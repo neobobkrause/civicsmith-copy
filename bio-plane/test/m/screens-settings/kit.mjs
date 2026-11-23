@@ -18,13 +18,19 @@ export { SCREENS };
 
 const VOID = new Set(["area", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 const ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'", nbsp: " " };
+/** HTML entities read back into their characters.
+ *  @param {*} s
+ *  @returns {string} */
 export const unescape = (s) => String(s).replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (m, e) => {
   if (ENT[e] !== undefined) return ENT[e];
   if (e[0] === "#") return String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : Number(e.slice(1)));
   return m;
 });
 
-/** An HTML string as `{tag: "#root", children}`; each element `{tag, attrs, children, parent}`, each text `{text}`. */
+/** An HTML string as `{tag: "#root", children}`; each element `{tag, attrs, children, parent}`, each text `{text}`.
+ *  @param {string} s
+ *  @returns {*} the root node
+ *  @throws {Error} for a closing tag with no element open, a bare `<`, or an element left open */
 export function html(s) {
   const root = { tag: "#root", attrs: {}, children: [] };
   let cur = root;
@@ -52,38 +58,87 @@ export function html(s) {
   return root;
 }
 
+/** Every node under `n`, depth first.
+ *  @param {*} n
+ *  @returns {Generator<*>} */
 export function* walk(n) { for (const c of n.children || []) { yield c; if (c.tag) yield* walk(c); } }
+/** The elements under `n` that `pred` accepts.
+ *  @param {*} n
+ *  @param {function(*): *} pred
+ *  @returns {Array<*>} */
 export const all = (n, pred) => [...walk(n)].filter((c) => c.tag && pred(c));
+/** A node's text, its children's joined.
+ *  @param {*} n
+ *  @returns {string} */
 export const textOf = (n) => (n.text !== undefined ? n.text : (n.children || []).map(textOf).join(""));
+/** Runs of white space as one space, trimmed.
+ *  @param {string} s
+ *  @returns {string} */
 export const squash = (s) => s.replace(/\s+/g, " ").trim();
-/** Every non-blank text node, trimmed. */
+/** Every non-blank text node, trimmed.
+ *  @param {*} n
+ *  @returns {string[]} */
 export const texts = (n) => [...walk(n)].filter((c) => c.text !== undefined && c.text.trim()).map((c) => squash(c.text));
+/** The act buttons under `n`.
+ *  @param {*} n
+ *  @returns {Array<*>} */
 export const acts = (n) => all(n, (e) => e.tag === "button" && e.attrs["data-act"]);
+/** The ops of the act buttons under `n`, each once, sorted.
+ *  @param {*} n
+ *  @returns {string[]} */
 export const actOps = (n) => [...new Set(acts(n).map((e) => e.attrs["data-act"]))].sort();
+/** The input, textarea and select elements under `n`.
+ *  @param {*} n
+ *  @returns {Array<*>} */
 export const fields = (n) => all(n, (e) => ["input", "textarea", "select"].includes(e.tag));
+/** The nearest element above `e` that `pred` accepts, or null.
+ *  @param {*} e
+ *  @param {function(*): *} pred
+ *  @returns {*} */
 export const ancestor = (e, pred) => { for (let p = e.parent; p; p = p.parent) if (p.tag && pred(p)) return p; return null; };
 
 // ---- the words ----
 
 /* The words the served page carries (interface-shell R5, R70): `WORD_ROWS` and the shell's own, each screen's keys among them. */
 const ROWS = new Map(wordsOf(SCREENS));
+/** The words the served page carries, key to English.
+ *  @type {Map<string, string>} */
 export const WORDS = ROWS;
 /** A word as the shell's `w(key, fills)` draws it (R5, R70): `setup-words`' `word`, which throws for a key the list lacks and for a
- *  `{name}` the fills do not fill, each fill escaped. */
+ *  `{name}` the fills do not fill, each fill escaped.
+ *  @param {string} key
+ *  @param {*} [fills]
+ *  @returns {string} the word, escaped
+ *  @throws {Error} for a key the list lacks or a fill left unfilled */
 export function w(key, fills = {}) {
   used.add(key);
   return esc(word(key, fills));
 }
 const used = new Set();
+/** The keys `w` has drawn since the last reset.
+ *  @returns {Set<string>} */
 export const usedKeys = () => new Set(used);
+/** Forgets the keys `w` has drawn.
+ *  @returns {void} */
 export const resetUsed = () => used.clear();
+/** A text escaped for HTML.
+ *  @param {*} s
+ *  @returns {string} */
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-/** A word's text with its fills, as a drawn text node reads it (unescaped), for comparison. */
+/** A word's text with its fills, as a drawn text node reads it (unescaped), for comparison.
+ *  @param {string} key
+ *  @param {*} [fills]
+ *  @returns {string} */
 export const said = (key, fills = {}) => squash(unescape(w(key, fills)));
-/** A word's text, unescaped, for a fill (the kit's `t`). */
+/** A word's text, unescaped, for a fill (the kit's `t`).
+ *  @param {string} key
+ *  @param {*} [fills]
+ *  @returns {string} */
 export const t = (key, fills = {}) => unescape(w(key, fills));
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-/** A date as the shell draws it (its R6): `date.daymonthyear` with `date.month.*`. */
+/** A date as the shell draws it (its R6): `date.daymonthyear` with `date.month.*`.
+ *  @param {string} iso an instant or a day
+ *  @returns {string} */
 export const day = (iso) => { const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number); return said("date.daymonthyear", { day: String(d), month: t("date.month." + MONTHS[m - 1]), year: String(y) }); };
 
 // ---- the served page, over the shell's harness ----
@@ -98,11 +153,17 @@ function toResponse(a) {
   return { status: 200, json: a };
 }
 
+/** The module's screen of that id.
+ *  @param {string} id
+ *  @returns {*} */
 export const screen = (id) => SCREENS.find((s) => s.id === id);
 
 /** Boots the page at `/app/<id>[/<subject>]` as `me`, over `table` (op → answer or `(query, body) => answer`).
  *  `reachable` answers the frame's reads so the assistant is reachable (interface-shell R20). `words` answers
- *  `interfacewords` (the member's shown words). */
+ *  `interfacewords` (the member's shown words).
+ *  @param {string} id the screen
+ *  @param {{me?: *, table?: Object<string, *>, subject?: string | null, reachable?: boolean, words?: Array<*> | null, screens?: ReadonlyArray<*>, world?: *, as?: *}} [o]
+ *  @returns {Promise<*>} the page: `html`, `tree`, `text`, `p` (its requests), `press`, `choose`, `tick`, `redraw` */
 export async function open(id, { me, table = {}, subject = null, reachable = false, words = null, screens = SCREENS, world = null, as = null } = {}) {
   const plane = {};
   for (const [op, a] of Object.entries(table)) plane[op] = async (req) => { const q = { ...req.query }; delete q.op; return toResponse(typeof a === "function" ? await a(q, req.body) : a); };
@@ -201,13 +262,21 @@ function keyOf(text) {
 
 // ---- what the page drew ----
 
-/** A row the shell's `cs.rows` drew (its R19), by its key: the row, and its panel (the next row, `cs-panel`). */
+/** A row the shell's `cs.rows` drew (its R19), by its key: the row, and its panel (the next row, `cs-panel`).
+ *  @param {*} tree
+ *  @param {*} key the row's key
+ *  @param {*} [name] the row's name, for a row with no acts
+ *  @returns {*} */
 export function rowOf(tree, key, name = key) {
   const b = all(tree, (e) => e.attrs["data-shell"] === "row" && e.attrs["data-id"] === String(key))[0];
   if (b) return ancestor(b, (e) => e.tag === "tr");
   // a row with no acts has no button: found by its first cell, its name
   return all(tree, (e) => e.tag === "tr" && /cs-r\b/.test(e.attrs.class || "") && squash(decode(textOf(e.children.filter((c) => c.tag)[0] || { children: [] }))) === String(name))[0] || null;
 }
+/** A row's panel (the next row, `cs-panel`), or an empty row.
+ *  @param {*} tree
+ *  @param {*} key
+ *  @returns {*} */
 export function panelOf(tree, key) {
   const r = rowOf(tree, key);
   if (!r) return { tag: "tr", attrs: {}, children: [] };
@@ -215,12 +284,26 @@ export function panelOf(tree, key) {
   const next = sib[sib.indexOf(r) + 1];
   return next && /cs-panel/.test(next.attrs.class || "") ? next : { tag: "tr", attrs: {}, children: [] };
 }
-/** Whether the main area says a word, filled (its text, as the member reads it). */
+/** Whether the main area says a word, filled (its text, as the member reads it).
+ *  @param {*} o the page `open` answered
+ *  @param {string} key
+ *  @param {*} [fills]
+ *  @returns {void}
+ *  @throws {Error} when the word is not drawn */
 export const has = (o, key, fills) => { if (!o.text.includes(said(key, fills))) throw new Error(`not drawn: ${key} "${said(key, fills)}"`); };
+/** Whether the main area does not say a word, filled.
+ *  @param {*} o the page `open` answered
+ *  @param {string} key
+ *  @param {*} [fills]
+ *  @returns {void}
+ *  @throws {Error} when the word is drawn */
 export const lacks = (o, key, fills) => { if (o.text.includes(said(key, fills))) throw new Error(`drawn: ${key}`); };
 
 /** The ops the design's registry lists for a screen (an owed act by the op it owes): the owner's declaration of a screen's acts (N1073). */
 import { readFileSync } from "node:fs";
+/**
+ *  @param {string} id the screen
+ *  @returns {string[]} */
 export const registryOps = (id) => {
   const reg = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/registry.json", import.meta.url), "utf8")).screens.find((x) => x.id === id);
   return reg.acts.map((a) => (/^owed:/.test(a.op) ? a.op.slice(5).split(" ")[0] : a.op)).sort();
