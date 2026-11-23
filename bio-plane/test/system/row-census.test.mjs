@@ -282,17 +282,8 @@ const FIXTURE = (v) => fileURLToPath(new URL(`./fixtures/row-census-${v}.jsonl`,
    code (its line is the tree's). */
 const AWAITING_STAMP = [
   /* RE-ANCHORED 2026-10-19 (PROMOTION #51, CR-5): over 1.80.0, the stamp's own lines (`fixtures/row-census-1.80.0.jsonl`).
-     The rows added or changed after 1.79.0 are stamped in 1.80.0. */
-  /* Process4 tranche t1 (journey-check #1, PR 1282, on ARCH's word): rows moved after 1.80.0 in the earlier process's last work,
-     named in their record; the next stamp takes them in. */
-  { kind: "changed", after: "1.80.0", line: ["C-115.40","TEMPLATE_NOT_NAMED","src/filings/index.mjs filingPrepare > is-template-not-named","The jurisdiction profile holds no file template for this kind: name a template, or write the words."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "changed", after: "1.80.0", line: ["C-120.4","CO_ATTESTATION_UNACKNOWLEDGED","src/case-disclosures/index.mjs selfAttestedJudged > is-co-attestation-acknowledged","A load-bearing document has no trusted timestamp and co-archive. Retry them, or acknowledge publishing it as self-attested only, with a reason. Nothing was written."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "changed", after: "1.80.0", line: ["C-124.8","SUBJECT_IN_ACTIVE_PLAN","src/action-plans/index.mjs #subjects > is-subject-free","That matter is already in an open plan of this project, which is named. A matter is in one open plan of a project at a time; work in that one, or close it first. Nothing was written."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "changed", after: "1.80.0", line: ["C-137.5","BAD_PERIOD","src/following/index.mjs followBody > is-follow-period","A follow names the days it covers: a first day, and a last day not before it, or none. Nothing was written."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "changed", after: "1.80.0", line: ["C-140.45","SIGNATURES_RUN_UNDER_WAY","src/file-safety/index.mjs scanMirror > is-signature-run-under-way","Your team's Civicsmith is already checking for new signatures, so it did not start another check. Look again in a few minutes."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "changed", after: "1.80.0", line: ["C-53.13","CAPTURE_HELD_BY_ANOTHER_BUNDLE","src/provenance/index.mjs #testimonyFence > is-register-home","The record already holds this document, under another record. A document has one home in the record — the first record that registered it — and registering it again here would move it away from there. Nothing was written. Cite the record that holds it, or, if you found it at a new address, that sighting is already recorded as a corroboration of the one it holds."], record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "arrived", after: "1.80.0", check: "C-2.8", code: "CUTTING_LEG_IN_GROUND", record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
-  { kind: "arrived", after: "1.80.0", check: "C-33.65", code: "WHICH_PASSAGE", record: "build/plan/row-census-awaiting-p4-t1.md", by: "journey-check #1, PR 1282 (ARCH, 23 Nov 2026)" },
+     The rows added or changed after 1.79.0 are stamped in 1.80.0.
+     The eight rows moved after 1.80.0 (build/plan/row-census-awaiting-p4-t1.md) are re-stamped in promotion's own pin. */
 ];
 /* COMPOSITIONS AWAITING STAMP: a change to which checks a gate runs moves no row, so the census cannot see it; each is
    declared here by name, verified against its record like a row, and listed (R50, K408, K464). Queue's registered step

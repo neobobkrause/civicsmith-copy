@@ -19,8 +19,6 @@ export const LEGACY_UI_WORKER = "civicos";
 
 export const FAIL = Object.freeze({ REFUSED: "refused", HTTP: "http", SCRIPT: "script", OLD_PAGE: "old-page", ADDRESS: "address",
   NOT_DRAWN: "not-drawn", STEP: "step", REFUSAL: "refusal",
-  /* R21: a carried state the local arm, which makes its own data, could not reach */
-  STATE: "state",
   /* R5: a role signed in that `whoami` does not answer as that role, or acts only an administrator is drawn not drawn */
   ROLE: "role",
   /* R6: a working screen the design mock does not draw, and the limits of a live page (design.mjs' LIMIT) */

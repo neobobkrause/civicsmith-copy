@@ -43,7 +43,7 @@ test("R21: a state the live screen reaches is paired at both widths; control: a 
   assert.deepEqual(walk.notes, [localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: `${states[1].screen}, ${states[1].state}` })]);
 });
 
-test("R21: on the local arm a state that cannot be reached fails by its name, on the live arm it is a note; a reached state passes on both", { timeout: 300000 }, async () => {
+test("R21: a state that cannot be reached is a note on both arms, never a pass and never a failure, naming the arm; a reached state passes on both", { timeout: 300000 }, async () => {
   const states = CARRIED_STATES.filter((s) => s.screen === "project").slice(0, 2);
   const name = (st) => `${st.screen}, ${st.state}`;
   const ctx = await B.newContext(); const page = await ctx.newPage();
@@ -54,11 +54,10 @@ test("R21: on the local arm a state that cannot be reached fails by its name, on
   await walkStates(live, B, mock, { out: live.out, page, base: "http://x", states, reach });
   await ctx.close();
   assert.equal(wrote.length, 2, "the reached state is paired at both widths");
-  assert.deepEqual(local.failures.map((f) => f.kind), [FAIL.STATE]);
-  assert.ok(local.failures[0].detail.startsWith(name(states[1])), "the failure names the state");
-  assert.deepEqual(local.notes, []);
+  assert.deepEqual(local.failures, []);
+  assert.deepEqual(local.notes, [`${name(states[1])}: not reached on the local arm`], "the note names the state");
   assert.deepEqual(live.failures, []);
-  assert.equal(live.notes.length, 1);
+  assert.deepEqual(live.notes, [`${name(states[1])}: not reached on this instance`]);
 });
 
 /* a fixture instance holding a published case (fake-plane.mjs `publishedPage`, drawn as the screen draws it); `bad` makes the minimum a request */

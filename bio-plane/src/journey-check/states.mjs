@@ -4,7 +4,8 @@
    mock, never copied here. The live screen is put in the state by `reach(page, ctx)` (the walk's own acts, or data the arm
    made), which answers true when it is there. A state the mock does not offer fails by its name; a state the walk cannot reach
    is a note "<screen>, <state>: not reached on this instance" on the live arm (never a pass, never a failure), listed for BOB's own live walk; on the
-   local arm, which makes its own data, the same state fails by its name (kind `state`). */
+   local arm it is a note "<screen>, <state>: not reached on the local arm", never a pass, never a failure, listed for the internal
+   walk to walk by hand (ARCH, "The local walk's unreached states, and a reading not yet held"). */
 import { join, relative } from "node:path";
 import { FAIL } from "./walker.mjs";
 import { localize } from "../setup-words/index.mjs";
@@ -107,7 +108,7 @@ export async function walkStates(walk, b, mock, { out, page = null, base = null,
       }
       await page.setViewportSize(viewportOf(WIDTHS[0]));
     }
-    if (!ok && walk.arm === "local") { walk.fail(FAIL.STATE, localize("journey-check.states.name_not_reached_on_the_local", "{name}: not reached on the local arm, which makes its own data", { name: String(name) })); continue; }
+    if (!ok && walk.arm === "local") { walk.notes.push(localize("journey-check.states.name_not_reached_on_the_local_arm", "{name}: not reached on the local arm", { name: String(name) })); continue; }
     if (!ok) { walk.notes.push(localize("journey-check.states.name_not_reached_on_this_instance", "{name}: not reached on this instance", { name: String(name) })); continue; }
     for (const width of WIDTHS)
       written.push(relative(out, await pair(b, livePng[width], design[width], join(out, "pairs", `state-${st.screen}-${(st.state ?? st.option).replace(/[^a-z0-9]+/gi, "-")}-${width}.png`), { title: `${name}, ${width}px` })));
