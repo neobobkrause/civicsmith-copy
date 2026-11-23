@@ -15,12 +15,16 @@ import { localize } from "../setup-words/index.mjs";
 const freeze = (a) => Object.freeze([...a]);
 
 /** R46: DEC-77's clarifier choices, the respects in which two sides of a contradiction may differ. */
+/** @type {readonly string[]} R46: `time_or_occasion`, `scope`, `meaning`, `observer_or_method`, `subject`, frozen */
 export const CONTRADICTION_COORDINATES = freeze(["time_or_occasion", "scope", "meaning", "observer_or_method", "subject"]);
 /** R46: DEC-84 item 3's named differences between two projects' conclusions. */
+/** @type {readonly string[]} R46: `scope`, `time_or_occasion`, `standard`, `evidence_set`, `weighing`, frozen */
 export const PLURALITY_DIFFERENCES = freeze(["scope", "time_or_occasion", "standard", "evidence_set", "weighing"]);
 /** R46: what a `dissolved` resolution may name, the union of both lists, plus `precision` and `opinion`. */
+/** @type {readonly string[]} R46: both lists' union, then `precision` and `opinion`, frozen */
 export const DISSOLVED_BY = freeze([...new Set([...CONTRADICTION_COORDINATES, ...PLURALITY_DIFFERENCES, "precision", "opinion"])]);
 /** R46: the canons by which a conflict of norms is reconciled, or said not to be. */
+/** @type {readonly string[]} R46: the five canons, frozen */
 export const NORM_CANONS = freeze(["higher_over_lower", "later_over_earlier", "specific_over_general", "harmonization", "unreconciled"]);
 
 const FAMILY = Object.freeze({
@@ -29,17 +33,26 @@ const FAMILY = Object.freeze({
   double_speak_or_reversal: "GENUINE", obligation_against_act: "GENUINE", conflict_of_norms: "GENUINE", irreconcilable: "GENUINE",
 });
 /** R46: every kind a contradiction can be resolved as, in the order the requirement lists them. */
+/** @type {readonly string[]} R46: the nine kinds, frozen */
 export const RESOLUTION_KINDS = freeze(Object.keys(FAMILY));
 
 /** R46: a kind's family (`DISSOLVED`, `CORRECTED` or `GENUINE`), null for anything that is not a kind. */
+/**
+ * R46: a kind's family. Pure; never throws.
+ * @param {unknown} kind any value; only a kind of `RESOLUTION_KINDS` has a family
+ * @returns {string | null} `DISSOLVED`, `CORRECTED` or `GENUINE`; null for anything that is not a kind
+ */
 export function resolutionFamily(kind) {
   return typeof kind === "string" && Object.prototype.hasOwnProperty.call(FAMILY, kind) ? FAMILY[kind] : null;
 }
 
 /** R47: a candidate's id, `contradiction` R15's (a SHA-256, lowercase hex). */
+/** @type {RegExp} R47: a contradiction candidate's id, 64 lowercase hex */
 export const CANDIDATE_RE = /^[0-9a-f]{64}$/;
 /** R47: a qualifier's bound, and an explored hypothesis's. */
+/** @type {number} R47: the most characters of a qualifier, 200 */
 export const QUALIFIER_MAX = 200;
+/** @type {number} R47: the most characters of an explored hypothesis, 500 */
 export const HYPOTHESIS_MAX = 500;
 
 const RESOLUTION_FIELDS = ["kind", "coordinates", "qualifier_a", "qualifier_b", "wrong_side", "reason", "canon"];
@@ -54,6 +67,11 @@ const text = (v) => (typeof v === "string" ? v : typeof v === "number" ? String(
  *  folded, trimmed; `basis-versions` R5's normalising, idempotent), a blank field left out. `resolution` is the logical
  *  shape, `{kind, coordinates?, qualifiers?: {a?, b?}, wrong_side?, reason?, canon?}`. Anything that is not an object
  *  answers no lines. Never throws. */
+/**
+ * R46: a resolution's frontmatter lines in one fixed order, frontmatter-safe. Never throws.
+ * @param {any} resolution `{kind, coordinates?, qualifiers?: {a?, b?}, wrong_side?, reason?, canon?}`; anything that is not an object answers no lines
+ * @returns {string[]} `resolution:` and then one line for each field present and not blank
+ */
 export function resolutionLines(resolution) {
   try {
     if (!isMap(resolution)) return [];

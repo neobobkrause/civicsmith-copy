@@ -42,7 +42,7 @@ test("R36 R12 the leg count and the superseded-by index are held in this module'
   /* purge clears the bundle's row */
   w.record.purge({ bundleId: E });
   assert.equal(facts(w, E), null);
-  assert.equal(w.k.writeSupersededBy("INQ-2026-0099-none").length, 0, "an id with no bundle writes nothing");
+  assert.equal(w.k.writeSupersededBy("INQ-2026-0099-none")?.length, 0, "an id with no bundle writes nothing");
   assert.equal(facts(w, "INQ-2026-0099-none"), null);
 });
 
@@ -129,6 +129,7 @@ test("R49 R12 N405 the migrated arm of surfaced_in: a migration replay's creatio
   assert.equal(w.promote(M, inquiryMd(M), null, { migrationReplay: { capture: "c".repeat(64), promotion: "P-1" } }).ok, true);
   w.inquiry(Q);
   const m = w.k.migratedSurfacing(M);
+  assert.ok(m, "a migrated question has its surfacing");
   assert.deepEqual({ ...m, migrated: { ...m.migrated, at: typeof m.migrated.at } },
     { recorded: false, stated: word("inquiry.stated.recorded_migrated_drive"), run: null, lens: null,
       migrated: { capture: "c".repeat(64), promotion: "P-1", at: "string" } });
