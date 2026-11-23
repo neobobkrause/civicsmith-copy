@@ -11,12 +11,10 @@
   "uses": [
     "ai-use",
     "provenance",
-    "record-grammar",
     "test-support",
     "runtime-limits",
     "bundler",
     "credentials",
-    "query-language",
     "retrieval",
     "basis-versions",
     "run-rules",
@@ -28,7 +26,6 @@
     "agent-harness",
     "agent-model",
     "agent-runner",
-    "reading-guides",
     "setup-words",
     "agent-steps",
     "agent-worker-routes"

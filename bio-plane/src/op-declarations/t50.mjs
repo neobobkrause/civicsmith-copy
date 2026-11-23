@@ -16,6 +16,7 @@
 
 const QUERY = (key) => Object.freeze({ key, at: "query" });
 
+/** @type {Object<string, {cite: string, ops: Object<string, string>, extra?: Object<string, readonly string[]>}>} each owner's share of T50's ops, each op under its kind */
 const T50_SHARES = Object.freeze({
   /* following R32, R33 (R73): an item watched by the member for herself, and a second look asked of an item, kept and
      cleared by a member (MACHINE_CANNOT_FOLLOW); `by` from the query, `item`, `on`, `note` and `flag` the body's. */
@@ -40,6 +41,7 @@ const T50_SHARES = Object.freeze({
   filings: Object.freeze({ cite: "filings R62; R73", ops: Object.freeze({ stakeatpreparation: "read" }) }),
 });
 
+/** @type {ReadonlyArray<{owner: string, cite: string, actor?: {key: string, at: string}, ops: Object<string, string>, extra?: Object<string, readonly string[]>}>} the families T50 adds, each an owner's own */
 const T50_FAMILIES = Object.freeze([
   /* action-records R17, R19 (R73): a stake recorded on an action and an inquiry opened on one, a joined member's acts
      (the owner refuses a machine by name), `author` from the query beside the viewer, `target`, `stake` and `action`,

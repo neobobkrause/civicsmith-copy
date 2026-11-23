@@ -266,7 +266,14 @@ const refusal = (code, detail, status, extra) =>
  * `mutating` is a property of THIS WORKER and not of what the plane may do
  * downstream, and for a fleet member it must be `false` on every row — fleet
  * rule 2, a member ASSERTS nothing. That is not left to discipline: the suites
- * fail a member that declares a mutating surface op. */
+ * fail a member that declares a mutating surface op.
+ *
+ * @typedef {Object} SurfaceRow
+ * @property {string} method `POST` or `GET`
+ * @property {boolean} mutating
+ * @bound mutating: false on every row (R34; fleet rule 2)
+ *
+ * @type {{run: SurfaceRow, ask: SurfaceRow, draft: SurfaceRow, signin: SurfaceRow, transcribe: SurfaceRow, version: SurfaceRow}} */
 export const SURFACE = {
   run:     { method: "POST", mutating: false },
   ask:     { method: "POST", mutating: false },
@@ -555,7 +562,9 @@ async function segmentAnswer(env, checked, body, whoami, traced, deadline, prefl
   const meter = segmentMeter({ turnsBound: requested, bytesBound });
   const modelMode = !Array.isArray(body.judgements);
   const model = modelMode
-    ? modelHalf({ reference: (await cascadeToken(account)).reference, runner: remoteOf(env), meter,
+    /* R6 refused every account R32 would not resolve before this line, so the reference is never null here. */
+    ? modelHalf({ reference: (/** @type {import("./cascade.mjs").CascadeReference} */ (await cascadeToken(account))).reference,
+                  runner: remoteOf(env), meter,
                   suggestions: account.suggestions, traced })
     : null;
 
@@ -703,9 +712,14 @@ const DEFAULT_SEGMENT_WALL_MS = 10 * 60 * 1000;
 const segmentsBound = (env) => typeof env.SEGMENTS?.idFromName === "function" && typeof env.SEGMENTS?.get === "function";
 const segmentWallMs = (env) => (Number(env.MAX_SEGMENT_MS) > 0 ? Number(env.MAX_SEGMENT_MS) : DEFAULT_SEGMENT_WALL_MS);
 
+/** R91, R93 — the Durable Object (`SEGMENTS`) that holds one run's segment: `fetch` takes `{body, whoami}` and answers
+ *  202 `{accepted: true, run_id}` or a refusal (409 `SEGMENT_RUNNING`, 400 `BAD_BODY`, or R1–R8's); `alarm` runs the
+ *  held segment to its end. */
 export class SegmentDriver {
+  /** @param {any} state the Durable Object's state, with `storage` @param {Record<string, any>} env the bindings */
   constructor(state, env) { this.state = state; this.env = env; this.pending = null; this.running = false; }
 
+  /** @param {Request} req @returns {Promise<Response>} */
   async fetch(req) {
     if (this.pending || this.running)
       return refusal("SEGMENT_RUNNING",
@@ -720,6 +734,7 @@ export class SegmentDriver {
     return json({ accepted: true, run_id: checked.runId }, 202);
   }
 
+  /** @returns {Promise<void>} */
   async alarm() {
     const p = this.pending;
     this.pending = null;
@@ -742,8 +757,13 @@ export class SegmentDriver {
    answers `{ok: true, checked, version}`; `POST /check` with `{version}` records a pass (R111's `check` step makes it).
    Only the gate reads it (`remoteReady`); it is not a store of the record and writes nothing of it. */
 export class CheckRecord {
+  /** @param {any} state the Durable Object's state, with `storage` */
   constructor(state) { this.state = state; }
 
+  /** `GET /check` answers `{ok: true, checked, version}`; `POST /check` with `{version}` records a pass, `{ok: true}`;
+   *  else 400 `BAD_BODY` or 404 `UNKNOWN`.
+   *  @param {Request} req @returns {Promise<Response>}
+   *  @bound version: a non-empty string of at most 200 characters */
   async fetch(req) {
     if (new URL(req.url).pathname !== "/check") return refusal("UNKNOWN", localize("agent-worker.index.get_or_post_check_only", "GET or POST /check only."), 404);
     if (req.method === "GET") {
@@ -773,7 +793,11 @@ const MODEL_TURNS = "run through agent-model exactly when the Claude account tha
   + "member's own reference or sign-in, a project's account, or the team's API key) arrives with the call and the mode of the run (/run), ask (/ask), "
   + "draft (/draft) or transcription (/transcribe) has turns to run; a segment whose caller supplies the judgements runs none";
 
+/** The Worker (R1–R8, R28–R31, R91): `POST /run` (or the empty path), `/ask`, `/draft`, `/signin`, `/transcribe` and
+ *  `GET /version`; anything else 404 `UNKNOWN`. Reached only through the plane's service binding (R47). */
 export default {
+  /** @param {Request} req @param {Record<string, any>} env the bindings (`PLANE`, `REMOTE`, `SEGMENTS`, `CHECKS`, and
+   *  `MAX_TURNS_PER_SEGMENT`, `MAX_SEGMENT_MS`, `VERSION`) @returns {Promise<Response>} */
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/+/, "");

@@ -19,6 +19,8 @@ import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { ASK_BOUNDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { MEMBER } from "./account.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+import { PUBLISHED_VALUE } from "./published.mjs";
+import { discoverMembers, writeMember } from "../../bio-plane/scripts/fleet-bundle.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -580,8 +582,6 @@ section("R64 · the words members read: your group's Civicsmith, or the thing it
           return (await res.text()).split("\n").filter(Boolean).map((l) => JSON.parse(l)).find((e) => e.event === "refused"); }
     finally { globalThis.fetch = saved; } })();
   rows.push(["ask.mjs:290", unchecked?.detail, cut(localize("agent-worker.ask.the_records_checks_answered_without", "the record's checks answered without a checked answer, so nothing is returned: an unchecked answer is never shown.", { why: "\u0000" }))]);
-  const PUBLISHED_VALUE = readFileSync(join(REPO, "bio-plane/dist/SECRETS.txt"), "utf8").split("\n")
-    .find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
   const revoked = await resolveClaudeCascade({ ...ACCOUNT, secret: PUBLISHED_VALUE });
   rows.push(["cascade.mjs:73", revoked.detail, cut(localize("agent-worker.cascade.the_member_connects_a_new", "The member connects a new one; until then the team's API key serves them only while your team's Civicsmith holds it and it is on.", { why: "\u0000" }))]);
   const unset = await resolveClaudeCascade({ ...ACCOUNT, secret: "" });
@@ -626,8 +626,11 @@ section("R65 · this member re-exports no other module's code");
   t("R65: src/index.mjs's import closure holds neither, and holds agent-harness' and agent-model's own files",
     [GONE.filter((g) => closure.has(g)), closure.has(join(REPO, "agent-harness/src/harness.mjs")), closure.has(join(REPO, "agent-model/src/model.mjs"))],
     [[], true, true]);
-  const manifest = JSON.parse(readFileSync(join(MEMBER_DIR, "dist/agent-worker.bundle.json"), "utf8"));
-  t("R65: the committed bundle's manifest names neither file",
+  /* R120: the bundle is not committed; it is built here as scripts/build.mjs builds it, and its manifest read. */
+  const member = discoverMembers().find((m) => m.name === "agent-worker");
+  if (!member) throw new Error("agent-worker declares no fleet-member.json, so its bundle cannot be built (R65, R120)");
+  const { manifest } = await writeMember(member);
+  t("R65, R120: the bundle built from the checkout has a manifest that names neither file",
     (manifest.inputs || []).map((i) => i.path).filter((p) => p === "src/harness.mjs" || p === "src/subsession.mjs"), []);
 }
 

@@ -82,8 +82,9 @@ test("R78 the declarations are the shape the owners' registry reads, each op dec
     [[], true, "reversible"]);
   assert.deepEqual([DECLARED_OPS.namedrequestset.classes, DECLARED_OPS.namedrequests.classes, DECLARED_OPS.namedrequests.mutating],
     [["admin", "member"], ["admin", "member", "probe"], false]);
-  /* test-support's collector finds them, each op once, with no other module declaring one of them */
-  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "store-assembly");
+  /* test-support's collector finds them, each op once, with no module up to this one declaring one of them (the read is
+     bounded to monitoring, so this test reaches no later module) */
+  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "monitoring");
   for (const op of OPS) assert.deepEqual([owners[op], ops[op] === DECLARED_OPS[op] || JSON.stringify(ops[op]) === JSON.stringify(DECLARED_OPS[op])], ["monitoring", true], op);
   assert.deepEqual(duplicates.filter((d) => OPS.includes(d.op)), []);
 });
