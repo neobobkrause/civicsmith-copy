@@ -1,6 +1,6 @@
 /* screens-inquiry's phone measurements (C81, fix round 3): this module's real screens, served as interface-shell serves them, drawn in
  * Chromium at a stated width over the scripted plane of `fixtures.mjs`, and the boxes of the controls a test names measured. Needs
- * `playwright-core` (beside the product) and Chromium (CHROMIUM, or /opt/pw-browsers/chromium); without them the test fails saying so
+ * `playwright-core` (beside the product) and a browser (CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, or Google Chrome or Chromium under /usr/bin); without them the test fails saying so
  * (as interface-shell's phone390.test.mjs does). */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -19,7 +19,9 @@ function engine() {
   }
   return null;
 }
-const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+/* the first browser this machine carries: a session's Chromium, or the Google Chrome GitHub's machine carries */
+const EXE = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
+  .find((p) => typeof p === "string" && p !== "" && existsSync(p)) || "/opt/pw-browsers/chromium";
 
 /** The screen at `path` drawn `width` px wide over `plane(o)` (op to answer or function, as the fixtures); `controls` are the words (already
  *  read through `word`) of the buttons and links to measure. Answers `{ mainScroll, over, small, boxes }`: the main area's scroll width, the
@@ -29,7 +31,7 @@ const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 export async function onPhone({ path, o = {}, width = 390, controls = [], before = null }) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
+  assert.ok(existsSync(EXE), "a browser is needed: CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN or Google Chrome or Chromium under /usr/bin");
   const answers = { ...FRAME, ...plane(o) };
   const html = interfacePage(SCREENS), script = interfaceScript(SCREENS);
   const browser = await pw.chromium.launch({ executablePath: EXE });
