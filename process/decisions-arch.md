@@ -44,3 +44,8 @@ Decision: agent-runner's R36, R37, R38 and R40, and agent-worker-routes' R111, w
 Why: a requirement that needs a secret-holding copy cannot be met inside the process's tests, and a public file the tool cannot list sends no notice.
 Decided: 23 Nov 2026.
 
+## The screens registry and answers
+Decision: the composition root no longer hands the screens registry to `answers`. `answers` states no `screens` in its dependencies and reads none, so the hand-over had no effect; `store-assembly` R23 is reworded to say so, and store-assembly's job removes the dependency and the release test's assertion of it. `wizardRegistration.screens` stays the one registry.
+Why: the module check refuses a provider's input that its stated interface does not name, and nothing in `answers` reads it; removing it changes nothing the product does.
+Decided: 23 Nov 2026.
+
