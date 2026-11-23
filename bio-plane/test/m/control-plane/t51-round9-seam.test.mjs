@@ -10,6 +10,12 @@ import { sections as limits } from "./r9-seam-limits.mjs";
 import { sections as parts } from "./r9-seam-parts.mjs";
 import { sections as safety } from "./r9-seam-safety.mjs";
 import { sections as hostile } from "./r9-seam-hostile.mjs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+/* §18 boots the pdf-worker from its bundle, which is never committed (ARCH, "Committed built files"): built here from source,
+   by the member's own build script, before any section runs. */
+execFileSync(process.execPath, [fileURLToPath(new URL("../../../../pdf-worker/scripts/build.mjs", import.meta.url))], { stdio: "ignore" });
 
 const kit = makeKit({ tag: "r9seam" });
 const counting = makeKit({ tag: "r9seamc", counting: true });
