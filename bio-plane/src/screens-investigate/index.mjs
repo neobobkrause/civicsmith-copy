@@ -30,7 +30,7 @@ import { THEME_SCREEN } from "./theme.mjs";
  */
 /**
  * interface-shell R21: the twelve registry screens this module draws.
- * @type {Screen[]} frozen: no screen is added or removed
+ * Frozen: no screen is added or removed. Each is a `Screen`.
  */
-export const SCREENS = /** @type {Screen[]} */ (Object.freeze([PEOPLE_SCREEN, PERSON_SCREEN, EXPLORE_SCREEN, TIMELINE_SCREEN, MONEY_SCREEN, CALCULATION_SCREEN,
-  HELP_SCREEN, PROCEEDING_SCREEN, DUE_DATE_SCREEN, STANDARD_SCREEN, TIES_SCREEN, THEME_SCREEN]));
+export const SCREENS = Object.freeze([PEOPLE_SCREEN, PERSON_SCREEN, EXPLORE_SCREEN, TIMELINE_SCREEN, MONEY_SCREEN, CALCULATION_SCREEN,
+  HELP_SCREEN, PROCEEDING_SCREEN, DUE_DATE_SCREEN, STANDARD_SCREEN, TIES_SCREEN, THEME_SCREEN]);
