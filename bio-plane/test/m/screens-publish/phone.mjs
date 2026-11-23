@@ -1,7 +1,8 @@
 /* screens-publish's tests: a screen of this module drawn in Chromium at a given width, over the fixture plane, and its controls
  * measured (C81). The page is the one the shell serves (`interfacePage`, `interfaceScript`) with the served stylesheets; the plane
  * is `fixtures.mjs`'s, answering each op by the `op` query the page sends. Needs `playwright-core` (beside the product or in
- * /opt/node-tools) and Chromium (CHROMIUM, or /opt/pw-browsers/chromium); without them the test that measures fails, saying so. */
+ * /opt/node-tools) and a Chromium browser (CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, or the system's Google Chrome or Chromium);
+ * without them the test that measures fails, saying so. */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { existsSync } from "node:fs";
@@ -20,13 +21,15 @@ function engine() {
   }
   return null;
 }
-const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+/* the first browser that exists: the one named by CHROMIUM, the session's, CHROME_BIN, or the system's (GitHub's machines carry Google Chrome) */
+const EXE = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
+  .find((x) => typeof x === "string" && x && existsSync(x)) || "";
 
 /** Draws `path` at `width` px over `answers` (op → fixture answer) and returns what `inspect(page)` measures; `waitFor` is a selector. */
 export async function measure(path, width, { answers = {}, waitFor = "#cs-main h1, #cs-main h2", session = true, inspect, drive } = {}) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
+  assert.ok(EXE, "a Chromium browser is needed at CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium or /usr/bin/chromium-browser");
   const html = interfacePage(SCREENS), script = interfaceScript(SCREENS);
   const all = { ...FRAME, ...(await frameAnswers()), ...plane(answers) };
   const browser = await pw.chromium.launch({ executablePath: EXE });

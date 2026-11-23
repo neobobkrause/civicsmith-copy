@@ -38,7 +38,13 @@ export const DOCKET = Object.freeze({
     out.push(none ? '<p class="cs-state" data-state="empty">' + cs.w("screen.docket.none") + "</p>" : cs.sec("screen.docket.entries", cs.state("docket", function (v) {
       return cs.sheet(v.entries.map(function (e) {
         const posted = e.shelf !== "record" || e.state === "posted" || e.published_at;
-        const said = e.summary || e.reason || e.kind || "";
+        // A posted entry states its kind, edition and summary in its signed fields (`docket` R3: `fields`); a record entry at its top
+        const f = e.fields && typeof e.fields === "object" ? e.fields : {};
+        const kind = e.kind || f.kind || "", ed = Number(e.edition !== undefined ? e.edition : f.edition);
+        // The code differences of 22 Nov 2026 (Screens page "Publishing", docket C2; protected): a posted edition says by key which edition it
+        // published and which it superseded (editions are numbered in order, so the one before it)
+        const said = posted && kind === "edition" && ed > 1 ? cs.w("screen.docket.edition.published", { n: String(ed), prior: String(ed - 1) })
+          : cs.esc(e.summary || f.summary || e.reason || kind || "");
         let prep = "";
         if (!posted && e.proposed && e.proposed !== "record" && e.state !== "taken-back") {
           const pr = P.later(cs, view, "prepare:" + e.entry, "docketprepare", { query: { case: caseId, entry: String(e.entry), kind: e.kind } });
@@ -46,8 +52,8 @@ export const DOCKET = Object.freeze({
             + cs.act("docketpost", { data: { entry: String(e.entry), kind: String(e.kind || "") } });
         }
         // C81: the preparation and "Post it, signed" sit under the entry, the whole width of the row, not squeezed into its end
-        return cs.row("", "<b>" + cs.w("screen.docket.kind." + (["edition", "correction", "withdrawal", "court-order", "response", "statement", "reaction", "outcome"].includes(e.kind) ? e.kind : "other")) + "</b> · "
-          + '<span class="rec">' + cs.esc(said) + "</span>",
+        return cs.row("", "<b>" + cs.w("screen.docket.kind." + (["edition", "correction", "withdrawal", "court-order", "response", "statement", "reaction", "outcome"].includes(kind) ? kind : "other")) + "</b> · "
+          + '<span class="rec">' + said + "</span>",
           '<span class="meta">' + cs.w(posted ? "screen.docket.posted" : "screen.docket.drafted") + (e.filed_at || e.published_at ? " · " + cs.date(e.published_at || e.filed_at) : "") + "</span>")
           + (prep ? '<div class="mk-acts" style="display:block;padding:0 0 12px">' + prep + "</div>" : "");
       }).join(""));
@@ -105,7 +111,10 @@ export const DOCKET = Object.freeze({
           return { value: String(f.bundle_id || f.id), on: false, text: String(b.conclusion || b.question || f.title || f.bundle_id || f.id) };
         }))
         + cs.field("dk-next-scope", "screen.docket.next.scope", { area: true, rec: true, help: "screen.docket.next.scope.help" })
-        + '<div class="mk-acts">' + cs.act("casedraft", { tone: "primary" }) + "</div>" + P.said(view, "casedraft"), []));
+        + '<div class="mk-acts">' + cs.act("casedraft", { tone: "primary" }) + "</div>"
+        // Screens page C7: where the draft opens, a reference to the case being prepared
+        + '<p class="mk-small" data-next-opens>' + cs.w("screen.docket.next.opens", { link: { html: cs.ref("case-editor", String(view.subject || "").split("/")[0], P.plain(cs.w("screen.docket.next.opens.link")), []) } }) + "</p>"
+        + P.said(view, "casedraft"), []));
     }
 
     // R43 (N858 D10; DEC-340; docket R30; action-holds R19): "Pressure marked on this case", after the record: each entry that

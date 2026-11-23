@@ -1,6 +1,6 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
-   list, docs/development/ux-substrate/screens/words.json (19531 design words, 1162 protected; SHA-256
-   82207b73675e7d174016a7305d69e60e8cf4fa797c6db873d9da4e38ca128e0e) followed by 7519 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   list, docs/development/ux-substrate/screens/words.json (19536 design words, 1162 protected; SHA-256
+   f9aae151ac939eed23d89a269e4e0fcfa342e348ef5ee31b4ce83219e979438f) followed by 7519 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
@@ -11,7 +11,7 @@
  * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
  */
 /** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
-export const WORDS_COMMIT = "82207b7367";
+export const WORDS_COMMIT = "f9aae151ac";
 /** @type {readonly WordRow[]} the list, frozen with each row (R3) */
 export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
@@ -10026,9 +10026,14 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["screen.imported.lens_removed","With the source's bias removed","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Radio choice, none preselected. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_own","Under your team's lens","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Radio choice, none preselected. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_shown","Shown here: with the source's bias removed.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Caption above the table; the lens named changes with the choice (one of the three radio choices, lower-cased start). Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_shown.as_published","Shown here: as the source published it.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_as_published)",null,false,"design"],
+  ["screen.imported.lens_shown.own","Shown here: under your team's lens.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_own)",null,false,"design"],
   ["screen.imported.lens_moved","Moved: {published} as published, {regraded} without the source's bias.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that moved; both placeholders hold a pair of grades; the lens named follows the choice. Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_moved.own","Moved: {published} as published, {regraded} under your team's lens.","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_moved and screen.imported.lens_own)",null,false,"design"],
   ["screen.imported.lens_bar_ours","It meets your team's bar: {answer}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_bar_theirs","It met the source's bar: {answer}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders.",null,false,"design"],
+  ["screen.imported.lens_bar.yes","yes","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)",null,false,"design"],
+  ["screen.imported.lens_bar.no","no","process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)",null,false,"design"],
   ["screen.imported.lens_because","Moved by the statement {statement}, which touches the inference {part}.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the statement is a lens statement as the case prints it; the touched part is a leg, an inference or a conclusion. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_unmoved","Nothing in this lens touches it.","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that did not move. Sample names and counts are placeholders.",null,false,"design"],
   ["screen.imported.lens_none_summary","When your team has no lens in force","DEC-378: B398 C49 (case-import, K4169): the imported-case page: Disclosure summary. Sample names and counts are placeholders.",null,false,"design"],

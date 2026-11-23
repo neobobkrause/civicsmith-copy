@@ -3,10 +3,17 @@
    member's reason. It names counsel (required at tier 3 or when the tier is undetermined, optional at 1 or 2), draws each
    matter as the packet states it ("not determined" never stops the packet), adds for a defense the challenged statements, the
    pressure received and the defense deadlines, and marks every section "Prepared for review by …. Not legal advice. Not for
-   filing." The packet is never offered for publication. The subject is the action. It holds no member-facing English (R19).
+   filing." The packet is never offered for publication. The versions assembled for the action are listed from `filingsfor`
+   (filings R13), newest first, each read again exactly as it was made (`counselpacketread`) or saved as a file the record
+   keeps (`counselpacketexport`, filings R11). The subject is the action. It holds no member-facing English (R19).
    Every function here is self-contained (interface-shell R21 (1)). */
 import { readOnly } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** Brief counsel (R34): the packet for the team's lawyer; `counselpacket`; the versions assembled (`filingsfor`), each read
+ *  (`counselpacketread`) or saved as a file (`counselpacketexport`).
+ *  @type {Readonly<ScreenDef>} */
 export const counsel = Object.freeze({
   id: "counsel",
 
@@ -22,6 +29,8 @@ export const counsel = Object.freeze({
     return {
       action: { op: "action", query: { id: view.subject }, subject: true },
       projects: { op: "list", query: { type: "project", limit: "500" } },
+      // the packets assembled for this action, each version with who assembled it and each time it was saved as a file (filings R13)
+      filings: { op: "filingsfor", query: { action: view.subject }, empty: function () { return false; } },
     };
   },
 
@@ -30,6 +39,19 @@ export const counsel = Object.freeze({
     // R34: counsel is required at tier 3 or undetermined, optional at 1 or 2
     required: function (a) { return !(Number(a.risk_tier) === 1 || Number(a.risk_tier) === 2); },
     // the matters as the packet states them: each fact with whether a determination holds it
+    // the packet versions `filingsfor` lists for the action, newest first
+    versionsOf: function (f) {
+      const list = f && Array.isArray(f.packets) ? f.packets.filter(function (p) { return p && typeof p.packet === "string" && p.packet; }) : [];
+      return list.slice().sort(function (a, b) {
+        const at = String(b.at || "").localeCompare(String(a.at || ""));
+        return at !== 0 ? at : Number(b.version || 0) - Number(a.version || 0);
+      });
+    },
+    // the counsel a version names, as `{name, organisation}`; null where it names none
+    counselOf: function (p) {
+      const c = p && p.counsel && typeof p.counsel === "object" ? p.counsel : null;
+      return c && typeof c.name === "string" && c.name.trim() ? { name: c.name.trim(), organisation: typeof c.organisation === "string" ? c.organisation.trim() : "" } : null;
+    },
     mattersOf: function (packet) {
       const s = packet && packet.sections && packet.sections.facts ? packet.sections.facts : null;
       return s && Array.isArray(s.items) ? s.items : [];
@@ -40,6 +62,49 @@ export const counsel = Object.freeze({
     const P = view.parts;
     const head = P.readOnly(cs, "screen.counsel.name") + cs.title(null) + '<p class="mk-sub">' + cs.w("screen.counsel.sub") + "</p>";
     const twoHelp = function (k) { return '<p class="mk-small">' + cs.w(k) + "</p>"; };
+    // C8 (filings R11, R13): the versions assembled for this action, newest first, each with who assembled it, when and for whom, the
+    // reason, whether the record changed since, and each time it was saved as a file; each can be read again exactly as it was made,
+    // or saved as a file the record keeps (who, which version, when, for which counsel). A version read is drawn in its place, its
+    // sections in a fold; a version saved is handed to the browser by the kit's save control.
+    const made = cs.state("filings", function (f) {
+      const shown = view.ui.shown || null, saved = view.ui.saved || null;
+      const nameOf = function (who) { return cs.memberName(String(who || "").replace(/^member:/, "")); };
+      const blocks = P.versionsOf(f).map(function (p) {
+        const c = P.counselOf(p);
+        const here = function (x) { return x && x.packet === p.packet && Number(x.version) === Number(p.version); };
+        const label = cs.esc(p.packet) + " · " + cs.esc(String(p.version));
+        // the made line names counsel; a version assembled with none named is drawn by who and when alone, as data
+        const by = c ? cs.w(c.organisation ? "screen.counsel.made.by" : "screen.counsel.made.by.noorg", { who: nameOf(p.assembled_by), date: { html: cs.date(p.at) }, counsel: c.name, organization: c.organisation })
+          : cs.esc(nameOf(p.assembled_by)) + " · " + cs.date(p.at);
+        const reason = typeof p.reason === "string" && p.reason.trim() ? '<p class="mk-small"><span class="rec">“' + cs.esc(p.reason.trim()) + "”</span></p>" : "";
+        // what changed since, in the words the record has for it (a superseded determination)
+        const causes = p.basis_changed && Array.isArray(p.basis_changed.causes) ? p.basis_changed.causes : [];
+        const said = causes.filter(function (x) { return x && x.cause === "determination_superseded" && typeof x.determination === "string"; })
+          .map(function (x) { return cs.w("filings.determination_superseded", { determination: x.determination, then: "" }); });
+        const changed = said.length ? '<p class="mk-note" data-changed>' + cs.w("screen.counsel.made.changed", { n: String(p.version), what: { html: said.join("; ") } }) + "</p>" : "";
+        const exported = (Array.isArray(p.exports) ? p.exports : []).map(function (e) {
+          const ec = P.counselOf(e);
+          return '<p class="mk-small" data-exported>' + (ec ? cs.w("screen.counsel.made.exported", { who: nameOf(e.exported_by), date: { html: cs.date(e.at) }, counsel: ec.name })
+            : cs.esc(nameOf(e.exported_by)) + " · " + cs.date(e.at)) + "</p>";
+        }).join("");
+        const data = { packet: p.packet, version: String(p.version) };
+        const acts = '<div class="mk-acts">' + cs.act("counselpacketread", { data: data }) + cs.act("counselpacketexport", { data: data }) + "</div>";
+        // the version as it was made: each section by its own title and marking, as the record states them
+        const read = here(shown) && shown.answer ? '<details class="mk-details" open data-read><summary>' + label + "</summary>"
+          + Object.keys(shown.answer.sections || {}).map(function (k) {
+            const s = shown.answer.sections[k] || {};
+            return '<div class="cs-sheet" data-section="' + cs.esc(k) + '"><b class="mk-small">' + cs.esc(s.title || k) + "</b>"
+              + (s.marking ? '<p class="mk-small">' + cs.esc(s.marking) + "</p>" : "") + (typeof s.says === "string" && s.says ? '<p class="mk-small">' + cs.esc(s.says) + "</p>" : "")
+              + (typeof s.text === "string" && s.text ? '<p class="mk-data">' + cs.esc(s.text) + "</p>" : "") + "</div>";
+          }).join("")
+          + '<p class="mk-note">' + (c ? cs.w("screen.counsel.sections.marking", { counsel: c.organisation ? c.name + ", " + c.organisation : c.name })
+            : cs.esc(typeof shown.answer.marking === "string" ? shown.answer.marking : "")) + "</p></details>" : "";
+        const file = here(saved) && typeof saved.text === "string" ? '<div class="mk-acts" role="status" data-saved>' + cs.save(saved.name, saved.text) + "</div>" : "";
+        return '<div class="cs-sheet" data-packet-version="' + cs.esc(p.packet + "~" + p.version) + '"><p class="mk-data">' + label + "</p><p class=\"mk-small\">" + by + "</p>"
+          + reason + changed + exported + acts + read + file + "</div>";
+      }).join("");
+      return cs.sec("screen.counsel.made.head", '<p class="mk-small">' + cs.w("screen.counsel.made.lead") + "</p>" + blocks + '<p class="mk-note">' + cs.w("screen.counsel.export.note") + "</p>");
+    });
     return head + cs.state("action", function (a) {
       const purpose = view.ui["choice:cp-purpose"] || "claim";
       const defence = purpose === "defence";
@@ -77,7 +142,7 @@ export const counsel = Object.freeze({
       const counselMatter = a.privileged || (pk && pk.privileged) ? cs.sec("screen.counsel.matter.heading", '<p class="mk-note">' + cs.w("screen.counsel.matter.seen") + " " + cs.w("screen.counsel.matter.hold") + "</p>") : "";
       const marked = pk ? cs.sec("screen.counsel.marked.heading", '<p class="mk-small">' + cs.esc(pk.marking && pk.marking.text ? pk.marking.text : typeof pk.marking === "string" ? pk.marking : "") + "</p>"
         + '<p class="mk-note">' + cs.w("screen.counsel.marked.every") + " " + cs.w("screen.counsel.marked.none") + "</p>") : "";
-      return who + stmts + '<div class="mk-acts">' + cs.act("counselpacket", { tone: "primary" }) + "</div>" + (pk ? mattersSec + added + counselMatter + marked : "");
+      return who + stmts + '<div class="mk-acts">' + cs.act("counselpacket", { tone: "primary" }) + "</div>" + (pk ? mattersSec + added + counselMatter + marked : "") + made;
     });
   },
 
@@ -98,8 +163,36 @@ export const counsel = Object.freeze({
         }
         return { body: body };
       },
-      rereads: [],
+      // C8: the new version is listed among those assembled
+      rereads: ["filings"],
       done: function (view, answer, cs) { if (answer && answer.sections) cs.set("packet", answer); },
+    },
+    {
+      // C8 (filings R11): "Read this version": the version exactly as it was made, drawn in its place; nothing changes
+      op: "counselpacketread", rereads: [],
+      send: function (view, el) {
+        if (!el.dataset.packet) return null;
+        view.ui.reading = { packet: el.dataset.packet, version: Number(el.dataset.version) };
+        return { query: { id: el.dataset.packet, version: el.dataset.version } };
+      },
+      done: function (view, answer, cs) {
+        const r = answer && answer.result !== undefined ? answer.result : answer;
+        if (r && r.ok !== false && view.ui.reading) cs.set("shown", Object.assign({ answer: r }, view.ui.reading));
+      },
+    },
+    {
+      // C8 (filings R11, R22): "Save as a file": the version's bytes, marked on every page, handed to the member to save; the record
+      // keeps who saved which version, when and for which counsel, so the list is read again
+      op: "counselpacketexport", rereads: ["filings"],
+      send: function (view, el) {
+        if (!el.dataset.packet) return null;
+        return { body: { id: el.dataset.packet, version: Number(el.dataset.version) } };
+      },
+      done: function (view, answer, cs) {
+        const r = answer && answer.result !== undefined ? answer.result : answer;
+        if (r && r.ok !== false && typeof r.bytes === "string" && r.id)
+          cs.set("saved", { packet: r.id, version: Number(r.version), name: r.id + "-" + String(r.version) + ".md", text: r.bytes });
+      },
     },
   ],
 });
