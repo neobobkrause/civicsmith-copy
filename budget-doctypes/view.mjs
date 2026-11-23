@@ -10,6 +10,8 @@
  * empty list, and every reader then says it found nothing for want of it. */
 import { readerView, vocabulary, vocabRegex } from "../docprofile/registry.mjs";
 
+/** The view's vocabulary keys this module reads (R12).
+ *  @type {Readonly<{REPORT_TITLES: string, BOOK_TITLES: string, HEADINGS: string, FISCAL_YEARS: string, HEADERS: string}>} */
 export const KEYS = Object.freeze({
   REPORT_TITLES: "financial_report_titles",
   BOOK_TITLES: "budget_book_titles",
@@ -18,7 +20,8 @@ export const KEYS = Object.freeze({
   HEADERS: "budget_headers",
 });
 
-/** The columns a budget line-item table's header words may name (R7). */
+/** The columns a budget line-item table's header words may name (R7).
+ *  @type {readonly string[]} */
 export const COLUMNS = Object.freeze(["fund", "org", "department", "department_code", "program", "project",
                                       "account", "amount", "period", "phase"]);
 
