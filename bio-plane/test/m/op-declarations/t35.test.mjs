@@ -145,7 +145,7 @@ test("R30, R2, R4: none of T35's ops is in GOVERNANCE_ACTIONS or IDENTITY_ACTION
   assert.equal(AI_GRANT_OPS.includes("agentpack"), AI_GRANT_OPS.includes("affordances"));
   for (const op of ["securitymap", "signout", "signouteverywhere", "recoverycodesissue", "recoverycodesstate",
                     "adminrecoverystep", "noterevise", "notedelete", "subscriptiondisconnect"])
-    assert.deepEqual([...OPS[op].machineClasses], [], op);
+    assert.deepEqual(OPS[op].machineClasses, [], op);
   /* unpack: the daemon continues an automatic unpack, the probe as an operator's bearer; no member or admin bearer */
   assert.ok(!OPS.unpack.machineClasses.includes("member") && !OPS.unpack.machineClasses.includes("admin"));
   /* negative control */

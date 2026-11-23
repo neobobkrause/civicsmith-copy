@@ -454,7 +454,7 @@ test("R17: clockpropose any credential's, as actionlawspropose (admin, member, p
   }
   assert.deepEqual(plain(OPS.exportrender), { classes: ["admin", "member"], machineClasses: [], mutating: true });
   assert.deepEqual(plain(OPS.exportpage), { classes: ["admin"], mutating: false });
-  assert.deepEqual(plain(OPS.exportpage).classes, [...OPS.export.classes]);
+  assert.deepEqual(plain(OPS.exportpage).classes, OPS.export.classes);
   /* K1689: a present null row, affordances grading it; no session set holds it */
   assert.ok(Object.hasOwn(NEEDS, "exportpage") && NEEDS.exportpage === null && !SESSION_OPS.member.has("exportpage"));
   const is = OP_FAMILIES["instance-setup"];
@@ -501,7 +501,7 @@ test("R20 (T41; DEC-188 (8); K2484): ask a member's own session only (machineCla
   for (const [owner, f, op] of [["ai-accounts", aa, "accountreferenceset"], ["ai-accounts", aa, "accountreferenceremove"],
                                 ["credentials", cr, "aigrantmint"], ["ai-accounts", aa, "accountusesset"]]) {
     assert.equal(f.kinds[op], "own", op);
-    assert.deepEqual([...OPS[op].machineClasses], [], op);
+    assert.deepEqual(OPS[op].machineClasses, [], op);
     assert.ok(await reaches(owner, op, { key: "by", at: "query" }), op);
   }
   assert.deepEqual(cr.actor, { key: "by", at: "query" });
