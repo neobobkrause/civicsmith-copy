@@ -59,6 +59,137 @@ export { ACTION_KINDS, RISK_TIERS, riskTierState, ACTION_BASIS_KINDS, CORRESPOND
    `PHRASING_KINDS` is `jurisdictions`' own binding (its R86), never a copy. */
 export { PHRASINGS, PHRASING_KINDS, ASSERTION_RESOLUTIONS, PHRASING_MIN, PHRASING_MAX, SENTENCES_MAX, SENTENCE_MAX,
          RESOLUTION_WORDS_MAX, readAs, phrasingsFor, pointOut, assertionResolutionFindings, assertionsUnresolved };
+/** @import { Finding } from './grammar.mjs' */
+/**
+ * @typedef {Object} CheckRow one refusal's row: its check number, where it is raised, and the words a member reads
+ * @property {string} check the check's number, `C-<n>.<n>`
+ * @property {string} [where] the file, the function and the region that raises it
+ * @property {string} translation the refusal's words
+ */
+/**
+ * @typedef {Object} ActionFenceChecks the action layer's machine fences, by code (C-32)
+ * @property {CheckRow} MACHINE_CANNOT_MOVE_ACTION
+ * @property {CheckRow} MACHINE_CANNOT_SET_RISK_TIER
+ * @property {CheckRow} MACHINE_CANNOT_CORRESPOND
+ * @property {CheckRow} MACHINE_CANNOT_SET_LAWS
+ */
+/**
+ * @typedef {Object} ActionActChecks the act-shape refusals, by code (C-33)
+ * @property {CheckRow} NO_RESOLUTION
+ * @property {CheckRow} RESOLUTION_WITHOUT_RESOLVING
+ * @property {CheckRow} BAD_DIRECTION
+ * @property {CheckRow} BAD_DATE
+ * @property {CheckRow} CAPTURE_AND_TESTIMONY
+ * @property {CheckRow} NEITHER_CAPTURE_NOR_TESTIMONY
+ * @property {CheckRow} UNREGISTERED_ARTIFACT
+ */
+/**
+ * @typedef {Object} GoverningLawChecks the governing-law refusals, by code (C-73)
+ * @property {CheckRow} GOVERNING_LAWS_REWRITTEN
+ * @property {CheckRow} NO_LAWS
+ * @property {CheckRow} BAD_LAW_LEVEL
+ * @property {CheckRow} BAD_CITATION
+ * @property {CheckRow} TOO_MANY_LAWS
+ * @property {CheckRow} RECORDS_LAW_REFUSED
+ */
+/**
+ * @typedef {Object} QuoteChecks the quote grammar's refusals, by code (C-72)
+ * @property {CheckRow} QUOTE_NOT_ON_RECEIVED
+ * @property {CheckRow} QUOTE_AMOUNT_NOT_A_NUMBER
+ * @property {CheckRow} QUOTE_NO_CURRENCY
+ * @property {CheckRow} QUOTE_ANSWERS_NO_SENT
+ * @property {CheckRow} QUOTE_REVISES_NO_QUOTE
+ * @property {CheckRow} QUOTE_TEXT_UNWRITABLE
+ * @property {CheckRow} QUOTE_READ_UNASKED
+ * @property {CheckRow} QUOTE_ANSWERS_NOT_AN_ORD
+ */
+/**
+ * @typedef {Object} LifecycleChecks the records-request lifecycle's refusals, by code (C-94)
+ * @property {CheckRow} STAGE_NOT_OF_DIRECTION
+ * @property {CheckRow} FOLLOWS_NO_ENTRY
+ * @property {CheckRow} APPEAL_NAMES_NO_DECISION
+ * @property {CheckRow} OUTCOME_NOT_ON_RECEIVED
+ * @property {CheckRow} OUTCOME_NOT_IN_VOCABULARY
+ * @property {CheckRow} DECISION_WITHOUT_OUTCOME
+ * @property {CheckRow} FEE_ESTIMATE_WITHOUT_QUOTE
+ * @property {CheckRow} DUE_HALF_STATED
+ * @property {CheckRow} DUE_NOT_A_DATE
+ * @property {CheckRow} DUE_CITE_NOT_GOVERNING
+ * @property {CheckRow} LIFECYCLE_TEXT_UNWRITABLE
+ * @property {CheckRow} LIFECYCLE_TOKEN_MALFORMED
+ */
+/**
+ * @typedef {Object} RiskTierRevisionChecks the tier revision's refusals, by code (C-90)
+ * @property {CheckRow} RISK_TIER_REWRITTEN
+ * @property {CheckRow} BAD_RISK_TIER
+ * @property {CheckRow} RISK_TIER_REASON_REFUSED
+ * @property {CheckRow} RISK_TIER_UNCHANGED
+ * @property {CheckRow} RISK_TIER_HISTORY_UNSPLICEABLE
+ * @property {CheckRow} RISK_PROPOSAL_BASIS_REFUSED
+ */
+/**
+ * @typedef {Object} RecordsLawFenceChecks who states a records law or what it seeks, by code (C-32)
+ * @property {CheckRow} MACHINE_CANNOT_STATE_RECORDS_LAW
+ * @property {CheckRow} MACHINE_CANNOT_STATE_SEEKS
+ */
+/**
+ * @typedef {Object} ActionCatalogueChecks the action catalogue's refusals at the act, by code (C-101, C-117)
+ * @property {CheckRow} ACTION_KIND_UNKNOWN
+ * @property {CheckRow} RISK_TIER_REFUSED
+ * @property {CheckRow} COUNTERPARTY_REFUSED
+ * @property {CheckRow} ACTION_RESOLUTION_REFUSED
+ * @property {CheckRow} CLOCK_REFUSED
+ * @property {CheckRow} CLOCK_STATUS_NOT_MECHANICAL
+ * @property {CheckRow} NO_SUCH_ACTION
+ * @property {CheckRow} ACTION_TOO_LARGE
+ * @property {CheckRow} ACTION_MOVE_NO_REASON
+ * @property {CheckRow} ACTION_NO_DETERMINATION
+ * @property {CheckRow} ADDRESSEE_NOT_AN_OFFICE
+ * @property {CheckRow} MACHINE_CANNOT_OVERRIDE
+ * @property {CheckRow} PREMISE_OVERRIDE_REWRITTEN
+ * @property {CheckRow} PREMISE_OVERRIDE_REFUSED
+ * @property {CheckRow} MACHINE_CANNOT_SET_CONTACT
+ * @property {CheckRow} CONTACT_NOT_A_MEMBER
+ * @property {CheckRow} PLAN_LINK_REWRITTEN
+ * @property {CheckRow} PLAN_LINK_REFUSED
+ * @property {CheckRow} MACHINE_CANNOT_MARK_PRESSURE
+ * @property {CheckRow} PRESSURE_REFUSED
+ * @property {CheckRow} PRESSURE_NOT_RECEIVED
+ * @property {CheckRow} NO_SUBJECT
+ * @property {CheckRow} MACHINE_CANNOT_SET_PROCEEDING
+ * @property {CheckRow} SEEKS_REFUSED
+ * @property {CheckRow} DETERMINATION_NOT_NONCOMPLIANT
+ * @property {CheckRow} OVERRIDE_NO_GROUND
+ * @property {CheckRow} OVERRIDE_GROUND_REFUSED
+ * @property {CheckRow} COPIED_IS_ADDRESSEE
+ * @property {CheckRow} MACHINE_CANNOT_SET_PARTNERS
+ * @property {CheckRow} PARTNERS_REFUSED
+ * @property {CheckRow} MACHINE_CANNOT_SET_PRESS_TERMS
+ * @property {CheckRow} PRESS_TERMS_NOT_PRESS
+ * @property {CheckRow} PRESS_TERMS_REFUSED
+ * @property {CheckRow} RECEIPT_NOT_ON_SENT
+ * @property {CheckRow} OFFICE_STATUS_UNKNOWN
+ * @property {CheckRow} OFFICE_STATUS_WITHOUT_OUTCOME
+ * @property {CheckRow} MACHINE_CANNOT_SET_REPLY_OWED
+ * @property {CheckRow} NO_REPLY_OWED
+ * @property {CheckRow} FOUND_ELSEWHERE_NEEDS_CAPTURE
+ * @property {CheckRow} STAGE_NOT_IN_LAW
+ * @property {CheckRow} FOLLOWS_ACTION_REWRITTEN
+ * @property {CheckRow} FOLLOWS_ACTION_SELF
+ * @property {CheckRow} MACHINE_CANNOT_SET_SCOPE
+ * @property {CheckRow} SCOPE_NO_REASON
+ * @property {CheckRow} SCOPE_UNCHANGED
+ * @property {CheckRow} MACHINE_CANNOT_RECORD_PROMISE
+ * @property {CheckRow} PROMISE_REFUSED
+ * @property {CheckRow} FOUND_ELSEWHERE_REFUSED
+ * @property {CheckRow} SPEAKER_REFUSED
+ * @property {CheckRow} REPLY_OWED_REFUSED
+ * @property {CheckRow} FOLLOWS_ACTION_REFUSED
+ * @property {CheckRow} LAW_STAGE_UNKNOWN
+ * @property {CheckRow} MACHINE_CANNOT_SET_COPIED
+ * @property {CheckRow} MINUTES_NOT_PUBLIC_COMMENT
+ * @property {CheckRow} BAD_MINUTES
+ */
 
 /* The catalogue's finding shape (record-grammar's, its R11), for the arms here. */
 function f(check, severity, message, repairs, code) {
@@ -80,15 +211,27 @@ const UNWRITABLE = /["\\\r\n]/;
  *  `NO_RESOLUTION` and the published vocabulary (`affordances`) read. Moved from the catalogue in T18 (its only product
  *  importer was `actions`). `completed` is allowed on any kind: the action was carried out and no counterparty's
  *  answer decides it; what happened is the action's own outcome (R26, DEC-14). */
+/**
+ * @type {ReadonlyArray<string>} how a resolved action ended
+ * @bound exactly complied, denied, escalated, withdrawn, completed, in that order
+ */
 export const RESOLUTIONS = Object.freeze(["complied", "denied", "escalated", "withdrawn", "completed"]);
 
 /* ---------------------------------------------------------------------------------------------- R10: the kinds */
 
 /** R10: the kinds this module's own rules are written for, offered on every instance. Every other kind comes from the
  *  active profiles' combined view (`jurisdictions` R25); no kind, law, office or deadline is written here. */
+/**
+ * @type {ReadonlyArray<string>} the kinds offered on every instance
+ * @bound exactly records_request, request_for_comment, other, in that order
+ */
 export const PRODUCT_KINDS = Object.freeze(["records_request", "request_for_comment", "other"]);
 
 /** R10, R40: the kinds this instance accepts on a creation: the product's own, then the view's `action_kinds`. */
+/**
+ * @param {*} view the active profiles' combined view; each `action_kinds` entry `{kind}` adds its kind; anything else adds none
+ * @returns {string[]} the product's kinds, then each other kind of the view once, in order
+ */
 export function actionKinds(view) {
   const out = [...PRODUCT_KINDS];
   for (const k of (view && Array.isArray(view.action_kinds) ? view.action_kinds : []))
@@ -98,17 +241,27 @@ export function actionKinds(view) {
 
 /** R4, R41: a kind an action was written with before R10 (the legacy suite, `cpra_request` among them) reads as
  *  written: the audit does not flag it and a revision may carry it forward. Only a creation is asked R10. */
+/**
+ * @param {*} kind a kind an action carries
+ * @returns {boolean} whether it is one of ACTION_KINDS
+ */
 export function kindReadsAsWritten(kind) { return typeof kind === "string" && ACTION_KINDS.includes(kind); }
 
 /* ---------------------------------------------------------------------------------------------- R4–R6: the records law */
 
 /** R4: the longest `law` a records request carries: a citation, never the law's text. */
+/** @type {number} the longest records law, in characters: 200 */
 export const RECORDS_LAW_MAX = 200;
 
 /** R4, R6 (N297, K275): C-2.10's law arm, and the one site that mints `RECORDS_LAW_REFUSED`. `law` is stated only on a
  *  `records_request`, as a string of at most `RECORDS_LAW_MAX` characters with no quote, backslash or line break;
  *  absent reads undetermined. Answers null, or the refusal with its row and each finding (`{check, detail, repairs}`):
  *  the write refuses by it and the audit reports its findings, so the two say one thing. */
+/**
+ * @param {*} fm an action's frontmatter; anything not stating `law` answers null
+ * @returns {{ok: boolean, reason: string, code: string, check: string, translation: string, detail: string, findings: {check: string, detail: string, repairs: string[]}[]}|null} the `RECORDS_LAW_REFUSED` refusal, or null
+ * @bound law: only on a records_request; 1 to RECORDS_LAW_MAX characters, no quote, backslash or line break
+ */
 export function recordsLawRefusal(fm) {
   if (!fm || typeof fm !== "object" || !Object.prototype.hasOwnProperty.call(fm, "law")) return null;
   const law = fm.law;
@@ -129,6 +282,11 @@ export function recordsLawRefusal(fm) {
 
 /** R4, R6: the law arm's findings, as the audit reports them (R37), read from `recordsLawRefusal`, each carrying its
  *  code. */
+/**
+ * @param {*} fm an action's frontmatter
+ * @param {Finding[]} findings where each finding is pushed, each coded `RECORDS_LAW_REFUSED`
+ * @returns {void}
+ */
 export function recordsLawFindings(fm, findings) {
   const r = recordsLawRefusal(fm);
   if (r) for (const x of r.findings) findings.push(f(x.check, "error", x.detail, x.repairs, r.code));
@@ -137,6 +295,11 @@ export function recordsLawFindings(fm, findings) {
 /** R5: the records law's state as the record can support it: `stated` by a member, `machine_stated` (written by a
  *  machine credential before C-32.20's fence, read from its recorded author class and never rewritten), or
  *  `undetermined`. `author` is the recorded author of the version that first stated it, when the caller has it. */
+/**
+ * @param {*} fm an action's frontmatter; anything else reads undetermined
+ * @param {*} [author] the recorded author of the version that first stated the law; absent or null names none
+ * @returns {{state: string, law: string|null, by?: *, says: string}} `stated`, `machine_stated` or `undetermined`, with the words that say so
+ */
 export function recordsLawOf(fm, author = null) {
   const law = fm && typeof fm.law === "string" && fm.law.trim() ? fm.law.trim() : null;
   if (!fm || fm.action_kind !== "records_request" || !law)
@@ -151,7 +314,9 @@ export function recordsLawOf(fm, author = null) {
 /* ---------------------------------------------------------------------------------------------- R13: what a records request seeks */
 
 /** R13 (T41; H30 (1), intent R33, K2505): the most items one records request's `seeks` states, and the longest part. */
+/** @type {number} the most items one records request seeks: 12 */
 export const SEEKS_MAX = 12;
+/** @type {number} the longest part of a sought item, in characters: 200 */
 export const SEEKS_PART_MAX = 200;
 const SEEKS_PARTS = ["progression", "entity", "stage"];
 
@@ -173,6 +338,11 @@ const seeksKey = (item) => JSON.stringify(SEEKS_PARTS.map((k) => item[k]));
 /** R13: the stages of progression instances a `records_request` asks the records for, as its `seeks` states them: each
  *  well-formed item once, in order, as `{progression, entity, stage}`; `[]` when absent, on another kind, or when `seeks`
  *  is not a list. Pure; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; anything else seeks nothing
+ * @returns {{progression: *, entity: *, stage: *}[]} each well-formed item once, in order
+ * @bound each part: a non-blank string of at most SEEKS_PART_MAX characters
+ */
 export function seeksOf(fm) {
   if (!fm || typeof fm !== "object" || fm.action_kind !== "records_request" || !Array.isArray(fm.seeks)) return [];
   const seen = new Set();
@@ -193,6 +363,13 @@ export function seeksOf(fm) {
  *  says its progression does not declare. `facts.stages` is the caller's reading of `progressions` (`actions` R70):
  *  `{[progression]: [stage key, …]}` for a progression it holds, `null` for one it does not; a progression it names no
  *  entry for is not judged here. Absent `seeks` (undefined or null) pushes nothing. It reads no record; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; absent `seeks` pushes nothing
+ * @param {*} facts `{stages}`, the stages each progression declares, null for one not held; anything else judges no stage
+ * @param {Finding[]} findings where each finding is pushed, each coded `SEEKS_REFUSED`
+ * @returns {void}
+ * @bound seeks: on a records_request only; 1 to SEEKS_MAX items, none twice
+ */
 export function seeksFindings(fm, facts, findings) {
   if (!fm || typeof fm !== "object" || fm.seeks === undefined || fm.seeks === null) return;
   const row = ACTION_CATALOGUE_CHECKS.SEEKS_REFUSED;
@@ -231,13 +408,22 @@ export function seeksFindings(fm, facts, findings) {
 
 /** R9 (D1, K590): the named addressee kinds. An office (`kind` absent reads `office`) is named by role and body; the
  *  others (a reporter by role and outlet, an organisation, another civic group) by role and organisation. */
+/**
+ * @type {ReadonlyArray<string>} the named addressee kinds
+ * @bound exactly office, press, organisation, group, in that order
+ */
 export const ADDRESSEE_KINDS = Object.freeze(["office", "press", "organisation", "group"]);
 /** R9: the longest description of an audience addressee. */
+/** @type {number} the longest description of an audience, in characters: 500 */
 export const AUDIENCE_DESCRIPTION_MAX = 500;
 
 /** R9: the counterparty as an office, `{role, body}`, from either shape: the office shape as written, or the earlier
  *  `{state: named, name}` read with its name as the office's role and no body. Null for any other addressee: a named
  *  non-office, an audience, an undetermined or absent one. */
+/**
+ * @param {*} cp a counterparty; anything but a named office answers null
+ * @returns {{role: string|null, body: string|null, level: string|null, entity_id: string|null, legacy: boolean}|null} the office, `legacy` when read from the earlier `{state: named, name}`
+ */
 export function counterpartyOffice(cp) {
   if (!cp || typeof cp !== "object" || Array.isArray(cp) || cp.state !== "named") return null;
   if (cp.kind !== undefined && cp.kind !== null && cp.kind !== "office") return null;
@@ -252,6 +438,10 @@ export function counterpartyOffice(cp) {
 
 /** R3, R9, R27: the name a quote's counterparty is matched by: an office as "role, body" (an earlier name as written),
  *  another named addressee as "role, organisation", and none for an audience or an undetermined one. */
+/**
+ * @param {*} cp a counterparty; anything unnamed answers null
+ * @returns {string|null} "role, body" for an office, "role, organisation" for another named addressee, else null
+ */
 export function counterpartyName(cp) {
   const o = counterpartyOffice(cp);
   if (o) return o.legacy || !o.body ? o.role : o.role ? `${o.role}, ${o.body}` : o.body;
@@ -262,6 +452,10 @@ export function counterpartyName(cp) {
 }
 
 /** R8, R9: whether the addressee is an office (`ADDRESSEE_NOT_AN_OFFICE` asks it of a breach action). */
+/**
+ * @param {*} cp a counterparty
+ * @returns {boolean} whether it is a named office
+ */
 export function addresseeIsOffice(cp) { return !!counterpartyOffice(cp); }
 
 /* ---------------------------------------------------------------------------------------------- R33: the clock's mechanical write */
@@ -272,6 +466,12 @@ export function addresseeIsOffice(cp) { return !!counterpartyOffice(cp); }
  *  `todayIso`'s day, and no time of day is read, so a timed entry (`due_at`, `action-clocks` R3) moved on its own day is
  *  answered like any other; admitting it once its instant has passed is `actions`' own arm (its R98), which filters this
  *  answer. A `todayIso` that names no day passes no entry. */
+/**
+ * @param {*} [heldClock] the clock as held; anything but a list is empty
+ * @param {*} [nextClock] the clock as written; anything but a list is empty
+ * @param {*} [todayIso] today, `YYYY-MM-DD` first; anything else passes no entry
+ * @returns {{ord: number, from: *, to: *}[]} each entry whose status moved other than pending to overdue after its date
+ */
 export function clockMovesNotMechanical(heldClock, nextClock, todayIso) {
   const held = Array.isArray(heldClock) ? heldClock : [];
   const next = Array.isArray(nextClock) ? nextClock : [];
@@ -296,7 +496,9 @@ export function clockMovesNotMechanical(heldClock, nextClock, todayIso) {
  * `risk_tier_history[]`; each entry is one revision — the tier it set, the tier it replaced (`prior`), who, when,
  * and the REQUIRED reason — and the act appends, never edits. The reason is stored as the member wrote it; the
  * restricted frontmatter grammar has no escapes, so a quote, backslash or line break is refused, not rewritten. */
+/** @type {number} the longest reason for a tier revision, in characters: 500 */
 export const RISK_TIER_REASON_MAX = 500;
+/** @type {number} the most revisions a tier history holds: 200 */
 export const RISK_TIER_HISTORY_MAX = 200;
 
 /** REC-214: THE ONE READER OF AN ACTION'S TIER HISTORY. The action's read (`op=projection`'s action block), the
@@ -309,6 +511,10 @@ export const RISK_TIER_HISTORY_MAX = 200;
  *  and saying the action's creator did would be an inference it cannot support. With no revision, `intake` is
  *  the current tier. An entry the grammar cannot read is returned with `readable: false`, never dropped: an
  *  append-only history that silently loses a row is the overwrite this act exists to refuse. */
+/**
+ * @param {*} fm an action's frontmatter; anything else has no history and an undetermined tier
+ * @returns {{current: *, current_words: *, intake: {tier: *, tier_words: *, by: null, stated: string}, revisions: {ord: number, readable: boolean, tier?: *, tier_words?: *, prior?: *, prior_words?: *, by?: *, at?: *, reason?: *}[], stated: string}} the tier, the intake tier and each revision, oldest first, an unreadable one kept
+ */
 export function riskTierHistoryOf(fm) {
   const raw = fm && Array.isArray(fm.risk_tier_history) ? fm.risk_tier_history : [];
   const revisions = raw.map((e, i) => {
@@ -377,9 +583,11 @@ function riskTierHistoryFindings(fm, findings) {
 }
 /* The most citations one act may set. Not a legal bound — a request under three levels names a handful — but
    a statement bound: every entry lands in the document's frontmatter and on every read of the action. */
+/** @type {number} the most governing laws one act sets: 12 */
 export const GOVERNING_LAWS_MAX = 12;
 /* The longest citation, in characters: a citation names a law ("Cal. Gov. Code § 7920.000 et seq."), it does
    not quote one. */
+/** @type {number} the longest citation, in characters: 200 */
 export const CITATION_MAX = 200;
 
 /** D-149: WHICH LAWS GOVERN THIS ACTION, AS THE RECORD CAN SUPPORT IT. The one reader: the action's own read
@@ -396,6 +604,10 @@ export const CITATION_MAX = 200;
  *  is its member's statement that the CPRA governs (D-149), so the undetermined sentence names it — and the
  *  LIST stays undetermined, because whether a federal law or a local ordinance also governs is not in the
  *  kind. The document is not rewritten and no citation is synthesised from the kind. */
+/**
+ * @param {*} fm an action's frontmatter; anything else reads undetermined
+ * @returns {{state: string, laws: {level: string, citation: string}[], by: *, at: *, stated: string}} `stated` with the list as authored, or `undetermined` with no laws
+ */
 export function governingLawsOf(fm) {
   const raw = fm && Array.isArray(fm.governing_laws) ? fm.governing_laws : [];
   const laws = raw.filter((l) => l && typeof l === 'object' && !Array.isArray(l))
@@ -457,6 +669,7 @@ function governingLawsFindings(fm, findings) {
 }
 /* The longest `why` a proposal may carry against one citation, in characters. A why says what the proposer
    read the citation off — "the counterparty is a California city agency" — and is never the law's text. */
+/** @type {number} the longest why a law proposal carries, in characters: 240 */
 export const LAW_PROPOSAL_WHY_MAX = 240;
 /** D-130 / REC-23: the counterparty is THREE-VALUED, and the shape is `source`'s.
  *
@@ -533,6 +746,11 @@ const COUNTERPARTY_PLACEHOLDER = word('action-grammar.named');
  *  a correspondence entry that already carries the date, the medium, the party
  *  and either the hash or the named account. Demanding prose on top of that
  *  would be asking a member to justify a fact the ledger already holds. */
+/**
+ * @param {*} fm a document's frontmatter; anything without a `references` list has no edges
+ * @param {Finding[]} findings where each finding is pushed, one for each `responds_to` edge whose target is not an action
+ * @returns {void}
+ */
 export function respondsToEdgeFindings(fm, findings) {
   const refs = Array.isArray(fm?.references) ? fm.references : [];
   refs.forEach((r, i) => {
@@ -558,6 +776,12 @@ export function respondsToEdgeFindings(fm, findings) {
  *  harder — it points at a registry subject) asserts one while wearing the
  *  label that says it does not. Both are the D-130 move in a different field,
  *  so both are refused here rather than left for a reader to notice. */
+/**
+ * @param {*} fm an action's frontmatter; anything without a counterparty block is refused as missing
+ * @param {Finding[]} findings where each finding is pushed
+ * @returns {void}
+ * @bound description: 1 to AUDIENCE_DESCRIPTION_MAX characters, no quote, backslash or line break
+ */
 export function counterpartyFindings(fm, findings) {
   const isPlaceholder = (v) =>
     typeof v === 'string' && v.trim().toLowerCase() === COUNTERPARTY_PLACEHOLDER;
@@ -662,6 +886,7 @@ export function counterpartyFindings(fm, findings) {
  *  `HOLDER_NAME_MAX` characters with no quote, backslash or line break. A malformed holder, or one on any other arm, is one
  *  C-2.10 finding naming the arm `holder` (`actions` answers it `COUNTERPARTY_REFUSED`, its R9). Absent (or null) pushes
  *  nothing, so every finding on a counterparty without a holder is unchanged. */
+/** @type {number} the longest name of a press role's holder, in characters: 200 */
 export const HOLDER_NAME_MAX = 200;
 function holderFindings(cp, arm, findings, repairs) {
   if (cp.holder === undefined || cp.holder === null) return;
@@ -683,6 +908,7 @@ function holderFindings(cp, arm, findings, repairs) {
  *  UNDETERMINED with the sentence saying so. `due.status` is DERIVED against `today` and nothing else:
  *  `open` (not yet passed, nothing followed), `passed_unanswered`, `followed_by_due`, `followed_after_due`.
  *  It never derives a due date, and it states no rate, pattern or judgement about the body. */
+/** @type {string} the words of a due date no member stated */
 export const DUE_UNDETERMINED_SAYS = word('action-grammar.undetermined_member_stated_next');
 const dayNumber = (d) => {
   const s = String(d ?? '').slice(0, 10);
@@ -690,6 +916,11 @@ const dayNumber = (d) => {
   const ms = Date.parse(`${s}T00:00:00Z`);
   return Number.isFinite(ms) ? Math.round(ms / 86400000) : null;
 };
+/**
+ * @param {*} fm an action's frontmatter; anything without a `correspondence` list has no entries
+ * @param {*} today the day it is read as of, `YYYY-MM-DD` first; anything else compares no date with today
+ * @returns {{entries: Object[], passed_unanswered: number[], as_of: string, says: string}} each entry as one dated chain, and the stated due dates passed with nothing following
+ */
 export function requestLifecycleOf(fm, today) {
   const entries = Array.isArray(fm?.correspondence) ? fm.correspondence : [];
   const laws = governingLawsOf(fm).laws.map((l) => l.citation);
@@ -767,6 +998,10 @@ export function requestLifecycleOf(fm, today) {
  *  the BODY (its non-response is fully claimable, DEC-13) and it is no evidence
  *  at all that our asking CAUSED anything — those are different claims and only
  *  one of them is about us. */
+/**
+ * @param {*} fm an action's frontmatter; anything without a consequence block answers null
+ * @returns {*} `{claim, state, determined, grade, evidence, description, at, detail}`: an outcome `recorded`, or an impact `established` or `unproven`; null with no consequence block
+ */
 export function consequenceState(fm) {
   const c = fm?.consequence;
   if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
@@ -803,23 +1038,54 @@ export function consequenceState(fm) {
 
 /** R2 (T45; Actions D3, D4, D12, D13, D15, D18; v0.2 rules 2, 6, 8, 15, 16): the vocabularies of the fields T45 adds, each
  *  frozen, one binding read by every module and published by `affordances` as the others are. */
+/**
+ * @type {ReadonlyArray<string>} the grounds an override rests on
+ * @bound exactly legal_deadline, irreversible_act, in that order
+ */
 export const OVERRIDE_GROUNDS = Object.freeze(["legal_deadline", "irreversible_act"]);
+/**
+ * @type {ReadonlyArray<string>} the terms a press action is on
+ * @bound exactly on_record, background, off_record, in that order
+ */
 export const PRESS_RECORD_TERMS = Object.freeze(["on_record", "background", "off_record"]);
+/**
+ * @type {ReadonlyArray<string>} where a response found elsewhere was found
+ * @bound exactly press, report, decision, statement, other, in that order
+ */
 export const FOUND_ELSEWHERE_KINDS = Object.freeze(["press", "report", "decision", "statement", "other"]);
+/**
+ * @type {ReadonlyArray<string>} how a reply bears on a claim
+ * @bound exactly new_evidence, disputed_without_evidence, not_addressed, in that order
+ */
 export const BEARINGS = Object.freeze(["new_evidence", "disputed_without_evidence", "not_addressed"]);
+/**
+ * @type {ReadonlyArray<string>} the kinds of a promise
+ * @bound exactly embargo, anonymity, other, in that order
+ */
 export const PROMISE_KINDS = Object.freeze(["embargo", "anonymity", "other"]);
+/**
+ * @type {ReadonlyArray<string>} who owes a clock entry's date
+ * @bound exactly group, body, undetermined, in that order
+ */
 export const CLOCK_OWED_BY = Object.freeze(["group", "body", "undetermined"]);
 /** R15, R21, R22, R24: the longest free text one of these fields carries (an act's `what`, a note, the office's words). */
+/** @type {number} the longest free text of these fields, in characters: 500 */
 export const FIELD_TEXT_MAX = 500;
 /** R20: the most offices one action copies, and the most partners it names. */
+/** @type {number} the most addressees one action copies: 20 */
 export const COPIED_MAX = 20;
+/** @type {number} the most partners one action names: 20 */
 export const PARTNERS_MAX = 20;
 /** R20, R22: the longest partner role or organisation, and a speaker's member id. */
+/** @type {number} the longest partner role or organisation, in characters: 200 */
 export const PARTNER_TEXT_MAX = 200;
+/** @type {number} the longest speaker id, in characters: 200 */
 export const SPEAKER_MAX = 200;
 /** R23 (K2859): the longest reason a member gives for whether a reply is owed. */
+/** @type {number} the longest reason a reply is or is not owed, in characters: 500 */
 export const REPLY_OWED_REASON_MAX = 500;
 /** R24: the most claims one reply is laid out by. */
+/** @type {number} the most claims one reply is laid out by: 50 */
 export const BEARING_CLAIMS_MAX = 50;
 
 const isBlock = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -839,6 +1105,10 @@ const GROUND_KEYS = Object.freeze({ ground_kind: 'kind', ground_citation: 'citat
  *  `ground_kind`, `ground_citation`, `ground_date`, or `ground_what`, `ground_when`): `ground` the parts stated, or null
  *  for an override that states none (one written before T45). An override already presented (`ground` a key) is answered
  *  as given; anything not a block answers null. Pure; never throws. */
+/**
+ * @param {*} po a `premise_override`; anything not a block answers null
+ * @returns {{reason: *, ground: *}|null} the override, `ground` null when it states none
+ */
 export function premiseOverrideOf(po) {
   if (!isBlock(po)) return null;
   if (Object.prototype.hasOwnProperty.call(po, 'ground')) return { reason: po.reason ?? null, ground: po.ground ?? null };
@@ -852,6 +1122,15 @@ export function premiseOverrideOf(po) {
  *  `OVERRIDE_NO_GROUND`, naming both grounds; a part missing or malformed, or a key the kind lacks, `OVERRIDE_GROUND_REFUSED`
  *  naming the part, one finding each. `actions` asks it at the write that states an override (its R74) and mints the
  *  refusal from the first finding. Pure; never throws; pushes and answers nothing. */
+/**
+ * @param {*} override an override as `premiseOverrideOf` presents it; anything else states no ground
+ * @param {Finding[]} findings where each finding is pushed, coded `OVERRIDE_NO_GROUND` or `OVERRIDE_GROUND_REFUSED`
+ * @returns {void}
+ * @bound citation: 1 to CITATION_MAX characters, no quote, backslash or line break
+ * @bound date: a real calendar date YYYY-MM-DD
+ * @bound what: 1 to FIELD_TEXT_MAX characters, no quote, backslash or line break
+ * @bound when: a real calendar date, or a local time YYYY-MM-DDTHH:MM
+ */
 export function overrideGroundFindings(override, findings) {
   const g = isBlock(override) ? override.ground : undefined;
   /* DEC-49 REGION is-override-ground */
@@ -898,6 +1177,12 @@ function addresseeKey(cp) {
  *  0 to `COPIED_MAX` named addressees (never an audience or undetermined), each checked as R8 checks a named counterparty,
  *  the finding naming `copied[i]` (`COUNTERPARTY_REFUSED`), two equal entries or more than `COPIED_MAX` the same; an office
  *  equal to the counterparty's office `COPIED_IS_ADDRESSEE`. Pure; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; absent `copied` pushes nothing
+ * @param {Finding[]} findings where each finding is pushed, coded `COUNTERPARTY_REFUSED` or `COPIED_IS_ADDRESSEE`
+ * @returns {void}
+ * @bound copied: at most COPIED_MAX named addressees, none twice
+ */
 export function copiedFindings(fm, findings) {
   const list = isBlock(fm) ? fm.copied : undefined;
   if (!stated(list)) return;
@@ -929,6 +1214,13 @@ export function copiedFindings(fm, findings) {
 /** R20 (T45; N883; Actions D16; v0.2 §6 `partners`): `partners`, absent or 0 to `PARTNERS_MAX` organisations by role,
  *  `{role, organisation, entity_id?}`, role and organisation by R8's text rule, `entity_id` a subject registry key; any
  *  other key (a person's name), or a repeated organisation, `PARTNERS_REFUSED` naming the entry. Pure; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; absent `partners` pushes nothing
+ * @param {Finding[]} findings where each finding is pushed, coded `PARTNERS_REFUSED`
+ * @returns {void}
+ * @bound partners: at most PARTNERS_MAX, no organisation twice
+ * @bound role and organisation: 1 to PARTNER_TEXT_MAX characters, no quote, backslash or line break
+ */
 export function partnersFindings(fm, findings) {
   const list = isBlock(fm) ? fm.partners : undefined;
   if (!stated(list)) return;
@@ -958,6 +1250,13 @@ export function partnersFindings(fm, findings) {
  *  `on_record` one of `PRESS_RECORD_TERMS`, the two times local date-times, `note` at most `FIELD_TEXT_MAX` characters by
  *  R8's text rule; malformed or another key `PRESS_TERMS_REFUSED`; on an action whose counterparty is not the press arm
  *  `PRESS_TERMS_NOT_PRESS`. Pure; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; absent `press_terms` pushes nothing
+ * @param {Finding[]} findings where each finding is pushed, coded `PRESS_TERMS_NOT_PRESS` or `PRESS_TERMS_REFUSED`
+ * @returns {void}
+ * @bound embargo_until and release_at: a local time YYYY-MM-DDTHH:MM
+ * @bound note: at most FIELD_TEXT_MAX characters, no quote, backslash or line break
+ */
 export function pressTermsFindings(fm, findings) {
   const t = isBlock(fm) ? fm.press_terms : undefined;
   if (!stated(t)) return;
@@ -991,6 +1290,14 @@ export function pressTermsFindings(fm, findings) {
  *  `speaker` only on a `sent` entry, a member id (`member:<id>` or bare) of 1 to `SPEAKER_MAX` characters, else
  *  `SPEAKER_REFUSED`. An entry with none of the three answers nothing. Answers the C-2.10 findings, each with its code.
  *  Pure; never throws. */
+/**
+ * @param {*} entries the correspondence; anything but a list answers none
+ * @param {*} i the position of the entry asked
+ * @param {*} [facts] `{responseStatuses}`, the statuses the profile holds; absent holds none
+ * @returns {Finding[]} each fault of its office status, found-elsewhere and speaker fields, with its code
+ * @bound office_words: 1 to FIELD_TEXT_MAX characters, no quote, backslash or line break
+ * @bound speaker: 1 to SPEAKER_MAX characters
+ */
 export function entryFieldFindings(entries, i, facts) {
   const out = [];
   if (!Array.isArray(entries)) return out;
@@ -1040,6 +1347,14 @@ export function entryFieldFindings(entries, i, facts) {
  *  `follows_action` absent or `{action, ord?}`, `action` an action's record id, `ord` a non-negative integer, else
  *  `FOLLOWS_ACTION_REFUSED`, and equal to `ctx.bundleId` (the document's own id, when the caller has it)
  *  `FOLLOWS_ACTION_SELF`. Pure; never throws. */
+/**
+ * @param {*} fm an action's frontmatter; anything not a block pushes nothing
+ * @param {*} ctx `{bundleId}`, the document's own id; anything else names none
+ * @param {Finding[]} findings where each finding is pushed, coded `REPLY_OWED_REFUSED`, `FOLLOWS_ACTION_REFUSED` or `FOLLOWS_ACTION_SELF`
+ * @returns {void}
+ * @bound reply_owed_reason: 1 to REPLY_OWED_REASON_MAX characters, no quote, backslash or line break
+ * @bound follows_action.ord: a whole number, 0 or more
+ */
 export function actionFieldFindings(fm, ctx, findings) {
   if (!isBlock(fm)) return;
   /* DEC-49 REGION is-action-fields */
@@ -1071,6 +1386,13 @@ export function actionFieldFindings(fm, ctx, findings) {
  *  `{claim, bearing, note?}`, `claim` one of `legTargets` (the action's `advances` and `rests_on` targets, handed in), none
  *  twice, `bearing` one of `BEARINGS`, `note` at most `FIELD_TEXT_MAX` characters; each fault `BEARING_REFUSED` naming the
  *  item (its row `action-replies`' C-150, K2845). Asked for a member's layout and a proposal alike. Pure; never throws. */
+/**
+ * @param {*} claims the reply's layout, `{claim, bearing, note?}` items
+ * @param {*} legTargets the action's leg targets; anything but a list holds none
+ * @param {Finding[]} findings where each finding is pushed, coded `BEARING_REFUSED`
+ * @returns {void}
+ * @bound claims: 1 to BEARING_CLAIMS_MAX items, no claim twice; note at most FIELD_TEXT_MAX characters
+ */
 export function bearingFindings(claims, legTargets, findings) {
   const legs = Array.isArray(legTargets) ? legTargets.filter((x) => typeof x === 'string') : [];
   /* DEC-49 REGION is-bearing */
@@ -1099,6 +1421,10 @@ const lawStageKnown = (item) => isBlock(item) && typeof item.stage === 'string' 
 /** R25 (T45; N858; v0.2 §5 "Which stages a law has comes from the profile"; `jurisdictions` R76): one `LAW_STAGE_UNKNOWN`
  *  finding per item of a records law's profile `stages` whose `stage` is not a stage of `CORRESPONDENCE_STAGES`, naming
  *  it; `[]` for a well-formed list, or no list. Pure; never throws. */
+/**
+ * @param {*} stages a records law's profile stages; anything but a list answers none
+ * @returns {Finding[]} one `LAW_STAGE_UNKNOWN` finding for each item naming no stage of CORRESPONDENCE_STAGES
+ */
 export function lawStagesFindings(stages) {
   if (!Array.isArray(stages)) return [];
   const out = [];
@@ -1115,6 +1441,11 @@ export function lawStagesFindings(stages) {
 /** R25: whether `stage` is one of the law's `stages` (`in_law`, `not_in_law`), or `undetermined` when the stages are not
  *  held (absent, or not a list); never `in_law` by default, and never for a stage `lawStagesFindings` reports. Pure;
  *  never throws. */
+/**
+ * @param {*} stage a stage
+ * @param {*} stages a records law's profile stages
+ * @returns {'in_law'|'not_in_law'|'undetermined'} `undetermined` when the stages are not a list
+ */
 export function stageInLaw(stage, stages) {
   if (!Array.isArray(stages)) return 'undetermined';
   return stages.some((item) => lawStageKnown(item) && item.stage === stage) ? 'in_law' : 'not_in_law';
@@ -1136,6 +1467,11 @@ function localTodayOf(nowMs, zone) {
 /** R37: C-2.10's action arms and C-11.1 over one action's document, as the audit runs them (`ctx.fm`, `ctx.nowMs`;
  *  `ctx.actionKinds`, the instance's R10 set, when the caller has it; `ctx.zone`, the IANA zone of the action's office
  *  or venue, R7; `ctx.bundleId`, the document's own id, when the caller has it, R23). */
+/**
+ * @param {*} ctx `{fm, nowMs?, actionKinds?, zone?, bundleId?}`; anything whose `fm` is not an action pushes nothing; reads the clock when `nowMs` is absent
+ * @param {Finding[]} findings where each finding is pushed, C-2.10's action arms and C-11.1
+ * @returns {void}
+ */
 export function checkActionExtension(ctx, findings) {
   if (ctx?.fm?.object_type !== 'action') return;
   const fm = ctx.fm;
@@ -1201,6 +1537,7 @@ export function checkActionExtension(ctx, findings) {
 
 /* The action layer's machine fences (C-32.3, C-32.4, C-32.18, C-32.19), split out of legacy-checks' MACHINE_FENCE_CHECKS
    whole, as strength took C-32.9 (K181 (3)). */
+/** @type {ActionFenceChecks} the machine fences' rows */
 export const ACTION_FENCE_CHECKS = {
   MACHINE_CANNOT_MOVE_ACTION: {
     check: 'C-32.3',
@@ -1234,6 +1571,7 @@ export const ACTION_FENCE_CHECKS = {
 };
 
 /* C-33.3–C-33.9, split out of legacy-checks' ACT_SHAPE_CHECKS the same way. */
+/** @type {ActionActChecks} the act-shape rows */
 export const ACTION_ACT_CHECKS = {
   NO_RESOLUTION: {
     check: 'C-33.3',
@@ -1293,6 +1631,7 @@ export const ACTION_ACT_CHECKS = {
  * T47 (R28; N961, K2982): the helper moved with the governing-law acts to `action-records` (its `lawEntries`), and the four
  * rows' `where` with it; `actions` answers its acts through it.
  * ========================================================================= */
+/** @type {GoverningLawChecks} the governing-law rows */
 export const GOVERNING_LAW_CHECKS = {
   GOVERNING_LAWS_REWRITTEN: {
     check: 'C-73.1',
@@ -1333,6 +1672,7 @@ export const GOVERNING_LAW_CHECKS = {
  * (`quoteFindings`, which C-2.10 also reports over the document, each finding carrying the same code) and of
  * its read. The rule lives in ONE pure function; op=actioncorrespond refuses by these names before anything is
  * written, and op=actionquotes refuses a read that names neither axis. None of them judges a quote. */
+/** @type {QuoteChecks} the quote rows */
 export const QUOTE_CHECKS = {
   QUOTE_NOT_ON_RECEIVED: {
     check: 'C-72.1',
@@ -1380,6 +1720,7 @@ export const QUOTE_CHECKS = {
  * grammar (`lifecycleFindings`, which C-2.10 also reports over the document, each finding carrying the same code)
  * and the two the op alone can judge: a due date's citation against the action's governing laws as they stand
  * when it is stated, and the writability of the prose a stage carries. None of them encodes a law's clock. */
+/** @type {LifecycleChecks} the lifecycle rows */
 export const LIFECYCLE_CHECKS = {
   STAGE_NOT_OF_DIRECTION: {
     check: 'C-94.1',
@@ -1457,6 +1798,7 @@ export const LIFECYCLE_CHECKS = {
  * revision that changes the tier or edits the history WITHOUT the act is refused, because a member's plain
  * revision from 3 to 1 would otherwise overwrite "do not file without counsel" with nothing recording that it
  * was ever there but an older snapshot. A creation may state a tier (that is intake) and may not state a history. */
+/** @type {RiskTierRevisionChecks} the tier revision rows */
 export const RISK_TIER_REVISION_CHECKS = {
   RISK_TIER_REWRITTEN: {
     check: 'C-90.1',
@@ -1498,6 +1840,7 @@ export const RISK_TIER_REVISION_CHECKS = {
  * and propose one (R19's shape); it may not state, change or remove `law`. A law written before this fence by a
  * machine is read MACHINE-STATED from its recorded author and never rewritten (`recordsLawOf`).
  * ========================================================================= */
+/** @type {RecordsLawFenceChecks} the records-law fence rows */
 export const RECORDS_LAW_FENCE_CHECKS = {
   MACHINE_CANNOT_STATE_RECORDS_LAW: {
     check: 'C-32.20',
@@ -1524,6 +1867,9 @@ export const RECORDS_LAW_FENCE_CHECKS = {
    `LAW_STAGE_UNKNOWN` (its sentence names "Civicsmith" bare, DEC-149). `BEARING_REFUSED` is `action-replies'` row
    (C-150.3), re-worded at its one minting site (K231, K2953). C-117.58 (MACHINE_CANNOT_SET_COPIED) reads its key too: `words.json` has held it since T50.
    Changed translations, awaiting T47's stamp. */
+/**
+ * @type {Readonly<Record<string, string>>} the words twenty-four rows translate by, keyed `refusal.<CODE>`, frozen
+ */
 export const ACTION_GRAMMAR_WORDS = Object.freeze(Object.fromEntries([
   "DETERMINATION_NOT_NONCOMPLIANT",
   "OVERRIDE_NO_GROUND",
@@ -1557,6 +1903,10 @@ export const ACTION_GRAMMAR_WORDS = Object.freeze(Object.fromEntries([
  * the audit say one thing. A MISSING counterparty and a pending entry PAST its date still land: the audit reports them
  * (R37). C-117.1 (K248's family for this module) is R33's direction rule for the one mechanical clock write.
  * ========================================================================= */
+/**
+ * The catalogue's rows at the act, by code (C-101, C-117), each a CheckRow; ActionCatalogueChecks lists the codes.
+ * Its kind is described, not stated: a test indexes it by a value the checker reads wider than a code.
+ */
 export const ACTION_CATALOGUE_CHECKS = {
   /* T34-87 (DEC-149, K1811): the translation says "your group's Civicsmith" where it said "this instance"; a changed
      translation, awaiting T35's stamp (plan Rules (5) 4). */

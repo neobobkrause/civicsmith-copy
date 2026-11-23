@@ -21,6 +21,15 @@ import { BUNDLE_ID_RE, OBJECT_TYPES, proposalLabel } from "../record-grammar/ind
 import { leadLegFindings } from "../inquiry-grammar/grammar.mjs";
 import { themeLegFindings } from "../connections/checks.mjs";
 import { word, localize } from '../setup-words/index.mjs';
+/**
+ * @typedef {Object} Finding one finding, record-grammar's shape, with an optional code
+ * @property {string} check the check's number, such as `C-2.10`
+ * @property {string} severity how grave it is; every finding this module writes is `error`
+ * @property {string} message the sentence a member reads
+ * @property {string[]} [repairs] what would repair it
+ * @property {boolean} [repairable] true when `repairs` is given
+ * @property {string} [code] the refusal code the finding is answered by
+ */
 
 /** A finding, record-grammar's shape (its R11), with the optional `code` (REC-56 / D-206). */
 function f(check, severity, message, repairs, code) {
@@ -34,6 +43,10 @@ function plainDirection(d) { return d === 'no_response' ? 'no response' : String
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 /** T45 (K2845, K2849 (5)): a success record's id as `consequences` mints it, `SUC-<year>-<4 digits>`, which a `rests_on`
  *  leg may name until record-grammar registers the prefix (N911). */
+/**
+ * @type {RegExp} a success record's id, which a `rests_on` leg may name
+ * @bound `SUC-`, four digits, `-`, four digits
+ */
 export const SUCCESS_RECORD_ID_RE = /^SUC-\d{4}-\d{4}$/;
 /* A captured artifact's content hash (`sha256:` and 64 hex), the shape `correspondenceFindings` accepts beside bare hex. */
 const CONTENT_HASH_RE = /^sha256:[0-9a-f]{64}$/;
@@ -54,6 +67,10 @@ const CONTENT_HASH_RE = /^sha256:[0-9a-f]{64}$/;
  * School review of Rolling Stone identified a comment request made WITHOUT
  * SPECIFICS as the central failure, so "we contacted them" and "we put these
  * four claims to them" must be different rows in this record. */
+/**
+ * @type {string[]} the legacy action vocabulary, read by every reader of a kind
+ * @bound exactly cpra_request, grand_jury, controller_referral, public_comment, media, litigation_support, request_for_comment, other, in that order
+ */
 export const ACTION_KINDS = ['cpra_request', 'grand_jury', 'controller_referral', 'public_comment', 'media', 'litigation_support', 'request_for_comment', 'other'];
 
 /* D-182, RULED 2026-09-21 by BOB #21 (BIO_Case_Making_v0_1.md §2, "risk_tier"): the tier of an action is
@@ -68,6 +85,7 @@ export const ACTION_KINDS = ['cpra_request', 'grand_jury', 'controller_referral'
  * sets 1, 2 or 3. An action whose bytes carry NO `risk_tier` key reads undetermined too, because that is
  * exactly what the absence says: nobody stated one. The gate does not refuse the absence, since a gate
  * that did would press a writer to invent the one value nobody assessed (CLAUDE.md §4). */
+/** @type {{1: string, 2: string, 3: string, undetermined: string}} each tier's words, by tier */
 export const RISK_TIERS = {
   1: 'file freely',
   2: word('risk.tier.2'),
@@ -78,12 +96,20 @@ export const RISK_TIERS = {
  * C-2.10 refuses by name). Absent and the literal `undetermined` read as undetermined; the NUMBERS 1, 2 and
  * 3 read as themselves (a quoted "2" stays refused, exactly as before this row). Every reader takes this,
  * never the literal. */
+/**
+ * @param {*} v a stored tier; absent, null and `undetermined` read undetermined
+ * @returns {*} 1, 2 or 3, or `undetermined`; null for anything else (a quoted "2" among it)
+ */
 export function riskTierState(v) {
   if (v === undefined || v === null || v === 'undetermined') return 'undetermined';
   return v === 1 || v === 2 || v === 3 ? v : null;
 }
 
 /** REC-195's label, kept by name for its readers (`actions`, `action-clocks`): the `governing_laws` case. */
+/**
+ * @param {*} proposedBy who proposed the governing laws; absent is no one
+ * @returns {{by: *, state: string, machine_work: boolean, says: string}} the label shown beside the proposal
+ */
 export function lawProposalLabel(proposedBy) {
   return proposalLabel(proposedBy, 'governing_laws');
 }
@@ -92,12 +118,20 @@ export function lawProposalLabel(proposedBy) {
 /* REC-24 (a): the two kinds a leg of an action's basis may carry. Exported for
  * the same reason ACTION_KINDS is — op=affordances publishes it and the store
  * projects against it, so the gate and the publication read ONE array. */
+/**
+ * @type {string[]} the kinds a leg of an action's basis may carry
+ * @bound exactly rests_on, advances, in that order
+ */
 export const ACTION_BASIS_KINDS = ['rests_on', 'advances'];
 
 /* REC-24 (b): the three directions a correspondence entry may carry.
  * `no_response` is the one that is easy to leave out and must not be: DEC-13
  * rules a refusal to reply a dated first-party fact about the body, and
  * frequently the more useful one. */
+/**
+ * @type {string[]} the directions a correspondence entry may carry
+ * @bound exactly sent, received, no_response, in that order
+ */
 export const CORRESPONDENCE_DIRECTIONS = ['sent', 'received', 'no_response'];
 
 /* DEC-13's SOURCED PRECEDENT for a response window, carried as a citation and
@@ -107,6 +141,9 @@ export const CORRESPONDENCE_DIRECTIONS = ['sent', 'received', 'no_response'];
  * progression's declared due-by takes — because a constant this project invented
  * would be this project asserting a deadline nobody agreed to. The numbers are
  * here so a surface can SHOW the precedent while the member chooses. */
+/**
+ * @type {{min_days: number, max_days: number, source: string, enforced: boolean}} a cited precedent for a response window, shown and never enforced
+ */
 export const RFC_RESPONSE_WINDOW_PRECEDENT = {
   min_days: 7, max_days: 30,
   source: 'GAGAS / GAO agency-comment protocol (7-30 calendar days on a draft)',
@@ -143,6 +180,11 @@ export const RFC_RESPONSE_WINDOW_PRECEDENT = {
  *  GAO's 7-30 days as a CITATION for a surface to show; nothing here compares a
  *  date against it, because a window this project invented would be this
  *  project asserting a deadline nobody agreed to. */
+/**
+ * @param {*} fm an action's frontmatter; anything without an `action_basis` list has no legs
+ * @param {Finding[]} findings where each finding is pushed
+ * @returns {void}
+ */
 export function actionBasisFindings(fm, findings) {
   const legs = Array.isArray(fm?.action_basis) ? fm.action_basis : [];
   const REPAIRS = [localize('action-grammar.grammar.point_the_leg_at_the_finding_it', 'point the leg at the finding it rests on, or at the question it advances')];
@@ -221,6 +263,11 @@ export function actionBasisFindings(fm, findings) {
  *  document carrying an account with no author is refused; a document carrying
  *  a FALSE author is not something a pure check can see, and `actions`'
  *  write overwriting the field is what makes it true. */
+/**
+ * @param {*} fm an action's frontmatter; anything without a `correspondence` list has no entries
+ * @param {Finding[]} findings where each finding is pushed, the quote and lifecycle ones with their codes
+ * @returns {void}
+ */
 export function correspondenceFindings(fm, findings) {
   const entries = Array.isArray(fm?.correspondence) ? fm.correspondence : [];
   entries.forEach((e, i) => {
@@ -302,17 +349,35 @@ export function correspondenceFindings(fm, findings) {
  *  tighter than its rule is not a safer fence; `quoteValue` parses it for ordering.
  *
  *  @returns {{code: string, message: string}[]} */
+/**
+ * @type {string[]} the flat keys a quote is written in
+ * @bound exactly quote_amount, quote_currency, quote_basis, quote_answers, quote_revises, in that order
+ */
 export const QUOTE_KEYS = ['quote_amount', 'quote_currency', 'quote_basis', 'quote_answers', 'quote_revises'];
 const QUOTE_NUMBER_RE = /^-?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$/;
 const ORD_RE = /^\d+$/;
+/**
+ * @param {*} e a correspondence entry; anything else answers false
+ * @returns {boolean} whether it is an entry carrying a key that starts `quote_`
+ */
 export function isQuoteEntry(e) {
   return !!e && typeof e === 'object' && !Array.isArray(e)
     && Object.keys(e).some((k) => k.startsWith('quote_'));
 }
+/**
+ * @param {*} amount the amount as quoted; anything else answers null
+ * @returns {number|null} its value, or null when it is not a number
+ * @bound a decimal with an optional sign, thousands separators only in groups of three
+ */
 export function quoteValue(amount) {
   const s = amount === null || amount === undefined ? '' : String(amount).trim();
   return QUOTE_NUMBER_RE.test(s) ? Number(s.replace(/,/g, '')) : null;
 }
+/**
+ * @param {*} entries the correspondence; anything but a list answers none
+ * @param {*} i the position of the entry asked
+ * @returns {{code: string, message: string}[]} each fault of its quote, with its C-72 code; none when it carries no quote
+ */
 export function quoteFindings(entries, i) {
   const out = [];
   if (!Array.isArray(entries)) return out;
@@ -385,6 +450,7 @@ export function quoteFindings(entries, i) {
  *  never on the list is therefore not refused here; the read says `on_list: false` for it.
  *
  *  @returns {{code: string, message: string}[]} */
+/** @type {{sent: string[], received: string[]}} the stages an entry may be, by direction */
 export const CORRESPONDENCE_STAGES = {
   sent: ['request', 'fee_waiver_request', 'appeal', 'court_filing'],
   received: ['acknowledgement', 'fee_estimate', 'fee_waiver_decision', 'extension_notice', 'production',
@@ -392,9 +458,27 @@ export const CORRESPONDENCE_STAGES = {
 };
 /* R13 (T41; H30 (1), intent R33, K2505): `none_exists`, the body's answer that no responsive record exists, is an outcome
  * of a received decision as the others are; appended, so every earlier position stands. */
+/**
+ * @type {string[]} the outcomes a received decision may carry
+ * @bound exactly granted, denied, partial, reversed, affirmed, none_stated, none_exists, in that order
+ */
 export const CORRESPONDENCE_OUTCOMES = ['granted', 'denied', 'partial', 'reversed', 'affirmed', 'none_stated', 'none_exists'];
+/**
+ * @type {string[]} the received stages that require an outcome
+ * @bound exactly fee_waiver_decision, denial, appeal_decision, court_decision, in that order
+ */
 export const DECISION_STAGES = ['fee_waiver_decision', 'denial', 'appeal_decision', 'court_decision'];
+/**
+ * @type {string[]} the flat keys a lifecycle stage is written in
+ * @bound exactly stage, follows, outcome, exemptions, due_by, due_cite, in that order
+ */
 export const LIFECYCLE_KEYS = ['stage', 'follows', 'outcome', 'exemptions', 'due_by', 'due_cite'];
+/**
+ * @param {*} entries the correspondence; anything but a list answers none
+ * @param {*} i the position of the entry asked
+ * @returns {{code: string, message: string}[]} each fault of its lifecycle keys, with its C-94 code
+ * @bound due_by: `YYYY-MM-DD`, stated with due_cite or not at all
+ */
 export function lifecycleFindings(entries, i) {
   const out = [];
   if (!Array.isArray(entries)) return out;
