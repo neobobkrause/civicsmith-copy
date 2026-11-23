@@ -1,5 +1,5 @@
-/* screens-inquiry R4, R6, R7, R8, R13, R33, R42, R48: the assistant dock (registry screen `assistant`, frame `dock`; its 3
- * acts), drawn beside the screen it serves while the assistant is reachable (interface-shell R20). `view.subject` is the
+/* screens-inquiry R4, R6, R7, R8, R13, R33, R42, R48: the assistant dock (registry screen `assistant`, frame `dock`; its 4
+ * acts: "Ask" with the field "Ask about this screen" (the Screens page's C7, A1), and R4's three), drawn beside the screen it serves while the assistant is reachable (interface-shell R20). `view.subject` is the
  * served screen's subject: a question (`INQ-`) or a project (`PROJ-`) is the run's context; a document's is the project
  * it states.
  *
@@ -88,6 +88,44 @@ function reads(view) {
     pack: { op: "agentpack", query: {} },
     keepaway: { op: "aikeepawaystate", query: {} },
   };
+}
+
+/** R4 (the Screens page's C4, C7, A1): her ask's progress while the stream works (each document read, by its title once
+ *  read; that the answer is being written; that it is being checked), the failed check's sentence, and the answer once the
+ *  stream's `answer` event (after the plane's check) has come: machine work, never evidence, its sentences with the
+ *  passages they rest on as links to `document`, `ai.progress.checked.all`, `screen.answers.legal` and, on a test
+ *  instance, `ai.label.untested` (R7). Nothing of the answer is drawn before the check. Self-contained. */
+function askPart(cs, ui) {
+  const st = ui.ask && typeof ui.ask === "object" ? ui.ask : null;
+  if (!st) return "";
+  const titles = ui.titles && typeof ui.titles === "object" ? ui.titles : {};
+  if (st.working) {
+    const reads = (Array.isArray(st.reads) ? st.reads : []).filter((r) => r && titles[r]);
+    return `<section class="mk-note" role="status" aria-live="polite" data-ask="working"><ul class="mk-list">`
+      + reads.map((r) => "<li>" + cs.w("ai.progress.reading.ask", { document: titles[r] }) + "</li>").join("")
+      + (st.composing ? "<li>" + cs.w("ai.progress.composing.answer") + "</li>" : "")
+      + (st.checking ? "<li>" + cs.w("ai.progress.checking") + "</li>" : "")
+      + `</ul><p class="muted">${cs.w("ai.progress.hold.answer")}</p></section>`;
+  }
+  if (st.failed) return `<section class="mk-note" role="status" aria-live="polite" data-ask="failed"><p>${cs.w("ai.progress.check.failed")}</p></section>`;
+  const a = st.answer && typeof st.answer === "object" ? st.answer : null;
+  if (!a) return "";
+  const holdings = Array.isArray(a.holdings) ? a.holdings : [];
+  const link = (i) => {
+    const h = holdings[i];
+    if (!h) return "";
+    const addr = String(h.address || "");
+    const doc = addr.split("#")[0];
+    return cs.ref("document", addr, h.quote ? String(h.quote) : doc, [doc]);
+  };
+  const support = (ids) => (Array.isArray(ids) ? ids : []).map((id) => { const m = /^h(\d+)$/.exec(String(id)); return m ? " " + link(Number(m[1]) - 1) : ""; }).join("");
+  const summary = a.summary && a.summary.text ? `<p><b>${cs.esc(String(a.summary.text))}</b></p>` : "";
+  const sentences = (Array.isArray(a.sentences) ? a.sentences : []).map((s) => `<p>${cs.esc(String((s && s.text) || ""))}${support(s && s.support)}</p>`).join("");
+  const label = st.untested ? `<span class="cs-draftlabel" data-label="untested">${cs.w("ai.label.untested")}</span>` : "";
+  return cs.sec("screen.assistant.productions.head",
+    `<div class="cs-machinework" data-origin="machine" data-ask="answer">${cs.mark("origin", "machine")}${label}${summary}${sentences}`
+    + `<p class="mk-small">${cs.w("screen.assistant.notevidence")}</p>`
+    + `<p class="mk-note">${cs.w("ai.progress.checked.all")}</p><p class="mk-note">${cs.w("screen.answers.legal")}</p></div>`);
 }
 
 /** R4, R6–R8, R13, R33, R42: what the panel is, whose account serves her, the run (its state, its productions), the
@@ -243,6 +281,15 @@ function render(cs, view) {
   }
   if (runPart || said) out.push(cs.sec("screen.assistant.run.head", runPart + said));
 
+  /* R4 (the Screens page's C7, A1): her ask about this screen, its progress as the stream makes it, and its answer only once
+     Civicsmith's check has passed it, drawn as machine work, never evidence */
+  out.push(view.parts.askPart(cs, ui));
+
+  /* R4 (C7, A1): "Ask about this screen" and "Ask", whenever the dock is drawn */
+  out.push(cs.field("assistant-ask", "screen.assistant.ask.label", { area: true, value: typeof ui.asked === "string" ? ui.asked : "" })
+    + '<div class="mk-acts">' + cs.act("ask", { label: "act.ask.label.assistant", tone: "primary",
+      data: { project: context ? (context.type === "project" ? context.id : context.project || "") : "" } }) + "</div>");
+
   /* the acts on the screen's subject: "Work on this" only with a context and a pack, opening a run, or continuing a
      run of hers this page has not dispatched; "Suggest" and "Stop the run" while one it dispatched is running */
   const pack = ok("pack") && ((d.pack.value.pack && (d.pack.value.pack.version || d.pack.value.pack.skillVersion)) || d.pack.value.version);
@@ -334,6 +381,61 @@ const acts = [
         }, () => sayRefusal("airunopen", null));
       return null;
     } },
+  /* R4 (C7, A1): her question about the screen through `op=ask` (`store-assembly`'s declared `ask`: `question`, and the
+     served screen's `project` where it has one), under her session; the answer is a stream whose last event is the answer
+     or the refusal (agent-worker R54), each event drawn as it comes. An empty field sends nothing and says so. */
+  { op: "ask", label: "act.ask.label.assistant",
+    send(view, el, cs) {
+      const question = String(cs.value("assistant-ask") || "").trim();
+      const P = view.parts || {};
+      if (!question) { cs.set("said", { op: "ask", code: "", html: cs.w("screen.answers.questionfirst") }); return null; }
+      cs.set("said", null);
+      cs.set("asked", question);
+      let st = { working: true, reads: [], composing: false, checking: false, failed: false, answer: null, untested: false };
+      cs.set("ask", st);
+      const refuse = (r) => {
+        const f = r && typeof r === "object" ? r : {};
+        const code = String(f.code || f.reason || "");
+        cs.set("ask", null);
+        cs.set("said", { op: "ask", code, html: P.refusalWords(cs, code, f.translation, (P.refusals || {})[code]) });
+      };
+      const take = (ev) => {
+        if (!ev || typeof ev !== "object") return;
+        if (ev.event === "read" && ev.record) {
+          const id = String(ev.record);
+          if (st.reads.indexOf(id) < 0) st = Object.assign({}, st, { reads: st.reads.concat([id]) });
+          const titles = view.ui.titles || {};
+          if (!titles[id]) cs.call("image", { query: { id } }).then((a) => {
+            const v = a && typeof a === "object" && a.result && typeof a.result === "object" ? a.result : a;
+            const t = v && typeof v === "object" && typeof v["bundle.md"] === "string" ? String(P.front(v["bundle.md"]).title || "").trim() : "";
+            if (t) cs.set("titles", Object.assign({}, view.ui.titles || {}, { [id]: t }));
+          }, () => {});
+        } else if (ev.event === "composing") st = Object.assign({}, st, { composing: true });
+        else if (ev.event === "checking") st = Object.assign({}, st, { checking: true });
+        else if (ev.event === "answer") st = Object.assign({}, st, { working: false, answer: ev.answer && typeof ev.answer === "object" ? ev.answer : null,
+          untested: !!ev.untested || !!(ev.answer && ev.answer.untested) });
+        else if (ev.event === "refused") {
+          if (ev.code === "ASK_CHECK_FAILED") st = Object.assign({}, st, { working: false, failed: true, answer: null });
+          else return refuse(ev);
+        }
+        cs.set("ask", st);
+      };
+      const body = { question, ...(el.dataset.project ? { project: el.dataset.project } : {}) };
+      cs.call("ask", { body, onEvent: take }).then((a) => {
+        /* a stream read as it arrived has already been drawn to its end: its answer, or its failed check */
+        if (!st.working) return;
+        if (Array.isArray(a)) {
+          /* a stream not read as it arrived: its events taken in order now */
+          if (st.working) for (const ev of a) take(ev);
+          if (st.working && view.ui.ask) refuse(null);
+          return;
+        }
+        /* a stream that ended `refused` answers as a refusal: a failed check is drawn as such, any other by its words */
+        if (a && typeof a === "object" && (a.code || a.reason) === "ASK_CHECK_FAILED") return take({ event: "refused", code: "ASK_CHECK_FAILED" });
+        refuse(a);
+      }, () => refuse(null));
+      return null;
+    } },
   { op: "suggest", label: "act.suggest.label.assistant",
     send(view, el, cs) {
       const run = view.ui.run;
@@ -371,7 +473,9 @@ const acts = [
 /** The keys the dock may draw (R44: keys only, each a `words.json` word). */
 const words = Object.freeze([
   "screen.assistant.name", "screen.assistant.purpose",
-  ...["airunopen", "suggest", "airunclose"].map((op) => "act." + op + ".label.assistant"),
+  ...["airunopen", "suggest", "airunclose", "ask"].map((op) => "act." + op + ".label.assistant"),
+  "screen.assistant.ask.label", "screen.answers.questionfirst", "screen.answers.legal", "ai.progress.reading.ask",
+  "ai.progress.composing.answer", "ai.progress.hold.answer", "ai.progress.checked.all",
   "ai.account.own.inline", "ai.account.group.inline", "ai.account.project.inline",
   ...new Set(Object.values(REFUSALS)), "dock.withheld.NAMESPACE_UNDETERMINED", "dock.withheld.other", "dock.run.yours",
   "question.ai.other", "question.ai.whose",
@@ -395,4 +499,4 @@ const words = Object.freeze([
  *  @type {Readonly<DockDef>} */
 export const ASSISTANT_SCREEN = Object.freeze({ id: "assistant", reads, render, acts, words,
   parts: Object.freeze({ ...(settingsPanel.aiUsageBars ? { aiUsageBars: settingsPanel.aiUsageBars } : {}),
-    bounds: MODE_BOUNDS, refusals: REFUSALS, withheld: WITHHELD, ending: COMMON.ending, costLine: COMMON.costLine, progress: COMMON.progress, refusalWords }) });
+    bounds: MODE_BOUNDS, refusals: REFUSALS, withheld: WITHHELD, ending: COMMON.ending, costLine: COMMON.costLine, progress: COMMON.progress, refusalWords, askPart, front: COMMON.front }) });
