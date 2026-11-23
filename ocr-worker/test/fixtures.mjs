@@ -43,6 +43,11 @@ const engineOf = (transcribeFrame) => ({ name: "tesseract-wasm", version: "0.11.
 const SEEN = () => ({ ok: true, regions: [{ text: "word word word", rect: [0, 0, 10, 10], confidence: 0.1 }], grain: "line", boxCount: 1,
                       words: [{ confidence: 0.1 }, { confidence: 0.1 }, { confidence: 0.1 }], orientation: { rotation: 0 } });
 
+/**
+ * @param {string} reason PAGE_NOT_LEGIBLE, ENGINE_FAILED, PIXELS_UNREADABLE or UNEXPECTED_FAILURE
+ * @returns {Promise<Record<string, any>>} the real member's 200 answer, ok false with the reason
+ * @throws {Error} for any other reason
+ */
 export async function memberRefusal(reason) {
   switch (reason) {
     case "PAGE_NOT_LEGIBLE":   /* a real page, an engine that rates none of its words as read */
@@ -59,6 +64,10 @@ export async function memberRefusal(reason) {
   }
 }
 
+/**
+ * @param {{renderReason?: string}} [opts] NOT_A_PDF (absent) or EMPTY_FILE
+ * @returns {Promise<Record<string, any>>} the real member's 200 answer, ok false, reason PAGE_NOT_RENDERABLE
+ */
 export async function pageNotRenderable({ renderReason = "NOT_A_PDF" } = {}) {
   const bytes = renderReason === "EMPTY_FILE" ? new Uint8Array(0) : new TextEncoder().encode("this file is not a PDF and not a picture");
   /* the engine is never reached: the real page renderer refuses these bytes first */
@@ -95,9 +104,14 @@ export default { async fetch(req, env) {
 } };`;
 
 const UNRENDERABLE = new TextEncoder().encode("this file is not a PDF and not a picture");
+/** @type {string} the sha of the bytes no renderer reads */
 export const UNRENDERABLE_SHA = hex(UNRENDERABLE);
 const REAL = "ocr-real";
 
+/**
+ * @param {{mode?: string, name?: string, store?: string}} [opts] mode ok (absent), throw, refuse, version or stray; name absent is "ocr-worker", store "scratch"
+ * @returns {Promise<{workers: object[], realName: string, readable: {sha: string, bytes: Uint8Array}, prepare: (mf: any) => Promise<void>, log: (mf: any) => Promise<number[][]>}>}
+ */
 export async function memberWorker({ mode = "ok", name = "ocr-worker", store = "scratch" } = {}) {
   const bytes = await readable.bytes();
   const real = ocrWorkerDef({ name: REAL });
