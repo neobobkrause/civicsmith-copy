@@ -146,7 +146,7 @@ export const MACHINE_REFUSED = Object.freeze(["filingapprove", "publish"]);
  *  @type {readonly string[]} */
 export const MACHINE_DRAFTS = Object.freeze(["whatchangedpropose", "escalationreasondraft"]);
 /** A step, whole.
- *  @param {string} screen @param {string | null} act @param {Object<string, unknown>} [extra]
+ *  @param {string} screen @param {any} act the op, or null; a test may pass a wrong kind to see it refused @param {Object<string, unknown>} [extra]
  *  @returns {TestStep & Object<string, unknown>} */
 export const step = (screen, act, extra = {}) => ({ screen, act, what: `Do ${act ?? "nothing"} on ${screen}`, why: "Because it moves the case", ...extra });
 /** @type {readonly TestStep[]} */
@@ -190,7 +190,7 @@ export function world({ register = true, reg = {}, templates = "reviewed", recor
   const accounts = aiAccountsOf(host, { record, membership });
   accounts.migrate();
   let n = 0;
-  const w = /** @type {TestWorld} */ ({
+  const w = /** @type {any} */ ({
     st, host, record, membership, clock, filingTemplates, accounts,
     rows: (q, ...a) => [...st.sql.exec(q, ...a)],
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n,
@@ -242,7 +242,7 @@ export function seeded(opts = {}) {
 
 /** The object constructed again on the same storage (a Durable Object's next wake), registered with `reg`'s changes. */
 /** @param {TestWorld} w @param {Object<string, unknown>} [reg]
- *  @returns {WizardScripts & {registered?: unknown}}
+ *  @returns {WizardScripts & {registered: any}}
  *  @throws {Error} when the registration is refused */
 export function restart(w, reg = {}) {
   const x = new WizardScripts({ storage: w.st, record: w.record, membership: w.membership, filingTemplates: w.filingTemplates,
@@ -250,8 +250,7 @@ export function restart(w, reg = {}) {
   x.migrate();
   const r = x.wizardRegister(registration(reg));
   if (!r.ok) throw new Error(JSON.stringify(r));
-  x.registered = r;
-  return x;
+  return Object.assign(x, { registered: r });
 }
 
 const must = (r, what) => { if (!r || !r.ok) throw new Error(`fixture ${what} refused: ${JSON.stringify(r).slice(0, 400)}`); return r; };

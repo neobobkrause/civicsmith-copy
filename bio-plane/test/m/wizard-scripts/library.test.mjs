@@ -140,7 +140,7 @@ test("R13 (T37; K2171) the registry is re-taken from PR #14's merge onward: conn
   assert.equal(connect.name, "The assistant");
   const w = seeded({ register: false });
   w.wz.wizardRegister({ library: [] });
-  assert.deepEqual(w.wz.registeredScreens().find((s) => s.id === "connect").acts, [...connect.acts], "registered by default");
+  assert.deepEqual(found(w.wz.registeredScreens().find((s) => s.id === "connect")).acts, [...connect.acts], "registered by default");
   assert.ok(!JSON.stringify(wz.SCREEN_REGISTRY).includes("The assistant and your account"), "the old name is gone");
   assert.equal(wz.CIVICSMITH_LIBRARY_SOURCE.commit, "d129238bf3", "the library's version 1 is not re-taken (R22)");
 });

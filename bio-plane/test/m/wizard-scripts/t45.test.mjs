@@ -95,7 +95,7 @@ test("R13 (T45; Actions D25, D26; v0.2 rule 19) a labelled machine draft registe
   /* the pure check */
   assert.deepEqual(codes(wz.checkScript(steps, reg(undeclared))), [["WIZARD_DRAFT_REFUSED", 1]], "registered, not declared");
   assert.deepEqual(codes(wz.checkScript(steps, reg(declared))), [], "declared: placeable");
-  assert.deepEqual(codes(wz.checkScript(steps, reg(declared, MACHINE_DRAFTS))), [["WIZARD_DRAFT_REFUSED", 1]], "declared, not a registered draft");
+  assert.deepEqual(codes(wz.checkScript(steps, reg(declared, [...MACHINE_DRAFTS]))), [["WIZARD_DRAFT_REFUSED", 1]], "declared, not a registered draft");
   assert.deepEqual(codes(wz.checkScript(steps, { ...reg(declared), ops: null })), [], "no op table: the registered list alone");
   /* the earlier drafts, each declared, are unchanged */
   for (const d of MACHINE_DRAFTS)
