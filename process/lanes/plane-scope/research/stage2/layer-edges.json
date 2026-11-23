@@ -1,0 +1,290 @@
+{
+ "about": "The plane program's import edges (esbuild metafile of bio-plane/src/plane/index.mjs, built in memory) joined to each file's layer (research/layers/layers.json; a mixed module's files take the layer of the part that lists them). An edge is 'against' a stacking when the importing file's layer is lower than the imported file's.",
+ "files": 853,
+ "edges": 3921,
+ "filesByLayer": {
+  "outside/shared-foundation": 42,
+  "model": 612,
+  "middleware": 56,
+  "outside/fleet-member": 5,
+  "ui": 130,
+  "control-plane": 4,
+  "launcher": 4
+ },
+ "edgesByLayerPair": {
+  "outside/shared-foundation -> outside/shared-foundation": 65,
+  "model -> outside/shared-foundation": 712,
+  "model -> model": 2298,
+  "middleware -> model": 409,
+  "middleware -> outside/shared-foundation": 56,
+  "model -> middleware": 19,
+  "middleware -> middleware": 68,
+  "outside/fleet-member -> outside/shared-foundation": 4,
+  "model -> outside/fleet-member": 3,
+  "outside/shared-foundation -> model": 12,
+  "outside/fleet-member -> outside/fleet-member": 3,
+  "ui -> ui": 188,
+  "ui -> outside/shared-foundation": 10,
+  "ui -> middleware": 6,
+  "ui -> model": 2,
+  "control-plane -> ui": 13,
+  "control-plane -> outside/shared-foundation": 6,
+  "control-plane -> model": 11,
+  "control-plane -> middleware": 17,
+  "control-plane -> control-plane": 3,
+  "middleware -> control-plane": 1,
+  "launcher -> outside/shared-foundation": 1,
+  "launcher -> middleware": 6,
+  "launcher -> model": 3,
+  "launcher -> control-plane": 2,
+  "launcher -> launcher": 3
+ },
+ "wanted_lowest_first": [
+  "outside/shared-foundation",
+  "model",
+  "middleware",
+  "control-plane",
+  "launcher",
+  "ui"
+ ],
+ "today_lowest_first": [
+  "outside/shared-foundation",
+  "model",
+  "middleware",
+  "ui",
+  "control-plane",
+  "launcher"
+ ],
+ "againstWanted": {
+  "model -> middleware": {
+   "count": 19,
+   "modulePairs": {
+    "attestation(52) -> attestation(52)": 1,
+    "extraction(62) -> capture(56)": 1,
+    "capture(56) -> capture(56)": 1,
+    "doorbell(57) -> capture(56)": 1,
+    "doorbell(57) -> doorbell(57)": 1,
+    "ratification(125) -> ratification(125)": 4,
+    "ratification(125) -> public-read(121)": 1,
+    "affordances(156) -> affordances(156)": 1,
+    "file-safety(58) -> capture(56)": 1,
+    "tasks(157) -> scheduler(152)": 1,
+    "queue(164) -> scheduler(152)": 1,
+    "instance-setup(166) -> scheduler(152)": 1,
+    "instance-setup(166) -> instance-setup(166)": 1,
+    "signin-door(172) -> signin-door(172)": 1,
+    "store-services(173) -> scheduler(152)": 1,
+    "admission(169) -> admission(169)": 1
+   },
+   "examples": [
+    "bio-plane/src/attestation/index.mjs -> bio-plane/src/attestation/ops.mjs",
+    "bio-plane/src/extraction/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/capture/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/doorbell/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/doorbell/index.mjs -> bio-plane/src/doorbell/door.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/ops.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/finding.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/casefile.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/publication/worker.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/casefile.mjs",
+    "bio-plane/src/affordances.mjs -> bio-plane/src/affordances/door.mjs",
+    "bio-plane/src/file-safety/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/tasks/index.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/queue/index.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/setup.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/setup.mjs -> bio-plane/src/livefire.mjs",
+    "bio-plane/src/signin-door/ops.mjs -> bio-plane/src/signin-door/index.mjs",
+    "bio-plane/src/store-assembly/pending.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/admission/window.mjs -> bio-plane/src/admission/index.mjs"
+   ]
+  },
+  "outside/shared-foundation -> model": {
+   "count": 12,
+   "modulePairs": {
+    "skills(102) -> observation-log(69)": 2,
+    "skills(102) -> strength(93)": 1,
+    "skills(102) -> run-productions(99)": 1,
+    "skills(102) -> basis-versions(92)": 1,
+    "skills(102) -> inquiry-grammar(84)": 1,
+    "skills(102) -> reading-guides(101)": 1,
+    "skills(102) -> run-rules(96)": 4,
+    "skills(102) -> contradiction-words(94)": 1
+   },
+   "examples": [
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/observation-log/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/strength/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-productions/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/basis-versions/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/inquiry-grammar/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/reading-guides/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/observation-log/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/contradiction.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/run-rules/index.mjs"
+   ]
+  },
+  "control-plane -> ui": {
+   "count": 13,
+   "modulePairs": {
+    "control-plane(195) -> interface-shell(177)": 2,
+    "control-plane(195) -> screens-capture(182)": 1,
+    "control-plane(195) -> interface-assets(176)": 1,
+    "control-plane(195) -> screens-entry(178)": 1,
+    "control-plane(195) -> screens-settings(181)": 1,
+    "control-plane(195) -> screens-intake(183)": 1,
+    "control-plane(195) -> screens-daily(185)": 1,
+    "control-plane(195) -> screens-inquiry(188)": 1,
+    "control-plane(195) -> screens-wizards(179)": 1,
+    "control-plane(195) -> screens-investigate(190)": 1,
+    "control-plane(195) -> screens-publish(192)": 1,
+    "control-plane(195) -> screens-action(194)": 1
+   },
+   "examples": [
+    "bio-plane/src/control-plane/app.mjs -> bio-plane/src/interface-shell/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-intake/capture.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/interface-shell/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/interface-assets/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-entry/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-settings/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-intake/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-daily/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-inquiry/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-wizards/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-investigate/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-publish/index.mjs",
+    "bio-plane/src/control-plane/index.mjs -> bio-plane/src/screens-action/index.mjs"
+   ]
+  },
+  "middleware -> control-plane": {
+   "count": 1,
+   "modulePairs": {
+    "plane(196) -> control-plane(195)": 1
+   },
+   "examples": [
+    "bio-plane/src/plane/door.mjs -> bio-plane/src/control-plane/index.mjs"
+   ]
+  }
+ },
+ "againstToday": {
+  "model -> middleware": {
+   "count": 19,
+   "modulePairs": {
+    "attestation(52) -> attestation(52)": 1,
+    "extraction(62) -> capture(56)": 1,
+    "capture(56) -> capture(56)": 1,
+    "doorbell(57) -> capture(56)": 1,
+    "doorbell(57) -> doorbell(57)": 1,
+    "ratification(125) -> ratification(125)": 4,
+    "ratification(125) -> public-read(121)": 1,
+    "affordances(156) -> affordances(156)": 1,
+    "file-safety(58) -> capture(56)": 1,
+    "tasks(157) -> scheduler(152)": 1,
+    "queue(164) -> scheduler(152)": 1,
+    "instance-setup(166) -> scheduler(152)": 1,
+    "instance-setup(166) -> instance-setup(166)": 1,
+    "signin-door(172) -> signin-door(172)": 1,
+    "store-services(173) -> scheduler(152)": 1,
+    "admission(169) -> admission(169)": 1
+   },
+   "examples": [
+    "bio-plane/src/attestation/index.mjs -> bio-plane/src/attestation/ops.mjs",
+    "bio-plane/src/extraction/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/capture/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/doorbell/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/doorbell/index.mjs -> bio-plane/src/doorbell/door.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/ops.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/finding.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/casefile.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/publication/worker.mjs",
+    "bio-plane/src/ratification/index.mjs -> bio-plane/src/ratification/casefile.mjs",
+    "bio-plane/src/affordances.mjs -> bio-plane/src/affordances/door.mjs",
+    "bio-plane/src/file-safety/index.mjs -> bio-plane/src/capture/ops.mjs",
+    "bio-plane/src/tasks/index.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/queue/index.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/setup.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/setup.mjs -> bio-plane/src/livefire.mjs",
+    "bio-plane/src/signin-door/ops.mjs -> bio-plane/src/signin-door/index.mjs",
+    "bio-plane/src/store-assembly/pending.mjs -> bio-plane/src/scheduler/index.mjs",
+    "bio-plane/src/admission/window.mjs -> bio-plane/src/admission/index.mjs"
+   ]
+  },
+  "outside/shared-foundation -> model": {
+   "count": 12,
+   "modulePairs": {
+    "skills(102) -> observation-log(69)": 2,
+    "skills(102) -> strength(93)": 1,
+    "skills(102) -> run-productions(99)": 1,
+    "skills(102) -> basis-versions(92)": 1,
+    "skills(102) -> inquiry-grammar(84)": 1,
+    "skills(102) -> reading-guides(101)": 1,
+    "skills(102) -> run-rules(96)": 4,
+    "skills(102) -> contradiction-words(94)": 1
+   },
+   "examples": [
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/observation-log/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/strength/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-productions/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/basis-versions/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/inquiry-grammar/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/reading-guides/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skilldoctrine.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/observation-log/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/run-rules/index.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/contradiction.mjs",
+    "bio-plane/src/skillpack.mjs -> bio-plane/src/run-rules/index.mjs"
+   ]
+  },
+  "middleware -> control-plane": {
+   "count": 1,
+   "modulePairs": {
+    "plane(196) -> control-plane(195)": 1
+   },
+   "examples": [
+    "bio-plane/src/plane/door.mjs -> bio-plane/src/control-plane/index.mjs"
+   ]
+  }
+ },
+ "edgesWithAnUnrankedEnd": {
+  "outside/fleet-member -> outside/shared-foundation": {
+   "count": 4,
+   "modulePairs": {
+    "sheet-worker(36) -> runtime-limits(10)": 1,
+    "sheet-worker(36) -> setup-words(2)": 1,
+    "file-scanner(37) -> runtime-limits(10)": 1,
+    "file-scanner(37) -> setup-words(2)": 1
+   },
+   "examples": [
+    "sheet-worker/src/contract.mjs -> bio-plane/src/read-bounds.mjs",
+    "sheet-worker/src/contract.mjs -> bio-plane/src/setup-words/index.mjs",
+    "file-scanner/src/limits.mjs -> bio-plane/src/read-bounds.mjs",
+    "file-scanner/src/providers/catalogue.mjs -> bio-plane/src/setup-words/index.mjs"
+   ]
+  },
+  "model -> outside/fleet-member": {
+   "count": 3,
+   "modulePairs": {
+    "workbooks(83) -> sheet-worker(36)": 1,
+    "file-safety(58) -> file-scanner(37)": 2
+   },
+   "examples": [
+    "bio-plane/src/workbooks/index.mjs -> sheet-worker/src/contract.mjs",
+    "bio-plane/src/file-safety/index.mjs -> file-scanner/src/limits.mjs",
+    "bio-plane/src/file-safety/index.mjs -> file-scanner/src/providers/catalogue.mjs"
+   ]
+  },
+  "outside/fleet-member -> outside/fleet-member": {
+   "count": 3,
+   "modulePairs": {
+    "file-scanner(37) -> file-scanner(37)": 3
+   },
+   "examples": [
+    "file-scanner/src/providers/net.mjs -> file-scanner/src/limits.mjs",
+    "file-scanner/src/providers/catalogue.mjs -> file-scanner/src/providers/descriptor.mjs",
+    "file-scanner/src/providers/catalogue.mjs -> file-scanner/src/providers/net.mjs"
+   ]
+  }
+ }
+}
