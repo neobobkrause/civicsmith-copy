@@ -6,10 +6,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, profiles, step, V, SCREENS, OPS, MACHINE_REFUSED, MACHINE_DRAFTS, seeded, draft, RECORDS_REQUEST_NAME } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { scriptWhere } from "./found.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 const F = V("frank"), E = V("erin");
-const GET = wz.CIVICSMITH_LIBRARY.find((e) => e.name === word("wizard.WIZ-cb0ad18a17a04233.name"));
+const GET = scriptWhere((e) => e.name === word("wizard.WIZ-cb0ad18a17a04233.name"), "Get a record");
+/** A step's `{template}` draft source, or undefined (R2). @param {unknown} d @returns {unknown} */
+const templateOf = (d) => (d && typeof d === "object" && "template" in d ? d.template : undefined);
 /* every op the carried registry names, owed ones included, so R12 judges "Get a record" by its template alone */
 const ALL_OPS = [...new Set(wz.SCREEN_REGISTRY.flatMap((s) => [...s.acts, ...s.owed.map((o) => o.op)]))];
 const codes = (r) => r.refusals.map((x) => [x.code, x.step]);
@@ -35,7 +38,7 @@ function seen(w, viewer = F) {
 const ON = { at: true, reg: true, start: true, listed: true, offered: true, check: [] };
 
 test("R22 (T45; N858, D8, v0.2 rule 11) with a test profile offering \"Records request\", \"Get a record\" is in wizardsAt(\"finder\"), the registry form, startFrom and the offered reads, its @records-request resolved by handle (filing-templates R26); control: without it, withheld from each, R12 refusing its template step WIZARD_DRAFT_REFUSED, and R14 still passes since the script is not required", () => {
-  const step6 = GET.steps.findIndex((s) => s.draft && s.draft.template !== undefined) + 1;
+  const step6 = GET.steps.findIndex((s) => templateOf(s.draft) !== undefined) + 1;
   assert.deepEqual(GET.steps[step6 - 1].draft, { template: "@records-request" }, "the library data: the step names the template by handle");
   /* offered: the profile's records request attributed and named "Records request" (handle records-request) */
   const w = real();
@@ -69,13 +72,13 @@ test("R22 (T45; K1883, K2781 (6)) \"Get a record\" is offered once a template of
   assert.deepEqual(seen(w), ON, "a named writer and a professional review exist: offered");
   state.reviewed = false;
   assert.equal(seen(w).at, false, "withheld again");
-  assert.equal(wz.stepsSha(wz.CIVICSMITH_LIBRARY.find((e) => e.id === GET.id).steps), sha);
+  assert.equal(wz.stepsSha(scriptWhere((e) => e.id === GET.id).steps), sha);
   assert.equal(RECORDS_REQUEST_NAME, "Records request");
 });
 
 test("R22 (T45; v0.2 rule 11) \"Get a record\" places its template only at communicationprepare, after the step that creates the action (actioncreate), so the template is offered only after the act is chosen", () => {
   const acts = GET.steps.map((s) => s.act);
-  const placed = GET.steps.flatMap((s, i) => (s.draft && s.draft.template !== undefined ? [i] : []));
+  const placed = GET.steps.flatMap((s, i) => (templateOf(s.draft) !== undefined ? [i] : []));
   assert.deepEqual(placed.map((i) => acts[i]), ["communicationprepare"]);
   assert.ok(acts.indexOf("actioncreate") >= 0 && acts.indexOf("actioncreate") < placed[0], "the act is chosen first");
   assert.equal(acts.indexOf("actioncreate") + 1, 4, "step 4, as R22 names it");

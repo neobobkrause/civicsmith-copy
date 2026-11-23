@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { world, seeded, draft, V, step, STEPS } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { found, scriptWhere } from "./found.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const F = V("frank"), G = V("gwen"), A = V("alice"), E = V("erin"), D = V("dave");
@@ -36,7 +37,7 @@ const OWED_NOW = OWED_OPS.filter((op) => !INSTALL.includes(op));
 /* every declared and function act of the file: the member op table once the owed acts are not yet declared */
 const DECLARED_OPS = [...new Set(REG_FILE.screens.flatMap((f) => f.acts.filter((a) => a.status !== "owed").map((a) => a.op)))];
 const ALL_OPS = [...DECLARED_OPS, ...OWED_OPS];
-const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
+const by = (n) => scriptWhere((e) => e.name === n, n);
 
 const run = (...args) => spawnSync(process.execPath, [join(GEN_DIR, "build-data.mjs"), ...args], { encoding: "utf8" });
 const flip = (text) => { const i = Math.floor(text.length / 2); return text.slice(0, i) + (text[i] === "a" ? "b" : "a") + text.slice(i + 1); };
@@ -157,7 +158,7 @@ test("R41 (T50; N1130; K3674) the check that every registry act has a declaratio
   const some = wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: ALL_OPS.filter((o) => o !== "reauth" && o !== "installremove") });
   assert.deepEqual(some, [{ screen: "connect", act: "reauth", owed: false }], "reauth is a gap; installremove, a route of the installer's, is not");
   assert.deepEqual(wz.registryActGaps(), []);
-  assert.deepEqual(wz.registryActGaps({ screens: null, declared: null }), []);
+  assert.deepEqual(wz.registryActGaps({}), [], "neither given: no gap");
   /* an act the table holds only as an alias counts: the caller hands the aliases in with the ops */
   assert.deepEqual(wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: [...ALL_OPS.filter((o) => o !== "passwordreset"), "passwordreset"] }), []);
 });
@@ -235,8 +236,9 @@ test("R42 (T50; N1130; DEC-266, DEC-279, DEC-281; K2241) the library is re-taken
   assert.deepEqual(same.map((e) => e.name).sort(), ["Build a timeline", "Check a claim", "Follow a proceeding", "Follow the money", "Keep asking this", "Pick up a plan", "Your first question"]);
   for (const e of gained) {
     assert.deepEqual([e.author, e.approved, e.origin, e.scope], ["civicsmith", { by: "BOB", at: "2026-10-17", ruling: "K2241" }, "civicsmith", "group"], e.name);
-    assert.ok(e.earlier.length >= 1 && e.earlier.at(-1).version === e.version - 1, `${e.name}: the version it follows kept`);
-    assert.notDeepEqual(e.earlier.at(-1).steps, e.steps, `${e.name}: it differs from the one it follows`);
+    const earlier = found(e.earlier, `${e.name}: its earlier versions`), last = found(earlier.at(-1));
+    assert.ok(earlier.length >= 1 && last.version === e.version - 1, `${e.name}: the version it follows kept`);
+    assert.notDeepEqual(last.steps, e.steps, `${e.name}: it differs from the one it follows`);
   }
   for (const e of same) assert.deepEqual([e.source === COMMIT, e.approved.at === "2026-10-17"], [false, false], `${e.name}: kept as it was`);
   /* the four renamed scripts */

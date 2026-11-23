@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { screenOf } from "./found.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -41,7 +42,7 @@ test("R49 control: the earlier registry, kept whole beside the carried one at 65
   const before = earlier.screens.find((s) => s.id === "request").acts.map((a) => a.op);
   assert.ok(!before.includes("entitycreate") || earlier.screens.find((s) => s.id === "request").acts.find((a) => a.op === "entitycreate").status === "owed",
     "control: the earlier file did not draw the act on request");
-  const now = wz.SCREEN_REGISTRY.find((s) => s.id === "request").acts;
+  const now = screenOf("request").acts;
   for (const op of before) assert.ok(now.includes(op), `${op}: still on request`);
 
   const dir = mkdtempSync(join(tmpdir(), "wz-r49-"));

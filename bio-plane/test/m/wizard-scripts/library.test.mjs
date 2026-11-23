@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 import { seeded, approved, draft, world, registration, V, MACHINE, STEPS, step, SCREENS, OPS, MACHINE_REFUSED, MACHINE_DRAFTS, LIBRARY } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+import { found, screenOf, scriptWhere } from "./found.mjs";
+/** @import { LibraryScript, ScriptStep } from "../../../src/wizard-scripts/data.mjs" */
 
 const A = V("alice"), F = V("frank"), E = V("erin"), D = V("dave");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
@@ -133,7 +135,7 @@ test("R13 (T37; K2171) the registry is re-taken from PR #14's merge onward: conn
   const setup = wz.SCREEN_REGISTRY.find((s) => s.id === "setup");
   assert.ok(!setup.acts.includes("assistantset") && !REG_FILE.screens.find((f) => f.id === "setup").acts.some((a) => a.op === "assistantset"),
             "PR #14 drops assistantset (DEC-182 (3))");
-  assert.deepEqual(wz.SCREEN_REGISTRY.find((s) => s.id === "proceeding").acts[0], "entitycreate", "DEC-182 (1): registerproceeding re-pointed");
+  assert.deepEqual(screenOf("proceeding").acts[0], "entitycreate", "DEC-182 (1): registerproceeding re-pointed");
   const connect = wz.SCREEN_REGISTRY.find((s) => s.id === "connect");
   assert.equal(connect.name, "The assistant");
   const w = seeded({ register: false });
@@ -334,7 +336,7 @@ test("R22, R30, R32, R36, R42 CIVICSMITH_LIBRARY is the 23 scripts of library.js
     assert.ok(lib.some((e) => e.name === now), `${now}: carried`);
   }
   /* the side trips and the owed acts, named */
-  const vias = lib.flatMap((e) => e.steps.filter((s) => s.via).map((s) => [e.name, lib.find((x) => x.id === s.via).name]));
+  const vias = lib.flatMap((e) => e.steps.filter((s) => s.via).map((s) => [e.name, found(lib.find((x) => x.id === s.via), String(s.via)).name]));
   assert.deepEqual(vias, [[word("wizard.WIZ-c887066cc553dd41.name"), word("wizard.WIZ-4d42b0233d48913f.name")], [word("wizard.WIZ-7db08189cc0e58c3.name"), word("wizard.WIZ-74328804ddae3503.name")],
                           [word("wizard.WIZ-7db08189cc0e58c3.name"), "Your ties"], [word("wizard.WIZ-33b5887790b7561b.name"), word("wizard.WIZ-cb0ad18a17a04233.name")]]);
   /* the acts a ruling owed when each version was written, carried as their ops; PR #33's head serves each by name */
@@ -350,23 +352,23 @@ test("R22, R30, R32, R36, R42 CIVICSMITH_LIBRARY is the 23 scripts of library.js
 });
 
 test("R30 (T46; DEC-194 (4), (5); N913; K2241) the five scripts DEC-194 (5) wrote are adopted, each required: false at version 1, approved by BOB on the date of the adoption and authored by the Civicsmith library, none placing a template, each preparing step saying to start from the group's own template; a step on an act PR #28 owes (escalationstoppursuing, actionscope, itemtakeup, K2780) passes R12 only once its op is declared, the script withheld until then and blocking no release; Start and send's version 2 names no template on communicationprepare and is offered with no filing template offered, its version 1 updated and withheld (control)", () => {
-  const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === nameNow(n));
+  const by = (n) => scriptWhere((e) => e.name === nameNow(n), n);
   for (const n of ADDED_T46) {
     const e = by(n), first = e.earlier ? e.earlier[0] : e;   /* version 1, whatever the re-take (R42) made of it since */
     assert.deepEqual([e.origin, e.scope, e.required, first.version, e.author, first.approved], ["civicsmith", "group", false, 1, "civicsmith", T46], n);
     assert.ok([e, ...(e.earlier || [])].every((v) => !v.steps.some((t) => t.draft)), `${n}: no step places a draft`);
   }
-  const preparing = [...ADDED_T46, word("wizard.WIZ-a8c349d7d71b6bb0.name")].flatMap((n) => by(n).steps.filter((t) => t.act === "communicationprepare").map((t) => [n, t]));
+  const preparing = [...ADDED_T46, word("wizard.WIZ-a8c349d7d71b6bb0.name")].flatMap((n) => by(n).steps.filter((t) => t.act === "communicationprepare").map((t) => /** @type {[string, ScriptStep]} */ ([n, t])));
   assert.deepEqual(preparing.map(([n]) => n), ["Comment for the group", word("wizard.WIZ-bd7bde2c61b6badb.name"), word("wizard.WIZ-d0cdcee9437b213b.name"), word("wizard.WIZ-a8c349d7d71b6bb0.name")]);
   for (const [n, t] of preparing) {
     assert.match(t.what, /[Ss]tart from your (group's|team's) (\w+ )*template/, n);
     assert.equal(t.draft, undefined, `${n}: no {template} draft`);
   }
-  const send = by(word("wizard.WIZ-a8c349d7d71b6bb0.name"));
+  const send = by(word("wizard.WIZ-a8c349d7d71b6bb0.name")), sendEarlier = found(send.earlier, "Start and send's earlier versions");
   assert.deepEqual([send.version, send.approved, send.required], [4, T50, false], "version 4 re-taken at the design commit (R42), after version 3 (R38)");
-  const step4 = (steps) => steps.find((t) => t.act === "communicationprepare");
-  assert.deepEqual(step4(send.earlier[0].steps).draft, { template: "@communication" }, "version 1 named @communication");
-  assert.deepEqual(send.earlier[2].steps.map((t) => t.act), send.earlier[0].steps.map((t) => t.act), "only step 4's words and draft changed, to version 3");
+  const step4 = (steps) => found(steps.find((t) => t.act === "communicationprepare"), "step 4");
+  assert.deepEqual(step4(sendEarlier[0].steps).draft, { template: "@communication" }, "version 1 named @communication");
+  assert.deepEqual(sendEarlier[2].steps.map((t) => t.act), sendEarlier[0].steps.map((t) => t.act), "only step 4's words and draft changed, to version 3");
   assert.ok(!JSON.stringify(wz.CIVICSMITH_LIBRARY.map((e) => e.steps)).includes("@communication"), "no offered version names @communication");
   /* owed acts: withheld until declared; none required, so R14 is unmoved */
   const reg = (ops, x = {}) => { const w = world({ register: false, ...x }); w.member("frank"); w.wz.wizardRegister({ ops }); return w; };
@@ -393,7 +395,7 @@ test("R30 (T46; DEC-194 (4), (5); N913; K2241) the five scripts DEC-194 (5) wrot
   assert.deepEqual([three.version.state, three.version.updated_by, three.offered], ["updated", `${send.id}@4`, false], "R42: version 3 followed by version 4");
   const v1 = world({ register: false, templates: "unreviewed" });
   v1.member("frank");
-  v1.wz.wizardRegister({ ops: ALL_OPS, library: [{ id: send.id, name: send.name, required: false, ...send.earlier[0] }] });
+  v1.wz.wizardRegister({ ops: ALL_OPS, library: [{ id: send.id, name: send.name, required: false, ...sendEarlier[0] }] });
   assert.deepEqual(v1.wz.wizardsAt({ screen: "plan", viewer: F }).scripts.filter((x) => x.id === send.id), [], "version 1 alone: withheld for want of @communication");
 });
 
@@ -426,7 +428,7 @@ test("R22 each library script is origin civicsmith, scope group, authored by the
 test("R22 every write on a library script, either version, is refused WIZARD_NOT_THE_GROUPS (R9), and R14 is run on them: with every op the registry names declared, no required flow fails and every script passes R12", () => {
   const w = seeded({ register: false });
   w.wz.wizardRegister({ ops: ALL_OPS });
-  for (const e of [wz.CIVICSMITH_LIBRARY[1], wz.CIVICSMITH_LIBRARY.find((x) => x.name === word("wizard.WIZ-c887066cc553dd41.name"))])
+  for (const e of [wz.CIVICSMITH_LIBRARY[1], scriptWhere((x) => x.name === word("wizard.WIZ-c887066cc553dd41.name"))])
     for (const v of [`${e.id}@1`, `${e.id}@${e.version}`]) {
       refused(w.wz.wizardDraft({ from: v, author: F, viewer: F }), "WIZARD_NOT_THE_GROUPS");
       refused(w.wz.wizardRevise({ version: v, steps: STEPS, author: F, viewer: F }), "WIZARD_NOT_THE_GROUPS");
@@ -449,25 +451,25 @@ test("R22 every write on a library script, either version, is refused WIZARD_NOT
 });
 
 test("R22 (T37, T41; K2241), R30 the seven adopted scripts carry version 2 in place of version 1: \"Set up and claim\" on aikeepaway then groupkeyset, no assistantset; \"Publication ceremony\" with its Photos step on obscuremark; \"Check a claim\" with DEC-178's wording; \"Follow a proceeding\" on entitycreate; (T41; DEC-188 (8), DEC-184) \"Connect your Claude account\" on ailimitset and accountusesset in place of aiceilingset and accountswitchset; \"Invite a member\" as PR #19 words it (an invitation's short id; the member chooses her handle); (T46) \"Start and send\" with no template on communicationprepare; each keeps its id, name, required and start, its version 1 updated, naming version 2, readable and not offered", () => {
-  const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
+  const by = (n) => scriptWhere((e) => e.name === n, n);
   const acts = (n) => by(n).steps.map((t) => t.act);
   /* Connect's version 2 (T41), kept readable under version 3 (R32) */
-  const connect = by(word("wizard.WIZ-74328804ddae3503.name")).earlier[1].steps.map((t) => t.act), connect1 = by(word("wizard.WIZ-74328804ddae3503.name")).earlier[0].steps.map((t) => t.act);
+  const connect = found(by(word("wizard.WIZ-74328804ddae3503.name")).earlier)[1].steps.map((t) => t.act), connect1 = found(by(word("wizard.WIZ-74328804ddae3503.name")).earlier)[0].steps.map((t) => t.act);
   assert.deepEqual([connect[4], connect[5]], ["ailimitset", "accountusesset"]);
   assert.deepEqual([connect1[4], connect1[5]], ["aiceilingset", "accountswitchset"], "version 1 as it was");
   assert.deepEqual(connect.filter((_, i) => i !== 4 && i !== 5), connect1.filter((_, i) => i !== 4 && i !== 5), "no other act changed");
   const invite = by(word("wizard.WIZ-8e7e2fac33d069f8.name"));
   assert.match(invite.steps[0].what, /a short id for the invitation/);
   assert.match(invite.steps[0].why, /choose their own handle/);
-  assert.match(invite.earlier[0].steps[0].what, /their handle/);
-  assert.deepEqual(invite.steps.map((t) => t.act), invite.earlier[0].steps.map((t) => t.act), "Invite's acts unchanged: its words only");
-  for (const steps of [by(word("wizard.WIZ-c887066cc553dd41.name")).steps, by(word("wizard.WIZ-c887066cc553dd41.name")).earlier[1].steps]) {   /* version 2's change, kept in version 3 */
+  assert.match(found(invite.earlier)[0].steps[0].what, /their handle/);
+  assert.deepEqual(invite.steps.map((t) => t.act), found(invite.earlier)[0].steps.map((t) => t.act), "Invite's acts unchanged: its words only");
+  for (const steps of [by(word("wizard.WIZ-c887066cc553dd41.name")).steps, found(by(word("wizard.WIZ-c887066cc553dd41.name")).earlier)[1].steps]) {   /* version 2's change, kept in version 3 */
     const setup = steps.map((t) => t.act);
     assert.ok(!setup.includes("assistantset") && setup.indexOf("aikeepaway") >= 0 && setup.indexOf("groupkeyset") === setup.indexOf("aikeepaway") + 1, setup.join());
   }
-  assert.ok(acts(word("wizard.WIZ-426b9c2e8b128b6b.name")).includes("obscuremark") && by(word("wizard.WIZ-426b9c2e8b128b6b.name")).earlier[1].steps.some((t) => t.act === "obscuremark"));
+  assert.ok(acts(word("wizard.WIZ-426b9c2e8b128b6b.name")).includes("obscuremark") && found(by(word("wizard.WIZ-426b9c2e8b128b6b.name")).earlier)[1].steps.some((t) => t.act === "obscuremark"));
   assert.ok(acts(word("wizard.WIZ-a15d174f7a2c1dc5.name")).includes("entitycreate") && !acts(word("wizard.WIZ-a15d174f7a2c1dc5.name")).includes("registerproceeding"));
-  assert.notDeepEqual(by(word("wizard.WIZ-33b5887790b7561b.name")).steps.map((t) => [t.what, t.why]), by(word("wizard.WIZ-33b5887790b7561b.name")).earlier[0].steps.map((t) => [t.what, t.why]), "the wording changed");
+  assert.notDeepEqual(by(word("wizard.WIZ-33b5887790b7561b.name")).steps.map((t) => [t.what, t.why]), found(by(word("wizard.WIZ-33b5887790b7561b.name")).earlier)[0].steps.map((t) => [t.what, t.why]), "the wording changed");
   for (const n of ADOPTED) {
     const f = LIB_FILE.scripts.find((x) => x.name === n);
     assert.deepEqual([by(n).id, by(n).name, by(n).required, by(n).start], [f.id, f.name, [word("wizard.WIZ-c887066cc553dd41.name"), word("wizard.WIZ-426b9c2e8b128b6b.name")].includes(n), f.start], n);
@@ -481,8 +483,9 @@ test("R22 (T37, T41; K2241), R30 the seven adopted scripts carry version 2 in pl
     assert.deepEqual([r.version.id, r.version.state, r.version.updated_by, r.offered],
                      [`${e.id}@${e.version}`, "approved", null, true], e.name);
     if (!e.earlier) { assert.equal(w.wz.wizardRead({ script: e.id, version: `${e.id}@2`, viewer: F }).reason, "NO_SUCH_WIZARD", e.name); continue; }
-    e.earlier.forEach((v, i) => {
-      const next = i + 1 < e.earlier.length ? e.earlier[i + 1].version : e.version;
+    const earlier = e.earlier;
+    earlier.forEach((v, i) => {
+      const next = i + 1 < earlier.length ? earlier[i + 1].version : e.version;
       const one = w.wz.wizardRead({ script: e.id, version: `${e.id}@${v.version}`, viewer: F });
       assert.deepEqual([one.ok, one.version.state, one.version.updated_by, one.offered, one.version.approved],
                        [true, "updated", `${e.id}@${next}`, false, { by: { name: v.approved.by }, at: v.approved.at, ...(v.approved.ruling ? { ruling: v.approved.ruling } : {}) }],
@@ -500,8 +503,8 @@ test("R22 (T37, T41; K2241), R30 the seven adopted scripts carry version 2 in pl
 test("R14 over the real library: while an owed act its required flows walk is undeclared, requiredFailures names the flow with its first refusal; an optional flow is never named", () => {
   const without = (ops) => wz.requiredFailures(real({ ops: ALL_OPS.filter((o) => !ops.includes(o)) }))
     .map((f) => [f.name, f.refusal.code, f.refusal.step, f.version]);
-  const id = (name) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === name).id;
-  const ver = (name) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === name).version;
+  const id = (name) => scriptWhere((e) => e.name === name, name).id;
+  const ver = (name) => scriptWhere((e) => e.name === name, name).version;
   assert.deepEqual(without(["memberlanguageset", "publishat"]), [
     [word("wizard.WIZ-7db08189cc0e58c3.name"), "WIZARD_ACT_UNKNOWN", 1, `${id("Welcome a new member")}@${ver("Welcome a new member")}`],
     [word("wizard.WIZ-426b9c2e8b128b6b.name"), "WIZARD_ACT_UNKNOWN", 11, `${id("Publication ceremony")}@${ver("Publication ceremony")}`]], "the version offered (R36, R42)");
@@ -542,12 +545,12 @@ test("R23 startFrom answers the offered scripts this viewer may start, the libra
 });
 
 test("R11 (K1883) a library script that fails R12 against the registration is not offered until it passes, as R13 withholds a group's: absent from wizardsAt, the registry form, startFrom and the offered reads; a passing one offered; the library data unchanged", () => {
-  const name = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
+  const name = (n) => scriptWhere((e) => e.name === n, n);
   const reg = (ops) => { const w = world({ register: false }); w.member("frank"); w.member("erin", { role: "admin" }); w.wz.wizardRegister({ ops }); return w; };
   const missing = ["subscriptionsignin", "translationdraft", "translationadopt", "translationconfirm"];
   const w = reg(ALL_OPS.filter((o) => !missing.includes(o)));
   const connect = name(word("wizard.WIZ-74328804ddae3503.name")), translate = name(word("wizard.WIZ-af4c9fafc3713f26.name")), ties = name("Your ties");
-  for (const [e, screen] of [[connect, "connect"], [translate, "translations"]]) {
+  for (const [e, screen] of /** @type {[LibraryScript, string][]} */ ([[connect, "connect"], [translate, "translations"]])) {
     assert.ok(!w.wz.wizardsAt({ screen, viewer: F }).scripts.some((s) => s.id === e.id), `${e.name} withheld`);
     assert.equal(w.wz.wizardRead({ script: e.id, viewer: F }).offered, false, "still readable, not offered");
     assert.ok(!w.wz.wizardRegistry({ viewer: F }).screens.some((sc) => sc.scripts.some((x) => x.id === e.id)), "not in the registry form");

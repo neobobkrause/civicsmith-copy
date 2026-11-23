@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { screenOf } from "./found.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -37,7 +38,7 @@ test("R50 (T51 fix round 6; G53; DEC-419; amends R49) the registry re-taken at f
   assert.equal(f72.screens.length, 84, "the registry at f72b2f8a4c is kept whole beside it: 84 screens, 609 acts");
   assert.equal(f72.screens.reduce((n, s) => n + s.acts.length, 0), 609);
   for (const id of ["start-send", "request", "action"])
-    assert.ok(wz.SCREEN_REGISTRY.find((s) => s.id === id).acts.includes("projectjoin"), `${id}: projectjoin is registered`);
+    assert.ok(screenOf(id).acts.includes("projectjoin"), `${id}: projectjoin is registered`);
   const registers = wz.SCREEN_REGISTRY.find((s) => s.id === "registers");
   assert.ok(registers, "T52's screen registers is carried");
   assert.ok(registers.acts.includes("search") && registers.acts.includes("explore"), "registers: its declared acts search and explore");
@@ -93,8 +94,8 @@ test("R53 (T51 fix round 10; DEC-438; SCREENS-INVESTIGATE #25 J45; K5302; amends
       assert.ok(now.acts.includes(a.op), `${s.id}: ${a.op} still registered`);
     }
   }
-  assert.ok(!wz.SCREEN_REGISTRY.find((s) => s.id === "dash-action").acts.includes("taskresolve"), "DEC-437: dash-action no longer lists taskresolve");
-  for (const id of ["home", "queue"]) assert.ok(wz.SCREEN_REGISTRY.find((s) => s.id === id).acts.includes("taskresolve"), `${id} still lists taskresolve`);
+  assert.ok(!screenOf("dash-action").acts.includes("taskresolve"), "DEC-437: dash-action no longer lists taskresolve");
+  for (const id of ["home", "queue"]) assert.ok(screenOf(id).acts.includes("taskresolve"), `${id} still lists taskresolve`);
   assert.equal(wz.CIVICSMITH_LIBRARY_SOURCE.commit, "d129238bf3");
   assert.equal(wz.FRONT_DOORS_SOURCE.commit, "1cc4a957f0");
   assert.equal(run("--check").status, 0, "the carried generated files are what their sources give");

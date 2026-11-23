@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 import { world, seeded, registration, step, V } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+import { found, screenOf, scriptWhere } from "./found.mjs";
+/** @import { LibraryScript } from "../../../src/wizard-scripts/data.mjs" */
 
 const F = V("frank"), E = V("erin");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
@@ -18,7 +20,7 @@ const LIB_T50 = JSON.parse(src("library-7be06eb4cb.json"));   /* the design comm
 const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 /* every op the registry names, owed ones as their op: the member op table once each owed op is declared */
 const ALL_OPS = [...new Set(REG_FILE.screens.flatMap((s) => s.acts.map((a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op))))];
-const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
+const by = (n) => scriptWhere((e) => e.name === n, n);
 /* the five scripted front doors of R33, without the sixth, the way out (R37) */
 const five = (doors) => doors.filter((d) => d.door !== "elsewhere");
 const fileStep = (file, name, i) => file.scripts.find((s) => s.name === name).versions[0].steps[i];
@@ -26,6 +28,7 @@ const ON = { on: true, account: { kind: "own", level: "member" } };
 const TEST_ENV = Object.freeze({ CIVICSMITH_TEST_INSTANCE: "biotest1", INSTANCE_NAME: "biotest1" });
 
 /* A world over the carried registry and library (or `library`), every op declared but those `lacking`. */
+/** @param {{lacking?: string[], library?: readonly object[], [k: string]: unknown}} [args] */
 function real({ lacking = [], library = undefined, ...opts } = {}) {
   const w = world({ register: false, ...opts });
   w.member("frank");
@@ -41,7 +44,7 @@ const check = (w, steps) => wz.wizardScriptsOps(w.wz, new URL(`https://x/?viewer
 const entry = (id, steps) => ({ id, name: id, required: false, version: 1, author: "civicsmith", approved: { by: "Bob", at: "2026-10-06" }, steps });
 
 test("R31 (T47; N992; DEC-198 (1), DEC-199 (6)) the registry carries DEC-198's and DEC-199's acts: capture lists captureupload; connect lists subscriptionsignin and subscriptiondisconnect beside accountreferenceset and accountreferenceremove; answers lists ask and ruleanswer; matter lists escalationreopen; itemtakeup, actionscope, filingsecondapprove, escalationstoppursuing, infolevelset and subscriptionsignin are declared acts under their own names; control: op=wizardcheck admits captureupload on capture and refuses capture there (WIZARD_ACT_UNKNOWN)", () => {
-  const acts = (id) => wz.SCREEN_REGISTRY.find((s) => s.id === id).acts;
+  const acts = (id) => screenOf(id).acts;
   assert.ok(acts("capture").includes("captureupload") && !acts("capture").includes("capture"));
   for (const op of ["subscriptionsignin", "subscriptiondisconnect", "accountreferenceset", "accountreferenceremove"]) assert.ok(acts("connect").includes(op), op);
   assert.ok(acts("connect").indexOf("subscriptiondisconnect") > acts("connect").indexOf("accountreferenceset"), "beside the API key's acts, in the file's order");
@@ -93,7 +96,7 @@ test("R35 (K3062, K3127, K3137; DEC-200–DEC-217; amended by R38, R41) the regi
 test("R32 (T47; N992; DEC-198 (2); K2241) Connect your Claude account's version 3, from a0fab7abf0, approved by BOB on the date of the adoption and authored by the Civicsmith library: its code step sends the code by subscriptionsignin, a step for an API key (accountreferenceset) follows, and its last step disconnects by subscriptiondisconnect, as the file words them; id, name, required and start kept; version 2 updated, naming it, readable and not offered; control: wizardsAt(\"connect\") answers the latest version (4 since the re-take, R42), version 3 readable and updated, and no offered version's last step is accountreferenceremove", () => {
   const c = by(word("wizard.WIZ-74328804ddae3503.name"));
   const file = LIB_T47A.scripts.find((s) => s.name === c.name);
-  const v3 = { version: 3, ...c.earlier[2] };   /* R42's re-take made version 4 of it, version 3 kept whole */
+  const v3 = { version: 3, ...found(c.earlier)[2] };   /* R42's re-take made version 4 of it, version 3 kept whole */
   assert.deepEqual([c.id, c.name, c.required, c.start, v3.version, v3.source, v3.author, v3.approved],
                    [file.id, file.name, false, "connect", 3, "a0fab7abf0", "civicsmith", { by: "BOB", at: "2026-10-14", ruling: "K2241" }]);
   const code = v3.steps.findIndex((t) => /code/i.test(t.what) && t.act === "subscriptionsignin");
@@ -129,7 +132,7 @@ test("R33 (T47; N992; DEC-198 (4); R41) FRONT_DOORS are library.json's doors at 
   const ids = new Set(wz.CIVICSMITH_LIBRARY.map((e) => e.id));
   for (const d of wz.FRONT_DOORS) for (const id of d.scripts) assert.ok(ids.has(id), `${d.door}: ${id} is a carried script`);
   assert.ok(!JSON.stringify(wz.FRONT_DOORS).includes("door.front"), "the doors' words are the interface's, not carried");
-  const names = (doors) => doors.map((d) => [d.door, d.scripts.map((id) => wz.CIVICSMITH_LIBRARY.find((e) => e.id === id).name)]);
+  const names = (doors) => doors.map((d) => [d.door, d.scripts.map((id) => scriptWhere((e) => e.id === id, id).name)]);
   /* every named script offered (the test profile offers "Records request") */
   const all = real();
   const before = all.snapshot();
@@ -224,26 +227,26 @@ test("R36 (K2241; DEC-205 (3), DEC-207 (10), DEC-208 (2), DEC-213 (1)) Set up an
   for (const e of [setup, ceremony]) {
     const f = LIB_T47.scripts.find((s) => s.name === e.name);
     /* the version R36 adopts: the entry's own for the ceremony, the earlier version 3 of Set up and claim (R38's version 4 follows it) */
-    const v3 = { version: 3, ...e.earlier[2] };
+    const v3 = { version: 3, ...found(e.earlier)[2] };
     assert.deepEqual([e.id, e.name, e.required, e.start], [f.id, f.name, true, f.start], e.name);
     assert.deepEqual([v3.version, v3.source, v3.approved], [3, "f90b187c7b", BOB], e.name);
-    assert.deepEqual(e.earlier.map((v) => v.version), e === setup ? [1, 2, 3, 4] : [1, 2, 3]);
+    assert.deepEqual(found(e.earlier).map((v) => v.version), e === setup ? [1, 2, 3, 4] : [1, 2, 3]);
   }
-  const setup3 = setup.earlier[2];
+  const setup3 = found(setup.earlier)[2];
   assert.match(setup3.steps[0].what, /Workers Paid plan/);
   assert.ok(!/free plan works/i.test(setup3.steps[0].why), "DEC-213 (1): no longer the free plan");
-  assert.match(setup.earlier[1].steps[0].why, /free plan works/i, "control: version 2 said so");
+  assert.match(found(setup.earlier)[1].steps[0].why, /free plan works/i, "control: version 2 said so");
   assert.deepEqual([setup3.steps[13].screen, setup3.steps[13].act], ["setup", "hostingaccessset"]);
-  assert.equal(setup.earlier[1].steps[13].act, "hostingaccess", "control: version 2's step 14");
+  assert.equal(found(setup.earlier)[1].steps[13].act, "hostingaccess", "control: version 2's step 14");
   for (const i of [8, 9, 10]) {
     const want = fileStep(LIB_T47, word("wizard.WIZ-426b9c2e8b128b6b.name"), i);
-    const c3 = ceremony.earlier[2].steps[i];   /* version 3, the one R36 adopts */
+    const c3 = found(ceremony.earlier)[2].steps[i];   /* version 3, the one R36 adopts */
     assert.deepEqual([c3.act, c3.what, c3.why], [want.act, want.what, want.why], `step ${i + 1}`);
-    assert.notDeepEqual([c3.what, c3.why], [ceremony.earlier[1].steps[i].what, ceremony.earlier[1].steps[i].why], `step ${i + 1} re-worded`);
+    assert.notDeepEqual([c3.what, c3.why], [found(ceremony.earlier)[1].steps[i].what, found(ceremony.earlier)[1].steps[i].why], `step ${i + 1} re-worded`);
   }
-  assert.deepEqual(ceremony.earlier[2].steps.slice(0, 8), ceremony.earlier[1].steps.slice(0, 8), "steps 1–8 unchanged");
+  assert.deepEqual(found(ceremony.earlier)[2].steps.slice(0, 8), found(ceremony.earlier)[1].steps.slice(0, 8), "steps 1–8 unchanged");
   const w = real();
-  for (const [e, screen] of [[setup, "install"], [ceremony, "ceremony"]]) {
+  for (const [e, screen] of /** @type {[LibraryScript, string][]} */ ([[setup, "install"], [ceremony, "ceremony"]])) {
     assert.deepEqual(w.wz.wizardsAt({ screen, viewer: F }).scripts.filter((s) => s.id === e.id).map((s) => s.version), [`${e.id}@${e.version}`], e.name);
     for (const [n, next] of [[1, 2], [2, 3], [3, 4], [4, 5]].filter(([n]) => n < e.version)) {
       const r = w.wz.wizardRead({ script: e.id, version: `${e.id}@${n}`, viewer: F });

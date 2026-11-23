@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
+import { screenOf } from "./found.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
@@ -43,7 +44,7 @@ test("R45 (T51 fix round; K4196, K4197; DEC-374 to DEC-384; K2241; amends R44) t
   assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.acts.length, 0), file.screens.reduce((n, s) => n + new Set(s.acts.filter((a) => a.status !== "owed").map((a) => a.op)).size, 0),
     "registered acts are the declared and function acts, an op two acts of a screen share counted once (members: expertiseconfirm); the owed ones wait for their ops");
   assert.equal(new Set(file.screens.find((s) => s.id === "members").acts.map((a) => a.op)).size, file.screens.find((s) => s.id === "members").acts.length, "FR-49: the file at aa8bdcd0b4 lists expertiseconfirm once on members (the duplicate B9 reported is gone)");
-  assert.equal(wz.SCREEN_REGISTRY.find((s) => s.id === "members").acts.filter((op) => op === "expertiseconfirm").length, 1, "and the registry carries it once, so the release suite finds no repeated act");
+  assert.equal(screenOf("members").acts.filter((op) => op === "expertiseconfirm").length, 1, "and the registry carries it once, so the release suite finds no repeated act");
   assert.equal(wz.SCREEN_REGISTRY.reduce((n, s) => n + s.owed.length, 0), count("owed"), "every owed act is carried apart (R13)");
   for (const id of ["bias", "contradiction", "objective", "about-knocker", "leads", "watching"]) {
     const f = file.screens.find((s) => s.id === id);
@@ -123,7 +124,7 @@ test("R48 (T51 fix round 2; U431, DEC-396; amends R47) the registry is re-taken 
   const count = (status) => acts.filter((a) => a.status === status).length;
   assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 662, 459, 82, 121]);
   assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 105, "105 owed ops at e5feed33be");
-  const screen = (id) => wz.SCREEN_REGISTRY.find((s) => s.id === id);
+  const screen = (id) => screenOf(id);
   assert.ok(screen("document").acts.includes("contradictionflag"), "document: contradictionflag is a registered act (DEC-396)");
   assert.ok(!screen("document").owed.some((o) => o.op === "contradictionflag"), "document: contradictionflag is no longer carried as owed");
   assert.ok(!wz.SCREEN_REGISTRY.some((s) => s.owed.some((o) => /contradictionflag/.test(o.op))), "control: no owed row names contradictionflag under any prefix");
