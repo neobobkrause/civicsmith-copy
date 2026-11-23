@@ -71,18 +71,43 @@ test("R34 (C8): the versions assembled are listed newest first, each with who, w
   assert.equal(main(p).querySelectorAll('button[data-act="counselpacketexport"]').length, 2);
 });
 
-test("R34 (C8): a version with no counsel named, or with no organization, is drawn without inventing either", async () => {
-  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ counsel: null }), V({ version: 2, counsel: { name: "B. Advocate" } })])) } });
-  assert.ok(drew(p, "screen.counsel.made.by.noorg", { who: "mai", date: day("2026-11-03"), counsel: "B. Advocate" }));
-  const bare = main(p).querySelector('[data-packet-version="CPK-2026-0001~1"]');
-  assert.ok(text(p, bare).includes("mai") && !text(p, bare).includes(norm(word("screen.counsel.made.by.noorg", { who: "mai", date: day("2026-11-03"), counsel: "" }))));
+test("R34 (C8, U16): each version is headed by its number, never by the packet's machine reference", async () => {
+  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ version: 1 }), V({ version: 2, at: "2026-11-04T10:00:00Z" })])) } });
+  assert.ok(drew(p, "screen.counsel.made.version", { n: "1" }) && drew(p, "screen.counsel.made.version", { n: "2" }));
+  assert.ok(!text(p).includes("CPK-2026-0001"), "the machine reference is not drawn");
 });
 
-test("R34 (C8): a version whose determination was superseded says the record changed since it", async () => {
-  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ basis_changed: { causes: [{ cause: "determination_superseded", determination: "DET-2026-0004" }] } })])) } });
-  assert.ok(drew(p, "screen.counsel.made.changed", { n: "1", what: word("filings.determination_superseded", { determination: "DET-2026-0004", then: "" }) }));
+test("R34 (C8, U16): a version with no counsel named is worded for the team's own review, and one with no organization names none", async () => {
+  const bare = V({ counsel: null, exports: [{ exported_by: "mai", at: "2026-11-04T09:00:00Z", counsel: null, sha: "ab" }] });
+  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [bare, V({ version: 2, counsel: { name: "B. Advocate" } })])) } });
+  assert.ok(drew(p, "screen.counsel.made.by.noorg", { who: "mai", date: day("2026-11-03"), counsel: "B. Advocate" }));
+  const one = main(p).querySelector('[data-packet-version="CPK-2026-0001~1"]');
+  assert.ok(drew(p, "screen.counsel.made.by.nocounsel", { who: "mai", date: day("2026-11-03") }, one));
+  assert.ok(drew(p, "screen.counsel.made.exported.nocounsel", { who: "mai", date: day("2026-11-04") }, one));
+  assert.ok(!text(p, one).includes("B. Advocate"), "no counsel is invented for it");
+});
+
+test("R34 (C8, U16): every cause a version is flagged by is said, in its own words, joined in one sentence", async () => {
+  const causes = [{ cause: "determination_superseded", determination: "DET-2026-0004" },
+    { cause: "determination_flagged", determination: "DET-2026-0005", causes: [] },
+    { cause: "finding_later_edition", finding: "FND-2026-0009", case: "CASE-1", edition: 1, later: 3 },
+    { cause: "standard_superseded", standard: "STD-2026-0002", out_of_view: true }];
+  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ basis_changed: { causes } })])) } });
+  const what = [word("filings.determination_superseded", { determination: "DET-2026-0004", then: "" }), word("filings.determination_flagged", { determination: "DET-2026-0005" }),
+    word("filings.finding_later_edition", { finding: "FND-2026-0009", later: "3" }), word("filings.standard_superseded", { standard: "STD-2026-0002" })].join("; ");
+  assert.ok(drew(p, "screen.counsel.made.changed", { n: "1", what }));
   const q = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V()])) } });
   assert.equal(main(q).querySelector("[data-changed]"), null, "nothing changed, nothing said");
+});
+
+test("R34 (C8, U16): a cause the answer does not state whole is left out, never drawn as bare data", async () => {
+  const causes = [{ cause: "standard_superseded", standard: "STD-2026-0002" }, { cause: "finding_later_edition", finding: "FND-2026-0009" },
+    { cause: "something_new", determination: "DET-2026-0006" }, null, { cause: "determination_flagged" }];
+  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ basis_changed: { causes } })])) } });
+  assert.ok(drew(p, "screen.counsel.made.changed", { n: "1", what: word("filings.standard_superseded", { standard: "STD-2026-0002" }) }));
+  assert.ok(!text(p).includes("FND-2026-0009") && !text(p).includes("DET-2026-0006") && !text(p).includes("something_new"));
+  const q = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ basis_changed: { causes: [{ cause: "something_new" }] } })])) } });
+  assert.equal(main(q).querySelector("[data-changed]"), null, "no cause it can word, nothing said");
 });
 
 test("R34 (C8): \"Read this version\" asks for that version and draws its sections and their marking; it changes nothing", async () => {
@@ -96,6 +121,18 @@ test("R34 (C8): \"Read this version\" asks for that version and draws its sectio
   assert.ok(text(p, shown).includes("The matters") && text(p, shown).includes("One matter, not determined."));
   assert.ok(drew(p, "screen.counsel.sections.marking", { counsel: "A. Lawyer, Lawyers LLP" }, shown));
   assert.equal(p.byOp("counselpacketexport").length + p.byOp("counselpacket").length, 0, "reading writes nothing");
+});
+
+test("R34 (C8, U16): a version with no counsel named, read again, marks each section for the team's own review, not the raw marking", async () => {
+  const read = { ok: true, id: "CPK-2026-0001", version: 1, action: ACTION, marking: "RAW MARKING",
+    sections: { facts: { title: "The matters", marking: "RAW SECTION MARKING", text: "One matter, not determined." } }, exports: [] };
+  const p = await open(PATH, { plane: { filingsfor: ok(FILINGS([], [V({ counsel: null })])), counselpacketread: ok(read) } });
+  await press(p, "counselpacketread");
+  const shown = main(p).querySelector("[data-read]");
+  assert.ok(shown && drew(p, "filings.prepared_group_review", {}, shown.querySelector("[data-section]")));
+  assert.ok(drew(p, "filings.prepared_group_review", {}, shown));
+  assert.ok(!text(p, shown).includes("RAW"), "the record's raw marking is not drawn");
+  assert.ok(!drew(p, "screen.counsel.sections.marking", { counsel: "" }, shown));
 });
 
 test("R34 (C8): a version that cannot be read is refused by its words and draws nothing in its place", async () => {

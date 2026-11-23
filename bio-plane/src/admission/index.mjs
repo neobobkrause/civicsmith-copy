@@ -92,7 +92,8 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
  * @property {string} tokenId
  * @property {any} principal the viewer it is seen as
  * @property {string} [taskScope]
- * @property {string[]} writes its declared writes
+ * @property {string[]} [writes] its declared writes; absent on the caller `control-plane` R53 admits under an ask's
+ *   grant (`{tokenId: "grant", principal, grant}`), whose ops `AI_GRANT_OPS` bounds and whose writes no gate here reads
  * @property {string | null} [confinedTo] `scratch`, or absent
  * @property {boolean} [revoked]
  * @property {string} [revokedAt]
