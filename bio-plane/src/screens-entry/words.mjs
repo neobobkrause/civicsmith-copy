@@ -49,7 +49,7 @@ export const READS = Object.freeze({
   setup: Object.freeze([...STATES, "screen.setup.name", "screen.setup.purpose", "shell.mark",
     /* R22: the parts as the design draws them, each its name, what it is for and its state */
     ...["lede", "coming", "after", "state.needed", "state.done", "state.optional", "state.off", "state.skipped", "state.skipped.help",
-      "claim", "part.claim.why", "claim.intro", "claim.button", "otp", "otp.help", "otp.tip", "handle", "handle.help", "handle.tip", "own",
+      "claim", "part.claim.why", "claim.intro", "otp", "otp.help", "otp.tip", "handle", "handle.help", "handle.tip", "own",
       "own.help", "again.help", "nootp", "claimed", "claimed.nosignin", "unarmed", "codes.intro",
       "part.group", "part.group.why", "name.field", "name.help", "name.tip", "name.now", "name.empty", "site.q", "site.no", "site.yes",
       "site.tip", "domain", "domain.help", "domain.empty", "domain.verified",
@@ -87,9 +87,9 @@ export const READS = Object.freeze({
     /* R33: the scanner holding no signatures, in the words file-safety's `scanstatus` carries by key (its R46) */
     "file-safety.index.no_signatures", "file-safety.index.no_signatures_since", "file-safety.index.signatures_refused",
     "file-safety.index.signatures_failed", "file-safety.index.signatures_not_fetched",
-    ...labels("setup", ["recoverycodesissue", "groupnameset", "groupdomainset", "profilesset", "placewanted", "officesseed", "entitycreate",
+    ...labels("setup", ["claim", "recoverycodesissue", "groupnameset", "groupdomainset", "profilesset", "placewanted", "officesseed", "entitycreate",
       "aikeepaway", "groupkeyset", "ailimitset", "courtnoticeset", "hostingaccessset"]),
-    ...["claim", "groupkeyswitch", "memberadd", "securitytooladd"].map((op) => `act.${op}.does`)]),
+    ...["groupkeyswitch", "memberadd", "securitytooladd"].map((op) => `act.${op}.does`)]),
   join: Object.freeze([...STATES, "screen.join.name", "screen.join.purpose",
     ...["invited", "invited.as", "link", "link.what", "cover", "cover.help", "cover.empty", "dead", "dead.what", "language",
       "language.help", "handle", "handle.help", "handle.taken", "handle.empty", "codes.after", "joined", "joined.nosignin", "home",

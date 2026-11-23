@@ -6,6 +6,9 @@
    screen reads the title), and the chosen `visibility` (R30); or `{ refuse }`, the word that says what is missing (the title,
    or the visibility, R80: nothing is sent until both are given). Self-contained: it refers only to its parameters. */
 
+/**
+ * @returns {{form: (cs: *, id: string, label: string, act: string) => string, body: (cs: *, view: *, id: string, trigger: string) => ({body: Object} | {refuse: (string | null)})}}
+ */
 export function startProject() {
   const form = function (cs, id, label, act) {
     if (!act) return "";

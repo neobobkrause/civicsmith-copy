@@ -127,7 +127,6 @@ Terms. An **inquiry** is a bundle of type `inquiry` (a legacy `focus` or `proble
 - `entities`: `has` (R7), `strongestByCapture` (R16).
 - `provenance`: the `register` read contract (R48).
 - `extraction`: the `readings` and `reading_text_source` read contract (its R58).
-- `text-chain`: `captureBound`, `isTranscribed`.
 - `bias`: `registerWorkProducts` (its R33; R53, for its R40).
 
 ### Invariants

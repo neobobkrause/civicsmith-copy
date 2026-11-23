@@ -165,10 +165,12 @@ const T33_WRITES = {
    lead, by holding the owner's sentence (K4168): the words of the owner's key in the word table (`<owner>.declared.<op>` or
    `act.<op>.does`), the row being no write of T33's */
 const ownerKeyOf = (op) => WORD_ROWS.map(([key]) => key).find((key) => key === `act.${op}.does` || key.endsWith(`.declared.${op}`));
+/** @param {string} op @returns {string|null} the owner's sentence for `op`, or null where no owner key holds one */
+const ownerSentenceOf = (op) => { const key = ownerKeyOf(op); return key === undefined ? null : word(key); };
 const OWNER_READS = Object.keys(T33_NON_ACTS)
-  .filter((op) => !T33_NON_ACTS[op].startsWith("read: ") && ownerKeyOf(op) && word(ownerKeyOf(op)) === T33_NON_ACTS[op])
+  .filter((op) => !T33_NON_ACTS[op].startsWith("read: ") && ownerSentenceOf(op) === T33_NON_ACTS[op])
   .filter((op) => !Object.hasOwn(T33_WRITES, op))
-  .map((op) => ({ op, sentence: word(ownerKeyOf(op)) }));
+  .map((op) => ({ op, sentence: ownerSentenceOf(op) }));
 const T33_READS = [...new Set([...readRows(T33_NON_ACTS), ...OWNER_READS.map(({ op }) => op)])];
 /* `reversible`: the published act of the owner that takes each result back */
 const TAKEN_BACK_BY = {

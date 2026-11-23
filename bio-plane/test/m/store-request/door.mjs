@@ -76,8 +76,7 @@ const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;   /* stor
 /* control-plane's `storageAbsent`: acquisition's one complaint (`evidenceStorageAbsent`, C-68.1), enveloped */
 const storageAbsent = (op, error) => { const { status, body } = evidenceStorageAbsent(op, error); return json(body, status); };
 const caseReader = async (url, env, storeName, presentedAi, credential) => {
-  const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential, { background: url.searchParams.get("background") === "1" });
-  return r.silent ? { silent: r.silent.op, correlation: r.silent.correlation } : r;
+  return readerOf(url, env, storeName, presentedAi, doAnswer, credential, { background: url.searchParams.get("background") === "1" });
 };
 const fingerprint = async (v) => (v ? (await sha256Hex(v)).slice(0, 16) : null);
 
@@ -160,7 +159,7 @@ function inlineVerdictOf(document) {
  *  true while a row is held for a reading owed, `refused` the digests whose owed reading no row holds. An entry that owes the OCR pass is skipped (a world binds no OCR worker). */
 export async function followReading(world, entries, storeName = "bio") {
   const stub = stubOf(world);
-  const ask = async (route, init) => { try { return await doAnswer(stub.fetch(new Request(`http://do/${route}`, init))); } catch { return { answered: false }; } };
+  const ask = async (route, init) => { try { return await doAnswer(stub.fetch(new Request(`http://do/${route}`, init))); } catch { return { answered: false, result: undefined }; } };
   /* whether the store kept the row (`pendingadd` answers `{ok: true}`); a refusal or a silence is a row not kept */
   const register = async (sha, kind) => {
     const a = await ask(`pendingadd?kind=${kind}&sha=${sha}&store=${encodeURIComponent(storeName)}`, { method: "POST" });
@@ -307,7 +306,8 @@ async function answer(world, stub, env, page) {
     else if (own && g.reason === "GRANT_OP_REFUSED") admitted = { refusal: { status: 403, body: g } };
   }
   if (admitted.refusal) return json(admitted.refusal.body, admitted.refusal.status);
-  const caller = { ...admitted.caller, token: credential.token };
+  /* admission `admit` answers exactly one of `caller`, `refusal` and `silent`; both others have returned */
+  const caller = { .../** @type {import("../../../src/admission/index.mjs").Caller} */ (admitted.caller), token: credential.token };
   const { cls, viaSession, aiCred, storeName } = caller;
   const { member: sessMember, viewer: sessViewer, identity: sessIdentity, rights: sessRights, caps: sessCaps } = caller;
 
@@ -331,11 +331,11 @@ async function answer(world, stub, env, page) {
   if (op === "purge") {
     const confirm = url.searchParams.get("confirm");
     if (confirm !== storeName)
-      return json({ ok: false, ...requiredArgument("purge", "confirm", "<store name>", "purge requires confirm=<store>"),
+      return json({ ...requiredArgument("purge", "confirm", "<store name>", "purge requires confirm=<store>"),
                     expected: storeName, got: confirm, tokenClass: cls, store: storeName }, 400);
   }
   const extra = { store: storeName, tokenClass: cls };
-  const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
+  const actor = viaSession ? sessViewer : cls === "ai" && aiCred ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
   /* control-plane R62: a member's or an `ai` credential's `op=capture` GET is a byte answer */
   if (op === "capture" && method === "GET" && (viaSession || cls === "ai")) {
     const w = url.searchParams.get("warned");
@@ -498,7 +498,7 @@ async function publicAnswer({ world, stub, env, page, op, req, reqBody, credenti
   const storeName = url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio";
   if (op === "groupdescription" || op === "handlecheck") {
     const reader = await caseReader(url, env, storeName, presentedAi.cred, credential);
-    if (reader.silent) return storeSilent(reader.silent, reader.correlation);
+    if (reader.silent) return storeSilent(reader.silent.op, reader.silent.correlation);
     if (op === "groupdescription") return relayAnswer(stub.fetch(`http://do/groupdescription?viewer=${encodeURIComponent(reader.viewer)}`), op);
     return relayAnswer(stub.fetch(new Request(`http://do/handlecheck?viewer=${encodeURIComponent(reader.viewer)}`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ invite: o.invite, handle: o.handle }) })), op);
@@ -533,16 +533,16 @@ async function publicAnswer({ world, stub, env, page, op, req, reqBody, credenti
     const admitted = await admit({ url, env, op, spec: { ...OPS[op], classes: ["admin", "member"], machineClasses: [] }, method: page.method,
                                    presented: presentedAi, doAnswer, credential, background: url.searchParams.get("background") === "1" });
     if (admitted.silent) return storeSilent(admitted.silent.op, admitted.silent.correlation);
-    if (admitted.refusal || !admitted.caller.viaSession) return templateAnswer(world, op, innerRequest({ op, url, method: "POST", body: "{}", caller: null,
+    if (admitted.refusal || !admitted.caller?.viaSession) return templateAnswer(world, op, innerRequest({ op, url, method: "POST", body: "{}", caller: null,
                                                                                                     bySecret: true, secretSha: await sha256Hex("") }));
-    caller = admitted.caller;
+    caller = admitted.caller ?? null;
   }
   /* control-plane R138: with no secret, the review copy's three are read as the caller's session or credential resolves (`caseReader`'s viewer, the one stamp the door sets), and a
      member's read of several drafts names them in `drafts`, an acknowledgement's `reason` comes from a POST body's string when the address has none */
   let reader = null;
   if (!bySecret && REVIEW_COPY_DOORS.includes(op)) {
     const found = await caseReader(url, env, "bio", presentedAi.cred, credential);
-    if (found.silent) return storeSilent(found.silent, found.correlation);
+    if (found.silent) return storeSilent(found.silent.op, found.silent.correlation);
     reader = found.viewer;
   }
   const made = innerRequest({ op, url, method: page.method, body: page.method === "POST" ? page.text : undefined, caller,
@@ -592,6 +592,20 @@ export function worldAnswers(op) {
 export const resultOf = (a) => (a && a.json && a.json.result !== undefined ? a.json.result : a && a.json);
 export const refusedAct = (op, a) => Object.assign(new Error(`storeWorld: ${op} was refused: ${JSON.stringify(a && (a.json ?? a.type)).slice(0, 400)}`), { answer: a });
 const passwordOf = (handle) => `${handle}-world-passphrase`;
+
+/** R16, R18: the record `{t, e, d, w}` a page keeps for a session the world issued (interface-shell R32). The world's clock is pinned (`WORLD_NOW`, moved only
+ *  by `tick`) and the page reads `e` against the real clock, so `e` is the time the session has left in the world measured from the real clock, read
+ *  afresh each time: a session live in the world is live on the page, and one the world has moved past (`tick`) is already past on the page. Setting `e`
+ *  (as copying a fresher record onto this one does) takes a page-clock instant back to the world's. A world expiry of none (`0`) stays none.
+ *  @param {{now: () => number}} world @param {string} t @param {number} expires the world's instant, milliseconds; 0 for none
+ *  @param {string} d @param {string} w @returns {{t: string, e: number, d: string, w: string}} */
+function pageSession(world, t, expires, d, w) {
+  let held = expires;
+  const record = { t, e: 0, d, w };
+  return Object.defineProperty(record, "e", { enumerable: true, configurable: true,
+    get: () => (held ? Date.now() + (held - world.now()) : 0),
+    set: (v) => { held = Number(v) ? Number(v) - Date.now() + world.now() : 0; } });
+}
 
 /** R16: `signIn(world, handle, {admin?, capabilities?, device?})` → `{handle, member, token, password, session, act, read}`, by the real acts:
  *  the founder by `login` with the claim's password; any other member by the founder's `memberadd`, the invitation's `enroll` with
@@ -647,13 +661,13 @@ export async function signIn(world, handle, { admin = false, capabilities = null
   } else member = handle;
   const signed = await login(isFounder ? (founderHandle || "admin") : handle, isFounder ? world.password : passwords.get(handle));
   const me = { handle, member, token: signed.token, password: isFounder ? world.password : passwords.get(handle),
-               session: { t: signed.token, e: typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, d: device === "own" ? "own" : "shared", w: handle } };
+               session: pageSession(world, signed.token, typeof signed.expires === "number" ? signed.expires : Date.parse(signed.expires) || 0, device === "own" ? "own" : "shared", handle) };
   me.act = (op, { query = {}, body = {} } = {}) => call(op, me, { query, body });
   me.read = (op, { query = {} } = {}) => call(op, me, { query });
   return me;
 }
 
-/** R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`. */
+/** R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`; `session` is `as.session`, whose `e` is on the page's clock (R16). */
 export function bootOf(world, as) {
   const door = doorOf(world);
   return { door: (req) => door(req, as), session: as ? as.session : null };
@@ -661,7 +675,7 @@ export function bootOf(world, as) {
 
 /** R18 (K5178; SCREENS-INQUIRY #29 J42 (f)): `routeOf(world, as)` → a Playwright route handler for the page's `/api/` requests, answering each from the world's door as `as`
  *  (her token is added when the page sends none), so a browser drawing the screens at a phone's width gets the real store's answers, not a scripted table. The handler fulfils
- *  `route`: a JSON answer as JSON, a byte answer (a served file) with its type. The session the page holds is `world.session(as)`. */
+ *  `route`: a JSON answer as JSON, a byte answer (a served file) with its type. The session the page holds is `world.session(as)`, its `e` on the page's clock (R16). */
 export function routeOf(world, as) {
   const door = doorOf(world);
   return async (route) => {

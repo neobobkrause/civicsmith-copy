@@ -94,7 +94,7 @@ test("R18: the administrator's acts op-declarations R22 declares are admitted as
        refused CLASS_FORBIDDEN by the spec (R9), never by a fence of admission's own */
     for (const [cls, t] of [["admin", env.ADMIN_TOKEN], ["probe", env.PROBE_TOKEN], ["daemon", env.DAEMON_TOKEN]]) {
       const r = await gate(env, { op, token: t, params: cls === "probe" ? { store: "scratch" } : {} });
-      if (spec.machineClasses.includes(cls)) assert.deepEqual([r.caller?.cls, r.caller?.viaSession], [cls, false], `${op}/${cls}`);
+      if ((spec.machineClasses ?? []).includes(cls)) assert.deepEqual([r.caller?.cls, r.caller?.viaSession], [cls, false], `${op}/${cls}`);
       else assert.equal(refused(r, 403, "CLASS_FORBIDDEN", "C-38.2", [t]).cls, cls, `${op}/${cls}`);
     }
     /* an agent reaches nothing a member reaches only from a session (R10) */
@@ -127,7 +127,7 @@ test("R19: the group key's ops are admitted only from a session — a bearer, a 
   for (const op of GROUP_KEY_OPS) {
     const spec = OPS[op];
     assert.ok(spec, `${op} declared (op-declarations R24)`);
-    assert.deepEqual([[...spec.classes].sort(), spec.machineClasses], [["admin", "member"], []], op);
+    assert.deepEqual([[...(spec.classes ?? [])].sort(), spec.machineClasses], [["admin", "member"], []], op);
     assert.equal(AI_GRANT_OPS.includes(op), false, `${op} is on no ask's grant`);
     assert.equal(NEEDS[op] ?? null, null, op);
     assert.ok(SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op), op);

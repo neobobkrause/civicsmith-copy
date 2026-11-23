@@ -2,6 +2,7 @@
  * (interface-shell R21, K3002: each part self-contained, serialised by the shell beside the screen's functions). Each
  * takes what it needs as parameters, never another part, so its text alone is its whole meaning. */
 
+/** @type {Readonly<Object<string, Function>>} the shared readers, each self-contained, handed to each screen as `view.parts` */
 export const PARTS = Object.freeze({
   /** A refusal drawn in words beside what it answers (interface-shell R13): its translation, else the code. */
   said(cs, f) {
