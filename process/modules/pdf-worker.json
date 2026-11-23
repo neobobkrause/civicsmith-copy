@@ -6,8 +6,7 @@
   "tests": [
     "pdf-worker/test/",
     "pdf-worker/test/jbig2.test.mjs",
-    "pdf-worker/test/jpx.test.mjs",
-    "budget-doctypes/test/fixtures/build.mjs"
+    "pdf-worker/test/jpx.test.mjs"
   ],
   "public": [
     "pdf-worker/src/index.mjs",
