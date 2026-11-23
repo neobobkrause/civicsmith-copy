@@ -4,9 +4,12 @@
  * work it is and how to read it; "Check the signature"; "Check a file you hold" (R22). Nothing here needs an account. Every function is
  * self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 import { PUBLISHED_PARTS } from "./published-parts.mjs";
 import { PUBLISHED_PAGES } from "./published-pages.mjs";
 
+/** A published case (R6, R19, R22, R29, R33, R34, R36 to R39, R47, R54, R76): `publishedcase` and `groupidentity` read as public ops; acts `verify` and `publishedcase`, and the browser acts of R38 and R39.
+ *  @type {Readonly<ScreenDef>} */
 export const PUBLISHED = Object.freeze({
   id: "published",
   parts: Object.freeze({ ...PARTS, ...PUBLISHED_PARTS, ...PUBLISHED_PAGES }),
@@ -78,8 +81,16 @@ export const PUBLISHED = Object.freeze({
       }).join("") + "</p>");
     if (e.withdrawn) out.push('<p role="status">' + cs.w("screen.published.withdrawn") + "</p>");
 
-    // Whose work it is, and how to read a case.
-    out.push('<p class="mk-explain">' + cs.w("screen.published.whose", { group: group }) + " " + cs.w("screen.published.howtoread") + "</p>");
+    // A disclosure the drawing draws closed (`mk-details`): its summary key, and what it says when opened.
+    const disclose = function (key, inner) { return '<details class="mk-details" data-disclosure="' + cs.esc(key) + '"><summary>' + cs.w(key) + "</summary>" + inner + "</details>"; };
+    const note = function () { return '<p class="mk-note">' + Array.prototype.map.call(arguments, function (k) { return cs.w(k); }).join(" ") + "</p>"; };
+
+    // Whose work it is, and how to read a case: "How to read a case" (`.howtoread.link`) explains, on hover or focus, what each of
+    // the two strengths says and what it never says, in the design's own explanations (`.tip.capture`, `.tip.connection`).
+    const howto = "<b>" + cs.w("screen.published.tip.capture") + "</b> · " + cs.w("screen.published.tip.capture_why")
+      + "<br><b>" + cs.w("screen.published.tip.connection") + "</b> · " + cs.w("screen.published.tip.connection_why");
+    out.push('<p class="mk-explain">' + cs.w("screen.published.whose", { group: group }) + " " + cs.w("screen.published.howtoread")
+      + ' <span class="cs-ref" tabindex="0" data-level="1" data-howtoread data-tip="' + cs.esc(howto) + '">' + cs.w("screen.published.howtoread.link") + "</span></p>");
 
     // The findings: each with its two strengths and whether it meets the project's bar.
     const findings = Array.isArray(e.findings) ? e.findings : [];
@@ -124,12 +135,15 @@ export const PUBLISHED = Object.freeze({
         + (acks && acks.length ? cs.sheet(acks.map(function (a) {
           return cs.row("", '<span class="mk-data">' + cs.esc(a.recipient || a.by || "") + "</span>", "", (a.at ? cs.date(a.at) : "") + (a.reason ? ' · <span class="rec">' + cs.esc(a.reason) + "</span>" : ""));
         }).join("")) : acks ? '<p class="mk-note" data-nobody>' + cs.w("screen.published.no_one_else_on_the") + "</p>"
-          : '<p class="mk-note" data-unsaid>' + cs.w("screen.published.this_edition_does_not_say") + "</p>")));
+          : '<p class="mk-note" data-unsaid>' + cs.w("screen.published.this_edition_does_not_say") + "</p>")
+        // the page's C7: what the two other states say, each in its closed disclosure, the one drawn above left out
+        + (acks && !acks.length ? "" : disclose("screen.published.when_no_one_else_has", note("screen.published.no_one_else_on_the", "screen.published.it_stands_as_the_team")))
+        + (!acks ? "" : disclose("screen.published.when_the_edition_does_not", note("screen.published.this_edition_does_not_say", "screen.published.that_is_not_the_same")))));
     }
     if (Object.hasOwn(e, "tensions")) {
       const ts = Array.isArray(e.tensions) ? e.tensions : null;
       const idx = function (id) { return findings.findIndex(function (f) { return String(f.bundle_id || f.id || "") === String(id); }); };
-      out.push(cs.sec("screen.published.contradictions_the_team_disclosed", ts && ts.length ? '<p>' + cs.w("screen.published.each_one_names_the_finding") + "</p>" + cs.sheet(ts.map(function (t) {
+      out.push(cs.sec("screen.published.contradictions_the_team_disclosed", (ts && ts.length ? '<p>' + cs.w("screen.published.each_one_names_the_finding") + "</p>" + cs.sheet(ts.map(function (t) {
         const n = idx(t.finding), side = function (x) { return x && x.text ? '<span class="mk-data">' + cs.esc(x.text) + "</span>" : ""; };
         return cs.row("", "<b>" + (n >= 0 ? cs.w("screen.published.finding", { n: String(n + 1) }) : cs.esc(t.finding || "")) + "</b> · " + cs.esc(t.state || "")
           + '<span class="meta" data-tension' + (t.highlighted ? ' data-highlighted' : "") + ">"
@@ -139,7 +153,9 @@ export const PUBLISHED = Object.freeze({
           + (t.owner_words && t.owner_words.text ? ' <span class="rec">' + cs.esc(t.owner_words.text) + "</span>" : "")
           + (t.acknowledged_by ? " " + cs.w("screen.published.read_by_who_on_date", { who: t.acknowledged_by, date: { html: t.acknowledged_at ? cs.date(t.acknowledged_at) : "" } }) : "") + "</span>", "");
       }).join("")) : ts ? '<p class="mk-note" data-none>' + cs.w("screen.published.the_team_disclosed_no_contradictions") + "</p>"
-        : '<p class="mk-note" data-before>' + cs.w("screen.published.this_edition_was_signed_before") + "</p>"));
+        : '<p class="mk-note" data-before>' + cs.w("screen.published.this_edition_was_signed_before") + "</p>")
+        // the page's C8: the two states a disclosed contradiction may also be in, which this edition's may not show
+        + disclose("screen.published.the_other_things_a_disclosed", note("screen.published.explained_not_yet_shown_the") + note("screen.published.taken_up_as_a_question"))));
     }
     // 10B C5 (R94 c): the lens as the signed document prints it (the acknowledgement, each statement with its justification, the closing sentences);
     // an edition that carries only the lens's fingerprint says so
@@ -189,7 +205,10 @@ export const PUBLISHED = Object.freeze({
 
     out.push('<div class="mk-acts">' + cs.act("verify", { data: { sha: String(e.manifest_sha || "") } }) + cs.act("publishedcase")
       + (/^[0-9a-f]{64}$/.test(String(e.manifest_sha || "")) ? cs.act("publishedcase", { label: "screen.published.download", data: { download: "1", manifest: String(e.manifest_sha) } }) : "")
-      + (findings.length ? cs.act("pubprint") : "") + "</div>" + P.said(view, "verify") + P.said(view, "download")
+      + (findings.length ? cs.act("pubprint") : "") + "</div>"
+      // the page's S7 disclosure: what a print made while a minimum strength is set says at its foot (R39)
+      + (findings.length ? disclose("screen.published.when.a.minimum.strength.was", note("screen.published.a.print.made.from.a")) : "")
+      + P.said(view, "verify") + P.said(view, "download")
       + (P.casefileSaid(cs, e) ? '<p class="mk-note" role="status" data-casefile-state>' + P.casefileSaid(cs, e) + "</p>" : "")
       // 10B C5 (R95 a), R81 (D-M6 (a)): what the check proves and what it does not, by key, where the answer states a verification
       + (e.verification && typeof e.verification === "object" ? '<p class="mk-small" data-verification>' + cs.w("screen.published.verify.detail") + "</p>" : ""));

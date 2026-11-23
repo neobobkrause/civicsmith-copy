@@ -2,7 +2,7 @@
 import { frameAnswers } from "./frame-answers.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { DESIGN_PATHS } from "./design-paths.fixture.mjs";
 import { WORD_ROWS, word } from "../../../src/setup-words/index.mjs";
 import { PATHS, FRAMES, PLACE_SCREENS } from "../../../src/interface-shell/index.mjs";
 import { fitSend, boot, ok, refused, silent, pending, httpError, STORE_KEY, tabs, SESSION } from "./harness.mjs";
@@ -115,10 +115,8 @@ test("R8 every screen opens its main area with its path, from its rail place to 
   assert.deepEqual(texts(crumbSteps(m.root())), [word("rail.settings.name"), word("screen.members.name")]);
 });
 
-const pathAt = (commit) => {
-  const src = execFileSync("git", ["show", commit + ":docs/development/ux-substrate/screens/mock-shell.js"], { encoding: "utf8" });
-  return new Function(/(const PATH = \{[\s\S]*?\n\};)/.exec(src)[1] + "; return PATH;")();
-};
+/* the design's PATH at a named commit, from the fixture taken from the repository's history (the required run's checkout is shallow) */
+const pathAt = (commit) => DESIGN_PATHS[commit].PATH;
 const PROJECTS = new Set(["The Coliseum lease", "Pothole repairs", "Sewer fund transfers"]);
 const step = (s) => (s === "@project" ? "@project" : /\.crumb$/.test(s) ? word(s, { name: "<name>" }) : /^(shell|screen)\./.test(s) ? word(s) : word("rail." + s + ".name"));
 const T46 = ["home", "queue", "inbox", "finder", "answers", "capture", "held", "open-file", "find-in", "project", "document", "question", "assistant", "members", "account", "connect", "notes"];
@@ -134,7 +132,7 @@ test("R8 each screen's path is mock-shell.js' PATH for its id at 3f40899950, a p
   assert.deepEqual(PATHS.document.map(step), [word("rail.projects.name"), "@project", word("screen.document.name")]);
 });
 
-test("R28 every screen of the new screen modules has its path from mock-shell.js' PATH at a0fab7abf0 (plan: Projects › <project> › Action plan; wizards: Settings › Wizards; due-date: Queue › Due date; person: People › Person), and L11's screens from PATH at PR #33's head; the public, published and setup frames have none", async () => {
+test("R28 every screen of the new screen modules has its path from mock-shell.js' PATH at a0fab7abf0 (plan: Projects › <project> › Action plan; wizards: Settings › Wizards; due-date: Queue › Due date; person: People › Person), and L11's screens from PATH at PR #33's head; the public, published and setup frames' screens open with the team's name (R8), setup with its own name alone, and the installer's and the site's pages have none", async () => {
   const A = pathAt("a0fab7abf0"), B = pathAt("f90b187c7b");
   const NEW = ["wizards", "person", "explore", "timeline", "money", "calculation", "proceeding", "due-date", "standard", "ties", "case-editor", "review-copy", "ceremony", "imported", "docket", "plan", "start-send", "request", "action", "matter", "archive", "group-identity", "security", "translations"];
   /* the design's PATH is in its words of the day; the interface says "team" where it said "group" (setup-words) */
@@ -146,7 +144,17 @@ test("R28 every screen of the new screen modules has its path from mock-shell.js
   assert.deepEqual(PATHS.wizards.map(step), [word("rail.settings.name"), word("screen.wizards.name")]);
   assert.deepEqual(PATHS["due-date"].map(step), [word("rail.queue.name"), word("shell.step.due-date")]);
   assert.deepEqual(PATHS.person.map(step), [word("rail.people.name"), word("screen.person.name")]);
-  for (const [id, frame] of Object.entries(FRAMES)) if (frame !== "dock") assert.equal(PATHS[id], undefined, id);
+  /* R8 (Screens page getting-started; the design's PATH, "Lakeshore Tenants › Forgot your password"): a screen the shell draws in the public, published or
+     setup frame opens with the team's name, then its own name (`front` the team's alone); `setup` is made before the team has a name; the site and the
+     installer are other programs, with no path here */
+  const OTHER = ["site", "install", "update"];
+  for (const [id, frame] of Object.entries(FRAMES)) {
+    if (frame === "dock") continue;
+    if (OTHER.includes(id)) assert.equal(PATHS[id], undefined, id);
+    else if (id === "setup") assert.deepEqual(PATHS[id], ["screen.setup.name"], id);
+    else if (id === "front") assert.deepEqual(PATHS[id], ["@team"], id);
+    else assert.deepEqual(PATHS[id], ["@team", "screen." + id + ".name"], id);
+  }
   /* drawn: a person's path with its place linked */
   const p = await boot({ screens: [...ALL, PERSON], path: "/app/person/x1", plane: { person: ok({ name: "Dana Ruiz" }) } });
   assert.deepEqual(texts(crumbSteps(p.root())), [word("rail.people.name"), word("screen.person.name")]);
@@ -270,6 +278,7 @@ test("R9 /app/review maps to review-outside (screens-publish R17), drawn in its 
 });
 
 test("R35 unavailable: an unknown screen or subject draws Nothing is here; NOT_VISIBLE and NOT_A_PARTICIPANT draw You can't open this; no answer or a 5xx draws can't be reached, tried again every 30 seconds in the background, what was typed kept", async () => {
+  /** @type {Array<[string, Object<string, *>, string]>} the path, the plane, the state drawn */
   const states = [["/app/nowhere", {}, "nothing"], ["/app/document/zz", { image: refused("NO_SUCH_CAPTURE") }, "nothing"], ["/app/document/zz", { image: ok(null) }, "nothing"],
     ["/app/document/zz", { image: refused("NOT_VISIBLE", "Not yours.") }, "notyours"], ["/app/document/zz", { image: refused("NOT_A_PARTICIPANT") }, "notyours"],
     ["/app/document/zz", { image: silent }, "unreachable"], ["/app/document/zz", { image: httpError(503) }, "unreachable"]];

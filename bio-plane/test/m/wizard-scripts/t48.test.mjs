@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 import { world, step, V } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+import { found, scriptWhere } from "./found.mjs";
+/** @import { LibraryScript } from "../../../src/wizard-scripts/data.mjs" */
 
 const F = V("frank");
 const src = (f) => readFileSync(new URL(`./source/${f}`, import.meta.url), "utf8");
@@ -19,11 +21,12 @@ const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 const opOf = (a) => (a.status === "owed" ? OWED.exec(a.op)[1] : a.op);
 /* every op the registry names, owed ones as their op: the member op table once each owed op is declared */
 const ALL_OPS = [...new Set(REG_FILE.screens.flatMap((s) => s.acts.map(opOf)))];
-const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
+const by = (n) => scriptWhere((e) => e.name === n, n);
 const UPDATE_OPS = ["updatestart", "updatelater", "updateskip"];
 
 /* A world over the carried registry and library (or `library`), every op declared but those `lacking`, with a front door's
    pointer when one is given. */
+/** @param {{lacking?: string[], library?: readonly object[], door?: object, [k: string]: unknown}} [args] */
 function real({ lacking = [], library = undefined, door = undefined, ...opts } = {}) {
   const w = world({ register: false, ...opts });
   w.member("frank");
@@ -95,14 +98,14 @@ test("R37 (T48; N847; DEC-227 (4); K3190) the elsewhere route's pointer is the r
 });
 
 test("R38 (T48; DEC-226, DEC-227, DEC-218; K2241, K3190, K3192 D1; amends R13, R35; R41) the registry is re-taken at PR #34's merge (4664e8efd4): 67 screens and 329 acts, five owed, and again at the design commit named at T50's START (7be06eb4cb), named as the source: 71 screens and 413 acts, sixteen owed; registeredScreens() lists elsewhere with no act and updates; dash-home is gone; owed acts updatestart, updatelater and updateskip are registered as those ops once declared, updatelater on queue too; controls: not while the op table lacks them, wizardsAt(\"elsewhere\") answers []", () => {
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json",
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "e5feed33be", path: "docs/development/ux-substrate/screens/registry.json",
                                                 sha256: createHash("sha256").update(src("registry.json"), "utf8").digest("hex") });
   assert.equal(REG_T48.screens.length, 67);
   assert.equal(REG_T48.screens.reduce((n, s) => n + s.acts.length, 0), 329);
   assert.equal(REG_T48.screens.flatMap((s) => s.acts).filter((a) => a.status === "owed").length, 5, "five owed at PR #34: passwordresetlink and the update acts");
-  assert.equal(wz.SCREEN_REGISTRY.length, 91, "R50: 84 at b1adf4236d");
-  assert.equal(REG_FILE.screens.reduce((n, s) => n + s.acts.length, 0), 656, "R53: the file at b1adf4236d, 92 acts more than R49's 564 (projectjoin, scanmirror, T52's owed acts and DEC-438's five standard acts, less taskresolve on dash-action)");
-  assert.equal(REG_FILE.screens.flatMap((s) => s.acts).filter((a) => a.status === "owed").length, 121, "R52: 121 owed at b1adf4236d");
+  assert.equal(wz.SCREEN_REGISTRY.length, 91, "R50: 91 at e5feed33be");
+  assert.equal(REG_FILE.screens.reduce((n, s) => n + s.acts.length, 0), 662, "R50: the file at e5feed33be, 98 acts more than R49's 564 (projectjoin, scanmirror, T52's owed acts and DEC-438's five standard acts, less taskresolve on dash-action, and DEC-453's six: factconfirm, signerknown, resolve, leggrade, counselpacketread, counselpacketexport)");
+  assert.equal(REG_FILE.screens.flatMap((s) => s.acts).filter((a) => a.status === "owed").length, 121, "R52: 121 owed at e5feed33be");
   assert.deepEqual(wz.SCREEN_REGISTRY.map((s) => s.id), REG_FILE.screens.map((f) => f.id));
   assert.equal(REG_T48.screens.length - REG_T47.screens.length, 1, "PR #34 has one screen more than PR #33's head");
   assert.deepEqual(REG_FILE.screens.map((s) => s.id).filter((id) => !REG_T48.screens.some((x) => x.id === id)).sort(), ["about-knocker", "actionnew", "aiconnect", "aimine", "aimoments", "aiproject", "aiproviders", "airesults", "aitest", "bias", "contradiction", "counsel", "docket-public", "glossary", "grouprules", "hold", "holdnotice", "leads", "more", "objective", "registers", "teamai", "theme", "watching"], "new since R38 (R41 and R44)");
@@ -143,7 +146,7 @@ test("R38 (T48; DEC-226 (5), DEC-220, DEC-221; K2241, K3192 D1) the library is r
   const file = LIB_T48.scripts.find((s) => s.name === "Update your group's Civicsmith");
   const u = by(word("wizard.WIZ-7de505135a9ecd4f.name"));
   /* version 1, as R38 carried it from 4664e8efd4 and kept whole since (R42's re-take made version 2 of it) */
-  const u1 = { version: 1, ...u.earlier[0] };
+  const u1 = { version: 1, ...found(u.earlier)[0] };
   assert.deepEqual([u.id, u.start, u.origin, u.scope, u.required, u.version, u.author, u.approved, u.source],
                    [file.id, "updates", "civicsmith", "group", false, 2, "civicsmith", { by: "BOB", at: "2026-10-17", ruling: "K2241" }, "2a64c5ae77"]);
   assert.deepEqual([u1.version, u1.author, u1.approved, u1.source], [1, "civicsmith", BOB, "4664e8efd4"]);
@@ -170,25 +173,25 @@ test("R38 (T48; DEC-226 (5), DEC-220, DEC-221; K2241, K3192 D1) the library is r
   /* Set up and claim version 4: step 3 with no act, the self-test within install (DEC-220) */
   const setup = by(word("wizard.WIZ-c887066cc553dd41.name"));
   const f4 = LIB_T48.scripts.find((s) => s.name === word("wizard.WIZ-c887066cc553dd41.name"));
-  const v4 = { version: 4, ...setup.earlier[3] };   /* R38's version, kept whole under R42's version 5 */
+  const v4 = { version: 4, ...found(setup.earlier)[3] };   /* R38's version, kept whole under R42's version 5 */
   assert.deepEqual([setup.id, setup.name, setup.start, setup.required, v4.version, v4.source, v4.approved], [f4.id, f4.name, f4.start, true, 4, "4664e8efd4", BOB]);
-  assert.deepEqual(setup.earlier.map((v) => v.version), [1, 2, 3, 4]);
+  assert.deepEqual(found(setup.earlier).map((v) => v.version), [1, 2, 3, 4]);
   assert.deepEqual([v4.steps[2].screen, v4.steps[2].act], ["install", null], "step 3 names no act");
   assert.deepEqual([setup.steps[2].screen, setup.steps[2].act], ["install", null], "and so does version 5's");
-  assert.equal(setup.earlier[2].steps[2].act, "selftest", "control: version 3's step 3 named the self-test act, which install no longer lists");
+  assert.equal(found(setup.earlier)[2].steps[2].act, "selftest", "control: version 3's step 3 named the self-test act, which install no longer lists");
   assert.equal(REG_FILE.screens.find((s) => s.id === "install").acts.some((a) => a.op === "selftest"), false);
-  assert.deepEqual(v4.steps.filter((_, i) => i !== 2), setup.earlier[2].steps.filter((_, i) => i !== 2), "no other step changed");
+  assert.deepEqual(v4.steps.filter((_, i) => i !== 2), found(setup.earlier)[2].steps.filter((_, i) => i !== 2), "no other step changed");
   /* Start and send version 3: DEC-221's spelling */
   const send = by(word("wizard.WIZ-a8c349d7d71b6bb0.name"));
-  const s3 = { version: 3, ...send.earlier[2] };   /* R38's version, kept whole under R42's version 4 */
+  const s3 = { version: 3, ...found(send.earlier)[2] };   /* R38's version, kept whole under R42's version 4 */
   assert.deepEqual([s3.version, s3.source, s3.approved, send.required], [3, "4664e8efd4", BOB, false]);
-  assert.deepEqual(send.earlier.map((v) => v.version), [1, 2, 3]);
+  assert.deepEqual(found(send.earlier).map((v) => v.version), [1, 2, 3]);
   const text = (steps) => steps.map((t) => `${t.what} ${t.why}`).join(" ");
   assert.ok(/labeled/.test(text(s3.steps)) && !/labelled/.test(text(s3.steps)), "labeled");
-  assert.ok(/labelled/.test(text(send.earlier[1].steps)), "control: version 2 said labelled, and stays as it was");
-  assert.deepEqual(s3.steps.map((t) => t.act), send.earlier[1].steps.map((t) => t.act));
+  assert.ok(/labelled/.test(text(found(send.earlier)[1].steps)), "control: version 2 said labelled, and stays as it was");
+  assert.deepEqual(s3.steps.map((t) => t.act), found(send.earlier)[1].steps.map((t) => t.act));
   /* each: the earlier versions updated, naming their successors, readable and not offered */
-  for (const [e, screen] of [[setup, "install"], [send, "plan"]]) {
+  for (const [e, screen] of /** @type {[LibraryScript, string][]} */ ([[setup, "install"], [send, "plan"]])) {
     assert.deepEqual(w.wz.wizardsAt({ screen, viewer: F }).scripts.filter((s) => s.id === e.id).map((s) => s.version), [`${e.id}@${e.version}`], e.name);
     for (let n = 1; n < e.version; n++) {
       const r = w.wz.wizardRead({ script: e.id, version: `${e.id}@${n}`, viewer: F });

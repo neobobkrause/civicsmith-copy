@@ -1,4 +1,4 @@
-Length: 95 lines. Last section: "Marks settled by a row the table already holds".
+Length: 100 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -70,12 +70,18 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.calculation.expertise.confirmed` | confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.calculation.expertise.declared` | declared, not confirmed: {label} | the-record / calculation C6 | lane (the words of `members`) |
 | `screen.explore.project` | For which project | the-record / explore C12 | lane (the words of `capture`) |
+| `screen.review-outside.ask` | Before publishing, the team asks you to read this draft of its case and comment. | publishing / review-outside C1 (U14) | mockup (the first sentence of `.sub`, word for word) |
+| `screen.imported.lens_shown.as_published` | Shown here: as the source published it. | publishing / imported C5 (U15) | lane (the words of `.lens_shown` and `.lens_as_published`) |
+| `screen.imported.lens_shown.own` | Shown here: under your team's lens. | publishing / imported C5 (U15) | lane (the words of `.lens_shown` and `.lens_own`) |
+| `screen.imported.lens_moved.own` | Moved: {published} as published, {regraded} under your team's lens. | publishing / imported C5 (U15) | lane (the words of `.lens_moved` and `.lens_own`) |
+| `screen.imported.lens_bar.yes` | yes | publishing / imported C5 (U15) | lane (DEC-378's row note: "the placeholder is yes or no") |
+| `screen.imported.lens_bar.no` | no | publishing / imported C5 (U15) | lane (DEC-378's row note) |
 
-64 rows: 24 from the mockup, 40 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
+70 rows: 25 from the mockup, 45 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 
-Fourteen marks named a control for which the table already holds a row, and the built code draws it. There the existing row stands and no new row is asked for; where the mockup drew other words, the page says they are not kept. Each page now names the row.
+Thirteen marks named a control for which the table already holds a row, and the built code draws it. (A fourteenth, leads A2, was taken out on 23 Nov 2026: `screens-intake` R52 draws it as "Open it", `screen.capture.openit`, as ARCH passed it.) There the existing row stands and no new row is asked for; where the mockup drew other words, the page says they are not kept. Each page now names the row.
 
 | existing key | English | screen page and part | mockup's words, not kept |
 |---|---|---|---|
@@ -86,7 +92,6 @@ Fourteen marks named a control for which the table already holds a row, and the 
 | `installer.need.time` | About twenty minutes, at a computer. | getting-started / install S3 | (the same, without the comma) |
 | `installer.remove.refused.typed` | Nothing was deleted: the short name typed doesn't match. … | getting-started / install V2 | (none) |
 | `screen.follow.label`, `screen.follow.*` | Follow from here, and its acts | outside-the-team / registers A8 | (the same) |
-| `act.leadread.label.leads` | Open a lead | outside-the-team / leads A2 (Differences) | Open it |
 | `screen.calculation.name`, `screen.proceeding.name`, `screen.standard.name`, `screen.published.name` | Calculation, Proceeding, Standard, Published case | projects-and-questions / project C11 | (none) |
 | `act.hypothesisrevise.label.question` | Revise a hunch | projects-and-questions / question A7 | Revise this hunch |
 | `progression.steps` | Its steps | the-record / timeline S3 | Steps |

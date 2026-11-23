@@ -5,7 +5,10 @@
  * off the address on load and hands it in as `view.fragment.grant` (interface-shell R46, R9's route). Every function is
  * self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 
+/** A review copy from outside (R17, R18, R23, R60, R61): `reviewcopy` and `groupidentity` read with the link's secret in the body; acts `reviewcomment` and `statementack`.
+ *  @type {Readonly<ScreenDef>} */
 export const REVIEW_OUTSIDE = Object.freeze({
   id: "review-outside",
   parts: PARTS,
@@ -35,11 +38,24 @@ export const REVIEW_OUTSIDE = Object.freeze({
     // R35); no UTC is drawn in its place, and with no zone held no end is stated.
     const zone = typeof g.zone === "string" ? g.zone : "";
     const line = until ? P.untilIn(cs, view, until, zone) : cs.w("screen.review-outside.untilstopped");
-    if (line) out.push('<p class="mk-sub" data-link-end>' + line + "</p>");
+    // The page's C1: the protected sub-line `.sub`, with the end day in the team's zone; a link with no end, or no zone held,
+    // has no day to name, so its one line is R27's sentence alone.
+    const endDay = until ? P.localDay(until, zone) : "";
+    if (endDay) out.push('<p class="mk-sub" data-sub>' + cs.w("screen.review-outside.sub", { date: { html: cs.date(endDay) } }) + "</p>");
+    if (line) out.push('<p class="' + (endDay ? "mk-small" : "mk-sub") + '" data-link-end>' + line + "</p>");
     out.push('<p class="mk-note">' + cs.w("screen.review-outside.comments.go") + "</p>");
     const a = copy.authored || {};
     const draftTitle = { fills: { case: c.identity || "", edition: String(c.edition || "") } };
-    out.push(P.sec(cs, "screen.review-outside.draft", (a.scope ? '<p class="rec">' + cs.esc(a.scope) + "</p>" : "")
+    // The page's C3: the draft's opening, then "Read the whole draft" (`.readall`), a fold on the same screen holding each part
+    // the team wrote, in its own words: the scope whole, its account, what changed, and each thing it says it leaves out.
+    const scope = typeof a.scope === "string" ? a.scope.trim() : "";
+    const cut = scope.length > 280 ? scope.slice(0, 280).replace(/\s+\S*$/, "") + "…" : scope;
+    const whole = [scope, typeof a.account === "string" ? a.account.trim() : "", typeof a.whatChanged === "string" ? a.whatChanged.trim() : ""]
+      .concat((Array.isArray(a.excluded) ? a.excluded : []).map(function (x) { return x && typeof x === "object" ? [x.description, x.reason].filter(function (y) { return typeof y === "string" && y.trim(); }).join(": ") : ""; }))
+      .filter(Boolean);
+    const readall = whole.length ? '<details class="mk-details" data-readall><summary>' + cs.w("screen.review-outside.readall") + "</summary>"
+      + whole.map(function (t) { return '<p class="rec">' + cs.esc(t) + "</p>"; }).join("") + "</details>" : "";
+    out.push(P.sec(cs, "screen.review-outside.draft", (cut ? '<p class="rec" data-opening>' + cs.esc(cut) + "</p>" : "") + readall
       + (Array.isArray(copy.findings) && copy.findings.length ? cs.sheet(copy.findings.map(function (f) {
         return cs.row("", P.findingWords(cs, f), ""); // R61 (L15), C46: the finding by its title and in its own words, never the raw file text
       }).join("")) : ""), draftTitle));
