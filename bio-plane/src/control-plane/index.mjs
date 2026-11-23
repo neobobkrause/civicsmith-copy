@@ -181,6 +181,7 @@ async function withTrace(res, trace) {
    here exactly as op=verify and op=publishedmanifest are — and a probe's
    `scratch` rehearsal, which lives in a different Durable Object under a
    different PUBLISHED prefix, is therefore unreachable from the public surface. */
+/** @type {string} the one namespace the public read path answers from */
 const PUBLISHED_STORE = "bio";
 /* R105 (K3770): the longest an `acquire` is let run at the door. */
 const ACQUIRE_BOUND_MS = 25000;
@@ -234,6 +235,12 @@ async function keptInStore(stub, { address, session, viewer }) {
   return false;
 }
 
+/**
+ * The first 8 bytes of a value's SHA-256, as 16 lower-case hex digits (a claim's credential fingerprint, R15).
+ * @param {string | null | undefined} v
+ * @returns {Promise<string | null>} null for an empty or absent value
+ * @bound returns: 16 lower-case hex digits, or null
+ */
 async function fingerprint(v) {
   if (!v) return null;
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
@@ -244,6 +251,11 @@ async function fingerprint(v) {
    `digests()` calls to name each normalised variant (CONSTRUCTS Step 2 / FW-4);
    it hashes the SAME raw bytes for `identity`, which is why identity must equal
    the capture sha and is asserted to. */
+/**
+ * @param {string | ArrayBuffer | ArrayBufferView} v a string (hashed as UTF-8) or bytes
+ * @returns {Promise<string>} the SHA-256, 64 lower-case hex digits
+ * @bound returns: 64 lower-case hex digits
+ */
 async function sha256Hex(v) {
   const b = await crypto.subtle.digest("SHA-256", typeof v === "string" ? new TextEncoder().encode(v) : v);
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -268,6 +280,15 @@ async function groupOf(stub, project = null) {
 }
 const INBAND_OVER = "this answer exactly as served, without its `inband` key: parse it, delete `inband`, and "
           + "hash JSON.stringify(rest, null, 1) as UTF-8";
+/**
+ * The review copy's answer (R20, R102): the store's refusal at its status, a silence, `NO_REVIEW_COPY` at 404, or the copy with its in-band quartet.
+ * @param {{answered: boolean, refused?: boolean, result?: any, correlation?: string, reply?: any}} out the store's answer, as `doAnswer` reads it
+ * @param {string} op
+ * @param {Record<string, any>} [extra] keys put in the answer before its hash is taken
+ * @param {Record<string, any> | null} [group] the group fields for the quartet
+ * @param {((project: string) => Promise<Record<string, any> | null>) | null} [batchGroup] the group fields for each copy of a batch, by its project
+ * @returns {Promise<Response>}
+ */
 async function reviewAnswer(out, op, extra = {}, group = null, batchGroup = null) {
   if (out.refused) return storeRefusal(out, extra);   /* R23: the store's own refusal, at its status */
   if (!out.answered) return storeSilent(op, out.correlation);
@@ -385,6 +406,15 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
 
 /* WHO IS ASKING, FOR A PUBLIC OP THAT ANSWERS WORKING MATERIAL ONLY TO SOME: `admission`'s `readerOf` (its R16), in the
    shape the arms behind plane's hooks read (`{viewer, cls}`, or `{silent: <op>, correlation}`). */
+/**
+ * Who is asking, for a public op that answers working material only to some (admission R16): never refuses.
+ * @param {URL} url
+ * @param {Record<string, any>} env
+ * @param {string} storeName
+ * @param {any} presentedAi the front door's looked-up agent credential; undefined asks the store
+ * @param {any} [credential] the presented credential (admission R20)
+ * @returns {Promise<{viewer?: any, cls?: string, silent?: import('../admission/index.mjs').SilentRoute} | {silent: string, correlation: string | undefined}>} the reader, or a silence naming the route asked
+ */
 async function caseReader(url, env, storeName, presentedAi, credential = null) {
   /* R83 (T47; K3144): a background request's session read is no activity */
   const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential,
@@ -395,6 +425,7 @@ async function caseReader(url, env, storeName, presentedAi, credential = null) {
 /* The R2 key for a capture's bytes (I1 §2): content-addressed under the store
    prefix. The ONE place this shape is written, so op=capture and op=pdfstructure
    read the identical object rather than two copies of the key drifting apart. */
+/** @type {(storeName: string, sha: string) => string} the R2 key of a capture's bytes, `<store>/captures/<sha>` */
 const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
 
 /* THE CAPABILITY COMPLAINT (C-68.1, D-278). A copy installed with no evidence
@@ -405,6 +436,12 @@ const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
  * BYTE-IDENTICAL from each site — the sites said two different sentences before
  * this and still do. Handed to every arm this door routes those ops to (moved
  * from legacy-index at T19, its door share). */
+/**
+ * C-68.1: the capability complaint of a copy with no evidence storage, enveloped (acquisition's row).
+ * @param {string} op
+ * @param {string} error the site's sentence, passed byte-identical
+ * @returns {Response}
+ */
 function storageAbsent(op, error) {
   const { status, body } = evidenceStorageAbsent(op, error);
   return json(body, status);
@@ -449,7 +486,15 @@ async function groupRead(op, url, env, presentedAi, credential, stateTiming = un
    door cannot be used to skip a run. Condition (1), the ADMIN class, is the caller's to ask before calling this.
    WHAT THIS CANNOT CHECK, stated rather than hidden: the provenance capture is uploaded by the root of trust, whose
    honesty the record does not model (Membership §DEC-2, deferred). */
+/** @type {string} where the Drive era's provenance capture is registered */
 const DRIVE_PROVENANCE_PATH = "migration/drive-provenance.json";
+/**
+ * R16: is this promotion a replay the server can verify (D-512)?
+ * @param {Record<string, any>} env needs `CAPTURES`
+ * @param {string} storeName
+ * @param {Record<string, any>} b the promotion's body
+ * @returns {Promise<{capture: string, promotion: string | null, bundleMdSha: string} | null>} null when any condition fails
+ */
 async function migrationReplayOf(env, storeName, b) {
   const cap = typeof b.provenanceCapture === "string" ? b.provenanceCapture.trim() : "";
   if (!/^[0-9a-f]{64}$/.test(cap)) return null;
@@ -582,14 +627,17 @@ async function packOf(res) {
    to the `limits` of the plane's own configuration (`wrangler.jsonc`), which a test pins. The installer reads them from
    the verified plane bundle and holds no value of its own; the door carries them as `limits` on the function it makes,
    so a bundle of the door cannot leave them out. */
+/** @type {Readonly<{subrequests: number, cpu_ms: number}>} the plane's limits, as its configuration states them */
 const PLANE_LIMITS = Object.freeze({ subrequests: 10000, cpu_ms: PLATFORM_FIGURES.cpu_ms.value });   /* plane R99: stated once, runtime-limits' figure */
 /* The statement a release's verified bundle is read for (installer R20, K723, K724): the tag, then `key=<positive
    integer>` for each key of the limits, keys sorted, single spaces, no quotes or backslashes, so a reader of the bundle's
    text finds it whole. `PLANE_LIMITS` is its parsed form. */
+/** @type {string} @bound PLANE_LIMITS_STATEMENT: `bio-plane-limits/1` then `key=<positive integer>` per key, keys sorted, single spaces */
 const PLANE_LIMITS_STATEMENT = "bio-plane-limits/1 cpu_ms=300000 subrequests=10000";
 /* R1 (fix round 6, G1; K4566): THE PLANE'S CRON, stated in its code beside its limits so the bundle a release signs carries it: the tag, then the one five-field cron
    the watchdog runs on (`bio-plane/wrangler.jsonc` `triggers.crons`, which plane's test pins equal). The installer sets the plane's schedules from this statement
    and holds no value of its own. */
+/** @type {string} @bound PLANE_CRONS_STATEMENT: `bio-plane-crons/1` then one five-field cron */
 const PLANE_CRONS_STATEMENT = "bio-plane-crons/1 */5 * * * *";
 
 /* R53 (K1601, K1674; credentials R27, R28; agent-worker R54): AN ASK'S GRANT. Its token has a session's shape and is
@@ -684,7 +732,11 @@ async function heldWholeFacts(env, storeName, sha) {
  *  bundle (its text, id and register), run in process through the same `promote` step (promotion's `promote`, the route's own), filed
  *  under the project of the shell document (the capture session's primary, as its opener sees it) with the opener as author and
  *  the door's promote stamps; then R123's read of the document, inline when it fits, else written down for the alarm. Nothing is
- *  delivered for a session that is gone or has no opener; a refusal is `{ok: false, reason}` and the render stays owed. */
+ *  delivered for a session that is gone or has no opener; a refusal is `{ok: false, reason}` and the render stays owed.
+ * @param {{ctx?: any, env?: Record<string, any>, storeName?: string, answer?: any, session?: string}} [args] the object's context, its environment, the namespace, the owed render's answer and the capture session
+ * @returns {Promise<{ok: boolean, bundleId?: string, existed?: boolean, reading_pending?: boolean, reason?: string, detail?: any, capture_sha?: string, kind?: string | null, holder?: string | null}>}
+ *  `ok: true` with `bundleId` (and `existed` or `reading_pending`), or `ok: false` with `reason` (and the refusal's facts for a capture held by another document)
+ */
 export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, session } = {}) {
   try {
     const doc = answer && typeof answer === "object" ? answer.document : null;
@@ -822,6 +874,15 @@ function requestDone(seen) {
                                queued_ms: seen.clock.queued(seen.op), isolate_ms, object_ms }));
 }
 
+/**
+ * @typedef {((req: Request, env: Record<string, any>) => Promise<Response>) & {limits: Readonly<{subrequests: number, cpu_ms: number}>, limitsStatement: string, cronsStatement: string}} PlaneDoor
+ * the Worker's entry, carrying the plane's limits and cron statements
+ */
+/**
+ * The instance's door (R1–R138): routing, admission in R28's order, the stamps through `innerRequest`, and the one envelope.
+ * @param {Record<string, any>} [hooks] what `plane` composes from the arms' owners (plane R6): `publicOp(ctx)` and `gatedOp(ctx)` answer an op whose handler is a module's, or undefined for the forward to the store
+ * @returns {PlaneDoor}
+ */
 export function makeFetch(hooks = {}) {
   /* R25: the door's one outermost catch. */
   /* R50: `seen.session` is set once admission has admitted a member's session, so a refusal answered to it is tallied;
