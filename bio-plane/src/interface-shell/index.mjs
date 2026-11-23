@@ -198,16 +198,11 @@ export const RE_POINTS = Object.freeze({
   /* G53 (fix round 6; K4699): `scanmirror` (on `security`) and `officeconfirm` (on `places`), R117's two, left this table: the
      design's registry lists both now, so the one screen-registry check admits them */
   /* B3 (K4467; screens-inquiry J21, N5): the read of a record stored unread, until the registry lists `readheld` on `document` */
-  document: Object.freeze(["readheld", "resolve"]),
+  document: Object.freeze(["readheld"]),
   /* K5178 (screens-investigate R1, screens-investigate J28 (1)): `linecurrentthrough` on a person's page, stating a holder current through a day, until the registry lists it for `person` */
   person: Object.freeze(["linecurrentthrough"]),
-  /* R134 (K5308; screens-entry R34, screens-inquiry R139): `factconfirm` on `setup` (DEC-439 D-B1, the time-zone step), `leggrade` on
-     `question` (citation R24), and `resolve` on `document` (entities' resolve, "Find the people and offices it names"), each until
-     the registry lists the op on that screen (the registry lists `factconfirm` on `group` and `resolve` on `person` only) */
-  setup: Object.freeze(["factconfirm"]),
-  question: Object.freeze(["leggrade"]),
-  /* R134 (K5310; credentials R83, screens-daily R107): `signerknown` on `queue`, until the registry lists it there */
-  queue: Object.freeze(["signerknown"]),
+  /* R134 (K5308, K5310): its four re-points, `factconfirm` on `setup`, `leggrade` on `question`, `resolve` on `document` and `signerknown` on
+     `queue`, left this table when the registry listed each on its screen (wizard-library #1, PR 1233) */
 });
 /** @type {ReadonlyArray<string>} */
 export const LOCKED_OPS = Object.freeze(["unlock"]);
