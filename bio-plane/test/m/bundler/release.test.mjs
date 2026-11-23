@@ -1,62 +1,31 @@
-/* bundler's release tooling (T19 BOB-5): requirement-named tests at the module's interface,
- * build/requirements/bundler.md R11–R23. R11–R15 are called as functions; R16–R23 are run as the
- * commands an operator runs, against a throwaway fixture repository (`repo.mjs`), with `fetch` stubbed
+/* release's tooling (T19 BOB-5): requirement-named tests at the module's interface,
+ * process/modules/release.md, with bundler R11's every-caller clause. R12 is called as functions; the rest are run as
+ * the commands an operator runs, against a throwaway fixture repository (`repo.mjs`), with `fetch` stubbed
  * (`stubfetch.mjs`), a fake `wrangler`, and a throwaway release key checked by stock `ssh-keygen`.
  * Nothing here reaches a real account or writes the real repository. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, rmSync, existsSync, mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { stripJsonc, parseJsonc } from "../../../scripts/jsonc.mjs";
 import { versionSites, resolveVersion } from "../../../scripts/resolve-version.mjs";
-import { deriveBindings, serviceTargets, deriveLimits, limitsReadBack, deriveCrons } from "../../../scripts/derive-bindings.mjs";
-import { planeMember, discoverMembers, buildMember, manifestFrom, verifyStatic } from "../../../scripts/fleet-bundle.mjs";
+import { deriveBindings, deriveLimits, deriveCrons } from "../../../scripts/derive-bindings.mjs";
+import { planeMember, discoverMembers, verifyStatic } from "../../../scripts/fleet-bundle.mjs";
 import {
   fleetStatement, NS_FLEET, NS_RELEASE, verifySshsig, NS_RELEASE_NOTICE, releaseNoticeStatement, verifyReleaseNotice,
 } from "../../../src/sshsig.mjs";
 import { signSshsig, signerPublicLine } from "../../../scripts/sign-sshsig.mjs";
-import {
-  makeRepo, addMember, addContainerMember, addScannerMember, buildAll, run, snapshot, readJson, writeJson, rm, hex, planeConfig,
-  VERSION, ACCOUNT, PLANE, PLANE_CRON, DIGEST, CONTAINER_PACKAGES, SCANNER_PACKAGES, DIGEST_A, DIGEST_B, scannerClasses, NOTES,
-} from "./repo.mjs";
+import { makeRepo, addMember, addContainerMember, addScannerMember, buildAll, run, snapshot, readJson, writeJson, rm, hex, VERSION, ACCOUNT, PLANE, PLANE_CRON, DIGEST, CONTAINER_PACKAGES, SCANNER_PACKAGES, DIGEST_A, DIGEST_B, scannerClasses, NOTES } from "./repo.mjs";
 
 const refused = (r, code) => {
   assert.notEqual(r.status, 0, `${code}: exits non-zero\n${r.stdout}\n${r.stderr}`);
   assert.ok(r.stderr.includes(`REFUSED [${code}]`), `${code} on stderr:\n${r.stderr}\n${r.stdout}`);
 };
 const tryThrow = (fn) => { try { fn(); } catch (e) { return e; } assert.fail("did not throw"); };
-
-/* ------------------------------------------------------------------------ R11 */
-
-test("R11: stripJsonc removes line and block comments, keeps each line comment's newline, and leaves every quoted string whole", () => {
-  const src = [
-    '{ "$schema": "https://example.test/schema.json", // a comment with "quotes" and \'ticks\'',
-    '  /* a block',
-    '     over lines with // inside */ "a": "x // not a comment", "b": \'y /* not a block */\',',
-    '  "c": "esc \\" // still a string", "d": "back\\\\", // the string closed at the escaped backslash',
-    '  "e": 1 /* inline */ }',
-  ].join("\n");
-  const out = stripJsonc(src);
-  assert.equal(out.split("\n").length, src.split("\n").length - 1 /* the block's newline goes with it */);
-  assert.ok(out.includes('"https://example.test/schema.json"'));
-  assert.ok(out.includes('"x // not a comment"') && out.includes("'y /* not a block */'"));
-  assert.ok(out.includes('"esc \\" // still a string"') && out.includes('"back\\\\"'));
-  assert.doesNotMatch(out, /a comment with|\/\* a block|over lines|inline|closed at/);
-  assert.equal(stripJsonc('"a" // c\n"b"'), '"a" \n"b"', "the line comment's newline is kept");
-  assert.equal(stripJsonc("no comments at all"), "no comments at all");
-});
-
-test("R11: parseJsonc returns the parsed object, or throws naming what did not parse", () => {
-  assert.deepEqual(parseJsonc('// x\n{ "u": "https://a.test//b", /* y */ "n": [1, 2] }\n'), { u: "https://a.test//b", n: [1, 2] });
-  const e = tryThrow(() => parseJsonc("{ broken", "agent-worker/wrangler.jsonc"));
-  assert.ok(e instanceof Error);
-  assert.match(e.message, /^agent-worker\/wrangler\.jsonc did not parse as JSONC: /);
-  assert.match(tryThrow(() => parseJsonc("[")).message, /^config did not parse as JSONC: /);
-});
 
 /* ------------------------------------------------------------------------ R12 */
 
@@ -125,117 +94,9 @@ test("R12: resolveVersionOrExit returns the version, or prints REFUSED [VERSION_
 
 /* ------------------------------------------------------------------------ R13 */
 
-test("R13: deriveBindings emits VERSION and INSTANCE_NAME, the vars, buckets, services (bio-plane becomes the slug), browser, and instance tokens only when given; no Durable Object", () => {
-  const cfg = planeConfig({ version: "0.0.1", services: [{ binding: "SELF", service: "bio-plane" }, { binding: "PDF", service: "pdf-worker" }] });
-  const base = [
-    { type: "plain_text", name: "VERSION", text: "9.9.9" },
-    { type: "plain_text", name: "INSTANCE_NAME", text: "grp" },
-    { type: "plain_text", name: "MODE", text: "fixture" },
-    { type: "r2_bucket", name: "CAPTURES", bucket_name: "c" },
-    { type: "r2_bucket", name: "PUBLISHED", bucket_name: "p" },
-    { type: "service", name: "SELF", service: "grp" },
-    { type: "service", name: "PDF", service: "pdf-worker" },
-    { type: "browser", name: "BROWSER" },
-  ];
-  assert.deepEqual(deriveBindings(cfg, { slug: "grp", version: "9.9.9" }), base, "VERSION is the argument's, never vars.VERSION");
-  assert.deepEqual(deriveBindings(cfg, { slug: "grp", version: "9.9.9", instanceClaudeToken: "c-tok", instanceAiToken: "a-tok" }), [...base,
-    { type: "secret_text", name: "INSTANCE_AI_TOKEN", text: "a-tok" }], "never a Claude credential, even when one is offered (K1502)");
-  assert.deepEqual(deriveBindings(cfg, { slug: "grp", version: "9.9.9", instanceAiToken: "a-tok" }).at(-1),
-    { type: "secret_text", name: "INSTANCE_AI_TOKEN", text: "a-tok" });
-  const all = deriveBindings(cfg, { slug: "grp", version: "9.9.9", instanceClaudeToken: "c", instanceAiToken: "a" });
-  assert.ok(!all.some((b) => b.type === "durable_object_namespace"), "no Durable Object binding");
-  assert.ok(!all.some((b) => /CLAUDE/i.test(b.name) || b.text === "c"), "no Claude credential under any name");
-  const { browser: _b, r2_buckets: _r, services: _s, ...bare } = cfg;
-  assert.deepEqual(deriveBindings({ ...bare, vars: {} }, { slug: "s", version: "1" }),
-    [{ type: "plain_text", name: "VERSION", text: "1" }, { type: "plain_text", name: "INSTANCE_NAME", text: "s" }]);
-});
-
-test("R14: deriveBindings refuses NO_SLUG, NO_VERSION, each declared unknown binding class by name, an unnamed browser, and a phantom target; serviceTargets lists targets but the slug", () => {
-  const cfg = planeConfig();
-  assert.match(tryThrow(() => deriveBindings(cfg, { version: "1" })).message, /^REFUSED \[NO_SLUG\]/);
-  assert.match(tryThrow(() => deriveBindings(cfg, { slug: "s" })).message, /^REFUSED \[NO_VERSION\]/);
-  const classes = ["kv_namespaces", "d1_databases", "queues", "analytics_engine_datasets", "ai", "vectorize", "hyperdrive",
-    "dispatch_namespaces", "mtls_certificates", "send_email", "wasm_modules", "data_blobs", "text_blobs"];
-  for (const k of classes) {
-    const e = tryThrow(() => deriveBindings({ ...cfg, [k]: k === "ai" ? { binding: "AI" } : [{ binding: "X" }] }, { slug: "s", version: "1" }));
-    assert.match(e.message, new RegExp(`^REFUSED \\[UNKNOWN_BINDING_CLASS\\]: wrangler\\.jsonc declares ${k},`), k);
-  }
-  const two = tryThrow(() => deriveBindings({ ...cfg, queues: [{}], hyperdrive: [{}] }, { slug: "s", version: "1" }));
-  assert.match(two.message, /declares queues, hyperdrive,/, "each one named");
-  assert.equal(deriveBindings({ ...cfg, kv_namespaces: [] }, { slug: "s", version: "1" }).length > 0, true, "an empty class is not declared");
-  for (const browser of [{}, { binding: "" }, null, { binding: 3 }])
-    assert.match(tryThrow(() => deriveBindings({ ...cfg, browser }, { slug: "s", version: "1" })).message, /^REFUSED \[BROWSER_BINDING_UNNAMED\]/);
-  assert.match(tryThrow(() => deriveBindings(cfg, { slug: "bio-plane", version: "1" })).message, /^REFUSED \[PHANTOM_TARGET\]/);
-  const b = deriveBindings(planeConfig({ services: [{ binding: "SELF", service: "bio-plane" }, { binding: "A", service: "agent-worker" },
-    { binding: "P", service: "pdf-worker" }] }), { slug: "grp", version: "1" });
-  assert.deepEqual(serviceTargets(b, "grp"), ["agent-worker", "pdf-worker"]);
-});
-
 /* ------------------------------------------------------------------------ R15 */
 
-test("R15: deriveLimits returns subrequests and cpu_ms, refusing a missing or non-positive-integer subrequests and any other key; limitsReadBack's three verdicts; neither makes a request", async () => {
-  const realFetch = globalThis.fetch;
-  globalThis.fetch = () => { throw new Error("R15 made a request"); };
-  try {
-    assert.deepEqual(deriveLimits({ limits: { subrequests: 500, cpu_ms: 30000 } }), { subrequests: 500, cpu_ms: 30000 });
-    assert.deepEqual(deriveLimits({ limits: { subrequests: 50 } }), { subrequests: 50 });
-    for (const cfg of [{}, null, { limits: {} }, { limits: { subrequests: 0 } }, { limits: { subrequests: -5 } },
-      { limits: { subrequests: 1.5 } }, { limits: { subrequests: "500" } }, { limits: { cpu_ms: 10 } }])
-      assert.match(tryThrow(() => deriveLimits(cfg)).message, /^REFUSED \[NO_SUBREQUEST_LIMIT\]/, JSON.stringify(cfg));
-    assert.match(tryThrow(() => deriveLimits({ limits: { subrequests: 5, memory: 1, cpu_ms: 2 } })).message,
-      /^REFUSED \[UNKNOWN_LIMIT_KEY\]: wrangler\.jsonc's limits declares memory,/);
-
-    const want = { subrequests: 500 };
-    for (const s of [null, undefined, "x", {}, { limits: {} }, { limits: { subrequests: null } }])
-      assert.equal(limitsReadBack(s, want).verdict, "UNDETERMINED", JSON.stringify(s));
-    assert.match(limitsReadBack(null, want).why, /could not be read/);
-    assert.match(limitsReadBack({}, want).why, /state no limits\.subrequests/);
-    const mis = limitsReadBack({ limits: { subrequests: 50 } }, want);
-    assert.equal(mis.verdict, "MISMATCH");
-    assert.match(mis.why, /50.*500/);
-    assert.deepEqual(limitsReadBack({ limits: { subrequests: 500 } }, want), { verdict: "MATCH", why: "limits.subrequests 500 read back" });
-  } finally { globalThis.fetch = realFetch; }
-});
-
 /* ------------------------------------------------------------------------ R16 */
-
-test("R16: npm run build writes the plane's bundle and manifest by R5 from the committed sources alone — it renders and embeds no signing page, even beside a stale one — and prints size, SHA-256 and input counts", async () => {
-  const root = await makeRepo({ build: false, members: {} });
-  try {
-    writeFileSync(join(root, "bio-plane/src/plane/index.mjs"),
-      'import { tag } from "../tag.mjs";\nexport default { fetch() { return new Response(tag); } };\n');
-    /* The old entry path, left beside the plane's own: the bundle must not start from it (T20, K846). */
-    writeFileSync(join(root, "bio-plane/src/index.mjs"), 'export { default } from "./plane/index.mjs";\n');
-    /* A committed generated source that its generator would now render differently: a build that ran the generator
-       would rewrite it (R16: it calls no step that generates a source file). */
-    const stale = "export const SIGN_HTML = 'a committed file, whatever it says';\n";
-    writeFileSync(join(root, "bio-plane/src/signpage.mjs"), stale);
-    const r = spawnSync("npm", ["run", "build"], { cwd: join(root, "bio-plane"), encoding: "utf8" });
-    assert.equal(r.status, 0, r.stdout + r.stderr);
-    assert.equal(readFileSync(join(root, "bio-plane/src/signpage.mjs"), "utf8"), stale, "no source file was generated or rewritten by the build");
-    const plane = planeMember(root);
-    const art = readFileSync(join(plane.abs, plane.bundle.outfile));
-    const built = await buildMember(plane);
-    assert.ok(art.equals(built.bytes), "the written bundle is what the recipe builds from the committed sources");
-    const manifest = readJson(join(plane.abs, plane.bundle.manifest));
-    assert.deepEqual(manifest, manifestFrom(plane, built));
-    assert.ok(!manifest.inputs.some((i) => i.path === "src/signpage.mjs"), "no signing page is an input of the bundle");
-    assert.equal(manifest.recipe.entry, "src/plane/index.mjs", "the plane's own entry (plane R6)");
-    assert.ok(manifest.inputs.some((i) => i.path === "src/plane/index.mjs"));
-    assert.ok(!manifest.inputs.some((i) => i.path === "src/index.mjs"), "the old entry is not an input");
-    assert.match(r.stdout, new RegExp(`bio-plane: built dist/bio-plane\\.bundled\\.mjs — ${art.length} B, sha256 ${hex(art)}`));
-    assert.match(r.stdout, new RegExp(`bio-plane: wrote dist/bio-plane\\.bundle\\.json — ${manifest.inputs.length} first-party input\\(s\\), 0 vendored`));
-  } finally { rm(root); }
-});
-
-test("R16: the plane is built from its own entry, the one its wrangler.jsonc's main names, and that file exists", () => {
-  const plane = planeMember();
-  assert.equal(plane.bundle.entry, "src/plane/index.mjs");
-  assert.equal(plane.entry, plane.bundle.entry);
-  assert.ok(existsSync(join(plane.abs, plane.bundle.entry)), "the entry exists in the repository");
-  const cfg = parseJsonc(readFileSync(join(plane.abs, "wrangler.jsonc"), "utf8"), "bio-plane/wrangler.jsonc");
-  assert.equal(cfg.main, plane.bundle.entry, "the bundle and a wrangler deploy start from one module");
-});
 
 /* --------------------------------------------------------------- R17, R18 */
 
@@ -630,7 +491,7 @@ test("R40: --dry-run prints the schedules step with the crons it would set and w
    repository the module's reader is replaced by a MARKED one that also reads a `#` line, a syntax no other JSONC
    reader accepts, and every config carries such a line. A caller reading any config through a copy of its own would
    refuse or crash on it; each command runs as it always does, and the marked reader records that each called it. */
-test("R11: one implementation serves every caller in the module: deploy, resolve-version, deploy-fleet and release-assemble each read every config through it", async () => {
+test("bundler R11: one implementation serves every caller in the module: deploy, resolve-version, deploy-fleet and release-assemble each read every config through it", async () => {
   const root = await makeRepo({ plane: { config: { services: [{ binding: "SELF", service: "bio-plane" }, { binding: "AGENT", service: "alpha-worker" }] } } });
   const work = mkdtempSync(join(tmpdir(), "bundler-r11-"));
   try {
@@ -1030,26 +891,6 @@ test("R23: without --sign the fleet signature comes from --fleet-sig and the pla
 });
 
 /* --------------------------------------------------------- R24, R25, R26 */
-
-test("R24: bundles.mjs surveys a container member with no Worker bundle as listed, not guarded, never stale; one with a bundle is surveyed like any member", async () => {
-  const root = await makeRepo({ build: false });
-  try {
-    addContainerMember(root, "runner", { bundle: false });
-    addContainerMember(root, "hosted");
-    await buildAll(root);
-    const r = bundles(root, ["--check"]);
-    assert.equal(r.status, 0, r.stdout + r.stderr);
-    assert.match(r.stdout, /4 guarded bundle\(s\) — alpha-worker, beta-worker, bio-plane, hosted/);
-    assert.match(r.stdout, /1 container member\(s\) listed, not bundle-guarded \(no Worker bundle\) — runner/);
-    assert.doesNotMatch(r.stdout, /runner: declares no/);
-    const full = bundles(root);
-    assert.equal(full.status, 0, "and a rebuild run has nothing to rebuild and nothing it could not");
-    writeFileSync(join(root, "hosted/src/word.mjs"), 'export const word = "moved";\n');
-    const stale = bundles(root, ["--check"]);
-    assert.equal(stale.status, 1);
-    assert.match(stale.stdout, /1 of 4 bundle\(s\) are STALE — hosted/);
-  } finally { rm(root); }
-});
 
 test("R22: a worker member that declares no bundle block refuses NO_ARTIFACT, never drops out of the release", async () => {
   const root = await makeRepo();

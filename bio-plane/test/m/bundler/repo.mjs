@@ -4,10 +4,7 @@
  * install, a fake `wrangler` that records what it was asked, and signatures' files it reads. Nothing here
  * touches the real repository or a real account. */
 import { spawnSync } from "node:child_process";
-import {
-  mkdtempSync, mkdirSync, writeFileSync, readFileSync, copyFileSync, symlinkSync, rmSync, readdirSync, statSync,
-  chmodSync, existsSync,
-} from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, symlinkSync, rmSync, readdirSync, statSync, chmodSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, dirname, relative } from "node:path";

@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync, rmSync, existsSync, mkdtempSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync, mkdtempSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -14,10 +14,7 @@ import { npmProductionPackages, containerDescriptor, discoverMembers } from "../
 import { thirdPartyInventory, checkAdvisories, run as advisories, DECLARATION } from "../../../scripts/release-advisories.mjs";
 import { signerPublicLine } from "../../../scripts/sign-sshsig.mjs";
 import { osvFetch } from "./osvstub.mjs";
-import {
-  makeRepo, addMember, addContainerMember, addScannerMember, buildAll, run, snapshot, readJson, writeJson, rm, hex, VERSION, DIGEST,
-  CONTAINER_LOCK, CONTAINER_PACKAGES, PLANE, REAL_ROOT, SCANNER_PACKAGES, SCANNER_STATEMENTS, BASE_A,
-} from "./repo.mjs";
+import { makeRepo, addMember, addContainerMember, addScannerMember, buildAll, run, snapshot, readJson, writeJson, rm, hex, DIGEST, CONTAINER_LOCK, CONTAINER_PACKAGES, REAL_ROOT, SCANNER_PACKAGES, SCANNER_STATEMENTS, BASE_A } from "./repo.mjs";
 
 const OSVSTUB = join(dirname(fileURLToPath(import.meta.url)), "osvstub.mjs");
 const refused = (r, code) => {
