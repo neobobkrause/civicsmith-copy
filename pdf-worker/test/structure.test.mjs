@@ -1,7 +1,7 @@
 /* pdf-worker's HTTP surface: R1–R12, R35–R38 and R41 of build/requirements/pdf-worker.md.
  *
- * The subject is a fresh build of the source by the committed bundle's own recipe (`subject.mjs`); that the committed
- * `dist/pdf-worker.bundled.mjs`, the file that deploys, equals such a build is `fleetbundles.test.mjs`'s guard. It is driven two ways: under miniflare (workerd, the runtime it
+ * The subject is a fresh build of the source by the bundle's own recipe (`subject.mjs`); `dist/pdf-worker.bundled.mjs`,
+ * the file that deploys, is built by the same recipe and never committed (R45). It is driven two ways: under miniflare (workerd, the runtime it
  * serves in) for the behaviour of each route, and imported into node with a
  * recording `env` where the question is what the Worker touches (R1, R37). */
 import "../../bio-plane/test/sandbox.mjs";

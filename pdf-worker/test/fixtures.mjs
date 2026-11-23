@@ -11,6 +11,7 @@ import { hex } from "./make-pdf.mjs";
 
 const MIXED = fileURLToPath(new URL("../../bio-plane/test/fixtures/cpdf20/legistar-73545.pdf", import.meta.url));
 
+/** @returns {Promise<any>} the worker's parsed `POST /structure` answer for the mixed legistar PDF */
 export async function tier2Answer() {
   const { BUNDLE } = await import("./subject.mjs");
   const worker = (await import(pathToFileURL(BUNDLE).href)).default;

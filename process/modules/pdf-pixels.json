@@ -15,7 +15,9 @@
     "pdf-worker/test/fixtures/jbig2-scan-page.pdf",
     "pdf-worker/test/fixtures/jpx-scan-page.pdf",
     "pdf-worker/test/fixtures/picture-variants.json",
-    "pdf-worker/test/fixtures/make-picture-fixtures.py"
+    "pdf-worker/test/fixtures/make-picture-fixtures.py",
+    "pdf-worker/test/jbig2.test.mjs",
+    "pdf-worker/test/jpx.test.mjs"
   ],
   "public": [
     "pdf-worker/src/imagecrop.mjs",

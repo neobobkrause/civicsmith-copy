@@ -1,7 +1,8 @@
 /* Rebuilds the measured-document fixtures (R13) from the PDFs themselves.
  *
  * Not run by the tests. Usage, from the repository root, with the four PDFs
- * fetched from the addresses below and `pdf-worker`'s dependencies installed:
+ * fetched from the addresses below and `bio-plane`'s dependencies installed
+ * (`test-support` carries `unpdf` there, at the version `pdf-worker` pins):
  *   node budget-doctypes/test/fixtures/build.mjs <dir holding a24.pdf a14.pdf a19.pdf bb23.pdf>
  *
  * Each fixture holds the selected pages' text as the plane's PDF path supplies
@@ -18,11 +19,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..", "..", "..");
 if (typeof Math.sumPrecise !== "function") Math.sumPrecise = (a) => { let s = 0; for (const x of a) s += x; return s; };
-const { getDocumentProxy, extractText } = await import(pathToFileURL(join(root, "pdf-worker/node_modules/unpdf/dist/index.mjs")).href);
+const { getDocumentProxy, extractText } = createRequire(join(root, "bio-plane/package.json"))("unpdf");
 const { extractPdfStructure } = await import(pathToFileURL(join(root, "bio-plane/src/pdfstructure.mjs")).href);
 
 const ACFR = "https://www.oaklandca.gov/files/assets/city/v/1/finance/documents/financial-reporting/annual-comprehensive-financial-reports/";

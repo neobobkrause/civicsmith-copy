@@ -1,11 +1,12 @@
 /* op-grades' tests: the ops and codes of other modules, read from this module's own requirements or its own tables, never
-   typed here (K3268, BOB K4069, K4076). This module uses nothing (P4): `op-declarations` merges after it, so no test imports
-   a declaration of another module; what a requirement of this module states, in backticks or as plain words, is the
-   contract, and the tables are the data under test. */
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+   typed here (K3268, BOB K4069, K4076). The owners of declared ops all come after this module in the order, so no test here
+   reads one: owners' rows are found only through test-support's collector bounded to this module (`registeredWith`), and an
+   owner's row a test needs is scripted from that owner's requirement. What a requirement of this module states, in backticks
+   or as plain words, is the contract, and the tables are the data under test. */
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
+import { declaredOpsOf } from "../../../test/declared-ops.mjs";
 
 /* ---- this module's own requirements ------------------------------------------------------------------------------- */
 const REQ_LINES = readFileSync(new URL("../../../../build/requirements/op-grades.md", import.meta.url), "utf8").split("\n");
@@ -77,51 +78,32 @@ export const declaredSentence = (module, op) => word(`${module}.declared.${op}`)
 export const doesSentence = (op) => (hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : null);
 
 /* ---- the owners' declarations (R49, R50) ------------------------------------------------------------------------- */
-/** Every module's `DECLARED_OPS`, found from `build/modules.json` with no module listed by hand, as `{ops, owners}` (an op's
- *  row, and the module that declares it); a module declaring an op twice is `duplicates`. This is the same search as
- *  test-support's `declaredOpsOf` (R16), kept here because this module uses nothing but `setup-words` (P4): only a test reads
- *  other modules' files, by path, and only to hand their rows to `registerDeclaredOps`. */
-export async function collectDeclaredOps(root) {
-  const { modules } = JSON.parse(readFileSync(join(root, "build", "modules.json"), "utf8"));
-  const ops = {}, owners = {}, who = {};
-  const filesOf = (path) => {
-    const abs = join(root, path);
-    if (!statSync(abs).isDirectory()) return [abs];
-    return readdirSync(abs, { withFileTypes: true }).filter((e) => e.name !== "node_modules").flatMap((e) => (e.isDirectory() ? filesOf(join(path, e.name)) : /\.(mjs|js)$/.test(e.name) ? [join(abs, e.name)] : []));
-  };
-  for (const mod of modules) for (const path of mod.paths ?? []) for (const file of filesOf(path)) {
-    if (!/^export const DECLARED_OPS\b/m.test(readFileSync(file, "utf8"))) continue;
-    for (const [op, row] of Object.entries((await import(pathToFileURL(file).href)).DECLARED_OPS)) {
-      (who[op] ??= []).push(mod.id);
-      if (!(op in ops)) { ops[op] = row; owners[op] = mod.id; }
-    }
-  }
-  return { ops, owners, duplicates: Object.entries(who).filter(([, ids]) => ids.length > 1).map(([op, ids]) => ({ op, owners: ids })) };
-}
-
-/* ---- the registered instance (R42, R46; B27) --------------------------------------------------------------------------- */
+const ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 let registeredN = 0;
-/** A fresh instance of this module with every owner's `DECLARED_OPS` registered (R49, R50), so the rungless acts are the acts
- *  no owner grades either: a grade an owner declares is read from the registered tables, never typed here. */
-export async function registeredOpGrades() {
-  const { ops, owners, duplicates } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
+/** A fresh instance of this module, registered (R49, R50) with the owners' rows a test of this module may read: test-support's
+ *  bounded collector (its R16) up to `op-grades` in the module order, so no later module is reached, and `doubles` (an object
+ *  from a module id to scripted rows, written from that owner's requirement) for each op the bound does not reach. A refused
+ *  registration propagates, naming what it refused.
+ *  @param {Object<string, Object<string, Object>>} [doubles] scripted owner rows by module id, then by op
+ *  @returns {Promise<Object>} the registered instance of this module
+ *  @throws {Error} when an op is declared twice, or the registration refuses a row (its `code` names why) */
+export async function registeredWith(doubles = {}) {
+  const { ops, owners, duplicates } = await declaredOpsOf(ROOT, "op-grades");
   if (duplicates.length) throw new Error(`an op declared twice: ${JSON.stringify(duplicates)}`);
   const byOwner = {};
   for (const [op, row] of Object.entries(ops)) (byOwner[owners[op]] ??= {})[op] = row;
+  for (const [mod, rows] of Object.entries(doubles)) for (const [op, row] of Object.entries(rows)) if (!(op in ops)) (byOwner[mod] ??= {})[op] = row;
   const m = await import(`../../../src/op-grades/index.mjs?registered=${registeredN++}`);
   m.registerDeclaredOps(byOwner);
   return m;
 }
 
-/** op-declarations' alias table (R17, B27), read by path as the other modules' rows are: a test reads it, the module imports nothing. */
-export async function declaredAliases() {
-  const path = join(new URL("../../../../", import.meta.url).pathname, "bio-plane", "src", "op-declarations", "index.mjs");
-  return (await import(pathToFileURL(path).href)).OP_ALIASES;
-}
+/** A scripted owner row (R49's shape): `weight` a rung, a ground or `read`, `description` a word key or a sentence.
+ *  @param {string} weight
+ *  @param {string} description
+ *  @returns {{classes: string[], mutating: boolean, weight: string, description: string}} */
+export const ownerRow = (weight, description) => ({ classes: ["admin", "member"], mutating: weight !== "read", weight, description });
 
-/** The ops of a NON_ACTS table that their owner declares a read (`weight: "read"`), in table order, each with its owner. A read
- *  its owner words without the "read: " lead holds the owner's sentence (K4168), so it is found by the declaration, not the lead. */
-export async function ownerReads(table) {
-  const { ops, owners } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
-  return Object.keys(table).filter((op) => ops[op]?.weight === "read").map((op) => ({ op, owner: owners[op], sentence: ops[op].description }));
-}
+/** The registry fixture's one act that only its owner grades, scripted: `strengthbarset`, Reasoned (`strength` R40, declared
+ *  and graded through `op-declarations` and this module, T47). An act its owner grades is not rungless, so needs no mark (B27). */
+export const REGISTRY_OWNER_ROWS = { strength: { strengthbarset: ownerRow("reasoned", "a fixture sentence for an act its owner declares") } };

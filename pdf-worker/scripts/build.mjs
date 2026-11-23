@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-/* Build the pdf-worker into ONE self-contained module. The output is committed
- * so a fresh worktree's suite (`test/structure.test.mjs`) can load it under
- * miniflare without installing `unpdf` — exactly as the plane commits
- * dist/bio-plane.bundled.mjs.
+/* Build the pdf-worker into ONE self-contained module, in `dist/`. The output is
+ * never committed (R45; ARCH's decision "Committed built files", 22 Nov 2026):
+ * `dist/` holds only a `.gitignore`, and whatever needs the bundle — a test, a
+ * deployment, a release — builds it here first by running this script.
  *
  * `unpdf` (pdf.js) is INLINED here and never enters the plane's module graph:
  * that separation is the whole point of the fleet (adding unpdf to the plane
@@ -18,12 +18,9 @@
  * expression of the recipe, or the build and the guard can disagree and the
  * guard is the one that would be wrong.**
  *
- * This step now also writes `dist/pdf-worker.bundle.json` — the artifact's
- * sha256, its byte length, the exact recipe, and the sha256 of every input — so
- * the staleness check runs on a checkout with no `node_modules` at all. This
- * member had committed a bundle since 2026-07-31 with nothing asserting it
- * matched its source; DIST measured that gap on 2026-09-10 and it is what FL-9
- * closes for BOTH members.
+ * This step also writes `dist/pdf-worker.bundle.json` — the artifact's sha256,
+ * its byte length, the exact recipe, and the sha256 of every input — beside the
+ * bundle it describes.
  *
  * Run from pdf-worker/: `npm run build`.
  */
