@@ -208,7 +208,7 @@ export function registryActGaps({ screens = [], declared = [] } = {}) {
 /** R13 (DEC-139 (5)): the registry's screens as `[{id, name, purpose, acts, owed}]`: `acts` the op of each act marked
  *  `declared` or `function`, in the file's order; `owed` each act marked `owed`, `{op, dec, at}`, `at` the number of
  *  `acts` that precede it, so an owed act whose op is declared is registered in the file's order (R13; DEC-148).
- *  @param {RegistryFile} file
+ *  @param {RegistryFile | null | undefined} file
  *  @returns {RegistryScreen[]} */
 export function screensFromFile(file) {
   const out = [];
