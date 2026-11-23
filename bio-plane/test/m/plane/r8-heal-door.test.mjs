@@ -27,7 +27,7 @@ after(() => Promise.all(live.map((m) => m.dispose().catch(() => {}))));
 
 /** a world: the scanner answers `/scan` after `scanMs` and says when a scan is in flight */
 async function world({ scanMs = 0 } = {}) {
-  const flight = { scanning: false, scans: 0 };
+  const flight = { scanning: false, scans: 0, down: false };
   const mf = new Miniflare({
     modules: true, modulesRoot: "/", scriptPath: ENTRY, script: readFileSync(ENTRY, "utf8"),
     modulesRules: [{ type: "ESModule", include: ["**/*.mjs"] }],
@@ -38,6 +38,7 @@ async function world({ scanMs = 0 } = {}) {
     durableObjectsPersist: mkdtempSync(join(tmpdir(), "plane-r8-heal-")),
     serviceBindings: { FILE_SCANNER: async (req) => {
       const u = new URL(req.url), body = req.method === "POST" ? await req.json() : null;
+      if (u.pathname === "/scan" && flight.down) return new Response("down", { status: 503 });   /* a scanner that is down: the scan stays owed */
       if (u.pathname === "/scan") {
         flight.scanning = true; flight.scans++;
         await sleep(scanMs);
@@ -59,7 +60,7 @@ async function world({ scanMs = 0 } = {}) {
   const doc = uj.result ?? uj;
   const filed = await (await stub.fetch("http://do/r8/file", { method: "POST", body: JSON.stringify({ document: doc.document, sha: doc.capture.sha256, bytes: doc.capture.bytes }) })).json();
   assert.equal(filed.ok, true, JSON.stringify(filed).slice(0, 300));
-  return { mf, flight, get, door, member, founder, stub };
+  return { mf, flight, get, door, member, founder, stub, sha: doc.capture.sha256 };
 }
 /** the first firing has ended (a row is owed and the alarm stands armed or spent): the starting position of a lost alarm */
 /** the firing a request started has ended (its health says it is not running): the same-run signal the arm is read at */
@@ -67,8 +68,22 @@ async function firingEnded(w) {
   for (let i = 0; i < 480; i++) { const s = await w.get("rows"); if (!s.health || !s.health.running_since) return; await sleep(250); }
   assert.fail("the firing the read started did not end");
 }
+/* The first firing may read the whole text (the ledger reads 4 MB in one pass today), leaving nothing owed; a scan of the filed digest is then owed through the
+   ledger's own registrar, as the door registers one, with the scanner down, so it stays owed and the lost alarm always has work behind it. */
 async function settled(w) {
-  for (let i = 0; i < 480; i++) { const s = await w.get("rows"); if (s.health && s.health.last_run && !s.health.running_since && s.pending.length) return s; await sleep(250); }   /* up to 120 s: a whole-directory run is loaded, and the first firing is slower there */
+  for (let i = 0; i < 480; i++) {
+    const s = await w.get("rows");
+    if (s.health && s.health.last_run && !s.health.running_since) {
+      if (s.pending.length) return s;
+      w.flight.down = true;
+      const owed = await (await w.stub.fetch("http://do/r8/owe", { method: "POST", body: JSON.stringify({ sha: w.sha, kind: "scan" }) })).json();
+      assert.equal(owed.ok, true, "a scan is owed: " + JSON.stringify(owed));
+      await firingEnded(w);
+      const t = await w.get("rows");
+      if (t.pending.length) return t;
+    }
+    await sleep(250);
+  }   /* up to 120 s: a whole-directory run is loaded, and the first firing is slower there */
   assert.fail("the first firing did not end with a row owed");
 }
 async function lose(w) {   /* the alarm is lost: deleted, a row owed, and no firing in flight that re-arms it (K4787: a firing begun before the delete

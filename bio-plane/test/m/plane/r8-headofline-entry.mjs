@@ -86,6 +86,8 @@ export class Headline extends Store {
       sql.exec("INSERT INTO sessions (token_sha, role, expires, created, device, last_active) VALUES (?,?,?,?,?,?)", sha256HexSync(token), ANN, now + 3_600_000, new Date(now).toISOString(), "shared", now);
       return json({ token });
     }
+    /* plane R102's tests: work on a filed digest (a reading, a scan) owed through the ledger's own registrar (`pendingOf(ctx).owe`, store-assembly R77), the same row the door registers */
+    if (step === "owe") { const { sha, kind = "reading" } = await req.json(); return json(await pendingOf(this.ctx).owe({ kind, sha })); }
     if (step === "kill-alarm") { await this.ctx.storage.deleteAlarm(); return json({ deleted: true }); }
     return json({ error: "no such step" }, 404);
   }
