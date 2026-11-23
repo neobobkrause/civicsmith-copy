@@ -20,7 +20,8 @@ const FIGURES = {
 };
 
 test("R41: sha256 of the recommender's prompt is its pinned digest, the one the recorded runs read", () => {
-  assert.match(RECOMMEND_PROMPT_SHA256, /^[0-9a-f]{64}$/);
+  assert.notEqual(RECOMMEND_PROMPT_SHA256, null, "a null digest says the prompt passed no measurement");
+  assert.match(String(RECOMMEND_PROMPT_SHA256), /^[0-9a-f]{64}$/);
   assert.equal(sha(RECOMMEND_PROMPT), RECOMMEND_PROMPT_SHA256);
   assert.equal(RECOMMEND_PROMPT_SHA256, PROMPT_SHA256);
   assert.ok(RECORD.includes(RECOMMEND_PROMPT_SHA256), "the record names the digest it measured");
