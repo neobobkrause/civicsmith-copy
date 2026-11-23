@@ -1783,6 +1783,8 @@ export function makeFetch(hooks = {}) {
       if (verdict.verdict === "deferred" || (verdict.verdict !== "stated" && readingWontFit(r.document))) return owed();
       /* R131: the gate admitted it: one inline read, its start written BEFORE the await; it makes no OCR call (extraction's `read` default, R131) */
       logRead("start", r.document, verdict);
+      /* R130 (R-LOG): `upload_read` is written before the slow await as well as after it */
+      try { console.log(JSON.stringify({ event: "upload_read", sha, phase: "start", pending: false, more: false, ocr_left: null, tier3_candidate: false })); } catch { /* a log is status */ }
       let read;
       try {
         read = await acquireReadingOp({ ok: true, document: r.document }, stub, { json, storeSilent, doAnswer, storeName,
