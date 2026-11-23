@@ -1,4 +1,4 @@
-Length: 52 lines. Last section: "4. What is not known".
+Length: 42 lines. Last section: "4. What is not known".
 
 # The plane module's scope: design
 
@@ -29,6 +29,8 @@ ARCH may split either further by run time. Gives: plane's own run takes minutes;
 **C. Move proof back to the owner modules by rewriting tests to run in plain Node with stand-ins.** store-assembly's Node store and a stand-in for the door's hooks. Gives: an owner's own job proves its requirement. Costs: rewriting up to 86 tests (about 14,000 lines); a stand-in can drift from the real program, so the real-shape checks still have to stay at the end; it narrows what the owner's real-shape ruling asked for.
 
 **Recommendation: B.** It puts plane back to its purpose at once, takes plane's run far from the limit, and keeps every proof on the real program, as the owner ruled. C is not ruled out: where a module's job can prove its own requirement in its own tests without a stand-in that drifts, it does so as part of meeting that requirement; the whole-program proof stays at the end beside it.
+
+**ARCH's answer (ARCH #11, 23 Nov 2026): B can be built as given**, on these terms. Both modules sit directly after plane and before `release`: the platform-shape module, then the door module; plan the door module as two (door A and door B) from the start, split further if a whole run passes about 20 minutes on GitHub. Every test there names a requirement of its own module, which ARCH writes, restating a whole-program proof and naming the owner's requirement it carries; a test without one stays with its owner or goes to ARCH. The group C kits are their code; files change owner by naming paths in the new entries, none moves. Cost stated plainly: both use nearly every earlier module, so nearly every provider change tells them: frequent short jobs with whole-module runs. A2's 10 store-only tests are judged at the build (back to `store-assembly` if they need only its store). Nothing is built while the halt stands or before the owner chooses; on B, ARCH makes the list change in one pull request, rewrites its "Module list" decision in place, and plane #1's pull request keeps only A1.
 
 Either way, plane's requirements file is corrected: its Purpose sentence and Uses still describe what moved to `store-assembly` (research 01, item 3). That is ARCH's requirement text.
 
