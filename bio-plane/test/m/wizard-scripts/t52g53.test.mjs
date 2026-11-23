@@ -51,7 +51,7 @@ test("R50 (T51 fix round 6; G53; DEC-419; amends R49) the registry re-taken at f
       assert.ok(now.acts.includes(a.op), `${s.id}: ${a.op} still registered`);
     }
   }
-  assert.equal(acts.length - 564, 92, "control: the diff adds acts only (564 to 656), but for dash-action's taskresolve (R53)");
+  assert.equal(acts.length - 564, 98, "control: the diff adds acts only (564 to 662), but for dash-action's taskresolve (R53)");
   assert.equal(run("--check").status, 0, "the carried generated files are what their sources give");
 });
 
@@ -61,7 +61,7 @@ test("R50 control: a one-byte change to the generated registry fails --check, an
     for (const f of GENERATED) copyFileSync(join(GEN_DIR, f), join(dir, f));
     assert.equal(run("--check", "--out", dir).status, 0, "the copies of the carried files pass");
     const path = join(dir, "screen-registry.mjs");
-    writeFileSync(path, readFileSync(path, "utf8").replace("b1adf4236d", "b1adf4236e"));
+    writeFileSync(path, readFileSync(path, "utf8").replace("e5feed33be", "e5feed33bf"));
     const r = run("--check", "--out", dir);
     assert.equal(r.status, 1, "a one-byte change to the generated registry fails --check");
     assert.match(r.stderr, /screen-registry\.mjs is stale/);
@@ -73,10 +73,10 @@ test("R50 control: a one-byte change to the generated registry fails --check, an
   assert.equal(wz.FRONT_DOORS_SOURCE.commit, "1cc4a957f0");
 });
 
-test("R53 (T51 fix round 10; DEC-438; SCREENS-INVESTIGATE #25 J45; K5302; amends R50) the registry is re-taken at b1adf4236d: SCREEN_REGISTRY_SOURCE names that commit, with 91 screens and 656 acts (452 declared, 83 function, 121 owed; 105 owed ops); standard registers standardinforcethrough, standardinforcethroughwithdraw, standardadoption, standardimpose and standardbenchmark; every act of c752a602da is still registered, kept whole beside it; the library and the front doors are unchanged; build-data.mjs --check passes", () => {
-  assert.equal(SOURCES.registry.commit, "b1adf4236d");
-  assert.equal(wz.SCREEN_REGISTRY_SOURCE.commit, "b1adf4236d");
-  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 656, 452, 83, 121]);
+test("R53 (T51 fix round 10; DEC-438; SCREENS-INVESTIGATE #25 J45; K5302; amends R50) the registry is re-taken at b1adf4236d and carried on at the pin R50 names (e5feed33be): SCREEN_REGISTRY_SOURCE names that commit, with 91 screens and 662 acts (459 declared, 82 function, 121 owed; 105 owed ops); standard registers standardinforcethrough, standardinforcethroughwithdraw, standardadoption, standardimpose and standardbenchmark; every act of c752a602da is still registered, kept whole beside it; the library and the front doors are unchanged; build-data.mjs --check passes", () => {
+  assert.equal(SOURCES.registry.commit, "e5feed33be");
+  assert.equal(wz.SCREEN_REGISTRY_SOURCE.commit, "e5feed33be");
+  assert.deepEqual([wz.SCREEN_REGISTRY.length, acts.length, count("declared"), count("function"), count("owed")], [91, 662, 459, 82, 121]);
   assert.equal(new Set(acts.filter((a) => a.status === "owed").map((a) => a.op)).size, 105);
   const standard = wz.SCREEN_REGISTRY.find((s) => s.id === "standard");
   for (const op of ["standardinforcethrough", "standardinforcethroughwithdraw", "standardadoption", "standardimpose", "standardbenchmark"])
