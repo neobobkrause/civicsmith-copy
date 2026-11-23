@@ -163,7 +163,8 @@ export const setup = {
           + explained(cs.field("su-handle", S + "handle", { help: S + "handle.help", autocomplete: "username" }), S + "handle.tip")
           + cs.field("su-pw", S + "own", { type: "password", help: S + "own.help", autocomplete: "new-password" })
           + cs.field("su-pw2", "screen.entry.again", { type: "password", help: S + "again.help", autocomplete: "new-password" })
-          + `<div class="mk-acts">${cs.act("claim", { tone: "primary", label: S + "claim.button" })}</div>`;
+          // R9 (interface-shell R11): the claim is labelled by its act key, act.claim.label.setup
+          + `<div class="mk-acts">${cs.act("claim", { tone: "primary" })}</div>`;
         // only part 1 is open; the seven that follow are shown closed beneath it
         return part(1, "claim", S + "claim", S + "part.claim.why", "needed", claim, { open: true, skip: false })
           + `<p class="mk-note">${W(S + "coming")}</p><div>`

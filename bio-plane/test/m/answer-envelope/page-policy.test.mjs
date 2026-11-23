@@ -241,8 +241,10 @@ test("R6 (K4359) a page with no inline script and the script's hash handed in is
 
 test("R6 (K4359) control: another HTML route keeps its nonce; a page that still carries an inline script keeps it even when a hash is handed in; no hashes, or a malformed one, keep it", async () => {
   const inline = '<!doctype html><script>x()</script>';
-  for (const [page, opts] of [[inline, { scriptHashes: [HASH] }], [hashPage, {}], [hashPage, { scriptHashes: [] }], [hashPage, { scriptHashes: ["sha256-short"] }],
-                              [hashPage, { scriptHashes: [HASH, "nope"] }], [`<!doctype html><script nonce="${M.NONCE_SLOT}" src="/a.js"></script>`, { scriptHashes: [HASH] }]]) {
+  /** @type {Array<[string, {scriptHashes?: string[]}]>} */
+  const pages = [[inline, { scriptHashes: [HASH] }], [hashPage, {}], [hashPage, { scriptHashes: [] }], [hashPage, { scriptHashes: ["sha256-short"] }],
+                              [hashPage, { scriptHashes: [HASH, "nope"] }], [`<!doctype html><script nonce="${M.NONCE_SLOT}" src="/a.js"></script>`, { scriptHashes: [HASH] }]];
+  for (const [page, opts] of pages) {
     const r = await M.withPagePolicy(html(page), opts);
     const body = await r.text();
     const { nonce } = judge(r.headers.get("content-security-policy"), body, "control");
