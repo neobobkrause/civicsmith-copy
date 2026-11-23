@@ -24,7 +24,8 @@ const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 /** The screen at `path` drawn `width` px wide over `plane(o)` (op to answer or function, as the fixtures); `controls` are the words (already
  *  read through `word`) of the buttons and links to measure. Answers `{ mainScroll, over, small, boxes }`: the main area's scroll width, the
  *  visible elements of the main area that run past the screen, the controls (links, buttons) smaller than 44 px either way, and for each of
- *  `controls` the box of each visible control whose text holds it (`{ left, right, width, height }`, rounded). `before(page)` may act first. */
+ *  `controls` the box of each visible control whose text holds it (`{ left, right, width, height }`, rounded). `before(page)` may act first.
+ *  @param {{ path?: string, o?: Object<string, *>, width?: number, controls?: string[], before?: ((page: *) => *) | null }} args */
 export async function onPhone({ path, o = {}, width = 390, controls = [], before = null }) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");

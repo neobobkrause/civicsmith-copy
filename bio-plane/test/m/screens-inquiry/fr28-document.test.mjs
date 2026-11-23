@@ -191,8 +191,8 @@ test("R92 control: none chosen sends nothing and refuses in place, naming the mi
 /** What `screens-intake`'s drawing gives for an answer: its word where the table holds one, else the key it draws (the module owns both). */
 const outcomeWords = (status, note, title = "Pothole repair policy, Administrative Instruction 4.12") => {
   const key = "screen.capture.address.checked." + (status || "unknown");
-  const fills = status ? { title } : { title, note };
-  return hasWord(key) ? word(key, fills) : key;
+  if (!hasWord(key)) return key;
+  return status ? word(key, { title }) : word(key, { title, note });
 };
 test("R93 Check now draws what the check found: four answers draw four different outcomes through the drawing screens-intake owns", async () => {
   const page = (body) => async () => new Response(`<html><head><title>Council minutes</title></head><body>${body}</body></html>`, { status: 200, headers: { "content-type": "text/html" } });
