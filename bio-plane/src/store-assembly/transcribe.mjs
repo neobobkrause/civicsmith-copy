@@ -128,7 +128,7 @@ export async function renderPages(bytes, pages, render = renderPageToPixels, pic
   return (await renderAsked(bytes, pages, render, picture)).sent;
 }
 
-/** R36's AI path for one act of `member`, on this object: `transcribe({account, capture_sha, store, pages, use})`.
+/** R36's AI path for one act of `member`, on this object: `transcribe({account, capture_sha, pages})`, the arguments it reads.
  *  `onSha` hears the capture's digest, so the act's id can carry it. */
 function aiPath(ctx, env, { member, at, act, onSha, trace = null, memberRef = null }) {
   return async function transcribe({ account = null, capture_sha = null, pages = [] } = {}) {

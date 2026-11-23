@@ -65,7 +65,7 @@ test("K2046 (tasks R18's back-off): an event that keeps failing is retried at la
   assert.equal(unpackDueAt({ attempts: 1, lastTry: "2026-10-07T12:00:00Z" }, now), T0 + UNPACK_BACKSTOP_MS);
   assert.equal(unpackDueAt({ attempts: 3, lastTry: "2026-10-07T12:00:00Z" }, now), T0 + UNPACK_BACKSTOP_MS * 4);
   assert.equal(unpackDueAt({ attempts: UNPACK_RETRY_LIMIT, lastTry: "2026-10-07T12:00:00Z" }, now), null);
-  assert.deepEqual([[200, { ok: true }], [200, { ok: false }], [400, {}], [404, {}], [408, {}], [429, {}], [500, {}], [0, null]]
+  assert.deepEqual(/** @type {Array<[number, any]>} */ ([[200, { ok: true }], [200, { ok: false }], [400, {}], [404, {}], [408, {}], [429, {}], [500, {}], [0, null]])
     .map(([s, b]) => unpackOutcome(s, b)), ["remove", "attempt", "remove", "remove", "attempt", "attempt", "attempt", "attempt"]);
 });
 

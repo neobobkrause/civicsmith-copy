@@ -142,6 +142,9 @@ export const FIRST_LAYER_11 = "wizard-scripts";
    `legacy-store`'s, so every step's checks and projections, and the order of refusals, are today's. Promotion ranks a name
    the order lacks last (its R39). `stepOrderFrom(order)` is the rule for any order a test hands it (R10); `STEP_ORDER` is
    its answer for `MODULE_ORDER`. */
+/** R2, R10: the step order for `order`.
+ * @param {any} order the modules' total order, a list of names
+ * @returns {readonly any[]} */
 export const stepOrderFrom = (order) => {
   const o = order.filter((m) => m !== STEP);
   const at = o.indexOf(FIRST_LAYER_11);
@@ -158,7 +161,10 @@ const MINT_LEDGER_LIVE = Object.freeze([["PROJ", "bundles", "bundle_id"]]);
  *  on the room's name only), and a Durable Object's id equals the one it was named by. It answers the LOGICAL name
  *  (`"bio"` inside `bio~g2`), so every `store=`, evidence prefix and published prefix is unchanged. Null for any other
  *  object (a suite's private instance), never a guess: a default here would let a resumed run touch the real record
- *  while the run lived in scratch. Pure. */
+ *  while the run lived in scratch. Pure.
+ * @param {any} ctx the Durable Object's state
+ * @param {any} env its bindings, `STORE` read
+ * @returns {string | null} `bio`, `scratch` or null */
 export function namespaceOf(ctx, env) {
   const ns = env && env.STORE;
   if (!ns || typeof ns.idFromName !== "function" || !ctx || !ctx.id || typeof ctx.id.equals !== "function") return null;
@@ -190,13 +196,27 @@ const captureClockOf = (ctx, env) => {
   return held.now;
 };
 
+/**
+ * R1: what the owed-work ledger hands the delivery of an owed render or fetch, and what it answers: the kind of
+ * `control-plane`'s `deliverOwedRender` (its R124), stated here because `control-plane` comes after this module.
+ * @typedef {(args: {ctx: any, env: Record<string, any>, storeName: string, answer?: any, session?: string}) => Promise<{ok: boolean, bundleId?: string, existed?: boolean, reading_pending?: boolean, reason?: string}>} OwedDelivery
+ */
+/**
+ * R1: the options `assembleStore` takes.
+ * @typedef {Object} AssemblyOptions
+ * @property {OwedDelivery | null} [deliver] the owed-render delivery handed to the owed-work ledger; absent or null, a row that needs it stays owed (R67)
+ * @property {string[] | null} [releaseKeys] the public keys (`ssh-ed25519 <key> <name>` lines) a release notice is verified against in place of the product's; absent or null, the product's
+ */
 /** R1: every module of the record store built on `ctx`'s storage, migrated and started; answers the assembled store
  *  `{routes, dispatch, namespace, nowMs, read}`. `deliver`, optional, is `control-plane`'s owed-render delivery
  *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `releaseKeys`,
  *  optional and a test's own, is the list of keys instance-setup verifies a release notice against in place of the
  *  product's (`RELEASE_KEYS`): the Durable Object class hands none. The
  *  migration and the starts are work handed to `ctx.blockConcurrencyWhile`, so they run before any request; a module that
- *  fails to build throws here, and the class that called it answers nothing. */
+ *  fails to build throws here, and the class that called it answers nothing.
+ * @param {any} ctx the Durable Object's state as the runtime hands it (the surface R90 lists)
+ * @param {any} env its bindings, each optional and read where it is used
+ * @param {AssemblyOptions} [options] */
 export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } = {}) {
   env = env || {};
   const sql = ctx.storage.sql;

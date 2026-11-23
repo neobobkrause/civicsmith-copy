@@ -3015,28 +3015,28 @@
       "en": "no member of this team reaches '{String}', so no declared scope reaches it either. An agent is confined to what a member could do themselves, which is a property of the operation rather than a list kept anywhere.",
       "module": "admission",
       "file": "bio-plane/src/admission/index.mjs",
-      "line": 601
+      "line": 602
     },
     {
       "id": "admission.index.op_is_not_reachable_by",
       "en": "'{op}' is not reachable by a member of this team, so it cannot be handed to an agent. This is a property of the operation and not a list of forbidden ones: the unattended worker's own verbs carry no member class by construction, so they are outside every scope anybody can author.",
       "module": "admission",
       "file": "bio-plane/src/admission/index.mjs",
-      "line": 701
+      "line": 702
     },
     {
       "id": "admission.index.string_is_on_the_unattended",
       "en": "'{String}' is on the unattended path. No signed-in session of any role reaches it, the founder's included; it answers to a credential held in the hosting account. This instance holds a decision on record saying so, cited in 'recorded' so you can check it. Nothing here says a machine is trusted more than a person (DEC-52 rules the opposite): it says which credential this verb is addressed to.",
       "module": "admission",
       "file": "bio-plane/src/admission/index.mjs",
-      "line": 830
+      "line": 831
     },
     {
       "id": "admission.index.too_many_requests_to_the",
       "en": "too many requests to the operations anyone may call reached this team's Civicsmith from {where} in a short time, so this one was turned away before the operation ran; nothing was read or written. Try again in {wait} seconds.",
       "module": "admission",
       "file": "bio-plane/src/admission/index.mjs",
-      "line": 1285
+      "line": 1286
     },
     {
       "id": "agent-harness.harness.a_judgement_may_not_set",
@@ -6112,13 +6112,6 @@
       "line": 295
     },
     {
-      "id": "ai-accounts.index.the_request_names_no_owner",
-      "en": "the request names no owner: the account is group, project:<id> or member:<id>. Nothing was written.",
-      "module": "ai-accounts",
-      "file": "bio-plane/src/ai-accounts/index.mjs",
-      "line": 368
-    },
-    {
       "id": "ai-accounts.index.the_request_names_no_switch",
       "en": "the request names no switch; the switches are {names}. Nothing was written.",
       "module": "ai-accounts",
@@ -6256,371 +6249,371 @@
       "en": "investigative run lifecycle, keyed by run id: ends a run and names the bound that stopped it (§14b.6); what the run PROPOSED is a separate act with its own author",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3649
+      "line": 3930
     },
     {
       "id": "ai-runs.declared.airunopen",
       "en": "investigative run lifecycle, keyed by run id: starts a background session in the context of an inquiry or a project and changes NOTHING about that object (§14a)",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3647
+      "line": 3928
     },
     {
       "id": "ai-runs.index.a_batch_names_the_steps",
       "en": "a batch names the steps it runs on, each once, 1 to {OPEN_MANY_MAX} of them. Nothing was started.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1434
+      "line": 1542
     },
     {
       "id": "ai-runs.index.a_members_credential_opened_it",
       "en": "a member's credential opened it, and your team's Civicsmith resumes only runs its own organisation credential opened (D-260, DEC-55 (4): continuing a member's run under the team's key would re-attribute its acts). It waits for its own principal",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2181
+      "line": 2346
     },
     {
       "id": "ai-runs.index.a_planning_run_works_from",
       "en": "a planning run works from what the record already holds, so it declares no '{bound}' allowance (it was given {allowed})",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1147
+      "line": 1240
     },
     {
       "id": "ai-runs.index.a_re_examination_of_this",
       "en": "a re-examination of this plan after this response is already running; its result is the one to read",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1170
+      "line": 1263
     },
     {
       "id": "ai-runs.index.a_run_in_mode_runmode",
       "en": "a run in mode '{runMode}' names no plan; only a run in mode 'plan' works on one",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1141
+      "line": 1234
     },
     {
       "id": "ai-runs.index.a_run_names_two_principals",
       "en": "a run names TWO principals — the plane credential acting and the member whose own Claude account carries it (K1502, K1503). They are different principals and an act must say both (DEC-27(b), DEC-55.4)",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1094
+      "line": 1187
     },
     {
       "id": "ai-runs.index.a_run_works_one",
       "en": "a run works one step: an existing one, or a step of its own by its place and work, not both",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1187
+      "line": 1280
     },
     {
       "id": "ai-runs.index.a_teams_own_step_has",
       "en": "a team's own step has no question or project for a run to sit in. Nothing was started for it.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1460
+      "line": 1568
     },
     {
       "id": "ai-runs.index.a_teams_test_investigation_is",
       "en": "a team's test investigation is added by one of its active members. Nothing was added.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3450
+      "line": 3705
     },
     {
       "id": "ai-runs.index.a_teams_test_investigation_names",
       "en": "a team's test investigation names its part, its matter and the answers your members wrote (missing: {filter}). Nothing was added.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3450
+      "line": 3705
     },
     {
       "id": "ai-runs.index.a_wait_source_names_its",
       "en": "a wait source names its module and {fns}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 307
+      "line": 343
     },
     {
       "id": "ai-runs.index.ai_run_on_stepid_string",
       "en": "AI run on {stepId}: {String}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1468
+      "line": 1576
     },
     {
       "id": "ai-runs.index.an_exploring_run_works",
       "en": "an exploring run works as a system step of its own: pass the step's place and work, and no step",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1185
+      "line": 1278
     },
     {
       "id": "ai-runs.index.closing_a_run_over",
       "en": "closing a run over a project is licensed by PARTICIPATION IN THAT PROJECT (DEC-63), and the contribute capability is only the floor beneath that. The run is untouched and is still running",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1811
+      "line": 1952
     },
     {
       "id": "ai-runs.index.continuing_a_run_over",
       "en": "continuing a run over a project is licensed by PARTICIPATION IN THAT PROJECT (DEC-63), and the contribute capability is only the floor beneath that. Nothing was appended and no budget was spent",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1578
+      "line": 1702
     },
     {
       "id": "ai-runs.index.it_could_not_be_counted",
       "en": "it could not be counted",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3259
+      "line": 3487
     },
     {
       "id": "ai-runs.index.no_acceptance_within_the_bound",
       "en": "no acceptance within the bound",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2253
+      "line": 2418
     },
     {
       "id": "ai-runs.index.no_run_named_run_is",
       "en": "no run named '{run}' is open here. An assistant opens a question only inside a run it holds (INVESTIGATIVE-SESSION.md §11 item 5, rule 2): the run carries the lens in force and the objective the question was surfaced under. Nothing was created.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3510
+      "line": 3771
     },
     {
       "id": "ai-runs.index.no_run_string_in_mode",
       "en": "no run '{String}' in mode '{String_2}' is held here for this member. Nothing was recorded",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3392
+      "line": 3630
     },
     {
       "id": "ai-runs.index.no_step_stepid_is_open",
       "en": "no step '{stepId}' is open to this caller",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1187
+      "line": 1280
     },
     {
       "id": "ai-runs.index.no_step_stepid_is_open_2",
       "en": "no step '{stepId}' is open to you. Nothing was started for it.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1452
+      "line": 1560
     },
     {
       "id": "ai-runs.index.no_work_is_attached_to",
       "en": "no work is attached to anything of the kind {stringify}. The kinds it is attached to: {map}. Answered as a refusal rather than as an empty list, because an empty list here would say nothing is running in a place the record does not recognise.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2697
+      "line": 2888
     },
     {
       "id": "ai-runs.index.nothing_is_registered_to_check",
       "en": "nothing is registered to check a run in mode '{runMode}'",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1319
+      "line": 1412
     },
     {
       "id": "ai-runs.index.on_a_members_own_sign",
       "en": "on a member's own sign-in the assistant runs checks and plans for that member only; this run is in mode '{String}'. Nothing was sent.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2333
+      "line": 2510
     },
     {
       "id": "ai-runs.index.only_a_member_starts",
       "en": "only a member starts a planning run, for one plan at a time; nothing starts one by itself",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1145
+      "line": 1238
     },
     {
       "id": "ai-runs.index.op_airuns_answers_for_one",
       "en": "op=airuns answers for ONE context and must be told which kind: contextType={kinds}. An inquiry and a project are different objects with different membership, so there is no default here that would not be answering about something you did not ask about.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2694
+      "line": 2885
     },
     {
       "id": "ai-runs.index.op_airuns_named_the_kind",
       "en": "op=airuns named the kind {stringify} but not which one. The gate is compiled over the context's own id, so a blank id would ask about every context at once — a different question, not a wider answer.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2700
+      "line": 2891
     },
     {
       "id": "ai-runs.index.resumption_not_continued_now_detail",
       "en": "Resumption: not continued now — {detail} The run was woken and is still resumable by its own principal; nothing it established is lost",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2263
+      "line": 2428
     },
     {
       "id": "ai-runs.index.resumption_not_dispatched_no_claude",
       "en": "Resumption: NOT dispatched — no Claude account serves the member whose act started this run (none of their own is connected, and the team's key is not set or not on), and a run continues only on the account that serves that member's act (K1503, K1755). It waits.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2173
+      "line": 2338
     },
     {
       "id": "ai-runs.index.resumption_the_dispatch_to_agent",
       "en": "Resumption: the dispatch to agent-worker did not complete ({state}: {reason}). The run was woken and is still resumable by its own principal; nothing it established is lost",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2264
+      "line": 2429
     },
     {
       "id": "ai-runs.index.starting_an_investigation_over",
       "en": "starting an investigation OVER A PROJECT is licensed by PARTICIPATION IN THAT PROJECT (DEC-63, Bob 2026-08-09; a run over a question consults no project, as amended 2026-09-18), and the contribute capability is only the floor beneath that. These are two different facts about an account and they are refused separately so each names its own remedy",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1059
+      "line": 1152
     },
     {
       "id": "ai-runs.index.the_check_module_registered_for",
       "en": "the check {module} registered for mode '{runMode}' gave no answer",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1318
+      "line": 1411
     },
     {
       "id": "ai-runs.index.the_claude_account_that_serves",
       "en": "The Claude account that serves this run has reached the spending limit set on it, so the assistant cannot continue for now. Nothing was lost.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3289
+      "line": 3517
     },
     {
       "id": "ai-runs.index.the_daemon_answered_length_capture",
       "en": "the daemon answered {length} capture request(s) this run was waiting on ({captured} captured, {refused} refused, {expired} expired). The run is resumable: its own log carries what each request established, and §14b.7's resumed run reads it and continues rather than restarting. {says}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 2050
+      "line": 2215
     },
     {
       "id": "ai-runs.index.the_entry_could_not_be",
       "en": "the entry could not be counted.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3258
+      "line": 3486
     },
     {
       "id": "ai-runs.index.the_entry_is_not",
       "en": "the entry is not an object {mode, model, usage, calls}.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3256
+      "line": 3484
     },
     {
       "id": "ai-runs.index.the_next_segment_was_not",
       "en": "the next segment was not dispatched ({reason}). The run is still resumable by its own principal; nothing it established is lost",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1750
+      "line": 1879
     },
     {
       "id": "ai-runs.index.the_run_ended_v1",
       "en": "the run ended: {v1}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 623
+      "line": 686
     },
     {
       "id": "ai-runs.index.the_run_run_declares_no",
       "en": "the run '{run}' declares no 'surfaces' bound, so the questions it may open would be unbounded. The bound is declared at op=airunopen, by the member who opens the run. Nothing was created.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3526
+      "line": 3787
     },
     {
       "id": "ai-runs.index.the_run_run_has_ended",
       "en": "the run '{run}' has ended ({String}), and a question is read against the conditions of the run that surfaced it, which stopped being current when it stopped. Nothing was created.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3522
+      "line": 3783
     },
     {
       "id": "ai-runs.index.the_run_run_has_reached",
       "en": "the run '{run}' has reached its 'surfaces' bound ({consumed} of {allowed}). Nothing was created; the next tick ends the run, and the log says which bound stopped it.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3529
+      "line": 3790
     },
     {
       "id": "ai-runs.index.the_run_stopped_because_the",
       "en": "the run stopped because the '{bound}' bound was reached ({v1})",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 622
+      "line": 685
     },
     {
       "id": "ai-runs.index.the_runs_own_step",
       "en": "the run's own step cannot be made: steps is not reachable",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1300
+      "line": 1393
     },
     {
       "id": "ai-runs.index.the_runs_work_is_done",
       "en": "the run's work is done",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1658
+      "line": 1782
     },
     {
       "id": "ai-runs.index.the_runs_work_is_not_done",
       "en": "the run's work is not done",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1658
+      "line": 1782
     },
     {
       "id": "ai-runs.index.the_segment_ended_by_v1",
       "en": "the segment ended (by: {v1}; {v2}{v3}). Refusals it met: {v4}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1658
+      "line": 1782
     },
     {
       "id": "ai-runs.index.the_use_of_the_account",
       "en": "The use of the account that would serve this run cannot be judged now. Nothing was started.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3241
+      "line": 3469
     },
     {
       "id": "ai-runs.index.usage_entry_v1_v2",
       "en": "usage entry {v1}: {v2}",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3259
+      "line": 3487
     },
     {
       "id": "ai-runs.index.usage_is_a_list",
       "en": "`usage` is a list with one entry per conversation that reached the model since the last tick, each {mode, model, usage, calls}.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 1614
+      "line": 1738
     },
     {
       "id": "ai-runs.index.what_names_no_member_whose",
       "en": "{what} names no member whose Claude account carries it. Nothing was started.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3341
+      "line": 3569
     },
     {
       "id": "ai-runs.index.what_needs_a_claude_account",
       "en": "{what} needs a Claude account to serve the member whose act started it, and none serves that member: they have connected none of their own, and the team's key is not set or not on. Nothing was started.",
       "module": "ai-runs",
       "file": "bio-plane/src/ai-runs/index.mjs",
-      "line": 3340
+      "line": 3568
     },
     {
       "id": "ai-use.declared.ailimitset",
@@ -8525,13 +8518,6 @@
       "module": "bias",
       "file": "bio-plane/src/bias/index.mjs",
       "line": 1831
-    },
-    {
-      "id": "bias.index.overrides_by_effect",
-      "en": "each entry is a project statement whose effect loosens a group statement on the same subject: it relaxes the scrutiny that statement raises, or licenses the inference it blocks. It is an override whatever it calls itself, and it must name the statement it loosens; a loosening of a LOCKED group statement is a conformance error; either way the group statement stands (safeguard 1). Effect is judged mechanically only for scrutiny and inference statements, and the group's review finishes the job",
-      "module": "bias",
-      "file": "bio-plane/src/bias/index.mjs",
-      "line": 1202
     },
     {
       "id": "bias.index.settling_bias_debt_is_a",
@@ -10648,13 +10634,6 @@
       "line": 1334
     },
     {
-      "id": "capture.index.parted_unavailable",
-      "en": "your group's Civicsmith cannot take a file in parts (its evidence bucket offers no multipart upload, or its key is not known), so nothing was written",
-      "module": "capture",
-      "file": "bio-plane/src/capture/index.mjs",
-      "line": 1153
-    },
-    {
       "id": "capture.index.parts_missing",
       "en": "the upload lacks parts, so it was not completed and nothing was written; send the parts named in missing",
       "module": "capture",
@@ -10816,13 +10795,6 @@
       "line": 1084
     },
     {
-      "id": "capture.index.upload_lost",
-      "en": "your group's Civicsmith lost the digest of the parts so far, so the upload was aborted and holds nothing; begin it again",
-      "module": "capture",
-      "file": "bio-plane/src/capture/index.mjs",
-      "line": 1238
-    },
-    {
       "id": "capture.index.upload_no_bytes",
       "en": "the upload carried no bytes; nothing was written",
       "module": "capture",
@@ -10842,13 +10814,6 @@
       "module": "capture",
       "file": "bio-plane/src/capture/index.mjs",
       "line": 1386
-    },
-    {
-      "id": "capture.index.upload_unknown",
-      "en": "your group's Civicsmith holds no upload in parts under that name for you; begin it again",
-      "module": "capture",
-      "file": "bio-plane/src/capture/index.mjs",
-      "line": 1080
     },
     {
       "id": "capture.index.whole_digest_mismatch",
@@ -20116,28 +20081,28 @@
       "en": "read: a case's drafts of its account, each labeled machine work; writes nothing",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/owner-ops.mjs",
-      "line": 26
+      "line": 29
     },
     {
       "id": "control-plane.declared.accountpropose",
       "en": "case-directed: keyed by a case, reached from its account; the system's draft of the account, labeled machine work, never the published account until a member writes it",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/owner-ops.mjs",
-      "line": 29
+      "line": 32
     },
     {
       "id": "control-plane.declared.captureupload",
       "en": "upload-directed: a member's bytes held as a capture under their digest, in her own name, with its receipt; reached from the upload, never beside a bundle",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/owner-ops.mjs",
-      "line": 23
+      "line": 26
     },
     {
       "id": "control-plane.declared.clockpropose",
       "en": "action-directed: keyed by (action, rule, proposer); a proposal stored apart, never a clock entry until a member adopts it",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/owner-ops.mjs",
-      "line": 32
+      "line": 35
     },
     {
       "id": "control-plane.draft.draft_over_limit",
@@ -26104,13 +26069,6 @@
       "line": 111
     },
     {
-      "id": "file-safety.declared.deepercheck",
-      "en": "file-directed: keyed by a capture's digest; asks the group's outside tools about this file; records no one",
-      "module": "file-safety",
-      "file": "bio-plane/src/file-safety/index.mjs",
-      "line": 2344
-    },
-    {
       "id": "file-safety.declared.openoriginal",
       "en": "file-directed: keyed by a capture's digest, reached from the safe view's one click; answers the original's bytes to a member who may see it, a high-risk file only after a fresh clean deeper check (`override`); records no one",
       "module": "file-safety",
@@ -26137,34 +26095,6 @@
       "module": "file-safety",
       "file": "bio-plane/src/file-safety/index.mjs",
       "line": 2352
-    },
-    {
-      "id": "file-safety.declared.scanmirror",
-      "en": "setting: the group's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle",
-      "module": "file-safety",
-      "file": "bio-plane/src/file-safety/index.mjs",
-      "line": 2354
-    },
-    {
-      "id": "file-safety.declared.securitytooladd",
-      "en": "setting: the group's security tools, an administrator's act; moves no bundle",
-      "module": "file-safety",
-      "file": "bio-plane/src/file-safety/index.mjs",
-      "line": 2356
-    },
-    {
-      "id": "file-safety.declared.securitytoolremove",
-      "en": "setting: the group's security tools, an administrator's act; moves no bundle",
-      "module": "file-safety",
-      "file": "bio-plane/src/file-safety/index.mjs",
-      "line": 2358
-    },
-    {
-      "id": "file-safety.declared.securitytooltest",
-      "en": "setting: the group's security tools, an administrator's act; moves no bundle",
-      "module": "file-safety",
-      "file": "bio-plane/src/file-safety/index.mjs",
-      "line": 2360
     },
     {
       "id": "file-safety.index.a_run_is_under_way",
@@ -33090,46 +33020,11 @@
       "line": 101
     },
     {
-      "id": "instance-setup.declared.declaredstakeset",
-      "en": "setting: the group's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3149
-    },
-    {
       "id": "instance-setup.declared.disclosureshown",
       "en": "personal state, keyed by member: the assistant's disclosure shown to them, with its version",
       "module": "instance-setup",
       "file": "bio-plane/src/setup.mjs",
       "line": 3152
-    },
-    {
-      "id": "instance-setup.declared.groupdomainset",
-      "en": "the group's claimed domain — the subject is the instance's identity, not a bundle",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3155
-    },
-    {
-      "id": "instance-setup.declared.grouplanguagesset",
-      "en": "setting: the languages the group works in; an administrator's act, a later one replacing it; moves no bundle",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3158
-    },
-    {
-      "id": "instance-setup.declared.grouplogoset",
-      "en": "setting: the group's logo, PNG or JPEG, or none; an administrator's act, a later one replacing it; moves no bundle",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3161
-    },
-    {
-      "id": "instance-setup.declared.groupnameset",
-      "en": "the group's public display name — the subject is the instance's identity, not a bundle",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3164
     },
     {
       "id": "instance-setup.declared.infolevelset",
@@ -33151,13 +33046,6 @@
       "module": "instance-setup",
       "file": "bio-plane/src/setup.mjs",
       "line": 3173
-    },
-    {
-      "id": "instance-setup.declared.placewanted",
-      "en": "the instance's configuration: the place the group wants its profile for; an administrator's",
-      "module": "instance-setup",
-      "file": "bio-plane/src/setup.mjs",
-      "line": 3176
     },
     {
       "id": "instance-setup.declared.profilesset",
@@ -33626,7 +33514,7 @@
       "en": "this run RETURNED, so the ceiling is above its elapsed time. If a later run does not return, its last recorded step is the last one that fit and the ceiling lies just above that step's elapsed_ms.",
       "module": "instance-setup",
       "file": "bio-plane/src/setup.mjs",
-      "line": 3492
+      "line": 3502
     },
     {
       "id": "instance-setup.setup.this_store_has_recorded_its",
@@ -36730,13 +36618,6 @@
       "line": 2156
     },
     {
-      "id": "member-roster.declared.courtnoticeset",
-      "en": "the group's setting: whether members are told what a court can reach; an administrator's, not an act on an object",
-      "module": "member-roster",
-      "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2158
-    },
-    {
       "id": "member-roster.declared.enroll",
       "en": "an invitee becoming a member",
       "module": "member-roster",
@@ -36763,13 +36644,6 @@
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
       "line": 2168
-    },
-    {
-      "id": "member-roster.declared.groupdescriptionset",
-      "en": "the group's description of itself — the subject is the group's identity, not a bundle; an administrator's",
-      "module": "member-roster",
-      "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2170
     },
     {
       "id": "member-roster.declared.handlecheck",
@@ -51245,98 +51119,91 @@
       "en": "{detail}. Nothing was drafted.",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 502
+      "line": 541
     },
     {
       "id": "store-assembly.ask.bearing-names-action",
       "en": "a bearing draft names the action the reply was received on",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 526
+      "line": 568
     },
     {
       "id": "store-assembly.ask.draft-own-act",
       "en": "a draft that reads records is a member's own act",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 522
+      "line": 564
     },
     {
       "id": "store-assembly.ask.infraction-names-matter",
       "en": "an infraction draft names the matter's plan or its actions",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 540
+      "line": 582
     },
     {
       "id": "store-assembly.ask.plan-unreadable",
       "en": "the plan this draft is about cannot be read here",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 389
+      "line": 426
     },
     {
       "id": "store-assembly.ask.reading-own-act",
       "en": "a reading is a member's own act",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 368
+      "line": 405
     },
     {
       "id": "store-assembly.ask.reading-subject",
       "en": "a reading names its subject as {kind, id}, kind one of {kinds}",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 469
+      "line": 508
     },
     {
       "id": "store-assembly.ask.records-unreadable",
       "en": "the records this draft is about cannot be read here",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 521
+      "line": 563
     },
     {
       "id": "store-assembly.ask.reply-not-received",
       "en": "the reply named is not an entry received on this action",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 531
+      "line": 573
     },
     {
       "id": "store-assembly.ask.reply-text-unheld",
       "en": "the reply's text is not held in a reading this member may read",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 535
+      "line": 577
     },
     {
       "id": "store-assembly.ask.statusreport-names-plan",
       "en": "a status report's draft names its plan and hands the items its report is drawn from",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/ask.mjs",
-      "line": 388
+      "line": 425
     },
     {
       "id": "store-assembly.declared.ask",
       "en": "member-directed: a member's own question to the assistant under their own account; no object is before them",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/declared.mjs",
-      "line": 11
+      "line": 18
     },
     {
       "id": "store-assembly.declared.owedwork",
       "en": "what the object still owes one document, or the counts of what it owes: the keeps, readings, scan pages, supporting files and archive entries left for its alarm, each owed or ended for a stated reason; writes nothing",
       "module": "store-assembly",
       "file": "bio-plane/src/store-assembly/declared.mjs",
-      "line": 19
-    },
-    {
-      "id": "store-assembly.declared.readtranslate",
-      "en": "draft: a machine translation of one passage of the group's own writing (a note, question, finding or notice) into the member's language, labeled machine work, the original one tap away; held nowhere and writes nothing (store-assembly R53)",
-      "module": "store-assembly",
-      "file": "bio-plane/src/store-assembly/declared.mjs",
-      "line": 15
+      "line": 26
     },
     {
       "id": "store-assembly.wiring.local-facts-unreachable",
@@ -52345,13 +52212,6 @@
       "module": "text-chain",
       "file": "bio-plane/src/textchain.mjs",
       "line": 704
-    },
-    {
-      "id": "translations.declared.interfacewords",
-      "en": "read: every interface word in a language, the group's shown translation or the English, never blank, with the English beside it; writes nothing",
-      "module": "translations",
-      "file": "bio-plane/src/translations/index.mjs",
-      "line": 839
     },
     {
       "id": "translations.declared.translationgrant",

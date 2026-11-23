@@ -17,7 +17,10 @@ import { actionPlansOf } from "../action-plans/index.mjs";
 import { extractionOf } from "../extraction/index.mjs";
 import { projectRosterOf } from "../project-roster/index.mjs";
 
-/** The getters of `ctx`'s one instances, for `controlPlaneOwnerOps(of, url, body)`. */
+/** The getters of `ctx`'s one instances, for `controlPlaneOwnerOps(of, url, body)`.
+ * @param {any} ctx the Durable Object's state
+ * @param {any} env its bindings
+ * @returns {{aiUse: () => any, aiRuns: () => any, caseAccount: () => any, review: () => any, legEarning: () => any, capture: () => any, steps: () => any, investigation: () => any, questionExplorer: () => any, actionClocks: () => any, filings: () => any, actionPlans: () => any, extraction: () => any, projectRoster: () => any}} */
 export const ownerGettersOf = (ctx, env) => ({
   aiUse: () => aiUseOf(ctx), aiRuns: () => aiRunsOf(ctx, env),
   /* (T42; N839; K2656) the plane's one case-account instance (R38), for control-plane R71's account ops; never case-authoring's pass-through */
