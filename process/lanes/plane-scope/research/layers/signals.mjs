@@ -423,12 +423,13 @@ function autoCite(o, layer) {
   if (layer === "ui") return tryKeys(["screens_export", "asset_bodies", "html_tags"]);
   if (layer === "launcher") return tryKeys(["platform_class", "block_start", "cf_import"]);
   if (layer === "control-plane") return tryKeys(["pathname"]);
-  return tryKeys(["first_export"]) || tryKeys(["first_export", "process_cli"], false);
+  return null;
 }
+const exportCite = (o) => { for (const planeOnly of [true, false]) { const h = firstHit(o, "first_export", planeOnly); if (h) return { ...h, signal: "first_export" }; } return null; };
 const RESULT = OUT.map((o) => {
   const pl = PLACED.get(o.name); const rd = READ[o.name] || {};
   const ambiguous = pl.layers.length > 1;
-  const cite = citeOf(rd.cite) || (ambiguous ? null : autoCite(o, pl.layer));
+  const cite = citeOf(rd.cite) || (ambiguous ? null : (pl.rule === "signals" ? autoCite(o, pl.layer) : null) || exportCite(o));
   const parts = pl.parts ? pl.parts.map((p) => ({ layer: p.layer, what: p.what || null, files: p.files, lines: p.lines, citation: citeOf(p.cite) || autoCite({ ...o, planeFiles: p.files.length ? p.files : o.planeFiles }, p.layer) })) : null;
   return { module: o.name, position: o.pos, layer: ambiguous ? "AMBIGUOUS" : pl.layer, sublayer: pl.sub, ambiguous, candidates: pl.layers, placed_by: pl.rule,
     deciding_signals: pl.claims.length ? Object.fromEntries(pl.claims.map((c) => [c.layer, c.why])) : { importer_layers: pl.importerLayers || [], imported_by_plane_held_code_of: pl.importers || [] },
@@ -530,21 +531,21 @@ function readRows() {
   const B = "bio-plane/src/";
   return {
     /* --- modules whose code claims two layers: the files of each part (`rest` takes every file not named), and a line read for each --- */
-    "host-governor": { parts: { model: { rest: true, cite: B + "host-governor/schema.mjs:9", what: "the class HostGovernor and its table (index.mjs:62-260, schema.mjs)" },
+    "host-governor": { parts: { model: { rest: true, what: "the class HostGovernor and its table (index.mjs:62-260, schema.mjs)" },
       middleware: { files: [], cite: B + "host-governor/index.mjs:429", what: "governorOverStub, governorOp and governorOpResponse reach the object through a stub (index.mjs:300-433); the same file as the class" } } },
-    "provenance": { parts: { model: { rest: true, cite: B + "provenance/index.mjs:1", what: "index.mjs, and provenanceOps in ops.mjs:24" },
+    "provenance": { parts: { model: { rest: true, what: "index.mjs, and provenanceOps in ops.mjs:24" },
       middleware: { files: [], cite: B + "provenance/ops.mjs:80", what: "registerAuditOp (ops.mjs:73-93), in the same file as the op map" } } },
-    "attestation": { parts: { model: { rest: true, cite: B + "attestation/schema.mjs:1" }, middleware: { files: ["attestation/ops.mjs"], cite: B + "attestation/ops.mjs:36", what: "attestOp" } } },
-    "capture": { parts: { model: { rest: true, cite: B + "capture/schema.mjs:1" }, middleware: { files: ["capture/ops.mjs"], cite: B + "capture/ops.mjs:230", what: "captureOp, acquireOp, linksOp, archiveLookupOp, captureObjectOp" } } },
-    "doorbell": { parts: { model: { rest: true, cite: B + "doorbell/schema.mjs:1" }, middleware: { files: ["doorbell/door.mjs"], cite: B + "doorbell/door.mjs:124", what: "knockOp, doorbellPublicOp" } } },
-    "extraction": { parts: { model: { rest: true, cite: B + "extraction/schema.mjs:1" }, middleware: { files: ["extraction/ops.mjs"], cite: B + "extraction/ops.mjs:32", what: "pdfStructureOp, pageTranscribeOp, extractionOp, acquireReadingOp" } } },
-    "connections": { parts: { model: { rest: true, cite: B + "connections/schema.mjs:1" }, middleware: { files: ["connections/ops.mjs"], cite: B + "connections/ops.mjs:27", what: "linkProjectOp, connectionsOp" } } },
+    "attestation": { parts: { model: { rest: true, }, middleware: { files: ["attestation/ops.mjs"], cite: B + "attestation/ops.mjs:36", what: "attestOp" } } },
+    "capture": { parts: { model: { rest: true, }, middleware: { files: ["capture/ops.mjs"], cite: B + "capture/ops.mjs:230", what: "captureOp, acquireOp, linksOp, archiveLookupOp, captureObjectOp" } } },
+    "doorbell": { parts: { model: { rest: true, }, middleware: { files: ["doorbell/door.mjs"], cite: B + "doorbell/door.mjs:124", what: "knockOp, doorbellPublicOp" } } },
+    "extraction": { parts: { model: { rest: true, }, middleware: { files: ["extraction/ops.mjs"], cite: B + "extraction/ops.mjs:32", what: "pdfStructureOp, pageTranscribeOp, extractionOp, acquireReadingOp" } } },
+    "connections": { parts: { model: { rest: true, }, middleware: { files: ["connections/ops.mjs"], cite: B + "connections/ops.mjs:27", what: "linkProjectOp, connectionsOp" } } },
     "publication": { parts: { model: { rest: true, cite: B + "publication/schema.mjs:82" }, middleware: { files: ["publication/door.mjs"], cite: B + "publication/door.mjs:58", what: "publicationDoorOp" } } },
     "public-read": { parts: { model: { rest: true, cite: B + "public-read/index.mjs:361" }, middleware: { files: ["public-read/door.mjs", "publication/worker.mjs"], cite: B + "public-read/door.mjs:75", what: "publicReadDoorOp and the published routes (publication/worker.mjs: publishedRoutes, assembleCaseContainer)" } } },
-    "ratification": { parts: { model: { rest: true, cite: B + "ratification/index.mjs:1" }, middleware: { files: ["ratification/ops.mjs", "ratification/finding.mjs", "ratification/casefile.mjs"], cite: B + "ratification/ops.mjs:115", what: "the ratify, case and publish ceremonies run against a stub of the object" } } },
-    "monitoring": { parts: { model: { rest: true, cite: B + "monitoring/schema.mjs:1" }, middleware: { files: [], cite: B + "monitoring/index.mjs:3904", what: "monitorOp (index.mjs:3904-3934), in the same file as the class" } } },
+    "ratification": { parts: { model: { rest: true, }, middleware: { files: ["ratification/ops.mjs", "ratification/finding.mjs", "ratification/casefile.mjs"], cite: B + "ratification/ops.mjs:115", what: "the ratify, case and publish ceremonies run against a stub of the object" } } },
+    "monitoring": { parts: { model: { rest: true, }, middleware: { files: [], cite: B + "monitoring/index.mjs:3904", what: "monitorOp (index.mjs:3904-3934), in the same file as the class" } } },
     "affordances": { parts: { model: { rest: true, cite: B + "affordances/facts.mjs:96" }, middleware: { files: ["affordances/door.mjs"], cite: B + "affordances/door.mjs:102", what: "affordancesOp" } } },
-    "queue": { parts: { model: { rest: true, cite: B + "queue/schema.mjs:1" }, middleware: { files: ["queue/door.mjs"], cite: B + "queue/door.mjs:43", what: "queueFeedOp, queueOp" } } },
+    "queue": { parts: { model: { rest: true, }, middleware: { files: ["queue/door.mjs"], cite: B + "queue/door.mjs:43", what: "queueFeedOp, queueOp" } } },
     "instance-setup": { parts: { model: { rest: true, cite: B + "setup.mjs:533", what: "the class InstanceSetup, its tables and op map (setup.mjs:479-3217), and setup-fleet.mjs" },
       middleware: { files: ["livefire.mjs"], cite: B + "setup.mjs:3220", what: "livefire.mjs, and in setup.mjs the handlers that reach the object through a stub: publicInstanceGroup, instanceGroupOp, groupIdentityOp, groupLogoAsset, bootstrapReport, selftest, runtimeOp, cpuProbeOp, instanceSetupOp, bootstrapOp (setup.mjs:3220-3587)" } } },
     "admission": { parts: { middleware: { rest: true, cite: B + "admission/index.mjs:1336", what: "the gates the door calls (index.mjs, checks.mjs)" }, model: { files: ["admission/window.mjs"], cite: B + "admission/window.mjs:53", what: "the door-window and session-window counters, their two tables and admissionOps" } } },
