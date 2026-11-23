@@ -1,7 +1,8 @@
 {
   "name": "setup-words",
   "files": [
-    "bio-plane/src/setup-words/"
+    "bio-plane/src/setup-words/",
+    "docs/development/ux-substrate/screens/words.json"
   ],
   "tests": [
     "bio-plane/test/m/setup-words/"
