@@ -3,6 +3,7 @@
  * form, and the review copy from outside. Every request is checked to carry no credential. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { PUBLISHED } from "../../../src/screens-publish/published.mjs";
 import { open, ok, word, main, text, drew, last, day, tipOf, disclosure, press, CASE, COPY, LEFT_OUT, TENSION, GROUP, C, SECRET } from "./fixtures.mjs";
 
 const noCredential = (p) => { for (const r of p.requests) assert.equal(r.headers.Authorization, undefined, `${r.op} carries no credential`); };
@@ -17,7 +18,10 @@ test("R6 the published case is drawn with no session: whose work it is, how to r
   assert.ok(link, "the link is drawn");
   assert.equal(link.textContent.trim(), word("screen.published.howtoread.link"));
   const tip = tipOf(link);
-  for (const k of ["tip.capture", "tip.capture_why", "tip.connection", "tip.connection_why"]) assert.ok(tip.includes(word("screen.published." + k)), k);
+  for (const k of ["tip.capture", "tip.capture_why", "tip.connection"]) assert.ok(tip.includes(word("screen.published." + k)), k);
+  assert.ok(tip.includes(word("mark.strength.means")), "the scale explained: an answer is only as strong as its weakest part");
+  assert.ok(!tip.includes(word("screen.published.tip.connection_why")), "never the sentence that explains one grade (B)");
+  assert.ok(tip.indexOf(word("screen.published.tip.capture")) < tip.indexOf(word("screen.published.tip.connection")), "capture, then connection");
   assert.equal(link.getAttribute("tabindex"), "0", "reached by keyboard, so its explanation shows on focus");
 });
 
@@ -117,20 +121,39 @@ test("R9 the doorbell needs no session: headed by the group's public name, it sa
   for (const k of ["only", "reads", "phrase", "court"]) assert.ok(drew(p, "screen.doorbell.happens." + k), k);
 });
 
-test("R17 R18 the review copy from outside: the protected sub-line with the link's end day, the end in the team's zone, the secret in the body only", async () => {
+test("R17 R18 the review copy from outside: the ask, then once who can read it until the end day in the team's zone; the secret in the body only", async () => {
   const p = await open("/app/review", { boot: { hash: "#grant=" + SECRET } });
   noCredential(p);
   const r = last(p, "reviewcopy");
   assert.equal(r.body.secret, SECRET);
   assert.ok(!r.url.includes(SECRET), "never in an address");
-  assert.ok(drew(p, "screen.review-outside.sub", { date: day("2099-10-20") }), "the end day in the team's zone, not UTC's");
-  assert.ok(main(p).querySelector("[data-link-end]"), "R27's line with the time and zone stays");
+  const sub = main(p).querySelector("[data-sub]"), end = main(p).querySelector("[data-link-end]");
+  assert.ok(sub && drew(p, "screen.review-outside.ask", {}, sub), "the sub-line asks the reader to read and comment");
+  assert.ok(end && text(p, end).includes(day("2099-10-20")), "R27's one line names the end day in the team's zone, not UTC's");
+  assert.ok(!drew(p, "screen.review-outside.sub", { date: day("2099-10-20") }), "who can read it is said once, not twice");
 });
 
-test("R18 control: a grant with no end draws the end-of-sharing sentence and no sub-line naming a day", async () => {
+test("R18 control: a grant with no end draws the ask and the end-of-sharing sentence, and names no day", async () => {
   const p = await open("/app/review", { boot: { hash: "#grant=" + SECRET }, plane: { reviewcopy: ok(COPY({ grant: {} })) } });
-  assert.ok(drew(p, "screen.review-outside.untilstopped"));
-  assert.ok(!main(p).querySelector("[data-sub]"));
+  assert.ok(drew(p, "screen.review-outside.ask", {}, main(p).querySelector("[data-sub]")));
+  assert.ok(drew(p, "screen.review-outside.untilstopped", {}, main(p).querySelector("[data-link-end]")));
+});
+
+/* interface-shell R30 (ARCH, 23 Nov 2026): the published frame's foot draws its signature line from what `published` states. */
+const placeOf = (edition, subject = C) => /** @type {(view: *) => {signed: *}} */ (PUBLISHED.place)({ parts: PUBLISHED.parts, subject, ui: {},
+  data: edition === undefined ? {} : { edition: { state: "ok", value: edition } } });
+
+test("R6 R39 the published case states for its foot the case's name and the signing key's fingerprint, as the edition states them", () => {
+  const signed = placeOf(CASE({ signed_by: { member: "Ana Ruiz", fingerprint: "9f2c 41aa" } })).signed;
+  assert.deepEqual(signed, { short: "The Coliseum lease", fingerprint: "9f2c 41aa" });
+  assert.notEqual(signed.short, C, "never the case's id");
+  assert.equal(placeOf(CASE({ scope: "", project_reference: "Coliseum", attestor: { fingerprint: "0b1d 77e2" } })).signed.short, "Coliseum");
+});
+
+test("R39 control: a fact the edition does not state is left out, never guessed; with no case or no answer nothing is stated", () => {
+  assert.deepEqual(placeOf(CASE({ scope: "" })).signed, { short: "", fingerprint: "" });
+  assert.equal(placeOf(undefined).signed, null);
+  assert.equal(placeOf(CASE(), "").signed, null);
 });
 
 test("R17 the draft's opening, then \"Read the whole draft\": a closed fold holding each part the team wrote, in its own words", async () => {

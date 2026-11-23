@@ -22,6 +22,7 @@
  * @property {ReadonlyArray<ScreenAct>} acts the acts it draws
  * @property {(cs: *, view: *) => void} [closed] what the screen forgets when the reader leaves (R11)
  * @property {(cs: *, view: *) => void} [printed] what the screen puts back once the browser has printed (R39)
+ * @property {(view: *) => Object} [place] what the shell's frame reads of the screen's place; on `published`, `signed: {short, fingerprint}` for the published foot (interface-shell R30)
  */
 /** The helpers every screen of this module is handed as `view.parts`, each self-contained (interface-shell R21 (1)).
  *  @type {Readonly<Object<string, Function>>} */
