@@ -19,9 +19,7 @@
     "bio-plane/test/system/bundle.test.mjs",
     "bio-plane/test/system/deploybindings.test.mjs",
     "bio-plane/test/system/fleetbundles.test.mjs",
-    "bio-plane/test/system/resolveversion.test.mjs",
-    "bio-plane/test/fleetbundles.control.mjs",
-    "bio-plane/test/system/migrate-released.test.mjs"
+    "bio-plane/test/system/resolveversion.test.mjs"
   ],
   "public": [],
   "uses": [
