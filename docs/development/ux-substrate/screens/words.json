@@ -13,7 +13,7 @@
   "date": 14,
   "queue": 498,
   "transcribe": 19,
-  "capture": 74,
+  "capture": 77,
   "document": 78,
   "question": 82,
   "connection": 34,
@@ -78,7 +78,7 @@
   "progression": 38,
   "dock": 9,
   "count": 6,
-  "translations": 8,
+  "translations": 9,
   "due": 2,
   "reading": 4,
   "held": 5,
@@ -114,13 +114,13 @@
   "timeline": 2,
   "caseimport": 4,
   "acquisition": 47,
-  "file-safety": 57,
+  "file-safety": 62,
   "extraction": 25,
   "events": 86,
   "entities": 30,
   "retrieval": 71,
   "case-account": 12,
-  "instance-setup": 43,
+  "instance-setup": 49,
   "list": 1,
   "glossary": 9,
   "people": 42,
@@ -140,7 +140,7 @@
   "strength": 83,
   "file-scanner": 7,
   "crumb": 1,
-  "ai-accounts": 7,
+  "ai-accounts": 8,
   "intent": 51,
   "case-inputs": 27,
   "store-door": 4,
@@ -224,7 +224,7 @@
   "capture-requests": 21,
   "provenance": 32,
   "credentials": 7,
-  "bias": 28,
+  "bias": 29,
   "reading-guides": 3,
   "sources": 4,
   "connection-grammar": 20,
@@ -237,7 +237,9 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19542,
+  "member-roster": 2,
+  "store-assembly": 1,
+  "total": 19562,
   "protected": 1162
  },
  "words": [
@@ -132525,6 +132527,146 @@
    "en": "If no reply comes, the next step is ready without anyone remembering.",
    "protected": false,
    "source": "library.json"
+  },
+  {
+   "key": "ai-accounts.index.the_request_names_no_owner",
+   "en": "the request names no owner: the account is the team's, project:<id> or member:<id>. Nothing was written.",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence ai-accounts writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "capture.index.parted_unavailable",
+   "en": "your team's Civicsmith cannot take a file in parts (its evidence bucket offers no multipart upload, or its key is not known), so nothing was written",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "capture.index.upload_lost",
+   "en": "your team's Civicsmith lost the digest of the parts so far, so the upload was aborted and holds nothing; begin it again",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "capture.index.upload_unknown",
+   "en": "your team's Civicsmith holds no upload in parts under that name for you; begin it again",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "file-safety.declared.deepercheck",
+   "en": "file-directed: keyed by a capture's digest; asks the team's outside tools about this file; records no one",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "file-safety.declared.scanmirror",
+   "en": "setting: the team's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "file-safety.declared.securitytooladd",
+   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "file-safety.declared.securitytoolremove",
+   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "file-safety.declared.securitytooltest",
+   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.declaredstakeset",
+   "en": "setting: the team's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.groupdomainset",
+   "en": "the team's claimed domain — the subject is the instance's identity, not a bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.grouplanguagesset",
+   "en": "setting: the languages the team works in; an administrator's act, a later one replacing it; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.grouplogoset",
+   "en": "setting: the team's logo, PNG or JPEG, or none; an administrator's act, a later one replacing it; moves no bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.groupnameset",
+   "en": "the team's public display name — the subject is the instance's identity, not a bundle",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "instance-setup.declared.placewanted",
+   "en": "the instance's configuration: the place the team wants its profile for; an administrator's",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "member-roster.declared.courtnoticeset",
+   "en": "the team's setting: whether members are told what a court can reach; an administrator's, not an act on an object",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence member-roster writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "member-roster.declared.groupdescriptionset",
+   "en": "the team's description of itself — the subject is the team's identity, not a bundle; an administrator's",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence member-roster writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "store-assembly.declared.readtranslate",
+   "en": "draft: a machine translation of one passage of the team's own writing (a note, question, finding or notice) into the member's language, labeled machine work, the original one tap away; held nowhere and writes nothing (store-assembly R53)",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence store-assembly writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "translations.declared.interfacewords",
+   "en": "read: every interface word in a language, the team's shown translation or the English, never blank, with the English beside it; writes nothing",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence translations writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
+  },
+  {
+   "key": "bias.index.overrides_by_effect",
+   "en": "each entry is a project statement whose effect loosens a team statement on the same subject: it relaxes the scrutiny that statement raises, or licenses the inference it blocks. It is an override whatever it calls itself, and it must name the statement it loosens; a loosening of a LOCKED team statement is a conformance error; either way the team statement stands (safeguard 1). Effect is judged mechanically only for scrutiny and inference statements, and the team's review finishes the job",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-281 (K3472): the sentence bias writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
   }
  ]
 }
