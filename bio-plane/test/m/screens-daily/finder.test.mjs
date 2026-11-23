@@ -109,7 +109,7 @@ test("R4: select holds the picked results together; the hold strip shows how man
   const at = new Date(held.expires);
   const hm = `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`;
   assert.ok(text(p, main(p).querySelector(".cs-hold")).includes(`${word("screen.finder.held.many", { n: "2" })} · ${word("screen.finder.until", { time: hm })}`));
-  assert.deepEqual(ops(p).filter((o) => !["search", "frontier", "select", "watchitem", "secondlook"].includes(o)), ["findin", "cite", "calculationcreate", "selectionrelease"]);
+  assert.deepEqual(ops(p).filter((o) => !["search", "frontier", "select", "watchitem", "secondlook", "explore"].includes(o)), ["findin", "cite", "calculationcreate", "selectionrelease"]);
   const one = await open("/app/finder/pothole");
   await press(one, "select", { values: { ["finder-pick-" + d1]: true } });
   assert.ok(text(one).includes(word("screen.finder.held.one")), "R25: one document, the singular key");
