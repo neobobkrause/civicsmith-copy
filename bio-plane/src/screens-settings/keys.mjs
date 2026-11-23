@@ -1713,6 +1713,8 @@ export const KEYS = Object.freeze([
   "screen.recovery.held",
   "screen.recovery.held.heading",
   "screen.recovery.issue.heading",
+  "screen.recovery.lost.heading",
+  "screen.recovery.lost.what",
   "screen.recovery.name",
   "screen.recovery.none",
   "screen.recovery.onlyyou",
