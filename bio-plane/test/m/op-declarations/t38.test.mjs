@@ -9,13 +9,16 @@ import * as O from "../../../src/op-declarations/index.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44 } from "./browser.mjs";
 import { AI_GRANT_OPS } from "../../../src/credentials/index.mjs";
 import { caseCarriageOps } from "../../../src/case-carriage/index.mjs";
+/** @param {string} op @returns {readonly string[]} the op's session classes, asserted to be a list, so a negative check is never
+ *  passed by a missing one */
+const classesOf = (op) => { const c = O.OPS[op].classes; assert.ok(Array.isArray(c), `${op}: classes is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS,
         UNATTENDED_BY_DECISION, ACT_HELP_ABSENT, ACT_GATE } = O;
 const plain = (s) => JSON.parse(JSON.stringify(s));
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).find((f) => Object.hasOwn(f.kinds, op))?.owner ?? null;
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
   .concat([["PLAN_RUN_SCOPE.reads", O.PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", O.PLAN_RUN_SCOPE.writes]]);
 const inNoTable = (op) => !Object.hasOwn(OPS, op) && !Object.hasOwn(NEEDS, op) && !SESSION_OPS.member.has(op)
   && !SESSION_OPS.admin.has(op) && !Object.hasOwn(OP_STAMPS, op) && !LISTS.some(([, l]) => l.includes(op))
@@ -45,7 +48,7 @@ test("R40 (T38; N788; DEC-183 (2); case-carriage R14): obscuremarkwithdraw — a
   assert.deepEqual(plain(OPS[op]), { classes: ["admin", "member"], machineClasses: [], mutating: true });
   assert.ok(Object.isFrozen(OPS[op]) && Object.isFrozen(OPS[op].classes) && Object.isFrozen(OPS[op].machineClasses));
   assert.deepEqual(machineAdmits(op), []);
-  assert.ok(!OPS[op].classes.includes("ai"));
+  assert.ok(!classesOf(op).includes("ai"));
   assert.equal(NEEDS[op], "contribute");
   assert.equal(ACT_GATE.needs(op), "contribute");
   assert.equal(ACT_GATE.mode(op), "session");

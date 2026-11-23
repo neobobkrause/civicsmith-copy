@@ -38,7 +38,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
   .concat([["PLAN_RUN_SCOPE.reads", PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
@@ -569,9 +569,10 @@ test("R64, R66, R67, R68, R5, R7: t48.mjs is frozen data — each share names an
       assert.ok(Object.hasOwn(O.OP_KINDS, k), `${op}: ${k}`);
       assert.equal(OP_FAMILIES[owner].kinds[op], k, op);
     }
-    for (const op of Object.keys(share.extra ?? {})) {
+    const extra = share.extra ?? {};
+    for (const op of Object.keys(extra)) {
       assert.ok(Object.hasOwn(share.ops, op), `${owner}: an extra on ${op}`);
-      assert.ok(Object.isFrozen(share.extra[op]), op);
+      assert.ok(Object.isFrozen(extra[op]), op);
     }
   }
   for (const f of T48_FAMILIES) {

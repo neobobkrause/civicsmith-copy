@@ -10,7 +10,7 @@ import { registerDeclaredOps } from "../../../src/op-declarations/index.mjs";
 const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "store-assembly");
 if (duplicates.length) throw new Error(`an op declared by two owners: ${duplicates.map((d) => `${d.op} (${d.owners.join(", ")})`).join("; ")}`);
 
-/** The declarations registered, `{owner: {op: row}}`. */
+/** @type {Object<string, Object<string, any>>} the declarations registered, `{owner: {op: row}}` */
 export const REGISTERED = {};
 for (const [op, row] of Object.entries(ops)) (REGISTERED[owners[op]] ??= {})[op] = row;
 registerDeclaredOps(REGISTERED);

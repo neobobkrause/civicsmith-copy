@@ -8,7 +8,7 @@ import { REGISTERED } from "./register-owners.mjs";
 import { linkSweepOps } from "../../../src/link-sweep/index.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
 const listsHolding = (op) => LISTS.filter(([, list]) => list.includes(op)).map(([name]) => name).sort();
 const plain = (spec) => ({ ...spec, ...(Array.isArray(spec.classes) ? { classes: [...spec.classes] } : {}),
                            ...(Array.isArray(spec.machineClasses) ? { machineClasses: [...spec.machineClasses] } : {}) });
@@ -66,7 +66,7 @@ test("R10, R2: OPS holds a spec for each op T23 adds — escalationreasondraft a
     assert.ok(!JSON.stringify(OPS[op]).includes('"ai"'), op);
   }
   /* The draft reaches an agent credential by its scope alone: member admitted, no machineClasses, no bearer fence. */
-  assert.ok(OPS.whatchangedpropose.classes.includes("member") && !("machineClasses" in OPS.whatchangedpropose)
+  assert.ok(OPS.whatchangedpropose.classes?.includes("member") && !("machineClasses" in OPS.whatchangedpropose)
             && !O.GOVERNANCE_ACTIONS.includes("whatchangedpropose") && !O.IDENTITY_ACTIONS.includes("whatchangedpropose"));
   /* Negative controls: the whole-spec comparison sees a drifted class, fence or mutation. */
   assert.notDeepEqual(plain({ ...OPS.noticepost, machineClasses: ["admin"] }), R10.noticepost.spec);
