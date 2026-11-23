@@ -11,6 +11,16 @@
 import { isMachineIdentity } from "../record-grammar/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/**
+ * One refusal row: its C-number, the site in this module that raises it, and the member's sentence read by key (R8).
+ * @typedef {Object} CheckRow
+ * @property {string} check the C-number
+ * @property {string} where the site that raises it, in this module
+ * @property {string} translation the member's sentence, read by key
+ * @bound where: names src/basis-version-grammar/grammar.mjs, never basis-versions'
+ * @bound no place is named in any row (R9)
+ */
+
 /* The site every row the grammar raises names (R1–R3, R6, R7). */
 const GRAMMAR_WHERE = "src/basis-version-grammar/grammar.mjs basisVersionFindings, reached from op=promote through the step "
   + "basis-versions registers with promotion (K31) and from the C-2.8 grammar slot";
@@ -89,7 +99,8 @@ const GRAMMAR_WHERE = "src/basis-version-grammar/grammar.mjs basisVersionFinding
 /** The explicit "no independent-sufficiency claim was made" value for a
  *  sufficiency `asserted_by` field. ONE literal, in ONE place, so the writer
  *  that will stamp it and the checks that will read it cannot drift apart —
- *  which is the REC-46 lesson taken before it has a chance to repeat. */
+ *  which is the REC-46 lesson taken before it has a chance to repeat.
+ *  @type {string} */
 export const SUFFICIENCY_UNCLAIMED = 'none:independent-sufficiency';
 
 /** The three legal states of a sufficiency `asserted_by`, plus the one a gate
@@ -102,7 +113,8 @@ export const SUFFICIENCY_UNCLAIMED = 'none:independent-sufficiency';
  *  AND / OR / disjunction / grounds — not even as tooltips.* The member-facing
  *  word for a part of an argument is a GROUP OF REASONS, which is the register
  *  `groundInquiry`'s own receipt already speaks in ("each group's strength is
- *  its weakest leg, and this question's is its strongest group"). */
+ *  its weakest leg, and this question's is its strongest group").
+ *  @type {{claimed: string, unclaimed: string, unstated: string, machine_stamped: string}} */
 export const SUFFICIENCY_CLAIM_STATES = {
   claimed:        word('basis-versions.claimed'),
   unclaimed:      word('basis-versions.unclaimed'),
@@ -123,7 +135,11 @@ export const SUFFICIENCY_CLAIM_STATES = {
  *  `machine_stamped` is NOT a legal value of the field: both gates refuse it
  *  and neither is changed here. It is answered anyway, for the reason
  *  `#axisResult` gives one field over — a row may reach a projection around a
- *  gate, and the reading of one must not be a member's claim. */
+ *  gate, and the reading of one must not be a member's claim.
+ *
+ *  @param {unknown} assertedBy a ground's `asserted_by`, any value
+ *  @returns {'claimed' | 'unclaimed' | 'unstated' | 'machine_stamped'}
+ *  @bound trimmed first; the no-claim value is case-folded */
 export function sufficiencyClaimState(assertedBy) {
   const s = String(assertedBy ?? '').trim();
   if (s === '') return 'unstated';
@@ -137,7 +153,9 @@ export function sufficiencyClaimState(assertedBy) {
 
 /** Is this the explicit no-claim state? Case-folded, because the value reaches
  *  a check hand-written in a document exactly as `token:member` does, and
- *  `None:Independent-Sufficiency` is the same statement. */
+ *  `None:Independent-Sufficiency` is the same statement.
+ *  @param {unknown} assertedBy a ground's `asserted_by`, any value
+ *  @returns {boolean} true exactly when `sufficiencyClaimState` answers `unclaimed` */
 export function isSufficiencyUnclaimed(assertedBy) {
   return sufficiencyClaimState(assertedBy) === 'unclaimed';
 }
@@ -184,6 +202,13 @@ export function isSufficiencyUnclaimed(assertedBy) {
  * no such default: §3 is explicit that "a version with no relationship field
  * would re-ship the flat-AND basis REC-42 corrected".
  * ========================================================================= */
+/** The grammar's refusal rows, by code (R8): C-25.1–.10, .12–.15, .19 and .36.
+ *  @type {{VERSION_NO_DESCRIPTION: CheckRow, VERSION_NAME_NOT_UNIQUE: CheckRow, VERSION_NAME_MALFORMED: CheckRow,
+ *    VERSION_NO_RELATIONSHIP: CheckRow, VERSION_RELATIONSHIP_DISAGREES: CheckRow, VERSION_PARTITION_INCOMPLETE: CheckRow,
+ *    VERSION_GROUND_UNASSERTED: CheckRow, VERSION_DERIVED_FROM_UNKNOWN: CheckRow, VERSION_DERIVATION_CYCLE: CheckRow,
+ *    VERSION_REGROUP_UNATTRIBUTED: CheckRow, VERSION_LEG_NOT_CITABLE: CheckRow, VERSION_STATE_UNKNOWN: CheckRow,
+ *    VERSION_HIDDEN_NOT_BOOLEAN: CheckRow, VERSION_LEG_SELF: CheckRow, VERSION_ORPHAN_ROW: CheckRow,
+ *    VERSION_DISPOSITION_UNATTRIBUTED: CheckRow}} */
 export const BASIS_VERSION_GRAMMAR_CHECKS = {
   /* §6 rule 1. The description is load-bearing rather than a courtesy: §10 makes
      it what survives a conversation that is deliberately not kept, and under §5
@@ -334,6 +359,7 @@ export const BASIS_VERSION_GRAMMAR_CHECKS = {
 
 /* §6 rule 4's four states. Exported so IS-2's six member ops read the vocabulary
    from here rather than holding a second copy of it — the drift DEC-8 closed. */
+/** @type {string[]} `suggested`, `considering`, `accepted`, `rejected` */
 export const VERSION_STATES = ['suggested', 'considering', 'accepted', 'rejected'];
 
 /* ===================================================================
@@ -377,6 +403,7 @@ export const VERSION_STATES = ['suggested', 'considering', 'accepted', 'rejected
  * stays accepted, because it honestly was (§6 rule 5). Current is a property of
  * the PROJECT's relationship to the inquiry (§7) and is not a state here.
  */
+/** @type {{legal: string[], edges: {suggested: string[], considering: string[], accepted: string[], rejected: string[]}}} */
 export const VERSION_MACHINE = {
   legal: VERSION_STATES,
   edges: {
@@ -407,7 +434,9 @@ export const VERSION_MACHINE = {
    implementations and removing either left the other absorbing the control. The
    six acts (`./index.mjs`) import `versionNeedsReason`; the grammar
    (`./grammar.mjs`) calls it; there is no third spelling. */
+/** @type {string[]} the two states a move into needs a reason */
 export const VERSION_REASON_REQUIRED = ['considering', 'rejected'];
+/** @type {(to: unknown) => boolean} true exactly for `considering` and `rejected` */
 export const versionNeedsReason = (to) => VERSION_REASON_REQUIRED.includes(to);
 
 /* The two ways a composition can compose, and DEC-32's own words for them. NOT a
@@ -415,9 +444,12 @@ export const versionNeedsReason = (to) => VERSION_REASON_REQUIRED.includes(to);
    the AND/OR words from every member-facing screen (D-226), which is why every
    translation in BASIS_VERSION_GRAMMAR_CHECKS above says "every part is needed" and
    "would carry the answer on its own" instead. */
+/** @type {string[]} */
 export const VERSION_RELATIONSHIPS = ['and', 'or'];
 /* Wider than GROUND_LABEL_RE by design: a member names a version and will use a
    full stop. Still bounded, still a single line, still no leading space. */
+/** @type {RegExp}
+ *  @bound a version name: 1 to 64 characters of letters, digits, space, '.', '_' and '-', first a letter or digit, case-insensitive */
 export const VERSION_NAME_RE = /^[a-z0-9][a-z0-9 ._-]{0,63}$/i;
 
 /* Section 9's five kinds. A suggestion is one of these and nothing else, and
@@ -431,6 +463,7 @@ export const VERSION_NAME_RE = /^[a-z0-9][a-z0-9 ._-]{0,63}$/i;
    so both modes use ONE write path and the fence needs no second design. What
    differs between the kinds is what the version SAYS, which is why the kind is
    a field on the version and not a second endpoint. */
+/** @type {{'basis-version': string, 'sharpen-question': string, 'new-inquiry': string, 'level-empty': string, 'new-edition': string}} */
 export const SUGGEST_KINDS = {
   'basis-version': localize('basis-version-grammar.checks.suggest_kind_basis_version', 'a new version of the inquiry\'s basis — the main output: a complete alternative composition with its legs, its branches and its description (section 6)'),
   'sharpen-question': localize('basis-version-grammar.checks.suggest_kind_sharpen_question', 'the inquiry asks two questions that need different evidence; here they are separated (section 8). The separation is carried as the version\'s claim'),
@@ -441,6 +474,7 @@ export const SUGGEST_KINDS = {
 
 /* C-27.15, the one row of the catalogue's `SUGGEST_CHECKS` this module raises (R1): the kind a DOCUMENT carries, checked
    by the grammar at both gates. The rest of C-27 is the suggest endpoint's, run-productions'. */
+/** @type {{VERSION_KIND_UNKNOWN: CheckRow}} */
 export const VERSION_KIND_CHECKS = {
   /* ---- the grammar's own row, fired from `basisVersionFindings` at both
      gates. A DOCUMENT can carry a kind without ever passing through the
