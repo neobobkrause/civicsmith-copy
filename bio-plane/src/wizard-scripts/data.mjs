@@ -5,15 +5,130 @@ import { word } from "../setup-words/index.mjs";
  * forms this module carries; `build-data.mjs` writes them into `screen-registry.mjs` and `civicsmith-library.mjs`, and
  * the tests hold the written data equal to these readings of the vendored files. */
 
-/** R13: an act the file marks owed: `owed:<op> DEC-n`, or `owed:<op> Kn` when a BOB ruling owes it (since PR #13). */
+/**
+ * @typedef {Object} OwedAct an act the registry owes until its op is declared (R13)
+ * @property {string} op the op it becomes
+ * @property {string | null} dec the ruling that owes it (`DEC-n` or `Kn`), or null
+ * @property {number} at the number of the screen's acts before it
+ * @bound at: whole number, zero or more, at most the number of the screen's acts
+ */
+/**
+ * @typedef {Object} RegistryScreen one screen of the registry (R13)
+ * @property {string} id
+ * @property {string} name
+ * @property {string} purpose
+ * @property {string[]} acts the ops of its declared and function acts, in the file's order, each once
+ * @property {OwedAct[]} owed
+ */
+/**
+ * @typedef {Object} RegistryGap an act of the registry with no declaration (R41)
+ * @property {string} screen
+ * @property {string} act
+ * @property {boolean} owed
+ */
+/**
+ * @typedef {Object} Approval who approved a version, and when (R22)
+ * @property {string} by
+ * @property {string} at
+ * @property {string} [ruling]
+ * @bound at: a date, YYYY-MM-DD
+ */
+/**
+ * @typedef {Object} ScriptStep one step of a script (R2, R13, R22)
+ * @property {string} screen
+ * @property {string | null} act the op, an owed act carried as its op
+ * @property {string} what
+ * @property {string} why
+ * @property {unknown} [draft] the file's draft, as the file holds it
+ * @property {string} [via] the id of the script a side trip opens
+ */
+/**
+ * @typedef {Object} EarlierVersion a version a newer one replaced (R1, R7)
+ * @property {number} version
+ * @property {ScriptStep[]} steps
+ * @property {string} author
+ * @property {Approval} approved
+ * @property {string} [source] the commit its steps come from
+ */
+/**
+ * @typedef {Object} LibraryScript one script of the Civicsmith library, in R1's form (R22)
+ * @property {string} id
+ * @property {string} name
+ * @property {string | null} start
+ * @property {string} origin
+ * @property {string} scope
+ * @property {boolean} required
+ * @property {number} version
+ * @property {ScriptStep[]} steps
+ * @property {string} author
+ * @property {Approval} approved
+ * @property {string} [source] the commit its steps come from
+ * @property {EarlierVersion[]} [earlier] oldest first
+ * @bound version: whole number, 1 or more
+ */
+/**
+ * @typedef {Object} FrontDoor one front door (R23, R33)
+ * @property {string} door
+ * @property {readonly string[]} scripts the ids of the scripts it names, in the file's order
+ */
+/**
+ * @typedef {Object} ElsewhereDoor the sixth door, which names no script (R37)
+ * @property {string} door
+ * @property {readonly string[]} scripts always empty
+ * @property {string} opens the route it opens
+ */
+/**
+ * @typedef {Object} SourceFile a carried file's source (R41)
+ * @property {string} commit
+ * @property {string} path
+ * @property {string} sha256
+ * @bound sha256: 64 lower-case hexadecimal characters
+ */
+/**
+ * @typedef {Object} AdoptedEntry versions BOB adopts from a newer library (R22, K2241)
+ * @property {readonly string[]} ids
+ * @property {number} version
+ * @property {string} source
+ * @property {Approval} approved
+ */
+/**
+ * @typedef {Object} AddedEntry scripts BOB adds from a newer library (R30)
+ * @property {readonly string[]} ids
+ * @property {string} source
+ * @property {Approval} approved
+ */
+/**
+ * @typedef {Object} RetakenEntry a library re-taken whole from the file (R42)
+ * @property {string} source
+ * @property {Approval} approved
+ */
+/**
+ * @typedef {Object} RegistryFile the design stream's registry.json, as read
+ * @property {Array<{id: string, name: string, purpose: string, acts?: Array<{op: string, status?: string}>}>} [screens]
+ */
+/**
+ * @typedef {Object} LibraryFile the design stream's library.json, as read
+ * @property {Array<{id: string, name: string, start?: string, versions?: Array<{version: number, steps?: Array<{screen: string, act?: string | null, what: string, why: string, draft?: unknown, via?: string | null}>}>}>} [scripts]
+ * @property {Array<{door: string, scripts?: string[], opens?: string}>} [doors]
+ */
+/**
+ * @typedef {Object} NewerLibrary a newer library file and its commit
+ * @property {LibraryFile} file
+ * @property {string} commit
+ */
+
+/** @type {RegExp} R13: an act the file marks owed: `owed:<op> DEC-n`, or `owed:<op> Kn` when a BOB ruling owes it (since PR #13). */
 export const OWED_ACT = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 /** R22: who authored the Civicsmith library, and who approved its first version and when (DEC-148). */
+/** @type {string} */
 export const LIBRARY_AUTHOR = "civicsmith";
+/** @type {Readonly<Approval>} */
 export const LIBRARY_APPROVED = Object.freeze({ by: "Bob", at: "2026-10-06" });
 /** R22 (T37, T41; K2241): the newer versions BOB adopts from the design stream's library (Bob: "I don't need to approve
  *  wizard scripts"), each script by name, the version it becomes, the commit of the library it is taken from, and who
  *  adopted it when under which ruling: T37's four from PR #14's merge (`e08cd35ecb`), T41's two from PR #19's
- *  (`3660c18803`; DEC-188 (8), DEC-184; K2484). */
+ *  (`3660c18803`; DEC-188 (8), DEC-184; K2484).
+ *  @type {readonly AdoptedEntry[]} */
 export const LIBRARY_ADOPTED = Object.freeze([
   Object.freeze({ ids: Object.freeze(["WIZ-c887066cc553dd41", "WIZ-426b9c2e8b128b6b", "WIZ-33b5887790b7561b", "WIZ-a15d174f7a2c1dc5"]), version: 2,
                   source: "e08cd35ecb", approved: Object.freeze({ by: "BOB", at: "2026-10-08", ruling: "K2241" }) }),
@@ -39,12 +154,14 @@ export const LIBRARY_ADOPTED = Object.freeze([
                   source: "4664e8efd4", approved: Object.freeze({ by: "BOB", at: "2026-10-14", ruling: "K2241" }) }),
 ]);
 /** R33, R41 (T47, T50; DEC-198 (4), DEC-266; N992, N1130): the commit of the library whose `doors` are carried as the front
- *  doors: the design commit named at T50's START, whose file holds the sixth door. */
+ *  doors: the design commit named at T50's START, whose file holds the sixth door.
+ *  @type {string} */
 export const DOORS_SOURCE = "1cc4a957f0";
 /** R42 (T50; N1130; DEC-266, DEC-279, DEC-281; K2241, which needs no approval from Bob): the library re-taken from the
  *  design file's content at the design commit named at T50's START (`7be06eb4cb`, the design branch's last merge into
  *  `tranche/T50`, K3750): every script whose name or steps differ from its latest carried version gains the file's
- *  content as its next version, approved as the entry records, the earlier version kept (R1, R7). */
+ *  content as its next version, approved as the entry records, the earlier version kept (R1, R7).
+ *  @type {readonly RetakenEntry[]} */
 export const LIBRARY_RETAKEN = Object.freeze([
   Object.freeze({ source: "2a64c5ae77", approved: Object.freeze({ by: "BOB", at: "2026-10-17", ruling: "K2241" }) }),
   /* T51 fix round (R45; DEC-384; K4197): the welcome wizard's step 4, reworded */
@@ -52,7 +169,8 @@ export const LIBRARY_RETAKEN = Object.freeze([
 ]);
 /** R30 (T46; DEC-194 (5); N913; K2241): the scripts BOB adds to the library from a newer design file, each by name, at
  *  version 1, from the commit of the library it is taken from, approved by BOB on the date of the adoption; none
- *  required (R22's three stay the only required ones). */
+ *  required (R22's three stay the only required ones).
+ *  @type {readonly AddedEntry[]} */
 export const LIBRARY_ADDED = Object.freeze([
   Object.freeze({ ids: Object.freeze(["WIZ-f06504b9133b8d61", "WIZ-bd7bde2c61b6badb", "WIZ-33cece8a68e76f58",
                                         "WIZ-d0cdcee9437b213b", "WIZ-a17835c4d8235f65"]),
@@ -61,18 +179,22 @@ export const LIBRARY_ADDED = Object.freeze([
   Object.freeze({ ids: Object.freeze(["WIZ-7de505135a9ecd4f"]),
                   source: "4664e8efd4", approved: Object.freeze({ by: "BOB", at: "2026-10-14", ruling: "K2241" }) }),
 ]);
-/** R22: the three required scripts, by name (DEC-148). */
+/** R22: the three required scripts, by name (DEC-148).
+ *  @type {readonly string[]} */
 export const REQUIRED_NAMES = Object.freeze([word("wizard.WIZ-c887066cc553dd41.name"), word("wizard.WIZ-7db08189cc0e58c3.name"), word("wizard.WIZ-426b9c2e8b128b6b.name")]);
 
 /** R41 (T50; K3471): the installer's four routes. The registry owes them (`owed:installupdate` and the others), but they are
- *  the installer's routes, not plane ops: the check that every registry act has a declaration excludes them by name. */
+ *  the installer's routes, not plane ops: the check that every registry act has a declaration excludes them by name.
+ *  @type {readonly string[]} */
 export const INSTALLER_ROUTES = Object.freeze(["installupdate", "installalongside", "installremove", "installremoveconfirm"]);
 
 /** R41 (pure): the acts of the registry (`screensFromFile`'s form, as `SCREEN_REGISTRY` carries it) that have no declaration.
  *  `declared` is what the member op table holds, aliases included (a Set, a list of names or an object keyed by name). Each
  *  gap is `{screen, act, owed}`, in the registry's order: an act the file marks `declared` or `function` that `declared` lacks
  *  (`owed: false`), and an owed act whose op `declared` lacks (`owed: true`: R13 registers it once its op is declared), but
- *  never one of `INSTALLER_ROUTES`. `[]` when every registry act has its declaration. Writes nothing; never throws. */
+ *  never one of `INSTALLER_ROUTES`. `[]` when every registry act has its declaration. Writes nothing; never throws.
+ *  @param {{screens?: readonly RegistryScreen[], declared?: Set<string> | readonly string[] | Object<string, unknown>}} [args]
+ *  @returns {RegistryGap[]} */
 export function registryActGaps({ screens = [], declared = [] } = {}) {
   const have = declared instanceof Set ? declared : new Set(Array.isArray(declared) ? declared : declared && typeof declared === "object" ? Object.keys(declared) : []);
   const gaps = [];
@@ -85,7 +207,9 @@ export function registryActGaps({ screens = [], declared = [] } = {}) {
 
 /** R13 (DEC-139 (5)): the registry's screens as `[{id, name, purpose, acts, owed}]`: `acts` the op of each act marked
  *  `declared` or `function`, in the file's order; `owed` each act marked `owed`, `{op, dec, at}`, `at` the number of
- *  `acts` that precede it, so an owed act whose op is declared is registered in the file's order (R13; DEC-148). */
+ *  `acts` that precede it, so an owed act whose op is declared is registered in the file's order (R13; DEC-148).
+ *  @param {RegistryFile} file
+ *  @returns {RegistryScreen[]} */
 export function screensFromFile(file) {
   const out = [];
   for (const s of (file && Array.isArray(file.screens) ? file.screens : [])) {
@@ -107,7 +231,11 @@ export function screensFromFile(file) {
  *  author, approved}`: the file's id, name, start, steps and order; one version, 1, approved by Bob on 6 October 2026
  *  and authored by the Civicsmith library; required exactly for the three DEC-148 names; a step's side trip, named in
  *  the file by the script's name, carried as that script's id (R2's `via`); an owed act as its op (R13). The file's
- *  `note`, `journeys` and `approved` are design notes and are not carried. */
+ *  `note`, `journeys` and `approved` are design notes and are not carried.
+ *  @param {LibraryFile} file
+ *  @param {string | null} [commit] the file's commit, carried as each script's `source`
+ *  @returns {LibraryScript[]}
+ *  @throws {Error} when a step's side trip names a script the file does not hold */
 export function libraryFromFile(file, commit = null) {
   const scripts = file && Array.isArray(file.scripts) ? file.scripts : [];
   const byName = new Map(scripts.map((s) => [s.name, s.id]));
@@ -129,7 +257,15 @@ export function libraryFromFile(file, commit = null) {
  *  start and required are the script's (R22: kept unless the file changes them). Each script an entry of `added` names
  *  joins the library from that entry's file as its version 1, approved as the entry records, never required, at its
  *  place in that file's order (before the first script that follows it there and is already held; else last). Last,
- *  each entry of `retaken` (R42, T50) brings every script of its file to the file's content, as a next version. */
+ *  each entry of `retaken` (R42, T50) brings every script of its file to the file's content, as a next version.
+ *  @param {LibraryFile} baseFile
+ *  @param {string} baseCommit
+ *  @param {readonly NewerLibrary[]} [newer]
+ *  @param {readonly AdoptedEntry[]} [adopted]
+ *  @param {readonly AddedEntry[]} [added]
+ *  @param {readonly RetakenEntry[]} [retaken]
+ *  @returns {LibraryScript[]}
+ *  @throws {Error} when an entry names a file not given, a script that file does not hold, a version that does not follow, or a script the library already holds or lacks */
 export function adoptedLibrary(baseFile, baseCommit, newer = [], adopted = LIBRARY_ADOPTED, added = LIBRARY_ADDED, retaken = LIBRARY_RETAKEN) {
   const base = libraryFromFile(baseFile, baseCommit);
   const read = new Map((Array.isArray(newer) ? newer : []).map((n) => [n.commit, libraryFromFile(n.file, n.commit)]));
@@ -180,13 +316,18 @@ export function adoptedLibrary(baseFile, baseCommit, newer = [], adopted = LIBRA
 /** R37 (T48; DEC-227 (1)): the sixth front door, the way out, `{door, scripts: [], opens}`: carried as this frozen data unless
  *  `library.json`'s `doors` holds a door of that name at the commit the job's START names (then the file's, normalised to
  *  this form). It names no script and opens the `elsewhere` route; its words are `door.front.elsewhere.*`, read by the
- *  interface. */
+ *  interface.
+ *  @type {string} */
 export const ELSEWHERE = "elsewhere";
+/** @type {Readonly<ElsewhereDoor>} */
 export const ELSEWHERE_FROZEN = Object.freeze({ door: ELSEWHERE, scripts: Object.freeze([]), opens: ELSEWHERE });
 
 /** R33 (T47; DEC-198 (4)): the file's front doors, each `{door, scripts}` in the file's order, `scripts` the script ids
  *  it names in its order, each a script the file holds (a door naming one it does not hold is an error, as a side trip
- *  is). Nothing else of a door is carried: its words are `words.json`'s `door.front.*`, read by the interface. */
+ *  is). Nothing else of a door is carried: its words are `words.json`'s `door.front.*`, read by the interface.
+ *  @param {LibraryFile} file
+ *  @returns {FrontDoor[]}
+ *  @throws {Error} when a door names a script the file does not hold */
 export function doorsFromFile(file) {
   const ids = new Set((file && Array.isArray(file.scripts) ? file.scripts : []).map((s) => s.id));
   return (file && Array.isArray(file.doors) ? file.doors : []).map((d) => {
@@ -211,7 +352,10 @@ function stepsOf(s, v, byName) {
     });
 }
 
-/** Freezes a value deeply, for the carried data. */
+/** Freezes a value deeply, for the carried data.
+ *  @template T
+ *  @param {T} v
+ *  @returns {T} the same value, frozen */
 export function deepFreeze(v) {
   if (v && typeof v === "object" && !Object.isFrozen(v)) { for (const k of Object.keys(v)) deepFreeze(v[k]); Object.freeze(v); }
   return v;
