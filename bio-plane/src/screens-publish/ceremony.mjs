@@ -23,9 +23,49 @@ const GATE_REFUSED = function (r, cs) {
   return cs.w("refusal.GATE_REFUSED") + (lines.length ? "<br><b>" + cs.w("ceremony.gate.heading") + "</b>" + lines.join("") : "");
 };
 
+/* The code differences ARCH placed on 22 Nov 2026 (Screens page "Publishing", ceremony C6, C7, C12 and V1, V2): the ceremony's own parts,
+ * beside the shared ones. Each is self-contained (interface-shell R21 (1)). */
+const CEREMONY_PARTS = Object.freeze({
+  /* R46, R51 (DEC-377): the refusals of what is disclosed and of a document listed as self-attested only, each said again in its section's
+     fold ("When a contradiction is refused", "When these are refused") by the design's sentences for its code. `which` is `disc` or `conf`;
+     `codes` the refusal codes the page holds now. "" when none of them is the section's. */
+  refusedFold: function (cs, which, codes) {
+    const said = which === "disc" ? {
+      TENSION_NOT_DISCLOSED: ["screen.ceremony.disc.refused.notlisted1", "screen.ceremony.disc.refused.notlisted2"],
+      DISCLOSURE_NOT_STANDING: ["screen.ceremony.disc.refused.standing1", "screen.ceremony.disc.refused.standing2"],
+      TENSIONS_UNDETERMINED: ["screen.ceremony.disc.refused.unread"],
+    } : {
+      CO_ATTESTATION_UNACKNOWLEDGED: ["screen.ceremony.conf.refused.unlisted1", "screen.ceremony.conf.refused.unlisted2"],
+      SELF_ATTESTED_NO_REASON: ["screen.ceremony.conf.refused.noreason1", "screen.ceremony.conf.refused.noreason2"],
+      SELF_ATTESTATION_NOT_STANDING: ["screen.ceremony.conf.refused.standing"],
+      NOT_THE_CAPTURING_ACTOR: ["screen.ceremony.conf.refused.actor"],
+    };
+    const seen = {};
+    const lines = (codes || []).filter(function (c) { const fresh = Object.hasOwn(said, c) && !seen[c]; seen[c] = true; return fresh; }).map(function (c) {
+      return '<p data-refused="' + cs.esc(c) + '">' + said[c].map(function (k) { return cs.w(k); }).join(" ") + "</p>";
+    });
+    if (!lines.length) return "";
+    const summary = which === "disc" ? "screen.ceremony.disc.refused.summary" : "screen.ceremony.conf.refused.summary";
+    return '<details class="mk-details" open data-fold="' + summary + '"><summary>' + cs.w(summary) + "</summary>" + lines.join("") + "</details>";
+  },
+  /* The refusal code an act's answer carries (a refusal in form, or one inside a success, D29); "" when it carries none. */
+  codeOf: function (answer) {
+    if (!answer || typeof answer !== "object") return "";
+    const f = answer.fields && typeof answer.fields === "object" ? answer.fields : answer;
+    const r = f.result !== undefined && f.result && typeof f.result === "object" ? f.result : f;
+    if (r.ok !== false && f.ok !== false && !answer.code) return "";
+    return String(r.code || r.reason || f.code || answer.code || "");
+  },
+  /* What the act `act` was last refused for, kept in page memory until it is answered without one. */
+  noteRefused: function (view, act, code) {
+    const r = view.ui.refusedBy || (view.ui.refusedBy = {});
+    r[act] = code || "";
+  },
+});
+
 export const CEREMONY = Object.freeze({
   id: "ceremony",
-  parts: PARTS,
+  parts: Object.freeze({ ...PARTS, ...CEREMONY_PARTS }),
 
   reads: function (view) {
     if (!view.parts.subject(view, 1)) return {}; // K3171: no subject in the address, no subject read
@@ -105,6 +145,12 @@ export const CEREMONY = Object.freeze({
     };
     const steps = pre.state === "ok" && Array.isArray(pre.value.steps) ? pre.value.steps : [];
     const stepWith = function (k) { return steps.find(function (x) { return x && typeof x === "object" && k in x; }) || null; };
+    // R46, R51: the refusal codes the page holds now: what the pre-flight answers stops the signing, the read of what is disclosed, and each
+    // act's last refusal (`noteRefused`); each is said again in its section's fold
+    const refusedCodes = (pre.state === "ok" ? (pre.value.first ? [pre.value.first] : []).concat(Array.isArray(pre.value.blockers) ? pre.value.blockers : []) : [])
+      .map(function (b) { return String(b && (b.code || b.reason) || ""); })
+      .concat(ten.state === "failed" && ten.refusal ? [String(ten.refusal.code || "")] : [])
+      .concat(Object.values(ui.refusedBy || {})).filter(Boolean);
     // R70, R71 (fix round 3, C48, C50; case-authoring R83, review R19): what this draft has prepared and published is read from the record:
     // the pre-flight's `editions`, else the draft's own in `casedrafts`; `{prepared, published: {edition, address}}`, so a reloaded page states
     // it again. An older answer that states neither is read as before: the case's public editions (`publishedcase`) and the unsigned
@@ -235,7 +281,7 @@ export const CEREMONY = Object.freeze({
             return cs.field("ce-dw-" + i, "screen.ceremony.disc.words.label", { rec: true, value: mine.words[t.candidate] || "", help: ["screen.ceremony.disc.words.help1", "screen.ceremony.disc.words.help2"] });
           }).join("") : "")
         + '<div class="mk-acts">' + cs.act("publishtensions") + "</div>";
-    })));
+    }) + P.refusedFold(cs, "disc", refusedCodes)));
 
     // R51 (C6; DEC-377): "Documents without a second confirmation", from the pre-flight: ask for the confirmation again (`reattest`),
     // list the document as self-attested only with a required reason (`selfAttested`, sent with the pre-flight and `publish`), or the
@@ -288,8 +334,8 @@ export const CEREMONY = Object.freeze({
           return cs.field("ce-cap-" + i, "screen.ceremony.conf.account.label", { area: true, rec: true, fills: { name: me.handle || me.member || "" },
             help: ["screen.ceremony.conf.account.help1", "screen.ceremony.conf.account.help2"] })
             + '<div class="mk-acts">' + cs.act("captureaccount", { data: { capture: sha, index: String(i) } }) + "</div>";
-        }).join("") + P.said(view, "reattest") + P.said(view, "captureaccount")));
-    }
+        }).join("") + P.said(view, "reattest") + P.said(view, "captureaccount") + P.refusedFold(cs, "conf", refusedCodes)));
+    } else if (P.refusedFold(cs, "conf", refusedCodes)) out.push(cs.sec("screen.ceremony.conf.heading", P.refusedFold(cs, "conf", refusedCodes)));
 
     // R44 (C2; DEC-376): the declared bias for this edition, the member's own words, fixed into the edition when she signs; sent with the
     // pre-flight and `publish` as `biasAcknowledgement`. Never blocks publishing.
@@ -302,6 +348,8 @@ export const CEREMONY = Object.freeze({
 
     // R4: the Photos step.
     out.push(P.sec(cs, "screen.ceremony.photos", !photos.length ? "" : '<p>' + cs.w("screen.ceremony.photos.copy") + "</p><p>" + cs.w("screen.ceremony.photos.gate") + "</p>"
+      // Screens page C8: the photo rules (protected) are said before any photo is marked
+      + '<p class="mk-note" data-photo-rules>' + cs.w("screen.ceremony.photos.rules") + "</p>"
       + (photos.map(function (ph, i) {
         const sha = ph.sha || ph.capture || "";
         const marks = P.later(cs, view, "marks:" + sha, "photomarks", { query: { capture: sha } });
@@ -383,6 +431,12 @@ export const CEREMONY = Object.freeze({
       // `screen.ceremony.when.nozonestated`): the op's own held sentence for the check that did not say.
       const rat = signStep && signStep.ratification && typeof signStep.ratification === "object" ? signStep.ratification : null;
       const why = !pa ? (rat && rat.reached === false ? "notreached" : "unanswered") : pa.offered === false ? "nozone" : "nozonestated";
+      // R12: the time the member gave, once both parts are given: `{fills}` for the choice (plain text, inside an option) and `{button}` for
+      // the button and the note; null until then. `atChosen`: the member has chosen a set time.
+      const atGiven = P.at(ui.atDate, ui.atTime);
+      const chosenAt = timed && atGiven ? { fills: { date: P.plain(cs.date(atGiven.date)), time: P.plain(P.clock(cs, atGiven.time)), zone: zone },
+        button: { date: { html: cs.date(atGiven.date) }, time: { html: P.clock(cs, atGiven.time) } } } : null;
+      const atChosen = ui["choice:ce-when"] === "at";
       const noTime = why === "nozone" ? P.refusalText(cs, { code: typeof pa.reason === "string" && pa.reason ? pa.reason : "PUBLISH_AT_NO_ZONE" })
         : cs.w(why === "notreached" ? "case-authoring.publish_at_not_reached_sentence" : "case-authoring.publish_at_unanswered_sentence");
       // R70: preparing publishes nothing; the Sign step is the one that says publishing makes the edition permanent
@@ -392,7 +446,10 @@ export const CEREMONY = Object.freeze({
       else {
         sign += (timed ? '<fieldset class="cs-field"><legend>' + cs.w("screen.ceremony.when") + "</legend>"
           + '<p class="help">' + cs.w("screen.ceremony.when.help", { zone: zone }) + "</p>"
-          + cs.field("ce-date", "screen.ceremony.when.date", { type: "date" }) + cs.field("ce-time", "screen.ceremony.when.time", { type: "time" }) + "</fieldset>"
+          // R12 (Screens page C12, A7): the date and time the member gives are kept in page memory as she gives them, so the choice, its
+          // note and the button say them before she signs (`.when.chosen`, `.when.note`, `.publishat.button`, all protected)
+          + cs.field("ce-date", "screen.ceremony.when.date", { type: "date", value: ui.atDate || "", typing: function (cs2, v, value) { cs2.set("atDate", String(value || "")); } })
+          + cs.field("ce-time", "screen.ceremony.when.time", { type: "time", value: ui.atTime || "", typing: function (cs2, v, value) { cs2.set("atTime", String(value || "")); } }) + "</fieldset>"
           : untimed ? '<p class="mk-note" role="status" data-publish-at-none="' + why + '"' + (pa && typeof pa.source === "string" ? ' data-source="' + cs.esc(pa.source) + '"' : "") + (pa && typeof pa.why === "string" ? ' data-why="' + cs.esc(pa.why) + '"' : "") + ">" + noTime + "</p>" : "")
           + cs.state(doc, function (d) {
             const list = P.sitting(d, prepared) || [];
@@ -404,7 +461,11 @@ export const CEREMONY = Object.freeze({
             return '<details data-statements><summary>' + cs.w("screen.ceremony.signs.exactly") + "</summary><ul class=\"mk-list\">"
               + list.map(function (x) {
                 return '<li data-statement="' + x.kind + '"><span class="id">' + cs.esc(x.text.trim()) + "</span> · " + cs.w("screen.ceremony.signs." + x.kind, { id: x.id, edition: String(x.edition === undefined ? "" : x.edition), case: x.id }) + "</li>";
-              }).join("") + "</ul></details>" + (gap ? '<p role="alert" data-roster-unread>' + cs.w("screen.ceremony.sign.nodoc") + "</p>" : "") + "<p>" + (evidence > 0 ? cs.w("screen.ceremony.signs.count", { n: String(list.length),
+              }).join("") + "</ul>"
+              // Screens page C12 (protected): how many lines like these the evidence makes, and what each line is
+              + (evidence > 0 ? "<p data-signs-lines>" + cs.w("screen.ceremony.signs.lines", { n: String(evidence), findings: String(list.filter(function (x) { return x.kind === "finding"; }).length),
+                list: list.filter(function (x) { return x.kind === "evidence"; }).map(function (x) { return x.id; }).join(", ") }) + "</p>" : "")
+              + '<p class="mk-note">' + cs.w("screen.ceremony.signs.linesabout") + "</p></details>" + (gap ? '<p role="alert" data-roster-unread>' + cs.w("screen.ceremony.sign.nodoc") + "</p>" : "") + "<p>" + (evidence > 0 ? cs.w("screen.ceremony.signs.count", { n: String(list.length),
                 findings: String(list.filter(function (x) { return x.kind === "finding"; }).length), evidence: String(evidence) })
                 : cs.w("screen.ceremony.signs.count.findings", { n: String(list.length), findings: String(list.filter(function (x) { return x.kind === "finding"; }).length) })) + "</p>"
               + (named === 1 ? '<p class="mk-note" data-unpublished="1">' + cs.w("screen.published.rests.on.the.council.minutes.one") + "</p>"
@@ -417,8 +478,10 @@ export const CEREMONY = Object.freeze({
           + (ui.keyHeld === false ? cs.field("ce-keyfile", "shell.signer.loadfile", { type: "file", help: "shell.signer.load",
             typing: function (cs2) { cs2.keyFile("ce-keyfile").then(function (k) { cs2.set("keyFileChosen", !!k.ok); }); } }) : "")
           // R12 (K3147, K3150): one button that follows the choice of when (interface-shell R49's `cs.choice` with `acts`).
-          + '<div class="mk-acts">' + (timed ? cs.choice("ce-when", "screen.ceremony.when", [["now", "screen.ceremony.when.now"], ["at", "screen.ceremony.when.at"]],
-            { acts: { now: "caseratify", at: "publishat" }, act: { tone: "primary", icon: "signed" } }) : cs.act("caseratify", { tone: "primary", icon: "signed" })) + "</div>"
+          + '<div class="mk-acts">' + (timed ? cs.choice("ce-when", "screen.ceremony.when", [["now", "screen.ceremony.when.now"], chosenAt ? ["at", "screen.ceremony.when.chosen", chosenAt.fills] : ["at", "screen.ceremony.when.at"]],
+            { acts: { now: "caseratify", at: "publishat" }, act: atChosen && chosenAt ? { tone: "primary", icon: "signed", label: "screen.ceremony.publishat.button", fills: chosenAt.button } : { tone: "primary", icon: "signed" } })
+            : cs.act("caseratify", { tone: "primary", icon: "signed" })) + "</div>"
+          + (timed && atChosen && chosenAt ? '<p class="mk-note" data-when-note>' + cs.w("screen.ceremony.when.note", { time: chosenAt.button.time }) + "</p>" : "")
           + '<p class="muted">' + cs.w("screen.ceremony.device.next") + "</p>";
       }
       // R45 (C4): the making of a signing key is offered as soon as the step is drawn when this browser holds none
@@ -466,11 +529,17 @@ export const CEREMONY = Object.freeze({
         const copy = view.parts.copyOf(view);
         if (!copy) return null;
         const at = view.parts.attested(view, cs);
-        if (at.refuse) return { refuse: at.refuse };
+        // R51: a document listed as self-attested only with no reason is refused in place, and said again in its section's fold
+        view.parts.noteRefused(view, "attested", at.refuse ? "SELF_ATTESTED_NO_REASON" : "");
+        if (at.refuse) { cs.set("refusedBy", view.ui.refusedBy); return { refuse: at.refuse }; }
         view.ui.attested = at.held; view.ui.attestedBody = at.body;
         return { body: Object.assign(view.parts.caseArgs(copy, view.ui.draftId || ""), at.body, view.ui.prepared ? { tieAttested: true } : {}) };
       },
-      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "publishpreflight", answer)) view.parts.forget(view); }, // D29
+      failed: function (view, answer, cs) { view.parts.noteRefused(view, "publishpreflight", view.parts.codeOf(answer)); cs.set("refusedBy", view.ui.refusedBy); },
+      done: function (view, answer, cs) {
+        view.parts.noteRefused(view, "publishpreflight", view.parts.codeOf(view.parts.carried(answer)));
+        if (!view.parts.refused(cs, view, "publishpreflight", answer)) view.parts.forget(view); // D29
+      },
     },
     {
       // R3: "See everything that will be disclosed".
@@ -480,7 +549,9 @@ export const CEREMONY = Object.freeze({
         if (!copy) return null;
         return { body: { project: copy.project, draft: view.ui.draftId || "" } };
       },
+      failed: function (view, answer, cs) { view.parts.noteRefused(view, "publishtensions", view.parts.codeOf(answer)); cs.set("refusedBy", view.ui.refusedBy); },
       done: function (view, answer, cs) {
+        view.parts.noteRefused(view, "publishtensions", view.parts.codeOf(view.parts.carried(answer)));
         if (view.parts.refused(cs, view, "publishtensions", answer)) return { stay: true }; // D29
         view.ui.allTensions = view.parts.value(answer);
         return { stay: true };
@@ -497,7 +568,11 @@ export const CEREMONY = Object.freeze({
       // once more; the answer shows only that it existed by then.
       op: "reattest", label: "act.reattest.label.ceremony", rereads: [],
       send: function (view, el) { return { body: { captureSha: el.dataset.capture } }; },
-      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "reattest", answer)) view.parts.forget(view); }, // D29
+      failed: function (view, answer, cs) { view.parts.noteRefused(view, "reattest", view.parts.codeOf(answer)); cs.set("refusedBy", view.ui.refusedBy); },
+      done: function (view, answer, cs) {
+        view.parts.noteRefused(view, "reattest", view.parts.codeOf(view.parts.carried(answer)));
+        if (!view.parts.refused(cs, view, "reattest", answer)) view.parts.forget(view); // D29
+      },
     },
     {
       // R51 (C6): the capturing member's own signed account of the capture (`bio-capture-account`, signed in `bio-ratify`), through
@@ -510,7 +585,11 @@ export const CEREMONY = Object.freeze({
         if (!signed || signed.ok !== true || !Array.isArray(signed.signatures) || signed.signatures.length !== 1) return { refuse: "signing.ceremony.declined" };
         return { body: { captureSha: sha, text: text, signature: signed.signatures[0] } };
       },
-      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "captureaccount", answer)) view.parts.forget(view); }, // D29
+      failed: function (view, answer, cs) { view.parts.noteRefused(view, "captureaccount", view.parts.codeOf(answer)); cs.set("refusedBy", view.ui.refusedBy); },
+      done: function (view, answer, cs) {
+        view.parts.noteRefused(view, "captureaccount", view.parts.codeOf(view.parts.carried(answer)));
+        if (!view.parts.refused(cs, view, "captureaccount", answer)) view.parts.forget(view); // D29
+      },
     },
     {
       // R4: the areas the member marks on a photo (a person not part of a finding, a number plate, city staff at work
@@ -547,6 +626,7 @@ export const CEREMONY = Object.freeze({
       // D-M5 (1): a refusal in form leaves the stops to be read again too, as a refusal inside a success does (`done`)
       failed: function (view, answer, cs) {
         const f = answer && answer.fields && typeof answer.fields === "object" ? answer.fields : { code: answer && answer.code };
+        view.parts.noteRefused(view, "publish", view.parts.codeOf(answer));
         view.parts.say(cs, view, "stops", view.parts.refusalText(cs, f) || cs.w("shell.noanswer"), false);
         view.parts.forget(view);
         cs.set("later", view.ui.later);
@@ -558,12 +638,14 @@ export const CEREMONY = Object.freeze({
         const tick = cs.value("ce-tie");
         if (!(Array.isArray(tick) ? tick.includes("yes") : tick === true)) return { refuse: "screen.ceremony.ties.needed" };
         const at = view.parts.attested(view, cs);
-        if (at.refuse) return { refuse: at.refuse };
+        view.parts.noteRefused(view, "attested", at.refuse ? "SELF_ATTESTED_NO_REASON" : "");
+        if (at.refuse) { cs.set("refusedBy", view.ui.refusedBy); return { refuse: at.refuse }; }
         view.ui.attested = at.held; view.ui.attestedBody = at.body;
         return { body: Object.assign(view.parts.caseArgs(copy, view.ui.draftId || ""), at.body, { tieAttested: true }) };
       },
       done: function (view, answer, cs) {
         // D29: nothing is prepared on a refusal; D-M5 (1): the stops are read again, so the list at the top is the one the plane now holds
+        view.parts.noteRefused(view, "publish", view.parts.codeOf(view.parts.carried(answer)));
         if (view.parts.refused(cs, view, "publish", answer)) {
           view.parts.say(cs, view, "stops", view.parts.refusalText(cs, view.parts.carried(answer)), false);
           view.parts.forget(view);
