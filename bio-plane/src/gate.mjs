@@ -1183,7 +1183,20 @@ import { localize } from "./setup-words/index.mjs";
    CHANGED (12), code and number unmoved: C-113.32, C-140.4, C-140.7, C-146.25, C-146.6, C-146.7, C-33.54, C-87.1,
    C-94.5, C-94.6, C-96.17, C-96.39. THE FAMILIES THAT ARRIVED: none. This module adds no row.
    ROW_CENSUS (R50) re-pinned to this tree: 1971 rows. Rows a T52 job adds or changes are T53's stamp. */
-export const CATALOG_VERSION = "1.80.0";
+/* 1.81.0 (promotion's Process4 job #1, tranche t1, 2026-11-23; ARCH's decision "The local walk's unreached states, and a
+   reading not yet held", 23 Nov 2026): MINOR. The stamp of the rows the earlier process's last work changed or added
+   after 1.80.0's tree (the merge of `work/module-splits-1`, PR 1129), as its record names them
+   (`build/plan/row-census-awaiting-p4-t1.md`, written by journey-check's job #1, PR 1282), read by diffing R50's census
+   lines of `p4-tranche` against 1.80.0's own (`test/fixtures/row-census-1.80.0.jsonl`): two arrivals, six changed, no
+   departures, nothing else.
+   ARRIVED (2): C-2.8 CUTTING_LEG_IN_GROUND (inquiry-grammar), C-33.65 WHICH_PASSAGE (citation).
+   CHANGED (6), code, number and `where` unmoved, translation reworded by the word table: C-115.40 TEMPLATE_NOT_NAMED
+   (filings), C-120.4 CO_ATTESTATION_UNACKNOWLEDGED (case-disclosures), C-124.8 SUBJECT_IN_ACTIVE_PLAN (action-plans),
+   C-137.5 BAD_PERIOD (following), C-140.45 SIGNATURES_RUN_UNDER_WAY (file-safety), C-53.13
+   CAPTURE_HELD_BY_ANOTHER_BUNDLE (provenance). This module adds no row.
+   ROW_CENSUS (R50) re-pinned to this tree: 1973 rows. */
+/** @type {string} the catalogue's version (R34): it moves whenever a check is added, removed or changed */
+export const CATALOG_VERSION = "1.81.0";
 /* D-147 side, kept as history — took 1.30.0 (D-147, 2026-09-25, branch land/worker/D-147): 1.29.0 -> 1.30.0, MINOR — eleven checks ADDED (C-94.1-11, LIFECYCLE_CHECKS, the records-request lifecycle), none changed or removed; the census read from the d470 suite's print (466 -> 477). CONDUCT reconciles the number at integration if another branch takes 1.30.0 first. */
 /* MK-7 side, kept as history — took 1.30.0 (MK-7, 2026-09-25, branch land/worker/MK-7): ONE NEW FAMILY, ATTRIBUTION_CHECKS (C-92.1-.12, the
    attribution act and its gate), and three TESTIMONY_CHECKS rows (C-53.10-.12) re-worded as their fence is narrowed.
@@ -1270,13 +1283,16 @@ export const CATALOG_VERSION = "1.80.0";
    ENVELOPE_TITLE_DISAGREES and C-86.4 ENVELOPE_STATE_DISAGREES in PROMOTED_TYPE_CHECKS. MINOR; 502 -> 504, count and
    digest from the d470 suite's print on this tree. If another branch in the batch also moves the version, CONDUCT takes
    the next number at the union and re-reads the print on the merged tree. */
+/** @type {string} exactly `plane-gate/1.0 (bio-checks <CATALOG_VERSION>)`, the one version both gates report (R34) */
 export const GATE_VERSION = `plane-gate/1.0 (bio-checks ${CATALOG_VERSION})`;
 /* R50 (N319, K431): the census of every refusal row as this stamp read it, pinned here and held against the tree by
    this module's own census suite, `bio-plane/test/system/row-census.test.mjs` (legacy-tests' until T22's opening, K1006):
    a test may import every module's tables, which this module's source cannot (P4). The stamp that moves CATALOG_VERSION
    re-pins it. */
-export const ROW_CENSUS = Object.freeze({ version: CATALOG_VERSION, rows: 1971,
-  digest: "17406b472cd7001dfef7d6028e0746b51ef7df322d42ad9fff1f2e1af16a5609" });
+/** @type {Readonly<{version: string, rows: number, digest: string}>} the census as the last stamp read it (R50): its
+ *  `CATALOG_VERSION`, the count of rows, and the SHA-256 of their sorted lines, lowercase hex */
+export const ROW_CENSUS = Object.freeze({ version: CATALOG_VERSION, rows: 1973,
+  digest: "f897256afee796690152985bdcb74778fdaf519cbe58a09729b6121beacb3a96" });
 
 const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
 const te = new TextEncoder();
@@ -1318,6 +1334,30 @@ function caseCatalogueFailed(e) {
    promotion instance (ratification's). There is no fallback: with none registered, nothing judges the document, and the
    gate answers C-102.9. A catalogue that throws or does not answer with findings has judged nothing either, so the gate
    fails closed on it (never throws, never passes). */
+/**
+ * A gate's finding, of error severity only (R29).
+ * @typedef {Object} GateFinding
+ * @property {string} check the check's id, or for the case gate's own refusal its code
+ * @property {string} detail what was found, in plain words
+ * @property {any} [repairs] the repairs the check offers, when it offers any
+ * @property {any} [where] where in the bundle the finding lies, when the check says
+ */
+/**
+ * A gate's verdict (R29): `ok` false exactly when one error-severity finding exists.
+ * @typedef {Object} GateAnswer
+ * @property {string} gateVersion `GATE_VERSION`
+ * @property {boolean} ok
+ * @property {GateFinding[]} findings the error-severity findings only
+ * @property {number} warnings the count of the rest
+ */
+/**
+ * R33: the case-document gate. Never throws.
+ * @param {{caseId?: any, edition?: any, fm?: any, priorCase?: any, body?: any, memberBasis?: any}} [facts] the facts a
+ *   case document cannot carry about itself, beside its parsed front matter `fm`; a null one blinds the checks that need it
+ * @param {any} [catalogue] the case-document catalogue registered by R47, `(fm, ctx) => findings`; anything but a
+ *   function answers C-102.9
+ * @returns {GateAnswer}
+ */
 export function runCaseGate({ caseId, edition, fm, priorCase, body = null, memberBasis = null } = {}, catalogue = null) {
   if (typeof catalogue !== "function")
     return caseCatalogueFailed(new Error("no case-document catalogue is registered with this instance"));
@@ -1345,6 +1385,14 @@ export function runCaseGate({ caseId, edition, fm, priorCase, body = null, membe
    `opts.grammars`: each fills its slot, so a grammar judges the bundle at the gate exactly as at the audit. Promotion's
    instance passes its record's (`Promotion#runGate`), each registered by the module that owns it (the catalogue's legacy
    registration left in T20); a caller of this function with none passes none, and only the structural arms run. */
+/**
+ * R27, R28: the bundle gate, the whole bundle-format catalogue over `image`. Rejects only when `hasCapture` rejects.
+ * @param {{bundleId?: any, image?: any, knownIds?: any, hasCapture?: any, registers?: any, releaseRegistry?: any,
+ *   publishedRegistry?: any, publishedCaseRegistry?: any, earnedRegistry?: any, grammars?: any}} facts the bundle's id,
+ *   its image (path to inline text, or a blob reference, which is elided), and the facts it cannot carry about itself; a
+ *   null or absent registry blinds the checks that need it
+ * @returns {Promise<GateAnswer>}
+ */
 export async function runGate({ bundleId, image, knownIds, hasCapture, registers, releaseRegistry,
                                 publishedRegistry, publishedCaseRegistry, earnedRegistry, grammars = null }) {
   const files = new Map(), elided = new Set();

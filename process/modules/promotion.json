@@ -6,7 +6,7 @@
   ],
   "tests": [
     "bio-plane/test/m/promotion/",
-    "bio-plane/test/fixtures/row-census-1.80.0.jsonl"
+    "bio-plane/test/fixtures/row-census-1.81.0.jsonl"
   ],
   "public": [
     "bio-plane/src/gate.mjs",
