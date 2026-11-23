@@ -291,6 +291,7 @@ test("R7: each budget line keyed on fund and org, with its codes read by the vie
   for (const c of odd) {
     assert.equal(typeof c.as_written, "string");
     const column = COLUMNS_OF_CODE.find((col) => r.rows.some((x) => x[col] && x[col].as_written === c.as_written && x[col].form === null));
+    if (!column) assert.fail(`the code "${c.as_written}" of no form is in no row's code column`);
     assert.equal(c.why, localize("budget-doctypes.lines.no_form_of_the_views", "no form of the view's {column} classification matches \"{s}\"", { column, s: c.as_written.trim() }));
   }
   /* A wide table: each amount column's header is that amount's period and phase. */
