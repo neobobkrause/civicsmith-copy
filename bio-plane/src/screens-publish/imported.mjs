@@ -5,11 +5,25 @@
  * (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
 
+/* R59 (C50; DEC-382) and the code differences ARCH placed on 22 Nov 2026 (Screens page "Publishing", imported V6): a citation of an imported
+ * finding, refused, is said in the fold "When it is refused" (`.citeimp.refd`): the team has not accepted the finding (`IMPORTED_NOT_ACCEPTED`),
+ * or the assistant asked (`MACHINE_CANNOT_CITE_IMPORTED`), each in the design's two sentences; another refusal in the plane's own words.
+ * Citation's real refusal is BASIS_REFUSED, its findings carrying the code (C-21.4). Self-contained (interface-shell R21 (1)). */
+const CITE_REFUSED = function (r, cs) {
+  const found = (r && Array.isArray(r.findings) ? r.findings : []).filter(function (f) { return f && typeof f === "object"; }).concat(r && typeof r === "object" ? [r] : []);
+  const has = function (code) { return found.some(function (f) { return f.code === code || f.reason === code; }); };
+  const fold = function (inner) { return '<details class="mk-details" open data-fold="screen.imported.citeimp.refd"><summary>' + cs.w("screen.imported.citeimp.refd") + "</summary><p>" + inner + "</p></details>"; };
+  if (has("IMPORTED_NOT_ACCEPTED")) return fold(cs.w("screen.imported.citeimp.ref.notaccepted1") + " " + cs.w("screen.imported.citeimp.ref.notaccepted2"));
+  if (has("MACHINE_CANNOT_CITE_IMPORTED")) return fold(cs.w("screen.imported.citeimp.ref.machine1") + " " + cs.w("screen.imported.citeimp.ref.machine2"));
+  const said = found.map(function (f) { return String(f.translation || ""); }).filter(Boolean)[0] || "";
+  return fold(said ? cs.esc(said) : cs.w("refusal.uncatalogued") + " <code>" + cs.esc(String(r && (r.code || r.reason) || "")) + "</code>");
+};
+
 export const IMPORTED = Object.freeze({
   id: "imported",
   // R25: an import or edition the team does not hold is answered `IMPORT_NO_SUCH_EDITION` (`case-import` R4): "Nothing is here".
   ABSENT_CODES: Object.freeze(["IMPORT_NO_SUCH_EDITION"]),
-  parts: PARTS,
+  parts: Object.freeze({ ...PARTS, citeRefused: CITE_REFUSED }),
 
   reads: function (view) {
     const r = { cases: { op: "importedcases", empty: function (v) { return !v || !Array.isArray(v.imports) || v.imports.length === 0; } } };
@@ -75,20 +89,31 @@ export const IMPORTED = Object.freeze({
       // chosen for her), the findings that moved and the statement that moved each, and the limit sentence. Nothing is saved or sent.
       const lensKeys = [["as_published", "screen.imported.lens_as_published"], ["removed", "screen.imported.lens_removed"], ["own", "screen.imported.lens_own"]];
       const rg = ui.regrade && ui.regrade.import === c.import ? ui.regrade : null;
+      // U15: each lens's own shown-line and moved-line (a lens with no key, such as one not determined, draws none)
+      const shownKey = { as_published: "screen.imported.lens_shown.as_published", removed: "screen.imported.lens_shown", own: "screen.imported.lens_shown.own" };
+      const movedKey = { removed: "screen.imported.lens_moved", own: "screen.imported.lens_moved.own" };
       const titleOf = function (id) { const i = findings.findIndex(function (x) { return x.finding === id; }); return i >= 0 ? nameOf(findings[i], i) : cs.w("screen.imported.findings"); };
       const pairOf = function (x) { return x && typeof x === "object" ? [x.capture, x.connection].filter(Boolean).join("/") || JSON.stringify(x) : x ? String(x) : ""; };
       out.push(cs.sec("act.owed_importregrade.label.imported", '<p class="mk-small">' + cs.w("screen.imported.lens_what") + "</p>"
         + cs.checks("im-lens", { key: "act.owed_importregrade.label.imported" }, lensKeys.map(function (k) { return [k[0], k[1], false]; }), { radio: true })
         + '<div class="mk-acts">' + cs.act("importregrade") + "</div>" + P.said(view, "importregrade")
         + (rg ? '<div data-regrade="' + cs.esc(rg.lens) + '"><p class="mk-small">' + cs.w("screen.imported.lens_does") + "</p>"
+          // R58 (Screens page C5; UX lane U15): the lens the rows are read under, above them, a whole sentence for each lens
+          + (shownKey[rg.lens] ? '<p class="mk-note" data-lens-shown="' + cs.esc(rg.lens) + '">' + cs.w(shownKey[rg.lens]) + "</p>" : "")
           + (rg.lens_note ? P.fold(cs, "screen.imported.lens_none_summary", "<p>" + cs.w("screen.imported.lens_none") + "</p>") : "")
           + (rg.lens === "undetermined" ? P.fold(cs, "screen.imported.lens_unreadable_summary", "<p>" + cs.w("screen.imported.lens_unreadable") + "</p>") : "")
           + cs.sheet((Array.isArray(rg.findings) ? rg.findings : []).map(function (f) {
             const why = Array.isArray(f.because) ? f.because : [];
             return cs.row("", '<span class="rec">' + titleOf(f.finding) + "</span>" + '<span class="meta" data-moved="' + (f.moved === true ? "yes" : "no") + '">'
-              + (f.moved === true ? cs.w("screen.imported.lens_moved", { published: pairOf(f.published && f.published.pair), regraded: pairOf(f.pair) })
+              // U15: a moved finding names the lens it moved under; read as published nothing moves, so no moved-line is drawn there
+              + (f.moved === true && movedKey[rg.lens] ? cs.w(movedKey[rg.lens], { published: pairOf(f.published && f.published.pair), regraded: pairOf(f.pair) })
                 + why.map(function (b) { return " " + cs.w("screen.imported.lens_because", { statement: b.text || b.statement || "", part: b.touched && b.touched.target ? b.touched.target : "" }); }).join("")
-                : f.moved === false ? cs.w("screen.imported.lens_unmoved") : "") + "</span>", "");
+                : f.moved === false ? cs.w("screen.imported.lens_unmoved") : "")
+              // R58 (Screens page C5): whether it meets the team's bar and met the source's, under this lens (`bar_met`, case-import R27), its
+              // answer imported's own lower-case yes or no (U15); a standing that is not determined (null) is not drawn
+              + (f.bar_met && typeof f.bar_met.own === "boolean" ? ' <span data-bar="ours">' + cs.w("screen.imported.lens_bar_ours", { answer: { html: cs.w(f.bar_met.own ? "screen.imported.lens_bar.yes" : "screen.imported.lens_bar.no") } }) + "</span>" : "")
+              + (f.bar_met && typeof f.bar_met.source === "boolean" ? ' <span data-bar="theirs">' + cs.w("screen.imported.lens_bar_theirs", { answer: { html: cs.w(f.bar_met.source ? "screen.imported.lens_bar.yes" : "screen.imported.lens_bar.no") } }) + "</span>" : "")
+              + "</span>", "");
           }).join("")) + (rg.limit ? '<p class="mk-note" data-limit>' + cs.esc(rg.limit) + "</p>" : "") + "</div>" : "")));
 
       // R58: "Re-run this work in your own project": one of the team's projects declared a rerun of this edition (or one started first).
@@ -242,15 +267,7 @@ export const IMPORTED = Object.freeze({
       // R59: "Rest one of your team's questions on this": a question of the team rests on a finding the team accepted, at the edition
       // shown; the plane judges whether the finding is accepted (`IMPORTED_NOT_ACCEPTED`), and this page offers it on accepted ones only.
       op: "citeimported", label: "act.owed_citeimported.label.imported", rereads: [],
-      refusals: {
-        /* citation's real refusal is BASIS_REFUSED, its findings carrying the code (C-21.4); a finding the plane worded otherwise is drawn by its translation */
-        BASIS_REFUSED: function (r, cs) {
-          const found = (Array.isArray(r.findings) ? r.findings : []).filter(function (f) { return f && typeof f === "object"; });
-          if (found.some(function (f) { return f.code === "IMPORTED_NOT_ACCEPTED"; })) return cs.w("screen.imported.citeimp.ref.notaccepted1") + " " + cs.w("screen.imported.citeimp.ref.notaccepted2");
-          const said = found.map(function (f) { return String(f.translation || ""); }).filter(Boolean)[0] || String(r.translation || "");
-          return said ? cs.esc(said) : cs.w("refusal.uncatalogued") + " <code>" + cs.esc(String(r.code || r.reason || "")) + "</code>";
-        },
-      },
+      refusals: { BASIS_REFUSED: CITE_REFUSED, MACHINE_CANNOT_CITE_IMPORTED: CITE_REFUSED, IMPORTED_NOT_ACCEPTED: CITE_REFUSED },
       send: function (view, el, cs) {
         const c = view.data.chosen && view.data.chosen.state === "ok" ? view.data.chosen.value : null;
         const i = el.dataset.index;
@@ -259,7 +276,14 @@ export const IMPORTED = Object.freeze({
         const note = String(cs.value("im-ci-note-" + i) || "").trim();
         return { body: Object.assign({ inquiry: inquiry, import: c.import, finding: el.dataset.finding, edition: (c.edition || {}).edition, role: role }, note ? { note: note } : {}) };
       },
-      done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "citeimported", answer)) view.parts.forget(view); return { stay: true }; }, // D29
+      done: function (view, answer, cs) {
+        // D29: a refusal inside a success is said in its fold, as one in form is
+        const f = view.parts.carried(answer);
+        if (f) { view.parts.say(cs, view, "citeimported", view.parts.citeRefused(f, cs), false); return { stay: true }; }
+        if (view.ui.said) delete view.ui.said.citeimported;
+        view.parts.forget(view);
+        return { stay: true };
+      },
     },
     {
       // R7: "Flag an issue", kept within the group.

@@ -3226,7 +3226,12 @@ export async function publicInstanceGroup(env, storeName, projection = "instance
 }
 
 /** R3 over the wire: a credentialed reader (`viewer` set by the control plane) is answered the whole row; anybody
- *  else the public projection. A silence is a silence (REC-52), never "no group is recorded". */
+ *  else the public projection. A silence is a silence (REC-52), never "no group is recorded".
+ *  @param {any} env
+ *  @param {any} storeName
+ *  @param {{viewer?: string | null, cls?: string | null}} [reader] who asks, as the control plane resolved it: a
+ *    non-empty `viewer` is a credentialed reader; `cls` is answered back as `tokenClass`
+ *  @param {any} io */
 export async function instanceGroupOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   if (viewer) {
@@ -3239,7 +3244,12 @@ export async function instanceGroupOp(env, storeName, { viewer = null, cls = nul
   return json({ ok: true, result: pub.result, store: storeName }, 200);
 }
 
-/** R10, R11 over the wire: the credentialed read (R11) or the public projection (R10). */
+/** R10, R11 over the wire: the credentialed read (R11) or the public projection (R10).
+ *  @param {any} env
+ *  @param {any} storeName
+ *  @param {{viewer?: string | null, cls?: string | null}} [reader] who asks, as the control plane resolved it: a
+ *    non-empty `viewer` is a credentialed reader; `cls` is answered back as `tokenClass`
+ *  @param {any} io */
 export async function groupIdentityOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   const out = await doAnswer(storeStub(env, storeName)
@@ -3502,8 +3512,29 @@ export async function cpuProbeOp(stub, { iterations = null, budget_ms = null, ru
 /* The admitted ops this module answers at the Worker. `bootstrap` is the public door's default answer (below). */
 export const INSTANCE_SETUP_OPS = Object.freeze(["selftest", "livefire", "runtime", "cpuprobe"]);
 
+/**
+ * The io every door hands a report op: the shared door io (`json`, `doAnswer`, `storeSilent`, `storeRefusal`, and
+ * `stateTiming` when the door gives one), the caller's class, the viewer stamp and the rehearsal namespace's name.
+ * `stateTiming` is accepted and not read here.
+ * @typedef {Object} InstanceSetupOpIo
+ * @property {string|null} [cls] the caller's class, as the door resolved it
+ * @property {string} [viewer] the door's viewer stamp for that caller
+ * @property {string} [scratch] the rehearsal namespace's name
+ * @property {(...args: any[]) => any} [json] the door's answer builder
+ * @property {(...args: any[]) => any} [doAnswer] reads a store reply as answered or not
+ * @property {(...args: any[]) => any} [storeSilent] the store-silence refusal
+ * @property {(...args: any[]) => any} [storeRefusal] the store's own refusal, relayed
+ * @property {(...args: any[]) => any} [stateTiming] the door's timing sink
+ */
 /** One of INSTANCE_SETUP_OPS, answered. `storeName` is the namespace the door resolved, `cls` the caller's class,
- *  `viewer` the door's viewer stamp for that caller, `scratch` the rehearsal namespace's name. */
+ *  `viewer` the door's viewer stamp for that caller, `scratch` the rehearsal namespace's name.
+ * @param {*} op
+ * @param {*} url
+ * @param {*} env
+ * @param {*} storeName
+ * @param {InstanceSetupOpIo} [io]
+ * @returns {Promise<*>}
+ */
 export async function instanceSetupOp(op, url, env, storeName, { cls = null, viewer = "", scratch = "scratch", json,
                                                                   doAnswer, storeSilent, storeRefusal } = {}) {
   const io = { json, doAnswer, storeSilent, storeRefusal };
@@ -3522,7 +3553,8 @@ export async function instanceSetupOp(op, url, env, storeName, { cls = null, vie
        THE STATUS IS KEYED TO THE VERDICT, so it is byte-for-byte what it was for every outcome: a
        DIST gate or a curl that reads the status alone loses nothing to this change, which is the
        whole point of moving the verdict to keys of its own rather than deleting it from the wire. */
-    return json(out, out.verdict === "pass" ? 200 : 500);
+    /* Every door hands `json` (InstanceSetupOpIo); the kind is stated here so the optional member reads as given. */
+    return /** @type {(...args: any[]) => any} */ (json)(out, out.verdict === "pass" ? 200 : 500);
   }
 
   /* What runs here have COST, measured. A read, and the honest counterpart to

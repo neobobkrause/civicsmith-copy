@@ -1,4 +1,4 @@
-Length: 117 lines. Last section: "Changes".
+Length: 118 lines. Last section: "Changes".
 
 # J20: From a knock to the record
 
@@ -38,7 +38,7 @@ For the outsider: "I have photographs of the roof at 14 Lakeshore Row and I want
 ## Steps
 
 1. The outsider opens the team's address `/doorbell`, signed out.
-   - 1.1 `doorbell` shows state S1 in the public frame: no rail, no masthead, no path, no weight mark (every-screen section 2).
+   - 1.1 `doorbell` shows state S1 in the public frame: no rail, no masthead, no weight mark (every-screen section 2), and its path "Lakeshore Tenants › Hand material over" (every-screen section 3.6).
    - 1.2 C1 shows "Lakeshore Tenants" above the heading; C2 and C3's four lines follow.
    - 1.3 The browser tab reads "{page} · Lakeshore Tenants" (`page.title.public`).
    - 1.4 No field asks for a name, an email or an account.
@@ -115,3 +115,4 @@ Checked after a reload, signed in as Rosa.
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
+- 23 Nov 2026, tranche t1: corrected on ARCH's word to the requirement the product follows: step 1.1, the public frame draws its path (every-screen section 3.6; `interface-shell` R8).

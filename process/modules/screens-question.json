@@ -4,12 +4,17 @@
     "bio-plane/src/screens-inquiry/question.mjs",
     "bio-plane/src/screens-inquiry/assistant.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-question/"
+  ],
   "public": [
     "bio-plane/src/screens-inquiry/assistant.mjs",
     "bio-plane/src/screens-inquiry/question.mjs"
   ],
   "uses": [
+    "setup-words",
+    "store-request",
+    "interface-shell",
     "screens-settings",
     "screens-document"
   ]

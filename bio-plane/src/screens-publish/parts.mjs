@@ -2,6 +2,30 @@
  * Each is self-contained: it refers only to its parameters and the language's own globals, so the shell serialises it
  * beside the screen's functions and hands it in as `view.parts`. A screen calls `view.parts.<name>(cs, view, …)`. */
 
+/**
+ * @typedef {Object} ScreenAct
+ * @property {string} op the operation the act sends (op-declarations)
+ * @property {string} label the key of its button's words
+ * @property {ReadonlyArray<string> | string} rereads the reads redrawn once it answers, or "all" for every read
+ * @property {Object<string, *>} [refusals] each refusal's code, and the key or the function its words are drawn by
+ * @property {string} [reasonField] the body field the shell's reason fills, where the act asks for one
+ * @property {(view: *, el: *, cs: *) => (null | {refuse?: string, body?: Object, query?: Object} | Promise<null | {refuse?: string, body?: Object, query?: Object}>)} send
+ *   what is sent: null sends nothing, `refuse` draws a key's words and sends nothing
+ * @property {(view: *, answer: *, cs: *) => ({stay: boolean} | Promise<{stay: boolean}>)} [done] what the screen does with the answer
+ */
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Readonly<Object<string, Function>>} parts the helpers handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name; no subject, no subject read
+ * @property {(cs: *, view: *) => string} render the screen's markup, drawn with the shell's kit `cs` (interface-shell R21)
+ * @property {ReadonlyArray<ScreenAct>} acts the acts it draws
+ * @property {(cs: *, view: *) => void} [closed] what the screen forgets when the reader leaves (R11)
+ * @property {(cs: *, view: *) => void} [printed] what the screen puts back once the browser has printed (R39)
+ * @property {(view: *) => Object} [place] what the shell's frame reads of the screen's place; on `published`, `signed: {short, fingerprint}` for the published foot (interface-shell R30)
+ */
+/** The helpers every screen of this module is handed as `view.parts`, each self-contained (interface-shell R21 (1)).
+ *  @type {Readonly<Object<string, Function>>} */
 export const PARTS = Object.freeze({
   /* A read that waits on another read's answer (a case's document once the draft names its case): sent once per query
      through `cs.call`, kept in the screen's page memory (`view.ui.later`), and answered in R10's four states, as

@@ -92,7 +92,8 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
  * @property {string} tokenId
  * @property {any} principal the viewer it is seen as
  * @property {string} [taskScope]
- * @property {string[]} writes its declared writes
+ * @property {string[]} [writes] its declared writes; absent on the caller `control-plane` R53 admits under an ask's
+ *   grant (`{tokenId: "grant", principal, grant}`), whose ops `AI_GRANT_OPS` bounds and whose writes no gate here reads
  * @property {string | null} [confinedTo] `scratch`, or absent
  * @property {boolean} [revoked]
  * @property {string} [revokedAt]
@@ -101,6 +102,7 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
  * @property {string} [expiresAt]
  * @property {string} [run] the one run it writes to (R23)
  * @property {string} [project] the project it was minted in (R30)
+ * @property {string} [grant] an ask's grant, present only on the caller `control-plane` R53 admits under a grant
  */
 /**
  * @typedef {Object} StoreAnswer what the door's reader answers for one store request
