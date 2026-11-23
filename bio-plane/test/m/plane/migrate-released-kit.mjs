@@ -348,3 +348,64 @@ export async function storeCopy(storeDir, persist) {
   copy(storeDir, persist);
   return persist;
 }
+
+/* THE CURRENT PLANE on a store somebody else wrote: it answers, it has a fresh
+   store's exact shape, the rows survive, and a second boot is clean. */
+/* `t` records each check; `FRESH` is the fresh reference store's shape (the suite's section 0), handed in */
+export const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }, t, FRESH) => {
+  let mf = bootCurrent(persist);
+  let c = client(mf, { current: true });
+  const bs = await c.get("bootstrap", "", "");
+  t(`${label}: op=bootstrap REACHES THE STORE — never STORE_DID_NOT_ANSWER`,
+    [bs.ok !== false || errOf(bs), JSON.stringify(bs).includes("STORE_DID_NOT_ANSWER")], [true, false]);
+  const up = await c.raw("SELECT 1 AS up");
+  t(`${label}: the Durable Object ANSWERS — its #migrate completed (a thrown migration is named here)`,
+    up.ok ? true : up.error, true);
+  const st = await c.get("stats");
+  t(`${label}: op=stats answers from the store`, st.ok !== false ? true : errOf(st), true);
+  const au = await c.get("audit", "", TOK.ADMIN_TOKEN);
+  t(`${label}: op=audit answers from the store`, au.ok !== false ? true : errOf(au), true);
+  const sf = await c.get("selftest", "", TOK.PROBE_TOKEN);
+  t(`${label}: op=selftest answers`, [sf.ok, sf.service], [true, "bio-plane"]);
+  t(groupBefore[1] === null
+      ? `${label}: D-436 DECISION (b) — the store a released plane wrote records NO producing group at the current `
+        + `plane's first boot, though INSTANCE_NAME ('${INSTANCE}') is bound: only the root of trust's seed may decide it`
+      : `${label}: D-436 — the group the old plane recorded at the store's own first boot is KEPT at the current `
+        + `plane's first boot, unchanged: no later boot re-decides it`,
+    await groupOf(c), groupBefore);
+
+  const after = await shapeOf(c);
+  const lacking = [], extra = [];
+  for (const [tb, cols] of Object.entries(FRESH.tables || {})) {
+    if (!after.tables?.[tb]) { lacking.push(`${tb}(table)`); continue; }
+    for (const col of cols) if (!after.tables[tb].includes(col)) lacking.push(`${tb}.${col}`);
+  }
+  for (const tb of Object.keys(after.tables || {})) if (!FRESH.tables?.[tb]) extra.push(tb);
+  t(`${label}: the migrated store has EVERY table and column a fresh store has (table_xinfo)`, lacking, []);
+  t(`${label}: and no table a fresh store lacks — every fold and rename completed`, extra, []);
+  t(`${label}: and EVERY index and trigger a fresh store has — none weakened, none skipped`,
+    (FRESH.others || []).filter((o) => !(after.others || []).includes(o)), []);
+  t(`${label}: in particular inquiry_basis.content_id and its index — the column and index that bricked 0.59.0-0.63.0`,
+    [after.tables?.inquiry_basis?.includes("content_id"), (after.others || []).includes("index:inquiry_basis_content")],
+    [true, true]);
+
+  const rowsAfter = [];
+  for (const q of ROWS_Q) rowsAfter.push((await c.raw(q)).rows ?? null);
+  t(`${label}: every row the old plane wrote SURVIVES, value for value`, rowsAfter, rows);
+  t(`${label}: and the legacy leg reads NULL for content_id — no backfill invented an extent`,
+    (await c.raw("SELECT content_id FROM inquiry_basis WHERE bundle_id='INQ-2026-9143'")).rows, [{ content_id: null }]);
+  const got = await c.get("file", `id=${DOC}&path=bundle.md`);
+  t(`${label}: THROUGH THE OP — op=file reads the old document's bytes exactly as the old plane stored them`,
+    sha((got.result ?? got).text ?? String(errOf(got))), sha(served));
+  await mf.dispose();
+
+  mf = bootCurrent(persist);
+  c = client(mf, { current: true });
+  const again = await c.raw("SELECT count(*) AS n FROM inquiry_basis");
+  t(`${label}: a SECOND boot is clean — the store answers and holds the same rows`,
+    again.ok ? again.rows[0].n : again.error, 1);
+  t(`${label}: D-436 — and a SECOND boot leaves the producing group as it found it (no later boot reads the binding)`,
+    await groupOf(c), groupBefore);
+  await mf.dispose();
+};
+

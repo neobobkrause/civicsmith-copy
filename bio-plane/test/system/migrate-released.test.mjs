@@ -47,10 +47,12 @@
  */
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs";               /* D-186: owns $TMPDIR for this process and removes it on exit */
-import { mkdtempSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir, availableParallelism } from "node:os";
+import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, INSTANCE, TOK, bootCurrent, client, errOf, groupOf, shapeOf, ROWS_Q, storeCopy } from "../m/plane/migrate-released-kit.mjs";
+import { RELEASES, WITHDRAWN, FIXTURES, slug, INSTANCE, bootCurrent, client, groupOf, shapeOf } from "../m/plane/migrate-released-kit.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -105,69 +107,6 @@ for (const label of LABELS) {
   FIX[label] = { dir, cap };
 }
 t("ARMED: every release in the list, and every withdrawn path, is a fixture", Object.keys(FIX).length, LABELS.length);
-/* the current plane boots on a COPY: the committed store is never written */
-const copyOf = (label) => storeCopy(join(FIX[label].dir, "store"), mkdtempSync(join(tmpdir(), `rec143-${slug(label)}-`)));
-const seeded = ({ doc, served, group_before, rows }) => ({ DOC: doc, served, groupBefore: group_before, rows });
-
-/* THE CURRENT PLANE on a store somebody else wrote: it answers, it has a fresh
-   store's exact shape, the rows survive, and a second boot is clean. */
-/* `t` is the store's own recorder (section 2 runs stores side by side and prints each store's checks together, in order) */
-const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows }, t) => {
-  let mf = bootCurrent(persist);
-  let c = client(mf, { current: true });
-  const bs = await c.get("bootstrap", "", "");
-  t(`${label}: op=bootstrap REACHES THE STORE — never STORE_DID_NOT_ANSWER`,
-    [bs.ok !== false || errOf(bs), JSON.stringify(bs).includes("STORE_DID_NOT_ANSWER")], [true, false]);
-  const up = await c.raw("SELECT 1 AS up");
-  t(`${label}: the Durable Object ANSWERS — its #migrate completed (a thrown migration is named here)`,
-    up.ok ? true : up.error, true);
-  const st = await c.get("stats");
-  t(`${label}: op=stats answers from the store`, st.ok !== false ? true : errOf(st), true);
-  const au = await c.get("audit", "", TOK.ADMIN_TOKEN);
-  t(`${label}: op=audit answers from the store`, au.ok !== false ? true : errOf(au), true);
-  const sf = await c.get("selftest", "", TOK.PROBE_TOKEN);
-  t(`${label}: op=selftest answers`, [sf.ok, sf.service], [true, "bio-plane"]);
-  t(groupBefore[1] === null
-      ? `${label}: D-436 DECISION (b) — the store a released plane wrote records NO producing group at the current `
-        + `plane's first boot, though INSTANCE_NAME ('${INSTANCE}') is bound: only the root of trust's seed may decide it`
-      : `${label}: D-436 — the group the old plane recorded at the store's own first boot is KEPT at the current `
-        + `plane's first boot, unchanged: no later boot re-decides it`,
-    await groupOf(c), groupBefore);
-
-  const after = await shapeOf(c);
-  const lacking = [], extra = [];
-  for (const [tb, cols] of Object.entries(FRESH.tables || {})) {
-    if (!after.tables?.[tb]) { lacking.push(`${tb}(table)`); continue; }
-    for (const col of cols) if (!after.tables[tb].includes(col)) lacking.push(`${tb}.${col}`);
-  }
-  for (const tb of Object.keys(after.tables || {})) if (!FRESH.tables?.[tb]) extra.push(tb);
-  t(`${label}: the migrated store has EVERY table and column a fresh store has (table_xinfo)`, lacking, []);
-  t(`${label}: and no table a fresh store lacks — every fold and rename completed`, extra, []);
-  t(`${label}: and EVERY index and trigger a fresh store has — none weakened, none skipped`,
-    (FRESH.others || []).filter((o) => !(after.others || []).includes(o)), []);
-  t(`${label}: in particular inquiry_basis.content_id and its index — the column and index that bricked 0.59.0-0.63.0`,
-    [after.tables?.inquiry_basis?.includes("content_id"), (after.others || []).includes("index:inquiry_basis_content")],
-    [true, true]);
-
-  const rowsAfter = [];
-  for (const q of ROWS_Q) rowsAfter.push((await c.raw(q)).rows ?? null);
-  t(`${label}: every row the old plane wrote SURVIVES, value for value`, rowsAfter, rows);
-  t(`${label}: and the legacy leg reads NULL for content_id — no backfill invented an extent`,
-    (await c.raw("SELECT content_id FROM inquiry_basis WHERE bundle_id='INQ-2026-9143'")).rows, [{ content_id: null }]);
-  const got = await c.get("file", `id=${DOC}&path=bundle.md`);
-  t(`${label}: THROUGH THE OP — op=file reads the old document's bytes exactly as the old plane stored them`,
-    sha((got.result ?? got).text ?? String(errOf(got))), sha(served));
-  await mf.dispose();
-
-  mf = bootCurrent(persist);
-  c = client(mf, { current: true });
-  const again = await c.raw("SELECT count(*) AS n FROM inquiry_basis");
-  t(`${label}: a SECOND boot is clean — the store answers and holds the same rows`,
-    again.ok ? again.rows[0].n : again.error, 1);
-  t(`${label}: D-436 — and a SECOND boot leaves the producing group as it found it (no later boot reads the binding)`,
-    await groupOf(c), groupBefore);
-  await mf.dispose();
-};
 
 /* ==================================================================== 2
  * A STORE BORN ON EACH RELEASE boots on the current plane.
@@ -175,22 +114,33 @@ const verifyCurrent = async (label, persist, { DOC, served, groupBefore, rows },
  *    bricked it, reproduced at the capture), ROLLED BACK to 0.58.0 (what DIST did to biosmoke7), then upgraded to
  *    the current plane.
  * ================================================================== */
-/* The stores are independent (each its own copy and its own miniflare), so they are booted side by side, at most one for each
-   processor, to keep the run inside the required run's bound (plane's tests "complete yet fast and efficient"). Each store's checks
-   are recorded and printed together, in the order of LABELS, exactly as a one-at-a-time run prints them; a store that throws is a
-   failure named with its label. */
-const SIDE_BY_SIDE = Math.max(1, Math.min(4, availableParallelism()));
+/* The stores are independent (each its own copy and its own miniflare), and a plane's boot is prepared on its process's one main
+   thread, so the stores are booted in up to four child processes side by side (`../m/plane/migrate-released-runner.mjs`), to keep the
+   run inside the required run's bound (plane's tests "complete yet fast and efficient"). Each child records every check of its stores
+   and the suite prints them all here, in the order of LABELS, exactly as a one-at-a-time run prints them; a child that fails to answer
+   is a failure named with its stores. */
 const runs = LABELS.filter((label) => FIX[label]);
+const share = Math.max(1, Math.min(4, availableParallelism(), runs.length));
+const work = mkdtempSync(join(tmpdir(), "rec143-runs-"));
+writeFileSync(join(work, "fresh.json"), JSON.stringify(FRESH));
+const RUNNER = fileURLToPath(new URL("../m/plane/migrate-released-runner.mjs", import.meta.url));
+const SQLITE = fileURLToPath(new URL("../platform-sqlite.mjs", import.meta.url));
+const parts = Array.from({ length: share }, (_, p) => runs.map((label, i) => ({ label, i })).filter(({ i }) => i % share === p));
 const results = new Array(runs.length);
-let next = 0;
-await Promise.all(Array.from({ length: Math.min(SIDE_BY_SIDE, runs.length) }, async () => {
-  for (let i = next++; i < runs.length; i = next++) {
-    const label = runs[i], checks = [];
-    try { await verifyCurrent(label, await copyOf(label), seeded(FIX[label].cap), (l, got, want) => checks.push([l, got, want])); }
-    catch (e) { checks.push([`${label}: the store's run ends without throwing`, String((e && e.stack) || e).slice(0, 600), null]); }
-    results[i] = checks;
-  }
-}));
+await Promise.all(parts.map((part, p) => new Promise((done) => {
+  const fixtures = part.map(({ label }) => ({ label, dir: FIX[label].dir, cap: FIX[label].cap }));
+  const input = join(work, `part-${p}.json`), output = join(work, `result-${p}.json`);
+  writeFileSync(input, JSON.stringify({ fixtures, fresh: join(work, "fresh.json") }));
+  execFile(process.execPath, ["--import", SQLITE, RUNNER, input, output], { maxBuffer: 256 << 20 }, (err, stdout, stderr) => {
+    let got = null;
+    try { got = JSON.parse(readFileSync(output, "utf8")); } catch { got = null; }
+    part.forEach(({ label, i }, q) => {
+      results[i] = got && got[q] && got[q].label === label ? got[q].checks
+        : [[`${label}: its child process answered`, String((err && err.message) || stderr || "no result").slice(0, 600), null]];
+    });
+    done();
+  });
+})));
 let n = 1;
 runs.forEach((label, i) => {
   n++;
