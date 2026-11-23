@@ -32,6 +32,7 @@
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 
+/** @type {"C"} the capture grade an OCR answer may support (R8) */
 export const CAP = "C";
 
 /** Where that letter's measurement lives. A free string a HUMAN follows — the
@@ -39,6 +40,7 @@ export const CAP = "C";
  *  joins on `engine`+`version` and this member deliberately does not hold (a
  *  measurement must not acquire a second home; extraction's
  *  `bio-plane/src/extraction/pipeline.mjs` says so at the join). */
+/** @type {string} the one measurement `CAP` and the confidence basis rest on (R8) */
 export const MEASURED_BY =
   localize("ocr-worker.contract.measurements_md_2026_09_10", "MEASUREMENTS.md 2026-09-10 (CPDF-15) — tesseract-wasm@0.11.0 SIMD + tessdata_fast eng on the deployed Workers runtime: 99.89% characters and 89/90 digits with ZERO minted on the one human-ground-truthed page (Oakland Legistar attachment 15721260 p2, 300 dpi), reproducible over identical bytes (9 images x 3 runs, no image gave more than one distinct text), the invention band EMPTY at every rung of CPDF-11's ladder. REACH, STATED: ONE ground-truthed page, ONE engine version, ONE model. Every other corpus figure in that row is agreement-with-the-local-floor and NOT accuracy — and D-314/CPDF-16 measured that NEITHER local model passes the noise control, so no agreement figure may be read as accuracy at all.");
 
@@ -50,11 +52,17 @@ export const MEASURED_BY =
  *  every ceiling, BY BEING REFUSED: 33.7 / 48.5 / 61.3 MB frames complete, a
  *  75.7 MB frame is KILLED (`exceededMemory`, reproduced), and 134.6 MB is
  *  refused in-isolate as a catchable `RangeError`. */
+/** @type {number} bytes of RGBA frame (R7 step 4, R31)
+ *  @bound whole number, read from READ_BOUNDS (ocr, frame_bytes), 61,300,000 in the alpha column */
 export const MAX_FRAME_BYTES = boundOf("ocr", "frame_bytes");
 
 /** The frame a page of these pixel dimensions costs. `loadImage` refuses
  *  anything shorter than width*height*4, so this is not avoidable by sending
- *  less (CPDF-15 measured that refusal). */
+ *  less (CPDF-15 measured that refusal).
+ *  @param {number} w the frame's width in pixels
+ *  @param {number} h the frame's height in pixels
+ *  @returns {number} w * h * 4
+ *  @bound w, h: whole numbers, zero or more */
 export const frameBytesOf = (w, h) => w * h * 4;
 
 /* D-478 — THE NAMESPACES THIS MEMBER WILL READ FROM: EXACTLY `bio` OR `scratch`, AND NOTHING ELSE.
@@ -70,18 +78,21 @@ export const frameBytesOf = (w, h) => w * h * 4;
  * the check that used to parse the plane's source from here, and went empty when that source moved (N402). Exact and case-sensitive: an R2
  * key is an exact string. NOT NAMING ONE is a different condition, BAD_STORE (`store` absent or not a string); an
  * empty `store: ""` is a NAMED value and meets NAMESPACE_UNKNOWN. */
+/** @type {readonly ["bio", "scratch"]} the namespaces this member reads from (R16, R22) */
 export const NAMESPACES = Object.freeze(["bio", "scratch"]);
 
 /* THE PLANE OPS THIS MEMBER CALLS: NONE. It is called BY the plane (extraction's `OCR_WORKER` binding) and reads
  * only `CAPTURES.get` (R21); it holds no credential and names no op. Declared in the same shape as agent-worker's
  * `PLANE_OPS` (`{op: {mutating, why}}`) so control-plane's pin reads both members the one way: every op a member
  * exports is in the op table with the class and namespace gate the member assumes. An empty set is the claim. */
+/** @type {Readonly<Record<string, {mutating: boolean, why: string}>>} the plane ops this member calls: none (R22) */
 export const PLANE_OPS = Object.freeze({});
 
 /* ===================================================================== *
  * Refusals. Every one is STATED, carries what it saw, and leaves the
  * document HONESTLY UNREAD rather than half-transcribed.
  * ===================================================================== */
+/** @type {Readonly<Record<string, string>>} each refusal reason this member answers, with its sentence (R1-R7, R14, R23, R25, R28, R29) */
 export const REFUSALS = {
   R2_NOT_CONFIGURED: "this member holds no CAPTURES binding, so it cannot read the bytes",
   BAD_SHA: "capture_sha must be 64 lowercase hex",
@@ -113,11 +124,15 @@ export const REFUSALS = {
 
 /** R29 · The page-segmentation modes the engine accepts: tesseract's own `PageSegMode` set, the whole numbers 0 to 13
  *  (the engine itself accepts any text as the variable's value and ignores a wrong one, which is why this member judges
- *  the setting). A mode is a name, not a ceiling. */
+ *  the setting). A mode is a name, not a ceiling.
+ *  @type {readonly string[]} */
 export const PAGE_SEG_MODES = Object.freeze(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]);
 
 /** R29 · `OCR_PSM` read as the engine's mode: `{set:false}` when it is absent or empty, `{set:true, ok, mode?, value}`
- *  otherwise, `value` the setting as text truncated to 80 characters. */
+ *  otherwise, `value` the setting as text truncated to 80 characters.
+ *  @param {{OCR_PSM?: unknown} | null | undefined} env the instance's settings
+ *  @returns {{set: boolean, ok: boolean, mode: string | null, value?: string}}
+ *  @bound value: at most 80 characters */
 export function psmFrom(env) {
   const raw = env && env.OCR_PSM;
   if (raw == null || raw === "") return { set: false, ok: true, mode: null };
@@ -126,31 +141,42 @@ export function psmFrom(env) {
   return { set: true, ok, mode: ok ? text : null, value: (text == null ? JSON.stringify(raw) ?? String(raw) : text).slice(0, 80) };
 }
 
-/** R26 · The turns a renderer is asked for and the engine can name. */
+/** R26 · The turns a renderer is asked for and the engine can name.
+ *  @type {readonly number[]} */
 export const QUARTER_TURNS = Object.freeze([0, 90, 180, 270]);
 /** R26 · The engine says by how many degrees clockwise the frame lies turned from upright; the renderer's `turn`
- *  (pdf-pixels R48) is the degrees clockwise to apply, so upright again is the rest of the way round. */
+ *  (pdf-pixels R48) is the degrees clockwise to apply, so upright again is the rest of the way round.
+ *  @param {number} rotation degrees clockwise the frame lies turned
+ *  @returns {number | null} degrees clockwise to turn it upright, or null for a rotation not a quarter turn
+ *  @bound rotation: 0, 90, 180 or 270 gives a turn; anything else null */
 export const turnToUpright = (rotation) => (QUARTER_TURNS.includes(rotation) ? (360 - rotation) % 360 : null);
 
 /** R25 · A word the engine rated at or over this (its own 0..1 confidence for the word, R9's basis) counts as read.
  *  Not a measurement of accuracy: over the fixtures of `pdf-pixels` R44 and this module's tests, the share of words rated
  *  this high came within 0.1 of the share of the page's words truly read, and under it (0.5 / 0.2 / 0.0 against the true
  *  share 0.6 / 0.0 at the hard pages, 0.97-1.00 for the clean ones), which is what makes the share a statement and not a
- *  guess. A line's own rating is the mean of its words', so one bad word would hide its good ones: the words are rated. */
+ *  guess. A line's own rating is the mean of its words', so one bad word would hide its good ones: the words are rated.
+ *  @type {number} */
 export const LEGIBLE_CONFIDENCE = 0.6;
-/** R25 · A picture whose share of words read is under this has it said in a note. */
+/** R25 · A picture whose share of words read is under this has it said in a note.
+ *  @type {number} */
 export const LEGIBLE_NOTE_BELOW = 0.8;
-/** R25 · A picture whose share of words read is under this is refused `PICTURE_NOT_LEGIBLE`. */
+/** R25 · A picture whose share of words read is under this is refused `PICTURE_NOT_LEGIBLE`.
+ *  @type {number} */
 export const LEGIBLE_REFUSE_BELOW = 0.2;
 
 /** R23 · THE LONG EDGE A PICTURE IS REDUCED TO, in pixels. Not a measurement: it is `PICTURE_FRAME_MAX`'s own
  *  4096-pixel edge (pdf-pixels R42), so a 12-megapixel camera frame (4032 x 3024, 4000 x 3000) reaches the engine
  *  at its own resolution and a larger one is reduced by a whole factor; a 4:3 frame at this edge is 50.3 MB of
- *  RGBA, under `MAX_FRAME_BYTES`, and a squarer frame that would pass it is refused by R7 step 4, never attempted. */
+ *  RGBA, under `MAX_FRAME_BYTES`, and a squarer frame that would pass it is refused by R7 step 4, never attempted.
+ *  @type {number} pixels
+ *  @bound whole number, read from READ_BOUNDS (ocr, picture_edge) */
 export const PICTURE_MAX_EDGE = boundOf("ocr", "picture_edge");
 
 /** R23 · Are these bytes a JPEG or a PNG picture, by their signature? The picture renderer re-judges them; this
- *  only decides which renderer is asked, so bytes that are neither are left to the page renderer's refusal as today. */
+ *  only decides which renderer is asked, so bytes that are neither are left to the page renderer's refusal as today.
+ *  @param {Uint8Array | null | undefined} bytes
+ *  @returns {boolean} */
 export function isPicture(bytes) {
   const b = bytes;
   if (!b || b.length < 4) return false;
@@ -167,7 +193,10 @@ export function isPicture(bytes) {
  *  returning half a document with no way to tell. The plane already carries the
  *  honest reading of a partial answer — a selected page nobody answered for
  *  KEEPS ITS MARKER and stays unread (`mergeTier3Text`) — so chunking costs
- *  another invocation while assuming costs a document that is silently partial. */
+ *  another invocation while assuming costs a document that is silently partial.
+ *  @param {unknown} pages the request's `pages`; anything not an array names no page
+ *  @returns {{take: number | null, deferred: number[]}}
+ *  @bound take, deferred: distinct whole numbers, zero or more; deferred ascending, each over take */
 export function chooseChunk(pages) {
   const clean = [];
   for (const p of Array.isArray(pages) ? pages : [])
@@ -181,7 +210,11 @@ export function chooseChunk(pages) {
  *  renderer reduces it to `maxEdge` (the renderer's own rule: the smallest whole factor that brings the long edge under
  *  it, each side rounded up), or `null` when the header cannot be read here (the rendered frame is judged anyway).
  *  The preparation only turns the lines level and enlarges, never shrinks, so a frame over the bound here is over it
- *  once prepared: a refusal on this figure is certain. */
+ *  once prepared: a refusal on this figure is certain.
+ *  @param {{size: number, readRange: (offset: number, length: number) => Promise<Uint8Array>}} source
+ *  @param {number} [maxEdge] absent is PICTURE_MAX_EDGE
+ *  @returns {Promise<{width: number, height: number, frame_bytes: number, declared: {width: number, height: number}, reduced_by: number} | null>}
+ *  @bound reduced_by: whole number, 1 or more */
 export async function declaredPictureFrame(source, maxEdge = PICTURE_MAX_EDGE) {
   const dims = await pictureDims(source);
   if (!dims) return null;
@@ -214,7 +247,9 @@ async function pictureDims({ readRange }) {
 }
 
 /** R27 · A captured object as the renderers take it in place of its bytes (pdf-pixels R47): the object's size and a
- *  ranged read of it. `bytes` is one that is already whole in memory (a caller that holds it, a test). */
+ *  ranged read of it. `bytes` is one that is already whole in memory (a caller that holds it, a test).
+ *  @param {Uint8Array} bytes
+ *  @returns {{size: number, readRange: (offset: number, length: number) => Promise<Uint8Array>}} */
 export function sourceOfBytes(bytes) {
   return { size: bytes.length, readRange: async (offset, length) => bytes.subarray(offset, offset + length) };
 }

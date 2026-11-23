@@ -23,13 +23,19 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+/** @type {string} the member's folder, the boot's modulesRoot */
 export const MEMBER_DIR = fileURLToPath(new URL("..", import.meta.url));
+/** @type {string} the path of the member's bundle */
 export const BUNDLE = fileURLToPath(new URL("../dist/ocr-worker.bundled.mjs", import.meta.url));
+/** @type {string} the path of the engine core */
 export const WASM = fileURLToPath(new URL("../assets/tesseract-core.wasm", import.meta.url));
+/** @type {string} the path of the language model */
 export const MODEL = fileURLToPath(new URL("../assets/eng.traineddata", import.meta.url));
 
 /** The miniflare worker definition for this member. `extra` folds in bindings a
- *  caller wants (a confidence floor, a version string) without a second recipe. */
+ *  caller wants (a confidence floor, a version string) without a second recipe.
+ *  @param {{name?: string, bindings?: Record<string, string>, r2?: boolean}} [opts] absent name is "ocr-worker", r2 true
+ *  @returns {{name: string, modulesRoot: string, modules: {type: string, path: string, contents: string | Buffer}[], compatibilityDate: string, r2Buckets?: string[], bindings: Record<string, string>}} */
 export function ocrWorkerDef({ name = "ocr-worker", bindings = {}, r2 = true } = {}) {
   return {
     name,
