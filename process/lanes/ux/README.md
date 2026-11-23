@@ -7,7 +7,7 @@ The UX lane of civicsmith: a standing design responsibility for the user's exper
 ## What is here
 
 - `research/`: the lane's research, first recorded 22 Nov 2026 by civicsmith ux lane #1 through four workers. Its index, `research/README.md`, gives one line for each file saying what it holds; every later session of the lane reads that index first and adds to it.
-- `decisions.md`: the lane's design decisions (U1 to U9), the questions put to the owner (Q1 and Q2, both settled by the canon), and how a line the design is silent on is settled.
+- `decisions.md`: the lane's design decisions (U1 to U13), the questions put to the owner (Q1 and Q2, both settled by the canon), and how a line the design is silent on is settled.
 - `walks/`: the walks' documents (the process config's `walks_folder`): an index page, one page for each group of screens, one page for each journey (build text 3, section 2).
 
 ## Design pages
