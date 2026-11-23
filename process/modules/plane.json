@@ -16,6 +16,7 @@
     "agent-worker/test/agent-worker.test.mjs",
     "agent-worker/test/harness.test.mjs",
     "agent-worker/test/plane-world.mjs",
+    "agent-worker/test/requirements.test.mjs",
     "agent-worker/test/versions.test.mjs",
     "bio-plane/test/cap13-reuse-pages.test.mjs",
     "bio-plane/test/conclude-project.test.mjs",
