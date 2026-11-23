@@ -2,6 +2,7 @@
 import { seeded, V } from "./fixture.mjs";
 
 /** The real NO_SUCH_WIZARD refusal of `wizardRead` for an id no script holds. */
+/** @returns {any} the refusal */
 export const noSuchWizard = () => seeded().wz.wizardRead({ script: "WIZ-0000000000000000", viewer: V("alice") });
 
 /* K5207 (fix round 10): the two `writinghelp` answers screens-publish takes. Each is the real `writingHelp` over a world this
@@ -14,8 +15,10 @@ const ASSISTANT_UNREACHABLE = { on: false, account: null, refusal: { ok: false, 
 const HELP_ASK = { op: "casenote", field: "text", told: "The gate was locked on Tuesday.", by: "member:frank", viewer: "member:frank" };
 
 /** R24, R27: `writinghelp` with a draft held in the field and the assistant reachable: `WRITING_HELP_DRAFT_HELD`, writing nothing. */
+/** @returns {any} the refusal */
 export const writingHelpDraftHeld = () => seeded().wz.writingHelp({ ...HELP_ASK, draftHeld: true, assistant: ASSISTANT_ON });
 
 /** R27: `writinghelp` with the assistant unreachable (the binding unbound at the door): the door's `AGENT_WORKER_UNBOUND`, as given,
  *  with the op it was asked for. */
+/** @returns {any} the refusal */
 export const writingHelpUnreachable = () => seeded().wz.writingHelp({ ...HELP_ASK, assistant: ASSISTANT_UNREACHABLE });
