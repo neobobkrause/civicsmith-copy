@@ -1,7 +1,8 @@
 /* screens-settings R39 (T49; K3366, K3368; DEC-257, DEC-258): the keys of the words this module reads, and no word. They are
    the `reads` list for it in docs/development/ux-substrate/screens/words-reads.json (1,955 keys at the merged design commit) with the keys
    its requirements name besides (R34–R38: `refusal.UPDATE_SKIP_NO_REASON`, `member.founder.unnamed` and its help,
-   `connect.ifnot`, `connect.notnow`, the password asked again, the install with no member behind it). Every sentence a
+   `connect.ifnot`, `connect.notnow`, the password asked again, the install with no member behind it), and every key a screen
+   draws, the month names `security` composes for a day without its year among them (SCREENS-SETTINGS, journey-check #1). Every sentence a
    screen draws is read through the shell's `w(key, fills)`, which reads `setup-words`' `word`. */
 /** @type {ReadonlyArray<string>} the keys of the words the module reads (R39) */
 export const KEYS = Object.freeze([
@@ -694,12 +695,30 @@ export const KEYS = Object.freeze([
   "court.add.help",
   "court.add.name",
   "date.daymonth",
+  "date.month.april",
+  "date.month.august",
+  "date.month.december",
+  "date.month.february",
+  "date.month.january",
+  "date.month.july",
+  "date.month.june",
+  "date.month.march",
+  "date.month.may",
+  "date.month.november",
+  "date.month.october",
+  "date.month.september",
   "file-safety.index.no_signatures",
   "file-safety.index.no_signatures_since",
   "file-safety.index.signatures_failed",
   "file-safety.index.signatures_not_fetched",
   "file-safety.index.signatures_refused",
   "file-safety.index.signatures_refused_unnumbered",
+  "file-safety.index.signatures_run_download",
+  "file-safety.index.signatures_run_seed",
+  "file-safety.index.signatures_run_stage",
+  "file-safety.index.signatures_run_stopped",
+  "file-safety.index.signatures_run_under_way",
+  "file-safety.index.signatures_run_verify",
   "file-scanner.credential.api_key",
   "file-scanner.credential.api_secret",
   "file-scanner.credential.client_id",
@@ -723,6 +742,13 @@ export const KEYS = Object.freeze([
   "instance.part.signin.absent",
   "instance.part.unknown",
   "instance.scanner.absent.step",
+  "label.timezones.America/Anchorage",
+  "label.timezones.America/Chicago",
+  "label.timezones.America/Denver",
+  "label.timezones.America/Los_Angeles",
+  "label.timezones.America/New_York",
+  "label.timezones.America/Phoenix",
+  "label.timezones.Pacific/Honolulu",
   "level.pause.name",
   "level.prompt.name",
   "mark.outward.means",
