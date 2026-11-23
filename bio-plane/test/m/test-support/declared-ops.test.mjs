@@ -1,15 +1,12 @@
 /* test-support R15, R16, R17: the op-declaration helper, the collector and the
- * registration call (build/requirements/test-support.md). The fixture ops are plain functions
+ * registration call (process/modules/test-support.md). The fixture ops are plain functions
  * `call(fields) -> answer`, standing in for an op run as the door runs it. */
 import { SANDBOX } from "../../sandbox.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { declaredOpHolds, declaredOpsOf, registerDeclared } from "../../declared-ops.mjs";
-
-const REPO = fileURLToPath(new URL("../../../../", import.meta.url));
 
 const decl = (accepts, requires) => ({ fields: { accepts, requires } });
 
@@ -191,11 +188,54 @@ test("R16 a file with the export text that exports no object DECLARED_OPS reject
   await assert.rejects(declaredOpsOf(root), /bad\.mjs/);
 });
 
-test("R16 on this repository it answers the three parts from build/modules.json with no module listed by hand", async () => {
-  const { ops, owners, duplicates } = await declaredOpsOf(REPO);
-  assert.equal(typeof ops, "object");
-  assert.deepEqual(Object.keys(owners).sort(), Object.keys(ops).sort());
-  assert.ok(Array.isArray(duplicates));
+/** A tree in the product's module-list form: `order` the order file's names, `entries` each name's `files`,
+ *  `folder` the process folder (`process.json` written only when it is not the default). */
+function orderedTree(order, entries, files, folder = "process/") {
+  const root = tree([], files);
+  if (folder !== "process/") writeFileSync(join(root, "process.json"), JSON.stringify({ process_folder: folder }));
+  const dir = join(root, folder, "modules");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "order.txt"), order.join("\n") + "\n");
+  for (const name of order) writeFileSync(join(dir, `${name}.json`), JSON.stringify({ name, files: entries[name] ?? [], tests: [], public: [], uses: [] }));
+  return root;
+}
+
+const threeInOrder = () => orderedTree(
+  ["alpha", "beta", "gamma"],
+  { alpha: ["alpha/"], beta: ["beta.mjs"], gamma: ["gamma.mjs", "alpha/late.mjs"] },
+  {
+    "alpha/ops.mjs": declares("foo", "bar"),
+    "alpha/late.mjs": 'export const DECLARED_OPS = {};\nthrow new Error("gamma\'s file inside alpha/ was imported");\n',
+    "beta.mjs": declares("bar", "baz"),
+    "gamma.mjs": 'export const DECLARED_OPS = {};\nthrow new Error("gamma was imported");\n',
+  },
+);
+
+test("R16 bounded to a module, only it and the modules before it on order.txt are read; a later module's file is never imported", async () => {
+  const root = threeInOrder();
+  const { ops, owners, duplicates } = await declaredOpsOf(root, "beta");
+  assert.deepEqual(owners, { foo: "alpha", bar: "alpha", baz: "beta" });
+  assert.deepEqual(Object.keys(ops).sort(), ["bar", "baz", "foo"]);
+  assert.deepEqual(duplicates, [{ op: "bar", owners: ["alpha", "beta"] }]);
+  assert.deepEqual(await declaredOpsOf(root, "alpha"), { ops: { foo: ops.foo, bar: ops.bar }, owners: { foo: "alpha", bar: "alpha" }, duplicates: [] });
+});
+
+test("R16 bounded, a file in an earlier module's folder that a later module owns by the longest path is not read", async () => {
+  const root = threeInOrder();
+  await assert.rejects(declaredOpsOf(root, "gamma"), /gamma/, "the bound that reaches gamma imports its files");
+  const { owners } = await declaredOpsOf(root, "alpha");
+  assert.deepEqual(Object.keys(owners).sort(), ["bar", "foo"]);
+});
+
+test("R16 bounded to a name not on order.txt rejects naming it; registerDeclared with that bound rejects too", async () => {
+  const root = threeInOrder();
+  await assert.rejects(declaredOpsOf(root, "delta"), /"delta"/);
+  await assert.rejects(registerDeclared(root, "delta", () => {}), /"delta"/);
+});
+
+test("R16 bounded, the process folder named by process.json is the one read", async () => {
+  const root = orderedTree(["solo"], { solo: ["solo.mjs"] }, { "solo.mjs": declares("only") }, "proc/");
+  assert.deepEqual((await declaredOpsOf(root, "solo")).owners, { only: "solo" });
 });
 
 /* ---------------------------------------------------------------- R17 */
@@ -246,6 +286,13 @@ test("R17 a registration's own refusal propagates, naming the op it refused", as
     assert.match(e.message, /\bbar\b/);
     return true;
   });
+});
+
+test("R17 bounded by a text second argument, each registration gets only the pairs up to that module", async () => {
+  const root = threeInOrder();
+  const rec = recorder();
+  await registerDeclared(root, "beta", rec.registration);
+  assert.deepEqual(shape(rec.calls[0]), [["alpha", ["foo", "bar"]], ["beta", ["bar", "baz"]]]);
 });
 
 test("R17 a call with no registrations reads nothing, so a root with no modules.json does not throw", async () => {

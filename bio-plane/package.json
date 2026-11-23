@@ -13,7 +13,8 @@
     "miniflare": "^4.20260722.0",
     "wrangler": "^4.114.0",
     "esbuild": "^0.25.0",
-    "pdfjs-dist": "4.10.38"
+    "pdfjs-dist": "4.10.38",
+    "unpdf": "1.8.0"
   },
   "cloudflare": {
     "bindings": {

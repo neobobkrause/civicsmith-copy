@@ -3,7 +3,7 @@
  * Test tooling: only tests import it, never product code, because `declaredOpsOf`
  * imports later modules' files by path (P4). It performs no side effect on import. */
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const SOURCE = /\.(mjs|js)$/;
@@ -87,29 +87,74 @@ function filesOf(root, path) {
   return out;
 }
 
-/** Every module's `DECLARED_OPS` found from `build/modules.json` under `root`, as `[owner, DECLARED_OPS]` pairs in
- *  `modules.json` order: the one collector that `declaredOpsOf` and `registerDeclared` both read through. */
-async function pairsOf(root) {
+/** The source files of each module up to and including `upTo`, in the order of the product's module order file
+ *  (`<process_folder>/modules/order.txt`, the folder named by `process.json`, `process/` by default), from each entry's
+ *  `files`. A file belongs to the module whose `files` path matches it longest, read over every entry, so a file inside
+ *  an earlier module's folder that a later module owns is not collected. → `[[name, [file, …]], …]`.
+ *  @param {string} root the repository's top folder
+ *  @param {string} upTo a module name on the order file
+ *  @returns {Array<[string, string[]]>}
+ *  @throws {Error} when `upTo` is not on the order file, naming it */
+function boundedModules(root, upTo) {
+  let folder = "process/";
+  try { folder = JSON.parse(readFileSync(join(root, "process.json"), "utf8")).process_folder ?? folder; } catch { /* no config: the default */ }
+  const modulesDir = join(root, folder, "modules");
+  const order = readFileSync(join(modulesDir, "order.txt"), "utf8").split("\n").map((l) => l.trim()).filter(Boolean);
+  const last = order.indexOf(upTo);
+  if (last < 0) throw new Error(`declared ops: module "${upTo}" is not on ${folder}modules/order.txt`);
+  const entries = order.map((name) => {
+    const entry = JSON.parse(readFileSync(join(modulesDir, `${name}.json`), "utf8"));
+    return { name, files: Array.isArray(entry.files) ? entry.files : [] };
+  });
+  const matches = (path, file) => (path.endsWith("/") ? file.startsWith(path) : file === path);
+  const ownerOf = (file) => {
+    let best = null, len = -1;
+    for (const { name, files } of entries) for (const path of files) {
+      if (matches(path, file) && path.length > len) { best = name; len = path.length; }
+    }
+    return best;
+  };
+  return entries.slice(0, last + 1).map(({ name, files }) => [name, [...new Set(files.flatMap((path) => filesOf(root, path)))]
+    .filter((full) => ownerOf(relative(root, full).split(sep).join("/")) === name)]);
+}
+
+/** The modules and their source files from the earlier list `build/modules.json` under `root`, every module, in its order. */
+function listedModules(root) {
   const { modules } = JSON.parse(readFileSync(join(root, "build", "modules.json"), "utf8"));
+  return modules.map((mod) => [mod.id, (mod.paths ?? []).flatMap((path) => filesOf(root, path))]);
+}
+
+/** Every module's `DECLARED_OPS` as `[owner, DECLARED_OPS]` pairs, in module order: bounded by `upTo` to that module and
+ *  the modules before it on the order file, or, without `upTo`, every module of `build/modules.json`. The one collector
+ *  that `declaredOpsOf` and `registerDeclared` both read through. */
+async function pairsOf(root, upTo) {
+  /** @type {Array<[string, Object]>} builds the pairs */
   const pairs = [];
-  for (const mod of modules) {
-    for (const path of mod.paths ?? []) {
-      for (const file of filesOf(root, path)) {
-        if (!EXPORT_LINE.test(readFileSync(file, "utf8"))) continue;
-        const { DECLARED_OPS } = await import(pathToFileURL(file).href);
-        if (!DECLARED_OPS || typeof DECLARED_OPS !== "object") throw new Error(`${file}: has a DECLARED_OPS export line but exports no object DECLARED_OPS`);
-        pairs.push([mod.id, DECLARED_OPS]);
-      }
+  for (const [owner, files] of upTo === undefined ? listedModules(root) : boundedModules(root, upTo)) {
+    for (const file of files) {
+      if (!EXPORT_LINE.test(readFileSync(file, "utf8"))) continue;
+      const { DECLARED_OPS } = await import(pathToFileURL(file).href);
+      if (!DECLARED_OPS || typeof DECLARED_OPS !== "object") throw new Error(`${file}: has a DECLARED_OPS export line but exports no object DECLARED_OPS`);
+      pairs.push([owner, DECLARED_OPS]);
     }
   }
   return pairs;
 }
 
-/** The declarations of every module, found from `build/modules.json` under `root` with no module listed by hand.
- *  → `{ops, owners, duplicates}`. */
-export async function declaredOpsOf(root) {
-  const ops = {}, owners = {}, who = {};
-  for (const [owner, DECLARED_OPS] of await pairsOf(root)) {
+/** The declarations of the modules up to and including `upTo` on the order file (every module of `build/modules.json`
+ *  when `upTo` is not given), found with no module listed by hand.
+ *  @param {string} root the repository's top folder
+ *  @param {string} [upTo] the last module whose declarations are read, normally the calling test's own module
+ *  @returns {Promise<{ops: Object<string, Object>, owners: Object<string, string>, duplicates: Array<{op: string, owners: string[]}>}>}
+ *  @throws {Error} when `upTo` is not on the order file, or a file with the export line exports no object */
+export async function declaredOpsOf(root, upTo) {
+  /** @type {Object<string, Object>} builds the answer's ops */
+  const ops = {};
+  /** @type {Object<string, string>} builds the answer's owners */
+  const owners = {};
+  /** @type {Object<string, string[]>} */
+  const who = {};
+  for (const [owner, DECLARED_OPS] of await pairsOf(root, upTo)) {
     for (const [op, declaration] of Object.entries(DECLARED_OPS)) {
       (who[op] ??= []).push(owner);
       if (!(op in ops)) { ops[op] = declaration; owners[op] = owner; }
@@ -123,12 +168,19 @@ export async function declaredOpsOf(root) {
 const called = new WeakSet();
 
 /** Calls each registration function given (e.g. a module's `registerDeclaredOps`) once per process with every owner's
- *  declaration as `[owner, DECLARED_OPS]` pairs (the pairs `declaredOpsOf` reads). A registration already called is
- *  skipped; a registration's own refusal propagates and names what it refused. Test tooling: only tests call it. */
-export async function registerDeclared(root, ...registrations) {
-  const todo = [...new Set(registrations)].filter((registration) => !called.has(registration));
+ *  declaration as `[owner, DECLARED_OPS]` pairs (the pairs `declaredOpsOf` reads). A text second argument is the bound
+ *  `upTo`, as for `declaredOpsOf`; every later argument is a registration. A registration already called is skipped;
+ *  a registration's own refusal propagates and names what it refused. Test tooling: only tests call it.
+ *  @param {string} root the repository's top folder
+ *  @param {...(string|function(Array<[string, Object]>): (void|Promise<void>))} rest an optional `upTo`, then the registrations
+ *  @returns {Promise<void>}
+ *  @throws {Error} a registration's own refusal, or `upTo` not on the order file */
+export async function registerDeclared(root, ...rest) {
+  const upTo = typeof rest[0] === "string" ? rest.shift() : undefined;
+  /** @type {Array<function(Array<[string, Object]>): (void|Promise<void>)>} the registrations not yet called */
+  const todo = /** @type {any[]} */ ([...new Set(rest)]).filter((registration) => !called.has(registration));
   if (todo.length === 0) return;
-  const pairs = await pairsOf(root);
+  const pairs = await pairsOf(root, upTo);
   for (const registration of todo) {
     called.add(registration);
     await registration(pairs);
