@@ -155,7 +155,7 @@ const parsed = (text) => { try { return JSON.parse(text); } catch { return undef
 /**
  * What the door hands in (R1, R23). Every field may be absent or none, which reads as none.
  * @typedef {Object} InnerRequestArgs
- * @property {string} op the op's name after alias resolution
+ * @property {*} op the op's name after alias resolution, as text
  * @property {*} url the page's request address, a `URL` or its text
  * @property {*} [method] absent is `GET`
  * @property {*} [body] the body as the door read it: text, or the bytes or stream of an upload
