@@ -114,8 +114,19 @@ const VIEWER_OPS = new Set(["search", "meaningrows", "select", "selection", "sel
 /** R6: every op stamped with its caller's sight, as one list (for tests and for `control-plane`'s census). */
 export const VIEWER_STAMPED_OPS = Object.freeze([...VIEWER_OPS]);
 
+/**
+ * A promotion's body as `promotedTypeOf` reads it: the bundle's files and its envelope.
+ * @typedef {Object} PromotionBody
+ * @property {Array<{path?: string, text?: string}>} [files] the bundle's files; `bundle.md` is read
+ * @property {{object_type?: string}} [meta] the envelope
+ */
 /* R11 (D-526): what a promotion is, derived once from the bytes the caller sent: the document's own `object_type` through
    record-grammar's `normalizeType`, the envelope's only where the document states none, as `promote` derives it. */
+/**
+ * @param {PromotionBody} b
+ * @returns {string | undefined} the normalised type, or none when neither states one
+ * @bound b: an object; a `files` that is not an array is read as none
+ */
 export function promotedTypeOf(b) {
   const md = Array.isArray(b.files) ? b.files.find((f) => f && f.path === "bundle.md") : null;
   const fm = md && typeof md.text === "string" ? parseFrontmatter(md.text).data : null;
@@ -127,8 +138,55 @@ export function promotedTypeOf(b) {
 const isObject = (b) => !!b && typeof b === "object" && !Array.isArray(b);
 const parsed = (text) => { try { return JSON.parse(text); } catch { return undefined; } };
 
+/**
+ * The caller `admission.admit` admitted, with the presented session token as `token` (R1).
+ * @typedef {Object} AdmittedCaller
+ * @property {string} [cls] the caller's class (`member`, `admin`, `ai`, a binding class)
+ * @property {boolean} [viaSession] true when the caller arrived by a member's session
+ * @property {string} [member] a session's member id
+ * @property {string} [viewer] a session's viewer (`admin` or `member:<id>`)
+ * @property {string} [identity] a session's positional identity (`member:<id>`)
+ * @property {Object} [rights] a session's rights (`administer` read)
+ * @property {Set<string>} [caps] a session's capabilities
+ * @property {{tokenId: string, principal: string, grant?: string}} [aiCred] an `ai` caller's credential
+ * @property {string} [storeName] the namespace; absent is `bio`
+ * @property {string} [token] the presented session token
+ */
+/**
+ * What the door hands in (R1, R23).
+ * @typedef {Object} InnerRequestArgs
+ * @property {string} op the op's name after alias resolution
+ * @property {URL | string} url the page's request address
+ * @property {string} [method] absent is `GET`
+ * @property {string | Uint8Array | ReadableStream} [body] the body as the door read it
+ * @property {AdmittedCaller | null} [caller] none for a public op
+ * @property {string | null} [source] the keyed digest of the connecting address
+ * @property {string | null} [country]
+ * @property {string | null} [userAgent]
+ * @property {string | null} [origin] scheme and host of the request's own address
+ * @property {number | null} [length] the request's `Content-Length`
+ * @property {boolean} [resolving] a knock resolved to `pulled`, re-routed as `inboxpull`
+ * @property {{asserted?: boolean, proven?: Object | null} | null} [replay] the door's verdict on a promotion's replay
+ * @property {boolean} [deferred] a `readheld` reading that will not fit the bound
+ * @property {string | null} [secretSha] the SHA-256 of a grant's secret
+ * @property {boolean} [bySecret] the caller presented a secret
+ * @property {{writes?: unknown, confinedTo?: unknown, secretSha?: string} | null} [mint] `aicredentialmint`'s judged declaration
+ * @bound length: a whole number, else absent
+ */
+/**
+ * The store's request (R1, R5), or the refusal of R11.
+ * @typedef {Object} InnerRequestAnswer
+ * @property {string} [url] the store route's in-process address `http://x/<route>`
+ * @property {string | Uint8Array | ReadableStream} [body] absent when none was sent
+ * @property {Record<string, string>} [headers] the internal headers `x-bio-session` and `x-bio-grant`, each only when it has a value
+ * @property {{status: number, body: Object}} [refusal] a project creation the capability gate refuses, answered as given
+ */
 /** R1: the store's request `{url, body, headers}` made from a page's, or `{refusal}` for a project creation the capability
- *  gate refuses (R11). Synchronous; never throws; the same answer for the same arguments. */
+ *  gate refuses (R11). Synchronous; never throws; the same answer for the same arguments.
+ * @param {InnerRequestArgs} [args]
+ * @returns {InnerRequestAnswer}
+ * @bound the answer holds either `url` and `headers` (and `body` when one passes) or `refusal`, never both
+ */
 export function innerRequest(args = {}) {
   try { return make(args); }
   catch (e) { return { refusal: { status: 500, body: { ok: false, reason: "STORE_REQUEST_FAILED", op: args && args.op } } }; }

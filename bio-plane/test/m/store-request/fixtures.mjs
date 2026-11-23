@@ -14,6 +14,7 @@ export { WORLD_RELEASE_KEY } from "./recipes-r10.mjs";
 export { WORLD_NOW, WORLD_PASSWORD, WORLD_FOUNDER_HANDLE, WORLD_UNREACHED, WORLD_ORIGIN, doorOf, bootOf, routeOf, signIn, admittedAs };
 
 /** The binding tokens a world's `env` holds (the classes an operator binds; `admission`'s `BINDINGS`), each live. */
+/** @type {Readonly<{ADMIN_TOKEN: string, PROBE_TOKEN: string, DAEMON_TOKEN: string}>} */
 export const WORLD_TOKENS = Object.freeze({ ADMIN_TOKEN: "world-root-of-trust-7f3a9c2e5b1d4086",
                                            PROBE_TOKEN: "world-probe-credential-2c8e41a7d0b6",
                                            DAEMON_TOKEN: "world-daemon-credential-91f0c3e6a2d8" });
@@ -21,6 +22,7 @@ export const WORLD_TOKENS = Object.freeze({ ADMIN_TOKEN: "world-root-of-trust-7f
 export const WORLD_GROUP = WORLD_INSTANCE_NAME;
 /** What `storeWorld({ ai: true })` adds to the environment: the seal secret a team's Claude key is kept under, and the instance named a test instance
  *  (`CIVICSMITH_TEST_INSTANCE` equal to `INSTANCE_NAME`, as ai-runs reads it), the only instance a run opens on while no AI part is verified. */
+/** @type {string} */
 export const WORLD_AI_SECRET = "world-account-seal-secret-3b9d71c4e0a5f628";
 
 /** `storeWorld({claimed?, now?, env?, ai?, deliver?, releaseKeys?, renderer?, follow?})` (op-tables §5.2, K5054): store-assembly's world (its producing team recorded at its first boot, K5149) with the binding tokens of
@@ -30,6 +32,10 @@ export const WORLD_AI_SECRET = "world-account-seal-secret-3b9d71c4e0a5f628";
  *  `admitted(token, op?)` (admission's caller for a token) and `recipes.hold|project|trail|profiles` (R19), each of real acts;
  *  `store`, `ctx`, `sql`, `tick(ms)` are the world's own. The world binds `CAPTURES` (store-assembly's) and no `PUBLISHED`: `selftest` reads that as the owner does, one bucket bound without the other, and a test that unbinds
  *  `CAPTURES` leaves neither bound (SCREENS-SETTINGS #20 J37 (1); STORE-REQUEST #6 B15 (4)); `recipes.published` binds the published store when it publishes. */
+/**
+ * @param {{claimed?: boolean, now?: number, env?: Record<string, unknown>, ai?: boolean, deliver?: boolean | ((a: Object) => unknown) | null, releaseKeys?: unknown, renderer?: boolean | Object, follow?: boolean} & Record<string, unknown>} [options]
+ * @returns {Promise<Object>} the world, with `door`, `signIn`, `plane`, `boot`, `route`, `session`, `admitted` and `recipes` beside its own `store`, `ctx`, `sql` and `tick`
+ */
 export async function storeWorld({ env = {}, ai = false, deliver = null, releaseKeys = null, renderer = false, follow = false, ...opts } = {}) {
   const name = WORLD_GROUP;
   const holder = {};
@@ -115,7 +121,9 @@ export async function storeWorld({ env = {}, ai = false, deliver = null, release
 }
 
 /** R19: an older installation (no producing team recorded: `groupidentity` answers `group: null`): `storeWorld` with a first boot that bound no `INSTANCE_NAME`. */
+/** @type {(opts?: Object) => Promise<Object>} */
 export const olderInstallation = (opts = {}) => olderOf(storeWorld, opts);
 
 /** R19: a founder with no handle: an unclaimed world claimed with a password and no handle; `unnamed` is the founder signed in. */
+/** @type {(opts?: Object) => Promise<Object>} */
 export const unnamedFounderWorld = (opts = {}) => unnamedFounder(storeWorld, opts);

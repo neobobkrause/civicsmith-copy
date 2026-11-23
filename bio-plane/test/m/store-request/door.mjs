@@ -53,9 +53,37 @@ import { mintTrace, memberRefOf } from "../../../src/signin-door/index.mjs";
 import { evidenceStorageAbsent } from "../../../src/acquisition/index.mjs";
 import { boundOf, wholeReadRow } from "../../../src/read-bounds.mjs";
 
+/**
+ * A world: `store-assembly`'s assembled store over one object, with its clock and its environment (its R90, R92).
+ * @typedef {Object} World
+ * @property {() => number} now the world's clock, in milliseconds
+ * @property {boolean} [claimed] true once the founder has claimed it
+ * @property {{handle?: string}} [founder]
+ */
+/**
+ * A signed-in member (R16).
+ * @typedef {Object} SignedIn
+ * @property {string} handle
+ * @property {string} member the member id
+ * @property {string} token the session token the real `login` issued
+ * @property {string} [password]
+ * @property {{t: string, e: number, d: string, w: string}} session the record the shell keeps
+ * @property {(op: string, asked?: {query?: Record<string, string>, body?: unknown}) => Promise<unknown>} act an act through the world's door; a refusal throws
+ * @property {(op: string, asked?: {query?: Record<string, string>}) => Promise<unknown>} read a read through the world's door; a refusal throws
+ */
+/**
+ * What the shell's harness hands the door, or a `Request` (R17).
+ * @typedef {{url?: string, op?: string, query?: Record<string, string>, headers?: Record<string, string>, body?: unknown, init?: Object, method?: string} | Request} DoorRequest
+ */
+/**
+ * The door's answer, the shape the page receives (R17).
+ * @typedef {{status: number, json?: unknown, bytes?: Uint8Array, type?: string}} DoorAnswer
+ */
 /** R17: the address a page's relative request is read against. */
+/** @type {string} */
 export const WORLD_ORIGIN = "https://group.example";
 /** R20: the declared ops the world's door cannot answer, each with its cause; closed (R20's test fails on any other). */
+/** @type {Readonly<Record<string, string>>} */
 export const WORLD_UNREACHED = Object.freeze({
 });
 /* control-plane R2, R53, R56, R63, R66: the names a table may hold that the real door answers as an op with no spec */
@@ -114,6 +142,10 @@ function envOf(world, stub) {
 /* ---- the reading that follows a promotion (control-plane R123, R130, R133; a world made with `follow: true`) ---- */
 /* control-plane `unreadDocuments`: the documents a promotion states in its `data/provenance.json` that carry a capture digest and no reading, in the order stated, each once;
    none for a verified replay */
+/**
+ * @param {unknown} b a promotion's body
+ * @returns {Array<Object>} the documents owed a reading, in the order stated; none for a body that is not an object or is a replay
+ */
 export function unreadDocuments(b) {
   if (!b || typeof b !== "object" || Array.isArray(b) || b.replay) return [];
   const prov = Array.isArray(b.files) ? b.files.find((f) => f && f.path === "data/provenance.json" && typeof f.text === "string") : null;
@@ -158,6 +190,12 @@ function inlineVerdictOf(document) {
 /** control-plane `followEntries`, over the store's routes alone: each entry's `reading` job row is registered first (`pendingadd`, R130), then read (`readheldfor`, extraction R80) unless
  *  the inline limit is spent; a reading made, or already held, ends it (a `more` is owed to the ledger); every other answer leaves the row standing. Answers `{pending, refused}`: `pending`
  *  true while a row is held for a reading owed, `refused` the digests whose owed reading no row holds. An entry that owes the OCR pass is skipped (a world binds no OCR worker). */
+/**
+ * @param {World} world
+ * @param {Array<{sha: string, document?: Object | null}>} entries
+ * @param {string} [storeName]
+ * @returns {Promise<{pending: boolean, refused: string[]}>}
+ */
 export async function followReading(world, entries, storeName = "bio") {
   const stub = stubOf(world);
   const ask = async (route, init) => { try { return await doAnswer(stub.fetch(new Request(`http://do/${route}`, init))); } catch { return { answered: false }; } };
@@ -256,6 +294,11 @@ async function byteAnswer(res, op, extra) {
 }
 
 /** R17: the world's door, `(req, as) → {status, json} | {status, bytes, type}`. */
+/**
+ * @param {World} world
+ * @returns {(req: DoorRequest, as?: SignedIn | null) => Promise<DoorAnswer>}
+ * @throws {Error} never for a refusal, which is answered; an op neither routed nor wired is answered 501 `WORLD_NO_DOOR_ARM`
+ */
 export function doorOf(world) {
   bindPublished(world);
   const stub = stubOf(world);
@@ -577,6 +620,10 @@ async function templateAnswer(world, op, made) {
 }
 
 /** R20: whether the world's door answers `op` through an arm or function of its own (class (b)); a store route is class (a). */
+/**
+ * @param {string} op
+ * @returns {boolean}
+ */
 export function worldAnswers(op) {
   return ["whoami", "subscriptionsignin", "signintrace", "subscriptiondisconnect", "ask", "affordances", "registeraudit", "attest",
           "monitor", "pagetranscribe", "agentpack", "airundispatch", TEXT_CHECK, READ_TRANSLATE, "claim", "login", "recover", "passwordresetlook", "passwordreset", "invitelook", "enroll",
@@ -589,13 +636,22 @@ export function worldAnswers(op) {
 
 /* ---- R16: real sign-ins ---- */
 
+/** The `result` of a door's answer, else its JSON. @type {(a: DoorAnswer | null | undefined) => unknown} */
 export const resultOf = (a) => (a && a.json && a.json.result !== undefined ? a.json.result : a && a.json);
+/** The error a refused act throws, naming the op and carrying the answer. @type {(op: string, a: DoorAnswer | null | undefined) => Error & {answer: unknown}} */
 export const refusedAct = (op, a) => Object.assign(new Error(`storeWorld: ${op} was refused: ${JSON.stringify(a && (a.json ?? a.type)).slice(0, 400)}`), { answer: a });
 const passwordOf = (handle) => `${handle}-world-passphrase`;
 
 /** R16: `signIn(world, handle, {admin?, capabilities?, device?})` → `{handle, member, token, password, session, act, read}`, by the real acts:
  *  the founder by `login` with the claim's password; any other member by the founder's `memberadd`, the invitation's `enroll` with
  *  her own password, then `login` (with `adminendorse` for `admin: true` and `membercaps` for `capabilities`). */
+/**
+ * @param {World} world a claimed world
+ * @param {string} handle `admin` or the founder's handle signs the founder in
+ * @param {{admin?: boolean, capabilities?: string[] | null, device?: string}} [options]
+ * @returns {Promise<SignedIn>}
+ * @throws {Error} an unclaimed world, or a refused act, naming the op
+ */
 export async function signIn(world, handle, { admin = false, capabilities = null, device = "own" } = {}) {
   const door = doorOf(world);
   const passwords = world.__passwords || (world.__passwords = new Map());
@@ -654,6 +710,11 @@ export async function signIn(world, handle, { admin = false, capabilities = null
 }
 
 /** R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`. */
+/**
+ * @param {World} world
+ * @param {SignedIn | null} [as]
+ * @returns {{door: (req: DoorRequest) => Promise<DoorAnswer>, session: SignedIn["session"] | null}}
+ */
 export function bootOf(world, as) {
   const door = doorOf(world);
   return { door: (req) => door(req, as), session: as ? as.session : null };
@@ -662,6 +723,11 @@ export function bootOf(world, as) {
 /** R18 (K5178; SCREENS-INQUIRY #29 J42 (f)): `routeOf(world, as)` → a Playwright route handler for the page's `/api/` requests, answering each from the world's door as `as`
  *  (her token is added when the page sends none), so a browser drawing the screens at a phone's width gets the real store's answers, not a scripted table. The handler fulfils
  *  `route`: a JSON answer as JSON, a byte answer (a served file) with its type. The session the page holds is `world.session(as)`. */
+/**
+ * @param {World} world
+ * @param {SignedIn | null} [as]
+ * @returns {(route: Object) => Promise<void>} a Playwright route handler
+ */
 export function routeOf(world, as) {
   const door = doorOf(world);
   return async (route) => {
@@ -675,7 +741,9 @@ export function routeOf(world, as) {
 
 /* ---- R19: recipes of real acts ---- */
 
+/** The SHA-256 of text or bytes, as hex. @type {(s: string | Uint8Array) => string} */
 export const hex = (s) => createSha256().update(typeof s === "string" ? new TextEncoder().encode(s) : s).hex();
+/** The world's clock as an instant to the second, `YYYY-MM-DDTHH:MM:SSZ`. @type {(world: World) => string} */
 export const instant = (world) => new Date(world.now()).toISOString().replace(/\.\d{3}Z$/, "Z");
 
 /** R19: a file the member holds: `captureupload` of the content, `allocid` for an `INFO` id, and `promote` of an information bundle
@@ -683,6 +751,16 @@ export const instant = (world) => new Date(world.now()).toISOString().replace(/\
  *  `text/plain`) is the media type the upload declares, and `read: true` has the held file read, by the member's `readheld`, so its
  *  reading holds the text units its format has (a web page's paragraphs and footnotes, a PDF's pages). Answers `{sha, bundle, read?}`
  *  (`read` the answer of `readheld` when it was asked). */
+/**
+ * @param {World} world
+ * @param {SignedIn} as
+ * @param {string} name
+ * @param {string | Uint8Array} content
+ * @param {string} [project]
+ * @param {{type?: string, read?: boolean}} [options]
+ * @returns {Promise<{sha: string, bundle: string, parts?: Array<Object>, read?: unknown}>}
+ * @throws {Error} a refused act, naming the op
+ */
 export async function hold(world, as, name, content, project = "", { type = "text/plain", read = false } = {}) {
   const door = doorOf(world);
   const bytes = typeof content === "string" ? new TextEncoder().encode(content) : content;
@@ -697,6 +775,16 @@ export async function hold(world, as, name, content, project = "", { type = "tex
 }
 
 /** R19: a captured document `doc` (the owner's answer to an upload or an acquire) filed as an information bundle at `collected` by `as`'s real `promote`, under `project` when given. Answers `{sha, bundle, parts?}`; with `answered` (an object) the promotion's own answer is set on it as `promoted`. */
+/**
+ * @param {World} world
+ * @param {SignedIn} as
+ * @param {string} name
+ * @param {{capture: {sha256: string, bytes: number, encoding?: string}, file: string, locator?: string, parts?: Array<Object>}} doc
+ * @param {string} [project]
+ * @param {{promoted?: unknown} | null} [answered] given, it receives the promotion's own answer as `promoted`
+ * @returns {Promise<{sha: string, bundle: string, parts?: Array<Object>}>}
+ * @throws {Error} a refused act, naming the op
+ */
 export async function fileDocument(world, as, name, doc, project = "", answered = null) {
   const now = instant(world);
   const minted = await as.read("allocid", { query: { prefix: "INFO", year: now.slice(0, 4) } });
@@ -724,6 +812,14 @@ export async function fileDocument(world, as, name, doc, project = "", answered 
 
 /** R19: a project, started as Home's "Start a project" starts it (`promote` of its document with no base). Answers its bundle id. It is
  *  `discoverable` (other members may find it by name) unless `visibility` is null: a hidden project is known only to the members it holds. */
+/**
+ * @param {World} world
+ * @param {SignedIn} as
+ * @param {string} title
+ * @param {{visibility?: string | null}} [options]
+ * @returns {Promise<string>} the project's bundle id
+ * @throws {Error} a refused act, naming the op
+ */
 export async function project(world, as, title, { visibility = "discoverable" } = {}) {
   const now = instant(world);
   const text = "---\nobject_type: project\ntitle: " + JSON.stringify(title) + "\nobjective: " + JSON.stringify(title) + "\ncurrent_state: forming\ncreated: \"" + now
@@ -734,12 +830,27 @@ export async function project(world, as, title, { visibility = "discoverable" } 
 }
 
 /** R19: a money trail for the project (`createset` with `purpose: "trail"`). Answers the set's id. */
+/**
+ * @param {World} world
+ * @param {SignedIn} as
+ * @param {string} projectId
+ * @param {string} [label]
+ * @returns {Promise<string>} the set's id
+ * @throws {Error} a refused act, naming the op
+ */
 export async function trail(world, as, projectId, label = "Stormwater trail") {
   const made = await as.act("createset", { body: { purpose: "trail", label, concerns: projectId } });
   return made.set_id;
 }
 
 /** R19: the profiles the team's administrator makes active (`profilesset`). Answers its answer. */
+/**
+ * @param {World} world
+ * @param {SignedIn} as
+ * @param {string[]} ids
+ * @returns {Promise<unknown>} the answer of `profilesset`
+ * @throws {Error} a refused act, naming the op
+ */
 export async function profiles(world, as, ids) {
   return as.act("profilesset", { body: { profiles: ids } });
 }
@@ -749,6 +860,13 @@ export async function profiles(world, as, ids) {
  *  her own for each (`signerregisterown`, which tells every administrator: an OBLIGATION `signer-self-registered`, `queue-producers`
  *  R14). A finding or a condition is raised by acts that need a project's dated actions or a recorded observation, which no act of the
  *  door makes alone: asking for one is refused naming it, never guessed (the world's rule for an arm no test needs). */
+/**
+ * @param {World} world
+ * @param {{obligations?: number, findings?: number, conditions?: number}} [counts]
+ * @returns {Promise<{obligations: string[], findings: string[], conditions: string[]}>}
+ * @throws {Error} any finding or condition asked; a refused act, naming the op
+ * @bound findings and conditions: zero
+ */
 export async function queue(world, { obligations = 0, findings = 0, conditions = 0 } = {}) {
   if (findings > 0 || conditions > 0)
     throw new Error(`storeWorld: recipes.queue makes obligations only; ${findings} findings and ${conditions} conditions asked, and no act of the door raises one by itself`);
@@ -767,6 +885,13 @@ export async function queue(world, { obligations = 0, findings = 0, conditions =
 
 /** R1's callers, as the door has them: `admission.admit`'s answer for `op` over the world's store, for a request presenting
  *  `token` (a session's, a binding's or an agent credential's), with the presented token as `token`; throws on a refusal. */
+/**
+ * @param {World} world
+ * @param {string | null} token
+ * @param {string} [op]
+ * @returns {Promise<Object>} the admitted caller with `token`
+ * @throws {Error} a caller admission refuses
+ */
 export async function admittedAs(world, token, op = "search") {
   const stub = stubOf(world), env = envOf(world, stub);
   const url = new URL(`${WORLD_ORIGIN}/api/?op=${op}`);
@@ -780,6 +905,11 @@ export async function admittedAs(world, token, op = "search") {
 
 /** R20: of the declared names given, those the world's door reaches in neither class (a key of the assembled route map, after
  *  alias resolution and R2's renames, or an arm or function of the door's own) and that `WORLD_UNREACHED` does not name. */
+/**
+ * @param {World} world
+ * @param {string[]} names
+ * @returns {string[]}
+ */
 export function unreachedOf(world, names) {
   const routes = routesOf(world);
   return names.filter((declared) => {
