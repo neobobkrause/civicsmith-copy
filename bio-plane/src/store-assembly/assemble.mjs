@@ -196,13 +196,27 @@ const captureClockOf = (ctx, env) => {
   return held.now;
 };
 
+/**
+ * R1: what the owed-work ledger hands the delivery of an owed render or fetch, and what it answers: the kind of
+ * `control-plane`'s `deliverOwedRender` (its R124), stated here because `control-plane` comes after this module.
+ * @typedef {(args: {ctx: any, env: Record<string, any>, storeName: string, answer?: any, session?: string}) => Promise<{ok: boolean, bundleId?: string, existed?: boolean, reading_pending?: boolean, reason?: string}>} OwedDelivery
+ */
+/**
+ * R1: the options `assembleStore` takes.
+ * @typedef {Object} AssemblyOptions
+ * @property {OwedDelivery | null} [deliver] the owed-render delivery handed to the owed-work ledger; absent or null, a row that needs it stays owed (R67)
+ * @property {string[] | null} [releaseKeys] the public keys (`ssh-ed25519 <key> <name>` lines) a release notice is verified against in place of the product's; absent or null, the product's
+ */
 /** R1: every module of the record store built on `ctx`'s storage, migrated and started; answers the assembled store
  *  `{routes, dispatch, namespace, nowMs, read}`. `deliver`, optional, is `control-plane`'s owed-render delivery
  *  (`deliverOwedRender`), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67). `releaseKeys`,
  *  optional and a test's own, is the list of keys instance-setup verifies a release notice against in place of the
  *  product's (`RELEASE_KEYS`): the Durable Object class hands none. The
  *  migration and the starts are work handed to `ctx.blockConcurrencyWhile`, so they run before any request; a module that
- *  fails to build throws here, and the class that called it answers nothing. */
+ *  fails to build throws here, and the class that called it answers nothing.
+ * @param {any} ctx the Durable Object's state as the runtime hands it (the surface R90 lists)
+ * @param {any} env its bindings, each optional and read where it is used
+ * @param {AssemblyOptions} [options] */
 export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } = {}) {
   env = env || {};
   const sql = ctx.storage.sql;
