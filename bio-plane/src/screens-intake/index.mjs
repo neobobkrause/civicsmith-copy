@@ -14,6 +14,33 @@
  * Words by key (R26; K3366, K3368; DEC-257, DEC-258): this module holds no member-facing English. `words` is the keys of
  * `setup-words`' `WORD_ROWS` each screen draws, and the shell reads every sentence through them. */
 
+/**
+ * One act a screen offers (interface-shell R21): the op it sends, its label's key, and the functions the shell calls.
+ * @typedef {Object} ScreenAct
+ * @property {string} op the op it sends
+ * @property {string} label the key of its label
+ * @property {Function} send builds the request from the view, the pressed element and the kit; or answers `{refuse, fills}`, or null to send nothing
+ * @property {Function} [done] reads the answer into page memory
+ * @property {Function} [failed] reads a failed answer
+ * @property {readonly string[]} rereads the reads asked again after the act
+ * @property {string} [reasonField] the field the member's reason is sent in
+ * @property {Object<string, *>} [refusals] a refusal's code to the key, or the function, that draws it
+ * @property {readonly string[]} [successCodes] codes answered that are not refusals
+ */
+/**
+ * A screen of this module as its own file builds it (interface-shell R21), before its words are added.
+ * @typedef {Object} ScreenBody
+ * @property {string} id the screen's id in the registry
+ * @property {Function} reads `reads(view)`: the reads it asks, by name, `{op, query, empty?, subject?}`
+ * @property {Function} render `render(cs, view)`: the screen's HTML
+ * @property {readonly ScreenAct[]} acts
+ * @property {Object<string, Function>} [parts] shared pieces its acts call through `view.parts`
+ */
+/**
+ * A screen as the shell composes it: its body and the keys of the words it draws (R26).
+ * @typedef {ScreenBody & {words: readonly string[]}} Screen
+ */
+
 import { CAPTURE_SCREEN } from "./capture.mjs";
 
 /* R42 (C55): the one drawing of what a check found, for `screens-inquiry`'s document page to import (K4164) */
@@ -30,7 +57,8 @@ import { WATCHING_SCREEN } from "./watching.mjs";
 const UNSUPPORTED = ["rtf", "email", "legacy_word", "legacy_excel", "legacy_powerpoint", "legacy_office", "tiff", "gif", "webp", "heic", "avif", "bmp", "jp2", "ico", "kind"]
   .map((k) => "reading-pipeline.index.unsupported_" + k);
 
-/* The keys each screen reads (R26). */
+/** The keys each screen reads (R26), by screen id.
+ * @type {Readonly<Record<string, readonly string[]>>} */
 export const SCREEN_KEYS = Object.freeze({
   capture: Object.freeze([
     ...UNSUPPORTED,
@@ -227,5 +255,7 @@ export const SCREEN_KEYS = Object.freeze({
   ]),
 });
 
+/** The eight screens, composed with their words (interface-shell R21, R28).
+ * @type {readonly Screen[]} */
 export const SCREENS = Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
   .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })));
