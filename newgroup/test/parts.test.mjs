@@ -9,7 +9,7 @@ import { containerDescriptor, workerDescriptor } from "../src/index.mjs";
 
 const DIGEST = "sha256:" + "a".repeat(64);
 const runner = {
-  name: "runner",
+  dir: "runner", name: "runner", abs: "/nowhere",
   bundle: { entry: "src/index.mjs", outfile: "dist/runner.bundled.mjs", manifest: "dist/runner.bundle.json" },
   marker: { kind: "container", class_name: "Runner", image: { repository: "docker.io/civicos/runner", digest: DIGEST },
     max_instances: 3, bind: [{ member: "alpha-worker", binding: "RUNNER" }] },

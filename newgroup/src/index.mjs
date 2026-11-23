@@ -1435,7 +1435,7 @@ export function assetResponse(name) {
 
 /**
  * @typedef {Object} InstallerWorker
- * @property {(req: Request) => Promise<Response>} fetch answers every request the installer's address receives
+ * @property {(req: Request, env?: unknown) => Promise<Response>} fetch answers every request the installer's address receives; it reads nothing from env, having no binding (R27)
  * @bound fetch.request: GET / and GET /update serve their pages, GET /app/assets/<name> interface-assets' files, POST /begin and GET /callback the sign-in and the run; any other request is answered 404 with a plain page; nothing is stored (R1, R54)
  * @bound fetch.request: POST /begin answers 400 by name for a slug outside GROUP_SLUG_RE or equal to newgroup, and for an instanceAi present but not 16 to 512 printable characters without spaces (R2)
  */

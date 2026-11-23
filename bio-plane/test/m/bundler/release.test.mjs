@@ -312,7 +312,7 @@ test("R34: a deploy of different bytes keeps every undeclared plain_text on the 
     const sent = puts(r)[0].metadata.bindings;
     assert.deepEqual(sent, [...full, onScript[0], onScript[1]], "R13's bindings, then the two undeclared plain_text bindings as they were");
     assert.equal(sent.filter((b) => b.name === "MODE").length, 1);
-    assert.equal(sent.find((b) => b.name === "MODE").text, "fixture");
+    assert.equal(sent.find((b) => b.name === "MODE")?.text, "fixture");
     assert.deepEqual(puts(r)[0].metadata.keep_bindings, ["secret_text", "durable_object_namespace", "service"], "secrets and the rest ride keep_bindings as before");
     const fresh = deploy(root, { stub: okStub() });
     assert.equal(fresh.status, 0, "an instance not on the account yet has nothing to keep");
@@ -434,8 +434,8 @@ test("R18: deriveCrons reads triggers.crons: none declared is the empty list, a 
   assert.deepEqual(deriveCrons({ triggers: { crons: [PLANE_CRON] } }), [PLANE_CRON]);
   assert.deepEqual(deriveCrons({ triggers: { crons: ["0 0 * * *", "17 3 * * 1-5", "*/10 * * * *"] } }), ["0 0 * * *", "17 3 * * 1-5", "*/10 * * * *"]);
   for (const crons of [["*/5 * * *"], ["*/5 * * * * *"], [""], ["a b c d e f"], [7], [null], "*/5 * * * *", [PLANE_CRON, PLANE_CRON], ["0 * * * *", "1 * * * *", "2 * * * *", "3 * * * *"]])
-    assert.match(tryThrow(() => deriveCrons({ triggers: { crons } })).message, /^REFUSED \[INVALID_CRONS\]/, JSON.stringify(crons));
-  assert.match(tryThrow(() => deriveCrons({ triggers: ["*/5 * * * *"] })).message, /^REFUSED \[INVALID_CRONS\]/);
+    assert.throws(() => deriveCrons({ triggers: { crons } }), { message: /^REFUSED \[INVALID_CRONS\]/ }, JSON.stringify(crons));
+  assert.throws(() => deriveCrons({ triggers: ["*/5 * * * *"] }), { message: /^REFUSED \[INVALID_CRONS\]/ });
   assert.match(tryThrow(() => deriveCrons({ triggers: { crons: ["*/5 * * *"] } })).message, /"\*\/5 \* \* \*"/, "names the cron");
 });
 
@@ -639,7 +639,7 @@ function expectedPayload(root, version = VERSION) {
   const art = (m) => readFileSync(join(m.abs, m.bundle.outfile));
   const members = lib.members.map((m) => {
     const cfg = parseJsonc(readFileSync(join(m.abs, "wrangler.jsonc"), "utf8"));
-    const parts = (m.bundle.assets || []).map((p) => {
+    const parts = (m.bundle?.assets || []).map((p) => {
       const b = readFileSync(join(m.abs, p));
       return { path: p, type: p.endsWith(".bin") ? "Data" : "CompiledWasm", sha256: hex(b), bytes: b.length };
     });
@@ -719,7 +719,7 @@ test("R23: --sign signs the plane in bio-release and the payload in bio-release-
     assert.ok(sshVerify(signer, rel.fleetSig, Buffer.from(payload), NS_FLEET), "stock ssh-keygen accepts fleetSig over the payload");
     assert.equal((await verifySshsig(rel.fleetSig, new TextEncoder().encode(payload), NS_FLEET, [signer])).ok, true);
     for (const m of [planeMember(root), ...discoverMembers(root)])
-      assert.ok(readFileSync(join(root, "release", `${m.name}.bundled.mjs`)).equals(readFileSync(join(m.abs, m.bundle.outfile))), m.name);
+      assert.ok(readFileSync(join(root, "release", `${m.name}.bundled.mjs`)).equals(readFileSync(join(m.abs, String(m.bundle?.outfile)))), m.name);
     assert.equal(readFileSync(join(root, "release/beta-worker/assets/model.bin"), "utf8"), "MODEL-1", "a part under <member>/<path>");
   } finally { rm(root); }
 });

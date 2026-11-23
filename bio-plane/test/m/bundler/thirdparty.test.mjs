@@ -41,9 +41,9 @@ test("R27: npmProductionPackages lists every non-dev installed copy from the loc
     assert.deepEqual(npmProductionPackages(p, "runner/package-lock.json"), { packages: CONTAINER_PACKAGES });
     assert.deepEqual(npmProductionPackages(join(dir, "none.json"), "x/package-lock.json"), { unread: "x/package-lock.json is missing" });
     writeFileSync(p, "{ not json");
-    assert.match(npmProductionPackages(p, "x/package-lock.json").unread, /^x\/package-lock\.json does not parse$/);
+    assert.match(String(npmProductionPackages(p, "x/package-lock.json").unread), /^x\/package-lock\.json does not parse$/);
     writeJson(p, { lockfileVersion: 1, dependencies: { a: { version: "1.0.0" } } });
-    assert.match(npmProductionPackages(p, "x/package-lock.json").unread, /^x\/package-lock\.json does not parse: it has no `packages` map/);
+    assert.match(String(npmProductionPackages(p, "x/package-lock.json").unread), /^x\/package-lock\.json does not parse: it has no `packages` map/);
     writeJson(p, { packages: { "": {}, "node_modules/a": { version: "1.0.0" }, "node_modules/b": { resolved: "x" } } });
     assert.equal(npmProductionPackages(p, "x/package-lock.json").unread, "x/package-lock.json names the installed package b (node_modules/b) without a version");
     writeJson(p, { packages: { "node_modules/b": { version: "1.0.0", dev: true }, "node_modules/b/node_modules/c": { dev: true } } });
@@ -52,14 +52,14 @@ test("R27: npmProductionPackages lists every non-dev installed copy from the loc
 });
 
 test("R27: the container.json part gains `packages` from the member's own package-lock.json, last; R25's other fields are unchanged", () => {
-  const member = { dir: "runner", name: "runner", abs: "/nowhere", bundle: { entry: "src/w.mjs" },
+  const member = { dir: "runner", name: "runner", abs: "/nowhere", bundle: { entry: "src/w.mjs", outfile: "dist/w.bundled.mjs", manifest: "dist/w.bundle.json" },
     marker: { kind: "container", image: { repository: "docker.io/civicos/runner", digest: DIGEST }, class_name: "Runner",
       max_instances: 3, bind: [{ member: "alpha-worker", binding: "RUNNER" }] } };
   const before = containerDescriptor(member, ["alpha-worker"]);
   const after = containerDescriptor(member, ["alpha-worker"], { packages: CONTAINER_PACKAGES });
-  const { packages, ...rest } = after.descriptor;
+  const { packages, ...rest } = after.descriptor ?? { packages: undefined };
   assert.deepEqual(rest, before.descriptor, "R25's fields unchanged");
-  assert.deepEqual(Object.keys(after.descriptor), ["class_name", "image", "scheduling_policy", "max_instances", "bind", "packages"]);
+  assert.deepEqual(Object.keys(after.descriptor ?? {}), ["class_name", "image", "scheduling_policy", "max_instances", "bind", "packages"]);
   assert.deepEqual(packages, CONTAINER_PACKAGES);
 });
 

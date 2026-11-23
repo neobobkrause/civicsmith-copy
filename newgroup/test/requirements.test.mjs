@@ -1882,6 +1882,7 @@ test("R39 a fleet member's limits are read from its signed bundle (`bio-member-l
      `wrangler.jsonc`'s `limits`: built here by the bundler's own recipe, the bytes a release would sign. */
   const { discoverMembers, buildMember } = await import("../../bio-plane/scripts/fleet-bundle.mjs");
   const sheet = discoverMembers().find((m) => m.name === SHEET);
+  if (!sheet) assert.fail(`${SHEET} is a member of the fleet`);
   const built = await buildMember(sheet, { write: false });
   const cfgLimits = JSON.parse(readFileSync(new URL("../../sheet-worker/wrangler.jsonc", import.meta.url), "utf8").match(/"limits":\s*(\{[^}]*\})/)[1]);
   assert.deepEqual(installer.memberLimits(built.bytes), { ok: true, limits: cfgLimits });
