@@ -25,10 +25,10 @@ Kept by the UX lane; rank 5 on `process/ranking.md` (design decisions), below th
 
 These touch what the product holds as evidence and what it publishes, which are his (Process4 design part 4, section 3). They are put to him on the lane's design page, with options and the lane's recommendation:
 
-- **Q1. Publishing with passages ungraded (the earlier A5's policy part).** Recommendation: the signing screen names every passage still ungraded; the member grades them there or signs anyway, and the edition says it was published with them ungraded.
+- **Q1. Publishing with passages ungraded (the earlier A5's policy part).** Settled by the canon, which the lane should have read before putting it: the owner's DEC-18 (2 Aug 2026; `docs/architecture/BIO_Case_Making_v0_1.md`, R1's amendment): an ungraded leg contributes nothing and is named on the case; it does not suspend a conclusion that has graded legs; a conclusion whose every leg is ungraded is UNRATED, and the signing check against the required strength stops it. The lane adds no rule. The owner's words: 22 Nov 2026, "Decision: Q1,A"; 23 Nov 2026, after the lane showed him that option A conflicts with DEC-18: "Decision: my answer on whether my choice of option A does not replaces my 2 August ruling". His words of 22 Nov, "a published can must be sufficiently supported by the evidence and mustn't present narrative that the evidence doesn't support", are, in his words, a summary of rules already in the canon, not a new rule.
 - **Q2. Citing a typed page once a second member has checked it (the earlier A8).** Recommendation: citable once checked, the citation carrying "typed by …, checked by …", never presented as Civicsmith's reading or the original.
 
-Until he answers, journey steps that rest on them stay marked `waiting Q1` or `waiting Q2`.
+Until he answers Q2, journey steps that rest on it stay marked `waiting Q2`. J15's step 23 still carries a `waiting Q1` mark: nothing waits on Q1 now, and the mark comes off when ARCH passes that correction during tranche t1.
 
 ## 3. How the lane settles a line the design is silent on
 
