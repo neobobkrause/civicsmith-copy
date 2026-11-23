@@ -14,11 +14,11 @@ import { makePdf, content, image, hex, runner } from "./make-pdf.mjs";
 import { generate } from "../../bio-plane/test/pdfgen.mjs";
 import { BUNDLE } from "./subject.mjs";
 
-const { Miniflare } = await (async () => {
-  try { return await import("miniflare"); } catch { /* fall through */ }
-  const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
-  return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
-})();
+// miniflare and esbuild come only from test-support's manifest (bio-plane/package.json),
+// never from whichever node_modules folder lies nearest this file.
+const fromTestSupport = createRequire(fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url)));
+const viaTestSupport = (name) => import(pathToFileURL(fromTestSupport.resolve(name)).href);
+const { Miniflare } = await viaTestSupport("miniflare");
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const bundle = await import(pathToFileURL(BUNDLE).href);
