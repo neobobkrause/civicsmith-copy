@@ -1,0 +1,67 @@
+{
+ "label": "born on 0.72.0",
+ "path": [
+  {
+   "version": "0.72.0",
+   "commit": "b942d97308195a644f5c2ecb3ba79967ce7548ef",
+   "bundle_sha256": "cc68d9816125eeb873c74e82f7018c958d2171a5776b516c27b23343c4a7bd99"
+  }
+ ],
+ "doc": "INFO-2026-9143-15",
+ "served": "---\nid: INFO-2026-9143-15\nobject_type: information\nschema: information@1\ntitle: \"Info INFO-2026-9143-15\"\ncurrent_state: collected\nprior_state: null\ncreated: \"2026-09-18T00:00:00Z\"\nlast_updated: \"2026-09-18T00:00:00Z\"\nproduced_by:\n  mode: assisted\n  capability_tier: session\ngroup: released-store-worker\nreferences: []\nstate_history: []\nannotations_open: 0\nreeval_pending:\n  flag: false\n  since: null\n  source: null\nvisuals: []\ncriticality: supporting\nsource_status: unchanged\nsource:\n  locator: in hand\n  authority: synthetic\n  retrieved: 2026-09-18T00:00:00Z\nmonitoring:\n  enabled: false\n  frequency: none\n---\n\n## Summary\n\nA captured document.\n\n## Provenance Notes\n\n## Session Log\n\n## Review Notes\n",
+ "group_before": [
+  true,
+  "released-store-worker",
+  "bootstrap"
+ ],
+ "rows": [
+  [
+   {
+    "bundle_id": "INFO-2026-9143-15",
+    "bundle_sha": "cbf49244cc285b28d7f7b79757681520397e261f14818cf9bdaf9840f786f0cd",
+    "current_state": "collected"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-15",
+    "role": "supports",
+    "grade": "B",
+    "grade_axis": "capture",
+    "grade_source": "capture",
+    "note": "rec143 legacy leg",
+    "at": "2026-09-18T00:00:00Z"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "name": "v1",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-15",
+    "role": "supports",
+    "note": "rec143 legacy version leg",
+    "ground": "g1"
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ]
+ ],
+ "checks": [
+  "born on 0.72.0: ARMED — 0.72.0 promoted a document through its own op",
+  "born on 0.72.0: ARMED — 0.72.0's store took a basis leg and a version leg",
+  "born on 0.72.0: ARMED — 0.72.0 serves the document it stored through its own op=file",
+  "born on 0.72.0: ARMED — 0.72.0 recorded its bound name at the store's own first boot (decision (a))",
+  "born on 0.72.0: ARMED — the rows 0.72.0 wrote are there to survive (a bundle, a leg, a version leg, its files)"
+ ]
+}

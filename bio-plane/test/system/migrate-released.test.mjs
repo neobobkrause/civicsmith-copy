@@ -47,10 +47,10 @@
  */
 import "../stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import "../sandbox.mjs";               /* D-186: owns $TMPDIR for this process and removes it on exit */
-import { mkdtempSync, readFileSync, existsSync, cpSync } from "node:fs";
+import { mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, INSTANCE, TOK, bootCurrent, client, errOf, groupOf, shapeOf, ROWS_Q } from "../m/plane/migrate-released-kit.mjs";
+import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, INSTANCE, TOK, bootCurrent, client, errOf, groupOf, shapeOf, ROWS_Q, storeCopy } from "../m/plane/migrate-released-kit.mjs";
 
 let pass = 0, fail = 0;
 const t = (label, got, want) => {
@@ -106,7 +106,7 @@ for (const label of LABELS) {
 }
 t("ARMED: every release in the list, and every withdrawn path, is a fixture", Object.keys(FIX).length, LABELS.length);
 /* the current plane boots on a COPY: the committed store is never written */
-const copyOf = (label) => { const persist = mkdtempSync(join(tmpdir(), `rec143-${slug(label)}-`)); cpSync(join(FIX[label].dir, "store"), persist, { recursive: true }); return persist; };
+const copyOf = (label) => storeCopy(join(FIX[label].dir, "store"), mkdtempSync(join(tmpdir(), `rec143-${slug(label)}-`)));
 const seeded = ({ doc, served, group_before, rows }) => ({ DOC: doc, served, groupBefore: group_before, rows });
 
 /* THE CURRENT PLANE on a store somebody else wrote: it answers, it has a fresh
@@ -179,7 +179,7 @@ for (const label of LABELS) {
   if (!FIX[label]) continue;
   n++;
   console.log(`\n--- ${n}. a store ${label} boots on the current plane ---`);
-  await verifyCurrent(label, copyOf(label), seeded(FIX[label].cap));
+  await verifyCurrent(label, await copyOf(label), seeded(FIX[label].cap));
 }
 
 console.log(`\nmigrate-released: ${pass} pass, ${fail} fail`);

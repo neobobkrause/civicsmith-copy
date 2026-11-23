@@ -1,0 +1,85 @@
+{
+ "label": "0.58.0 -> 0.60.0 -> 0.58.0 -> current",
+ "path": [
+  {
+   "version": "0.58.0",
+   "commit": "db7589b80c1d126e8d6345033b70319ef9d1e3a2",
+   "bundle_sha256": "72fce1e9156163ad5a04cff68d0dae405e051548fc85fef4d6228ea7fcd28f4c"
+  },
+  {
+   "version": "0.60.0",
+   "commit": "76b2a5c64ebd99a944b7a10d28b620390997d95e",
+   "bundle_sha256": "115843fb50ef7719647096a829c4fa736ec7e763a62177dcd88c7d22abb6b046"
+  },
+  {
+   "version": "0.58.0",
+   "commit": "db7589b80c1d126e8d6345033b70319ef9d1e3a2",
+   "bundle_sha256": "72fce1e9156163ad5a04cff68d0dae405e051548fc85fef4d6228ea7fcd28f4c"
+  }
+ ],
+ "doc": "INFO-2026-9143-31",
+ "served": "---\nid: INFO-2026-9143-31\nobject_type: information\nschema: information@1\ntitle: \"Info INFO-2026-9143-31\"\ncurrent_state: collected\nprior_state: null\ncreated: \"2026-09-18T00:00:00Z\"\nlast_updated: \"2026-09-18T00:00:00Z\"\nproduced_by:\n  mode: assisted\n  capability_tier: session\ngroup: believe-in-oakland\nreferences: []\nstate_history: []\nannotations_open: 0\nreeval_pending:\n  flag: false\n  since: null\n  source: null\nvisuals: []\ncriticality: supporting\nsource_status: unchanged\nsource:\n  locator: in hand\n  authority: synthetic\n  retrieved: 2026-09-18T00:00:00Z\nmonitoring:\n  enabled: false\n  frequency: none\n---\n\n## Summary\n\nA captured document.\n\n## Provenance Notes\n\n## Session Log\n\n## Review Notes\n",
+ "group_before": [
+  true,
+  null,
+  null
+ ],
+ "rows": [
+  [
+   {
+    "bundle_id": "INFO-2026-9143-31",
+    "bundle_sha": "98e07dffcf75efdd4cca603094209f407fdcb22b847348ba02f8fce4b722399e",
+    "current_state": "collected"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-31",
+    "role": "supports",
+    "grade": "B",
+    "grade_axis": "capture",
+    "grade_source": "capture",
+    "note": "rec143 legacy leg",
+    "at": "2026-09-18T00:00:00Z"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "name": "v1",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-31",
+    "role": "supports",
+    "note": "rec143 legacy version leg",
+    "ground": "g1"
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ]
+ ],
+ "withdrawn": {
+  "brick_ok": false,
+  "brick_error": "non-JSON 500: Error: no such column: content_id at offset 66: SQLITE_ERROR\n    at async Object.fetch (file:///home/user/civicsmith-copy/bio-plane/node_modules/miniflare/dist/src/workers/core/entry.worker.js:4709:22)",
+  "bootstrap_silent": true
+ },
+ "rollback_inquiry_basis": 1,
+ "checks": [
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: ARMED — 0.58.0 promoted a document through its own op",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: ARMED — 0.58.0's store took a basis leg and a version leg",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: ARMED — 0.58.0 serves the document it stored through its own op=file",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: ARMED — the rows 0.58.0 wrote are there to survive (a bundle, a leg, a version leg, its files)",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: REPRODUCED — 0.60.0's own bytes BRICK the 0.58.0 store: the Durable Object throws `no such column: content_id`",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: and 0.60.0's op=bootstrap answers STORE_DID_NOT_ANSWER, as DIST measured on biosmoke7",
+  "0.58.0 -> 0.60.0 -> 0.58.0 -> current: the ROLLBACK to 0.58.0 answers again — the failed upgrade left nothing 0.58.0 cannot read"
+ ]
+}

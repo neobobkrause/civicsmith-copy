@@ -1,0 +1,66 @@
+{
+ "label": "born on 0.60.0",
+ "path": [
+  {
+   "version": "0.60.0",
+   "commit": "76b2a5c64ebd99a944b7a10d28b620390997d95e",
+   "bundle_sha256": "115843fb50ef7719647096a829c4fa736ec7e763a62177dcd88c7d22abb6b046"
+  }
+ ],
+ "doc": "INFO-2026-9143-03",
+ "served": "---\nid: INFO-2026-9143-03\nobject_type: information\nschema: information@1\ntitle: \"Info INFO-2026-9143-03\"\ncurrent_state: collected\nprior_state: null\ncreated: \"2026-09-18T00:00:00Z\"\nlast_updated: \"2026-09-18T00:00:00Z\"\nproduced_by:\n  mode: assisted\n  capability_tier: session\ngroup: believe-in-oakland\nreferences: []\nstate_history: []\nannotations_open: 0\nreeval_pending:\n  flag: false\n  since: null\n  source: null\nvisuals: []\ncriticality: supporting\nsource_status: unchanged\nsource:\n  locator: in hand\n  authority: synthetic\n  retrieved: 2026-09-18T00:00:00Z\nmonitoring:\n  enabled: false\n  frequency: none\n---\n\n## Summary\n\nA captured document.\n\n## Provenance Notes\n\n## Session Log\n\n## Review Notes\n",
+ "group_before": [
+  true,
+  null,
+  null
+ ],
+ "rows": [
+  [
+   {
+    "bundle_id": "INFO-2026-9143-03",
+    "bundle_sha": "fbbe18964bc42fbbfa248519a1a641f33b99a672736bb33225a48d7a641aa50d",
+    "current_state": "collected"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-03",
+    "role": "supports",
+    "grade": "B",
+    "grade_axis": "capture",
+    "grade_source": "capture",
+    "note": "rec143 legacy leg",
+    "at": "2026-09-18T00:00:00Z"
+   }
+  ],
+  [
+   {
+    "bundle_id": "INQ-2026-9143",
+    "name": "v1",
+    "ord": 0,
+    "target_id": "INFO-2026-9143-03",
+    "role": "supports",
+    "note": "rec143 legacy version leg",
+    "ground": "g1"
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ],
+  [
+   {
+    "n": 1
+   }
+  ]
+ ],
+ "checks": [
+  "born on 0.60.0: ARMED — 0.60.0 promoted a document through its own op",
+  "born on 0.60.0: ARMED — 0.60.0's store took a basis leg and a version leg",
+  "born on 0.60.0: ARMED — 0.60.0 serves the document it stored through its own op=file",
+  "born on 0.60.0: ARMED — the rows 0.60.0 wrote are there to survive (a bundle, a leg, a version leg, its files)"
+ ]
+}

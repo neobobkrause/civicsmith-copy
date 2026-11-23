@@ -306,3 +306,45 @@ export const seed = async (label, version, persist, { bootRelease, t, n }) => {
 
 /* the five releases WITHDRAWN from `release/` (d86b27ea): each bricked a store born before it (section 3 of the suite) */
 export const WITHDRAWN = new Set(["0.59.0", "0.60.0", "0.61.0", "0.62.0", "0.63.0"]);
+
+/* A captured store, made whole and small before it is committed: each SQLite file's write-ahead log folded into it (`wal_checkpoint(TRUNCATE)`)
+   and its free pages dropped (`VACUUM`), the `-wal` and `-shm` files removed, and miniflare's cache, which no plane writes, left out. Every table,
+   column, index, trigger and row the release wrote is kept; each file is then committed gzipped (`<name>.sqlite.gz`, the empty pages make a
+   6 MB store about 50 KB), and `storeCopy` restores the bytes exactly before miniflare opens them. */
+export function compactStore(storeDir) {
+  return import("node:fs").then(async ({ readdirSync, statSync, rmSync, existsSync, readFileSync, writeFileSync }) => {
+    const { gzipSync } = await import("node:zlib");
+    const { DatabaseSync } = await import("node:sqlite");
+    const { join } = await import("node:path");
+    rmSync(join(storeDir, "cache"), { recursive: true, force: true });
+    const walk = (d) => readdirSync(d).flatMap((n) => { const p = join(d, n); return statSync(p).isDirectory() ? walk(p) : [p]; });
+    for (const f of walk(storeDir).filter((p) => p.endsWith(".sqlite"))) {
+      const db = new DatabaseSync(f);
+      db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+      db.exec("VACUUM");
+      db.close();
+      for (const x of ["-wal", "-shm"]) if (existsSync(f + x)) rmSync(f + x);
+      writeFileSync(f + ".gz", gzipSync(readFileSync(f), { level: 9 }));
+      rmSync(f);
+    }
+  });
+}
+
+/* A committed store, copied whole into `persist` with each `.sqlite.gz` ungzipped to its `.sqlite`: the bytes the capture kept. The committed
+   store is never written. */
+export async function storeCopy(storeDir, persist) {
+  const { readdirSync, statSync, mkdirSync, readFileSync, writeFileSync } = await import("node:fs");
+  const { gunzipSync } = await import("node:zlib");
+  const { join } = await import("node:path");
+  const copy = (from, to) => {
+    mkdirSync(to, { recursive: true });
+    for (const n of readdirSync(from)) {
+      const p = join(from, n);
+      if (statSync(p).isDirectory()) copy(p, join(to, n));
+      else if (n.endsWith(".sqlite.gz")) writeFileSync(join(to, n.slice(0, -3)), gunzipSync(readFileSync(p)));
+      else writeFileSync(join(to, n), readFileSync(p));
+    }
+  };
+  copy(storeDir, persist);
+  return persist;
+}

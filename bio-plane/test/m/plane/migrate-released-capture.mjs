@@ -13,7 +13,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, boot, probe, client, seed } from "./migrate-released-kit.mjs";
+import { RELEASES, WITHDRAWN, FIXTURES, slug, sha, boot, probe, client, seed, compactStore } from "./migrate-released-kit.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
 const gitShow = (commit, path) => execFileSync("git", ["show", `${commit}:${path}`], { cwd: ROOT, maxBuffer: 64 << 20 });
@@ -82,6 +82,7 @@ for (const { label, persist, capture } of out) {
   const dir = join(FIXTURES, slug(label));
   mkdirSync(dir, { recursive: true });
   cpSync(persist, join(dir, "store"), { recursive: true });
+  await compactStore(join(dir, "store"));
   writeFileSync(join(dir, "capture.json"), JSON.stringify({ ...capture, checks: checks.filter((c) => c.label.startsWith(label + ":")).map((c) => c.label) }, null, 1) + "\n");
 }
 console.log(`\ncapture: ${checks.length} checks pass; ${out.length} stores written under ${FIXTURES}`);
