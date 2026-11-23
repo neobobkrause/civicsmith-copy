@@ -19,5 +19,9 @@
     "bio-plane/src/screens-publish/published.mjs",
     "bio-plane/src/screens-publish/review-outside.mjs"
   ],
-  "uses": []
+  "uses": [
+    "setup-words",
+    "interface-shell",
+    "store-request"
+  ]
 }
