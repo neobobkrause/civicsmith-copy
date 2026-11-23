@@ -278,6 +278,9 @@ const sumRows = (cursors) => {
  * @property {number} failed
  * @property {Object<string, any>} failed_why
  * @property {string | null} priority
+ * @property {any} cursor the row's cursor, parsed; null when none or unreadable
+ * @property {number | null} last_progress_at
+ * @property {any} verdict the plan step's verdict on the bound, `{ok, size, limit, bound_key}`, parsed; null when none
  */
 /**
  * R79, R98: an ended row as `readingsEnded` answers it.
@@ -316,7 +319,7 @@ const sumRows = (cursors) => {
  * @property {(batch?: {sha?: any, kind?: any, batch?: any}) => boolean} landBatch true the first time a batch lands
  * @property {(key?: {sha?: any, kind?: any}) => (Object<string, any> | null)} jobRow R79: every column of the row, or null
  * @property {(key?: {sha?: any, kind?: any}) => Array<{unit: string, tries: number, stamped_at: number | null}>} unitAttempts
- * @property {(of?: {sha?: any}) => OwedEntry[]} list the rows still owed or ended for a stated reason; a `finished` row is not listed
+ * @property {(of?: {sha?: any, finished?: boolean}) => OwedEntry[]} list the rows still owed or ended for a stated reason; a `finished` row only when `finished` is true
  * @property {(page?: {after?: any, limit?: any}) => {ok: true, rows: EndedRow[], next: string | null}} readingsEnded
  * @property {(of?: {sha?: any}) => Array<Object<string, any>>} ledgerLast R72, R78
  * @property {() => Object<string, {owed: number, final: number}>} summary counts for each kind, no digest
@@ -778,11 +781,15 @@ export function pendingOf(ctx, deps = {}) {
   /* an end kept a month for the table's readers, then removed */
   const prune = () => { try { sql.exec(`DELETE FROM keeps_pending WHERE state IN ('finished','refused') AND ended_at < ?`, now() - ENDED_KEEP_MS); } catch { /* kept */ } };
 
+  /* R74 (control-plane R135): `cursor`, `last_progress_at` and `verdict` are read as `jobRow` reads them, so `owedwork` lists what
+     `op=reading` answers; a finished row has no next try */
+  const cursorOf = (r) => { if (r.cursor === null || r.cursor === undefined) return null; try { return JSON.parse(r.cursor); } catch { return null; } };
   const view = (r) => ({ sha: r.sha, kind: r.kind, state: r.final_why === null ? "owed" : "final", job_state: r.state, attempts: r.attempts,
-    registered_at: r.registered_at, next_try: r.final_why === null ? r.due_at : null, last_try: r.last_try, why: r.final_why ?? r.last_why,
+    registered_at: r.registered_at, next_try: r.final_why === null && r.state !== "finished" ? r.due_at : null, last_try: r.last_try, why: r.final_why ?? r.last_why,
     detail: json(r.detail, {}), interrupted: r.interrupted, running: r.started_at !== null && running.has(keyOf(r)), last_ms: r.last_ms,
     own_ms: r.own_ms, wait_ms: r.wait_ms, last_mem: r.last_mem, written: r.written, skipped: r.skipped, owed: r.owed, failed: r.failed,
-    failed_why: json(r.failed_why, {}), priority: r.priority ?? null });
+    failed_why: json(r.failed_why, {}), priority: r.priority ?? null, cursor: cursorOf(r), last_progress_at: r.last_progress_at ?? null,
+    verdict: r.verdict === null || r.verdict === undefined ? null : json(r.verdict, null) });
 
   h = {
     /** R75, R77, R97 (and R5's migration pass): the ledger's table; one an earlier release wrote (one row for each digest, a count
@@ -855,14 +862,16 @@ export function pendingOf(ctx, deps = {}) {
       const r = typeof sha === "string" && JOB_KINDS.includes(kind) ? rowOf(sha, kind) : null;
       if (!r) return null;
       return { ...r, parts: json(r.parts, []), detail: json(r.detail, {}), verdict: r.verdict === null ? null : json(r.verdict, null),
-               cursor: r.cursor === null ? null : (() => { try { return JSON.parse(r.cursor); } catch { return null; } })(), failed_why: json(r.failed_why, {}) };
+               cursor: cursorOf(r), failed_why: json(r.failed_why, {}) };
     },
     /** R101: the attempts stamped on a row's units, `[{unit, tries, stamped_at}]` */
     unitAttempts({ sha, kind } = {}) { return all(`SELECT unit, tries, stamped_at FROM job_unit_attempts WHERE sha=? AND kind=? ORDER BY unit`, sha, kind).map((r) => ({ ...r })); },
     /** every entry still owed or ended for a stated reason, or those of one digest, with the state the document's page states: `owed`, or
-     *  `final` with its reason (a `refused` row is `final`); `job_state` is R97's. A row that finished owes nothing and is not listed. */
-    list({ sha } = {}) {
-      const rows = sha === undefined ? all(`SELECT * FROM keeps_pending WHERE state <> 'finished'`) : all(`SELECT * FROM keeps_pending WHERE sha=? AND state <> 'finished'`, sha);
+     *  `final` with its reason (a `refused` row is `final`); `job_state` is R97's. A row that finished owes nothing and is not listed,
+     *  unless `finished` is true (R74; control-plane R135: `owedwork` lists the rows `op=reading` answers, a finished one among them). */
+    list({ sha, finished = false } = {}) {
+      const kept = finished === true ? "" : ` WHERE state <> 'finished'`;
+      const rows = sha === undefined ? all(`SELECT * FROM keeps_pending${kept}`) : all(`SELECT * FROM keeps_pending WHERE sha=?${finished === true ? "" : ` AND state <> 'finished'`}`, sha);
       return rows.sort((a, b) => a.registered_at - b.registered_at || (a.sha < b.sha ? -1 : a.sha > b.sha ? 1 : RANK[a.kind] - RANK[b.kind])).map(view);
     },
     /** R98: the rows that ended (`finished`, `refused`, `final`), after the cursor `after` (the `next` of the page before; none: from the
@@ -984,9 +993,10 @@ export function pendingOps(holder, url, { health, administers } = {}) {
     owedwork: () => {
       const sha = url.searchParams.get("sha");
       if (sha === null) return stalled({ ok: true, owed: holder.summary() });
-      if (DIGEST.test(sha)) return stalled({ ok: true, sha, owed: holder.list({ sha }), last: lastOf(holder, sha) });
+      /* R74 (control-plane R135): a digest's rows as `op=reading` answers them, a finished row among them */
+      if (DIGEST.test(sha)) return stalled({ ok: true, sha, owed: holder.list({ sha, finished: true }), last: lastOf(holder, sha) });
       /* a `subresources` or `fetch` row is keyed by its capture session (R77, R81): the key is read when a row of those kinds holds it */
-      const owed = holder.list({ sha }).filter((e) => SESSION_KEYED.includes(e.kind));
+      const owed = holder.list({ sha, finished: true }).filter((e) => SESSION_KEYED.includes(e.kind));
       return owed.length ? stalled({ ok: true, sha, owed, last: lastOf(holder, sha) }) : { ok: false, reason: "BAD_SHA" };
     },
   };
