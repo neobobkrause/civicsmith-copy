@@ -12,6 +12,9 @@
 
 const deepFreeze = (o) => { for (const v of Object.values(o)) if (v && typeof v === "object") deepFreeze(v); return Object.freeze(o); };
 
+/**
+ * @type {Readonly<Record<string, Readonly<Record<string, ReadonlyArray<string>>>>>} the phrasings Civicsmith holds, by language, then by kind, deeply frozen; English only
+ */
 export const PHRASINGS = deepFreeze({
   en: {
     /* R16's pinned list, then the inflections of its verbs (canon's "staff illegally split the contract", S1 §B1). */

@@ -45,8 +45,15 @@ import * as RUN_RULES from "../../bio-plane/src/run-rules/index.mjs";
 import { DEPLOYMENT_SEQUENCE, GATE_ADDRESS, DEPLOYED_MODES } from "../../bio-plane/src/run-rules/index.mjs";
 import { reportsAs } from "../../bio-plane/src/skilldoctrine.mjs";
 import * as HARNESS from "../../agent-harness/src/harness.mjs";
-import { discoverMembers, verifyStatic, verifyFresh } from "../../bio-plane/scripts/fleet-bundle.mjs";
+import { discoverMembers, verifyStatic, verifyFresh, writeMember } from "../../bio-plane/scripts/fleet-bundle.mjs";
+
+/* R120: the bundle and its manifest are not committed; whatever here reads them builds them first, as
+   scripts/build.mjs does, once for the suite. */
+const AGENT_WORKER = discoverMembers().find((m) => m.name === "agent-worker");
+if (!AGENT_WORKER) throw new Error("agent-worker declares no fleet-member.json, so its bundle cannot be built (R120)");
+const BUILT = await writeMember(AGENT_WORKER);
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+import { PUBLISHED_VALUE } from "./published.mjs";
 
 const { Miniflare } = await (async () => {
   try { return await import("miniflare"); } catch { /* fall through */ }
@@ -638,7 +645,7 @@ section("agent-harness R1 · the rows, their declared edges, and nextStep held t
     nextStep({ step: "submit", mode: "check", pass: 0, maxPasses: 3, refusal: { code: "X" }, queue: [{ name: "a" }] }).step, "adjust");
   const unknown = nextStep({ step: "nowhere", pass: 0, maxPasses: 3 });
   t("agent-harness R1: an unknown step closes with `completed` and says so",
-    [unknown.step, unknown.bound, /not a row/.test(unknown.why)], ["close", "completed", true]);
+    [unknown.step, unknown.bound, /not a row/.test(unknown.why ?? "")], ["close", "completed", true]);
 }
 
 section("agent-harness R2 · gate-mode is first; an undeployed mode closes mode-not-deployed before anything is spent");
@@ -654,8 +661,9 @@ section("agent-harness R2 · gate-mode is first; an undeployed mode closes mode-
       /* R91 (R085): the last call is the segment's own `segment_end` tick, after the close. */
       [["gate-mode"], "mode-not-deployed", ["whoami", "airun", "airunlog", "airuntick", "airunclose", "airuntick"], 0, 0]);
     const why = r.out.trace?.[0]?.why ?? "";
-    t(`agent-harness R2: its why ${MODES[mode] ? "says the table holds it and has not deployed it" : "says the table does not hold the word"}, and names the deployed modes`,
-      [MODES[mode] ? /not deployed yet/.test(why) : /no mode this table knows/.test(why), /deployed now: check/.test(why)],
+    const held = mode ? MODES[mode] : undefined;   /* null and "" are words no table holds */
+    t(`agent-harness R2: its why ${held ? "says the table holds it and has not deployed it" : "says the table does not hold the word"}, and names the deployed modes`,
+      [held ? /not deployed yet/.test(why) : /no mode this table knows/.test(why), /deployed now: check/.test(why)],
       [true, true]);
     t(`agent-harness R2: …and the close was written (${mode})`, st.ended?.bound, "mode-not-deployed");
   }
@@ -738,7 +746,7 @@ section("R17 · fanout: one spawn per level, the contract built key by key, 4 su
   t("R17: a refused spawn -> 403 PLANE_REFUSED with the plane's body", [ref.status, ref.out.reason, ref.out.plane?.reason],
     [403, "PLANE_REFUSED", "AI_BEYOND_TASK_SCOPE"]);
   const { spawnContracts } = await import("../../agent-harness/src/subsession.mjs");
-  const cs = spawnContracts({ run: "r", context: { type: "inquiry", id: "I" } }).contracts;
+  const cs = spawnContracts({ run: "r", context: { type: "inquiry", id: "I" } }).contracts ?? [];
   t("R17: the contracts are frozen and share no object", [cs.every((c) => Object.isFrozen(c) && Object.isFrozen(c.context)),
     new Set(cs.map((c) => c.context)).size, new Set(cs.map((c) => c.returns)).size], [true, 4, 4]);
 }
@@ -980,7 +988,7 @@ section("R26 · after every step one tick: the spend, and an entry only when the
     [ended.out.ended?.bound, ended.out.ended?.by, (await planeState(mf)).log.filter((l) => l.op === "airunclose").length],
     ["runtime", "the plane's own exit", 0]);
   const stub = stepLog({ step: "plan", level: "meaning", observed: "LOOKED_ABSENT" }, { step: "fanout", why: "w".repeat(900) });
-  t("R26: detail is cut at 500 characters", stub.detail.length, 500);
+  t("R26: detail is cut at 500 characters", stub?.detail.length, 500);
 }
 
 section("R26 · an entry the plane refuses is in log_refused and refusals, and not counted");
@@ -1002,11 +1010,11 @@ section("R49 · the state a tick publishes stays within ai-runs' AI_RUN_STATE_MA
   const fits = publishableState(small, LIMIT);
   t("R49: a state within the ceiling is published whole, measured as the UTF-8 length of its JSON",
     [fits.state, fits.bytes, fits.restarted], [resumableState(small), new TextEncoder().encode(JSON.stringify(resumableState(small))).length, null]);
-  const over = { step: "submit", pass: 2, candidates: big(70), queue: big(70), reports: [{ level: "meaning" }],
+  const over = { step: "submit", pass: 2, candidates: big(70), queue: big(70), reports: [{ level: "meaning", state: "PRESENT" }],
                  submission: { name: "c0" }, adjusted: true };
   const cut = publishableState(over, LIMIT);
   t("R49: a state over the ceiling is published as its pass restarted at plan: the pass kept, every working field null",
-    [cut.state, cut.restarted?.at, cut.restarted?.limit, cut.restarted?.bytes > LIMIT, cut.bytes <= LIMIT],
+    [cut.state, cut.restarted?.at, cut.restarted?.limit, (cut.restarted?.bytes ?? 0) > LIMIT, cut.bytes <= LIMIT],
     [resumableState({ step: "plan", pass: 2, adjusted: false }), "plan", LIMIT, true, true]);
   t("R49: next-pass and close keep their own step when restarted",
     ["next-pass", "close", "fanout", "adjust"].map((step) => publishableState({ ...over, step }, LIMIT).state.step),
@@ -1150,8 +1158,6 @@ section("R30, R31 · GET /version; anything else 404 UNKNOWN");
 /* ============================================================ the cascade, pure */
 section("R32, R33 · the cascade: the one account that arrived, at its own level (project, member or group)");
 {
-  const PUBLISHED_VALUE = readFileSync(fileURLToPath(new URL("../../bio-plane/dist/SECRETS.txt", import.meta.url)), "utf8")
-    .split("\n").find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
   const st = async (a) => (await resolveClaudeCascade(a)).levels.map((l) => `${l.level}:${l.state}`);
   t("R32, R71: three levels, a project's, the member's own and the group's, in credentials' order; no instance level is judged, held or answered", [...CASCADE_ORDER], ["project", "member", "group"]);
   t("R32: unset (no non-empty secret), revoked_by_publication, or available, at the account's own level — no shape check "
@@ -1242,8 +1248,7 @@ section("R48 · in the model mode the pack is the one the plane serves on op=age
   await runOp(mf, { ...base, account: ACCOUNTS, judgements: J() });
   t("R48: until turns run it changes nothing: the supplied mode never asks for the pack",
     (await planeState(mf)).log.some((l) => l.op === "agentpack" || l.op === "affordances"), false);
-  const bundle = JSON.parse(readFileSync(fileURLToPath(new URL("../dist/agent-worker.bundle.json", import.meta.url)), "utf8"));
-  const inputs = (bundle.inputs || []).map((i) => String(i.path ?? i.file ?? i));
+  const inputs = (BUILT.manifest.inputs || []).map((i) => i.path);
   t("R48: it renders nothing and imports neither the check catalogue nor skills' code: no such input in its bundle",
     [inputs.length > 0, inputs.filter((f) => /bio-checks\.mjs$|skillpack\.mjs$|skilldoctrine\.mjs$/.test(f))], [true, []]);
 }
@@ -1482,13 +1487,14 @@ section("N53 · the skills doctrine's pins on this member, owned here (agent-har
      nextStep({ step: "gate-mode", mode: "check", pass: 0, maxPasses: 3 }).step], ["mode-not-deployed", "resume"]);
 }
 
-section("R45 · the committed bundle is a fresh build of src/index.mjs, its manifest naming every input");
+section("R45, R120 · the bundle built into dist/ is a fresh build of src/index.mjs, its manifest naming every input");
 {
-  const member = discoverMembers().find((m) => m.name === "agent-worker");
+  const member = AGENT_WORKER;
   const stat = verifyStatic(member);
   t("R45: the static check finds nothing", stat.findings, []);
+  if (!stat.committed) throw new Error("R120: the bundle built into dist/ above could not be read back");
   const fresh = await verifyFresh(member, stat.committed);
-  t("R45: a fresh build is byte-identical to the committed bundle", [fresh.checked, fresh.findings], [true, []]);
+  t("R45, R120: a second fresh build is byte-identical to the bundle built into dist/", [fresh.checked, fresh.findings], [true, []]);
   const inputs = (stat.manifest?.inputs || []).map((i) => i.path);
   t("R45, R119: the manifest names every input, bio-plane/src/tokens.mjs and the agent-steps files included",
     ["../bio-plane/src/tokens.mjs", "src/index.mjs", "src/cascade.mjs", "src/ops.mjs", "src/ask.mjs", "src/draft.mjs",

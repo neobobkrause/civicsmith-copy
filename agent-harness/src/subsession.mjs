@@ -100,6 +100,137 @@ import { LEVELS } from "./harness.mjs";
 import { CONDITION_KINDS } from "../../bio-plane/src/observation-log/vocabulary.mjs";
 import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * A citation: an address the parent re-reads by, and nothing else (D-164).
+ * @typedef {Object} Citation
+ * @property {string} address non-empty
+ * @bound address: at most 200 characters (`ADDRESS_MAX`)
+ */
+/**
+ * A sub-session's return, as the report contract admits it (R5): these keys and no other.
+ * @typedef {Object} Report
+ * @property {string} level one of `LEVELS`
+ * @property {string} state one of `REPORT_STATES` (D-129)
+ * @property {string} [observed_at] the observation-log address of the search; owed by every state but `NEVER_LOOKED`
+ * @property {string} [summary] the conclusion, in prose
+ * @property {Citation[]} [citations] owed by `PRESENT` and `partial`
+ * @property {boolean} [governed] D-104: our governor held a host
+ * @property {string} [condition] a word of the record's condition vocabulary, validated by the plane
+ * @bound summary: at most 500 characters (`SUMMARY_MAX`)
+ * @bound citations: at most 20 (`CITATIONS_MAX`)
+ * @bound the whole report: its JSON at most `REPORT_MAX_BYTES` characters
+ */
+/**
+ * A refusal: what broke, named by its own code. Some carry `fields`, the keys named, or `bound`, `limit` and `got`,
+ * the bound breached.
+ * @typedef {Object} Refusal
+ * @property {false} ok
+ * @property {string} code
+ * @property {string} reason the same as `code`
+ * @property {string} detail the sentence saying what broke
+ * @property {string[]} [fields] the keys named
+ * @property {string} [bound] the bound breached: `citations`, `address`, `summary` or `report`
+ * @property {number} [limit] the bound's figure
+ * @property {number} [got] the figure that breached it
+ */
+/**
+ * A return refused at the fan-in: the level it named (null when it named none) and the refusal's code and words.
+ * @typedef {Object} RefusedReturn
+ * @property {unknown} level
+ * @property {string} code
+ * @property {string} detail
+ * @property {string[]} [fields]
+ */
+/**
+ * The keys of the plane's search-half payload (`op=airunspawn`, PL-12) that a spawn contract reads, key by key.
+ * @typedef {Object} SpawnPayloadFields
+ * @property {unknown} [run]
+ * @property {{type?: unknown, id?: unknown, [key: string]: unknown}|null} [context]
+ * @property {unknown} [mode]
+ * @property {unknown} [skill]
+ * @property {unknown} [standard_pair]
+ * @property {{in_force?: unknown, basis?: unknown, stated?: unknown, pair?: unknown, [key: string]: unknown}|null} [standard]
+ * @property {{items?: unknown}|null} [subjects] `items`: a list of `{id, extent, kind}`
+ * @property {unknown} [bias] present at all: the payload is refused
+ */
+/**
+ * The plane's search-half payload. A key not named in `SpawnPayloadFields` is never read.
+ * @typedef {SpawnPayloadFields & Object<string, unknown>} SpawnPayload
+ */
+/**
+ * One subject a sub-session is briefed with (R12).
+ * @typedef {Object} Subject
+ * @property {unknown} id
+ * @property {unknown} extent
+ * @property {unknown} kind `target` for one of the level's targets
+ */
+/**
+ * The return contract a sub-session is briefed with: R5's report contract, as data.
+ * @typedef {Object} ReturnContract
+ * @property {string[]} keys the keys of `REPORT_KEYS`
+ * @property {string[]} required the keys a report must carry
+ * @property {string[]} citation_keys the keys of `CITATION_KEYS`
+ * @property {string[]} states the keys of `REPORT_STATES`
+ * @property {number} summary_max
+ * @property {string[]} conditions the condition kinds the plane admits, in the vocabulary's order (R11)
+ * @property {number} citations_max
+ * @property {number} address_max
+ * @property {string} rule the rule, in words
+ */
+/**
+ * The keys of one level's spawn contract: exactly `SPAWN_KEYS`.
+ * @typedef {Object} SpawnContractFields
+ * @property {string} level
+ * @property {unknown} run
+ * @property {{type: unknown, id: unknown}} context
+ * @property {unknown} mode
+ * @property {unknown} skill
+ * @property {unknown} standard_pair
+ * @property {{in_force: unknown, basis: unknown, stated: unknown, pair: unknown}|null} standard
+ * @property {string[]} scope the ops a sub-session may name: `SUBSESSION_OPS`
+ * @property {Subject[]} subjects the payload's subjects, then the level's targets
+ * @property {string[]} arms the meaning arms the caller passed
+ * @property {ReturnContract} returns
+ * @bound subjects: at most 50 (`SUBJECTS_MAX`), no two with the same `id` and `extent`
+ */
+/**
+ * The spawn contract of one level's sub-session, deep-frozen: it holds `SpawnContractFields` and no other key.
+ * @typedef {SpawnContractFields & Object<string, unknown>} SpawnContract
+ */
+/**
+ * What `spawnContract` answers: `ok` and the contract, or a refusal.
+ * @typedef {{ok: true, contract: SpawnContract, code?: undefined, reason?: undefined, detail?: undefined}
+ *   | {ok: false, contract?: undefined, code: string, reason: string, detail: string}} SpawnAnswer
+ */
+/**
+ * What `spawnContracts` answers: `ok` and one contract per level in `LEVELS` order, or the first refusal.
+ * @typedef {{ok: true, contracts: SpawnContract[], code?: undefined, reason?: undefined, detail?: undefined}
+ *   | {ok: false, contracts?: undefined, code: string, reason: string, detail: string}} SpawnAnswers
+ */
+/**
+ * One cited document the run holds, counted once with its versions (D-220).
+ * @typedef {Object} HeldDocument
+ * @property {string} address_norm the plane's identity of the document
+ * @property {number} versions_held
+ * @property {boolean} truncated the plane answered the chain only in part
+ * @property {unknown[]} cited the citations that named it
+ * @property {unknown[]} versions_cited the cited bundles its chain holds
+ * @property {unknown[]} cited_not_listed the cited bundles its chain does not list
+ */
+/**
+ * What the run holds, by document (D-220).
+ * @typedef {Object} Holdings
+ * @property {number} documents documents held, each counted once
+ * @property {number} citations the citations read
+ * @property {number} versions_cited
+ * @property {number} versions_held
+ * @property {number} unchained cited items in no version chain
+ * @property {number} undetermined citations whose document is UNDETERMINED
+ * @property {HeldDocument[]} by_document
+ * @property {Array<{citation: unknown, address: unknown, reason: unknown}>} unchained_items
+ * @property {Array<{citation: unknown, at: unknown, code: unknown, check: unknown}>} undetermined_items
+ * @property {string} identity how a document's identity is read, in words
+ */
 /* D-129's five, and this is a COPY of the plane's `OBSERVATION_STATES`, pinned
    to run-rules' export in `test/fanout.test.mjs` and the requirements suite (R44) — the same
    decision `harness.mjs` records for `LEVELS`, for the same two reasons: a fleet
@@ -112,6 +243,7 @@ import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
    member UNREAD, because a second copy of the record's condition vocabulary here
    would be a rule with two implementations, which run-rules already records as
    a control that proves nothing about either. */
+/** @type {Object<string, string>} D-129's five states, each with its meaning */
 export const REPORT_STATES = {
   NEVER_LOOKED:         "nobody looked at this level for this subject",
   LOOKED_ABSENT:        "we looked and it is positively not there",
@@ -126,12 +258,14 @@ export const REPORT_STATES = {
    reasoning, one contract over. Note this set is NOT that one: `LOOKED_ABSENT` is
    definitive about the world and cites nothing, because there is nothing to
    cite. */
+/** @type {Set<string>} */
 export const FOUND_STATES = new Set(["PRESENT", "partial"]);
 
 /* A state that LOOKED owes the address of the search that establishes it. Only
    `NEVER_LOOKED` is exempt, because nobody looked and there is no observation to
    point at — an unrun search is not an absence (§9, and `emptyLevelCandidates`
    turns on exactly this distinction). */
+/** @type {Set<string>} */
 export const LOOKED_STATES = new Set(
   Object.keys(REPORT_STATES).filter((s) => s !== "NEVER_LOOKED"));
 
@@ -146,12 +280,16 @@ export const LOOKED_STATES = new Set(
  * `REPORT_MAX_BYTES` is COMPUTED from the parts, never typed. A key added to
  * `REPORT_KEYS` tomorrow widens this arithmetic instead of escaping it, and the
  * whole-report check is the belt that catches a field nobody thought to bound. */
+/** @type {number} */
 export const SUMMARY_MAX = 500;
+/** @type {number} */
 export const ADDRESS_MAX = 200;
+/** @type {number} */
 export const CITATIONS_MAX = 20;
 
 /* THE REPORT, AS AN EXACT KEY SET. `true` marks the keys a report must carry;
    the rest are optional and everything absent from this object is REFUSED. */
+/** @type {Object<string, boolean>} each key a report may carry; true: it must */
 export const REPORT_KEYS = {
   level:      true,   /* which of the four this sub-session searched */
   state:      true,   /* D-129 — what the search ESTABLISHED, never a boolean */
@@ -163,6 +301,7 @@ export const REPORT_KEYS = {
 };
 
 /* A CITATION IS AN ADDRESS. One field, for D-164's reason above. */
+/** @type {Object<string, boolean>} each key a citation may carry; true: it must */
 export const CITATION_KEYS = { address: true };
 
 /* WHAT A SEARCH SUB-SESSION MAY NAME, AND IT IS A READ SET WITH NO WRITE IN IT.
@@ -185,6 +324,7 @@ export const CITATION_KEYS = { address: true };
  * a second party spending the run's fetch budget and writing to PL-4's table. The
  * internet level's sub-session REPORTS what it would need; the PARENT requests
  * acquisition, which is the same division the harness already drives. */
+/** @type {string[]} */
 export const SUBSESSION_OPS = ["meaningrows"];
 
 /* THE SPAWN CONTRACT'S EXACT KEYS. Built as an explicit literal in
@@ -194,10 +334,12 @@ export const SUBSESSION_OPS = ["meaningrows"];
    reason). THIS IS WHAT "BY CONSTRUCTION" MEANS HERE: there is no field for a
    manifest to arrive in, under ANY spelling, because the object's keys are these
    and are written out one by one. */
+/** @type {string[]} the spawn contract's keys, in order */
 export const SPAWN_KEYS = ["level", "run", "context", "mode", "skill",
                            "standard_pair", "standard", "scope", "subjects", "arms", "returns"];
 
 /* R12: the most subjects one contract carries, the payload's and the level's targets together. */
+/** @type {number} */
 export const SUBJECTS_MAX = 50;
 
 function refusal(code, detail, extra) {
@@ -248,6 +390,14 @@ function subjectsFor(payload, targets) {
  *  because a search half that has been handed the lens has already been handed
  *  it, and continuing would mean the run searched under a bias nobody can now
  *  prove it did not use. */
+/**
+ * @param {Object} [args]
+ * @param {unknown} [args.level] one of `LEVELS`; any other value is refused
+ * @param {SpawnPayload|null} [args.payload] the plane's search-half payload; absent, or carrying `bias`, is refused
+ * @param {unknown} [args.arms] a list of meaning arms; anything else is none
+ * @param {unknown} [args.targets] a list of `{id, extent}`; anything else is none
+ * @returns {SpawnAnswer} refused as `SPAWN_LEVEL_UNKNOWN`, `SPAWN_PAYLOAD_MISSING` or `SPAWN_PAYLOAD_CARRIES_LENS`
+ */
 export function spawnContract({ level, payload, arms, targets } = {}) {
   if (!LEVELS.includes(String(level)))
     return refusal("SPAWN_LEVEL_UNKNOWN",
@@ -326,6 +476,10 @@ export function spawnContract({ level, payload, arms, targets } = {}) {
  *  The count is the TABLE's and not a judgement's — a run that searched three
  *  levels and reported on four is the false-coverage hazard, and taking the count
  *  from `LEVELS` is what makes it uncountable any other way. */
+/**
+ * @param {SpawnPayload|null} [payload]
+ * @returns {SpawnAnswers}
+ */
 export function spawnContracts(payload) {
   const contracts = [];
   for (const level of LEVELS) {
@@ -348,6 +502,10 @@ const size = (v) => JSON.stringify(v ?? null).length;
  *  Returns `null` when the report honours the contract, or a refusal naming what
  *  broke. NULL-TOLERANT THROUGHOUT, on run-rules' recorded reason: a check
  *  that throws cannot NAME what it broke and takes every arm behind it with it. */
+/**
+ * @param {Object<string, any>|string|number|boolean|null} [report] what a sub-session returned: any value
+ * @returns {Refusal|null} null when the report honours the contract
+ */
 export function checkReport(report) {
   if (report == null || typeof report !== "object" || Array.isArray(report))
     return refusal("REPORT_NOT_AN_OBJECT",
@@ -443,6 +601,7 @@ export function checkReport(report) {
 
 /* COMPUTED, NEVER TYPED. The citation list, the summary, and a fixed allowance
    for the small scalar fields and the JSON punctuation around them. */
+/** @type {number} */
 export const REPORT_MAX_BYTES =
   SUMMARY_MAX + (CITATIONS_MAX * (ADDRESS_MAX + 20)) + 400;
 
@@ -459,6 +618,10 @@ export const REPORT_MAX_BYTES =
  *  nothing downstream may read it as either an absence or a finding — which is
  *  `CLAUDE.md`'s "undetermined is first-class and must be STATED" applied at the
  *  one place a machine could quietly launder a defect into a claim. */
+/**
+ * @param {unknown} returns a list of what the sub-sessions returned; anything else is none
+ * @returns {{taken: Report[], refused: RefusedReturn[]}}
+ */
 export function takeReports(returns) {
   const taken = [], refused = [];
   for (const r of Array.isArray(returns) ? returns : []) {
@@ -474,6 +637,11 @@ export function takeReports(returns) {
  *  bounded. §14b.1: *"the parent re-reads by address if it needs the bytes."*
  *  Which is a behaviour and not a promise — the driver performs the read, and
  *  the suite observes it arriving at the plane. */
+/**
+ * @param {unknown} reports a list of reports; anything else is none
+ * @returns {string[]}
+ * @bound at most 20 addresses (`CITATIONS_MAX`)
+ */
 export function citedAddresses(reports) {
   const out = [];
   for (const r of Array.isArray(reports) ? reports : [])
@@ -530,6 +698,10 @@ export function citedAddresses(reports) {
  * as the driver built it from the plane's answers (`index.mjs`, the `collect`
  * row). PURE, for `harness.mjs`'s reason: the suite can drive every outcome here
  * without a plane, and through the op with one. */
+/**
+ * @param {unknown} resolved a list of `{citation, bundle, address, chain, refused, reason}`; anything else is none
+ * @returns {Holdings}
+ */
 export function documentHoldings(resolved) {
   const documents = new Map();
   const unchained = [], undetermined = [];
@@ -585,6 +757,10 @@ export function documentHoldings(resolved) {
 /** The sentence the `collect` row writes into the observation log. Three facts
  *  that must not read alike: documents counted once, items no chain names, and
  *  citations whose document is UNDETERMINED because the plane refused. */
+/**
+ * @param {Partial<Holdings>|null} [h]
+ * @returns {string} empty when there are no holdings
+ */
 export function holdingsNote(h) {
   if (!h) return "";
   let s = localize("agent-harness.subsession.documents_document_s_held_across", "{documents} document(s) held across {citations} citation(s), each counted ONCE with its versions ({versions_cited} of {versions_held} held version(s) cited, read through op=versionchain)", { documents: String(h.documents), citations: String(h.citations), versions_cited: String(h.versions_cited), versions_held: String(h.versions_held) });
