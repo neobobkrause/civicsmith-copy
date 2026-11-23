@@ -6,7 +6,7 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, CONSEQUENCE_STATEMENTS,
 import { T51_NON_ACTS } from "../../../src/op-grades/t51.mjs";
 import { MARKS, MARK_SOURCES, MARKS_KIT_COMMIT } from "../../../src/op-grades/marks.mjs";
 import { JUSTIFICATION_REFUSALS } from "../../../src/op-grades/index.mjs";
-import { declaredSentence, registeredOpGrades } from "./declared.mjs";
+import { declaredSentence, registeredWith, ownerRow, REGISTRY_OWNER_ROWS } from "./declared.mjs";
 
 const READS = ["holdsdue", "templatebyhandle", "rulefields"];
 
@@ -80,7 +80,7 @@ test("R46: capturerequests and casedrafts, the reads DEC-394's drawings add, hav
 
 test("R42 R46: over the registered tables every rungless act of the registry at the marks' commit has a mark, and "
    + "contradictionflag has a rung there", async () => {
-  const reg = await registeredOpGrades();
+  const reg = await registeredWith(REGISTRY_OWNER_ROWS);
   assert.equal(reg.RUNGS.contradictionflag, "reasoned");
   for (const op of ["capturerequests", "casedrafts"]) {
     assert.equal(Object.hasOwn(reg.RUNGS, op), false, op);
@@ -99,8 +99,9 @@ test("R1 R5 R51: contradictionflag is reasoned (contradiction R61 refuses it wit
   assert.equal(Object.hasOwn(RUNG_ABSENT, "contradictionflag"), false);
   assert.equal(Object.hasOwn(MACHINE_REFUSALS, "contradictionflag"), false, "contradiction refuses a machine by its own code");
   assert.equal(phoneOf("contradictionflag"), true);
-  /* the registration of every owner's declared ops meets no DECLARED_OP_DISAGREES for it (R50 (b)) */
-  const reg = await registeredOpGrades();
+  /* its owner's row, scripted from contradiction R61 (reasoned, refused FLAG_NO_REASON, in the owner's sentence), registers
+     with no DECLARED_OP_DISAGREES (R50 (b)) */
+  const reg = await registeredWith({ contradiction: { contradictionflag: { ...ownerRow("reasoned", NON_ACTS.contradictionflag), refusal: "FLAG_NO_REASON" } } });
   assert.equal(reg.RUNGS.contradictionflag, "reasoned");
   assert.equal(reg.NON_ACTS.contradictionflag, NON_ACTS.contradictionflag);
   /* control: a sibling candidate act keeps its grade, and a different op is not backed by the flag's code */
