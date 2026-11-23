@@ -2,13 +2,11 @@
   "name": "screens-question",
   "files": [
     "bio-plane/src/screens-inquiry/question.mjs",
-    "bio-plane/src/screens-inquiry/assistant.mjs",
-    "bio-plane/src/screens-inquiry/common.mjs"
+    "bio-plane/src/screens-inquiry/assistant.mjs"
   ],
   "tests": [],
   "public": [
     "bio-plane/src/screens-inquiry/assistant.mjs",
-    "bio-plane/src/screens-inquiry/common.mjs",
     "bio-plane/src/screens-inquiry/question.mjs"
   ],
   "uses": [
