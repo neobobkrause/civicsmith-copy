@@ -88,7 +88,8 @@ test("R4 a project's own account serves her in its project; a document's run is 
 
 test("R6 R13 R33 Work on this opens the run under her session with the bounds its mode needs, then the segment through the door with run alone", async () => {
   const p = await dock(Q, stub());
-  assert.deepEqual(dockActs(p), ["airunopen"]);
+  /* screens-question's "Ask" (act ask) is drawn in the dock beside the run's acts */
+  assert.deepEqual(dockActs(p), ["ask", "airunopen"]);
   await workOn(p);
   const [opened, dispatch] = ["airunopen", "airundispatch"].map((op) => p.byOp(op)[0]);
   assert.deepEqual(Object.keys(opened.body).sort(), ["bounds", "contextId", "contextType", "mode", "principalClaude", "project", "run", "skillVersion"]);
@@ -111,7 +112,7 @@ test("R6 R13 R33 Work on this opens the run under her session with the bounds it
   }
   for (const v of [...p.store.values(), ...p.local.values()]) assert.ok(!/RUN-|token/i.test(String(v)), "nothing of the run is stored");
   assert.ok(says(panel(p), "dock.run.yours"), "working, once dispatched and running");
-  assert.deepEqual(dockActs(p).sort(), ["airunclose", "suggest"]);
+  assert.deepEqual(dockActs(p).sort(), ["airunclose", "ask", "suggest"]);
 });
 
 test("R33 controls: started: false is a refusal by its words and no dispatch follows; a withheld dispatch draws its reason by key", async () => {
@@ -186,7 +187,7 @@ test("R4 R13 Stop the run closes it under her session; a new run may then be sta
   assert.equal(close.headers.Authorization, SESSION_HEADER);
   assert.deepEqual(close.body, { run: p.byOp("airunopen")[0].body.run, bound: "cancelled" });
   assert.ok(panel(p).querySelector('[data-run="ended"]'));
-  assert.deepEqual(dockActs(p), ["airunopen"]);
+  assert.deepEqual(dockActs(p), ["ask", "airunopen"]);
   const q = await dock(Q, stub({ runs: [{ id: OLD, status: "running", principal: { plane: "member:mai" } }] }));
   await q.click(button(q, "airunclose", panel(q)));
   await q.settle();

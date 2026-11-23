@@ -140,7 +140,7 @@ test("R79 the screen is registered by this module: `dash-project`, its subject r
   const { SCREENS } = await import("../../../src/screens-inquiry/index.mjs");
   const s = SCREENS.find((x) => x.id === "dash-project");
   const t = await state({ held: [] });
-  assert.ok(s && s.reads({ subject: t.project }).stage.subject === true, "R21: its subject read is marked");
+  assert.ok(s && /** @type {Record<string, *>} */ (s.reads({ subject: t.project })).stage.subject === true, "R21: its subject read is marked");
   assert.deepEqual(s.acts.map((a) => a.op).sort(), ["adoptversion", "keepversion", "release"]);
   for (const k of s.words) assert.ok(hasWord(k), k);
   assert.equal(SCREENS.findIndex((x) => x.id === "dash-project"), SCREENS.findIndex((x) => x.id === "project") + 1);

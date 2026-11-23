@@ -41,6 +41,7 @@
     "ai-accounts",
     "network-notices",
     "screens-document",
-    "screens-question"
+    "screens-question",
+    "ocr-worker"
   ]
 }
