@@ -108,8 +108,6 @@ test("R24, R25, R19 (N366): a duty's reach names only the projects the viewer ma
   assert.deepEqual(ask(two, { project: PV }).candidates.map((c) => c.candidate).sort(), [two.k1, two.k2, two.k4].sort());
 });
 
-test("R24 (K5): any shown label on K5 is plurality until no_difference, then duty", { todo: "K5 is unshown until its gate arm is measured, and no model is reachable here to measure it (K488; draft-T15 point 5)" }, () => {});
-
 test("R25: exactly one subject, else C-60.2; each of the six subjects answers the candidates naming it", () => {
   const w = seeded();
   w.project("PROJ-2026-0001-a", ["m1"]); w.draws(IQ.a, "PROJ-2026-0001-a");
@@ -360,8 +358,6 @@ test("R27: a CORRECTED resolution through the inquiry marks its wrong side stale
   assert.deepEqual([s3.mark, s3.inquiry, s3.member, s3.at, s3.act], ["stale", up3.inquiry, null, null, undefined]);
   assert.match(s3.why, /basis-versions' own door/);
 });
-
-test("R27: plurality marks an open K5 candidate before no_difference", { todo: "K5 is unshown until its gate arm is measured (K488)" }, () => {});
 
 test("R27, R45: not_shown candidates put no mark; more than 200 referents is C-60.3; it writes nothing and never throws", () => {
   const w = seeded();

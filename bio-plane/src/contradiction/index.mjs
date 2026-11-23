@@ -241,6 +241,8 @@ export const CONTRADICTION_ABSENCE = Object.freeze({
  * @property {string|null} [run] the run a run refusal names
  * @property {number} [index] the proposal or evidence item refused
  * @property {string[]} [labels] `CANDIDATE_LABEL_UNKNOWN`'s labels
+ * @property {string[]} [choices] `CLARIFY_CHOICE_UNKNOWN`'s choices for the candidate's key
+ * @property {string[]} [coordinates] `CLARIFY_COORDINATE_UNKNOWN`'s vocabulary for the candidate's key
  * @property {string[]} [cut_keys] the keys whose read was cut at its bound
  * @property {string} [field] the free-text field over its cap
  * @property {number} [limit] that field's cap
@@ -496,6 +498,8 @@ export const CONTRADICTION_ABSENCE = Object.freeze({
  * @property {string} [candidate]
  * @property {string} [state]
  * @property {string} [choice]
+ * @property {string[]} [choices] `CLARIFY_CHOICE_UNKNOWN`'s choices for the candidate's key
+ * @property {string[]} [coordinates] `CLARIFY_COORDINATE_UNKNOWN`'s vocabulary for the candidate's key
  * @property {string} [kind]
  * @property {string|null} [family]
  * @property {string} [weight]

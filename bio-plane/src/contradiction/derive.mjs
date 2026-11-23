@@ -11,11 +11,12 @@ export const WEIGHTS = Object.freeze(["lead", "duty", "plurality", "not_shown"])
 export const STATES = Object.freeze(["open", "dismissed", "explained_not_shown", "taken_up", "resolved"]);
 
 /** K5 is shown only once the gate's corpus holds a K5 arm, measured and passing (Satisfies: K5's judgement; DEC-84
- *  item 3; draft-T15 point 5). No measured run exists yet, so every K5 candidate is withheld as `not_shown`, and says
- *  why. The rule for a shown K5 candidate (plurality, then duty after `no_difference`) is written below and reached
- *  the day this is true, in the change that records the measurement. */
+ *  item 3; draft-T15 point 5). Measured 23 Nov 2026 (job/contradiction.1; `test/m/contradiction/gate-k5.mjs`): three
+ *  recorded runs under R2's prompt, unchanged, over seven K5 pairs, no false conflict in any (recall 0 of 2, each
+ *  record pair `undetermined`). So a K5 candidate is shown by the rule below: plurality, then duty after
+ *  `no_difference` (R24, R34). Kept, and named, so that a moved prompt is re-measured before K5 is shown again. */
 /** @type {boolean} */
-export const K5_GATE_MEASURED = false;
+export const K5_GATE_MEASURED = true;
 /** @type {string} */
 export const K5_UNSHOWN_WHY = "k5_gate_unmeasured";
 

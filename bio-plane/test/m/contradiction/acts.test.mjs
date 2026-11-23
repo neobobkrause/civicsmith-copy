@@ -161,7 +161,7 @@ test("R32: on K4, `subject` reports a defect on each resolution that paired the 
   assert.equal(w2.count("resolution_defects"), 0);
 });
 
-test("R32 (K5): an evidenced differs is recorded on both projects' stances as the named difference", { todo: "K5 is unshown until its gate arm is measured, so no member can act on a K5 candidate (K488)" }, () => {});
+test("R32 (K5): an evidenced differs is recorded on both projects' stances as the named difference", { todo: "not built: basis-versions offers no write of a named difference on a stance; reported to ARCH (job/contradiction.1)" }, () => {});
 
 test("R33: one_wrong — the side named, a reason, and no wrong side on K5; resolved corrected, the side marked stale, never deleted", () => {
   const w = seeded();
@@ -174,8 +174,6 @@ test("R33: one_wrong — the side named, a reason, and no wrong side on K5; reso
   assert.equal(JSON.stringify(w.rows(`SELECT * FROM inquiry_basis_versions ORDER BY bundle_id`)), before);
 });
 
-test("R33, R36: on K5 no side is wrong (PLURALITY_HAS_NO_WRONG_SIDE)", { todo: "K5 is unshown until its gate arm is measured, so no member can act on a K5 candidate (K488)" }, () => {});
-test("R34: no_difference applies to K5 only, and makes the candidate a duty for both projects", { todo: "the K5 half is unreachable while K5 is unshown (K488); the refusal on K1–K4 is tested under R32" }, () => {});
 
 test("R35: take up — closed refused, a taken-up one answers its inquiry and writes nothing, a question, a frame; otherwise one act through promotion: an open inquiry linked to the candidate with both sides as legs", () => {
   const w = seeded();
