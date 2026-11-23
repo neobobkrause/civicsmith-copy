@@ -96,7 +96,7 @@ test("R55: the gate (R27) and the audit judge with the registered grammar in its
   const { findings } = await checkBundle({ folderName: ID, files: new Map(Object.entries(img)), elidedPaths: new Set(),
     sha256: async (v) => hex(v), sha512: async (b) => new Uint8Array(createHash("sha512").update(b).digest()),
     resolveTarget: (id) => id === ID, releaseRegistry: null, publishedRegistry: null, publishedCaseRegistry: null, earnedRegistry: null },
-    { grammars: [{ module: "promotion", ...INFO2_GRAMMAR }] });
+    { grammars: [{ module: "promotion", ids: [...INFO2_GRAMMAR.ids], arm: INFO2_GRAMMAR.arm }] });
   const errors = findings.filter((x) => x.severity === "error").map((x) => [x.check, x.message]);
   assert.deepEqual(gated.findings.filter((x) => x.check.startsWith("C-") && !["C-4.2", "C-17.2", "C-18.8", "C-20.1"].includes(x.check))
                      .map((x) => [x.check, x.detail]), errors);
