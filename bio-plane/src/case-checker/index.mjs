@@ -110,7 +110,7 @@ export function caseFileSpec(version) {
   if (v === null || !Object.hasOwn(CASE_FILE_SPECS, v))
     return { held: false, version: v === null ? null : v.slice(0, 80), versions: [...CASE_FILE_SPEC_VERSIONS],
              detail: localize("case-checker.index.holds_several", "{reason}; it holds the specifications of {head} and {last}, each named as version",
-                              { reason: noSpecification(v), head: CASE_FILE_SPEC_VERSIONS.slice(0, -1).join(", "), last: CASE_FILE_SPEC_VERSIONS.at(-1) }) };
+                              { reason: noSpecification(v), head: CASE_FILE_SPEC_VERSIONS.slice(0, -1).join(", "), last: CASE_FILE_SPEC_VERSIONS.at(-1) ?? "" }) };
   return { held: true, version: v, media_type: "text/markdown", text: CASE_FILE_SPECS[v], versions: [...CASE_FILE_SPEC_VERSIONS] };
 }
 

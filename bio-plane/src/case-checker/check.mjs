@@ -258,7 +258,7 @@ const lowerSha = (v) => (typeof v === "string" ? v.toLowerCase() : null);
 function carriedMaterials(files) {
   const doc = files.find((f) => f.kind === "case_document" && f.content);
   if (!doc) return null;
-  const p = parseFrontmatter(textOf(doc.content));
+  const p = parseFrontmatter(textOf(doc.content) ?? "");
   const read = isObj(p.data) ? materialsOf(p.data) : null;
   return isObj(read) && Array.isArray(read.materials) ? read.materials.filter(isObj) : null;
 }
@@ -616,7 +616,8 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     const t = ff && ff.content ? textOf(ff.content) : null;
     const p = t !== null ? parseFrontmatter(t) : null;
     /* R28: each member's `{basis, references}` from its own bytes, so a leg its references sever is not counted (`strength` R2) */
-    if (p && isObj(p.data) && Array.isArray(p.data.basis)) memberBasis[id] = { basis: p.data.basis, references: Array.isArray(p.data.references) ? p.data.references : [] };
+    const d = p ? p.data : null;
+    if (d && isObj(d) && Array.isArray(d.basis)) memberBasis[id] = { basis: d.basis, references: Array.isArray(d.references) ? d.references : [] };
     else basisAll = false;
   }
   const statedChecks = method && typeof method.checks === "string" ? method.checks : null;
@@ -649,11 +650,12 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     const rb = typeof rendered === "string" ? te.encode(rendered) : asBytes(rendered && rendered.bytes !== undefined ? rendered.bytes : rendered);
     if (!rb) { complete_edition.detail = word("case-checker.detail.checker_render_complete"); caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail)); }
     else {
-      complete_edition.rendered_sha256 = shaOf(rb);
+      const renderedSha = shaOf(rb);
+      complete_edition.rendered_sha256 = renderedSha;
       complete_edition.equal = complete_edition.rendered_sha256 === shaOf(ceFile.content);
       complete_edition.detail = complete_edition.equal ? word("case-checker.text.carried_complete_edition")
         : localize("case-checker.check.complete_edition_differs", "the carried complete edition (SHA-256 {sha}) is not the edition the rest of the case file renders (SHA-256 {rendered})",
-                   { sha: complete_edition.sha256, rendered: complete_edition.rendered_sha256 });
+                   { sha: ceFile.sha256, rendered: renderedSha });
       if (!complete_edition.equal) caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail));
     }
   }
@@ -973,7 +975,7 @@ export function reweigh(args) {
       for (const g of files.filter((f) => f.state === "missing" && f.sha256 === h)) { g.state = "supplied"; g.content = b; }
     }
     const docFile = files.find((f) => f.kind === "case_document" && f.content) || null;
-    const p = docFile ? parseFrontmatter(textOf(docFile.content)) : null;
+    const p = docFile ? parseFrontmatter(textOf(docFile.content) ?? "") : null;
     const fm = p && isObj(p.data) ? p.data : null;
     if (!fm) { out.lens.departure = word("case-checker.departure.case_document_carried"); for (const f of out.findings) { f.pair = null; f.bar_met = null; } return out; }
     const grading = gradingContextOf(fm);

@@ -346,7 +346,7 @@ function judgeSentence(row, cited, printed, concl) {
     const j = row.cites.length
       ? checkSentences([{ text, kind: "explain", support: holdings.map((_, i) => `h${i + 1}`) }], { cited: { holdings }, readLog: log })
       : null;
-    const code = j && j.ok ? (j.withheld[0]?.code ?? null) : null;
+    const code = j && j.ok ? (j.withheld?.[0]?.code ?? null) : null;
     const unread = row.cites.filter((x) => !cited.has(x));
     if (!row.cites.length) {
       /* (K2965) a statement's or outcome's sentence citing nothing: arm 1 is not asked, and arm 2, judged against what
