@@ -76,8 +76,7 @@ const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;   /* stor
 /* control-plane's `storageAbsent`: acquisition's one complaint (`evidenceStorageAbsent`, C-68.1), enveloped */
 const storageAbsent = (op, error) => { const { status, body } = evidenceStorageAbsent(op, error); return json(body, status); };
 const caseReader = async (url, env, storeName, presentedAi, credential) => {
-  const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential, { background: url.searchParams.get("background") === "1" });
-  return r.silent ? { silent: r.silent.op, correlation: r.silent.correlation } : r;
+  return readerOf(url, env, storeName, presentedAi, doAnswer, credential, { background: url.searchParams.get("background") === "1" });
 };
 const fingerprint = async (v) => (v ? (await sha256Hex(v)).slice(0, 16) : null);
 
@@ -307,7 +306,8 @@ async function answer(world, stub, env, page) {
     else if (own && g.reason === "GRANT_OP_REFUSED") admitted = { refusal: { status: 403, body: g } };
   }
   if (admitted.refusal) return json(admitted.refusal.body, admitted.refusal.status);
-  const caller = { ...admitted.caller, token: credential.token };
+  /* admission `admit` answers exactly one of `caller`, `refusal` and `silent`; both others have returned */
+  const caller = { .../** @type {import("../../../src/admission/index.mjs").Caller} */ (admitted.caller), token: credential.token };
   const { cls, viaSession, aiCred, storeName } = caller;
   const { member: sessMember, viewer: sessViewer, identity: sessIdentity, rights: sessRights, caps: sessCaps } = caller;
 
@@ -335,7 +335,7 @@ async function answer(world, stub, env, page) {
                     expected: storeName, got: confirm, tokenClass: cls, store: storeName }, 400);
   }
   const extra = { store: storeName, tokenClass: cls };
-  const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
+  const actor = viaSession ? sessViewer : cls === "ai" && aiCred ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
   /* control-plane R62: a member's or an `ai` credential's `op=capture` GET is a byte answer */
   if (op === "capture" && method === "GET" && (viaSession || cls === "ai")) {
     const w = url.searchParams.get("warned");
@@ -498,7 +498,7 @@ async function publicAnswer({ world, stub, env, page, op, req, reqBody, credenti
   const storeName = url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio";
   if (op === "groupdescription" || op === "handlecheck") {
     const reader = await caseReader(url, env, storeName, presentedAi.cred, credential);
-    if (reader.silent) return storeSilent(reader.silent, reader.correlation);
+    if (reader.silent) return storeSilent(reader.silent.op, reader.silent.correlation);
     if (op === "groupdescription") return relayAnswer(stub.fetch(`http://do/groupdescription?viewer=${encodeURIComponent(reader.viewer)}`), op);
     return relayAnswer(stub.fetch(new Request(`http://do/handlecheck?viewer=${encodeURIComponent(reader.viewer)}`, {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ invite: o.invite, handle: o.handle }) })), op);
@@ -533,16 +533,16 @@ async function publicAnswer({ world, stub, env, page, op, req, reqBody, credenti
     const admitted = await admit({ url, env, op, spec: { ...OPS[op], classes: ["admin", "member"], machineClasses: [] }, method: page.method,
                                    presented: presentedAi, doAnswer, credential, background: url.searchParams.get("background") === "1" });
     if (admitted.silent) return storeSilent(admitted.silent.op, admitted.silent.correlation);
-    if (admitted.refusal || !admitted.caller.viaSession) return templateAnswer(world, op, innerRequest({ op, url, method: "POST", body: "{}", caller: null,
+    if (admitted.refusal || !admitted.caller?.viaSession) return templateAnswer(world, op, innerRequest({ op, url, method: "POST", body: "{}", caller: null,
                                                                                                     bySecret: true, secretSha: await sha256Hex("") }));
-    caller = admitted.caller;
+    caller = admitted.caller ?? null;
   }
   /* control-plane R138: with no secret, the review copy's three are read as the caller's session or credential resolves (`caseReader`'s viewer, the one stamp the door sets), and a
      member's read of several drafts names them in `drafts`, an acknowledgement's `reason` comes from a POST body's string when the address has none */
   let reader = null;
   if (!bySecret && REVIEW_COPY_DOORS.includes(op)) {
     const found = await caseReader(url, env, "bio", presentedAi.cred, credential);
-    if (found.silent) return storeSilent(found.silent, found.correlation);
+    if (found.silent) return storeSilent(found.silent.op, found.silent.correlation);
     reader = found.viewer;
   }
   const made = innerRequest({ op, url, method: page.method, body: page.method === "POST" ? page.text : undefined, caller,
