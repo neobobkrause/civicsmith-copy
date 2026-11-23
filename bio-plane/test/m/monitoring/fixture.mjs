@@ -32,6 +32,10 @@ import { registerDoctype, CONTRACT, CONFIDENCE } from "../../../../docprofile/re
 
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 /** A Durable Object's storage over an in-memory SQLite database. */
+/**
+ * A Durable Object's storage over a fresh in-memory SQLite database (K316, K313), for every test of this module.
+ * @returns {{db: any, sql: {exec: (q: any, ...args: any[]) => any}, transactionSync: (fn: () => any) => any}} `exec` answers a cursor; `transactionSync` rolls back what `fn` wrote when it throws, and rethrows
+ */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -59,13 +63,22 @@ export function storage() {
   };
 }
 
+/** @type {(b: any) => string} the hex SHA-256 of a string (as UTF-8) or of bytes */
 export const sha = (b) => createHash("sha256").update(typeof b === "string" ? Buffer.from(b, "utf8") : Buffer.from(b)).digest("hex");
+/** @type {number} the test clock's starting instant, 2026-09-28T12:00:00Z */
 export const NOW_MS = Date.parse("2026-09-28T12:00:00Z");
+/** @type {string} the instant the fixture's documents are created at */
 export const NOW = "2026-09-20T00:00:00Z";
+/** @type {string} the daemon class's stamp, the machine viewer the tests read as */
 export const DAEMON = "class:daemon";
+/** @type {(id: any) => string} a member's stamp, `member:<id>` */
 export const V = (id) => `member:${id}`;
 
 /** An evidence bucket (the R2 binding's shape), recording every call. */
+/**
+ * R6, R9: an in-memory evidence bucket, recording every call; `failPut` true makes `put` throw.
+ * @returns {{calls: any[], held: Map<string, Uint8Array>, failPut: boolean, head: Function, get: Function, put: Function}}
+ */
 export function bucket() {
   const held = new Map(), calls = [];
   const obj = (k) => { const b = held.get(k); return { key: k, size: b.length,
@@ -79,6 +92,11 @@ export function bucket() {
 }
 
 /** host-governor's R1–R14 as monitoring reaches them, each call recorded; `refuse` names hosts to refuse. */
+/**
+ * R2, R39: host-governor's admit and report as monitoring reaches them, each call recorded.
+ * @param {{refuse?: string[]}} [args] `{refuse?}`: the hosts it refuses, `cooling_off`
+ * @returns {any} `{calls, refuse, governorAdmit, governorReport}`
+ */
 export function governor({ refuse = [] } = {}) {
   const calls = [];
   return {
@@ -90,6 +108,11 @@ export function governor({ refuse = [] } = {}) {
 }
 
 /** A scripted network: `routes` maps a URL to a Response factory (or an Error to throw); every fetch is recorded. */
+/**
+ * R2: a scripted network, recording every fetch's address and options; an address with no route answers 404.
+ * @param {Record<string, any>} [routes] each address with a Response, a function making one, or an Error to throw
+ * @returns {{seen: string[], inits: any[], routes: Record<string, any>, fetch: (u: any, init?: any) => Promise<any>}}
+ */
 export function network(routes = {}) {
   const seen = [], inits = [];
   const fetch = async (u, init) => {
@@ -104,10 +127,18 @@ export function network(routes = {}) {
   return { seen, inits, routes, fetch };
 }
 /** A response serving `body` with `type`. */
+/** @type {(body: any, type?: string, status?: number) => () => Response} a route serving `body` (text or bytes) as `type` at `status` */
 export const serve = (body, type = "text/plain", status = 200) => () =>
   new Response(typeof body === "string" ? body : new Uint8Array(body), { status, headers: { "content-type": type } });
 
 /** An information bundle asking to be monitored. `lines` are extra front-matter lines. */
+/**
+ * R1: an Information bundle's `bundle.md` asking to be monitored at `locator`.
+ * @param {any} id the bundle id
+ * @param {any} locator the source's address
+ * @param {{freq?: any, enabled?: any, lines?: string[]}} [args] `{freq?, enabled?, lines?}`: its `monitoring.frequency` (none when absent), its `monitoring.enabled` (true) and extra front-matter lines
+ * @returns {string}
+ */
 export function infoMd(id, locator, { freq = null, enabled = true, lines = [] } = {}) {
   return ["---", `id: ${id}`, "object_type: information", "schema: information@2",
     `title: "Monitored ${id}"`, "current_state: collected", "prior_state: null",
@@ -128,6 +159,7 @@ export function infoMd(id, locator, { freq = null, enabled = true, lines = [] } 
    has built them on the host (K1164): connections' `refs`; inquiry's `inquiry_bundle_facts`, `inquiry_basis`,
    `inquiry_exclusions` and `inquiry_contradiction_links`; content's `content`. Copied from their schemas, comments left
    out; `seam.test.mjs`'s N506-tail test fails by name if one goes missing. */
+/** @type {ReadonlyArray<string>} K1164: the statements of other modules' tables a promotion step reads on this host */
 export const PLANE_TABLES = Object.freeze([
   `CREATE TABLE IF NOT EXISTS refs (bundle_id TEXT NOT NULL, target_id TEXT NOT NULL, kind TEXT NOT NULL DEFAULT '',
      PRIMARY KEY (bundle_id, target_id, kind))`,
@@ -148,6 +180,11 @@ export const PLANE_TABLES = Object.freeze([
      cited_as TEXT NOT NULL DEFAULT 'text', chain_kind TEXT)`,
 ]);
 
+/**
+ * monitoring over the real modules it uses on one SQLite storage, with its clock, network, governor and bucket stood in, and the helpers the tests read it through.
+ * @param {{profiles?: any, env?: any, evidence?: boolean, refuse?: string[], intent?: any, actionClocks?: any, escalation?: any, publication?: any, extraColumns?: string[], realActions?: boolean, planeTables?: boolean, caseImport?: any}} [args] `{profiles?, env?, evidence?, refuse?, intent?, actionClocks?, escalation?, publication?, extraColumns?, realActions?, planeTables?, caseImport?}`: what the world is made with, each described in the file's head
+ * @returns {Record<string, any>} the world: `st`, `host`, the modules (`record`, `membership`, `promotion`, `prov`, `obs`, `capture`, `m` and the rest), `gov`, `net`, `bkt`, `clock`, and the helpers `rows`, `row`, `text`, `fm`, `manifest`, `looks`, `hold`, `promote`, `inProject`, `monitored`
+ */
 export function world({ profiles = ["test-port-ellery"], env = null, evidence = true, refuse = [], intent = undefined,
                         actionClocks = undefined, escalation = undefined, publication = undefined, extraColumns = [], realActions = false,
                         planeTables = true, caseImport = undefined } = {}) {
@@ -265,6 +302,10 @@ export function world({ profiles = ["test-port-ellery"], env = null, evidence = 
  *  (CERTAIN) by an ASP.NET calendar page's markers, `__VIEWSTATE` and `MeetingDetail.aspx`. Registration is for the
  *  test file's process; a document it does not recognise stays docprofile's no-type answer (contract `substance`). */
 // fixtures-own: synthetic a content type of the test's own, registered through docprofile's seam (registerDoctype); no module's answer
+/**
+ * R14: registers through docprofile's seam a stand-in content type under the `membership` contract, for this test file's process.
+ * @returns {any} what docprofile's `registerDoctype` answers
+ */
 export function registerCalendarStub() {
   return registerDoctype({
     key: "stub_meeting_calendar", label: "stub meeting calendar", version: 1, contract: CONTRACT.MEMBERSHIP,
@@ -277,6 +318,11 @@ export function registerCalendarStub() {
 
 /** A sweep definition in link-sweep R1's shape, with `over` replacing any field: kept here for the readers of this
  *  world that still build one (scheduler's `consumers.test.mjs`) until their own jobs re-point to link-sweep's (N506). */
+/**
+ * A sweep definition in link-sweep R1's shape, kept for scheduler's readers of this world.
+ * @param {Record<string, any>} [over] fields replacing the default's
+ * @returns {Record<string, any>}
+ */
 export function sweepDef(over = {}) {
   return { id: "minutes", title: "Council minutes", ratified: true, sources: ["https://records.example.org/council"],
            seeds: ["https://records.example.org/council/index.html"], match: { terms: ["minutes"] }, cadence: "weekly",
@@ -287,8 +333,13 @@ export function sweepDef(over = {}) {
  *  message}` findings, the message beginning with its field, for a sweep with no `id`, a duplicate id, a key that is no
  *  sweep's field (`field` null) and a `terms` entry "/(?=x)/" (with `code` and the row as `refusal`, `TERM_ROW`); `fence`
  *  refuses a sweep whose `title` is "fenced"; `dueForSlate` lists `due` through `sees`. Every call is recorded in `calls`. */
+/** @type {Readonly<{code: string, check: string, translation: string}>} R66: the stand-in row a refused sweep term carries, C-18.16 */
 export const TERM_ROW = Object.freeze({ code: "SWEEP_TERM_REFUSED", check: "C-18.16",
   translation: "This was not saved: a search term of a sweep is a pattern the record cannot match safely. Nothing was changed." });
+/**
+ * R66: a sweep share as `registerSweep` takes it, standing in for link-sweep's, every call recorded in `calls`.
+ * @returns {{calls: any[], grammar: Function, fence: Function, dueForSlate: Function, due: any[], row: any}}
+ */
 export function sweepShare() {
   const calls = [];
   const sweepsOf = (t) => { try { const g = JSON.parse(t); return Array.isArray(g.sweeps) ? g.sweeps : []; } catch { return []; } };
