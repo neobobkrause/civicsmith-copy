@@ -58,7 +58,7 @@ const asking = (x) => async (fields) => {
   const url = new URL(`http://plane/ask${named ? `?store=${encodeURIComponent(named)}` : ""}`);
   const req = new Request(url, { method: "POST", headers: { authorization: `Bearer ${SESSION}` }, body: JSON.stringify(body) });
   const env = { STORE: { idFromName: (n) => n, get: () => ({ ask: (a) => x.s.ask(a) }) } };
-  return askOp({ req, url, env, viaSession: true, sessMember: "ann" });
+  return askOp({ req, url, env, viaSession: true, sessMember: "ann", grantMember: null });
 };
 const reading = (x) => async (fields) =>
   x.s.draft({ op: "readtranslate", member: "ann", session: SESSION, pack: { layers: [] }, ...fields });
