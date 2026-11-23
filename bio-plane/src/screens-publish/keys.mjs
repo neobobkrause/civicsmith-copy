@@ -5,6 +5,8 @@
  * module in `docs/development/ux-substrate/screens/words-reads.json`, with R22's `published.check.*` and R23's
  * `review.statement.*` keys and `review-outside`'s `statementack` act. */
 
+/** Each screen's keys, by the screen's id.
+ * @type {Readonly<Object<string, readonly string[]>>} */
 export const SCREEN_KEYS = Object.freeze({
   "case-editor": Object.freeze([
     "screen.ceremony.published.edition", "screen.ceremony.publicpage", "screen.ceremony.prepared",
@@ -50,6 +52,8 @@ export const SCREEN_KEYS = Object.freeze({
     "act.owed_casedetails.label.case-editor", "act.owed_casedetailsset.label.case-editor", "screen.panel.limit.remove", "screen.person.fact.notstated", "screen.case-editor.details.first", "screen.case-editor.details.rel.same", "screen.case-editor.details.rel.other", "screen.case-editor.details.intro1", "screen.case-editor.details.intro2", "screen.case-editor.details.outward1", "screen.case-editor.details.outward2", "screen.case-editor.details.area.bodyhint", "screen.case-editor.details.area.addbody", "screen.case-editor.details.area.words", "screen.case-editor.details.list.add", "screen.case-editor.details.contact.legend", "screen.case-editor.details.contact.doorbell", "screen.case-editor.details.contact.words", "screen.case-editor.details.contact.help", "screen.case-editor.details.contact.nomember1", "screen.case-editor.details.contact.nomember2", "screen.case-editor.details.rel.link", "screen.case-editor.details.rel.linkhelp", "screen.case-editor.details.rel.choose", "screen.case-editor.details.rel.words", "screen.case-editor.details.ties.legend", "screen.case-editor.details.ties.intro", "screen.case-editor.details.ties.public", "screen.case-editor.details.ties.none", "screen.case-editor.details.ties.some", "screen.case-editor.details.ties.with", "screen.case-editor.details.ties.how", "screen.case-editor.details.ties.stake", "screen.case-editor.details.refused.summary", "screen.case-editor.details.refused.owner1", "screen.case-editor.details.refused.body", "screen.case-editor.details.refused.body2", "screen.case-editor.details.refused.malformed1", "screen.case-editor.details.refused.malformed2", "screen.case-editor.details.refused.nocase1", "screen.case-editor.details.refused.nocase2",
     "act.owed_casedetails.does", "act.owed_casedetailsset.does",
     "act.casedrafts.label.case-editor", "act.casedrafts.does", "screen.case-editor.drafts.help", "screen.case-editor.drafts.choose", "screen.case-editor.drafts.newest", "screen.case-editor.drafts.item", "screen.case-editor.links.live", "review.index.not_concluded_yet",
+    // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
+    "screen.case-editor.when_the_roles_cant_be_saved", "screen.case-editor.a_finding_has_no_role_or", "screen.case-editor.choose_a_role_for_every_finding", "screen.case-editor.a_finding_you_rely_on_does", "screen.case-editor.make_it_supporting_or_strengthen_it", "screen.case-editor.when_it_cant_be_saved", "screen.case-editor.an_item_names_nothing_or_has", "screen.case-editor.a_field_is_longer_than_2000", "screen.case-editor.shorten_it_or_reword_it_then", "screen.case-editor.when_the_position_cant_be_saved", "screen.case-editor.no_position_is_chosen_or_it", "screen.case-editor.choose_one_and_say_why", "screen.case-editor.the_acknowledgement_is_missing_or_it", "screen.case-editor.write_it_for_this_edition", "screen.case-editor.when_a_citation_cant_be_moved", "screen.case-editor.you_gave_no_reason_or_you", "screen.case-editor.write_why_or_ask_a_member",
   ]),
   "review-copy": Object.freeze([
     "screen.ceremony.published.edition", "screen.ceremony.publicpage", "screen.ceremony.prepared",
@@ -76,6 +80,8 @@ export const SCREEN_KEYS = Object.freeze({
     "mark.scale.connection.name", "screen.case-editor.scope.label", "review.statement.title", "screen.case-editor.leavesout", "screen.published.findings",
     "shell.unavailable.home", "shell.unavailable.nothing.says", "shell.unavailable.nothing.title",
     "act.casedrafts.label.review-copy", "act.casedrafts.does", "screen.review-copy.drafts.help", "screen.review-copy.drafts.choose", "screen.review-copy.drafts.newest", "screen.review-copy.drafts.item", "screen.review-copy.links.heading", "screen.review-copy.links.note", "screen.review-copy.links.help", "case.draft.untitled",
+    // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
+    "screen.review-copy.band", "screen.review-copy.link.line", "screen.review-copy.links.shared", "screen.review-copy.links.comments.one", "screen.review-copy.links.comments.other",
   ]),
   ceremony: Object.freeze([
     "shell.signer.loadfile", "shell.signer.load", "member.founder.unnamed", "shell.card.member",
@@ -136,6 +142,8 @@ export const SCREEN_KEYS = Object.freeze({
     "shell.unavailable.nothing.says", "shell.unavailable.nothing.title",
     "act.owed_casedetails.label.case-editor", "act.owed_casedetails.label.ceremony", "act.owed_casedetails.does", "screen.person.fact.notstated", "screen.ceremony.details.ceremony.notstated1", "screen.ceremony.details.ceremony.notstated2", "screen.case-editor.details.area.bodyhint", "screen.case-editor.details.contact.legend", "screen.case-editor.details.rel.link", "screen.case-editor.details.ties.legend",
     "act.casedrafts.label.ceremony", "act.casedrafts.does", "screen.ceremony.drafts.help", "screen.ceremony.drafts.choose", "screen.ceremony.drafts.newest", "screen.ceremony.drafts.item", "screen.ceremony.links.live", "case.draft.untitled", "screen.ceremony.signs.count.findings", "screen.ceremony.published.edition",
+    // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
+    "screen.ceremony.when.chosen", "screen.ceremony.when.note", "screen.ceremony.signs.lines", "screen.ceremony.publishat.button", "screen.ceremony.photos.rules", "shell.noanswer",
   ]),
   published: Object.freeze([
     "screen.document.passage.where", "screen.question.leg.paragraph",
@@ -197,6 +205,8 @@ export const SCREEN_KEYS = Object.freeze({
     "mark.origin.elsewhere.name", "mark.origin.elsewhere.means", "mark.origin.accepted.name",
     "mark.origin.accepted.means", "mark.origin.flagged.name", "mark.origin.flagged.means",
     "act.owed_importregrade.label.imported", "act.owed_importregrade.does", "act.owed_rerunstart.label.imported", "act.owed_rerunstart.does", "act.owed_citeimported.label.imported", "act.owed_citeimported.does", "screen.imported.lens_what", "screen.imported.lens_does", "screen.imported.lens_as_published", "screen.imported.lens_removed", "screen.imported.lens_own", "screen.imported.lens_moved", "screen.imported.lens_because", "screen.imported.lens_unmoved", "screen.imported.lens_none_summary", "screen.imported.lens_none", "screen.imported.lens_unreadable_summary", "screen.imported.lens_unreadable", "screen.imported.rerun_what", "screen.imported.rerun_pairing_human", "screen.imported.rerun_project_label", "screen.imported.rerun_start_one", "screen.imported.rerun_declares", "screen.imported.rerun_nothing", "screen.imported.rerun_compare_there", "screen.imported.rerun_refused_owner", "screen.imported.rerun_refused_owner_next", "screen.imported.rerun_refused_already", "screen.imported.rerun_refused_already_next", "screen.imported.citeimp.head", "screen.imported.citeimp.q", "screen.imported.citeimp.role", "screen.imported.citeimp.role.supports", "screen.imported.citeimp.role.cuts", "screen.imported.citeimp.note", "screen.imported.citeimp.inherit1", "screen.imported.citeimp.inherit2", "screen.imported.citeimp.ref.notaccepted1", "screen.imported.citeimp.ref.notaccepted2",
+    // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
+    "screen.imported.lens_shown", "screen.imported.lens_bar_ours", "screen.imported.lens_bar_theirs", "screen.calculation.standing.yes", "screen.calculation.standing.no", "screen.imported.citeimp.refd", "screen.imported.citeimp.ref.machine1", "screen.imported.citeimp.ref.machine2", "refusal.BASIS_REFUSED",
   ]),
   docket: Object.freeze([
     "refusal.NO_SUCH_CASE", "refusal.REVIEW_NO_SUCH_CASE", "screen.action.pressure.note",
@@ -219,6 +229,8 @@ export const SCREEN_KEYS = Object.freeze({
     "screen.docket.next.refused.noscope", "screen.docket.next.refused.nocase",
     "screen.docket.reason.label", "screen.docket.sub", "screen.docket.summary.label", "signing.ceremony.declined",
     "shell.unavailable.home", "shell.unavailable.nothing.says", "shell.unavailable.nothing.title",
+    // the code differences of 22 Nov 2026 (ARCH), and R24: keys these screens draw
+    "screen.docket.edition.published", "screen.docket.next.opens", "screen.docket.next.opens.link",
   ]),
   "docket-public": Object.freeze([
     "refusal.NO_SUCH_CASE",

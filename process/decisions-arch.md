@@ -1,4 +1,4 @@
-Length: 35 lines. Last section: "Code differences found before the first walk".
+Length: 66 lines. Last section: "answer-envelope's tests that fail before Process4's first job".
 
 # civicsmith: ARCH's technical decisions
 
@@ -58,4 +58,9 @@ Decided: 23 Nov 2026.
 ## The screens' shared readers
 Decision: `bio-plane/src/screens-inquiry/common.mjs`, the self-contained readers every inquiry screen is handed as its `parts` (`front`, `later`, `who`, `readPages`, `legWords`, the kinds and the rest), belongs to `screens-document`, the earliest of the three parts that draws with it; `screens-question` and `screens-inquiry`, after it in the order, keep using it through `screens-document`. `screens-document` gets its own tests folder, `bio-plane/test/m/screens-document/`, where its job boots the document screen with these readers through `interface-shell`'s harness. R138 is rewritten to the words DEC-439 and DEC-440 already fix: `already: true` draws `screen.document.flag.already`, and the list of flags uses `screen.document.flags.head`, `screen.document.flags.pair` and `screen.contradiction.flagged.by`; its text had been cut short at "The list clause".
 Why: `document.mjs` is drawn only with these readers, and they sat in `screens-question`, after `screens-document` in the order, so no test of `screens-document` could draw its page (Process4 design part 2, sections 1 and 6). The file imports nothing, so it moves without moving anything else. The code already draws the decided keys.
+Decided: 23 Nov 2026.
+
+## answer-envelope's tests that fail before Process4's first job
+Decision: `bio-plane/test/m/answer-envelope/families.test.mjs` goes to `plane`'s tests: it walks and imports every plane file of every module, later ones included, and imports `bio-plane/src/plane/register.mjs`, which does not exist; plane's job points it at `store-assembly`'s `register.mjs` (store-assembly R83), the start registration as it stands. The seven rows `catalogue-end.test.mjs` pins and the catalogue no longer matches (BAD_GRADE, now decorated by citation's C-33.61, the earlier of the two families that hold the code; and the translation digests of CAPTURE_HELD_BY_ANOTHER_BUNDLE, CO_ATTESTATION_UNACKNOWLEDGED, DECISION_WITHOUT_OUTCOME, OUTCOME_NOT_IN_VOCABULARY, SUBJECT_IN_ACTIVE_PLAN and TEMPLATE_NOT_NAMED) are re-pinned by answer-envelope's job to the catalogue as it stands, under its R7.
+Why: the families test reaches every later module, so by the module-list decision it belongs to the module after everything it reaches. The seven pins moved before Process4 took the product in; the catalogue as built is the product as it stands, no requirement names the old values, and the first-listed family decorating a shared code is how the catalogue has always chosen.
 Decided: 23 Nov 2026.

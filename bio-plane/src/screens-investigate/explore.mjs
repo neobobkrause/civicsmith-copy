@@ -270,4 +270,14 @@ const words = ["screen.explore.name", "screen.explore.purpose",
   "mark.gap.undetermined.name", "mark.gap.undetermined.means", "mark.gap.unrated.name", "mark.gap.unrated.means",
   "state.empty", "state.loading", "state.failed", ...EXPLORE_KEYS];
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ * @property {Array<string>} words the word keys the screen draws
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ */
+/** @type {Readonly<ScreenDef>} People › Person › Explore connections */
 export const EXPLORE_SCREEN = Object.freeze({ id: "explore", reads, render, acts, words, parts: PARTS });

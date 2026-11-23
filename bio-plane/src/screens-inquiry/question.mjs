@@ -1213,7 +1213,12 @@ function render(cs, view) {
  *  handle, or the founder unnamed) is drawn as `fallback` (common's `who`) draws it; an id, a stamp or a handle goes to the kit's
  *  `cs.memberName`: her handle, the founder with no handle by `member.founder.unnamed`, any other by `shell.card.member`, never the id. An
  *  `admin` the screen knows the founder's handle for is drawn by it. A machine identity (`class:`, `agent:`) and a kit with no `memberName`
- *  are the fallback's. Self-contained (the page carries it by its text); the other screens of this module import it. */
+ *  are the fallback's. Self-contained (the page carries it by its text); the other screens of this module import it.
+ * @param {*} cs the shell's drawing kit (interface-shell R21)
+ * @param {*} x a roster row, a member id, a stamp (`member:<id>`, `token:<id>`) or a handle
+ * @param {*} founder the founder's handle, where the screen knows it
+ * @param {(cs: *, x: *, founder: *) => string} fallback common's `who`
+ * @returns {string} the markup of the name drawn */
 export function named(cs, x, founder, fallback) {
   if (x && typeof x === "object" && (x.handle || x.founder === true)) return fallback(cs, x, founder);
   const raw = x && typeof x === "object" ? (x.member_id ?? x.member ?? x.id ?? x.by ?? "") : x;
@@ -1836,7 +1841,18 @@ const words = Object.freeze([
   "screen.imported.citeimp.inherit1", "screen.imported.citeimp.inherit2", "screen.imported.citeimp.tip",
 ]);
 
-/** The question screen (interface-shell R21), with the module's shared readers and the dock's bounds as its parts. */
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, *>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {ReadonlyArray<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ * @property {ReadonlyArray<string>} words the keys it may draw (R44)
+ */
+/** The question screen (interface-shell R21), with the module's shared readers and the dock's bounds as its parts.
+ * @param {Object<string, *>} parts the shared readers (`screens-document`'s common.mjs) and the dock's tables
+ * @returns {Readonly<ScreenDef & {place: (view: *) => Object}>} the screen `question`, `place` naming its project */
 export function questionScreen(parts) {
   return Object.freeze({ id: "question", reads, place, render, acts: [...acts, ...legGradeActs], words, parts: Object.freeze({ ...parts, named, leggrade: legGradeActs.length > 0 }) });
 }

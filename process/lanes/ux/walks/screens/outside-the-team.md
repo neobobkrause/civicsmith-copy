@@ -1,4 +1,4 @@
-Length: 354 lines. Last section: "Changes".
+Length: 355 lines. Last section: "Changes".
 
 # Screens: Outside the team
 
@@ -204,7 +204,7 @@ No assistant is offered. If the team's Civicsmith cannot be reached, `unavailabl
 | Control | When offered | Where it leads |
 |---|---|---|
 | A1. button "Write down the lead" (`act.lead.label.leads`) | Always | Same screen; the lead heads C3 with "Nobody has looked yet"; the fields empty |
-| A2. button "Open a lead" (`act.leadread.label.leads`), one per row | S2 | Same screen, S3 for that lead |
+| A2. button "Open it" (`screen.capture.openit`; `screens-intake` R52), one per row | S2 | Same screen, S3 for that lead |
 | A3. button "Record the look" (`act.leadlook.label.leads`) | S3 | Same screen; a new look line in C4; the lead's state word changes in C3 and C4 |
 | A4. button "Share it with the project" (`act.leadshare.label.leads`) | S3 | Same screen; a new "Shared with" line in C4; the lead is readable by that project's members |
 | A5. button "Help me write this" (`act.writinghelp.label.leads`), `AI` | S4 only | Fills "What you were told or suspect" with a labelled draft, kept only by A1. Empty field: "Write something first: the assistant helps word only what you told it." (`screen.capture.help.empty`) |
@@ -343,7 +343,7 @@ No form messages are designed for this screen yet.
 - `screens-intake/inbox.mjs:63`: more than 200 knocks borrows the Held captures line `screen.held.more`; no inbox row exists. (lane: its "More are on the next page" is untrue here, as the inbox has no next page; every-screen rule 2)
 - `screens-intake/about-knocker.mjs:121`: an empty required field is refused with `capture.fieldneeded` ("This can be captured only once “{field}” is filled in.") before sending, not with `refusal.NO_EVIDENCE` (also :147, :158).
 - `screens-intake/about-knocker.mjs:90`: the two permanence notes `sources.consent_permanent_anything` and `sources.withdrawal_binds_later` are not drawn.
-- `screens-intake/leads.mjs:36`: the row button reads "Open a lead"; the mockup reads "Open it". The code's words stand: "Open a lead" (existing row `act.leadread.label.leads`); the mockup's "Open it" is not kept.
+- `screens-intake/leads.mjs:36`: the row button reads "Open a lead" (`act.leadread.label.leads`); `screens-intake` R52 and this page say "Open it" (`screen.capture.openit`), built in PR 1216.
 - `screens-intake/watching.mjs:130`: no row or link to `registers` (C2).
 - `screens-intake/watching.mjs:158`: an empty "Who stands behind the source", and an empty sweep name, sites, pages or budget (:179-181), are refused with `capture.fieldneeded`; the design has no message for them. (lane: these forms capture nothing, and the words do not say what was not done, as every-screen section 7 asks; `shell.field.needed` would)
 
@@ -352,3 +352,4 @@ No form messages are designed for this screen yet.
 - 22 Nov 2026: written.
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
+- 23 Nov 2026, tranche t1: corrected on ARCH's word to the requirement the product follows: leads A2 is "Open it" (`screen.capture.openit`; `screens-intake` R52).

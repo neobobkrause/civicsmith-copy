@@ -12,6 +12,9 @@
     "bio-plane/src/screens-inquiry/question.mjs"
   ],
   "uses": [
+    "setup-words",
+    "store-request",
+    "interface-shell",
     "screens-settings",
     "screens-document"
   ]
