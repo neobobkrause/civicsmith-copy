@@ -138,7 +138,8 @@ export function requestOf({ token, params = {}, via = "header", method = "POST",
 
 /** The gates in the door's order, for a request naming `op` with `token` and `params`. Answers one of
  *  `{ refusal }`, `{ silent }`, `{ public: true, url }` (a public op past R1–R3) or `{ caller, url, credential }`.
- *  `via` sends the credential: "header" by default, "body", or "query" (refused by R20's gate). */
+ *  `via` sends the credential: "header" by default, "body", or "query" (refused by R20's gate).
+ *  @returns {Promise<any>} the answer, of whichever of those four forms */
 export async function gate(env, { op, token, params = {}, method = "POST", tables, via = "header", extraBody = {},
                                   reauthActs, background }) {
   const { url, req, body } = requestOf({ token, params, via, method, extraBody });

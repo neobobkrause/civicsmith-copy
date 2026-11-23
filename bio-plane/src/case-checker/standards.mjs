@@ -29,16 +29,19 @@ import { parseFrontmatter } from "../record-grammar/frontmatter.mjs";
 import { canonicalJson } from "../record-grammar/json.mjs";
 import { gradingFactsOf, memberSubjectOf } from "../case-grammar/index.mjs";
 
-/** R21: the refusal codes, in the order the arms run. */
+/** R21: the refusal codes, in the order the arms run.
+ *  @type {readonly string[]} */
 export const STANDARDS_USE_CODES = Object.freeze(["MALFORMED", "COPYRIGHTED_TEXT_CARRIED", "COPYRIGHTED_PASSAGE_UNRELIED",
   "BENCHMARK_CALLED_NONCONFORMING"]);
 
 /** R21 (K1723): the words a finding resting only on benchmarks never uses, matched as whole words in any letter case.
- *  The list is BOB's and may grow without a change of meaning. */
+ *  The list is BOB's and may grow without a change of meaning.
+ *  @type {readonly string[]} */
 export const NONCONFORMING_WORDS = Object.freeze(["violated", "violates", "violation", "nonconforming", "non-conforming",
   "nonconformity", "nonconformance"]);
 
-/** R26: the key of the members' words for each code (`refusal.<code>`, `setup-words`), in the codes' order. */
+/** R26: the key of the members' words for each code (`refusal.<code>`, `setup-words`), in the codes' order.
+ *  @type {readonly string[]} */
 export const STANDARDS_USE_KEYS = Object.freeze(STANDARDS_USE_CODES.map((c) => `refusal.${c}`));
 
 /** R26: a departure with the words it is read by: `says.key` is `refusal.<code>`, `says.vars` the departure's own fields. */
@@ -56,7 +59,36 @@ const wordsIn = (texts) => {
   return WORD_RES.filter(([, re]) => re.test(joined)).map(([w]) => w);
 };
 
-/** R21. Never throws; any input answers. */
+/**
+ * `checkStandardsUse`'s arguments. Each is read defensively: one of another shape answers `MALFORMED` naming it.
+ * @typedef {Object} StandardsUseArgs
+ * @property {unknown} [text] the case document's text, with its front matter
+ * @property {unknown} [criteria] the edition's criteria rows, each `{standard, access, binds, body?, portion?, stated?,
+ *   captures?, passages?}`
+ * @property {unknown} [materials] the document's `materials:` rows, each `{sha, included, ...}`
+ * @property {unknown} [passages] the passages, each `{content_id, capture_sha, finding?, ...}`
+ */
+/**
+ * One departure: its `code` (one of `STANDARDS_USE_CODES`), its own fields (`field`; or `standard` with `sha`,
+ * `content`, or `finding` and `word`) and `says`, the members' words by key (R26).
+ * @typedef {{code: string, says: {key: string, vars: Record<string, any>}, [field: string]: any}} StandardsUseRefusal
+ */
+/**
+ * A standard's row not judged: `stated: "not held"`, or (offline, R22) a row frozen before T37, with the `check` not
+ * judged and its `detail`.
+ * @typedef {{standard: unknown, portion: unknown, body: unknown, check?: string, detail?: string}} StandardsUseUnjudged
+ */
+/**
+ * R21's answer: `{ok: true}`, or `{ok: false, refusals}` with each departure once, in the arms' order; `unjudged` beside
+ * either when a row was not judged.
+ * @typedef {Object} StandardsUse
+ * @property {boolean} ok
+ * @property {StandardsUseRefusal[]} [refusals] present when not `ok`
+ * @property {StandardsUseUnjudged[]} [unjudged]
+ */
+/** R21. Never throws; any input answers.
+ *  @param {any} args a `StandardsUseArgs`; anything that is not an object answers `MALFORMED` for `arguments`
+ *  @returns {StandardsUse} */
 export function checkStandardsUse(args) {
   try { return judge(args); }
   catch { return { ok: false, refusals: [withSays({ code: "MALFORMED", field: "arguments" })] }; }
