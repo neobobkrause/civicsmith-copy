@@ -12,6 +12,21 @@ import scanner from '../packages-scanner.json' with { type: 'json' };
 import renderer from '../packages-renderer.json' with { type: 'json' };
 import { localize } from '../../bio-plane/src/setup-words/index.mjs';
 
+/**
+ * The member's dependencies, as the Worker gives them and the tests stand them in.
+ * @typedef {Object} Deps
+ * @property {*} [bucket] the group's R2 bucket (`CAPTURES`); absent answers `R2_NOT_CONFIGURED` (R1)
+ * @property {string} [version] the running build's version (R8); absent is `"unknown"`
+ * @property {*} [scanner] a request to the ClamAV image's instance, `(path, init) => Promise<Response>` (R3)
+ * @property {*} [updater] a request to the scanner image's signature-updater instance, the same form (R6, R34)
+ * @property {*} [renderer] a request to the safe-view image's instance, the same form (R7)
+ * @property {*} [fetch] the guarded network an outside call goes through (R12)
+ * @property {*} [connect] the guarded socket opener for ICAP and syslog (R30)
+ * @property {*} [vpc] the Workers VPC binding for a `reach:"tunnel"` tool (R10, R21)
+ * @property {*} [now] the clock, `() => number`, milliseconds since the epoch
+ * @property {*} [waitUntil] the runtime's hold on work that outlives the answer (R6's `async=1`)
+ */
+
 const reply = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 const UNKNOWN = () => reply(404, { ok: false, code: 'UNKNOWN' });
 const versionOf = (list, name) => (list.packages.find((p) => p.name === name) || {}).version || 'not reported';
@@ -34,9 +49,21 @@ const POSTS = {
   '/provider/refresh': providerRefresh, '/provider/forward': providerForward, '/provider/test': providerTest,
 };
 
-/** R6: the scheduled trigger's act (every ten minutes). */
+/**
+ * R6: the scheduled trigger's act (every ten minutes): finishes an open mirror request, resumes a stalled run, or runs
+ * the daily mirror.
+ * @param {Deps} deps
+ * @returns {Promise<*>} the run's outcome, or `{ok, skipped}` when nothing was due
+ */
 export const scheduled = (deps) => mirrorTick(deps);
 
+/**
+ * The member's surface (R1–R9, R19–R31): routes one request to its answer; any other method or path is 404 `UNKNOWN`
+ * (R9). A body that is not a JSON object reaches its route as null.
+ * @param {Request} request
+ * @param {Deps} deps
+ * @returns {Promise<Response>}
+ */
 export async function handle(request, deps) {
   const { pathname, searchParams } = new URL(request.url);
   if (request.method === 'GET' && pathname === '/version') return version(deps);

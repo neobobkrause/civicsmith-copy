@@ -5,7 +5,14 @@
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import { recordingNet, enc, EICAR } from './helpers.mjs';
 
+/** True when `bytes` hold `needle`.
+ * @param {*} bytes
+ * @param {*} needle
+ * @returns {boolean} */
 export const has = (bytes, needle) => Buffer.from(bytes).includes(Buffer.from(needle));
+/** True when `bytes` hold the EICAR test file.
+ * @param {*} bytes
+ * @returns {boolean} */
 export const infected = (bytes) => has(bytes, EICAR);
 const MACRO = 'vbaProject.bin';
 const j = (o, status = 200, headers = {}) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', ...headers } });
@@ -13,13 +20,21 @@ const xml = (s) => new Response(s, { status: 200, headers: { 'content-type': 'ap
 const deny = () => j({ error: 'unauthorised' }, 401);
 const form = (rec) => Object.fromEntries(new URLSearchParams(rec.text));
 
-/** Sentinel credentials: each value names its field, so a leak is found by searching for `SENTINEL-`. */
+/** Sentinel credentials: each value names its field, so a leak is found by searching for `SENTINEL-`.
+ * @param {string} id
+ * @param {...string} names
+ * @returns {Object<string, string>} */
 export const cred = (id, ...names) => Object.fromEntries(names.map((n) => [n, `SENTINEL-${id}-${n}`]));
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+/** A Google service-account key, sentinel-marked, for `google-secops`.
+ * @type {string} */
 export const SERVICE_ACCOUNT = JSON.stringify({ client_email: 'counts@project.iam.example', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }), token_uri: 'https://oauth2.googleapis.com/token', _sentinel: 'SENTINEL-google-secops-service_account_key' });
+/** A generic template's handling statement, as an administrator gives it.
+ * @type {Object<string, string>} */
 export const HANDLING = { recipient: 'the organization', region: 'its own servers', file_retention: 'not kept', result_retention: 'not kept' };
 
-/** The tool specs the tests send, one per catalogued provider. */
+/** The tool specs the tests send, one per catalogued provider, keyed by `provider_id`.
+ * @returns {Object<string, *>} */
 export function specs() {
   const s = (o) => ({ tool_id: `t-${o.provider_id}`, config: {}, handling_confirmed: false, ...o });
   return {
@@ -51,11 +66,15 @@ export function specs() {
 
 // Web Risk's lists for the stubs: the test address's own hash prefix in MALWARE, and a decoy.
 const sha256 = (s) => createHash('sha256').update(s).digest();
+/** Web Risk's documented test address, listed as malware by the stub (R25, R28).
+ * @type {string} */
 export const WEB_RISK_TEST = 'http://testsafebrowsing.appspot.com/s/malware.html';
 const listed = [sha256('testsafebrowsing.appspot.com/s/malware.html').subarray(0, 4), sha256('decoy.example/').subarray(0, 4)];
 const checksum = (prefixes) => createHash('sha256').update(Buffer.concat([...prefixes].sort(Buffer.compare))).digest('base64');
 
-/** HTTP stubs for every catalogued tool. */
+/** HTTP stubs for every catalogued tool, as a recording network.
+ * @param {*} [state] steers private mode (`mode`), a sandbox's progress and a list's failures
+ * @returns {{seen: *[], fetch: *}} */
 export function vendorNet(state = {}) {
   const st = state;
   st.mode ??= 'confirm';
@@ -197,7 +216,9 @@ export function vendorNet(state = {}) {
   return recordingNet(routes);
 }
 
-/** TCP for ICAP and syslog: a Workers-style socket whose peer answers once the request is complete. */
+/** TCP for ICAP and syslog: a Workers-style socket whose peer answers once the request is complete.
+ * @param {*} [answer] the peer's answer to a recorded request
+ * @returns {{seen: *[], connect: *}} */
 export function vendorSockets(answer = (rec) => (infected(rec.bytes()) ? 'ICAP/1.0 200 OK\r\nX-Infection-Found: Type=0; Resolution=2; Threat=Eicar-Test-Signature;\r\nEncapsulated: null-body=0\r\n\r\n' : 'ICAP/1.0 204 No Content\r\n\r\n')) {
   const seen = [];
   const connect = (address, options = {}) => {
