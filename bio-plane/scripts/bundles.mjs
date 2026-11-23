@@ -94,11 +94,40 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+/** @import { Member } from "./fleet-bundle.mjs" */
+
+/**
+ * The sha256 of a member's artifact and manifest; null where the file is absent.
+ * @typedef {Object} ArtifactState
+ * @property {string|null} artifact
+ * @property {number|null} bytes the artifact's size
+ * @property {string|null} manifest
+ */
+/**
+ * One guarded bundle's survey.
+ * @typedef {Object} SurveyRow
+ * @property {string} name
+ * @property {string} dir
+ * @property {Member} member
+ * @property {string[]} findings each begins with the member's name
+ * @property {boolean} stale true when any finding
+ */
+/**
+ * @typedef {Object} RebuildResult
+ * @property {number|null} status the build's exit status
+ * @property {string|null} error why it could not be started
+ * @property {string} out its output
+ */
+/** @typedef {(line: string) => void} Log */
 
 /* The library needs `esbuild` from `bio-plane/node_modules` (its header says
    why), so it is imported LAZILY and its absence is NAMED: a fresh checkout
    with no install would otherwise fail here with a bare ERR_MODULE_NOT_FOUND for
    a package the reader never asked for. */
+/**
+ * @returns {Promise<typeof import("./fleet-bundle.mjs")>}
+ * @throws {Error} naming the missing install when the library cannot be loaded
+ */
 export async function library() {
   try {
     return await import("./fleet-bundle.mjs");
@@ -115,7 +144,10 @@ const sha = (buf) => createHash("sha256").update(buf).digest("hex");
 const readOrNull = (p) => { try { return readFileSync(p); } catch { return null; } };
 
 /** The sha256 of the two files a rebuild writes. `null` where the file is absent,
- *  which is a legitimate before-state (a bundle that was never built). */
+ *  which is a legitimate before-state (a bundle that was never built).
+ * @param {Member} member
+ * @returns {ArtifactState}
+ */
 export function artifactState(member) {
   const b = member.bundle;
   const a = b ? readOrNull(join(member.abs, b.outfile)) : null;
@@ -129,7 +161,11 @@ export function artifactState(member) {
  *  probe would drop the plane SILENTLY on the day its entry moved — and the
  *  plane going quietly missing from this set is the exact defect the command
  *  exists for. The CLI always passes `true`; only a suite driving a synthetic
- *  repository root passes `false`, and it says so where it does. */
+ *  repository root passes `false`, and it says so where it does.
+ * @param {string|null} repoRoot absent is the repository's own root
+ * @param {{plane?: boolean}} [options]
+ * @returns {Promise<Member[]>} sorted by name
+ */
 export async function guardedBundles(repoRoot, { plane = true } = {}) {
   const lib = await library();
   const root = repoRoot || lib.REPO_ROOT;
@@ -138,13 +174,21 @@ export async function guardedBundles(repoRoot, { plane = true } = {}) {
   return all.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** The members discovery lists that the bundle guard does not cover (R24). */
+/**
+ * The members discovery lists that the bundle guard does not cover (R24).
+ * @param {string|null} repoRoot absent is the repository's own root
+ * @returns {Promise<Member[]>}
+ */
 export async function unguardedMembers(repoRoot) {
   const lib = await library();
   return lib.discoverMembers(repoRoot || lib.REPO_ROOT).filter((m) => !lib.isGuarded(m));
 }
 
-/** Ask the dependency-free arm of the gate about every guarded bundle. */
+/**
+ * Ask the dependency-free arm of the gate about every guarded bundle.
+ * @param {Member[]} members
+ * @returns {Promise<SurveyRow[]>}
+ */
 export async function survey(members) {
   const lib = await library();
   return members.map((m) => {
@@ -155,7 +199,11 @@ export async function survey(members) {
 
 /** Run the member's OWN build. Returns its exit status and its output, both
  *  read from the process rather than from a wrapper (a `&&` chain reports the
- *  wrapper's status, which is how a killed test run reads green). */
+ *  wrapper's status, which is how a killed test run reads green).
+ * @param {Member} member
+ * @param {{log?: Log}} [options]
+ * @returns {RebuildResult}
+ */
 export function rebuildMember(member, { log = console.log } = {}) {
   const r = spawnSync("npm", ["run", "build"], { cwd: member.abs, encoding: "utf8" });
   const out = [r.stdout || "", r.stderr || ""].join("").trimEnd();
@@ -163,6 +211,11 @@ export function rebuildMember(member, { log = console.log } = {}) {
   return { status: r.status, error: r.error ? r.error.message : null, out };
 }
 
+/**
+ * R21: survey every guarded bundle and, unless `check`, rebuild each stale one by its own build.
+ * @param {{repoRoot?: string|null, check?: boolean, plane?: boolean, log?: Log}} [options]
+ * @returns {Promise<0|1>} 0 none stale (or all rebuilt fresh), 1 otherwise
+ */
 export async function run({ repoRoot = null, check = false, plane = true, log = console.log } = {}) {
   const members = await guardedBundles(repoRoot, { plane });
   log(`bundles: ${members.length} guarded bundle(s) — ${members.map((m) => m.name).join(", ")}`);
@@ -231,7 +284,10 @@ export async function run({ repoRoot = null, check = false, plane = true, log = 
  *  assembled — each guarded bundle's member that has a `package-lock.json` (its vendored inputs are what the byte
  *  guard rebuilds from), repository-relative, the plane first, then in discovery's order. Derived from discovery
  *  (R1), never listed by hand in the workflow. The library needs the plane's own install (esbuild), so the plane's
- *  `npm ci` comes first. */
+ *  `npm ci` comes first.
+ * @param {string|null} [repoRoot] absent is the repository's own root
+ * @returns {Promise<string[]>} repository-relative directories, `bio-plane` first
+ */
 export async function installDirs(repoRoot = null) {
   const lib = await library();
   const root = repoRoot || lib.REPO_ROOT;
@@ -240,7 +296,10 @@ export async function installDirs(repoRoot = null) {
 }
 
 /** R37: the state of every container member's classes, one line each for those not current, and the exit status:
- *  0 when every image is provably built from the code now in the tree, 1 otherwise. Writes nothing. */
+ *  0 when every image is provably built from the code now in the tree, 1 otherwise. Writes nothing.
+ * @param {{repoRoot?: string|null, log?: Log}} [options]
+ * @returns {Promise<0|1>}
+ */
 export async function containerImages({ repoRoot = null, log = console.log } = {}) {
   const lib = await library();
   let bad = 0, classes = 0;
@@ -257,7 +316,13 @@ export async function containerImages({ repoRoot = null, log = console.log } = {
 }
 
 /** R36: record the digest the workflow's build produced for one class. Returns the exit status; a refusal prints
- *  `REFUSED [CODE]: …` and writes nothing. */
+ *  `REFUSED [CODE]: …` and writes nothing.
+ * @param {string} memberName
+ * @param {string} className
+ * @param {string} digest `sha256:<64 hex>`
+ * @param {{repoRoot?: string|null, log?: Log, err?: Log}} [options]
+ * @returns {Promise<0|1>}
+ */
 export async function recordImage(memberName, className, digest, { repoRoot = null, log = console.log, err = console.error } = {}) {
   const lib = await library();
   const member = lib.discoverMembers(repoRoot || lib.REPO_ROOT).find((m) => m.name === memberName);
