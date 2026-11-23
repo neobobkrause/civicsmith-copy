@@ -45,8 +45,15 @@ import * as RUN_RULES from "../../bio-plane/src/run-rules/index.mjs";
 import { DEPLOYMENT_SEQUENCE, GATE_ADDRESS, DEPLOYED_MODES } from "../../bio-plane/src/run-rules/index.mjs";
 import { reportsAs } from "../../bio-plane/src/skilldoctrine.mjs";
 import * as HARNESS from "../../agent-harness/src/harness.mjs";
-import { discoverMembers, verifyStatic, verifyFresh } from "../../bio-plane/scripts/fleet-bundle.mjs";
+import { discoverMembers, verifyStatic, verifyFresh, writeMember } from "../../bio-plane/scripts/fleet-bundle.mjs";
+
+/* R120: the bundle and its manifest are not committed; whatever here reads them builds them first, as
+   scripts/build.mjs does, once for the suite. */
+const AGENT_WORKER = discoverMembers().find((m) => m.name === "agent-worker");
+if (!AGENT_WORKER) throw new Error("agent-worker declares no fleet-member.json, so its bundle cannot be built (R120)");
+const BUILT = await writeMember(AGENT_WORKER);
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+import { PUBLISHED_VALUE } from "./published.mjs";
 
 const { Miniflare } = await (async () => {
   try { return await import("miniflare"); } catch { /* fall through */ }
@@ -1150,8 +1157,6 @@ section("R30, R31 · GET /version; anything else 404 UNKNOWN");
 /* ============================================================ the cascade, pure */
 section("R32, R33 · the cascade: the one account that arrived, at its own level (project, member or group)");
 {
-  const PUBLISHED_VALUE = readFileSync(fileURLToPath(new URL("../../bio-plane/dist/SECRETS.txt", import.meta.url)), "utf8")
-    .split("\n").find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
   const st = async (a) => (await resolveClaudeCascade(a)).levels.map((l) => `${l.level}:${l.state}`);
   t("R32, R71: three levels, a project's, the member's own and the group's, in credentials' order; no instance level is judged, held or answered", [...CASCADE_ORDER], ["project", "member", "group"]);
   t("R32: unset (no non-empty secret), revoked_by_publication, or available, at the account's own level — no shape check "
@@ -1242,8 +1247,7 @@ section("R48 · in the model mode the pack is the one the plane serves on op=age
   await runOp(mf, { ...base, account: ACCOUNTS, judgements: J() });
   t("R48: until turns run it changes nothing: the supplied mode never asks for the pack",
     (await planeState(mf)).log.some((l) => l.op === "agentpack" || l.op === "affordances"), false);
-  const bundle = JSON.parse(readFileSync(fileURLToPath(new URL("../dist/agent-worker.bundle.json", import.meta.url)), "utf8"));
-  const inputs = (bundle.inputs || []).map((i) => String(i.path ?? i.file ?? i));
+  const inputs = (BUILT.manifest.inputs || []).map((i) => i.path);
   t("R48: it renders nothing and imports neither the check catalogue nor skills' code: no such input in its bundle",
     [inputs.length > 0, inputs.filter((f) => /bio-checks\.mjs$|skillpack\.mjs$|skilldoctrine\.mjs$/.test(f))], [true, []]);
 }
@@ -1482,13 +1486,14 @@ section("N53 · the skills doctrine's pins on this member, owned here (agent-har
      nextStep({ step: "gate-mode", mode: "check", pass: 0, maxPasses: 3 }).step], ["mode-not-deployed", "resume"]);
 }
 
-section("R45 · the committed bundle is a fresh build of src/index.mjs, its manifest naming every input");
+section("R45, R120 · the bundle built into dist/ is a fresh build of src/index.mjs, its manifest naming every input");
 {
-  const member = discoverMembers().find((m) => m.name === "agent-worker");
+  const member = AGENT_WORKER;
   const stat = verifyStatic(member);
   t("R45: the static check finds nothing", stat.findings, []);
+  if (!stat.committed) throw new Error("R120: the bundle built into dist/ above could not be read back");
   const fresh = await verifyFresh(member, stat.committed);
-  t("R45: a fresh build is byte-identical to the committed bundle", [fresh.checked, fresh.findings], [true, []]);
+  t("R45, R120: a second fresh build is byte-identical to the bundle built into dist/", [fresh.checked, fresh.findings], [true, []]);
   const inputs = (stat.manifest?.inputs || []).map((i) => i.path);
   t("R45, R119: the manifest names every input, bio-plane/src/tokens.mjs and the agent-steps files included",
     ["../bio-plane/src/tokens.mjs", "src/index.mjs", "src/cascade.mjs", "src/ops.mjs", "src/ask.mjs", "src/draft.mjs",

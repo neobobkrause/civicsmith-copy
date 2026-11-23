@@ -10,6 +10,7 @@
   "public": [],
   "uses": [
     "ai-use",
+    "provenance",
     "test-support",
     "runtime-limits",
     "bundler",
