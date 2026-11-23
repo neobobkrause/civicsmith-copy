@@ -55,7 +55,8 @@ function render(cs, view) {
       + `<p class="mk-small">${cs.w(S + "addother.kind.help")}</p>`
       + cs.field("people-other-aliases", S + "addother.aliases", { area: true, help: S + "addother.aliases.help" })
       + cs.field("people-other-note", S + "addother.note", { area: true, rec: true, help: S + "addother.note.help" })
-      + cs.act("entitycreate", { label: "screen.people.add.submit" })
+      /* R42: the state g form ends in "Follow it"; the two-way form of R37 keeps "Follow them" */
+      + cs.act("entitycreate", { label: "screen.people.addother.submit" })
     : cs.field("people-add-name", S + "add.name", {})
       + cs.choice("people-add-kind", S + "add.kind", [["person", S + "add.kind.person"], ["institution", S + "add.kind.organization"]], {})
       + cs.field("people-add-note", S + "add.note", { area: true, rec: true, help: S + "add.note.help" })
@@ -230,7 +231,7 @@ const PEOPLE_KEYS = [
   "screen.people.show.offices", "screen.people.show.ordinances", "screen.people.show.contracts", "screen.people.show.funds", "screen.people.show.sources", "screen.people.add.kind.office", "screen.people.add.kind.ordinance", "screen.people.add.kind.contract", "screen.people.add.kind.fund", "screen.people.add.kind.program", "screen.people.add.kind.place", "screen.people.add.kind.parcel", "screen.people.add.kind.source", "screen.people.show.everything", "screen.people.other.note", "screen.people.other.heading", "screen.people.today.heldby",
   "screen.people.addother.head", "screen.people.addother.name", "screen.people.addother.kind", "screen.people.addother.kind.help",
   "screen.people.addother.aliases", "screen.people.addother.aliases.help", "screen.people.addother.note", "screen.people.addother.note.help",
-  "screen.people.addother.preflight", "people.nearmatch.same", "people.nearmatch.contains", "people.nearmatch.spelling",
+  "screen.people.addother.preflight", "screen.people.addother.submit", "people.nearmatch.same", "people.nearmatch.contains", "people.nearmatch.spelling",
   ...["source", "office", "ordinance", "parcel", "contract", "fund", "program", "place", "proceeding"].map((k) => "find.row.kind." + k),
 ];
 
