@@ -183,7 +183,7 @@ export class Walk {
   }
 
   /* R17: the words the page draws (its title, its text, hidden disclosures too, the labels a screen reader reads; not script
-     or style), with the rows the design's `GROUP_SENSE` keeps taken out: where one says "group" for a team, the step fails,
+     or style), with the rows kept in another sense (`group-words.mjs`) taken out: where one says "group" for a team, the step fails,
      naming where. The rule is read once, from the design's build. */
   async #scanGroup(page) {
     let url;
