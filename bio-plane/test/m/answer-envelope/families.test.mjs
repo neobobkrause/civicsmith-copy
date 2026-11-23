@@ -38,9 +38,9 @@ const reached = (files) => new Set(files.flatMap(([, ns]) => Object.entries(ns).
 
 /* The rows exported anywhere in the plane that `files` does not reach: `<file> <family>`, once per family. */
 async function unreached(files) {
-  /* plane R68: the start registration is the first import of the plane's graph, before any table is read (R81). The walk
+  /* store-assembly R83 (was plane R68): the start registration is the first import of the plane's graph, before any table is read (R81). The walk
      imports plane files that reach it, so it runs here first. */
-  await import(join(REPO, "bio-plane/src/plane/register.mjs"));
+  await import(join(REPO, "bio-plane/src/store-assembly/register.mjs"));
   const have = reached(files);
   const missing = new Set();
   for (const [p] of planeFiles()) {
@@ -238,7 +238,7 @@ test("R2, R7 (N520, N522, N526, N533; K1310, K1331): the list reads accepted-wor
   assert.deepEqual(Object.values((await import("../../../src/accepted-work/checks.mjs")).ACCEPTED_WORK_CHECKS).map((r) => r.check).sort(), ["C-21.4", "C-21.5"]);
   /* docket: its own pressure codes, no code shared with action-grammar, whose rows stay its own */
   const AG = (await import("../../../src/action-grammar/checks.mjs"));
-  const agFams = Object.entries(AG).filter(([k, v]) => isFamily(k, v)).map(([, v]) => v);
+  const agFams = Object.entries(AG).filter(([k, v]) => isFamily(k, v)).map(([, v]) => /** @type {Record<string, any>} each family is an object of rows (isFamily) */ (v));
   const agRow = (code) => agFams.filter((v) => v[code]).map((v) => v[code])[0];
   for (const code of ["PRESSURE_REFUSED", "MACHINE_CANNOT_MARK_PRESSURE"])
     assert.deepEqual(M.dec49Row(code), { check: agRow(code).check, translation: agRow(code).translation }, code);
