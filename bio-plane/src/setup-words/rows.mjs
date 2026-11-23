@@ -1,6 +1,6 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
    list, docs/development/ux-substrate/screens/words.json (19530 design words, 1162 protected; SHA-256
-   87f0081abbc407e8e52afa30ff4dd67f2c44870bfe16868108ee1137ff6aa820) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   340124cd9038e8a5d44029e6e1e4aa7ec956c5e1402e3b89c43671d6549f0c51) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
@@ -11,7 +11,7 @@
  * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
  */
 /** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
-export const WORDS_COMMIT = "87f0081abb";
+export const WORDS_COMMIT = "340124cd90";
 /** @type {readonly WordRow[]} the list, frozen with each row (R3) */
 export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
