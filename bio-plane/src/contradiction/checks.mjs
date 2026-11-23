@@ -3,6 +3,14 @@
 
 import { word, localize } from '../setup-words/index.mjs';
 
+/**
+ * One refusal's row: its catalogue number, where it is decided, and its canned words (R20).
+ * @typedef {Object} ContradictionCheckRow
+ * @property {string} check its C-60 or C-93 number
+ * @property {string} where
+ * @property {string} translation
+ */
+
 /* REC-146 / C-60 — THE CONTRADICTION PAIRING READ'S REFUSALS
  * (`CONTRADICTION-IDENTIFY-DESIGN.md` section 4, section 9 item 1).
  *
@@ -20,6 +28,7 @@ import { word, localize } from '../setup-words/index.mjs';
  * is that keys are ADDED, never tuned, precisely so the per-key figures stay comparable
  * across runs; a key name that answered from a different key would make them incomparable
  * while looking complete. So the refusal NAMES the keys the record holds. */
+/** @type {Object<string, ContradictionCheckRow>} the pairing read's and PRESENT's refusals, by code */
 export const CONTRADICTION_PAIR_CHECKS = {
   CONTRADICTION_KEY_UNKNOWN: {
     check: 'C-60.1',
@@ -49,6 +58,7 @@ export const CONTRADICTION_PAIR_CHECKS = {
  * pairs for THIS viewer and writes only a proposal naming one of them, with
  * the referents and versions the PLANE read, never the ones the body sent. The run's principal is REC-152's gate,
  * relayed with its own code, and is not restated here. */
+/** @type {Object<string, ContradictionCheckRow>} the candidate door's and the acts' refusals, by code */
 export const CONTRADICTION_CANDIDATE_CHECKS = {
   CANDIDATE_NO_PROPOSER: {
     check: 'C-93.1',

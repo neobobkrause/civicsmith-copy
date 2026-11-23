@@ -117,7 +117,7 @@ test("R25: exactly one subject, else C-60.2; each of the six subjects answers th
   for (const on of [null, undefined, {}, { inquiry: "" }, { inquiry: IQ.a, content: CID.a }, "INQ", [IQ.a]])
     refusedWith(assert, ROWS, w.c.candidatesFor({ on, viewer: M1 }), "CANDIDATES_NO_SUBJECT");
   /* N458: the member reads "record", and the argument keeps its name `bundle` (N71). */
-  assert.match(w.c.candidatesFor({ on: {}, viewer: M1 }).detail, /a record \(bundle\)/);
+  assert.match(String(w.c.candidatesFor({ on: {}, viewer: M1 }).detail), /a record \(bundle\)/);
   const ids = (on) => w.c.candidatesFor({ on, viewer: M1 }).candidates.map((c) => c.candidate).sort();
   assert.deepEqual(ids({ candidate: k2 }), [k2]);
   assert.deepEqual(ids({ inquiry: IQ.a }), [k2]);
@@ -462,7 +462,7 @@ test("R29: a case pinning a finding at its bytes discloses each standing duty on
   assert.equal(r.ok, true);
   assert.deepEqual(r.candidates.map((c) => c.candidate).sort(), [duty2, duty4].sort());
   for (const c of r.candidates) { assert.equal(c.depth, 1); assert.equal(c.state, "open"); assert.ok(c.a && c.b); }
-  assert.match(r.says, /deeper findings disclose their own/);
+  assert.match(String(r.says), /deeper findings disclose their own/);
   assert.equal(UNRESOLVED_MAX, 200);
   /* dissolved is no longer disclosed; irreconcilable is */
   w.c.clarify({ candidate: duty4, choice: "differs", coordinates: ["time_or_occasion"], explanation: "dates", evidence: [{ fact: "time_or_occasion" }], viewer: M1, author: M1 });

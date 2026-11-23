@@ -43,7 +43,7 @@ test("R5: key is trimmed and upper-cased; absent or blank runs all six keys (K6 
     assert.equal(r.check, row.check);
     assert.equal(r.translation, row.translation);
     assert.deepEqual(r.keys, ["K1", "K2", "K3", "K4", "K5", "K6"]);
-    assert.match(r.detail, /K1, K2, K3, K4, K5, K6/);
+    assert.match(String(r.detail), /K1, K2, K3, K4, K5, K6/);
   }
 });
 
@@ -237,7 +237,7 @@ test("R9: K4 tells sources apart only by the doctype their readers state and the
     if (want.undetermined) {
       assert.equal(k.notes.length, 1);
       assert.match(k.notes[0], /NOT formed/);
-      assert.match(r.says, /NOT formed because a value the record does not hold, or an order it does not settle/);
+      assert.match(String(r.says), /NOT formed because a value the record does not hold, or an order it does not settle/);
     } else assert.deepEqual(k.notes, []);
   }
   /* the side carries the date as stated and its precision and zone */
@@ -310,7 +310,7 @@ test("R10: every side's bundle is one the viewer may see; an absent or unrecogni
       assert.equal(key.absence.says, CONTRADICTION_ABSENCE.viewer);
       assert.deepEqual(key.levels, [{ level: "viewer", present: false }]);
     }
-    assert.match(r.says, /outage and not a statement about the record/);
+    assert.match(String(r.says), /outage and not a statement about the record/);
     const one = w.c.pairs({ key: "K2", viewer });
     assert.equal(byKey(one, "K2").absence.level, "viewer");
     assert.equal(byKey(one, "K1").absence.level, "not_run");

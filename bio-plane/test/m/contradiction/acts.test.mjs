@@ -82,7 +82,7 @@ test("R30, R44: the acceptance basis — accepted naming a standing recommendati
   const acc = bare.c.clarify({ candidate: d2, choice: "differs", coordinates: ["scope"], accepted: [s2], viewer: M1, author: M1 });
   assert.equal(acc.ok, true, JSON.stringify(acc));
   assert.equal(acc.own_words, false);
-  assert.match(acc.says_words, /no words of the member's own/);
+  assert.match(String(acc.says_words), /no words of the member's own/);
   /* once explained the recommendation still stands; once resolved it does not: a stale acceptance is refused */
   bare.c.clarify({ candidate: d2, choice: "one_wrong", wrongSide: "a", reason: "r", viewer: M1, author: M1 });
   const closed = bare.c.clarify({ candidate: d2, choice: "differs", coordinates: ["scope"], accepted: [s2], viewer: M1, author: M1 });
@@ -105,7 +105,7 @@ test("R31: dismiss — closed and taken-up refused, a duty or plurality cannot b
   assert.equal(taken.inquiry, up.inquiry);
   const rec = w.c.dismiss({ candidate: duty, reason: "zzz", viewer: M1, author: M1 });
   refused(rec, "RECORD_CANNOT_BE_DISMISSED");                        /* asked before the reason */
-  assert.match(rec.translation, /closes only when a member/);
+  assert.match(String(rec.translation), /closes only when a member/);
   assert.deepEqual(DISMISSAL_REASONS, ["same_fact_different_precision", "not_same_matter", "real_conflict_not_pursued"]);
   for (const reason of [null, "", "precision", "Not_same_matter"]) refused(w.c.dismiss({ candidate: lead, reason, viewer: M1, author: M1 }), "DISMISSAL_REASON_UNKNOWN");
   const r = w.c.dismiss({ candidate: lead, reason: "same_fact_different_precision", words: " rounded ", viewer: M1, author: M1 });
@@ -186,7 +186,7 @@ test("R35: take up — closed refused, a taken-up one answers its inquiry and wr
   for (const frame of [null, "", "c", "A"]) refused(w.c.takeUp({ candidate: duty, question: "Q?", frame, viewer: M1, author: M1 }), "TAKE_UP_NO_FRAME");
   const r = w.c.takeUp({ candidate: duty, question: "Did the fee rise, given the minutes say it fell?", frame: "a", viewer: M1, author: M1 });
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 800));
-  assert.match(r.inquiry, /^INQ-\d{4}-\d{4}-contradiction$/);
+  assert.match(String(r.inquiry), /^INQ-\d{4}-\d{4}-contradiction$/);
   const fm = w.fm(r.inquiry);
   assert.deepEqual([fm.object_type, fm.current_state, fm.surfaced_by], ["inquiry", "open", "human"]);
   assert.equal(fm.title, "Did the fee rise, given the minutes say it fell?");
@@ -404,7 +404,7 @@ test("R37: recommend — R13's first four through the run gate, then coordinates
     assert.equal(typeof rec.recommendation, "string");
   }
   assert.equal(r.recommendations[1].reason.length, 2000);
-  assert.match(r.says, /machine work, not a member's choice/);
+  assert.match(String(r.says), /machine work, not a member's choice/);
   assert.deepEqual([call({}).written, call({}).unchanged], [0, 1]);
   /* not standing once resolved */
   w.c.clarify({ candidate: duty, choice: "one_wrong", wrongSide: "a", reason: "r", viewer: M1, author: M1 });
