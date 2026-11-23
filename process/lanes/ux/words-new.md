@@ -1,4 +1,4 @@
-Length: 100 lines. Last section: "Marks settled by a row the table already holds".
+Length: 106 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -76,8 +76,14 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `screen.imported.lens_moved.own` | Moved: {published} as published, {regraded} under your team's lens. | publishing / imported C5 (U15) | lane (the words of `.lens_moved` and `.lens_own`) |
 | `screen.imported.lens_bar.yes` | yes | publishing / imported C5 (U15) | lane (DEC-378's row note: "the placeholder is yes or no") |
 | `screen.imported.lens_bar.no` | no | publishing / imported C5 (U15) | lane (DEC-378's row note) |
+| `screen.counsel.made.version` | Version {n} | deciding-and-acting / counsel C8 (U16) | lane (the page's own words) |
+| `screen.counsel.made.by.nocounsel` | Assembled by {who}, {date}, for the team's own review | deciding-and-acting / counsel C8 (U16) | lane (the words of `.made.by` and `filings.prepared_group_review`, `filings` R10) |
+| `screen.counsel.made.exported.nocounsel` | Saved as a file by {who}, {date}, for the team's own review. | deciding-and-acting / counsel C8 (U16) | lane (the words of `.made.exported` and `filings.prepared_group_review`) |
+| `filings.determination_flagged` | the determination {determination} was flagged: what it rests on has changed | deciding-and-acting / counsel C8 (U16) | lane (beside `filings.determination_superseded`; `conformance` R10) |
+| `filings.finding_later_edition` | finding {finding} was published in a later edition, Edition {later} | deciding-and-acting / counsel C8 (U16) | lane (`filings` R12) |
+| `filings.standard_superseded` | the standard {standard} was superseded | deciding-and-acting / counsel C8 (U16) | lane (beside `filings.determination_superseded`; `filings` R12) |
 
-70 rows: 25 from the mockup, 45 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
+76 rows: 25 from the mockup, 51 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 

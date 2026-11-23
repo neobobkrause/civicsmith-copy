@@ -13,6 +13,7 @@
   ],
   "tests": [
     "bio-plane/test/m/plane/",
+    "bio-plane/test/m/answer-envelope/families.test.mjs",
     "agent-worker/test/agent-worker.test.mjs",
     "agent-worker/test/harness.test.mjs",
     "agent-worker/test/plane-world.mjs",
