@@ -1,0 +1,3 @@
+# Built here by scripts/build.mjs whenever needed; nothing built is committed (R45).
+*
+!.gitignore
