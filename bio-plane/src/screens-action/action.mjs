@@ -516,10 +516,10 @@ export const action = Object.freeze({
 
       // R5: move and scope (R32: the hold is placed on `hold`, not here).
       const moves = P.moves(state);
-      // The Screens page's C10: resolving says how it ended, under its fold, by the design's words (`screen.action.ended.*`), and the
+      // The Screens page's C10: resolving says how it ended, under its fold "How it ended" (`screen.action.ended.head`, U17), by the design's words (`screen.action.ended.*`), and the
       // member's own words are the reason the move is kept with; any other move is kept with the member's reason (actions declares
       // `reason` required on every move)
-      const ended = moves.includes("resolved") && cs.can("actionmove") ? fold("screen.action.move.resolution",
+      const ended = moves.includes("resolved") && cs.can("actionmove") ? fold("screen.action.ended.head",
         pick("move-resolution", "screen.action.ended.help", ["complied", "denied", "escalated", "withdrawn", "completed"].map(function (r) { return [r, "screen.action.ended." + r]; }))
         + cs.field("move-own", "screen.action.ended.own", { area: true, rec: true, help: "screen.action.ended.own.help" })) : "";
       const move = moves.length && cs.can("actionmove") ? cs.choice("move-to", "screen.action.move.to", moves.map(function (m) { return [m, "screen.plan.actionstate." + m]; }))
