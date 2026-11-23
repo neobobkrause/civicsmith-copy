@@ -228,6 +228,8 @@ const LIST_METHODS = new Set(['map', 'forEach', 'filter', 'flatMap', 'some', 'ev
 const evalCache = new Map();
 /** The parameters a failed evaluation ran into (declaration nodes), kept for the reading that is under way. */
 let paramDeps = null;
+/** Where a parameter was looked for and not found, in a reading that carries arguments. */
+const missEnv = new Map();
 let steps = 0;
 const STEP_CAP = 4000;
 function ev(node, env = null, depth = 0) {
@@ -466,6 +468,7 @@ function evParam(decl, env, d) {
     }
   }
   if (paramDeps) paramDeps.add(decl);
+  if (env) missEnv.set(decl, env);
   return null;
 }
 /** A name a product file exports. */
@@ -578,9 +581,14 @@ for (const n of ['copyFileSync', 'copyFile', 'cpSync', 'cp', 'symlinkSync', 'sym
 for (const n of ['renameSync', 'rename']) FS_KIND.set(n, ['fs-write', 'fs-write']);
 /** Names that are read as a file-system call even where the parser cannot tell what the name is bound to. */
 const FS_BY_NAME = new Set(['readFileSync', 'readdirSync', 'statSync', 'lstatSync', 'existsSync', 'writeFileSync', 'mkdirSync', 'rmSync', 'createReadStream', 'createWriteStream',
-  'copyFileSync', 'cpSync', 'renameSync', 'unlinkSync', 'appendFileSync', 'mkdtempSync', 'accessSync', 'realpathSync', 'opendirSync', 'readFile', 'readdir', 'writeFile']);
+  'copyFileSync', 'cpSync', 'renameSync', 'unlinkSync', 'appendFileSync', 'mkdtempSync', 'accessSync', 'realpathSync', 'opendirSync']);
 const PROC_FNS = new Set(['spawn', 'spawnSync', 'execFile', 'execFileSync', 'exec', 'execSync', 'fork']);
-const PROC_BY_NAME = new Set(['spawn', 'spawnSync', 'execFile', 'execFileSync', 'execSync']);
+const PROC_BY_NAME = new Set(['spawnSync', 'execFileSync', 'execSync']);
+/** Names Node's file system and process modules share with ordinary methods: a call by such a name that the parser
+ *  cannot tie to Node is listed apart (UNBOUND), by what it is called on, and is not counted as a reference. */
+const GENERIC_NAMES = new Set(['readFile', 'readdir', 'writeFile', 'appendFile', 'stat', 'lstat', 'access', 'mkdir', 'rm', 'unlink', 'rename', 'copyFile', 'cp', 'opendir', 'open',
+  'spawn', 'execFile', 'fork']);
+const UNBOUND = [];
 
 const sinkCache = new Map();
 /** What kind of point of use a call or a `new` is, or null. */
@@ -616,6 +624,7 @@ function sinkOf0(node) {
     if (!cv) {
       if (FS_BY_NAME.has(name)) return { type: 'fs', fn: name, kinds: FS_KIND.get(name), byName: true };
       if (PROC_BY_NAME.has(name)) return { type: 'proc', fn: name, byName: true };
+      if (GENERIC_NAMES.has(name)) UNBOUND.push({ f: relOf(fileOfNode(node)), l: lineOf(node), name, on: ts.isPropertyAccessExpression(callee) ? textOf(callee.expression, 50) : '(a bare name)' });
     }
     return null;
   }
@@ -887,8 +896,8 @@ function visit(node, base0, sf) {
           const ok = record({ f: rel, l: lineOf(n), s: textOf(n), in: fnNameOf(node) ?? undefined }, spec, val, got);
           if (!ok && deps && deps.size) { waits ??= new Set(); for (const d of deps) waits.add(d); }
         });
-        for (const r of got) { if (r.c && waits) r.params = [...waits].map((d) => (ts.isIdentifier(d.name) ? d.name.text : '{…}')); REFS.push(r); }
-        if (waits) PENDING.push({ node, desc, deps: waits, rel });
+        for (const r of got) { if (r.c && waits) r.params = [...waits].map((d) => (ts.isIdentifier(d.name) ? d.name.text : '{…}')); if (r.byName) r.callee = textOf(node.expression, 60); REFS.push(r); }
+        if (waits) PENDING.push({ node, desc, deps: waits, rel, refs: got.filter((r) => r.c) });
         return;
       }
       pathExpr(node, rel);
@@ -950,6 +959,61 @@ function pathText(node, rel) {
 for (const rel of JS_FILES) { const t = Date.now(); readFile(rel); if (Date.now() - t > 3000) log(`  slow: ${rel} ${Date.now() - t} ms`); }
 lap(`read: ${REFS.length} references, ${TEXT_REFS.length} texts that name a path, ${PENDING.length} points of use that wait on a parameter, ${PARTIALS.length} partial paths`);
 
+// ---------------------------------------------------------------------------------------------------------------
+// 6. Points of use that wait on a parameter: read again at every call the parser can tie to the function
+// ---------------------------------------------------------------------------------------------------------------
+const fnOfParam = (decl) => { let n = decl.parent; while (n && !ts.isFunctionLike(n)) n = n.parent; return n; };
+const VIA = [];
+let budget = 0;
+function expand(evalAll, depth, trail, results) {
+  missEnv.clear();
+  const { got, waits } = evalAll();
+  if (!waits) { results.push({ got, trail, open: false }); return; }
+  const dep = depth < 4 ? [...waits].find((x) => missEnv.get(x) && fnOfParam(x)) : null;
+  if (!dep) { results.push({ got, trail, open: true }); return; }
+  const fn = fnOfParam(dep); const envToFill = missEnv.get(dep);
+  const sites = CALLS.get(fn) ?? [];
+  if (!sites.length) { results.push({ got, trail, open: true, noCaller: true }); return; }
+  for (const cs of sites) {
+    if (--budget < 0) { results.push({ got, trail, open: true, cut: true }); return; }
+    const csEnv = new Map(); const before = new Map(envToFill);
+    fn.parameters.forEach((p, i) => { if (!p.dotDotDotToken) envToFill.set(p, { node: cs.arguments[i] ?? null, env: csEnv }); });
+    expand(evalAll, depth + 1, [...trail, cs], results);
+    envToFill.clear(); for (const [k, v] of before) envToFill.set(k, v);
+  }
+}
+for (const pend of PENDING) {
+  const env0 = new Map(); const rel = pend.rel; const node = pend.node;
+  const evalAll = () => {
+    const got = []; let waits = null;
+    runSink(pend.desc, node, env0, (spec, val, deps) => {
+      const n = spec.node ?? node;
+      const ok = record({ f: rel, l: lineOf(n), s: textOf(n), in: fnNameOf(node) ?? undefined }, spec, val, got);
+      if (!ok && deps && deps.size) { waits ??= new Set(); for (const d of deps) waits.add(d); }
+    });
+    return { got, waits };
+  };
+  const results = []; budget = 4000;
+  expand(evalAll, 0, [], results);
+  let sites = 0; let open = 0; let noCaller = false; let cut = false;
+  const seen = new Map();
+  for (const r of results) {
+    if (!r.trail.length) { noCaller = noCaller || !!r.noCaller; continue; }
+    sites++;
+    if (r.open) open++;
+    if (r.noCaller) noCaller = true;
+    if (r.cut) cut = true;
+    const cs = r.trail[r.trail.length - 1]; const via = `${relOf(fileOfNode(cs))}:${lineOf(cs)}`;
+    for (const g of r.got) {
+      if (g.c && g.c !== 'x') continue;
+      const key = `${g.l}|${g.k}|${g.c ?? ''}|${g.tk ?? ''}|${g.to ?? g.px}`;
+      if (!seen.has(key)) { const v = { ...g, via: [via], viaCount: 1 }; seen.set(key, v); VIA.push(v); } else { const v = seen.get(key); v.viaCount++; if (v.via.length < 3 && !v.via.includes(via)) v.via.push(via); }
+    }
+  }
+  for (const r of pend.refs) r.inst = { sites, open, ...(noCaller ? { noCaller: 1 } : {}), ...(cut ? { cut: 1 } : {}) };
+}
+lap(`callers read: ${VIA.length} references through ${PENDING.length} points of use`);
+
 if (ARGV.has('--stats')) {
   const by = {};
   for (const r of REFS) { const k = `${r.k}${r.c ? (r.c === 'x' ? ' [start known]' : ' [computed]') : ''}${r.byName ? ' (by name)' : ''}`; by[k] = (by[k] || 0) + 1; }
@@ -958,5 +1022,5 @@ if (ARGV.has('--stats')) {
   for (const r of REFS) if (!r.c) { const k = `${r.k} → ${r.tk}`; tk[k] = (tk[k] || 0) + 1; }
   console.log(Object.entries(tk).sort().map(([k, v]) => `${String(v).padStart(7)} ${k}`).join('\n'));
   console.log(STATS.anchors, 'anchors', STATS.stackErrors.length, 'stack errors', STATS.stackErrors.slice(0, 5));
-  fs.writeFileSync('/tmp/claude-0/-home-user-civicsmith-copy/53b72b9b-955f-50e9-89b2-414bb3215ac9/scratchpad/refs.json', JSON.stringify({ REFS, TEXT_REFS, PARTIALS }));
+  fs.writeFileSync('/tmp/claude-0/-home-user-civicsmith-copy/53b72b9b-955f-50e9-89b2-414bb3215ac9/scratchpad/refs.json', JSON.stringify({ REFS, TEXT_REFS, PARTIALS, VIA, UNBOUND }));
 }
