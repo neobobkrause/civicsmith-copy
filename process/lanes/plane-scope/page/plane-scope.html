@@ -28,7 +28,7 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <p>You opened this lane on 23 November 2026 to understand the plane module and fix its scope. This page is where you read the lane's findings and choose. It will be filled in as the research is recorded.</p>
 </header>
 
-<div class="status"><b>Status, 23 Nov 2026:</b> the research is under way. The choices and the lane's recommendation will appear below once it is recorded. Development is halted on your instruction, so nothing here is being built.</div>
+<div class="status"><b>Status, 23 Nov 2026:</b> the research is recorded and the choices are below, waiting for your choice. Development is halted on your instruction, so nothing here is being built. The order of parts is ARCH's to decide and build; ARCH has this proposal too.</div>
 
 <section>
 <h2>What the plane is, in one paragraph</h2>
@@ -47,13 +47,33 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 </section>
 
 <section>
-<h2>The choices</h2>
-<p><i>Coming once the research is recorded.</i></p>
+<h2>What its tests actually are</h2>
+<p>Plane's run holds 147 tests. Only 27 check plane itself. The other 120:</p>
+<ul>
+<li><b>27</b> check how other parts behave on the real hosting program: very large files, memory, timers that wake the program.</li>
+<li><b>86</b> walk through the real front door to check other parts' promises. More than half were written for the front door's own part; the rest for the screens and a dozen others.</li>
+<li><b>7</b> odd ones, among them the check that stores saved by every earlier release still open.</li>
+</ul>
+<p><b>A correction to what I told you earlier.</b> I expected many of these tests could go back to the parts they test. The measurement says otherwise: 138 of the 147 start plane's own program, 108 of them on the real hosting runtime. They cannot move earlier than plane without testing a copy of the program instead of the real one, which would undo your ruling that anything depending on the live service is checked on the real thing.</p>
+<p>So the fault is where the tests sit, not that they exist: they belong at the end of the order, but not inside plane.</p>
 </section>
 
 <section>
-<h2>The lane's recommendation</h2>
-<p><i>Coming once the research is recorded.</i></p>
+<h2>The choices</h2>
+<h3>A. Leave them in plane, and make the run faster</h3>
+<p><b>Gives:</b> the least change. <b>Costs:</b> plane stays answerable for 120 tests about other parts. Its run stays near the limit and grows with every new whole-program test. A change to plane's few hundred lines still reruns everything.</p>
+<h3>B. Plane keeps only its own 27; the rest move to new checking parts placed right after plane</h3>
+<p>Two new parts at the end: one for behaviour on the real hosting program (with the old-stores check), one for the walks through the front door. ARCH can split them further if a run is still long.</p>
+<p><b>Gives:</b> plane's own run takes minutes. Each checking run stays well under the limit (expected from the measured shares; not yet measured). A failure lands on the part whose job is that check, which reports the faulty part to ARCH, as any work does. <b>Costs:</b> two or more new parts, and moved requirement text: ARCH's work. Each such promise is written twice, once at its owner and once as a whole-program check. The owner part's own work still does not run the whole-program check; the checking part runs it when something it uses changes, and the walks cover the rest. That the process tool spots those changes inside such a part is not yet proven.</p>
+<h3>C. Rewrite the tests so each part checks itself with stand-ins</h3>
+<p><b>Gives:</b> each part's own work proves its own promises. <b>Costs:</b> rewriting up to 86 tests, about 14,000 lines. A stand-in can drift from the real thing, so the real-program checks must stay at the end anyway. It narrows your real-hosting ruling.</p>
+</section>
+
+<section>
+<h2>The lane's recommendation: B</h2>
+<p>It returns plane to its purpose at once, takes its run far from the limit, and keeps every check on the real program, as you ruled. C stays open part by part: where a part can prove its own promise in its own tests without a stand-in that drifts, its work does so, and the whole-program check stays at the end beside it.</p>
+<p>Whichever you choose, plane's own description is corrected: it still describes work that moved to another part in October.</p>
+<p><b>Not yet known:</b> the exact run time of each new part; whether 10 of the platform tests need plane at all; and whether the 45-minute limit itself changes, which is with PROCESS and you, not this lane.</p>
 </section>
 
 <section>
