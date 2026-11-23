@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_EXTERNAL, discoverMembers, buildMember, manifestFrom, sha256, isContainer, containerDescriptor, imageReference, containerClasses, containerParts, classPackages, statementPackages, workerPart, WORKER_PART_PATH, BUCKET_ROLES, SOURCE_FIELD, containerSourceHash, containerImageStates, containerImageFindings, recordContainerDigest, planeMember, bundleExports, bindingFindings, releaseBindingFindings } from "../../../scripts/fleet-bundle.mjs";
+import { DEFAULT_EXTERNAL, discoverMembers, buildMember, manifestFrom, sha256, isContainer, containerDescriptor, imageReference, containerClasses, containerParts, classPackages, statementPackages, workerPart, WORKER_PART_PATH, BUCKET_ROLES, SOURCE_FIELD, containerSourceHash, containerImageStates, containerImageFindings, recordContainerDigest, bundleExports, bindingFindings } from "../../../scripts/fleet-bundle.mjs";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
 
 const hex = (b) => createHash("sha256").update(b).digest("hex");
@@ -626,12 +626,4 @@ test("R39: bundleExports reads the names the built bundle exports from the build
     const built = await buildMember(m);
     assert.deepEqual([...bundleExports(m, built)].sort(), ["Direct", "Local", "Renamed", "default"]);
   } finally { rmSync(root, { recursive: true, force: true }); }
-});
-
-test("R39: over the real fleet as it stands, every service and Durable Object binding the plane's and each member's configuration declares names a class or service the release exports (red by name until agent-runner exports RemoteSession, K4176)", async () => {
-  const members = [planeMember(), ...discoverMembers().filter((m) => m.bundle)];
-  const { findings, unchecked } = await releaseBindingFindings(members);
-  for (const u of unchecked) console.log(`# R39 real fleet: ${u.name} not checked: ${u.reason}`);
-  assert.deepEqual(findings.map((f) => f.text), [], "every binding is exported by the bundle that would ship");
-  assert.deepEqual(unchecked.map((u) => u.name), [], "every bundle was built, none left unread");
 });

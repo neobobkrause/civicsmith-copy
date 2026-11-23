@@ -1,77 +1,21 @@
 #!/usr/bin/env node
-/* bundles.mjs — REBUILD EVERY COMMITTED BUNDLE A SOURCE EDIT HAS STALED, AND SAY
- * WHICH ONES IT REBUILT.
+/* bundles.mjs — BUILD EVERY BUNDLE AFRESH FROM THE CHECKOUT, AND SAY WHAT IT BUILT (release R21, R46).
  *
- * M0-178, 2026-09-24. **The measured failure this closes:** `kickoffs/WORKER.md`
- * step 0 told a worker who touched `bio-plane/src/` to run `npm run build` in
- * `bio-plane/` — the PLANE's bundle and nothing else. But THREE committed bundles
- * read the plane's sources: `pdf-worker` takes `../bio-plane/src/pdfstructure.mjs`,
- * `subresources.mjs` and `cpu.mjs`, and `ocr-worker` takes `../bio-plane/src/
- * pdfstructure.mjs` behind `../pdf-worker/src/pagepixels.mjs`. So one `src` edit
- * stales three artifacts, the worker rebuilt one, and `fleetbundles.test.mjs`
- * named the other two in a red gate — a round of the battery spent on a fact the
- * instruction could have carried. Found by D-502's worker.
+ * No bundle is committed (ARCH's decision "Committed built files", 22 Nov 2026). Whatever needs one — a test, a
+ * deployment, a release — builds it from the checkout first, and this command is how: it builds the plane and every
+ * guarded fleet member into its own `dist/`, by the member's OWN build (`npm run build` in its directory, which runs
+ * its `scripts/build.mjs` and any pre-step, as `ocr-worker`'s regenerates `src/tesslib.mjs`), and then holds what that
+ * build wrote to the fleet guard: the inputs its manifest records are the tree's, the artifact imports nothing a
+ * one-part upload cannot resolve, and a second build of the same checkout gives the same bytes. It never reads,
+ * compares with or copies a bundle that was there before: the artifact and manifest are removed before each build, so
+ * nothing earlier can be taken for this build's output.
  *
- * **THE ANSWER IS NOT A LONGER INSTRUCTION.** A sentence naming three directories
- * is a list of spellings, and it goes stale the moment a fourth bundle exists or
- * a member gains an import — which is how this defect arrived in the first place.
- * So the command DERIVES the set it rebuilds, from the same two things the gate
- * derives its verdict from and never from a list kept here:
- *
- *   - `discoverMembers` — the fleet's members, by their own `fleet-member.json`
- *     marker (D-117), plus `planeMember` for the plane, which is DELIBERATELY not
- *     a marker member (FL-10) and is therefore the one entry that must be named.
- *     It is named through the library's own exported descriptor, not re-declared.
- *   - `verifyStatic` — the dependency-free staleness arm, which compares every
- *     input sha256 the committed manifest RECORDS against the file in the tree.
- *     That is precisely "whose manifest names a touched file", and it is stricter
- *     than a diff against a branch point: it answers against the bytes the bundle
- *     was actually built from.
- *
- * **IT DOES NOT DECIDE WHICH FINDINGS A REBUILD FIXES.** A table of finding
- * spellings would be a second copy of `verifyStatic`'s rules, and the second copy
- * is the one that goes stale in silence. It rebuilds what is red, then RE-READS
- * the tree and reports what is still red. A member that was red for a reason a
- * rebuild cannot cure is therefore NAMED rather than classified away.
- *
- * **A REBUILD IS REPORTED ONLY WHEN THE BYTES MOVED.** The artifact's and
- * manifest's sha256 are read before and after, so "rebuilt" is a measurement and
- * not the fact that a build command exited 0 — a build that changed nothing is
- * reported as `no change`, which is the honest answer for a comment-only edit
- * esbuild strips (measured both ways, c20-batch14).
- *
- * **HOW IT REBUILDS: `npm run build` IN THE MEMBER'S OWN DIRECTORY**, never
- * `writeMember` from here. A member may have a PRE-STEP that a direct call would
- * silently skip — `ocr-worker`'s build regenerates
- * `src/tesslib.mjs` from its vendor — and a rebuild that skipped them would leave
- * a generated source stale while reporting the bundle fresh, which is this
- * defect's own shape one layer down. `package.json`'s `build` script is the ONE
- * expression of how a member is built; this command chooses WHICH, never HOW.
- *
- * ---- WHAT IT CANNOT SEE ------------------------------------------------------
- *
- *   - A VENDORED input that is not installed. `verifyStatic` treats an absent
- *     vendored file as the normal condition of a fresh checkout, so a bundle
- *     stale only against a dependency it does not have reads FRESH here. The
- *     byte-identity arm in `fleetbundles.test.mjs` is what covers that half, and
- *     it needs the install.
- *   - A GENERATED input whose generator's input moved without the render being
- *     re-run — `src/sign-release.html` against `src/signpage.mjs`. The input
- *     hashes cannot see it (the render is what is hashed), and the gate closes
- *     that loop by re-rendering in memory. This command closes it a different
- *     way, by running the member's real build, whose pre-step re-renders; the
- *     render then moves a hashed input and the bundle is rebuilt behind it. So
- *     it is covered in the REBUILD and invisible in `--check`.
- *   - Anything outside a committed manifest. A bundle nobody guards is a bundle
- *     this command does not know exists, which is why the members are DISCOVERED
- *     and why `fleetbundles.test.mjs` floors the count.
- *
- * NEGATIVE CONTROL: driven by bundler's R21 tests, `bio-plane/test/m/bundler/release.test.mjs`
- * (a stale member rebuilt, an unmoved rebuild, a failed build).
+ * The set is DERIVED, never listed here: `discoverMembers` (bundler R1) for the fleet, by each member's own
+ * `fleet-member.json`, and `planeMember` for the plane, which has no marker and is the one entry named.
  *
  * From the repository root (bundler R21; moved from the old process's `tools/` in T19):
- *   node bio-plane/scripts/bundles.mjs              rebuild every stale bundle, say which
- *   node bio-plane/scripts/bundles.mjs --check      report only; write nothing; 0 all fresh, 1 stale
+ *   node bio-plane/scripts/bundles.mjs              build every bundle into its dist/ and check each; 0 all good, 1 any not
+ *   node bio-plane/scripts/bundles.mjs --check      build every bundle in memory and check each; writes nothing; 0 / 1
  *   node bio-plane/scripts/bundles.mjs --install-dirs
  *                    print, one per line, each directory whose `npm ci` the byte guard needs, the plane's first
  *                    (run after the plane's own `npm ci`): the release-sign workflow's install list (R30, R22)
@@ -90,33 +34,17 @@
  * assembly (`release-assemble.mjs`) then refuses `[CONTAINER_IMAGE_STALE]` for any class still outrun.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-/** @import { Member } from "./fleet-bundle.mjs" */
+/** @import { Member, Manifest, Bytes, Built } from "./fleet-bundle.mjs" */
 
 /**
- * The sha256 of a member's artifact and manifest; null where the file is absent.
- * @typedef {Object} ArtifactState
- * @property {string|null} artifact
- * @property {number|null} bytes the artifact's size
- * @property {string|null} manifest
- */
-/**
- * One guarded bundle's survey.
- * @typedef {Object} SurveyRow
- * @property {string} name
- * @property {string} dir
- * @property {Member} member
- * @property {string[]} findings each begins with the member's name
- * @property {boolean} stale true when any finding
- */
-/**
- * @typedef {Object} RebuildResult
- * @property {number|null} status the build's exit status
- * @property {string|null} error why it could not be started
- * @property {string} out its output
+ * What a member's own build wrote: the artifact and its manifest, or why there are none.
+ * @typedef {{ok: true, artifact: Bytes, manifest: Manifest, sha256: string, code?: undefined, why?: undefined}
+ *   | {ok: false, code: "BUILD_FAILED"|"NO_ARTIFACT"|"NO_MANIFEST", why: string, artifact?: undefined, manifest?: undefined, sha256?: undefined}} FreshBuild
+ * @bound sha256: 64 lower-case hex, the artifact's
  */
 /** @typedef {(line: string) => void} Log */
 
@@ -143,25 +71,11 @@ export async function library() {
 const sha = (buf) => createHash("sha256").update(buf).digest("hex");
 const readOrNull = (p) => { try { return readFileSync(p); } catch { return null; } };
 
-/** The sha256 of the two files a rebuild writes. `null` where the file is absent,
- *  which is a legitimate before-state (a bundle that was never built).
- * @param {Member} member
- * @returns {ArtifactState}
- */
-export function artifactState(member) {
-  const b = member.bundle;
-  const a = b ? readOrNull(join(member.abs, b.outfile)) : null;
-  const m = b ? readOrNull(join(member.abs, b.manifest)) : null;
-  return { artifact: a ? sha(a) : null, bytes: a ? a.length : null, manifest: m ? sha(m) : null };
-}
-
-/** Every bundle a committed manifest guards, the plane included.
+/** Every guarded bundle, the plane included.
  *
  *  `plane` is a PARAMETER rather than a probe for the plane's files, because a
- *  probe would drop the plane SILENTLY on the day its entry moved — and the
- *  plane going quietly missing from this set is the exact defect the command
- *  exists for. The CLI always passes `true`; only a suite driving a synthetic
- *  repository root passes `false`, and it says so where it does.
+ *  probe would drop the plane SILENTLY on the day its entry moved. The CLI always
+ *  passes `true`; only a suite driving a synthetic repository root passes `false`.
  * @param {string|null} repoRoot absent is the repository's own root
  * @param {{plane?: boolean}} [options]
  * @returns {Promise<Member[]>} sorted by name
@@ -169,7 +83,7 @@ export function artifactState(member) {
 export async function guardedBundles(repoRoot, { plane = true } = {}) {
   const lib = await library();
   const root = repoRoot || lib.REPO_ROOT;
-  /* A container member with no Worker bundle (R24) has no bundle to survey; `run` names it as listed, not guarded. */
+  /* A container member with no Worker bundle (R24) has no bundle to build; `run` names it as listed, not guarded. */
   const all = [...lib.discoverMembers(root).filter(lib.isGuarded), ...(plane ? [lib.planeMember(root)] : [])];
   return all.sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -185,38 +99,56 @@ export async function unguardedMembers(repoRoot) {
 }
 
 /**
- * Ask the dependency-free arm of the gate about every guarded bundle.
- * @param {Member[]} members
- * @returns {Promise<SurveyRow[]>}
- */
-export async function survey(members) {
-  const lib = await library();
-  return members.map((m) => {
-    const { findings } = m.bundle ? lib.verifyStatic(m) : { findings: [`${m.name}: declares no \`bundle\` block in fleet-member.json, so there is no artifact to rebuild.`] };
-    return { name: m.name, dir: m.dir, member: m, findings, stale: findings.length > 0 };
-  });
-}
-
-/** Run the member's OWN build. Returns its exit status and its output, both
- *  read from the process rather than from a wrapper (a `&&` chain reports the
- *  wrapper's status, which is how a killed test run reads green).
+ * R46: build one bundle afresh into its member's `dist/` by the member's own `npm run build`, after removing the
+ * artifact and manifest a build writes, and read back what this build wrote. Its exit status and output are the
+ * process's own (a `&&` chain reports the wrapper's status, which is how a killed run reads green).
  * @param {Member} member
  * @param {{log?: Log}} [options]
- * @returns {RebuildResult}
+ * @returns {FreshBuild}
  */
-export function rebuildMember(member, { log = console.log } = {}) {
+export function buildFresh(member, { log = () => {} } = {}) {
+  const b = member.bundle;
+  if (!b) return { ok: false, code: "NO_ARTIFACT", why: "declares no `bundle` block, so it has no build of its own" };
+  const artifactPath = join(member.abs, b.outfile), manifestPath = join(member.abs, b.manifest);
+  rmSync(artifactPath, { force: true });
+  rmSync(manifestPath, { force: true });
   const r = spawnSync("npm", ["run", "build"], { cwd: member.abs, encoding: "utf8" });
   const out = [r.stdout || "", r.stderr || ""].join("").trimEnd();
   if (out) for (const line of out.split("\n")) log(`         | ${line}`);
-  return { status: r.status, error: r.error ? r.error.message : null, out };
+  if (r.status !== 0)
+    return { ok: false, code: "BUILD_FAILED", why: `its build (npm run build in ${member.dir}/) exited ${r.status}`
+      + `${r.error ? ` (${r.error.message})` : ""}${out ? `: ${out.split("\n").slice(-3).join(" / ")}` : ""}` };
+  const artifact = readOrNull(artifactPath);
+  if (!artifact) return { ok: false, code: "NO_ARTIFACT", why: `its build exited 0 and wrote no ${b.outfile}` };
+  const manifest = readOrNull(manifestPath);
+  if (!manifest) return { ok: false, code: "NO_MANIFEST", why: `its build exited 0 and wrote no ${b.manifest}` };
+  return { ok: true, artifact, manifest: JSON.parse(manifest.toString("utf8")), sha256: sha(artifact) };
 }
 
 /**
- * R21: survey every guarded bundle and, unless `check`, rebuild each stale one by its own build.
+ * The fleet guard over a build just written: bundler's `verifyStatic` over the files it wrote (its inputs are the
+ * tree's, it is installable, its manifest agrees with it), then a second build of the same checkout, in memory, that
+ * must give the same bytes (`verifyFresh`). Never writes.
+ * @param {Member} member
+ * @param {Bytes} artifact the bytes the member's build wrote
+ * @returns {Promise<{findings: string[], built: Built|null, unchecked: string|null}>}
+ */
+export async function checkBuilt(member, artifact) {
+  const lib = await library();
+  const findings = [...lib.verifyStatic(member).findings];
+  const fresh = await lib.verifyFresh(member, artifact);
+  if (!fresh.checked) return { findings, built: null, unchecked: fresh.reason };
+  return { findings: [...findings, ...fresh.findings.filter((f) => !findings.includes(f))], built: fresh.built, unchecked: null };
+}
+
+/**
+ * R21, R46: build every guarded bundle afresh and check each. With `check`, each is built in memory only and nothing
+ * is written; otherwise each is built into its `dist/` by its own build and that build is checked.
  * @param {{repoRoot?: string|null, check?: boolean, plane?: boolean, log?: Log}} [options]
- * @returns {Promise<0|1>} 0 none stale (or all rebuilt fresh), 1 otherwise
+ * @returns {Promise<0|1>} 0 when every bundle built and passed, 1 otherwise
  */
 export async function run({ repoRoot = null, check = false, plane = true, log = console.log } = {}) {
+  const lib = await library();
   const members = await guardedBundles(repoRoot, { plane });
   log(`bundles: ${members.length} guarded bundle(s) — ${members.map((m) => m.name).join(", ")}`);
   const listed = await unguardedMembers(repoRoot);
@@ -224,60 +156,32 @@ export async function run({ repoRoot = null, check = false, plane = true, log = 
     log(`bundles: ${listed.length} container member(s) listed, not bundle-guarded (no Worker bundle) — `
       + listed.map((m) => m.name).join(", "));
 
-  const before = await survey(members);
-  for (const r of before) for (const f of r.findings) log(`         ! ${f}`);
-
-  const stale = before.filter((r) => r.stale);
-  if (!stale.length) {
-    log(`bundles: every guarded bundle is fresh — nothing to rebuild.`);
-    return 0;
+  /** @type {{name: string, why: string}[]} */
+  const bad = [];
+  for (const m of members) {
+    if (!m.bundle) { bad.push({ name: m.name, why: "declares no `bundle` block, so it has no build of its own" }); continue; }
+    if (check) {
+      /* In memory: the same recipe the member's build runs, with nothing written. */
+      let built;
+      try { built = await lib.buildMember(m); }
+      catch (e) { bad.push({ name: m.name, why: `it does not build: ${String(e instanceof Error ? e.message : e).split("\n")[0]}` }); continue; }
+      const unresolved = lib.unresolvableSpecifiers(built.bytes.toString("utf8"), m.bundle.external || lib.DEFAULT_EXTERNAL);
+      if (unresolved.length) { bad.push({ name: m.name, why: `its build imports ${unresolved.join(", ")}, which a one-part upload cannot resolve` }); continue; }
+      log(`bundles: ${m.name} — builds ${built.bytes.length} B, sha256 ${built.sha256} (in memory; nothing written)`);
+      continue;
+    }
+    log(`bundles: building ${m.name} (npm run build in ${m.dir}/)`);
+    const res = buildFresh(m, { log });
+    if (!res.ok) { bad.push({ name: m.name, why: res.why }); continue; }
+    const { findings, unchecked } = await checkBuilt(m, res.artifact);
+    if (unchecked) { bad.push({ name: m.name, why: `a second build could not run to check it: ${unchecked}` }); continue; }
+    for (const f of findings) log(`         ! ${f}`);
+    if (findings.length) { bad.push({ name: m.name, why: `${findings.length} finding(s) above` }); continue; }
+    log(`bundles: ${m.name} — BUILT ${m.bundle.outfile} ${res.artifact.length} B, sha256 ${res.sha256}; a second build gives the same bytes`);
   }
-  log(`bundles: ${stale.length} of ${members.length} bundle(s) are STALE — ${stale.map((r) => r.name).join(", ")}`);
-  if (check) {
-    log(`bundles: --check, so nothing was rebuilt. Run \`node bio-plane/scripts/bundles.mjs\` to rebuild them.`);
-    return 1;
-  }
-
-  /* Rebuild, and MEASURE the rebuild: a build command that exits 0 having
-     changed nothing has not rebuilt anything, and saying otherwise is the
-     mechanism-believed-on-its-existence claim this estate meets most. */
-  const moved = [], unmoved = [], failed = [];
-  for (const r of stale) {
-    if (!r.member.bundle) { failed.push({ name: r.name, why: "declares no `bundle` block, so no build step of its own" }); continue; }
-    const was = artifactState(r.member);
-    log(`bundles: rebuilding ${r.name} (npm run build in ${r.dir}/)`);
-    const res = rebuildMember(r.member, { log });
-    if (res.status !== 0) { failed.push({ name: r.name, why: `its build exited ${res.status}${res.error ? ` (${res.error})` : ""}` }); continue; }
-    const now = artifactState(r.member);
-    /* **THE TWO HALVES ARE REPORTED SEPARATELY, AND MEASUREMENT IS WHY.** Run on
-       2026-09-24 against an unused export appended to `bio-plane/src/cpu.mjs`, all
-       three stale bundles came back with the ARTIFACT BYTE-IDENTICAL and only the
-       MANIFEST moved: esbuild TREE-SHAKES an unused export out of a non-entry
-       module (FL-9's own measurement, which is why the input-hash arm is the
-       load-bearing one). The bundle was genuinely stale and the rebuild genuinely
-       needed, so a line reading `sha256 X (was X)` would have been true and
-       unreadable. Say which half moved. */
-    const artifactMoved = now.artifact !== was.artifact;
-    const manifestMoved = now.manifest !== was.manifest;
-    const changed = artifactMoved || manifestMoved;
-    (changed ? moved : unmoved).push({ name: r.name, was, now, artifactMoved, manifestMoved });
-    log(`bundles: ${r.name} — ${changed ? "REBUILT" : "rebuilt, NOTHING MOVED"} ${r.member.bundle.outfile}`
-      + ` ${now.bytes} B — artifact ${artifactMoved ? `sha256 ${now.artifact} (was ${was.artifact ?? "absent"})` : "BYTE-IDENTICAL"}`
-      + `, manifest ${manifestMoved ? "moved" : "unchanged"}`);
-  }
-
-  /* THE POSITIVE ARTIFACT: the tree is READ AGAIN. The rebuild's own exit status
-     is not the evidence — the staleness being gone is. */
-  const after = await survey(members);
-  const left = after.filter((r) => r.stale);
-  for (const r of left) for (const f of r.findings) log(`         ! STILL ${f}`);
-
-  log(`bundles: ${moved.length} rebuilt${moved.length ? ` (${moved.map((m) => m.name).join(", ")})` : ""}`
-    + `, ${unmoved.length} already byte-identical`
-    + `, ${members.length - stale.length} already fresh`
-    + `, ${left.length} STILL STALE${left.length ? ` (${left.map((r) => r.name).join(", ")})` : ""}`
-    + `${failed.length ? `, ${failed.length} could not be rebuilt (${failed.map((f) => `${f.name}: ${f.why}`).join("; ")})` : ""}`);
-  return left.length || failed.length ? 1 : 0;
+  log(`bundles: ${members.length - bad.length} of ${members.length} built${check ? " in memory" : ""} and checked`
+    + (bad.length ? `; ${bad.length} NOT (${bad.map((x) => `${x.name}: ${x.why}`).join("; ")})` : ""));
+  return bad.length ? 1 : 0;
 }
 
 /** R30's second step: the directories, besides the plane's, a checkout must `npm ci` in before a release can be

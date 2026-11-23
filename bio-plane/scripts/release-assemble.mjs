@@ -23,10 +23,12 @@
  *
  * ---- THE THREE REFUSALS ----------------------------------------------------
  *
- *  1. EVERY ASSET IS PROVED FRESH, by FL-9/FL-10's guard rather than by a
- *     second implementation of it (D-112: one path, no drift). `verifyFresh`
- *     builds each member from source with write:false and byte-compares against
- *     the artifact read from disk BEFORE the build. A stale artifact REFUSES.
+ *  1. EVERY ASSET IS BUILT AFRESH FROM THE CHECKOUT AND PROVED, by FL-9/FL-10's
+ *     guard rather than by a second implementation of it (D-112: one path, no
+ *     drift). Each member's own build writes its bundle into its `dist/` (R46: no
+ *     bundle is committed, and none that was there before is read); `verifyFresh`
+ *     then builds it a second time with write:false and byte-compares, so a build
+ *     that does not give the same bytes twice REFUSES.
  *     It also answers, from the build's own metafile, whether the output still
  *     imports anything a one-part script upload cannot resolve — which is
  *     precisely the installer's constraint, so the guard that protects the
@@ -122,7 +124,8 @@
  * Signatures made elsewhere complete a release the same way, without the seed:
  *   node bio-plane/scripts/release-assemble.mjs --version <V> --fleet-sig <file> --plane-sig <file> --notice-sig <file>
  *
- * Every run reads the release's notes from `release/notes/<V>.json`, `{date, security, notes: {members,
+ * Every run first builds each asset afresh into its member's `dist/` by the member's own build (R46); `--dry-run`
+ * writes nothing else. Every run reads the release's notes from `release/notes/<V>.json`, `{date, security, notes: {members,
  * administrators, must_do}}`, and refuses NO_NOTES or NOTES_UNREADABLE before anything is written (R32).
  *
  * usage (bundler R22, R23, R30, R32; moved from the old process's `tools/` in T19), from the repository root:
@@ -147,6 +150,7 @@ import { NS_FLEET, fleetStatement, NS_RELEASE_NOTICE, releaseNoticeStatement } f
 import { parseJsonc } from "./jsonc.mjs";
 import { resolveVersion } from "./resolve-version.mjs";
 import { signSshsig, signerPublicLine } from "./sign-sshsig.mjs";   /* signatures' release signer (its R33, R35) */
+import { buildFresh } from "./bundles.mjs";
 
 const argv = process.argv.slice(2);
 const flag = (n) => { const i = argv.indexOf(n); return i === -1 ? null : (argv[i + 1] ?? ""); };
@@ -274,13 +278,15 @@ for (const m of members) {
     bytes: w.part.bytes.length, data: w.part.bytes });
 }
 
-function committedArtifact(m) {
-  const p = join(m.abs, m.bundle.outfile);
-  /* The fleet's one rebuild command (N31, bundler R21), as every staleness finding names it: it builds
-     each member by its own `npm run build`, pre-steps included, and says which it rebuilt. */
-  if (!existsSync(p)) die("NO_ARTIFACT", `${m.name} has no committed ${m.bundle.outfile}.`,
-    "Run `node bio-plane/scripts/bundles.mjs` from the repository root, and commit the artifacts.");
-  return readFileSync(p);                      // read BEFORE any build runs
+/* R46: EVERY ASSET IS BUILT AFRESH FROM THIS CHECKOUT, here, by the member's own build (`npm run build` in its
+   directory, pre-steps included), into its own `dist/`, and that build is what the release carries. No bundle is
+   committed, and nothing that was in `dist/` before is read: `buildFresh` removes the artifact and manifest first. */
+function freshArtifact(m) {
+  const res = buildFresh(m, { log: (l) => console.log(l) });
+  if (!res.ok) die(res.code, `${m.name}: ${res.why}.`,
+    "Every asset a release carries is built from the checkout by the member's own build. Make the member build\n"
+    + "(`npm run build` in its directory, after `npm ci` there), then assemble again.");
+  return res;
 }
 
 console.log("assets discovered:");
@@ -291,11 +297,7 @@ for (const m of all) console.log(`   ${m.name.padEnd(14)} ${m.bundle.outfile}`);
 const entries = [];
 const bindingUnits = [];   /* R39: each member's configuration and the names its fresh bundle exports */
 for (const m of all) {
-  const committed = committedArtifact(m);
-  const manifestPath = join(m.abs, m.bundle.manifest);
-  const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : null;
-  if (!manifest) die("NO_MANIFEST", `${m.name} has no ${m.bundle.manifest}.`,
-    "The bundle manifest carries the input hashes the guard reads. Rebuild the member.");
+  const { artifact, manifest } = freshArtifact(m);
 
   const runnable = freshBuildRunnable(m, manifest);
   if (!runnable.runnable) {
@@ -308,7 +310,7 @@ for (const m of all) {
       runnable.reason);
   }
 
-  const { checked, reason, findings, built } = await verifyFresh(m, committed);
+  const { checked, reason, findings, built } = await verifyFresh(m, artifact);
   /* The build itself can fail here with every vendored input present: that is
      the same skipped guard, never a pass (R7). */
   if (!checked) die("GUARD_CANNOT_RUN",
@@ -318,9 +320,9 @@ for (const m of all) {
     die("STALE_OR_UNINSTALLABLE", `${m.name} did not pass the fleet build guard.`,
       findings.map((f) => "  - " + f).join("\n"));
   }
-  if (sha256(committed) !== manifest.sha256) {
+  if (sha256(artifact) !== manifest.sha256) {
     die("MANIFEST_DISAGREES", `${m.name}: ${m.bundle.manifest} records ${manifest.sha256.slice(0, 16)}… `
-      + `but the artifact hashes ${sha256(committed).slice(0, 16)}….`,
+      + `but the artifact hashes ${sha256(artifact).slice(0, 16)}….`,
       "The manifest and the artifact must be written by the same build.");
   }
   /* The member's DECLARED service bindings, taken from its own config and
@@ -367,7 +369,7 @@ for (const m of all) {
      hashes them. An installer that uploaded only the bundle would deploy a
      member that fails at runtime with no engine, and the release would have
      SAID it was complete. Each part is hashed HERE and the hash is required to
-     match the committed manifest, so the guard's reading and the release's
+     match the artifact manifest, so the guard's reading and the release's
      reading cannot diverge. */
   const parts = [];
   for (const rel of m.bundle.assets || []) {
@@ -418,10 +420,10 @@ for (const m of all) {
     console.log(`       + ${parts.length} upload part(s): `
       + parts.map((x) => `${x.path} (${x.bytes} B)`).join(", "));
   }
-  entries.push({ member: m.name, asset: `${m.name}.bundled.mjs`, sha256: sha256(committed),
-                 bytes: committed.length, from: join(m.abs, m.bundle.outfile), services, parts,
+  entries.push({ member: m.name, asset: `${m.name}.bundled.mjs`, sha256: sha256(artifact),
+                 bytes: artifact.length, from: join(m.abs, m.bundle.outfile), services, parts,
                  ...(compat ? { compat } : {}) });
-  console.log(`guard: ${m.name} fresh — ${built.bytes.length} B, sha256 ${sha256(committed).slice(0, 16)}…`);
+  console.log(`guard: ${m.name} fresh — ${built.bytes.length} B, sha256 ${sha256(artifact).slice(0, 16)}…`);
 }
 
 /* ---- REFUSAL 1b: THE RELEASE IS COHERENT (R39; K4176) --------------------------------------------------------
@@ -582,8 +584,8 @@ if (EMIT_PLANE) { copyFileSync(planeEntry.from, EMIT_PLANE); console.log(`plane 
 if (EMIT_NOTICE) { writeFileSync(EMIT_NOTICE, noticeStatement); console.log(`notice statement written to ${EMIT_NOTICE}`); }
 
 if (DRY) {
-  console.log(`\n--dry-run: nothing written. A release cut now would carry ${entries.length} assets `
-    + `at ${version}, all proved fresh against this tree, and its notice from ${notesRel}.`);
+  console.log(`\n--dry-run: nothing written to release/ (each bundle was built into its own dist/, R46). A release cut now `
+    + `would carry ${entries.length} assets at ${version}, each built afresh from this checkout, and its notice from ${notesRel}.`);
   process.exit(0);
 }
 
