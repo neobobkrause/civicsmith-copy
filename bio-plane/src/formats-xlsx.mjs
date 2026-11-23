@@ -702,12 +702,23 @@ function offsetAccess() {
   };
 }
 
-/* G178 (R46): the text is encoded once and written once; only the compressed chunks are collected (no Blob of the text, no
-   Response collecting a second whole). */
+/* G178 (R46): the text is encoded and written a window at a time, never as one whole copy of its bytes; only the compressed
+   chunks are collected (no Blob of the text, no Response collecting a second whole). A window never ends between the two
+   halves of a surrogate pair, so the bytes are the text's. */
 const TEXT_ENC = new TextEncoder();
+const DEFLATE_WINDOW_CHARS = 1 << 14;
 async function deflateText(s) {
   const cs = new CompressionStream("deflate-raw");
-  const writing = (async () => { const w = cs.writable.getWriter(); await w.write(TEXT_ENC.encode(s)); await w.close(); })();
+  const writing = (async () => {
+    const w = cs.writable.getWriter();
+    for (let at = 0; at < s.length;) {
+      let end = Math.min(at + DEFLATE_WINDOW_CHARS, s.length);
+      if (end < s.length && (s.charCodeAt(end - 1) & 0xfc00) === 0xd800) end--;
+      await w.write(TEXT_ENC.encode(s.slice(at, end)));
+      at = end;
+    }
+    await w.close();
+  })();
   const chunks = [];
   let size = 0;
   const reader = cs.readable.getReader();
@@ -1340,7 +1351,7 @@ async function xlsxText(parts, opts) {
   const cap = inlineCellsCap(opts);
   let held = false, listedBytes = 0;
   const walkedOut = [];
-  const sink = textSink((parts.declared?.total ?? 0) / 4);
+  const sink = textSink();
   const spans = [];
   /* R44: the typed cells a read holds at once are bounded by the table's retained-objects figure: a read that would
      hold more is refused, by name and with its figure. */
