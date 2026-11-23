@@ -117,12 +117,14 @@ t("ARMED: every release in the list, and every withdrawn path, is a fixture", Ob
  *    the current plane.
  * ================================================================== */
 /* The stores are independent (each its own copy and its own miniflare), and a plane's boot is prepared on its process's one main
-   thread, so the stores are booted in up to four child processes side by side (`../m/plane/migrate-released-runner.mjs`), to keep the
+   thread, so the stores are booted in two child processes side by side (`../m/plane/migrate-released-runner.mjs`), to keep the
    run inside the required run's bound (plane's tests "complete yet fast and efficient"). Each child records every check of its stores
    and the suite prints them all here, in the order of LABELS, exactly as a one-at-a-time run prints them; a child that fails to answer
    is a failure named with its stores. */
 const runs = LABELS.filter((label) => FIX[label]);
-const share = Math.max(1, Math.min(4, availableParallelism(), runs.length));
+/* two at a time: with the plane booted from its built bundle most of the saving is made, and more processes beside the module's other
+   load-sensitive files (r8-wave's derivation count, R46's memory probe) pushed one of them over in the required run (23 Nov 2026) */
+const share = Math.max(1, Math.min(2, availableParallelism(), runs.length));
 const work = mkdtempSync(join(tmpdir(), "rec143-runs-"));
 writeFileSync(join(work, "fresh.json"), JSON.stringify(FRESH));
 const RUNNER = fileURLToPath(new URL("../m/plane/migrate-released-runner.mjs", import.meta.url));
