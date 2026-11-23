@@ -24,6 +24,9 @@ import { inquiryOps } from "../../../src/inquiry/index.mjs";
 import { progressionOps } from "../../../src/progressions/index.mjs";
 import { filingsOps } from "../../../src/filings/index.mjs";
 import { actionRecordsOps } from "../../../src/action-records/index.mjs";
+/** @param {string} op @returns {readonly string[]} the op's session classes, asserted to be a list, so a negative check is never
+ *  passed by a missing one */
+const classesOf = (op) => { const c = O.OPS[op].classes; assert.ok(Array.isArray(c), `${op}: classes is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_KINDS, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS,
         UNATTENDED_BY_DECISION, ACT_GATE, ACT_HELP_ABSENT, CAPTURE_VIEWER_ACTIONS, CAPTURE_MEMBER_ACTIONS } = O;
@@ -32,7 +35,7 @@ const MP = ["admin", "member", "probe"];
 const plain = (s) => JSON.parse(JSON.stringify(s));
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
 const ground = (op) => Object.entries(ACT_HELP_ABSENT).filter(([, g]) => g.ops.includes(op)).map(([k]) => k);
@@ -128,7 +131,7 @@ test("R73, R2 (T50): an ai credential is refused each member, own and ownread op
   for (const op of [...ACTS_PLAIN, ...OWNREADS]) {
     assert.deepEqual(OPS[op].machineClasses, [], `${op}: machineClasses`);
     assert.deepEqual(machineAdmits(op), [], `${op}: a bearer or an ai credential is admitted`);
-    assert.ok(!OPS[op].classes.includes("ai") && !OPS[op].classes.includes("probe") && !OPS[op].classes.includes("daemon"), op);
+    assert.ok(!classesOf(op).includes("ai") && !classesOf(op).includes("probe") && !classesOf(op).includes("daemon"), op);
   }
   for (const op of Object.keys(T50)) assert.ok(!JSON.stringify(OPS[op]).includes('"ai"'), `${op}: names ai`);
   /* the owners-kind act and the reads are not session-only by class, but still name no ai */
@@ -188,7 +191,7 @@ test("R73 (T50; action-records R17, R19): actionstake and actioninquiry are a jo
   assert.ok(await reaches(actionRecordsOps, "actionstake", { body: { stake: SENT } }), "stake");
   assert.ok(await reaches(actionRecordsOps, "actioninquiry", { body: { action: SENT } }), "action");
   assert.ok(await reaches(actionRecordsOps, "actioninquiry", { body: { question: SENT } }), "question");
-  assert.equal(OP_FAMILIES["action-records"].actor.key, "author");
+  assert.equal(OP_FAMILIES["action-records"].actor?.key, "author");
   assert.deepEqual(familyOf("actionstake"), ["action-records"]);
   assert.equal(NEEDS.actionstake, "contribute");
   assert.equal(NEEDS.actioninquiry, "contribute");

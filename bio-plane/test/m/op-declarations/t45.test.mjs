@@ -44,7 +44,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
   .concat([["PLAN_RUN_SCOPE.reads", PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
@@ -260,7 +260,7 @@ test("R49, R2, R4 (K2820, K2824; agent-worker R78): a planning run's agent crede
   for (const op of ["action", "reading", "procedureguides"]) {
     assert.ok(PLAN_RUN_SCOPE.reads.includes(op), op);
     assert.equal(OPS[op].mutating, false, op);
-    assert.ok(OPS[op].classes.includes("member") && !("machineClasses" in OPS[op]), op);
+    assert.ok(OPS[op].classes?.includes("member") && !("machineClasses" in OPS[op]), op);
   }
   assert.ok(!PLAN_RUN_SCOPE.writes.some((op) => Object.hasOwn(R49, op)));
   /* negative control */

@@ -96,7 +96,7 @@ import { queueProducersOf } from "../queue-producers/index.mjs";
 import { machineryProducersOf } from "../machinery-producers/index.mjs";
 import { actionProducersOf } from "../action-producers/index.mjs";
 import { tasksOf } from "../tasks/index.mjs";
-import { wizardScriptsOf, wizardScriptsOps, SCREEN_REGISTRY } from "../wizard-scripts/index.mjs";
+import { wizardScriptsOf, wizardScriptsOps } from "../wizard-scripts/index.mjs";
 import { translationsOf, translationsOps } from "../translations/index.mjs";
 import { instanceSetupOf, instanceSetupOps, disclosureReadOf, DISCLOSURE_READER } from "../setup.mjs";
 import { dispatch, controlPlaneRoutes } from "../store-door/dispatch.mjs";   /* K1907, K2041: the store's door */
@@ -327,10 +327,7 @@ export function assembleStore(ctx, env, { deliver = null, releaseKeys = null } =
      whose `relations()` and `zone()` answers reads itself, K1788, K1803) and the account reads. R33 (K2500): no
      `ceilingRefusal`: answers judges a limit through ai-use's `useCheck` on its own host (its R30). */
   answersOf(ctx, { standards, content: contentOf(ctx), events, entities: entitiesOf(ctx), lines, people, duties,
-    calculations, retrieval, credentials: credentialsOf(ctx),
-    /* R24 (T51; K3807): the one registry, wizard-scripts' `SCREEN_REGISTRY` (the design's), for its explain read; the plane
-       carries none of its own. */
-    screens: SCREEN_REGISTRY });
+    calculations, retrieval, credentials: credentialsOf(ctx) });   /* R23: answers is handed no screens registry */
   /* reevaluation before actions: actions reaches conformance, which reaches reevaluation, and a factory reads its
      `deps` on the first call only, so created there it would never see `env` (its R25). */
   reevaluationOf(ctx, { env, acceptedWork, calculations });

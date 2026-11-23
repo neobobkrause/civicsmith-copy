@@ -38,7 +38,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
   .concat([["PLAN_RUN_SCOPE.reads", PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
@@ -296,6 +296,7 @@ test("R67, R2–R4, R6 (N1026, K3206; ai-use R14): aiuseovertime is a session's 
 });
 
 test("R67, R2–R4, R6 (N1027, N1029, N1030, N1035; explore R21, standards R57, filings R59, action-holds R16): exploregraph, standardproposals, filingread and pressurefor are reads in their owners' families — admin, member and probe, not mutating, NEEDS null, viewer stamped — served by the owners' maps with the fields the requirement names (explore's from the body, the others' from the query; filingread's filing from either) (negative control: a body viewer does not reach, a read is no act)", async () => {
+  /** @type {Array<[string, string, any, Array<[string, string[]]>]>} each case: the op, its family, its owner's map, the fields that reach it */
   const CASES = [
     ["exploregraph", "explore", exploreOps, [["body", ["centre", "at", "rings", "kinds", "scope"]]]],
     ["standardproposals", "standards", standardsOps, [["query", ["project", "state", "after", "limit"]]]],
@@ -544,7 +545,7 @@ test("R70, R56 (N1045; K3150): sourceof's control holds at the door because this
   assert.equal(NEEDS[op], null);
   /* a viewer-stamped read of SOURCE_READS, whose stamp the act list gives (R4), not a family */
   assert.equal(stamps(op), null);
-  assert.ok(O.SOURCE_READS.includes(op) && O.SESSION_SOURCE_READS === undefined);
+  assert.ok(O.SOURCE_READS.includes(op) && !Object.hasOwn(O, "SESSION_SOURCE_READS"));
   assert.ok(both(op) && ACT_GATE.mode(op) === "session");
   assert.ok(!PLAN_RUN_SCOPE.reads.includes(op) && !PLAN_RUN_SCOPE.writes.includes(op), "on the planning run's task scope");
   assert.ok(!AI_GRANT_OPS.includes(op) && !O.ASK_GRANT_OPS.includes(op), "on a grant's list");
@@ -568,9 +569,10 @@ test("R64, R66, R67, R68, R5, R7: t48.mjs is frozen data — each share names an
       assert.ok(Object.hasOwn(O.OP_KINDS, k), `${op}: ${k}`);
       assert.equal(OP_FAMILIES[owner].kinds[op], k, op);
     }
-    for (const op of Object.keys(share.extra ?? {})) {
+    const extra = share.extra ?? {};
+    for (const op of Object.keys(extra)) {
       assert.ok(Object.hasOwn(share.ops, op), `${owner}: an extra on ${op}`);
-      assert.ok(Object.isFrozen(share.extra[op]), op);
+      assert.ok(Object.isFrozen(extra[op]), op);
     }
   }
   for (const f of T48_FAMILIES) {

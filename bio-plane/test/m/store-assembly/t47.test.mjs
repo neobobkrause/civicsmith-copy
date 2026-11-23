@@ -127,7 +127,7 @@ test("R49 (T47; K3089; answers R35, R30): a grant the draft path minted whose fi
   assert.equal(instanceSetupOf(x.ctx).disclosureShown({ member: "member:ann", version: ASSISTANT_DISCLOSURE.version, by: "member:ann" }).ok, true);
   assert.equal((await c.accountReferenceSet({ member: "member:ann", kind: "apikey", secret: "sk-ant-zz-ann", by: "member:ann" })).ok, true);
   assert.equal((await c.accountUsesSet({ owner: "member:ann", switch: "suggestions", on: true, by: "member:ann" })).ok, true);
-  assert.equal(answersOf(x.ctx).ruleServicesSwitch({ on: true, by: "member:ada" }).ok, true);
+  assert.equal(Object(answersOf(x.ctx).ruleServicesSwitch({ on: true, by: "member:ada" })).ok, true);
   const d = await (await draftOnObject(x.ctx, x.env, { op: "writinghelp", member: "ann", session: SESSION, told: "t", act: "conclude", field: "reason" })).json();
   assert.match(d.grant, /^[0-9a-f]{64}$/, JSON.stringify(d));
   const rule = (grant) => x.fetch("/rule?service=profiles&viewer=member:ann&use=ask", { method: "POST", headers: { "x-bio-grant": grant }, body: "{}" });
