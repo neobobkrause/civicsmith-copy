@@ -27,7 +27,9 @@ test("R64 R36 (the real plane) a GIF the plane stored as UNSUPPORTED_FORMAT is d
 });
 
 test("R64 R36 every kind reading-pipeline names has its own sentence, drawn from the word table; the screen lists its keys", () => {
-  const keys = SCREENS.find((s) => s.id === "capture").words;
+  const capture = SCREENS.find((s) => s.id === "capture");
+  assert.ok(capture, "the capture screen is registered");
+  const keys = capture.words;
   const cs = { w: (k, v) => (hasWord(k) ? word(k, v) : k), esc: (x) => String(x) };
   const seen = new Set();
   for (const kind of KINDS) {

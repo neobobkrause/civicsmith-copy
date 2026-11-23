@@ -156,6 +156,7 @@ test("R1 R96 G1 (the real plane) a PDF cut short (A5b): the page draws what the 
 });
 
 const notesOf = (reading) => (reading.reading && reading.reading.recovery_notes) || reading.recovery_notes || [];
+/** @returns {Record<string, string>} */
 const NOTE_VARS = (n) => (n.note === "pages_missing" ? { missing: String(n.missing), of: String(n.of) } : {});
 
 test("R9 R62 (the real plane) a PDF cut at 70 per cent: each recovery note the reading lists is drawn by the design's key, with the pages missing and the total; a sound PDF draws none", async () => {

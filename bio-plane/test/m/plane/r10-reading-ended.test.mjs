@@ -45,7 +45,7 @@ test("R1 (notice-producers R29, the reading-ended seam): the real job table answ
     assert.ok(Number.isFinite(r.ended_at), "ended_at is epoch milliseconds");
     for (const k of ["written", "skipped", "owed", "failed"]) assert.ok(Number.isInteger(r[k]) && r[k] >= 0, k);
   }
-  const by = (name) => all.rows.find((r) => r.sha === sha(name));
+  const by = (name) => { const r = all.rows.find((x) => x.sha === sha(name)); assert.ok(r, `a row for ${name}`); return r; };
   assert.deepEqual([by("refused").state, by("refused").why, by("refused").member], ["refused", "pdf.bytes", "member:m1"], "a refusal's why is its bound key");
   assert.deepEqual([by("finished").state, by("finished").why, by("finished").member], ["finished", null, "member:m1"]);
   assert.deepEqual([by("final").state, by("final").why, by("final").member], ["final", answerFinal.why, "member:m2"], "a final row's why is the reader's reason");

@@ -64,7 +64,7 @@ function stated(res, n) {
 const fetch = Object.assign(async function fetch(req, env, ctx) {
   logArrival(req);   /* R24 (d): an upload's arrival, stated before anything is awaited */
   const tally = { n: 0 };
-  const res = await door(req, counted(env, tally), ctx);
+  const res = await door(req, counted(env, tally));   /* control-plane's door takes the request and its env (PlaneDoor) */
   return stated(res, tally.n);
 }, door);
 

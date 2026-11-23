@@ -46,7 +46,7 @@ for (const [label, extra, naming, options] of SETTINGS) {
     assert.deepEqual(calls.map((c) => c.name).sort(), [naming("bio"), naming("scratch")], "the watchdog asks both rooms");
     const asked = recorder(extra);
     const member = { req: new Request("http://x/api/?op=ask", { method: "POST", body: JSON.stringify({ question: "q" }) }), url: new URL("http://x/api/?op=ask"), env: asked.env,
-                     viaSession: true, sessMember: "ann", sessViewer: "member:ann" };
+                     viaSession: true, sessMember: "ann", sessViewer: "member:ann", grantMember: null };   /* store-services' askOp: no grant presented */
     await askOp(member);
     await actionDraftOp({ ...member, op: "infractiondraft", req: new Request("http://x/api/?op=infractiondraft", { method: "POST", body: JSON.stringify({ matter: "m", audience: "a" }) }) });
     assert.deepEqual(asked.calls.map((c) => c.name), [naming("bio"), naming("bio")], "the ask and the draft door ask the bio room");
