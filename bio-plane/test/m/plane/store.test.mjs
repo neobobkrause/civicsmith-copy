@@ -59,6 +59,20 @@ test("R1: the class holds no construction, route map or frame of its own: its me
   assert.ok(res.headers.get("server-timing").startsWith("object;dur="), "the class stamps its I/O time on the frame's answer");
 });
 
+test("R111: the RPCs `ask` and `draft` answer store-assembly's `askOnObject` and `draftOnObject` for the object they are called on, `draft` reading through the assembled store's `read`", async () => {
+  const { askOnObject, draftOnObject } = await import("../../../src/store-assembly/index.mjs");
+  const x = await store();
+  const seen = async (res) => ({ status: res.status, body: await res.text() });
+  for (const args of [{}, { member: "member:ann", question: "q" }])
+    assert.deepEqual(await seen(await x.s.ask(args)), await seen(await askOnObject(x.ctx, x.env, args)), `ask ${JSON.stringify(args)}`);
+  for (const args of [{}, { op: "textcheck", member: "ann", text: "a sentence" }, { op: "infractiondraft", member: "ann", matter: "m1", audience: "council" }])
+    assert.deepEqual(await seen(await x.s.draft(args)),
+      await seen(await draftOnObject(x.ctx, x.env, args, { read: (op, params) => x.s.read(op, params) })), `draft ${JSON.stringify(args)}`);
+  /* control: no args at all is the empty request, not a throw */
+  assert.equal(typeof (await x.s.ask(undefined)).status, "number");
+  assert.equal(typeof (await x.s.draft(undefined)).status, "number");
+});
+
 test("R95, R111, R114: a retired room is inert: it builds nothing, answers 410 ROOM_RETIRED to a request and ROOM_RETIRED to each RPC, and deletes its alarm when it fires", async () => {
   const st = storage();
   let alarm = 99;

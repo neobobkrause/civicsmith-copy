@@ -26,10 +26,11 @@ import "../sandbox.mjs"; /* D-186: owns $TMPDIR for this process and removes it 
 import { Miniflare } from "miniflare";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+/* the pdf-worker member built fresh from its source by its own fleet recipe (pdf-worker/test/subject.mjs); no committed bundle is read (ARCH, "Committed built files") */
+import { BUNDLE } from "../../../pdf-worker/test/subject.mjs";
 import { createHash } from "node:crypto";
 
 const PLANE = fileURLToPath(new URL("../../src/plane/index.mjs", import.meta.url));
-const BUNDLE = fileURLToPath(new URL("../../../pdf-worker/dist/pdf-worker.bundled.mjs", import.meta.url));
 const hex = (b) => createHash("sha256").update(b).digest("hex");
 
 let pass = 0, fail = 0;

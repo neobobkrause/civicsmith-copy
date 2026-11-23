@@ -84,7 +84,7 @@ export class G55Plane extends Store {
       const items = noticeProducersOf(ctx).noticeItems({ member: "bob", viewer: BOB, identity: BOB, now: Date.now() }).items.filter((i) => i.kind.startsWith("ingest-"));
       const now = Date.now();
       return { now, ingestDue: c.ingestDue(now), ingestWake: c.ingestWake(now), facts: facts.n, distinctRows: facts.d, record: rec, openMarkers: open, markers: marked, alarm: await ctx.storage.getAlarm(), firings: this.#fired, held: this.#held,
-        notices: items.map((i) => ({ id: i.id, kind: i.kind, text: i.text ?? i.says ?? null })) };
+        notices: items.map((i) => ({ id: i.id, kind: i.kind, text: i.summary })) };
     }
     if (step === "release") { this.#release(); return { released: true }; }
     throw new Error("no step " + step);

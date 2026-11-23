@@ -22,12 +22,8 @@ import { makeZip } from "../../make-zip.mjs";
 import { SCREENS, main, actsIn, word } from "./fixtures.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
-/* the member booted from its committed bytes (what ocr-worker's own helper does; ocr-worker is not in this module's `uses`, so the recipe is stated here) */
-const MEMBER = (f) => fileURLToPath(new URL("../../../../ocr-worker/" + f, import.meta.url));
-const ocrWorkerDef = () => ({ name: "ocr-worker", modulesRoot: MEMBER(""), compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"], bindings: { VERSION: "test" },
-  modules: [{ type: "ESModule", path: MEMBER("dist/ocr-worker.bundled.mjs"), contents: readFileSync(MEMBER("dist/ocr-worker.bundled.mjs"), "utf8") },
-    { type: "CompiledWasm", path: MEMBER("assets/tesseract-core.wasm"), contents: readFileSync(MEMBER("assets/tesseract-core.wasm")) },
-    { type: "Data", path: MEMBER("assets/eng.traineddata"), contents: readFileSync(MEMBER("assets/eng.traineddata")) }] });
+/* the ocr-worker member built fresh from its source, with its wasm and model, by ocr-worker's own helper; no committed bundle is read (ARCH, "Committed built files") */
+import { ocrWorkerDef } from "../../../../ocr-worker/test/memberworker.mjs";
 const ADM = "adm-r10stated-0123456789abcdef", PASSWORD = "the founder's long password";
 const mf = new Miniflare({ workers: [
   { name: "plane", modules: true, modulesRoot: "/", scriptPath: SRC, script: readFileSync(SRC, "utf8"),
@@ -161,6 +157,7 @@ test("R1 R96 G1 (the real plane) a PDF cut short (A5b): the page draws what the 
 });
 
 const notesOf = (reading) => (reading.reading && reading.reading.recovery_notes) || reading.recovery_notes || [];
+/** @returns {Record<string, string>} */
 const NOTE_VARS = (n) => (n.note === "pages_missing" ? { missing: String(n.missing), of: String(n.of) } : {});
 
 test("R9 R62 (the real plane) a PDF cut at 70 per cent: each recovery note the reading lists is drawn by the design's key, with the pages missing and the total; a sound PDF draws none", async () => {

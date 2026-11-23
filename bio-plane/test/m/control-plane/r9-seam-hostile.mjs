@@ -7,14 +7,14 @@ import "../../sandbox.mjs";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { makeKit } from "./r8-kit.mjs";
 import { makeZip } from "../../make-zip.mjs";
 import { generate as imgGenerate } from "../../imggen.mjs";
 import { ocrWorkerDef } from "../../../../ocr-worker/test/memberworker.mjs";
+/* the pdf-worker member built fresh from its source by its own fleet recipe (pdf-worker/test/subject.mjs); no committed bundle is read (ARCH, "Committed built files") */
+import { BUNDLE as PDF_BUNDLE } from "../../../../pdf-worker/test/subject.mjs";
 import { put, fileIt, uniq, bytesOf, readEnded } from "./r9-seam-parts.mjs";
 
-const PDF_BUNDLE = fileURLToPath(new URL("../../../../pdf-worker/dist/pdf-worker.bundled.mjs", import.meta.url));
 const pdfWorkerDef = () => ({ name: "pdf-worker", modules: true, modulesRoot: "/", scriptPath: PDF_BUNDLE, script: readFileSync(PDF_BUNDLE, "utf8"),
   compatibilityDate: "2026-07-01", compatibilityFlags: ["nodejs_compat"], r2Buckets: ["CAPTURES"], bindings: { VERSION: "test" } });
 const te = (t) => new TextEncoder().encode(t);

@@ -127,6 +127,9 @@ const t = (label, got, want) => {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}${ok ? "" : `\n         want ${JSON.stringify(want)}\n         got  ${JSON.stringify(got)}`}`);
   ok ? pass++ : fail++;
 };
+/** A value the harness must hand back; an absent one fails the run here rather than later.
+ *  @template T @param {T | null | undefined} v @returns {T} */
+const present = (v) => { if (v == null) throw new Error("expected an entry, got none"); return v; };
 
 /* R37, R53: the op declaration this member exports, pinned here floor and ceiling (N402: never parsed from the plane). */
 /* R78 (T45): a re-examination run's reads, action, reading and procedureguides. */
@@ -247,7 +250,7 @@ console.log("\n--- A1 · the table is DATA, and its edges are the enforcement --
   t("every row is reachable from the first step", (() => {
     const seen = new Set([FIRST_STEP]);
     const stack = [FIRST_STEP];
-    while (stack.length) for (const n of CONTROL_FLOW[stack.pop()].to) if (!seen.has(n)) { seen.add(n); stack.push(n); }
+    for (let at = stack.pop(); at !== undefined; at = stack.pop()) for (const n of CONTROL_FLOW[at].to) if (!seen.has(n)) { seen.add(n); stack.push(n); }
     return steps.filter((s) => !seen.has(s));
   })(), []);
 
@@ -317,7 +320,7 @@ console.log("\n--- A3 · F10: a refusal routes to ADJUST, never to a verbatim re
                       refusal: { code: "SUGGEST_BOILERPLATE" }, queue: [{ name: "a" }, { name: "b" }] };
   t("a refused submit goes to `adjust`", nextStep(refusedAt).step, "adjust");
   t("and it does NOT go back to `submit`", nextStep(refusedAt).step === "submit", false);
-  t("the reason names F10's rule rather than the budget", /never to a verbatim retry/.test(nextStep(refusedAt).why), true);
+  t("the reason names F10's rule rather than the budget", /never to a verbatim retry/.test(nextStep(refusedAt).why ?? ""), true);
   /* THE BUDGET IS THE BACKSTOP, NOT THE MECHANISM: with the budget WIDE OPEN the
      refusal must still route to adjust. An arm that only fired when the budget
      was tight would be measuring the backstop. */
@@ -337,7 +340,7 @@ console.log("\n--- A3 · F10: a refusal routes to ADJUST, never to a verbatim re
   t("and a missing queue is read as empty, not as a reason to write", nextStep({ ...dropped, queue: undefined }).step,
     "next-pass");
   t("and says why in the record's terms, naming PL-3's counter — whether or not anything is behind it",
-    [/repeats/.test(nextStep(dropped).why), /repeats/.test(nextStep({ ...dropped, queue: [] }).why)], [true, true]);
+    [/repeats/.test(nextStep(dropped).why ?? ""), /repeats/.test(nextStep({ ...dropped, queue: [] }).why ?? "")], [true, true]);
 
   console.log("\n  -- `adjustedFrom` answers by the BYTES, and key order is not a change --");
   t("identical objects are not an adjustment", adjustedFrom({ a: 1, b: 2 }, { a: 1, b: 2 }), false);
@@ -382,7 +385,7 @@ console.log("\n--- A4 · loop termination and the pass count are the TABLE's, ne
     t(`a judgement setting \`${field}\` is REFUSED and NAMED`, [r.ok, r.overreach], [false, [field]]);
   }
   t("the refusal cites the measurement rather than a preference",
-    /TREC 2011/.test(applyJudgement({}, { maxPasses: 99 }).detail), true);
+    /TREC 2011/.test(applyJudgement({}, { maxPasses: 99 }).detail ?? ""), true);
   t("a judgement setting only judgeable fields is accepted",
     applyJudgement({ pass: 0 }, { candidates: [{ name: "x" }] }).ok, true);
   t("and it changes ONLY what it named",
@@ -423,7 +426,7 @@ console.log("\n--- A6 · SK-4's gate is a ROW in this table, not a sentence in a
      nothing had ever defined) and this arm moved with the fix. */
   t("and the ending NAMES THE MACHINE THAT ACTED — a gate refusal is not a member cancelling a run",
     gate("investigate").bound, "mode-not-deployed");
-  t("the refusal cites VF-5/SK-4's sequencing", /VF-5\/SK-4/.test(gate("investigate").why), true);
+  t("the refusal cites VF-5/SK-4's sequencing", /VF-5\/SK-4/.test(gate("investigate").why ?? ""), true);
   t("an unknown mode is closed too, never defaulted to CHECK", gate("wat").step, "close");
   t("an absent mode is closed too", gate(undefined).step, "close");
 
@@ -442,11 +445,11 @@ console.log("\n--- A6 · SK-4's gate is a ROW in this table, not a sentence in a
   t("an extract run is CLOSED at the gate on the machine's word",
     [gate("extract").step, gate("extract").bound], ["close", "mode-not-deployed"]);
   t("and the refusal says NOT DEPLOYED YET — a known row, never an unknown word",
-    [/not deployed yet/.test(gate("extract").why), /no mode this table knows/.test(gate("extract").why)], [true, false]);
+    [/not deployed yet/.test(gate("extract").why ?? ""), /no mode this table knows/.test(gate("extract").why ?? "")], [true, false]);
   t("while an unknown word's refusal says the table does not know it — the two absences are different facts and both are stated",
-    [/no mode this table knows/.test(gate("wat").why), /not deployed yet/.test(gate("wat").why)], [true, false]);
+    [/no mode this table knows/.test(gate("wat").why ?? ""), /not deployed yet/.test(gate("wat").why ?? "")], [true, false]);
   t("the sentence is DERIVED from the table: it lists what is deployed now and what is not yet",
-    [/deployed now: check/.test(gate("extract").why), /not yet: .*extract/.test(gate("extract").why)], [true, true]);
+    [/deployed now: check/.test(gate("extract").why ?? ""), /not yet: .*extract/.test(gate("extract").why ?? "")], [true, true]);
   /* OVER-STRICTNESS, and it is the arm that keeps the correction honest: the fix
      must not have made `cancelled` unreachable or unmeaning. A member stopping a
      run is still `cancelled`, and the gate must never produce that word. */
@@ -526,8 +529,8 @@ console.log("\n--- A8 · log-always: every row logs, and the entry is in the PLA
 {
   t("every row declares `logs: true`",
     Object.keys(CONTROL_FLOW).filter((s) => CONTROL_FLOW[s].logs !== true), []);
-  const e = stepLog({ step: "fanout", level: "document", observed: "LOOKED_ABSENT" },
-                    { step: "collect", why: "four sub-sessions spawned" });
+  const e = present(stepLog({ step: "fanout", level: "document", observed: "LOOKED_ABSENT" },
+                    { step: "collect", why: "four sub-sessions spawned" }));
   t("the entry names the transition it records", e.subject, "fanout -> collect");
   t("and carries D-129's state", e.state, "LOOKED_ABSENT");
   /* CORRECTED BY R26 (K148), NEVER EXEMPTED: this read "a control-flow entry that observed nothing is
@@ -536,7 +539,7 @@ console.log("\n--- A8 · log-always: every row logs, and the entry is in the PLA
   t("a control-flow step that observed nothing sends NO entry — never NEVER_LOOKED (R26, K148)",
     [stepLog({ step: "plan" }, { step: "fanout", why: "w" }),
      stepLog({ step: "plan", observed: "NEVER_LOOKED" }, { step: "fanout", why: "w" })], [null, null]);
-  const term = stepLog({ step: "next-pass", observed: "LOOKED_ABSENT" }, { step: "close", why: "done", bound: "completed" });
+  const term = present(stepLog({ step: "next-pass", observed: "LOOKED_ABSENT" }, { step: "close", why: "done", bound: "completed" }));
   t("the terminal entry is marked terminal and names the bound", [term.terminal, term.bound], [true, "completed"]);
   t("a non-terminal entry names no bound",
     [e.terminal, e.bound], [false, null]);
@@ -546,8 +549,8 @@ console.log("\n--- A8 · log-always: every row logs, and the entry is in the PLA
   /* REC-100 / IC-130 — THE UNIT HALF OF SECTION R. A model-judged PRESENT is
      not written as PRESENT: this entry can name nothing that was found, and the
      plane now refuses a PRESENT that names nothing (C-22.10). */
-  const judged = stepLog({ step: "collect", level: "document", observed: "PRESENT" },
-                         { step: "compose", why: "the reports are in" });
+  const judged = present(stepLog({ step: "collect", level: "document", observed: "PRESENT" },
+                         { step: "compose", why: "the reports are in" }));
   t("A8 (REC-100): a model-judged PRESENT is recorded LOOKED_INDETERMINATE, carries no invented "
     + "referent, and STATES the judgement in its detail",
     [judged.state, "result_ref" in judged, "result_kind" in judged,

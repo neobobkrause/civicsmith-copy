@@ -65,13 +65,14 @@ import "./sandbox.mjs";               /* D-186: owns $TMPDIR for this process an
 import { Miniflare } from "miniflare";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+/* the pdf-worker member built fresh from its source by its own fleet recipe (pdf-worker/test/subject.mjs); no committed bundle is read (ARCH, "Committed built files") */
+import { BUNDLE } from "../../pdf-worker/test/subject.mjs";
 import { createHash } from "node:crypto";
 import { tier2Answer } from "../../pdf-worker/test/fixtures.mjs";
 import { extractPdfStructure } from "../src/pdfstructure.mjs";
 import { mergeTier2Text, perPageTierWinner } from "../src/textchain.mjs";
 
 const SRC = fileURLToPath(new URL("../src/plane/index.mjs", import.meta.url));
-const BUNDLE = fileURLToPath(new URL("../../pdf-worker/dist/pdf-worker.bundled.mjs", import.meta.url));
 const FIX = fileURLToPath(new URL("./fixtures/cpdf20/", import.meta.url));
 
 /* THE CORPUS IS A MANIFEST, NEVER A WALK — CPDF-20's own correction, earned by

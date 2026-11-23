@@ -74,28 +74,30 @@ test("R62 (T50; N933; control-plane R102; public-read R36; amends R114): the Sto
     files: [{ path: "bundle.md", text: projMd("Budget watch") }], meta: { object_type: "project" } });
   assert.equal(p.ok, true, JSON.stringify(p));
   const P = p.bundleId;
+  /* the RPC's answer for a live room: group fields, never R95's retired refusal (this suite's instance is no room) */
+  const fieldsOf = async (args) => { const r = await x.s.groupFields(args); assert.ok(!("retired" in r), JSON.stringify(r)); return r; };
   const KEYS = ["detail", "domain", "domain_verified_at", "group", "matter_stake", "name", "stake"];
   /* none: as before, and `matter_stake` null */
-  const none = await x.s.groupFields();
+  const none = await fieldsOf();
   assert.deepEqual(Object.keys(none).sort(), KEYS);
   assert.equal(none.matter_stake, null);
   assert.deepEqual(none, publicReadOf(x.ctx).groupFields());
-  assert.deepEqual(await x.s.groupFields({}), none);
-  assert.deepEqual(await x.s.groupFields({ project: "" }), none, "an empty project is none");
-  assert.deepEqual(await x.s.groupFields({ project: 7 }), none, "a project that is no string is none");
+  assert.deepEqual(await fieldsOf({}), none);
+  assert.deepEqual(await fieldsOf({ project: "" }), none, "an empty project is none");
+  assert.deepEqual(await fieldsOf({ project: 7 }), none, "a project that is no string is none");
   /* a project with no stake set answers null, as one set and cleared does */
-  assert.equal((await x.s.groupFields({ project: P })).matter_stake, null);
+  assert.equal((await fieldsOf({ project: P })).matter_stake, null);
   const set = projectRosterOf(x.ctx).projectStakeSet({ projectId: P, stake: "We live next to the plant.", by: "alice", viewer: "member:alice" });
   assert.equal(set.ok, true, JSON.stringify(set));
-  const withProject = await x.s.groupFields({ project: P });
+  const withProject = await fieldsOf({ project: P });
   assert.deepEqual(Object.keys(withProject).sort(), KEYS);
   assert.deepEqual(withProject, publicReadOf(x.ctx).groupFields({ project: P }), "public-read's own answer for the project");
-  assert.deepEqual([withProject.matter_stake.stake, withProject.matter_stake.source], ["We live next to the plant.", "project"]);
+  assert.deepEqual([withProject.matter_stake?.stake, withProject.matter_stake?.source], ["We live next to the plant.", "project"]);
   assert.equal(withProject.stake, none.stake, "the team-wide stake is not replaced");
   /* control: cleared, null; an id that names no project, null */
   assert.equal(projectRosterOf(x.ctx).projectStakeSet({ projectId: P, stake: null, by: "alice", viewer: "member:alice" }).ok, true);
-  assert.equal((await x.s.groupFields({ project: P })).matter_stake, null);
-  assert.equal((await x.s.groupFields({ project: "PROJ-2026-none" })).matter_stake, null);
+  assert.equal((await fieldsOf({ project: P })).matter_stake, null);
+  assert.equal((await fieldsOf({ project: "PROJ-2026-none" })).matter_stake, null);
   /* a spy shows the RPC is public-read's answer for the project, not a copy */
   const pr = publicReadOf(x.ctx), was = pr.groupFields.bind(pr), seen = [];
   pr.groupFields = (a) => { seen.push(a); return was(a); };

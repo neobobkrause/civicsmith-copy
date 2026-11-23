@@ -13,12 +13,13 @@ import { createRequire } from "node:module";
 const { Miniflare } = createRequire(new URL("../../../bio-plane/package.json", import.meta.url))("miniflare");
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+/* the pdf-worker member built fresh from its source by its own fleet recipe (pdf-worker/test/subject.mjs); no committed bundle is read (ARCH, "Committed built files") */
+import { BUNDLE } from "../../../pdf-worker/test/subject.mjs";
 import { createHash } from "node:crypto";
 
 const [manPath, pdfDir, outPath] = process.argv.slice(2);
 const man = JSON.parse(readFileSync(manPath, "utf8"));
 const PLANE = fileURLToPath(new URL("../../../bio-plane/src/plane/index.mjs", import.meta.url));
-const BUNDLE = fileURLToPath(new URL("../../../pdf-worker/dist/pdf-worker.bundled.mjs", import.meta.url));
 const MEM = "mem-roster-capture";
 const mf = new Miniflare({ workers: [{
   name: "plane", modules: true, modulesRoot: "/", scriptPath: PLANE, script: readFileSync(PLANE, "utf8"),

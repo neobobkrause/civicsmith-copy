@@ -14,7 +14,8 @@ const MINUTES = [
   "Ms. Reyes, the treasurer, reported a balance of $4,200.",
   "After a long discussion, the members agreed, by a show of hands, to postpone the vote, pending a legal opinion.",
   "The meeting adjourned at nine.", ""].join("\n");
-const THREE_COLUMNS = "id,name,amount\n1,Ann,10\n2,Bo,20\n3,Cy,30\n";
+/* csv-reader R27 (amends R26): declared plain text is a table only from 5 records, with fields under 40 characters on average */
+const THREE_COLUMNS = "id,name,amount\n1,Ann,10\n2,Bo,20\n3,Cy,30\n4,Di,40\n5,Ed,50\n";
 
 async function upload(auth, name, type, text) {
   const res = await kit.plane(`/api/?op=captureupload&statement=${encodeURIComponent("r10csvprose")}&name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`,
@@ -24,7 +25,7 @@ async function upload(auth, name, type, text) {
   return body.result.document.reading ?? {};
 }
 
-test("R100 (csv-reader R26): prose with commas on most lines, uploaded as comma-minutes.txt (text/plain), is read as prose: no cells, no dialect (controls: a real CSV named .txt and the prose declared text/csv are tables)", { timeout: 300000 }, async () => {
+test("R100 (csv-reader R26, R27): prose with commas on most lines, uploaded as comma-minutes.txt (text/plain), is read as prose: no cells, no dialect (controls: a real CSV named .txt and the prose declared text/csv are tables)", { timeout: 300000 }, async () => {
   const own = await kit.ownerOf("r10csvprose-ann");
   const prose = await upload(own.auth, "comma-minutes.txt", "text/plain", MINUTES);
   assert.equal("cells" in prose, false, `read as prose, no table cells: ${Object.keys(prose).join(",")}`);

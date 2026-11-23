@@ -355,15 +355,17 @@ async function questionOf(auth, project, question) {
   return id;
 }
 
-/* G60: a member's own revision of her filed document under a snap key the history cannot name (a promotion's `snapKey` is any non-blank string; the history
-   files it writes are named by it, and C-12.2 maps each back to a manifest entry by the stamp's shape). The record keeps it; the case gate, which reads each
-   cited member's image at signing, finds it. The revision carries the document's stored bytes by their address, as the screens carry them. */
+/* G60: a member's own revision of her filed document that leaves a history file no manifest entry lists. Since record-grammar R65 a history file maps to its
+   entry by the key the manifest lists, whatever its form, so a revision under an odd snap key alone is coherent; a file under `_history/` whose key the
+   manifest does not list is still a C-12.2 error (R65's control). The record keeps it; the case gate, which reads each cited member's image at signing, finds
+   it. The revision carries the document's stored bytes by their address, as the screens carry them. */
 async function reviseUnnamed(cs, bundle, size) {
   const img = R(await cs.call("image", { query: { id: bundle } }));
   const row = R(await cs.call("list", {})).find((b) => b.bundle_id === bundle);
   assert.ok(row && row.bundle_sha, "the document's head: " + JSON.stringify(row));
   const files = Object.keys(img).filter((k) => !k.startsWith("_history/")).map((path) => ({ path,
     ...(path === "bundle.md" ? { text: img[path] + "\n" } : path.startsWith("snapshots/upload-") ? { blobSha: path.slice(17), sha256: path.slice(17), bytes: size } : { text: img[path] }) }));
+  files.push({ path: "_history/bundle_unlisted-key.md", text: img["bundle.md"] });   /* a history file whose key ("unlisted-key") no manifest entry lists */
   const done = R(await cs.call("promote", { body: { bundleId: bundle, base: row.bundle_sha, snapKey: "not-a-stamp", meta: { object_type: "information" }, files } }));
   assert.equal(done.ok, true, "the revision is kept: " + JSON.stringify(done).slice(0, 400));
 }
