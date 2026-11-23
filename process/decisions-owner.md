@@ -29,8 +29,9 @@ Rule now: DEC-18 (2 Aug 2026) stands, as the UX lane reads the owner's 23 Nov wo
 Shown to the owner: not yet.
 
 ## A lane for the plane module's scope
-Rule now: a lane is opened for the plane module's scope, for the owner to understand it and fix it. ARCH opens it.
+Rule now: a lane is opened for the plane module's scope, for the owner to understand it and fix it. ARCH opens it, also while development is halted; the halt still holds every job and walk. (That reading is ARCH's, from the owner giving the decision again after the halt; shown to the owner to confirm.)
 - 23 Nov 2026: "Decision: open a lane for the plane module's scope, so I can understand it and fix it"
+- 23 Nov 2026, after the halt: "Decision: open a lane for the plane module's scope, so I can understand it and fix it" (given to ARCH; relayed by ARCH #11)
 Shown to the owner: not yet.
 
 ## Halting development
