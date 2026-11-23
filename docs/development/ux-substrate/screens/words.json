@@ -36668,10 +36668,10 @@
   },
   {
    "key": "screen.plan.tip.title",
-   "en": "{plan}: {name}'s action plan, opened {date} when the inquiry began, about {matter}. Its options, the order to try them and what to check are here.",
+   "en": "{plan}: {name}'s action plan, opened {date}, about {matter}. Its options, the order to try them and what to check are here.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: the plan's title, its explanation; {plan} and {subject} the plan's own words"
+   "note": "DEC-276: the plan's title, its explanation; {plan}, {name}, {date} and {matter} the plan's own facts. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
   },
   {
    "key": "screen.plan.tip.scenario",
@@ -36689,10 +36689,10 @@
   },
   {
    "key": "screen.plan.tip.scenario_why",
-   "en": "The check above is about this scenario: it has no branch for a refusal or a stall.",
+   "en": "This scenario has no branch yet for a refusal or a stall.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a scenario, its card"
+   "note": "DEC-276: a scenario, its card; drawn only when the scenario has no such branch. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
   },
   {
    "key": "screen.plan.tip.hostile",
@@ -36710,10 +36710,10 @@
   },
   {
    "key": "screen.plan.tip.hostile_why",
-   "en": "Scenario {scenario} says nothing about what follows one; a branch can be added before the reply is due on {date}.",
+   "en": "Scenario {scenario} says nothing yet about what follows one; a branch can be added to it.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a hostile response, its card"
+   "note": "DEC-276: a hostile response, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
   },
   {
    "key": "screen.plan.tip.hypothetical",
@@ -36724,10 +36724,10 @@
   },
   {
    "key": "screen.plan.tip.hypothetical_why",
-   "en": "The options here rest on something unproven; the inspection logs could show it or rule it out.",
+   "en": "The options here rest on something not yet proven.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a hypothetical subject, its card"
+   "note": "DEC-276: a hypothetical matter, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
   },
   {
    "key": "screen.plan.tip.enddate",
@@ -36759,21 +36759,14 @@
   },
   {
    "key": "screen.plan.tip.alternative_why",
-   "en": "The fallback if {office} refuses or stalls on {action}.",
+   "en": "The fallback if the first scenario is refused or stalls.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: an alternative scenario, its card"
+   "note": "DEC-276: an alternative scenario, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
   },
   {
    "key": "screen.plan.tip.checkpoint",
    "en": "judged by a member, with a reason, once the reply comes",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-276: a checkpoint, its card"
-  },
-  {
-   "key": "screen.plan.tip.checkpoint_why",
-   "en": "Dates of inspection and repair are what would show whether a report was closed before the repair.",
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-276: a checkpoint, its card"
@@ -63695,10 +63688,10 @@
   },
   {
    "key": "screen.matter.compliance_is_not_restored_why",
-   "en": "Compliance is not restored: {why}.",
+   "en": "Compliance is not restored yet.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is what is missing, sample data"
+   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
   },
   {
    "key": "screen.matter.an_escalation_ends_only_after_your_team",
@@ -63723,10 +63716,10 @@
   },
   {
    "key": "screen.matter.whether_the_consequences_are_addressed_is_undetermined",
-   "en": "Whether the consequences are addressed is undetermined: {why}.",
+   "en": "Whether the consequences are addressed is not settled yet.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is what is not settled"
+   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
   },
   {
    "key": "screen.matter.if_your_team_judges_the_breach_had",
@@ -63744,10 +63737,10 @@
   },
   {
    "key": "screen.matter.the_consequences_are_not_addressed_why",
-   "en": "The consequences are not addressed: {why}.",
+   "en": "The consequences are not addressed yet.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is the part not addressed"
+   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
   },
   {
    "key": "screen.matter.say_with_evidence_that_each_part_was",
@@ -64654,10 +64647,10 @@
   },
   {
    "key": "screen.matter.stage_3_is_not_proposed_yet_missing",
-   "en": "Starting the response clock is not proposed yet: {missing}.",
+   "en": "Starting the response clock is not proposed yet.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to hold at a stage; {missing} is what the next stage still needs"
+   "note": "DEC-374: the matter screen: a refusal to hold at a stage. Reworded by process/lanes/ux/words-new.md (U17): no {missing} fill, which the screen cannot have"
   },
   {
    "key": "screen.matter.there_is_nothing_to_hold_at",
@@ -64695,11 +64688,11 @@
    "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
-   "key": "screen.matter.this_escalation_has_been_suspended_since_october",
-   "en": "This escalation has been paused since October 14, 2026.",
+   "key": "screen.matter.escalation.paused_since",
+   "en": "This escalation has been paused since {date}.",
    "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / matter S10 (U17) (lane: in place of the sample row screen.matter.this_escalation_has_been_suspended_since_october)"
   },
   {
    "key": "screen.matter.resume_it_before_suspending_it_again",
@@ -64772,11 +64765,11 @@
    "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
-   "key": "screen.matter.this_escalation_stands_at_stage_2",
-   "en": "This escalation stands at the notification stage.",
+   "key": "screen.matter.escalation.stands_at",
+   "en": "This escalation stands at this stage: {stage}.",
    "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / matter S8 (U17); {stage} the stage's name, screen.matter.stage.1 to 7 (lane: in place of the sample row screen.matter.this_escalation_stands_at_stage_2)"
   },
   {
    "key": "screen.matter.no_stage_is_proposed_while_it_is",
@@ -83453,6 +83446,13 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-446: DS5: what the council-meeting checklist wizard does"
+  },
+  {
+   "key": "screen.action.ended.head",
+   "en": "How it ended",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: deciding-and-acting / action C10 (U17) (mockup)"
   },
   {
    "key": "screen.action.ended.complied",
