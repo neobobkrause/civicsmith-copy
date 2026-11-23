@@ -272,6 +272,10 @@ const FILE_LIST = [
   ["src/admission/checks.mjs", ADMISSION],
   ["src/answer-envelope/checks.mjs", OWN],
 ];
+/**
+ * @type {Array<[string, Object<string, *>]>} each source of the catalogue, in the order a code is resolved: its path under
+ * `bio-plane/` and the module namespace it is read from (R7, R10, R12, R15, R17); frozen, built on first read (R18)
+ */
 export const CHECK_FAMILY_FILES = lazyTable([], (t) => { for (const e of FILE_LIST) t.push(Object.freeze(e)); });
 
 const translated = (row) => !!row && typeof row === "object" && typeof row.translation === "string" && row.translation !== "";
@@ -294,10 +298,19 @@ function compose(out) {
   for (const f of Object.keys(out)) Object.freeze(out[f]);
 }
 
+/**
+ * @type {Object<string, Object<string, *>>} the composed catalogue: each family's name to its rows by code, each code held
+ * once, in the first family that holds it (a translated row preferred); frozen, built on first read (R2, R7, R18)
+ */
 export const CHECK_FAMILIES = lazyTable({}, compose);
 
 /* R2: a code's row, `{check, translation}`, or null when no source holds one with a canned translation. Read on first use (R18). */
 let ROWS = null;
+/**
+ * @param {string} code a refusal's code
+ * @returns {*} a fresh copy of the code's row, `{check, translation}` (`check` a string or null), or null when no family
+ *   holds one with a translation
+ */
 export function dec49Row(code) {
   ROWS ??= new Map(Object.values(CHECK_FAMILIES).flatMap((rows) => Object.entries(rows))
     .filter(([, row]) => translated(row)).map(([code, row]) => [code, { check: row.check ?? null, translation: row.translation }]));
