@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 7932,
+  "screen": 7937,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -237,7 +237,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "total": 19531,
+  "total": 19536,
   "protected": 1162
  },
  "words": [
@@ -69616,11 +69616,32 @@
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Caption above the table; the lens named changes with the choice (one of the three radio choices, lower-cased start). Sample names and counts are placeholders."
   },
   {
+   "key": "screen.imported.lens_shown.as_published",
+   "en": "Shown here: as the source published it.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_as_published)"
+  },
+  {
+   "key": "screen.imported.lens_shown.own",
+   "en": "Shown here: under your team's lens.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_own)"
+  },
+  {
    "key": "screen.imported.lens_moved",
    "en": "Moved: {published} as published, {regraded} without the source's bias.",
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that moved; both placeholders hold a pair of grades; the lens named follows the choice. Sample names and counts are placeholders."
+  },
+  {
+   "key": "screen.imported.lens_moved.own",
+   "en": "Moved: {published} as published, {regraded} under your team's lens.",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_moved and screen.imported.lens_own)"
   },
   {
    "key": "screen.imported.lens_bar_ours",
@@ -69635,6 +69656,20 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders."
+  },
+  {
+   "key": "screen.imported.lens_bar.yes",
+   "en": "yes",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
+  },
+  {
+   "key": "screen.imported.lens_bar.no",
+   "en": "no",
+   "protected": false,
+   "source": "UX lane 23 Nov 2026",
+   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
   },
   {
    "key": "screen.imported.lens_because",
