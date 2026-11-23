@@ -165,7 +165,7 @@ export function finderStates() {
         : cs.w("queue.source.untitled", { date: { html: cs.date(String(h.last_updated || h.captured || "")) } });
       const grade = h.grade ? cs.grade("capture", String(h.grade)) + " " : "";
       const where = h.snippet ? excerpt(h.snippet) : "";
-      // Screens `finder` A12: a document hit, or a person or organization, offers "Explore connections" from it.
+      // R108 (Screens `finder` A12): a document hit offers "Explore connections" from it; a question, action or plan hit none.
       const sc = screenOf(h.object_type, id);
       const explore = sc === "document" || sc === "person" ? cs.act("explore", { label: "act.explore.label.finder", data: { from: id } }) : "";
       return cs.row(pickBox(id, title), cs.ref(sc, id, title, []) + '<span class="meta">' + grade + cs.mark("origin", "search") + (where ? " <span>" + where + "</span>" : "") + "</span>", explore, "");
