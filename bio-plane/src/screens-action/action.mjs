@@ -330,6 +330,16 @@ export const action = Object.freeze({
           + cs.field("reply-fee-basis", "screen.action.what.the.fee.is.for", { help: "screen.action.optional.in.the.office.s.words" })
           + pick("reply-fee-answers", "screen.action.it.answers.this.sending", answersOpts, { help: "screen.action.the.earlier.sending.the.quote.responds" })
           + (revisesOpts.length > 1 ? pick("reply-fee-revises", "screen.action.it.revises.this.quote", revisesOpts, { help: "screen.action.only.when.the.office.changes.a" }) : ""));
+      // The Screens page's form messages (deciding-and-acting, `action` V1 to V10): why a reply is not recorded, each in its two keyed
+      // sentences, under the design's fold "When a reply is not recorded", beside the form they explain
+      const notRecorded = fold("screen.action.when.a.reply.is.not.recorded", [["the.day.is.not.a.real", "write.it.as.a.day.that"],
+        ["a.reply.needs.either.the.document", "choose.one.and.record.again"], ["a.silence.has.no.document.or", "record.it.with.its.date.alone"],
+        ["this.action.says.no.reply.is", "change.that.on.the.action.first"], ["that.kind.of.reply.does.not", "a.sending.is.a.request.a"],
+        ["a.decision.needs.what.it.decided", "choose.what.the.office.decided.or"], ["a.fee.quote.needs.an.amount", "fix.the.quote.and.record.again"],
+        ["the.date.the.office.gave.needs", "add.the.law.first.or.leave"], ["a.line.has.a.quotation.mark", "take.them.out.and.record.again"],
+        ["another.member.is.recording.on.this", "wait.a.moment.and.try.again"]].map(function (pair) {
+        return '<p class="mk-small">' + cs.w("screen.action." + pair[0]) + " " + cs.w("screen.action." + pair[1]) + "</p>";
+      }).join(""));
       // R55 (actions R108): on a public comment, the reply can carry the minutes' passage: the meeting, its day, the document that holds
       // the minutes (a held capture, as above) and the passage as the minutes write it. The words are located in the document's reading
       // (`reading`, read once a document is chosen) and the passage sent is the extent of the unit that holds them; any other kind draws
@@ -370,7 +380,7 @@ export const action = Object.freeze({
             + (e.minutes.date ? " · " + cs.date(e.minutes.date) : "") + "</span>" : ""), "", mark);
       }).join("")) : "")
         // R27: the form belongs to the act: a member who may not record a reply is shown no field of it
-        + (cs.can("actioncorrespond") ? replyForm + minutesFold + '<div class="mk-acts">' + cs.act("actioncorrespond", { tone: "primary" }) + helpReply + "</div>" : ""));
+        + (cs.can("actioncorrespond") ? replyForm + minutesFold + notRecorded + '<div class="mk-acts">' + cs.act("actioncorrespond", { tone: "primary" }) + helpReply + "</div>" : ""));
 
       // R12, R31 (3): the pressure marks and records on this action, each with where it arrived, who made it and whether a hold
       // is placed (a legal one as `screen.action.legalmark`), paged by `after`; none drawn at zero; the profile's fact on a legal
@@ -506,9 +516,15 @@ export const action = Object.freeze({
 
       // R5: move and scope (R32: the hold is placed on `hold`, not here).
       const moves = P.moves(state);
-      const move = moves.length ? cs.choice("move-to", "screen.action.move.to", moves.map(function (m) { return [m, "screen.plan.actionstate." + m]; }))
-        + cs.choice("move-resolution", "screen.action.move.resolution", ["complied", "denied", "escalated", "withdrawn", "completed"].map(function (r) { return [r, "screen.action.resolution." + r]; }))
-        + cs.act("actionmove", {}) : "";
+      // The Screens page's C10: resolving says how it ended, under its fold "How it ended" (`screen.action.ended.head`, U17), by the design's words (`screen.action.ended.*`), and the
+      // member's own words are the reason the move is kept with; any other move is kept with the member's reason (actions declares
+      // `reason` required on every move)
+      const ended = moves.includes("resolved") && cs.can("actionmove") ? fold("screen.action.ended.head",
+        pick("move-resolution", "screen.action.ended.help", ["complied", "denied", "escalated", "withdrawn", "completed"].map(function (r) { return [r, "screen.action.ended." + r]; }))
+        + cs.field("move-own", "screen.action.ended.own", { area: true, rec: true, help: "screen.action.ended.own.help" })) : "";
+      const move = moves.length && cs.can("actionmove") ? cs.choice("move-to", "screen.action.move.to", moves.map(function (m) { return [m, "screen.plan.actionstate." + m]; }))
+        + cs.field("move-reason", "shell.reason", { area: true, rec: true, help: "shell.reason.help" })
+        + ended + cs.act("actionmove", {}) : "";
       const scope = '<p class="mk-note">' + cs.w(a.confidential ? "screen.action.scope.confidential" : "screen.action.scope.open") + "</p>"
         + cs.act("actionscope", { data: { to: a.confidential ? "false" : "true" } });
       const manage = cs.sec("screen.action.manage", '<div class="mk-acts">' + move + "</div>" + scope);
@@ -577,13 +593,19 @@ export const action = Object.freeze({
     },
     {
       // R5: "Move the action", with the member's reason (asked by the shell, sent in the query actions reads).
-      op: "actionmove",
+      op: "actionmove", reasonField: "reason",
       rereads: ["action"],
       send: function (view, el, cs) {
         const to = cs.value("move-to");
         if (!to) return null;
+        const own = function (id) { return String(cs.value(id) || "").trim(); };
         const q = { target: view.subject, to: to };
-        if (to === "resolved") q.resolution = cs.value("move-resolution");
+        if (to === "resolved") {
+          // the Screens page's C10: how it ended, and in the member's own words, which are required and are the move's reason
+          q.resolution = cs.value("move-resolution");
+          if (!own("move-own")) return { refuse: "findin.fieldneeded", fills: { field: { html: cs.w("screen.action.ended.own") } } };
+          q.reason = own("move-own");
+        } else q.reason = own("move-reason");
         return { query: q, raw: "" };
       },
     },

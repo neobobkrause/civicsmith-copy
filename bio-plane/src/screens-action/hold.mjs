@@ -9,6 +9,11 @@
    (interface-shell R21 (1)). */
 import { readOnly, WRITE_HELP } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** Litigation hold (R32): where the pressure arrived, the hold placed with a reason, and released; `actionhold`, `pressurerecord`,
+ *  `actionholdpreview`, `actionholdrelease`.
+ *  @type {Readonly<ScreenDef>} */
 export const hold = Object.freeze({
   id: "hold",
 
@@ -120,7 +125,7 @@ export const hold = Object.freeze({
         + '<div class="mk-acts">' + cs.act("pressurerecord", {}) + helpPress + "</div>") : "";
 
       // releasing a hold: the place, the member's reason; what will start being deleted again is said first (R6). The places are those that
-      // hold a hold now (`holdsplaced`'s `in_place`), the counsel matters, and what still wants a hold (to state that none is needed)
+      // hold a hold now (`holdsplaced`'s `in_place`) and no other: what still wants a hold stays the placing choice alone (R32)
       const heldRows = view.data.held && view.data.held.state === "ok" && view.data.held.value && Array.isArray(view.data.held.value.items) ? view.data.held.value.items : [];
       const dayOf = function (at) { return at ? String(cs.date(at)).replace(/<[^>]*>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&") : ""; };
       const kept = [];
@@ -130,7 +135,6 @@ export const hold = Object.freeze({
           offer({ value: JSON.stringify(at), text: [typeof m.reason === "string" ? m.reason.trim() : "", dayOf(m.at), cs.w("screen.action.held")].filter(Boolean).join(" \u00b7 ") });
         });
       });
-      options.forEach(function (o) { offer({ value: o.value, text: o.text }); });
       const chosen = view.ui && view.ui.releaseFor && kept.some(function (k) { return k.value === view.ui.releaseFor; }) ? view.ui.releaseFor : "";
       const titleOf = function (id) { const b = projects.find(function (x) { return x.bundle_id === id; }); return b ? b.title || id : id; };
       const prev = view.data.preview;
@@ -180,7 +184,9 @@ export const hold = Object.freeze({
         // R32: only a place chosen (and so previewed) is released
         const place = view.parts.placeIn(cs.value("hold-release-for"));
         const reason = String(cs.value("hold-release-why") || "").trim();
-        return place ? { body: Object.assign({}, place, { reason: reason }) } : null;
+        if (!place) return null;
+        if (!reason) return { refuse: "shell.reason.needed" };
+        return { body: Object.assign({}, place, { reason: reason }) };
       },
       rereads: ["due", "held"],
     },
@@ -188,6 +194,8 @@ export const hold = Object.freeze({
   ],
 });
 
+/** Hold notice (R33): `holdnoticeprepare` fills the notice; `holdnoticesent` records that the member sent it.
+ *  @type {Readonly<ScreenDef>} */
 export const holdNotice = Object.freeze({
   id: "holdnotice",
 

@@ -24,7 +24,7 @@ function callers() {
   const sess = (name, token, id, viewer, administer) => ({ name, token, params: {}, viewer, identity: `member:${id}`,
     administer, own: [id, `member:${id}`, viewer] });
   const ai = (name, token, principal, tokenId) => ({ name, token, params: {}, viewer: principal, identity: principal,
-    administer: "0", own: [principal, "class:ai", `class:ai/${tokenId}`, `${principal}/${tokenId}`, "token:ai", ""] });
+    administer: "0", cred: { tokenId, principal }, own: [principal, "class:ai", `class:ai/${tokenId}`, `${principal}/${tokenId}`, "token:ai", ""] });
   return { w, list: [
     bind("admin", w.env.ADMIN_TOKEN), bind("probe", w.env.PROBE_TOKEN, { store: "scratch" }),
     bind("daemon", w.env.DAEMON_TOKEN),
@@ -69,6 +69,10 @@ test("R17: every stamp an op declares is the server's value from the authenticat
         else if (f === "identity" || f === "actorIdentity") assert.equal(v, c.identity, where);
         else if (f === "administer") assert.equal(v, c.administer, where);
         else if (f === "origin") assert.equal(v, ORIGIN, where);
+        /* store-request R17: an agent's publish carries its credential's id and principal */
+        else if (f === "aiCred") assert.deepEqual(JSON.parse(v), c.cred, where);
+        /* admission R21: the request's source and country, never the caller's field (the forged run above answered the same) */
+        else if (f === "source" || f === "country") assert.equal(typeof v, "string", where);
         else assert.ok(c.own.includes(v), `${where}: ${JSON.stringify(v)} is not derived from the credential`);
       }
     });

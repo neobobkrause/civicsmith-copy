@@ -150,10 +150,12 @@ export function finderStates() {
     // Fields: "In titles, notes and details".
     const hs = hits(view);
     const ftotal = f && f.state === "ok" ? (typeof f.value.total === "number" ? f.value.total : hs.length) : 0;
+    // R46: a snippet marks each match between query-language's MARK_OPEN (\u0001) and MARK_CLOSE (\u0002) (query.mjs); the match
+    // is drawn as emphasis, a bracket is plain text, and a stray mark is dropped, never drawn.
     const excerpt = function (text) {
-      return String(text).split(/(\[[^\]]*\])/).map(function (part) {
-        const m = /^\[([^\]]*)\]$/.exec(part);
-        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part);
+      return String(text).split(/(\u0001[^\u0001\u0002]*\u0002)/).map(function (part) {
+        const m = /^\u0001([^\u0001\u0002]*)\u0002$/.exec(part);
+        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part.replace(/[\u0001\u0002]/g, ""));
       }).join("");
     };
     const fieldRows = cs.sheet(hs.map(function (h) {

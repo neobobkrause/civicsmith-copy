@@ -7,8 +7,17 @@ import { word } from "../setup-words/index.mjs";
  * filing-templates' codes (its C-125.9, .24, .25): this module answers its own rows, worded for a wizard script, and the
  * composed catalogue keeps the first source's (control-plane R22). */
 
+/**
+ * @typedef {Object} CheckRow one refusal's row (R20; DEC-49)
+ * @property {string} check its check number, `C-131.<n>`
+ * @property {string} where the file, function and region that answers it
+ * @property {string} translation the member's words for it
+ */
+
 const at = (fn, region, file = "index.mjs") => `src/wizard-scripts/${file} ${fn} > ${region}`;
 
+/** R20: every refusal code this module answers, with its row.
+ *  @type {Readonly<Object<string, CheckRow>>} */
 export const WIZARD_SCRIPTS_CHECKS = Object.freeze({
   MACHINE_CANNOT_DRAFT_WIZARD: {
     check: "C-131.1", where: at("#machine", "is-wizard-member"),
@@ -183,7 +192,9 @@ export const WIZARD_SCRIPTS_CHECKS = Object.freeze({
   },
 });
 
-/** The row a code names, or null for a code this module does not answer. */
+/** The row a code names, or null for a code this module does not answer. Never throws.
+ *  @param {string} code
+ *  @returns {CheckRow | null} */
 export function rowOf(code) {
   return Object.prototype.hasOwnProperty.call(WIZARD_SCRIPTS_CHECKS, code) ? WIZARD_SCRIPTS_CHECKS[code] : null;
 }

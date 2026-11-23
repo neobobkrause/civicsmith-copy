@@ -125,7 +125,7 @@ test("G81 R124 control: the store keeps when each constant was answered, and no 
   const a = await load();
   const o = JSON.parse(a.store.get(KEY));
   assert.deepEqual(Object.keys(o.at).sort(), [...TEAM].sort());
-  for (const n of TEAM) assert.ok(Number.isFinite(o.at[n]) && Math.abs(o.at[n] - Date.now()) < 60 * 1000, n + " carries the time it was answered");
+  for (const n of TEAM) assert.ok(Number.isFinite(o.at[n]) && Math.abs(o.at[n] - a.world.now()) < 60 * 1000, n + " carries the time it was answered, on the page's clock (the world's)");
 });
 
 for (const [name, age] of [["a day old", 24 * 3600 * 1000 + 1000], ["two days old", 48 * 3600 * 1000]]) {

@@ -4,7 +4,10 @@
  * drawn and no act is offered; members keep `docket` in the working frame. Its way back is the case's public page. Every
  * function is self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
+/** @import { ScreenDef } from "./parts.mjs" */
 
+/** A published case's public docket (R34): `docketpublic` read by the case in the address; no act.
+ *  @type {Readonly<ScreenDef>} */
 export const DOCKET_PUBLIC = Object.freeze({
   id: "docket-public",
   parts: PARTS,
