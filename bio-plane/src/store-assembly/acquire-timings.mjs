@@ -10,14 +10,47 @@
    (the clock `acquisition` times with does not span a restart), so it names the stage, which is what a stalled call needs. */
 import { stageTimes } from "../acquisition/index.mjs";
 
+/** R60: the most traces held at once.
+ *  @type {number}
+ *  @bound whole number, 64 */
 export const HOLD_MAX = 64;
+/** R60: how long an entry is held past its start, in milliseconds.
+ *  @type {number}
+ *  @bound whole number, 60,000 */
 export const HOLD_TTL_MS = 60_000;
+/** R62: the statement that makes the stage record's table in the object's storage.
+ *  @type {string} */
 export const ACQUIRE_STAGES_DDL = `CREATE TABLE IF NOT EXISTS acquire_stages (
   trace TEXT PRIMARY KEY, started_at INTEGER NOT NULL, saved_at INTEGER NOT NULL, snapshot TEXT NOT NULL)`;
 
 const HOLDERS = new WeakMap();
 
-/** The holder of a host: `{open(trace), read(trace), record(trace), size}`; `now` is the clock for the time to live (a test passes its own). */
+/**
+ * `acquisition`'s `stageTimes` of one acquire: `{total_ms, stages, running?, read_split?}`.
+ * @typedef {Object<string, any>} StageTimes
+ */
+/**
+ * What the holder answers for a trace (R60, R63).
+ * @typedef {Object} StageRecord
+ * @property {StageTimes} stageTimes
+ * @property {true} [restarted] present only when the record was read from storage after a restart
+ */
+/**
+ * The holder of one host's stage times.
+ * @typedef {Object} TimingsHolder
+ * @property {(trace: any) => Object<string, any>} open a fresh timings object; kept under `trace` only when it is a non-empty string
+ * @property {(trace: any) => (StageTimes | null)} read
+ * @property {(trace: any) => (StageRecord | null)} record
+ * @property {number} size the traces held in memory
+ * @bound size: at most HOLD_MAX
+ */
+/**
+ * The holder of a host: `{open(trace), read(trace), record(trace), size}`; `now` is the clock for the time to live (a test passes its own).
+ * One holder for each host, made at the first call.
+ * @param {any} host the object; its `storage.sql`, when it has one, keeps the record across a restart
+ * @param {{now?: () => number}} [opts]
+ * @returns {TimingsHolder}
+ */
 export function acquireTimingsOf(host, { now = () => Date.now() } = {}) {
   let h = HOLDERS.get(host);
   if (h) return h;
@@ -77,12 +110,17 @@ export function acquireTimingsOf(host, { now = () => Date.now() } = {}) {
   return h;
 }
 
+/** The header the door's trace rides in.
+ *  @type {string} */
 export const TRACE_HEADER = "x-civicsmith-trace";
 const TRACE_VALUE = /^[\x21-\x7e]{1,200}$/;
 
 /** The request as the route map sees it: for `acquire`, the door's trace from the header `x-civicsmith-trace` (capture R99) is set as the
  *  in-process `trace` parameter (store-door hands on only the headers it names), and a `trace` a caller put in the address is removed, so
- *  the key is the door's alone. Any other request is returned as it came. */
+ *  the key is the door's alone. Any other request is returned as it came.
+ *  @param {Request} req
+ *  @returns {Promise<Request>}
+ *  @bound trace: 1 to 200 printable characters; any other header value is not set */
 export async function traceStamped(req) {
   let url;
   try { url = new URL(req.url); } catch { return req; }
@@ -93,13 +131,19 @@ export async function traceStamped(req) {
   return new Request(url, { method: req.method, headers: req.headers, body: await req.text() });
 }
 
-/** The handler parts `captureOps` takes as `h`: `timings` is made when the `acquire` arm reads it, keyed by this request's `trace`. */
+/** The handler parts `captureOps` takes as `h`: `timings` is made when the `acquire` arm reads it, keyed by this request's `trace`.
+ *  @param {any} host
+ *  @param {URL} url
+ *  @returns {{readonly timings: Object<string, any>}} */
 export function acquireHandlerParts(host, url) {
   const trace = url.searchParams.get("trace");
   return { get timings() { return acquireTimingsOf(host).open(trace); } };
 }
 
-/** The store-internal read, an entry of the route map: no caller's own, reached by the door with the stamps it sets. */
+/** The store-internal read, an entry of the route map: no caller's own, reached by the door with the stamps it sets.
+ *  @param {any} host
+ *  @param {URL} url
+ *  @returns {{acquiretimings: () => {ok: true, stageTimes: StageTimes | null, restarted?: true}}} */
 export function acquireTimingsOps(host, url) {
   return { acquiretimings: () => {
     const r = acquireTimingsOf(host).record(url.searchParams.get("trace"));

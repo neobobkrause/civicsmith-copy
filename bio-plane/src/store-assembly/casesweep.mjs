@@ -11,6 +11,47 @@
            publication's: the wake moves), never `finished`. */
 const finiteOr = (v) => (Number.isFinite(v) ? v : null);
 
+/**
+ * What the sweep is built over: `ratification`'s two calls.
+ * @typedef {Object} CaseFileSweeper
+ * @property {(at: number) => (number | null | undefined)} caseFileWake the instant the sweep next wants a wake, else none
+ * @property {(at: number) => Promise<any>} caseFileSweep one sweep: `{built, failed, files, bytes}`, or `{ok: false, reason}`
+ */
+/**
+ * One edition the sweep built, or one it failed to build.
+ * @typedef {Object} SweptEdition
+ * @property {string} case
+ * @property {string} edition
+ * @property {string | null} [code] a failed build's refusal, else null
+ */
+/**
+ * What one tick answers under `casefilesweep`.
+ * @typedef {Object} SweepTick
+ * @property {number} asked
+ * @property {number} finished the editions built
+ * @property {number} retried the editions that failed
+ * @property {SweptEdition[]} built
+ * @property {SweptEdition[]} failed
+ * @property {number} files
+ * @property {number} bytes
+ * @property {false} [ok] present only when the sweep answered a refusal
+ * @property {string | null} [reason]
+ * @bound asked: built plus failed; at most two editions a tick (ratification R57)
+ */
+/**
+ * The scheduler consumer `{name, key, due, wake, tick}` (scheduler R8).
+ * @typedef {Object} SweepConsumer
+ * @property {"casefile-sweep"} name
+ * @property {"casefilesweep"} key
+ * @property {(at: number) => (number | null)} due `at` when the sweep's wake has come, else null
+ * @property {(at: number) => (number | null)} wake the sweep's own next instant, never raised to `at`
+ * @property {(at: number) => Promise<{casefilesweep: SweepTick}>} tick
+ */
+/**
+ * R70: the case-file sweep as a consumer of the object's alarm.
+ * @param {CaseFileSweeper} ratification
+ * @returns {SweepConsumer}
+ */
 export function casefileSweepConsumer(ratification) {
   const wakeAt = (at) => { try { return finiteOr(ratification.caseFileWake(at)); } catch { return null; } };
   return {
