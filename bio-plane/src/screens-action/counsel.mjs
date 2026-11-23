@@ -7,6 +7,10 @@
    Every function here is self-contained (interface-shell R21 (1)). */
 import { readOnly } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** Brief counsel (R34): the packet for the team's lawyer; `counselpacket`.
+ *  @type {Readonly<ScreenDef>} */
 export const counsel = Object.freeze({
   id: "counsel",
 

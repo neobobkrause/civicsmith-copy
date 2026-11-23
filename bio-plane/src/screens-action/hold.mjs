@@ -9,6 +9,11 @@
    (interface-shell R21 (1)). */
 import { readOnly, WRITE_HELP } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** Litigation hold (R32): where the pressure arrived, the hold placed with a reason, and released; `actionhold`, `pressurerecord`,
+ *  `actionholdpreview`, `actionholdrelease`.
+ *  @type {Readonly<ScreenDef>} */
 export const hold = Object.freeze({
   id: "hold",
 
@@ -188,6 +193,8 @@ export const hold = Object.freeze({
   ],
 });
 
+/** Hold notice (R33): `holdnoticeprepare` fills the notice; `holdnoticesent` records that the member sent it.
+ *  @type {Readonly<ScreenDef>} */
 export const holdNotice = Object.freeze({
   id: "holdnotice",
 

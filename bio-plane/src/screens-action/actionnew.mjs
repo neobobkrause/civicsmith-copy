@@ -9,6 +9,10 @@
    function here is self-contained (interface-shell R21 (1)). */
 import { readOnly, kindWord, kindsOf, officeLine, WRITE_HELP } from "./send-steps.mjs";
 
+/** @import { ScreenDef } from "./send-steps.mjs" */
+
+/** Start an action (R24, R28, R35): the composer for any kind but a records request; `actioncreate`.
+ *  @type {Readonly<ScreenDef>} */
 export const actionNew = Object.freeze({
   id: "actionnew",
 

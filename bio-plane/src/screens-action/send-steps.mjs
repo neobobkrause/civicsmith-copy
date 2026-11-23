@@ -14,7 +14,55 @@
    none, or that it cannot be read). `start-send` alone asks the question, when `stakeatpreparation` answers `higher_stakes`:
    a prompt that is never a gate, so approving, preparing and recording the sending are drawn whether or not it is answered. */
 
-/** The newest draft not yet recorded sent, and the newest one sent, from `filingsfor`'s answer. */
+/**
+ * @typedef {Object} ScreenAct
+ * @property {string} op the operation the act sends (op-declarations)
+ * @property {string} [label] the key of its button's words, where not the act's own
+ * @property {ReadonlyArray<string>} [rereads] the reads drawn again once it answers
+ * @property {Object<string, *>} [refusals] each refusal's code, and the key or the function its words are drawn by
+ * @property {string} [reasonField] the body field the shell's reason fills, where the act asks for one
+ * @property {boolean} [outward] the act also carries the outward mark
+ * @property {(view: *, el: *, cs: *) => (null | {refuse?: string, body?: Object, query?: Object})} send
+ *   what is sent: null sends nothing, `refuse` draws a key's words and sends nothing
+ * @property {(view: *, answer: *, cs: *) => void} [done] what the screen keeps of the answer
+ */
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, *>} parts the helpers handed to it as `view.parts`, each self-contained (interface-shell R21 (1))
+ * @property {(view: *) => Object} [place] the place drawn in the path, from the screen's reads
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup, drawn with the shell's kit `cs` (interface-shell R21)
+ * @property {ReadonlyArray<ScreenAct>} acts the acts it draws
+ */
+/**
+ * @typedef {Object} Draft
+ * @property {string} id the filing
+ * @property {string} text
+ * @property {Array<*>} blanks each filled blank with its source
+ * @property {Array<*>} unfilled each unfilled blank with why
+ * @property {*} template
+ * @property {*} disclosure
+ * @property {string | null} advisory
+ * @property {Array<string>} offers
+ * @property {Array<*>} exhibits each exhibit's grade against the venue's standard (R49)
+ * @property {Object | null} venueStandard
+ * @property {* | null} tier
+ */
+/**
+ * @typedef {Object} RecordsLaw
+ * @property {string} citation
+ * @property {string} level
+ * @property {string} name
+ * @property {string} rule the `deadlines` rule its `response` names, or ""
+ * @property {number} amount
+ * @property {string} count
+ * @property {string} dcitation
+ */
+
+/** The newest draft not yet recorded sent, and the newest one sent, from `filingsfor`'s answer.
+ *  @param {*} v `filingsfor`'s answer
+ *  @returns {{open: * | null, sent: * | null}} */
 export function draftsOf(v) {
   const drafts = v && Array.isArray(v.drafts) ? v.drafts.slice() : [];
   drafts.sort(function (a, b) { return String(a.at || "") < String(b.at || "") ? -1 : String(a.at || "") > String(b.at || "") ? 1 : 0; });
@@ -23,7 +71,9 @@ export function draftsOf(v) {
   return { open: unsent.length ? unsent[unsent.length - 1] : null, sent: sent.length ? sent[sent.length - 1] : null };
 }
 
-/** The step an action is at: "prepare", "approve", "second" (waiting on a second approval), "send" or "sent". */
+/** The step an action is at: "prepare", "approve", "second" (waiting on a second approval), "send" or "sent".
+ *  @param {*} v `filingsfor`'s answer
+ *  @returns {string} */
 export function stepOf(v) {
   const drafts = v && Array.isArray(v.drafts) ? v.drafts.slice() : [];
   drafts.sort(function (a, b) { return String(a.at || "") < String(b.at || "") ? -1 : String(a.at || "") > String(b.at || "") ? 1 : 0; });
@@ -35,7 +85,9 @@ export function stepOf(v) {
   return "prepare";
 }
 
-/** A prepared draft as the screen draws it, from what `communicationprepare`, `filingprepare` or `filingread` answered. */
+/** A prepared draft as the screen draws it, from what `communicationprepare`, `filingprepare` or `filingread` answered.
+ *  @param {*} a the answer
+ *  @returns {Draft} */
 export function draftOf(a) {
   return { id: a.id || a.filing, text: a.text, blanks: Array.isArray(a.blanks) ? a.blanks : [], unfilled: Array.isArray(a.unfilled) ? a.unfilled : [],
     template: a.template || null, disclosure: a.disclosure || null, advisory: typeof a.advisory === "string" && a.advisory ? a.advisory : null,
@@ -46,7 +98,11 @@ export function draftOf(a) {
 }
 
 /** R11: reads the prepared draft the action holds, once per filing, through `filingread`; keeps it in the page's memory
- *  as `ui.draft` (and a new text field id, so the redraw draws its text). Answers the read's state while it is not there. */
+ *  as `ui.draft` (and a new text field id, so the redraw draws its text). Answers the read's state while it is not there.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @param {string} filing
+ *  @returns {{state: string, refusal?: *}} */
 export function readFiling(cs, view, filing) {
   const ui = view.ui;
   const L = ui.read || (ui.read = {});
@@ -69,13 +125,21 @@ export function readFiling(cs, view, filing) {
 }
 
 /** R27: the kit's read-only sentence for a member who may read and not act, the screen's own name its noun (`shell.readonly`,
- *  `interface-shell` R94); "" for a member who may act. */
+ *  `interface-shell` R94); "" for a member who may act.
+ *  @param {*} cs the shell's kit
+ *  @param {string} noun the screen's name key
+ *  @returns {string} */
 export function readOnly(cs, noun) {
   return typeof cs.readonly === "function" ? cs.readonly(String(noun).replace(/^screen\.(.+)\.name$/, "shell.readonly.noun.$1")) : "";
 }
 
 /** R28: a kind in its words, `screen.action.kind.<kind>` (or `screen.start-send.kind.<kind>` with `lower`), else the profile's
- *  own label from `action_kind_labels`, else "" (a kind with neither is not drawn, and is never worded "Other"). */
+ *  own label from `action_kind_labels`, else "" (a kind with neither is not drawn, and is never worded "Other").
+ *  @param {*} cs the shell's kit
+ *  @param {string} kind
+ *  @param {boolean} lower
+ *  @param {*} labels `action_kind_labels`
+ *  @returns {string} */
 export function kindWord(cs, kind, lower, labels) {
   const key = (lower ? "screen.start-send.kind." : "screen.action.kind.") + kind;
   if (cs.w(key) !== cs.esc(key)) return cs.w(key);
@@ -84,7 +148,11 @@ export function kindWord(cs, kind, lower, labels) {
 }
 
 /** R28: the kinds the vocabulary offers (`affordances`' `action_kind`, read at each call) as `cs.choice` options: a kind with
- *  words by its key, a profile's own by its label (record data), a kind with neither not at all. */
+ *  words by its key, a profile's own by its label (record data), a kind with neither not at all.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @param {boolean} lower
+ *  @returns {Array<{value: string, key?: string, text?: string}>} */
 export function kindsOf(cs, view, lower) {
   const vocab = view.data.vocab;
   const v = vocab && vocab.state === "ok" && vocab.value && vocab.value.vocabularies ? vocab.value.vocabularies : {};
@@ -97,7 +165,9 @@ export function kindsOf(cs, view, lower) {
 }
 
 /** C64-law (`jurisdictions` R95 to R97): the laws a records request can go under, as the profile's `records_laws` lists them, each with its
- *  own first-request window: the `deadlines` rule its `response` names, never a guess. A law with no window of its own carries none. */
+ *  own first-request window: the `deadlines` rule its `response` names, never a guess. A law with no window of its own carries none.
+ *  @param {*} profiles the `profiles` read's answer
+ *  @returns {Array<RecordsLaw>} */
 export function recordsLawsOf(profiles) {
   const v = profiles && profiles.view ? profiles.view : {};
   const ds = Array.isArray(v.deadlines) ? v.deadlines : [];
@@ -110,7 +180,10 @@ export function recordsLawsOf(profiles) {
 
 /** C64-law: the records law the action goes under, as a member stated it (`actions` R25's `governing_laws`) and the profile lists it with
  *  its own window (as `recordsLawsOf` reads each); null when none is stated or the stated one is not one the profile lists (an older
- *  action's). Self-contained: it is serialised beside the screen that names it. */
+ *  action's). Self-contained: it is serialised beside the screen that names it.
+ *  @param {*} action
+ *  @param {*} profiles the `profiles` read's answer
+ *  @returns {RecordsLaw | null} */
 export function chosenLawOf(action, profiles) {
   const gl = action && action.governing_laws && typeof action.governing_laws === "object" ? action.governing_laws : {};
   const stated = gl.state === "stated" && Array.isArray(gl.laws) ? gl.laws : [];
@@ -128,7 +201,9 @@ export function chosenLawOf(action, profiles) {
 }
 
 /** C64-more: an office by its role and body, each once: an office named by its agency alone (role and body the same words) is
- *  drawn once, never "Office, Office". */
+ *  drawn once, never "Office, Office".
+ *  @param {*} ad the addressee
+ *  @returns {string} */
 export function officeLine(ad) {
   const parts = [ad && ad.role, ad && (ad.body || ad.organisation)].filter(function (x) { return typeof x === "string" && x.trim(); })
     .map(function (x) { return x.trim(); });
@@ -136,7 +211,9 @@ export function officeLine(ad) {
 }
 
 /** C64-template: whether `templatesforaction` offers a template for the action's kind (a version, and no court petition); a read that did
- *  not answer offers none (never claimed). */
+ *  not answer offers none (never claimed).
+ *  @param {*} view
+ *  @returns {boolean} */
 export function templateOffered(view) {
   const t = view.data.templates;
   const v = t && t.state === "ok" && t.value ? t.value : null;
@@ -144,7 +221,10 @@ export function templateOffered(view) {
 }
 
 /** R21: "Sent with" and "In this matter", from `stakeatpreparation` (`filings` R62: `group_stake`, `matter_stake`) and the
- *  team's name from `groupidentity`. A stake that cannot be read says so in its fold, open whenever drawn, never none. */
+ *  team's name from `groupidentity`. A stake that cannot be read says so in its fold, open whenever drawn, never none.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @returns {string} */
 export function stakeLines(cs, view) {
   const idn = view.data.identity;
   const name = idn && idn.state === "ok" && idn.value && typeof idn.value.display_name === "string" ? idn.value.display_name.trim() : "";
@@ -173,7 +253,10 @@ export function stakeLines(cs, view) {
 
 /** R21: on `start-send` alone, the question asked when the action carries higher stakes (`stakeatpreparation`'s
  *  `higher_stakes`): the team's stake in this action, optional, saved by `actionstake` where the shell draws it. Nothing
- *  waits on it. The extra sentence is drawn when the tier is undetermined. */
+ *  waits on it. The extra sentence is drawn when the tier is undetermined.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @returns {string} */
 export function stakeAsk(cs, view) {
   const r = view.data.stake;
   if (!r || r.state !== "ok" || !r.value || r.value.higher_stakes !== true) return "";
@@ -197,7 +280,11 @@ export function stakeAsk(cs, view) {
  *  act of `start-send`, `request` and `action`). A screen that does not draw the act (the dashboard), or a member who may not do it,
  *  is given a reference to the project's page, where Join is drawn. "" for any other state, including one not read (the plane still
  *  refuses what she may not do). The state is her own `participation` on the `projectlist` row of the action's project (`standing`,
- *  project-roster R34), read with the screen's others. */
+ *  project-roster R34), read with the screen's others.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @param {string} [project] the project, where not the action's
+ *  @returns {string} */
 export function joinFirst(cs, view, project) {
   const a = view.data.action && view.data.action.state === "ok" && view.data.action.value ? view.data.action.value : null;
   const id = project || (a && typeof a.project === "string" ? a.project : "");
@@ -215,7 +302,9 @@ export function joinFirst(cs, view, project) {
 
 /** R3 (filings R43, R44; fix round 10, diagnosis 11 §2a): the language, and for a public comment the voice, the draft is prepared in, as
  *  the member states them: the language her account holds (`memberlanguage`) among those the team's profiles answer (`grouplanguages`),
- *  else the team's first; never nothing, as without one `filings` reads no list of phrasings and the assertion gate does not run. */
+ *  else the team's first; never nothing, as without one `filings` reads no list of phrasings and the assertion gate does not run.
+ *  @param {*} view
+ *  @returns {{tags: Array<string>, first: string, mine: string}} */
 export function languagesOf(view) {
   const mine = view.data.mylang && view.data.mylang.state === "ok" && view.data.mylang.value && typeof view.data.mylang.value.language === "string" ? view.data.mylang.value.language : "";
   const team = view.data.languages && view.data.languages.state === "ok" && view.data.languages.value && Array.isArray(view.data.languages.value.languages)
@@ -225,7 +314,10 @@ export function languagesOf(view) {
 }
 
 /** The controls that state those marks: the language (named in the member's own language, never as a tag) and, on a public comment, the
- *  voice (`voice.group`, `voice.self`, each with what it means). "" where there is nothing to state. */
+ *  voice (`voice.group`, `voice.self`, each with what it means). "" where there is nothing to state.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @returns {string} */
 export function marksFields(cs, view) {
   const L = view.parts.languagesOf(view);
   const a = view.data.action && view.data.action.state === "ok" && view.data.action.value ? view.data.action.value : {};
@@ -240,7 +332,10 @@ export function marksFields(cs, view) {
 }
 
 /** What those controls state, as the body of `communicationprepare` carries it: `language` (the one chosen, else the member's), and for a
- *  public comment `voice` (`group` unless she chose `self`). */
+ *  public comment `voice` (`group` unless she chose `self`).
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @returns {{language?: string, voice?: string}} */
 export function marksBody(cs, view) {
   const L = view.parts.languagesOf(view);
   const out = {};
@@ -256,7 +351,11 @@ export function marksBody(cs, view) {
 }
 
 /** R18 (fix round 10; diagnosis 11 §7a): a determination named by its act, never by an id: the kind of event (where the read carries it; the
- *  list does not), its day and the office (`noOffice` leaves the office out), as plain text the kit escapes; "" where the record gives none of them. */
+ *  list does not), its day and the office (`noOffice` leaves the office out), as plain text the kit escapes; "" where the record gives none of them.
+ *  @param {*} cs the shell's kit
+ *  @param {*} d the determination
+ *  @param {boolean} [noOffice]
+ *  @returns {string} */
 export function actName(cs, d, noOffice) {
   const act = d && d.act && typeof d.act === "object" ? d.act : {};
   const ev = d && d.event && typeof d.event === "object" ? d.event : null;
@@ -268,13 +367,21 @@ export function actName(cs, d, noOffice) {
   return [ev && typeof ev.kind === "string" ? ev.kind : "", day, noOffice ? "" : office].filter(Boolean).join(" \u00b7 ");
 }
 
-/** R18: a standard named by its citation, as `standards` lists it (`{id, cite}`); "" where the list does not hold it, never the standard's id. */
+/** R18: a standard named by its citation, as `standards` lists it (`{id, cite}`); "" where the list does not hold it, never the standard's id.
+ *  @param {*} items
+ *  @param {string} id
+ *  @returns {string} */
 export function citeOf(items, id) {
   const hit = (Array.isArray(items) ? items : []).find(function (x) { return x && x.id === id; });
   return hit && typeof hit.cite === "string" ? hit.cite.trim() : "";
 }
 
-/** The steps drawn: `o.request` adds the period, form and cost limit fields (R8) and the portal's warning and number. */
+/** The steps drawn: `o.request` adds the period, form and cost limit fields (R8) and the portal's warning and number.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @param {*} filings `filingsfor`'s answer
+ *  @param {{request?: boolean}} [o]
+ *  @returns {string} */
 export function sendSteps(cs, view, filings, o) {
   const P = view.parts;
   const req = !!(o && o.request);
@@ -415,6 +522,8 @@ const keepDraft = function (view, answer, cs) {
   }
 };
 
+/** R3, R4, R8: "Prepare what is sent", `communicationprepare`.
+ *  @type {Readonly<ScreenAct>} */
 export const PREPARE = Object.freeze({
   // R3, R4, R8: what is sent, in the member's own words, with the period, form and cost limit as `fills` on a request.
   op: "communicationprepare",
@@ -440,6 +549,8 @@ export const PREPARE = Object.freeze({
   done: keepDraft,
 });
 
+/** R3, R41: "Prepare the filing", `filingprepare`.
+ *  @type {Readonly<ScreenAct>} */
 export const PREPARE_FILING = Object.freeze({
   // R3: the filing from the group's template for this kind, or the member's text where she wrote one.
   op: "filingprepare",
@@ -460,6 +571,8 @@ export const PREPARE_FILING = Object.freeze({
   done: keepDraft,
 });
 
+/** R3, R42: "Approve this text", `filingapprove`.
+ *  @type {Readonly<ScreenAct>} */
 export const APPROVE = Object.freeze({
   // R3: terminal: approving fixes the text (the shell's dialog says so, `act.filingapprove.does`).
   // R42 (C71; BOB's B11): refused with the sentences pointed out as saying the body broke a rule (`ASSERTION_UNRESOLVED`), the
@@ -523,6 +636,8 @@ export const APPROVE = Object.freeze({
   },
 });
 
+/** R21: "Save this action's stake", `actionstake`.
+ *  @type {Readonly<ScreenAct>} */
 export const STAKE = Object.freeze({
   // R21: "Save this action's stake" (`action-records` R17): what this one action adds to the team's and the project's;
   // empty clears the action's own, and saves nothing where it has none. A prompt, never a gate: no other act waits on it.
@@ -539,6 +654,8 @@ export const STAKE = Object.freeze({
   rereads: ["stake"],
 });
 
+/** G52: "Join", `projectjoin`.
+ *  @type {Readonly<ScreenAct>} */
 export const JOIN = Object.freeze({
   // G52 (K4686; R3): "Join", the project the member is invited to, in place on `start-send`, `request` and `action` (the design's fold,
   // DEC-417); the screen reads her place again, now joined, and offers the weighty act.
@@ -546,12 +663,16 @@ export const JOIN = Object.freeze({
   send: function (view, el) { return el.dataset.project ? { query: { projectId: el.dataset.project } } : null; },
 });
 
+/** R3: "Give the second approval", `filingsecondapprove`.
+ *  @type {Readonly<ScreenAct>} */
 export const SECOND = Object.freeze({
   // R3: by a member other than the first approver (filings refuses `SAME_APPROVER` otherwise).
   op: "filingsecondapprove",
   send: function (view, el) { return { body: { filing: el.dataset.filing } }; },
 });
 
+/** R48: "Keep this filing as your team's template", `templatesave`.
+ *  @type {Readonly<ScreenAct>} */
 export const TEMPLATE_SAVE = Object.freeze({
   // R48 (C75; DEC-377): keeps the approved filing as the team's template, as a filing or as a brief for counsel (`filings` R32).
   op: "templatesave", rereads: [],
@@ -569,6 +690,8 @@ export const TEMPLATE_SAVE = Object.freeze({
   },
 });
 
+/** R3, R4, R8: "I have sent it · record the sending", `filingrecordsent`.
+ *  @type {Readonly<ScreenAct>} */
 export const RECORD_SENT = Object.freeze({
   // R3, R4, R8: the member sent it by the office's own means; this records the day, how, and the venue's reference.
   op: "filingrecordsent", outward: true,
@@ -592,7 +715,8 @@ export const RECORD_SENT = Object.freeze({
 
 /** The assistant's help with one own-words field (`wizard-scripts` R27, DEC-153): drawn only while it is reachable, by the
  *  screen that owns the field (`data-id` the field, `data-field` its name, `data-forop` the act the words are for). Nothing is
- *  kept until the member saves; the draft is labelled machine work and replaces nothing she did not ask to have worded. */
+ *  kept until the member saves; the draft is labelled machine work and replaces nothing she did not ask to have worded.
+ *  @type {Readonly<ScreenAct>} */
 export const WRITE_HELP = Object.freeze({
   op: "writinghelp", rereads: [], reasonField: "told",
   send: function (view, el, cs) {
@@ -610,7 +734,14 @@ export const WRITE_HELP = Object.freeze({
 });
 
 /** A read a screen makes itself, once per query and token, kept in the page's memory (`view.ui.later`); answers
- *  `{state: "loading" | "ok" | "failed", value?, refusal?}`. */
+ *  `{state: "loading" | "ok" | "failed", value?, refusal?}`.
+ *  @param {*} cs the shell's kit
+ *  @param {*} view
+ *  @param {string} key
+ *  @param {string} op
+ *  @param {Object} query
+ *  @param {string} [token]
+ *  @returns {{q: string, state: string, value?: *, refusal?: *}} */
 export function later(cs, view, key, op, query, token) {
   const L = view.ui.later || (view.ui.later = {});
   const q = JSON.stringify(query) + "#" + (token || "");
