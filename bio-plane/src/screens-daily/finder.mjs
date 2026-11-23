@@ -8,6 +8,15 @@
    (interface-shell R21 (1)); the state parts it draws are `view.parts.finderStates`. */
 import { finderStates } from "./finder-states.mjs";
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ */
+/** @type {Readonly<ScreenDef>} Find and its browse */
 export const finder = Object.freeze({
   id: "finder",
   parts: { finderStates },
