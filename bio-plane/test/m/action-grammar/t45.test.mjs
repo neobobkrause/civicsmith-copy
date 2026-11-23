@@ -65,6 +65,30 @@ test("R5 (T45): the lifecycle grammar is the same for every kind, its stages key
   assert.deepEqual(codes(AG.lifecycleFindings([sent({ stage: "request" }), sent({ stage: "acknowledgement", follows: "0" })], 1)), ["STAGE_NOT_OF_DIRECTION"]);
 });
 
+test("R5: each of the nine refusals is its own row, C-94.1 to C-94.9 in the order R5 lists them, and an entry's findings come in that order so the first found leads; bounds: a stage follows only an earlier entry (itself, a later one, a negative or a non-number is FOLLOWS_NO_ENTRY), a non-response has no stage, a due date is year-month-day with its citation; never throws on anything handed in; negative controls: the well-formed forms answer nothing", () => {
+  const R5 = ["STAGE_NOT_OF_DIRECTION", "FOLLOWS_NO_ENTRY", "APPEAL_NAMES_NO_DECISION", "OUTCOME_NOT_ON_RECEIVED", "OUTCOME_NOT_IN_VOCABULARY",
+    "DECISION_WITHOUT_OUTCOME", "FEE_ESTIMATE_WITHOUT_QUOTE", "DUE_HALF_STATED", "DUE_NOT_A_DATE"];
+  R5.forEach((code, n) => assert.equal(AG.LIFECYCLE_CHECKS[code].check, `C-94.${n + 1}`, code));
+  const c = (entries, i) => codes(AG.lifecycleFindings(entries, i));
+  const many = c([sent({ stage: "denial", outcome: "granted", due_by: "x" })], 0);
+  assert.deepEqual(many, ["STAGE_NOT_OF_DIRECTION", "FOLLOWS_NO_ENTRY", "OUTCOME_NOT_ON_RECEIVED", "DUE_HALF_STATED"]);
+  assert.deepEqual(many, [...many].sort((a, b) => R5.indexOf(a) - R5.indexOf(b)), "in R5's order");
+  const req = sent({ stage: "request" });
+  for (const follows of ["1", "2", "-1", "0.0", "first"])
+    assert.deepEqual(c([req, recv({ stage: "acknowledgement", follows }), recv({})], 1), ["FOLLOWS_NO_ENTRY"], follows);
+  assert.deepEqual(c([req, recv({ stage: "acknowledgement", follows: "0" })], 1), []);
+  const nr = AG.lifecycleFindings([req, { direction: "no_response", at: "2026-07-01", stage: "request", follows: "0" }], 1);
+  assert.deepEqual(codes(nr), ["STAGE_NOT_OF_DIRECTION"]);
+  assert.match(nr[0].message, /non-response has no stage/);
+  assert.deepEqual(c([sent({ stage: "request", due_by: "2026-6-30", due_cite: "Records Act s.1" })], 0), ["DUE_NOT_A_DATE"]);
+  assert.deepEqual(c([sent({ stage: "request", due_by: "2026-06-30", due_cite: "Records Act s.1" })], 0), []);
+  assert.deepEqual(c([sent({ stage: "request", exemptions: "s.6254" })], 0), ["OUTCOME_NOT_ON_RECEIVED"]);
+  assert.deepEqual(c([req, recv({ stage: "fee_estimate", follows: "0", quote_amount: "25", quote_currency: "USD", quote_answers: "0" })], 1), []);
+  for (const [entries, i] of [[null, 0], [undefined, 0], [[], 0], [[null], 0], [[5], 0], [[[]], 0], [[req], 9], [[req], -1], ["text", 0]])
+    assert.deepEqual(AG.lifecycleFindings(entries, i), [], JSON.stringify([entries, i]));
+  assert.doesNotThrow(() => AG.lifecycleFindings([{ direction: "sent", stage: 5, follows: {}, outcome: [], due_by: 7 }], 0));
+});
+
 /* ------------------------------------------------------------------------------------------------ R8 */
 
 test("R8 (T45; K2849): the press arm accepts the reporter who holds the role, in the bytes the flat text holder: \"<name>\" (and as the reads present it, {name}), 1 to 200 characters with no quote, backslash or line break; a malformed holder, or a holder on any other arm, pushes one C-2.10 finding naming the arm holder; negative controls: a press counterparty with a holder pushes nothing, the same holder on an office pushes the finding, and every counterparty without a holder answers as before", () => {
