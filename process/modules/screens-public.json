@@ -9,7 +9,9 @@
     "bio-plane/src/screens-publish/review-outside.mjs",
     "bio-plane/src/screens-publish/parts.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-public/"
+  ],
   "public": [
     "bio-plane/src/screens-publish/docket-public.mjs",
     "bio-plane/src/screens-publish/doorbell.mjs",
