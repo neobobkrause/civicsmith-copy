@@ -187,7 +187,12 @@ function merge(folder, outFile) {
       n: v.n, distinct: v.distinct, mods: Object.keys(v.owners).filter((o) => place.has(o)).map((o) => place.get(o)).sort((a, b) => a - b),
       ...(v.owners['(no owner)'] ? { unowned: v.owners['(no owner)'] } : {}), ...(v.owners['(a folder no module claims)'] ? { noClaim: v.owners['(a folder no module claims)'] } : {}),
       ...(v.other ? { other: v.other } : {}), ...(v.ex ? { ex: v.ex.slice(0, 1) } : {}) }]))]));
-    real.writeFileSync(outFile, `${JSON.stringify({ made: 'by tools/trace.mjs merge, from traced runs of test files (tools/trace-run.mjs)', format: 'sites: "file:line" → kind of call → { n calls, distinct paths, mods: the modules that own those paths as places on process/modules/order.txt (0 first), unowned and noClaim: paths no module owns and folders no module claims, other: paths outside the checkout by where, ex: one of the paths }', processes, callingPlacesSeen: Object.keys(sites).length, sites: kept })}\n`);
+    // for each file that has a computed import() or require: the modules whose files it imported at run time
+    const importers = new Set(Array.isArray(list) ? [] : Object.entries(list.computed ?? {}).filter(([, rows]) => rows.some((r) => /^(dynamic-import|require)/.test(Array.isArray(r) ? r[1] : r.k))).map(([f]) => f));
+    const importsOf = {};
+    for (const e of imports.keys()) { const [from, to] = e.split('|'); if (!importers.has(from) || to.startsWith('<')) continue; const o = ownerOf(to); if (o && place.has(o)) (importsOf[from] ??= new Set()).add(place.get(o)); }
+    for (const f of Object.keys(importsOf)) importsOf[f] = [...importsOf[f]].sort((a, b) => a - b);
+    real.writeFileSync(outFile, `${JSON.stringify({ made: 'by tools/trace.mjs merge, from traced runs of test files (tools/trace-run.mjs)', importsOf, format: 'sites: "file:line" → kind of call → { n calls, distinct paths, mods: the modules that own those paths as places on process/modules/order.txt (0 first), unowned and noClaim: paths no module owns and folders no module claims, other: paths outside the checkout by where, ex: one of the paths }. importsOf: a file that has a computed import() → the modules (places on the order file) whose files Node resolved as imported from it in the runs', processes, callingPlacesSeen: Object.keys(sites).length, sites: kept })}\n`);
     console.log(`${processes} processes, ${Object.keys(sites).length} calling places, ${Object.keys(kept).length} kept → ${outFile}`);
     return;
   }

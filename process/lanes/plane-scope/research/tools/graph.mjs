@@ -1398,7 +1398,14 @@ function resolveComputed(r) {
   // to start a Worker, show as reads made from the line)
   const seenAt = RUNTIME.sites?.[`${r.f}:${r.l}`] ?? null;
   const seenKind = { 'dynamic-import': 'fs-read', require: 'fs-read', worker: 'fs-read', 'worker-module': 'fs-read', 'worker-root': 'fs-read', 'sqlite-open': 'fs-read' }[r.k] ?? r.k;
-  const seenRaw = seenAt?.[seenKind] ?? null;
+  let seenRaw = seenAt?.[seenKind] ?? null;
+  // a computed import(): what Node resolved as imported from this file in the runs, less what the file's settled imports
+  // already reach. It is known for the file, not for the line: every computed import() of the file carries it.
+  if (/^(dynamic-import|require)/.test(r.k) && RUNTIME.importsOf?.[r.f]) {
+    const settled = SETTLED_IMPORTS.get(r.f) ?? new Set();
+    const mods = RUNTIME.importsOf[r.f].filter((i) => !settled.has(ORDER[i]) && ORDER[i] !== ownerOf(r.f)?.m);
+    seenRaw = { n: seenRaw?.n ?? 0, distinct: seenRaw?.distinct ?? 0, ...(seenRaw ?? {}), mods: [...new Set([...(seenRaw?.mods ?? []), ...mods])].sort((a, b) => a - b), importedFromTheFile: mods.length };
+  }
   const seen = seenRaw ? { ...seenRaw, owners: Object.fromEntries((seenRaw.mods ?? []).map((i) => [ORDER[i], 1])) } : null;
   const res = {};
   if (r.glob) {
@@ -1436,6 +1443,9 @@ for (const p of PARTIALS) REFS.push({ f: p.f, l: p.l, k: 'path', s: p.s, c: 'x',
 /** The places that start a file as a program (a child process, a Worker, a package script): file → ["file:line", …]. */
 const STARTS = new Map();
 for (const r of [...REFS, ...VIA]) if (!r.c && r.tk === 'file' && /^(proc|worker)$/.test(r.k)) { if (!STARTS.has(r.to)) STARTS.set(r.to, []); const at = `${r.f}:${r.l}`; if (STARTS.get(r.to).length < 6 && !STARTS.get(r.to).includes(at)) STARTS.get(r.to).push(at); }
+/** file → the modules its settled imports reach. */
+const SETTLED_IMPORTS = new Map();
+for (const r of REFS) if (!r.c && r.own && ['import', 'export-from', 'dynamic-import', 'require'].includes(r.k)) { if (!SETTLED_IMPORTS.has(r.f)) SETTLED_IMPORTS.set(r.f, new Set()); SETTLED_IMPORTS.get(r.f).add(r.own); }
 const COMPUTED = REFS.filter((r) => r.c);
 for (const r of COMPUTED) r.res = resolveComputed(r);
 for (const v of VIA) if (v.c) v.res = resolveComputed(v);
@@ -1492,11 +1502,14 @@ for (const v of VIA) {
   if (HAS_TARGET.has(v.tk) && v.own) addEdge(v.f, v.own, `${v.k} (path given by a caller)`, v.l);
   if (v.k === 'fs-list' && v.tk === 'dir') for (const m of childOwners(v.to)) if (m !== v.own) addEdge(v.f, m, 'fs-list (a file or folder inside the folder listed)', v.l);
 }
+const importSeenDone = new Set();
 for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
   const res = r.res;
   if (res.by === 'start') for (const m of res.reach) addEdge(r.f, m, `${r.k} (start of the path known)`, r.l);
   if (res.by === 'pattern') for (const m of res.reach) addEdge(r.f, m, `${r.k} (a pattern of files)`, r.l);
   if (res.hand) for (const m of res.hand.reach) addEdge(r.f, m, `${r.k} (read by hand)`, r.l);
+  // (a file's run-time imports are known for the file: counted once, at its first computed import)
+  if (res.seen && res.seen.importedFromTheFile !== undefined) { if (importSeenDone.has(r.f)) continue; importSeenDone.add(r.f); }
   if (res.seen) for (const m of Object.keys(res.seen.owners ?? {})) if (MOD_INDEX.has(m)) addEdge(r.f, m, `${r.k} (seen in a run)`, r.l);
 }
 const realPairs = new Set(REFS.filter((r) => r.to).map((r) => `${r.f}|${r.to}`));
@@ -1519,10 +1532,12 @@ for (const r of LEADS) if (r.own) upRef(r, 'path-text (a lead)');
 const upExtra = (r, m, kind) => { const o = ownerOf(r.f); if (o && MOD_INDEX.get(m) > MOD_INDEX.get(o.m)) UP.push({ from: o.m, to: m, side: o.t ? 'test' : 'code', at: `${r.f}:${r.l}`, kind, what: r.s }); };
 for (const r of REFS) if (!r.c && r.k === 'fs-list' && r.tk === 'dir') for (const m of childOwners(r.to)) if (m !== r.own) upExtra({ ...r, s: r.to }, m, 'fs-list (a file or folder inside the folder listed)');
 for (const v of VIA) if (!v.c && v.k === 'fs-list' && v.tk === 'dir') for (const m of childOwners(v.to)) if (m !== v.own) upExtra({ ...v, s: v.to }, m, 'fs-list (a file or folder inside the folder listed)');
+const importSeenUp = new Set();
 for (const r of [...COMPUTED, ...VIA.filter((v) => v.c)]) {
   if (r.res.by === 'start') for (const m of r.res.reach) upExtra(r, m, `${r.k} (start of the path known)`);
   if (r.res.by === 'pattern') for (const m of r.res.reach) upExtra(r, m, `${r.k} (a pattern of files)`);
   if (r.res.hand) for (const m of r.res.hand.reach) upExtra(r, m, `${r.k} (read by hand)`);
+  if (r.res.seen && r.res.seen.importedFromTheFile !== undefined) { if (importSeenUp.has(r.f)) continue; importSeenUp.add(r.f); }
   if (r.res.seen) for (const m of Object.keys(r.res.seen.owners ?? {})) if (MOD_INDEX.has(m)) upExtra(r, m, `${r.k} (seen in a run)`);
 }
 
@@ -1610,6 +1625,7 @@ const sizes = {};
   const seenShort = (f, s) => {
     const names = Object.keys(s.owners ?? {}).filter((n) => MOD_INDEX.has(n)); const later = laterThan(f, names);
     if (!names.length && !s.unowned && !s.noClaim) return { calls: s.n, ...(s.other ? { other: s.other } : {}) };
+    if (s.importedFromTheFile !== undefined) return { modulesImportedFromTheFileAtRunTime: s.importedFromTheFile, modules: names.length, ...(names.length <= 6 ? { names } : {}), ...(later.length ? { later: later.length > 10 ? `${later.length}: ${later.slice(0, 4).join(', ')} … ${later.slice(-2).join(', ')}` : later } : {}) };
     return { calls: s.n, paths: s.distinct, modules: names.length, ...(names.length && names.length <= 6 ? { names } : {}), ...(later.length ? { later: later.length > 10 ? `${later.length}: ${later.slice(0, 4).join(', ')} … ${later.slice(-2).join(', ')}` : later } : {}),
       ...(s.unowned ? { unowned: s.unowned } : {}), ...(s.noClaim ? { foldersNoModuleClaims: s.noClaim } : {}), ...(Object.keys(s.other ?? {}).length ? { other: s.other } : {}), ...(s.ex ? { ex: s.ex.slice(0, 1) } : {}) };
   };
@@ -1683,7 +1699,11 @@ const SUMMARY = {
   other: { python: OTHER.python, html: OTHER.html, htmlInlineScripts: OTHER.htmlInlineScripts, configuration: OTHER.config, programsKeptAsText: OTHER.text, leftToHand: OTHER.byHand.length },
   references: REFS.length, referencesByKind: Object.fromEntries([...TOTALS.byKind].sort()),
   targets: (() => { const m = {}; for (const r of REFS) if (!r.c) { const k = `${r.k} → ${r.tk}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),
-  viaCallers: VIA.length, leads: LEADS.length, anchors: STATS.anchors, partialPaths: PARTIALS.length, unbound: UNBOUND.length,
+  // of the settled references outside import declarations: written as a text literal (or new URL(literal, import.meta.url)), or settled by following names and calls
+  settledOutsideImportDeclarations: (() => { const lit = /^(['"`][^$]*['"`]|new URL\(\s*['"`][^$]*['"`]\s*,\s*import\.meta\.url\s*\))$/; let literal = 0; let followed = 0; const notes = {};
+    for (const r of REFS) { if (r.c || r.lang || ['import', 'export-from', 'jsdoc-import'].includes(r.k)) continue; if (lit.test(r.s ?? '')) literal++; else followed++; if (r.note) { const k = r.note.replace(/[:("].*$/, '').trim(); notes[k] = (notes[k] ?? 0) + 1; } }
+    return { literal, followed, withANote: notes }; })(),
+  viaCallers: VIA.length, viaCallersSettled: VIA.filter((v) => !v.c).length, leads: LEADS.length, anchors: STATS.anchors, partialPaths: PARTIALS.length, unbound: UNBOUND.length,
   computedPointsOfUse: COMPUTED.filter((r) => !r.held).length, heldPathsWithOnlyTheStartKnown: COMPUTED.filter((r) => r.held).length,
   computed: COMPUTED.length, computedByClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return m; })(),
   computedByKindAndClass: (() => { const m = {}; for (const r of COMPUTED) { const k = `${r.held ? 'path held' : r.k} | ${r.res.by}`; m[k] = (m[k] ?? 0) + 1; } return Object.fromEntries(Object.entries(m).sort()); })(),

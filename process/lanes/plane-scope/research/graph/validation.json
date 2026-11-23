@@ -289,5 +289,36 @@
   ],
   "inRegexNotInGraph": [],
   "latestModuleBoth": "screens-intake (183)"
+ },
+ "settledReferencesAgainstRuns": {
+  "about": "Every reference the extractor settled (not computed) at a file-system call or an import() with a file or folder as target, against what the traced runs saw at that line. literal = the argument is a text literal or new URL(literal, import.meta.url); followed = settled by following names and calls.",
+  "command": "node tools/crosscheck.mjs settled <raw folder>,<raw folder>,<raw folder> <full.json> <out.json>",
+  "counts": {
+   "literal file system": {
+    "line not reached in the runs": 191,
+    "seen as written": 63
+   },
+   "followed file system": {
+    "line not reached in the runs": 301,
+    "seen as written": 199,
+    "line reached, other paths seen": 1
+   },
+   "literal import()": {
+    "seen as written": 144,
+    "file not run": 634,
+    "file run, this import not seen": 29
+   },
+   "followed import()": {
+    "seen as written": 22,
+    "file run, this import not seen": 3,
+    "file not run": 114
+   }
+  },
+  "differing": [
+   "stewards/scripts/deploy.mjs:24 [fs-read] config -> graph: stewards/wrangler.jsonc (one of 2) | run: <tmp>"
+  ],
+  "correctedAfterAFirstPass": [
+   "bio-plane/test/m/screens-settings/measure.mjs:30 [fs-stat] EXE -> the first pass read an empty text after \"||\" as the top folder; the run saw a path outside the checkout; the extractor now leaves it computed"
+  ]
  }
 }

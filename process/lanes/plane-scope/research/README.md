@@ -1,4 +1,4 @@
-Length: 12 lines. Last section: "Files".
+Length: 23 lines. Last section: "Files".
 
 # The plane-scope lane's research: index
 
@@ -10,3 +10,14 @@ Recorded 23 Nov 2026 by civicsmith plane-scope lane #1 through four workers. Eve
 - `02-test-map.md`: every file plane's `tests` names (192 files, 147 tests), with what each proves, what it boots and whether it needs plane's own code; groups A1 own 27, A2 platform-shape 27, B other modules' proofs 86, C kits 28, D odd 24; 138 of 147 tests load plane's own code (108 under workerd); the module order around plane; the owed pieces as far as git shows them.
 - `03-run-time.md`: how plane's required run works (one `node --test`, three files at a time, 45 min); four measured runs (33 to 43 min of tests); the slowest files and shares by group; migrate-released's 69 workerd starts; why the run is now throughput-bound.
 - `04-best-practice.md`: outside practice on where whole-system tests live, contract tests, a final acceptance module, migration fixtures, keeping CI within a time budget; sources found by search, not opened. Its nightly full run and failing time budget are not usable under Process4 (no full regression; no added gate).
+- `05-case-l77.md`, `06-case-held-paging.md`: two tests drawn at random from plane's 138: what each proves, why it starts the plane's program, and whether it needs to.
+- `07-move-held-paging.md`, `08-move-l77.md`: both tests rewritten on scratch copies to run in their owner modules (screens-intake; store-services on workerd through a test-only Durable Object), with the order checks and run results; 07 finds the helper `bio-plane/test/declared-ops.mjs` reading later modules' files.
+- `evidence-rules.md`: the rules every finding of the layer research is held to (measured, read, not checked), and the working rules for its workers.
+- `09-graph.md` with `graph/` and `tools/graph.mjs`: the dependency graph of all 204 modules, code and tests apart, by a real parser, with its validation; no written import goes upward, 184 places reach later modules by other routes.
+- `10-layers.md` with `layers/`: each module placed in a layer by what its code does (model 132, middleware 6, UI 19, outside 27, mixed 20), the working definitions, the mixed modules' parts.
+- `11-door-and-launcher.md` with `door/ties.json`: the anatomy of control-plane and plane; the 30 ties between the door and the UI (13 imports, 17 symbols, 13 not imports), the CAPTURE_SCREEN tie, the start-order tie, what else fixes their place.
+- `12-ui-below-and-above.md`: UI knowledge held below the UI (28 couplings) and how UI code reaches downward (10), with file and line.
+- `13-upper-tests.md` with `tests/upper-tests.json`: every test file of the modules from store-services to journey-check: its harness, what it reaches, run-time reads; the stand-in door against the real door; run times.
+- `14-build-and-run.md` with `build/bundle-by-module.json`: the build, the bundle's bytes by module, start-up time, what reaches the browser, bindings, the required run's mechanics and run times, where the entry is named.
+- `18-stage2-program-code.md` with `stage2/` and `tools/stage2-join.mjs`, `tools/stage2-tests-join.mjs`: the import graph joined to the layer map: the 45 program imports and the test references that run against the wanted stacking.
+- In progress (23 Nov 2026): `15-trial-door-inversion.md`, `16-trial-delayed-capture.md`, `17-what-pins-the-stacking.md`.

@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 if (process.argv[2] === 'edges') { compareEdges(process.argv[3], process.argv[4], process.argv[5]); process.exit(0); }
+if (process.argv[2] === 'settled') { compareSettled(process.argv[3], process.argv[4], process.argv[5]); process.exit(0); }
 const [checkout, fullFile, outFile, ...wanted] = process.argv.slice(2);
 const root = path.resolve(checkout);
 const TRACE = fileURLToPath(new URL('./trace.mjs', import.meta.url));
@@ -75,4 +76,35 @@ function compareEdges(mergedFile, fullFile, outFile) {
     processes, filesLoaded: loads.filter((l) => !l.startsWith('<')).length, edgesResolved: imports.length, entryOrPreload: entry, toOrFromOutsideTheCheckout: outside, matched, fromAFileWithAComputedImport: viaComputed, missing };
   fs.writeFileSync(outFile, `${JSON.stringify(out, null, 1)}\n`);
   console.log(`edges ${imports.length}: matched ${matched}, entry or preload ${entry}, outside ${outside}, from a file with a computed import ${viaComputed.length}, missing ${missing.length}`);
+}
+
+/** node crosscheck.mjs settled <raw folder>[,<raw folder>…] <full.json> <out.json>: every reference the extractor settled at a
+ *  file-system call or an import(), against what the traced runs saw at that line. */
+function compareSettled(rawFolders, fullFile, outFile) {
+  const { REFS } = JSON.parse(fs.readFileSync(fullFile, 'utf8'));
+  const seen = new Map(); const imports = new Set(); const importers = new Set();
+  for (const dir of rawFolders.split(',')) for (const name of fs.readdirSync(dir)) {
+    if (!name.endsWith('.json')) continue;
+    const d = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+    for (const [kind, at, p] of d.records) {
+      if (kind === 'import') { imports.add(`${at}|${p}`); importers.add(at); continue; }
+      if (kind === 'load') continue;
+      const k = `${at}|${kind}`; if (!seen.has(k)) seen.set(k, new Set()); seen.get(k).add(p);
+    }
+  }
+  const literal = /^(['"`][^$]*['"`]|new URL\(\s*['"`][^$]*['"`]\s*,\s*import\.meta\.url\s*\))$/;
+  const counts = {}; const differing = [];
+  const bump = (g, k) => { (counts[g] ??= {})[k] = (counts[g][k] ?? 0) + 1; };
+  for (const r of REFS) {
+    if (r.c || r.lang || !['fs-read', 'fs-list', 'fs-stat', 'fs-write', 'dynamic-import'].includes(r.k) || !['file', 'dir'].includes(r.tk)) continue;
+    const g = `${literal.test(r.s ?? '') ? 'literal' : 'followed'} ${r.k === 'dynamic-import' ? 'import()' : 'file system'}`;
+    const target = r.to.replace(/\/$/, '');
+    if (r.k === 'dynamic-import') { bump(g, !importers.has(r.f) ? 'file not run' : imports.has(`${r.f}|${target}`) ? 'seen as written' : 'file run, this import not seen'); continue; }
+    const set = seen.get(`${r.f}:${r.l}|${r.k}`);
+    if (!set) { bump(g, 'line not reached in the runs'); continue; }
+    if (set.has(target) || set.has(r.to)) bump(g, 'seen as written');
+    else { bump(g, 'line reached, other paths seen'); differing.push(`${r.f}:${r.l} [${r.k}] ${(r.s ?? '').slice(0, 60)} -> graph: ${r.to}${r.multi ? ` (one of ${r.multi})` : ''} | run: ${[...set].slice(0, 2).join(', ')}`); }
+  }
+  fs.writeFileSync(outFile, `${JSON.stringify({ counts, differing }, null, 1)}\n`);
+  console.log(JSON.stringify(counts), differing.length ? `\n${differing.join('\n')}` : '');
 }

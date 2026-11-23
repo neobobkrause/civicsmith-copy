@@ -1,0 +1,621 @@
+{
+ "about": "Module pairs of graph/module-edges.json by the layer of each end, code side and tests side apart. imports = import, export-from, dynamic-import, jsdoc-import; otherReferences = every other kind in the graph (file reads, folder listings, processes and Workers started, paths held, seen-in-a-run). A mixed module carries one label (see MIXED in the script).",
+ "wanted_lowest_first": [
+  "shared foundation",
+  "model",
+  "middleware",
+  "front door",
+  "launcher",
+  "UI"
+ ],
+ "bySide": {
+  "code": {
+   "outside -> shared foundation": {
+    "pairs": 36,
+    "pairsWithImport": 27,
+    "imports": 87,
+    "otherReferences": 93,
+    "againstWanted": false
+   },
+   "outside -> outside": {
+    "pairs": 81,
+    "pairsWithImport": 22,
+    "imports": 98,
+    "otherReferences": 718,
+    "againstWanted": false
+   },
+   "shared foundation -> outside": {
+    "pairs": 22,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 119,
+    "againstWanted": false
+   },
+   "shared foundation -> shared foundation": {
+    "pairs": 12,
+    "pairsWithImport": 7,
+    "imports": 40,
+    "otherReferences": 25,
+    "againstWanted": false
+   },
+   "shared foundation -> model": {
+    "pairs": 154,
+    "pairsWithImport": 8,
+    "imports": 12,
+    "otherReferences": 736,
+    "againstWanted": true
+   },
+   "shared foundation -> middleware": {
+    "pairs": 10,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 50,
+    "againstWanted": true
+   },
+   "shared foundation -> UI": {
+    "pairs": 19,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 95,
+    "againstWanted": true
+   },
+   "shared foundation -> front door": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 5,
+    "againstWanted": true
+   },
+   "shared foundation -> launcher": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 5,
+    "againstWanted": true
+   },
+   "model -> shared foundation": {
+    "pairs": 283,
+    "pairsWithImport": 283,
+    "imports": 734,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "model -> model": {
+    "pairs": 1151,
+    "pairsWithImport": 1151,
+    "imports": 1413,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "outside -> model": {
+    "pairs": 223,
+    "pairsWithImport": 17,
+    "imports": 27,
+    "otherReferences": 2063,
+    "againstWanted": false
+   },
+   "outside -> middleware": {
+    "pairs": 12,
+    "pairsWithImport": 1,
+    "imports": 1,
+    "otherReferences": 124,
+    "againstWanted": false
+   },
+   "outside -> UI": {
+    "pairs": 34,
+    "pairsWithImport": 14,
+    "imports": 30,
+    "otherReferences": 207,
+    "againstWanted": false
+   },
+   "outside -> front door": {
+    "pairs": 2,
+    "pairsWithImport": 1,
+    "imports": 1,
+    "otherReferences": 14,
+    "againstWanted": false
+   },
+   "outside -> launcher": {
+    "pairs": 6,
+    "pairsWithImport": 1,
+    "imports": 14,
+    "otherReferences": 41,
+    "againstWanted": false
+   },
+   "model -> outside": {
+    "pairs": 7,
+    "pairsWithImport": 3,
+    "imports": 4,
+    "otherReferences": 18,
+    "againstWanted": false
+   },
+   "middleware -> shared foundation": {
+    "pairs": 21,
+    "pairsWithImport": 21,
+    "imports": 30,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "middleware -> model": {
+    "pairs": 319,
+    "pairsWithImport": 319,
+    "imports": 383,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "model -> middleware": {
+    "pairs": 3,
+    "pairsWithImport": 3,
+    "imports": 3,
+    "otherReferences": 0,
+    "againstWanted": true
+   },
+   "middleware -> middleware": {
+    "pairs": 19,
+    "pairsWithImport": 19,
+    "imports": 33,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "UI -> outside": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 3,
+    "againstWanted": false
+   },
+   "UI -> shared foundation": {
+    "pairs": 7,
+    "pairsWithImport": 7,
+    "imports": 10,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "UI -> model": {
+    "pairs": 2,
+    "pairsWithImport": 2,
+    "imports": 2,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "UI -> middleware": {
+    "pairs": 4,
+    "pairsWithImport": 4,
+    "imports": 6,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "UI -> UI": {
+    "pairs": 14,
+    "pairsWithImport": 14,
+    "imports": 76,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> shared foundation": {
+    "pairs": 4,
+    "pairsWithImport": 4,
+    "imports": 12,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> model": {
+    "pairs": 14,
+    "pairsWithImport": 14,
+    "imports": 17,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> middleware": {
+    "pairs": 5,
+    "pairsWithImport": 5,
+    "imports": 11,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> UI": {
+    "pairs": 12,
+    "pairsWithImport": 12,
+    "imports": 13,
+    "otherReferences": 0,
+    "againstWanted": true
+   },
+   "launcher -> shared foundation": {
+    "pairs": 2,
+    "pairsWithImport": 2,
+    "imports": 3,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "launcher -> model": {
+    "pairs": 17,
+    "pairsWithImport": 17,
+    "imports": 20,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "launcher -> outside": {
+    "pairs": 6,
+    "pairsWithImport": 1,
+    "imports": 1,
+    "otherReferences": 5,
+    "againstWanted": false
+   },
+   "launcher -> middleware": {
+    "pairs": 4,
+    "pairsWithImport": 4,
+    "imports": 7,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "launcher -> front door": {
+    "pairs": 1,
+    "pairsWithImport": 1,
+    "imports": 3,
+    "otherReferences": 0,
+    "againstWanted": false
+   }
+  },
+  "tests": {
+   "shared foundation -> outside": {
+    "pairs": 6,
+    "pairsWithImport": 1,
+    "imports": 1,
+    "otherReferences": 33,
+    "againstWanted": false
+   },
+   "shared foundation -> shared foundation": {
+    "pairs": 6,
+    "pairsWithImport": 6,
+    "imports": 30,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "model -> shared foundation": {
+    "pairs": 234,
+    "pairsWithImport": 226,
+    "imports": 1038,
+    "otherReferences": 86,
+    "againstWanted": false
+   },
+   "model -> model": {
+    "pairs": 1387,
+    "pairsWithImport": 1124,
+    "imports": 2522,
+    "otherReferences": 1208,
+    "againstWanted": false
+   },
+   "outside -> shared foundation": {
+    "pairs": 35,
+    "pairsWithImport": 22,
+    "imports": 57,
+    "otherReferences": 184,
+    "againstWanted": false
+   },
+   "outside -> outside": {
+    "pairs": 75,
+    "pairsWithImport": 31,
+    "imports": 216,
+    "otherReferences": 710,
+    "againstWanted": false
+   },
+   "outside -> launcher": {
+    "pairs": 7,
+    "pairsWithImport": 1,
+    "imports": 8,
+    "otherReferences": 88,
+    "againstWanted": false
+   },
+   "model -> outside": {
+    "pairs": 140,
+    "pairsWithImport": 95,
+    "imports": 222,
+    "otherReferences": 108,
+    "againstWanted": false
+   },
+   "outside -> model": {
+    "pairs": 459,
+    "pairsWithImport": 63,
+    "imports": 137,
+    "otherReferences": 4213,
+    "againstWanted": false
+   },
+   "outside -> middleware": {
+    "pairs": 31,
+    "pairsWithImport": 3,
+    "imports": 6,
+    "otherReferences": 291,
+    "againstWanted": false
+   },
+   "model -> middleware": {
+    "pairs": 21,
+    "pairsWithImport": 2,
+    "imports": 2,
+    "otherReferences": 75,
+    "againstWanted": true
+   },
+   "model -> UI": {
+    "pairs": 30,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 112,
+    "againstWanted": true
+   },
+   "model -> front door": {
+    "pairs": 2,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 8,
+    "againstWanted": true
+   },
+   "model -> launcher": {
+    "pairs": 2,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 8,
+    "againstWanted": true
+   },
+   "shared foundation -> model": {
+    "pairs": 8,
+    "pairsWithImport": 8,
+    "imports": 23,
+    "otherReferences": 10,
+    "againstWanted": true
+   },
+   "outside -> UI": {
+    "pairs": 59,
+    "pairsWithImport": 9,
+    "imports": 21,
+    "otherReferences": 442,
+    "againstWanted": false
+   },
+   "outside -> front door": {
+    "pairs": 3,
+    "pairsWithImport": 1,
+    "imports": 2,
+    "otherReferences": 34,
+    "againstWanted": false
+   },
+   "middleware -> outside": {
+    "pairs": 15,
+    "pairsWithImport": 9,
+    "imports": 44,
+    "otherReferences": 31,
+    "againstWanted": false
+   },
+   "middleware -> model": {
+    "pairs": 225,
+    "pairsWithImport": 221,
+    "imports": 878,
+    "otherReferences": 20,
+    "againstWanted": false
+   },
+   "middleware -> shared foundation": {
+    "pairs": 15,
+    "pairsWithImport": 14,
+    "imports": 62,
+    "otherReferences": 2,
+    "againstWanted": false
+   },
+   "middleware -> middleware": {
+    "pairs": 21,
+    "pairsWithImport": 19,
+    "imports": 181,
+    "otherReferences": 12,
+    "againstWanted": false
+   },
+   "middleware -> front door": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 5,
+    "againstWanted": true
+   },
+   "middleware -> launcher": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 3,
+    "againstWanted": true
+   },
+   "UI -> outside": {
+    "pairs": 23,
+    "pairsWithImport": 8,
+    "imports": 52,
+    "otherReferences": 37,
+    "againstWanted": false
+   },
+   "UI -> shared foundation": {
+    "pairs": 20,
+    "pairsWithImport": 20,
+    "imports": 94,
+    "otherReferences": 1,
+    "againstWanted": false
+   },
+   "UI -> model": {
+    "pairs": 63,
+    "pairsWithImport": 62,
+    "imports": 140,
+    "otherReferences": 1,
+    "againstWanted": false
+   },
+   "UI -> middleware": {
+    "pairs": 25,
+    "pairsWithImport": 25,
+    "imports": 104,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "UI -> UI": {
+    "pairs": 28,
+    "pairsWithImport": 26,
+    "imports": 197,
+    "otherReferences": 14,
+    "againstWanted": false
+   },
+   "front door -> outside": {
+    "pairs": 7,
+    "pairsWithImport": 5,
+    "imports": 23,
+    "otherReferences": 2,
+    "againstWanted": false
+   },
+   "front door -> shared foundation": {
+    "pairs": 6,
+    "pairsWithImport": 6,
+    "imports": 20,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> model": {
+    "pairs": 72,
+    "pairsWithImport": 65,
+    "imports": 167,
+    "otherReferences": 12,
+    "againstWanted": false
+   },
+   "front door -> middleware": {
+    "pairs": 8,
+    "pairsWithImport": 8,
+    "imports": 55,
+    "otherReferences": 0,
+    "againstWanted": false
+   },
+   "front door -> UI": {
+    "pairs": 12,
+    "pairsWithImport": 12,
+    "imports": 102,
+    "otherReferences": 0,
+    "againstWanted": true
+   },
+   "front door -> launcher": {
+    "pairs": 1,
+    "pairsWithImport": 0,
+    "imports": 0,
+    "otherReferences": 6,
+    "againstWanted": true
+   },
+   "launcher -> outside": {
+    "pairs": 18,
+    "pairsWithImport": 9,
+    "imports": 153,
+    "otherReferences": 173,
+    "againstWanted": false
+   },
+   "launcher -> shared foundation": {
+    "pairs": 6,
+    "pairsWithImport": 6,
+    "imports": 43,
+    "otherReferences": 97,
+    "againstWanted": false
+   },
+   "launcher -> model": {
+    "pairs": 145,
+    "pairsWithImport": 110,
+    "imports": 262,
+    "otherReferences": 2475,
+    "againstWanted": false
+   },
+   "launcher -> middleware": {
+    "pairs": 10,
+    "pairsWithImport": 8,
+    "imports": 73,
+    "otherReferences": 187,
+    "againstWanted": false
+   },
+   "launcher -> UI": {
+    "pairs": 19,
+    "pairsWithImport": 13,
+    "imports": 115,
+    "otherReferences": 326,
+    "againstWanted": true
+   },
+   "launcher -> front door": {
+    "pairs": 1,
+    "pairsWithImport": 1,
+    "imports": 16,
+    "otherReferences": 40,
+    "againstWanted": false
+   }
+  }
+ },
+ "testsReachingALaterModule": {
+  "pairs": 400,
+  "byImport": 0
+ },
+ "upwardFromTestsOf": {
+  "frontDoor": {
+   "front door tests -> plane (196, launcher)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 6
+   },
+   "front door tests -> journey-check (204, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 1
+   }
+  },
+  "launcher": {
+   "launcher tests -> release (197, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 15
+   },
+   "launcher tests -> installer (201, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 11
+   },
+   "launcher tests -> site (202, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 3
+   },
+   "launcher tests -> stewards (203, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 3
+   },
+   "launcher tests -> journey-check (204, outside)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 19
+   }
+  },
+  "ui": {
+   "UI tests -> journey-check (204, outside)": {
+    "pairs": 6,
+    "imports": 0,
+    "other": 6
+   }
+  },
+  "middleware": {
+   "middleware tests -> journey-check (204, outside)": {
+    "pairs": 2,
+    "imports": 0,
+    "other": 7
+   },
+   "middleware tests -> store-door (171, middleware)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 2
+   },
+   "middleware tests -> signin-door (172, middleware)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 1
+   },
+   "middleware tests -> control-plane (195, front door)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 5
+   },
+   "middleware tests -> plane (196, launcher)": {
+    "pairs": 1,
+    "imports": 0,
+    "other": 3
+   }
+  }
+ }
+}
