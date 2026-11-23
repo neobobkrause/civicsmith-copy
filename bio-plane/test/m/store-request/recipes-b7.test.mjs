@@ -208,9 +208,11 @@ function engine() {
 
 test("R18 world.route answers a browser page's /api/ requests from the world's door, as the member signed in: a read, an act that changes the world, a refusal, and the file the store serves", async () => {
   const pw = engine();
-  const exe = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+  /* a Chromium the machine has: CHROMIUM, the session machine's own, or the browser a test machine carries (CHROME_BIN, Chrome or Chromium on the path) */
+  const exe = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
+    .find((f) => f && existsSync(f));
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/): this test cannot drive a browser without it");
-  assert.ok(existsSync(exe), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
+  assert.ok(exe, "Chromium is needed: CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, or Chrome or Chromium in /usr/bin");
   const w = await storeWorld();
   assert.equal(typeof w.route, "function", "the world answers a page's /api/ requests");
   const admin = await w.signIn("admin");

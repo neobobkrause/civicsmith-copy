@@ -1,4 +1,4 @@
-Length: 500 lines. Last section: "Changes".
+Length: 501 lines. Last section: "Changes".
 
 # Screens: Deciding and acting
 
@@ -272,7 +272,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C7. Section "How this kind of action goes" (`.guide.heading`): "From your jurisdiction's profile" · `.guide.order` · "Legal information, not legal advice"; each route "Expect: {expectation}" · "Source: {citation}"; note `.guide.sourced` + `.guide.team` + `.guide.teamnone`; button "Show the routes"; none: `.routes.none`.
 - C8. Section "Templates for this action" (`.templates.heading`): `.templates.offered` + `.templates.nocourt`; rows "approved by {member}, {date}" or `.templates.notyet`; note `.templates.own` + `.templates.never`; link "Prepare the text" (to `request`).
 - C9. Section "Its risk" (`risk.title`): "Tier {n} · …", who set it and why; button "Revise, with a reason…" (`risk.revise`).
-- C10. Disclosure "How it ended" (`.ended.*`: "The office complied", "The office denied it", "It was escalated", "Your team withdrew it", "Your team carried it out"), "In your own words" (`.ended.own`). Buttons "Move the action", "Remind me", and the confidentiality act.
+- C10. Disclosure "How it ended" (new word, key proposed: `screen.action.ended.head`; U17) (`.ended.*`: "The office complied", "The office denied it", "It was escalated", "Your team withdrew it", "Your team carried it out"), "In your own words" (`.ended.own`). Buttons "Move the action", "Remind me", and the confidentiality act.
 - C11. In C3, a date whose reply was recorded after it fell due shows the state "met late" (new word, key proposed: `screen.action.clock.metlate`), beside the other states. `not built`
 
 **States**
@@ -447,7 +447,7 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - C3. Stage ladder "Documentation", "Notification", "Clock starts", "Response evaluation", "Legal tools", "Sustained attention", "Political accountability" (`.stage.1`-`7`), the current stage marked; `.proposed` ("Proposed next: {stage}. Civicsmith proposes; a member decides."); "It ends only when both hold" (`.endswhen`): "compliance restored", "consequences addressed".
 - C4. Section "Consequences: what the breach did" (`.what_the_breach_did`): each part with "computed" / "assessed" / "undetermined" (`.known.*`); note `.neverzero`.
 - C5. Buttons A3 to A7.
-- C6. Disclosures "When it cannot be ended: compliance is not restored" (`.compliance_is_not_restored_why` …), "When it cannot be ended: the consequences are not settled", "When it cannot be ended: the consequences are not addressed".
+- C6. Disclosures "When it cannot be ended: compliance is not restored" ("Compliance is not restored yet.", `.compliance_is_not_restored_why`), "When it cannot be ended: the consequences are not settled" ("Whether the consequences are addressed is not settled yet.", `.whether_the_consequences_are_addressed_is_undetermined`), "When it cannot be ended: the consequences are not addressed" ("The consequences are not addressed yet.", `.the_consequences_are_not_addressed_why`), each then the refusal's own words by its code (`refusal.<CODE>`, DEC-260), which say what is missing. No sentence fills a `{why}` from the refusal's detail (U17).
 
 **States** (headings and sub-lines are keyed under `screen.matter.`)
 
@@ -498,3 +498,4 @@ Matters, plans and actions: plans, starting and sending, records requests, actio
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
 - 23 Nov 2026, tranche t1: ARCH's three word gaps from `screens-send` #1 settled (decisions.md U16): counsel C8's version heading, the made and saved lines with no counsel named, and words for every cause a version is flagged by.
+- 23 Nov 2026, tranche t1: ARCH's word questions from `screens-action` #1 settled (decisions.md U17): action C10's fold title; matter C6's refusal sentences without `{why}`; the plan's tips and the matter's stage and pause sentences reworded to facts the record holds, or withdrawn.

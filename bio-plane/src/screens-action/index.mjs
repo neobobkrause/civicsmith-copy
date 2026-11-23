@@ -49,7 +49,7 @@ const EXTRA = {
   hold: ["act.actionholdrelease.label.hold", "act.actionholdrelease.does", "screen.action.pressure.kind", "screen.action.pressure.legal", "screen.action.pressure.retaliation", "screen.action.pressure.discrediting", "screen.action.pressure.other",
     "screen.start-send.draft.machine"],
   holdnotice: ["screen.holdnotice.how.email", "screen.holdnotice.how.message", "screen.holdnotice.how.person", "screen.holdnotice.how.other", "screen.start-send.sentat", "screen.start-send.how", "screen.start-send.outward", "screen.start-send.draft.template", "screen.start-send.draft.machine", "shell.unavailable.nothing"],
-  counsel: ["screen.person.kind.name", "screen.people.kind.organization"],
+  counsel: ["screen.person.kind.name", "screen.people.kind.organization", "filings.determination_superseded"],
   "dash-action": ["home.needsyou.title", "screen.action.kind.other", "screen.plan.matter.n", "screen.actionnew.name", "screen.queue.reminder.on", "act.reminderanswer.label.dash-action",
     "act.filingapprove.label.dash-action", "act.actioncreate.label.dash-action", "act.reminderanswer.does", "act.taskresolve.does"],
 };
@@ -81,6 +81,24 @@ const wordsOf = (s) => {
   return Object.freeze([...new Set([...SHARED, ...(noun ? [noun] : []), `screen.${id}.name`, `screen.${id}.purpose`, ...acts, ...EXTRA[id], ...FIX.flatMap((f) => f.EXTRA[id] || []), ...own])]);
 };
 
+/**
+ * @typedef {{op: string, label?: string} & Object<string, *>} ScreenAct one act a screen draws (interface-shell R21): `op` the op
+ *  it sends, by its declared name; `label` the key of its label, where it is not `act.<op>.label.<screen>`; and the shell's other
+ *  parts of an act as the screen gives them (`send`, `refusals`, `rereads`, `done` and the rest)
+ */
+/**
+ * @typedef {Object} Screen a screen of the module, in interface-shell R21's screen contract
+ * @property {string} id the registry screen's id: `plan`, `start-send`, `request`, `action`, `matter`, `help-records`,
+ *  `actionnew`, `hold`, `holdnotice`, `counsel` or `dash-action`
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each an op by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup, drawn with the shell's kit
+ * @property {ReadonlyArray<ScreenAct>} acts the acts it may draw, each an op through the shell
+ * @property {ReadonlyArray<string>} words the keys it may draw (R19), each read through `setup-words`
+ * @property {(view: *) => Object} [place] the path's project step (interface-shell R8), where the screen has one
+ * @property {Readonly<Object<string, *>>} [parts] the self-contained helpers handed to it as `view.parts`, where it has any
+ * @bound words.each: a key at most once
+ */
 /** The screens, in the order a member meets them: the plan, starting and sending, a records request, one action, one matter, the
- *  records request's help, then (T51) the composer, the litigation hold and its notice, counsel and the dashboard. */
-export const SCREENS = Object.freeze([plan, startSend, request, action, matter, helpRecords, actionNew, hold, holdNotice, counsel, dashAction].map((s) => Object.freeze({ ...s, words: wordsOf(s) })));
+ *  records request's help, then (T51) the composer, the litigation hold and its notice, counsel and the dashboard. Each is a
+ *  Screen, frozen, its `words` the keys it may draw. */
+export const SCREENS = Object.freeze([plan, startSend, request, action, matter, helpRecords, actionNew, hold, holdNotice, counsel, dashAction].map(/** @param {Omit<Screen, "words">} s @returns {Readonly<Screen>} */ (s) => Object.freeze({ ...s, words: wordsOf(s) })));

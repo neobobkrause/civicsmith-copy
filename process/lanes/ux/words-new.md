@@ -1,4 +1,4 @@
-Length: 106 lines. Last section: "Marks settled by a row the table already holds".
+Length: 129 lines. Last section: "Rows the table holds that the lane rewords or withdraws".
 
 # New words the lane decided
 
@@ -82,8 +82,11 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 | `filings.determination_flagged` | the determination {determination} was flagged: what it rests on has changed | deciding-and-acting / counsel C8 (U16) | lane (beside `filings.determination_superseded`; `conformance` R10) |
 | `filings.finding_later_edition` | finding {finding} was published in a later edition, Edition {later} | deciding-and-acting / counsel C8 (U16) | lane (`filings` R12) |
 | `filings.standard_superseded` | the standard {standard} was superseded | deciding-and-acting / counsel C8 (U16) | lane (beside `filings.determination_superseded`; `filings` R12) |
+| `screen.action.ended.head` | How it ended | deciding-and-acting / action C10 (U17) | mockup |
+| `screen.matter.escalation.paused_since` | This escalation has been paused since {date}. | deciding-and-acting / matter S10 (U17) | lane (in place of the sample row `screen.matter.this_escalation_has_been_suspended_since_october`) |
+| `screen.matter.escalation.stands_at` | This escalation stands at this stage: {stage}. | deciding-and-acting / matter S8 (U17); `{stage}` the stage's name (`screen.matter.stage.1`-`7`) | lane (in place of the sample row `screen.matter.this_escalation_stands_at_stage_2`) |
 
-76 rows: 25 from the mockup, 51 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
+79 rows: 26 from the mockup, 53 the lane's own (four mockup rows dropped once ARCH's judgment took the code's words there; six of the lane's rows withdrawn on 23 Nov 2026 where the canon governs: `screen.held.from.doorbell`, `screen.document.from.doorbell` (U5), `screen.question.leggrade.copy`, `screen.document.copy.ceiling`, `screen.document.copy.grade` (U9), `signing.ceremony.keepkey.gone` (U7)), none from the code alone (every place where the code draws words had a row already; see below).
 
 ## Marks settled by a row the table already holds
 
@@ -104,3 +107,23 @@ Thirteen marks named a control for which the table already holds a row, and the 
 | `act.reconcile.label.money` | Compare two sources | the-record / money C7 | Compare the two |
 | `screen.money.tension` | Each column is read from the figure's own source, … | the-record / money C8 | (the same) |
 | `connection.kind.pos.name` | Position or membership | the-record / explore C2 | Positions and memberships |
+
+## Rows the table holds that the lane rewords or withdraws
+
+These rows are in the table, but their English holds the drawing's sample facts, or a fill the screen cannot have, so no screen can draw them as they stand (U17). The module that keeps the word table rewords or withdraws each as written here. A card with no sentence of its own shows the item's own facts alone (`interface-shell` R106).
+
+| existing key | its English now | the English it takes, or withdrawn |
+|---|---|---|
+| `screen.plan.tip.title` | {plan}: {name}'s action plan, opened {date} when the inquiry began, about {matter}. … | {plan}: {name}'s action plan, opened {date}, about {matter}. Its options, the order to try them and what to check are here. |
+| `screen.plan.tip.scenario_why` | The check above is about this scenario: it has no branch for a refusal or a stall. | This scenario has no branch yet for a refusal or a stall. (drawn only when it has none) |
+| `screen.plan.tip.hostile_why` | Scenario {scenario} says nothing about what follows one; a branch can be added before the reply is due on {date}. | Scenario {scenario} says nothing yet about what follows one; a branch can be added to it. |
+| `screen.plan.tip.hypothetical_why` | The options here rest on something unproven; the inspection logs could show it or rule it out. | The options here rest on something not yet proven. |
+| `screen.plan.tip.alternative_why` | The fallback if {office} refuses or stalls on {action}. | The fallback if the first scenario is refused or stalls. |
+| `screen.plan.tip.alternative`, `.alternative_start` | an alternative scenario, not laid out yet; would start with {option} | unchanged: drawn where the plan holds an alternative scenario, `{option}` its first option |
+| `screen.plan.tip.checkpoint_why` | Dates of inspection and repair are what would show whether a report was closed before the repair. | withdrawn: sample only; the card shows the checkpoint's own words |
+| `screen.matter.this_escalation_has_been_suspended_since_october` | This escalation has been paused since October 14, 2026. | withdrawn: `screen.matter.escalation.paused_since` takes its place |
+| `screen.matter.this_escalation_stands_at_stage_2` | This escalation stands at the notification stage. | withdrawn: `screen.matter.escalation.stands_at` takes its place |
+| `screen.matter.compliance_is_not_restored_why` | Compliance is not restored: {why}. | Compliance is not restored yet. |
+| `screen.matter.whether_the_consequences_are_addressed_is_undetermined` | Whether the consequences are addressed is undetermined: {why}. | Whether the consequences are addressed is not settled yet. |
+| `screen.matter.the_consequences_are_not_addressed_why` | The consequences are not addressed: {why}. | The consequences are not addressed yet. |
+| `screen.matter.stage_3_is_not_proposed_yet_missing` | Starting the response clock is not proposed yet: {missing}. | Starting the response clock is not proposed yet. |
