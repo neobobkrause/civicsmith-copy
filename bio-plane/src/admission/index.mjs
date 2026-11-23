@@ -86,12 +86,7 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
  * @property {boolean} inAddress true exactly when the address names a `token` or a `secret` parameter
  * @bound token: never read from the address
  */
-/**
- * @typedef {Object} OpSpec the parts of an op-declarations spec this module reads
- * @property {string[] | null} [classes] the binding classes admitted; `null` for a public op
- * @property {string[]} [machineClasses] for a caller not arriving by a session, the classes admitted in place of `classes`
- * @property {boolean} [mutating] true for an op that writes
- */
+/** @import { OpSpec } from '../op-declarations/index.mjs' */
 /**
  * @typedef {Object} AiCredential an agent credential's row, as `credentials.aiCredentialLook` answers it
  * @property {string} tokenId
@@ -137,14 +132,14 @@ import { ADMISSION_CHECKS, NAMESPACE_CHECKS, AI_SCOPE_CHECKS, OPERATOR_FENCE_CHE
 /**
  * @typedef {Object} ReauthArgument an act that asks the password again only for one argument (R25)
  * @property {string} field the body's field, else the query's
- * @property {any[] | null} values the values that ask; null is any value given
+ * @property {readonly any[] | null} values the values that ask; null is any value given
  */
 /**
  * @typedef {Record<string, ReauthArgument | null>} ReauthActs op-declarations' `REAUTH_ACTS`: op to `null` (every call asks) or its argument
  */
 /**
  * @typedef {Object} SessionTables op-declarations' session tables, or others of the same shape (R8)
- * @property {Record<string, Set<string>>} SESSION_OPS the ops each session kind reaches, `admin` and `member`
+ * @property {Record<string, ReadonlySet<string>>} SESSION_OPS the ops each session kind reaches, `admin` and `member` (op-declarations' `SessionOps`)
  * @property {Record<string, any>} UNATTENDED_BY_DECISION op to the recorded decision reserving it to a credential
  */
 
@@ -551,7 +546,7 @@ export function resolveSession(sess) {
 /**
  * R10, R13: true exactly when a member class reaches the op and no `machineClasses` bounds it; never for a governance
  * or group-identity act, or a public op.
- * @param {OpSpec | null | undefined} spec
+ * @param {{classes?: readonly string[] | null, machineClasses?: readonly string[]} | null | undefined} spec the op's spec (`OpSpec`); only these two are read
  * @param {string} op
  * @returns {boolean}
  */
@@ -799,7 +794,7 @@ const DECLARED = Object.freeze({ SESSION_OPS, UNATTENDED_BY_DECISION });
  * `MACHINE_CREDENTIAL_REQUIRED` (C-38.3) or `SESSION_ROUTE_NOT_RECORDED` (C-38.8). `capture`'s GET is a read.
  * @param {string} kind `admin` or `member`
  * @param {string} op
- * @param {OpSpec} spec
+ * @param {{mutating?: boolean}} spec the op's spec; only `mutating` is read
  * @param {string} method
  * @param {SessionTables} [tables]
  * @returns {Refusal | null} null to admit
@@ -1163,7 +1158,7 @@ export async function readerOf(url, env, storeName, presented, doAnswer, credent
   const cls = bound;
   if (cls) {
     const scope = scopeFor(cls, url);
-    const inScope = OPS.index.classes.includes(cls) && !scope.error && scope.name === storeName;
+    const inScope = (OPS.index.classes ?? []).includes(cls) && !scope.error && scope.name === storeName;
     return { viewer: inScope ? `${MACHINE_CLASS_PREFIX}${cls}` : "", cls };
   }
   if (AI_TOKEN_SHAPE.test(t)) {

@@ -115,7 +115,7 @@ test("R10 (K1934 (5); credentials R42): an ai caller whose credential is answere
     refused(await gate(env, { op, token: both }), 403, "AI_CREDENTIAL_REVOKED", "C-29.7", [both]);
   }
   /* the gate itself, before scope: an op beyond member reach is still answered expired */
-  assert.equal(A.aiTaskScope(cred({ expired: true }), "purge", OPS.purge).refusal.body.reason, "AI_CREDENTIAL_EXPIRED");
+  assert.equal(A.aiTaskScope(cred({ expired: true }), "purge", OPS.purge).refusal?.body.reason, "AI_CREDENTIAL_EXPIRED");
   /* R16: an expired credential reads as no one */
   assert.deepEqual(await A.readerOf(urlOf({}), env, "bio", undefined, doAnswer, A.presentedCredential({ body: { token: lapsed } })), { viewer: "", cls: "ai" });
   /* negative controls: live (expired false, or the field absent as before credentials R42) is admitted */

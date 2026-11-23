@@ -57,7 +57,7 @@ test("R21 (T38, both arms): for one address sourceOf equals the window's source 
   const env = bridged(w);
   const addr = "203.0.113.50";
   for (let i = 0; i < 300; i++) await A.doorWindowGate({ req: reqFrom(addr), env, spec: OPS.login, doAnswer, now: T0 + i });
-  assert.equal((await A.doorWindowGate({ req: reqFrom(addr), env, spec: OPS.login, doAnswer, now: T0 + 400 })).refusal.status, 429);
+  assert.equal((await A.doorWindowGate({ req: reqFrom(addr), env, spec: OPS.login, doAnswer, now: T0 + 400 })).refusal?.status, 429);
   const full = JSON.stringify(w.rows());
   assert.equal(await A.sourceOf(reqFrom(addr), env), await w.doorbell.sourceFingerprint(addr));
   assert.equal(JSON.stringify(w.rows()), full);
