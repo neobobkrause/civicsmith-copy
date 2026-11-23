@@ -5,4 +5,5 @@ import { WORD_ROWS } from "../setup-words/index.mjs";
 
 const FAMILIES = ["people.why.", "people.identity_cluster_cache", "lines.why.", "events.why.", "civil-time."];
 
+/** @type {ReadonlyArray<string>} the word keys an undetermined answer's reason can carry */
 export const WHY_KEYS = Object.freeze(WORD_ROWS.map((r) => r[0]).filter((k) => FAMILIES.some((f) => k.startsWith(f))));
