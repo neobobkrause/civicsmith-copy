@@ -425,6 +425,13 @@ export async function walkWelcome(walk, page, { base, link, member }) {
 /* A screen opened at its bare address has no subject: the answers interface-shell R35 draws as "Nothing is here" or
    "You can't open this" are its designed absence, expected; any other refusal fails the sweep. */
 export const ABSENCE = /^(?:NOT_FOUND|NO_SUCH_[A-Z_]+|[A-Z_]+_NOT_FOUND|NOT_VISIBLE|NOT_A_PARTICIPANT)$/;
+/* R8 (ARCH, "The local walk's unreached states, and a reading not yet held"): `standard` at its bare address draws the form for a
+   new standard, whose picker reads the first held capture's reading (screens-investigate `standard.mjs`); a capture whose
+   reading is not yet held answers `op=reading` with `found: false` in its result, which the design allows there. That refusal,
+   at that place, is expected on that screen only. */
+export const NO_READING_YET = Object.freeze({ at: /^result$/, code: "found: false" });
+/* What a screen opened at its bare address may answer without failing the step. */
+export const bareExpect = (id) => (id === "standard" ? [ABSENCE, NO_READING_YET] : [ABSENCE]);
 
 /* `each(page, screen, drawn)`, when given, is done on each screen within its step, once it is opened and judged. */
 export async function sweep(walk, page, base, { screens = sweepScreens(), journey = "screens", each = null } = {}) {
@@ -436,7 +443,7 @@ export async function sweep(walk, page, base, { screens = sweepScreens(), journe
       const st = await drawnState(p, s.id);
       if (!st.drawn) walk.fail(FAIL.NOT_DRAWN, `${s.id}: ${st.why}`);
       if (each) await each(p, s, st.drawn);
-    }, { expect: [ABSENCE] }).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
+    }, { expect: bareExpect(s.id) }).catch((e) => { if (!(e instanceof StepFailed)) throw e; });
   }
 }
 

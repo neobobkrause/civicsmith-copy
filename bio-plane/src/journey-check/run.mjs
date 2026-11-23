@@ -12,7 +12,7 @@ import { planeScheduleProblem } from "./account.mjs";
 import { Walk, StepFailed, FAIL, settle } from "./walker.mjs";
 import { drawnState } from "./screens.mjs";
 import { requireTestInstance, WalkRefused } from "./guard.mjs";
-import { ABSENCE, walkInstaller, walkFounder, inviteMember, walkMember, walkWelcome, sweep, credentials, open, act, requireDrawn, drawnActs,
+import { bareExpect, walkInstaller, walkFounder, inviteMember, walkMember, walkWelcome, sweep, credentials, open, act, requireDrawn, drawnActs,
   signInBy, sweepAsFounder, walkSite, walkDashboards, walkSignGone } from "./journeys.mjs";
 import { walkAdministrator, walkMemberJourney, walkUnassisted, journey29Live, notReady, STEP_NAMES } from "./investigation.mjs";
 import { sweepScreens, addressOf, registryScreens } from "./screens.mjs";
@@ -184,7 +184,7 @@ export async function runLocal({ out = join(OUT, "local"), world: makeWorld, lau
             await p.goto(new URL(addressOf(s.id), copy).href); await settle(p);
             for (const e of await escapedOnPage(p, { entered })) if (!said.has(e.text) && said.add(e.text)) walk.fail(FAIL.PSEUDO, localize("journey-check.run.id_at_width_px_element", "{id} at {width}px: {element}: \"{text}\" escaped the word list", { id: String(s.id), width: String(width), element: String(e.element), text: String(e.text) }));
           }
-        }, { expect: [ABSENCE] }).catch(going);
+        }, { expect: bareExpect(s.id) }).catch(going);
       }
     }
     /* R13: design journey 29, step by step, each LIVE step beside the mock's drawing of it */
