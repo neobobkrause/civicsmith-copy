@@ -16,6 +16,10 @@
  * (`$schema`, the observability docs link). It tracks quoting and escapes so a
  * `//` inside a string stays, and a `"` inside a comment is ignored.
  */
+/**
+ * @param {string} text JSONC text
+ * @returns {string} the text with every comment outside a string removed (a line comment's newline kept)
+ */
 export function stripJsonc(text) {
   let out = "", inStr = false, quote = "", inLine = false, inBlock = false;
   for (let i = 0; i < text.length; i++) {
@@ -36,7 +40,13 @@ export function stripJsonc(text) {
   return out;
 }
 
-/** Parse a JSONC file's text, naming the file when it does not parse. */
+/**
+ * Parse a JSONC file's text, naming the file when it does not parse.
+ * @param {string} text JSONC text
+ * @param {string} [what] the file's name for the error; absent is "config"
+ * @returns {any} the parsed JSON value, of whatever shape the file holds
+ * @throws {Error} `<what> did not parse as JSONC: …` when the stripped text is not JSON
+ */
 export function parseJsonc(text, what = "config") {
   try { return JSON.parse(stripJsonc(text)); }
   catch (e) { throw new Error(`${what} did not parse as JSONC: ${e.message}`); }
