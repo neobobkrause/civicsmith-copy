@@ -18,7 +18,7 @@ const tables = (w) => w.rows(`SELECT name FROM sqlite_master WHERE type='table' 
 const NONE = (r) => {
   assert.deepEqual({ ...r, stated: undefined }, { ok: true, description: null, offered: false, proposed: false, authored: false,
     statements: [], installed: false, adopted: false, writes: 0, stated: undefined });
-  assert.match(r.stated, /no description of the team to start a declared bias from/);
+  assert.equal(r.stated, word("bias.index.there_is_no_description_of"));
 };
 
 async function described() {

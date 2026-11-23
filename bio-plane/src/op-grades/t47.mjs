@@ -69,8 +69,8 @@ export const T47_NON_ACTS = {
   passwordresetlink: RESET("an administrator's reset link for one member, answered once"),
   passwordresetlook: R("whether a reset link is live, one answer for every dead arm; public, reached with no session"),
   passwordreset: RESET("a reset link and a new password, reached with no session"),
-  grouplogoset: GROUP_SETTING("the group's logo, PNG or JPEG, or none"),
-  grouplanguagesset: GROUP_SETTING("the languages the group works in"),
+  grouplogoset: GROUP_SETTING("the team's logo, PNG or JPEG, or none"),
+  grouplanguagesset: GROUP_SETTING("the languages the team works in"),
   grouplanguages: R("the languages the group works in, or the active profiles' while none is set; public, no "
     + "credential"),
   signrequest: "case-directed: keyed by a prepared case edition; a member asks its project's owners to sign it, each "
