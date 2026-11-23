@@ -231,9 +231,9 @@ const WORDS_OF = {
  * @property {string} id the registry's screen id: `home`, `elsewhere`, `projects`, `queue`, `finder`, `find-in` or `answers`
  * @property {(subject?: any) => Object<string, any>} reads the reads the screen asks, by name, for its subject (a read may be absent)
  * @property {(cs: any, view: any) => any} render draws the screen with the kit `cs` from the view of its reads' answers
- * @property {ScreenAct[]} acts the acts it draws
+ * @property {Array<Object>} acts the acts it draws, each a ScreenAct (screens-find states its screens' acts as plain objects)
  * @property {ReadonlyArray<string>} words the keys of every sentence it draws, each read through setup-words (R34)
- * @property {Object<string, (...args: any[]) => any>} [parts] the pieces it is built from, each self-contained, for the shell to ship with it
+ * @property {Object<string, Function>} [parts] the pieces it is built from, each self-contained, for the shell to ship with it
  * @property {(subject: any) => any} [place] where a subject sits, for the masthead (`find-in`)
  * @bound words: every key one setup-words holds (R34); no key twice in one screen
  */

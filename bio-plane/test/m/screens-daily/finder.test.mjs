@@ -13,7 +13,7 @@ import { SESSION_OPS } from "../../../src/op-declarations/index.mjs";
 import { SCREENS } from "./page.mjs";
 
 const HITS = ok({ total: 3, hits: [
-  { bundle_id: "INF-1", title: "Public Works work orders, FY2025", grade: "B", snippet: "pothole [work orders]" },
+  { bundle_id: "INF-1", title: "Public Works work orders, FY2025", grade: "B", snippet: "pothole \u0001work orders\u0002" },
   { bundle_id: "INF-2", title: "Memo 88-31 on stormwater", snippet: "within seven calendar days" },
   { bundle_id: "INF-3", title: "Report to council", grade: "C" },
 ] });
@@ -78,9 +78,9 @@ test("R4: each result with its grade and where it matched (Found by search), a r
   assert.ok(text(p).includes(word("screen.finder.route.fields.holds.other", { n: "3" })), "R56: the fields route counts its own");
   assert.equal(main(p).querySelectorAll('.cs-origin[data-origin="search"]').length, 3);
   assert.deepEqual(main(p).querySelectorAll(".cs-grade").map((g) => g.textContent.slice(-1)), ["B", "C"]);
-  // R46: the match brackets are drawn as emphasis, never as raw brackets.
+  // R46: each match the plane marks (query-language's MARK_OPEN, MARK_CLOSE) is drawn as emphasis, never as a marker.
   assert.match(text(p), /pothole work orders/);
-  assert.ok(!text(p).includes("[work orders]"));
+  assert.ok(!/[\u0001\u0002]/.test(text(p)));
   assert.deepEqual(main(p).querySelectorAll("em").map((e) => e.textContent), ["work orders"]);
   assert.ok(main(p).querySelectorAll(".cs-card, a.cs-ref").some((a) => a.textContent === "Memo 88-31 on stormwater"));
   assert.equal(p.doc.getElementById("finder-pick-INF-1").getAttribute("aria-label"), word("screen.finder.pick", { title: "Public Works work orders, FY2025" }));

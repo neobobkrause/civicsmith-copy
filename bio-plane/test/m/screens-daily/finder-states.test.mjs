@@ -79,12 +79,12 @@ test("R55: Show as offers the list or one table; the table is read with no kinds
 
 const SCOPES = ok({ ok: true, scopes: ["everything", "question", "document", "action", "awaiting_review", "watched", "flagged"].map((key) => ({ key, kinds: [], only: null })) });
 const FIELDS = ok({ ok: true, total: 2, hits: [
-  { bundle_id: "INF-1", object_type: "information", title: "Sewer fund transfers", grade: "B", snippet: "the [sewer] fund" },
+  { bundle_id: "INF-1", object_type: "information", title: "Sewer fund transfers", grade: "B", snippet: "the \u0001sewer\u0002 fund" },
   { bundle_id: "INF-2", object_type: "information", title: "Budget amendment", snippet: null }],
   scope: { documents: 412, documents_with_rows: 391, documents_without_rows: 21, existence_only_projects: [{ project: "PROJ-8", name: "A" }, { project: "PROJ-9", name: "B" }] }, levels: { meaning: { state: "UNDETERMINED", why: "no read names it" } } });
 const PASSAGES = ok({ ok: true, total: 2, rows: [
-  { bundle_id: "INF-1", title: "Council minutes", snippet: "…transfer from the [sewer fund]…", extent: { passage: 4 } },
-  { bundle_id: "INF-2", title: "Budget amendment", snippet: "…the [sewer fund] shall be reimbursed…", extent: { passage: 2 } }] });
+  { bundle_id: "INF-1", title: "Council minutes", snippet: "…transfer from the \u0001sewer fund\u0002…", extent: { passage: 4 } },
+  { bundle_id: "INF-2", title: "Budget amendment", snippet: "…the \u0001sewer fund\u0002 shall be reimbursed…", extent: { passage: 2 } }] });
 const SUBJECTS = ok({ ok: true, count: 3, subjects: [
   { entity_id: "ENT-5", kind: "fund", label: "Sewer Service Fund", documents: 9 },
   { entity_id: "ENT-6", kind: "institution", label: "Public Works", documents: 31 },
