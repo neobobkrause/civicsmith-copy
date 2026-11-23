@@ -4,7 +4,8 @@
  *
  *   biasAdopt     the AUTHORED, ATTRIBUTED, REASONED act that puts a set in force, and the PIN taken at that instant
  *                 (R11, R12; DEC-88).
- *   biasManifest  the EFFECTIVE SET in force for a scope, its hash, and what it does NOT enforce (R13–R18, R24, R25).
+ *   biasManifest  the EFFECTIVE SET in force for a scope, its hash, and what it does NOT enforce (R13–R18, R24, R25),
+ *                 the strictest applying where statements conflict with no named override (R26).
  *   statementInForce  whether one statement id is in that set, with its kind and text (R49; D59).
  *   biasInhale    reading an outside policy: it SPLITS bars from bias, PUBLISHES the residue, and PROPOSES, never
  *                 installs (R19–R21). It holds no write path at all: no SQL, no transaction, no promotion.
@@ -252,6 +253,25 @@ export const BIAS_COUNT_KEYS = Object.freeze(["biasStatements", "biasAdoptions"]
  * @property {{statement_id: string, bundle_id: string, justification: string}[]} instance the group statements
  */
 /**
+ * A project statement whose effect loosens a group statement on the same subject, which it does not name (R26).
+ * @typedef {Object} BiasOverrideByEffect
+ * @property {string} statement_id
+ * @property {string} bundle_id
+ * @property {string} subject
+ * @property {string} effect "scrutiny" (it relaxes the scrutiny raised) or "inference" (it licenses the inference blocked)
+ * @property {{statement_id: string, bundle_id: string, locked: boolean}} loosens the group statement, which stands
+ * @property {string|null} names the statement it does name, if any
+ */
+/**
+ * Two statements on one subject that conflict with no named override: the stricter applies, the looser is withheld
+ * from `statements`, `total` and `statements_sha` (R26).
+ * @typedef {Object} BiasStrictestApplied
+ * @property {string} subject
+ * @property {string} effect "scrutiny" or "inference"
+ * @property {{statement_id: string, bundle_id: string, scope: string}} applies
+ * @property {{statement_id: string, bundle_id: string, scope: string}} withheld
+ */
+/**
  * @typedef {Object} BiasUnregisteredSubject
  * @property {string} statement_id
  * @property {string} bundle_id
@@ -276,10 +296,14 @@ export const BIAS_COUNT_KEYS = Object.freeze(["biasStatements", "biasAdoptions"]
  * @property {BiasLockViolation[]} lock_violations
  * @property {BiasInteraction[]} [interactions] present when a lens is in force
  * @property {string} [interactions_stated]
+ * @property {BiasOverrideByEffect[]} [overrides_by_effect] present when a lens is in force
+ * @property {string} [overrides_by_effect_stated]
+ * @property {BiasStrictestApplied[]} [strictest_applied] present when a lens is in force
+ * @property {string} [strictest_applied_stated]
  * @property {BiasUnregisteredSubject[]|null} [unregistered_subjects] null: no registry to ask
  * @property {string} [unregistered_subjects_stated]
  * @property {number} count the page's length
- * @property {number} total the whole set's length
+ * @property {number} total the whole set's length, after the strictest applies (R26)
  * @property {number} limit
  * @property {number} offset
  * @property {boolean} truncated
@@ -607,7 +631,7 @@ export const BIAS_COUNT_KEYS = Object.freeze(["biasStatements", "biasAdoptions"]
  * @property {Bias["noticesDelivered"]} noticesDelivered R23
  * @property {Bias["committed"]} committed R23, promotion's post-commit notice
  * @property {Bias["biasAdopt"]} biasAdopt R11, R12
- * @property {Bias["biasManifest"]} biasManifest R13–R18, R24, R25
+ * @property {Bias["biasManifest"]} biasManifest R13–R18, R24–R26
  * @property {Bias["statementInForce"]} statementInForce R49
  * @property {Bias["biasInhale"]} biasInhale R19–R21
  * @property {Bias["descriptionDraft"]} descriptionDraft R48
@@ -639,6 +663,27 @@ const SETTLED_BY_AN_ACT = new Set(["rerun", "resolved"]);
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const RESIDUE_SECTION = /\n## What This Does Not Enforce[^\S\n]*\n([\s\S]*?)(?=\n## |$)/;
 const enc = new TextEncoder();
+
+/* R20, R26: a sentence that BLOCKS an inference. One predicate for the inhale's proposal (R20) and the lens's effect
+   comparison (R26), as R31 keeps the verdict and bar predicates one. */
+const INFERENCE_BLOCKS = /\b(does not (mean|indicate|imply|constitute)|is not (evidence|an indication|proof|confirmation)|should not be (taken|read|treated|inferred)|do not (assume|infer)|cannot be inferred|must not be (taken|read) as)\b/i;
+/* R26: a sentence that LICENSES an inference (and blocks none): what loosens an inference a statement blocks. */
+const INFERENCE_LICENSES = /\b((may|can|should) be (taken|read|treated|inferred|understood|counted) as|(is|are) (an? )?(indication|evidence|sign|proof|confirmation) of|indicates|implies|signals|means)\b/i;
+/* R26: a sentence that RELAXES scrutiny: what loosens a statement that raises it. Narrow on purpose, as the checks'
+   arms are: what it does not catch, the group's review does (the doctrine's safeguard 5). */
+const SCRUTINY_RELAXED = /\b((need not|needs? no|does not need|do not need|no need to)\b[^.]{0,40}?\b(verif\w*|corroborat\w*|cross-?check\w*|confirm\w*|check\w*|scrutin\w*|vet\w*)|without (further |any )?(verification|corroboration|cross-?checking|confirmation|checking|scrutiny)|at face value|(may|can) be (relied on|relied upon|trusted) without)\b/i;
+
+/* R26: the way statement `a` LOOSENS statement `b` on the same subject, or null. Mechanical where the doctrine says it
+   is (safeguard 5): an inference `b` blocks that `a` licenses; a scrutiny `b` raises that `a` relaxes. A pattern
+   statement, and any other pair, is not judged here. */
+function loosening(a, b) {
+  if (a === b || a.subject !== b.subject || !a.text || !b.text) return null;
+  if (a.kind === "pattern" || b.kind === "pattern") return null;
+  if (b.kind === "inference" && INFERENCE_BLOCKS.test(b.text)
+      && INFERENCE_LICENSES.test(a.text) && !INFERENCE_BLOCKS.test(a.text)) return "inference";
+  if (b.kind === "scrutiny" && !SCRUTINY_RELAXED.test(b.text) && SCRUTINY_RELAXED.test(a.text)) return "scrutiny";
+  return null;
+}
 const safeJson = (s) => { try { return s == null ? null : JSON.parse(s); } catch { return null; } };
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -1051,10 +1096,35 @@ class Bias {
       }))
       .sort((x, y) => x.bundle_id.localeCompare(y.bundle_id) || x.statement_id.localeCompare(y.statement_id));
 
+    /* R26 (safeguards 1 and 2): a statement that LOOSENS another on the same subject, where no named override has
+       resolved the two, is an override by its effect whatever it calls itself; and where statements so conflict
+       the STRICTEST applies. The looser is withheld from the effective set, and each withholding is reported. A pair
+       that loosens each other is not judged. A named override that took effect (R16) leaves no pair: the statement
+       it nullified is gone; one refused for a lock leaves the pair, and the locked statement stands. */
+    const withheld = new Map();          // statement id -> the first statement that applies over it
+    const strictest = [];
+    const overridesByEffect = [];
+    for (const a of all)
+      for (const b of all) {
+        const effect = loosening(a, b);
+        if (!effect || loosening(b, a)) continue;
+        if (!withheld.has(a.statement_id)) withheld.set(a.statement_id, b);
+        strictest.push({ subject: a.subject, effect,
+                         applies: { statement_id: b.statement_id, bundle_id: b.bundle_id, scope: b.scope },
+                         withheld: { statement_id: a.statement_id, bundle_id: a.bundle_id, scope: a.scope } });
+        if (a.scope === "project" && b.scope === "instance")
+          overridesByEffect.push({ statement_id: a.statement_id, bundle_id: a.bundle_id, subject: a.subject, effect,
+                                   loosens: { statement_id: b.statement_id, bundle_id: b.bundle_id, locked: b.locked },
+                                   names: a.nullifies });
+      }
+    const candidates = all;
+    const applied = withheld.size ? all.filter((s) => !withheld.has(s.statement_id)) : all;
+
     /* R17: over the WHOLE set and the fields that change meaning, before any paging. */
     const statementsSha = sha256Hex(JSON.stringify(
-      all.map((s) => [s.bundle_id, s.statement_id, s.kind, s.subject, s.text, s.justification, s.locked])));
-    return { adoptions, all, statementsSha, pinnedText, lockViolations, marker };
+      applied.map((s) => [s.bundle_id, s.statement_id, s.kind, s.subject, s.text, s.justification, s.locked])));
+    return { adoptions, all: applied, candidates, withheld, strictest, overridesByEffect, statementsSha, pinnedText,
+             lockViolations, marker };
   }
 
   /** op=biasmanifest — THE EFFECTIVE SET IN FORCE, its hash, and its residue. Effective bias = the adopted instance
@@ -1069,7 +1139,8 @@ class Bias {
     const sid = st === "project" ? String(scopeId || "").trim() : "";
     const lens = this.#lens(st, sid, viewer);
     if (lens.answer) return lens.answer;
-    const { adoptions, all, statementsSha, pinnedText, lockViolations, marker } = lens;
+    const { adoptions, all, candidates, strictest, overridesByEffect, statementsSha, pinnedText, lockViolations,
+            marker } = lens;
 
     /* R18, DEC-54 (b): the residue travels with the manifest, read from each PINNED revision's own section. */
     const residue = adoptions.map((a) => {
@@ -1081,11 +1152,11 @@ class Bias {
        naming no statement it overrides, is an INTERACTION, listed with both justifications so a reviewer reads the
        one against the other. Nothing is refused (R28). */
     const instanceBySubject = new Map();
-    for (const s of all) if (s.scope === "instance") {
+    for (const s of candidates) if (s.scope === "instance") {
       if (!instanceBySubject.has(s.subject)) instanceBySubject.set(s.subject, []);
       instanceBySubject.get(s.subject).push(s);
     }
-    const interactions = all
+    const interactions = candidates
       .filter((s) => s.scope === "project" && !s.nullifies && instanceBySubject.has(s.subject))
       .map((s) => ({ statement_id: s.statement_id, bundle_id: s.bundle_id, subject: s.subject,
                      justification: s.justification,
@@ -1097,7 +1168,7 @@ class Bias {
     let unregistered = null;
     if (registry) {
       unregistered = [];
-      for (const s of all) {
+      for (const s of candidates) {
         let held;
         try { held = registry.has(s.subject) === true; } catch { held = null; }
         if (held === null) { unregistered = null; break; }
@@ -1127,6 +1198,12 @@ class Bias {
       lock_violations: lockViolations,
       interactions,
       interactions_stated: word("bias.entry_project_statement"),
+      overrides_by_effect: overridesByEffect,
+      overrides_by_effect_stated: localize("bias.index.overrides_by_effect",
+        "each entry is a project statement whose effect loosens a group statement on the same subject: it relaxes the scrutiny that statement raises, or licenses the inference it blocks. It is an override whatever it calls itself, and it must name the statement it loosens; a loosening of a LOCKED group statement is a conformance error; either way the group statement stands (safeguard 1). Effect is judged mechanically only for scrutiny and inference statements, and the group's review finishes the job"),
+      strictest_applied: strictest,
+      strictest_applied_stated: localize("bias.index.strictest_applied",
+        "each entry is two statements on one subject that conflict with no named override resolving them: the stricter applies, and the one that loosens it is withheld from the statements in force and from their hash (safeguard 2)"),
       unregistered_subjects: unregistered,
       unregistered_subjects_stated: unregistered === null
         ? word("bias.undetermined_subject_registry")
@@ -1167,6 +1244,9 @@ class Bias {
                      + "this statement is in force cannot be computed")
         : absent(false, "no lens is in force for this scope, so this statement is not in force");
       const s = lens.all.find((x) => x.statement_id === id);
+      if (!s && lens.withheld.has(id))
+        return absent(false, "this statement loosens a stricter statement on the same subject that applies over it, so "
+                           + "it is not in force (R26)", lens.statementsSha);
       if (!s) return absent(false, "this statement is not in the lens in force for this scope", lens.statementsSha);
       return { ok: true, statement: id, scope: where, in_force: true, kind: s.kind, text: s.text, bundle_id: s.bundle_id,
                level: s.scope === "project" ? "project" : "group", locked: s.locked,
@@ -1201,7 +1281,6 @@ class Bias {
     /* The cues, deliberately NARROW: a sentence that does not clearly do one of the two mechanisable things goes to
        the residue, the safe direction here. */
     const SCRUTINY = /\b(verify|verified|verification|corroborat\w+|cross-?check\w*|confirm\w*|reliab\w+|track record|motive|direct knowledge|first-?hand|vet\w*|scrutin\w+|authenticat\w+)\b/i;
-    const INFERENCE = /\b(does not (mean|indicate|imply|constitute)|is not (evidence|an indication|proof|confirmation)|should not be (taken|read|treated|inferred)|do not (assume|infer)|cannot be inferred|must not be (taken|read) as)\b/i;
     const PATTERN_SHAPED = /\b(routinely|habitually|has a history of|repeatedly|consistently|typically|often)\b/i;
 
     const bars = [], statements = [], residue = [];
@@ -1219,7 +1298,7 @@ class Bias {
                        check: BIAS_CHECKS.BIAS_STATEMENT_ISSUES_A_VERDICT.check });
         continue;
       }
-      if (INFERENCE.test(s)) {
+      if (INFERENCE_BLOCKS.test(s)) {
         statements.push({ id: `prop-${++n}`, kind: "inference", subject: null, text: s,
                           justification: null, citations: [], proposed: true, authored: false });
         continue;

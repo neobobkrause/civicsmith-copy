@@ -376,7 +376,98 @@ test("R25: a statement whose subject is not in the registry is listed for review
   assert.deepEqual(real.bias.biasManifest({ viewer: "admin" }).unregistered_subjects.map((u) => u.statement_id), ["s2"]);
 });
 
-test.todo("R26: a project statement that loosens a group statement on the same subject is an override whatever it calls itself, and the strictest applies (deferred by K102 until evaluation findings exist)");
+/* R26: a project lens over A's group statements, adopted for P by its owner. */
+const PB = "BIAS-2026-0000-proj";
+const OWNER = { reason: WHY, scope: "project", scopeId: P, author: "owner", identity: "member:owner", viewer: "member:owner" };
+const SUBJ = "ENT-2026-0007";
+const RELAX = "Claims from this office may be taken at face value in this project.";
+const BLOCK = "A lack of response from this office is not an indication of agreement with what others say.";
+const LICENSE = "In this project a lack of response from this office may be read as agreement.";
+async function lensWorld(group, project) {
+  const w = await adoptWorld("draft");
+  w.set(A, group, "adopted");
+  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  if (project) { w.set(PB, project, "adopted"); w.bias.biasAdopt({ bundleId: PB, ...OWNER }); }
+  return w;
+}
+const inP = (w) => w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
+
+test("R26: a project statement that relaxes a group statement's scrutiny on its subject, naming no override, is an override by its effect; the group statement applies and the looser is withheld from the set and its hash; it is still an interaction (R24), and nothing is refused (R28)", async () => {
+  const w = await lensWorld([S("s1")], [S("p1", { text: RELAX })]);
+  const m = inP(w);
+  assert.equal(m.in_force, true);
+  assert.deepEqual(m.overrides_by_effect, [{ statement_id: "p1", bundle_id: PB, subject: SUBJ, effect: "scrutiny",
+    loosens: { statement_id: "s1", bundle_id: A, locked: false }, names: null }]);
+  assert.deepEqual(m.strictest_applied, [{ subject: SUBJ, effect: "scrutiny",
+    applies: { statement_id: "s1", bundle_id: A, scope: "instance" }, withheld: { statement_id: "p1", bundle_id: PB, scope: "project" } }]);
+  assert.match(String(m.overrides_by_effect_stated), /must name the statement it loosens/);
+  assert.match(String(m.overrides_by_effect_stated), /group statement stands/);
+  assert.doesNotMatch(String(m.overrides_by_effect_stated), /instance statement/, "DEC-149");
+  assert.match(String(m.strictest_applied_stated), /the stricter applies/);
+  assert.deepEqual([m.statements.map((s) => s.statement_id), m.total], [["s1"], 1]);
+  /* the looser adds nothing to the lens: the project's hash is the group's own */
+  assert.equal(m.statements_sha, w.bias.biasManifest({ viewer: "admin" }).statements_sha);
+  assert.deepEqual(m.interactions.map((i) => i.statement_id), ["p1"]);
+  assert.deepEqual(m.lock_violations, []);
+  /* R49 reads the same set */
+  const p1 = w.bias.statementInForce({ statement: "p1", scope: { type: "project", id: P }, viewer: "member:owner" });
+  assert.deepEqual([p1.in_force, p1.statements_sha], [false, m.statements_sha]);
+  assert.match(p1.stated, /stricter statement/);
+  assert.equal(w.bias.statementInForce({ statement: "s1", scope: { type: "project", id: P }, viewer: "member:owner" }).in_force, true);
+});
+
+test("R26: a project statement that licenses an inference a group statement blocks is an override by its effect; a LOCKED group statement so loosened stands and is reported locked, as a conformance error, refusing nothing", async () => {
+  const w = await lensWorld([S("s1", { kind: "inference", text: BLOCK, locked: true })],
+                            [S("p1", { kind: "inference", text: LICENSE })]);
+  const m = inP(w);
+  assert.deepEqual(m.overrides_by_effect, [{ statement_id: "p1", bundle_id: PB, subject: SUBJ, effect: "inference",
+    loosens: { statement_id: "s1", bundle_id: A, locked: true }, names: null }]);
+  assert.deepEqual(m.statements.map((s) => [s.statement_id, s.locked]), [["s1", true]]);
+  assert.match(String(m.overrides_by_effect_stated), /LOCKED group statement is a conformance error/);
+  /* naming ANOTHER statement does not name this one: still an override by effect */
+  const w2 = await lensWorld([S("s1", { kind: "inference", text: BLOCK }), S("s2", { subject: "ENT-2026-0099" })],
+                             [S("p1", { kind: "inference", text: LICENSE, nullifies: "s2" })]);
+  const m2 = inP(w2);
+  assert.deepEqual(m2.overrides_by_effect.map((o) => [o.statement_id, o.loosens.statement_id, o.names]), [["p1", "s1", "s2"]]);
+  assert.deepEqual(m2.statements.map((s) => s.statement_id), ["s1"], "s2 nullified by name, p1 withheld by effect");
+});
+
+test("R26: where two group statements conflict with no named override, the strictest applies — listed under strictest_applied, and not an override by a project", async () => {
+  const w = await lensWorld([S("s1"), S("s2", { text: "Claims from this office need no cross-checking before they bear load." })]);
+  const m = w.bias.biasManifest({ viewer: "admin" });
+  assert.deepEqual(m.strictest_applied, [{ subject: SUBJ, effect: "scrutiny",
+    applies: { statement_id: "s1", bundle_id: A, scope: "instance" }, withheld: { statement_id: "s2", bundle_id: A, scope: "instance" } }]);
+  assert.deepEqual(m.overrides_by_effect, []);
+  assert.deepEqual([m.statements.map((s) => s.statement_id), m.total, m.count], [["s1"], 1, 1]);
+  /* paging reads the set after the strictest applied: a page of one holds s1, and nothing is past it */
+  const page = w.bias.biasManifest({ viewer: "admin", limit: 1, offset: 1 });
+  assert.deepEqual([page.statements, page.total, page.truncated, page.statements_sha], [[], 1, false, m.statements_sha]);
+});
+
+test("R26 negative controls: a stricter project statement, a second blocked inference, a pattern statement, a named replacement, another subject, and two statements that loosen each other are no override by effect and withhold nothing", async () => {
+  const quiet = async (group, project, ids) => {
+    const w = await lensWorld(group, project);
+    const m = inP(w);
+    assert.deepEqual([m.overrides_by_effect, m.strictest_applied], [[], []], JSON.stringify(project));
+    assert.deepEqual(m.statements.map((s) => s.statement_id), ids);
+    return m;
+  };
+  /* raising scrutiny further loosens nothing */
+  await quiet([S("s1")], [S("p1", { text: "Claims from this office need two independent records in this project." })], ["p1", "s1"]);
+  /* blocking a second inference licenses nothing */
+  await quiet([S("s1", { kind: "inference", text: BLOCK })],
+              [S("p1", { kind: "inference", text: "A late filing by this office is not evidence of bad faith." })], ["p1", "s1"]);
+  /* a pattern statement is not machine-judged (safeguard 5) */
+  await quiet([S("s1")], [S("p1", { kind: "pattern", text: RELAX, citations: ["EV-2026-0001"] })], ["p1", "s1"]);
+  /* a replacement that names s1 is R16's named override: s1 is gone, so nothing conflicts */
+  await quiet([S("s1")], [S("p1", { text: RELAX, nullifies: "s1" })], ["p1"]);
+  /* a relaxing statement on another subject touches nothing */
+  await quiet([S("s1")], [S("p1", { text: RELAX, subject: "ENT-2026-0099" })], ["p1", "s1"]);
+  /* each loosens the other: neither is judged stricter, so neither is withheld */
+  await quiet([S("s1", { text: "Claims from this office need a second record, and a filing date indicates when it was made." })],
+              [S("p1", { kind: "inference", text: "Silence from this office is not an indication of assent, and its filings may be relied on without checking." })],
+              ["p1", "s1"]);
+});
 
 test("R27: nothing puts a lens in force but a member's authored adoption whose pinned revision stands at adopted", async () => {
   const w = await adoptWorld();
