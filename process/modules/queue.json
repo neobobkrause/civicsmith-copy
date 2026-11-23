@@ -29,7 +29,6 @@
     "bias",
     "observation-log",
     "inquiry",
-    "actions",
     "scheduler",
     "affordances",
     "tasks",
@@ -41,7 +40,6 @@
     "investigation",
     "setup-words",
     "project-roster",
-    "op-grades",
     "queue-catalogue"
   ]
 }

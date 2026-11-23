@@ -93,7 +93,7 @@ test("R70 R40 every published case edition answers signed_at and published_at in
   /* published at signing (no source of waiting editions registered: R77) */
   w.signCase(CASE, 1, { project: proj, roster, at: "2026-09-28T02:00:00Z" });
   w.signFinding(F);
-  const d1 = w.p.caseEditionState(CASE, 1).document;
+  const d1 = w.p.caseEditionState(CASE, 1)?.document;
   assert.deepEqual([d1.signed_at, d1.published_at, d1.ratified_at], ["2026-09-28T02:00:00Z", "2026-09-28T02:00:00Z", "2026-09-28T02:00:00Z"]);
   const r1 = w.p.caseDocument(CASE, 1, null);
   assert.deepEqual([r1.signed_at, r1.published_at], ["2026-09-28T02:00:00Z", "2026-09-28T02:00:00Z"]);

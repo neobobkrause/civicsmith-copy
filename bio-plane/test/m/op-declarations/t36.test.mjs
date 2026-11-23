@@ -26,7 +26,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const neither = (op) => !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
 const familyOf = (op) => Object.values(OP_FAMILIES).find((f) => Object.hasOwn(f.kinds, op))?.owner ?? null;
@@ -140,7 +140,7 @@ test("R32, R6: OPS holds a spec for each of the ops file-safety serves (its regi
   assert.deepEqual([...served].sort(), Object.keys(R32).sort());
   for (const op of served) assert.ok(Object.hasOwn(OPS, op), `${op} has no spec`);
   /* T51 fix round 3 (K4371; B27): scanmirror is file-safety's declaration (R80), not a map op: specced by its owner's row */
-  assert.ok(Object.hasOwn(OPS, "scanmirror") && OPS.scanmirror.mutating === true && OPS.scanmirror.classes.includes("admin"));
+  assert.ok(Object.hasOwn(OPS, "scanmirror") && OPS.scanmirror.mutating === true && OPS.scanmirror.classes?.includes("admin"));
   /* the family is the 19 a session reaches; the four wakes are declared in OPS apart */
   assert.deepEqual(Object.keys(OP_FAMILIES["file-safety"].kinds).sort(), served.filter((op) => R32[op].sets === "both" && !R32[op].owner).sort());
   /* negative control */

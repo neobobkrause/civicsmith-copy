@@ -82,7 +82,6 @@ The screens drawn without a member session, in the public frame (`front`, `tour`
 
 - `interface-shell`: the kit (its R21, R30).
 - `setup-words`: `WORD_ROWS` keys.
-- `instance-setup`: `HOSTING_CONTROL` (its R47; R6) and `FORGOT_HELP` (its R47; R4), a `modules.json` edge to an earlier module (T47-86).
 - Through the plane: the ops each screen names (R1–R7), as `op-declarations` declares them.
 - Tests only: `op-declarations` (`OPS`).
 

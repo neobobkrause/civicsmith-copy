@@ -1,4 +1,4 @@
-Length: 95 lines. Last section: "Marks settled by a row the table already holds".
+Length: 94 lines. Last section: "Marks settled by a row the table already holds".
 
 # New words the lane decided
 
@@ -75,7 +75,7 @@ These rows are design (rank 5 on `process/ranking.md`), decided by the UX lane o
 
 ## Marks settled by a row the table already holds
 
-Fourteen marks named a control for which the table already holds a row, and the built code draws it. There the existing row stands and no new row is asked for; where the mockup drew other words, the page says they are not kept. Each page now names the row.
+Thirteen marks named a control for which the table already holds a row, and the built code draws it. (A fourteenth, leads A2, was taken out on 23 Nov 2026: `screens-intake` R52 draws it as "Open it", `screen.capture.openit`, as ARCH passed it.) There the existing row stands and no new row is asked for; where the mockup drew other words, the page says they are not kept. Each page now names the row.
 
 | existing key | English | screen page and part | mockup's words, not kept |
 |---|---|---|---|
@@ -86,7 +86,6 @@ Fourteen marks named a control for which the table already holds a row, and the 
 | `installer.need.time` | About twenty minutes, at a computer. | getting-started / install S3 | (the same, without the comma) |
 | `installer.remove.refused.typed` | Nothing was deleted: the short name typed doesn't match. … | getting-started / install V2 | (none) |
 | `screen.follow.label`, `screen.follow.*` | Follow from here, and its acts | outside-the-team / registers A8 | (the same) |
-| `act.leadread.label.leads` | Open a lead | outside-the-team / leads A2 (Differences) | Open it |
 | `screen.calculation.name`, `screen.proceeding.name`, `screen.standard.name`, `screen.published.name` | Calculation, Proceeding, Standard, Published case | projects-and-questions / project C11 | (none) |
 | `act.hypothesisrevise.label.question` | Revise a hunch | projects-and-questions / question A7 | Revise this hunch |
 | `progression.steps` | Its steps | the-record / timeline S3 | Steps |

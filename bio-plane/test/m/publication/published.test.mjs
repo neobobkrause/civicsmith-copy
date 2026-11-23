@@ -224,7 +224,7 @@ test("R27 signer and deliverer are two facts, and neither is copied from the oth
     attestorMember: "olive", gateVersion: "g", sigArmored: SIG(2), deliveredBy: null, edges: [] }));
   const doc = w.p.caseDocument("CASE-2026-0001", 1, null);
   assert.deepEqual([doc.attestor_member, doc.delivered_by], ["olive", { kind: "founder", member: null }]);
-  const row = w.p.caseEditionState("CASE-2026-0001", 1).findings[0];
+  const row = w.p.caseEditionState("CASE-2026-0001", 1)?.findings[0];
   assert.equal(row.attestor.member, "olive");
   assert.equal(row.delivered_by.kind, "undetermined", "a deliverer never recorded is not read off the signer");
 });
@@ -232,7 +232,7 @@ test("R27 signer and deliverer are two facts, and neither is copied from the oth
 test("R28 undetermined is stated and never filled: a deliverer, an acknowledgement list a document is silent about, a citation's version before /4", () => {
   const { w } = published();
   w.st.sql.exec(`UPDATE published_bundles SET delivered_by=NULL`);
-  const f = w.p.caseEditionState("CASE-2026-0001", 1).findings[0];
+  const f = w.p.caseEditionState("CASE-2026-0001", 1)?.findings[0];
   assert.deepEqual(f.delivered_by, { kind: "undetermined", member: null, detail: DELIVERER_UNDETERMINED_DETAIL });
   assert.equal(w.p.caseDocument("CASE-2026-0001", 1, null).citations.state, "signed");
   /* the completeness a caller commits is stored as given: a list the document was silent about stays null */
@@ -285,7 +285,7 @@ test("R22 (N256) a reference to evidence not yet published is held privately, ne
   /* the id is never published while held: the published graph and the registry name it nowhere (the case's own signed
      document names DOC among its exclusions: that is the case's statement, not the graph's) */
   assert.equal(w.row(`SELECT COUNT(*) AS n FROM published_edges WHERE to_bundle=? OR from_bundle=?`, DOC, DOC).n, 0);
-  for (const read of [w.op("publishedtargets", { ids: F }), w.p.caseEditionState("CASE-2026-0001", 1).findings])
+  for (const read of [w.op("publishedtargets", { ids: F }), w.p.caseEditionState("CASE-2026-0001", 1)?.findings])
     assert.equal(JSON.stringify(read).includes(DOC), false);
   /* a held reference to another target stays held when DOC is published */
   w.record.transact(() => w.p.publishEdges(F, [{ to: G, kind: "cites", disclosure: "serve" }], NOW));

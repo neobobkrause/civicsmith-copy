@@ -50,6 +50,7 @@ const T47_FAMILIES = Object.freeze([
    being one of `values`, or, with `values: null`, the field present at all. `memberset` is `{field: "role", values:
    null}`, wider than "a role to or from admin", since admission cannot read a member's present role (R62). Frozen data
    (R5). */
+/** @type {Object<string, {field: string, values: readonly string[] | null} | null>} the acts that ask the password again, and the argument that makes them so (R58, R62, R63) */
 const REAUTH_ACTS = Object.freeze({
   caseratify: null, publishat: null, publishatmove: null, ratify: null, docketpost: null,
   adminendorse: null, adminremove: null,

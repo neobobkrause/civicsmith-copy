@@ -275,6 +275,9 @@ export class Publication {
   purgeDeclaration = null;   // R31: record-core's answer to this module's purge declaration, set at creation
   handleGuard = null;        // R76: membership's answer to this module's handle guard registration, set at creation
 
+  /** @param {*} [deps] the store's `storage` (its `sql`), `record`, `membership` and `promotion`, and the uses a test
+   *    injects in place of each one's factory (`host` and the clock `now` among them; the module's head comment names each)
+   */
   constructor({ storage, record, membership, promotion, host = null, inquiry = null, basisVersions = null,
                 contradiction = null, sources = null, credentials = null, corpusExport = null, acceptedWork = null,
                 capture = null, extraction = null, standards = null, entities = null, bucket = null, store = null,
@@ -288,31 +291,47 @@ export class Publication {
     this.now = typeof now === "function" ? now : () => new Date().toISOString();
   }
 
-  /* The modules reached lazily: each is created on the same host on first use, unless a test passed its own. */
+  /** The modules reached lazily: each is created on the same host on first use, unless a test passed its own.
+   *  @returns inquiry's module on the same host, reached lazily
+   */
   get inquiry() { return this.#deps.inquiry ||= inquiryOf(this.#deps.host); }
+  /** @returns basis-versions' module on the same host, reached lazily
+   */
   get basisVersions() { return this.#deps.basisVersions ||= basisVersionsOf(this.#deps.host); }
-  /* R72: read at a case edition's commit only. */
+  /** R72: read at a case edition's commit only.
+   *  @returns standards' module on the same host, reached lazily
+   */
   get standards() {
     return this.#deps.standards ||= standardsOf(this.#deps.host, { record: this.record, membership: this.membership,
                                                                    promotion: this.promotion });
   }
-  /* R78: read at a case edition's commit only. */
+  /** R78: read at a case edition's commit only.
+   *  @returns project-roster's module on the same host, reached lazily
+   */
   get roster() {
     return this.#deps.roster ||= projectRosterOf(this.#deps.host, { record: this.record, membership: this.membership });
   }
+  /** @returns entities' module on the same host, reached lazily
+   */
   get entities() { return this.#deps.entities ||= entitiesOf(this.#deps.host, { record: this.record, membership: this.membership }); }
+  /** @returns credentials' module on the same host, reached lazily
+   */
   get credentials() {
     return this.#deps.credentials ||= credentialsOf(this.#deps.host, { record: this.record, membership: this.membership });
   }
-  /* T33-63 (K1505, K1634): case-tensions, one per host, forwarded the uses a test gave this module; its provider is
-     registered by the factory below. */
+  /** T33-63 (K1505, K1634): case-tensions, one per host, forwarded the uses a test gave this module; its provider is
+     registered by the factory below.
+   *  @returns case-tensions' module on the same host
+   */
   get caseTensionsModule() {
     const { host, storage, basisVersions, contradiction, capture } = this.#deps;
     return caseTensionsOf(host, { storage, record: this.record, membership: this.membership, promotion: this.promotion,
                                   now: this.now, ...(basisVersions ? { basisVersions } : {}),
                                   ...(contradiction ? { contradiction } : {}), ...(capture ? { capture } : {}) });
   }
-  /* N532: case-carriage, one per host, forwarded the uses a test gave this module (its Suggestions' factory). */
+  /** N532: case-carriage, one per host, forwarded the uses a test gave this module (its Suggestions' factory).
+   *  @returns case-carriage's module on the same host
+   */
   get caseCarriage() {
     const { host, storage, sources, acceptedWork, extraction, bucket, store } = this.#deps;
     /* (T37; K2226) the evidence bucket and the store's namespace, when given, so case-carriage holds an obscured copy
@@ -322,11 +341,16 @@ export class Publication {
                                   ...(extraction ? { extraction } : {}), ...(bucket ? { bucket } : {}),
                                   ...(store != null ? { store } : {}) });
   }
+  /** @returns corpus-export's module on the same host
+   */
   get corpusExport() {
     return this.#deps.corpusExport ||= corpusExportOf(this.#deps.host, { storage: this.#deps.storage, record: this.record,
                                                                         now: this.now });
   }
 
+  /** Creates this module's tables; idempotent, every boot.
+   *  @returns {void}
+   */
   migrate() { migratePublication(this.sql); }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
@@ -351,7 +375,11 @@ export class Publication {
    *  draft states), `liveGrant(secretSha)`, `grantAdmitsCaseEdition(secretSha, caseId, edition)` and `deadAnswer()`.
    *  Called as `registerReviewProvider(provider)` or `registerReviewProvider(module, provider)`. A second
    *  registration is refused `PROVIDER_DECLARED`; one missing a door `PROVIDER_MALFORMED`. `review` fills
-   *  it (legacy-store did until its retirement). */
+   *  it (legacy-store did until its retirement).
+   *  @param {*} moduleOrProvider the registering module's name, or the provider itself
+   *  @param {*} [maybeProvider] the provider, when the first argument names the module
+   *  @returns `{ok: true, module}`, or `{ok: false, reason}` with `PROVIDER_MALFORMED` or `PROVIDER_DECLARED`
+   */
   registerReviewProvider(moduleOrProvider, maybeProvider = undefined) {
     const provider = typeof moduleOrProvider === "string" ? maybeProvider : moduleOrProvider;
     const module = typeof moduleOrProvider === "string" ? str(moduleOrProvider)
@@ -367,7 +395,9 @@ export class Publication {
   }
 
   /** R23: the registered review provider, or the answer that none is: no draft reads, no grant admits, no identity is
-   *  stated, and the dead answer is a bare NO_REVIEW_COPY. */
+   *  stated, and the dead answer is a bare NO_REVIEW_COPY.
+   *  @returns the registered doors with `registered: true`, or the doors that admit nothing
+   */
   reviewProvider() {
     return this.#review ? { registered: true, ...this.#review } : NO_REVIEW_PROVIDER;
   }
@@ -377,7 +407,9 @@ export class Publication {
   /** R62 (K1632): `docket` fills, once at start, the one source that says whether a docket entry is a posted
    *  `court-order` entry of a case: `courtOrderOf(case, entry)` → `{seq, effect, editions, parts}` or null. Called as
    *  `registerOrderSource(source)` or `registerOrderSource(module, source)`; a second registration is refused
-   *  `PROVIDER_DECLARED`, one without the door `PROVIDER_MALFORMED`. With none, every stamp is refused STAMP_NO_ORDER. */
+   *  `PROVIDER_DECLARED`, one without the door `PROVIDER_MALFORMED`. With none, every stamp is refused STAMP_NO_ORDER.
+   *  @returns `{ok: true, module}`, or `{ok: false, reason}` with `PROVIDER_MALFORMED` or `PROVIDER_DECLARED`
+   */
   registerOrderSource(moduleOrSource, maybeSource = undefined) {
     const source = typeof moduleOrSource === "string" ? maybeSource : moduleOrSource;
     const module = typeof moduleOrSource === "string" ? str(moduleOrSource) : str(source && source.module) || "unnamed";
@@ -390,7 +422,9 @@ export class Publication {
     return { ok: true, module };
   }
 
-  /** R62: whether a court-order source is registered, and by whom. */
+  /** R62: whether a court-order source is registered, and by whom.
+   *  @returns `{registered, module}`
+   */
   orderSource() { return this.#orders ? { registered: true, module: this.#orders.module } : { registered: false, module: null }; }
 
   /* ---------------------------------------------------------------- R77: the source of waiting editions */
@@ -400,7 +434,11 @@ export class Publication {
    *  (R21: it counts as signed) and `signedAtOf(caseId, edition)` → the instant it was signed at the ceremony, or null
    *  (R70), and `signerOf(caseId, edition)` → `{signer, delivered_by}` while it waits, else null (R76; K2529). Called as `registerWaitingEditions(source)` or `registerWaitingEditions(module, source)`; a second
    *  registration is refused `PROVIDER_DECLARED`, one missing a door `PROVIDER_MALFORMED`, each registering nothing.
-   *  With none, no edition waits and no signing instant is answered. No SQL of this module names its table. */
+   *  With none, no edition waits and no signing instant is answered. No SQL of this module names its table.
+   *  @param {*} moduleOrSource the registering module's name, or the source itself
+   *  @param {*} [maybeSource] the source, when the first argument names the module
+   *  @returns `{ok: true, module}`, or `{ok: false, reason}` with `PROVIDER_MALFORMED` or `PROVIDER_DECLARED`
+   */
   registerWaitingEditions(moduleOrSource, maybeSource = undefined) {
     const source = typeof moduleOrSource === "string" ? maybeSource : moduleOrSource;
     const module = typeof moduleOrSource === "string" ? str(moduleOrSource) : str(source && source.module) || "unnamed";
@@ -413,7 +451,9 @@ export class Publication {
     return { ok: true, module };
   }
 
-  /** R77: whether the waiting editions' source is registered, and by whom. */
+  /** R77: whether the waiting editions' source is registered, and by whom.
+   *  @returns `{registered, module}`
+   */
   waitingSource() { return this.#waiting ? { registered: true, module: this.#waiting.module } : { registered: false, module: null }; }
 
   /* R21, R76 (R77): whether a case edition's document waits, asked of the source inside the caller's transaction; with
@@ -435,7 +475,9 @@ export class Publication {
 
   /** R65 (DEC-132 (3); K1541): exactly what `membership.groupDescription` (its R110) answers the public: the four texts
    *  while the group's latest chosen visibility is `public`, else `{description: null}`; never the history, who set it
-   *  or when. No credential and no viewer; writes nothing and never throws. */
+   *  or when. No credential and no viewer; writes nothing and never throws.
+   *  @returns `{description}`: `{kinds, otherKind, focus, purpose}` while the group is public, else null
+   */
   publicGroupDescription() {
     try {
       const d = this.membership.groupDescription({ viewer: null });
@@ -451,7 +493,10 @@ export class Publication {
    *  its bytes fixed) whose signer, deliverer (R14) or preparer (`authored_by`) is the member, or whose document names
    *  the member's handle in a row that carries one (`material_attestations:` at `cover` or `name`, `member_ties:`, an
    *  attribution at `cover` or `name`); null when none; `{unreadable: true}` when its tables or the source cannot be
-   *  read. A waiting edition's signer and deliverer are its source's `signerOf` (R77; K2529). Synchronous; writes nothing; never throws. Registered with `membership.registerHandleGuard` at start; while no handle is changed (membership R129, T46) no act of membership asks it. */
+   *  read. A waiting edition's signer and deliverer are its source's `signerOf` (R77; K2529). Synchronous; writes nothing; never throws. Registered with `membership.registerHandleGuard` at start; while no handle is changed (membership R129, T46) no act of membership asks it.
+   *  @param {{memberId?: *}} [args] the member asked about
+   *  @returns `{case, edition}`, null when none, or `{unreadable: true}`
+   */
   publishedWorkOf({ memberId = null } = {}) {
     try {
       const id = str(memberId);
@@ -512,7 +557,13 @@ export class Publication {
   /** R21: store one case edition's UNSIGNED document, replacing an unsigned one of the same edition and never a signed
    *  one (nor one R77's source answers waiting to be published at a set time, which counts as signed), and project its
    *  exclusions (R3). Inside the caller's transaction; never throws on a signed document; answers what the store holds
-   *  after the call, read back, so a caller sees a write that did not happen. */
+   *  after the call, read back, so a caller sees a write that did not happen.
+   *  @param {{case?: *, caseId?: *, edition?: *, text?: *, author?: *, at?: *, draft?: *}} [args]
+   *    the case edition, the document's text, who authored it and when, and the draft it came from
+   *  @returns `{ok: true, case_id, edition, doc_sha, stored}`, or `{ok: false, reason}` with `MALFORMED` or
+   *    `CASE_DOCUMENT_TOO_LARGE` (`bytes`, `bound`)
+   *  @bound text: at most CASE_DOCUMENT_BYTES_MAX (1,572,864) UTF-8 bytes; edition: a whole number, 1 or more
+   */
   storeCaseDocument({ case: caseArg = null, caseId = null, edition = null, text = null, author = null, at = null,
                       draft = null } = {}) {
     const id = str(caseArg ?? caseId), ed = Number(edition);
@@ -543,7 +594,13 @@ export class Publication {
   /** R21: replace one named section's lines (`attribution`, `acknowledgements`: SECTIONS above) of an UNSIGNED case
    *  document still at `docSha`. `lines` is `{frontmatter, body}`, each an array of lines the section's owner built.
    *  Only those runs change; the document's hash moves, so a signature over the old bytes is refused as stale. A
-   *  signed or moved document, or one carrying no such section, is left as it is and the answer says so. */
+   *  signed or moved document, or one carrying no such section, is left as it is and the answer says so.
+   *  @param {{case?: *, caseId?: *, edition?: *, docSha?: *, section?: *, lines?: *}} [args]
+   *    the case edition, the hash it must still be at, the section and its new lines
+   *  @returns `{ok: true, case_id, edition, doc_sha, reauthored}` with `why` or `too_large` when nothing changed, or
+   *    `{ok: false, reason: "MALFORMED"}`
+   *  @bound a splice whose result passes CASE_DOCUMENT_BYTES_MAX (1,572,864) UTF-8 bytes and the stored text is not made
+   */
   reauthorSection({ case: caseArg = null, caseId = null, edition = null, docSha = null, section = null,
                     lines = null } = {}) {
     const id = str(caseArg ?? caseId), ed = Number(edition);
@@ -594,7 +651,14 @@ export class Publication {
    *  (`EDITION_EXISTS`, `EDITION_NOT_INCREMENTED`), `CASE_ASSERTION_DIVERGED` against every legacy case pinning it,
    *  the per-case discharge of revision flags (R5), the bar projection, the `published_bundles` row, every file's hash
    *  and the published graph (R35). Re-committing bytes already published at that edition is a retry and answers
-   *  `existed: true`, writing nothing new. Who may publish is ratification's. */
+   *  `existed: true`, writing nothing new. Who may publish is ratification's.
+   *  @param {{[key: string]: *, bundleId?: *, bundleSha?: *, edition?: *, title?: *, completeness?: *, strength?: *, memberCarriesBlocks?: *, group?: *, edges?: *, shas?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, sigArmored?: *, deliveredBy?: *, at?: *}} [args]
+   *    `bundleId`, `bundleSha`, `edition`, `title`, `completeness`, `strength`, `memberCarriesBlocks`,
+   *    `group`, `edges`, `shas` (each `{path, sha256, kind, bytes}`), `attestorKey`, `attestorMember`, `gateVersion`,
+   *    `sigArmored`, `deliveredBy` and `at`
+   *  @returns the committed edition (`existed: true` on a retry), or a refusal: `MALFORMED`, `EDITION_EXISTS`,
+   *    `EDITION_NOT_INCREMENTED`, `CASE_ASSERTION_DIVERGED`
+   */
   commitEdition({ bundleId = null, bundleSha = null, edition = null, title = null, completeness = null, strength = null,
                   memberCarriesBlocks = false, group = null, edges = [], shas = null, attestorKey = null,
                   attestorMember = null, gateVersion = null, sigArmored = null, deliveredBy = null, at = null } = {}) {
@@ -1038,7 +1102,16 @@ export class Publication {
    *  answers `existed: true` and writes nothing; any other signed document is `CASE_EDITION_ALREADY_RATIFIED`, and a
    *  case another project owns `CASE_PRODUCTION_DIVERGED`, nothing written. It answers `awaiting` (roster members not
    *  yet published at their pins) and `state`, the case edition's state (`caseEditionState`). Who may sign, the
-   *  document's staleness and the flag discharge are ratification's. */
+   *  document's staleness and the flag discharge are ratification's.
+   *  @param {{[key: string]: *, case?: *, caseId?: *, edition?: *, project?: *, scope?: *, completeness?: *, biasAcknowledgement?: *, bar?: *, roster?: *, sigArmored?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, deliveredBy?: *, at?: *}} [args]
+   *    `case` (or `caseId`), `edition`, `project`, `scope`, `completeness`, `biasAcknowledgement`,
+   *    `bar`, `roster` (each `{bundle_id, version_sha, role}`), `sigArmored`, `attestorKey`, `attestorMember`,
+   *    `gateVersion`, `deliveredBy` and `at`
+   *  @returns the committed case edition with `awaiting`, `state`, `materials` and `materials_unheld` (`existed: true` on
+   *    a retry), or a refusal: `MALFORMED`, `CASE_EDITION_ALREADY_RATIFIED`, `CASE_PRODUCTION_DIVERGED`,
+   *    `COUNSEL_MATTER_NOT_PUBLISHED`, `SOURCE_CONSENT_WITHDRAWN`, `PHOTO_MARKS_CHANGED_SINCE`,
+   *    `DOCUMENT_COPY_CHANGED_SINCE`, `CASE_FORMAT_SUPERSEDED`, `ACCEPTANCE_WITHDRAWN_SINCE`, `FLAG_OPENED_SINCE`
+   */
   commitCaseEdition({ case: caseArg = null, caseId = null, edition = null, project = null, scope = null,
                       completeness = null, biasAcknowledgement = null, bar = null, roster = [], sigArmored = null,
                       attestorKey = null, attestorMember = null, gateVersion = null, deliveredBy = null, at = null } = {}) {
@@ -1298,7 +1371,10 @@ export class Publication {
   /** R75 (N717; K2002, K2129): the criteria R72 would record for `members` (each `{bundle_id, version_sha}`, read at
    *  those bytes) at a commit by `signer` on the UTC day of `at`, composed exactly as the commit composes them (the same
    *  read), so a preparation and its commit disagree only by a change in the record between them: `{rows}`. Writes
-   *  nothing, is no op, and never throws: a member whose bytes cannot be read contributes no row. */
+   *  nothing, is no op, and never throws: a member whose bytes cannot be read contributes no row.
+   *  @param {*} [args] `{members: [{bundle_id, version_sha}], signer, at}`
+   *  @returns `{rows}`, each row as R72 composes it
+   */
   criteriaFor(args = {}) {
     try {
       const { members = [], signer = null, at = null } = args && typeof args === "object" ? args : {};
@@ -1390,7 +1466,11 @@ export class Publication {
   }
 
   /** R57 (K1317): what a committed case edition held, as case-carriage answers it (its R2), with each calculation input
-   *  its signed document names (R22), so a retried ratification copies what is left (ratification R39). */
+   *  its signed document names (R22), so a retried ratification copies what is left (ratification R39).
+   *  @param {*} caseId
+   *  @param {*} edition
+   *  @returns `[{sha, held}]`, `held` `inline`, `evidence` or `derived`
+   */
   heldMaterialsOf(caseId, edition) {
     const d = this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=? AND sig_armored IS NOT NULL`,
                         str(caseId), Number(edition));
@@ -1398,13 +1478,19 @@ export class Publication {
     return this.#withInputs(this.caseCarriage.heldMaterialsOf(caseId, edition), inputs);
   }
 
-  /** R57 (K1316): a held material's text by its SHA-256, as case-carriage answers it (its R3), for `public-read`. */
+  /** R57 (K1316): a held material's text by its SHA-256, as case-carriage answers it (its R3), for `public-read`.
+   *  @param {*} sha the material's SHA-256
+   *  @returns its text, or null
+   */
   publishedMaterialText(sha) { return this.caseCarriage.publishedMaterialText(sha); }
 
-  /* D-734: THE BYTES op=publishedbytes SERVES FOR A `case_document` HASH, read from `case_documents.text` — the signed
+  /** D-734: THE BYTES op=publishedbytes SERVES FOR A `case_document` HASH, read from `case_documents.text` — the signed
      bytes themselves, which never reach the published bucket. Answered ONLY for a sha that BOTH a `case_document` row
      of `published_shas` names AND a RATIFIED case document carries, so an unsigned document's text is unreachable here.
-     The control plane re-hashes before serving; this read does not vouch for the bytes. */
+     The control plane re-hashes before serving; this read does not vouch for the bytes.
+   *  @param {*} sha a published case document's SHA-256
+   *  @returns `{ok: true, case_id, edition, text}`, or `{ok: false, reason: "NO_SUCH_HASH"}`
+   */
   publishedCaseDocumentText(sha) {
     const d = this.#one(
       `SELECT d.case_id, d.edition, d.text FROM case_documents d
@@ -1430,7 +1516,11 @@ export class Publication {
    *  same stamp again answers `existed: true` and writes nothing. Refusals, each writing nothing: a malformed call
    *  `MALFORMED`; an edition that is not a ratified edition of the case `NO_SUCH_CASE_EDITION`; an entry the registered
    *  source does not answer as a posted `court-order` entry of that case with this effect (or no source registered)
-   *  `STAMP_NO_ORDER`. Never throws. */
+   *  `STAMP_NO_ORDER`. Never throws.
+   *  @param {{case?: *, caseId?: *, editions?: *, entry?: *, effect?: *, parts?: *, at?: *}} [args]
+   *  @returns `{ok: true, case, editions, effect, parts, entry, stamps}` (`existed: true` for a repeat), or
+   *    `{ok: false, reason}` with `MALFORMED`, `NO_SUCH_CASE_EDITION` or `STAMP_NO_ORDER`
+   */
   stampEdition({ case: caseArg = null, caseId = null, editions = null, entry = null, effect = null, parts = null,
                  at = null } = {}) {
     const id = str(caseArg ?? caseId);
@@ -1473,7 +1563,10 @@ export class Publication {
 
   /** R62: one edition's court-order stamps, in the order they were made: `{ok, case, edition, stamps: [{case, edition,
    *  effect, parts, entry, stamped_at}]}`, for `public-read` to answer beside the edition. `NO_ID` without a case;
-   *  an edition never stamped answers `stamps: []`. Writes nothing. */
+   *  an edition never stamped answers `stamps: []`. Writes nothing.
+   *  @param {{case?: *, caseId?: *, edition?: *}} [args]
+   *  @returns `{ok: true, case, edition, stamps}`, or `{ok: false, reason: "NO_ID"}`
+   */
   stampsOf({ case: caseArg = null, caseId = null, edition = null } = {}) {
     const id = str(caseArg ?? caseId), ed = Number(edition);
     if (!id || !Number.isInteger(ed) || ed < 1)
@@ -1487,7 +1580,9 @@ export class Publication {
 
   /** R64 (N598, K1644): every edition holding at least one R62 stamp, in one read over the whole store, in case id and
    *  edition order, each edition's `stamps` exactly as `stampsOf` answers them (in the order made): `{ok: true,
-   *  editions: [{case, edition, stamps}]}`. Takes no viewer, writes nothing and never throws. */
+   *  editions: [{case, edition, stamps}]}`. Takes no viewer, writes nothing and never throws.
+   *  @returns `{ok: true, editions: [{case, edition, stamps}]}`
+   */
   stampedEditions() {
     try {
       const editions = [];
@@ -1508,7 +1603,11 @@ export class Publication {
   /** R63 (C11; K1494, K1632): a ratified edition's timeline, the `timeline:` block of its signed document as signed
    *  (`case-grammar.timelineOf`): `{ok, case, edition, they_did, we_did}`, the two lanes apart, never a later read of
    *  the record. A document without the block answers both lanes empty; an edition not ratified (or never authored)
-   *  `NO_SUCH_CASE_EDITION`. Writes nothing. */
+   *  `NO_SUCH_CASE_EDITION`. Writes nothing.
+   *  @param {{case?: *, caseId?: *, edition?: *}} [args]
+   *  @returns `{ok: true, case, edition, they_did, we_did}`, or `{ok: false, reason}` with `NO_ID` or
+   *    `NO_SUCH_CASE_EDITION`
+   */
   editionTimeline({ case: caseArg = null, caseId = null, edition = null } = {}) {
     const id = str(caseArg ?? caseId), ed = Number(edition);
     if (!id || !Number.isInteger(ed) || ed < 1)
@@ -1531,7 +1630,11 @@ export class Publication {
    *  project (null for a case older than DEC-72), the member's pinned version and role, and its frozen pair per axis as
    *  that case's document states it (R7's frozen pair), never composed. `version` keeps the editions pinning that
    *  version, `project` the cases that project owns. An unsigned preparation is never an edition here. The read
-   *  `conformance` R2 uses. */
+   *  `conformance` R2 uses.
+   *  @param {{finding?: *, version?: *, project?: *}} [args]
+   *  @returns `{ok: true, items: [{case, edition, project, version_sha, role, strength}]}`, or `{ok: false, reason: "NO_ID"}`
+   *  @bound items: at most EDITIONS_OF_MAX (500)
+   */
   publishedEditionsOf({ finding = null, version = null, project = null } = {}) {
     const id = str(finding);
     if (!id) return { ok: false, reason: "NO_ID", detail: localize("publication.index.publishededitionsof_requires_a_finding", "publishedEditionsOf requires a finding") };
@@ -1576,7 +1679,12 @@ export class Publication {
    *  (K365). `project` is
    *  the case's owning project, null for a case older than DEC-72. Registered with R43 as reevaluation's
    *  `registerCaseParts` (its R26). A case with no ratified edition (or not that one) answers `NO_SUCH_CASE_EDITION`;
-   *  no case named, `NO_ID`. Writes nothing. */
+   *  no case named, `NO_ID`. Writes nothing.
+   *  @param {{case?: *, caseId?: *, edition?: *}} [args] the case, and the edition (the latest ratified when absent)
+   *  @returns `{ok: true, case, edition, project, parts: [{bundle_id, capture_sha}], limit, truncated}`, or
+   *    `{ok: false, reason}` with `NO_ID` or `NO_SUCH_CASE_EDITION`
+   *  @bound parts: at most CITED_PARTS_MAX (1,000)
+   */
   caseCitedParts({ case: caseArg = null, caseId = null, edition = null } = {}) {
     const id = str(caseArg ?? caseId);
     if (!id) return { ok: false, reason: "NO_ID", detail: localize("publication.index.casecitedparts_names_a_case", "caseCitedParts names a case") };
@@ -1612,7 +1720,11 @@ export class Publication {
   /** R43 (N210; K359): the cases holding at least one ratified edition, in case id order after `after`, at most `limit`
    *  (default RATIFIED_CASES_MAX, clamped to 1–RATIFIED_CASES_MAX): `{cases: [case_id], cursor}`, `cursor` the last case
    *  answered when more follow, else null, so reevaluation pages through them (a case is no bundle; only this module
-   *  can list them). Viewer-free; writes nothing. */
+   *  can list them). Viewer-free; writes nothing.
+   *  @param {{after?: *, limit?: *}} [args]
+   *  @returns `{cases: [case_id], cursor}`
+   *  @bound limit: a whole number, clamped to 1 to RATIFIED_CASES_MAX (1,000), that when absent
+   */
   ratifiedCases({ after = null, limit = null } = {}) {
     const cap = pageOf(limit, RATIFIED_CASES_MAX);
     const rows = this.#rows(
@@ -1631,7 +1743,9 @@ export class Publication {
 
   /** R61 (K1505 (3), K1634): the provider this module registers with `case-tensions` at start, its seven doors each
    *  answering exactly the rows the moved code read from this module's tables before the split, and the splice (R21).
-   *  Every table and write stays here (R24); the one write is R21's, inside the caller's transaction. */
+   *  Every table and write stays here (R24); the one write is R21's, inside the caller's transaction.
+   *  @returns `{module, pins, preparations, caseDocument, members, latestRatified, signedDocumentsNaming, reauthorSection}`
+   */
   publicationProvider() {
     return {
       module: "publication",
@@ -1698,7 +1812,12 @@ export class Publication {
    *  is linked); a captured byte sequence is the register's (provenance's read contract), homed on a bundle that
    *  exists. A RATIFIED finding is one with a published edition that a committed case edition's roster names; its
    *  owning projects are those cases' (`cases`), null for a case older than DEC-72. `published_bundles` names no
-   *  capture, and the published basis files would be a parse per finding, unpageable in capture order. */
+   *  capture, and the published basis files would be a parse per finding, unpageable in capture order.
+   *  @param {{after?: *, limit?: *}} [args]
+   *  @returns `{captures: [{capture_sha, findings: [{bundle_id, projects}], findings_truncated}], limit, truncated, cursor}`
+   *  @bound limit: a whole number, clamped to 1 to RESTING_CAPTURES_MAX (1,000), that when absent
+   *  @bound findings: at most RESTING_FINDINGS_PER_CAPTURE (200) a capture, and RESTING_FINDINGS_PER_PAGE (10,000) a page
+   */
   restingCapturesOf({ after = null, limit = null } = {}) {
     const cap = pageOf(limit, RESTING_CAPTURES_MAX);
     const rests = `WITH rests(finding, target) AS (
@@ -1755,7 +1874,7 @@ export class Publication {
   }
 
   /* ---------------------------------------------------------------- moved from the store */
-  /* CASE-5b / DEC-72: THE FACTS THE CASE RATIFICATION NEEDS, out of the one
+  /** CASE-5b / DEC-72: THE FACTS THE CASE RATIFICATION NEEDS, out of the one
      place that holds the rows — `gateFacts`' own shape one altitude up, and for
      `gateFacts`' own reason: the gate and the write path must judge against the
      same published record, so they read it from one method rather than probing
@@ -1767,7 +1886,14 @@ export class Publication {
      already carries about `publishedRegistry`.
 
      THE TEXT COMES BACK WHOLE. A ceremony whose subject is "a thing a member
-     actually reviewed" cannot hand the member a summary of the thing. */
+     actually reviewed" cannot hand the member a summary of the thing.
+   *  @param {*} caseId
+   *  @param {*} edition
+   *  @param {*} viewer the viewer the control plane stamps; absent, the read fails closed
+   *  @param {*} [secretSha] the SHA-256 of a presented review grant's secret
+   *  @returns `{ok: true, ...}` the document and the facts signing needs, or `{ok: false, reason}` with `NO_ID` or
+   *    `NO_CASE_DOCUMENT`
+   */
   caseDocumentFacts(caseId, edition, viewer, secretSha = null) {
     const id = String(caseId ?? "").trim();
     const ed = Number(edition);
@@ -1863,9 +1989,13 @@ export class Publication {
     return out;
   }
 
-  /* D-442 — `case_exclusions`, projected WHOLE for one case edition from its stored document, by the
+  /** D-442 — `case_exclusions`, projected WHOLE for one case edition from its stored document, by the
      delete-then-insert discipline every projection here takes. A signed document cannot change, so a
-     re-projection of one only rewrites the same rows. */
+     re-projection of one only rewrites the same rows.
+   *  @param {*} caseId
+   *  @param {*} edition
+   *  @returns {void}
+   */
   projectCaseExclusions(caseId, edition) {
     const d = this.#one(`SELECT text FROM case_documents WHERE case_id=? AND edition=?`, caseId, Number(edition));
     this.sql.exec(`DELETE FROM case_exclusions WHERE case_id=? AND edition=?`, caseId, Number(edition));
@@ -1892,7 +2022,7 @@ export class Publication {
       }
   }
 
-  /* R55 (K651): the one reader of a case document's per-member frozen facts, a service to `public-read` (its R3, R4)
+  /** R55 (K651): the one reader of a case document's per-member frozen facts, a service to `public-read` (its R3, R4)
      as to R53 and the commit; it writes nothing and never throws.
      D-442 / BIO_Publication_v0_1.md §3 rule 12 — WHAT A CASE DOCUMENT STATES ABOUT ONE MEMBER, OR
      NULL FOR A LEGACY (/1) DOCUMENT, whose members carried these blocks in their own bytes (rule 12
@@ -1900,7 +2030,11 @@ export class Publication {
      the ratify committer and `caseEditionState` both ask here, so the per-case frozen facts are
      parsed one way. `strength` is the member-bytes block's row shape exactly (`axis`, `state`,
      `grade`, `weakest`, `load_bearing`, `population`, `detail`), so every consumer of the old
-     `published_strength` reads it unchanged. */
+     `published_strength` reads it unchanged.
+   *  @param {*} caseId
+   *  @param {*} edition
+   *  @returns a map of member id to `{edition, version_sha, strength, grounds, excludes}`, or null
+   */
   caseDocMemberFrozen(caseId, edition) {
     /* R55: never throws; a document this read cannot read or parse states nothing it can answer. */
     try { return this.#caseDocMemberFrozen(caseId, edition); } catch { return null; }
@@ -1930,7 +2064,7 @@ export class Publication {
   }
 
 
-  /* REC-130: STANDING IN THE OWNING PROJECT, ASKED THROUGH D-15's ONE
+  /** REC-130: STANDING IN THE OWNING PROJECT, ASKED THROUGH D-15's ONE
      COMPILATION POINT rather than restated. `viewerPredicate` already answers
      "may this viewer see this project" — an identified member sees it if they
      participate in it (invited, joined or leaving) or are an active
@@ -1948,7 +2082,11 @@ export class Publication {
      A DOCUMENT NAMING NO PROJECT answers only the unfiltered scope. The ceremony
      cannot author one (DEC-72 removed the project-less path before CASE-5b built
      case documents), so this arm is defence rather than policy, and it fails
-     closed for every identified member rather than guessing an owner. */
+     closed for every identified member rather than guessing an owner.
+   *  @param {*} doc the case document's row
+   *  @param {*} viewer
+   *  @returns {boolean} whether the viewer has standing in every project the record names for the case
+   */
   hasCaseStanding(doc, viewer) {
     const gate = viewerPredicate(viewer);
     if (gate.scope === "DENY") return false;
@@ -1962,12 +2100,19 @@ export class Publication {
       p, ...gate.args));
   }
 
-  /* Read-only, for the member who is about to sign — and, once RATIFIED, for
+  /** Read-only, for the member who is about to sign — and, once RATIFIED, for
      anybody, because a ratified document is the signed bytes a stranger is
      entitled to check (the posture `op=publishedbytes` takes one altitude
      down). REC-130 CORRECTED the other half of this comment: it said "scoped to
      nothing" of the UNRATIFIED document too, which was a mechanism choice with
-     no ruling behind it. The scoping now lives in `caseDocumentFacts`. */
+     no ruling behind it. The scoping now lives in `caseDocumentFacts`.
+   *  @param {*} caseId
+   *  @param {*} edition
+   *  @param {*} viewer the viewer the control plane stamps; absent, the read fails closed
+   *  @param {*} [secretSha] the SHA-256 of a presented review grant's secret
+   *  @returns `{ok: true, text, doc_sha, delivered_by, citations, findings, ...}`, or `{ok: false, reason}` with `NO_ID`
+   *    or `NO_CASE_DOCUMENT`
+   */
   caseDocument(caseId, edition, viewer, secretSha = null) {
     const facts = this.caseDocumentFacts(caseId, edition, viewer, secretSha);
     if (!facts.ok) return facts;
@@ -2017,11 +2162,16 @@ export class Publication {
     } catch { return null; }
   }
 
-  /* D-442 / BIO_Publication_v0_1.md §3 rule 12: a member's edition and frozen pair as the RATIFIED
+  /** D-442 / BIO_Publication_v0_1.md §3 rule 12: a member's edition and frozen pair as the RATIFIED
      case documents pinning exactly these bytes state them. Null when every pinning document is
      legacy (/1) — those members carried the blocks in their own bytes. The edition and the pair are
      each taken only where every /2 document agrees; a disagreement is returned as undetermined and
-     never resolved by picking one (CLAUDE.md §4: undetermined is first-class). */
+     never resolved by picking one (CLAUDE.md §4: undetermined is first-class).
+   *  @param {*} bundleId
+   *  @param {*} bundleSha
+   *  @param {*} pins the ratified case editions pinning those bytes
+   *  @returns the member's edition and frozen pair, or null
+   */
   frozenFromPinningDocuments(bundleId, bundleSha, pins) {
     const seen = [];
     for (const pin of pins) {
@@ -2037,14 +2187,17 @@ export class Publication {
              strengthUndetermined: pairs.length > 1 };
   }
 
-  /* R53 (K651): the one answer to what a case edition is, a service to `public-read` (its R3, R6) as to this module's
+  /** R53 (K651): the one answer to what a case edition is, a service to `public-read` (its R3, R6) as to this module's
      commit (R22); it composes no case-level strength (R26), and its one write is the completion stamp below.
      REC-44: what a case edition is, and whether it is COMPLETE. One place, so
      the ratify path (which must know whether to assemble the container) and the
      public read path (which must say so) cannot disagree about it. Returns the
      facts the control plane needs to build the manifest and nothing derived:
      in particular NO case-level strength, because there is no such thing —
-     every member's frozen PAIR travels with that member. */
+     every member's frozen PAIR travels with that member.
+   *  @returns {*} the case edition's state, or null when there is no such published case edition (stated as anything
+   *    while its callers read it unguarded)
+   */
   caseEditionState(caseId, ed, group = null) {
     const c = this.#one(`SELECT scope, completeness, bias_acknowledgement, bar, opened, ratified_at, manifest_sha, criteria
                          FROM published_cases WHERE case_id=? AND edition=?`, caseId, ed);
@@ -2256,13 +2409,17 @@ export class Publication {
                : localize("publication.index.this_case_edition_is_incomplete", "this case edition is INCOMPLETE: {awaiting} of {total} findings are not yet ratified. The findings that are published answer individually; the container cannot be assembled until the last one lands, because it would otherwise claim to carry findings it does not have.", { awaiting: String(awaiting.length), total: String(roster.length) }) };
   }
 
-  /* REC-44: the case CONTAINER's manifest, handed back by the control plane
+  /** REC-44: the case CONTAINER's manifest, handed back by the control plane
      (which is where the SHA-256 and the R2 copy live) once the edition
      completed. Stored on the case row rather than on any member's, because the
      manifest describes the CASE — one manifest per case per edition, naming
      every member finding's parts and every member's own signature. The
      published_shas row is what makes it answerable by its own hash and what
-     op=publishedbytes checks before serving anything. */
+     op=publishedbytes checks before serving anything.
+   *  @param {{caseId?: *, edition?: *, manifest?: *, manifestSha?: *, bytes?: *, built?: *}} [args]
+   *  @returns `{ok: true, caseId, edition, manifest_sha}` (`existed: true` on a retry, `files` when it registered any),
+   *    or `{ok: false, reason}` with `MALFORMED`, `NO_SUCH_CASE_EDITION` or `MANIFEST_EXISTS`
+   */
   recordCaseManifest({ caseId, edition, manifest, manifestSha, bytes = null, built = undefined } = {}) {
     /* R15: a case id, a whole edition, a manifest object, its SHA-256 as 64 lowercase hex, a byte count that is a
        whole number or absent, and `built` absent or a boolean; anything else is MALFORMED and nothing is written (never a
@@ -2318,14 +2475,18 @@ export class Publication {
                   this.#when(), caseId, ed);
   }
 
-  /* R15 (G54; K4426, K4565, K4566, K4571): the one writer of the case file's ledger, the four `casefile_*` columns of
+  /** R15 (G54; K4426, K4565, K4566, K4571): the one writer of the case file's ledger, the four `casefile_*` columns of
      `published_cases`. `building` and `failed` add one to `casefile_attempts` (a `building` left by a cancelled request or a
      memory kill is therefore already an attempt); `built` is written only on an edition whose manifest is recorded (the
      caller puts the manifest's own bytes first) and adds none. `stopped` is this writer's own: a `failed` whose
      `why.code` is `MATERIAL_MISSING`, with `absent: true` (the caller's probe of the evidence store confirmed the object
      gone), that is the `CASEFILE_MISSING_MAX_ATTEMPTS`th in a row (counted in `why.run`) is stored `stopped`. A built or
      stopped edition is not rewritten by a late `building` or `failed`; a `built` is accepted over anything. It is a
-     store-internal hop (`recordcasefile`), no caller's op, and `recordCaseManifest` leaves these columns alone but for `built: true`. */
+     store-internal hop (`recordcasefile`), no caller's op, and `recordCaseManifest` leaves these columns alone but for `built: true`.
+   *  @param {{caseId?: *, edition?: *, state?: *, why?: *, at?: *, absent?: *}} [args]
+   *  @returns `{ok: true, ...}` the ledger as written, or `{ok: false, reason}`
+   *  @bound why: under CASEFILE_WHY_BYTES_MAX (1,024) UTF-8 bytes, its texts under CASEFILE_TEXT_MAX (160) characters
+   */
   recordCaseFileAttempt({ caseId, edition, state, why = null, at = null, absent = false } = {}) {
     const ed = Number(edition);
     const whyOf = state === "built" ? null : caseFileWhy(why);
@@ -2397,7 +2558,11 @@ export class Publication {
 
   /** R15 (G54): the editions owed a case file and due at `now` (default the module's clock), oldest due first, at most `limit`
    *  (default and ceiling `CASEFILES_OWED_MAX`); each carries the instant it was due (`next_at`). Writes nothing but
-   *  `caseEditionState`'s completion stamp; never throws. */
+   *  `caseEditionState`'s completion stamp; never throws.
+   *  @param {{now?: *, limit?: *}} [args]
+   *  @returns the editions owed a case file and due, each with `next_at`
+   *  @bound limit: clamped to 1 to CASEFILES_OWED_MAX (100), that when absent
+   */
   caseFilesOwed({ now = null, limit = null } = {}) {
     try {
       const t = typeof now === "number" ? now : Date.parse(now ?? this.#when());
@@ -2407,12 +2572,14 @@ export class Publication {
     } catch { return []; }
   }
 
-  /** R15 (G54): the earliest instant an owed case file is due (an ISO string, as `publishWake`), null when none is owed. */
+  /** R15 (G54): the earliest instant an owed case file is due (an ISO string, as `publishWake`), null when none is owed.
+   *  @returns {string|null}
+   */
   caseFileNextAt() {
     try { const o = this.#caseFilesOwing(); return o.length ? new Date(o[0].due).toISOString() : null; } catch { return null; }
   }
 
-  /* REC-22 / R4: the PUBLISHED GRAPH, written inside the publishing act's own
+  /** REC-22 / R4: the PUBLISHED GRAPH, written inside the publishing act's own
      transaction from the RATIFIED BYTES (the control plane reads references[]
      and the division disclosure out of the document the signature covers and
      hands them here) -- never from the working `refs` table, which is a
@@ -2444,7 +2611,12 @@ export class Publication {
      `published_held_references`, which the public read path never reads, so the
      target's id stays unpublished; when the target is published, `commitEdition`
      turns it into a `serve` edge (R22, R35). `held` counts them; `dropped` is
-     kept in the answer and is now always 0 (nothing is dropped). */
+     kept in the answer and is now always 0 (nothing is dropped).
+   *  @param {*} bundleId
+   *  @param {*} edges the ratified bytes' references
+   *  @param {*} now
+   *  @returns what was written to the published graph
+   */
   publishEdges(bundleId, edges, now) {
     if (!Array.isArray(edges)) return { serve: 0, name: 0, held: 0, dropped: 0 };
     const out = { serve: 0, name: 0, held: 0, dropped: 0 };
@@ -2508,7 +2680,7 @@ export class Publication {
      PINNED FIRST, PREPARED SECOND: a ratified relation is the record's answer
      and an unratified case document is this act's own preparation — the same
      order `publishCase()` resolves a case identity in, and for the same reason. */
-  /* ===== D-309 / DEC-72 clause 6, 2026-09-10: SITE 5 OF CASE-6's NINE, AND THE
+  /** ===== D-309 / DEC-72 clause 6, 2026-09-10: SITE 5 OF CASE-6's NINE, AND THE
      DECISION HERE IS **ALL CASES**.
 
      WHAT THIS ANSWERS AND FOR WHOM. Its one caller is `gateFacts`, which feeds
@@ -2528,7 +2700,10 @@ export class Publication {
      PINNED FIRST, PREPARED SECOND is UNCHANGED and its reasoning above still
      holds in full — a ratified relation is the record's answer and an unratified
      case document is this act's own preparation. What changed is only that each
-     half may now answer with more than one. */
+     half may now answer with more than one.
+   *  @param {*} bundleId
+   *  @returns the cases the finding is pinned or prepared into
+   */
   caseClaimsOf(bundleId) {
     const b = this.#headRow(bundleId);
     if (!b) return [];
@@ -2575,7 +2750,7 @@ export class Publication {
                      ORDER BY case_id`, bundleId)).map((r) => r.case_id);
   }
 
-  /* R54 (K651): pure, never throws; a service to `public-read` as to this module's commit (R22) and registry (R7).
+  /** R54 (K651): pure, never throws; a service to `public-read` as to this module's commit (R22) and registry (R7).
      THE SOLE MEMBERSHIP, OR NULL — D-309's ONE MIGRATION RULE, WRITTEN ONCE SO
      FIVE READ OPS CANNOT SPELL IT FIVE WAYS.
 
@@ -2592,7 +2767,10 @@ export class Publication {
      `ORDER BY edition DESC LIMIT 1` returned. That equality is the whole of
      D-309's over-strictness arm: a single-case finding answers exactly as it did
      yesterday, and it does so by construction here rather than by care at five
-     call sites. */
+     call sites.
+   *  @param {*} list a list of `{case_id, edition}`
+   *  @returns `{case_id, edition}` at the highest edition listed, or null
+   */
   soleCase(list) {
     /* R54: never throws; anything that is not a `{case_id, edition}` row names no case. */
     const rows = (Array.isArray(list) ? list : []).filter((x) => x && typeof x === "object" && x.case_id != null);
@@ -2603,7 +2781,7 @@ export class Publication {
     return { case_id: ids[0], edition: top };
   }
 
-  /* D-431 (b): WHICH FINDINGS OF A RATIFIED CASE REST ON THIS BUNDLE, and each one's publishing project.
+  /** D-431 (b): WHICH FINDINGS OF A RATIFIED CASE REST ON THIS BUNDLE, and each one's publishing project.
      Asked over every roster row a RATIFIED case edition PINNED (`version_sha` set, joined to
      `published_cases`, which only `ratifyCaseDocument` writes), at the PINNED bytes — the bytes the case
      froze and the finding will be signed at, never whatever `bundle.md` says today (the working `refs`
@@ -2615,7 +2793,12 @@ export class Publication {
      pinned sha, other than `id`; the editions of one case pinning one sha are one pin), in case id, member id and
      pinned sha order after `after`, and `cursor` is the last pin read (`<case>#<member>#<sha>`) when more follow, else
      null. A page may answer no finding while `cursor` is set; a caller follows it to null, so nothing is decided on
-     part of the pins (a truncated list would change who may sign, K380). */
+     part of the pins (a truncated list would change who may sign, K380).
+   *  @param {*} bundleId
+   *  @param {{after?: *, limit?: *}} [page]
+   *  @returns `{findings: [{case_id, finding, project}], limit, cursor}`
+   *  @bound limit: a whole number, clamped to 1 to RESTING_PINS_MAX (1,000), that when absent
+   */
   ratifiedFindingsRestingOn(bundleId, { after = null, limit = null } = {}) {
     const id = String(bundleId ?? "");
     const cap = pageOf(limit, RESTING_PINS_MAX);
@@ -2643,7 +2826,7 @@ export class Publication {
     return { findings, limit: cap, cursor: more ? `${last.case_id}#${last.bundle_id}#${last.version_sha}` : null };
   }
 
-  /* D-309: SITE 2's QUERY, LIFTED OUT OF `publish()` AND PUT BESIDE ITS SIBLINGS,
+  /** D-309: SITE 2's QUERY, LIFTED OUT OF `publish()` AND PUT BESIDE ITS SIBLINGS,
      AND THE REASON IS A MEASUREMENT RATHER THAN TIDINESS — stated in full because
      a reader could otherwise take it for evasion, and it is the opposite.
 
@@ -2672,7 +2855,11 @@ export class Publication {
      CASE at that case's newest edition holding them — the same collapse every
      other D-309 site takes, so "how many cases is this member in" has one answer
      across the file. The JOIN on `published_cases` is unchanged and still does its
-     job: only case editions that exist are membership. */
+     job: only case editions that exist are membership.
+   *  @param {*} bundleId
+   *  @param {*} bundleSha
+   *  @returns the ratified case editions whose signed document pins those bytes
+   */
   pinnedCaseEditionsOf(bundleId, bundleSha) {
     const rels = this.#rows(
       `SELECT m.case_id, m.edition, m.role FROM published_case_members m
@@ -2684,18 +2871,22 @@ export class Publication {
     return byCase;
   }
 
-  /* REC-22: which of these ids have a published edition, and what each one FROZE
+  /** REC-22: which of these ids have a published edition, and what each one FROZE
      -- the one indexed lookup that lets the public read path say, per basis leg,
      whether it is a leg the page can SERVE or one it can only NAME. Reuses
      publishedRegistryFor, which C-21.2 already reads: a leg names an edition
      (DEC-12) and the comparison is against THAT edition's frozen pair, so the
-     shape a check needs and the shape a reader needs are the same shape. */
+     shape a check needs and the shape a reader needs are the same shape.
+   *  @param {*} ids a list of ids, or a comma-separated string
+   *  @returns R7's registry for those ids
+   *  @bound ids: the first 200
+   */
   publishedTargets(ids) {
     const list = (Array.isArray(ids) ? ids : String(ids || "").split(","))
       .map((s) => String(s || "").trim()).filter(Boolean).slice(0, 200);
     return { ok: true, registry: this.publishedRegistryFor(null, list) };
   }
-  /* REC-14 / P8's justifying query, and the reason inquiry_exclusions exists as
+  /** REC-14 / P8's justifying query, and the reason inquiry_exclusions exists as
      a TABLE and not only as bytes: "WHICH CASES EXCLUDED THIS DOCUMENT" —
      invariant 7's only mechanical enforcement point at the case level — as ONE
      indexed lookup on inquiry_exclusions_target, never a scan of every
@@ -2709,7 +2900,11 @@ export class Publication {
      be the surface deciding what the record forgets.
 
      D-15: viewer-gated like every other read that can name a bundle, and fails
-     closed on an absent viewer. */
+     closed on an absent viewer.
+   *  @param {*} targetId
+   *  @param {*} [viewer]
+   *  @returns `{ok: true, cases}`, or `{ok: false, reason}` with `NO_ID`
+   */
   excludedBy(targetId, viewer = null) {
     if (!targetId) return { ok: false, reason: "NO_ID", detail: localize("publication.index.excludedby_requires_id", "excludedby requires ?id=") };
     const gate = viewerPredicate(viewer);
@@ -2746,13 +2941,17 @@ export class Publication {
      leg: a case's own prior edition (freshness) and the frozen pair of every
      published case beneath it (inheritance) are the two facts neither the
      checker nor a caller can supply for itself. */
-  /* REC-44: THIS REGISTRY IS PER FINDING AND STAYS PER FINDING. It carries the
+  /** REC-44: THIS REGISTRY IS PER FINDING AND STAYS PER FINDING. It carries the
      frozen PAIR of every published finding and it is what C-21.2 reads: a
      basis leg rests on a FINDING (one proposition, one falsifier — DEC-32) and
      inherits THAT finding's frozen strength on THAT axis at THAT edition. It no
      longer carries `completeness`, which went up one altitude to the CASE with
      C-21.1 (publishedCaseRegistryFor below). The two must not be collapsed:
-     collapsing them is what DEC-44 names as the mistake, one level down. */
+     collapsing them is what DEC-44 names as the mistake, one level down.
+   *  @param {*} bundleId
+   *  @param {*} [extraTargets]
+   *  @returns each id's published editions and frozen pairs
+   */
   publishedRegistryFor(bundleId, extraTargets = []) {
     const ids = [...new Set([bundleId, ...extraTargets].filter(Boolean))];
     if (!ids.length) return {};
@@ -2809,14 +3008,17 @@ export class Publication {
     return reg;
   }
 
-  /* REC-44 / C-21.1: the published projection AT CASE ALTITUDE — what each
+  /** REC-44 / C-21.1: the published projection AT CASE ALTITUDE — what each
      EDITION OF A CASE asserted about its own limits. The freshness gate needs
      exactly this and nothing from any finding: "was this completeness claim
      carried forward byte-identical from the previous edition" is a question
      about the CASE, because what a reader was given is a case edition.
      Deliberately a SECOND function beside publishedRegistryFor rather than one
      registry serving both: they answer at different altitudes and one shape
-     serving two altitudes is how the collapse DEC-44 corrects happened. */
+     serving two altitudes is how the collapse DEC-44 corrects happened.
+   *  @param {*} [caseIds]
+   *  @returns each case's published editions and what each asserted
+   */
   publishedCaseRegistryFor(caseIds = []) {
     const ids = [...new Set((Array.isArray(caseIds) ? caseIds : [caseIds]).filter(Boolean))];
     if (!ids.length) return {};
@@ -2845,7 +3047,11 @@ const instances = new WeakMap();
  *  case-carriage (N532) and case-tensions (T33-63, which declares its own three tables and registers the fact
  *  `caseMember` and the revision step), registers with case-tensions this module's provider (R61), with promotion the
  *  facts `publishedRegistry` and `publishedCaseRegistry` (R7; K206, N152), with reevaluation its cited parts and
- *  ratified cases (R41, R43), and with membership its published-work guard (R76). */
+ *  ratified cases (R41, R43), and with membership its published-work guard (R76).
+ *  @param {*} host the Durable Object's `ctx`
+ *  @param {*} [deps] the uses (see the module's head comment)
+ *  @returns {Publication}
+ */
 export function publicationOf(host, deps) {
   let p = instances.get(host);
   if (!p) {
@@ -2892,18 +3098,40 @@ export function publicationOf(host, deps) {
   return p;
 }
 
-/** Which purge declaration names one of this module's tables (record-core R21: each owner declares its own). */
+/** Which purge declaration names one of this module's tables (record-core R21: each owner declares its own).
+ *  @param {*} t a table's name, or its declaration
+ *  @returns {boolean}
+ */
 export function publicationOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return PUBLICATION_TABLES.some((x) => (typeof x === "string" ? x : x.name) === name) || PUBLICATION_EXEMPT.includes(name);
 }
+
+/**
+ * The names this module's ops answer through the plane's op map, each the store request it reads and what it hands back.
+ * @typedef {{
+ *   recordcasemanifest: {req: Parameters<Publication['recordCaseManifest']>[0], res: ReturnType<Publication['recordCaseManifest']>},
+ *   recordcasefile: {req: Parameters<Publication['recordCaseFileAttempt']>[0], res: ReturnType<Publication['recordCaseFileAttempt']>},
+ *   publishedtargets: {req: {ids: string}, res: ReturnType<Publication['publishedTargets']>},
+ *   excludedby: {req: {id: string, viewer: string}, res: ReturnType<Publication['excludedBy']>},
+ *   casedocfacts: {req: {case: string, edition: string, viewer: string}, res: ReturnType<Publication['caseDocumentFacts']>},
+ *   casedocument: {req: {case: string, edition: string, viewer: string, secretSha?: string}, res: ReturnType<Publication['caseDocument']>},
+ *   publishedcasedoctext: {req: {sha256: string}, res: ReturnType<Publication['publishedCaseDocumentText']>}
+ * }} PublicationOps
+ * @optable
+ */
 
 /** The module's ops (K3), as entries of the plane's op map (`plane/store.mjs`). `viewer` and `by` are the control plane's
  *  stamps, read from the query, so a caller's own copy in a body never wins. `secretSha` (R73) is the door's too, and
  *  travels in the store request's body, never its address: `op=casedocument` reads it from the body alone (a string). The public reads
  *  (`publishededitions`, `publishedcase`, `publishedmanifest`, `verify`, `publishedlist`) are `public-read`'s
  *  `publicReadOps` and `projectstage` is `project-stage`'s `projectStageOps` since K651; the plane's op map
- *  spreads them beside these (K671). */
+ *  spreads them beside these (K671).
+ *  @param {Publication} p
+ *  @param {URL} url the store request's address
+ *  @param {*} body the store request's body
+ *  @returns each op's arm, by the names `PublicationOps` lists
+ */
 export function publicationOps(p, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = body && typeof body === "object" ? body : {};

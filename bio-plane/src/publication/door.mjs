@@ -22,8 +22,18 @@ async function bodySecret(body) {
   return b && typeof b === "object" && !Array.isArray(b) && typeof b.secret === "string" && b.secret ? b.secret : null;
 }
 
+/** @type {ReadonlyArray<string>} the two ops this door answers
+ */
 export const PUBLICATION_DOOR_OPS = Object.freeze(["caseflags", "casedocument"]);
 
+/** Answers `op=caseflags` or `op=casedocument` at the door, or null for any other op.
+ *  @param {string} op the request's op
+ *  @param {URL} url the request's address
+ *  @param {*} stub the store's stub, pinned to `bio`
+ *  @param {*} helpers the door's own: `json`, `storeSilent`, `storeRefusal`, `doAnswer`, `readerOf`, `sha256Hex`,
+ *    `NS_RATIFY`, `caseRatifyStatement`, and the request's `body` (R73)
+ *  @returns the op's response, or null
+ */
 export async function publicationDoorOp(op, url, stub, { json, storeSilent, storeRefusal, doAnswer, readerOf, sha256Hex,
                                                        NS_RATIFY, caseRatifyStatement, body = null }) {
   /* ---- CASE-4 / DEC-72: op=caseflags ----
