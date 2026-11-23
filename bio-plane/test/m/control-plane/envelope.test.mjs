@@ -366,7 +366,7 @@ test("R23, R25 (N349): every silence the door answers itself carries the correla
       const w = world({ answer: (c) => (c.route === route ? reply(body, 500)() : null) });
       const got = await M.caseReader(new URL("https://plane.example/api"), w.env, "bio", undefined,
                                      { token, secret: null, inAddress: false });
-      assert.deepEqual(got, carried ? { silent: route, correlation: carried } : { silent: route, correlation: undefined }, route);
+      assert.deepEqual(got, { viewer: "", cls: undefined, silent: route, correlation: carried }, route);
     }
   }
   /* negative control: an answering store is no silence at any of the sites */
