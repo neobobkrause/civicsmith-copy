@@ -7,6 +7,8 @@
    shown once, to the member alone (`screen.recovery.onlyyou`). Every function is self-contained
    (interface-shell R21). */
 
+/** @import { SettingsScreen } from './account.mjs' */
+/** @type {SettingsScreen} Settings › Recovery codes */
 export const recovery = {
   id: "recovery",
 

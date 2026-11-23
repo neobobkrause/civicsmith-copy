@@ -15,6 +15,8 @@
    T51 FR-25 (R76; K4203): `accountreferenceset` and `accountreferenceremove` send only the fields `ai-accounts` declares (its R35): the door
    stamps whose reference it is from the session, so the body names no member. */
 
+/** @import { SettingsScreen } from './account.mjs' */
+/** @type {SettingsScreen} Settings › The assistant */
 export const connect = {
   id: "connect",
 
