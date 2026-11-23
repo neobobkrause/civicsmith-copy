@@ -1,4 +1,4 @@
-Length: 76 lines. Last section: "The stewards' contact and the guide's words".
+Length: 81 lines. Last section: "The design mock the walk compares against".
 
 # civicsmith: ARCH's technical decisions
 
@@ -73,4 +73,9 @@ Decided: 23 Nov 2026.
 ## The stewards' contact and the guide's words
 Decision: installer R48 (the README's stewards' contact, what the stewards may do, and the guide to what a group holds and who could compel it) is not yet met, and its file is corrected to say so: the conversion marked it met although its own text says it waits, and `newgroup/README.md` does not exist. R48, and stewards R7's amendment (its guide's shared words read byte for byte from that README), wait, out of tranche t1, for two things that are the owner's: the address he names for reporting abuse of Civicsmith to its stewards, and the words of the guide, which R48 says are his. The coordinator puts both to him. When he has given them, installer's job writes the README, and stewards' job adds `installer` to its uses and points R7's test at the README. Until then installer's job leaves R48, and stewards' job is recorded blocked by installer.
 Why: the README's address and words are product definition, not a technical matter; nothing a job writes can stand in for them, and an address made up for it would publish a false contact.
+Decided: 23 Nov 2026.
+
+## The design mock the walk compares against
+Decision: journey-check's design comparison (its `design.mjs`, R6 and R21) reads the design mock `docs/development/ux-substrate/layouts.html` from the checkout being walked, at the same commit as the build, and no longer reads it from git at `interface-assets`' `ASSETS_COMMIT`. R6 and R21 are reworded to say so. `interface-assets` keeps `ASSETS_COMMIT` for its own generated assets, as the decision "Committed built files" left it.
+Why: `ASSETS_COMMIT` (2a64c5ae77) is not in this repository, and the required run checks out one commit, so a `git show` of it fails in every module that runs the walk's tests. The checkout's `layouts.html` is the design as it stands, which is what a walk is measured against (build text 3, section 3); the UX lane owns it, and a change to it is a change to the design the walk follows.
 Decided: 23 Nov 2026.

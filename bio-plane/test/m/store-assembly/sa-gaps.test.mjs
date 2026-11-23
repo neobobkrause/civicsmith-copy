@@ -108,7 +108,7 @@ test("R58: a capture within the ceiling is read in the request by ranges; asked 
   /* every asked page that was not sent is stated, none dropped */
   for (const page of asked) assert.ok(r.sent.includes(page) || r.unread.some((u) => u.page === page), `page ${page} stated`);
   assert.deepEqual(r.owed, beyond);
-  assert.deepEqual(pendingOf(t.ctx).jobRow({ sha: t.sha, kind: "ocr" }).detail.pages, beyond);
+  assert.deepEqual(pendingOf(t.ctx).jobRow({ sha: t.sha, kind: "ocr" })?.detail.pages, beyond);
   /* control: a capture the evidence store does not hold answers EVIDENCE_ABSENT, nothing posted */
   const none = await transcriberWith(new Uint8Array([1, 2, 3]));
   await none.env.CAPTURES.delete(`bio/captures/${none.sha}`);
