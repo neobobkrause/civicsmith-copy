@@ -289,9 +289,9 @@ export async function publicPass(walk, b, base, { pages = publicPages(), registr
    instance directly (R5). Each role signs in, `whoami` must answer it as that role, and it walks every working screen;
    on each, at 1280 and 390 px, the page's limits are measured and the page is paired with the design mock's drawing
    (R6). The administrator must be drawn every act the member is, and somewhere an act the member is not. `screens`
-   narrows the sweep; `commit` names the mock's commit (the interface's ASSETS_COMMIT when not given). */
+   narrows the sweep; `mockFile` names the mock's file (the checkout's `layouts.html` when not given). */
 export async function runLive({ base, env = process.env, out = join(OUT, "live"), fetchOf = directFetch, launch = browser,
-  screens = null, commit = undefined, investigate = true, codeOf = askCode, assistant = false } = {}) {
+  screens = null, mockFile = undefined, investigate = true, codeOf = askCode, assistant = false } = {}) {
   const walk = new Walk({ out, arm: "live" });
   const need = ["JOURNEY_ADMIN_HANDLE", "JOURNEY_ADMIN_PASSWORD", "JOURNEY_MEMBER_HANDLE", "JOURNEY_MEMBER_PASSWORD"];
   for (const k of need) if (env[k]) walk.keepSecret(env[k]);
@@ -306,7 +306,7 @@ export async function runLive({ base, env = process.env, out = join(OUT, "live")
     const b = await launch({ direct: true });
     let mock = null;
     try {
-      mock = await designMock(b, { dir: join(out, "design"), ...(commit ? { commit } : {}) });
+      mock = await designMock(b, { dir: join(out, "design"), ...(mockFile ? { file: mockFile } : {}) });
       const working = screens || sweepScreens().filter((s) => s.frame === "working" || s.frame === "dock");
       const acts = { administrator: new Map(), member: new Map() };
       const sweepAs = async (role, handle, password, administer) => {

@@ -6,7 +6,6 @@ import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execFileSync } from "node:child_process";
 import { browser } from "../../../src/journey-check/run.mjs";
 import { Walk, FAIL } from "../../../src/journey-check/walker.mjs";
 import { designMock, WIDTHS } from "../../../src/journey-check/design.mjs";
@@ -16,9 +15,8 @@ import { walkDashboards } from "../../../src/journey-check/journeys.mjs";
 import { fakePlane, publishedPage } from "./fake-plane.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
-const COMMIT = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 let B, dir, mock;
-before(async () => { B = await browser(); dir = mkdtempSync(join(tmpdir(), "jc-frames-")); mock = await designMock(B, { dir: join(dir, "design"), commit: COMMIT }); });
+before(async () => { B = await browser(); dir = mkdtempSync(join(tmpdir(), "jc-frames-")); mock = await designMock(B, { dir: join(dir, "design") }); });
 after(async () => { await mock?.close(); await B?.close(); rmSync(dir, { recursive: true, force: true }); });
 
 test("R21: the design mock offers every carried state the walk pairs, drawn by its own control at both widths; control: a state the mock does not offer fails by its name", { timeout: 300000 }, async () => {

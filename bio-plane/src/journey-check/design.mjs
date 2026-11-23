@@ -1,10 +1,9 @@
 /* journey-check R6: each working screen beside the design mock's drawing of it, at 1280 and 390 px, and the limits a live
-   page fails on. The mock is `layouts.html` as committed at the interface's `ASSETS_COMMIT` (read from git, so the
-   working copy never moves it), drawn through its own walker (`CS_WALK`) in screen mode with the assistant off: `phone`
+   page fails on. The mock is `layouts.html` as the checkout being walked holds it (ARCH, "The design mock the walk compares
+   against": the interface's `ASSETS_COMMIT` is not a commit this repository holds, and a one-commit checkout holds no other), drawn through its own walker (`CS_WALK`) in screen mode with the assistant off: `phone`
    at 390, `desktop` at 1280. Each pair is one image, LIVE on the left and DESIGN on the right, as WALK-084 #2 made them,
    in the arm's `pairs/` directory; the report lists them for BOB, who records the comparison before a release is called
    ready. */
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -13,21 +12,14 @@ import { localize } from "../setup-words/index.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 export const MOCK_PATH = "docs/development/ux-substrate/layouts.html";
-/* interface-assets' own file, read as data (journey-check imports no module) */
-export const ASSETS_FILE = join(ROOT, "bio-plane", "src", "interface-assets", "index.mjs");
+/* the mock as the checkout holds it */
+export const MOCK_FILE = join(ROOT, MOCK_PATH);
 export const WIDTHS = Object.freeze([1280, 390]);
 export const PHONE = 390;
 const HEIGHT = { 1280: 900, 390: 844 };
 export const viewportOf = (width) => ({ width, height: HEIGHT[width] || 900 });
 
 export const LIMIT = Object.freeze({ WIDER: "wider", TABS: "tabs", BAND: "band", CLASS: "class", WORDS: "words" });
-
-/* The commit the interface's assets are built from. */
-export function assetsCommit(file = ASSETS_FILE) {
-  const m = /export const ASSETS_COMMIT = "([0-9a-f]{7,40})"/.exec(readFileSync(file, "utf8"));
-  if (!m) throw new Error(`no ASSETS_COMMIT in ${file}`);
-  return m[1];
-}
 
 /* What a person must never read on a screen (R6; WALK-084 #2's C8): a slug, a language tag, a record id, a refusal code.
    `slugs` are the instance's own short names, matched as words. */
@@ -103,12 +95,14 @@ export async function pageLimits(page, { width, slugs = [] }) {
   return out;
 }
 
-/* The design mock: `layouts.html` at `commit`, written into `dir` and opened in its own browser context. `draw(id, width)`
+/* The design mock: `layouts.html` as the checkout holds it (`file`), copied into `dir` and opened in its own browser context. `draw(id, width)`
    answers its drawing of screen `id` as PNG bytes, or `null` when the mock draws no such screen; drawings are kept. */
-export async function designMock(b, { dir, commit = assetsCommit(), root = ROOT } = {}) {
+export async function designMock(b, { dir, file: from = MOCK_FILE } = {}) {
   mkdirSync(dir, { recursive: true });
-  const file = join(dir, `layouts-${commit}.html`);
-  writeFileSync(file, execFileSync("git", ["-C", root, "show", `${commit}:${MOCK_PATH}`], { maxBuffer: 64 << 20 }));
+  const file = join(dir, "layouts.html");
+  writeFileSync(file, readFileSync(from));
+  /* what a failure names as the mock's place: the repository's path when it is the checkout's own file */
+  const commit = from === MOCK_FILE ? MOCK_PATH : from;
   const ctx = await b.newContext({ viewport: { width: 1600, height: 1200 } });
   /* the mock's own file only: its web fonts are not fetched */
   await ctx.route("**/*", (r) => (r.request().url().startsWith("file:") ? r.continue() : r.abort("blockedbyclient")));

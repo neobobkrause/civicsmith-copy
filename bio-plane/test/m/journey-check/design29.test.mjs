@@ -1,23 +1,21 @@
 /* journey-check R13 (N1099, N1100; DEC-241, DEC-245; amends R6): R6's comparison covers design journey 29 step by step,
-   each LIVE step beside the mock's drawing of it, and `/app/more` at 390 px. The mock is read at the checkout's own
-   commit, which holds journey 29. */
+   each LIVE step beside the mock's drawing of it, and `/app/more` at 390 px. The mock is the checkout's own `layouts.html`,
+   which holds journey 29. */
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { execFileSync } from "node:child_process";
 import { Walk, FAIL } from "../../../src/journey-check/walker.mjs";
 import { designMock, journeyPairs, JOURNEY_29, JOURNEY_29_ORDER } from "../../../src/journey-check/design.mjs";
 import { journey29Live, JOURNEY_29_STEPS } from "../../../src/journey-check/investigation.mjs";
 import { sweepScreens } from "../../../src/journey-check/screens.mjs";
 import { browser } from "../../../src/journey-check/run.mjs";
 
-const COMMIT = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 let B, dir, mock, shot;
 before(async () => {
   B = await browser(); dir = mkdtempSync(join(tmpdir(), "jc-j29-"));
-  mock = await designMock(B, { dir: join(dir, "design"), commit: COMMIT });
+  mock = await designMock(B, { dir: join(dir, "design") });
   const ctx = await B.newContext(); const p = await ctx.newPage(); await p.setContent("<p>a live step</p>");
   shot = join(dir, "live.png"); await p.screenshot({ path: shot }); await ctx.close();
 });

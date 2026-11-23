@@ -1,20 +1,20 @@
 /* journey-check R5, R6: the live arm against a fake plane over HTTP (fake-plane.mjs). R5: it reaches the instance
    directly, signs in as the administrator and as a member, and fails unless `whoami` answers each as that role; each role
    walks every working screen, the administrator drawn the acts only an administrator is. R6: each working screen, at 1280
-   and 390 px, is paired with the design mock's drawing of it, and fails on the five limits. The mock is drawn at the
-   checkout's own commit, whose `layouts.html` is the registry's (the interface's ASSETS_COMMIT is the release's). */
+   and 390 px, is paired with the design mock's drawing of it, and fails on the five limits. The mock is the
+   checkout's own `layouts.html`, the registry's. */
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
-import { spawn, execFileSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { runLive, browser, directFetch } from "../../../src/journey-check/run.mjs";
 import { FAIL, Walk } from "../../../src/journey-check/walker.mjs";
 import { sweepScreens } from "../../../src/journey-check/screens.mjs";
-import { developerWords, assetsCommit, designMock, WIDTHS } from "../../../src/journey-check/design.mjs";
+import { developerWords, designMock, WIDTHS, MOCK_PATH, MOCK_FILE } from "../../../src/journey-check/design.mjs";
 import { fakePlane, PUBLISHED_PATH } from "./fake-plane.mjs";
 import { STEP_NAMES, notReady } from "../../../src/journey-check/investigation.mjs";
 import { ACTION_BLOCK_NOT_DRAWN } from "../../../src/journey-check/journeys.mjs";
@@ -22,7 +22,6 @@ import { NO_PUBLISHED_NOTE } from "../../../src/journey-check/published.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
 const SRC = join(import.meta.dirname, "..", "..", "..", "src", "journey-check");
-const COMMIT = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
 const ENV = { JOURNEY_ADMIN_HANDLE: "ada", JOURNEY_ADMIN_PASSWORD: "admin-password-x", JOURNEY_MEMBER_HANDLE: "mai", JOURNEY_MEMBER_PASSWORD: "member-password-x" };
 const WORKING = sweepScreens().filter((s) => s.frame === "working" || s.frame === "dock");
 const only = (...ids) => sweepScreens().filter((s) => ids.includes(s.id));
@@ -35,7 +34,7 @@ after(() => rmSync(dir, { recursive: true, force: true }));
 async function walked(plane, opts = {}) {
   const fp = await fakePlane(plane);
   /* R5 and R6 are the sweeps' own: R12's journeys are walked by their own tests below */
-  try { return await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), commit: COMMIT, investigate: false, ...opts }); }
+  try { return await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), investigate: false, ...opts }); }
   finally { await fp.close(); }
 }
 
@@ -92,7 +91,7 @@ test("R5: it reaches the instance directly: an environment proxy sees none of th
       const code = `const { runLive, browser, directFetch } = await import(${JSON.stringify(pathToFileURL(join(SRC, "run.mjs")).href)});
 const rule = ["--host-resolver-rules=MAP grp.test 127.0.0.1"];
 const r = await runLive({ base: "http://${host}", env: ${JSON.stringify(ENV)}, out: ${JSON.stringify(join(dir, "proxy-" + direct))},
-  commit: ${JSON.stringify(COMMIT)}, screens: [{ id: "members", frame: "working" }], investigate: false,
+  screens: [{ id: "members", frame: "working" }], investigate: false,
   fetchOf: (q) => directFetch(new Request(q.url.replace("grp.test", "127.0.0.1"), q)),
   launch: (o) => browser(${direct} ? { ...o, args: rule } : { args: rule }) });
 const viaFetch = await fetch(${JSON.stringify(fp.base)} + "/api/?op=bootstrap").then((x) => x.status, () => "refused");
@@ -134,28 +133,25 @@ test("R6: a fixture page that overflows fails, and so does each other limit, on 
 test("R6: a working screen the design mock does not draw fails; control: one it draws is paired", { timeout: 300000 }, async () => {
   const r = await walked({ admins: { ada: true } }, { screens: [{ id: "no-such-screen", frame: "working" }, ...only("members")] });
   const design = r.walk.failures.filter((f) => f.kind === FAIL.DESIGN).map((f) => f.detail);
-  assert.ok(design.length >= 1 && design.every((d) => /^no-such-screen: the design mock at [0-9a-f]+ draws no such screen$/.test(d)), r.report);
+  assert.ok(design.length >= 1 && design.every((d) => d === `no-such-screen: the design mock at ${MOCK_PATH} draws no such screen`), r.report);
   assert.ok(r.walk.pairs.includes("pairs/administrator-members-390.png"));
 });
 
-test("R6: each pair is one image, LIVE on the left and DESIGN on the right, the mock read from git at its commit", { timeout: 120000 }, async () => {
+test("R6: each pair is one image, LIVE on the left and DESIGN on the right, the mock the checkout's own layouts.html", { timeout: 120000 }, async () => {
   const r = await cleanWalk();
   const png = readFileSync(join(r.walk.out, "pairs/administrator-members-1280.png"));
   const width = png.readUInt32BE(16);
   assert.ok(width > 1280 + 1180, `a pair holds both drawings side by side (${width}px)`);
-  /* the mock at a commit is that commit's layouts.html, whatever the working copy holds */
+  /* the mock is the checkout's layouts.html, read as it stands, and named by its path */
   const b = await browser();
   try {
-    const m = await designMock(b, { dir: join(dir, "mock"), commit: COMMIT });
-    assert.equal(m.commit, COMMIT);
-    assert.ok(readFileSync(join(dir, "mock", `layouts-${COMMIT}.html`)).equals(execFileSync("git", ["show", `${COMMIT}:docs/development/ux-substrate/layouts.html`], { maxBuffer: 64 << 20 })));
+    const m = await designMock(b, { dir: join(dir, "mock") });
+    assert.equal(m.commit, MOCK_PATH);
+    assert.ok(readFileSync(join(dir, "mock", "layouts.html")).equals(readFileSync(MOCK_FILE)));
     assert.ok(await m.draw("members", 390));
     assert.equal(await m.draw("no-such-screen", 390), null);
     await m.close();
   } finally { await b.close(); }
-  /* by default, the interface's ASSETS_COMMIT, a commit git holds */
-  assert.match(assetsCommit(), /^[0-9a-f]{7,40}$/);
-  assert.equal(execFileSync("git", ["cat-file", "-t", assetsCommit()], { encoding: "utf8" }).trim(), "commit");
 });
 
 test("R6: text a person must never read: a slug, a language tag, a record id, a refusal code; control: words, two-part compounds and addresses pass", () => {
@@ -180,7 +176,7 @@ async function investigated(codeOf) {
   const fp = await fakePlane({ admins: { ada: true }, assistantControls: true });
   try {
     const out = join(dir, String(Math.random()).slice(2));
-    const r = await runLive({ base: fp.base, env: ENV, out, commit: COMMIT, screens: only("members"), codeOf, assistant: true });
+    const r = await runLive({ base: fp.base, env: ENV, out, screens: only("members"), codeOf, assistant: true });
     return { r, fp, printed: r.report + readFileSync(join(out, "report.json"), "utf8") };
   } finally { await fp.close(); }
 }
@@ -216,7 +212,7 @@ test("R20 (live arm): while the assistant does not work, R9's step 4 and all of 
   const fp = await fakePlane({ admins: { ada: true } });
   try {
     const out = join(dir, String(Math.random()).slice(2));
-    const r = await runLive({ base: fp.base, env: ENV, out, commit: COMMIT, screens: only("members") });
+    const r = await runLive({ base: fp.base, env: ENV, out, screens: only("members") });
     const ready = r.walk.steps.filter((s) => /^assistant not ready: /.test(s.label));
     assert.ok(ready.length >= 2 && ready.every((s) => s.ok), r.report);
     for (const n of [STEP_NAMES.connect, STEP_NAMES.memberConnect, STEP_NAMES.memberRun, STEP_NAMES.memberProjectai, STEP_NAMES.memberPlan, STEP_NAMES.memberAsk])
@@ -230,7 +226,7 @@ test("R20 (live arm): while the assistant does not work, R9's step 4 and all of 
 test("R20 control (live arm): connect's sign-in drawn while the assistant does not work is the assistant's own step (K4086): reported not walked, never failed", { timeout: 300000 }, async () => {
   const fp = await fakePlane({ admins: { ada: true }, assistantControls: true });
   try {
-    const r = await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), commit: COMMIT, screens: only("members") });
+    const r = await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), screens: only("members") });
     assert.ok(!r.walk.failures.some((f) => /draws an assistant control that cannot work/.test(f.detail)), r.report);
     assert.ok(r.walk.notes.some((n) => n.startsWith(STEP_NAMES.connect)), r.report);
     assert.deepEqual(fp.codes, [], "the sign-in was not tried");
@@ -274,7 +270,7 @@ test("R24 (live arm): the published case the environment names is walked signed 
   const fp = await fakePlane({ admins: { ada: true }, published: true });
   try {
     const out = join(dir, String(Math.random()).slice(2));
-    const r = await runLive({ base: fp.base, env: { ...ENV, JOURNEY_PUBLISHED_CASE: PUBLISHED_PATH }, out, commit: COMMIT, screens: only("members"), investigate: false });
+    const r = await runLive({ base: fp.base, env: { ...ENV, JOURNEY_PUBLISHED_CASE: PUBLISHED_PATH }, out, screens: only("members"), investigate: false });
     assert.deepEqual(r.walk.failures.filter((f) => /published/.test(f.step || "") || /published/.test(f.detail)), [], r.report);
     for (const w of WIDTHS) assert.ok(r.walk.pairs.includes(`pairs/published-${w}.png`), `pairs/published-${w}.png`);
     assert.ok(r.walk.steps.some((s) => /Print the case/.test(s.label) && s.ok), r.report);
@@ -282,7 +278,7 @@ test("R24 (live arm): the published case the environment names is walked signed 
     /* the arm signed in and swept as a person does, and the published case was opened with no session at all: the requests for it carry no credential */
     const forCase = fp.seen.filter((x) => x.includes(PUBLISHED_PATH));
     assert.ok(forCase.length >= 4 && forCase.every((x) => !/ AUTH$/.test(x)), JSON.stringify(forCase));
-    const none = await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), commit: COMMIT, screens: only("members"), investigate: false });
+    const none = await runLive({ base: fp.base, env: ENV, out: join(dir, String(Math.random()).slice(2)), screens: only("members"), investigate: false });
     assert.ok(none.walk.notes.includes(NO_PUBLISHED_NOTE), none.report);
     assert.ok(!none.walk.steps.some((s) => /Print the case/.test(s.label)));
   } finally { await fp.close(); }
