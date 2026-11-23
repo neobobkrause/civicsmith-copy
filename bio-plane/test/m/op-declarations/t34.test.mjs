@@ -34,7 +34,7 @@ const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const neither = (op) => !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 /* every exported list of op names (the act lists, the family-derived lists, the scope's two) */
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
+const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
   .concat([["PLAN_RUN_SCOPE.reads", O.PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", O.PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n).sort();
 const unfenced = (op) => !GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op);
@@ -160,7 +160,7 @@ test("R21: each alias names the function its op's arm calls — driven through t
   let checked = 0;
   for (const [al, op] of Object.entries(OP_ALIASES)) {
     const owner = Object.values(OP_FAMILIES).find((f) => Object.hasOwn(f.kinds, op))?.owner;
-    if (!MAPS[owner]) continue;
+    if (owner === undefined || !MAPS[owner]) continue;
     const calls = await drive(MAPS[owner], op);
     assert.ok(calls.some(([k]) => String(k).toLowerCase() === al), `${owner}.${op} calls ${calls.map(([k]) => String(k))}, not ${al}`);
     checked++;

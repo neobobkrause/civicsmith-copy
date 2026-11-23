@@ -9,7 +9,9 @@
     "bio-plane/src/screens-action/counsel.mjs",
     "bio-plane/src/screens-action/send-steps.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-send/"
+  ],
   "public": [
     "bio-plane/src/screens-action/actionnew.mjs",
     "bio-plane/src/screens-action/counsel.mjs",
@@ -20,6 +22,9 @@
     "bio-plane/src/screens-action/start-send.mjs"
   ],
   "uses": [
-    "op-declarations"
+    "setup-words",
+    "op-declarations",
+    "store-request",
+    "interface-shell"
   ]
 }

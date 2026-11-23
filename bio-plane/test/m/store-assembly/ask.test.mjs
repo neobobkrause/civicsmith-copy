@@ -170,7 +170,7 @@ test("B5 (K1685; answers R1, R2): a read under an ask's grant reaching this obje
   const { answersOf } = await import("../../../src/answers/index.mjs");
   const x = await store();
   const a = answersOf(x.ctx), was = a.logRead.bind(a), seen = [];
-  a.logRead = (e) => { seen.push([e.grant, e.op, e.viewer]); return was(e); };
+  a.logRead = (e) => { seen.push([e?.grant, e?.op, e?.viewer]); return was(e); };
   try {
     const grant = "g".repeat(64);
     /* store-door R9 (F1): the grant reaches the object in the door's `x-bio-grant` header, never the address */

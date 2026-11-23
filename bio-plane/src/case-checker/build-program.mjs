@@ -28,7 +28,7 @@ const sha = (s) => createHash("sha256").update(s).digest("hex");
 
 /** R13: the program file's text and its fingerprints, built in memory; nothing on disk moves. */
 export async function buildProgram() {
-  const member = { abs: PLANE, bundle: { entry: "src/case-checker/main.mjs", outfile: "case-checker.mjs", external: [...DEFAULT_EXTERNAL] } };
+  const member = { dir: "bio-plane", name: "case-checker", abs: PLANE, bundle: { entry: "src/case-checker/main.mjs", outfile: "case-checker.mjs", manifest: "case-checker.manifest.json", external: [...DEFAULT_EXTERNAL] } };
   const built = await buildMember(member, { write: false });
   const body = built.bytes.toString("utf8");
   const bodySha = sha(body);

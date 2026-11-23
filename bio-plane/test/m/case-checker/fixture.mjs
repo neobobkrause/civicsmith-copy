@@ -25,41 +25,85 @@ const OWN = new Map();
 for (const f of readdirSync(SOURCE).filter((x) => x.endsWith(".mjs") && x !== "program.mjs" && x !== "spec.mjs"))
   for (const c of callsOf(readFileSync(new URL(f, SOURCE), "utf8"), f)) OWN.set(c.id, c.en);
 const TABLE = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
+/** The sentence of `key`, as the word table holds it (or, while `rows.mjs` is stale, the module's own `localize` call).
+ *  @param {string} key a word key
+ *  @returns {string}
+ *  @throws {Error} when no sentence is held for `key` */
 export const sentenceOf = (key) => {
   const t = TABLE.get(key) ?? OWN.get(key);
   if (t === undefined) throw new Error(`no sentence for ${key}`);
   return t;
 };
-/** The sentence of `key` with each `{name}` filled from `vars`, as `word` and `localize` fill it (a missing fill is refused). */
+/** The sentence of `key` with each `{name}` filled from `vars`, as `word` and `localize` fill it (a missing fill is refused).
+ *  @param {string} key a word key
+ *  @param {Record<string, unknown>} [vars] absent is no values
+ *  @returns {string}
+ *  @throws {Error} when no sentence is held for `key`, or a `{name}` has no value (undefined and null are none) */
 export const W = (key, vars = {}) => sentenceOf(key).replace(/\{([A-Za-z0-9_]+)\}/g, (_, n) => {
   if (!Object.hasOwn(vars, n) || vars[n] === undefined || vars[n] === null) throw new Error(`W: ${key} needs {${n}}`);
   return String(vars[n]);
 });
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** A pattern matching the sentence of `key`: each `{name}` of `vars` filled, each other `{name}` open (any text).
+ *  @param {string} key a word key
+ *  @param {Record<string, unknown>} [vars] absent is no values
+ *  @returns {RegExp}
+ *  @throws {Error} when no sentence is held for `key` */
 export function like(key, vars = {}) {
   const parts = sentenceOf(key).split(/\{([A-Za-z0-9_]+)\}/);
   return new RegExp(`^${parts.map((t, i) => (i % 2 === 0 ? escapeRe(t) : Object.hasOwn(vars, t) ? escapeRe(String(vars[t])) : "[^]*")).join("")}$`);
 }
-/** True when an entry of `list` for `check` has the sentence of `key`, each `{name}` of `vars` filled and the others open. */
+/** True when an entry of `list` for `check` has the sentence of `key`, each `{name}` of `vars` filled and the others open.
+ *  @param {{check: string, detail: string}[]} list `missing[]` or `differs[]` entries
+ *  @param {string} check
+ *  @param {string} key a word key
+ *  @param {Record<string, unknown>} [vars] absent is no values
+ *  @returns {boolean}
+ *  @throws {Error} when no sentence is held for `key` */
 export const hasLike = (list, check, key, vars = {}) => list.some((e) => e.check === check && like(key, vars).test(e.detail));
 
+/** The SHA-256 of a text's UTF-8 bytes, or of bytes, in lowercase hex.
+ *  @param {any} s a string (its UTF-8 bytes are hashed) or bytes (a `Uint8Array`)
+ *  @returns {string}
+ *  @bound 64 lowercase hex */
 export const sha = (s) => createHash("sha256").update(typeof s === "string" ? Buffer.from(s, "utf8") : s).digest("hex");
+/** @type {TextEncoder} */
 export const te = new TextEncoder();
+/** The time every act of the fixture is stamped with.
+ *  @type {string} */
 export const NOW = "2026-10-02T12:00:00Z";
 
-/** A signing key from a label: its envelope, its public key line and its bare base64. */
+/** A signing key from a label: its envelope, its public key line and its bare base64. The same label gives the same key.
+ *  @param {string} label
+ *  @returns {{env: string, line: string, b64: string}} */
 export function keyFor(label) {
   const seed = createHash("sha256").update(`case-checker:${label}`).digest();
   const env = `BIOKEY-RAW1.bio-ratify.${seed.toString("base64")}`;
   const line = signerPublicLine(env, label);
   return { env, line, b64: line.split(" ")[1] };
 }
+/** A key's OpenSSH fingerprint, `SHA256:` and the unpadded base64 of the SHA-256 of its wire bytes.
+ *  @param {string} b64 the key's wire bytes in base64
+ *  @returns {string} */
 export const fingerprintOf = (b64) => "SHA256:" + createHash("sha256").update(Buffer.from(b64, "base64")).digest("base64").replace(/=+$/, "");
+/** An armored SSH signature by the key of `who` over `message`, in namespace `ns` (absent is `bio-ratify`).
+ *  @param {string} who a key's label (`keyFor`)
+ *  @param {string|Uint8Array} message
+ *  @param {string} [ns]
+ *  @returns {string} */
 export const sign = (who, message, ns = NS_RATIFY) => signSshsig(keyFor(who).env, Buffer.from(message), ns);
-/* R3: a member signs their account over `signatures.captureAccountStatement` (its R41). */
+/** R3: a member signs their account over `signatures.captureAccountStatement` (its R41): the bytes signed.
+ *  @param {string} capSha the capture's SHA-256
+ *  @param {string} text the account's text
+ *  @returns {Uint8Array} */
 export const accountMessage = (capSha, text) => captureAccountStatement(capSha, text);
 
+/* The case's names, ids, carried texts and their SHA-256s, each a string. The ids handed to `case-grammar`'s
+   `caseFilePath` (A, B, C, MINUTES, MEMO, OBS, CALC) carry no `@type`: the reader types that function's `key` too
+   narrowly, and a stated kind here would be read as a claim against it. */
+/** @type {string} */
 export const GROUP = "lakeshore-tenants";
+/** @type {string} */
 export const CASE = "CASE-2026-0001";
 export const A = "INQ-2026-0001-lease";        // load-bearing member
 export const C = "INQ-2026-0003-context";      // supporting member
@@ -67,21 +111,38 @@ export const B = "INQ-2026-0002-board";        // reached from A's chain
 export const MINUTES = "INFO-2026-0001-minutes";
 export const MEMO = "INFO-2026-0002-memo";     // from a source whose identity is withheld
 export const OBS = "INFO-2026-0009-observation";
+/** @type {string} */
 export const MINUTES_BYTES = "%PDF-1.7 the minutes of the board, as captured";
+/** @type {string} */
 export const MEMO_BYTES = "%PDF-1.7 the memo a clerk handed over";
+/** @type {string} */
 export const OBS_TEXT = "I watched the board vote by a show of hands.";
+/** The SHA-256 of the minutes', the memo's and the observation's bytes.
+ *  @type {string} */
 export const MINUTES_SHA = sha(MINUTES_BYTES), MEMO_SHA = sha(MEMO_BYTES), OBS_SHA = sha(OBS_TEXT);
+/** Another team's finding a leg of A rests on (`imported`).
+ *  @type {string} */
 export const REF = `imported:${sha("an import")}/INQ-2026-0042-lease`;
 /* R20: one calculation A's chain rests on (a count of late payments), with its one input carried as a table. */
 export const CALC = "CALC-2026-0001-late";
+/** The calculation's recipe, in `bio-calc/1`.
+ *  @type {{method: string, inputs: {name: string, kind: string}[], steps: Record<string, any>[], output: string}} */
 export const CALC_RECIPE = { method: "bio-calc/1", inputs: [{ name: "pay", kind: "table" }],
   steps: [{ op: "select", as: "late", from: "pay", where: [{ field: "days", test: "gt", value: 30 }] }, { op: "count", as: "n", from: "late" }],
   output: "n" };
+/** The calculation's one input, as the canonical JSON the engine evaluates (a table).
+ *  @type {string} */
 export const CALC_INPUT = canonicalJson({ fields: [{ name: "days", type: "integer" }], rows: [{ days: "10" }, { days: "45" }, { days: "60" }] });
+/** @type {string} */
 export const CALC_INPUT_SHA = sha(CALC_INPUT);
-/** R20: the path a calculation's input travels at (`case-grammar` R13's `calculation` kind). */
+/** R20: the path a calculation's input travels at (`case-grammar` R13's `calculation` kind).
+ *  @param {string} calc
+ *  @param {string} inputSha
+ *  @returns {string} */
 export const calcInputPath = (calc, inputSha) => CG.caseFilePath("calculation", [calc, inputSha]);
-/** R20: a calculation's row as `case-grammar` R18 states it, as the act computed it. `over` changes one field. */
+/** R20: a calculation's row as `case-grammar` R18 states it, as the act computed it. `over` changes one field.
+ *  @param {Record<string, any>} [over] fields that replace the row's
+ *  @returns {Record<string, any>} `{calc, recipe, inputs, method_version, results, result_key, recompute, disclosed}` */
 export function calcRow(over = {}) {
   const inputs = { pay: CALC_INPUT_SHA };
   const key = resultKey(CALC_RECIPE, inputs, { methodVersion: CALC_METHOD });
@@ -91,21 +152,34 @@ export function calcRow(over = {}) {
 }
 /* R8 (DEC-180 (4)): the memo as a photo carried as its copy, its marked areas covered (`case-carriage` R11's copy and
    label; `case-grammar` R12's `obscured`). */
+/** @type {string} */
 export const COPY_BYTES = "%PDF-1.7 the memo, faces and plates covered";
+/** @type {string} */
 export const COPY_SHA = sha(COPY_BYTES);
+/** @type {string} */
 export const OBSCURED_LABEL = "Faces and plates obscured for publication; the team holds the original";
+/** The minutes' capturing member's account.
+ *  @type {string} */
 export const ACCOUNT = "I pulled it from the records office's box on the 3rd.";
+/** The memo's capturing member's account.
+ *  @type {string} */
 export const MEMO_ACCOUNT = "A clerk handed me this memo in person.";
 
 const MINUTES_UNITS = [{ extent: { kind: "pdf-page", page: 0 }, ref: "page 1", text: "Item 7. The lease was approved without a vote." },
                        { extent: { kind: "pdf-page", page: 1 }, ref: "page 2", text: "Adjourned at nine." }];
 const MEMO_UNITS = [{ extent: { kind: "pdf-page", page: 0 }, ref: "page 1", text: "Please sign the lease before the meeting." }];
+/** A reading's extracted text, as `case-grammar` spells it (the canonical JSON of its units).
+ *  @param {{extent: Record<string, any>, ref: string, text: string}[]} units
+ *  @returns {string} */
 export const extracted = (units) => CG.extractedTextOf(units);
 
 const PAIR_AXES = ["capture", "connection", "testimony"];
 const pairOf = (r) => Object.fromEntries(PAIR_AXES.map((a) => [a, { state: r[a].state, grade: r[a].grade ?? null }]));
 
-/** The grading facts of each finding, and each pair as the act computed it. */
+/** The grading facts of each finding (A, B and C), by finding.
+ *  @param {{withImported?: boolean, withCalculation?: boolean}} [opts] add a leg of A on another team's finding, or on
+ *    the calculation
+ *  @returns {Record<string, {legs: Record<string, any>[]}>} */
 export function gradingFacts({ withImported = false, withCalculation = false } = {}) {
   const B_legs = [
     { target: MINUTES, kind: "document", role: "supports", grade: "B", grade_axis: "capture", grade_source: "capture", ground: null, captures: [MINUTES_SHA] },
@@ -119,7 +193,14 @@ export function gradingFacts({ withImported = false, withCalculation = false } =
   const C_legs = [{ target: OBS, kind: "observation", role: "supports", grade: "D", grade_axis: "testimony", grade_source: "testimony", ground: null }];
   return { [A]: { legs: A_legs }, [B]: { legs: B_legs }, [C]: { legs: C_legs } };
 }
+/** The pair of another team's finding, as its `accepted_work:` row states it.
+ *  @type {Record<string, {state: string, grade: string}>} */
 export const IMPORTED_PAIR = { capture: { state: "graded", grade: "B" }, connection: { state: "graded", grade: "C" } };
+/** Each finding's pair as the act computed it (`recomputePair` over its facts, an `imported` leg taking its
+ *  `accepted_work:` row's pair), by finding: per axis `{state, grade}`.
+ *  @param {Record<string, {legs: Record<string, any>[]}>} facts
+ *  @param {Record<string, any>[]} [accepted] the `accepted_work:` rows
+ *  @returns {Record<string, any>} per finding, per axis `{state, grade}` */
 export function pairsOf(facts, accepted = []) {
   const out = {};
   for (const [id, f] of Object.entries(facts)) {
@@ -130,10 +211,17 @@ export function pairsOf(facts, accepted = []) {
 }
 
 const q = (v) => (v === null ? "null" : typeof v === "string" ? `"${v}"` : String(v));
+/** A front-matter block of flat rows, as lines: `key: []` when `list` is empty.
+ *  @param {string} key
+ *  @param {Record<string, unknown>[]} list
+ *  @returns {string[]} */
 export const rows = (key, list) => (list.length ? [`${key}:`, ...list.flatMap((r) => Object.entries(r)
   .map(([k, v], i) => `${i ? "   " : "  -"} ${k}: ${q(v)}`))] : [`${key}: []`]);
 
-/** The case document's text, `/6` unless `format` names another (`/7`, T31). */
+/** The case document's text, `/6` unless `format` names another (`/7`, T31).
+ *  @param {Record<string, any>} [opts] `{format?, pairs, bar?, findings?, pins, materials, attestations, accounts,
+ *    accepted?, edition?, recorded?, facts?, passages?, calculations?, extra?, lens?, omit?}`
+ *  @returns {string} */
 export function caseDocument({ format = "bio-case-document/6", pairs, bar = { declared: true, capture: "B", connection: "C" }, findings = { [A]: "load_bearing", [C]: "supporting" },
                               pins, materials, attestations, accounts, accepted = [], edition = 2, recorded = null,
                               facts = {}, passages = {}, calculations = [], extra = [], lens = [], omit = [] } = {}) {
@@ -176,10 +264,15 @@ export function caseDocument({ format = "bio-case-document/6", pairs, bar = { de
   return [...fm, ...body].join("\n");
 }
 
-/** A finding's published bytes. */
+/** A finding's published bytes, as text.
+ *  @param {string} id
+ *  @returns {string} */
 export const findingText = (id) => `---\nid: ${id}\nobject_type: inquiry\ntitle: "${id}"\nbasis: []\n---\n\nWhat ${id} found.\n`;
 
-/** The whole case, as text by path, before packing. `opts` change one thing for a negative control. */
+/** The whole case, as text by path, before packing. `opts` change one thing for a negative control.
+ *  @param {any} [opts] the changes, by name (`facts`, `findings`, `withImported`, `withCalculation`, `obscureMemo`,
+ *    `mutate`, ...); absent is none
+ *  @returns {{texts: Map<string, string>, pairs: Record<string, any>, facts: Record<string, any>}} */
 export function caseFiles(opts = {}) {
   const facts = opts.facts || gradingFacts(opts);
   const accepted = opts.withImported ? [{ member: A, leg_of: A, ref: REF, group: "riverside-watch", case: "CASE-2026-0007", edition: 2,
@@ -245,7 +338,11 @@ export function caseFiles(opts = {}) {
   return { texts, pairs, facts };
 }
 
-/** The manifest over the files (path order), with each part's fingerprint by `case-grammar`'s one spelling. */
+/** The manifest over the files (path order), with each part's fingerprint by `case-grammar`'s one spelling.
+ *  @param {Record<string, any>[]} listed each file `{path, sha256, bytes, part, kind}`
+ *  @param {{keys?: string[], over?: Record<string, any>}} [opts] the keys' labels (absent is group, alice and bob);
+ *    fields that replace the manifest's
+ *  @returns {Record<string, any>} `{format, group, case, edition, case_document_sha, keys, parts, files}` */
 export function manifestFor(listed, { keys = ["group", "alice", "bob"], over = {} } = {}) {
   const files = [...listed].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   const parts = [...new Set(files.map((f) => f.part))].sort((a, b) => a - b).map((index) => {
@@ -266,7 +363,12 @@ export function manifestFor(listed, { keys = ["group", "alice", "bob"], over = {
 /** A case file's parts as bytes: the files split into `parts` parts (round robin by path), the complete edition rendered
  *  from the rest, every part carrying the same manifest. `edit(bytesByPath)` changes carried bytes after the manifest is
  *  written (a tampered file); `unlisted` (a Map of path → bytes) adds entries to the first part that the manifest does not
- *  list. */
+ *  list.
+ *  @param {any} [opts] `caseFiles`' changes, and `parts` (absent is 1), `edit`, `unlisted`, `manifest`,
+ *    `completeEdition`, `keys`, `over`
+ *  @returns {{parts: any[], manifest: Record<string, any>, pairs: Record<string, any>, facts: Record<string, any>,
+ *    bytesOf: Map<string, any>}} `parts` each part's bytes, a `Uint8Array`
+ *  @throws {Error} when a part cannot be packed */
 export function caseFile(opts = {}) {
   const { texts, pairs, facts } = caseFiles(opts);
   const n = opts.parts || 1;
@@ -296,4 +398,8 @@ export function caseFile(opts = {}) {
   return { parts, manifest, pairs, facts, bytesOf };
 }
 
+/** An answer's findings by id.
+ *  @template {{finding: string}} F
+ *  @param {{findings: F[]}} answer
+ *  @returns {Record<string, F>} */
 export const byId = (answer) => Object.fromEntries(answer.findings.map((f) => [f.finding, f]));

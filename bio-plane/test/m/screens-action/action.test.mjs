@@ -62,11 +62,31 @@ test("R5 (diagnosis 11 §17): a reply marked through `actionpressure` is drawn m
   assert.ok(other.doc.getElementById("pressure-kind-2"));
 });
 
-test("R5: 'Move the action' to a state its edges allow, with the reason in the query actions reads; resolving names how", async () => {
+test("R5: 'Move the action' to a state its edges allow, with the member's reason in the query actions reads", async () => {
   const p = await open(ROUTES.action, { ...DATA_PLANE, actionmove: ok({}) });
   const to = p.doc.getElementById("move-to").querySelectorAll("option").map((o) => o.value);
   assert.deepEqual(to, ["active", "resolved", "abandoned"]);
-  await press(p, "actionmove", { values: { "move-to": "resolved", "move-resolution": "complied" }, reason: "the logs came" });
+  await press(p, "actionmove", { values: { "move-to": "abandoned", "move-reason": "the office closed" } });
+  const r = last(p, "actionmove");
+  assert.deepEqual([r.query.target, r.query.to, r.query.reason, r.query.resolution], [ACTION_ID, "abandoned", "the office closed", undefined]);
+  // control: a move with no reason is refused in place by the shell's words and sends nothing
+  const n = p.byOp("actionmove").length;
+  const b = await press(p, "actionmove", { values: { "move-to": "active", "move-reason": "" } });
+  assert.equal(p.byOp("actionmove").length, n);
+  assert.ok(beside(p, b).includes(W("shell.reason.needed")));
+});
+
+test("R5 (the Screens page's C10, how it ended): resolving says how it ended in the design's words and the member's own words, which are its reason; control: own words missing are asked for and nothing is sent", async () => {
+  const p = await open(ROUTES.action, { ...DATA_PLANE, actionmove: ok({}) });
+  const fold = [...main(p).querySelectorAll("details.mk-details")].find((d) => text(p, d.querySelector("summary")) === W("screen.action.move.resolution"));
+  assert.ok(fold, "the fold");
+  const offered = p.doc.getElementById("move-resolution").querySelectorAll("option").map((o) => [o.value, o.textContent]);
+  assert.deepEqual(offered, ["complied", "denied", "escalated", "withdrawn", "completed"].map((r) => [r, W("screen.action.ended." + r)]));
+  for (const k of ["screen.action.ended.help", "screen.action.ended.own", "screen.action.ended.own.help"]) assert.ok(text(p, fold).includes(W(k)), k);
+  const none = await press(p, "actionmove", { values: { "move-to": "resolved", "move-resolution": "denied", "move-reason": "ignored" } });
+  assert.equal(p.byOp("actionmove").length, 0);
+  assert.ok(beside(p, none).includes(W("findin.fieldneeded", { field: W("screen.action.ended.own") })));
+  await press(p, "actionmove", { values: { "move-to": "resolved", "move-resolution": "complied", "move-own": "the logs came" } });
   const r = last(p, "actionmove");
   assert.deepEqual([r.query.target, r.query.to, r.query.resolution, r.query.reason], [ACTION_ID, "resolved", "complied", "the logs came"]);
 });

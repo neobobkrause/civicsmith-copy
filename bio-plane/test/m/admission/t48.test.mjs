@@ -34,6 +34,6 @@ test("R26: a member-scoped ai credential is refused AI_BEYOND_TASK_SCOPE (C-29.6
   assert.ok(other.length > 0);
   for (const op of other) assert.equal((await gate(env, { op, token: bare, method: "GET" })).caller?.cls, "ai", op);
   /* at the gate itself */
-  assert.equal(A.aiTaskScope(cred({ writes: [] }), "sourceof", OPS.sourceof).refusal.body.reason, "AI_BEYOND_TASK_SCOPE");
+  assert.equal(A.aiTaskScope(cred({ writes: [] }), "sourceof", OPS.sourceof).refusal?.body.reason, "AI_BEYOND_TASK_SCOPE");
   assert.deepEqual(A.aiTaskScope(cred({ writes: ["sourceof"] }), "sourceof", OPS.sourceof), { ok: true, viewer: "member:ann" });
 });

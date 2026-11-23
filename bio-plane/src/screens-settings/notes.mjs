@@ -7,6 +7,8 @@
    first time the member keeps a note while the group tells members what a court can reach (DEC-136; membership R108).
    Every function is self-contained (interface-shell R21). */
 
+/** @import { SettingsScreen } from './account.mjs' */
+/** @type {SettingsScreen} Settings › Your notes */
 export const notes = {
   id: "notes",
 
