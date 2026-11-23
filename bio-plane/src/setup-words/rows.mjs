@@ -1,6 +1,6 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
-   list, docs/development/ux-substrate/screens/words.json (19536 design words, 1162 protected; SHA-256
-   f9aae151ac939eed23d89a269e4e0fcfa342e348ef5ee31b4ce83219e979438f) followed by 7519 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   list, docs/development/ux-substrate/screens/words.json (19542 design words, 1162 protected; SHA-256
+   c497e0d9c68d590bd8790f39902df835ab0e1226d87f5a89052db7daa324f61e) followed by 7519 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
@@ -11,7 +11,7 @@
  * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
  */
 /** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
-export const WORDS_COMMIT = "f9aae151ac";
+export const WORDS_COMMIT = "c497e0d9c6";
 /** @type {readonly WordRow[]} the list, frozen with each row (R3) */
 export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
@@ -11967,10 +11967,13 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["screen.case-editor.next.lead","A next edition starts as a draft from Docket, where your team keeps everything filed and received for this case, and is published like any case.","DEC-444: D-K9: above the link to Docket's \"Start the next edition\" (casedraft with the case, R52, DEC-374)",null,false,"design"],
   ["screen.counsel.made.head","Packets assembled for this action","DEC-444: E-K7 (filings R11, R13): the versions made, newest first",null,false,"design"],
   ["screen.counsel.made.lead","Each time a member assembles the packet, a new version is saved from the record as it stands then. Earlier versions stay readable, exactly as they were assembled. Only a member who may see this action and every project the packet draws on can read or save one.","DEC-444: E-K7: filings R11 (who may read), R13 (the versions listed)",null,false,"design"],
+  ["screen.counsel.made.version","Version {n}","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the page's own words)",null,false,"design"],
   ["screen.counsel.made.by","Assembled by {who}, {date}, for {counsel}, {organization}","DEC-444: E-K7: a version's made line beside its id and version; {counsel} the counsel named and {organization} theirs (screen.counsel.made.by.noorg without one); then the reason quoted",null,false,"design"],
   ["screen.counsel.made.by.noorg","Assembled by {who}, {date}, for {counsel}","DEC-444: E-K7: the made line when no organization is named",null,false,"design"],
+  ["screen.counsel.made.by.nocounsel","Assembled by {who}, {date}, for the team's own review","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.by and filings.prepared_group_review, filings R10)",null,false,"design"],
   ["screen.counsel.made.changed","The record changed since version {n}: {what}","DEC-444: E-K7: basis_changed, in plain words; absent when nothing changed",null,false,"design"],
   ["screen.counsel.made.exported","Saved as a file by {who}, {date}, for {counsel}.","DEC-444: E-K7: the export record (counselPacketExport); one row per export",null,false,"design"],
+  ["screen.counsel.made.exported.nocounsel","Saved as a file by {who}, {date}, for the team's own review.","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.exported and filings.prepared_group_review)",null,false,"design"],
   ["screen.counsel.section.matters","The matters, each as the record stands","DEC-444: E-K7: a section of the packet, with its count",null,false,"design"],
   ["screen.counsel.section.exhibits","Exhibits, with their fingerprints and grades","DEC-444: E-K7: a section of the packet",null,false,"design"],
   ["screen.counsel.section.standards","Standards, candidate theories and remedies","DEC-444: E-K7: a section of the packet",null,false,"design"],
@@ -13905,6 +13908,7 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["filings.point_finding_grade","Point: {claim} (finding {finding}, {kind}; grade {grade}).",null,null,false,"design"],
   ["filings.evidence_capture_grade","Evidence: {locator} (capture grade {grade}).",null,null,false,"design"],
   ["filings.finding_published","finding {finding} is not published",null,null,false,"design"],
+  ["filings.finding_later_edition","finding {finding} was published in a later edition, Edition {later}","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: filings R12)",null,false,"design"],
   ["filings.grade","the grade of {locator}",null,null,false,"design"],
   ["filings.uncertain","Still uncertain: {unsure}.",null,null,false,"design"],
   ["filings.uncertain_nothing_record","Still uncertain: nothing the record marks undetermined.",null,null,false,"design"],
@@ -13939,6 +13943,8 @@ export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["filings.action_longer_held","the action is no longer held",null,null,false,"design"],
   ["filings.governing_tier","the governing tier (was {tier}, now {tier_2})",null,null,false,"design"],
   ["filings.determination_superseded","the determination {determination} was superseded{then}",null,null,false,"design"],
+  ["filings.determination_flagged","the determination {determination} was flagged: what it rests on has changed","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; conformance R10)",null,false,"design"],
+  ["filings.standard_superseded","the standard {standard} was superseded","process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; filings R12)",null,false,"design"],
   ["filings.the_determination_the_action_rests","the determination the action rests on",null,null,false,"design"],
   ["filings.governing_laws","the governing laws",null,null,false,"design"],
   ["filings.says.approved_member_named","approved by the member named: the text is theirs. Your team's Civicsmith transmits nothing; a member files it by the venue's own means and records that it was sent",null,null,false,"design"],
