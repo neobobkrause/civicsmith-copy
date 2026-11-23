@@ -8,7 +8,9 @@
     "bio-plane/src/screens-settings/recovery.mjs",
     "bio-plane/src/screens-settings/members.mjs"
   ],
-  "tests": [],
+  "tests": [
+    "bio-plane/test/m/screens-account/"
+  ],
   "public": [
     "bio-plane/src/screens-settings/account.mjs",
     "bio-plane/src/screens-settings/connect.mjs",
