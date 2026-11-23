@@ -32,3 +32,8 @@ Shown to the owner: not yet.
 Rule now: a lane is opened for the plane module's scope, for the owner to understand it and fix it. ARCH opens it.
 - 23 Nov 2026: "Decision: open a lane for the plane module's scope, so I can understand it and fix it"
 Shown to the owner: not yet.
+
+## Halting development
+Rule now: civicsmith development is halted, on the owner's word, until he lifts it. The stop record is written; ARCH has been told to stop every job.
+- 23 Nov 2026: "Instruction: halt civicsmith development"
+Shown to the owner: not yet.
