@@ -154,7 +154,7 @@ test("R23 no field asks for a record id: ties offers named people from the direc
   assert.deepEqual(who.querySelectorAll("option").map((o) => o.textContent), directory.map((r) => r.name || r.entity), "the people the directory names");
   assert.deepEqual(who.querySelectorAll("option").map((o) => o.getAttribute("value")), directory.map((r) => r.entity));
   assert.ok(["L. Chen", "Public Works Department"].every((n) => who.querySelectorAll("option").some((o) => o.textContent === n)), "by their names");
-  fill(p, { "tie-who": works, "tie-note": "my cousin works there" });
+  fill(p, { "tie-kind": "relative", "tie-who": works, "tie-note": "my cousin works there", "tie-says": "group" });
   await p.click(button(p, "declaretie"));
   await settled(p);
   assert.equal(p.byOp("declaretie")[0].body.entity, works);

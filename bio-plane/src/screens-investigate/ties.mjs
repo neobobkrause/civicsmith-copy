@@ -12,6 +12,8 @@ function reads() {
 
 function render(cs, view) {
   const S = "screen.ties.";
+  /* each screen function is sent to the page as text, so it names its own constants */
+  const KINDS = ["employer", "relative", "business", "other"];
   const me = (view.me && view.me.handle) || "";
   const out = [cs.title()];
   /* R9: why she is asked and who sees the list, in one open fold headed by `.summary`; "Who sees it" ends with `.who.change` */
@@ -47,8 +49,6 @@ function render(cs, view) {
   return out.join("");
 }
 
-const KINDS = ["employer", "relative", "business", "other"];
-
 const acts = [
   /* "Add this tie": its kind, who, the member's note (her own words serve as the reason, DEC-88) and how a case says it */
   { op: "declaretie", label: "act.declaretie.label.ties", reasonField: "note",
@@ -56,6 +56,7 @@ const acts = [
       const entity = String(cs.value("tie-who") || "").trim(), note = String(cs.value("tie-note") || "").trim();
       if (!entity || !note) return { refuse: "screen.ties.add.empty" };
       /* R9: a kind or a disclosure not chosen refuses in place, naming the choice; nothing is sent and nothing is chosen for her */
+      const KINDS = ["employer", "relative", "business", "other"];
       const kind = String(cs.value("tie-kind") || ""), says = String(cs.value("tie-says") || "");
       const needed = (key) => ({ refuse: "shell.field.needed", fills: { field: view.parts.plain(cs, key) } });
       if (!KINDS.includes(kind)) return needed("screen.ties.kind");
