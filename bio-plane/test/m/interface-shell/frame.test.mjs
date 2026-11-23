@@ -2,7 +2,7 @@
 import { frameAnswers } from "./frame-answers.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { DESIGN_PATHS } from "./design-paths.fixture.mjs";
 import { WORD_ROWS, word } from "../../../src/setup-words/index.mjs";
 import { PATHS, FRAMES, PLACE_SCREENS } from "../../../src/interface-shell/index.mjs";
 import { fitSend, boot, ok, refused, silent, pending, httpError, STORE_KEY, tabs, SESSION } from "./harness.mjs";
@@ -115,10 +115,8 @@ test("R8 every screen opens its main area with its path, from its rail place to 
   assert.deepEqual(texts(crumbSteps(m.root())), [word("rail.settings.name"), word("screen.members.name")]);
 });
 
-const pathAt = (commit) => {
-  const src = execFileSync("git", ["show", commit + ":docs/development/ux-substrate/screens/mock-shell.js"], { encoding: "utf8" });
-  return new Function(/(const PATH = \{[\s\S]*?\n\};)/.exec(src)[1] + "; return PATH;")();
-};
+/* the design's PATH at a named commit, from the fixture taken from the repository's history (the required run's checkout is shallow) */
+const pathAt = (commit) => DESIGN_PATHS[commit].PATH;
 const PROJECTS = new Set(["The Coliseum lease", "Pothole repairs", "Sewer fund transfers"]);
 const step = (s) => (s === "@project" ? "@project" : /\.crumb$/.test(s) ? word(s, { name: "<name>" }) : /^(shell|screen)\./.test(s) ? word(s) : word("rail." + s + ".name"));
 const T46 = ["home", "queue", "inbox", "finder", "answers", "capture", "held", "open-file", "find-in", "project", "document", "question", "assistant", "members", "account", "connect", "notes"];
