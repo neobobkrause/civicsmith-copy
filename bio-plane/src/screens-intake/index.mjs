@@ -58,7 +58,7 @@ const UNSUPPORTED = ["rtf", "email", "legacy_word", "legacy_excel", "legacy_powe
   .map((k) => "reading-pipeline.index.unsupported_" + k);
 
 /** The keys each screen reads (R26), by screen id.
- * @type {Readonly<Record<string, readonly string[]>>} */
+ * @type {Readonly<{capture: readonly string[], held: readonly string[], archive: readonly string[], "open-file": readonly string[], "about-knocker": readonly string[], leads: readonly string[], watching: readonly string[], inbox: readonly string[]}>} */
 export const SCREEN_KEYS = Object.freeze({
   capture: Object.freeze([
     ...UNSUPPORTED,
@@ -185,7 +185,8 @@ export const SCREEN_KEYS = Object.freeze({
   ]),
   "about-knocker": Object.freeze([
     "act.sourcedisclose.label.about-knocker", "act.sourceconsent.label.about-knocker", "act.sourceconsentwithdraw.label.about-knocker",
-    "act.sourcepersonlink.label.about-knocker", "act.writinghelp.label.about-knocker", "capture.fieldneeded", "screen.capture.help.empty",
+    "act.sourcepersonlink.label.about-knocker", "act.writinghelp.label.about-knocker", "shell.field.needed", "refusal.NO_EVIDENCE", "screen.capture.help.empty",
+    "sources.consent_permanent_anything", "sources.withdrawal_binds_later",
     "screen.inbox.ladder", "screen.inbox.ladder.unknown", "screen.inbox.ladder.same", "screen.inbox.ladder.partly", "screen.inbox.ladder.group",
     "screen.inbox.ladder.public", "screen.inbox.ladder.basis", "shell.unavailable.home", "shell.unavailable.nothing.says", "shell.unavailable.nothing.title",
     "screen.about-knocker.intro1", "screen.about-knocker.intro2", "screen.about-knocker.known.head", "screen.about-knocker.known.help1",
@@ -206,7 +207,7 @@ export const SCREEN_KEYS = Object.freeze({
     "screen.about-knocker.person.refused.org.next",
   ]),
   leads: Object.freeze([
-    "act.lead.label.leads", "act.leadread.label.leads", "act.leadlook.label.leads", "act.leadshare.label.leads", "act.writinghelp.label.leads",
+    "act.lead.label.leads", "act.leadread.label.leads", "screen.capture.openit", "act.leadlook.label.leads", "act.leadshare.label.leads", "act.writinghelp.label.leads",
     "screen.capture.help.empty", "screen.capture.saw.draft", "screen.leads.intro1", "screen.leads.intro2", "screen.leads.write.heading", "screen.leads.write.words",
     "screen.leads.write.where", "screen.leads.write.note1", "screen.leads.write.note2", "screen.leads.mine.head", "screen.leads.list.help", "screen.leads.state.never",
     "screen.leads.state.absent", "screen.leads.state.unclear", "screen.leads.state.part", "screen.leads.state.found", "screen.leads.one.head",
@@ -225,7 +226,7 @@ export const SCREEN_KEYS = Object.freeze({
     "monitor.freq.weekly", "monitor.freq.monthly", "monitor.freq.per_meeting", "screen.watching.slate.head", "screen.watching.slate.intro1",
     "screen.watching.slate.intro2", "screen.watching.sweeps.head", "screen.watching.sweep.help", "screen.watching.sweep.ratified", "screen.watching.sweep.next",
     "screen.watching.sweep.unratified", "screen.watching.sweep.note1", "screen.watching.sweep.note2", "state.empty",
-    "capture.fieldneeded", "act.writinghelp.label.watching", "screen.capture.help.empty", "screen.watching.project", "screen.watching.sweep.pages", "screen.watching.nr.head", "screen.watching.nr.tip", "screen.watching.nr.where",
+    "shell.field.needed", "act.writinghelp.label.watching", "screen.capture.help.empty", "screen.watching.project", "screen.watching.sweep.pages", "screen.watching.nr.head", "screen.watching.nr.tip", "screen.watching.nr.where",
     "screen.watching.nr.authority", "screen.watching.nr.open", "screen.watching.nr.retired", "screen.watching.nr.never", "screen.watching.nr.list",
     "screen.watching.nr.listnote", "screen.watching.nr.ask", "screen.watching.nr.asktip", "screen.watching.nr.f.target", "screen.watching.nr.f.desc",
     "screen.watching.nr.f.loc", "screen.watching.nr.f.lochelp", "screen.watching.nr.f.auth", "screen.watching.nr.f.authhelp", "screen.watching.nr.f.matters",
@@ -252,10 +253,11 @@ export const SCREEN_KEYS = Object.freeze({
     "inbox.discard.why", "reference.label", "screen.inbox.alreadyheld", "screen.inbox.alreadyheld.other",
     "screen.inbox.same.date", "shell.card.document", "screen.document.fingerprint", "act.inboxresolve.label.inbox.putback", "shell.reason", "screen.inbox.putback.done", "act.knocksof.label.inbox", "screen.inbox.knocker.heading", "screen.inbox.knocker.same1", "screen.inbox.knocker.same2",
     "screen.inbox.knocker.help1", "screen.inbox.knocker.help2", "screen.inbox.source.line", "screen.about-knocker.name", "size.kb", "size.mb", "size.small",
+    "screen.inbox.knock.name", "screen.inbox.knock.type", "find.browse.more",
   ]),
 });
 
-/** The eight screens, composed with their words (interface-shell R21, R28).
- * @type {readonly Screen[]} */
-export const SCREENS = Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
-  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })));
+/** The eight screens, composed with their words (interface-shell R21, R28); frozen, each screen and the list.
+ * @type {Screen[]} */
+export const SCREENS = /** @type {Screen[]} builds the screens, each a Screen */ (Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
+  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[/** @type {keyof typeof SCREEN_KEYS} */ (s.id)] }))));

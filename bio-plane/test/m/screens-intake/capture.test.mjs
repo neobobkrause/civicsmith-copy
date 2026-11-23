@@ -8,7 +8,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { openWorld, members, dayOf, html, text, main, btn, fill, press, idle, ok, refused, refusedIn, rawKeys, word, hasWord, says, saysIn, DOCUMENT_STUB } from "./page.mjs";
+import { openWorld, members, dayOf, html, text, main, btn, fill, press, idle, ok, refused, refusedIn, rawKeys, word, hasWord, says, saysIn, DOCUMENT_STUB, screenOf } from "./page.mjs";
 import { silent, pending } from "../interface-shell/harness.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
 import { generate } from "../../pdfgen.mjs";
@@ -101,7 +101,9 @@ test("R1 R25 acquire sends the address as the locator; an empty address sends no
 test("R1 R25 each of acquire's five refusals is drawn by its key beside the address; any other code is the shell's (R13)", async () => {
   const seen = new Set();
   /* the five are the ones the screen declares by key (BAD_FOR is a function of its own, R29) */
-  const own = SCREENS.find((x) => x.id === "capture").acts.find((a) => a.op === "acquire").refusals;
+  const acquire = screenOf("capture").acts.find((a) => a.op === "acquire");
+  if (!acquire || !acquire.refusals) throw new Error("capture declares acquire with its refusals");
+  const own = acquire.refusals;
   const codes = Object.keys(own).filter((c) => typeof own[c] === "string");
   assert.equal(codes.length, 5);
   /* four are caused by a real act: a site that refuses (403), no site at all, a site that serves nothing, and a source that declares more than a capture takes. The fifth, BAD_LOCATOR,

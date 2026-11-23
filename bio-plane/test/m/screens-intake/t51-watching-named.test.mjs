@@ -72,6 +72,10 @@ test("R48 control: a place that does not start with https://, or no target, is r
   fill(p, { "nr-target": "", "nr-loc": "https://ok.example/a" });
   const s = await pressLabel(p, "namedrequestset", "screen.watching.nr.ask", "x");
   assert.ok(saysIn(s.slot(), "screen.watching.nr.ref.target"));
+  /* no one named behind the source: the field is named and the words say nothing was sent (shell.field.needed) */
+  fill(p, { "nr-target": "x", "nr-loc": "https://ok.example/a", "nr-auth": "" });
+  const a = await pressLabel(p, "namedrequestset", "screen.watching.nr.ask", "x");
+  assert.ok(saysIn(a.slot(), "shell.field.needed", { field: word("screen.watching.nr.f.auth") }));
   assert.equal(p.byOp("namedrequestset").length, 0);
   assert.deepEqual((await t.mai.read("namedrequests")).items, [], "nothing was planted");
   /* a machine is refused a request only for a machine caller, which a member's page is not: the owner's refusal is a fault, the one scripted answer */
@@ -109,7 +113,9 @@ test("R48 defining a sweep sends the fields sweepset declares and starts nothing
   const u = await team();
   const q = await open(u);
   fill(q, { "sw-title": "", "sw-budget": "50" });
-  assert.ok(saysIn((await press(q, "sweepset", { reason: "x" })).slot(), "capture.fieldneeded", { field: word("screen.watching.sweepdef.title") }));
+  /* an empty field is named, and the words say nothing was sent (shell.field.needed; every-screen section 7) */
+  assert.ok(saysIn((await press(q, "sweepset", { reason: "x" })).slot(), "shell.field.needed", { field: word("screen.watching.sweepdef.title") }));
+  assert.equal(q.byOp("sweepset").length, 0);
 });
 
 test("R48 ratifying: the project's owner is offered Ratify, with the scope and budget shown and the ratify sentence by key; a non-owner is offered none and told who to ask", async () => {
