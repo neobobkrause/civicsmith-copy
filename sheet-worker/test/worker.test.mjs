@@ -1,4 +1,4 @@
-/* The committed bundle, booted under workerd (miniflare) with its wasm as the CompiledWasm part the platform compiles
+/* The bundle, built from the checkout (R18) and booted under workerd (miniflare) with its wasm as the CompiledWasm part the platform compiles
  * at upload: the path a deployed member takes, end to end, through a real R2 binding. */
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { Miniflare } from "miniflare";
 import * as contract from "../src/contract.mjs";
 import { workbook } from "./xlsx.mjs";
-import { MEMBER_DIR, WASM_PATH, SHA } from "./helpers.mjs";
+import { MEMBER_DIR, WASM_PATH, SHA, builtBundle } from "./helpers.mjs";
 
 const BUNDLE = `${MEMBER_DIR}dist/sheet-worker.bundled.mjs`;
 
@@ -14,7 +14,7 @@ function boot(bindings) {
   return new Miniflare({
     modulesRoot: MEMBER_DIR,
     modules: [
-      { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
+      { type: "ESModule", path: BUNDLE, contents: builtBundle().bundle.toString("utf8") },
       { type: "CompiledWasm", path: WASM_PATH, contents: readFileSync(WASM_PATH) },
     ],
     compatibilityDate: "2026-07-01",

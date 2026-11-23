@@ -32,7 +32,7 @@ A standalone Cloudflare Worker, reached only through the plane's `SHEET_WORKER` 
 - **R9** [met] Refused `{ok: false, reason: "UNKNOWN"}` with HTTP 404.
 
 **Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
-- **R18** [not yet met] `sheet-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `sheet-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way. The engine's generated glue (`src/enginelib.mjs`, `src/enginelib-tz.mjs`) stays committed.
+- **R18** [met] `sheet-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `sheet-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way. The engine's generated glue (`src/enginelib.mjs`, `src/enginelib-tz.mjs`) stays committed.
 
 ## Private
 
