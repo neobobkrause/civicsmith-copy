@@ -112,7 +112,7 @@ Home's four areas lead on: Investigation to `dash-project`, Action to `dash-acti
 
 ### 3.6 The path
 
-A navigation landmark "Where you are" (`shell.path`) at the top of every working screen: each earlier step a link back (explained "Back to {place}.", `shell.crumb.back`), "›" between, the screen's own name last and current. The setup, public and published frames draw no path.
+A navigation landmark "Where you are" (`shell.path`) at the top of every working screen: each earlier step a link back (explained "Back to {place}.", `shell.crumb.back`), "›" between, the screen's own name last and current. The setup, public and published frames open with their path too, as `mock-shell.js`' `PATH` holds it (`interface-shell` R8): the team's name, a link to the team's page, then the screen's own name; `front` draws the team's name alone, and `setup` its own name alone.
 
 ## 4. Signing in, staying signed in, the idle lock and signing out
 
@@ -295,3 +295,4 @@ The rail (section 3) stands as built. The seven navigation categories of the Roa
 - 22 Nov 2026: design-silent lines settled (decisions.md section 3).
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
+- 23 Nov 2026, tranche t1: corrected on ARCH's word to the requirement the product follows: section 3.6, the setup, public and published frames open with their path (`interface-shell` R8).

@@ -361,7 +361,7 @@ The website and the installer are separate programs from the team's Civicsmith: 
 
 | Control | When offered | Leads to |
 |---|---|---|
-| A1. button "Claim it and become its administrator" (`screen.setup.claim.button`; registry `act.claim.label.setup` "Claim with the one-time password") | S1 | S2, signed in as the founder |
+| A1. button "Claim with the one-time password" (`act.claim.label.setup`; `interface-shell` R11, `screens-entry` R9) | S1 | S2, signed in as the founder |
 | A2. button "Show my recovery codes" (`act.recoverycodesissue.label.setup`) | S2, codes not yet shown | the ten codes, once |
 | A3. "Skip for now" (`setup.skip`), explained by `setup.skip_does` | each part 2 to 8 | the part marked "Skipped"; nothing sent |
 | A4. button "Name the team" (`act.groupnameset.label.setup`) | part 2 | the name saved; "Saved. Your team is now called {name}." |
@@ -461,12 +461,13 @@ The website and the installer are separate programs from the team's Civicsmith: 
 
 ## Differences seen in the code
 
-- The public and setup frames draw no path; the design draws one ("Lakeshore Tenants › Forgot your password" and the like) (`bio-plane/src/interface-shell/browser.mjs:1364-1367`).
+- The public and setup frames draw no path; the design draws one (section 3.6 of `every-screen`) ("Lakeshore Tenants › Forgot your password" and the like) (`bio-plane/src/interface-shell/browser.mjs:1364-1367`).
 - `install` draws no "Check my account" (S5, S6, A12 to A14) and no record region (S2) (`newgroup/src/ui.mjs:270-305`).
-- `setup` A1 is drawn "Claim it and become its administrator" (`screen.setup.claim.button`); the registry's label is "Claim with the one-time password" (`bio-plane/src/screens-entry/setup.mjs:166`).
+- `setup` A1 is drawn by the old key `screen.setup.claim.button`, not by the act's label `act.claim.label.setup` "Claim with the one-time password" (`bio-plane/src/screens-entry/setup.mjs:166`; `screens-entry` R9, PR 1213).
 
 ## Changes
 
 - 22 Nov 2026: written.
 - 22 Nov 2026: words with no row decided (words-new.md).
 - 22 Nov 2026: corrected to ARCH's judgment of the code differences (PR 1136).
+- 23 Nov 2026, tranche t1: corrected on ARCH's word to the requirement the product follows: setup A1 is labelled by `act.claim.label.setup` (`interface-shell` R11, `screens-entry` R9); the public and setup frames' path note points to every-screen section 3.6.
