@@ -50,7 +50,7 @@ export const PREPARED = (o = {}) => ({ ok: true, id: "FIL-2026-0101", text: "We 
   template: null, disclosure: null, advisory: null, offers: [], ...o });
 /** affordances' vocabularies: the product's kinds and `labels` for the profile's own. */
 export const VOCAB = (kinds = ["records_request", "request_for_comment", "grand_jury", "other"], labels = {}) => ({ vocabularies: { action_kind: kinds,
-  action_kind_labels: labels, action_basis_kinds: ["rests_on", "advances"], risk_tiers: [1, 2, 3] } });
+  action_kind_labels: labels, action_basis_kinds: ["rests_on", "advances"], risk_tiers: { 1: "file freely", 2: "take care", 3: "counsel first", undetermined: "not determined" } } });
 /** A project row as `list` answers it. */
 export const PROJECTS = ok({ bundles: [{ bundle_id: PROJECT, title: "The Coliseum lease" }] });
 
