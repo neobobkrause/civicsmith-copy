@@ -48,6 +48,7 @@ import { caseTensionsOf, caseDocumentBlocks, whatChangedOf, lensOf, LENS_HEAD,
          lensClosingSentencesOf, workingOnOf, methodOf, materialsOf, standingOf, gradingFactsOf, passagesOf,
          caseDocumentRequiresMaterials, caseDocumentStatesMemberBlocks } from "../case-grammar/index.mjs";
 import { caseFilePath, caseFileEntryOf, calculationsOf, timelineOf, signedCitations } from "../case-grammar/index.mjs";
+import { memberBasisVersionOf } from "../case-grammar/index.mjs";
 import { parseFrontmatter } from "../record-grammar/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { rowOf } from "./checks.mjs";
@@ -1391,6 +1392,17 @@ export class PublicRead {
        `body.falsifies` to carry before the finding's own bytes' words; null where the document states none. */
     const stated = signed ? caseWordsOf(signed.fm) : null;
     for (const f of findings) f.case_words = stated ? (stated.get(f.bundle_id) ?? null) : null;
+    /* R45 (K5186; `case-grammar` R34): each member's basis version, its name and identity, as the signed document froze it
+       at prepare: `{recorded, name, identity}`, read with `case-grammar`'s one reading and never from `basis-versions` live;
+       `recorded: false` where the document does not state it (undetermined, never filled, R13). Null where no signed
+       document is held, where an order withholds the document, or where it withholds the finding (R28). The case's header
+       list (DEC-34) names each served member's version beside it, in the findings' order; no version is composed for the
+       case (R11). */
+    const versioned = !!signed && !docWithheld;
+    for (const f of findings) f.basis_version = versioned && !f.withheld ? memberBasisVersionOf(signed.fm, f.bundle_id) : null;
+    const basisVersions = versioned
+      ? findings.filter((f) => f.basis_version).map((f) => ({ bundle_id: f.bundle_id, ...f.basis_version }))
+      : null;
     /* R3 (DEC-112): a `/6` document's `method` and `materials` blocks, as signed, each copy's row with its `label_key`
        (T41; DEC-185 (1)); null for any other document. */
     const six = !!(signed && caseDocumentRequiresMaterials(signed.fm));
@@ -1510,6 +1522,9 @@ export class PublicRead {
              complete: state.complete, awaiting: state.awaiting,
              ...(asked ? { asked } : {}),
              findings,
+             /* R45 (DEC-34): the header list's basis versions, one row per served member, `{bundle_id, recorded, name,
+                identity}`; null where the signed document is not held or is withheld. */
+             basis_versions: basisVersions,
              tensions: disclosed.tensions, highlighted: disclosed.highlighted,
              /* K499: the member legs the conflict read could not examine, stated by the document; null where it states none. */
              tensions_unread: disclosed.unread,
