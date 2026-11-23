@@ -18,7 +18,7 @@ import { boot } from "../interface-shell/harness.mjs";
 import { SCREENS } from "../../../src/screens-intake/index.mjs";
 import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
 
-await registerDeclared(fileURLToPath(new URL("../../../../", import.meta.url)), registerDeclaredOps);
+await registerDeclared(fileURLToPath(new URL("../../../../", import.meta.url)), "screens-intake", registerDeclaredOps);
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
 const ADM = "adm-e7-0123456789abcdef", PASSWORD = "the founder's long password, E7", ORIGIN = "https://group.example";

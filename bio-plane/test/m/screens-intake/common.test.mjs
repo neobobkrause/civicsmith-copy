@@ -10,7 +10,8 @@ import { WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { SCREEN_REGISTRY } from "../../../src/wizard-scripts/index.mjs";
 import { OPS, SESSION_OPS, NEEDS } from "../../../src/op-declarations/index.mjs";
 import { pending } from "../interface-shell/harness.mjs";
-import { openWorld, members, html, text, main, refused, MEMBER, rawKeys, fill, press, word, hasWord } from "./page.mjs";
+import { openWorld, members, html, text, main, refused, MEMBER, rawKeys, fill, press, word, hasWord, screenOf } from "./page.mjs";
+/** @import { Screen } from '../../../src/screens-intake/index.mjs' */
 import { scanner } from "../file-safety/fixture.mjs";
 import { makeZip } from "../../make-zip.mjs";
 
@@ -72,7 +73,8 @@ const pathsOf = (F) => ({ capture: ["/app/capture/address", `/app/capture/addres
   inbox: ["/app/inbox", `/app/inbox/${F.knock || "KNOCK-2026-10-03-9c1f0a2b"}`] });
 const READ_FAULTS = (answer) => Object.fromEntries(READS.map((op) => [op, answer]));
 /* the ops a screen declares: its reads' and its acts' */
-const declared = (id) => { const s = SCREENS.find((x) => x.id === id); return [s, Object.values(s.reads({ subject: SHA, me: MEMBER, data: {}, ui: {} })).map((r) => r.op), s.acts.map((a) => a.op)]; };
+/** @type {(id: string) => [Screen, string[], string[]]} a screen, the ops it reads and the ops it acts by */
+const declared = (id) => { const s = screenOf(id); return [s, Object.values(s.reads({ subject: SHA, me: MEMBER, data: {}, ui: {} })).map((r) => r.op), s.acts.map((a) => a.op)]; };
 
 test("R8 R15 SCREENS meets interface-shell R21: eight registry screens, archive and the three of the T51 fix round among them, served by interfacePage without a throw", async () => {
   await full();   /* the world registers the owners' declarations the screens' acts are held to */
@@ -101,9 +103,10 @@ test("R8 every act names one op OPS holds and a member's session reaches, the re
     const listed = new Set([...(reg.acts || []).map((a) => (typeof a === "string" ? a : a.op)), ...(reg.owed || []).map((o) => o.op)]);
     if (listed.has("capture")) listed.add("captureupload");   /* draft-T46-interface.md §3 item 1 */
     for (const a of s.acts) {
-      assert.ok(OPS[a.op], `${s.id}: ${a.op} in OPS`);
+      const row = OPS[a.op];
+      if (!row) throw new Error(`${s.id}: ${a.op} in OPS`);
       /* interface-shell R12: SESSION_OPS gates mutating ops alone; a read is reached when the session's class is among its OPS classes */
-      assert.ok(OPS[a.op].mutating ? SESSION_OPS.member.has(a.op) : OPS[a.op].classes.includes("member"), `${s.id}: ${a.op} reached by a member's session`);
+      assert.ok(row.mutating ? SESSION_OPS.member.has(a.op) : (row.classes || []).includes("member"), `${s.id}: ${a.op} reached by a member's session`);
       assert.ok(listed.has(a.op), `${s.id}: ${a.op} the registry's`);
     }
     for (const op of listed) if (op !== "capture") assert.ok(s.acts.some((a) => a.op === op), `${s.id} draws ${op}`);
