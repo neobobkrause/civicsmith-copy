@@ -1,5 +1,5 @@
 /* control-plane R130 (fix round 9, G126a-c; K4811 (6), K4835 (2)): EACH WAY IN, KILLED BETWEEN THE PUT AND THE FILING, FINDS ONE JOB ROW. Through the real plane under
-   Miniflare (the seam kit, `r8-kit.mjs`), the object's own R2 and `/promote` route made to fail once by a fault entry of this file's own (the plane under it is the real one).
+   Miniflare (`rows-plane.mjs`), the object's own R2 and `/promote` route made to fail once by a fault entry of this file's own (the plane under it is the real one).
    control-plane #1 proved the clause for `captureupload`; this file proves it for the other four ways in R130 names:
      acquire       the fetched capture's put fails: the first answer promises no reading and no row stands; the member asks again: one `reading` row; again (held): still one
      the pull      `inboxpull`'s put of the knock's bytes under their digest fails (`PULL_NOT_STORED`): no row; the pull again: one row
@@ -9,21 +9,15 @@
 import "../../sandbox.mjs";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { makeKit } from "./r8-kit.mjs";
 import { makeZip } from "../../make-zip.mjs";
 import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
+import { rowsPlane, PLANE_ENTRY, MB, body, sha, te, pdfOf } from "./rows-plane.mjs";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
-const PLANE = join(HERE, "../../../src/plane/index.mjs");
-const MB = 1024 * 1024;
-const body = (a) => (a && a.result !== undefined ? a.result : a);
 const textOf = (v) => JSON.stringify(v ?? null).slice(0, 500);
 
 /* The fault entry: the plane as deployed, its `CAPTURES` bucket's `put` of a key naming a listed digest rejected `times` times (a key naming `except` is never failed, so a
    knock's inbox copy is kept and only the pull's put under the digest dies), and its `/promote` route thrown `times` times for a body naming a listed digest. */
-const FAULTS = (cfg) => `import plane, { Store as Base } from ${JSON.stringify(PLANE)};
+const FAULTS = (cfg) => `import plane, { Store as Base } from ${JSON.stringify(PLANE_ENTRY)};
 const CFG = ${JSON.stringify(cfg)};
 const left = new Map();
 const take = (key, times) => { const r = left.has(key) ? left.get(key) : times; if (r <= 0) return false; left.set(key, r - 1); return true; };
@@ -60,22 +54,18 @@ export default plane;
 
 /* one plane for the four ways in; each case's bytes are its own, so each fault touches one case */
 const tag = `r130k${Date.now().toString(36)}`;
-let k = null;
-k = makeKit({ tag, bindings: { DAEMON_TOKEN: `dmn-${tag}-0123456789abcdef`, KNOCK_FINGERPRINT_KEY: `knock-${tag}` },
-              serviceBindings: { SELF: (req) => k.mf.dispatchFetch(req) } });
-after(() => { try { k.mf.dispose(); } catch { /* gone */ } });
-const pdf = (words) => k.pdfOf(`${words} ${tag}`, 3 * MB);   /* a PDF over the inline ceiling: its reading follows by the job table */
+const pdf = (words) => pdfOf(`${words} ${tag}`, 3 * MB);   /* a PDF over the inline ceiling: its reading follows by the job table */
 const ACQ = pdf("The acquired agenda of the water board");
 const KNOCK = pdf("The knocked letter about the hearing");
 const UP = pdf("The uploaded minutes of the finance committee");
-const entries = Array.from({ length: 4 }, (_, i) => ({ name: `m${i + 1}.txt`, data: k.te(`Member ${i + 1} of the archive ${tag}. Marker R130M${i + 1}${tag}.\n`) }));
+const entries = Array.from({ length: 4 }, (_, i) => ({ name: `m${i + 1}.txt`, data: te(`Member ${i + 1} of the archive ${tag}. Marker R130M${i + 1}${tag}.\n`) }));
 const ZIP = makeZip(entries);
-const sha = k.sha;
 const STRUCK = sha(entries[1].data);
-const ready = k.mf.setOptions({ ...k.OPTIONS, script: FAULTS({
+const k = rowsPlane({ tag, script: FAULTS({
   putFail: [{ sha: sha(ACQ), times: 1 }, { sha: sha(KNOCK), times: 1, except: "inbox/" }, { sha: STRUCK, times: 1 }],
   promoteFail: [{ sha: sha(UP), times: 1 }],
-}), scriptPath: join(HERE, "r130-fault-entry.worker.mjs") });
+}) });
+after(() => { try { k.mf.dispose(); } catch { /* gone */ } });
 
 /* the `reading` rows a digest has, by its digest: those owed, or, when none is owed, the last run of the one that has ended (a `last` entry is the digest's own and names
    no digest; the plane keeps one for each kind, so an ended row counts once). Read as the administrator, who sees every digest's rows: a capture no document holds yet is
@@ -85,8 +75,8 @@ async function readingRows(_auth, digest) {
   const owed = (w.owed || []).filter((r) => r.kind === "reading");
   return owed.length ? owed.map((r) => r.sha) : (w.last || []).filter((r) => r.kind === "reading").map(() => digest);
 }
-let annOnce = null;
-const ann = async () => { await ready; return (annOnce ??= (await k.ownerOf("r130-ann")).auth); };
+/* the acts are the founder's: the clause is about the rows each way in leaves, which any member's act leaves alike */
+const ann = () => k.founder();
 
 test("R130 (G126; acquire): an acquire whose capture's put dies promises no reading and leaves no row; asked again it registers exactly one `reading` row, and the bytes asked a third time leave one", { timeout: 600000 }, async () => {
   const auth = await ann();
@@ -112,7 +102,7 @@ test("R130 (G126; the pull): a pull whose put under the knock's digest dies is a
   const knock = body(knocked);
   assert.equal(knock.ok, true, textOf(knocked));
   assert.equal(knock.sha256, digest);
-  const pull = async () => body((await k.post(auth, "inboxpull", { knockId: knock.knockId })).body);
+  const pull = async () => body(await k.post(auth, "inboxpull", { knockId: knock.knockId }));
   const first = await pull();
   assert.equal(first.ok, false, "the pull that died is not answered as a pull: " + textOf(first));
   assert.equal(first.reason, "PULL_NOT_STORED", textOf(first));
@@ -126,8 +116,7 @@ test("R130 (G126; the pull): a pull whose put under the knock's digest dies is a
 test("R130 (G126; promote's follow): a promotion that dies before it files leaves the upload's one row and no second; promoted again, the follow registers nothing twice: one `reading` row", { timeout: 600000 }, async () => {
   const auth = await ann();
   const digest = sha(UP);
-  const res = await k.plane(`/api/?op=captureupload&statement=minutes&name=minutes.pdf&type=${encodeURIComponent("application/pdf")}`, { method: "POST", headers: auth, body: UP });
-  const up = body(await res.json());
+  const up = await k.upload(auth, UP, "minutes.pdf", "application/pdf");
   assert.equal(up.ok, true, textOf(up));
   const before = await readingRows(auth, digest);
   assert.ok(before.length <= 1, "at most one row before the filing: " + textOf(before));
@@ -144,7 +133,7 @@ test("R130 (G126; promote's follow): a promotion that dies before it files leave
 test("R130 (G126; the archive door): a member whose put dies while an archive is unpacked stays owed (`unpack_pending`), the plane's tick files it, and each member ends with exactly one `reading` row", { timeout: 900000 }, async () => {
   const auth = await ann();
   const project = await k.projectOf(auth, `R130 archive ${tag}`);
-  k.serve("bundle.zip", ZIP, { type: "application/zip" });
+  k.serve("bundle.zip", ZIP, "application/zip");
   const press = await k.acquire(auth, { locator: "https://www.example.gov/files/bundle.zip", project });
   assert.equal(press.status, 200, textOf(press.body));
   assert.equal(press.body.unpack_pending, true, "the member whose put died is owed to the archive's `unpack` row: " + textOf(press.body));
