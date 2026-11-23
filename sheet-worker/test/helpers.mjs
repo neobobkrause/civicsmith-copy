@@ -1,7 +1,8 @@
 /* What the suites share: the real engine compiled from the vendored wasm, a member over it, a recording R2 stand-in
  * and request helpers. A helper, not a suite. */
 import "../../bio-plane/test/sandbox.mjs";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { makeEngine } from "../src/enginecore.mjs";
 import { makeMember } from "../src/member.mjs";
@@ -90,5 +91,32 @@ export async function recomputeVia(member, bytes, env = {}) {
   const r2 = bucket({ [`bio/captures/${SHA}`]: bytes });
   return call(member, post({ capture_sha: SHA, store: "bio" }), { ...ON, CAPTURES: r2.binding, ...env });
 }
+
+/** R18: the bundle and its manifest are built, never committed. Builds them into `dist/` with the member's own
+ *  `scripts/build.mjs`, and reads them back, while holding `dist/.building` (made and removed by this process), so
+ *  that test files run at once never read a half-written bundle. Built once in each process.
+ *  @returns {{bundle: Buffer, manifest: any}} the bundle's bytes and the manifest, parsed
+ *  @throws {Error} when the build fails, or another build holds the lock past a minute */
+export function builtBundle() {
+  if (built) return built;
+  const lock = `${MEMBER_DIR}dist/.building`;
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    try { mkdirSync(lock); break; } catch (e) {
+      if (e.code !== "EEXIST") throw e;
+      if (Date.now() > deadline) throw new Error(`${lock} is held past a minute; remove it if no build is running`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
+  try {
+    execFileSync(process.execPath, [`${MEMBER_DIR}scripts/build.mjs`], { cwd: MEMBER_DIR, stdio: "pipe" });
+    built = {
+      bundle: readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`),
+      manifest: JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8")),
+    };
+  } finally { rmSync(lock, { recursive: true, force: true }); }
+  return built;
+}
+let built = null;
 
 export { makeEngine, makeMember };
