@@ -59,7 +59,7 @@ test("R19 a machine writes only a proposal: it never drafts, revises, submits, a
   const a = approved(w, { name: "A" });
   const before = w.snapshot();
   const M = { author: MACHINE, by: MACHINE, viewer: MACHINE };
-  const acts = [
+  const acts = /** @type {[any, string][]} */ ([
     [w.wz.wizardDraft({ project: w.P, name: "N", recorded: [], ...M }), "MACHINE_CANNOT_DRAFT_WIZARD"],
     [w.wz.wizardRevise({ version: d.version, steps: STEPS, ...M }), "MACHINE_CANNOT_DRAFT_WIZARD"],
     [w.wz.wizardSubmit({ version: d.version, ...M }), "MACHINE_CANNOT_DRAFT_WIZARD"],
@@ -69,7 +69,7 @@ test("R19 a machine writes only a proposal: it never drafts, revises, submits, a
     [w.wz.wizardRetire({ version: d.version, reason: "r", ...M }), "MACHINE_CANNOT_APPROVE_WIZARD"],
     [w.wz.wizardEditorGrant({ member: "frank", by: MACHINE }), "NOT_AN_ADMIN"],
     [w.wz.wizardEditorRevoke({ grant: "WEG-2026-0000", by: MACHINE }), "NOT_AN_ADMIN"],
-  ];
+  ]);
   for (const [r, c] of acts) assert.deepEqual([r.ok, r.reason], [false, c]);
   assert.deepEqual(w.snapshot(), before, "nothing written");
   const p = w.wz.wizardPropose({ script: a.script, steps: STEPS, why: "w", ...M, proposer: MACHINE });
