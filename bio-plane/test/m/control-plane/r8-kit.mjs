@@ -15,9 +15,15 @@ import "./register-declared.mjs";
 import { wrapScript } from "./wrap-entry.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
+/** @type {number} one mebibyte */
 export const MB = 1024 * 1024;
+/** @type {string} the group's stated bias, as the seam's fixtures write it */
 export const BIAS = "This group holds that contracts should be adopted in public session.";
 
+/**
+ * The seam kit over a Miniflare plane of its own; the caller disposes `mf`.
+ * @param {{tag?: string, counting?: boolean, bindings?: Record<string, any>, outbound?: any, serviceBindings?: any, workers?: any}} [options]
+ */
 export function makeKit({ tag = "r8kit", counting = false, bindings = {}, outbound = null, serviceBindings = null, workers = null } = {}) {
   const ADM = `adm-${tag}-0123456789abcdef`, PASSWORD = `the founder's long password, ${tag}`, ORIGIN = "https://group.example";
   const sha = (b) => createHash("sha256").update(b).digest("hex");

@@ -49,7 +49,9 @@ const EXTRA = {
   hold: ["act.actionholdrelease.label.hold", "act.actionholdrelease.does", "screen.action.pressure.kind", "screen.action.pressure.legal", "screen.action.pressure.retaliation", "screen.action.pressure.discrediting", "screen.action.pressure.other",
     "screen.start-send.draft.machine"],
   holdnotice: ["screen.holdnotice.how.email", "screen.holdnotice.how.message", "screen.holdnotice.how.person", "screen.holdnotice.how.other", "screen.start-send.sentat", "screen.start-send.how", "screen.start-send.outward", "screen.start-send.draft.template", "screen.start-send.draft.machine", "shell.unavailable.nothing"],
-  counsel: ["screen.person.kind.name", "screen.people.kind.organization", "filings.determination_superseded"],
+  // counsel draws the filings' own sentences for a prepared packet: the group's review, and each basis change's cause (DEC-260)
+  counsel: ["screen.person.kind.name", "screen.people.kind.organization", "filings.prepared_group_review", "filings.determination_superseded",
+    "filings.determination_flagged", "filings.finding_later_edition", "filings.standard_superseded"],
   "dash-action": ["home.needsyou.title", "screen.action.kind.other", "screen.plan.matter.n", "screen.actionnew.name", "screen.queue.reminder.on", "act.reminderanswer.label.dash-action",
     "act.filingapprove.label.dash-action", "act.actioncreate.label.dash-action", "act.reminderanswer.does", "act.taskresolve.does"],
 };
