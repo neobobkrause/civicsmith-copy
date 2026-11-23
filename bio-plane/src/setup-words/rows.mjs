@@ -6,8 +6,14 @@
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
    and each row are frozen (R3). Written by `node bio-plane/src/setup-words/build.mjs` from the repository root
    (`--check` finds it stale); bio-plane/test/m/setup-words/ checks it. */
+/**
+ * One word: [key, en, note, means, protected, origin] (R1, R15).
+ * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
+ */
+/** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
 export const WORDS_COMMIT = "2f703a6723";
-export const WORD_ROWS = Object.freeze([
+/** @type {readonly WordRow[]} the list, frozen with each row (R3) */
+export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
   ["weight.reasoned.name","Asks for a reason",null,"Asks for a reason: you are asked why, and your reason becomes part of the record.",true,"design"],
   ["weight.terminal.name","Ends something",null,"Ends something: it ends or removes something; opening it again takes a reason.",true,"design"],
@@ -26990,4 +26996,4 @@ export const WORD_ROWS = Object.freeze([
   ["workbooks.declared.bind","workbook-directed: keyed by (capture, project) and a range; writes a binding and moves no bundle",null,null,false,"code"],
   ["workbooks.declared.recordcheck","workbook-directed: keyed by (capture, project); a second member's check, disclosed and never a gate",null,null,false,"code"],
   ["workbooks.index.k1447_grade_rule","K1447 (ii): each bound input at its capture grade capped by its derivation; an unbound input is testimony (D); a third-party engine's value is a derivation step, undetermined until measured; the method is disclosed, not graded",null,null,false,"code"],
-].map((row) => Object.freeze(row)));
+].map((row) => Object.freeze(row))));
