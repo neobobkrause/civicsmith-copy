@@ -1,7 +1,6 @@
 /* The subject of pdf-worker's HTTP suites: a fresh build of `src/index.mjs`, made by the fleet recipe
- * (`bio-plane/scripts/fleet-bundle.mjs`, the one the committed bundle is made by) into a temporary file, so the suites
- * test the source as it stands. That the committed `dist/pdf-worker.bundled.mjs` equals a fresh build is
- * `bio-plane/test/system/fleetbundles.test.mjs`'s guard (FL-9), outside this module's tests. Not product code. */
+ * (`bio-plane/scripts/fleet-bundle.mjs`, the one `scripts/build.mjs` builds `dist/` with) into a temporary file, so the
+ * suites test the source as it stands. No bundle is committed (R45). Not product code. */
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
