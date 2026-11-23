@@ -408,8 +408,6 @@ export class Publication {
    *  `court-order` entry of a case: `courtOrderOf(case, entry)` → `{seq, effect, editions, parts}` or null. Called as
    *  `registerOrderSource(source)` or `registerOrderSource(module, source)`; a second registration is refused
    *  `PROVIDER_DECLARED`, one without the door `PROVIDER_MALFORMED`. With none, every stamp is refused STAMP_NO_ORDER.
-   *  @param {*} moduleOrSource the registering module's name, or the source itself
-   *  @param {*} [maybeSource] the source, when the first argument names the module
    *  @returns `{ok: true, module}`, or `{ok: false, reason}` with `PROVIDER_MALFORMED` or `PROVIDER_DECLARED`
    */
   registerOrderSource(moduleOrSource, maybeSource = undefined) {
@@ -654,7 +652,7 @@ export class Publication {
    *  the per-case discharge of revision flags (R5), the bar projection, the `published_bundles` row, every file's hash
    *  and the published graph (R35). Re-committing bytes already published at that edition is a retry and answers
    *  `existed: true`, writing nothing new. Who may publish is ratification's.
-   *  @param {{bundleId?: *, bundleSha?: *, edition?: *, title?: *, completeness?: *, strength?: *, memberCarriesBlocks?: *, group?: *, edges?: *, shas?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, sigArmored?: *, deliveredBy?: *, at?: *}} [args]
+   *  @param {{[key: string]: *, bundleId?: *, bundleSha?: *, edition?: *, title?: *, completeness?: *, strength?: *, memberCarriesBlocks?: *, group?: *, edges?: *, shas?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, sigArmored?: *, deliveredBy?: *, at?: *}} [args]
    *    `bundleId`, `bundleSha`, `edition`, `title`, `completeness`, `strength`, `memberCarriesBlocks`,
    *    `group`, `edges`, `shas` (each `{path, sha256, kind, bytes}`), `attestorKey`, `attestorMember`, `gateVersion`,
    *    `sigArmored`, `deliveredBy` and `at`
@@ -1105,7 +1103,7 @@ export class Publication {
    *  case another project owns `CASE_PRODUCTION_DIVERGED`, nothing written. It answers `awaiting` (roster members not
    *  yet published at their pins) and `state`, the case edition's state (`caseEditionState`). Who may sign, the
    *  document's staleness and the flag discharge are ratification's.
-   *  @param {{case?: *, caseId?: *, edition?: *, project?: *, scope?: *, completeness?: *, biasAcknowledgement?: *, bar?: *, roster?: *, sigArmored?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, deliveredBy?: *, at?: *}} [args]
+   *  @param {{[key: string]: *, case?: *, caseId?: *, edition?: *, project?: *, scope?: *, completeness?: *, biasAcknowledgement?: *, bar?: *, roster?: *, sigArmored?: *, attestorKey?: *, attestorMember?: *, gateVersion?: *, deliveredBy?: *, at?: *}} [args]
    *    `case` (or `caseId`), `edition`, `project`, `scope`, `completeness`, `biasAcknowledgement`,
    *    `bar`, `roster` (each `{bundle_id, version_sha, role}`), `sigArmored`, `attestorKey`, `attestorMember`,
    *    `gateVersion`, `deliveredBy` and `at`
@@ -2197,9 +2195,6 @@ export class Publication {
      facts the control plane needs to build the manifest and nothing derived:
      in particular NO case-level strength, because there is no such thing —
      every member's frozen PAIR travels with that member.
-   *  @param {*} caseId
-   *  @param {*} ed the edition
-   *  @param {*} [group]
    *  @returns the case edition's state, or null when there is no such published case edition
    */
   caseEditionState(caseId, ed, group = null) {

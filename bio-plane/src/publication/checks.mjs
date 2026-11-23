@@ -39,7 +39,6 @@ function wordAsWritten(key) {
 /** R33 (DEC-187 (4), DEC-188 (7); K2483): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`)
    this module's rows answer, each read by key from `setup-words`' list (protected); `{photo}` is left for the screen,
    the answer naming the photos.
- *  @type {{[key: string]: string}}
  */
 export const PUBLICATION_WORDS = Object.freeze(Object.fromEntries(
   ["photo.refused.changed.signed", "document.refused.changed"].map((key) => [key, wordAsWritten(key)])));
@@ -110,8 +109,8 @@ export const CASE_SOURCES_CHECKS = {
 
 /** A refusal from one of this module's rows: `reason` and `code` one literal, with its check and translation. The
  *  code is a string literal at every call site (DEC-49); a code with no row here is a defect and throws, loudly.
- *  @param {string} code one of this module's refusal codes
- *  @returns {{code: string, check: string, translation: string}}
+ *  @param {*} code one of this module's refusal codes
+ *  @returns `{code, check, translation}`
  *  @throws {Error} when the code has no row with a translation
  */
 export function rowOf(code) {
