@@ -125,7 +125,7 @@ test("R10, R4: the act lists name each of T23's ops, so its stamps are named —
   assert.deepEqual([...O.WHAT_CHANGED_PROPOSAL_ACTIONS], ["whatchangedpropose"]);
   assert.deepEqual([...O.WHAT_CHANGED_READS], ["whatchangeddrafts"]);
   assert.deepEqual([...O.LINK_SWEEP_READS], ["sweeps"]);
-  assert.equal(O.MONITORING_READS, undefined);
+  assert.equal(Object.hasOwn(O, "MONITORING_READS"), false);
   assert.deepEqual([...O.NETWORK_NOTICES_ACTIONS], ["noticepost"]);
   assert.deepEqual([...O.NETWORK_NOTICES_READS], ["noticeprepare", "notices", "directorysubmission"]);
   assert.deepEqual([...O.NETWORK_NOTICES_BY], ["noticeprepare", "noticepost"]);

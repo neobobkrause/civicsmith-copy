@@ -265,8 +265,8 @@ test("R5: the fence's composer throws when either letter is absent; op=acquire's
    + "is held here (N80)", () => {
   for (const [c, u] of [[null, "A"], ["B", null], [undefined, undefined], ["", "A"], ["B", ""]])
     assert.throws(() => A.attestFence(c, u));
-  assert.equal(A.acquireGradeNote, undefined);
-  assert.equal(A.ACQUIRE_GRADE_NOTE, undefined);
+  assert.equal(Object.hasOwn(A, "acquireGradeNote"), false);
+  assert.equal(Object.hasOwn(A, "ACQUIRE_GRADE_NOTE"), false);
 });
 
 test("R5: GROUND_PROMPT and every label use none of AND, OR, disjunction, branch or ground (DEC-32 clause 1)", () => {
@@ -530,7 +530,9 @@ test("R1 R12 R24: N345's ops — contradiction's op map, with resolutiondefect a
 
 /* K516: contradiction's measures (its R39, R40) are in-process and no op, so no registry names them. */
 test("R12: contradiction's measures are no op and are named in no registry", () => {
-  assert.ok(!Object.keys(contradictionOps({}, new URL("http://x/"), {})).includes("contradictionmeasures"));
+  /* only the map's names are read and no arm is called, so a stand-in serves for the instance */
+  const standIn = /** @type {any} */ ({});
+  assert.ok(!Object.keys(contradictionOps(standIn, new URL("http://x/"), {})).includes("contradictionmeasures"));
   for (const t of [NON_ACTS, RUNGS, RUNG_ABSENT]) assert.ok(!Object.hasOwn(t, "contradictionmeasures"));
   assert.ok(![...ACTS, ...CAPTURE_ACTS, ...PER_ITEM_ACTS].some((a) => a.id === "contradictionmeasures"));
 });
@@ -958,7 +960,7 @@ test("R64 R41: the sentence explainRefusal gives for a code no catalogue row hol
    + "composes one (NOT_CATALOGUED is gone)", () => {
   const e = A.explainRefusal({ op: "conclude", code: "SOMETHING_NEW", rowOf: () => null });
   assert.deepEqual([e.translation, e.check, e.detail], [null, null, word("refusal.uncatalogued")]);
-  assert.equal(A.NOT_CATALOGUED, undefined);
+  assert.equal(Object.hasOwn(A, "NOT_CATALOGUED"), false);
   /* control: a catalogued code answers its row and no detail */
   const c = A.explainRefusal({ op: "conclude", code: "NO_CONCLUSION", rowOf: () => ({ translation: "x", check: "C-1" }) });
   assert.deepEqual([c.translation, c.check, c.detail], ["x", "C-1", null]);

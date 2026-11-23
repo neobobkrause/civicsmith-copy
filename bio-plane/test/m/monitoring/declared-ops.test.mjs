@@ -83,7 +83,7 @@ test("R78 the declarations are the shape the owners' registry reads, each op dec
   assert.deepEqual([DECLARED_OPS.namedrequestset.classes, DECLARED_OPS.namedrequests.classes, DECLARED_OPS.namedrequests.mutating],
     [["admin", "member"], ["admin", "member", "probe"], false]);
   /* test-support's collector finds them, each op once, with no other module declaring one of them */
-  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)));
+  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "store-assembly");
   for (const op of OPS) assert.deepEqual([owners[op], ops[op] === DECLARED_OPS[op] || JSON.stringify(ops[op]) === JSON.stringify(DECLARED_OPS[op])], ["monitoring", true], op);
   assert.deepEqual(duplicates.filter((d) => OPS.includes(d.op)), []);
 });
