@@ -46,10 +46,11 @@ export const plan = Object.freeze({
   parts: {
     readOnly: readOnly, actName: actName, citeOf: citeOf,
     // The Screens page (deciding-and-acting, `plan`): a word the design explains on hover carries its tip, each sentence by key
-    // (`screen.plan.tip.*`); a tip holding a sample fact of the drawing is not drawn (R19)
-    tip: function (cs, html, keys, fills) {
+    // (`screen.plan.tip.*`), each saying only what the record holds (U17); `own`, where given, is the item's own words, said after
+    // the design's (a checkpoint's card shows what the checkpoint tests: interface-shell R106)
+    tip: function (cs, html, keys, fills, own) {
       if (!html) return html;
-      const said = keys.map(function (k) { return cs.w(k, fills); }).join(" ");
+      const said = keys.map(function (k) { return cs.w(k, fills); }).concat(own ? [String(own)] : []).join(" ");
       return '<span class="cs-card" tabindex="0" data-level="1" data-tip="' + cs.esc(said) + '">' + html + "</span>";
     },
     // The Screens page's form messages under their folds: each message's sentences, by key, said together
@@ -219,6 +220,11 @@ export const plan = Object.freeze({
     phName: function (cs, ph, i) {
       return ph && typeof ph.name === "string" && ph.name ? cs.esc(ph.name) : cs.w("screen.plan.phase.unnamed", { n: String(i + 1) });
     },
+    // U17: a scenario is named in a sentence by its own name, else by its number in the plan
+    scenName: function (scenarios, n) {
+      const sc = (Array.isArray(scenarios) ? scenarios : []).find(function (x) { return String(x.scenario) === String(n); });
+      return sc && typeof sc.name === "string" && sc.name ? sc.name : String(n);
+    },
     // R44: the second and later phases of a scenario's form carry their own ids, the first keeps the plain ones.
     sfx: function (k) { return k ? "-p" + (k + 1) : ""; },
     // R44: one phase of the scenario form: its name, options, start, check-back days, test and where each judgement goes.
@@ -295,7 +301,7 @@ export const plan = Object.freeze({
             // C63: the other checks name an option or a phase by its place in the list, never by its id ("opt-1", "p1")
             const said = P.checkSays(cs, P, c, options, p.scenarios);
             const line = said || cs.esc(c.says || c.check || "");
-            return "<p>" + (c.check === "no_hostile_branch" ? P.tip(cs, line, ["screen.plan.tip.hostile", "screen.plan.tip.hostile_example"]) : line) + "</p>";
+            return "<p>" + (c.check === "no_hostile_branch" ? P.tip(cs, line, ["screen.plan.tip.hostile", "screen.plan.tip.hostile_why", "screen.plan.tip.hostile_example"], { scenario: P.scenName(p.scenarios, c.scenario) }) : line) + "</p>";
           }).join("") + "</div>"
         : "";
 
@@ -331,7 +337,7 @@ export const plan = Object.freeze({
           : s.escalation && s.escalation.id && s.escalation.state === "open"
           ? cs.act("itemtakeup", { label: "screen.plan.takeup", data: { kind: "escalation_stage", escalation: s.escalation.id, stage: String(s.escalation.stage || "") } }) : "";
         return cs.row("<b>" + cs.w("screen.plan.matter.n", { n: String(i + 1) }) + "</b>", P.matterName(cs, s, titles)
-          + '<span class="meta">' + (s.support === "hypothetical" ? P.tip(cs, cs.w("screen.plan.support.hypothetical"), ["screen.plan.tip.hypothetical"])
+          + '<span class="meta">' + (s.support === "hypothetical" ? P.tip(cs, cs.w("screen.plan.support.hypothetical"), ["screen.plan.tip.hypothetical", "screen.plan.tip.hypothetical_why"])
             : cs.w("screen.plan.support." + (["established", "short"].includes(s.support) ? s.support : "undetermined")))
           + (s.why ? " · " + cs.esc(s.why) : "") + live + (esc ? " · " + esc : "") + "</span>", take, "");
       }).join("")) : "")
@@ -500,11 +506,18 @@ export const plan = Object.freeze({
       const chosenItems = options.map(function (o, i) { return { o: o, i: i }; }).filter(function (x) { return x.o.disposition === "chosen"; }).map(function (x) {
         return x.o.summary ? { value: x.o.id, text: x.o.summary } : { value: x.o.id, key: "screen.plan.option.unnamed", fills: { n: String(x.i + 1) } };
       });
-      const scenIn = scenarios.map(function (s) {
-        return "<h3>" + P.tip(cs, cs.esc(s.name || ""), ["screen.plan.tip.scenario"]) + (s.set_aside ? " · " + cs.w("screen.plan.setaside") : "") + "</h3>"
+      const scenIn = scenarios.map(function (s, si) {
+        // U17: "no branch yet for a refusal or a stall" only where the checks say so of this scenario; a later scenario not set
+        // aside is the plan's alternative, with the option it would start with where its first phase names one
+        const unbranched = checks.some(function (c) { return c.check === "no_hostile_branch" && String(c.scenario) === String(s.scenario); });
+        const first = ((s.phases || [])[0] || {}).options || [];
+        const startWith = first.length ? byName.get(first[0]) : "";
+        const keys = ["screen.plan.tip.scenario"].concat(unbranched ? ["screen.plan.tip.scenario_why"] : [],
+          si > 0 && !s.set_aside ? ["screen.plan.tip.alternative"].concat(startWith ? ["screen.plan.tip.alternative_start"] : [], ["screen.plan.tip.alternative_why"]) : []);
+        return "<h3>" + P.tip(cs, cs.esc(s.name || ""), keys, { option: startWith || "" }) + (s.set_aside ? " · " + cs.w("screen.plan.setaside") : "") + "</h3>"
           + cs.sheet((s.phases || []).map(function (ph, pi) {
             const judged = ph.judgement ? cs.w("screen.plan.judged." + (ph.judgement.judged === "met" ? "met" : "not_met")) + (ph.judgement.note ? " · " + cs.esc(ph.judgement.note) : "") : "";
-            const due = ph.checkpoint_due ? P.tip(cs, cs.due(String(ph.checkpoint_due), ""), ["screen.plan.tip.checkpoint"]) : "";
+            const due = ph.checkpoint_due ? P.tip(cs, cs.due(String(ph.checkpoint_due), ""), ["screen.plan.tip.checkpoint"], undefined, typeof ph.condition === "string" ? ph.condition : "") : "";
             const tookIt = (view.ui.took || {})["checkpoint:" + s.scenario + ":" + ph.id];
             // R53: the Judge control is drawn only once the checkpoint is due (by the page's clock); before, the day it can be judged
             const isDue = !!ph.checkpoint_due && String(ph.checkpoint_due).slice(0, 10) <= today;

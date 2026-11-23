@@ -78,7 +78,7 @@ test("R5: 'Move the action' to a state its edges allow, with the member's reason
 
 test("R5 (the Screens page's C10, how it ended): resolving says how it ended in the design's words and the member's own words, which are its reason; control: own words missing are asked for and nothing is sent", async () => {
   const p = await open(ROUTES.action, { ...DATA_PLANE, actionmove: ok({}) });
-  const fold = [...main(p).querySelectorAll("details.mk-details")].find((d) => text(p, d.querySelector("summary")) === W("screen.action.move.resolution"));
+  const fold = [...main(p).querySelectorAll("details.mk-details")].find((d) => text(p, d.querySelector("summary")) === W("screen.action.ended.head")); // U17: the fold is titled "How it ended"
   assert.ok(fold, "the fold");
   const offered = p.doc.getElementById("move-resolution").querySelectorAll("option").map((o) => [o.value, o.textContent]);
   assert.deepEqual(offered, ["complied", "denied", "escalated", "withdrawn", "completed"].map((r) => [r, W("screen.action.ended." + r)]));

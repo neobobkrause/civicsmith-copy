@@ -19,14 +19,31 @@ test("R1 (the Screens page's purpose and explanations): the plan's heading expla
   const h1 = main(p).querySelector("h1");
   assert.ok(plain(h1.getAttribute("data-tip")).includes(W("screen.plan.purpose")), "the purpose");
   for (const k of ["screen.plan.tip.hypothetical", "screen.plan.tip.enddate", "screen.plan.tip.enddate_why", "screen.plan.tip.hostile", "screen.plan.tip.hostile_example",
-    "screen.plan.tip.scenario", "screen.plan.tip.checkpoint"]) assert.ok(tipped(p, k), k);
+    "screen.plan.tip.scenario", "screen.plan.tip.checkpoint", "screen.plan.tip.hypothetical_why", "screen.plan.tip.scenario_why"]) assert.ok(tipped(p, k), k);
+  // U17: the hostile check's card names its scenario by name
+  assert.ok(tipped(p, "screen.plan.tip.hostile_why", { scenario: PLAN.scenarios[0].name }), "the hostile check names its scenario");
   assert.ok(tipped(p, "screen.plan.tip.scenario_phase", { n: "1", step: PLAN.options[0].summary }), "the phase, by its place and its options");
-  // control: the tips whose words hold the drawing's own sample facts are not drawn
-  for (const k of ["screen.plan.tip.hypothetical_why", "screen.plan.tip.checkpoint_why"]) assert.ok(!tips(p).some((t) => t.includes(W(k).slice(0, 30))), k);
+  // control (U17): one scenario only is no alternative, so no alternative card is drawn
+  assert.ok(!tipped(p, "screen.plan.tip.alternative"), "no alternative with one scenario");
   // control: a plan with no hostile check, no dates and no assumed matter draws none of those three
   const q = await open(ROUTES.plan, { ...DATA_PLANE, plan: ok({ ...PLAN, checks: [], subjects: PLAN.subjects.filter((s) => s.support !== "hypothetical"),
     options: PLAN.options.map((o) => ({ ...o, dates: [] })) }) });
   for (const k of ["screen.plan.tip.hypothetical", "screen.plan.tip.enddate", "screen.plan.tip.hostile"]) assert.ok(!tipped(q, k), k);
+  // control (U17): with no hostile check, the scenario's card does not say it lacks a branch for a refusal or a stall
+  assert.ok(!tipped(q, "screen.plan.tip.scenario_why"), "scenario_why only where the checks say so");
+});
+
+test("R1 (U17; interface-shell R106): a later scenario is the plan's alternative, with the option it starts with; a checkpoint's card says what the checkpoint tests in its own words", async () => {
+  const [first] = PLAN.scenarios;
+  const ph = { ...first.phases[0], condition: "The logs show the repair date" };
+  const second = { ...first, scenario: 2, name: "Auditor next", phases: [{ ...first.phases[0], id: "p1", options: ["opt-3"] }] };
+  const p = await open(ROUTES.plan, { ...DATA_PLANE, plan: ok({ ...PLAN, scenarios: [{ ...first, phases: [ph] }, second] }) });
+  for (const k of ["screen.plan.tip.alternative", "screen.plan.tip.alternative_why"]) assert.ok(tipped(p, k), k);
+  assert.ok(tipped(p, "screen.plan.tip.alternative_start", { option: "Complaint to the auditor" }), "the alternative's first option");
+  assert.ok(tips(p).some((t) => t.includes(W("screen.plan.tip.checkpoint")) && t.includes("The logs show the repair date")), "the checkpoint's own words");
+  // control: a scenario set aside is no alternative
+  const q = await open(ROUTES.plan, { ...DATA_PLANE, plan: ok({ ...PLAN, scenarios: [first, { ...second, set_aside: { reason: "later" } }] }) });
+  assert.ok(!tipped(q, "screen.plan.tip.alternative"), "a set-aside scenario draws no alternative card");
 });
 
 test("R1, R44 (the Screens page's folds): deciding the picked options sits under 'Decide the options you picked' with what a decision records; why an option is not added, a decision not recorded and a scenario not laid out are each said under its fold, every message with its second sentence", async () => {
@@ -98,7 +115,7 @@ const checkFolds = (p, set) => {
   for (const [summary, keys] of Object.entries(set)) {
     const f = foldOf(p, M(summary));
     assert.ok(f, summary);
-    assert.deepEqual([...f.querySelectorAll("p")].map((x) => text(p, x)), keys.map((k) => W(M(k))), summary);
+    assert.deepEqual([...f.querySelectorAll("p")].map((x) => text(p, x)), keys.map((k) => W(k.startsWith("refusal.") ? k : M(k))), summary);
   }
 };
 
@@ -108,10 +125,13 @@ test("R45, R50, R51 (the Screens page's form messages): each form of the matter 
     await choose(p, "mt-mode", mode);
     checkFolds(p, set);
   }
-  assert.ok(!text(p).includes(W(M("this_escalation_has_been_suspended_since_october"))), "control: the drawing's sample date is not said");
+  // U17: holding at the response clock says it is not proposed yet, then the refusal's own words; at another stage, no stage-3 sentence
   const r = await open(AT, STAGE(2, { proposed: [{ to: 3 }] }));
   await choose(r, "mt-mode", "escalationdecline");
-  checkFolds(r, { when_no_stage_is_proposed: ["there_is_nothing_to_hold_at"] });
+  checkFolds(r, { when_no_stage_is_proposed: ["stage_3_is_not_proposed_yet_missing", "there_is_nothing_to_hold_at", "refusal.EDGE_NOT_PROPOSED"] });
+  const r4 = await open(AT, STAGE(3, { proposed: [{ to: 4 }] }));
+  await choose(r4, "mt-mode", "escalationdecline");
+  checkFolds(r4, { when_no_stage_is_proposed: ["there_is_nothing_to_hold_at", "refusal.EDGE_NOT_PROPOSED"] });
   const s = await open(AT, { ...DATA_PLANE, escalation: ok({ ...ESCALATION, state: "suspended", proposed: [] }) });
   await choose(s, "mt-mode", "escalationresume");
   checkFolds(s, { when_it_is_not_suspended: ["this_escalation_is_open_not_suspended_so"] });
@@ -119,8 +139,24 @@ test("R45, R50, R51 (the Screens page's form messages): each form of the matter 
 
 test("R6, R50 (the Screens page's C6): an open escalation says why it cannot be ended under the design's three folds; control: a member who may not act is shown none of them", async () => {
   const p = await open(AT, STAGE(2));
-  checkFolds(p, { when_it_cannot_be_ended_compliance_is: ["an_escalation_ends_only_after_your_team", "record_it_then_end_the_escalation"],
-    when_it_cannot_be_ended_the_consequences: ["if_your_team_judges_the_breach_had"], when_it_cannot_be_ended_the_consequences_2: ["say_with_evidence_that_each_part_was"] });
+  // U17: each fold's sentence fills no {why}; the refusal's own words by its code follow (DEC-260)
+  checkFolds(p, { when_it_cannot_be_ended_compliance_is: ["compliance_is_not_restored_why", "refusal.COMPLIANCE_NOT_RESTORED", "an_escalation_ends_only_after_your_team",
+    "record_it_then_end_the_escalation"],
+    when_it_cannot_be_ended_the_consequences: ["whether_the_consequences_are_addressed_is_undetermined", "refusal.CONSEQUENCES_UNDETERMINED", "if_your_team_judges_the_breach_had"],
+    when_it_cannot_be_ended_the_consequences_2: ["the_consequences_are_not_addressed_why", "refusal.CONSEQUENCES_NOT_ADDRESSED", "say_with_evidence_that_each_part_was"] });
   const r = await open(AT, { ...STAGE(2), whoami: ok(READER) });
   assert.ok(!foldOf(r, M("when_it_cannot_be_ended_compliance_is")));
+});
+
+test("R6 (U17; the Screens page's matter S8, S10): the escalation says the stage it stands at by the stage's name, and a paused one the day its pause was recorded; control: an open one says no pause", async () => {
+  const p = await open(AT, STAGE(2));
+  assert.ok(text(p).includes(W(M("escalation.stands_at"), { stage: W(M("stage.2")) })), "stands at the notification stage");
+  assert.ok(!text(p).includes(W(M("escalation.paused_since"), { date: "" }).split("{")[0].slice(0, 30)), "control: no pause said while open");
+  const s = await open(AT, STAGE(2, { state: "suspended", proposed: [], history: [{ kind: "open", at: "2026-10-01T10:00:00Z" },
+    { kind: "suspend", at: "2026-10-14T10:00:00Z", reason: "waiting" }] }));
+  const said = text(s);
+  assert.ok(said.includes(W(M("escalation.stands_at"), { stage: W(M("stage.2")) })), "the stage, paused");
+  const head = W(M("escalation.paused_since"), { date: "\u0000" }).split("\u0000")[0];
+  assert.ok(head && said.includes(head), "paused since its date");
+  assert.ok(said.includes("2026") && /14|Oct/.test(said), "the pause's own day");
 });
