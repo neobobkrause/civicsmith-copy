@@ -64,8 +64,7 @@ test("R11: refusals in order — not authored (C-26.9), not proposed (C-26.10), 
     assert.deepEqual(r, notAnAdmin(by, INSTANCE_ADOPTION_ACT, { remedy: INSTANCE_ADOPTION_REMEDY, scope: "instance" }), who);
     assert.equal(r.message, `${row.translation} ${INSTANCE_ADOPTION_REMEDY}`);
   }
-  assert.match(INSTANCE_ADOPTION_REMEDY, /project you own/);
-  assert.match(INSTANCE_ADOPTION_REMEDY, /ask an administrator/);
+  assert.equal(INSTANCE_ADOPTION_REMEDY, word("bias.project_owners_set"));
   assert.equal(w.ops(`bundleId=${A}&author=mo&identity=member:mo&viewer=member:mo`).biasadopt instanceof Function, true);
   assert.equal((await w.ops(`bundleId=${A}&author=mo&identity=member:mo&viewer=member:mo`).biasadopt()).code, "NOT_AN_ADMIN");
   assert.equal(w.dump(), before, "every refusal writes nothing");
@@ -400,10 +399,9 @@ test("R26: a project statement that relaxes a group statement's scrutiny on its 
     loosens: { statement_id: "s1", bundle_id: A, locked: false }, names: null }]);
   assert.deepEqual(m.strictest_applied, [{ subject: SUBJ, effect: "scrutiny",
     applies: { statement_id: "s1", bundle_id: A, scope: "instance" }, withheld: { statement_id: "p1", bundle_id: PB, scope: "project" } }]);
-  assert.match(String(m.overrides_by_effect_stated), /must name the statement it loosens/);
-  assert.match(String(m.overrides_by_effect_stated), /group statement stands/);
+  assert.equal(m.overrides_by_effect_stated, word("bias.index.overrides_by_effect"));
   assert.doesNotMatch(String(m.overrides_by_effect_stated), /instance statement/, "DEC-149");
-  assert.match(String(m.strictest_applied_stated), /the stricter applies/);
+  assert.equal(m.strictest_applied_stated, word("bias.index.strictest_applied"));
   assert.deepEqual([m.statements.map((s) => s.statement_id), m.total], [["s1"], 1]);
   /* the looser adds nothing to the lens: the project's hash is the group's own */
   assert.equal(m.statements_sha, w.bias.biasManifest({ viewer: "admin" }).statements_sha);
@@ -423,7 +421,7 @@ test("R26: a project statement that licenses an inference a group statement bloc
   assert.deepEqual(m.overrides_by_effect, [{ statement_id: "p1", bundle_id: PB, subject: SUBJ, effect: "inference",
     loosens: { statement_id: "s1", bundle_id: A, locked: true }, names: null }]);
   assert.deepEqual(m.statements.map((s) => [s.statement_id, s.locked]), [["s1", true]]);
-  assert.match(String(m.overrides_by_effect_stated), /LOCKED group statement is a conformance error/);
+  assert.equal(m.overrides_by_effect_stated, word("bias.index.overrides_by_effect"));
   /* naming ANOTHER statement does not name this one: still an override by effect */
   const w2 = await lensWorld([S("s1", { kind: "inference", text: BLOCK }), S("s2", { subject: "ENT-2026-0099" })],
                              [S("p1", { kind: "inference", text: LICENSE, nullifies: "s2" })]);
