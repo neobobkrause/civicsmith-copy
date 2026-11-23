@@ -238,4 +238,14 @@ const words = ["screen.people.name", "screen.people.purpose", "act.search.label.
   "act.explore.label.people", "act.explore.does", "act.entitycreate.does",
   "state.empty", "state.loading", "state.failed", ...PEOPLE_KEYS];
 
+/**
+ * @typedef {Object} ScreenDef
+ * @property {string} id the registry screen's id
+ * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
+ * @property {(cs: *, view: *) => string} render the screen's markup
+ * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
+ * @property {Array<string>} words the word keys the screen draws
+ * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
+ */
+/** @type {Readonly<ScreenDef>} People: the directory of those the record follows, and adding one */
 export const PEOPLE_SCREEN = Object.freeze({ id: "people", reads, render, acts, words, parts: PARTS });
