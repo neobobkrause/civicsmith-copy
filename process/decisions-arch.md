@@ -1,4 +1,4 @@
-Length: 81 lines. Last section: "The design mock the walk compares against".
+Length: 86 lines. Last section: "The local walk's unreached states, and a reading not yet held".
 
 # civicsmith: ARCH's technical decisions
 
@@ -78,4 +78,9 @@ Decided: 23 Nov 2026.
 ## The design mock the walk compares against
 Decision: journey-check's design comparison (its `design.mjs`, R6 and R21) reads the design mock `docs/development/ux-substrate/layouts.html` from the checkout being walked, at the same commit as the build, and no longer reads it from git at `interface-assets`' `ASSETS_COMMIT`. R6 and R21 are reworded to say so. `interface-assets` keeps `ASSETS_COMMIT` for its own generated assets, as the decision "Committed built files" left it.
 Why: `ASSETS_COMMIT` (2a64c5ae77) is not in this repository, and the required run checks out one commit, so a `git show` of it fails in every module that runs the walk's tests. The checkout's `layouts.html` is the design as it stands, which is what a walk is measured against (build text 3, section 3); the UX lane owns it, and a change to it is a change to the design the walk follows.
+Decided: 23 Nov 2026.
+
+## The local walk's unreached states, and a reading not yet held
+Decision: on journey-check's local arm, a carried state (R21) that the local world's data does not reach is listed by name as "not reached on the local arm", as the live arm already lists a state its instance does not hold. It is neither a pass nor a failure, and the internal walk walks it by hand. R21 is reworded to say so. `op=reading` answering `found: false` at `result` is a refusal under R8 as written, because it states whether the op found its subject. A step that reaches a screen before any reading is held, as the design allows, expects that refusal by its code; a step whose screen should show a reading has the local world hold one. Separately: the row census's pin of the eight rows changed or added by the earlier process's last work (C-115.40, C-120.4, C-124.8, C-137.5, C-140.45, C-53.13; C-2.8, C-33.65) is re-stamped by promotion, whose pin it is (R50), with that work's record. journey-check's test then carries no list of rows awaiting a stamp.
+Why: making the local world reach the 63 carried states is a large piece of work that no requirement of this round names, and a walk measured against the Screens document already walks by hand what no step covers. R8's words are clear about where `found: false` counts. A pin kept current by a list in another module's test would hide changed rows from the census.
 Decided: 23 Nov 2026.
