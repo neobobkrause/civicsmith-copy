@@ -7,7 +7,7 @@ The plane-scope lane of civicsmith: a standing design responsibility for the pla
 ## What is here
 
 - `research/`: the lane's research. Its index, `research/README.md`, gives one line for each file; every later session of the lane reads that index first and adds to it. `research/evidence-rules.md` holds the rules every finding is held to (measured, read, or not checked).
-- `design.md`: the lane's design for plane's scope (options A, B and C of 23 Nov 2026, with ARCH's terms for B). The layer research below may replace it.
+- `design.md`: the lane's design: plane's scope (option B with ARCH's terms), the re-stacking's design proven on a scratch copy, the lane's recommendation (B and the capture move first; the re-stacking after, in steps, on the owner's choice), the 13-step plan. Rewritten 24 Nov 2026 by lane #2.
 - `page/plane-scope.html`: the source of the first design page.
 
 ## Design pages
