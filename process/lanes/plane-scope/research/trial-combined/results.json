@@ -1,0 +1,1286 @@
+{
+ "Length": "data of 20-trials-quiet-and-combined.md; one JSON object. Last key: \"not_checked\".",
+ "about": "plane l79 restart test on base a26a8da2, the door trial (trial-door/diff.patch) and the capture trial (trial-capture/alt1.patch), quiet machine, runs interleaved base, door, capture; and the attempt to apply both patches together. 24 Nov 2026.",
+ "machine": "4 vCPU Intel Xeon 2.10GHz, Node v26.10.0; no other test run by this worker in parallel; loadavg read from /proc/loadavg before and after each run",
+ "command": "from the tree top: env -u GH_TOKEN -u GITHUB_TOKEN -u ACTIONS_RUNTIME_TOKEN -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u NODE_TEST_CONTEXT node --import ./bio-plane/test/platform-sqlite.mjs --test --test-reporter=spec --test-reporter=junit [--test-name-pattern=\"a restart over the same storage\"] bio-plane/test/m/plane/l79.test.mjs",
+ "labels": {
+  "file-<tree>": "the whole l79 file alone (5 tests); restart = the junit time of the restart test",
+  "pat-<tree>": "the restart test alone, by --test-name-pattern"
+ },
+ "note_run0": "file-base run 0 was a first trial run of the same command, kept but left out of the summary",
+ "summary": {
+  "file-base": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.488038,
+   "restart_seconds_median": 18.15805,
+   "restart_seconds_max": 19.046919,
+   "wall_seconds": [
+    56.9,
+    56.45,
+    57.23,
+    56.88,
+    57.52
+   ]
+  },
+  "file-door": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.869679,
+   "restart_seconds_median": 18.459765,
+   "restart_seconds_max": 18.63028,
+   "wall_seconds": [
+    57.93,
+    57.56,
+    57.1,
+    57.33,
+    57.45
+   ]
+  },
+  "file-capture": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.644344,
+   "restart_seconds_median": 17.982516,
+   "restart_seconds_max": 18.102708,
+   "wall_seconds": [
+    57.48,
+    57.8,
+    56.7,
+    57,
+    57.38
+   ]
+  },
+  "pat-base": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 33.526966,
+   "restart_seconds_median": 38.35034,
+   "restart_seconds_max": 39.375177,
+   "wall_seconds": [
+    38.85,
+    34,
+    38.92,
+    39.84,
+    38.83
+   ]
+  },
+  "pat-door": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 37.528818,
+   "restart_seconds_median": 38.646293,
+   "restart_seconds_max": 39.51507,
+   "wall_seconds": [
+    40.13,
+    39.09,
+    39.59,
+    38.65,
+    37.99
+   ]
+  },
+  "pat-capture": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 38.64974,
+   "restart_seconds_median": 38.885801,
+   "restart_seconds_max": 39.078032,
+   "wall_seconds": [
+    39.33,
+    39.13,
+    39.15,
+    39.52,
+    39.48
+   ]
+  }
+ },
+ "runs": [
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 0,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.95,
+   "loadavg_before": "0.42 0.51 0.26 1/120 2718",
+   "loadavg_after": "0.99 0.67 0.34 1/120 2841",
+   "started": "2026-11-24T01:58:03Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.167051,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.043559,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.661152,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024163,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581974,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.661152,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.9,
+   "loadavg_before": "0.84 0.65 0.33 2/117 2866",
+   "loadavg_after": "1.00 0.75 0.39 1/120 3091",
+   "started": "2026-11-24T01:59:11Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.622352,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.042013,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.15805,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.022654,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581913,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.15805,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.93,
+   "loadavg_before": "1.00 0.75 0.39 1/120 3099",
+   "loadavg_after": "1.20 0.89 0.46 1/117 3200",
+   "started": "2026-11-24T02:00:08Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.213658,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.043883,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.63028,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.027305,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.577127,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.63028,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.48,
+   "loadavg_before": "1.20 0.89 0.46 1/117 3208",
+   "loadavg_after": "0.86 0.86 0.47 1/120 3352",
+   "started": "2026-11-24T02:01:06Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.63774,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04241,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.761391,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025641,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580701,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.761391,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.45,
+   "loadavg_before": "0.86 0.86 0.47 1/120 3360",
+   "loadavg_after": "0.77 0.85 0.49 1/118 3523",
+   "started": "2026-11-24T02:02:04Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.841872,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.051273,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.488038,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024865,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581306,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.488038,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.56,
+   "loadavg_before": "0.77 0.85 0.49 2/118 3531",
+   "loadavg_after": "0.79 0.86 0.52 1/120 3887",
+   "started": "2026-11-24T02:03:00Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.97075,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.040841,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.467004,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024443,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.582451,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.467004,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.8,
+   "loadavg_before": "0.79 0.86 0.52 1/120 3895",
+   "loadavg_after": "0.90 0.92 0.57 1/117 3993",
+   "started": "2026-11-24T02:03:58Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.602144,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.047967,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.102708,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.02342,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.577828,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.102708,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.23,
+   "loadavg_before": "0.90 0.92 0.57 2/117 4001",
+   "loadavg_after": "1.02 0.99 0.61 1/118 4106",
+   "started": "2026-11-24T02:04:56Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.738229,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.044976,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.401246,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026087,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580958,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.401246,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.1,
+   "loadavg_before": "1.02 0.99 0.61 1/118 4114",
+   "loadavg_after": "0.98 1.01 0.65 2/118 4214",
+   "started": "2026-11-24T02:05:53Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.723705,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04279,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.302424,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025441,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580886,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.302424,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.7,
+   "loadavg_before": "0.98 1.01 0.65 1/118 4222",
+   "loadavg_after": "0.76 0.96 0.65 1/117 4321",
+   "started": "2026-11-24T02:06:50Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.952168,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.054299,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.644344,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.029207,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.58818,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.644344,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.88,
+   "loadavg_before": "0.76 0.96 0.65 1/117 4329",
+   "loadavg_after": "0.83 0.96 0.67 1/116 4431",
+   "started": "2026-11-24T02:07:47Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.111649,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.044066,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.696048,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025431,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.575933,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.696048,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.33,
+   "loadavg_before": "0.83 0.96 0.67 1/116 4439",
+   "loadavg_after": "0.61 0.89 0.66 1/116 4538",
+   "started": "2026-11-24T02:08:44Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.793663,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04345,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.459765,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024588,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.576439,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.459765,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57,
+   "loadavg_before": "0.61 0.89 0.66 1/116 4546",
+   "loadavg_after": "0.78 0.92 0.69 1/115 4650",
+   "started": "2026-11-24T02:09:41Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.923716,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.041117,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.001263,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024861,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580843,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.001263,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.52,
+   "loadavg_before": "0.78 0.92 0.69 1/115 4658",
+   "loadavg_after": "0.64 0.87 0.69 1/118 4757",
+   "started": "2026-11-24T02:10:38Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.381557,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.057589,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 19.046919,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026962,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.583723,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 19.046919,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.45,
+   "loadavg_before": "0.64 0.87 0.69 1/118 4765",
+   "loadavg_after": "0.84 0.90 0.72 1/118 4865",
+   "started": "2026-11-24T02:11:36Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.444509,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.054315,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.869679,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024865,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.584611,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.869679,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.38,
+   "loadavg_before": "0.84 0.90 0.72 1/118 4873",
+   "loadavg_after": "0.71 0.87 0.72 1/118 4976",
+   "started": "2026-11-24T02:12:33Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.289121,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.049568,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.982516,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026648,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.579832,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.982516,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.85,
+   "loadavg_before": "0.66 0.86 0.71 1/117 4994",
+   "loadavg_after": "1.18 0.97 0.76 1/114 5045",
+   "started": "2026-11-24T02:13:34Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.274572,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.274572,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 40.13,
+   "loadavg_before": "1.18 0.97 0.76 1/114 5053",
+   "loadavg_after": "1.20 1.00 0.78 1/112 5099",
+   "started": "2026-11-24T02:14:13Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.51507,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.51507,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.33,
+   "loadavg_before": "1.20 1.00 0.78 1/112 5107",
+   "loadavg_after": "1.45 1.09 0.83 1/116 5159",
+   "started": "2026-11-24T02:14:53Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.885801,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.885801,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 34,
+   "loadavg_before": "1.45 1.09 0.83 1/116 5167",
+   "loadavg_after": "1.30 1.10 0.84 1/118 5215",
+   "started": "2026-11-24T02:15:32Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 33.526966,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 33.526966,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.09,
+   "loadavg_before": "1.30 1.10 0.84 2/118 5223",
+   "loadavg_after": "1.40 1.15 0.87 1/114 5271",
+   "started": "2026-11-24T02:16:06Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.646293,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.646293,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.13,
+   "loadavg_before": "1.40 1.15 0.87 1/114 5279",
+   "loadavg_after": "1.85 1.27 0.92 1/114 5325",
+   "started": "2026-11-24T02:16:45Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.64974,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.64974,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.92,
+   "loadavg_before": "1.85 1.27 0.92 1/114 5333",
+   "loadavg_after": "1.43 1.24 0.93 1/119 5384",
+   "started": "2026-11-24T02:17:24Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.386892,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.386892,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.59,
+   "loadavg_before": "1.43 1.24 0.93 1/119 5392",
+   "loadavg_after": "1.46 1.27 0.95 1/115 5438",
+   "started": "2026-11-24T02:18:03Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.147255,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.147255,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.15,
+   "loadavg_before": "1.46 1.27 0.95 1/115 5446",
+   "loadavg_after": "1.49 1.30 0.98 1/116 5493",
+   "started": "2026-11-24T02:18:43Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.690703,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.690703,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.84,
+   "loadavg_before": "1.49 1.30 0.98 1/116 5501",
+   "loadavg_after": "1.30 1.28 0.98 1/118 5551",
+   "started": "2026-11-24T02:19:22Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.375177,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.375177,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.65,
+   "loadavg_before": "1.30 1.28 0.98 1/118 5559",
+   "loadavg_after": "1.40 1.31 1.01 1/116 5607",
+   "started": "2026-11-24T02:20:02Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.197929,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.197929,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.52,
+   "loadavg_before": "1.40 1.31 1.01 1/116 5615",
+   "loadavg_after": "1.55 1.37 1.04 1/115 5661",
+   "started": "2026-11-24T02:20:41Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.078032,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.078032,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.83,
+   "loadavg_before": "1.55 1.37 1.04 2/115 5669",
+   "loadavg_after": "1.69 1.42 1.07 1/119 5718",
+   "started": "2026-11-24T02:21:20Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.35034,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.35034,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 37.99,
+   "loadavg_before": "1.69 1.42 1.07 1/119 5726",
+   "loadavg_after": "1.47 1.40 1.08 1/116 5772",
+   "started": "2026-11-24T02:21:59Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 37.528818,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 37.528818,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.48,
+   "loadavg_before": "1.47 1.40 1.08 1/116 5780",
+   "loadavg_after": "1.49 1.41 1.09 1/116 5828",
+   "started": "2026-11-24T02:22:37Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.031658,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.031658,
+    "failed": false
+   }
+  }
+ ],
+ "combine": {
+  "door_then_capture_git_apply": "error: patch failed: bio-plane/src/control-plane/index.mjs:35; bio-plane/src/control-plane/index.mjs: patch does not apply",
+  "capture_then_door_git_apply": "error: patch failed: bio-plane/src/control-plane/index.mjs:35; patch does not apply",
+  "three_way": "git apply -3 of alt1.patch over diff.patch (staged): bio-plane/src/control-plane/index.mjs applied with conflicts (2 conflict regions, file lines 38-44 and 793-799); screens-intake/capture.mjs and process/modules/screens-capture.json applied cleanly; the new file capture/filing.mjs is not named in the output and was not inspected",
+  "conflict_diff": "diff --cc bio-plane/src/control-plane/index.mjs\nindex fb86e3fcf9,7efca1cd0a..0000000000\n--- a/bio-plane/src/control-plane/index.mjs\n+++ b/bio-plane/src/control-plane/index.mjs\n@@@ -35,8 -35,8 +35,13 @@@ import { jobRegistrar } from \"./jobs.mj\n  import { jobStateOf } from \"./job-state.mjs\";\n  import { PLATFORM_FIGURES } from \"../byte-ledger.mjs\";\n  import { acquireReadingOp } from \"../extraction/ops.mjs\";\n++<<<<<<< ours\n +/* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by the builder it is handed\n +   (TRIAL: the capture screen's `titleOf` and `promoteDocument` arrive as `deliverOwedRender`'s second argument; no screen is imported) */\n++=======\n+ /* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by the one builder the capture screen also lists in its `parts` (trial: capture's file) */\n+ import { titleOf, promoteDocument } from \"../capture/filing.mjs\";\n++>>>>>>> theirs\n  import { captureOf } from \"../capture/index.mjs\";\n  import { promotionOf } from \"../promotion/index.mjs\";\n  import { recordOf } from \"../record-core/index.mjs\";\n@@@ -785,8 -793,8 +790,13 @@@ export async function deliverOwedRender\n        } };\n      const address = String(doc.locator || \"\");\n      let title;\n++<<<<<<< ours\n +    try { title = composer.titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }\n +    const made = await composer.promoteDocument(cs, { doc, title, locator: address, project });\n++=======\n+     try { title = titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }\n+     const made = await promoteDocument(cs, { doc, title, locator: address, project });\n++>>>>>>> theirs\n      if (made.refused !== undefined) {\n        const refused = made.refused && typeof made.refused === \"object\" ? made.refused : {};\n        const reason = refused.reason || refused.code || \"PROMOTE_REFUSED\";\n",
+  "stopped": true
+ },
+ "not_checked": [
+  "step 3 on a combined copy: stopped at the conflict, as the brief says",
+  "the cause of the restart test taking about 38 s alone and about 18 s inside the file",
+  "set b (27 files) on a quiet machine",
+  "r8-timing-hook age test"
+ ]
+}

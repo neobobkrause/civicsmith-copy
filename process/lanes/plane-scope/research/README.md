@@ -1,4 +1,4 @@
-Length: 26 lines. Last section: "Files".
+Length: 27 lines. Last section: "Files".
 
 # The plane-scope lane's research: index
 
@@ -24,3 +24,4 @@ Recorded 23 Nov 2026 by civicsmith plane-scope lane #1 through four workers. Eve
 - `16-trial-delayed-capture.md` with `trial-capture/` (alt1.patch, results.json): the CAPTURE_SCREEN tie: the three bundle composers compared (all differ), ruling K4493's words, the two functions moved to `capture/filing.mjs` with the page script byte-identical and no test changed, the rule the page puts on a moved function, and that this is the only background call of UI code.
 - `17-what-pins-the-stacking.md` with `pins/requirements.json`: everything written down that states today's stacking: 163 requirements in 26 modules, module records, ARCH's decisions, the rulings (DEC-122, K4493, K5046, K5052, K4426, K4990), the canon's `civicos-ui`, the Process4 rules a multi-module change must follow, and the open work that overlaps (PR 1259).
 - `19-case-against.md`: the strongest case against the re-stacking, from files 09 to 18 and the two trials, with option B, test-only entries, fixing only the helper and the capture move weighed beside it; its re-checks by command; strongest alternative B with the capture move. Key claims re-checked by lane #2 (door's 13 UI imports, 100 of plane's test files reaching the top entry, 163 pinned requirements, PR 1259 sharing 2 files with the door trial and none with the capture trial).
+- `20-trials-quiet-and-combined.md` with `trial-combined/results.json`: plane's l79 restart test on a quiet machine (load 0.6 to 1.9): 30 of 30 runs pass on base, door and capture copies alike; the two trial patches do not apply together (both rewrite the door's R124 import and the two calls in `deliverOwedRender`), so the combined copy needs the handed-in or imported-from-below choice made first.
