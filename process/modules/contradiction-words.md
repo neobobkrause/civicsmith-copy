@@ -20,7 +20,7 @@ The words contradiction holds as data: the judgement and recommendation prompts 
 
 #### The measures
 
-- **R41** [met] (K447 (6)). `sha256(RECOMMEND_PROMPT)` equals `RECOMMEND_PROMPT_SHA256`: the digest under which the blind fixture of dissolved pairs was measured and recorded, the record kept in the module's tests folder (`bio-plane/test/m/contradiction-words/`) beside the fixture and its runs. The prompt changes only with a new measurement that moves the digest in the same change.
+- **R41** [not yet met] (K447 (6)). `sha256(RECOMMEND_PROMPT)` equals `RECOMMEND_PROMPT_SHA256`: the digest under which the blind fixture of dissolved pairs was measured and recorded, the record kept in the module's tests folder (`bio-plane/test/m/contradiction-words/`) beside the fixture and its runs. The prompt changes only with a new measurement that moves the digest in the same change.
 
 ## Private
 

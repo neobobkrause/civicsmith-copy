@@ -74,7 +74,7 @@ A fleet member in the group's own Cloudflare account, reached only through the p
 - **R33** [met] (T51 CR-17; FILE-SCANNER #8 J8; K4120; amends R19) **Whose server.** `handling` also carries `on_own`, a boolean: `true` when the recipient is the organization's own server or service (a tool it runs itself), else `false`; stated by the descriptor beside `recipient`, never read from `recipient`'s words, so a page decides "on the organization's own servers" from data in any language. `validateDescriptor` refuses a descriptor whose `handling` lacks a boolean `on_own` (`DESCRIPTOR_MALFORMED`, field `handling.on_own`). Test: every catalogue descriptor's `on_own` agrees with the recipient its English names (the self-run ones `true`); control: one without it refuses.
 
 **Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
-- **R36** [met] `file-scanner/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `file-scanner/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
+- **R36** [not yet met] `file-scanner/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `file-scanner/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
 
 ## Private
 
