@@ -1,4 +1,4 @@
-Length: 116 lines. Last section: "The top module".
+Length: 121 lines. Last section: "The word-table extractor".
 
 # civicsmith: ARCH's technical decisions
 
@@ -113,4 +113,9 @@ Decided: 24 Nov 2026.
 ## The top module
 Decision: a new module, `plane-program`, is added at step 6 directly after the UI modules and before `release`. Its promise is the assembled program: the UI plugged into the launcher, deployed as one Worker, the page served end to end. It owns the entry `bio-plane/src/plane/index.mjs` (path kept) and the file by which the entry hands the UI in, `bio-plane/wrangler.jsonc` (whose `main` names the entry), `bio-plane/scripts/build-plane.mjs` and `bio-plane/dist/`, with plane R116, which travels with `dist/`. The bundle stays uncommitted, as the decision "Committed built files" says. The plane's build description (`PLANE_ENTRY`, `planeMember`, today in `bio-plane/scripts/fleet-bundle.mjs`) moves into `build-plane.mjs`: `bundler`'s job first accepts a description handed in beside its own, then drops `planeMember`; `bundler` keeps building any member it is handed. `plane` keeps the launcher: the store's class, the Worker's start-up, the watchdog and arrival. The top module's tests are the only ones that start the entry: the door tests that assert screens, the test files that reach the entry by import (taken from `p4 check`'s refusals at that step) or by path (the lane's groups `boots-entry`, `computed-import` and `worker-program-text` still standing then), and plane's tests and halves that state the deployment config (`limits` against `wrangler.jsonc`, the deployed cron, the parts of `worker.test.mjs` that read it). Plane's census tests (`g83-census`, `worker.test.mjs` R8) and `sa-assembly.test.mjs`'s census are bounded to modules up to their owner, and the top module runs the same check on its own files. The UI modules leave plane's declared uses.
 Why: those files name and build the program with its UI. Kept at plane after the move, `wrangler.jsonc` would name a later module's file and `dist/` would hold a copy of 20 later modules (lane research 24, measured).
+Decided: 24 Nov 2026.
+
+## The word-table extractor
+Decision: the extractor `extract(root)` in `bio-plane/src/setup-words/build.mjs`, which reads the source of every module, and setup-words' tests that run it over the real tree move to `journey-check`, the last module. Its outputs `rows.mjs` and `words-unreviewed.json` stay with `setup-words` as committed data, and `pseudo` and `callsOf`, which `journey-check` and `case-checker` import, stay at `setup-words` in a file of their own. The rows each module shows do not change.
+Why: after the re-stacking it would read about 200 modules after `setup-words`, the second module. No script or workflow runs it; it runs by hand and in setup-words' own tests (lane research 24, measured).
 Decided: 24 Nov 2026.
