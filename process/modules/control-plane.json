@@ -130,6 +130,8 @@
     "calculations",
     "workbooks",
     "op-grade-tranches",
-    "record-core-tables"
+    "record-core-tables",
+    "host-governor",
+    "ratification"
   ]
 }
