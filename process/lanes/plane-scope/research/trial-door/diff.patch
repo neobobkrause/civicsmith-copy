@@ -1,0 +1,776 @@
+Trial of the door inversion (plane-scope lane, research file 15-trial-door-inversion.md).
+The full git diff of the scratch worktree trialA against origin/p4-tranche a26a8da2, in four parts:
+  1. product code (bio-plane/src)   2. test setup (bio-plane/test)   3. the trial-only UI-less entry   4. the scratch module list (process/modules)
+Apply with: git apply diff.patch (text before the first diff header is ignored). Never applied to the product.
+
+diff --git a/bio-plane/src/control-plane/app.mjs b/bio-plane/src/control-plane/app.mjs
+index 97bf34c4..0039bc6f 100644
+--- a/bio-plane/src/control-plane/app.mjs
++++ b/bio-plane/src/control-plane/app.mjs
+@@ -18,18 +18,19 @@
+    here. No credential is read on either route: the page holds no secret, and every read is an op under the member's
+    session. */
+ 
+-import { versionOfScriptPath } from "../interface-shell/index.mjs";
++/* TRIAL (door inversion): the shell's parser of its own script address (`versionOfScriptPath`) and its two public addresses are
++   handed in by the caller; this file imports nothing. */
+ 
+ const APP = "/app";
+ const ASSETS = "/app/assets/";
+ 
+ /** Which of the three routes a request names: `"page"`, `"asset"`, `"script"` (the shell's script at its versioned address,
+  *  R75), or null for none. Only a GET (or HEAD) is any. */
+-export function appRouteOf(req, url) {
++export function appRouteOf(req, url, { versionOfScriptPath } = {}) {
+   if (req.method !== "GET" && req.method !== "HEAD") return null;
+   const p = url.pathname;
+   if (p.startsWith(ASSETS)) return "asset";
+-  if (versionOfScriptPath(p) !== null) return "script";
++  if (typeof versionOfScriptPath === "function" && versionOfScriptPath(p) !== null) return "script";
+   if (p === APP || p.startsWith(`${APP}/`)) return "page";
+   return null;
+ }
+@@ -48,9 +49,9 @@ export function appPage(req, { interfacePage, screens, options = {}, status = 20
+    script of any other version is not this release's, and is answered 404 as an unknown asset is. The page that loads it keeps
+    `no-store` (`appPage`). `source` is interface-shell's `interfaceScript` over the screens the page is built from. */
+ export const SCRIPT_CACHE = "public, max-age=31536000, immutable";
+-export function appScript(req, url, { source, version }) {
++export function appScript(req, url, { source, version, versionOfScriptPath }) {
+   const here = version === undefined || version === null || version === "" ? "0" : String(version);
+-  if (versionOfScriptPath(url.pathname) !== here) return notFound();
++  if (typeof versionOfScriptPath !== "function" || versionOfScriptPath(url.pathname) !== here) return notFound();
+   return new Response(req.method === "HEAD" ? null : source, { status: 200,
+     headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": SCRIPT_CACHE, "x-content-type-options": "nosniff" } });
+ }
+@@ -64,14 +65,13 @@ export function appScript(req, url, { source, version }) {
+    naming an op (`/bootstrap`), an `op=` request, a path below `/api/` and any other method are not answered here:
+    they stay the op door's, `UNKNOWN_OP` JSON byte for byte when no op is named (R2). `opNamed(name)` is the door's
+    own test of an op's name (its spec table, an alias read as the op it is). Answers `{status}`, or null. */
+-export const PUBLIC_ALIASES = Object.freeze(["/doorbell", "/tour"]);
+-export function addressPageOf(req, url, { opNamed }) {
++export function addressPageOf(req, url, { opNamed, publicAddresses = [] }) {
+   if (req.method !== "GET" && req.method !== "HEAD") return null;
+   const p = url.pathname;
+   if (p === "/api" || p.startsWith("/api/") || url.searchParams.get("op")) return null;
+   const bare = p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
+   if (bare === "" || bare === "/") return null;
+-  if (PUBLIC_ALIASES.includes(bare)) return { status: 200 };
++  if (publicAddresses.includes(bare)) return { status: 200 };
+   return opNamed(bare.slice(1)) ? null : { status: 404 };
+ }
+ 
+diff --git a/bio-plane/src/control-plane/index.mjs b/bio-plane/src/control-plane/index.mjs
+index 6e420d06..fb86e3fc 100644
+--- a/bio-plane/src/control-plane/index.mjs
++++ b/bio-plane/src/control-plane/index.mjs
+@@ -35,8 +35,8 @@ import { jobRegistrar } from "./jobs.mjs";
+ import { jobStateOf } from "./job-state.mjs";
+ import { PLATFORM_FIGURES } from "../byte-ledger.mjs";
+ import { acquireReadingOp } from "../extraction/ops.mjs";
+-/* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by screens-intake's own builder */
+-import { CAPTURE_SCREEN } from "../screens-intake/capture.mjs";
++/* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by the builder it is handed
++   (TRIAL: the capture screen's `titleOf` and `promoteDocument` arrive as `deliverOwedRender`'s second argument; no screen is imported) */
+ import { captureOf } from "../capture/index.mjs";
+ import { promotionOf } from "../promotion/index.mjs";
+ import { recordOf } from "../record-core/index.mjs";
+@@ -49,20 +49,10 @@ import { appRouteOf, appPage, appAsset, appScript, logoAsked, addressPageOf } fr
+ import { interfaceWordsCache } from "./words-cache.mjs";
+ /* R121 (fix round 4, C5a, P9): the door's clock, in its own isolate */
+ import { makeClock, clockedEnv, withClock, withServerTiming } from "./phase-clock.mjs";
+-import { interfacePage, interfaceScript, interfaceScriptHash, pageWork } from "../interface-shell/index.mjs";
+-import { ASSET_FILES } from "../interface-assets/index.mjs";
+-import { SCREENS as ENTRY_SCREENS } from "../screens-entry/index.mjs";
+-import { SCREENS as SETTINGS_SCREENS } from "../screens-settings/index.mjs";
+-import { SCREENS as INTAKE_SCREENS } from "../screens-intake/index.mjs";
+-import { SCREENS as DAILY_SCREENS } from "../screens-daily/index.mjs";
+-import { SCREENS as INQUIRY_SCREENS } from "../screens-inquiry/index.mjs";
+-import { SCREENS as WIZARDS_SCREENS, GUIDE as WIZARD_GUIDE } from "../screens-wizards/index.mjs";
+-import { SCREENS as INVESTIGATE_SCREENS } from "../screens-investigate/index.mjs";
+-import { SCREENS as PUBLISH_SCREENS } from "../screens-publish/index.mjs";
+-import { SCREENS as ACTION_SCREENS } from "../screens-action/index.mjs";
+-const APP_SCREENS = Object.freeze([...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INTAKE_SCREENS, ...DAILY_SCREENS, ...INQUIRY_SCREENS,
+-  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS]);
+-const APP_OPTIONS = Object.freeze({ guide: WIZARD_GUIDE });
++/* TRIAL (door inversion): the interface is handed to `makeFetch` as `hooks.ui`, never imported here:
++   `{interfacePage, interfaceScript, interfaceScriptHash, pageWork, versionOfScriptPath, assets, screens, guide, publicAddresses}`.
++   With none handed, every page route answers `NO_INTERFACE` (`noInterface`). */
++const noInterface = () => json({ ok: false, reason: "NO_INTERFACE", detail: "this plane was started with no interface; its ops answer under /api/" }, 404);
+ /* (T47; K3167) a member's own Claude sign-in, its disconnection, the revocation's sign-out, a refused held token and the
+    test instance's trace are signin-door's (its R1–R5, were this module's R65, R78, R85–R87): the door routes to them. */
+ import { subscriptionSignin, subscriptionDisconnect, leaverOf, signoutLeaver, tokenRefusedSeen, signintrace, mintTrace,
+@@ -159,7 +149,7 @@ function testInstanceOf(env) {
+   try { return AiRuns.prototype.testInstance.call({ env: env || {} }) === true; } catch { return false; }
+ }
+ /* R75 (fix round 3, C15; interface-shell R1): the page names the release's script by `version`, the plane's own (`env.VERSION`) */
+-const appOptions = (env) => ({ ...APP_OPTIONS, testInstance: testInstanceOf(env),
++const appOptions = (env, ui) => ({ guide: ui.guide, testInstance: testInstanceOf(env),
+   ...(typeof env?.VERSION === "string" && env.VERSION ? { version: env.VERSION } : {}) });
+ 
+ /* R93 (T48; N1015; K3103; agent-worker R87; plane R55): the requests that reach the plane's ask, run, draft or transcribe
+@@ -740,7 +730,7 @@ async function heldWholeFacts(env, storeName, sha) {
+  * @returns {Promise<{ok: boolean, bundleId?: string, existed?: boolean, reading_pending?: boolean, reason?: string, detail?: any, capture_sha?: string, kind?: string | null, holder?: string | null}>}
+  *  `ok: true` with `bundleId` (and `existed` or `reading_pending`), or `ok: false` with `reason` (and the refusal's facts for a capture held by another document)
+  */
+-export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, session } = {}) {
++export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, session } = {}, composer = {}) {
+   try {
+     const doc = answer && typeof answer === "object" ? answer.document : null;
+     const sha = doc && doc.capture && doc.capture.sha256;
+@@ -783,6 +773,8 @@ export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, s
+         return { ok: true, bundleId: linked.document, existed: true };
+       }
+     }
++    /* TRIAL: the document's composer is the one handed in; with none, nothing is promoted and the render stays owed */
++    if (!composer || typeof composer.titleOf !== "function" || typeof composer.promoteDocument !== "function") return { ok: false, reason: "NO_DOCUMENT_COMPOSER" };
+     const record = recordOf(ctx), promotion = promotionOf(ctx);
+     const cs = { now: () => Date.now(), digest: async (t) => sha256Hex(t), w: (k, v) => word(k, v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([n, x]) => [n, x && typeof x === "object" && "html" in x ? x.html : x])) : v),
+       date: (d) => { const t = new Date(d); return Number.isNaN(t.getTime()) ? String(d) : t.toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" }); },
+@@ -793,8 +785,8 @@ export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, s
+       } };
+     const address = String(doc.locator || "");
+     let title;
+-    try { title = CAPTURE_SCREEN.parts.titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }
+-    const made = await CAPTURE_SCREEN.parts.promoteDocument(cs, { doc, title, locator: address, project });
++    try { title = composer.titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }
++    const made = await composer.promoteDocument(cs, { doc, title, locator: address, project });
+     if (made.refused !== undefined) {
+       const refused = made.refused && typeof made.refused === "object" ? made.refused : {};
+       const reason = refused.reason || refused.code || "PROMOTE_REFUSED";
+@@ -887,6 +879,8 @@ function requestDone(seen) {
+  * @returns {PlaneDoor}
+  */
+ export function makeFetch(hooks = {}) {
++  /* TRIAL: the interface handed in at start, or null */
++  const ui = hooks.ui && typeof hooks.ui === "object" ? hooks.ui : null;
+   /* R25: the door's one outermost catch. */
+   /* R50: `seen.session` is set once admission has admitted a member's session, so a refusal answered to it is tallied;
+      R51: every HTML answer leaves with the page policy. */
+@@ -919,12 +913,13 @@ export function makeFetch(hooks = {}) {
+   /* R75: the interface's page, built for this request, and the hash of the script it loads, kept for the page policy on the way out */
+   function page(req, env, seen, status = 200) {
+     const began = Date.now();
+-    const options = appOptions(env);
+-    seen.scriptHashes = [interfaceScriptHash(APP_SCREENS, options)];
+-    const answer = appPage(req, { interfacePage, screens: APP_SCREENS, options, status });
++    if (!ui) return noInterface();
++    const options = appOptions(env, ui);
++    seen.scriptHashes = [ui.interfaceScriptHash(ui.screens, options)];
++    const answer = appPage(req, { interfacePage: ui.interfacePage, screens: ui.screens, options, status });
+     /* R126 (G30; K4428, K4609): one line per page naming the work the route did in this isolate, as counts (`pageWork`: scripts composed,
+        hashes taken, checks run); `ms` is the isolate's clock, which does not see synchronous work (R-CLOCK) */
+-    console.log(JSON.stringify({ event: "control-plane.page", ...pageWork(), ms: Date.now() - began }));
++    console.log(JSON.stringify({ event: "control-plane.page", ...ui.pageWork(), ms: Date.now() - began }));
+     return answer;
+   }
+   async function fetch(req, env, seen = { session: null }) {
+@@ -978,7 +973,7 @@ export function makeFetch(hooks = {}) {
+ 
+     /* R75 (T46): `GET /app`, `/app/<path>` and `/app/assets/<name>`, through the same namespace and address gates as `/`
+        (admission R1, R20), before any `op` exists; no credential is read on either route (`app.mjs`). */
+-    const appRoute = appRouteOf(req, url);
++    const appRoute = appRouteOf(req, url, ui || {});
+     if (appRoute) {
+       const appNamespace = namespaceGate(url);   /* admission R1 */
+       if (appNamespace) return json(appNamespace.body, appNamespace.status);
+@@ -988,15 +983,16 @@ export function makeFetch(hooks = {}) {
+       if (appRoute === "asset" && logoAsked(url))
+         return groupLogoAsset(env, url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio", { json, storeSilent, storeRefusal, doAnswer });
+       /* R75 (fix round 3, C15, P2.4): the shell's script, at its versioned address, `immutable` */
+-      if (appRoute === "script") return appScript(req, url, { source: interfaceScript(APP_SCREENS, appOptions(env)), version: env.VERSION });
+-      return appRoute === "page" ? page(req, env, seen) : appAsset(req, url, { assets: ASSET_FILES, version: env.VERSION });
++      if (!ui) return noInterface();
++      if (appRoute === "script") return appScript(req, url, { source: ui.interfaceScript(ui.screens, appOptions(env, ui)), version: env.VERSION, versionOfScriptPath: ui.versionOfScriptPath });
++      return appRoute === "page" ? page(req, env, seen) : appAsset(req, url, { assets: ui.assets, version: env.VERSION });
+     }
+ 
+     /* R104 (T50; N1174, B-14; interface-shell R79): an address outside the team's pages that names no op draws the
+        interface's public "nothing is here" page, 404, and `/doorbell` and `/tour` the same page at 200, through the same
+        namespace and address gates as the other page routes; an `op=` request, a path below `/api/` and a path naming
+        an op go on below, and `UNKNOWN_OP` stays JSON for them (R2). */
+-    const addressPage = addressPageOf(req, url, { opNamed: (name) => Object.hasOwn(OPS, Object.hasOwn(OP_ALIASES, name) ? OP_ALIASES[name] : name) });
++    const addressPage = addressPageOf(req, url, { opNamed: (name) => Object.hasOwn(OPS, Object.hasOwn(OP_ALIASES, name) ? OP_ALIASES[name] : name), publicAddresses: ui ? ui.publicAddresses : [] });
+     if (addressPage) {
+       const pageNamespace = namespaceGate(url);   /* admission R1 */
+       if (pageNamespace) return json(pageNamespace.body, pageNamespace.status);
+diff --git a/bio-plane/src/plane/index.mjs b/bio-plane/src/plane/index.mjs
+index 2c78c8c3..ef388522 100644
+--- a/bio-plane/src/plane/index.mjs
++++ b/bio-plane/src/plane/index.mjs
+@@ -1,71 +1,11 @@
+-/* plane R6: the Worker's module. Its default export is `control-plane`'s door (`makeFetch`) over the hooks the door takes,
+-   each composed from the arms' owners' handlers (`door.mjs`); `Store` is the Durable Object class `wrangler.jsonc` binds
+-   (R1). The published read is handed its plane binding (`bindPublishedPlane`, public-read's) when this module loads. Its
+-   default export also carries `scheduled`, the watchdog's cron handler (R79, `watchdog.mjs`). A `captureupload` request is stated in a line on
+-   arrival (`arrival.mjs`, R24 d). No other export. (R105) Each answer
+-   states the calls its request made to the object, `object-calls;dur=<n>` in its `Server-Timing`. */
+-import "../store-assembly/index.mjs";   /* store-assembly R83 (was plane R68; T51; K4168): its first import is the start's registration of the owners' op declarations, before control-plane reads the op tables when it loads */
+-import { makeFetch, PUBLISHED_STORE } from "../control-plane/index.mjs";
+-import { json, doAnswer, storeSilent, storeRefusal, requiredArgument, STORE_SILENT_REASON,
+-         STORE_SILENT_DETAIL } from "../answer-envelope/index.mjs";   /* K1907, K2041: the envelope's */
+-import { bindPublishedPlane } from "../publication/worker.mjs";
+-import { publicInstanceGroup } from "../setup.mjs";
+-import { publicOp, gatedOp } from "./door.mjs";
+-import { watchdog } from "./watchdog.mjs";
+-import { logArrival } from "./arrival.mjs";
++/* TRIAL (door inversion): THE WORKER'S MODULE, above the interface. It imports the launcher (`launch.mjs`: the door over the hooks,
++   the Store, the watchdog; nothing of the interface) and the interface assembled (`ui.mjs`), hands the second to the first, and
++   exports the Worker's default `{fetch, scheduled}` and `Store`, the Durable Object class `wrangler.jsonc` binds. No other export.
++   The launcher is imported first: its own first import is the start's registration of the owners' op declarations (store-assembly R83),
++   which must precede the first read of the op tables. Owned by the trial's top module, not by `plane`. */
++import { launch, storeWith } from "./launch.mjs";
++import { INTERFACE, DOCUMENT_COMPOSER } from "./ui.mjs";
+ 
+-export { Store } from "./store.mjs";
++export const Store = storeWith(DOCUMENT_COMPOSER);
+ 
+-bindPublishedPlane({ json, doAnswer, storeSilent, storeRefusal, requiredArgument, STORE_SILENT_REASON,
+-                     STORE_SILENT_DETAIL, PUBLISHED_STORE });
+-
+-const door = makeFetch({ publicOp, gatedOp,
+-  publicInstanceGroup: (env, storeName, projection) => publicInstanceGroup(env, storeName, projection, doAnswer) });
+-
+-/** R105 (fix round 9, G123g; K4848 (2)): the `Server-Timing` entry naming how many calls a request made to the object. */
+-const OBJECT_CALLS = "object-calls";
+-
+-/* R105: the request's `env`, its `STORE` namespace's stubs counting each `fetch` to the object (RPC methods are not route calls and are not
+-   counted). Every other binding is the env's own. */
+-function counted(env, tally) {
+-  if (!env || typeof env !== "object" || !env.STORE || typeof env.STORE.get !== "function") return env;
+-  const ns = env.STORE;
+-  const STORE = new Proxy(ns, { get(target, key) {
+-    const v = target[key];
+-    if (key !== "get" || typeof v !== "function") return typeof v === "function" ? v.bind(target) : v;
+-    return (...a) => {
+-      const stub = v.apply(target, a);
+-      return new Proxy(stub, { get(st, k) {
+-        const f = st[k];
+-        if (k === "fetch" && typeof f === "function") return (...b) => { tally.n++; return f.apply(st, b); };
+-        return typeof f === "function" ? f.bind(st) : f;
+-      } });
+-    };
+-  } });
+-  return new Proxy(env, { get(target, key) { return key === "STORE" ? STORE : target[key]; } });
+-}
+-
+-/* R105: the answer with `object-calls;dur=<n>` added to its `Server-Timing`, the calls counted until the answer was made; none when the
+-   request made no call (never 0). Calls after the answer (`waitUntil`) belong to no request. */
+-function stated(res, n) {
+-  if (!(res instanceof Response) || !(n > 0)) return res;
+-  const entry = `${OBJECT_CALLS};dur=${n}`;
+-  const was = res.headers.get("server-timing");
+-  const value = was ? `${was}, ${entry}` : entry;
+-  try { res.headers.set("server-timing", value); return res; }
+-  catch {
+-    const headers = new Headers(res.headers);
+-    headers.set("server-timing", value);
+-    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+-  }
+-}
+-
+-/* the door's own properties (its `limits`) stay readable on the fetch the Worker exports */
+-const fetch = Object.assign(async function fetch(req, env, ctx) {
+-  logArrival(req);   /* R24 (d): an upload's arrival, stated before anything is awaited */
+-  const tally = { n: 0 };
+-  const res = await door(req, counted(env, tally), ctx);
+-  return stated(res, tally.n);
+-}, door);
+-
+-export default { fetch, scheduled: (controller, env) => watchdog(controller, env) };
++export default launch({ ui: INTERFACE });
+diff --git a/bio-plane/src/plane/launch.mjs b/bio-plane/src/plane/launch.mjs
+new file mode 100644
+index 00000000..5cb3adae
+--- /dev/null
++++ b/bio-plane/src/plane/launch.mjs
+@@ -0,0 +1,82 @@
++/* TRIAL (door inversion): this file is the launcher, moved from `index.mjs` unchanged but for its last lines: it exports `launch(parts)`,
++   which makes what was the default export, and `storeWith` beside `Store`; it imports nothing of the interface. `index.mjs` is now the
++   entry above the interface, which hands the interface in.
++   plane R6: the Worker's module. Its default export is `control-plane`'s door (`makeFetch`) over the hooks the door takes,
++   each composed from the arms' owners' handlers (`door.mjs`); `Store` is the Durable Object class `wrangler.jsonc` binds
++   (R1). The published read is handed its plane binding (`bindPublishedPlane`, public-read's) when this module loads. Its
++   default export also carries `scheduled`, the watchdog's cron handler (R79, `watchdog.mjs`). A `captureupload` request is stated in a line on
++   arrival (`arrival.mjs`, R24 d). No other export. (R105) Each answer
++   states the calls its request made to the object, `object-calls;dur=<n>` in its `Server-Timing`. */
++import "../store-assembly/index.mjs";   /* store-assembly R83 (was plane R68; T51; K4168): its first import is the start's registration of the owners' op declarations, before control-plane reads the op tables when it loads */
++import { makeFetch, PUBLISHED_STORE } from "../control-plane/index.mjs";
++import { json, doAnswer, storeSilent, storeRefusal, requiredArgument, STORE_SILENT_REASON,
++         STORE_SILENT_DETAIL } from "../answer-envelope/index.mjs";   /* K1907, K2041: the envelope's */
++import { bindPublishedPlane } from "../publication/worker.mjs";
++import { publicInstanceGroup } from "../setup.mjs";
++import { publicOp, gatedOp } from "./door.mjs";
++import { watchdog } from "./watchdog.mjs";
++import { logArrival } from "./arrival.mjs";
++
++export { Store, storeWith } from "./store.mjs";
++
++bindPublishedPlane({ json, doAnswer, storeSilent, storeRefusal, requiredArgument, STORE_SILENT_REASON,
++                     STORE_SILENT_DETAIL, PUBLISHED_STORE });
++
++/* (the name `door` is kept at the top level on purpose: the bundler renames every nested `door` in the program after it, one of them
++   inside a screen's function, whose source text is the script the page loads; see the trial's report) */
++const door = (ui) => makeFetch({ publicOp, gatedOp, ...(ui ? { ui } : {}),
++  publicInstanceGroup: (env, storeName, projection) => publicInstanceGroup(env, storeName, projection, doAnswer) });
++
++/** R105 (fix round 9, G123g; K4848 (2)): the `Server-Timing` entry naming how many calls a request made to the object. */
++const OBJECT_CALLS = "object-calls";
++
++/* R105: the request's `env`, its `STORE` namespace's stubs counting each `fetch` to the object (RPC methods are not route calls and are not
++   counted). Every other binding is the env's own. */
++function counted(env, tally) {
++  if (!env || typeof env !== "object" || !env.STORE || typeof env.STORE.get !== "function") return env;
++  const ns = env.STORE;
++  const STORE = new Proxy(ns, { get(target, key) {
++    const v = target[key];
++    if (key !== "get" || typeof v !== "function") return typeof v === "function" ? v.bind(target) : v;
++    return (...a) => {
++      const stub = v.apply(target, a);
++      return new Proxy(stub, { get(st, k) {
++        const f = st[k];
++        if (k === "fetch" && typeof f === "function") return (...b) => { tally.n++; return f.apply(st, b); };
++        return typeof f === "function" ? f.bind(st) : f;
++      } });
++    };
++  } });
++  return new Proxy(env, { get(target, key) { return key === "STORE" ? STORE : target[key]; } });
++}
++
++/* R105: the answer with `object-calls;dur=<n>` added to its `Server-Timing`, the calls counted until the answer was made; none when the
++   request made no call (never 0). Calls after the answer (`waitUntil`) belong to no request. */
++function stated(res, n) {
++  if (!(res instanceof Response) || !(n > 0)) return res;
++  const entry = `${OBJECT_CALLS};dur=${n}`;
++  const was = res.headers.get("server-timing");
++  const value = was ? `${was}, ${entry}` : entry;
++  try { res.headers.set("server-timing", value); return res; }
++  catch {
++    const headers = new Headers(res.headers);
++    headers.set("server-timing", value);
++    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
++  }
++}
++
++/** TRIAL (door inversion): the Worker's default export, over the interface handed in (`parts.ui`, the door's `hooks.ui`); with none the
++ *  program has no page and every op answers as before.
++ * @param {{ui?: object}} [parts]
++ * @returns {{fetch: Function, scheduled: Function}} */
++export function launch(parts = {}) {
++  const made = door(parts && parts.ui ? parts.ui : null);
++  /* the door's own properties (its `limits`) stay readable on the fetch the Worker exports */
++  const fetch = Object.assign(async function fetch(req, env, ctx) {
++    logArrival(req);   /* R24 (d): an upload's arrival, stated before anything is awaited */
++    const tally = { n: 0 };
++    const res = await made(req, counted(env, tally), ctx);
++    return stated(res, tally.n);
++  }, made);
++  return { fetch, scheduled: (controller, env) => watchdog(controller, env) };
++}
+diff --git a/bio-plane/src/plane/store.mjs b/bio-plane/src/plane/store.mjs
+index b9af698b..88d10477 100644
+--- a/bio-plane/src/plane/store.mjs
++++ b/bio-plane/src/plane/store.mjs
+@@ -31,14 +31,19 @@ export class Store extends DurableObject {
+   #startedAt = Date.now();
+   /* R1: the assembled store (`store-assembly` R1); absent in a retired room */
+   #assembled = null;
+-  constructor(ctx, env) {
++  /** TRIAL (door inversion): `composer` is the document composer an owed render is promoted with (`{titleOf, promoteDocument}`), handed in by
++   *  the class `storeWith` makes; the platform constructs with `(ctx, env)` alone, and then an owed render stays owed (`NO_DOCUMENT_COMPOSER`).
++   * @param {any} ctx
++   * @param {any} env
++   * @param {{titleOf: Function, promoteDocument: Function}|null} [composer] */
++  constructor(ctx, env, composer = null) {
+     super(ctx, env);
+     this.ctx = ctx;
+     this.env = env;
+     /* R95 (fix round 7, G83; review2 D4): a retired room registers no consumers, migrates nothing and writes nothing; its alarm is deleted when it
+        fires and every request is refused, its data left as it is (removing the generation makes it the current room again). */
+     if (this.#isRetired()) { this.#retired = true; return; }
+-    this.#assembled = assembleStore(ctx, env, { deliver: deliverOwedRender });
++    this.#assembled = assembleStore(ctx, env, { deliver: (a) => deliverOwedRender(a, composer || {}) });
+   }
+ 
+   /* B2 (K1674, K1684): `op=ask`'s work on the `bio` object, reached over the object's RPC from the door's arm (no route:
+@@ -103,3 +108,12 @@ export class Store extends DurableObject {
+     return typeof name === "string" && /^(bio|scratch)(~g[1-9][0-9]*)?$/.test(name);
+   }
+ }
++
++/** TRIAL (door inversion): the Durable Object class the top entry exports as `Store`: this file's `Store`, its owed-render delivery
++ *  composing with the composer handed in. The launcher imports no composer; the entry above it hands one.
++ * @param {{titleOf: Function, promoteDocument: Function}|null} [composer]
++ * @returns {typeof Store} */
++export function storeWith(composer = null) {
++  const Launcher = Store;
++  return class Store extends Launcher { constructor(ctx, env) { super(ctx, env, composer); } };
++}
+diff --git a/bio-plane/src/plane/ui.mjs b/bio-plane/src/plane/ui.mjs
+new file mode 100644
+index 00000000..dc7f4a04
+--- /dev/null
++++ b/bio-plane/src/plane/ui.mjs
+@@ -0,0 +1,31 @@
++/* TRIAL (door inversion): THE INTERFACE, ASSEMBLED FOR THE DOOR AND THE STORE. The one file that imports the interface's modules
++   (interface-shell, interface-assets, the nine screen modules, the capture screen) for the program: what `control-plane`'s door took
++   by import before the trial (ties T01 to T17 and N02 of research file 11), composed here and handed down by `index.mjs`.
++   Owned by the trial's top module, not by `plane`. */
++import { interfacePage, interfaceScript, interfaceScriptHash, pageWork, versionOfScriptPath, PUBLIC_ADDRESSES } from "../interface-shell/index.mjs";
++import { ASSET_FILES } from "../interface-assets/index.mjs";
++import { SCREENS as ENTRY_SCREENS } from "../screens-entry/index.mjs";
++import { SCREENS as SETTINGS_SCREENS } from "../screens-settings/index.mjs";
++import { SCREENS as INTAKE_SCREENS } from "../screens-intake/index.mjs";
++import { SCREENS as DAILY_SCREENS } from "../screens-daily/index.mjs";
++import { SCREENS as INQUIRY_SCREENS } from "../screens-inquiry/index.mjs";
++import { SCREENS as WIZARDS_SCREENS, GUIDE as WIZARD_GUIDE } from "../screens-wizards/index.mjs";
++import { SCREENS as INVESTIGATE_SCREENS } from "../screens-investigate/index.mjs";
++import { SCREENS as PUBLISH_SCREENS } from "../screens-publish/index.mjs";
++import { SCREENS as ACTION_SCREENS } from "../screens-action/index.mjs";
++import { CAPTURE_SCREEN } from "../screens-intake/capture.mjs";
++
++/* control-plane R81's order, as the door spread them before the trial */
++const APP_SCREENS = Object.freeze([...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INTAKE_SCREENS, ...DAILY_SCREENS, ...INQUIRY_SCREENS,
++  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS]);
++
++/** The door's `hooks.ui`: the shell's builders and its parser of its script address, the asset table, the screens in one list, the
++ *  guide, and the shell's public addresses as paths (`/doorbell`, `/tour`). */
++export const INTERFACE = Object.freeze({
++  interfacePage, interfaceScript, interfaceScriptHash, pageWork, versionOfScriptPath,
++  assets: ASSET_FILES, screens: APP_SCREENS, guide: WIZARD_GUIDE,
++  publicAddresses: Object.freeze(Object.keys(PUBLIC_ADDRESSES).map((name) => `/${name}`)),
++});
++
++/** The Store's document composer (an owed render's promotion): the capture screen's own two functions. */
++export const DOCUMENT_COMPOSER = Object.freeze({ titleOf: CAPTURE_SCREEN.parts.titleOf, promoteDocument: CAPTURE_SCREEN.parts.promoteDocument });
+diff --git a/bio-plane/test/m/control-plane/doors.test.mjs b/bio-plane/test/m/control-plane/doors.test.mjs
+index 6bb4cb7d..4b9c9b7b 100644
+--- a/bio-plane/test/m/control-plane/doors.test.mjs
++++ b/bio-plane/test/m/control-plane/doors.test.mjs
+@@ -1,7 +1,7 @@
+ /* control-plane: the Worker entry's routing and namespaces (R1–R6). Driven through `makeFetch(hooks)` with a fake env. */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { M, O, world, call, opCalls, defaultHooks, refused } from "./harness.mjs";
++import { M, O, world, call, opCalls, defaultHooks, refused } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ import { existsSync } from "node:fs";
+ import { fileURLToPath } from "node:url";
+ 
+diff --git a/bio-plane/test/m/control-plane/harness-ui.mjs b/bio-plane/test/m/control-plane/harness-ui.mjs
+new file mode 100644
+index 00000000..8a1969f2
+--- /dev/null
++++ b/bio-plane/test/m/control-plane/harness-ui.mjs
+@@ -0,0 +1,13 @@
++/* TRIAL (door inversion): control-plane's harness with the interface plugged in, for the suites that ask the door for a page, the
++   shell's script or an asset. It is `harness.mjs` whole, but `makeFetch`, `defaultHooks` and `call` hand the door the interface the
++   program's entry hands it (`src/plane/ui.mjs`, a file above the interface). A hook set that names its own `ui` keeps it.
++   The interface is imported after the harness has loaded, never beside it: two screen modules read the op tables when they load, and
++   the harness's registration of the declared ops (`register-declared.mjs`, which awaits) must come first. */
++export * from "./harness.mjs";
++import { makeFetch as bareMakeFetch, defaultHooks as bareHooks, call as bareCall } from "./harness.mjs";
++const { INTERFACE, DOCUMENT_COMPOSER } = await import("../../../src/plane/ui.mjs");
++
++export { INTERFACE, DOCUMENT_COMPOSER };
++export const makeFetch = (hooks = {}) => bareMakeFetch({ ui: INTERFACE, ...hooks });
++export const defaultHooks = (log) => ({ ...bareHooks(log), ui: INTERFACE });
++export const call = (env, o = {}) => bareCall(env, { ...o, hooks: { ui: INTERFACE, ...(o.hooks ?? bareHooks()) } });
+diff --git a/bio-plane/test/m/control-plane/page-policy.test.mjs b/bio-plane/test/m/control-plane/page-policy.test.mjs
+index bd4314b8..f8b8343f 100644
+--- a/bio-plane/test/m/control-plane/page-policy.test.mjs
++++ b/bio-plane/test/m/control-plane/page-policy.test.mjs
+@@ -4,7 +4,7 @@
+    judged directive by directive, never matched as text. */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { world, call, defaultHooks } from "./harness.mjs";
++import { world, call, defaultHooks } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ 
+ /* A policy's directives, `{name: [sources]}`. */
+ const parse = (header) => Object.fromEntries(String(header || "").split(";").map((d) => d.trim()).filter(Boolean)
+diff --git a/bio-plane/test/m/control-plane/r124-owed-render.test.mjs b/bio-plane/test/m/control-plane/r124-owed-render.test.mjs
+index 220760d5..04998b32 100644
+--- a/bio-plane/test/m/control-plane/r124-owed-render.test.mjs
++++ b/bio-plane/test/m/control-plane/r124-owed-render.test.mjs
+@@ -10,7 +10,9 @@ import assert from "node:assert/strict";
+ import { createHash } from "node:crypto";
+ /* the sources are loaded after the harness has registered the declared ops (its top-level await), as the other suites do */
+ const { CAPTURE_SCREEN } = await import("../../../src/screens-intake/capture.mjs");
+-const { deliverOwedRender } = await import("../../../src/control-plane/index.mjs");
++const { deliverOwedRender: deliverWith } = await import("../../../src/control-plane/index.mjs");
++const { DOCUMENT_COMPOSER } = await import("../../../src/plane/ui.mjs");   /* TRIAL: the composer the entry hands the Store */
++const deliverOwedRender = (a) => deliverWith(a, DOCUMENT_COMPOSER);
+ const { captureOf } = await import("../../../src/capture/index.mjs");
+ const { extractionOf } = await import("../../../src/extraction/index.mjs");
+ const { recordOf } = await import("../../../src/record-core/index.mjs");
+diff --git a/bio-plane/test/m/control-plane/r8-phase-clock.test.mjs b/bio-plane/test/m/control-plane/r8-phase-clock.test.mjs
+index b840a7ec..907e59bc 100644
+--- a/bio-plane/test/m/control-plane/r8-phase-clock.test.mjs
++++ b/bio-plane/test/m/control-plane/r8-phase-clock.test.mjs
+@@ -5,7 +5,7 @@
+    The object here is the harness's, answering as the plane's object does; what the module states is what its answer's header says. */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { M, world, call, defaultHooks } from "./harness.mjs";
++import { M, world, call, defaultHooks } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ 
+ const parse = (header) => (header || "").split(",").map((m) => m.trim()).filter(Boolean).map((m) => {
+   const [name, ...params] = m.split(";");
+diff --git a/bio-plane/test/m/control-plane/t46-app.test.mjs b/bio-plane/test/m/control-plane/t46-app.test.mjs
+index 1b6ad53d..5b1ff4e6 100644
+--- a/bio-plane/test/m/control-plane/t46-app.test.mjs
++++ b/bio-plane/test/m/control-plane/t46-app.test.mjs
+@@ -6,7 +6,7 @@ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { createHash } from "node:crypto";
+ import "./register-declared.mjs";
+-import { world, call, refused } from "./harness.mjs";
++import { world, call, refused, INTERFACE } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ const { appPage } = await import("../../../src/control-plane/app.mjs");
+ const { interfacePage } = await import("../../../src/interface-shell/index.mjs");
+ const { ASSET_FILES } = await import("../../../src/interface-assets/index.mjs");
+@@ -41,7 +41,7 @@ const policyHashes = (r) => {
+ };
+ const fetchRaw = async (env, path, headers = {}, method = "GET") => {
+   const { makeFetch } = await import("../../../src/control-plane/index.mjs");
+-  return makeFetch({})(new Request(`https://plane.example${path}`, { method, headers }), env);
++  return makeFetch({ ui: INTERFACE })(new Request(`https://plane.example${path}`, { method, headers }), env);
+ };
+ 
+ test("R75, R81 (T46, T47; N897 (1); K3137; fix round 3, C15, P2.4): `GET /app` and `GET /app/<path>` answer interface-shell's page over the nine screen modules' screens (entry, settings, intake, daily, inquiry, wizards, investigate, publish, action) with screens-wizards' guide, `text/html`, `cache-control: no-store`, under a page policy that names the shell's script by its hash in place of a nonce; the page loads one external script at the release's address, carries no inline script and no nonce, and is the same for every path below `/app` (the routing is the page's own); no store is asked and no credential read, a presented session changing nothing", async () => {
+diff --git a/bio-plane/test/m/control-plane/t48-door.test.mjs b/bio-plane/test/m/control-plane/t48-door.test.mjs
+index d8a2fcdf..85e7c1de 100644
+--- a/bio-plane/test/m/control-plane/t48-door.test.mjs
++++ b/bio-plane/test/m/control-plane/t48-door.test.mjs
+@@ -9,7 +9,7 @@
+ import { test } from "node:test";
+ import { T48_SHARES, T48_FAMILIES } from "../../../src/op-declarations/t48.mjs";
+ import assert from "node:assert/strict";
+-import { M, O, world, call, opCalls, refused, aik, cred, FORGED } from "./harness.mjs";
++import { M, O, world, call, opCalls, refused, aik, cred, FORGED } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ import { routesForSessions, callers, ok } from "./door-routes.mjs";
+ import { memberRefOf } from "../../../src/signin-door/index.mjs";
+ import { actionRepliesOps } from "../../../src/action-replies/index.mjs";
+diff --git a/bio-plane/test/m/control-plane/t50-door.test.mjs b/bio-plane/test/m/control-plane/t50-door.test.mjs
+index 2f4e9b82..ab0150a3 100644
+--- a/bio-plane/test/m/control-plane/t50-door.test.mjs
++++ b/bio-plane/test/m/control-plane/t50-door.test.mjs
+@@ -7,7 +7,7 @@
+ import { test } from "node:test";
+ import { T50_SHARES, T50_FAMILIES } from "../../../src/op-declarations/t50.mjs";
+ import assert from "node:assert/strict";
+-import { M, O, world, call, opCalls, makeFetch, defaultHooks, refused, aik, cred, hex64, FORGED } from "./harness.mjs";
++import { M, O, world, call, opCalls, makeFetch, defaultHooks, refused, aik, cred, hex64, FORGED } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ import { ok, routesForSessions } from "./door-routes.mjs";
+ import { word, hasWord } from "../../../src/setup-words/index.mjs";
+ import { callerViewer, admit, aiCredentialPresented, presentedCredential } from "../../../src/admission/index.mjs";
+diff --git a/bio-plane/test/m/control-plane/t51-g43-embed.test.mjs b/bio-plane/test/m/control-plane/t51-g43-embed.test.mjs
+index 3294235f..a5857147 100644
+--- a/bio-plane/test/m/control-plane/t51-g43-embed.test.mjs
++++ b/bio-plane/test/m/control-plane/t51-g43-embed.test.mjs
+@@ -11,7 +11,9 @@ import { INLINE_MAX } from "../../../src/promotion/index.mjs";
+ import { archiveDocuments, promoteArchive, PROV_EMBED_MAX } from "../../../src/control-plane/archive.mjs";
+ import { archiveAnswer } from "../acquisition/fixtures.mjs";
+ const { CAPTURE_SCREEN } = await import("../../../src/screens-intake/capture.mjs");
+-const { deliverOwedRender } = await import("../../../src/control-plane/index.mjs");
++const { deliverOwedRender: deliverWith } = await import("../../../src/control-plane/index.mjs");
++const { DOCUMENT_COMPOSER } = await import("../../../src/plane/ui.mjs");   /* TRIAL: the composer the entry hands the Store */
++const deliverOwedRender = (a) => deliverWith(a, DOCUMENT_COMPOSER);
+ const { captureOf } = await import("../../../src/capture/index.mjs");
+ const { extractionOf } = await import("../../../src/extraction/index.mjs");
+ const { recordOf } = await import("../../../src/record-core/index.mjs");
+diff --git a/bio-plane/test/m/control-plane/t51-interfacewords.test.mjs b/bio-plane/test/m/control-plane/t51-interfacewords.test.mjs
+index 5ed8a928..05eb614e 100644
+--- a/bio-plane/test/m/control-plane/t51-interfacewords.test.mjs
++++ b/bio-plane/test/m/control-plane/t51-interfacewords.test.mjs
+@@ -4,7 +4,7 @@
+    are as they were. A request is "versioned" when its `v` is the release (`env.VERSION`, R1), the language answered and the words stamp, joined by `~` (R127; `r8-words-cache.test.mjs` holds the key's other cases). */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { M, world, defaultHooks, makeFetch } from "./harness.mjs";
++import { M, world, defaultHooks, makeFetch } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ 
+ const WORDS = { ok: true, result: { ok: true, language: "es", words_version: "s1", words: Object.fromEntries(Array.from({ length: 4000 }, (_, i) => [`k.${i}`, { shown: `palabra ${i} `.repeat(4), english: `word ${i} `.repeat(4) }])) },
+                 store: "bio", tokenClass: "member" };
+diff --git a/bio-plane/test/m/control-plane/t51-page-log.test.mjs b/bio-plane/test/m/control-plane/t51-page-log.test.mjs
+index 98dea636..2b2ecfe3 100644
+--- a/bio-plane/test/m/control-plane/t51-page-log.test.mjs
++++ b/bio-plane/test/m/control-plane/t51-page-log.test.mjs
+@@ -5,7 +5,7 @@
+ import "../../sandbox.mjs";
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { call, world } from "./harness.mjs";
++import { call, world } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ 
+ const LINE = "control-plane.page";
+ 
+diff --git a/bio-plane/test/m/control-plane/t51-server-timing.test.mjs b/bio-plane/test/m/control-plane/t51-server-timing.test.mjs
+index b71e30d9..5748472d 100644
+--- a/bio-plane/test/m/control-plane/t51-server-timing.test.mjs
++++ b/bio-plane/test/m/control-plane/t51-server-timing.test.mjs
+@@ -5,7 +5,7 @@
+    `env` (`env.STORE.get(...)`) or the `stub` they are handed, and the routes `acquire` and `extractread` are the two phases. */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { M, world, call, defaultHooks, opCalls } from "./harness.mjs";
++import { M, world, call, defaultHooks, opCalls } from "./harness-ui.mjs";   /* TRIAL: the door over the interface */
+ 
+ const SHA = "d".repeat(64);
+ const later = (ms) => new Promise((r) => setTimeout(r, ms));
+diff --git a/bio-plane/test/m/control-plane/t51-visitor-copy.test.mjs b/bio-plane/test/m/control-plane/t51-visitor-copy.test.mjs
+index da26f35f..46cbee64 100644
+--- a/bio-plane/test/m/control-plane/t51-visitor-copy.test.mjs
++++ b/bio-plane/test/m/control-plane/t51-visitor-copy.test.mjs
+@@ -11,7 +11,9 @@ import { createHash } from "node:crypto";
+ import { network, HTML, page } from "../acquisition/fixture.mjs";
+ 
+ const { CAPTURE_SCREEN } = await import("../../../src/screens-intake/capture.mjs");
+-const { deliverOwedRender } = await import("../../../src/control-plane/index.mjs");
++const { deliverOwedRender: deliverWith } = await import("../../../src/control-plane/index.mjs");
++const { DOCUMENT_COMPOSER } = await import("../../../src/plane/ui.mjs");   /* TRIAL: the composer the entry hands the Store */
++const deliverOwedRender = (a) => deliverWith(a, DOCUMENT_COMPOSER);
+ const { captureOf } = await import("../../../src/capture/index.mjs");
+ const { recordOf } = await import("../../../src/record-core/index.mjs");
+ const { promotionOf } = await import("../../../src/promotion/index.mjs");
+diff --git a/bio-plane/test/m/plane/worker.test.mjs b/bio-plane/test/m/plane/worker.test.mjs
+index 1231fa32..88ab614a 100644
+--- a/bio-plane/test/m/plane/worker.test.mjs
++++ b/bio-plane/test/m/plane/worker.test.mjs
+@@ -35,7 +35,7 @@ const get = async (q, token = null) => {
+ 
+ test("R6 R79: the Worker's module exports `default { fetch, scheduled }` and `Store`, and nothing else", () => {
+   assert.deepEqual(Object.keys(entry).sort(), ["Store", "default"]);
+-  assert.equal(entry.Store, PlaneStore, "the class is R1's");
++  assert.equal(Object.getPrototypeOf(entry.Store), PlaneStore, "the class is R1's, made by `storeWith` with the composer handed in (TRIAL)");
+   assert.deepEqual(Object.keys(entry.default), ["fetch", "scheduled"]);
+   assert.equal(typeof entry.default.fetch, "function");
+   assert.equal(typeof entry.default.scheduled, "function", "the watchdog's cron (R79)");
+diff --git a/bio-plane/trial-door/launcher-only.mjs b/bio-plane/trial-door/launcher-only.mjs
+new file mode 100644
+index 00000000..0ef9eb42
+--- /dev/null
++++ b/bio-plane/trial-door/launcher-only.mjs
+@@ -0,0 +1,7 @@
++/* TRIAL ONLY (door inversion, step 4): a Worker entry that plugs in NO interface: the launcher alone. Not a product file; owned by
++   no module. `launch()` with no parts makes the door with no `hooks.ui`; `Store` is the launcher's own class, with no document composer. */
++import { launch, Store } from "../src/plane/launch.mjs";
++
++export { Store };
++
++export default launch();
+diff --git a/process/modules/control-plane.json b/process/modules/control-plane.json
+index 0ff8cc8e..7b98c236 100644
+--- a/process/modules/control-plane.json
++++ b/process/modules/control-plane.json
+@@ -89,18 +89,6 @@
+     "question-explorer",
+     "case-account",
+     "doorbell",
+-    "interface-assets",
+-    "interface-shell",
+-    "screens-settings",
+-    "screens-intake",
+-    "screens-capture",
+-    "screens-daily",
+-    "screens-inquiry",
+-    "screens-entry",
+-    "screens-wizards",
+-    "screens-investigate",
+-    "screens-publish",
+-    "screens-action",
+     "test-support",
+     "action-holds",
+     "case-inputs",
+diff --git a/process/modules/order.txt b/process/modules/order.txt
+index b9efec5c..b3761751 100644
+--- a/process/modules/order.txt
++++ b/process/modules/order.txt
+@@ -173,6 +173,8 @@ signin-door
+ store-services
+ store-assembly
+ store-request
++control-plane
++plane
+ interface-assets
+ interface-shell
+ screens-entry
+@@ -192,8 +194,7 @@ screens-public
+ screens-publish
+ screens-send
+ screens-action
+-control-plane
+-plane
++product
+ release
+ installer-account
+ installer-steps
+diff --git a/process/modules/plane.json b/process/modules/plane.json
+index cc602757..c49ec428 100644
+--- a/process/modules/plane.json
++++ b/process/modules/plane.json
+@@ -246,10 +246,8 @@
+     "jurisdictions",
+     "machinery-producers",
+     "setup-words",
+-    "interface-shell",
+     "translations",
+     "sources",
+-    "screens-settings",
+     "case-grammar",
+     "csv-reader",
+     "reading-pipeline",
+@@ -257,16 +255,6 @@
+     "store-assembly",
+     "store-services",
+     "store-request",
+-    "screens-entry",
+-    "screens-wizards",
+-    "screens-intake",
+-    "screens-capture",
+-    "screens-daily",
+-    "screens-inquiry",
+-    "screens-investigate",
+-    "screens-publish",
+-    "screens-public",
+-    "screens-action",
+     "civil-time",
+     "calc-grammar",
+     "office-readers",
+@@ -285,7 +273,6 @@
+     "agent-steps",
+     "action-grammar",
+     "op-capabilities",
+-    "interface-assets",
+     "query-language",
+     "format-registry",
+     "op-grade-tranches",
+diff --git a/process/modules/product.json b/process/modules/product.json
+new file mode 100644
+index 00000000..93e80646
+--- /dev/null
++++ b/process/modules/product.json
+@@ -0,0 +1,24 @@
++{
++  "name": "product",
++  "files": [
++    "bio-plane/src/plane/index.mjs",
++    "bio-plane/src/plane/ui.mjs"
++  ],
++  "tests": [],
++  "public": [],
++  "uses": [
++    "plane",
++    "interface-shell",
++    "interface-assets",
++    "screens-entry",
++    "screens-settings",
++    "screens-intake",
++    "screens-capture",
++    "screens-daily",
++    "screens-inquiry",
++    "screens-wizards",
++    "screens-investigate",
++    "screens-publish",
++    "screens-action"
++  ]
++}

@@ -1,0 +1,2871 @@
+{
+ "note": "Requirement text that states or assumes today's stacking (model, middleware, UI, control plane, launcher). Every entry is a lead about intent: requirement text is not evidence of what the code does. Base: process/modules/*.md of the working tree (= origin/p4-tranche a26a8da2 under process/modules). Built by a scratch script from a parse of all 204 files (7,045 requirement lines of the form '- **R<n>** [met|not yet met]'; 27 lines naming **R<n>** in another form were not parsed: 24 in ooxml.md, 1 each in docprofile.md, pdf-worker.md, screens-intake.md).",
+ "classes": {
+  "serve": "says the door serves the member page, its script or its assets, or a UI requirement says who serves them",
+  "compose": "says which screens modules' SCREENS the page is composed from",
+  "nine": "names 'the nine' screens modules",
+  "owner": "says which module owns the Worker's entry, the Store class, makeFetch, the hooks or the config",
+  "deliver": "says the owed render's delivery uses the capture screen's builder, or hands deliverOwedRender on",
+  "proof": "says where a requirement is proven: through the door, at the real plane, with later modules' real screens, or names a test file another module owns",
+  "wholeplane": "one of plane's proofs of another (non-UI) module at the real plane",
+  "order": "states that one module is earlier or later than another, or forbids an import by order",
+  "world": "the test world and test door that stand in for the real door in UI tests",
+  "registry": "the screens registry",
+  "text": "an address, bound, sentence or sequence agreed between the door side and a screen",
+  "cite": "names the other side only to cite its requirement or what it does",
+  "double": "a UI requirement whose test names a fake or stub 'plane'",
+  "generic": "a UI requirement that uses 'the plane' for the server side as a whole"
+ },
+ "counts": {
+  "total": 163,
+  "by_module": {
+   "instance-setup": 1,
+   "admission": 2,
+   "answer-envelope": 2,
+   "store-door": 1,
+   "store-services": 2,
+   "store-assembly": 9,
+   "store-request": 9,
+   "interface-assets": 1,
+   "interface-shell": 15,
+   "screens-entry": 8,
+   "screens-account": 2,
+   "screens-settings": 4,
+   "screens-capture": 15,
+   "screens-intake": 4,
+   "screens-find": 4,
+   "screens-daily": 2,
+   "screens-document": 9,
+   "screens-question": 8,
+   "screens-inquiry": 1,
+   "screens-investigate": 2,
+   "screens-public": 2,
+   "screens-publish": 4,
+   "screens-send": 3,
+   "screens-action": 2,
+   "control-plane": 30,
+   "plane": 21
+  },
+  "by_class": {
+   "owner": 30,
+   "serve": 18,
+   "text": 7,
+   "cite": 37,
+   "deliver": 6,
+   "order": 4,
+   "registry": 1,
+   "world": 7,
+   "proof": 25,
+   "compose": 4,
+   "nine": 5,
+   "generic": 33,
+   "double": 16,
+   "wholeplane": 6
+  },
+  "not_yet_met": [
+   "plane R1",
+   "plane R9",
+   "plane R111",
+   "plane R112",
+   "plane R113",
+   "plane R114"
+  ],
+  "sets": {
+   "A1_ui_requirements_naming_control_plane": 21,
+   "A2_ui_requirements_with_the_word_plane": 64,
+   "A3_door_side_seven_naming_a_ui_module": 21
+  }
+ },
+ "requirements": [
+  {
+   "id": "instance-setup R95",
+   "module": "instance-setup",
+   "position": 166,
+   "r": 95,
+   "status": "met",
+   "file": "process/modules/instance-setup.md",
+   "line": 126,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "**Where the change is made:** `bootstrap` is public (`classes: null`) and the door's `publicOp` hands `bootstrapOp` only the fingerprint; the caller's credential class reaches `bootstrapReport` through `plane`'s door (BOB's to place with `control-plane`), and the seven are read by the store only for such a caller.",
+   "assumes": "\"The door's `publicOp`\" and \"`plane`'s door\" hand `bootstrapOp` its caller.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "admission R1",
+   "module": "admission",
+   "position": 169,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/admission.md",
+   "line": 20,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "This applies to every caller and to the instance's page at `/`.",
+   "assumes": "The namespace gate \"applies to every caller and to the instance's page at `/`\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "admission R27",
+   "module": "admission",
+   "position": 169,
+   "r": 27,
+   "status": "met",
+   "file": "process/modules/admission.md",
+   "line": 92,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "- The limit is confirmed at this job's START against M-T49-4, so that at least 400 page loads in 10 minutes fit within it. / - Tests: - 400 signed-in page loads in 10 minutes, under one session and from one source, are admitted (each load makes the public reads M-T49-4 measures, at least `bootstrap` and `groupidentity`), and that source's window is not counted by them.",
+   "assumes": "The session window's limit is sized by page loads and the public reads each load makes.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "answer-envelope R6",
+   "module": "answer-envelope",
+   "position": 170,
+   "r": 6,
+   "status": "met",
+   "file": "process/modules/answer-envelope.md",
+   "line": 27,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(was `control-plane` R51; K1943) (DEC-122 (3); N528) Every `text/html` response the plane serves (the interface page among them) carries a policy under which a browser loads no script, style, font, image or connection from another origin and sends nothing elsewhere. / Its `img-src` is `'self' data: blob:`: an object address the page makes itself names no other origin (K3156; `interface-shell` R49's `cs.image`). / (T35; F17, K1881) Its `script-src` is nonce-based: each such response carries a fresh nonce (at least 128 bits from a CSPRNG), no two responses the same, and a `script-src` of `'nonce-<that nonce>'` alone, with no `'unsafe-inline'`, no `'unsafe-eval'` and no host; every inline `<script>` element of the page served carries that nonce (the interface page's `NONCE_SLOT`, `interface-shell` R2, R3, filled per response), so the pages run as before and a script they did not ship does not.",
+   "assumes": "The page policy is defined over \"the interface page\" and cites interface-shell R1, R2, R3, R49; its test reads the interface page's policy.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "answer-envelope R16",
+   "module": "answer-envelope",
+   "position": 170,
+   "r": 16,
+   "status": "met",
+   "file": "process/modules/answer-envelope.md",
+   "line": 39,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "(N1002; N1001; amends R6) R6 binds `interfacePage` at `/` and `/app/*`; the setup page is no longer served; the door's row for `signintrace` off a test instance (`SIGNINTRACE_NOT_TEST`) joins `DISPATCH_CHECKS` and its order test.",
+   "assumes": "\"R6 binds `interfacePage` at `/` and `/app/*`\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-door R7",
+   "module": "store-door",
+   "position": 171,
+   "r": 7,
+   "status": "met",
+   "file": "process/modules/store-door.md",
+   "line": 39,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(was `control-plane` R36, the pull and its promotion; `control-plane` keeps the routing and the `by` stamp) The store's pull (`pullAndFile`, the internal route `inboxpullfile`) reached by `op=inboxpull` pulls through `doorbell`'s `pullKnock` (`doorbell` R13; was capture R65), with `by` and `viewer` as the door stamped them (so `doorbell`'s `holder` is answered to a viewer who may see the holding bundle, never null for want of the viewer; K5129), and in the same act promotes the pulled document as a new information bundle at `collected`, the puller its au …",
+   "assumes": "Cites screens-intake R32 (3) for the title's wording.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-services R64",
+   "module": "store-services",
+   "position": 173,
+   "r": 64,
+   "status": "met",
+   "file": "process/modules/store-services.md",
+   "line": 37,
+   "classes": [
+    "deliver"
+   ],
+   "found_by": "read",
+   "quote": "A keep that succeeds becomes a `reading` entry read in the same tick; `reading` and `ocr` call extraction's `readHeld({sha, storeName, env, kind})`; `subresources` calls acquisition's `owedRun` with `{storeName, env, deliver}`, `deliver` being `control-plane`'s `deliverOwedRender` (handed in, R1); `unpack` runs the archive-unpack drain as the daemon, a tree or depth stop ending it stated, a daily budget leaving it owed. / Test: a reading with no home for 20 minutes of alarms is then read; a 40 MB keep promoted at 90 s; re-arm after exhaustion and after a final stop; the owed render delivered through `deliver`.",
+   "assumes": "The ledger's `subresources` kind calls `deliver`, \"being `control-plane`'s `deliverOwedRender` (handed in, R1)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-services R83",
+   "module": "store-services",
+   "position": 173,
+   "r": 83,
+   "status": "met",
+   "file": "process/modules/store-services.md",
+   "line": 58,
+   "classes": [
+    "owner",
+    "order"
+   ],
+   "found_by": "read",
+   "quote": "(was `plane` R68) **The assembly assembles each module's op declarations at start-up and refuses to start on a duplicate or a disagreement.** At load, before any table either registration keeps is read, the first import of both entries (`register.mjs`, imported first by the Worker's entry `plane/index.mjs` and by the assembly, since `control-plane` reads the op tables when it loads) hands every composed module's `DECLARED_OPS`, and the assembly's own (R84), to `op-declarations`' and `op-grades`' `registerDeclaredOps`, once.",
+   "assumes": "`register.mjs` is \"imported first by the Worker's entry `plane/index.mjs` … since `control-plane` reads the op tables when it loads\": a load order fixed by the entry.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R1",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 21,
+   "classes": [
+    "deliver",
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(was `plane` R1 and R2, in part; `releaseKeys` K5226) `assembleStore(ctx, env, {deliver, releaseKeys})` builds every module of the record store on one Durable Object's storage and answers the assembled store `{routes, dispatch, namespace, nowMs, read}` (the route map R6, `dispatch` R7, `namespace` R4, `nowMs` R5, `read` R8). / `ctx` is the object's state as the runtime hands it (the surface R90 lists); `env` is its bindings (`STORE`, `CAPTURES`, `ACCOUNT_SEAL_SECRET`, `RECEIPT_SIGNING_KEY`, `INSTANCE_NAME`, `AGENT_WORKER`, `FILE_SCANNER`, `CAPTURE_CREDENTIALS_KEY`, `OWN_HOSTS`, `BIO_NOW_MS`), each optional and read where it is used; `deliver`, optional, is `control-plane`'s owed-render delivery (`deliverOwedRender`, `control-plane` R124), handed to the owed-work ledger: absent, a ledger row that needs it stays owed (R67); `releaseKeys`, optional, is the keys a release notice i …",
+   "assumes": "An earlier module's requirement names the later one: `deliver` \"is `control-plane`'s owed-render delivery (`deliverOwedRender`, `control-plane` R124)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R18",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 18,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 46,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(was `plane` R57) The composition root's `wizardRegistration` also hands `wizard-scripts` the administrator's acts and screens (`wizard-scripts`' `ADMIN_ACTS` and `ADMIN_SCREENS`, its R51; were `interface-shell`'s), so the live registration withholds the group-setup scripts from a viewer without the `administer` capability.",
+   "assumes": "History: `ADMIN_ACTS`/`ADMIN_SCREENS` \"were `interface-shell`'s\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R23",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 23,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 51,
+   "classes": [
+    "registry"
+   ],
+   "found_by": "read",
+   "quote": "(was `plane` R24) The assembly carries **no screens registry of its own**. / `wizardRegistration.screens` is that registry, the same object and no copy; `answers` reads no registry, and the composition root hands it none.",
+   "assumes": "\"The assembly carries no screens registry of its own\"; the one registry is wizard-scripts'.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R90",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 90,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 79,
+   "classes": [
+    "world"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (d); `op-tables.md` §5.2) `storeWorld({claimed?, now?, env?, instanceName?, deliver?, releaseKeys?})` (`instanceName` `null` binds no `INSTANCE_NAME`, so no producing team is recorded; `deliver` and `releaseKeys` forwarded to R1; K5226) (async; published from `bio-plane/test/m/store-assembly/world.mjs`) answers a world: the real store, `assembleStore` (R1), over a real SQL database (`node:sqlite`, behind `sql.exec` answering a cursor as the platform's does) as the Durable Object's storage, migrated and with `instance-setup` started.",
+   "assumes": "`storeWorld()` (the real store in plain node) is published for tests of later modules; it forwards `deliver`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R91",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 91,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 80,
+   "classes": [
+    "world"
+   ],
+   "found_by": "read",
+   "quote": "The module prints once for the file `storeWorld: base <ms> ms, copy <ms> ms`, the measure K5046 (g) asks before the screens' jobs start.",
+   "assumes": "The world's cost is measured \"before the screens' jobs start\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R94",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 94,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 83,
+   "classes": [
+    "world"
+   ],
+   "found_by": "read",
+   "quote": "A fault the page must survive (`silent`, `pending`, an HTTP error, a nameless refusal) stays the harness's, not the world's: the world answers no made-up code but `WORLD_NO_DOOR_ARM` (`store-request` R17).",
+   "assumes": "What the page's harness keeps and what the world answers (`WORLD_NO_DOOR_ARM`, store-request R17).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R96",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 96,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 102,
+   "classes": [
+    "order"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (a); P4) It imports only modules earlier than `store-assembly` in `build/modules.json` and no module of the platform: no `cloudflare:workers`, no Worker entry, no Worker-only global. / Test: a census of the module's imports against the file's order; control: an import of `control-plane`, `interface-shell` or `plane` fails it by name.",
+   "assumes": "\"It imports only modules earlier than `store-assembly`\"; its control: \"an import of `control-plane`, `interface-shell` or `plane` fails it by name\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R98",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 98,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 104,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "When the job closes `plane` holds the `Store` class, the Worker's entry (`index.mjs`, `door.mjs`, `watchdog.mjs`) and the deployment config, and none of `pending.mjs`, `ask.mjs`, `wiring.mjs`, `owners.mjs`, `stats.mjs`, `unpack.mjs`, `transcribe.mjs`, `casesweep.mjs`, `acquire-timings.mjs`, `register.mjs`, `declarations.mjs`, `declared.mjs` or `wizards.mjs`; `control-plane` holds no `owner-ops.mjs`; and no file imports a deleted path.",
+   "assumes": "\"`plane` holds the `Store` class, the Worker's entry (`index.mjs`, `door.mjs`, `watchdog.mjs`) and the deployment config\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-assembly R99",
+   "module": "store-assembly",
+   "position": 174,
+   "r": 99,
+   "status": "met",
+   "file": "process/modules/store-assembly.md",
+   "line": 31,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (a); K5052 (5)) **What this module exports, and to whom.** `assembleStore(ctx, env, {deliver})` (R1); `namespaceOf(ctx, env)` (R4); `STEP_ORDER`, `stepOrderFrom` and `FIRST_LAYER_11` (R2, R10); `askOp({req, url, env, viaSession, sessMember, grantMember, trace?, memberRef?})` and `actionDraftOp({req, url, env, op, viaSession, sessMember, sessViewer, trace?, memberRef?})`, with `ACTION_DRAFT_OPS` (`[\"infractiondraft\", \"bearingdraft\"]`), the doors `plane`'s Worker hooks call (R49 to R51); `askOnObject(ctx, env, {member, session?, grant?, question, co …",
+   "assumes": "Exports \"the doors `plane`'s Worker hooks call\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R1",
+   "module": "store-request",
+   "position": 175,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 21,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "(was `control-plane` R17, R29's mechanism and the construction at `control-plane/index.mjs:1384-3881`; K5046 (b), K5052 (1)) `innerRequest({op, url, method, body, caller, source?, country?, userAgent?, origin?, length?, resolving?, replay?, deferred?, secretSha?, bySecret?, mint?})` makes the store's request from a page's, in one function. / `op` is the op's name after `op-declarations`' alias resolution; `url` the request's address (its search parameters are the page's); `method`; `body` the body as the door read it, text, or the bytes or stream of an upload, or absent; `caller` the caller `admission.admit` admitted (`cls`, `viaSession`, `member`, `viewer`, `identity`, `rights`, `caps`, `aiCred`, `storeName`, with the presented session token as `token`).",
+   "assumes": "`innerRequest` \"makes the store's request from a page's\"; it was cut from control-plane's door.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R4",
+   "module": "store-request",
+   "position": 175,
+   "r": 4,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 24,
+   "classes": [
+    "order"
+   ],
+   "found_by": "read",
+   "quote": "The caller's own value of any key R3 deletes is gone before this rule runs; a page's `proposer`, `principal`, `owner` or `member` for an op that neither declares it as a stamp nor is named for it in R7 passes as the page's parameter (an argument, as `membercaps`' `member` is), as the Worker's door does today (R15; K5149).",
+   "assumes": "\"As the Worker's door does today (R15)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R15",
+   "module": "store-request",
+   "position": 175,
+   "r": 15,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 36,
+   "classes": [
+    "order",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Both are this function's answer; the real door can run only in a module later than this one, so `control-plane` R137 holds it to this parity.",
+   "assumes": "\"The real door can run only in a module later than this one, so `control-plane` R137 holds it to this parity\": states the door is later than store-request.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R16",
+   "module": "store-request",
+   "position": 175,
+   "r": 16,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 41,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "`token` is the session token the real `login` issued and `session` the record the shell keeps (`{t, e, d, w}`, `interface-shell` R32).",
+   "assumes": "Cites interface-shell R32 for the session record the shell keeps.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R17",
+   "module": "store-request",
+   "position": 175,
+   "r": 17,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 42,
+   "classes": [
+    "world",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (d), K5052 (2), (8); `op-tables.md` §3.4, §5.2) **The world's door.** `doorOf(world)(req, as)` answers a request as the real door answers it for the caller `as` (a signed-in member of R16, or none for a public op). / It (1) resolves the op's alias and refuses an op with no spec as the real door does (`UNKNOWN_OP`, status 400); (2) admits the caller with `admission.admit` over the bearer token the request presents (the session the real `login` made), so a locked, ended or unknown session is refused as admission refuses it; (3) makes the store's request with `innerRequest` (R1) from the admitted caller and by no rule of its own; (4) passes it to the world (`world.send`, `store-assembly` R92) and decorates the answer in `answer-envelope`'s envelope (`{ok, result, store, …",
+   "assumes": "The world's door answers \"as the real door answers it\" for the shell's harness, re-making the arms \"`plane/door.mjs` composes\": a test-side door exists because the real one is later.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R18",
+   "module": "store-request",
+   "position": 175,
+   "r": 18,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 43,
+   "classes": [
+    "world",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (d)) **For the shell's harness.** `bootOf(world, as)` answers `{door, session}`: `door` is `doorOf(world)` bound to `as`, the function `interface-shell`'s `boot({screens, door, session})` consults for every op the test's own table does not answer (`interface-shell` R129), and `session` the record of `as.session`. / A screens module's test boots over the real store with `boot({screens, ...bootOf(world, as)})`.",
+   "assumes": "\"A screens module's test boots over the real store with `boot({screens, ...bootOf(world, as)})`\" (interface-shell R129).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R19",
+   "module": "store-request",
+   "position": 175,
+   "r": 19,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 44,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "This module ships `hold(world, as, name, text, project?)` → `{sha, bundle}` (`captureupload` of the text, `allocid` for an `INFO` id, `promote` of an information bundle at `collected`, filed under `project` when given, as the capture screen promotes it); `project(world, as, title)` → the project's bundle id (`promote` of its document with no base); `trail(world, as, projectId, label?)` → the money set's id (`createset` with `purpose: \"trail\"`); `profiles(world, as, ids)` → the answer of `profilesset`. / They are the recipes `screens-investigate`'s real-plane test support makes, moved here.",
+   "assumes": "Recipes \"as the capture screen promotes it\"; \"`screens-investigate`'s real-plane test support … moved here\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R22",
+   "module": "store-request",
+   "position": 175,
+   "r": 22,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 62,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(K624) The split is by copy, then delete: when the job closes `control-plane/index.mjs` holds none of the rules of R2 to R13 and R23, R23 and R24 and calls `innerRequest` for every store request, and the constants of R24 and `promotedTypeOf` are imported from here by what still reads them.",
+   "assumes": "After the split `control-plane/index.mjs` calls `innerRequest` for every store request.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "store-request R26",
+   "module": "store-request",
+   "position": 175,
+   "r": 26,
+   "status": "met",
+   "file": "process/modules/store-request.md",
+   "line": 47,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(was `control-plane` R41; K5162, K5168) **`agentpack`.** `agentPackOp({url, headers, gatedOp, stamps})` answers the `Response` the door gives for `op=agentpack`, as control-plane R41 states it; the world's door serves the op through it.",
+   "assumes": "`agentPackOp` takes the hook `gatedOp`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-assets R6",
+   "module": "interface-assets",
+   "position": 176,
+   "r": 6,
+   "status": "met",
+   "file": "process/modules/interface-assets.md",
+   "line": 22,
+   "classes": [
+    "cite",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(T48; N1039; K3147; `plane` R43, R54; `bundler` R31) The faces (`fonts/<f>`, the bulk of `ASSET_FILES`) are not evaluated as module code at the plane's start: `ASSET_FILES` holds each face so that the bundle carries its bytes as an upload part (a data module the Worker loads as bytes) or builds it on first read, never as a base64 string literal parsed in the global scope.",
+   "assumes": "A UI module's requirement is about \"the plane's start\" and cites `plane` R43, R54 and bundler R31: the assets are in the plane's bundle.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R1",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 20,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 3, C15, P2.4; K4353, K4356) `interfacePage(screens)` answers one HTML document: `<html lang>` the member's language once known (`en` before), one `<link rel=\"stylesheet\" href=\"/app/assets/civicsmith.css\">`, icons referenced from `/app/assets/icons.svg` (no inline copy of the sprite), and one `<script src>` loading the shell's script, composed from the shell's own functions and each registered screen's and held at an address that carries the release version, served unchanged for that release (`control-plane` R75); the module exports that script …",
+   "assumes": "The script is \"served unchanged for that release (`control-plane` R75)\": a UI requirement states who serves it.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R2",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 2,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 21,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "A test serves the page through the door and finds one script element, loading the shell's versioned script, and no inline script.",
+   "assumes": "\"A test serves the page through the door\": the shell's requirement is proven with the door.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R3",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 3,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 24,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "With one, it sends `op=whoami` (`control-plane` R18); an answer without a member session (`session` false or `member` empty) is treated as none.",
+   "assumes": "Cites `control-plane` R18 (`whoami`).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R28",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 28,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 68,
+   "classes": [
+    "compose",
+    "nine",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T47; N897 (1); amends the Terms, R21, R25) The screen modules are also `screens-wizards`, `screens-investigate`, `screens-publish` and `screens-action`; `interfacePage` takes the `SCREENS` of all nine (`screens-entry` among them, `plane` R48; K3137), and R21's contract binds each.",
+   "assumes": "\"`interfacePage` takes the `SCREENS` of all nine (… `plane` R48)\": cites the launcher's requirement for the page's composition.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R33",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 33,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 75,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "A `shared` device at 15 minutes idle sends `signout` and draws `front`'s ended state; an `own` device at 30 minutes idle draws the lock (`session.locked`) over the screen, keeping what was typed; the plane's `SESSION_LOCKED` or 401 governs over the page's clock.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R56",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 56,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 103,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "With the real screens, the check runs in `control-plane`'s page test (`t46-app.test.mjs`), so the composed product fails on any undefined class.",
+   "assumes": "\"With the real screens, the check runs in `control-plane`'s page test (`t46-app.test.mjs`)\": the shell's check over real screens is proven in the door's module.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R58",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 58,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 109,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T48; K3250, K3254; walk C2 (a), row 2; amends R36, R53) While `options.testInstance` is `true`, the test band is part of the page as served (`control-plane` R95), spans the frame from first paint, and the page does not move when `bootstrap` answers.",
+   "assumes": "\"The test band is part of the page as served (`control-plane` R95)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R73",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 73,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 151,
+   "classes": [
+    "proof",
+    "nine"
+   ],
+   "found_by": "read",
+   "quote": "Test: every act of the nine screen modules' real `SCREENS` composes with `RE_POINTS` holding only the named exceptions; a stand-in screen naming an op the registry and `RE_POINTS` both lack throws, naming the screen.",
+   "assumes": "Test \"over every act of the nine screen modules' real `SCREENS`\": the shell's requirement is proven with modules later than the shell.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R79",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 79,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 157,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "The page itself is served by `control-plane` (T50-35) with status 404 for the first kind and 200 for the two aliases; this module draws what it is handed.",
+   "assumes": "\"The page itself is served by `control-plane` … this module draws what it is handed\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R86",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 86,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 163,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "A cause outside the shell (a screen's reads, the plane's time to answer, the door's headers, the size of the served page) is a REPORT to BOB with its measure and is not fixed here.",
+   "assumes": "Names \"the plane's time to answer, the door's headers, the size of the served page\" as causes outside the shell.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R87",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 87,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 164,
+   "classes": [
+    "proof",
+    "nine"
+   ],
+   "found_by": "read",
+   "quote": "Test: over every act of the nine modules' real `SCREENS`, each act graded Reasoned either asks or names a `reasonField`, and pressing it with the field empty sends nothing; a stand-in screen with a Reasoned act and neither throws, naming it.",
+   "assumes": "Test \"over every act of the nine modules' real `SCREENS`\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R92",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 92,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 174,
+   "classes": [
+    "cite",
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "(T51; K3807; DEC-330 (A9); census A9; `control-plane` R1; amends R7, R33) **A newer version is ready.** In the working frame the shell asks `GET /version` (plain text, a public address: no `Authorization` header) once on load and then every five minutes (the old page's cadence, which polled `/build` every five minutes and not while `document.hidden`) while the page is visible, on the page's clock (`cs.now()`'s).",
+   "assumes": "Cites `control-plane` R1; the shell asks `GET /version`, an address the door answers.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R126",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 126,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 258,
+   "classes": [
+    "serve",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "The module exports `pageWork()`, the counts of scripts composed, hashes taken and checks run in this isolate (counts, not times: a Worker's clock does not see synchronous work), for control-plane's `page` log line. / Test: `g30.test.mjs`; controls: the hash is the SHA-256 of the script's UTF-8 bytes; another set of screens is another release; a broken screen is refused every time. / Platform check: `page-contention.probe.mjs`.",
+   "assumes": "Exports `pageWork()` \"for control-plane's `page` log line\"; its test `g30.test.mjs` is in control-plane's `tests` and its probe in plane's.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R127",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 127,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 259,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: `g31.test.mjs`, through the real `front` screen; controls: the other tab sends its own set once; a cut open list asks one count.",
+   "assumes": "Its test `g31.test.mjs` is in control-plane's `tests`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "interface-shell R129",
+   "module": "interface-shell",
+   "position": 177,
+   "r": 129,
+   "status": "met",
+   "file": "process/modules/interface-shell.md",
+   "line": 212,
+   "classes": [
+    "world"
+   ],
+   "found_by": "read",
+   "quote": "(K5046 (d); `store-request` R18; amends R104) The shell's test harness, `boot({screens, plane, session, door, …})` (`bio-plane/test/m/interface-shell/harness.mjs`), takes `door`: a function of the request (`{url, op, query, headers, body, init, method}`) answering `{status, json}` or `{status, bytes, type}`. / An op request is answered, in order, by the test's own `plane` entry for the op (a value, or a function of the request), else, when a `door` is given, by `door`, else by the default frame table (`whoami`, `groupidentity`, `queue`, `infolevel`, `assistantstate`, `accountreference`, `subscriptionsignin`, `groupkeystate`, `signout`, `version`), else by an empty ok answer. / With a `door` the default frame table is not consulted: the door answers those ops itself.",
+   "assumes": "The shell's harness `boot({screens, plane, session, door, …})` takes a `door` (store-request R18's): the screens' tests reach the store by a test door, not the real one.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R2",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 2,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 20,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "It draws the states refused (`refusal.SIGN_IN_REFUSED`), paused (`refusal.SIGN_IN_PAUSED`, with the plane's `stated` drawn as the bound it is, never as a time: `credentials` R38 states no end, so that neither words nor time tell which window is full; K5185), signed out (`session.signedout`), ended (`session.ended`) and locked (`session.locked`: the handle, the password, \"Unlock\" sending `unlock`; \"Not <handle>?\" signs out).",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R6",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 6,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 24,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane walked from claim to finish; control: a refused part keeps the step and sends nothing more.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R17",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 17,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 44,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane walked from the claim with a chosen handle sends that handle to `claim` and to `login`.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R18",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 18,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 47,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane answering `handle: null` for the founder draws the step, and a chosen handle is sent.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R20",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 20,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 51,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: both states over a fake plane.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R22",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 22,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 61,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane walked through the drawing's five states (unclaimed, just claimed, founder with no handle, already claimed, a member opening setup): before the claim only part 1 is open; choosing \"no\" to the assistant sends `aikeepaway` and no AI field, key or pay choice is drawn after; a saved name draws `screen.setup.name.now`; each part's state is the one its read gives.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R26",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 26,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 69,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane answering a claim draws the file from the answer, the steps and the copy act (the test reads the answer, never builds the file); control: a null file draws the steps without a file, a refusal draws its word, no claim draws no fold.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-entry R33",
+   "module": "screens-entry",
+   "position": 178,
+   "r": 33,
+   "status": "met",
+   "file": "process/modules/screens-entry.md",
+   "line": 75,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane whose `scanstatus` carries `no_signatures` (a date, a refused download) draws the date and the reason and not the checked sentence; control: an answer without `no_signatures` draws the checked sentence and none of the no-signature words, and `part_scanner` not `true` draws neither.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-account R49",
+   "module": "screens-account",
+   "position": 180,
+   "r": 49,
+   "status": "met",
+   "file": "process/modules/screens-account.md",
+   "line": 67,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Then parts that open and close, the first open, anything needed before the first question marked \"Needed first\" (`screen.setup.state.needed`, the same `.cs-part` mark): on her own account, \"What the assistant may do for you\" (`screen.connect.part.uses`, `.part.uses.why`): checkboxes in one style named by `ai.use.<u>.name` and explained by `ai.use.<u>.means`, everyday help (`screen.connect.uses.everyday`: ask, draft, run, enquire, read, transcribe, account) apart from \"without being asked\" (`screen.connect.uses.unasked`, `.unasked.help`: suggestions and s …",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-account R56",
+   "module": "screens-account",
+   "position": 180,
+   "r": 56,
+   "status": "met",
+   "file": "process/modules/screens-account.md",
+   "line": 80,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "*A removal under way* (state c; K3946 replaces K3868's \"not drawn in T51\"; K4072): the screen reads `adminremovalsopen` (`member-roster` R75, declared by `op-declarations`, routed by `control-plane` and `plane`) and, for each entry of `removals`, draws who faces removal (`target`), what it takes (`have` of `need`, \"{have} of {eligible} have agreed so far\"), each administrator in `voters` \"agreed\" with the day of `at` (through `civil-time`) and each in `awaiting` \"hasn't voted yet\" with \"the removal waits for <who>\", the one facing removal as counted and  …",
+   "assumes": "An op \"routed by `control-plane` and `plane`\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-settings R15",
+   "module": "screens-settings",
+   "position": 181,
+   "r": 15,
+   "status": "met",
+   "file": "process/modules/screens-settings.md",
+   "line": 25,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 4, C84; K4468) The Security page draws the scanner's run under way, a run stopped after 20 minutes and a refusal with its status by their keys, never the plane's English, and a second press while a run is under way is refused in words.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-settings R18",
+   "module": "screens-settings",
+   "position": 181,
+   "r": 18,
+   "status": "met",
+   "file": "process/modules/screens-settings.md",
+   "line": 31,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51 fix round 2; K4335) (C86) The latest domain check draws its day and time and the plane's own detail beside its verdict.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-settings R69",
+   "module": "screens-settings",
+   "position": 181,
+   "r": 69,
+   "status": "met",
+   "file": "process/modules/screens-settings.md",
+   "line": 82,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: as `screens-entry`'s on the `group` screen: a fake plane answering a claim draws the file from the answer (two different answers, two different files), the steps and the save and copy, and the refusals; control: a null file draws the steps without a file, no claim draws no fold, and drawing it sends nothing.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-settings R79",
+   "module": "screens-settings",
+   "position": 181,
+   "r": 79,
+   "status": "met",
+   "file": "process/modules/screens-settings.md",
+   "line": 89,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: the six sizes at their edges through the real door and record; control: a member sends none and draws none.",
+   "assumes": "\"Test: the six sizes at their edges through the real door and record\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R1",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 18,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(N747; `control-plane` R58) An acquire whose answer carries `promoted` (an archive the door already promoted) is not promoted again by the screen; one without it is promoted as the screen's flow does.",
+   "assumes": "Cites `control-plane` R58 (\"an archive the door already promoted\").",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R2",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 2,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 19,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 3, C17; K4356) \"A file or photo\" (`captureupload`, `capture` R86; `control-plane` R72): the member chooses a file (on a phone the camera may open, through the input's `accept` and `capture` attributes); the screen asks \"How you got it\" (four choices, none preselected), \"Where and when\" and \"What it shows, in your own words\", and composes `statement` from the three in that order, each with its label, at most 2,000 characters, refusing to send while any is empty and saying which; it sends `POST /api/?op=captureupload&statement=<s>&name=<the file …",
+   "assumes": "Cites `control-plane` R72.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R21",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 21,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 36,
+   "classes": [
+    "cite",
+    "deliver"
+   ],
+   "found_by": "read",
+   "quote": "(T49; D9 **B**; K3324 (1); `capture` R86; `control-plane` R72; amends R2) An upload's answer (a provenance document, `capture` R86) is promoted as an information bundle at `collected`, exactly as R1 promotes `acquire`'s document (`allocid`, then `promote` with the same composition, R23's files included). / Test: a five-part upload's register is one whole row carrying five parts and no part as a row of its own; `promoteDocument` of a multipart document whose part equals another bundle's part is accepted and both documents are held; control: a single-part upload registers its one file as one row with no `parts`; the same whole sent twice is refused for the whole only.",
+   "assumes": "Cites `control-plane` R72; `promoteDocument` is the function the door's delivery runs (control-plane R124).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R27",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 27,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 45,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(R085-5; K3477; WALK-085 F1; `control-plane` R100) The upload sends the file's declared media type (the browser's `file.type`) as `type` beside `statement` and `name`; a file whose declared type is empty sends no `type`.",
+   "assumes": "Cites `control-plane` R100.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R31",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 31,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 51,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 7, G72; K4736) \"Finish it\" answered `NO_SUCH_SESSION` (the plane no longer holds the session) is the end of that capture, not a failure: the Unfinished line leaves, a status line says the capture is closed, and the unfinished captures are asked again.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R33",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 33,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 52,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "An upload is titled by the file's name, or by `reading.title` when the upload's answer (`control-plane` R100) carries one and the file is a page.",
+   "assumes": "Cites `control-plane` R100 for the upload's answer.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R34",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 34,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 53,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "An `acquire` that gets no answer, or one that is not JSON, draws `shell.unread` with R39's reference beside the address and leaves the act usable again, never silence; a large page's capture that cannot end is that refusal or a result within the door's stated time (`control-plane`, T50-35), diagnosed first by one timed live `acquire` at START, and a cause in the door is a REPORT.",
+   "assumes": "\"Within the door's stated time (`control-plane`, T50-35) … a cause in the door is a REPORT\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R38",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 38,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 57,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 4, C9; R49; K4472) When the press's `heldat` finds the address held and `changed.state` is `unchanged` or `undetermined`, the compared copy is also filed in the project the page names, by R49's step (`captureseenin` with the copy's digest, sent once; nothing when the page has no project or the copy's home is that project), and the row says `screen.capture.address.filedhere` with the home project's name; a filing the plane refuses is drawn in its words beside the row; when it is `changed`, nothing is filed until \"Capture the new copy\".",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R42",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 42,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 60,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51 fix round; C55; K4164: one owner; `monitoring` R10; amends R16) **What a check found.** \"Check it now\" draws what the check found, from the answer's `status` (`modified`, `removed`, `unchanged`) and, when it names none, its `note`: four different sentences, `screen.capture.address.checked.modified`, `.removed`, `.unchanged` and `.unknown` (`{title}`; the last also `{note}`, the plane's note as data), never one \"Checked just now\" for every outcome.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R45",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 45,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 61,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "The web-archive capture is refused to members by the plane: the screen says so in the design's words and offers nothing it cannot do (no choice, no act, nothing sent).",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R49",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 49,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 63,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "The screen asks the record (`heldat` by the capture's digest, no `check`) for the document that holds them as this viewer sees it: one that shows is linked and no document is written, but the capture is also recorded as made for the question (`capture` R94 `recordCapturedFor`, recorded by the plane from `acquire`'s `for`, which the screen sends for the question the \"For which question\" choice names, R29), so the question's project lists it, and, when the capture has a subject project (R22) other than the document's home, also filed in that project as a r … / When the bytes have another home (a document the viewer may not open, `provenance` R2's `CAPTURE_HELD_BY_ANOTHER_BUNDLE`), the sentence names the holder and links it where the plane names it, and says so without a name or link where it does not.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R57",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 57,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 81,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 4b, F1, F2, F6; K4487; control-plane R123; amends R1, R2) **The member is told a reading is on its way.** A capture by address or an upload whose answer (or whose promotion's answer) says `reading_pending` draws that the reading follows, once, under the result (the nearest held row as stand-in, `screen.document.text.unread.next`; its own row, K4269, in `later-ux.md`), whether the capture is filed under a project or not and whether it is a new document or bytes the store already held; an answer without it draws none.",
+   "assumes": "Cites control-plane R123 (`reading_pending`).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R58",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 58,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 82,
+   "classes": [
+    "cite",
+    "deliver"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 6, G2, G3; K4562, K4570; `acquisition` `fetch_pending`; `capture` `opencaptures`; `control-plane` delivery) **A capture too large for the request is said, watched and finished.** `acquire` is sent with `project` when the page names one.",
+   "assumes": "Cites \"`control-plane` delivery\" for a capture finished after the request.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R59",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 59,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 83,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 6, G19; S10; `capture` R77; `acquisition` R108) **A capture states the supporting files it skipped.** When the plane's capture answer (or its document) carries `supporting: {kept, skipped, reasons}` with `skipped` above zero, the result says how many of how many supporting files were kept and why the rest were not; with none skipped, nothing.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-capture R65",
+   "module": "screens-capture",
+   "position": 182,
+   "r": 65,
+   "status": "met",
+   "file": "process/modules/screens-capture.md",
+   "line": 67,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 9, G135f; K4831 (5); `control-plane` R135, `store-assembly` R74; amends R57) **The states of a read are drawn from the job row.** The screen draws the reading's state from the job row as `op=reading` and `owedwork` answer it, not from the reading object: queued, being fetched, being read N of M, read in part and why (with \"searched so far\" for the part already searchable), refused with its limit, finished; an \"about\" estimate only once the row holds enough units to measure a rate, and none before; no promised time.",
+   "assumes": "Cites `control-plane` R135 and store-assembly R74 (the job row).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-intake R39",
+   "module": "screens-intake",
+   "position": 183,
+   "r": 39,
+   "status": "met",
+   "file": "process/modules/screens-intake.md",
+   "line": 68,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "The plane's check is `openOriginal`'s (`file-safety` R8): it answers the capture's bytes with a digest header equal to the capture's digest, which is the screen's subject.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-intake R52",
+   "module": "screens-intake",
+   "position": 183,
+   "r": 52,
+   "status": "met",
+   "file": "process/modules/screens-intake.md",
+   "line": 75,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Test: the rows are those the plane answers, in its order; a lead written in the visit is listed after the list is read again. / Control: a lead the viewer may not read (one the plane does not list) is not drawn, not even when the member has just written it; an empty answer draws no list.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-intake R66",
+   "module": "screens-intake",
+   "position": 183,
+   "r": 66,
+   "status": "met",
+   "file": "process/modules/screens-intake.md",
+   "line": 78,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: `capture.test.mjs` \"R2 R21 R24 the answer: existed…\" with the plane double's `captureupload` answer held behind a gate the test releases after the first read: the old test is red (it reads before the draw), the fixed test waits on the drawn state and is green, run alone five times, on one core (`taskset -c 0`) and in a two-suite run.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-intake R68",
+   "module": "screens-intake",
+   "position": 183,
+   "r": 68,
+   "status": "met",
+   "file": "process/modules/screens-intake.md",
+   "line": 79,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: a BMP through the plane, `/app/open-file/<sha>`: the sentence is drawn; control: a PNG draws none.",
+   "assumes": "\"Test: a BMP through the plane, `/app/open-file/<sha>`\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-find R52",
+   "module": "screens-find",
+   "position": 184,
+   "r": 52,
+   "status": "met",
+   "file": "process/modules/screens-find.md",
+   "line": 62,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "No word of the answer is drawn before the stream's `answer` event, which follows the plane's check; the answer then carries `ai.progress.checked.all` beneath it (explained by `ai.progress.checked.all.means`).",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-find R53",
+   "module": "screens-find",
+   "position": 184,
+   "r": 53,
+   "status": "met",
+   "file": "process/modules/screens-find.md",
+   "line": 63,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "`answers` draws: the answer, with `ai.progress.checked.all`, only after the plane's check; at work, the progress as it arrives (`ai.progress.reading.ask`, `ai.progress.composing.answer`, `ai.progress.checking`, `ai.progress.hold.answer`), with no Stop; the check failed, `ai.progress.check.failed` and `screen.answers.failed.next`, drawing nothing of the answer; not ready, `refusal.ASSISTANT_REMOTE_NOT_READY` with a door to `connect`.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-find R76",
+   "module": "screens-find",
+   "position": 184,
+   "r": 76,
+   "status": "met",
+   "file": "process/modules/screens-find.md",
+   "line": 87,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51; L7; amends R56) **\"What anything rests on\" reads the plane's reason.** The covered-levels row reads `levels.meaning.why` (the plane's key), not `reason`; `state.undetermined` draws that sentence after \"because\"; with no reason the row draws no stub.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-find R83",
+   "module": "screens-find",
+   "position": 184,
+   "r": 83,
+   "status": "met",
+   "file": "process/modules/screens-find.md",
+   "line": 91,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51 fix round 2, C21; retrieval R92; K4326) A passage row of Find is named by its `document` title (the plain word `shell.card.document` when it has none) and links to it; a question hit's excerpt is the plane's.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-daily R15",
+   "module": "screens-daily",
+   "position": 185,
+   "r": 15,
+   "status": "met",
+   "file": "process/modules/screens-daily.md",
+   "line": 43,
+   "classes": [
+    "world"
+   ],
+   "found_by": "read",
+   "quote": "A `pointer` of `null` is drawn `state.failed`, never as none (`interface-shell` R10); until `store-assembly` R38 merges, the screens are tested against a fake plane answering `wizard-scripts` R37's shape.",
+   "assumes": "\"Until `store-assembly` R38 merges, the screens are tested against a fake plane\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-daily R99",
+   "module": "screens-daily",
+   "position": 185,
+   "r": 99,
+   "status": "met",
+   "file": "process/modules/screens-daily.md",
+   "line": 125,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: `fix6.test.mjs` (five projects, one read; a hidden project drawn failed; control: none sharing, no read); `casedrafts-seam.test.mjs` (the real plane).",
+   "assumes": "\"`casedrafts-seam.test.mjs` (the real plane)\": that file is in plane's `tests`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R3",
+   "module": "screens-document",
+   "position": 186,
+   "r": 3,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 18,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: `fr6-pages.test.mjs`, `fr6-seam.test.mjs` (a reading of three pages whose cited and flagged units sit on page 3; control: a one-page reading makes one read). / Test: `g41-document.test.mjs`.",
+   "assumes": "Names `fr6-seam.test.mjs` and `g41-document.test.mjs` as its tests; both are in plane's `tests`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R56",
+   "module": "screens-document",
+   "position": 186,
+   "r": 56,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 43,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Fix round 6 (G17; K4571): a list the plane cut says how many of how many it shows, with a more control where the read pages.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R65",
+   "module": "screens-document",
+   "position": 186,
+   "r": 65,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 50,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test, over a fake plane: a document with a first revision, a vouching and two later revisions draws \"Added\", the vouching with its blurb quoted and three revisions; choosing two and pressing the compare act sends nothing and marks the changed line; a 250-revision answer says it is cut. / Control: an answer with no `states` draws only \"Added\"; a grade-change row is drawn nowhere; a fake plane that counts requests sees no write.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R67",
+   "module": "screens-document",
+   "position": 186,
+   "r": 67,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 52,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "An outside link is not a bare anchor: pressing it opens the dialog \"You are about to leave the record\" (`screen.document.a30.you_are_about_to_leave_the_record` with the explanation the drawing gives, the address in the data face, \"Stay in the record\" (closes it) and \"Open it anyway\" (the browser act `linkopen`: the address opens in a new window with `noopener`; nothing sent to the plane). / Fix round 6 (G17; K4571): a list the plane cut says how many of how many it shows, with a more control where the read pages.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R68",
+   "module": "screens-document",
+   "position": 186,
+   "r": 68,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 53,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Fix round 6 (G17; K4571): a list the plane cut says how many of how many it shows, with a more control where the read pages.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R84",
+   "module": "screens-document",
+   "position": 186,
+   "r": 84,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 65,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(FR-28 entry 1; C25; amends R56) **Thread sends what the plane needs.** \"Thread it to a step…\" on `document` sends `thread` with `{progressionKey, entityId, placements: [{stage, captureSha}]}`: the flow's key and the entity from the `captureprogressions` row, and one placement for the stage the member chose.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R96",
+   "module": "screens-document",
+   "position": 186,
+   "r": 96,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 71,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: through the real plane, a 25,165,825-byte PDF, a CSV of 1,048,577 rows, an encrypted file, a picture the reader found nothing in, a ZIP and a DOCX past the object bound each draw their own sentence with their own figures; control: a size refusal keeps the size sentence.",
+   "assumes": "\"Test: through the real plane\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R111",
+   "module": "screens-document",
+   "position": 186,
+   "r": 111,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 77,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(entry 29; L1; amends the document page's vouch rows) **The held list is read as the plane answers it.** `heldcaptures` answers `{held: rows}`; the page reads `held`, so the vouch box, the release fields and act, and the row's `captured_for` question (preselected) are drawn.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-document R130",
+   "module": "screens-document",
+   "position": 186,
+   "r": 130,
+   "status": "met",
+   "file": "process/modules/screens-document.md",
+   "line": 87,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test: through the real plane, an image the OCR member refuses as too large is drawn on the Document page with `refusal.IMAGE_TOO_LARGE`'s words.",
+   "assumes": "\"Test: through the real plane\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R6",
+   "module": "screens-question",
+   "position": 187,
+   "r": 6,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 22,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(N919; Bob's K2892; `ai-runs` R18; K2947, K2952) On a member's own sign-in, \"Work on this\" starts the run's segment through `control-plane`'s member-run door (`op=airundispatch`, its R77), for that member only: the dock sends it at her act for the run she opened, and draws what the door answers, a run dispatched or running, or the withholding or refusal by its words (`MEMBER_PRINCIPAL_RUN`, `MEMBER_RUN_MODE_NOT_ADMITTED`, `AI_RUN_NOT_PRINCIPAL`, `AGENT_WORKER_UNBOUND`, the run not running). / - (K2999) The credential the dock mints names among its declared `writes` the ops it presents it to (`airunopen`, `airundispatch`), so admission admits it (control-plane R77).",
+   "assumes": "\"Through `control-plane`'s member-run door (`op=airundispatch`, its R77)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R7",
+   "module": "screens-question",
+   "position": 187,
+   "r": 7,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 23,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(N897 (2); K2816 (2); `run-rules` R29, `ai-runs` R78) On a test instance, every AI output the dock draws (a run's productions, a suggestion) carries the test-instance label the plane marks it with (`untested`, `run-rules`' `untestedLabel`), drawn by its key `ai.label.untested`: until `words.json` holds it, this module's own row, meaning \"Not yet tested: this part of the assistant has not yet passed Civicsmith's tests on real matters.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R13",
+   "module": "screens-question",
+   "position": 187,
+   "r": 13,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 27,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T47; N955; amends R6; `ai-runs` R18, `credentials` R63, `control-plane` R77) The dock holds no credential: \"Work on this\" opens the run under the member's session (`airunopen`, with R6's fields and `principalClaude` `member:<whoami.member>`) and sends `airundispatch` with `run` alone under the session, the segment's credential minted in the plane (`credentials` R63); no `aicredentialmint` or `aicredentialrevoke` is sent and no credential is held, stored or drawn.",
+   "assumes": "Cites `control-plane` R77.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R23",
+   "module": "screens-question",
+   "position": 187,
+   "r": 23,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 36,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "A2",
+   "quote": "(Fix round 10, causes 30a, 30b; K5056; DEC-32 clauses 2 and 4: the default is AND, independent sufficiency is claimed per branch; amends R23) Test: two passages both answered \"No\" send `grounds: []`; two answered \"Yes, because of the other\" send one ground holding both; one \"No\" and two holding each other up send one ground of two, the first stands unlabelled; control: through the real plane the saved answers are stored and `conclude` on an own reading with no `affirmed` is `ok`.",
+   "assumes": "Proven \"through the real plane\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R33",
+   "module": "screens-question",
+   "position": 187,
+   "r": 33,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 53,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: over a fake plane running `run-rules`' check, `airunopen` is not refused `AI_RUN_BOUND_NO_ALLOWANCE`.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R42",
+   "module": "screens-question",
+   "position": 187,
+   "r": 42,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 63,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T49; N1100; DEC-246; DEC-311 (2); K3689; amends R4, R7) The dock, and the question's state f, list under \"Other reasons the assistant can't work here\" (`question.ai.other`), each by key and each drawn only when the plane's refusal of the member's run or ask, or the member's own account read, names it: first `refusal.ASSISTANT_REMOTE_NOT_READY` (the connection has not passed its check, `agent-worker` R110) and `refusal.SIGNIN_EXPIRED` (the Claude sign-in has expired, `ai-accounts` R35), in that order and leading the list; then switched off, kept away, no …",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R45",
+   "module": "screens-question",
+   "position": 187,
+   "r": 45,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 67,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: over a fake plane, the press draws state d before `airunopen` resolves; a running run is read again and its ticks drawn; an ended run with no proposal draws the ending and the ask.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-question R47",
+   "module": "screens-question",
+   "position": 187,
+   "r": 47,
+   "status": "met",
+   "file": "process/modules/screens-question.md",
+   "line": 68,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: over a fake plane, an ended run with pending proposals draws the ending and the ask above them; a running run found on load (not pressed on the page) is drawn and read again; control: no run, proposals pending, draws the proposals as before.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-inquiry R76",
+   "module": "screens-inquiry",
+   "position": 188,
+   "r": 76,
+   "status": "met",
+   "file": "process/modules/screens-inquiry.md",
+   "line": 96,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a fake plane receives `noticeprepare` with the fields, the preview draws the answer's `statement`, the signer is asked for exactly that statement in `bio-working-on`, and `noticepost` carries the digest, the signature and `acknowledged: true`; declining sends nothing; a wording of 281 characters is refused in place.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-investigate R8",
+   "module": "screens-investigate",
+   "position": 190,
+   "r": 8,
+   "status": "met",
+   "file": "process/modules/screens-investigate.md",
+   "line": 35,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(K5148; WALK-FINAL-08 D2, D4, D7, D8, D9, D10, R70.12) The Standard page draws the plane's `says` (standards R45); the kind choice offers every kind `standards` accepts (`court` included); a related law is named by its citation, with words for its direction; \"Who set it\" chooses among the registered bodies (sending the `ENT-` id) or takes a typed name; a fixed-list choice opens with nothing chosen and a press without one refuses in place; every act sends the standard's own id (the subject before any `/`); a member in a `why` is drawn by name.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-investigate R64",
+   "module": "screens-investigate",
+   "position": 190,
+   "r": 64,
+   "status": "met",
+   "file": "process/modules/screens-investigate.md",
+   "line": 97,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51 fix round 10; DEC-438 (UX-DESIGN U480); K5299; walk E C2a, the alpha's design blocker; amends `standard`) `standard` draws \"Whom it binds, and until when\" (`screen.standard.binds.head`, `.help`) with four acts the plane serves (`standards`): `standardinforcethrough` (day, passage, reason; `standardinforcethroughwithdraw` on a recorded day), `standardadoption` (act, edition, how `screen.standard.mode.<by_reference|voluntary|by_accreditation>`, passage, reason), `standardimpose` (the body chosen among the team's office and body entities, sending its i …",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-public R36",
+   "module": "screens-public",
+   "position": 191,
+   "r": 36,
+   "status": "met",
+   "file": "process/modules/screens-public.md",
+   "line": 49,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: over a fake plane that answers `publishedcase` after a delay, the corrections line and the check's answer appear only with the answer, and a slow answer is drawn once it arrives; a rejected read draws `state.failed`.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-public R47",
+   "module": "screens-public",
+   "position": 191,
+   "r": 47,
+   "status": "met",
+   "file": "process/modules/screens-public.md",
+   "line": 63,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(T51 FR-30; C7; DEC-376 (C7); `public-read` R3; `review` R38; amends R1, R6) **The published page and the editor draw what the plane returns.** `published` draws what the case leaves out (`completeness`), the declared bias (`bias_acknowledgement`), each disclosed contradiction (`tensions`, `highlighted`) and each evidence row's grade from `publishedcase`; the case editor draws the publish gates' first refusal (`missing`) from `reviewcopy`; each only when the answer holds it.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-publish R40",
+   "module": "screens-publish",
+   "position": 192,
+   "r": 40,
+   "status": "met",
+   "file": "process/modules/screens-publish.md",
+   "line": 71,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T51-121; DEC-330 A81; census A81; `review` R11, R35; `public-read` R7; `control-plane` R20; `op-declarations` R76; amends R2, R17) **`review-copy`: \"Save as a file\".** Beside \"Share with a named reader\" the screen offers \"Save as a file\" (the browser act `reviewexport`) and opens the drawing's state b, \"Save this copy as a file\" (`screen.review_copy.*`, the design's family spells its prefix with an underscore; the module reads the keys as `words.json` holds them): the warning **\"A file can't be recalled\"** (once it leaves the device by email, sharing, u … / Pressing it reads the copy once (`reviewcopy`, the member door, the draft's id: `review` R11 with the in-band stamp `public-read` R7 composes and `control-plane` R20 attaches: `hash` over the copy's bytes, `date` (the copy's last change), `author`, `floors` (the project's bar as `publish` would freeze it)), builds one stamped HTML file in the page from that answer (the copy's findings, authored fields, gates and what is missing as the answer states them, without the grant part and the comments), puts the stamp on every page of the file, in a print header … / Test: with the box unticked the act is absent; ticked, pressing it reads `reviewcopy` once and saves a file whose text holds the in-band quartet's `hash.sha256`, `date`, `author` and `floors` (`public-read` R7, attached by `control-plane` R20, wherever the answer carries it; K4073), and neither a reader's name nor a comment; an answer with no hash makes no file and draws the could-not-be-stamped fold.",
+   "assumes": "Cites `control-plane` R20 (the in-band stamp the door attaches).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-publish R41",
+   "module": "screens-publish",
+   "position": 192,
+   "r": 41,
+   "status": "met",
+   "file": "process/modules/screens-publish.md",
+   "line": 72,
+   "classes": [
+    "double"
+   ],
+   "found_by": "A2",
+   "quote": "Test: a draft with no grant and a team zone shares with an end day counted in that zone and `publishpreflight` is not sent (counted at the fake plane); with no zone held nothing is shared and the right sentence is drawn for each kind of member.",
+   "assumes": "Its test's other side is a fake or stub \"plane\" (a stand-in for the door and store).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-publish R74",
+   "module": "screens-publish",
+   "position": 192,
+   "r": 74,
+   "status": "met",
+   "file": "process/modules/screens-publish.md",
+   "line": 123,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 3; K4398, C40; amends R51; `case-disclosures` R2, `case-authoring` R34) Each document the pre-flight lists as held without a second confirmation is drawn with the proof it still lacks (`missing`: the time stamp, the outside copy, or both), a sentence of its own for each, and, where its time stamp was made late, the plane's `late_words`; a row that lacks neither says it is done; an older entry that states no `missing` draws the sentence for both.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-publish R75",
+   "module": "screens-publish",
+   "position": 192,
+   "r": 75,
+   "status": "met",
+   "file": "process/modules/screens-publish.md",
+   "line": 124,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(fix round 3; K4398, C46; amends R1, R3, R17, R61; `review` R41) A finding of a draft is drawn, in the case editor and to the outside reader, by its title, its statement and what would change it; one the team has not concluded (`concluded: false`) is drawn with the plane's `not_concluded` sentence.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-send R3",
+   "module": "screens-send",
+   "position": 193,
+   "r": 3,
+   "status": "met",
+   "file": "process/modules/screens-send.md",
+   "line": 19,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Her place is her own `participation` on `projectlist`'s row of the action's project, read once with the screen's other reads; any other state, or one not read, changes nothing (the plane still refuses).",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-send R24",
+   "module": "screens-send",
+   "position": 193,
+   "r": 24,
+   "status": "met",
+   "file": "process/modules/screens-send.md",
+   "line": 43,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "\"Start the action\" sends `actioncreate` with the action's document composed as `request` composes its own (R4; `actions` R47, Terms): `action_kind`, `counterparty` (the addressee, R9), `title`, `risk_tier`, `action_basis` (`{target, kind}`), `clock`, `project` and `current_state: planned`, the author set by the door and never the body (`control-plane` R29); with the member's reasons and fields kept on a refusal.",
+   "assumes": "\"The author set by the door and never the body (`control-plane` R29)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-send R39",
+   "module": "screens-send",
+   "position": 193,
+   "r": 39,
+   "status": "met",
+   "file": "process/modules/screens-send.md",
+   "line": 55,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(C67; amends R4, R20) **The records request asks which record or name it concerns before it asks the offices.** `request` opened for a project does not send `addresseesuggest` with the project's id (the plane resolves an entity or an action's records, never a project): it asks which name the records concern, from the names the record follows (`peopledirectory`), and after the member picks one sends that id as `addresseesuggest`'s `subject`; the offices are then drawn, and \"no office is known\" (R20) is said only once the ask answers none (or when the reco …",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-action R44",
+   "module": "screens-action",
+   "position": 194,
+   "r": 44,
+   "status": "met",
+   "file": "process/modules/screens-action.md",
+   "line": 85,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "(C73; DEC-376; amends R1) **The plan's forms carry what the plane takes.** \"Add an option\" carries who it is directed to, the dates that bind it each with its basis, the tier (legal options only), the lobbying mark with the requirement it seeks; \"Lay out a scenario\" carries each phase's branches and order (when it starts, after which phase, where it goes if its checkpoint is met or not); an option can be marked done, blocked or returned to undecided (as it can be chosen or declined), each with a reason and a reminder where the design draws one.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "screens-action R56",
+   "module": "screens-action",
+   "position": 194,
+   "r": 56,
+   "status": "met",
+   "file": "process/modules/screens-action.md",
+   "line": 93,
+   "classes": [
+    "generic"
+   ],
+   "found_by": "A2",
+   "quote": "Start an action: draws the plane's own findings, no local pre-check.",
+   "assumes": "Uses \"the plane\" for the server side as a whole (what answers, checks or refuses); no module order is stated.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R1",
+   "module": "control-plane",
+   "position": 195,
+   "r": 1,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 20,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "`GET /` with no `op` answers the interface's page (R82), `admission` R1 and R20 applying first, so a `store` other than `bio` or `scratch` (`NAMESPACE_UNKNOWN`) and a credential in the address are refused by name before any page; the page is served `cache-control: no-store`. / No route answers `/sign` (R109): the signing page is gone, and so is the setup page, which T47 deleted. / (Before T51: `GET /sign` answered the signing page, and this line named the setup page `GET /` had answered before T47.)",
+   "assumes": "The door answers `GET /` with the interface's page: the page is something the door's module can already produce.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R20",
+   "module": "control-plane",
+   "position": 195,
+   "r": 20,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 36,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "- (K2999) The review copy's group fields are read through the Store's RPC `groupFields()` (`plane` R114) at each `reviewcopy` read; with no such method `group` is null and nothing is guessed.",
+   "assumes": "The door reads group fields \"through the Store's RPC `groupFields()` (`plane` R114)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R40",
+   "module": "control-plane",
+   "position": 195,
+   "r": 40,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 56,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "The storage gauge's ten sentences (`screen.group.storage.*`, `STORAGE_WORDS`) are control-plane's code-origin rows.",
+   "assumes": "A screen's ten sentences (`screen.group.storage.*`) are \"control-plane's code-origin rows\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R67",
+   "module": "control-plane",
+   "position": 195,
+   "r": 67,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 76,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(N757; DEC-180; `op-declarations` R38; `case-carriage` R9, R10; T38: N788, DEC-183 (2), `op-declarations` R40, `case-carriage` R14) The door routes `obscuremark`, `photomarks` and `obscuremarkwithdraw` to `case-carriage`'s own map as `plane` composes it (R26's pattern), with the stamps `op-declarations` R38 and R40 declare (`obscuremarkwithdraw`'s `by` from the caller's session, never one the caller sends) and none taken from the caller (R29), each refused to any caller not arriving by a member's session, holding no arm's behaviour.",
+   "assumes": "Routes to a module's map \"as `plane` composes it\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R74",
+   "module": "control-plane",
+   "position": 195,
+   "r": 74,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 85,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "The admitted request is answered by the gated hook `plane` composes (its R6, R36), whose arm is `extraction`'s exported `pageTranscribeOp` (not in `EXTRACTION_OPS`, K2635), as `pdfstructure`'s is `extractionOp`.",
+   "assumes": "\"The gated hook `plane` composes (its R6, R36)\": the hooks are the launcher's.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R75",
+   "module": "control-plane",
+   "position": 195,
+   "r": 75,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 88,
+   "classes": [
+    "serve",
+    "compose",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(N897 (1); DEC-122 (3); N559; fix round 3, C15, P2.4; K4353, K4356) `GET /app` and `GET /app/<path>` (any path below it) answer `interface-shell`'s page (`interfacePage` over the four screen modules' `SCREENS`), `text/html`, `cache-control: no-store`, through the same namespace and address gates as `/` (R1; `admission` R1, R20), under `answer-envelope` R6's page policy, which names the shell's script by its hash (`interface-shell` R1) in place of a nonce per response. / `GET /app/assets/<name>` answers `interface-assets`' file of that name (`ASSET_FILES`, its R1) with its content type (`text/css`, `font/woff2`, `image/svg+xml`, `text/plain` for a licence), a face's bytes decoded from base64, and a `cache-control` that lets the browser keep it while the plane's version is unchanged; any other name is answered 404. / The end-to-end suite runs here: over Miniflare and the real plane (`src/plane/index.mjs`), `GET /app`, the shell's script and `/app/assets/*` served with the policy and the script's hash; a member signed in through the interface's own sign-in (`login`, the real plane's handler); then `home`, `capture` with an upload, `held` and `release`, each read back through the real ops.",
+   "assumes": "The door answers `/app` with interface-shell's `interfacePage` over the screen modules' `SCREENS`, and `/app/assets/<name>` from interface-assets' `ASSET_FILES`; its end-to-end suite runs \"here\", over the real plane (`src/plane/index.mjs`). Says \"four screen modules\" where R81 says nine.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R77",
+   "module": "control-plane",
+   "position": 195,
+   "r": 77,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 90,
+   "classes": [
+    "cite",
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(K2976) The dock presents her member-scoped credential in the `Authorization` header (`screens-inquiry` R6); if the presented credential would reach `dispatchMemberRun` only through the Worker's internal fetch to the store, it travels in that request's `Authorization` header only, as every `ai` caller's does, never a query or body (K2952 read so). / - (K2999) The door calls the Store's RPC `dispatchMemberRun({run, by, viewer, credential, at})` (`plane` R114), the presented credential an in-process argument of that RPC, never a query, body or fetch (so K2976's header reading is not needed); with no such method the door answers 503 `AGENT_WORKER_UNBOUND`, nothing sent.",
+   "assumes": "Cites screens-inquiry R6 for what the dock presents, and `plane` R114 for the Store's RPC the door calls.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R80",
+   "module": "control-plane",
+   "position": 195,
+   "r": 80,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 94,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(T47; N955; K2976, K2999, K3027; amends R77; `ai-runs` R18, `credentials` R63; `plane` R114) The member-run door takes no credential from the page: `airundispatch` is admitted for a member's own session, `by` and `viewer` that member (`store-request` R7), `run` from the body, and calls the Store's RPC `dispatchMemberRun({run, by, viewer, at})` with no credential argument; a credential presented in a header, body or query is neither read for the dispatch nor passed on, and the segment's credential is minted in the plane (`credentials` R63, at `ai-runs` R1 …",
+   "assumes": "The door \"calls the Store's RPC `dispatchMemberRun`\" (`plane` R114).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R81",
+   "module": "control-plane",
+   "position": 195,
+   "r": 81,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 95,
+   "classes": [
+    "serve",
+    "compose",
+    "nine",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(T47; N897 (1); amends R75) `GET /app` and `/app/<path>` answer `interfacePage` over the `SCREENS` of the nine screen modules (`screens-entry` (K3137), `screens-settings`, `screens-intake`, `screens-daily`, `screens-inquiry`, `screens-wizards`, `screens-investigate`, `screens-publish`, `screens-action`), under R75's gates, policy and `no-store`; a public-frame screen's address (`/app/doorbell`, `/app/published/<case>`, `interface-shell` R30) is served alike, no credential being read on either route. / The end-to-end suite adds, through the real plane: Home's projects with their counts, a wizard started from a front door, and the doorbell's page handing over a file with no credential.",
+   "assumes": "Names the nine screens modules whose `SCREENS` the door hands `interfacePage`; the end-to-end suite goes \"through the real plane\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R82",
+   "module": "control-plane",
+   "position": 195,
+   "r": 82,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 103,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "(N1002; amends R1, R81) `GET /` with no `op` answers `interfacePage` (the page draws `front` or Home, `interface-shell` R32), under R75's gates and policy, `no-store`; no route serves `setupPage`.",
+   "assumes": "`GET /` answers `interfacePage`: the door calls interface-shell's builder.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R84",
+   "module": "control-plane",
+   "position": 195,
+   "r": 84,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 105,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "(DEC-205) `grouplogoset`, `grouplanguagesset` and `grouplanguages` routed through `instance-setup`'s map, `signrequest` through `tasksOps`; `GET /app/assets/group-logo` answers the stored logo with its type, or 404.",
+   "assumes": "The door answers an address under the UI's `/app/assets/`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R93",
+   "module": "control-plane",
+   "position": 195,
+   "r": 93,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 115,
+   "classes": [
+    "cite",
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(T48; N1015; K3103; `agent-worker` R87; `plane` R55 and `store-assembly` R55; amends R57, R74, R77) For each request that reaches the plane's ask, run, draft or transcribe call (`ask`, `airundispatch`, every draft R57 and R90 route, `pagetranscribe`), the door mints a `trace` and the member ref in `signin-door` R3's form (a fresh trace per request; the member ref naming the session's member as R3 names it, never a handle or a credential) and passes both to the plane's call in process, as the strings `trace` and `memberRef` (K3293); neither is taken from  …",
+   "assumes": "Cites interface-shell R39 (the trace the shell shows) and `plane` R55.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R95",
+   "module": "control-plane",
+   "position": 195,
+   "r": 95,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 119,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T48; K3250, K3254; walk C2 (a); `interface-shell` R58) The page route passes `testInstance` to `interfacePage`, taken from `ai-runs.testInstance()`, as `bootstrap` R80 answers it.",
+   "assumes": "The door's page route passes `testInstance` to `interfacePage` (interface-shell R58).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R100",
+   "module": "control-plane",
+   "position": 195,
+   "r": 100,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 129,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "After an upload `capture` answers as new (not `existed`, not refused), the door registers its `reading` job row (R130) and reads the uploaded document inline only when R131's gate admits it, exactly as it reads an acquired one on `op=acquire` (`extraction.read` over the answer's document); an admitted read's answer carries `reading` and `text_units` as `op=acquire`'s answer does, so the promotion the capture screen sends with that document stores the reading (`extraction` R20), and any other upload is answered `reading_pending: true` with its row and no  … / Test, through the door: a member uploads a two-line text file with `type` `text/plain`, then promotes it as the capture screen does; `op=reading` by its digest answers `found: true` with both lines' text in its units, and the original opens by the warned path (`op=openwithwarning`), a received file being graded by `file-safety` R6 and R8 as any upload is.",
+   "assumes": "The door's test \"promotes it as the capture screen does\": the proof repeats a screen's act.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R102",
+   "module": "control-plane",
+   "position": 195,
+   "r": 102,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 134,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(T50; N933; K3230, Bob's \"N933: B\"; `public-read` R36; `project-roster` R32; amends R20) **The review copy carries its draft's matter stake.** The review copy's group fields are read for the project its draft belongs to: the Store's RPC `groupFields()` (`plane` R114) is called with that `project`, so the in-band quartet's `group` carries `matter_stake` for that project beside the team-wide `stake` (`public-read` R36), still outside `hash`.",
+   "assumes": "The door calls the Store's RPC `groupFields()` (`plane` R114).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R104",
+   "module": "control-plane",
+   "position": 195,
+   "r": 104,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 136,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "(T50; N1174, B-14; DEC-299 (11), DEC-301 (3); `index.mjs:643` to `:645`, `:672`; `app.mjs:23`; amends R2, R82) **An unknown address draws a page.** A `GET` or `HEAD` of a path that is not `/app`, not below it, not `/api/…`, not an `op=` request and names no op draws the interface's public \"nothing is here\" page with status 404, its words `unavailable.public` and the link `unavailable.public.go` to the front page, under R75's policy and `no-store`; `/doorbell` and `/tour` are aliases of the doorbell and tour pages.",
+   "assumes": "The door draws the interface's public \"nothing is here\" page and holds `/doorbell` and `/tour` as aliases of two screens' pages.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R105",
+   "module": "control-plane",
+   "position": 195,
+   "r": 105,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 137,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "The bound is 25 seconds: past it the door answers the refusal `ACQUIRE_TIMED_OUT` (its words are the design's key `refusal.ACQUIRE_TIMED_OUT` (DEC-329 (5)), which the interface draws for the code as it draws every refusal (`interface-shell` R13); the answer carries the code, the op and the status 504 and, as R99 does for `AGENT_WORKER_UNBOUND`, `detail` read by `word(\"refusal.ACQUIRE_TIMED_OUT\")`, no sentence of this module's; T51), never a silent stop (K3770: the timed live `acquire` was refused by the session's safety check; BOB's release walk on biosm …",
+   "assumes": "Cites interface-shell R13 for how the interface draws the door's refusal.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R109",
+   "module": "control-plane",
+   "position": 195,
+   "r": 109,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 144,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T51-123; K3807, K3814, K3835; C1, C2, C4, C5, C7; `signatures` T51-124; `plane` R7; amends R1, R104) **The signing page is not served.** `GET /sign` and `GET /sign/` answer as any unknown address does (R104: the interface's public \"nothing is here\" page, 404, `no-store`), and no other route serves a signing page. / What the page did, but for C2 and C4 below, is carried by the interface, not by a route: a member makes, copies and downloads her ratification key in the shell signer and registers it on `account` (`interface-shell` R40, R41; `screens-settings`, T51-116), a project's \"working on\" notice is signed in the shell signer on `project` (`screens-inquiry` R76), and the release key, the recovery key and release signing are release-operator tooling in `release-sign.yml` and BOB's command line, not a page (K3807: C2, C4 not carried).",
+   "assumes": "The door serves the interface's page for `/sign`; names interface-shell R40, R41, `screens-settings`, screens-inquiry R76 as carrying what the page did.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R115",
+   "module": "control-plane",
+   "position": 195,
+   "r": 115,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 149,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(T51; K4222; acquisition R95; amends R105) The door hands `acquire` the object its stages are kept in, `timings`, through the plane's hook (`gatedOp`), and a call the door stops waiting for (R105's bound) answers the refusal `ACQUIRE_TIMED_OUT` with `timings`: (K4234; B13) the object keeps the stages, not the door: a session's `acquire` is minted a trace, handed to the hook as `trace` beside `timings`, and on the bound the door asks the store-internal route `acquiretimings?trace=` and answers the `stageTimes` it gives as `timings`, `{}` when the request  …",
+   "assumes": "The door hands `acquire` its timings \"through the plane's hook (`gatedOp`)\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R116",
+   "module": "control-plane",
+   "position": 195,
+   "r": 116,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 150,
+   "classes": [
+    "serve"
+   ],
+   "found_by": "read",
+   "quote": "Control: the page of `GET /app` keeps `cache-control: no-store` (R75).",
+   "assumes": "A control of the door's cache requirement is the page of `GET /app`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R117",
+   "module": "control-plane",
+   "position": 195,
+   "r": 117,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 151,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "Test, through the door: a digest registered under a home with no reading is uploaded again (`existed: true`) and `op=reading` by the digest then answers `found: true` with its units; an upload of bytes held with no home and no reading, answered `existed: true`, carries its reading, and after the screen promotes it `op=reading` answers `found: true`; a capture of several parts, once kept whole, is read.",
+   "assumes": "The door's test depends on what happens \"after the screen promotes it\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R120",
+   "module": "control-plane",
+   "position": 195,
+   "r": 120,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 157,
+   "classes": [
+    "text"
+   ],
+   "found_by": "read",
+   "quote": "In that case the answer carries `reading_pending: true` and no `reading` or `text_units`, the capture is promoted for the member as any kept capture is, and the reading follows by `extraction.readHeld` (R117), started after the screen's promotion and, if the object is cut short, finished by the plane's alarm (`store-assembly` R62).",
+   "assumes": "The door's reading \"started after the screen's promotion\": a sequence agreed with the capture screen.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R122",
+   "module": "control-plane",
+   "position": 195,
+   "r": 122,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 153,
+   "classes": [
+    "proof",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 4, P9; K4429) **The page's bootstrap is read once per load.** The shell's page asks `op=bootstrap` once per page load and hands its answer to the frame and the screen; no screen asks it again in the same load. / (fix round 4, K4472) The shell's side is met by interface-shell (a screen's `{op: \"bootstrap\"}` read is answered from the page's one answer; a read after a successful act, a sign-in or a sign-out asks again); the id stays marked until control-plane's `t51-bootstrap` whole-path test is green.",
+   "assumes": "A requirement of the door's module about what the shell's page asks; \"the shell's side is met by interface-shell\", and it stays marked until control-plane's `t51-bootstrap` whole-path test is green (that file is in plane's `tests`).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R124",
+   "module": "control-plane",
+   "position": 195,
+   "r": 124,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 155,
+   "classes": [
+    "deliver",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 4b, F5; K4492, K4493, K4503; acquisition R100, `store-assembly` R64) **The alarm's delivery of an owed render.** `deliverOwedRender({ctx, env, storeName, answer, session})` promotes the rendered document `answer.document` as the capture screen promotes an acquired one (screens-intake's `promoteDocument`, through the record's `promote`), filed under the project of the shell document (the capture session's primary, as the session's opener sees it), the opener its author with the door's promote stamps; then R123's read follows (inline when it fit … / (fix round 9, P25; K4855; screens-intake R49) An owed fetch whose `acquire` answers `existed: true` follows screens-intake R49 as the inline path does: the record is asked (`heldat` by the digest, as the opener sees it) for the document that holds the bytes; one that shows is linked, no document is promoted and the fetch is recorded done naming it (its `bundleId`, `existed: true`); only when none shows is the document promoted; a held-elsewhere refusal is answered `{ok: false, reason: \"CAPTURE_HELD_BY_ANOTHER_BUNDLE\", holder}` with the holder where the p …",
+   "assumes": "`deliverOwedRender` promotes \"as the capture screen promotes an acquired one (screens-intake's `promoteDocument`)\" and \"follows screens-intake R49\": the door's function is defined by a UI module's builder and requirement.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R126",
+   "module": "control-plane",
+   "position": 195,
+   "r": 126,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 252,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T51, fix round 6, G30; B-21; K4428, K4609; `interface-shell` R126) **The front page names its work.** Every page the door draws (`GET /`, `/app` and below, and the unknown-address page, R104) writes one structured log line `{event: \"control-plane.page\", scripts, hashes, checks, ms}`: the counts of scripts composed, hashes taken and screen and guide checks run in this isolate (`interface-shell`'s `pageWork()`), and `ms` the isolate's clock; counts, not CPU times (R-CLOCK).",
+   "assumes": "\"Every page the door draws\" logs interface-shell's `pageWork()` counts.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R128",
+   "module": "control-plane",
+   "position": 195,
+   "r": 128,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 163,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 8, G113, G116, G118, G120; review G4; fix round 9, P24; K4817, K4822, K4850, K4855, K4870; amends R121) **The door carries the timings a module states.** The phase clock takes the entries a module states into the answer's `Server-Timing`: from the object's `server-timing` header (token-checked `name;dur=` and `name;desc=` entries, the first of a name, never one of the door's own, at most `METRIC_MAX` = 64) and from the hook `stateTiming(name, ms, desc)` (`desc` optional: written beside the `dur` as the entry's `desc` when it is a short token o …",
+   "assumes": "The door's timing hook `stateTiming`, handed to modules by the plane's door (plane R96).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R129",
+   "module": "control-plane",
+   "position": 195,
+   "r": 129,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 165,
+   "classes": [
+    "owner",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 8, G106; K4428, K4817, K4822) **Each acquire and upload is logged whole.** `acquire`'s answer's `timings.door` carries `cold {isolate_ms, object_ms}`: `isolate_ms`, the whole milliseconds since the Worker isolate's FIRST request, measured by the door (0 for the first request the isolate serves, never a clock's epoch), and `object_ms`, the age of the object, read from the module-stated `object-age;dur` (R128; `plane` R96), `null` until the object states it; the field is always present.",
+   "assumes": "Cites `plane` R96 for the object's age.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R130",
+   "module": "control-plane",
+   "position": 195,
+   "r": 130,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 169,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 9, G126a-c; K4811 (6), K4835 (2); `store-assembly` R74, R75; section 2c item 1; amends R123) **Every way in registers its reading's job row before the answer, and a failed registration is never swallowed.** `acquire`, `captureupload`, the doorbell's pull (`inboxpull` and `inboxresolve` at `pulled`), `promote`'s follow and the archive door each register the document's `reading` row, keyed by its whole sha, through the `registerJob` callback the composition root hands the door (`store-assembly` R75; never an import upward), BEFORE any inline rea …",
+   "assumes": "\"The `registerJob` callback the composition root hands the door\": the door is handed things by the launcher.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R135",
+   "module": "control-plane",
+   "position": 195,
+   "r": 135,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 174,
+   "classes": [
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "The screens draw their states from these answers (`screens-intake` R65).",
+   "assumes": "Says the screens draw their states from the door's answers (screens-intake R65).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "control-plane R137",
+   "module": "control-plane",
+   "position": 195,
+   "r": 137,
+   "status": "met",
+   "file": "process/modules/control-plane.md",
+   "line": 176,
+   "classes": [
+    "owner",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(K5052 (2); `store-request` R15, R17) A parity test: for one op of each row of `store-request` R6 to R12 and of each family of its R17 (a store-route read, an act whose body carries a stamp, a public relay, `claim`, `whoami`, `subscriptionsignin`, an op with a module's door arm), once through `makeFetch` over a world's store and once through the world's door, the status, the body and the store request made are equal.",
+   "assumes": "The parity test runs \"once through `makeFetch` over a world's store and once through the world's door\": the real door is proven here, after store-request.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R1",
+   "module": "plane",
+   "position": 196,
+   "r": 1,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 18,
+   "classes": [
+    "owner",
+    "deliver"
+   ],
+   "found_by": "read",
+   "quote": "(was `control-plane` R35) The Durable Object class the instance exports is this module's (`Store`, `extends DurableObject`). / Its constructor builds the store by calling `store-assembly`'s `assembleStore(ctx, env, {deliver})` (its R1), `deliver` being `control-plane`'s `deliverOwedRender` (R124 there); a retired room (R95) does not call it.",
+   "assumes": "The `Store` class is plane's; its constructor hands `assembleStore` `deliver`, \"being `control-plane`'s `deliverOwedRender`\": the launcher takes the delivery from the door's module.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R6",
+   "module": "plane",
+   "position": 196,
+   "r": 6,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 22,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "The Worker's module exports `default { fetch }`, `control-plane`'s `makeFetch` over the hooks the door takes (today `publicOp`, `gatedOp` and `publicInstanceGroup`, each the arms' owners' once their arms have moved), and `{ Store }` (R1); it hands the published read its plane binding (`bindPublishedPlane`, `public-read`'s), as R6's entry, `src/plane/index.mjs`, does. / (T51 fix round 6, G1; K4570; amends R6) The Worker's default export is `{ fetch, scheduled }`: `scheduled` is the watchdog (R79).",
+   "assumes": "The Worker's entry (`src/plane/index.mjs`) is plane's and its `fetch` is \"`control-plane`'s `makeFetch` over the hooks the door takes\" (`publicOp`, `gatedOp`, `publicInstanceGroup`).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R7",
+   "module": "plane",
+   "position": 196,
+   "r": 7,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 25,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "`wrangler.jsonc`'s `main` names this module's Worker entry (R6), its bindings unchanged; `package.json`'s `test` runs the module tests and `test:system` the old system suites for the release (K619), the old suites' other `test:*` entries dropped; `build-plane.mjs` and the fleet bundle (`bundler`) take this entry.",
+   "assumes": "`wrangler.jsonc`'s `main` names plane's entry; `build-plane.mjs` and the fleet bundle take this entry.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R8",
+   "module": "plane",
+   "position": 196,
+   "r": 8,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 98,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "Once this module's job closes, `bio-plane/src/store.mjs` and `bio-plane/src/schema.mjs` do not exist, nor does `bio-plane/src/index.mjs` (`planeMember` builds from `src/plane/index.mjs`, K1010), and no file imports them; no module's own requirement is answered here.",
+   "assumes": "`planeMember` builds from `src/plane/index.mjs`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R9",
+   "module": "plane",
+   "position": 196,
+   "r": 9,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 99,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "It writes no row (the owed-work ledger's tables are `store-assembly`'s, its R97), mints no refusal and answers no op itself: every answer is a module's, through `control-plane`'s door.",
+   "assumes": "\"Every answer is a module's, through `control-plane`'s door\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R42",
+   "module": "plane",
+   "position": 196,
+   "r": 42,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 113,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(`hypotheses` R23 at the plane's shape, moved from `hypotheses`' tests by K2950) The plane's own `Store`, booted on workerd (the plane's runtime, not Node), opens a store numbered from the shared sequence and holding notes and turns, runs `hypotheses`' renumbering and every boot migration (`store-assembly` R3) without a `TEMP` table, view or trigger or any statement workerd refuses `SQLITE_AUTH`, and answers its first request; the notes and turns read back renumbered. / The test is this module's, since only the plane's `Store` composes every migration.",
+   "assumes": "Another module's requirement (hypotheses R23) proven here \"since only the plane's `Store` composes every migration\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R48",
+   "module": "plane",
+   "position": 196,
+   "r": 48,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 32,
+   "classes": [
+    "compose",
+    "nine"
+   ],
+   "found_by": "read",
+   "quote": "(N1002; DEC-201) The composed page's screens are the nine modules' (`screens-entry` among them).",
+   "assumes": "\"The composed page's screens are the nine modules'\": a requirement of the launcher about the page's composition.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R54",
+   "module": "plane",
+   "position": 196,
+   "r": 54,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 120,
+   "classes": [
+    "cite",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(T48; N1039; K3147; amends R43; `court-citations` R11, `ooxml` R34, `op-declarations` R69, `answer-envelope` R18, `case-checker` R25, `interface-assets` R6) The plane's global scope, measured as R43 measures it on the built artifact, is within `bundler` R31's 500 ms budget (509 ms median at T47's close) once T48's reductions are merged; the test asserts it at the plane's shape.",
+   "assumes": "The start-up budget is measured on the built artifact \"at the plane's shape\"; cites interface-assets R6 among the reductions (the UI's bytes are in the plane's start).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R63",
+   "module": "plane",
+   "position": 196,
+   "r": 63,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 125,
+   "classes": [
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "At START, on biosmoke8, the job sends a timed burst of the reads one screen sends at once (Home's, the Inbox's and `/app/notes`'s), at 1, 2, 4, 8 and 16 in flight, each member's session in turn, and records for each count every answer's status, body code and time and the plane's own log line for each 503 (M-T50-7: the parallel reads per screen until a 503, before the fix and after it). / Test: the same burst against the assembled plane at the widest screen's read count plus four answers no 503; the measure is printed beside the figure before.",
+   "assumes": "Plane's test sends \"the reads one screen sends at once\" and is sized by \"the widest screen's read count\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R64",
+   "module": "plane",
+   "position": 196,
+   "r": 64,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 128,
+   "classes": [
+    "serve",
+    "cite"
+   ],
+   "found_by": "read",
+   "quote": "(T51-125; K3807, K3832, K3835; `control-plane` R109; `bundler` T51-5; amends R7) **The build holds no render step.** `package.json`'s `build` script (today `npm run embed:sign && node scripts/build-plane.mjs`) is `node scripts/build-plane.mjs` and nothing else: the `embed:sign` script is deleted (the file is this module's by `modules.json`; `bundler` T51-5 names the build's calling `embed-signpage.mjs` too, and one of the two jobs makes this edit, this one), and `build-plane.mjs` calls no step that renders a signing page (the signing page is not served,  … / (The stale comment at `test/m/plane/worker.test.mjs`:43 is brought to the interface; the plane serves no setup page, T47-74, so the census found no HTML of one a user can meet.)",
+   "assumes": "\"The plane serves no setup page\"; cites control-plane R109 (the signing page not served).",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R76",
+   "module": "plane",
+   "position": 196,
+   "r": 76,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 131,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 4, C5a, RC-R1; K4453; `control-plane` R120) **A reading the door defers.** `gatedOp` takes `deferReading(document)`: when it answers true, the read step is skipped and the answer carries `reading_pending: true` and no reading, the reading following through `readHeld` (`/readheldfor`) and the alarm.",
+   "assumes": "`gatedOp` (plane's hook) takes the door's `deferReading`.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R84",
+   "module": "plane",
+   "position": 196,
+   "r": 84,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 134,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 6, G41; K4636; K4725) **Large sheets are read whole at the platform's shape.** The real plane reads a 4 MB, 8 MB, 12 MiB and 16 MiB CSV, the CSV bound at the standard (50 MB and 1,048,576 rows, `READ_BOUNDS`, K4834) and a 200,000-row xlsx to the end in a child capped by the one cap convention (`runtime-limits` `capFor(N)`, R33 there, the platform's measured idle; fix round 9, G123a retires `128 + 39 - N`) under the platform's value bound: the child alive, every tick within the work budget by count (bytes served, calls, rows, yields; never a ti …",
+   "assumes": "A whole-plane proof (\"the real plane reads…\").",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R85",
+   "module": "plane",
+   "position": 196,
+   "r": 85,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 135,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 6, G44; K4655; K4725) **An oversized workbook is refused and previewed stated at the real door.** `/workbookadd` and `/safeview` asked of the real door under the cap convention (R84) for a workbook over the add's cells bound (`READ_BOUNDS`; 250,000 cells once `workbooks` R20 merges, G137e): the add refused `WORKBOOK_TOO_LARGE` with its count and bound, nothing written; the safe view answers its first rows with the cut stated; the child alive.",
+   "assumes": "A whole-plane proof \"at the real door\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R88",
+   "module": "plane",
+   "position": 196,
+   "r": 88,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 137,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 6, G55's residual; K4426 (4), K4726, K4727; `scheduler` R24, `calculations` R14) **A money ingest over the inline threshold is run to its end by the object's own alarm.** In the real plane on workerd, a member's `moneyingest` of 25,000 resolving rows through the door answers started; the object's alarm, with no tick fired by hand, runs every slice until the record is `done`, with 25,000 facts, no `source.row` twice, the marker closed, `moneyingestread` `complete`, the viewer's `ingest-done` notice raised, and no alarm wanted for the ingest; an …",
+   "assumes": "A whole-plane proof \"in the real plane on workerd\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R89",
+   "module": "plane",
+   "position": 196,
+   "r": 89,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 138,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 6, G57; K4720, K4724, K4727, K4729; `ratification` R57, R6): **A finding the act's copy did not store is healed by the object's own alarm.** In the real plane on workerd, an edition completed by a member's `op=ratify` through the door whose finding copy failed (the answer `published.reason` `COPY_FAILED`, the ledger `failed` at step `copy`, the finding's `bundle.md` not served) is healed by the `casefile-sweep` consumer's tick run by the object's alarm: the finding's `bundle.md` is copied from the record, the case file is built, `publishedcase …",
+   "assumes": "A whole-plane proof \"in the real plane on workerd\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R93",
+   "module": "plane",
+   "position": 196,
+   "r": 93,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 139,
+   "classes": [
+    "wholeplane"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 7, G82; K4426 (4), K4736) **The plane's own consumer does not hold the object.** On workerd, with the reading owner answering at once, twelve cheap reads through the door wait under 500 ms at p95 while the object's alarm runs the ledger; the bar for the real reads is reading-pipeline's `read` (its R40).",
+   "assumes": "A whole-plane proof on workerd, \"through the door\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R96",
+   "module": "plane",
+   "position": 196,
+   "r": 96,
+   "status": "met",
+   "file": "process/modules/plane.md",
+   "line": 42,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(fix round 8, G106, G120; K4822; `control-plane` R128, R129) **The door hands modules the timing hook, and the object states its age.** The plane's door passes the door's `stateTiming(name, ms)` (control-plane R128's module-stated entry) into the context it hands every module's op handler (`ratificationOp` and the others it calls), absent when the door gives none, so a module's call is a no-op then; and every route answer of the object carries, beside R78's `object;dur`, `object-age;dur=<ms>`, the milliseconds since the object's instance started (control …",
+   "assumes": "\"The plane's door passes the door's `stateTiming`\" into every module's handler.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R111",
+   "module": "plane",
+   "position": 196,
+   "r": 111,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 50,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "The Worker's hooks (`door.mjs`) take `askOp`, `actionDraftOp` and `ACTION_DRAFT_OPS` from `store-assembly`, and the class takes `namespaceOf` (its R4) to judge a retired room (R95).",
+   "assumes": "\"The Worker's hooks (`door.mjs`)\" are plane's and take their arms from store-assembly.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R112",
+   "module": "plane",
+   "position": 196,
+   "r": 112,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 51,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(was R36, in part) The Worker's gated hook (`gatedOp`, R6) answers `op=pagetranscribe` through `extraction`'s exported `pageTranscribeOp` (`door.mjs`, beside `pdfstructure`'s `extractionOp` arm), with the stamps `store-request` R8 sets.",
+   "assumes": "\"The Worker's gated hook (`gatedOp`, R6)\" is plane's.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R113",
+   "module": "plane",
+   "position": 196,
+   "r": 113,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 52,
+   "classes": [
+    "owner",
+    "proof"
+   ],
+   "found_by": "read",
+   "quote": "(was R37, in part) The Worker's public door answers `knock` through `doorbell`'s `doorbellPublicOp`, never `capture`'s `capturePublicOp`, so no plane path reaches capture's doorbell copy. / Test: `op=knock` at the whole plane's door with no token answers 200, a GET 405, and an empty knock `KNOCK_EMPTY` (C-85.5).",
+   "assumes": "\"The Worker's public door\" is plane's; proven \"at the whole plane's door\".",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  },
+  {
+   "id": "plane R114",
+   "module": "plane",
+   "position": 196,
+   "r": 114,
+   "status": "not yet met",
+   "file": "process/modules/plane.md",
+   "line": 53,
+   "classes": [
+    "owner"
+   ],
+   "found_by": "read",
+   "quote": "(was R40, in part) The Store has two RPC methods beside `ask` and `draft` (R111): `dispatchMemberRun(args)`, calling `ai-runs`' `dispatchMemberRun(args)` in the object addressed (R46 states its arguments), and `groupFields()`, answering `public-read`'s `groupFields()` of the `bio` object (R62 adds its project), whose keys are `detail`, `domain`, `domain_verified_at`, `group`, `name` and `stake`.",
+   "assumes": "The Store's RPC methods the door calls are plane's.",
+   "standing": "lead about intent (requirement text; not evidence of what the code does)"
+  }
+ ],
+ "other_lines": [
+  {
+   "file": "process/modules/plane.md",
+   "line": 13,
+   "section": "Purpose",
+   "quote": "The instance's composition root. It builds every module on one Durable Object's storage, in the modules' order, runs their migrations before any request, hands the alarm to `scheduler`, assembles the one route map from every module's ops map and passes every store request through `control-plane`'s door, and exports the Worker's entry and the class the deployment config names. It holds no construct of its own: no table, no check row, no op and no answer.",
+   "assumes": "The module's purpose: composition root, every store request \"through `control-plane`'s door\", exports the Worker's entry and the class.",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/plane.md",
+   "line": 143,
+   "section": "Satisfies",
+   "quote": "- `docs/architecture/BIO_System_Design.md` §3, construct 15 (distribution: one instance, one deployable plane) and §2 (the trustworthiness of the record: a store written before opens after).",
+   "assumes": "\"One instance, one deployable plane\" is this file's paraphrase of System Design section 3, construct 15; the canon does not hold the word \"deployable\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/control-plane.md",
+   "line": 13,
+   "section": "Purpose",
+   "quote": "The instance's two doors: the Worker's HTTP entry and the record store's internal dispatch. The control plane routes each op to the module that serves it. It works out who is asking and admits or refuses them before the op runs. It sets every identity field from the credential, never from the caller, and answers in one envelope. It decides where a call lands and who made it, never what the answer is.",
+   "assumes": "\"The instance's two doors: the Worker's HTTP entry and the record store's internal dispatch.\"",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/control-plane.md",
+   "line": 197,
+   "section": "Uses",
+   "quote": "- (T35; K1974) `answer-envelope`: `json`, the decoration, `doAnswer`, `storeRefusal`, `storeSilent`, `relayAnswer`, `requiredArgument`, `PAGE_POLICY`, `withPagePolicy`, `CHECK_FAMILIES` (its R1–R8), once its copy is merged; this module's copies are deleted in T35-72. It does not use `store-door`, which `plane` composes.",
+   "assumes": "\"It does not use `store-door`, which `plane` composes.\"",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/control-plane.md",
+   "line": 219,
+   "section": "Uses",
+   "quote": "- (T47; T47-65) `screens-entry` (K3137), `screens-wizards`, `screens-investigate`, `screens-publish`, `screens-action` (their `SCREENS`, handed to `interfacePage`; R81): five new `modules.json` edges, each to an earlier module. `credentials`: `disclosureDue` (its R64; R78), already a use; `instance-setup.disclosureOf` is no longer read here. `project-roster`, `basis-versions`, `citation`, `strength`, `monitoring`, `sources`, `capture-requests`: their maps (R79), as the plane composes them. `case-inputs`: `caseInputsOps` and its check rows, read by this module's tests (`statementack`, `digest-channel`, `r45-routes`, re-pointed from `case-authoring`'s; split map §5), tests only.",
+   "assumes": "Five screens modules' `SCREENS` \"handed to `interfacePage`\": \"five new `modules.json` edges, each to an earlier module\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/control-plane.md",
+   "line": 220,
+   "section": "Uses",
+   "quote": "- (T46; T46-59) `interface-assets` (`ASSET_FILES`; R75), `interface-shell` (`interfacePage`; R75), and `screens-settings`, `screens-intake`, `screens-daily`, `screens-inquiry` (their `SCREENS`, handed to `interfacePage`; R75): six new `modules.json` edges, each to an earlier module (plan T46, \"New modules: places\"). `instance-setup`: `disclosureOf` (its R54; R65) and its R79 arms (R76). `ai-runs`: `dispatchMemberRun` (its R18; R77). `public-read`: `groupFields` (its R34; R20). `membership`: `joindoors` in `membershipOps` (its R130; R54). `plan-work`: `statusreportassist` in its map (its R14; R57). Each but the six is already a use.",
+   "assumes": "interface-assets, interface-shell and four screens modules: \"six new `modules.json` edges, each to an earlier module\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/store-assembly.md",
+   "line": 94,
+   "section": "Uses",
+   "quote": "- Every module whose factory, `migrate()`, start or ops map the assembly reaches (R1, R2, R3, R6), as the `uses` of this module's row in `modules.json` lists them: `plane`'s composition root, less `control-plane`, `interface-shell`, `bundler`, `subresources` and `screens-settings`, which stay with `plane`.",
+   "assumes": "`control-plane`, `interface-shell` and `screens-settings` named as uses that \"stay with `plane`\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/store-assembly.md",
+   "line": 97,
+   "section": "Uses",
+   "quote": "- Not used: `store-request` (a later module, so the world's door is its), `control-plane` (its `deliverOwedRender` is handed in, R1), `interface-shell` and `plane`, all later than this module (P4).",
+   "assumes": "\"Not used: `store-request` (a later module, so the world's door is its), `control-plane` (its `deliverOwedRender` is handed in, R1), `interface-shell` and `plane`, all later than this module\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/store-assembly.md",
+   "line": 109,
+   "section": "Satisfies",
+   "quote": "- `docs/architecture/BIO_System_Design.md` §3, construct 15 (distribution: one instance, one deployable plane) and §2 (the trustworthiness of the record: a store written before opens after): R1, R3 (as the requirements `plane` carried before the move). `docs/architecture/BIO_Distribution_v0_1.md` §6 (the deployment and its bindings): R24, R25, R26. DEC-121 (5) (required flows in the Civicsmith library, a failing one blocking the release): R17. DEC-101 response 3 (the docket watch composed): R19. `BIO_Action_v0_2.md` (the actions canon's fold composed once): R34, R9.",
+   "assumes": "Repeats \"one instance, one deployable plane\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/store-request.md",
+   "line": 13,
+   "section": "Purpose",
+   "quote": "The request the store is asked, made from the page's. One function takes an admitted caller and a page's request and makes the store's: every stamp set from the caller and none taken from the request, every credential in a header, the actor written into the body where the owner reads it there. It holds no door arm, gate or answer. Over `store-assembly`'s world it also publishes the door a screen's test talks to, the real sign-ins and the recipes of real acts.",
+   "assumes": "\"It also publishes the door a screen's test talks to\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/interface-assets.md",
+   "line": 13,
+   "section": "Purpose",
+   "quote": "The visual language every member screen uses (DEC-138), as frozen data copied from the design stream's files at a named commit: the stylesheet with its faces, the typefaces with their licences, and the icons. Pure data: it imports nothing, reads nothing and writes nothing; `interface-shell` names its files and `control-plane` serves them.",
+   "assumes": "\"`interface-shell` names its files and `control-plane` serves them.\"",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/interface-shell.md",
+   "line": 13,
+   "section": "Purpose",
+   "quote": "The member interface's page and frame. It holds the member's session (R32), loads the member's words, draws the working frame and the path, routes among the screens the screen modules register, and gives every screen one way to read, to act, to explain and to refuse. Pure: it reads no table and writes nothing; every read and act is an op the plane serves, called from the browser.",
+   "assumes": "\"Every read and act is an op the plane serves, called from the browser.\"",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/interface-shell.md",
+   "line": 233,
+   "section": "Uses",
+   "quote": "- Through the plane, each op's owner's documented answer: `control-plane` R18 (`whoami`), R65 (`subscriptionsignin`); `instance-setup` R10 (`groupidentity`), R53 (`assistantstate`), R74 (`interfacewords`), R79 (`infolevelset`, `infolevel`); `credentials` (`signout`, `accountreference`, `groupkeystate`); `queue` R6 (`queue`).",
+   "assumes": "\"Through the plane, each op's owner's documented answer: `control-plane` R18 (`whoami`), R65\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/interface-shell.md",
+   "line": 234,
+   "section": "Uses",
+   "quote": "- (T51) Through the plane: `control-plane` R1 (`GET /version`; R92), `credentials` R6–R9 (`signerlist`, `signeradd`, `signerregisterown`; R97, R101), `file-safety` R8 (the digest header; R98), `instance-setup` R4 (`instancegroupseed`; R101), `op-declarations` R76 (`BROWSER_ACTS`; R100), `wizard-scripts` R13 (the registry regenerated at the design commit; R101). `interface-assets` R10 (the stylesheets at the new commit).",
+   "assumes": "\"Through the plane: `control-plane` R1 (`GET /version`; R92)\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/screens-intake.md",
+   "line": 95,
+   "section": "Uses",
+   "quote": "- Through the plane: `acquisition` (R10), `capture` (R76–R81, R86), `capture-requests`, `monitoring`, `entities` and `provenance` (`testify`), `ratification` (`release`), `file-safety` (R6, R8, R27–R32 and the open ops), `doorbell`, `store-door`, `sources`, `wizard-scripts` (`writinghelp`), `control-plane` (R58's `promoted`, R72).",
+   "assumes": "\"Through the plane: … `control-plane` (R58's `promoted`, R72)\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/screens-intake.md",
+   "line": 99,
+   "section": "Uses",
+   "quote": "- (fix round 9; G135f; R65) Through the plane: `control-plane`'s `op=reading` and `owedwork`, which answer the job row (`control-plane` R135, `store-assembly` R74).",
+   "assumes": "\"Through the plane: `control-plane`'s `op=reading` and `owedwork`\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/screens-intake.md",
+   "line": 105,
+   "section": "Invariants",
+   "quote": "Seam: a 1,048,576 B CSV uploaded and filed through the real plane is a bundle (the follow is the plane's). / A sheet is not read at the door past the gate (`control-plane` R131): the no-cursor door read that cut it at 128 Ki and indexed it `whole` with `truncated: 1` is gone, the door gives the first look and the job row reads the rest.",
+   "assumes": "\"A sheet is not read at the door past the gate (`control-plane` R131)\".",
+   "standing": "lead about intent"
+  },
+  {
+   "file": "process/modules/screens-publish.md",
+   "line": 116,
+   "section": "Uses",
+   "quote": "- (T51; R37–R41) Through the plane: `public-read` (`publishedcase`'s per-finding answer, its R39; `publishedbytes`, its R5), `review` (the member door's `reviewcopy` with its top-level `zone`, its R11, R35; the in-band stamp, `public-read` R7, `control-plane` R20). The kit's `cs.save` and `cs.download` (`interface-shell` R47) and the print rules `interface-assets` T51-112 carries. No new `modules.json` edge. `publishedfrozen` (`public-read` R38) is `screens-inquiry`'s.",
+   "assumes": "Cites `control-plane` R20.",
+   "standing": "lead about intent"
+  }
+ ]
+}

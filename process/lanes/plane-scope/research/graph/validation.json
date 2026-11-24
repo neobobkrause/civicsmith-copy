@@ -1,0 +1,324 @@
+{
+ "about": "The raw results of the validations 09-graph.md reports. Made once, on 23 Nov 2026, from the runs it describes; tools/graph.mjs does not remake this file.",
+ "processToolCheck": {
+  "command": "node ~/process4/<commit>/tool/p4.mjs check <module>, and the same check function called directly to read the names its lines do not print",
+  "exitCodes": {
+   "setup-words": 0,
+   "record-grammar": 0,
+   "capture": 1,
+   "retrieval": 0,
+   "store-assembly": 0,
+   "store-request": 0,
+   "interface-shell": 0,
+   "screens-intake": 0,
+   "control-plane": 0,
+   "plane": 1
+  },
+  "rows": [
+   {
+    "module": "setup-words",
+    "declared": 0,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 0,
+    "graphNoLiteralImport": 0,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 2,
+    "graphLeftComputed": 1,
+    "graphResolved": 1,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "record-grammar",
+    "declared": 1,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 0,
+    "graphNoLiteralImport": 0,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "capture",
+    "declared": 19,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 4,
+    "graphNoLiteralImport": 4,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "retrieval",
+    "declared": 24,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 2,
+    "graphNoLiteralImport": 2,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "store-assembly",
+    "declared": 131,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 1,
+    "graphNoLiteralImport": 1,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 4,
+    "graphLeftComputed": 1,
+    "graphResolved": 3,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "store-request",
+    "declared": 32,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 1,
+    "graphNoLiteralImport": 1,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "interface-shell",
+    "declared": 13,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 0,
+    "graphNoLiteralImport": 0,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "screens-intake",
+    "declared": 15,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 2,
+    "graphNoLiteralImport": 2,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 0,
+    "graphLeftComputed": 0,
+    "graphResolved": 0,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "control-plane",
+    "declared": 114,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 16,
+    "graphNoLiteralImport": 16,
+    "sameNames": true,
+    "onlyInGraphList": [],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 9,
+    "graphLeftComputed": 1,
+    "graphResolved": 8,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": []
+   },
+   {
+    "module": "plane",
+    "declared": 171,
+    "toolRefusedUses": 0,
+    "graphUndeclaredImports": 0,
+    "toolNoImport": 24,
+    "graphNoLiteralImport": 26,
+    "sameNames": false,
+    "onlyInGraphList": [
+     "file-scanner",
+     "screens-wizards"
+    ],
+    "onlyInToolList": [],
+    "toolCannotReadImport": 9,
+    "graphLeftComputed": 5,
+    "graphResolved": 4,
+    "graphComputedToolSilent": 0,
+    "modulesOnlyThroughResolvedComputedImports": [
+     "screens-entry",
+     "screens-wizards",
+     "screens-investigate",
+     "screens-action"
+    ]
+   }
+  ]
+ },
+ "tracedTestRuns": {
+  "command": "node tools/trace-run.mjs <scratch checkout of origin/p4-tranche> <list> <folder> --jobs 3 --timeout 300|240 [--net]",
+  "files": 195,
+  "passed": 164,
+  "failed": 27,
+  "killedAtTheTimeLimit": 4,
+  "passedOnlyWithTheProxyCertificatePassedOn": [
+   "bio-plane/test/m/pdf-reader/memory.test.mjs",
+   "bio-plane/test/m/pdf-reader/opened-range.test.mjs",
+   "bio-plane/test/m/pdf-reader/range.test.mjs",
+   "bio-plane/test/m/pdf-reader/pagesource.test.mjs",
+   "bio-plane/test/m/pdf-reader/refusal.test.mjs",
+   "doctypes/test/bounded.test.mjs",
+   "bio-plane/test/m/reading-pipeline/pdf-pieces.test.mjs"
+  ],
+  "notPassed": [
+   "bio-plane/test/m/answer-envelope/families.test.mjs",
+   "agent-worker/test/harness.test.mjs (killed at the time limit)",
+   "bio-plane/test/d606-perpage-ocr.test.mjs (killed at the time limit)",
+   "bio-plane/test/m/setup-words/extraction.test.mjs",
+   "bio-plane/test/m/test-support/test-support.test.mjs",
+   "bio-plane/test/m/setup-words/word-list.test.mjs",
+   "bio-plane/test/m/office-readers/g41-held.test.mjs",
+   "bio-plane/test/m/doc-clean/stream.test.mjs",
+   "bio-plane/test/m/interface-assets/assets.test.mjs",
+   "bio-plane/test/m/store-request/recipes-b7.test.mjs",
+   "bio-plane/test/m/interface-shell/phone390.test.mjs",
+   "bio-plane/test/m/interface-shell/fixround7.test.mjs",
+   "bio-plane/test/m/screens-settings/phone.test.mjs",
+   "bio-plane/test/m/screens-daily/fix10.test.mjs",
+   "bio-plane/test/m/screens-intake/phone390.test.mjs",
+   "bio-plane/test/m/screens-inquiry/fr4-document.test.mjs",
+   "bio-plane/test/m/screens-daily/fix3.test.mjs",
+   "bio-plane/test/m/screens-inquiry/fr4-project.test.mjs",
+   "bio-plane/test/m/screens-publish/fix3.test.mjs",
+   "bio-plane/test/m/screens-publish/fix4.test.mjs",
+   "bio-plane/test/system/migrate-released.test.mjs",
+   "bio-plane/test/m/following/checks.test.mjs",
+   "bio-plane/test/m/journey-check/account-installer.test.mjs",
+   "bio-plane/test/m/journey-check/dec340.test.mjs",
+   "bio-plane/test/m/journey-check/design29.test.mjs",
+   "bio-plane/test/m/journey-check/frames.test.mjs",
+   "bio-plane/test/m/journey-check/journey.test.mjs",
+   "bio-plane/test/m/journey-check/pseudo.test.mjs",
+   "bio-plane/test/m/journey-check/walker.test.mjs",
+   "bio-plane/test/m/control-plane/t51-round9-seam.test.mjs (killed at the time limit)",
+   "bio-plane/test/m/journey-check/live.test.mjs (killed at the time limit)"
+  ],
+  "processesRecorded": 689
+ },
+ "tracedImportEdges": {
+  "command": "node tools/trace.mjs merge <raw folders> merged.json; node tools/crosscheck.mjs edges merged.json full.json out.json",
+  "filesLoaded": 1452,
+  "edgesResolved": 7806,
+  "matched": 5854,
+  "entryOrPreload": 251,
+  "toOrFromOutsideTheCheckout": 66,
+  "fromAFileWithAComputedImport": {
+   "edges": 1619,
+   "byImportingFile": {
+    "agent-runner/test/stubs/runtime.mjs": 1,
+    "bio-plane/scripts/fleet-bundle.mjs": 9,
+    "bio-plane/test/declared-ops.mjs": 81,
+    "bio-plane/test/m/admission/t43.test.mjs": 3,
+    "bio-plane/test/m/answer-envelope/families.test.mjs": 2,
+    "bio-plane/test/m/bundler/bundler.test.mjs": 1,
+    "bio-plane/test/m/control-plane/r53-routes.test.mjs": 12,
+    "bio-plane/test/m/docket/reads.test.mjs": 173,
+    "bio-plane/test/m/file-safety/rows.test.mjs": 214,
+    "bio-plane/test/m/lines/invariants.test.mjs": 132,
+    "bio-plane/test/system/row-census.mjs": 986,
+    "newgroup/test/t51.test.mjs": 5
+   }
+  },
+  "missing": [
+   "bio-plane/[eval1]|bio-plane/src/attestation/index.mjs",
+   "bio-plane/[eval1]|bio-plane/src/capture/ops.mjs",
+   "bio-plane/[eval1]|bio-plane/src/control-plane/index.mjs",
+   "bio-plane/[eval1]|bio-plane/src/extraction/index.mjs",
+   "bio-plane/[eval1]|bio-plane/src/extraction/ops.mjs",
+   "bio-plane/[eval1]|bio-plane/src/monitoring/index.mjs",
+   "bio-plane/[eval1]|bio-plane/src/plane/door.mjs",
+   "bio-plane/[eval1]|bio-plane/src/ratification/ops.mjs",
+   "bio-plane/[eval1]|bio-plane/src/setup.mjs",
+   "bio-plane/[eval1]|bio-plane/src/store-assembly/register.mjs",
+   "bio-plane/[eval1]|bio-plane/test/m/case-carriage/fixture.mjs",
+   "bio-plane/[eval1]|bio-plane/test/m/plane/fixture.mjs",
+   "bio-plane/[eval1]|bio-plane/test/m/store-assembly/alarmed-store.mjs",
+   "bio-plane|bio-plane/test/platform-sqlite.mjs",
+   "file-scanner/test/stubs/runtime.mjs|file-scanner/dist/file-scanner.bundled.mjs",
+   "pdf-worker/test/built-files.test.mjs|pdf-worker/dist/pdf-worker.bundled.mjs"
+  ]
+ },
+ "regexTracer": {
+  "command": "the lane's scratch tracer (regex /(?:from|import\\()\\s*[\"'](\\.{1,2}\\/[^\"']+)[\"']/g) from bio-plane/test/m/screens-intake/page.mjs and bio-plane/src/screens-intake/index.mjs, realplane.mjs left out",
+  "regexFiles": 737,
+  "graphFiles": 739,
+  "graphFilesByImportAndExportFromOnly": 582,
+  "inGraphNotInRegex": [
+   "bio-plane/src/store-assembly/register.mjs",
+   "bio-plane/src/store-assembly/declarations.mjs"
+  ],
+  "inRegexNotInGraph": [],
+  "latestModuleBoth": "screens-intake (183)"
+ },
+ "settledReferencesAgainstRuns": {
+  "about": "Every reference the extractor settled (not computed) at a file-system call or an import() with a file or folder as target, against what the traced runs saw at that line. literal = the argument is a text literal or new URL(literal, import.meta.url); followed = settled by following names and calls.",
+  "command": "node tools/crosscheck.mjs settled <raw folder>,<raw folder>,<raw folder> <full.json> <out.json>",
+  "counts": {
+   "literal file system": {
+    "line not reached in the runs": 191,
+    "seen as written": 63
+   },
+   "followed file system": {
+    "line not reached in the runs": 301,
+    "seen as written": 199,
+    "line reached, other paths seen": 1
+   },
+   "literal import()": {
+    "seen as written": 144,
+    "file not run": 634,
+    "file run, this import not seen": 29
+   },
+   "followed import()": {
+    "seen as written": 22,
+    "file run, this import not seen": 3,
+    "file not run": 114
+   }
+  },
+  "differing": [
+   "stewards/scripts/deploy.mjs:24 [fs-read] config -> graph: stewards/wrangler.jsonc (one of 2) | run: <tmp>"
+  ],
+  "correctedAfterAFirstPass": [
+   "bio-plane/test/m/screens-settings/measure.mjs:30 [fs-stat] EXE -> the first pass read an empty text after \"||\" as the top folder; the run saw a path outside the checkout; the extractor now leaves it computed"
+  ]
+ }
+}
