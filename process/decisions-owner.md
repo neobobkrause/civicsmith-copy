@@ -9,6 +9,7 @@ Rule now: civicsmith moves to the latest Process4 version.
 - 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
 - 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
 - 23 Nov 2026: "1. Instruction: move civicsmith to the latest Process4 version"
+- 24 Nov 2026: "1. Instruction: move civicsmith to the latest Process4 version" (the fourth move, so that the tranche t1 drop can be carried out)
 Shown to the owner: not yet.
 
 ## Slots
