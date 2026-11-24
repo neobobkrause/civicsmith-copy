@@ -1,75 +1,82 @@
-Length: 75 lines. Last section: "7. What is not known".
+Length: 82 lines. Last section: "8. What is not known".
 
 # The plane module's scope and the layers: design
 
-The plane-scope lane's design. First written 23 Nov 2026 by civicsmith plane-scope lane #1 (sections 1 and 2, options A, B, C); rewritten 24 Nov 2026 by lane #2 after the layer research the owner asked for on 23 Nov (research 09 to 21, index `research/README.md`). The report of that research is the lane's second design page, https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL; the first page, https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L, holds options A, B, C. The module list, the order and interfaces are ARCH's to decide and build. Nothing here is built while development is halted, or before the owner chooses a direction; ARCH has said it can be built as given, and section 6 says which steps each choice opens. Tags: measured, read, not checked (`research/evidence-rules.md`).
+The plane-scope lane's design as it stands on 24 Nov 2026 (civicsmith plane-scope lane #3). It states the current design only. The evidence is the lane's research (index `research/README.md`); the owner's report is https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL, the first page https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L. The module list, the order, interfaces and requirement text are ARCH's to decide and build. Nothing here is built while development is halted, or before the owner chooses the direction. Tags: measured, read, not checked (`research/evidence-rules.md`).
 
-## 1. What plane is for
+## 1. The rule
 
-- Plane is the shell that makes civicsmith one running program on the hosting service: the store's class, the Worker's entry, the door's hooks, the watchdog, the build of its bundle and its deployment config (research 01, 02). Its own requirements are the 27 about that shell; its own proof is its 27 A1 tests.
-- It is not the home of other modules' proof. It holds that proof because whole-program tests use every module and only the end of the order may, and because only plane's entry starts the real runtime (research 01, 02).
+- Each module's promises are proven by that module's own tests, so that its own job finds its flaws. A whole-program test moves to the module it proves. A test that today loads a later module is rebuilt so that it does not. A test stays at the end of the order only when its route fails as it is built; its reason is then written at the test, and only then is a proof module after plane made for it.
+- ARCH's condition (24 Nov 2026): a test moved to its owner loads only that module and earlier ones, and no copy of a later one. `p4 check` at the owner's job is the judge.
+- Plane is the launcher: the store's class, the Worker's start-up, the watchdog, the build and the deployment config (research 01, 02). Its own proof is its 27 own test files. The other 120 files its record names prove other modules' promises (research 02).
+- None of the 120 was found to need the assembled program (research 22a, 22b, 22c: each test read). 17 of the 120 were moved or rebuilt on scratch copies and pass at the owner with `p4 check` clean there: 12 in research 22a to 22c, 2 in research 07 and 08, 3 in research 23.
 
-## 2. Option B, unchanged, with ARCH's terms
+## 2. The architecture
 
-Plane keeps only its own proof; the whole-program proofs move to proof modules placed after plane. ARCH #11, 23 Nov 2026: B can be built as given: both modules directly after plane and before `release` (the platform-shape module, then the door module, planned as door A and door B, split further if a run passes about 20 minutes on GitHub); every test there names a requirement of its own module, which ARCH writes; the group C kits are their code; A2's 10 store-only tests judged at the build; plane #1's pull request (1259) keeps only A1. Plane's requirements file is corrected either way (research 01, item 3).
+The owner's layers, lowest first: model, middleware, front door, launcher, UI. Today the door (`control-plane`, 195) and the launcher (`plane`, 196) sit after the UI (176 to 194).
 
-## 3. The re-stacking: the design
+1. **Order.** After `store-request` (175): `control-plane`, `plane`, the 19 UI modules, one new top module, then `release` and what follows it.
+2. **The routing belongs to the door.** `plane/door.mjs` (`publicOp`, `gatedOp`: which owner's handler answers each op, with the stamps it hands) moves unchanged into `control-plane` as `src/control-plane/routing.mjs`, importing the four helpers from `./index.mjs`. Plane hands it to `makeFetch` as today. control-plane declares `host-governor` and `ratification`, which the routing imports. The door's own tests then import the real routing; no test re-makes it (K4990). Research 23, variant C.
+3. **The door knows no screen.** `makeFetch` is handed the UI as ready-made functions (page, script, script hash), the asset table and the public addresses, read from `hooks.ui`. With nothing handed in, every page route answers 404 JSON `NO_INTERFACE`; ops answer as before.
+4. **The launcher** keeps its start-up code in `src/plane/launch.mjs`, `Store` unchanged in `src/plane/store.mjs`, and `wrangler.jsonc`, `scripts/build-plane.mjs` and `dist/`, which name the entry only as a path held as text.
+5. **The document builder sits below the door.** `titleOf` and `promoteDocument` move unchanged from the capture screen's file to `capture/filing.mjs` (capture, 56); the door's `deliverOwedRender` imports them. K4493 names only the earlier process's session, so it ranks 5 (`process/ranking.md`) and this is the lane's call. capture's Purpose line "It writes no bundle" is reworded by ARCH.
+6. **The top module** owns the entry `bio-plane/src/plane/index.mjs` (path kept) and `src/plane/ui.mjs`. Its promise is the assembled program: the UI plugged into the launcher, the page served end to end. Its tests are the only ones that boot the entry.
+7. **Shared text.** The 11 addresses and words the door and the UI each still write (research 11, N01, N03 to N12) and the built manifest's list of UI files (N13) stay as they are through the move; afterwards each UI module may take them from the door by import, as its own job.
+8. **Not part of this design:** the 20 modules that fit no one layer and the layer definitions (research 10). `skills` belongs with the model: a correction to the map, not to code.
 
-The owner's wanted order, lowest first: model, middleware, front door (control-plane), launcher (plane), UI (interface-assets, interface-shell, the screens parts). Today the door and the launcher sit after the UI.
+Why the routing goes into the door and not into a module before it (research 23, measured on scratch copies of `a26a8da2`): placed in the door, control-plane's whole set passes 569 of 569 and the built bundle is byte-identical to base's. A new module after `store-request` passes too, but only with the four helpers in a second file (variant N2): one file that both the routing and the door import makes 76 of control-plane's 98 test files fail at load ("a second registration"), because the routing's import of `store-assembly/index.mjs` registers every owner's ops before the door's test harness does. Inside `store-request` it also breaks that module's own census test (R21). The door is the routing's natural owner: deciding which handler answers an op is front-door work, and it needs no new module or order entry.
 
-1. **Order.** control-plane and plane directly after store-request; then the UI; then a new top module that owns the entry `bio-plane/src/plane/index.mjs` (path kept) and the UI plug-in `src/plane/ui.mjs`; then option B's proof modules; then release.
-2. **The door knows no screen.** `makeFetch` is handed the UI as ready-made functions (page, script, script hash) plus the asset table and the public addresses, read from `hooks.ui`. With nothing handed in, every page route answers 404 JSON `NO_INTERFACE`; ops answer as before. (The trial handed in the builders, `interfacePage` and the rest, to change fewer lines; the design hands in composed functions so the door knows neither screens nor guide.)
-3. **The launcher** keeps its start-up code in `src/plane/launch.mjs`, `Store` unchanged in `src/plane/store.mjs`. plane keeps `wrangler.jsonc`, `scripts/build-plane.mjs` and `dist/`, which name the entry only as a path held as text.
-4. **The document builder moves below the door.** `titleOf` and `promoteDocument` move, unchanged, from the capture screen's file to `capture/filing.mjs` (capture, 56). The door's `deliverOwedRender` imports them; it keeps one argument and the store hands nothing in. K4493 names only the earlier process's session ("BOB's"), so by `process/ranking.md` it is rank 5; the lane decides this. capture's Purpose line "It writes no bundle" is reworded by ARCH.
-5. **Shared text.** The 11 addresses and words the door and the UI each still write after the change (research 11, N01, N03 to N12; the trial removed N02), and the built manifest's list of UI files (N13), stay as they are through the move; afterwards each UI module may take them from the door by import, as its own job.
-6. **Not part of this design:** the 20 modules that fit no one layer, and the layer definitions (research 10). `skills` is misplaced there as a shared foundation and belongs with the model: a correction to the map, not to code.
+## 3. Where each whole-program test goes
 
-**Proven on a scratch copy (research 21, the design's join of research 15 and 16), measured on a quiet machine:** control-plane 564 of 564; plane A1 98 of 99 (the one failure fails on base); capture 366 of 366; screens-intake 375 of 375; interface-shell 321 of 321; the 13 delivery files 151 of 159, the same 8 failing as on base; 15 served answers and the page script byte-identical to base; the UI-less build answers ops and refuses pages; `p4 check` finds no disagreement in any code file. Code 7 files +261 -209; tests 10 files +23 -10. plane's l79 restart test: 30 of 30 on a quiet machine across base and both trials (research 20).
+By class (22a, 22b by test; 22c by file):
 
-## 4. The lane's recommendation
+| Tests of | Plain test at the owner | Real runtime, test-only store at the owner | Rebuilt by a route found | Duplicate, dropped | No route |
+|---|---|---|---|---|---|
+| Platform behaviour and the odd ones (34 files) | 12 | 10 | 11 | 1 | 0 |
+| The door's promises (46 files, 133 tests) | 121 | 8 | 3 | 1 | 0 |
+| Other modules' promises (40 files) | 24 | 1 | 5 | 10 | 0 |
 
-- **First: option B and the capture move.** B is the only choice that fixes plane's scope, the problem the lane was opened for. The capture move is the cheapest measured step toward the owner's order and removes the one call of UI code from background work.
-- **Then the re-stacking, as small steps, if the owner chooses that direction.** After B, the tests the re-stacking must move shrink from 121 to about 27 (control-plane's 20 and plane's 7 A1 files that reach the entry; worked out from research 15's refused list, not run).
-- **The case against re-stacking now** (research 19): it does not fix plane's scope; it costs the most text (163 requirements in 26 modules pin today's order, about 112 likely to need rewording); the door still refers to the UI by what it is handed; no recorded user needs the UI-less program; it overlaps PR 1259. **The case for:** the door imports nothing of the UI, a UI-less program builds and runs, nothing users get changes, and the order then allows screens tests to use the real door and the UI to take shared text from the door (both not checked).
-- The direction is the owner's: he asked for this order, but there is no marked decision for it.
+Where they land (`research/classify/22a.json`, `22b.json`, `22c.json` give each test's destination, its reason and its route):
+
+- **control-plane:** the 46 door files, `g42-storage-seam`, `r8-wave`, and the door's halves of the split tests. Plain tests run `makeFetch` with the real routing over store-request's world (`real-door.mjs`); the 8 runtime tests run under Miniflare through a test-only Durable Object built from earlier modules (`door-object-entry.mjs`, which adds `scheduler` to control-plane's declared uses). The seam kit `r8-kit.mjs` becomes control-plane's, rewritten over the real door; it is moved, not copied. Inputs the tests now make with screen code (`promoteDocument`, `PARTS.sitting`, `PARTS.caseArgs`; 70 tests) are made with store-request's recipes instead.
+- **The top module:** the 14 door tests that assert screens drawn over the door, and plane's own test files that boot the entry (taken from `p4 check`'s refusals at that step).
+- **The composed store** (`store-services`, `store-assembly`, `store-request`, 173 to 175): the platform tests and the other-module tests whose behaviour exists only once the store is assembled. An owner earlier than 173 cannot hold these; its own interface tests stay as they are.
+- **Each UI module** (screens-intake, screens-inquiry, screens-daily, screens-publish): its seam tests, over store-request's world now, over the real door once the door is below it.
+- **Their own modules:** affordances, host-governor, instance-setup, lines, office-readers, reading-pipeline, scheduler, test-support, extraction's split half.
+- **agent-worker's four:** their checks of later modules become contract checks at the provider (admission, control-plane, answer-envelope), as K4995 rules for a later provider; their checks of earlier modules use those modules' published fixtures.
+- **`migrate-released`:** properties 3 to 5 at store-assembly over the captured stores; property 2, the door's answers on a migrated store, at control-plane, whose routing now answers `selftest` too. This needs ARCH's decision "Stores written by past releases" rewritten.
+- **Plane keeps** its 27 own files and the halves of split tests that state plane's own files: `limits` against `wrangler.jsonc`, `t51-hops`' join of plane's timing header, `r9-memory`'s total with the bundle (plane R100), the deployed cron, plane's imports of store-assembly.
+- **Dropped:** 12 duplicates; 9 are legacy suites already ruled for deletion at the release (K619).
+
+## 4. What is proven on scratch copies
+
+All on `a26a8da2`, measured, each re-run by the lane from the saved patch: the capture move and the door taking its UI from outside, joined (research 21: control-plane 564 of 564, capture 366 of 366, the served answers and page script byte-identical); the routing in the door with three door tests over the real routing (research 23: control-plane 569 of 569, re-run by the lane from the saved patch (179 s, load 0.8 to 2.5), three arm paths, mutations of the routing turn each red); 12 whole-program test files moved or rebuilt at store-assembly, test-support, control-plane, plane, screens-intake and lines (research 22a to 22c, each with `p4 check` clean at the owner; the lane re-ran the 10 held in the saved patches). Moved door tests run in 1.5 to 2.2 s in Node against 17 to 23 s over plane.
 
 ## 5. The plan
 
-Each step is one merge that passes on its own (Process4 design part 2, section 8). Requirement text and the module list are ARCH's; "job" is one module's job.
+One sequence. Each step is one merge that passes on its own (Process4 design part 2, section 8). "ARCH" is the module list or requirement text, which runs no tests; "job" is one module's job. Tests move with the step that makes their route possible, so no test moves twice.
 
-1. ARCH: B's list change (proof modules after plane; requirements; tests by path).
-2. Job plane: PR 1259 keeps only A1 and goes on; its blocked record (store-assembly's `deliver` option) is separate.
-3. ARCH: capture's Purpose reworded; requirements for the two functions.
-4. Job capture: `capture/filing.mjs` with the two functions; nothing uses it yet.
-5. Job screens-capture: the screen uses capture's copy and drops its own (page script byte-identical, research 16).
-6. Job control-plane: `deliverOwedRender` imports from capture; its six test files re-pointed.
-7. Job control-plane: `makeFetch` accepts `hooks.ui`, keeping its own UI imports as a fallback.
-8. Job plane: `launch.mjs` split from the entry; the entry hands the UI in (plane is still after the UI).
-8a. Job control-plane moves a part out of `index.mjs`; then ARCH splits control-plane (requirement numbers kept).
-8b. ARCH splits interface-shell along an existing file boundary (requirement numbers kept).
-9. ARCH rewords the door's page requirements; job control-plane drops its UI imports and the fallback (only after step 8 has merged), adds `NO_INTERFACE`, and its 9 page test files take the UI from a test helper.
-10. ARCH: the top module after plane, owning the entry and `ui.mjs`, and the test files that reach the entry (the list taken from `check`'s refusals at that step, not from the estimate of about 27); UI names out of plane's `uses`.
-11. ARCH: the remaining requirements that state today's order; its "Module list" decision and the rulings that name today's places (K5046, K5052) rewritten in place.
-12. ARCH: control-plane and plane moved to directly after store-request, merged only once `p4 check` on that list finds nothing in either's code. If it finds something in code, the boundary is an architecture bug and the step comes back to the lane; it is not worked round.
-13. Follow-ons, each its own job: UI modules import the shared text from the door; screens tests may use the real door; `bio-plane/test/declared-ops.mjs` stops reading later modules' files (test-support).
+1. **The capture move.** ARCH rewords capture's Purpose and adds requirements for the two functions. Job capture adds `capture/filing.mjs`. Job screens-capture uses it and drops its own copy. Job control-plane's `deliverOwedRender` imports it; its 6 test files re-point.
+2. **The routing into the door.** ARCH writes the routing's requirements at control-plane (from plane R6, R112 and their kin), adds `host-governor` and `ratification` to its uses, and rewords plane R6 (plane hands the door the door's own routing). Job control-plane adds `routing.mjs`. Job plane's entry imports it, deletes `door.mjs`, and re-points the 8 plane tests that import it.
+3. **Tests to their owners.** For each owner, ARCH gives it the tests in its record and places the rebuild as its work; the owner's job rebuilds them by their route, and its run with `p4 check` judges. Owners earliest in the order first. The door's 46 files and `r8-wave` follow step 2. agent-worker's contract checks and `migrate-released` come with ARCH's rewritten decision. The 14 screen-asserting door tests stay with plane until step 6. Duplicates are dropped in the same pass.
+4. **Splits.** Job control-plane moves a part out of `index.mjs`; ARCH splits `control-plane` and then `interface-shell` along existing file boundaries, keeping requirement numbers (ARCH's steps 8a and 8b).
+5. **The door takes its UI from outside.** Job control-plane accepts `hooks.ui` and keeps its own UI imports as the fallback (accept-both). Job plane splits `launch.mjs` from the entry; the entry hands the UI in. ARCH rewords the door's page requirements and writes `NO_INTERFACE`; job control-plane drops its UI imports and the fallback, adds `NO_INTERFACE`, and its 9 page test files take the UI from a test helper.
+6. **The top module.** ARCH adds it after plane, owning the entry and `ui.mjs`, with the 14 screen-asserting door tests and the test files that reach the entry (the list taken from `p4 check`'s refusals at this step); the UI leaves plane's declared uses.
+7. **The move.** ARCH rewords the remaining requirements that state today's order and rewrites its "Module list" decision and the rulings that name today's places (K5046, K5052); then moves `control-plane` and `plane` to directly after `store-request`, merged only once `p4 check` on that list finds nothing in either's code. If it finds something in code, the boundary is an architecture bug and the step comes back to the lane; it is not worked round.
+8. **After the move, each its own job:** the screens' seam tests that need the real door (`casedrafts-seam`, `door-seam`, `t51-seam-g126h`) take it; the UI modules take the shared text from the door; `bio-plane/test/declared-ops.mjs` stops reading later modules' files (test-support).
 
-Dependencies: the halt and the owner's choice; PR 1259 shares 2 files with steps 7 to 9 and none with steps 3 to 6; `control-plane.md` (121 KB) and `interface-shell.md` (120 KB) are over the 60 KB single-text maximum and are split at steps 8a and 8b; after step 12 the 19 UI modules are later modules of the door and the launcher, so their changes tell more modules.
+## 6. ARCH's conditions
 
-## 6. ARCH's answer
+ARCH #11, 24 Nov 2026, on the earlier plan; carried here by step: (1) nothing is built while the halt stands or before the owner's choice; (2) the splits (step 4) come before the door drops its UI imports (step 5); (3) step 5's fallback is the accept-both form, removed only after plane's entry hands the UI in; (4) a rewording that only says the same thing more clearly ARCH makes and names in the account; one that changes what the product does goes to the owner first; `NO_INTERFACE` is new behaviour of an unshipped build, written as a new requirement and named in the account; (5) the move as step 7 says; (6) plane keeps `wrangler.jsonc`, `build-plane.mjs` and `bio-plane/dist/`; (7) the owed render delivered by the alarm inside the built program is a walk area of the round that lands step 5; the notice load after step 7 and the owners' run times are measured as they come and reported, and neither stops a step; (8) step 6's test list is taken from `check`'s refusals at that step. ARCH's standing condition on moved tests is section 1's.
 
-ARCH #11, 24 Nov 2026: it can be built as given, B first, then the re-stacking in the steps above, on these conditions.
+## 7. If a route fails
 
-1. Steps 1 to 6 (B and the capture move) are buildable on the owner's choice of B; steps 7 to 12 only on his choice of the re-stacking direction. Neither is built while his halt stands.
-2. Steps 8a and 8b (the splits) come before step 9.
-3. Step 7's fallback is the accept-both form (design part 2, section 8), removed at step 9 only after step 8 has merged.
-4. Requirement wording: a rewording that only says the same thing more clearly ARCH makes and names in the account; one that changes what the product does goes to the owner first. `NO_INTERFACE` is new behaviour of an unshipped build: ARCH writes it as a new requirement and names it in the account.
-5. Step 12 as written above.
-6. plane keeps `wrangler.jsonc`, `build-plane.mjs` and `bio-plane/dist/`.
-7. The owed render delivered by the alarm inside the built program becomes a walk area of the round that lands steps 7 to 9. The notice load after step 12 and B's run times are measured as they come and reported; neither stops a step.
-8. Step 10's test list is taken from `check`'s refusals at that step.
+A test whose route fails as it is built stays with plane until the end of the plan, with its reason written at the test. If any remain then, ARCH makes one proof module directly after the top module for them, as the earlier option B gave (both after plane and before `release`; each test naming a requirement of its own module). None is planned.
 
-## 7. What is not known
+## 8. What is not known
 
-- Which of the 112 requirements truly need rewording; whether `p4 check` passes at step 12; how many notices the door's changes cause after it; B's proof modules' run times.
-- About 190 test files that reach changed files were not run on a changed copy; each set ran once on the joined copy; an owed render delivered by the alarm in the built program; screens tests over the real door.
-- The full list is the report's section "What is not known".
+- Whether every route holds as built: 17 test files of 120 were moved or rebuilt; the rest are classed by reading.
+- The run times of the owners that gain tests, store-assembly most (it gains the memory-capped shape runs).
+- Whether store-request's recipes make every input the 70 door tests now make with screen code (not checked test by test).
+- Which of the 163 requirements that state today's order truly need rewording (about 112 judged); whether `p4 check` passes at step 7; the notices the door's changes send after it.
+- About 190 test files that reach changed files were not run on a changed copy; the owed render delivered by the alarm in the built program; the screens' tests over the real door.
