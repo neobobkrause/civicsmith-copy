@@ -1,0 +1,361 @@
+diff --git a/bio-plane/test/m/control-plane/door-object-entry.mjs b/bio-plane/test/m/control-plane/door-object-entry.mjs
+new file mode 100644
+index 0000000000..083ef2e86d
+--- /dev/null
++++ b/bio-plane/test/m/control-plane/door-object-entry.mjs
+@@ -0,0 +1,23 @@
++/* control-plane (scratch experiment, plane-scope research 22b): a test-only Worker for this module's tests that need the real runtime, booted under Miniflare.
++   Its default export is this module's own door, `makeFetch({})` (every op on the door's generic forward, no arm composed); its Durable Object class is the
++   store `store-assembly`'s `assembleStore` builds (with this module's `deliverOwedRender`, as the store is built for the product), every request passed to the
++   assembled store's one frame (`dispatch`). The platform's alarm is forwarded to the scheduler (workerd refuses the store's alarm without a handler: tried); `scheduler` is added to control-plane's
++   declared `uses` for it (scratch). Built only from modules before control-plane and from
++   control-plane itself: nothing of plane is imported. */
++import { DurableObject } from "cloudflare:workers";
++import { assembleStore } from "../../../src/store-assembly/index.mjs";
++import { schedulerOf } from "../../../src/scheduler/index.mjs";
++import { makeFetch, deliverOwedRender } from "../../../src/control-plane/index.mjs";
++
++export class Store extends DurableObject {
++  #assembled;
++  constructor(ctx, env) {
++    super(ctx, env);
++    this.ctx = ctx; this.env = env;
++    this.#assembled = assembleStore(ctx, env, { deliver: deliverOwedRender });
++  }
++  async alarm() { await schedulerOf(this.ctx, this.env).alarm(); }
++  async fetch(req) { return this.#assembled.dispatch(req); }
++}
++
++export default { fetch: makeFetch({}) };
+diff --git a/bio-plane/test/m/control-plane/limits.test.mjs b/bio-plane/test/m/control-plane/limits.test.mjs
+index ea2a1cb324..7b5355b589 100644
+--- a/bio-plane/test/m/control-plane/limits.test.mjs
++++ b/bio-plane/test/m/control-plane/limits.test.mjs
+@@ -1,28 +1,19 @@
+-/* control-plane: the plane's limits (N336; installer R20, K649 (6)). The door states them in code, equal to the `limits`
+-   of the plane's own configuration, so the bundle a release signs carries what the installer sends. */
++/* control-plane: the plane's limits (N336; installer R20, K649 (6)). The door states them in code, so the bundle a release signs carries what the
++   installer sends. This module's half (scratch reconstruction, plane-scope research 22b): the constant's own shape, its statement and the door that
++   carries both, read from this module's code alone. That the constant equals the deployment's configuration (`wrangler.jsonc`, a file of plane's) is
++   proven by plane, the later module, in `plane/limits.test.mjs`. */
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { readFileSync } from "node:fs";
+ import { M } from "./harness.mjs";
+ 
+-const jsonc = (t) => JSON.parse(t.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m, str) => str ?? "")
+-                                 .replace(/,(\s*[}\]])/g, "$1"));
+-
+-test("installer R20 (N336): PLANE_LIMITS equals wrangler.jsonc's limits exactly, is frozen, and is carried on the door makeFetch makes, with PLANE_LIMITS_STATEMENT, its one-line statement", () => {
+-  const config = jsonc(readFileSync(new URL("../../../wrangler.jsonc", import.meta.url), "utf8"));
+-  assert.ok(config.limits && typeof config.limits === "object", "the configuration states limits");
+-  assert.deepEqual({ ...M.PLANE_LIMITS }, config.limits);
++test("installer R20 (N336), the door's half: PLANE_LIMITS is a frozen map of positive whole numbers, carried on the door makeFetch makes, with PLANE_LIMITS_STATEMENT, its one-line statement, whose parsed form is PLANE_LIMITS", () => {
++  const limits = { ...M.PLANE_LIMITS };
+   assert.ok(Object.isFrozen(M.PLANE_LIMITS));
++  const keys = Object.keys(limits).sort();
++  assert.ok(keys.length > 0 && keys.every((k) => Number.isInteger(limits[k]) && limits[k] > 0));
+   assert.equal(M.makeFetch({}).limits, M.PLANE_LIMITS);
+-  /* the statement (K723, K724): the tag, then key=<positive integer> per key of the configuration's limits, sorted */
+-  const keys = Object.keys(config.limits).sort();
+-  assert.ok(keys.every((k) => Number.isInteger(config.limits[k]) && config.limits[k] > 0));
+-  assert.equal(M.PLANE_LIMITS_STATEMENT, ["bio-plane-limits/1", ...keys.map((k) => `${k}=${config.limits[k]}`)].join(" "));
++  assert.equal(M.PLANE_LIMITS_STATEMENT, ["bio-plane-limits/1", ...keys.map((k) => `${k}=${limits[k]}`)].join(" "));
+   assert.match(M.PLANE_LIMITS_STATEMENT, /^bio-plane-limits\/1( [a-z_]+=[1-9][0-9]*)+$/);
+   assert.equal(M.makeFetch({}).limitsStatement, M.PLANE_LIMITS_STATEMENT);
+-  /* its parsed form is PLANE_LIMITS */
+-  assert.deepEqual(Object.fromEntries(M.PLANE_LIMITS_STATEMENT.split(" ").slice(1).map((kv) => kv.split("=")).map(([k, v]) => [k, Number(v)])),
+-                   { ...M.PLANE_LIMITS });
+-  /* negative control: a configuration stating another value is not equal */
+-  assert.notDeepEqual({ ...M.PLANE_LIMITS }, { ...config.limits, subrequests: config.limits.subrequests + 1 });
++  assert.deepEqual(Object.fromEntries(M.PLANE_LIMITS_STATEMENT.split(" ").slice(1).map((kv) => kv.split("=")).map(([k, v]) => [k, Number(v)])), limits);
+ });
+diff --git a/bio-plane/test/m/control-plane/r118-shared.test.mjs b/bio-plane/test/m/control-plane/r118-shared.test.mjs
+index dce1cb8eb9..87f0bd464e 100644
+--- a/bio-plane/test/m/control-plane/r118-shared.test.mjs
++++ b/bio-plane/test/m/control-plane/r118-shared.test.mjs
+@@ -1,16 +1,14 @@
+ /* control-plane R118 (fix round 3, C14, P2.2; K4363; project-roster R42, review R43): THE DOOR HANDS `review.sharedDraftsByProject` TO
+    `project-roster.projectList` AS ITS `sharedDraftsOf`, so `op=projectlist`'s rows answer `shared_drafts`. Part one drives the door's
+-   map over doubles of the two owners (what is handed, and how often); part two, over Miniflare and the real plane, is R118's own test:
+-   a project with a draft shared for review answers `shared_drafts.count: 1` on `op=projectlist` (control: one with none answers
+-   `{count: 0, newest: null}`). The plane hands the door's map the getter `of.projectRoster`. Negative controls throughout (K874). */
++   map over doubles of the two owners (what is handed, and how often); part two, through this module's real door (`makeFetch`) over the
++   real store (store-request's world, `real-door.mjs`; no plane), is R118's own test: a project with a draft shared for review answers
++   `shared_drafts.count: 1` on `op=projectlist` (control: one with none answers `{count: 0, newest: null}`). Negative controls throughout (K874). */
+ import "../../sandbox.mjs";
+-import { test, after } from "node:test";
++import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { createHash } from "node:crypto";
+-import { readFileSync } from "node:fs";
+-import { fileURLToPath } from "node:url";
+-import { Miniflare } from "miniflare";
+ import { ownerOps as controlPlaneOwnerOps } from "../../../src/store-assembly/owner-ops.mjs";
++import { realDoor } from "./real-door.mjs";
+ 
+ test("R118 (the door's map): `projectlist` is project-roster's `projectList` over the stamped viewer and the request's `limit` and `after`, handed review's `sharedDraftsByProject` as `sharedDraftsOf`; the roster calls it with the page's projects and the viewer and its answer is what the roster reads; the arm exists once the plane hands the getter (negative control: without it the roster's own `projectlist` arm is left in place)", () => {
+   const listed = [], shared = [];
+@@ -27,38 +25,22 @@ test("R118 (the door's map): `projectlist` is project-roster's `projectList` ove
+   assert.equal("projectlist" in controlPlaneOwnerOps({ review: of.review }, url, null), false);
+ });
+ 
+-/* ---- part two: the real plane ---- */
+-const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
+-const ADM = "adm-r118-0123456789abcdef", PASSWORD = "the founder's long password";
+-const mf = new Miniflare({
+-  modules: true, modulesRoot: "/", scriptPath: SRC, script: readFileSync(SRC, "utf8"),
+-  modulesRules: [{ type: "ESModule", include: ["**/*.mjs"] }],
+-  compatibilityDate: "2026-07-01", compatibilityFlags: ["nodejs_compat"],
+-  durableObjects: { STORE: { className: "Store", useSQLite: true } }, r2Buckets: ["CAPTURES", "PUBLISHED"],
+-  bindings: { ADMIN_TOKEN: ADM, MEMBER_TOKEN: "mem-r118-0123456789abcdef", PROBE_TOKEN: "prb-r118-0123456789abcdef",
+-              VERSION: "4.6.0", INSTANCE_NAME: "r118-town" },
+-});
+-after(() => mf.dispose());
+-const ORIGIN = "https://group.example";
+-const plane = (url, init = {}) => mf.dispatchFetch(new URL(url, ORIGIN).href, init);
++/* ---- part two: the real door over the real store ---- */
+ const sha = (s) => createHash("sha256").update(s).digest("hex");
+ const file = (path, t) => ({ path, text: t, bytes: Buffer.byteLength(t), sha256: sha(t) });
+ let keys = 0;
+ 
+-test("R118 (through the door, the real plane): `op=projectlist` answers each project's `shared_drafts`: a project with a draft shared for review answers `count: 1` with the instant it was shared, a project with none answers `{count: 0, newest: null}`, and a grant revoked is no longer counted", async () => {
+-  const claimed = await plane("/api/?op=claim", { method: "POST", body: JSON.stringify({ bootstrapToken: ADM, password: PASSWORD }) });
+-  await claimed.arrayBuffer();
+-  const signed = await (await plane("/api/?op=login", { method: "POST", headers: { "content-type": "application/json" },
+-    body: JSON.stringify({ handle: "admin", password: PASSWORD, device: "own" }) })).json();
+-  assert.equal(signed.ok, true, JSON.stringify(signed).slice(0, 300));
+-  const auth = { authorization: `Bearer ${signed.result.token}`, "content-type": "application/json" };
+-  const asFounder = async (url, body) => (await plane(url, { method: body === undefined ? "GET" : "POST", headers: auth,
+-    ...(body === undefined ? {} : { body: JSON.stringify(body) }) })).json();
++test("R118 (through the door, the real store): `op=projectlist` answers each project's `shared_drafts`: a project with a draft shared for review answers `count: 1` with the instant it was shared, a project with none answers `{count: 0, newest: null}`, and a grant revoked is no longer counted", async () => {
++  const { world, ask } = await realDoor();
++  const signed = await ask(null, "login", { body: { handle: world.founder.handle, password: world.password, device: "own" } });
++  assert.equal(signed.body.ok, true, JSON.stringify(signed.body).slice(0, 300));
++  const as = { token: signed.body.result.token };
++  const asFounder = async (op, body) => (await ask(as, op, body === undefined ? {} : { body })).body;
+   const project = async (title) => {
+-    const at = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
++    const at = new Date(world.now()).toISOString().replace(/\.\d{3}Z$/, "Z");
+     const md = ["---", "object_type: project", "schema: project@1", `title: ${JSON.stringify(title)}`, `objective: ${JSON.stringify(title)}`, "current_state: forming",
+       "prior_state: null", `created: "${at}"`, `last_updated: "${at}"`, "references: []", "state_history: []", "---", "", "## Objective", "", "Find out.", "", "## Session Log", ""].join("\n");
+-    const r = await asFounder("/api/?op=promote", { base: null, snapKey: `${at.replace(/[-:]/g, "")}_r118${String(++keys).padStart(3, "0")}`,
++    const r = await asFounder("promote", { base: null, snapKey: `${at.replace(/[-:]/g, "")}_r118${String(++keys).padStart(3, "0")}`,
+       meta: { object_type: "project", title, current_state: "forming", prior_state: null, created: at, last_updated: at },
+       files: [file("bundle.md", md)], register: [] });
+     assert.equal(r.ok && r.result?.ok, true, JSON.stringify(r).slice(0, 400));
+@@ -66,18 +48,18 @@ test("R118 (through the door, the real plane): `op=projectlist` answers each pro
+   };
+   const shared = await project("Street lights, shared");
+   const quiet = await project("Street lights, quiet");
+-  const rowsOf = async () => Object.fromEntries(((await asFounder("/api/?op=projectlist")).result.projects || []).map((p) => [p.id, p.shared_drafts]));
++  const rowsOf = async () => Object.fromEntries(((await asFounder("projectlist")).result.projects || []).map((p) => [p.id, p.shared_drafts]));
+   assert.deepEqual(await rowsOf(), { [shared]: { count: 0, newest: null }, [quiet]: { count: 0, newest: null } }, "before any draft is shared");
+-  const draft = await asFounder("/api/?op=casedraft", { project: shared, scope: "the lights" });
++  const draft = await asFounder("casedraft", { project: shared, scope: "the lights" });
+   assert.equal(draft.result?.ok, true, JSON.stringify(draft).slice(0, 400));
+   assert.deepEqual(await rowsOf(), { [shared]: { count: 0, newest: null }, [quiet]: { count: 0, newest: null } }, "a draft not shared is not counted");
+-  const granted = await asFounder("/api/?op=reviewgrant", { draft: draft.result.draftId ?? draft.result.draft_id ?? draft.result.draft, recipient: "A neighbour" });
++  const granted = await asFounder("reviewgrant", { draft: draft.result.draftId ?? draft.result.draft_id ?? draft.result.draft, recipient: "A neighbour" });
+   assert.equal(granted.result?.ok, true, JSON.stringify(granted).slice(0, 400));
+   const rows = await rowsOf();
+   assert.equal(rows[shared].count, 1, JSON.stringify(rows));
+   assert.match(rows[shared].newest, /^\d{4}-\d\d-\d\dT/, "the instant it was shared");
+   assert.deepEqual(rows[quiet], { count: 0, newest: null }, "a project with none");
+-  const revoked = await asFounder("/api/?op=reviewrevoke", { grant: granted.result.grantId ?? granted.result.grant_id ?? granted.result.grant });
++  const revoked = await asFounder("reviewrevoke", { grant: granted.result.grantId ?? granted.result.grant_id ?? granted.result.grant });
+   assert.equal(revoked.result?.ok, true, JSON.stringify(revoked).slice(0, 400));
+   assert.deepEqual((await rowsOf())[shared], { count: 0, newest: null }, "a grant revoked is not counted");
+ });
+diff --git a/bio-plane/test/m/control-plane/r8-money-trail-hidden.test.mjs b/bio-plane/test/m/control-plane/r8-money-trail-hidden.test.mjs
+index 1e20142fc1..24d6018ead 100644
+--- a/bio-plane/test/m/control-plane/r8-money-trail-hidden.test.mjs
++++ b/bio-plane/test/m/control-plane/r8-money-trail-hidden.test.mjs
+@@ -1,31 +1,52 @@
+ /* control-plane R17, R29 (fix round 10, B12; K5138; WALK-FINAL-07 overlay 2/21, diag2-07.md §13; money R12): the walker's case through the real door. The project's owner starts a money trail on her
+    project (`moneysetcreate`, concerns the project); `max`, a plain member who cannot see the project, opens the trail as `/app/money/<trail>` reads it (`op=moneyset&id=<trail>`) and is answered as
+    absent: the same answer, key for key, as for a trail that does not exist, with no label, no project and no author. Control: the owner reads the same trail (found, with its label and its project).
+-   Module cause: money (build/jobs/T51/money.md, J14 COMPLETE: `readSet` fenced). Run against the Miniflare plane (the seam kit); the member and the project are made by the acts that make them. */
+-import { after, test } from "node:test";
++   Module cause: money (build/jobs/T51/money.md, J14 COMPLETE: `readSet` fenced). Run through this module's real door (`makeFetch`) over the real store (store-request's world, `real-door.mjs`;
++   no plane); the members are made by the founder's `memberadd`, their `enroll` and `login`, and the project by `promote`, each through the real door. */
++import { test } from "node:test";
+ import assert from "node:assert/strict";
+-import { makeKit } from "./r8-kit.mjs";
++import { realDoor } from "./real-door.mjs";
+ 
+-const kit = makeKit({ tag: "r8moneytrail" });
+-after(() => kit.mf.dispose());
+-const R = kit.R;
+ const LABEL = "Where the paving money went, r8moneytrail";
+ 
+ test("R17, R29 (money R12): `max`, who cannot see a project, opens the money trail of it and is answered as absent, the same as for a trail that does not exist; the owner reads it", { timeout: 600000 }, async () => {
+-  const own = await kit.ownerOf("r8moneytrail-ann");
+-  const max = await kit.person("r8moneytrail-max");
+-  const project = await kit.projectOf(own.auth, "A fenced project with a money trail");
+-  const made = await kit.post(own.auth, "moneysetcreate", { purpose: "trail", label: LABEL, concerns: project });
+-  assert.equal(R(made.body).ok, true, kit.gateLine(made));
++  const { world, ask, R } = await realDoor();
++  const line = (a) => `${a.status} ${JSON.stringify(a.body).slice(0, 400)}`;
++  const signed = await ask(null, "login", { body: { handle: world.founder.handle, password: world.password, device: "own" } });
++  assert.equal(signed.body.ok, true, line(signed));
++  const founder = { token: R(signed.body).token };
++  /* a member as the seam kit's `ownerOf` and `person` make one: invited by the founder, enrolled with the invitation, signed in */
++  const person = async (handle, capabilities) => {
++    const added = await ask(founder, "memberadd", { body: { memberId: handle, cover: `cover of ${handle}`, role: "member", ...(capabilities ? { capabilities } : {}) } });
++    const invite = R(added.body) && (R(added.body).invite || (R(added.body).invitation && R(added.body).invitation.invite));
++    assert.ok(invite, "an invitation: " + line(added));
++    const pw = `${handle}-long-passphrase-r7`;
++    const enrolled = await ask(null, "enroll", { body: { invite, handle, password: pw } });
++    assert.equal(enrolled.body.ok, true, "enrolled: " + line(enrolled));
++    const login = await ask(null, "login", { body: { handle, password: pw, device: "own" } });
++    assert.equal(login.body.ok, true, "signed in: " + line(login));
++    return { token: R(login.body).token };
++  };
++  const own = await person("r8moneytrail-ann", ["contribute", "publish", "create_projects"]);
++  const max = await person("r8moneytrail-max");
++  /* a hidden project, as the seam kit's `projectOf` makes one */
++  const iso = new Date(world.now()).toISOString().replace(/\.\d{3}Z$/, "Z");
++  const title = "A fenced project with a money trail";
++  const madeProject = await ask(own, "promote", { body: { base: null, snapKey: iso.replace(/[-:]/g, "") + "_00c0ffee", meta: { object_type: "project", title, current_state: "forming", created: iso, last_updated: iso },
++    files: [{ path: "bundle.md", text: `---\nobject_type: project\ntitle: "${title}"\nobjective: "${title}"\ncurrent_state: forming\ncreated: "${iso}"\nlast_updated: "${iso}"\n---\n\n## Session Log\n\n### Session ${iso} | Formation | interactive\nTrigger: the seam test\nChanges: created.\n` }], register: [], visibility: "hidden" } });
++  const project = R(madeProject.body) && R(madeProject.body).bundleId;
++  assert.ok(project, "the project is made: " + line(madeProject));
++  const made = await ask(own, "moneysetcreate", { body: { purpose: "trail", label: LABEL, concerns: project } });
++  assert.equal(R(made.body).ok, true, line(made));
+   const trail = R(made.body).set_id;
+-  assert.ok(trail, "a trail: " + kit.gateLine(made));
+-  const owner = R(await kit.get(own.auth, { op: "moneyset", id: trail }));
++  assert.ok(trail, "a trail: " + line(made));
++  const owner = R((await ask(own, "moneyset", { query: { id: trail } })).body);
+   assert.equal(owner.found, true, "the owner reads her trail: " + JSON.stringify(owner).slice(0, 300));
+   assert.equal(owner.set.concerns, project);
+   assert.equal(owner.set.label, LABEL);
+   /* max is not a member of the owner's hidden project, so he cannot see it */
+-  const seen = R(await kit.get(max, { op: "moneyset", id: trail }));
+-  const absent = R(await kit.get(max, { op: "moneyset", id: "MSR-2026-9999" }));
++  const seen = R((await ask(max, "moneyset", { query: { id: trail } })).body);
++  const absent = R((await ask(max, "moneyset", { query: { id: "MSR-2026-9999" } })).body);
+   assert.equal(seen.found, false, "max is answered as absent: " + JSON.stringify(seen).slice(0, 300));
+   assert.equal(seen.ok, true);
+   assert.deepEqual(Object.keys(seen).sort(), Object.keys(absent).sort(), `the same shape as a trail that does not exist: ${JSON.stringify(seen)} / ${JSON.stringify(absent)}`);
+diff --git a/bio-plane/test/m/control-plane/real-door.mjs b/bio-plane/test/m/control-plane/real-door.mjs
+new file mode 100644
+index 0000000000..ed8c310d1d
+--- /dev/null
++++ b/bio-plane/test/m/control-plane/real-door.mjs
+@@ -0,0 +1,32 @@
++/* control-plane's real door over a real store, in plain node (scratch experiment, plane-scope research 22b). The door is this module's own `makeFetch`,
++   handed no hooks (every op takes the door's generic forward, as `r137-parity.test.mjs` drives it); the store behind it is store-request's world
++   (`storeWorld`: store-assembly's `assembleStore` over node:sqlite, a memory bucket, a pinned clock), every inner request the door makes passed to
++   `world.send`. Built only from modules before control-plane: nothing of plane is loaded. The ops plane's `door.mjs` answers by an arm of its own
++   (`acquire`, `capture`, the extraction and ratification arms, ...) are not composed here, so a test that needs one cannot use this as it stands. */
++import { storeWorld } from "../store-request/fixtures.mjs";
++import { makeFetch } from "../../../src/control-plane/index.mjs";
++
++const ORIGIN = "https://group.example";
++
++/** `realDoor(opts)` → `{world, env, ask(as, op, {method, query, body}), R}`: `as` is a signed-in member from `world.signIn` (her token is sent as the
++ *  bearer credential) or null for none; `ask` answers `{status, headers, body}` with the body parsed as JSON where it is JSON. */
++export async function realDoor(opts = {}) {
++  const world = await storeWorld(opts);
++  const stub = { fetch: async (input, init) => world.send(input instanceof Request ? input : new Request(String(input), init)) };
++  const env = { ...world.env, STORE: { idFromName: (n) => n, get: () => stub } };
++  const fetch = makeFetch({});
++  async function ask(as, op, { method, query = {}, body } = {}) {
++    const u = new URL("/api/", ORIGIN);
++    u.searchParams.set("op", op);
++    for (const [k, v] of Object.entries(query)) u.searchParams.set(k, v);
++    const m = method ?? (body === undefined ? "GET" : "POST");
++    const headers = { ...(as && as.token ? { authorization: `Bearer ${as.token}` } : {}), ...(body === undefined ? {} : { "content-type": "application/json" }) };
++    const res = await fetch(new Request(u, { method: m, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }) }), env);
++    const text = await res.text();
++    let parsed = null;
++    try { parsed = JSON.parse(text); } catch { parsed = text; }
++    return { status: res.status, headers: res.headers, body: parsed };
++  }
++  const R = (a) => (a && a.result !== undefined ? a.result : a);
++  return { world, env, ask, R };
++}
+diff --git a/bio-plane/test/m/control-plane/stats-capacity.test.mjs b/bio-plane/test/m/control-plane/stats-capacity.test.mjs
+index b1b0933f87..a3317ff5fd 100644
+--- a/bio-plane/test/m/control-plane/stats-capacity.test.mjs
++++ b/bio-plane/test/m/control-plane/stats-capacity.test.mjs
+@@ -1,5 +1,5 @@
+-/* control-plane R40, G42 (K4635, K4638), platform check (L): `op=stats` through the whole plane in Miniflare's real Worker and
+-   Store (the `host-governor/ops.test.mjs` pattern). The object's measured size is a real, non-zero figure that grows with a
++/* control-plane R40, G42 (K4635, K4638), platform check (L): `op=stats` through this module's door on workerd under Miniflare, with the real
++   Durable Object storage behind it: a test-only Worker (`door-object-entry.mjs`: `makeFetch` and the store `assembleStore` builds; no plane). The object's measured size is a real, non-zero figure that grows with a
+    1 MB insert; the admin binding and the founder read it exact, an administering member's session reads it floored to a whole
+    100,000,000 B, and an ordinary member's and the probe's answer carries none. */
+ import "../../sandbox.mjs";
+@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
+ import { fileURLToPath } from "node:url";
+ import { Miniflare } from "miniflare";
+ 
+-const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
++const SRC = fileURLToPath(new URL("./door-object-entry.mjs", import.meta.url));
+ const T = { admin: "cp-adm", probe: "cp-prb" };
+ const GRAIN = 100_000_000;
+ let mf;
+diff --git a/bio-plane/test/m/plane/limits.test.mjs b/bio-plane/test/m/plane/limits.test.mjs
+index d5744d8933..eb8b05d0d2 100644
+--- a/bio-plane/test/m/plane/limits.test.mjs
++++ b/bio-plane/test/m/plane/limits.test.mjs
+@@ -51,3 +51,12 @@ test("R13 negative controls: a cap raised past the ceiling's margin fails the ch
+   const text = readFileSync(join(PLANE, "wrangler.jsonc"), "utf8").replace(/\/\/[^\n]*subrequest[^\n]*/gi, "// (comment changed)");
+   assert.equal(parseJsonc(text).limits.subrequests, limits.subrequests);
+ });
++
++/* installer R20 (N336), the configuration's half (moved here from control-plane's `limits.test.mjs`, scratch reconstruction, plane-scope research 22b):
++   the door's constant equals this module's own configuration's `limits` exactly; negative control: another value is not equal. */
++const { PLANE_LIMITS } = await import("../../../src/control-plane/index.mjs");
++test("installer R20 (N336): control-plane's PLANE_LIMITS equals wrangler.jsonc's limits exactly (negative control: a configuration stating another value is not equal)", () => {
++  const cfg = config();
++  assert.deepEqual({ ...PLANE_LIMITS }, cfg.limits);
++  assert.notDeepEqual({ ...PLANE_LIMITS }, { ...cfg.limits, subrequests: cfg.limits.subrequests + 1 });
++});
+diff --git a/process/modules/control-plane.json b/process/modules/control-plane.json
+index 0ff8cc8e1d..a90e12addf 100644
+--- a/process/modules/control-plane.json
++++ b/process/modules/control-plane.json
+@@ -130,6 +130,7 @@
+     "calculations",
+     "workbooks",
+     "op-grade-tranches",
+-    "record-core-tables"
++    "record-core-tables",
++    "scheduler"
+   ]
+ }
+diff --git a/process/modules/plane.json b/process/modules/plane.json
+index cc602757fb..005d875027 100644
+--- a/process/modules/plane.json
++++ b/process/modules/plane.json
+@@ -30,18 +30,15 @@
+     "bio-plane/test/m/capture/g41b-plane.test.mjs",
+     "bio-plane/test/m/capture/plane.test.mjs",
+     "bio-plane/test/m/capture/r7-upload-plane.test.mjs",
+-    "bio-plane/test/m/control-plane/limits.test.mjs",
+     "bio-plane/test/m/control-plane/r10-caseratify-chain.test.mjs",
+     "bio-plane/test/m/control-plane/r100-upload.test.mjs",
+     "bio-plane/test/m/control-plane/r117-held.test.mjs",
+-    "bio-plane/test/m/control-plane/r118-shared.test.mjs",
+     "bio-plane/test/m/control-plane/r41-sweepset.test.mjs",
+     "bio-plane/test/m/control-plane/r8-bootstrap-fanout.test.mjs",
+     "bio-plane/test/m/control-plane/r8-caseratify-calls.test.mjs",
+     "bio-plane/test/m/control-plane/r8-door-phases.test.mjs",
+     "bio-plane/test/m/control-plane/r8-hops.test.mjs",
+     "bio-plane/test/m/control-plane/r8-kit.mjs",
+-    "bio-plane/test/m/control-plane/r8-money-trail-hidden.test.mjs",
+     "bio-plane/test/m/control-plane/r8-words-door.test.mjs",
+     "bio-plane/test/m/control-plane/r8-wrap-entry.test.mjs",
+     "bio-plane/test/m/control-plane/r9-seam-documents.mjs",
+@@ -49,7 +46,6 @@
+     "bio-plane/test/m/control-plane/r9-seam-parts.mjs",
+     "bio-plane/test/m/control-plane/r9-seam-reading.mjs",
+     "bio-plane/test/m/control-plane/r9-seam-safety.mjs",
+-    "bio-plane/test/m/control-plane/stats-capacity.test.mjs",
+     "bio-plane/test/m/control-plane/t46-e2e.test.mjs",
+     "bio-plane/test/m/control-plane/t47-e2e.test.mjs",
+     "bio-plane/test/m/control-plane/t51-bootstrap.test.mjs",

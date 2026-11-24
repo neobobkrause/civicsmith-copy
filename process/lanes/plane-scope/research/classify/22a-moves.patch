@@ -1,0 +1,195 @@
+diff --git a/bio-plane/test/m/plane/fixtures/g48-plane-answers.json b/bio-plane/test/m/store-assembly/fixtures/g48-plane-answers.json
+similarity index 100%
+rename from bio-plane/test/m/plane/fixtures/g48-plane-answers.json
+rename to bio-plane/test/m/store-assembly/fixtures/g48-plane-answers.json
+diff --git a/bio-plane/test/m/plane/g48-classify.test.mjs b/bio-plane/test/m/store-assembly/g48-classify.test.mjs
+similarity index 97%
+rename from bio-plane/test/m/plane/g48-classify.test.mjs
+rename to bio-plane/test/m/store-assembly/g48-classify.test.mjs
+index 903b1cf103..ad90fb6336 100644
+--- a/bio-plane/test/m/plane/g48-classify.test.mjs
++++ b/bio-plane/test/m/store-assembly/g48-classify.test.mjs
+@@ -1,4 +1,4 @@
+-/* plane R86 (proposed, fix round 6, G48; K4673, K4685; docprofile R5, R19, R38), THE COMPOSITION OF THE CLASSIFICATION: the one place that registers all 17 real types (`registerReaders()`) and reads every
++/* store-assembly (moved from plane: plane R86; the composition `registerReaders` is store-assembly's) (proposed, fix round 6, G48; K4673, K4685; docprofile R5, R19, R38), THE COMPOSITION OF THE CLASSIFICATION: the one place that registers all 17 real types (`registerReaders()`) and reads every
+    module's fixtures through them. (c1) The shared second pass and the bounded view change no answer for a text under the bound: `doctypeFor` and `readText` over every doctype, roster, budget and court fixture
+    give, byte for byte, what the 17 types gave on the tip before G48 (`fixtures/g48-plane-answers.json`, recorded by `make-g48-plane-answers.mjs` on 713e63be2e), and `also` is `alsoFor`'s. (c2) A 3 MiB sheet of a
+    roster's, a directory's, a chart's, a budget table's and a budget volume's rows is classified from a stated view and gets the type, confidence and `also` keys the whole text gets; a 1 MiB sheet is classified whole,
+diff --git a/bio-plane/test/m/plane/g48-corpus.mjs b/bio-plane/test/m/store-assembly/g48-corpus.mjs
+similarity index 100%
+rename from bio-plane/test/m/plane/g48-corpus.mjs
+rename to bio-plane/test/m/store-assembly/g48-corpus.mjs
+diff --git a/bio-plane/test/m/store-assembly/l75-entry.mjs b/bio-plane/test/m/store-assembly/l75-entry.mjs
+new file mode 100644
+index 0000000000..e166965562
+--- /dev/null
++++ b/bio-plane/test/m/store-assembly/l75-entry.mjs
+@@ -0,0 +1,70 @@
++/* store-assembly R62 (was plane R75; T51 fix round 4; C5a, C5c; K4429), the platform check L: a test-only Durable Object for
++   `l75.test.mjs`, booted on workerd under Miniflare. It is this module's assembled store (`assembleStore`, R1) inside a bare
++   `DurableObject`, with the platform's alarm forwarded to the scheduler (as plane R4's one line does) and every request handed to
++   the assembled store's one frame (`dispatch`, R7). No `deliver` is handed (control-plane's `deliverOwedRender` is a later
++   module's): a row that needs it stays owed (R67), and none here does. No module later than store-assembly is imported. The debug
++   routes (`/l75/...`) are those of plane's former entry: lay a document's parts in the evidence store, leave a keep pending through
++   `captureOf(ctx).keepLater` (the call acquisition makes), write a stage record, and read the state. */
++import { DurableObject } from "cloudflare:workers";
++import { assembleStore } from "../../../src/store-assembly/index.mjs";
++import { schedulerOf } from "../../../src/scheduler/index.mjs";
++import { recordOf } from "../../../src/record-core/index.mjs";
++import { captureOf } from "../../../src/capture/index.mjs";
++import { pendingOf } from "../../../src/store-assembly/pending.mjs";
++import { acquireTimingsOf } from "../../../src/store-assembly/acquire-timings.mjs";
++import { extractionOf } from "../../../src/extraction/index.mjs";
++
++const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
++const sha = async (bytes) => hex(await crypto.subtle.digest("SHA-256", bytes));
++const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: { "content-type": "application/json" } });
++
++export class Held extends DurableObject {
++  readHeldCalls = [];
++  #assembled;
++  constructor(ctx, env) {
++    super(ctx, env);
++    this.ctx = ctx; this.env = env;
++    this.#assembled = assembleStore(ctx, env, { deliver: null });
++  }
++  async alarm() { await schedulerOf(this.ctx, this.env).alarm(); }   /* as plane R4's forwarder */
++  async fetch(req) {
++    const url = new URL(req.url);
++    if (!url.pathname.startsWith("/l75/")) return this.#assembled.dispatch(req);
++    const ctx = this.ctx, step = url.pathname.slice(5);
++    const ev = recordOf(ctx).evidenceStore();
++    if (step === "hold") {
++      const n = Number(url.searchParams.get("n")), mib = Number(url.searchParams.get("mib"));
++      const whole = new Uint8Array(mib * 1024 * 1024);
++      for (let i = 0; i < whole.length; i += 65536) crypto.getRandomValues(whole.subarray(i, Math.min(i + 65536, whole.length)));
++      const size = Math.ceil(whole.length / n), parts = [];
++      for (let at = 0; at < whole.length; at += size) { const p = whole.slice(at, at + size), d = await sha(p); await ev.put(d, p); parts.push(d); }
++      return json({ sha: await sha(whole), parts, bytes: whole.length });
++    }
++    if (step === "keep") {
++      const body = await req.json();
++      // fixtures-own: synthetic the owner of the reading is a counter that answers at once: this probe measures when the alarm runs the ledger and how often it asks, and asserts nothing of what the reader answers
++      extractionOf(ctx).readHeld = async (a) => { this.readHeldCalls.push({ ...a, at: Date.now() }); return { ok: true, read: true }; };
++      return json({ filed: await captureOf(ctx).keepLater(body), at: Date.now() });
++    }
++    if (step === "state") {
++      const d = url.searchParams.get("sha");
++      return json({ pending: pendingOf(ctx).list(), whole: !!(await ev.head(d)), alarm: await ctx.storage.getAlarm(), now: Date.now(), readHeld: this.readHeldCalls });
++    }
++    if (step === "migrate-old") {
++      const sql = ctx.storage.sql;
++      sql.exec(`DROP TABLE keeps_pending`);
++      sql.exec(`CREATE TABLE keeps_pending (sha TEXT PRIMARY KEY, kind TEXT NOT NULL, parts TEXT NOT NULL DEFAULT '[]', attempts INTEGER NOT NULL DEFAULT 0, registered_at INTEGER NOT NULL, due_at INTEGER NOT NULL, last_try INTEGER, last_why TEXT)`);
++      sql.exec(`INSERT INTO keeps_pending (sha, kind, parts, attempts, registered_at, due_at, last_try, last_why) VALUES (?, 'reading', '[]', 5, 1, 9999999999999, 2, 'NO_HOME')`, "a".repeat(64));
++      pendingOf(ctx).migrate(); pendingOf(ctx).migrate();
++      return json({ rows: [...sql.exec(`SELECT * FROM keeps_pending`)], old: [...sql.exec(`SELECT name FROM sqlite_master WHERE name='keeps_pending_old'`)].length,
++                    owed: await pendingOf(ctx).owe({ kind: "ocr", sha: "b".repeat(64), detail: { next_page: 25 } }), list: pendingOf(ctx).list() });
++    }
++    if (step === "stages") {
++      const h = acquireTimingsOf(ctx), t = h.open(url.searchParams.get("trace"));
++      t.start = performance.now(); t.end = null; t.stages = {}; t.running = { name: "read", since: performance.now() };
++      return json({ ok: true });
++    }
++    return json({ error: "unknown l75 step" }, 404);
++  }
++}
++export default { async fetch() { return new Response("store-assembly l75 entry: the object only", { status: 404 }); } };
+diff --git a/bio-plane/test/m/plane/l75.test.mjs b/bio-plane/test/m/store-assembly/l75.test.mjs
+similarity index 92%
+rename from bio-plane/test/m/plane/l75.test.mjs
+rename to bio-plane/test/m/store-assembly/l75.test.mjs
+index cb2a067d9d..3a1f0da025 100644
+--- a/bio-plane/test/m/plane/l75.test.mjs
++++ b/bio-plane/test/m/store-assembly/l75.test.mjs
+@@ -1,4 +1,4 @@
+-/* plane R75 (T51 fix round 4; C5a, C5c; K4429), the platform check L: on workerd under Miniflare, with the real Durable Object
++/* store-assembly R62 (was plane R75; T51 fix round 4; C5a, C5c; K4429), the platform check L: on workerd under Miniflare, through a test-only object of this module's (`l75-entry.mjs`: the assembled store, not plane's `Store`), with the real Durable Object
+    alarm, the real R2 multipart upload and the real object storage. A keep left pending by `captureOf(ctx).keepLater` (what
+    acquisition calls when its keep will not end inside the door's bound) is finished by the object's own alarm, with no further
+    request, inside a minute, and the stage record is written to and read from the object's storage on workerd. The numbers are
+@@ -18,7 +18,7 @@ const mf = new Miniflare({
+   compatibilityDate: "2026-07-01", compatibilityFlags: ["nodejs_compat"],
+   durableObjects: { STORE: { className: "Held", useSQLite: true } },
+   r2Buckets: ["CAPTURES", "PUBLISHED"], bindings: { INSTANCE_NAME: "l75", VERSION: "test" },
+-  durableObjectsPersist: mkdtempSync(join(tmpdir(), "plane-l75-")),
++  durableObjectsPersist: mkdtempSync(join(tmpdir(), "store-assembly-l75-")),
+ });
+ after(() => mf.dispose());
+ const stub = async () => { const ns = await mf.getDurableObjectNamespace("STORE"); return ns.get(ns.idFromName("bio")); };
+diff --git a/bio-plane/test/m/plane/make-g48-plane-answers.mjs b/bio-plane/test/m/store-assembly/make-g48-plane-answers.mjs
+similarity index 97%
+rename from bio-plane/test/m/plane/make-g48-plane-answers.mjs
+rename to bio-plane/test/m/store-assembly/make-g48-plane-answers.mjs
+index 7a91d9321f..0c18ba8fc3 100644
+--- a/bio-plane/test/m/plane/make-g48-plane-answers.mjs
++++ b/bio-plane/test/m/store-assembly/make-g48-plane-answers.mjs
+@@ -1,6 +1,6 @@
+ /* Writes `fixtures/g48-plane-answers.json`: `doctypeFor` over every reading of ./g48-corpus.mjs, all 17 real types registered, taken on the tranche tip BEFORE G48 changed
+  * `doctypeFor` and `readText` (713e63be2e). Run once, on that tip, from the repository root:
+- *   node bio-plane/test/m/plane/make-g48-plane-answers.mjs
++ *   node bio-plane/test/m/store-assembly/make-g48-plane-answers.mjs
+  * The file is the record the change must reproduce; it is not regenerated afterwards. */
+ import fs from "node:fs";
+ import { corpus } from "./g48-corpus.mjs";
+diff --git a/bio-plane/test/m/store-assembly/r10-nohome-refiled.test.mjs b/bio-plane/test/m/store-assembly/r10-nohome-refiled.test.mjs
+new file mode 100644
+index 0000000000..cf92d67eb2
+--- /dev/null
++++ b/bio-plane/test/m/store-assembly/r10-nohome-refiled.test.mjs
+@@ -0,0 +1,55 @@
++/* store-assembly R59, R74 (was plane R25, R97; fix round 10, G5; walk D2a; K5057), the store's half of plane's `r10-nohome-filed-later.test.mjs`, over the assembled
++   store on the suite's storage (`alarmed-store.mjs`), no plane and no door: an unfiled upload's `reading` row, registered as the door registers it (`pendingadd`), is
++   answered NO_HOME by the real reading owner at the alarm's tick and waits, backed off; once the document is filed (promotion's real `promote`), the registration the
++   door makes when it follows a filed document's reading (control-plane R123, proven at control-plane: `r123-reading.test.mjs`) brings the row forward, before its
++   backoff, and the next tick reads it. Counts and the store's own instants only (R-CLOCK). Scratch reconstruction for the plane-scope lane. */
++import "../../../src/store-assembly/register.mjs";
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { createHash } from "node:crypto";
++import { store } from "./alarmed-store.mjs";
++import { multipartBucket } from "../record-core/storage.mjs";
++import { captureOf } from "../../../src/capture/index.mjs";
++import { promotionOf } from "../../../src/promotion/index.mjs";
++import { recordOf } from "../../../src/record-core/index.mjs";
++import { pendingOf } from "../../../src/store-assembly/pending.mjs";
++
++const hex = (b) => createHash("sha256").update(b).digest("hex");
++const NOW = "2026-10-22T00:00:00Z";
++const textBytes = (bytes) => { const n = Math.floor((bytes - 60) / 100), p = []; for (let i = 0; i < n; i++) p.push(`line ${String(i).padStart(6, "0")} ` + "council-minutes ".repeat(5).padEnd(87, ".") + "\n"); p.push("ENDMARKER" + " ".repeat(bytes - n * 100 - 9)); return Buffer.from(p.join("")); };
++
++test("R59 R74 (was plane R25 R97): an unfiled upload's reading waits NO_HOME backed off; filing it and the door's registration bring the row forward before that backoff, and it is read", { timeout: 300_000 }, async () => {
++  const x = await store({ env: { CAPTURES: multipartBucket(), INSTANCE_NAME: "town" } });
++  const ctx = x.ctx;
++  const up = await captureOf(ctx).uploadCapture({ bytes: textBytes(400_060), statement: "the clerk's file", name: "minutes.txt", type: "text/plain", by: "member:ann", boundMs: 1 });
++  assert.equal(up && up.ok, true, JSON.stringify(up).slice(0, 300));
++  const sha = up.capture.sha256, document = up.document;
++  const add = async () => (await x.fetch(`/pendingadd?kind=reading&sha=${sha}&store=bio`, { method: "POST" })).json();
++  assert.equal((await add()).ok, true);
++  const row = () => pendingOf(ctx).list().find((e) => e.kind === "reading" && e.sha === sha);
++  let at = Date.now() + 1000;
++  await x.s.onAlarm(at);
++  const waiting = row();
++  assert.ok(waiting && waiting.why === "NO_HOME" && Number(waiting.next_try) > at, `the first pass found no home and the row waits, backed off: ${JSON.stringify(waiting)}`);
++  const backoff = Number(waiting && waiting.next_try);
++  /* the filing: an information document whose file is the capture, through promotion's own commit */
++  const id = recordOf(ctx).allocId("INFO", "2026").id, title = document.file;
++  const md = ["---", "id: " + id, "object_type: information", "schema: information@2", "title: " + JSON.stringify(title), "current_state: collected", "prior_state: null", "created: " + NOW, "last_updated: " + NOW,
++    "produced_by:", "  mode: assisted", "  capability_tier: session", "references: []", "state_history: []", "annotations_open: 0", "reeval_pending:", "  flag: false", "  since: null", "  source: null", "visuals: []",
++    "criticality: supporting", "source_status: unchanged", "content_hash: sha256:" + hex(title), "source:", "  locator: " + JSON.stringify(document.locator), "  authority: member-entered", "  retrieved: " + NOW,
++    "monitoring:", "  enabled: false", "  frequency: none", "---", "", "## Summary", "", title, "", "## Provenance Notes", "", "## Session Log", "", "## Review Notes", ""].join("\n");
++  const prov = JSON.stringify({ documents: [document] }, null, 1), dataset = JSON.stringify({ documents: [{ bytes: up.capture.bytes, locator: document.locator, sha256: sha }] });
++  const len = (t) => Buffer.byteLength(t);
++  const pr = promotionOf(ctx).promote({ bundleId: id, base: null, snapKey: "20261022T000000_" + hex(id).slice(0, 8), meta: { object_type: "information", title, current_state: "collected", created: NOW, last_updated: NOW },
++    files: [{ path: "bundle.md", text: md, bytes: len(md), sha256: hex(md) }, { path: "data/provenance.json", text: prov, bytes: len(prov), sha256: hex(prov) },
++            { path: "data/dataset.json", text: dataset, bytes: len(dataset), sha256: hex(dataset) }, { path: document.file, blobSha: sha, sha256: sha, bytes: up.capture.bytes }],
++    register: [{ sha256: sha, path: document.file, encoding: "binary", bytes: up.capture.bytes }], author: "ann", actorMemberId: "ann", actorIdentity: "member:ann", actorViewer: "member:ann" });
++  assert.ok(pr && pr.ok !== false, JSON.stringify(pr).slice(0, 300));
++  assert.equal((await add()).ok, true, "the door's registration of the filed document's reading");
++  const after = row();
++  assert.ok(!after || Number(after.next_try) < backoff, `brought forward: ${JSON.stringify(after)} against ${backoff}`);
++  at = Math.max(at + 1, Date.now()) + 1000;
++  for (let i = 0; i < 20 && row(); i++) { await x.s.onAlarm(at); at += 1000; }
++  assert.equal(row(), undefined, `read before the backoff ${backoff} was due: ${JSON.stringify(row())}`);
++  assert.ok(at < backoff, `the reading ended at ${at}, before the backoff ${backoff}`);
++});

@@ -1,0 +1,160 @@
+diff --git a/bio-plane/test/m/lines/invariants.test.mjs b/bio-plane/test/m/lines/invariants.test.mjs
+index fe6971ecf2..8549edef63 100644
+--- a/bio-plane/test/m/lines/invariants.test.mjs
++++ b/bio-plane/test/m/lines/invariants.test.mjs
+@@ -2,7 +2,7 @@
+    conclusion drawn from lines (R20). */
+ import test from "node:test";
+ import assert from "node:assert/strict";
+-import { readdirSync, existsSync } from "node:fs";
++import { readdirSync, existsSync, readFileSync } from "node:fs";
+ import { fileURLToPath } from "node:url";
+ import { join, dirname } from "node:path";
+ import { world, sha, ANN, MACHINE } from "./fixture.mjs";
+@@ -31,7 +31,15 @@ test("R18 one home per fact at the store's gate: a line row holds no amount and
+ });
+ 
+ test("R18 holderAt has no second implementation in any module, structure is never written into entities' declared relations, and every bound_cache equals its rebuild", async () => {
+-  const dirs = readdirSync(SRC, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(join(SRC, d.name, "index.mjs")));
++  /* bounded at this module (the order's rule: a module's tests load only it and earlier modules): a folder of src/ is read when the module that owns its
++     index.mjs (longest listed path over files and tests, as the process tool decides) comes no later than lines; each later module is held to the rule by its own census */
++  const mods = readFileSync(join(SRC, "../../process/modules/order.txt"), "utf8").split("\n").map((x) => x.trim()).filter(Boolean);
++  const claims = mods.flatMap((m, i) => { const j = JSON.parse(readFileSync(join(SRC, `../../process/modules/${m}.json`), "utf8"));
++    return [...(j.files || []), ...(j.tests || [])].map((path) => ({ path: path.replace(/\/$/, ""), i })); });
++  const at = (rel) => claims.filter((c) => rel === c.path || rel.startsWith(c.path + "/")).sort((a, b) => b.path.length - a.path.length)[0]?.i ?? Infinity;
++  const BOUND = mods.indexOf("lines");
++  const dirs = readdirSync(SRC, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(join(SRC, d.name, "index.mjs"))
++    && at(`bio-plane/src/${d.name}/index.mjs`) <= BOUND);
+   const holders = [];
+   let imported = 0;
+   for (const d of dirs) {
+@@ -43,7 +51,7 @@ test("R18 holderAt has no second implementation in any module, structure is neve
+       if (typeof v === "function" && v.prototype && Object.getOwnPropertyNames(v.prototype).includes("holderAt")) holders.push(`${d.name}.${k}`);
+     }
+   }
+-  assert.ok(imported > 40, `the modules' exports were read (${imported})`);
++  assert.ok(imported > 20, `the modules' exports were read (${imported})`);
+   assert.deepEqual(holders, ["lines.Lines"]);
+   const w = world();
+   const p = w.ent("person", "Ada Example"), o = w.ent("office", "Harbour Master"), b = w.ent("body", "Port Board");
+diff --git a/bio-plane/test/m/screens-intake/r10-pending.test.mjs b/bio-plane/test/m/screens-intake/r10-pending.test.mjs
+index 762d733e7e..8695db0738 100644
+--- a/bio-plane/test/m/screens-intake/r10-pending.test.mjs
++++ b/bio-plane/test/m/screens-intake/r10-pending.test.mjs
+@@ -5,9 +5,9 @@
+ import { test, after } from "node:test";
+ import assert from "node:assert/strict";
+ import { main, text, says, idle } from "./page.mjs";
+-import { realPlane } from "./realplane.mjs";
++import { realWorld } from "./realworld.mjs";
+ 
+-const plane = realPlane("r10pend");
++const plane = realWorld();   /* the real store (store-request's world), was the real plane (realplane.mjs) */
+ after(() => plane.dispose());
+ const { founder, uploaded } = plane;
+ 
+diff --git a/bio-plane/test/m/screens-intake/r10-refused-kind.test.mjs b/bio-plane/test/m/screens-intake/r10-refused-kind.test.mjs
+index 1645fb94f8..90aee0417e 100644
+--- a/bio-plane/test/m/screens-intake/r10-refused-kind.test.mjs
++++ b/bio-plane/test/m/screens-intake/r10-refused-kind.test.mjs
+@@ -5,11 +5,11 @@
+ import { test, after } from "node:test";
+ import assert from "node:assert/strict";
+ import { main, text, says, idle, word, hasWord } from "./page.mjs";
+-import { realPlane } from "./realplane.mjs";
++import { realWorld } from "./realworld.mjs";
+ import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
+ import { SCREENS } from "../../../src/screens-intake/index.mjs";
+ 
+-const plane = realPlane("r10kind");
++const plane = realWorld();   /* the real store (store-request's world), was the real plane (realplane.mjs) */
+ after(() => plane.dispose());
+ /* the owner's keys, by kind (a held row of reading-pipeline, code-origin until the layer close regenerates the list) */
+ const unsupported = (kind) => `reading-pipeline.index.unsupported_${kind}`;
+diff --git a/bio-plane/test/m/screens-intake/realworld.mjs b/bio-plane/test/m/screens-intake/realworld.mjs
+new file mode 100644
+index 0000000000..9d081cb221
+--- /dev/null
++++ b/bio-plane/test/m/screens-intake/realworld.mjs
+@@ -0,0 +1,60 @@
++/* The REAL store behind the served `capture` page, for this module's fix-round-10 tests that were plane's (`realplane.mjs`, Miniflare over plane's
++ * entry). Here the store is store-request's world (`storeWorld`: store-assembly's `assembleStore` over node:sqlite, the world's door running the real
++ * admission and store request), so nothing later than screens-intake is loaded (K4990: every answer is the provider's own code; nothing is built by hand).
++ * The API is `realplane.mjs`'s: `founder()`, `uploaded(auth, recipe, name, edit)`, `ticksUntil(p, drawn)`, `deferred`, `dispose()`. The store's own jobs
++ * run on the world's alarm (`world.tick`), which `ticksUntil` moves with the page's clock. */
++import { generate } from "../../corpus.mjs";
++import { members, openWorld, fill, press, idle } from "./page.mjs";
++
++/* every op the capture screen's flows reach on the way from an upload to its reading, as `realplane.mjs` lists them */
++const OPS = ["captureupload", "allocid", "promote", "heldat", "heldcaptures", "opencaptures", "capturerequests", "reading", "readheld", "search", "projectlist",
++  "image", "memberlist", "captureseenin", "select", "release", "heldsetaside", "heldrestore"];
++
++export function realWorld() {
++  let made = null;
++  const t = () => made ||= members({ mai: ["contribute", "create_projects"] });
++
++  /* the signed-in member stands where the founder's session stood: the page's door adds her sign-in */
++  async function founder() { return (await t()).mai; }
++
++  /* the page's table: an op a test names an edit for is asked of the world's door and its real answer edited by name; every other op the door answers */
++  function viaDoor(world, as, edit = {}) {
++    return Object.fromEntries(OPS.filter((op) => edit[op]).map((op) => [op, async (req) => {
++      const a = await world.door(req, as);
++      return { ...a, json: edit[op](a.json) };
++    }]));
++  }
++
++  /* the upload answer given `reading_pending: true` and no reading of its own (realplane.mjs's one named edit) */
++  const deferred = (json) => {
++    if (!json || !json.result) return json;
++    const { reading: _r, text_units: _u, completeness: _c, ...answer } = json.result;
++    const { reading: _dr, text_units: _du, ...document } = answer.document || {};
++    return { ...json, result: { ...answer, ...(answer.document ? { document } : {}), reading_pending: true } };
++  };
++
++  async function uploaded(as, recipe, name, edit = {}) {
++    const { world } = await t();
++    const f = generate(recipe), bytes = Buffer.from(await f.bytes());
++    const p = await openWorld("/app/capture/file", { world, as, plane: viaDoor(world, as, { captureupload: deferred, ...edit }) });
++    fill(p, { "ci-file": new File([bytes], name, { type: f.type }), "ci-how-made": true, "ci-where": "City hall", "ci-what": "The scan." });
++    await press(p, "captureupload");
++    await p.clock.tick(1);
++    await idle(p, 3000);
++    return p;
++  }
++
++  /* the page's clock and the world's alarm are moved thirty seconds at a time until what the test waits for is drawn: a bound of counts, never a time (R66) */
++  async function ticksUntil(p, drawn, steps = 20) {
++    const { world } = await t();
++    for (let i = 0; i < steps && !drawn(); i++) {
++      const by = i === 0 ? 21000 : 30000;
++      await world.tick(by);
++      await p.clock.tick(by);
++      await idle(p, 3000);
++    }
++    return drawn();
++  }
++
++  return { founder, viaDoor, deferred, uploaded, ticksUntil, dispose: () => {} };
++}
+diff --git a/process/modules/plane.json b/process/modules/plane.json
+index cc602757fb..644fcecf5b 100644
+--- a/process/modules/plane.json
++++ b/process/modules/plane.json
+@@ -86,7 +86,6 @@
+     "bio-plane/test/m/host-governor/ops.test.mjs",
+     "bio-plane/test/m/instance-setup/reports.test.mjs",
+     "bio-plane/test/m/instance-setup/worker-reports.test.mjs",
+-    "bio-plane/test/m/lines/invariants.test.mjs",
+     "bio-plane/test/m/office-readers/r46-memory.test.mjs",
+     "bio-plane/test/m/reevaluation/r14-regrade-door.test.mjs",
+     "bio-plane/test/m/scheduler/invariants.test.mjs",
+@@ -102,8 +101,6 @@
+     "bio-plane/test/m/screens-inquiry/r9-seam.test.mjs",
+     "bio-plane/test/m/screens-intake/r10-held-paging.test.mjs",
+     "bio-plane/test/m/screens-intake/r10-open-file.test.mjs",
+-    "bio-plane/test/m/screens-intake/r10-pending.test.mjs",
+-    "bio-plane/test/m/screens-intake/r10-refused-kind.test.mjs",
+     "bio-plane/test/m/screens-intake/realplane.mjs",
+     "bio-plane/test/m/screens-intake/t51-seam-e7.test.mjs",
+     "bio-plane/test/m/screens-intake/t51-seam-g126h.test.mjs",
