@@ -37,3 +37,8 @@ Shown to the owner: not yet.
 Rule now: civicsmith development is halted, on the owner's word, until he lifts it. The stop record is written; ARCH has been told to stop every job.
 - 23 Nov 2026: "Instruction: halt civicsmith development"
 Shown to the owner: not yet.
+
+## Dropping tranche t1
+Rule now: tranche t1 is dropped. The refactor starts from main's code as it is; the requirements, the module list, the decision records and the lanes' design work are kept. ARCH carries it out (no branch deleted, no history rewritten; t1 stays in history).
+- 24 Nov 2026: "Decision: drop tranche t1. The refactor starts from main's code as it is; keep the requirements, the module list, the decision records and the lanes' design work." (typed within code marks)
+Shown to the owner: not yet.
