@@ -1,8 +1,8 @@
-Length: 60 lines. Last section: "6. What is not known".
+Length: 75 lines. Last section: "7. What is not known".
 
 # The plane module's scope and the layers: design
 
-The plane-scope lane's design. First written 23 Nov 2026 by civicsmith plane-scope lane #1 (sections 1 and 2, options A, B, C); rewritten 24 Nov 2026 by lane #2 after the layer research the owner asked for on 23 Nov (research 09 to 21, index `research/README.md`). The report of that research is the lane's second design page, https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL; the first page, https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L, holds options A, B, C. The module list, the order and interfaces are ARCH's to decide and build. Nothing here is built while development is halted, before the owner chooses a direction, or before ARCH says it can be built as given. Tags: measured, read, not checked (`research/evidence-rules.md`).
+The plane-scope lane's design. First written 23 Nov 2026 by civicsmith plane-scope lane #1 (sections 1 and 2, options A, B, C); rewritten 24 Nov 2026 by lane #2 after the layer research the owner asked for on 23 Nov (research 09 to 21, index `research/README.md`). The report of that research is the lane's second design page, https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL; the first page, https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L, holds options A, B, C. The module list, the order and interfaces are ARCH's to decide and build. Nothing here is built while development is halted, or before the owner chooses a direction; ARCH has said it can be built as given, and section 6 says which steps each choice opens. Tags: measured, read, not checked (`research/evidence-rules.md`).
 
 ## 1. What plane is for
 
@@ -45,15 +45,30 @@ Each step is one merge that passes on its own (Process4 design part 2, section 8
 6. Job control-plane: `deliverOwedRender` imports from capture; its six test files re-pointed.
 7. Job control-plane: `makeFetch` accepts `hooks.ui`, keeping its own UI imports as a fallback.
 8. Job plane: `launch.mjs` split from the entry; the entry hands the UI in (plane is still after the UI).
-9. ARCH rewords the door's page requirements; job control-plane drops its UI imports and the fallback, adds `NO_INTERFACE`, and its 9 page test files take the UI from a test helper.
-10. ARCH: the top module after plane, owning the entry and `ui.mjs`, and the 27 test files that reach the entry; UI names out of plane's `uses`.
+8a. Job control-plane moves a part out of `index.mjs`; then ARCH splits control-plane (requirement numbers kept).
+8b. ARCH splits interface-shell along an existing file boundary (requirement numbers kept).
+9. ARCH rewords the door's page requirements; job control-plane drops its UI imports and the fallback (only after step 8 has merged), adds `NO_INTERFACE`, and its 9 page test files take the UI from a test helper.
+10. ARCH: the top module after plane, owning the entry and `ui.mjs`, and the test files that reach the entry (the list taken from `check`'s refusals at that step, not from the estimate of about 27); UI names out of plane's `uses`.
 11. ARCH: the remaining requirements that state today's order; its "Module list" decision and the rulings that name today's places (K5046, K5052) rewritten in place.
-12. ARCH: control-plane and plane moved to directly after store-request, merged only once `p4 check` on that list finds nothing for either.
+12. ARCH: control-plane and plane moved to directly after store-request, merged only once `p4 check` on that list finds nothing in either's code. If it finds something in code, the boundary is an architecture bug and the step comes back to the lane; it is not worked round.
 13. Follow-ons, each its own job: UI modules import the shared text from the door; screens tests may use the real door; `bio-plane/test/declared-ops.mjs` stops reading later modules' files (test-support).
 
-Dependencies: the halt and the owner's choice; PR 1259 shares 2 files with steps 7 to 9 and none with steps 3 to 6; `control-plane.md` (121 KB) and `interface-shell.md` (120 KB) are over the 60 KB single-text maximum and are split by ARCH before steps 9 and 11; after step 12 the 19 UI modules are later modules of the door and the launcher, so their changes tell more modules.
+Dependencies: the halt and the owner's choice; PR 1259 shares 2 files with steps 7 to 9 and none with steps 3 to 6; `control-plane.md` (121 KB) and `interface-shell.md` (120 KB) are over the 60 KB single-text maximum and are split at steps 8a and 8b; after step 12 the 19 UI modules are later modules of the door and the launcher, so their changes tell more modules.
 
-## 6. What is not known
+## 6. ARCH's answer
+
+ARCH #11, 24 Nov 2026: it can be built as given, B first, then the re-stacking in the steps above, on these conditions.
+
+1. Steps 1 to 6 (B and the capture move) are buildable on the owner's choice of B; steps 7 to 12 only on his choice of the re-stacking direction. Neither is built while his halt stands.
+2. Steps 8a and 8b (the splits) come before step 9.
+3. Step 7's fallback is the accept-both form (design part 2, section 8), removed at step 9 only after step 8 has merged.
+4. Requirement wording: a rewording that only says the same thing more clearly ARCH makes and names in the account; one that changes what the product does goes to the owner first. `NO_INTERFACE` is new behaviour of an unshipped build: ARCH writes it as a new requirement and names it in the account.
+5. Step 12 as written above.
+6. plane keeps `wrangler.jsonc`, `build-plane.mjs` and `bio-plane/dist/`.
+7. The owed render delivered by the alarm inside the built program becomes a walk area of the round that lands steps 7 to 9. The notice load after step 12 and B's run times are measured as they come and reported; neither stops a step.
+8. Step 10's test list is taken from `check`'s refusals at that step.
+
+## 7. What is not known
 
 - Which of the 112 requirements truly need rewording; whether `p4 check` passes at step 12; how many notices the door's changes cause after it; B's proof modules' run times.
 - About 190 test files that reach changed files were not run on a changed copy; each set ran once on the joined copy; an owed render delivered by the alarm in the built program; screens tests over the real door.
