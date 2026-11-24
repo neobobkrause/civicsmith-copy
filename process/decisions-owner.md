@@ -44,3 +44,8 @@ Shown to the owner: not yet.
 Rule now: tranche t1 is dropped. The refactor starts from main's code as it is; the requirements, the module list, the decision records and the lanes' design work are kept. ARCH carries it out (no branch deleted, no history rewritten; t1 stays in history).
 - 24 Nov 2026: "Decision: drop tranche t1. The refactor starts from main's code as it is; keep the requirements, the module list, the decision records and the lanes' design work." (typed within code marks)
 Shown to the owner: not yet.
+
+## The direction of the plane-scope refactoring
+Rule now: the refactoring follows the direction in the "Civicsmith layers" report: each part's promises are proven by its own tests, with the 120 test files the launcher holds moved to the parts they prove; the launcher's routing moves into the front door; the parts are re-stacked, with the front door and launcher below the screens; built by the report's eight-step plan. ARCH records the lane's design decisions and opens the refactoring tranche. The halt is not lifted by this.
+- 24 Nov 2026: "Decision: I choose the direction in the "Civicsmith layers" report: each part's promises are proven by that part's own tests, with the 120 test files the launcher holds moved to the parts they prove; the launcher's routing moves into the front door; the parts are re-stacked, with the front door and launcher below the screens; and all of it is built by the report's eight-step plan." (given to the plane-scope lane; relayed by ARCH #14)
+Shown to the owner: not yet.
