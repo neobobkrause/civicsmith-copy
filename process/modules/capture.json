@@ -8,6 +8,7 @@
   ],
   "public": [
     "bio-plane/src/capture/checks.mjs",
+    "bio-plane/src/capture/filing.mjs",
     "bio-plane/src/capture/index.mjs",
     "bio-plane/src/capture/ops.mjs",
     "bio-plane/src/capture/schema.mjs",

@@ -9,5 +9,7 @@
   "public": [
     "bio-plane/src/screens-intake/capture.mjs"
   ],
-  "uses": []
+  "uses": [
+    "capture"
+  ]
 }
