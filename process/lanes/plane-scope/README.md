@@ -1,4 +1,4 @@
-Length: 22 lines. Last section: "Settled with ARCH".
+Length: 23 lines. Last section: "Settled with ARCH".
 
 # The plane-scope lane's folder
 
@@ -20,3 +20,4 @@ The plane-scope lane of civicsmith: a standing design responsibility for the pla
 - ARCH #11, 23 Nov 2026: option B can be built as given, on the terms recorded in `design.md`; nothing is built while the owner's halt stands or before he chooses.
 - ARCH #11, 23 Nov 2026: the layer research goes on as the owner asked; its proposal, with the dependency facts behind each move, goes to ARCH before anything appears on the owner's page as buildable. The module order and interfaces are ARCH's. The fault in `bio-plane/test/declared-ops.mjs` (it reads later modules' files) is placed against `test-support`.
 - ARCH #11, 24 Nov 2026: the layer proposal (PR 1310) can be built as given, B first and then the re-stacking in the lane's steps, on eight conditions recorded in `design.md` section 6 (splits 8a and 8b added; steps 7 to 12 only on the owner's choice of the re-stacking).
+- ARCH #11, 24 Nov 2026: the design of lane #3 (each module's promises proven by its own tests; the routing in the door; the plan as one sequence) can be built as given, on the conditions recorded in `design.md` section 6; it is built on main's code after the owner's drop of tranche t1, each route proven again at its own job.
