@@ -1,4 +1,4 @@
-Length: 126 lines. Last section: "The bundler's discovery of the fleet".
+Length: 131 lines. Last section: "Reaches upward by path, and the test runners".
 
 # civicsmith: ARCH's technical decisions
 
@@ -123,4 +123,9 @@ Decided: 24 Nov 2026.
 ## The bundler's discovery of the fleet
 Decision: discovering the whole fleet (listing the top folders, reading each `fleet-member.json`, and its computed `import()` of members) moves from `bundler`'s `bio-plane/scripts/fleet-bundle.mjs` to `release`, which builds the fleet after every member. `bundler` keeps "build the member at this folder", with the path handed in by the member's own build, so its uses of a caller's path reach only that caller's folder. Bundler R1 is reworded to say so; nothing the product does changes.
 Why: `bundler` comes early in the order and its discovery reaches seven later members by path (lane research 24, measured in runs); `release`, after them all, is where the whole fleet is known.
+Decided: 24 Nov 2026.
+
+## Reaches upward by path, and the test runners
+Decision: the reaches to a later module that exist today, made by path and so unseen by `p4 check` (`process/lanes/plane-scope/design.md`, section 6a), end as follows, each by its own job at any point of tranche t2. The every-module test runners, `.github/scripts/module-tests.mjs` with `.github/workflows/regression.yml`, go to `journey-check`; the `test` script of `bio-plane/package.json` and the other package scripts that gather every module's tests stay with their owners and are pointed at journey-check's runner by their owners' jobs. No job removes the runners: the required run is the process's own workflow. The design-words builder `build_words.mjs` moves from `documents` to `journey-check`, whose mock files it reads. `words-reads.json` goes to `documents`, whose folder holds it. The fixture makers' PDFs go to `image-codecs`, which writes them. The single-file checks of `run-rules` and `wizard-library` move to the module each checks. `sa-parity`'s child fixture moves to `plane`. The census tests of `money`, `agent-worker`, `member-roster`, `stewards` and `pdf-worker` are bounded to modules up to their owner, each later module checking itself. `bio-plane/test/declared-ops.mjs` (`test-support`) stops reading later modules' files. `agent-worker/wrangler.jsonc`'s binding of the deployed Worker by name is not a reach and stays.
+Why: a reach by path to a later module breaks the order rule as surely as an import, though no check sees it; each of these has an owner where it no longer reaches upward (lane research 24).
 Decided: 24 Nov 2026.
