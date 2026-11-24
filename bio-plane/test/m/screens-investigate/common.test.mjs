@@ -90,7 +90,7 @@ test("R10 after an act the screen reads again what it changed and draws it (cont
   const transit = (await me.act("entitycreate", { body: { kind: "institution", label: "East Bay Transit", note: "The transit agency." } })).entity_id;
   const p = await openAs(world, me, TIES);
   assert.equal(p.byOp("memberties").length, 1);
-  fill(p, { "tie-kind": "employer", "tie-who": transit, "tie-note": "East Bay Transit", "tie-says": "group" });
+  fill(p, { "tie-who": transit, "tie-note": "East Bay Transit" });
   await press(p, "declaretie");
   await settled(p);
   assert.equal(p.byOp("memberties").length, 2, "read again after the act");
@@ -104,7 +104,7 @@ test("R10 after an act the screen reads again what it changed and draws it (cont
   const gone = "ENT-2026-9999";
   const why = await refused(world, me, "declaretie", { entity: gone, note: "x" });
   assert.equal(why.ok, false, "the store refuses a tie to an entity it does not hold");
-  fill(q, { "tie-kind": "other", "tie-who": gone, "tie-note": "x", "tie-says": "group" });
+  fill(q, { "tie-who": gone, "tie-note": "x" });
   await press(q, "declaretie");
   await settled(q);
   assert.equal(q.byOp("memberties").length, before);

@@ -6,10 +6,7 @@ import { parseFrontmatter } from "../record-grammar/index.mjs";
 import { localize } from "../setup-words/index.mjs";
 
 /** Append one entry to `state_history`, for the inline-empty, absent and populated shapes. Null when the block is in
- *  a shape this grammar cannot extend, so the caller refuses rather than guesses.
- * @param {string} text a `bundle.md`
- * @param {{timestamp: any, from_state: any, to_state: any, blurb: any, author: any}} e the entry (R25)
- * @returns {string | null} the text with the entry appended, or null */
+ *  a shape this grammar cannot extend, so the caller refuses rather than guesses. */
 export function appendStateHistory(text, e) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -34,11 +31,7 @@ export function appendStateHistory(text, e) {
   return [...lines.slice(0, last + 1), ...block, ...lines.slice(last + 1)].join("\n");
 }
 
-/** Rewrite one column-0 scalar of the front matter; a key the document does not carry is left absent.
- * @param {string} text a `bundle.md`
- * @param {string} key the front-matter key
- * @param {any} value the value, written as given
- * @returns {string} the text, unchanged when it does not carry `key` */
+/** Rewrite one column-0 scalar of the front matter; a key the document does not carry is left absent. */
 export function setScalar(text, key, value) {
   const lines = text.split("\n");
   const end = lines.indexOf("---", 1);
@@ -51,18 +44,13 @@ export function setScalar(text, key, value) {
 /** A text as a scalar the grammar reads back as itself (R44's fork title). The grammar has no escapes: a value wrapped
  *  in two of one quote character is the text between them, so the wrapper is a quote the text does not hold, never a
  *  JSON string, whose `\"` and `\\` the grammar would keep as written. A text holding both quotes is wrapped in `"`,
- *  and the promotion it goes into judges what the grammar reads.
- * @param {any} text the value, read as a string
- * @returns {string} the value wrapped in quotes */
+ *  and the promotion it goes into judges what the grammar reads. */
 export function quotedScalar(text) {
   const s = String(text);
   return !s.includes('"') ? `"${s}"` : !s.includes("'") ? `'${s}'` : `"${s}"`;
 }
 
-/** Add a Session Log entry after the `## Session Log` heading's section, opening the section when absent.
- * @param {string} text a `bundle.md`
- * @param {any} entry the entry's text
- * @returns {string} the text with the entry added */
+/** Add a Session Log entry after the `## Session Log` heading's section, opening the section when absent. */
 export function appendSessionLog(text, entry) {
   const at = text.indexOf("## Session Log");
   if (at < 0) return localize("promotion.text.text_session_log_entry", "{text}\n## Session Log\n\n{entry}", { text: String(text), entry: String(entry) });
@@ -71,11 +59,7 @@ export function appendSessionLog(text, entry) {
   return text.slice(0, cutAt) + entry + "\n" + text.slice(cutAt);
 }
 
-/** Set a column-0 scalar, opening it immediately before the closing fence when the document does not carry it.
- * @param {string} text a `bundle.md`
- * @param {string} key the front-matter key
- * @param {any} value the value, written as given
- * @returns {string} the text, unchanged when it has no front-matter block */
+/** Set a column-0 scalar, opening it immediately before the closing fence when the document does not carry it. */
 export function setOrAddScalar(text, key, value) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return text;
@@ -86,10 +70,7 @@ export function setOrAddScalar(text, key, value) {
   return [...lines.slice(0, end), `${key}: ${value}`, ...lines.slice(end)].join("\n");
 }
 
-/** Append reference entries to `references`, for the absent, inline-empty and block shapes; null for any other.
- * @param {string} text a `bundle.md`
- * @param {{rel: any, target: any, status: any, note: any}[]} additions the entries, in order
- * @returns {string | null} the text with the entries appended, or null */
+/** Append reference entries to `references`, for the absent, inline-empty and block shapes; null for any other. */
 export function spliceReferences(text, additions) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -118,10 +99,7 @@ export function spliceReferences(text, additions) {
  *  Replaces the top-level `group:` line (column 0, inside the front matter), or opens one immediately before the closing
  *  fence, the convention every key the plane adds follows. Returns the text UNCHANGED when there is no front matter block
  *  to write into, and when the document already names `slug` in any spelling the catalogue's parser reads as it — so a
- *  correct document is never rewritten.
- * @param {any} text a `bundle.md`; anything but a string is answered unchanged
- * @param {any} slug the producing group; anything but a non-empty string leaves `text` unchanged
- * @returns {any} the text with its group written */
+ *  correct document is never rewritten. */
 export function withProducingGroup(text, slug) {
   if (typeof text !== 'string' || typeof slug !== 'string' || !slug) return text;
   if (parseFrontmatter(text).data?.group === slug) return text;

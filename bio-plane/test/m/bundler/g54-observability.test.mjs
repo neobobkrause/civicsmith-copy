@@ -8,8 +8,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseJsonc } from "../../../scripts/jsonc.mjs";
-import { deriveObservability, deriveBindings } from "../../../scripts/derive-bindings.mjs";
-import { makeRepo, run, rm, VERSION, ACCOUNT, PLANE_CRON } from "./repo.mjs";
+import { deriveObservability, observabilityReadBack, deriveBindings } from "../../../scripts/derive-bindings.mjs";
+import { makeRepo, run, rm, VERSION, ACCOUNT, PLANE, PLANE_CRON } from "./repo.mjs";
 
 const SLUG = "grp";
 const CF = { CF_TOKEN: "cf-secret-token-value", CF_ACCT: ACCOUNT };
@@ -30,6 +30,28 @@ const settled = (root, { settings = {}, ...extra } = {}) => ({
     ...settings },
   ...extra });
 const atServing = (root, script) => okStub({ scripts: { "alpha-worker": { settings: {} }, [SLUG]: script }, serving: { [SLUG]: VERSION } });
+
+test("R15: deriveObservability states {enabled: true} from the config and refuses a config that does not turn Workers Logs on or carries a key it does not know; observabilityReadBack tells MATCH, MISMATCH and UNREADABLE and makes no request", () => {
+  assert.deepEqual(deriveObservability({ observability: { enabled: true } }), { enabled: true });
+  const code = (cfg) => { try { deriveObservability(cfg); } catch (e) { return /\[([A-Z_]+)\]/.exec(e.message)?.[1] ?? e.message; } return "no refusal"; };
+  for (const [label, cfg] of [["no config", undefined], ["no key", {}], ["null", { observability: null }], ["a boolean", { observability: true }],
+    ["enabled false", { observability: { enabled: false } }], ["enabled a string", { observability: { enabled: "true" } }],
+    ["no enabled", { observability: {} }], ["a list", { observability: [ON] }]])
+    assert.equal(code(cfg), "NO_OBSERVABILITY", label);
+  for (const key of ["head_sampling_rate", "logs", "traces", "invocation_logs"])
+    assert.equal(code({ observability: { enabled: true, [key]: 1 } }), "UNKNOWN_OBSERVABILITY_KEY", key);
+  assert.deepEqual(deriveObservability(parseJsonc(readFileSync(join(PLANE, "wrangler.jsonc"), "utf8"), "wrangler.jsonc")), { enabled: true },
+    "the real plane's configuration turns Workers Logs on and states nothing else");
+
+  const want = deriveObservability({ observability: ON });
+  assert.equal(observabilityReadBack({ observability: { enabled: true } }, want).verdict, "MATCH");
+  assert.equal(observabilityReadBack({ observability: { enabled: true, head_sampling_rate: 1, logs: { enabled: true } } }, want).verdict, "MATCH",
+    "a rate or a sub-setting the platform adds is not a difference; only `enabled` was sent");
+  for (const [label, settings] of [["no key (how the platform reports it off)", { limits: {} }], ["enabled false", { observability: { enabled: false } }],
+    ["enabled missing", { observability: {} }], ["not an object", { observability: "on" }]])
+    assert.equal(observabilityReadBack(settings, want).verdict, "MISMATCH", label);
+  for (const settings of [null, undefined, "x"]) assert.equal(observabilityReadBack(settings, want).verdict, "UNREADABLE", String(settings));
+});
 
 test("R18: the upload's metadata carries observability {enabled: true} derived from wrangler.jsonc, and success is stated only after the script's settings read back as enabled, before the schedules are set", async () => {
   const root = await repo();

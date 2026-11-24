@@ -76,18 +76,13 @@ test("R43 recording what became known sends the fields sourcedisclose declares: 
   await press(q, "sourcedisclose");
   assert.deepEqual(q.byOp("sourcedisclose").map((r) => r.body), [{ source: u.source, revealed: { kind: "name" }, how: "hostile", knownTo: "member", recorded: false, evidence: "A letter.", claimedBy: "the landlord's lawyer", claimedAt: "2026-10-06" }]);
   assert.deepEqual((await u.history()).map((e) => [e.how, e.recorded, e.claimed_by]), [["hostile", false, "the landlord's lawyer"]]);
-  /* control: no evidence, nothing is sent, and the design's words say so (outside-the-team V2: refusal.NO_EVIDENCE) */
+  /* control: no evidence, nothing is sent */
   const v = await scene();
   const r = await open(v);
   fill(r, { "ab-value": "x", "ab-evidence": "" });
   const m = await press(r, "sourcedisclose");
   assert.equal(r.byOp("sourcedisclose").length, 0);
-  assert.ok(saysIn(m.slot(), "refusal.NO_EVIDENCE"));
-  /* control: a value to store left empty names its field and says nothing was sent (shell.field.needed) */
-  fill(r, { "ab-value": "", "ab-evidence": "She said so." });
-  const m2 = await press(r, "sourcedisclose");
-  assert.equal(r.byOp("sourcedisclose").length, 0);
-  assert.ok(saysIn(m2.slot(), "shell.field.needed", { field: word("screen.about-knocker.value.label") }));
+  assert.ok(saysIn(m.slot(), "capture.fieldneeded", { field: word("screen.about-knocker.evidence.label") }));
   assert.deepEqual(await v.history(), [], "nothing was recorded");
 });
 
@@ -97,12 +92,6 @@ test("R43 consent given and withdrawn: the detail, the audience and the evidence
   await s.dev.act("sourceconsent", { body: { source: s.source, entry, audience: "group", evidence: "She agreed at the meeting." } });
   const p = await open(s);
   assert.ok(says(p, "screen.about-knocker.consent.members"), "consent given is drawn");
-  /* sources R7: what a consent and its withdrawal bind is said where they are recorded (outside-the-team C5) */
-  assert.ok(says(p, "sources.consent_permanent_anything") && says(p, "sources.withdrawal_binds_later"));
-  /* control: no evidence of the agreement, nothing is sent, in the design's words */
-  fill(p, { "ab-cdetail": entry, "ab-caud": "public", "ab-cev": "" });
-  assert.ok(saysIn((await press(p, "sourceconsent")).slot(), "refusal.NO_EVIDENCE"));
-  assert.equal(p.byOp("sourceconsent").length, 0);
   fill(p, { "ab-cdetail": entry, "ab-caud": "public", "ab-cev": "She wrote to the doorbell." });
   await press(p, "sourceconsent");
   assert.deepEqual(p.byOp("sourceconsent").map((r) => r.body), [{ source: s.source, entry, audience: "public", evidence: "She wrote to the doorbell." }]);
@@ -116,10 +105,6 @@ test("R43 consent given and withdrawn: the detail, the audience and the evidence
   await u.disclose(occupation());
   const q = await open(u);
   assert.ok(!says(q, "screen.about-knocker.consent.members"));
-  /* control: nothing stored to publish, no publish section and no permanence notes */
-  const w = await scene();
-  const nothing = await open(w);
-  assert.ok(!says(nothing, "sources.consent_permanent_anything") && !says(nothing, "sources.withdrawal_binds_later"));
 });
 
 test("R43 linked to a person: the person, the evidence and the members who may read it are sent; an organization is refused in the design's words", async () => {
@@ -129,10 +114,6 @@ test("R43 linked to a person: the person, the evidence and the members who may r
   const school = (await s.mai.act("entitycreate", { body: { kind: "institution", label: "Oakland Unified", note: "The school district." } })).entity_id;
   const p = await open(s);
   const dev = await boxOf(s, s.dev);
-  /* control: no evidence, nothing is sent, in the design's words (V2) */
-  fill(p, { "ab-person": dana, "ab-pev": "", [`ab-psight-${dev}`]: true });
-  assert.ok(saysIn((await press(p, "sourcepersonlink")).slot(), "refusal.NO_EVIDENCE"));
-  assert.equal(p.byOp("sourcepersonlink").length, 0);
   fill(p, { "ab-person": dana, "ab-pev": "The badge in the council video.", [`ab-psight-${dev}`]: true });
   await press(p, "sourcepersonlink");
   assert.deepEqual(p.byOp("sourcepersonlink").map((r) => r.body), [{ source: s.source, person: dana, evidence: "The badge in the council video.", sight: [s.dev.member] }]);

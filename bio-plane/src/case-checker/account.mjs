@@ -29,23 +29,17 @@ import { canonicalJson } from "../record-grammar/json.mjs";
 import { checkSentences, VERDICT_WORDS, CAUSE_MARKERS } from "../answers/sentences.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
-/** R24: the arms' codes, in `case-disclosures` R30's order.
- *  @type {readonly string[]} */
+/** R24: the arms' codes, in `case-disclosures` R30's order. */
 export const ACCOUNT_CODES = Object.freeze(["ACCOUNT_SENTENCE_UNSUPPORTED", "ACCOUNT_FACT_NOT_IN_CITED",
   "ACCOUNT_CONTRADICTED_BY_RECORD", "ACCOUNT_BIAS_NOT_PRINTED", "ACCOUNT_CLAIM_NOT_BIAS"]);
 
-/** The words that state a finding's outcome, a determination (arm 3 (a), arm 5), matched as whole words in any letter case.
- *  @type {readonly string[]} */
+/* The words that state a finding's outcome, a determination (arm 3 (a), arm 5). */
 export const DETERMINATION_WORDS = Object.freeze(["established", "establishes", "establish", "found that", "finds that",
   "concluded", "concludes", "determined", "determines", "proved", "proves", "proven", "shows that", "showed that",
   "shown that", "confirmed", "confirms", "demonstrated", "demonstrates"]);
-/** The words that read a leg as supporting what it rests on (arm 3 (c)).
- *  @type {readonly string[]} */
+/* A leg read as supporting what it rests on (arm 3 (c)), and the words that read it as cutting against it. */
 export const SUPPORT_WORDS = Object.freeze(["supports", "supported", "shows", "showed", "confirms", "confirmed", "proves",
   "proved", "establishes", "established", "demonstrates", "demonstrated", "bears out", "backs"]);
-/** The words that read a sentence as cutting against what a leg rests on (arm 3 (c)): a sentence holding one is not read
- *  as calling a cutting leg supporting.
- *  @type {readonly string[]} */
 export const CONTRARY_WORDS = Object.freeze(["against", "contradicts", "contradicted", "undermines", "undermined",
   "disputes", "disputed", "cuts", "however", "despite", "but", "although", "though", "weakens", "conflicts"]);
 
@@ -150,27 +144,14 @@ const figureIn = (fig, texts) => {
   return texts.some((x) => re.test(x));
 };
 
-/**
- * The facts one sentence states, each as the sentence spells it, in the order it states them.
- * @typedef {Object} SentenceFacts
- * @property {string[]} figures amounts, counts, ratios and percentages outside its quotations (a date is not one)
- * @property {string[]} dates dates outside its quotations
- * @property {string[]} names runs of capitalised words outside its quotations, each once
- * @property {string[]} quotations the text inside each pair of quotation marks
- */
-/** Every fact a text states: its figures, dates, names and quotations. Pure; never throws on a string.
- *  @param {string} t the sentence; any other value is read as its string
- *  @returns {SentenceFacts} */
+/** Every fact a text states: its figures, dates, names and quotations. */
 export function factsIn(t) {
   return { figures: figureSpans(t), dates: datesIn(unquoted(t)).map((d) => d.said), names: namesIn(t), quotations: quotationsIn(t) };
 }
 
 /* ============================================================ the arguments */
 
-/** A list field written as a list, as canonical JSON in one value (`case-grammar`'s flat rows), or comma-separated:
- *  its items, a null or undefined item left out; `[]` for anything else. Pure; never throws.
- *  @param {unknown} v the field's value as the row holds it
- *  @returns {any[]} the list's items as written (a comma-separated text gives trimmed strings) */
+/** A list field written as a list, as canonical JSON in one value (`case-grammar`'s flat rows), or comma-separated. */
 export function listOfField(v) {
   if (Array.isArray(v)) return v.filter((x) => x !== null && x !== undefined);
   if (typeof v !== "string" || !v.trim()) return [];
@@ -182,19 +163,8 @@ export function listOfField(v) {
  *  `passage`, `material`; a leg its finding's id with its `ord`, a passage its `content_id`, a material its
  *  `materials:` ref; `ord` null but for a leg. Answers the one key this module holds it by (a leg's `<finding>#<ord>`),
  *  and the words a refusal names it in; a bare string is read as a key. */
-/** @type {readonly string[]} */
 export const CITE_KINDS = Object.freeze(["finding", "leg", "passage", "material"]);
 const legWords = (finding, ord) => localize("case-checker.account.leg_of", "leg {ord} of {finding}", { ord, finding });
-/**
- * One cite as this module holds it.
- * @typedef {Object} CiteKey
- * @property {string} key the one key it is held by: a leg `<finding>#<ord>`, anything else its `ref`
- * @property {string} words the words a refusal names it in
- */
-/** What a sentence cites, read; null when it is not a cite. Pure; never throws.
- *  @param {any} c a cite `{kind?, ref, ord?}` (`kind` one of `CITE_KINDS`), or a key as a string
- *  @returns {any} a `CiteKey`, or null when `c` is not a cite (typed loosely: its callers filter the nulls out in a way
- *    the reader does not follow) */
 export function citeOf(c) {
   if (typeof c === "string" && c.trim()) {
     const m = /^(.+)#(\d+)$/.exec(c.trim());
@@ -232,33 +202,6 @@ function citedMap(cited) {
   return { map: out };
 }
 
-/**
- * `checkAccount`'s arguments. Each is read defensively: a member of another shape answers `MALFORMED` naming it.
- * @typedef {Object} AccountArgs
- * @property {unknown} [account] the `account:` rows, each `{ord, text, cites, kind?, bias_statement?, began_as}`; absent is `[]`
- * @property {unknown} [cited] what the sentences may cite: a list of `{kind?, ref, ord?, text, role?}`, or a map from a
- *   cite's key to its text (or to `{text, role?}`); absent is `[]`
- * @property {unknown} [printed] the bias statements printed in the case's lens: ids, or `{bundle, id}`; absent is `[]`
- * @property {unknown} [conclusions] the record's conclusions, `{finding, claim, claim_state, legs: [{ord, target, role}]}`;
- *   absent is `[]`
- */
-/**
- * One sentence failing one arm.
- * @typedef {Object} AccountDeparture
- * @property {number} ord the `account:` row's `ord` (its place when it states none)
- * @property {string} code one of `ACCOUNT_CODES`
- * @property {string} detail a sentence naming what fails
- */
-/**
- * `checkAccount`'s answer: `{ok: true, departures}` when the arguments read, else `{ok: false, reason: "MALFORMED",
- * field}` naming the argument that does not.
- * @typedef {Object} AccountJudgement
- * @property {boolean} ok
- * @property {AccountDeparture[]} [departures] present when `ok`; `[]` when every sentence holds
- * @property {string} [reason] `MALFORMED`, present when not `ok`
- * @property {string} [field] the argument that does not read, present when not `ok`
- */
-
 const MALFORMED = (field) => ({ ok: false, reason: "MALFORMED", field });
 
 /* ============================================================ the check */
@@ -270,9 +213,7 @@ const MALFORMED = (field) => ({ ok: false, reason: "MALFORMED", field });
  *  `[{finding, claim, claim_state, legs: [{ord, target, role}]}]`. Answers `{ok: true, departures}` (K2531): one
  *  `{ord, code, detail}` per sentence and arm that fails, `ord` the `account:` row's, in the account's order and the
  *  arms' order, never only the first; `[]` when every sentence holds. Malformed arguments answer `{ok: false, reason:
- *  "MALFORMED", field}`. Pure; never throws.
- *  @param {any} args an `AccountArgs`; anything that is not an object is read as `{}`
- *  @returns {AccountJudgement} */
+ *  "MALFORMED", field}`. Pure; never throws. */
 export function checkAccount(args) {
   try { return judgeAccount(plain(args) ? args : {}); }
   catch { return MALFORMED("account"); }
@@ -346,7 +287,7 @@ function judgeSentence(row, cited, printed, concl) {
     const j = row.cites.length
       ? checkSentences([{ text, kind: "explain", support: holdings.map((_, i) => `h${i + 1}`) }], { cited: { holdings }, readLog: log })
       : null;
-    const code = j && j.ok ? (j.withheld?.[0]?.code ?? null) : null;
+    const code = j && j.ok ? (j.withheld[0]?.code ?? null) : null;
     const unread = row.cites.filter((x) => !cited.has(x));
     if (!row.cites.length) {
       /* (K2965) a statement's or outcome's sentence citing nothing: arm 1 is not asked, and arm 2, judged against what

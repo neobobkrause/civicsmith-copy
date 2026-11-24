@@ -1,12 +1,10 @@
-// The fleet member as deployed (R10): the bundle built from the checkout (R36) and loaded under Node, its marker and configuration; the
+// The fleet member as deployed (R10): the committed bundle loaded under Node, its marker and configuration; the
 // surface's edge (R9); the stores and limits (R15, R16); storage writes (R11) and egress (R12) as the sources state
 // them; no place named (R18).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { loadWorker, buildBundle } from './stubs/runtime.mjs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { loadWorker } from './stubs/runtime.mjs';
 import { dialled } from './stubs/cloudflare-sockets.mjs';
 import { handle } from '../src/handler.mjs';
 import * as limits from '../src/limits.mjs';
@@ -210,23 +208,6 @@ test('R15 the namespace set is exactly ["bio", "scratch"], frozen, with PLANE_OP
   }
 });
 
-test('R36 dist/ holds no committed file but its .gitignore; the bundle and its manifest are built there by scripts/build.mjs and stay uncommitted', () => {
-  const git = (...args) => execFileSync('git', args, { cwd: here('.'), encoding: 'utf8' });
-  assert.deepEqual(git('ls-files', '--', 'dist').split('\n').filter(Boolean), ['dist/.gitignore']);
-  const { bundle } = marker();
-  assert.deepEqual([bundle.outfile, bundle.manifest].map((f) => f.startsWith('dist/')), [true, true], 'both are built into dist/');
-  buildBundle();
-  for (const f of [bundle.outfile, bundle.manifest]) {
-    assert.ok(existsSync(here(f)), `${f} is built`);
-    assert.equal(git('check-ignore', '--', f).trim(), f, `${f} is ignored, never committed`);
-  }
-  const manifest = JSON.parse(text(bundle.manifest));
-  assert.deepEqual([manifest.member, manifest.artifact, manifest.sha256],
-    ['file-scanner', bundle.outfile, createHash('sha256').update(readFileSync(here(bundle.outfile))).digest('hex')], 'the manifest describes the bundle built beside it');
-  // control: the .gitignore itself is not ignored, so it stays the folder's one committed file
-  assert.throws(() => git('check-ignore', '--', 'dist/.gitignore'));
-});
-
 test('R16 the limits, by name; the bundle states the Worker\'s own limits once, equal to its configuration', async () => {
   assert.deepEqual([limits.SCAN_MAX_BYTES, limits.SCAN_BATCH_MAX, limits.SIGNATURES_MAX_AGE_MS, limits.SAFE_VIEW_DPI, limits.SAFE_VIEW_PAGES_MAX,
     limits.SAFE_VIEW_BYTES_MAX, limits.PROVIDER_TIMEOUT_MS, limits.SANDBOX_TIMEOUT_MS, limits.REPUTATION_LIST_MAX_AGE_MS],
@@ -238,7 +219,6 @@ test('R16 the limits, by name; the bundle states the Worker\'s own limits once, 
   assert.deepEqual(limits.MEMBER_LIMITS, wrangler().limits);
   const stated = `bio-member-limits/1 ${Object.entries(wrangler().limits).sort().map(([k, v]) => `${k}=${v}`).join(' ')}`;
   assert.equal(limits.MEMBER_LIMITS_STATEMENT, stated);
-  buildBundle();
   const bundle = text(marker().bundle.outfile);
   assert.deepEqual([...new Set([...bundle.matchAll(/(["'`])bio-member-limits\/1( [^"'`\\\n]*)\1/g)].map((m) => m[2]))], [stated.slice('bio-member-limits/1'.length)]);
   const mod = await loadWorker();

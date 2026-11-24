@@ -2,33 +2,15 @@
    (rows.mjs, by build.mjs) and frozen; `word` fills a key's English, `hasWord` says whether a key is held, `localize` reads a sentence written first in code. Nothing here
    does I/O, keeps state beyond the lookup table built on first call, or reads the clock or randomness. */
 import { WORD_ROWS, WORDS_COMMIT } from "./rows.mjs";
-/** @import { WordRow } from './rows.mjs' */
-
-/**
- * A reason: a key the list holds and the values for its placeholders, itself usable as a value of `vars` (R19).
- * @typedef {Object} Reason
- * @property {string} key a key the list holds
- * @property {WordVars} [vars] absent is no values
- */
-/**
- * The values for a sentence's `{name}` placeholders, by name (R11, R19).
- * @typedef {Record<string, string | number | Reason>} WordVars
- * @bound every placeholder of the sentence has a value that is neither undefined nor null; other names are ignored
- */
 
 export { WORD_ROWS, WORDS_COMMIT };
 
 let table;
 const rowsByKey = () => (table ??= new Map(WORD_ROWS.map((r) => [r[0], r])));
 
-/** @type {(code: string, message: string) => Error & {code: string}} builds the error each service throws */
 const fail = (code, message) => Object.assign(new Error(`${code}: ${message}`), { code });
 
-/**
- * R12: true exactly when the list holds `key`.
- * @param {unknown} key any value; only a string the list holds answers true
- * @returns {boolean}
- */
+/** R12: true exactly when the list holds `key`. */
 export const hasWord = (key) => typeof key === "string" && rowsByKey().has(key);
 
 const PLACEHOLDER = /\{([A-Za-z0-9_]+)\}/g;
@@ -45,31 +27,17 @@ function fill(key, text, vars) {
   });
 }
 
-/**
- * R11: the English of `key`, each `{name}` filled from `vars[name]` (a string or a number, as `String` writes it; a
- * Reason with its own words, R19).
- * @param {string} key a key the list holds
- * @param {WordVars} [vars] absent is no values
- * @returns {string}
- * @throws {Error} code UNKNOWN_WORD when the list lacks `key` (or a Reason's key); code WORD_VAR_MISSING when a placeholder has no value
- * @bound key: a key the list holds; never falls back to the key, another word or an empty string
- */
+/** R11: the English of `key`, each `{name}` filled from `vars[name]` (a string or a number, as `String` writes it).
+ *  UNKNOWN_WORD when the list lacks `key`; WORD_VAR_MISSING when a placeholder's name is absent from `vars`. */
 export function word(key, vars = {}) {
   const row = typeof key === "string" ? rowsByKey().get(key) : undefined;
   if (!row) throw fail("UNKNOWN_WORD", `no word ${typeof key === "string" ? key : String(key)}`);
   return fill(key, row[1], vars);
 }
 
-/**
- * R14: the sentence for `id` when the list holds a row for it, else `en`, filled as `word` fills it. `id` and `en` are
- * string literals at the call, so the build reads them; the list always wins, `en` is never compared with the row.
- * @param {string} id a dotted word id
- * @param {string} en the sentence written first at the call
- * @param {WordVars} [vars] absent is no values
- * @returns {string}
- * @throws {Error} code BAD_WORD_ID when `id` is not a dotted id; code BAD_WORD_EN when the list lacks `id` and `en` is not a string; code WORD_VAR_MISSING and UNKNOWN_WORD as `word`'s
- * @bound id: letters, digits, _ and - in each segment, at least two segments joined by dots
- */
+/** R14: the sentence for `id` when the list holds a row for it, else `en`, filled as `word` fills it. `id` and `en` are
+ *  string literals at the call, so the build reads them; the list always wins, `en` is never compared with the row.
+ *  BAD_WORD_ID when `id` is not a dotted id; WORD_VAR_MISSING as `word`'s. */
 export function localize(id, en, vars = {}) {
   if (typeof id !== "string" || !ID.test(id)) throw fail("BAD_WORD_ID", `${typeof id === "string" ? id : String(id)} is not a word id`);
   const row = rowsByKey().get(id);

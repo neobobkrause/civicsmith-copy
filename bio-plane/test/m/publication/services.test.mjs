@@ -38,7 +38,7 @@ test("R53 caseEditionState answers null for no published case edition, else ever
   assert.deepEqual(s0.completeness, { statement: "It leaves out the minutes.", author: V("olive") });
   assert.deepEqual([s0.complete, s0.awaiting, s0.findings, s0.ratified_at, s0.manifest_sha], [false, [F, G], [], null, null]);
   assert.match(s0.detail, /INCOMPLETE: 2 of 2 findings are not yet ratified/);
-  assert.equal(w.p.caseEditionState(CASE, 1)?.group, null, "no group given: null, stated");
+  assert.equal(w.p.caseEditionState(CASE, 1).group, null, "no group given: null, stated");
   /* the signed document: signature, attestor, deliverer, gate version, instant (commitCaseEdition ratified it) */
   const d = s0.document;
   assert.deepEqual([d.sig_armored, d.attestor, d.delivered_by, d.gate_version, d.ratified_at],
@@ -80,7 +80,7 @@ test("R53 its one write: when the edition first reads complete, the instant the 
   assert.deepEqual(after, before, "no other table is written");
   /* never re-stamped: a later read, and a later ratification of the same bytes, leave it */
   w.st.sql.exec(`UPDATE published_bundles SET ratified_at='2026-09-29T00:00:00Z'`);
-  assert.equal(w.p.caseEditionState(CASE, 1)?.ratified_at, "2026-09-28T05:00:00Z");
+  assert.equal(w.p.caseEditionState(CASE, 1).ratified_at, "2026-09-28T05:00:00Z");
   assert.equal(w.row(`SELECT ratified_at FROM published_cases`).ratified_at, "2026-09-28T05:00:00Z");
 });
 
@@ -110,7 +110,7 @@ test("R53 each member resolved by its pin: a member at its own edition in a case
 test("R53 a legacy (/1) document states no member blocks: each member's own ratified pair is read, frozen_from member_bytes", () => {
   const { w } = signed({ format: "bio-case-document/1" });
   w.signFinding(F, { sig: SIG(2), strength: [{ axis: "capture", state: "graded", grade: "A" }] });
-  const f = w.p.caseEditionState(CASE, 1)?.findings[0];
+  const f = w.p.caseEditionState(CASE, 1).findings[0];
   assert.deepEqual([f.frozen_from, f.strength, "grounds" in f, "case_excludes" in f],
                    ["member_bytes", [{ axis: "capture", state: "graded", grade: "A" }], false, false]);
 });
@@ -147,7 +147,7 @@ test("R55 caseDocMemberFrozen answers, for a document stating member blocks, eac
   const text = caseDoc(CASE, 5, { project: proj, roles }).replace("case_citations: []",
     `case_strength_grounds:\n  - target: ${F}\n    axis: capture\n    ground: the minutes\n  - target: ${G}\n    axis: capture\n    ground: other\ncase_citations: []`);
   w.p.storeCaseDocument({ case: CASE, edition: 5, text, author: V("olive") });
-  assert.deepEqual(w.p.caseDocMemberFrozen(CASE, 5)?.get(F).grounds, [{ axis: "capture", ground: "the minutes" }]);
+  assert.deepEqual(w.p.caseDocMemberFrozen(CASE, 5).get(F).grounds, [{ axis: "capture", ground: "the minutes" }]);
   /* a /1 document states none; no document; an unreadable store */
   w.prepare(CASE, 6, { project: proj, roles, format: "bio-case-document/1" });
   assert.equal(w.p.caseDocMemberFrozen(CASE, 6), null);
@@ -175,7 +175,7 @@ test("R15 recordCaseManifest records a case edition's manifest once, through its
   assert.deepEqual(w.row(`SELECT manifest_sha, manifest FROM published_cases`), { manifest_sha: sha, manifest: '{"m":1}' });
   assert.deepEqual(w.rows(`SELECT bundle_id, path, kind, bytes FROM published_shas WHERE sha256=?`, sha),
                    [{ bundle_id: CASE, path: "MANIFEST.json", kind: "manifest", bytes: 42 }]);
-  assert.equal(w.p.caseEditionState(CASE, 1)?.manifest_sha, sha);
+  assert.equal(w.p.caseEditionState(CASE, 1).manifest_sha, sha);
   /* once: the same hash again answers, another is refused and nothing moves */
   assert.equal(w.op("recordcasemanifest", {}, { caseId: CASE, edition: 1, manifest: { m: 1 }, manifestSha: sha }).ok, true);
   const before = w.snapshot();

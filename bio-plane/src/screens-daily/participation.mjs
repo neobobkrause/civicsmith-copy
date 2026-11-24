@@ -6,12 +6,6 @@
    redraw reads none again. A state still being read, one that failed, and a project the member has no row in, answer no
    state: she is offered nothing on a guess; a row answering `participation: null` is no participant, and no read is made for it (C14). Self-contained: it refers only to its parameters. */
 
-/**
- * @param {*} cs the shell's kit
- * @param {*} view the screen's view
- * @param {Array<Object>} projects the rows `projectlist` answers
- * @returns {Object} the member's participation state for each project id known, by id
- */
 export function participation(cs, view, projects) {
   const ui = view.ui;
   if (!ui.mine || typeof ui.mine !== "object") ui.mine = {};

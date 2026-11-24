@@ -32,8 +32,7 @@ export function historyWriteOrder(raw) {
  *  names one of these operations and changes only its fields. `last_updated` rides every mutating set: the
  *  write-completeness law (C-12.1, C-13.2) makes it inseparable from any update. Front-matter paths in dotted form;
  *  `clock[]` denotes clock entry fields. Moved here from the catalogue in T18 (K636); the catalogue's copy was deleted in
- *  T19 (K750), so this is the one registry.
- *  @type {Readonly<Record<string, readonly string[]>>} */
+ *  T19 (K750), so this is the one registry. */
 export const MECHANICAL_FIELD_SETS = Object.freeze({
   "monitor-tick": Object.freeze(["source_status", "monitoring.last_checked", "reeval_pending.flag", "reeval_pending.since",
                                  "reeval_pending.source", "last_updated"]),

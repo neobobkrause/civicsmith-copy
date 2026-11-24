@@ -1157,9 +1157,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       /* R110: `place` answers `{project, last}`; `last` (data: the one the member is on) is the final crumb's `{name}` where the path holds the design's `.crumb` word, else the screen's own name stays */
       try { const pl = inst && inst.spec.place ? inst.spec.place(inst.view) || {} : {}; proj = pl.project; last = typeof pl.last === "string" && pl.last ? pl.last : null; projKey = typeof pl.projectKey === "string" && has(pl.projectKey) ? pl.projectKey : null; } catch { proj = null; last = null; projKey = null; }
       p.forEach((step, i) => {
-        /* R8: a screen of the public, published or setup frame opens its path with the team's name, a link to the team's page unless it is that page */
-        if (step === "@team") { const team = teamLabel(inst); if (team) steps.push({ label: team, href: route.screen === "front" ? null : "/" }); }
-        else if (step === "@project") { if (proj && proj.title) steps.push({ label: projKey ? w(projKey, { name: String(proj.title) }) : soft(proj.title), href: route.screen === "project" ? null : hrefOf("project", proj.id) }); }
+        if (step === "@project") { if (proj && proj.title) steps.push({ label: projKey ? w(projKey, { name: String(proj.title) }) : soft(proj.title), href: route.screen === "project" ? null : hrefOf("project", proj.id) }); }
         else if (i === 0 && D.places.includes(step)) steps.push({ label: w("rail." + step + ".name"), href: placeHref(step) });
         else if (i === p.length - 1 && /\.crumb$/.test(step)) steps.push({ label: last ? w(step, { name: last }) : w(step.replace(/\.crumb$/, ".name")) });
         else steps.push({ label: w(step) });
@@ -1168,19 +1166,6 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     } else if (D.places.includes(route.screen)) steps.push({ label: w(route.screen === "more" ? "shell.more" : "rail." + route.screen + ".name") });
     else steps.push({ label: inst && has("screen." + route.screen + ".name") ? w("screen." + route.screen + ".name") : w("screen.unavailable.name") });
     return crumbs(steps);
-  }
-  /* R8, R30: the team's name for a frame drawn without the masthead: the screen's own read of `groupidentity` where it makes one (null while that read
-     is out), else the frame's answer, else the last name this device was shown, else the unnamed-team word; never the short name (R60). It asks nothing. */
-  function teamLabel(inst) {
-    const named = (v) => (typeof v === "string" && v.trim() ? soft(v) : w("shell.group.unnamed"));
-    for (const [n, sp] of Object.entries(inst ? readsOf(inst) : {})) {
-      if (!sp || sp.op !== "groupidentity") continue;
-      const d = inst.view.data[n];
-      if (!d || d.state === "loading") return null;
-      if (d.state === "ok" && d.value && typeof d.value === "object") return named(d.value.display_name);
-    }
-    if (GROUP_KNOWN) return named(GROUP);
-    return named(LAST_GROUP);
   }
   /* R8, R56: the path as the design draws it (`mk-crumbs`): each earlier step a link, "›" between, the screen's own name
      last, the current page */
@@ -1206,8 +1191,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       : '<a class="cs-btn" data-tone="quiet" href="/app" data-nav>' + w("shell.unavailable.home") + "</a>";
     return '<h1 class="t-title" tabindex="0"' + tipAttr(kw("screen.unavailable.purpose"), 2) + ">" + w(key + ".title") + "</h1>"
       + '<p class="cs-state" data-state="' + (kind === "unreachable" ? "failed" : "empty") + '" data-unavailable="' + esc(kind) + '"' + (kind === "unreachable" ? ' role="alert"' : "") + ">" + w(key + ".says") + "</p>"
-      /* R35 (Screens page every-screen, `unavailable` S3): the out-of-reach state says it tries again by itself, as a note under the alert, and offers no link */
-      + (kind === "unreachable" ? '<p class="mk-sub" data-unreachable-note>' + w("screen.unavailable.unreachable.note") + "</p>" : "<p>" + back + "</p>");
+      + (kind === "unreachable" ? "" : "<p>" + back + "</p>");
   }
   const shellPage = (route) => {
     const k = route.screen;
@@ -1283,8 +1267,7 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     }
     if (MAIN.unavail) return pathNav(route, MAIN, MAIN.unavail) + unavailableHtml(MAIN.unavail, route);
     const body = renderOf(MAIN);
-    /* R8: every screen opens with its path; one of the public, published or setup frames has one where `PATHS` names it */
-    return (frameOf(MAIN.spec.id) === "working" || D.paths[MAIN.spec.id] ? pathNav(route, MAIN) : "") + body;
+    return (frameOf(MAIN.spec.id) === "working" ? pathNav(route, MAIN) : "") + body;
   }
   /* R32: with no `front` registered, the state the session ended in, drawn by the shell */
   let ENTRY_PAGE = false, OUTSIDE = false;
@@ -1379,11 +1362,8 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
     const shown = MAIN ? MAIN.spec.id : route.screen;
     const frame = ENTRY_PAGE || OUTSIDE ? "public" : MAIN ? frameOf(shown) : "working";
     if (frame !== "working") {
-      /* R30, R45: the public, published and setup frames: no rail, tabs, dock or member menu; the published frame is headed by the team's name and
-         ended by its foot (Screens page every-screen, section 2) */
-      const pub = frame === "published" && !!MAIN;
-      return '<div class="cs-frame" data-frame="' + esc(frame) + '" id="cs-frame">' + (pub ? pubHead() : "") + '<main class="cs-main" id="cs-main"' + screenAttr() + ">" + mainHtml(route) + "</main>"
-        + (pub ? pubFoot() : "") + "</div>";
+      /* R30, R45: the public, published and setup frames: no rail, tabs, dock or member menu */
+      return '<div class="cs-frame" data-frame="' + esc(frame) + '" id="cs-frame"><main class="cs-main" id="cs-main"' + screenAttr() + ">" + mainHtml(route) + "</main></div>";
     }
     const place = placeOf(route.screen);
     const rail = RAIL.map((k) => '<a href="' + placeHref(k) + '" data-nav' + (place === k ? ' aria-current="page"' : "") + tipAttr(w("rail." + k + ".holds"), RAILW < 120 ? 1 : 2) + ">"
@@ -1411,25 +1391,6 @@ export function shellProgram(D, SCREENS, win, GUIDE) {
       + update + mastHtml() + band + '<nav class="cs-rail" aria-label="' + w("shell.sections") + '">' + rail + "</nav>"
       + '<main class="cs-main" id="cs-main"' + screenAttr() + ">" + ask + main + "</main>" + dock
       + '<nav class="cs-tabs" aria-label="' + w("shell.sections") + '">' + tabs + "</nav></div>";
-  }
-  /* R30 (Screens page every-screen, section 2): the published frame's head, the team's name (R60: never its short name), explained as the team whose
-     published cases are signed by its project owners; drawn once the name is known */
-  function pubHead() {
-    const team = teamLabel(MAIN);
-    return team ? '<header class="cs-pubhead"><span class="grp" tabindex="0"' + tipAttr("<b>" + team + "</b> · " + w("shell.group.signed"), 1) + ">" + team + "</span></header>" : "";
-  }
-  /* R30 (Screens page every-screen, section 2; public-read R30): the published frame's foot: the signature line, drawn when the screen's `place(view)`
-     answers `signed: {short, fingerprint}` (the screen's data, escaped), and the credit "Made with Civicsmith", a link to public-read's credit page
-     (`op=credit`, public, no credential), explained by what Civicsmith is and that it neither wrote nor checked the case */
-  function pubFoot() {
-    let signed = null;
-    try { const pl = MAIN.spec.place ? MAIN.spec.place(MAIN.view) : null; signed = pl && typeof pl === "object" && pl.signed && typeof pl.signed === "object" ? pl.signed : null; } catch { signed = null; }
-    const short = signed && typeof signed.short === "string" ? signed.short.trim() : "", print = signed && typeof signed.fingerprint === "string" ? signed.fingerprint.trim() : "";
-    const line = short && print ? '<span class="id" tabindex="0"' + tipAttr("<b>" + w("glossary.term.signature") + "</b>: " + w("shell.pubfoot.signature"), 1) + ">"
-      + w("shell.pubfoot.line", { fingerprint: html(soft(print)) }).split("{short name}").join(soft(short)) + "</span>" : "";
-    const credit = '<a class="cs-credit" href="/api/?op=credit"' + tipAttr("<b>" + w("shell.pubfoot.credit") + "</b>: " + w("shell.civicsmith.what") + " " + w("shell.credit.neither"), 1) + ">"
-      + '<svg viewBox="0 0 60 90" aria-hidden="true"><use href="' + D.icons + '#i-mark"/></svg>' + w("shell.pubfoot.credit") + "</a>";
-    return '<footer class="cs-pubfoot">' + line + credit + "</footer>";
   }
   /* R33, R34: the lock over the screen, and the password asked again; R41: what the key signs, exactly */
   let REAUTH = null, DIALOG = null, OVERLAY_REFUSAL = "";

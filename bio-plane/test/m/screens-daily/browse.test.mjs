@@ -186,7 +186,7 @@ test("R45: Flag for a second look… opens its note in place and sends secondloo
   assert.deepEqual(main(f).querySelectorAll(".cs-row").length, 2, "the cleared one is not listed: the document and the person are");
 });
 
-test("R46: a search result is a reference of its own kind with its title and a plain excerpt, each match the plane marks drawn as emphasis; a passage's words when found through one; a hit with no snippet draws its title and kind alone", async () => {
+test("R46: a search result is a reference of its own kind with its title and a plain excerpt, the match brackets drawn as emphasis; a passage's words when found through one; a hit with no snippet draws its title and kind alone", async () => {
   const w = await storeWorld({ now: Date.now() });
   const rosa = await w.signIn("rosa", { admin: true });
   const project = await w.recipes.project(rosa, "Repair of the Coliseum lease");
@@ -203,10 +203,10 @@ test("R46: a search result is a reference of its own kind with its title and a p
   assert.ok(rows.length >= 3 && rows.some((r) => refOf(r) === "/app/question/" + q.id));
   for (const h of hits.filter((x) => x.snippet)) {
     const row = rows.find((r) => refOf(r) === hrefOf[h.object_type] + h.bundle_id);
-    assert.deepEqual(row.querySelectorAll("em").map((e) => e.textContent), [...h.snippet.matchAll(/\u0001([^\u0002]+)\u0002/g)].map((m) => m[1]), "each marked match is emphasis (query-language's MARK_OPEN, MARK_CLOSE)");
-    assert.ok(text(p, row).includes(h.snippet.replace(/[\u0001\u0002]/g, "")), "the plain excerpt");
+    assert.deepEqual(row.querySelectorAll("em").map((e) => e.textContent), [...h.snippet.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]), "the match brackets are emphasis");
+    assert.ok(text(p, row).includes(h.snippet.replace(/[\[\]]/g, "")), "the plain excerpt");
   }
-  assert.ok(!/[\u0001\u0002]/.test(text(p)), "no marker is drawn as text");
+  assert.ok(!text(p).includes("[repair") && !text(p).includes("[420]"));
   const docRow = every.find((r) => text(p, r).includes("work orders were closed"));
   assert.ok(docRow, "the document is found through its passage");
   assert.ok(docRow.querySelectorAll("em").some((e) => /repair/i.test(e.textContent)), "a passage's matched words");

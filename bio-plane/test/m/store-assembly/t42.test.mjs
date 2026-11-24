@@ -237,7 +237,7 @@ test("R57 (was plane R36): transcription({member, project, at}) answers the obje
   assert.deepEqual(tx.useCheck(q), aiUseOf(x.ctx).useCheck(q));
   assert.equal(tx.useCheck({ ...q, owner: "nobody" }).ok, false, "ai-use's own refusal, relayed");
   const d = await hold(x.evidence, SCAN);
-  const r = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, pages: [0] });
+  const r = await tx.transcribe({ account: { ok: true, kind: "apikey", level: "member", key: SENTINEL }, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   // fixtures-run: extraction transcribe-not-sent
   assert.deepEqual(r, { ok: false, reason: "AGENT_WORKER_UNBOUND" });
   assert.equal(x.evidence.calls.length, 0, "nothing read");
@@ -263,7 +263,7 @@ test("R57 R106 transcribe-answer: the answer a user module (extraction's t48) ha
   const d = await hold(x.evidence, SCAN);
   const tx = transcriberOf(x.ctx, x.env).transcription({ member: "member:ann", project: null, at: "2026-10-11T06:00:00Z" });
   const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
-  const real = await tx.transcribe({ account, capture_sha: d, pages: [0] });
+  const real = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [0], use: "transcribe" });
   // fixtures-run: extraction transcribe-answer
   // fixtures-run: reading-pipeline transcribe-answer   (text-units.test.mjs:531-542 and transcribe.test.mjs:323-327 hand the same success value, {ok, engine, version, pages, asked, sent, owed}; their refusal `{ok: false, reason}` is agent-worker's relayed shape)
   assert.deepEqual(real, theirs({ pages: [0] }), "the real answer also names the pages asked, sent, unread and owed (transcribe.mjs, R106)");
@@ -277,7 +277,7 @@ test("R57 (was plane R36) (agent-worker R6, R63, R72; ai-use R1, R11): the AI pa
   const account = await credentialsOf(x.ctx).accountFor({ member: "member:ann", act: { kind: "transcribe", member: "member:ann" } });
   assert.equal(account.ok, true, JSON.stringify(account));
   /* page 1 does not exist in a one-page scan: refused by the renderer, not sent */
-  const r = await tx.transcribe({ account, capture_sha: d, pages: [1, 0, 0] });
+  const r = await tx.transcribe({ account, capture_sha: d, store: "bio", pages: [1, 0, 0], use: "transcribe" });
   assert.equal(worker.seen.length, 1);
   const [u, body, raw] = worker.seen[0];
   assert.equal(u, "https://agent-worker/transcribe");
@@ -473,6 +473,6 @@ test("R58 (was plane R106) (control): a 3-page file under the ceiling is read in
   assert.deepEqual(r.unread.filter((f) => f.reason === PAGES_MAX).map((f) => f.page), beyond, "named unread, never dropped");
   assert.equal(Object.hasOwn(r, "refused"), false, "a posted answer carries no `refused` (T44)");
   assert.deepEqual(r.owed, beyond);
-  assert.deepEqual(pendingOf(x.ctx).jobRow({ sha: d, kind: "ocr" })?.detail.pages, beyond, "and owed as a job row");
+  assert.deepEqual(pendingOf(x.ctx).jobRow({ sha: d, kind: "ocr" }).detail.pages, beyond, "and owed as a job row");
   assert.ok(x.evidence.calls.some((c) => c[0] === "head"), "the size is asked of the store's record, never by loading the object first");
 });

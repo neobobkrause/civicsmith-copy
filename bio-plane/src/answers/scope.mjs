@@ -6,21 +6,10 @@
  * `scrubRead` is R2: a read made under a grant never answers, names or counts a member's declared tie (`MTI-`), the
  * link from a source to a person, or a row of a project hidden from the asking member. Pure over its predicate. */
 
-/**
- * One entry of the asking scope (R1): the op as the plane routes it, the module whose read it is, and the ruling that
- * admitted it.
- * @typedef {Object} AskScopeEntry
- * @property {string} op
- * @property {string} owner
- * @property {string} ruling
- */
-
-/** @returns {Readonly<AskScopeEntry>} */
 const e = (op, owner, ruling) => Object.freeze({ op, owner, ruling });
 
 /** R1: the asking scope, sorted by op, each op named as the plane routes it (N580; K1603, K1609), so the list equals
- *  credentials' `AI_GRANT_OPS` both ways. `rule` is R7's door to every rule service (R8–R12), J1 (1).
- *  @type {ReadonlyArray<Readonly<AskScopeEntry>>} */
+ *  credentials' `AI_GRANT_OPS` both ways. `rule` is R7's door to every rule service (R8–R12), J1 (1). */
 export const ASK_SCOPE = Object.freeze([
   e("calculation", "calculations", "C:B-3"),
   e("career", "people", "K1470"),
@@ -53,9 +42,7 @@ export const ASK_SCOPE = Object.freeze([
 
 const OPS = new Set(ASK_SCOPE.map((x) => x.op));
 
-/** R1: whether an op is in the asking scope. Pure; never throws.
- *  @param {any} op
- *  @returns {boolean} */
+/** R1: whether an op is in the asking scope. Pure; never throws. */
 export function askAdmits(op) {
   return typeof op === "string" && OPS.has(op);
 }
@@ -66,10 +53,7 @@ export function askAdmits(op) {
  *  that is the caller's to keep, `wizard-scripts` R25); `askAdmits` itself answers, so the two cannot drift. (T37;
  *  N669, K2200, K2201) A translation draft is the exception: it reads nothing of the record, the asking scope included
  *  (`run-rules` R22). `kind` is the draft's kind as `run-rules`' `DRAFT_KINDS` names it, `own_words` when absent; any
- *  kind but `own_words` reads nothing (fail closed). Pure; never throws.
- *  @param {any} op
- *  @param {any} [kind] the draft's kind, `own_words` when absent
- *  @returns {boolean} */
+ *  kind but `own_words` reads nothing (fail closed). Pure; never throws. */
 export function draftAdmits(op, kind = "own_words") {
   return kind === "own_words" && askAdmits(op);
 }
@@ -128,10 +112,7 @@ function scrubNode(node, hidden) {
 
 /** R2: the read's answer with every tie, source link and hidden row removed, and each count beside a list counting
  *  none of them. `hidden(id)` answers whether an id names a held bundle the asking member may not see. A read whose
- *  answer is itself about such a thing answers `{ok: true, found: false}`, as for nothing held. Never throws.
- *  @param {any} answer the read's answer; anything but an object or a list is answered as it is
- *  @param {(id: string) => any} [hidden] a predicate that throws counts as true (fail closed)
- *  @returns {any} */
+ *  answer is itself about such a thing answers `{ok: true, found: false}`, as for nothing held. Never throws. */
 export function scrubRead(answer, hidden = () => false) {
   try {
     const h = (id) => { try { return !!hidden(id); } catch { return true; } };

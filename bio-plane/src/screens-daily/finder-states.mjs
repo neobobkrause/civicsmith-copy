@@ -150,12 +150,10 @@ export function finderStates() {
     // Fields: "In titles, notes and details".
     const hs = hits(view);
     const ftotal = f && f.state === "ok" ? (typeof f.value.total === "number" ? f.value.total : hs.length) : 0;
-    // R46: a snippet marks each match between query-language's MARK_OPEN (\u0001) and MARK_CLOSE (\u0002) (query.mjs); the match
-    // is drawn as emphasis, a bracket is plain text, and a stray mark is dropped, never drawn.
     const excerpt = function (text) {
-      return String(text).split(/(\u0001[^\u0001\u0002]*\u0002)/).map(function (part) {
-        const m = /^\u0001([^\u0001\u0002]*)\u0002$/.exec(part);
-        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part.replace(/[\u0001\u0002]/g, ""));
+      return String(text).split(/(\[[^\]]*\])/).map(function (part) {
+        const m = /^\[([^\]]*)\]$/.exec(part);
+        return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part);
       }).join("");
     };
     const fieldRows = cs.sheet(hs.map(function (h) {
@@ -165,10 +163,7 @@ export function finderStates() {
         : cs.w("queue.source.untitled", { date: { html: cs.date(String(h.last_updated || h.captured || "")) } });
       const grade = h.grade ? cs.grade("capture", String(h.grade)) + " " : "";
       const where = h.snippet ? excerpt(h.snippet) : "";
-      // R108 (Screens `finder` A12): a document hit offers "Explore connections" from it; a question, action or plan hit none.
-      const sc = screenOf(h.object_type, id);
-      const explore = sc === "document" || sc === "person" ? cs.act("explore", { label: "act.explore.label.finder", data: { from: id } }) : "";
-      return cs.row(pickBox(id, title), cs.ref(sc, id, title, []) + '<span class="meta">' + grade + cs.mark("origin", "search") + (where ? " <span>" + where + "</span>" : "") + "</span>", explore, "");
+      return cs.row(pickBox(id, title), cs.ref(screenOf(h.object_type, id), id, title, []) + '<span class="meta">' + grade + cs.mark("origin", "search") + (where ? " <span>" + where + "</span>" : "") + "</span>", "", "");
     }).join(""));
     // G16: a route past its page says so and continues by its cursor (a held row's nearest stand-in: the browse's).
     const moreOf = function (route, r) {
@@ -208,8 +203,7 @@ export function finderStates() {
       const k = KIND[String(x.kind)] || String(x.kind);
       const n = typeof x.documents === "number" ? x.documents : 0;
       return cs.row("", cs.ref("person", String(x.entity_id), String(x.label || ""), []) + '<span class="meta">' + cs.w("find.row.kind." + k) + " · "
-        + (n === 1 ? cs.w("screen.finder.named.nodoc.one") : cs.w("screen.finder.named.nodoc", { n: String(n) })) + "</span>",
-        cs.act("explore", { label: "act.explore.label.finder", data: { from: String(x.entity_id) } }), "");
+        + (n === 1 ? cs.w("screen.finder.named.nodoc.one") : cs.w("screen.finder.named.nodoc", { n: String(n) })) + "</span>", "", "");
     }).join(""));
     const subjectsSec = s && s.state === "ok" && scount > 0
       ? cs.sec("screen.finder.subjects.heading", '<p class="mk-small">' + (scount === 1 ? cs.w("screen.finder.route.subjects.holds.one") : cs.w("screen.finder.route.subjects.holds.other", { n: String(scount) })) + "</p>" + subjectRows + moreOf("subjects", s), { help: "screen.finder.subjects.help" })

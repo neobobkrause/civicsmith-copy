@@ -28,39 +28,14 @@ import { contradictionOf, inquiryServices } from "../../../src/contradiction/ind
 import { noSelection } from "../retrieval/fixtures.mjs";
 import { concludeAct } from "../basis-versions/fixtures.mjs";
 
-/** @import { Contradiction } from '../../../src/contradiction/index.mjs' */
-
-/**
- * A storage stand-in over node:sqlite: `sql.exec` answers the rows of a statement with columns (each a plain object),
- * else runs it and answers none; `transactionSync` nests as savepoints.
- * @typedef {Object} ContradictionTestStorage
- * @property {any} db the node:sqlite database
- * @property {{exec: (q: string, ...args: any[]) => any[]}} sql
- * @property {<T>(fn: () => T) => T} transactionSync
- */
-/**
- * A fresh record with contradiction over it: `c` the module's instance, `runs` the runs the stand-in gate answers for
- * (`{status, principal, hidden}` by id), `clock.now` the instant every module reads, and the real modules and the helpers
- * that lay rows down (`inquiry`, `version`, `leg`, `content`, `reading`, `dated`, `fact`, `resolution`, `project`,
- * `participant`, `draws`, `stance`, ...), each answered as it is.
- * @typedef {{c: Contradiction, runs: Map<string, any>, clock: {now: string}, rows: (q: string, ...a: any[]) => any[],
- *   one: (q: string, ...a: any[]) => any, count: (t: string) => number} & Object<string, any>} ContradictionTestWorld
- */
-
-/** @type {(s: any) => string} SHA-256 of the text of `s`, lower-case hex */
 export const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
-/** @type {string} a machine viewer: sees every bundle */
 export const MACHINE = "class:admin";
-/** @type {string} */
 export const MEMBER = "member:m1";
-/** @type {string} */
 export const OUTSIDER = "member:outsider";
-/** @type {string} the clock's instant */
 export const NOW = "2026-09-28T00:00:00Z";
 
-/** @returns {ContradictionTestStorage} */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -80,9 +55,7 @@ export function storage() {
 }
 
 
-/** A fresh record with the modules above and contradiction over it. `gate: false` registers no run gate.
- *  @param {{gate?: boolean, now?: (() => string)|null, strictConclude?: boolean}} [opts]
- *  @returns {ContradictionTestWorld} */
+/** A fresh record with the modules above and contradiction over it. `gate: false` registers no run gate. */
 export function world({ gate = true, now = null, strictConclude = false } = {}) {
   const st = storage();
   const host = { storage: st };
@@ -301,12 +274,7 @@ export function world({ gate = true, now = null, strictConclude = false } = {}) 
   return w;
 }
 
-/** A K4 world: entity E1, two cited passages of two captures resolving (established) to it, read as `a` and `b`; null
- *  lays no reading down for that capture.
- *  @param {any} [a] the reading of capA, as `world().reading` takes it
- *  @param {any} [b] the reading of capB
- *  @param {{gate?: boolean, now?: (() => string)|null, strictConclude?: boolean}} [opts]
- *  @returns {ContradictionTestWorld} */
+/* A K4 world: entity E1, two cited passages of two captures resolving (established) to it, read as `a` and `b`. */
 export function k4World(a = {}, b = {}, opts = {}) {
   const w = world(opts);
   w.inquiry("INQ-2026-0001");

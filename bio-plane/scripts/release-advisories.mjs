@@ -23,57 +23,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { REPO_ROOT, discoverMembers, isContainer, npmProductionPackages, containerClasses, classPackages } from "./fleet-bundle.mjs";
 
-/**
- * One third-party package the release ships.
- * @typedef {Object} InventoryEntry
- * @property {string} ecosystem `npm`, `crates.io`, `PyPI`, or a container statement's system-package ecosystem
- * @property {string} name
- * @property {string} version
- * @property {string[]} shippedIn the members, or `bio-plane`, that ship it, sorted
- */
-/**
- * @typedef {Object} Inventory
- * @property {InventoryEntry[]} packages one per ecosystem, name and version
- * @property {string[]} unread each source that could not be read, named
- * @bound packages: sorted by ecosystem, then name, then version
- */
-/**
- * One advisory as the report states it.
- * @typedef {Object} Advisory
- * @property {string} id
- * @property {string|null} summary
- * @property {string|null} severity
- * @property {string[]} fixed the fixed versions stated for this package, sorted
- */
-/**
- * An advisory as an entry lists it: its details, or only its id where they could not be read.
- * @typedef {Object} ListedAdvisory
- * @property {string} id
- * @property {string|null} [summary]
- * @property {string|null} [severity]
- * @property {string[]} [fixed] absent: the details could not be read
- */
-/**
- * One inventory entry after OSV was asked.
- * @typedef {InventoryEntry & {checked: boolean, advisories: ListedAdvisory[], why?: string|null}} CheckedEntry
- * @bound why: present only when not checked, naming why
- */
-/**
- * @typedef {Object} AdvisoryReport
- * @property {string} database "OSV"
- * @property {string} url
- * @property {string} askedAt ISO time
- * @property {CheckedEntry[]} entries
- * @property {string[]} withAdvisories
- * @property {string[]} notChecked
- * @property {string[]} unread
- */
-
-/** @type {string} the declaration of committed third-party code, repository-relative */
 export const DECLARATION = "bio-plane/scripts/third-party.json";
-/** @type {readonly string[]} the ecosystems a lockfile or the declaration may name */
 export const ECOSYSTEMS = Object.freeze(["npm", "crates.io", "PyPI"]);
-/** @type {string} the advisory database's address */
 export const OSV = "https://api.osv.dev";
 
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
@@ -109,11 +60,7 @@ const LOCK_FORMATS = { "cargo-lock": cargoLockPackages, pins: pinsPackages };
 
 /* ---- R28 ------------------------------------------------------------------ */
 
-/**
- * R28: the third-party code the release ships. Makes no request; never throws.
- * @param {string} [root] absent is the repository's own root
- * @returns {Inventory}
- */
+/** `{packages: [{ecosystem, name, version, shippedIn}], unread: [string]}`. Makes no request; never throws. */
 export function thirdPartyInventory(root = REPO_ROOT) {
   const found = new Map();
   const unread = [];
@@ -198,12 +145,7 @@ export function thirdPartyInventory(root = REPO_ROOT) {
 
 /* ---- R29: the advisory check --------------------------------------------- */
 
-/**
- * One advisory, as the report states it: id, summary, severity and fixed versions where OSV states them.
- * @param {any} vuln OSV's record of the advisory
- * @param {{ecosystem: string, name: string}} entry the package it is known against
- * @returns {Advisory}
- */
+/** One advisory, as the report states it: id, summary, severity and fixed versions where OSV states them. */
 export function advisoryOf(vuln, entry) {
   const sev = vuln.database_specific && typeof vuln.database_specific.severity === "string"
     ? vuln.database_specific.severity
@@ -223,13 +165,8 @@ async function post(path, body) {
   return r.json();
 }
 
-/**
- * Asks OSV about every entry. Never throws: an entry OSV could not answer is not checked, with the reason.
- * @param {InventoryEntry[]} packages
- * @returns {Promise<CheckedEntry[]>}
- */
+/** Asks OSV about every entry. Each result is `{...entry, checked, advisories, why?}`. Never throws. */
 export async function checkAdvisories(packages) {
-  /** @type {(CheckedEntry & {ids?: string[]})[]} */
   const results = packages.map((e) => ({ ...e, checked: false, advisories: [], ids: [], why: null }));
   const query = (e) => ({ package: { ecosystem: e.ecosystem, name: e.name }, version: e.version });
   /* querybatch: at most 1000 queries a call; it answers ids only, and a page token where an entry has more. */
@@ -281,11 +218,7 @@ export async function checkAdvisories(packages) {
   return results;
 }
 
-/**
- * R29: the whole report, its printed text, and the exit status (0 every entry checked, 1 otherwise).
- * @param {{root?: string, now?: () => Date}} [options]
- * @returns {Promise<{report: AdvisoryReport, text: string, exit: 0|1}>}
- */
+/** The whole report: `{report, text, exit}`. */
 export async function run({ root = REPO_ROOT, now = () => new Date() } = {}) {
   const inv = thirdPartyInventory(root);
   const askedAt = now().toISOString();

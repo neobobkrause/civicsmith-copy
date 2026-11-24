@@ -9,8 +9,8 @@ import { randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync, rmSync, existsSync, mkdtempSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { npmProductionPackages, containerDescriptor } from "../../../scripts/fleet-bundle.mjs";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { npmProductionPackages, containerDescriptor, discoverMembers } from "../../../scripts/fleet-bundle.mjs";
 import { thirdPartyInventory, checkAdvisories, run as advisories, DECLARATION } from "../../../scripts/release-advisories.mjs";
 import { signerPublicLine } from "../../../scripts/sign-sshsig.mjs";
 import { osvFetch } from "./osvstub.mjs";
@@ -41,9 +41,9 @@ test("R27: npmProductionPackages lists every non-dev installed copy from the loc
     assert.deepEqual(npmProductionPackages(p, "runner/package-lock.json"), { packages: CONTAINER_PACKAGES });
     assert.deepEqual(npmProductionPackages(join(dir, "none.json"), "x/package-lock.json"), { unread: "x/package-lock.json is missing" });
     writeFileSync(p, "{ not json");
-    assert.match(String(npmProductionPackages(p, "x/package-lock.json").unread), /^x\/package-lock\.json does not parse$/);
+    assert.match(npmProductionPackages(p, "x/package-lock.json").unread, /^x\/package-lock\.json does not parse$/);
     writeJson(p, { lockfileVersion: 1, dependencies: { a: { version: "1.0.0" } } });
-    assert.match(String(npmProductionPackages(p, "x/package-lock.json").unread), /^x\/package-lock\.json does not parse: it has no `packages` map/);
+    assert.match(npmProductionPackages(p, "x/package-lock.json").unread, /^x\/package-lock\.json does not parse: it has no `packages` map/);
     writeJson(p, { packages: { "": {}, "node_modules/a": { version: "1.0.0" }, "node_modules/b": { resolved: "x" } } });
     assert.equal(npmProductionPackages(p, "x/package-lock.json").unread, "x/package-lock.json names the installed package b (node_modules/b) without a version");
     writeJson(p, { packages: { "node_modules/b": { version: "1.0.0", dev: true }, "node_modules/b/node_modules/c": { dev: true } } });
@@ -52,14 +52,14 @@ test("R27: npmProductionPackages lists every non-dev installed copy from the loc
 });
 
 test("R27: the container.json part gains `packages` from the member's own package-lock.json, last; R25's other fields are unchanged", () => {
-  const member = { dir: "runner", name: "runner", abs: "/nowhere", bundle: { entry: "src/w.mjs", outfile: "dist/w.bundled.mjs", manifest: "dist/w.bundle.json" },
+  const member = { dir: "runner", name: "runner", abs: "/nowhere", bundle: { entry: "src/w.mjs" },
     marker: { kind: "container", image: { repository: "docker.io/civicos/runner", digest: DIGEST }, class_name: "Runner",
       max_instances: 3, bind: [{ member: "alpha-worker", binding: "RUNNER" }] } };
   const before = containerDescriptor(member, ["alpha-worker"]);
   const after = containerDescriptor(member, ["alpha-worker"], { packages: CONTAINER_PACKAGES });
-  const { packages, ...rest } = after.descriptor ?? { packages: undefined };
+  const { packages, ...rest } = after.descriptor;
   assert.deepEqual(rest, before.descriptor, "R25's fields unchanged");
-  assert.deepEqual(Object.keys(after.descriptor ?? {}), ["class_name", "image", "scheduling_policy", "max_instances", "bind", "packages"]);
+  assert.deepEqual(Object.keys(after.descriptor), ["class_name", "image", "scheduling_policy", "max_instances", "bind", "packages"]);
   assert.deepEqual(packages, CONTAINER_PACKAGES);
 });
 
@@ -83,6 +83,10 @@ test("R27: the release's container.json part lists the image's packages, signed 
     assert.deepEqual(listed, { path: "container.json", type: "Container", sha256: hex(bytes), bytes: bytes.length });
     assert.match(r.stdout, new RegExp(`^member runner .* parts=container\\.json:Container:${hex(bytes)}:${bytes.length}$`, "m"),
       "the fleet signature's payload carries the part's hash, packages included");
+    /* The installer's own reading of the part (newgroup's containerDescriptor) is unchanged by the new field. */
+    const ng = await import(pathToFileURL(join(REAL_ROOT, "newgroup/src/index.mjs")).href);
+    assert.deepEqual(ng.containerDescriptor(bytes), { ok: true, d: { class_name: "Runner",
+      image: `docker.io/civicos/runner@${DIGEST}`, max_instances: 3, bind: [{ member: "alpha-worker", binding: "RUNNER" }] } });
   } finally { rm(root); }
 });
 
@@ -326,12 +330,21 @@ test("R28: a source that is missing or does not parse is named in unread, never 
   } finally { rm(root); }
 });
 
-test("R28: over the real repository nothing is unread, and each production lockfile package, declared source and container package is listed for the member that ships it", () => {
+test("R28: over the real repository nothing is unread, and every bundled vendored package, declared source and container package is listed for the member that ships it", () => {
   const inv = thirdPartyInventory();
   assert.deepEqual(inv.unread, []);
   const has = (eco, name, version, member) => inv.packages.some((p) => p.ecosystem === eco && p.name === name
     && (version === null || p.version === version) && p.shippedIn.includes(member));
   const lockVersion = (dir, name) => readJson(join(REAL_ROOT, dir, "package-lock.json")).packages[`node_modules/${name}`].version;
+  /* Every package a committed bundle inlines (its manifest's vendored inputs) is in the inventory for that member. */
+  for (const m of discoverMembers().filter((x) => x.bundle)) {
+    const manifest = readJson(join(m.abs, m.bundle.manifest));
+    const pkgs = new Set((manifest.vendoredInputs || []).map((i) => {
+      const seg = i.path.split("node_modules/").pop().split("/");
+      return seg[0].startsWith("@") ? `${seg[0]}/${seg[1]}` : seg[0];
+    }));
+    for (const name of pkgs) assert.ok(has("npm", name, lockVersion(m.dir, name), m.name), `${m.name} ships ${name}`);
+  }
   assert.ok(has("npm", "unpdf", lockVersion("pdf-worker", "unpdf"), "pdf-worker"));
   assert.ok(has("npm", "@anthropic-ai/claude-agent-sdk", lockVersion("agent-runner", "@anthropic-ai/claude-agent-sdk"), "agent-runner"), "the Agent SDK's tree");
   assert.ok(has("npm", "tesseract-wasm", lockVersion("ocr-worker", "tesseract-wasm"), "ocr-worker"), "the declared version is the one ocr-worker installs");

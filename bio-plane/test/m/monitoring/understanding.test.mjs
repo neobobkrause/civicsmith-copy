@@ -362,7 +362,6 @@ test("R34 a pending clock entry whose date has passed is marked overdue by a mec
   const m = w.manifest(ACT).at(-1);
   assert.deepEqual([m.writer, m.operation, m.author], ["mechanical", "deadline-recheck", MONITOR_AUTHOR]);
   assert.deepEqual(MECHANICAL_FIELD_SETS["deadline-recheck"], ["clock[].status", "last_updated"]);
-  assert.ok(fb, "the action read before the mark has frontmatter");
   for (const k of Object.keys(fb)) if (k !== "clock" && k !== "last_updated") assert.deepEqual(fa[k], fb[k], k);
   assert.deepEqual(fa.clock.map(({ status, ...rest }) => rest), fb.clock.map(({ status, ...rest }) => rest));
   assert.match(after, /Deadline recheck: the clock entry dated 2026-09-01 passed while pending and is marked overdue/);

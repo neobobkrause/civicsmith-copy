@@ -4,20 +4,10 @@
    words searched are the route's subject (`/app/finder/<words>`) or the member's last search on this page. With words the three routes
    are read apart and counted apart, under a scope, with what the search covered (R56); with none Find is the browse (R44, R54): the
    choices "Show", "Only", "Show as" and "Theme" are choices that redraw and send nothing, and the whole record is one sortable table
-   (R55). A search that finds nothing says what search covers and offers "Capture it" (R12). A result `explore` can start from (a
-   document, a person or organization) offers "Explore connections" (R108). Every function is self-contained
+   (R55). A search that finds nothing says what search covers and offers "Capture it" (R12). Every function is self-contained
    (interface-shell R21 (1)); the state parts it draws are `view.parts.finderStates`. */
 import { finderStates } from "./finder-states.mjs";
 
-/**
- * @typedef {Object} ScreenDef
- * @property {string} id the registry screen's id
- * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
- * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
- * @property {(cs: *, view: *) => string} render the screen's markup
- * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
- */
-/** @type {Readonly<ScreenDef>} Find and its browse */
 export const finder = Object.freeze({
   id: "finder",
   parts: { finderStates },
@@ -256,10 +246,8 @@ export const finder = Object.freeze({
           const title = String(it.title || "");
           const sc = screenOf(it.kind, id);
           const bits = mark(it);
-          // R108 (Screens `finder` A12): "Explore connections" on a browse row `explore` can start from (a document, a person or organization).
           const acts = (it.watched === true ? cs.act("watchitem", { label: "find.row.unwatch", data: { item: id, off: "1" } }) : "")
-            + (it.flagged ? cs.act("secondlookclear", { label: "act.secondlookclear.label.finder", data: { item: id } }) : "")
-            + (sc === "document" || sc === "person" ? cs.act("explore", { label: "act.explore.label.finder", data: { from: id } }) : "");
+            + (it.flagged ? cs.act("secondlookclear", { label: "act.secondlookclear.label.finder", data: { item: id } }) : "");
           return cs.row(pickBox(id, title), cs.ref(sc, id, title, []) + '<span class="meta"><span>' + kindWord(it, sc) + "</span>"
             + (bits.length ? " · " + bits.join(" · ") : "") + (unread ? ' · <span class="muted">' + cs.w("state.undetermined", { reason: String(browse.undetermined.why || "") }) + "</span>" : "") + "</span>", acts, "");
         }).join("")) : nothing)
@@ -474,14 +462,6 @@ export const finder = Object.freeze({
       },
       done: function (view, answer, cs) { cs.set("page1", null); cs.set("more", null); } },
     // R45: Clear, on a flagged row: any member who may see the item, no reason asked; the row leaves.
-    // R108 (Screens `finder` A12; the registry's `explore` on Find): "Explore connections" opens `explore` with the result as its start, as
-    // `document`, `people` and `person` open it; it sends nothing itself (explore's own act asks).
-    { op: "explore", label: "act.explore.label.finder", rereads: [],
-      send: function (view, el, cs) {
-        if (!el.dataset.from) return null;
-        cs.go("explore", String(el.dataset.from));
-        return null;
-      } },
     { op: "secondlookclear", label: "act.secondlookclear.label.finder", rereads: ["browse"],
       refusals: { MARK_NO_SUCH_ITEM: "refusal.MARK_NO_SUCH_ITEM", MACHINE_CANNOT_MARK: "refusal.MACHINE_CANNOT_MARK", SECOND_LOOK_NOT_OPEN: "refusal.SECOND_LOOK_NOT_OPEN" },
       send: function (view, el) { return el.dataset.item ? { body: { item: el.dataset.item } } : null; },

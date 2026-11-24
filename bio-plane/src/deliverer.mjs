@@ -28,14 +28,11 @@
 
 import { localize } from "./setup-words/index.mjs";
 
-/** The principal whose authenticated session performed the act, from the SESSION
+/* The principal whose authenticated session performed the act, from the SESSION
    ROW the admission block resolved — never from `sessMember`, which folds the
    founder's `admin` role and a member literally enrolled as `admin` into one
    string. Returns null for a role this plane does not issue, and the reads then
-   say UNDETERMINED rather than guessing.
- *  @param {*} session the session row the admission block resolved
- *  @returns {string|null} `founder`, `member:<id>`, or null for a role this plane does not issue
- */
+   say UNDETERMINED rather than guessing. */
 export function deliveringPrincipal(session) {
   const role = session && typeof session.role === "string" ? session.role : "";
   if (role === "admin") return "founder";
@@ -43,17 +40,12 @@ export function deliveringPrincipal(session) {
   return null;
 }
 
-/** @type {string} the sentence an undetermined deliverer carries
- */
 export const DELIVERER_UNDETERMINED_DETAIL = localize("publication.deliverer.who_delivered_this_ratification_was",
   "who DELIVERED this ratification was not recorded: it was ratified before the record stated the delivering principal (REC-128). Its SIGNER is known, from the signature; who carried the signature in is undetermined, and it is not inferred from the signer — a member's signature can be delivered by another member's session or by the founder's.");
 
-/** The READ shape, from the stored column and from nothing else. One function so
+/* The READ shape, from the stored column and from nothing else. One function so
    every read — the finding rows, the case document, the container that travels —
-   says the same thing about the same column.
- *  @param {*} stored the stored `delivered_by` column
- *  @returns `{kind: "founder", member: null}`, `{kind: "member", member}`, or `{kind: "undetermined", member: null, detail}`
- */
+   says the same thing about the same column. */
 export function delivererOf(stored) {
   if (stored === "founder") return { kind: "founder", member: null };
   if (typeof stored === "string" && stored.startsWith("member:") && stored.length > "member:".length)

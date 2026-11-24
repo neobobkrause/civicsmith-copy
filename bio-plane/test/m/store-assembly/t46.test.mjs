@@ -143,7 +143,7 @@ async function statusReport(w, { plan = "PLAN-2026-0007-harbour", project = "PRO
   const ka = c.aiKeptAway.bind(c), acc = a.askAccount.bind(a);
   /* the group's own keep-away (instance-setup's `assistantGate`, asked with no project) is answered as it stands */
   c.aiKeptAway = (q) => { if (q === undefined) return ka(); order.push(["aiKeptAway", q]); return keptAway ?? ka(q); };
-  a.askAccount = async (q) => { order.push(["askAccount", q?.kind]); return acc(q); };
+  a.askAccount = async (q) => { order.push(["askAccount", q.kind]); return acc(q); };
   try {
     const res = await draftOnObject(w.ctx, w.env, { op: "statusreportdraft", member: "ann", session: SESSION, plan, items: ITEMS },
       { read: read || ((op, p) => (op === "plan" ? { ok: true, id: p.id, project, viewer: p.viewer } : null)) });

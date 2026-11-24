@@ -10,7 +10,7 @@
  * upload's body serialised as `fetch` buffers it), and, to be conservative, with that serialised copy held while sampled.
  * Prints one JSON line: `{peakMB, baselineMB, samples, ...what the act did}`.
  */
-import { createWriteStream, createReadStream, readFileSync, mkdirSync, existsSync, statSync } from "node:fs";
+import { createWriteStream, readFileSync, mkdirSync, existsSync, statSync } from "node:fs";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { join } from "node:path";
@@ -24,9 +24,12 @@ let ext0 = null;
 const live = () => { globalThis.gc(); globalThis.gc(); const u = process.memoryUsage();
   if (ext0 === null) return u.heapUsed + u.external;
   return u.heapUsed + ext0 + Math.max(u.arrayBuffers, u.external - ext0); };
+/* What the stand-in itself holds while it answers (the body it serves, which a real account holds, not the installer):
+   taken off every sample. Released when the installer's next call starts, its answer having been read by then. */
+let mockHeld = 0;
 const samples = [];
 let peak = 0;
-const sample = (what) => { const v = live(); samples.push([what, Math.round(v / MB)]); if (v > peak) peak = v; };
+const sample = (what) => { const v = live() - mockHeld; samples.push([what, Math.round(v / MB)]); if (v > peak) peak = v; };
 const BIG = 1e6;
 
 /* Sample where a large buffer is made or consumed, in the installer's own calls to these. */
@@ -59,26 +62,6 @@ let prefix = "grp", version = null;
 const ok = (result) => new Response(JSON.stringify({ success: true, result }));
 const bad = (message, status = 400, code = 0) => new Response(JSON.stringify({ success: false, errors: [{ message, code }] }), { status });
 const fileOf = (name) => join(cfg.dir, name + ".mjs");
-/* A body the stand-in serves from disk as a stream, a chunk at a time, as an account serves it: the stand-in never holds a whole
-   script or release in memory, so the process's resident growth is the installer's own (R33), not the stand-in's. `flip`, when
-   given, is the offset of one byte changed on the way. `head` and `tail` frame a multipart answer. */
-function streamed(file, { head = null, tail = null, flip = null } = {}) {
-  let at = 0;
-  return new ReadableStream({
-    async start(ctl) {
-      if (head) ctl.enqueue(new Uint8Array(head));
-      for await (const chunk of createReadStream(file, { highWaterMark: 1 << 16 })) {
-        const c = new Uint8Array(chunk);
-        if (flip !== null && flip >= at && flip < at + c.length) c[flip - at] ^= 1;
-        at += c.length;
-        ctl.enqueue(c);
-      }
-      if (tail) ctl.enqueue(new Uint8Array(tail));
-      ctl.close();
-    },
-  });
-}
-const served = (file) => new Response(streamed(file));
 for (const name of cfg.pre || []) scripts.set(name, { bindings: [{ type: "secret_text", name: "ACCOUNT_SEAL_SECRET" }, { type: "secret_text", name: "ADMIN_TOKEN" }], put: false });
 let uploads = 0, reads = 0;
 const members = new Map();
@@ -95,8 +78,7 @@ async function putScript(name, init) {
   const meta = JSON.parse(await init.body.get("metadata").text());
   const file = init.body.get("index.mjs");
   await pipeline(Readable.fromWeb(file.stream()), createWriteStream(fileOf(name)));
-  /* The account states each script's `observability` as its last upload sent it (installer-steps R40 reads it back). */
-  scripts.set(name, { bindings: meta.bindings || [], put: true, observability: meta.observability });
+  scripts.set(name, { bindings: meta.bindings || [], put: true });
   const mig = meta.migrations || {};
   classes.set(name, [...new Set([...(classes.get(name) || []), ...(mig.new_sqlite_classes || []), ...(mig.new_classes || []),
     ...(mig.steps || []).flatMap((st) => [...(st.new_sqlite_classes || []), ...(st.new_classes || [])])])]);
@@ -107,13 +89,15 @@ async function putScript(name, init) {
 /* The module as the account hands it back: the multipart body the management API answers with, or the module itself. */
 function readScript(name) {
   reads++;
-  const file = fileOf(name), flip = cfg.differ ? statSync(file).size >> 1 : null;
-  const multipart = cfg.readBack === "multipart";
-  const body = multipart
-    ? streamed(file, { flip, head: Buffer.from(`--bnd9\r\ncontent-disposition: form-data; name="metadata"\r\n\r\n{}\r\n--bnd9\r\ncontent-disposition: form-data; name="index.mjs"; filename="index.mjs"\r\ncontent-type: application/javascript+module\r\n\r\n`),
-      tail: Buffer.from("\r\n--bnd9--\r\n") })
-    : streamed(file, { flip });
-  return new Response(body, { headers: { "content-type": multipart ? "multipart/form-data; boundary=bnd9" : "application/javascript+module" } });
+  const module = readFileSync(fileOf(name));
+  if (cfg.differ) module[module.length >> 1] ^= 1;
+  const body = cfg.readBack === "multipart"
+    ? Buffer.concat([Buffer.from(`--bnd9\r\ncontent-disposition: form-data; name="metadata"\r\n\r\n{}\r\n--bnd9\r\ncontent-disposition: form-data; name="index.mjs"; filename="index.mjs"\r\ncontent-type: application/javascript+module\r\n\r\n`),
+      module, Buffer.from("\r\n--bnd9--\r\n")])
+    : module;
+  mockHeld = body.length;
+  return new Response(body, { headers: { "content-type": cfg.readBack === "multipart"
+    ? "multipart/form-data; boundary=bnd9" : "application/javascript+module" } });
 }
 
 /* R61: the built-in release's own members are fetched from its tag; the stand-in serves them from the release's committed files. */
@@ -121,7 +105,7 @@ const TAGGED = /^https:\/\/raw\.githubusercontent\.com\/believeinoakland\/bio\/v
 const rules = [
   { m: (u) => TAGGED.test(u), f: (u) => {
     const p = u.replace(TAGGED, "");
-    if (cfg.real && existsSync(join(cfg.real, p)) && statSync(join(cfg.real, p)).isFile()) return served(join(cfg.real, p));
+    if (cfg.real && existsSync(join(cfg.real, p)) && statSync(join(cfg.real, p)).isFile()) { const body = readFileSync(join(cfg.real, p)); mockHeld = body.length; return new Response(body); }
     return new Response("not found", { status: 404 });
   } },
   { m: (u, mth) => u.endsWith("/workers/scripts") && mth === "GET", f: () => ok([...scripts.keys()].map((id) => ({ id }))) },
@@ -141,10 +125,10 @@ const rules = [
     const p = u.slice(CFG.RELEASE_LATEST.length + 1);
     if (!cfg.repo) return new Response("not found", { status: 404 });
     if (p === "RELEASE.json") return new Response(readFileSync(cfg.repo.manifest));
-    if (p === cfg.repo.asset) return served(cfg.repo.file);
+    if (p === cfg.repo.asset) { const body = readFileSync(cfg.repo.file); mockHeld = body.length; return new Response(body); }
     /* The fleet's members and their parts, from the real release's own files. */
     if (cfg.repo.extra && existsSync(join(cfg.repo.extra, p)) && statSync(join(cfg.repo.extra, p)).isFile()) {
-      return served(join(cfg.repo.extra, p));
+      const body = readFileSync(join(cfg.repo.extra, p)); mockHeld = body.length; return new Response(body);
     }
     return new Response("gone", { status: 404 });
   } },
@@ -157,8 +141,7 @@ const rules = [
   { m: (u, mth) => u.includes("/scripts/bio-plan-probe") && mth === "DELETE", f: () => ok({}) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+\/settings$/.test(u) && mth === "GET", f: (u) => {
     const name = u.split("/workers/scripts/")[1].split("/")[0];
-    const held = scripts.get(name);
-    return held ? ok({ ...(held.observability === undefined ? {} : { observability: held.observability }), bindings: held.bindings.map(({ text, ...b }) => b) }) : bad("not found", 404);
+    return scripts.has(name) ? ok({ bindings: scripts.get(name).bindings.map(({ text, ...b }) => b) }) : bad("not found", 404);
   } },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "PUT", f: (u, init) => putScript(u.split("/workers/scripts/")[1], init) },
   { m: (u, mth) => /\/workers\/scripts\/[^/]+$/.test(u) && mth === "GET", f: (u) => {
@@ -184,6 +167,7 @@ globalThis.setTimeout = (fn) => realTimeout(fn, 0);
 globalThis.fetch = async (input, init = {}) => {
   const u = typeof input === "string" ? input : input.url;
   const method = (init.method || "GET").toUpperCase();
+  mockHeld = 0;
   for (const r of rules) if (r.m(u, method)) return r.f(u, init);
   throw new Error(`unscripted fetch: ${method} ${u}`);
 };

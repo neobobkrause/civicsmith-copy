@@ -45,20 +45,6 @@ export const plan = Object.freeze({
 
   parts: {
     readOnly: readOnly, actName: actName, citeOf: citeOf,
-    // The Screens page (deciding-and-acting, `plan`): a word the design explains on hover carries its tip, each sentence by key
-    // (`screen.plan.tip.*`), each saying only what the record holds (U17); `own`, where given, is the item's own words, said after
-    // the design's (a checkpoint's card shows what the checkpoint tests: interface-shell R106)
-    tip: function (cs, html, keys, fills, own) {
-      if (!html) return html;
-      const said = keys.map(function (k) { return cs.w(k, fills); }).concat(own ? [String(own)] : []).join(" ");
-      return '<span class="cs-card" tabindex="0" data-level="1" data-tip="' + cs.esc(said) + '">' + html + "</span>";
-    },
-    // The Screens page's form messages under their folds: each message's sentences, by key, said together
-    said: function (cs, summaryKey, messages) {
-      return '<details class="mk-details"><summary>' + cs.w(summaryKey) + "</summary>" + messages.map(function (m) {
-        return '<p class="mk-small">' + m.map(function (k) { return cs.w("screen.plan." + k); }).join(" ") + "</p>";
-      }).join("") + "</details>";
-    },
     // R25: a project's plans: its one live plan opens at once, several or only closed ones are listed (live ones first, newest
     // first, then the closed), none says where one is started. A plan the viewer may not see is not listed.
     projectPlans: function (cs, view) {
@@ -220,11 +206,6 @@ export const plan = Object.freeze({
     phName: function (cs, ph, i) {
       return ph && typeof ph.name === "string" && ph.name ? cs.esc(ph.name) : cs.w("screen.plan.phase.unnamed", { n: String(i + 1) });
     },
-    // U17: a scenario is named in a sentence by its own name, else by its number in the plan
-    scenName: function (scenarios, n) {
-      const sc = (Array.isArray(scenarios) ? scenarios : []).find(function (x) { return String(x.scenario) === String(n); });
-      return sc && typeof sc.name === "string" && sc.name ? sc.name : String(n);
-    },
     // R44: the second and later phases of a scenario's form carry their own ids, the first keeps the plain ones.
     sfx: function (k) { return k ? "-p" + (k + 1) : ""; },
     // R44: one phase of the scenario form: its name, options, start, check-back days, test and where each judgement goes.
@@ -300,8 +281,7 @@ export const plan = Object.freeze({
             }
             // C63: the other checks name an option or a phase by its place in the list, never by its id ("opt-1", "p1")
             const said = P.checkSays(cs, P, c, options, p.scenarios);
-            const line = said || cs.esc(c.says || c.check || "");
-            return "<p>" + (c.check === "no_hostile_branch" ? P.tip(cs, line, ["screen.plan.tip.hostile", "screen.plan.tip.hostile_why", "screen.plan.tip.hostile_example"], { scenario: P.scenName(p.scenarios, c.scenario) }) : line) + "</p>";
+            return "<p>" + (said || cs.esc(c.says || c.check || "")) + "</p>";
           }).join("") + "</div>"
         : "";
 
@@ -337,8 +317,7 @@ export const plan = Object.freeze({
           : s.escalation && s.escalation.id && s.escalation.state === "open"
           ? cs.act("itemtakeup", { label: "screen.plan.takeup", data: { kind: "escalation_stage", escalation: s.escalation.id, stage: String(s.escalation.stage || "") } }) : "";
         return cs.row("<b>" + cs.w("screen.plan.matter.n", { n: String(i + 1) }) + "</b>", P.matterName(cs, s, titles)
-          + '<span class="meta">' + (s.support === "hypothetical" ? P.tip(cs, cs.w("screen.plan.support.hypothetical"), ["screen.plan.tip.hypothetical", "screen.plan.tip.hypothetical_why"])
-            : cs.w("screen.plan.support." + (["established", "short"].includes(s.support) ? s.support : "undetermined")))
+          + '<span class="meta">' + cs.w("screen.plan.support." + (["hypothetical", "established", "short"].includes(s.support) ? s.support : "undetermined"))
           + (s.why ? " · " + cs.esc(s.why) : "") + live + (esc ? " · " + esc : "") + "</span>", take, "");
       }).join("")) : "")
         + (open ? addMatter : "");
@@ -360,7 +339,7 @@ export const plan = Object.freeze({
           const last = Array.isArray(o.dispositions) && o.dispositions.length ? o.dispositions[o.dispositions.length - 1] : null;
           return [byName.get(o.id),
             cs.w("screen.plan.category." + (CATS.includes(o.category) ? o.category : "other")),
-            end ? P.tip(cs, cs.date(end), ["screen.plan.tip.enddate", "screen.plan.tip.enddate_why"]) : cs.w("screen.plan.noend"),
+            end ? cs.date(end) : cs.w("screen.plan.noend"),
             cs.esc(P.subjectKeys(o).map(titles.ofKey).filter(Boolean).join(", ")),
             cs.w("screen.plan.disposition." + disp) + (last && last.reason ? " · " + cs.esc(last.reason) : "")
               + (o.action && o.action.id ? " · " + cs.w("screen.plan.started") : "")
@@ -424,11 +403,7 @@ export const plan = Object.freeze({
         + cs.choice("plan-opt-tier", "screen.plan.how.careful.to.be.legal.options", [["", "screen.plan.option.tier.none"], ["1", "screen.plan.option.tier.1"], ["2", "screen.plan.option.tier.2"], ["3", "screen.plan.option.tier.3"]], { value: "" })
         + cs.checks("plan-opt-lobbying", "screen.plan.option.enforce", [["lobbying", "screen.plan.this.option.asks.someone.to.enforce"]])
         + cs.choice("plan-opt-enforces", "screen.plan.the.requirement.it.seeks", enfChoices, { value: "" })
-        + '<div class="mk-acts">' + cs.act("optionadd", { label: "act.optionadd.label.plan" }) + "</div>"
-        + P.said(cs, "screen.plan.when.an.option.is.not.added", [["an.option.needs.a.line.saying", "write.one.and.add.it.again"],
-          ["choose.at.least.one.matter.the", "an.option.cannot.serve.a.matter"], ["a.tier.belongs.only.on.a", "change.the.kind.or.clear.the"],
-          ["an.option.marked.as.lobbying.must", "choose.it.or.clear.the.mark"], ["a.date.needs.the.law.order", "fix.the.date.and.add.again"],
-          ["an.option.can.be.directed.to", "change.who.it.is.for"], ["press.empty.role"], ["press.empty.organisation"], ["press.empty.both"]]) : "";
+        + '<div class="mk-acts">' + cs.act("optionadd", { label: "act.optionadd.label.plan" }) + "</div>" : "";
 
       // R1 (v0.2 rule 19; DEC-194): the standing offers, then the assistant's suggestions, each labelled and adopted
       // only by the member's own act.
@@ -489,14 +464,7 @@ export const plan = Object.freeze({
         cs.choice("plan-rem-date", "screen.plan.dispose.date", [{ value: "", text: "" }].concat(dated), { value: "" })
         + cs.field("plan-rem-on", "screen.action.remindon", { type: "date", help: "screen.plan.a.day.before.the.date.in" }),
         { help: ["screen.plan.only.when.you.choose.an.option", "screen.plan.pick.one.of.its.dates.and"] }) : "";
-      // The Screens page's C6: deciding the picked options sits under its fold, saying what a decision records and that nothing there
-      // starts an action, with the reminder it may ask and why a decision is not recorded
-      const decide = open && options.length ? '<details class="mk-details"><summary>' + cs.w("screen.plan.decide.the.options.you.picked") + "</summary>"
-        + '<p class="mk-small">' + cs.w("screen.plan.each.decision.is.recorded.with.who") + " " + cs.w("screen.plan.nothing.here.starts.an.action") + "</p>"
-        + remind + P.said(cs, "screen.plan.when.a.decision.is.not.recorded", [["declining.an.option.or.marking.it"],
-          ["reminders.are.set.only.when.you", "choose.it.or.leave.the.reminder"], ["a.reminder.names.a.date.the", "pick.one.of.its.dates.or"],
-          ["pick.at.least.one.option", "an.option.that.is.not.in"], ["this.plan.is.closed.so.its", "ask.an.owner.to.reopen.it"]]) + "</details>" : "";
-      const optionsIn = (options.length ? optionRows + decide : "") + addOption + (offers.length ? cs.sheet(offers.join("")) : "") + tray;
+      const optionsIn = (options.length ? optionRows + remind : "") + addOption + (offers.length ? cs.sheet(offers.join("")) : "") + tray;
       const optionsSec = optionsIn ? cs.sec("screen.plan.options", optionsIn) : "";
 
       // R1: scenarios and their phases; a checkpoint judged by a member; take-up, never assignment (v0.2 rule 18).
@@ -506,18 +474,11 @@ export const plan = Object.freeze({
       const chosenItems = options.map(function (o, i) { return { o: o, i: i }; }).filter(function (x) { return x.o.disposition === "chosen"; }).map(function (x) {
         return x.o.summary ? { value: x.o.id, text: x.o.summary } : { value: x.o.id, key: "screen.plan.option.unnamed", fills: { n: String(x.i + 1) } };
       });
-      const scenIn = scenarios.map(function (s, si) {
-        // U17: "no branch yet for a refusal or a stall" only where the checks say so of this scenario; a later scenario not set
-        // aside is the plan's alternative, with the option it would start with where its first phase names one
-        const unbranched = checks.some(function (c) { return c.check === "no_hostile_branch" && String(c.scenario) === String(s.scenario); });
-        const first = ((s.phases || [])[0] || {}).options || [];
-        const startWith = first.length ? byName.get(first[0]) : "";
-        const keys = ["screen.plan.tip.scenario"].concat(unbranched ? ["screen.plan.tip.scenario_why"] : [],
-          si > 0 && !s.set_aside ? ["screen.plan.tip.alternative"].concat(startWith ? ["screen.plan.tip.alternative_start"] : [], ["screen.plan.tip.alternative_why"]) : []);
-        return "<h3>" + P.tip(cs, cs.esc(s.name || ""), keys, { option: startWith || "" }) + (s.set_aside ? " · " + cs.w("screen.plan.setaside") : "") + "</h3>"
+      const scenIn = scenarios.map(function (s) {
+        return "<h3>" + cs.esc(s.name || "") + (s.set_aside ? " · " + cs.w("screen.plan.setaside") : "") + "</h3>"
           + cs.sheet((s.phases || []).map(function (ph, pi) {
             const judged = ph.judgement ? cs.w("screen.plan.judged." + (ph.judgement.judged === "met" ? "met" : "not_met")) + (ph.judgement.note ? " · " + cs.esc(ph.judgement.note) : "") : "";
-            const due = ph.checkpoint_due ? P.tip(cs, cs.due(String(ph.checkpoint_due), ""), ["screen.plan.tip.checkpoint"], undefined, typeof ph.condition === "string" ? ph.condition : "") : "";
+            const due = ph.checkpoint_due ? cs.due(String(ph.checkpoint_due), "") : "";
             const tookIt = (view.ui.took || {})["checkpoint:" + s.scenario + ":" + ph.id];
             // R53: the Judge control is drawn only once the checkpoint is due (by the page's clock); before, the day it can be judged
             const isDue = !!ph.checkpoint_due && String(ph.checkpoint_due).slice(0, 10) <= today;
@@ -531,16 +492,12 @@ export const plan = Object.freeze({
                 + takeUp
               : "";
             const names = (ph.options || []).map(function (id) { return byName.get(id); }).filter(Boolean).join(", ");
-            const phase = names ? P.tip(cs, P.phName(cs, ph, pi), ["screen.plan.tip.scenario_phase"], { n: String(pi + 1), step: names }) : P.phName(cs, ph, pi);
-            return cs.row("<b>" + phase + "</b>", names + (judged ? '<span class="meta">' + judged + "</span>" : ""), due, form);
+            return cs.row("<b>" + P.phName(cs, ph, pi) + "</b>", names + (judged ? '<span class="meta">' + judged + "</span>" : ""), due, form);
           }).join(""));
       }).join("") + (open ? cs.field("plan-scen-name", "screen.plan.scenario.name")
         + Array.from({ length: nPhases }, function (_, k) { return P.phaseForm(cs, view, k, nPhases, chosenItems); }).join("")
         + cs.choice("plan-scen-phasecount", "screen.plan.add.another.phase", Array.from({ length: 10 }, function (_, i) { return { value: String(i + 1), text: String(i + 1) }; }), { redraw: "scenphases", value: "1" })
-        + '<div class="mk-acts">' + cs.act("scenarioset", { label: "act.scenarioset.label.plan", data: { next: String(scenarios.length + 1) } }) + "</div>"
-        + P.said(cs, "screen.plan.when.a.scenario.is.not.laid", [["a.phase.can.hold.only.options", "choose.the.option.first.or.take"],
-          ["following.when.each.phase.starts.leads", "no.phase.can.start.after.itself.2"], ["a.phase.points.to.a.phase", "choose.one.that.is.in.it"],
-          ["a.phase.needs.a.name.the", "fill.in.the.one.that.is"]]) : "");
+        + '<div class="mk-acts">' + cs.act("scenarioset", { label: "act.scenarioset.label.plan", data: { next: String(scenarios.length + 1) } }) + "</div>" : "");
       const scen = scenIn ? cs.sec("screen.plan.scenarios", scenIn) : "";
 
       // R1: what each started option became.

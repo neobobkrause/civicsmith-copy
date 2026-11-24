@@ -58,8 +58,8 @@ test("R36 R7 answers declares ruleservicesstate: a read for admin and member wit
   await declaredOpHolds({ op: "ruleservicesstate", declaration: d, call: mk("ruleservicesstate", {"viewer":"member:bob"}), same: sameCode });
 });
 
-test("R36 R7 the owners' declarations, found from the module order up to answers, hold ruleservicesstate as answers' own, declared by no earlier owner", async () => {
-  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "answers");
+test("R36 R7 the owners' declarations, found from build/modules.json, hold ruleservicesstate as answers' own, declared by no other owner", async () => {
+  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)));
   assert.equal(owners["ruleservicesstate"], "answers");
   assert.deepEqual(ops["ruleservicesstate"], DECLARED_OPS["ruleservicesstate"]);
   assert.deepEqual(duplicates.filter((d) => d.op === "ruleservicesstate"), []);

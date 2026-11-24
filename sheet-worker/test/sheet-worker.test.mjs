@@ -1,5 +1,5 @@
 /* sheet-worker at its interface (build/requirements/sheet-worker.md), with the real engine compiled from the vendored
- * wasm under node. The built bundle under workerd is `worker.test.mjs`; the corpus fixtures are `corpus.test.mjs`. */
+ * wasm under node. The committed bundle under workerd is `worker.test.mjs`; the corpus fixtures are `corpus.test.mjs`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -14,7 +14,7 @@ import { withEngineSection } from "../scripts/build-engine.mjs";
 import { workbook, zip } from "./xlsx.mjs";
 import {
   MEMBER_DIR, MODULE, ON, SHA, WASM_FILE, bucket, call, fixture, makeEngine, makeMember, post, realEngine,
-  recomputeVia, spied, builtBundle,
+  recomputeVia, spied,
 } from "./helpers.mjs";
 
 const { MAX_CELLS, MAX_UNZIPPED_BYTES, TIME_BUDGET_MS, NAMESPACES, PLANE_OPS, REFUSALS, NOT_RECOMPUTED } = contract;
@@ -181,7 +181,6 @@ const EXTERNAL_PART = {
 test("R3 (4): EXTERNAL_LINKS for an external-link part, or a formula or defined name that refers to another workbook, naming how many, before the engine loads", async () => {
   const { engine, calls } = spied(realEngine());
   const m = makeMember(engine);
-  /** @type {Array<[Uint8Array, {parts: number, formulas: number, defined_names: number}]>} the workbooks and the counts each names */
   const cases = [
     [small([{ r: "A1", v: 1 }], EXTERNAL_PART), { parts: 1, formulas: 0, defined_names: 0 }],
     [small([{ r: "A1", f: "[1]Other!A1", v: 1 }, { r: "A2", f: "SUM('[2]My Sheet'!B1:B3)", v: 2 }, { r: "A3", f: "A1", v: 1 }]),
@@ -424,7 +423,7 @@ test("R10: writes nothing — only CAPTURES.get is ever called, the bucket is un
   assert.deepEqual(cfg.r2_buckets.map((b) => b.binding), ["CAPTURES"]);
   for (const k of ["durable_objects", "kv_namespaces", "d1_databases", "queues", "services", "migrations"]) assert.equal(cfg[k], undefined, k);
   /* and the deployed artifact makes no write call on any binding */
-  const bundle = builtBundle().bundle.toString("utf8");
+  const bundle = readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`, "utf8");
   assert.equal(/\.(put|delete|createMultipartUpload|resumeMultipartUpload)\s*\(/.test(bundle.replace(/_fmtCache\.\w+\(/g, "")), false);
 });
 
@@ -464,7 +463,7 @@ test("R13: the vendored wasm is the pinned IronCalc build with its xlsx feature,
   assert.equal(sha256(WASM_FILE.subarray(0, facts.code_bytes)), facts.code_sha256);
   const cargo = readFileSync(`${MEMBER_DIR}engine/Cargo.toml`, "utf8");
   assert.deepEqual([...cargo.matchAll(/rev = "([0-9a-f]{40})"/g)].map((m) => m[1]), [contract.ENGINE_VERSION, contract.ENGINE_VERSION]);
-  const { manifest } = builtBundle();
+  const manifest = JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8"));
   const asset = manifest.assets.find((a) => a.path === "assets/sheet-engine.wasm");
   assert.deepEqual([asset.bytes, asset.sha256], [contract.WASM_BYTES, contract.WASM_SHA256]);
   /* it reads XLSX: the engine loads a workbook from its bytes */
@@ -514,7 +513,7 @@ test("R14: the three bounds are the READ_BOUNDS rows of the sheet worker, read t
 const limitsStatements = (text) =>
   [...new Set([...text.matchAll(/(["'`])(bio-member-limits\/1(?: [^"'`\\\n]*)?)\1/g)].map((m) => m[2]))];
 
-test("R17: the member states its limits in its bundle as exactly one distinct string bio-member-limits/1 key=n …, keys sorted, equal to its configuration's limits", () => {
+test("R17: the member states its limits in its committed bundle as exactly one distinct string bio-member-limits/1 key=n …, keys sorted, equal to its configuration's limits", () => {
   const cfg = parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc");
   assert.ok(cfg.limits && typeof cfg.limits === "object" && Object.keys(cfg.limits).length, "the configuration states limits");
   const keys = Object.keys(cfg.limits).sort();
@@ -529,11 +528,11 @@ test("R17: the member states its limits in its bundle as exactly one distinct st
   /* today's (K1536) */
   assert.equal(want, "bio-member-limits/1 cpu_ms=300000");
   /* the bundle a release signs states it exactly once, as written */
-  const { bundle: bytes, manifest } = builtBundle();
-  const bundle = bytes.toString("utf8");
+  const bundle = readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`, "utf8");
   assert.deepEqual(limitsStatements(bundle), [want]);
   /* and the manifest pins the bytes that hold it */
-  assert.equal(manifest.sha256, sha256(bytes));
+  const manifest = JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8"));
+  assert.equal(manifest.sha256, sha256(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`)));
   /* negative controls: a second, different statement, or none, is not one distinct string */
   assert.equal(limitsStatements(`${bundle}\nvar b = 'bio-member-limits/1 cpu_ms=30000';`).length, 2);
   assert.equal(limitsStatements(bundle.split(want).join("")).length, 0);
@@ -556,20 +555,4 @@ test("R16: no place is named; the same bytes and settings give the same answer u
   assert.equal(a, b); assert.equal(a, c);
   const out = JSON.parse(a);
   assert.equal(out.cells.find((x) => x.source.cell === "A2").value, "2024-03-10 12:00");
-});
-
-test("R18: dist/ holds no committed file but its .gitignore, which ignores everything else there; the build script makes the bundle and manifest there", () => {
-  const git = (...a) => execFileSync("git", a, { cwd: MEMBER_DIR, encoding: "utf8" });
-  assert.deepEqual(git("ls-files", "--", "dist/").split("\n").filter(Boolean), ["dist/.gitignore"]);
-  const ignored = (p) => { try { git("check-ignore", "-q", "--no-index", "--", p); return true; } catch { return false; } };
-  for (const p of ["dist/sheet-worker.bundled.mjs", "dist/sheet-worker.bundle.json", "dist/anything-else.txt"]) assert.ok(ignored(p), p);
-  assert.equal(ignored("dist/.gitignore"), false);
-  /* the generated engine glue stays committed */
-  assert.deepEqual(git("ls-files", "--", "src/enginelib.mjs", "src/enginelib-tz.mjs").split("\n").filter(Boolean),
-    ["src/enginelib-tz.mjs", "src/enginelib.mjs"]);
-  /* the build makes both, and the manifest pins the bundle it made */
-  const { bundle, manifest } = builtBundle();
-  assert.ok(bundle.length > 0);
-  assert.equal(manifest.sha256, sha256(bundle));
-  assert.deepEqual([manifest.member, manifest.artifact], ["sheet-worker", "dist/sheet-worker.bundled.mjs"]);
 });

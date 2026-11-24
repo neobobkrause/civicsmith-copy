@@ -7,15 +7,6 @@
 
 import { frontTitle } from "./front-title.mjs";
 
-/**
- * @typedef {Object} ScreenDef
- * @property {string} id the registry screen's id
- * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
- * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
- * @property {(cs: *, view: *) => string} render the screen's markup
- * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
- */
-/** @type {Readonly<ScreenDef>} Find › Ask, and "Find and count" while the assistant is not reachable */
 export const answers = Object.freeze({
   id: "answers",
   parts: { frontTitle },
@@ -133,16 +124,9 @@ export const answers = Object.freeze({
       if (!settled(f) || (p && !settled(p))) results = cs.state(f.state === "loading" ? f : p, null);
       else if (merged.length === 0 && f.state === "failed" && (!p || p.state === "failed")) results = cs.state(f, null);
       else results = cs.state(merged.length ? { state: "ok", value: { hits: merged } } : { state: "empty" }, function (s) {
-        // A snippet marks each match between query-language's MARK_OPEN (\u0001) and MARK_CLOSE (\u0002): drawn as emphasis, a stray mark dropped.
-        const excerpt = function (text) {
-          return String(text).split(/(\u0001[^\u0001\u0002]*\u0002)/).map(function (part) {
-            const m = /^\u0001([^\u0001\u0002]*)\u0002$/.exec(part);
-            return m ? "<em>" + cs.esc(m[1]) + "</em>" : cs.esc(part.replace(/[\u0001\u0002]/g, ""));
-          }).join("");
-        };
         return cs.sheet(s.hits.map(function (h) {
           const id = String(h.bundle_id);
-          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + excerpt(h.snippet) + "</span>" : ""), "", "");
+          return cs.row(cs.mark("origin", "search"), cs.ref("document", id, h.title || id, []) + (h.snippet ? '<span class="meta">' + cs.esc(String(h.snippet)) + "</span>" : ""), "", "");
         }).join(""));
       }, { empty: "screen.finder.none" });
     }
@@ -161,8 +145,7 @@ export const answers = Object.freeze({
       + '<div class="mk-search">' + cs.field("answers-q", "screen.finder.words", { value: ui.q || "" })
       + '<span class="mk-acts">' + cs.act("search", { label: "act.search.label.finder", tone: "primary" }) + "</span></div>"
       + results
-      // R6: "Show how this was counted" is on the screen whenever the rule services are on, with or without a search before it.
-      + (ruleOn ? '<div class="mk-acts">' + cs.act("ruleanswer", { label: "act.ruleanswer.label.answers" }) + "</div>" : "")
+      + (ui.q && ruleOn ? '<div class="mk-acts">' + cs.act("ruleanswer", { label: "act.ruleanswer.label.answers" }) + "</div>" : "")
       + rule + keep;
   },
 
@@ -260,10 +243,8 @@ export const answers = Object.freeze({
     // "Show how this was counted": the rule service's answer with its basis and label (answers R7).
     { op: "ruleanswer", label: "act.ruleanswer.label.answers", rereads: [],
       send: function (view, el, cs) {
-        // R6: the words in the field, else the last words searched; with none it says words come first and sends nothing.
-        const q = String(cs.value("answers-q") || (view.ui || {}).q || "").trim();
+        const q = String((view.ui || {}).q || "").trim();
         if (!q) return { refuse: "screen.finder.wordsfirst" };
-        cs.set("q", q);
         return { body: { service: "occurrences", args: { q: q } } };
       },
       done: function (view, answer, cs) {

@@ -1,5 +1,5 @@
 {
- "_note": "The interface word list (DEC-179). Source of the module setup-words: its jobs edit this file directly, and its generator (bio-plane/src/setup-words/build.mjs) builds the word rows from it. build_words.mjs, the earlier builder, is kept with its inputs as history and is never run. Keys are stable: a word keeps its key when its English changes, and a new word takes a new key. {name} marks a placeholder the screen fills.",
+ "_note": "The interface word list (DEC-179). Built by build_words.mjs from the mockups' sources; never edit by hand. Keys are stable: a word keeps its key when its English changes, and a new word takes a new key. {name} marks a placeholder the screen fills.",
  "protected_rule": "DEC-157 (4): the fixed terms (grades and scales, the five gaps, origins, the queue's kinds, the path, the acts' names), the weights, every warning and dialog before an outward, signed or irreversible act, the court notice, and every \"who can see this\" notice. A protected word changed from the assistant's draft, or typed without one, shows only after a second check.",
  "for_builders": "A sentence on a screen that carries its data (a name, a count, a date) is keyed when the screen is built: screen.<id>.<part>, with {placeholders}; it is protected when it is a warning or dialog before an outward, signed or irreversible act, the court notice (\"What a court can reach\"), or says who can see something.",
  "counts": {
@@ -13,7 +13,7 @@
   "date": 14,
   "queue": 498,
   "transcribe": 19,
-  "capture": 77,
+  "capture": 74,
   "document": 78,
   "question": 82,
   "connection": 34,
@@ -33,7 +33,7 @@
   "phrasing": 4,
   "assertion": 3,
   "packet": 2,
-  "filings": 264,
+  "filings": 261,
   "pointer": 7,
   "voice": 4,
   "recognition": 1,
@@ -53,7 +53,7 @@
   "wizard": 359,
   "elsewhere": 38,
   "places": 6,
-  "screen": 7940,
+  "screen": 7869,
   "signin": 1,
   "forgot": 1,
   "founder": 6,
@@ -63,7 +63,7 @@
   "proceeding": 11,
   "duty": 6,
   "published": 9,
-  "shell": 178,
+  "shell": 177,
   "settings": 4,
   "entity": 33,
   "find": 43,
@@ -78,7 +78,7 @@
   "progression": 38,
   "dock": 9,
   "count": 6,
-  "translations": 9,
+  "translations": 8,
   "due": 2,
   "reading": 4,
   "held": 5,
@@ -114,13 +114,13 @@
   "timeline": 2,
   "caseimport": 4,
   "acquisition": 47,
-  "file-safety": 62,
+  "file-safety": 57,
   "extraction": 25,
   "events": 86,
   "entities": 30,
   "retrieval": 71,
   "case-account": 12,
-  "instance-setup": 49,
+  "instance-setup": 43,
   "list": 1,
   "glossary": 9,
   "people": 42,
@@ -140,7 +140,7 @@
   "strength": 83,
   "file-scanner": 7,
   "crumb": 1,
-  "ai-accounts": 8,
+  "ai-accounts": 7,
   "intent": 51,
   "case-inputs": 27,
   "store-door": 4,
@@ -224,7 +224,7 @@
   "capture-requests": 21,
   "provenance": 32,
   "credentials": 7,
-  "bias": 29,
+  "bias": 28,
   "reading-guides": 3,
   "sources": 4,
   "connection-grammar": 20,
@@ -237,9 +237,7 @@
   "rail": 17,
   "tab": 2,
   "column": 47,
-  "member-roster": 2,
-  "store-assembly": 1,
-  "total": 19562,
+  "total": 19467,
   "protected": 1162
  },
  "words": [
@@ -9212,10 +9210,10 @@
   },
   {
    "key": "shell.menu.signout_does",
-   "en": "Ends your session on this device and goes to your team's page. Nothing you wrote is lost; drafts stay where they were.",
+   "en": "Ends your session on this device and goes to the sign-in page. Nothing you wrote is lost; drafts stay where they were.",
    "protected": false,
    "source": "DEC-251",
-   "note": "DEC-251; ARCH 22 Nov 2026 (code differences): signing out goes to the team's page, as interface-shell R4 does"
+   "note": "DEC-251"
   },
   {
    "key": "level.keep.ask",
@@ -9423,6 +9421,13 @@
   {
    "key": "shell.signout",
    "en": "Sign out",
+   "protected": false,
+   "source": "DEC-252",
+   "note": "adopted from interface-shell's own rows"
+  },
+  {
+   "key": "shell.signout.does",
+   "en": "Ends this session on this device and returns to your team's page.",
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from interface-shell's own rows"
@@ -11477,13 +11482,6 @@
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from screens-action's own rows"
-  },
-  {
-   "key": "screen.action.clock.metlate",
-   "en": "met late",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / action C11 (mockup (journeys))"
   },
   {
    "key": "screen.action.noreplyby",
@@ -18395,20 +18393,6 @@
    "note": "adopted from screens-investigate's own rows"
   },
   {
-   "key": "screen.person.follow.registers",
-   "en": "Registers followed",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / person C8 (lane)"
-  },
-  {
-   "key": "screen.person.follow.registers.row",
-   "en": "{address} · followed {date}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / person C8 (lane)"
-  },
-  {
    "key": "screen.person.same",
    "en": "Same person?",
    "protected": false,
@@ -19408,13 +19392,6 @@
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from screens-investigate's own rows"
-  },
-  {
-   "key": "screen.timeline.rel.line",
-   "en": "Linked to {event}: {relation}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / timeline C9 (lane)"
   },
   {
    "key": "screen.timeline.date",
@@ -29453,13 +29430,6 @@
    "source": "DEC-257"
   },
   {
-   "key": "screen.capture.file.project",
-   "en": "For which project",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / capture C18 (mockup)"
-  },
-  {
    "key": "screen.capture.saw.photo",
    "en": "Add a photo or recording you made then",
    "protected": false,
@@ -32143,13 +32113,6 @@
    "note": "DEC-360 (B371 1): {precision} from screen.dash-project.precision.<code>; any number of events"
   },
   {
-   "key": "screen.dash-project.story.timeline",
-   "en": "Open the timeline",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / dash-project A4 (mockup)"
-  },
-  {
    "key": "screen.dash-project.activity.events",
    "en": "{name} added {count} events on {day}",
    "protected": false,
@@ -32850,13 +32813,6 @@
    "source": "DEC-259"
   },
   {
-   "key": "screen.open-file.release.why",
-   "en": "Why release it?",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / open-file S3 (mockup)"
-  },
-  {
    "key": "screen.people.counts.three",
    "en": "named in {documents}, {questions} and {projects}",
    "protected": false,
@@ -33156,13 +33112,6 @@
    "protected": true,
    "source": "DEC-259",
    "note": "under the reader's link"
-  },
-  {
-   "key": "screen.review-outside.ask",
-   "en": "Before publishing, the team asks you to read this draft of its case and comment.",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / review-outside C1 (U14) (mockup: the first sentence of screen.review-outside.sub, word for word)"
   },
   {
    "key": "screen.review-outside.sub",
@@ -36179,20 +36128,6 @@
    "note": "DEC-276: the signature at the foot of a public case, its explanation"
   },
   {
-   "key": "shell.pubfoot.line",
-   "en": "{short name} · signed by an owner of the project · {fingerprint}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: every-screen, section 2, the published frame's foot (mockup)"
-  },
-  {
-   "key": "shell.pubfoot.credit",
-   "en": "Made with Civicsmith",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: every-screen, section 2, the published frame's foot (mockup)"
-  },
-  {
    "key": "shell.credit.neither",
    "en": "Civicsmith is software; it neither wrote nor checked this case.",
    "protected": false,
@@ -36670,10 +36605,10 @@
   },
   {
    "key": "screen.plan.tip.title",
-   "en": "{plan}: {name}'s action plan, opened {date}, about {matter}. Its options, the order to try them and what to check are here.",
+   "en": "{plan}: {name}'s action plan, opened {date} when the inquiry began, about {matter}. Its options, the order to try them and what to check are here.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: the plan's title, its explanation; {plan}, {name}, {date} and {matter} the plan's own facts. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
+   "note": "DEC-276: the plan's title, its explanation; {plan} and {subject} the plan's own words"
   },
   {
    "key": "screen.plan.tip.scenario",
@@ -36691,10 +36626,10 @@
   },
   {
    "key": "screen.plan.tip.scenario_why",
-   "en": "This scenario has no branch yet for a refusal or a stall.",
+   "en": "The check above is about this scenario: it has no branch for a refusal or a stall.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a scenario, its card; drawn only when the scenario has no such branch. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
+   "note": "DEC-276: a scenario, its card"
   },
   {
    "key": "screen.plan.tip.hostile",
@@ -36712,10 +36647,10 @@
   },
   {
    "key": "screen.plan.tip.hostile_why",
-   "en": "Scenario {scenario} says nothing yet about what follows one; a branch can be added to it.",
+   "en": "Scenario {scenario} says nothing about what follows one; a branch can be added before the reply is due on {date}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a hostile response, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
+   "note": "DEC-276: a hostile response, its card"
   },
   {
    "key": "screen.plan.tip.hypothetical",
@@ -36726,10 +36661,10 @@
   },
   {
    "key": "screen.plan.tip.hypothetical_why",
-   "en": "The options here rest on something not yet proven.",
+   "en": "The options here rest on something unproven; the inspection logs could show it or rule it out.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: a hypothetical matter, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
+   "note": "DEC-276: a hypothetical subject, its card"
   },
   {
    "key": "screen.plan.tip.enddate",
@@ -36761,14 +36696,21 @@
   },
   {
    "key": "screen.plan.tip.alternative_why",
-   "en": "The fallback if the first scenario is refused or stalls.",
+   "en": "The fallback if {office} refuses or stalls on {action}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-276: an alternative scenario, its card. Reworded by process/lanes/ux/words-new.md (U17): no sample facts"
+   "note": "DEC-276: an alternative scenario, its card"
   },
   {
    "key": "screen.plan.tip.checkpoint",
    "en": "judged by a member, with a reason, once the reply comes",
+   "protected": false,
+   "source": "DEC-259",
+   "note": "DEC-276: a checkpoint, its card"
+  },
+  {
+   "key": "screen.plan.tip.checkpoint_why",
+   "en": "Dates of inspection and repair are what would show whether a report was closed before the repair.",
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-276: a checkpoint, its card"
@@ -37766,27 +37708,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-286: when no project is invited or findable; {admins}: the handles of the team's active administrators, joined with commas and “and”"
-  },
-  {
-   "key": "screen.home.join.why",
-   "en": "Why you'd like to join (optional)",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
-  },
-  {
-   "key": "screen.home.join.declined",
-   "en": "Its owners declined your request on {date}.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
-  },
-  {
-   "key": "screen.home.join.declined.word",
-   "en": "Its owners declined your request on {date}: “{word}”",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / home C10 (lane)"
   },
   {
    "key": "projects.findable.head",
@@ -48819,13 +48740,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-330: B306 A51: People, state g: the preflight, before the record takes it"
-  },
-  {
-   "key": "screen.people.addother.submit",
-   "en": "Follow it",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / people S7 (and Differences) (mockup)"
   },
   {
    "key": "screen.person.cited",
@@ -60483,13 +60397,6 @@
    "note": "DEC-365 (B381 2): installer F2; the Workers Paid stop's button, beside screen.install.stopped.containers.done"
   },
   {
-   "key": "screen.install.stopped.again",
-   "en": "Start again",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: getting-started / install A11 (mockup)"
-  },
-  {
    "key": "installer.fleet.why.pullfailed",
    "en": "its software was placed in your account but couldn't be started from there",
    "protected": false,
@@ -63690,10 +63597,10 @@
   },
   {
    "key": "screen.matter.compliance_is_not_restored_why",
-   "en": "Compliance is not restored yet.",
+   "en": "Compliance is not restored: {why}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is what is missing, sample data"
   },
   {
    "key": "screen.matter.an_escalation_ends_only_after_your_team",
@@ -63718,10 +63625,10 @@
   },
   {
    "key": "screen.matter.whether_the_consequences_are_addressed_is_undetermined",
-   "en": "Whether the consequences are addressed is not settled yet.",
+   "en": "Whether the consequences are addressed is undetermined: {why}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is what is not settled"
   },
   {
    "key": "screen.matter.if_your_team_judges_the_breach_had",
@@ -63739,10 +63646,10 @@
   },
   {
    "key": "screen.matter.the_consequences_are_not_addressed_why",
-   "en": "The consequences are not addressed yet.",
+   "en": "The consequences are not addressed: {why}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: the matter screen: a refusal to end an escalation. Reworded by process/lanes/ux/words-new.md (U17): no {why} fill, which the screen cannot have"
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to end an escalation; {why} is the part not addressed"
   },
   {
    "key": "screen.matter.say_with_evidence_that_each_part_was",
@@ -64649,10 +64556,10 @@
   },
   {
    "key": "screen.matter.stage_3_is_not_proposed_yet_missing",
-   "en": "Starting the response clock is not proposed yet.",
+   "en": "Starting the response clock is not proposed yet: {missing}.",
    "protected": false,
    "source": "DEC-259",
-   "note": "DEC-374: the matter screen: a refusal to hold at a stage. Reworded by process/lanes/ux/words-new.md (U17): no {missing} fill, which the screen cannot have"
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal to hold at a stage; {missing} is what the next stage still needs"
   },
   {
    "key": "screen.matter.there_is_nothing_to_hold_at",
@@ -64690,11 +64597,11 @@
    "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
-   "key": "screen.matter.escalation.paused_since",
-   "en": "This escalation has been paused since {date}.",
+   "key": "screen.matter.this_escalation_has_been_suspended_since_october",
+   "en": "This escalation has been paused since October 14, 2026.",
    "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / matter S10 (U17) (lane: in place of the sample row screen.matter.this_escalation_has_been_suspended_since_october)"
+   "source": "DEC-259",
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
    "key": "screen.matter.resume_it_before_suspending_it_again",
@@ -64767,11 +64674,11 @@
    "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
-   "key": "screen.matter.escalation.stands_at",
-   "en": "This escalation stands at this stage: {stage}.",
+   "key": "screen.matter.this_escalation_stands_at_stage_2",
+   "en": "This escalation stands at the notification stage.",
    "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / matter S8 (U17); {stage} the stage's name, screen.matter.stage.1 to 7 (lane: in place of the sample row screen.matter.this_escalation_stands_at_stage_2)"
+   "source": "DEC-259",
+   "note": "DEC-374: B398 C41-C43 (conformance determine; consequences; escalation): a sentence on the matter screen in one of its mockup states. a refusal or an explanation where it is the plane's own, same meaning"
   },
   {
    "key": "screen.matter.no_stage_is_proposed_while_it_is",
@@ -65558,13 +65465,6 @@
    "note": "DEC-375: B398 C56 (monitoring monitoring): row on the address tab pointing to Watched addresses; before a link"
   },
   {
-   "key": "screen.capture.watching.link",
-   "en": "See watched addresses",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / capture A9 (mockup)"
-  },
-  {
    "key": "screen.capture.lead.line",
    "en": "Something you were only told, and want to look into?",
    "protected": false,
@@ -65670,20 +65570,6 @@
    "note": "DEC-375: B398 C17 (sources): sits on screen doorbell"
   },
   {
-   "key": "screen.doorbell.consent.audience.team",
-   "en": "The whole team",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
-  },
-  {
-   "key": "screen.doorbell.consent.audience.public",
-   "en": "Anyone",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
-  },
-  {
    "key": "screen.doorbell.consent.yes",
    "en": "I agree to this being published",
    "protected": false,
@@ -65738,13 +65624,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-375: B398 C17 (sources): sits on screen doorbell"
-  },
-  {
-   "key": "screen.doorbell.consent.secret",
-   "en": "Your secret phrase",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: outside-the-team / doorbell C8 (Differences) (mockup)"
   },
   {
    "key": "screen.about-knocker.intro1",
@@ -69611,32 +69490,11 @@
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Caption above the table; the lens named changes with the choice (one of the three radio choices, lower-cased start). Sample names and counts are placeholders."
   },
   {
-   "key": "screen.imported.lens_shown.as_published",
-   "en": "Shown here: as the source published it.",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_as_published)"
-  },
-  {
-   "key": "screen.imported.lens_shown.own",
-   "en": "Shown here: under your team's lens.",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_shown and screen.imported.lens_own)"
-  },
-  {
    "key": "screen.imported.lens_moved",
    "en": "Moved: {published} as published, {regraded} without the source's bias.",
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row of a finding that moved; both placeholders hold a pair of grades; the lens named follows the choice. Sample names and counts are placeholders."
-  },
-  {
-   "key": "screen.imported.lens_moved.own",
-   "en": "Moved: {published} as published, {regraded} under your team's lens.",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: the words of screen.imported.lens_moved and screen.imported.lens_own)"
   },
   {
    "key": "screen.imported.lens_bar_ours",
@@ -69651,20 +69509,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-378: B398 C49 (case-import, K4169): the imported-case page: Row; the placeholder is yes or no. Sample names and counts are placeholders."
-  },
-  {
-   "key": "screen.imported.lens_bar.yes",
-   "en": "yes",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
-  },
-  {
-   "key": "screen.imported.lens_bar.no",
-   "en": "no",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C5 (U15) (lane: DEC-378's row note, the placeholder is yes or no)"
   },
   {
    "key": "screen.imported.lens_because",
@@ -71382,13 +71226,6 @@
    "note": "DEC-384: B411 I-32"
   },
   {
-   "key": "screen.person.claim.fold",
-   "en": "Say another record is this person…",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / person C6 (mockup)"
-  },
-  {
    "key": "screen.person.kind.help.org",
    "en": "For an organization a fact can be its name, address or contact. Born, died and where someone lives or works apply to people only.",
    "protected": false,
@@ -72551,13 +72388,6 @@
    "note": "DEC-387: B423 2: leads (R44); the four .state.* are the result of the latest look, shown beside the lead in the list"
   },
   {
-   "key": "screen.leads.share.already2",
-   "en": "Nothing changed.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: outside-the-team / leads V10 (mockup)"
-  },
-  {
    "key": "screen.leads.state.unclear",
    "en": "We looked and could not tell",
    "protected": false,
@@ -72626,13 +72456,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-387: B423 3: watching (R46); .counts is a label: count form, safe for any number; .sweep.pages the budget in screen.watching.sweepdef.scope, .one when the count is 1"
-  },
-  {
-   "key": "screen.watching.list.none",
-   "en": "Your team watches no address yet. Capture a document from its address under Add, then choose how often to look.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: outside-the-team / watching S4 (lane)"
   },
   {
    "key": "screen.watching.counts",
@@ -79285,13 +79108,6 @@
    "note": "DEC-420: B488 aiconnect: s4 freebox"
   },
   {
-   "key": "screen.aiconnect.s4.accepted",
-   "en": "Accepted by {handle} on {date}.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aiconnect C9 (lane)"
-  },
-  {
    "key": "screen.aiconnect.p.head",
    "en": "Your own subscription",
    "protected": false,
@@ -79411,13 +79227,6 @@
    "note": "DEC-420: B488 aimine: now note"
   },
   {
-   "key": "screen.aimine.now.none",
-   "en": "No AI serves your work yet. Your team's administrators decide which accounts are on; where the team allows it, you can add one of your own.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aimine S3 (C2 empty) (lane)"
-  },
-  {
    "key": "screen.aimine.choose.head",
    "en": "Choose among what the team allows",
    "protected": false,
@@ -79507,20 +79316,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-420: B488 aimine: own fails"
-  },
-  {
-   "key": "screen.aimine.own.plan",
-   "en": "Which plan",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aimine C8 (lane)"
-  },
-  {
-   "key": "screen.aimine.own.notallowed",
-   "en": "Your team does not let members add their own accounts. Its administrators decide this on the AI providers page.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aimine S4 (lane)"
   },
   {
    "key": "screen.aimine.chk.head",
@@ -79712,13 +79507,6 @@
    "note": "DEC-420: B488 aiproject: use save"
   },
   {
-   "key": "screen.aiproject.use.none",
-   "en": "Your team allows no AI yet, so this project has none to choose from. An administrator can connect one on AI providers.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aiproject S3 (C2 empty) (lane)"
-  },
-  {
    "key": "screen.aiproject.bud.head",
    "en": "This project's limit",
    "protected": false,
@@ -79801,13 +79589,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-420: B488 aiproject: order down"
-  },
-  {
-   "key": "screen.aiproject.order.none",
-   "en": "No AI is in this project's order yet: it lists the AIs this project uses, once there are any.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / aiproject S3 (C4 empty) (lane)"
   },
   {
    "key": "screen.aimoments.mock",
@@ -83198,13 +82979,6 @@
    "note": "DEC-444: E-K7: filings R11 (who may read), R13 (the versions listed)"
   },
   {
-   "key": "screen.counsel.made.version",
-   "en": "Version {n}",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the page's own words)"
-  },
-  {
    "key": "screen.counsel.made.by",
    "en": "Assembled by {who}, {date}, for {counsel}, {organization}",
    "protected": false,
@@ -83219,13 +82993,6 @@
    "note": "DEC-444: E-K7: the made line when no organization is named"
   },
   {
-   "key": "screen.counsel.made.by.nocounsel",
-   "en": "Assembled by {who}, {date}, for the team's own review",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.by and filings.prepared_group_review, filings R10)"
-  },
-  {
    "key": "screen.counsel.made.changed",
    "en": "The record changed since version {n}: {what}",
    "protected": false,
@@ -83238,13 +83005,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-444: E-K7: the export record (counselPacketExport); one row per export"
-  },
-  {
-   "key": "screen.counsel.made.exported.nocounsel",
-   "en": "Saved as a file by {who}, {date}, for the team's own review.",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: the words of screen.counsel.made.exported and filings.prepared_group_review)"
   },
   {
    "key": "screen.counsel.section.matters",
@@ -83448,13 +83208,6 @@
    "protected": false,
    "source": "DEC-259",
    "note": "DEC-446: DS5: what the council-meeting checklist wizard does"
-  },
-  {
-   "key": "screen.action.ended.head",
-   "en": "How it ended",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / action C10 (U17) (mockup)"
   },
   {
    "key": "screen.action.ended.complied",
@@ -96711,13 +96464,6 @@
    "source": "DEC-260"
   },
   {
-   "key": "filings.finding_later_edition",
-   "en": "finding {finding} was published in a later edition, Edition {later}",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: filings R12)"
-  },
-  {
    "key": "filings.grade",
    "en": "the grade of {locator}",
    "protected": false,
@@ -96920,20 +96666,6 @@
    "en": "the determination {determination} was superseded{then}",
    "protected": false,
    "source": "DEC-260"
-  },
-  {
-   "key": "filings.determination_flagged",
-   "en": "the determination {determination} was flagged: what it rests on has changed",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; conformance R10)"
-  },
-  {
-   "key": "filings.standard_superseded",
-   "en": "the standard {standard} was superseded",
-   "protected": false,
-   "source": "UX lane 23 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: deciding-and-acting / counsel C8 (U16) (lane: beside filings.determination_superseded; filings R12)"
   },
   {
    "key": "filings.the_determination_the_action_rests",
@@ -122082,27 +121814,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.members.removed.line",
-   "en": "Administrator's powers removed on {date}.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: team-and-account / members C12 (lane)"
-  },
-  {
-   "key": "screen.members.removed.agreed",
-   "en": "{member} agreed: “{reason}”",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: team-and-account / members C12 (lane)"
-  },
-  {
-   "key": "screen.members.ties.head",
-   "en": "Their ties",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: team-and-account / members C13 (lane)"
-  },
-  {
    "key": "screen.security.name",
    "en": "Security",
    "protected": false,
@@ -122367,20 +122078,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.queue.lens.settle",
-   "en": "Settle it",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / queue A2 (mockup)"
-  },
-  {
-   "key": "screen.queue.tension.open",
-   "en": "Open both",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: daily-work / queue A4 (mockup)"
-  },
-  {
    "key": "screen.finder.name",
    "en": "Find",
    "protected": false,
@@ -122453,13 +122150,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.document.stands",
-   "en": "Where it stands",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: reading-a-document / document C2 (mockup)"
-  },
-  {
    "key": "screen.contradiction.name",
    "en": "Two documents in tension",
    "protected": false,
@@ -122496,34 +122186,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.project.objective.open",
-   "en": "Open the objective",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C6 (mockup)"
-  },
-  {
-   "key": "screen.project.suggested.head",
-   "en": "Suggested questions",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C15 (mockup)"
-  },
-  {
-   "key": "screen.project.suggested.open",
-   "en": "Open this question",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C15 (mockup)"
-  },
-  {
-   "key": "screen.project.about.label",
-   "en": "Who is this question about?",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / project C16 (lane (U3))"
-  },
-  {
    "key": "screen.objective.name",
    "en": "Objective",
    "protected": false,
@@ -122548,62 +122210,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.question.about.line",
-   "en": "About: {name}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
-  },
-  {
-   "key": "screen.question.about.change",
-   "en": "Change who it is about",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
-  },
-  {
-   "key": "screen.question.about.why",
-   "en": "Why you change it",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
-  },
-  {
-   "key": "screen.question.about.none",
-   "en": "This question does not name anyone it is about.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
-  },
-  {
-   "key": "screen.question.about.name",
-   "en": "Name who it is about",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C15 (lane (U3))"
-  },
-  {
-   "key": "screen.question.expertise.sent",
-   "en": "The request reached {count} members who declared this expertise.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
-  },
-  {
-   "key": "screen.question.expertise.sent.one",
-   "en": "The request reached 1 member who declared this expertise.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
-  },
-  {
-   "key": "screen.question.expertise.none",
-   "en": "Nobody was asked: no member who can see this question has declared this expertise.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / question C17 (lane)"
-  },
-  {
    "key": "screen.answers.name",
    "en": "Ask",
    "protected": false,
@@ -122614,20 +122220,6 @@
    "en": "Ask in plain words, with the assistant, or find and count without it. Answers come only from what your team holds, and show where they looked.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
-  },
-  {
-   "key": "screen.answers.often",
-   "en": "How often",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / answers C9 (lane)"
-  },
-  {
-   "key": "screen.answers.until",
-   "en": "Until when",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: projects-and-questions / answers C9 (lane)"
   },
   {
    "key": "screen.assistant.name",
@@ -122666,13 +122258,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.person.offices.head",
-   "en": "Offices in it",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / person S2 (mockup)"
-  },
-  {
    "key": "screen.timeline.name",
    "en": "Timeline",
    "protected": false,
@@ -122697,13 +122282,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.money.fiscal.unknown",
-   "en": "No fiscal-year view for {government}: the record does not hold its fiscal year yet. A member can state it, with how they checked.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / money C11 (lane (U4))"
-  },
-  {
    "key": "screen.calculation.name",
    "en": "Calculation",
    "protected": false,
@@ -122714,20 +122292,6 @@
    "en": "A calculation shown with its method and inputs, each tied to the record and recomputed when an input changes.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
-  },
-  {
-   "key": "screen.calculation.expertise.confirmed",
-   "en": "confirmed: {label}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / calculation C6 (lane (the words of `members`))"
-  },
-  {
-   "key": "screen.calculation.expertise.declared",
-   "en": "declared, not confirmed: {label}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / calculation C6 (lane (the words of `members`))"
   },
   {
    "key": "screen.help-records.name",
@@ -122764,13 +122328,6 @@
    "en": "Chains of connections between people, votes, contracts and payments, each step cited and graded. A chain is a lead until a member cites its documents.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
-  },
-  {
-   "key": "screen.explore.project",
-   "en": "For which project",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: the-record / explore C12 (lane (the words of `capture`))"
   },
   {
    "key": "screen.proceeding.name",
@@ -123001,34 +122558,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.published.changed",
-   "en": "What changed in this edition: “{what}”",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / published C13 (lane)"
-  },
-  {
-   "key": "screen.published.order",
-   "en": "Court order of {date}: {order}",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / published C13 (lane)"
-  },
-  {
-   "key": "screen.published.lane.world",
-   "en": "What they did",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / published C14 (lane (the timeline's lane words))"
-  },
-  {
-   "key": "screen.published.lane.ours",
-   "en": "What we did",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / published C14 (lane (the timeline's lane words))"
-  },
-  {
    "key": "screen.imported.name",
    "en": "Another team's case",
    "protected": false,
@@ -123041,20 +122570,6 @@
    "source": "mock-refs.js SCREEN_HELP"
   },
   {
-   "key": "screen.imported.watching",
-   "en": "Watching {address} for changes to this case.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C9 (lane)"
-  },
-  {
-   "key": "screen.imported.sigfailed",
-   "en": "When this case was imported, its signature did not check against what {team} published.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / imported C10 (lane)"
-  },
-  {
    "key": "screen.docket.name",
    "en": "Docket",
    "protected": false,
@@ -123065,41 +122580,6 @@
    "en": "The public record of every edition, correction and withdrawal of your team's cases.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
-  },
-  {
-   "key": "screen.docket.order.label",
-   "en": "What the court orders",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (lane)"
-  },
-  {
-   "key": "screen.docket.order.remove",
-   "en": "Remove",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
-  },
-  {
-   "key": "screen.docket.order.redact",
-   "en": "Redact",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
-  },
-  {
-   "key": "screen.docket.order.seal",
-   "en": "Seal",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
-  },
-  {
-   "key": "screen.docket.order.unseal",
-   "en": "Unseal",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: publishing / docket C8 (mockup (journeys))"
   },
   {
    "key": "screen.docket-public.name",
@@ -123262,13 +122742,6 @@
    "en": "What other teams' tests found for each AI: the parts it passed, its limits, its speed and cost, and the grade.",
    "protected": false,
    "source": "mock-refs.js SCREEN_HELP"
-  },
-  {
-   "key": "screen.airesults.none",
-   "en": "No other team has sent results yet. A team's results appear here once it tests an AI and chooses to send them.",
-   "protected": false,
-   "source": "UX lane 22 Nov 2026",
-   "note": "process/lanes/ux/words-new.md: ai / airesults, its one state (C3 empty) (lane)"
   },
   {
    "key": "act.bootstrap.label.install",
@@ -132527,146 +132000,6 @@
    "en": "If no reply comes, the next step is ready without anyone remembering.",
    "protected": false,
    "source": "library.json"
-  },
-  {
-   "key": "ai-accounts.index.the_request_names_no_owner",
-   "en": "the request names no owner: the account is the team's, project:<id> or member:<id>. Nothing was written.",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence ai-accounts writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "capture.index.parted_unavailable",
-   "en": "your team's Civicsmith cannot take a file in parts (its evidence bucket offers no multipart upload, or its key is not known), so nothing was written",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "capture.index.upload_lost",
-   "en": "your team's Civicsmith lost the digest of the parts so far, so the upload was aborted and holds nothing; begin it again",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "capture.index.upload_unknown",
-   "en": "your team's Civicsmith holds no upload in parts under that name for you; begin it again",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence capture writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "file-safety.declared.deepercheck",
-   "en": "file-directed: keyed by a capture's digest; asks the team's outside tools about this file; records no one",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "file-safety.declared.scanmirror",
-   "en": "setting: the team's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "file-safety.declared.securitytooladd",
-   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "file-safety.declared.securitytoolremove",
-   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "file-safety.declared.securitytooltest",
-   "en": "setting: the team's security tools, an administrator's act; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence file-safety writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.declaredstakeset",
-   "en": "setting: the team's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.groupdomainset",
-   "en": "the team's claimed domain — the subject is the instance's identity, not a bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.grouplanguagesset",
-   "en": "setting: the languages the team works in; an administrator's act, a later one replacing it; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.grouplogoset",
-   "en": "setting: the team's logo, PNG or JPEG, or none; an administrator's act, a later one replacing it; moves no bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.groupnameset",
-   "en": "the team's public display name — the subject is the instance's identity, not a bundle",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "instance-setup.declared.placewanted",
-   "en": "the instance's configuration: the place the team wants its profile for; an administrator's",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence instance-setup writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "member-roster.declared.courtnoticeset",
-   "en": "the team's setting: whether members are told what a court can reach; an administrator's, not an act on an object",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence member-roster writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "member-roster.declared.groupdescriptionset",
-   "en": "the team's description of itself — the subject is the team's identity, not a bundle; an administrator's",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence member-roster writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "store-assembly.declared.readtranslate",
-   "en": "draft: a machine translation of one passage of the team's own writing (a note, question, finding or notice) into the member's language, labeled machine work, the original one tap away; held nowhere and writes nothing (store-assembly R53)",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence store-assembly writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "translations.declared.interfacewords",
-   "en": "read: every interface word in a language, the team's shown translation or the English, never blank, with the English beside it; writes nothing",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence translations writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
-  },
-  {
-   "key": "bias.index.overrides_by_effect",
-   "en": "each entry is a project statement whose effect loosens a team statement on the same subject: it relaxes the scrutiny that statement raises, or licenses the inference it blocks. It is an override whatever it calls itself, and it must name the statement it loosens; a loosening of a LOCKED team statement is a conformance error; either way the team statement stands (safeguard 1). Effect is judged mechanically only for scrutiny and inference statements, and the team's review finishes the job",
-   "protected": false,
-   "source": "DEC-259",
-   "note": "DEC-281 (K3472): the sentence bias writes first in code, worded for members (team, never group); journey-check R17, flaw from journey-check #1 (PR 1282)"
   }
  ]
 }

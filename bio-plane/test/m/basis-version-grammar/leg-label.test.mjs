@@ -15,11 +15,9 @@ const place = (n, name) => localize("basis-version-grammar.grammar.leg_of_versio
 const withCode = (code, legs, over = {}) => findingsOf(fm({ legs, ...over })).filter((y) => y.code === code);
 
 test("R13: a lead leg names its place in plain words, never basis_version_legs (C-54.1, through leadLegFindings)", () => {
-  /* the sentence is inquiry-grammar's (leadLegFindings), which sets the place inside its own words: this module answers
-     only for the place it hands over, so the test asks that the sentence holds it, not where */
   const found = withCode("LEAD_NOT_EVIDENCE", [{ version: "first", target: "LEAD-2026-0001-x", role: "supports", ground: "main" }]);
   assert.equal(found.length, 1, "control: the lead refusal is still raised");
-  assert.ok(found[0].message.includes(place(1, "first")), found[0].message);
+  assert.ok(found[0].message.startsWith(place(1, "first")), found[0].message);
   assert.doesNotMatch(found[0].message, /basis_version_legs/);
 });
 

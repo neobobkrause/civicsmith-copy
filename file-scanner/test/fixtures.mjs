@@ -7,11 +7,7 @@ import { vendorNet, specs } from './vendors.mjs';
 /** The real reputation provider's refresh answer `{ok:false, list_version, fetched_at, error}` for a Web Risk list that
  *  fails: `failure` is `'checksum'` (the list's checksum does not hold: `LIST_CHECKSUM_MISMATCH:<threat>`) or
  *  `'unreadable'` (the list cannot be read: `LIST_UNREADABLE`). After one good refresh, so `list_version` and
- *  `fetched_at` are those of the last good list; `prior: false` refreshes with no good list before it (both null).
- * @param {string} failure `checksum` or `unreadable`
- * @param {{prior?: boolean}} [options]
- * @returns {Promise<*>}
- * @throws {Error} when `failure` names neither */
+ *  `fetched_at` are those of the last good list; `prior: false` refreshes with no good list before it (both null). */
 export async function reputationRefresh(failure, { prior = true } = {}) {
   const state = {};
   const net = vendorNet(state);

@@ -93,8 +93,6 @@ function renderAbout(cs, view) {
       + cs.choice("ab-caud", "screen.about-knocker.audience.label", [["member", "screen.about-knocker.audience.member"], ["group", "screen.about-knocker.audience.group"], ["public", "screen.about-knocker.audience.public"]], { value: "group" })
       + cs.field("ab-cev", "screen.about-knocker.consent.evidence", { area: true, rec: true, value: U.cevidence || "" })
       + `<div class="mk-acts">${cs.act("sourceconsent", { tone: "primary" })}${cs.act("sourceconsentwithdraw")}</div>`
-      /* sources R7: what a consent and its withdrawal bind */
-      + `<p class="mk-note">${cs.w("sources.consent_permanent_anything")} ${cs.w("sources.withdrawal_binds_later")}</p>`
       + "</div>");
     /* say who this is: a claim, with its evidence, that the source is a person the team follows */
     const persons = people.filter((p) => p && p.entity).map((p) => ({ value: p.entity, text: plain(String(p.name || p.entity) + (p.today ? ", " + p.today : "")) }));
@@ -120,15 +118,13 @@ function sourceIdOf(view) { const d = view.data && view.data.src; return d && d.
  * maker and date, a hostile claim this one confirms, and the evidence (the shell's reason field, `reasonField`). */
 function sendDisclose(view, el, cs) {
   const source = view.parts.sourceIdOf(view);
-  /* R43: an empty required field is refused beforehand in the design's words: the evidence by `refusal.NO_EVIDENCE` (the words sources answers),
-     any other by `shell.field.needed` naming it (every-screen section 7) */
-  const need = (id, key) => !String(cs.value(id) || "").trim() && { refuse: "shell.field.needed", fills: { field: { html: cs.w(key) } } };
+  const need = (id, key) => !String(cs.value(id) || "").trim() && { refuse: "capture.fieldneeded", fills: { field: { html: cs.w(key) } } };
   const kind = cs.value("ab-kind") === "name" ? "name" : "attribute";
   const how = ["self", "filing", "third_party", "hostile"].find((h) => h === cs.value("ab-how")) || "self";
   const known = ["member", "group", "public"].find((h) => h === cs.value("ab-known")) || "group";
   const store = cs.value("ab-store-0") === true;
   const sight = cs.value("ab-sight");
-  const miss = (store && need("ab-value", "screen.about-knocker.value.label")) || (how === "hostile" && need("ab-by", "screen.about-knocker.claimedby.label")) || (!String(cs.value("ab-evidence") || "").trim() && { refuse: "refusal.NO_EVIDENCE" });
+  const miss = (store && need("ab-value", "screen.about-knocker.value.label")) || (how === "hostile" && need("ab-by", "screen.about-knocker.claimedby.label")) || need("ab-evidence", "screen.about-knocker.evidence.label");
   if (miss) return miss;
   const revealed = kind === "attribute" ? { kind, attribute: ["occupation", "employer", "role"].find((a) => a === cs.value("ab-attr")) || "occupation" } : { kind };
   if (store) revealed.value = String(cs.value("ab-value")).trim();
@@ -148,7 +144,7 @@ function consentBody(view, cs) {
   return { source: view.parts.sourceIdOf(view), entry, audience };
 }
 function sendConsent(view, el, cs) {
-  if (!String(cs.value("ab-cev") || "").trim()) return { refuse: "refusal.NO_EVIDENCE" };
+  if (!String(cs.value("ab-cev") || "").trim()) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.about-knocker.consent.evidence") } } };
   return { body: { ...view.parts.consentBody(view, cs), evidence: String(cs.value("ab-cev")).trim() } };
 }
 function doneConsent(view, answer, cs) { cs.set("later", {}); }
@@ -159,7 +155,7 @@ function doneWithdraw(view, answer, cs) { cs.set("later", {}); }
  * `NOT_A_PERSON` for an organization, in the design's words. */
 function sendPersonLink(view, el, cs) {
   const person = String(cs.value("ab-person") || "");
-  if (!String(cs.value("ab-pev") || "").trim()) return { refuse: "refusal.NO_EVIDENCE" };
+  if (!String(cs.value("ab-pev") || "").trim()) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.about-knocker.evidence.label") } } };
   const sight = cs.value("ab-psight");
   return { body: { source: view.parts.sourceIdOf(view), person, evidence: String(cs.value("ab-pev")).trim(), sight: Array.isArray(sight) ? sight : [] } };
 }

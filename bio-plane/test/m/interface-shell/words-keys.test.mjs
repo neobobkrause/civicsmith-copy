@@ -27,7 +27,7 @@ test("R70 each key the module reads is a word of setup-words (hasWord); control:
 });
 
 test("R70 the module holds no English of its own: it exports no word rows, and the words its page carries are setup-words' rows, word for word", () => {
-  assert.equal("SHELL_WORDS" in shellModule, false);
+  assert.equal(shellModule.SHELL_WORDS, undefined);
   const rows = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
   const page = new Map(wordsOf([]));
   assert.equal(page.size, rows.size);

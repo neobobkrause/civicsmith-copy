@@ -28,31 +28,12 @@ import { CASE_FILE_FORMAT, CASE_FILE_FORMATS_ACCEPTED, CASE_FILE_MANIFEST_PATH, 
 import * as grammar from "../case-grammar/index.mjs";
 import { CONTAINER_MAX_BYTES } from "../container.mjs";
 
-/**
- * R44 (G121): the most R2 calls of one kind in flight at once: the case file's reads of materials, and the writes of its files.
- * @type {number}
- * @bound 8 calls
- */
+/** R44 (G121): the most R2 calls of one kind in flight at once: the case file's reads of materials, and the writes of its files. */
 export const CASEFILE_GROUP = 8;
 
-/**
- * One call's settled result in `inWindow`'s answer, as `Promise.allSettled` spells it; a place whose call never started is
- * left empty.
- * @typedef {Object} WindowSettled
- * @property {string} status "fulfilled" or "rejected"
- * @property {any} [value] the call's answer, when fulfilled
- * @property {any} [reason] what the call threw, when rejected
- */
-/**
- * R44 (G121b): a window of `CASEFILE_GROUP` calls that slides, so the next call starts the moment one ends and no call waits for a
- * group's slowest. Runs `fn(item)` over `items`, at most `width` at a time, in order of start; answers the settled results in the
- * items' order (`{status, value | reason}`), never throws, and starts no further call once one has failed (those in flight finish).
- * @param {any[]} items
- * @param {(item: any, index: number) => any} fn called with each item and its index
- * @param {number} [width] absent is `CASEFILE_GROUP`
- * @returns {Promise<WindowSettled[]>}
- * @bound width: at most `width` calls in flight at once
- */
+/** R44 (G121b): a window of `CASEFILE_GROUP` calls that slides, so the next call starts the moment one ends and no call waits for a
+ *  group's slowest. Runs `fn(item)` over `items`, at most `width` at a time, in order of start; answers the settled results in the
+ *  items' order (`{status, value | reason}`), never throws, and starts no further call once one has failed (those in flight finish). */
 export async function inWindow(items, fn, width = CASEFILE_GROUP) {
   const out = new Array(items.length);
   let next = 0, failed = false;
@@ -66,23 +47,13 @@ export async function inWindow(items, fn, width = CASEFILE_GROUP) {
   return out;
 }
 
-/**
- * R44 (G121b): an object this small is written without asking after it first (its key is its hash, so the same bytes again change
- * nothing); a larger one is asked after, so a big file already held is not sent again. Proposed; BOB records.
- * @type {number}
- * @bound 256 KiB (262,144 bytes)
- */
+/** R44 (G121b): an object this small is written without asking after it first (its key is its hash, so the same bytes again change
+ *  nothing); a larger one is asked after, so a big file already held is not sent again. Proposed; BOB records. */
 export const CASEFILE_BLIND_PUT_MAX = 256 * 1024;
 
 const enc = new TextEncoder();
 const utf8 = (s) => enc.encode(String(s));
 
-/**
- * R23, R44: the SHA-256 of `bytes`, as 64 lowercase hex characters: the hash a case file's files, and the store's objects, are
- * named and checked by.
- * @param {Uint8Array|ArrayBuffer} bytes
- * @returns {Promise<string>}
- */
 export async function sha256Hex(bytes) {
   const d = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -90,12 +61,8 @@ export async function sha256Hex(bytes) {
 const b64 = (bytes) => { let s = ""; for (const x of bytes) s += String.fromCharCode(x); return btoa(s); };
 const unb64 = (s) => { try { return Uint8Array.from(atob(String(s)), (ch) => ch.charCodeAt(0)); } catch { return null; } };
 
-/**
- * R23: a signing key's fingerprint as `ssh-keygen -l` prints it: `SHA256:` and the unpadded base64 of the SHA-256 of the key's
- * wire bytes; null for a key that is not base64.
- * @param {any} keyB64 the key's base64
- * @returns {Promise<string|null>}
- */
+/** A signing key's fingerprint as `ssh-keygen -l` prints it: `SHA256:` and the unpadded base64 of the SHA-256 of the key's
+ *  wire bytes; null for a key that is not base64. */
 export async function keyFingerprint(keyB64) {
   const raw = unb64(keyB64);
   if (!raw || !raw.length) return null;
@@ -103,28 +70,16 @@ export async function keyFingerprint(keyB64) {
   return `SHA256:${b64(d).replace(/=+$/, "")}`;
 }
 
-/**
- * R23 (T37; T39, N806): why a material is named unheld: its bytes are those of a material this edition carries as its
- * copy (a photo, or a member document).
- * @type {string}
- */
+/* R23 (T37; T39, N806): why a material is named unheld: its bytes are those of a material this edition carries as its
+   copy (a photo, or a member document). */
 export const ORIGINAL_NOT_CARRIED = word("public-read.bytes_material_case");
-/**
- * R23, R32 (T37): why an archive is named unheld: it holds an original this edition carries only as its copy.
- * @type {string}
- */
 export const ARCHIVE_HOLDS_ORIGINAL = word("public-read.archive_holds_material");
 
 /* R6: the assembly's one statement that it built nothing, naming what it could not read. */
 const notAssembled = (cause, what) => ({ ok: false, reason: "CASE_FILE_NOT_ASSEMBLED", cause, ...what,
   detail: localize("public-read.casefile.the_case_edition_is_published", "the case edition is published and its findings answer by hash; its case file was not built, because it would have left out something it must carry. Nothing was recorded for it.") });
 
-/**
- * R23 (K1315): a signing key on one line, as an SSH public key is written: its type (the wire blob's first string) and its
- * base64; the base64 alone when no type can be read, and the key as text when it is not base64.
- * @param {any} keyB64 the key's base64
- * @returns {string}
- */
+/** A signing key on one line, as an SSH public key is written: its type (the wire blob's first string) and its base64. */
 export function keyLine(keyB64) {
   const raw = unb64(keyB64);
   if (!raw || raw.length < 4) return String(keyB64 ?? "");
@@ -136,44 +91,7 @@ export function keyLine(keyB64) {
 /* What `serialiseContainer` counts for one entry: its payload and both headers' copies of its name. */
 const entryCost = (name, bytes) => bytes + utf8(name).length * 2 + 76;
 
-/**
- * One file of a built case file, with the part it was packed into.
- * @typedef {Object} CaseFileFile
- * @property {any} path its path, `case-grammar`'s `caseFilePath`
- * @property {string} kind its kind, a `caseFilePath` kind
- * @property {string} sha256 the SHA-256 of `content`, lowercase hex
- * @property {number} bytes the length of `content`
- * @property {any} content its bytes
- * @property {number} part the part it sits in, from 1
- */
-/**
- * What the case file could not carry: one material, copy, archive, attestation token or calculation input.
- * @typedef {Object} CaseFileUnheld
- * @property {any} ref the material's ref, or the calculation's id
- * @property {any} sha the digest it was wanted at, or null
- * @property {any} what what it is: "bytes", "text", "extracted_text", an archive's kind, "obscured", "attestation" or "calculation_input"
- * @property {string} [why] `ORIGINAL_NOT_CARRIED` or `ARCHIVE_HOLDS_ORIGINAL`
- * @property {boolean} [unspellable] the row's capture is not a sha, so no path spells it
- * @property {boolean} [unregistered] an archive the commit did not register
- */
-/**
- * What `buildCaseFile` answers: a built case file (`ok` true: `manifest`, `unheld`, `files`; R23, R24, R5), or R6's
- * statement that none was built (`ok` false: `reason` "CASE_FILE_NOT_ASSEMBLED", `cause`, `detail`, and what could not be
- * read), never a refusal. One kind, each field present only on its side.
- * @typedef {Object} CaseFileAnswer
- * @property {boolean} ok
- * @property {any} [manifest] built: format, group, case, edition, the case document's digest, keys, parts and files
- * @property {any} [unheld] built: a `CaseFileUnheld[]`
- * @property {any} [files] built: a `CaseFileFile[]`, in path order
- * @property {any} [reason] not built: "CASE_FILE_NOT_ASSEMBLED"
- * @property {any} [cause] not built: what could not be read, in plain words
- * @property {any} [detail] not built: the sentence for the reader
- * @property {any} [sha256] not built: the digest that did not answer
- * @property {any} [finding] not built: the finding whose published bytes did not answer
- * @property {any} [kinds] not built: the kinds of the files no path could spell
- */
-/**
- * R23, R24, R6: the case file for one case edition, from `facts` (`PublicRead.caseFileFacts`, the published projection)
+/** R23, R24, R6: the case file for one case edition, from `facts` (`PublicRead.caseFileFacts`, the published projection)
  *  and `read(sha)` (the published bucket's bytes by hash, or null). `group` is the publishing group's slug. Answers
  *  `{ok: true, manifest, files: [{path, kind, sha256, bytes, part, content}], unheld}`, `unheld` naming each included
  *  material the projection holds no bytes for at its stated digest (the checker then shows it missing, K1316), and each
@@ -181,13 +99,7 @@ const entryCost = (name, bytes) => bytes + utf8(name).length * 2 + 76;
  *  `CASE_FILE_NOT_ASSEMBLED` naming what it could not read, where a part a finding published cannot be read at its hash
  *  or the signed document's bytes do not hash to its digest: a case file that would leave out what it must carry is
  *  never built. It is a statement inside an act that has committed, never a refusal (R6). `maxBytes` is the part bound
- *  (R5). R44: the objects it reads are read first, `CASEFILE_GROUP` at a time.
- * @param {{facts: any, group?: string|null, read: (sha: string) => any, maxBytes?: number}} args `read` answers the bytes or null,
- *   and may throw; what it throws is thrown where the assembly asks for that hash
- * @returns {Promise<CaseFileAnswer>}
- * @throws {*} what `read` threw, thrown where the assembly asks for that hash
- * @bound maxBytes: absent is `CONTAINER_MAX_BYTES` (64 MiB); a file larger than it sits alone in its part
- */
+ *  (R5). */
 export async function buildCaseFile({ facts, group = null, read: readStore, maxBytes = CONTAINER_MAX_BYTES }) {
   const files = [];
   /* G50 (B): one file at one path is listed once (a shared archive two captures reach, the same copy two rows name); a
@@ -378,29 +290,12 @@ export async function buildCaseFile({ facts, group = null, read: readStore, maxB
   return { ok: true, manifest: manifestOf(assign, count), unheld, files: files.map((f, j) => ({ ...f, part: assign[j] })) };
 }
 
-/**
- * R23: whether `manifest` states a case file format `case-grammar` accepts (`CASE_FILE_FORMATS_ACCEPTED`).
- * @param {any} manifest
- * @returns {boolean}
- */
 export const isCaseFileManifest = (manifest) => !!(manifest && CASE_FILE_FORMATS_ACCEPTED.includes(manifest.format));
 
-/**
- * One part of a case file as `../container.mjs`' `containerEntries` reads it.
- * @typedef {Object} CaseFilePartLayout
- * @property {any} case the manifest's case
- * @property {{root: string, manifest_at: string, parts_at: string}} layout
- * @property {{path: any, sha256: any}[]} parts the part's files in manifest order
- */
-/**
- * R5, R6: one part of a case file in the shape `../container.mjs`' `containerEntries` reads (its `parts[]` and
+/** R5, R6: one part of a case file in the shape `../container.mjs`' `containerEntries` reads (its `parts[]` and
  *  `layout`), so the part is assembled, and a missing file refused `PART_MISSING` (C-98.5), at that one governed site:
  *  the part's files in manifest order, each at its path under the part's root, the manifest at that root. `index` is the part asked for, a
- *  whole number the manifest lists; any other answers null.
- * @param {any} manifest
- * @param {number} index
- * @returns {CaseFilePartLayout|null}
- */
+ *  whole number the manifest lists; any other answers null. */
 export function caseFilePartLayout(manifest, index) {
   const parts = Array.isArray(manifest.parts) ? manifest.parts.map((p) => Number(p.index)) : [];
   if (!parts.includes(index)) return null;
@@ -411,62 +306,22 @@ export function caseFilePartLayout(manifest, index) {
              .map((f) => ({ path: f.path, sha256: f.sha256 })) };
 }
 
-/**
- * R5: the parts a case file's manifest lists, by index.
- * @param {any} manifest
- * @returns {number[]}
- */
+/** R5: the parts a case file's manifest lists, by index. */
 export const caseFileParts = (manifest) => (Array.isArray(manifest.parts) ? manifest.parts.map((p) => Number(p.index)) : []);
 
 /* G54 (K4426, K4565, K4566, K4571): THE CASE FILE'S STATE AS THE PUBLIC READ STATES IT. The closed set of codes a failed attempt
    is stated by, the one mapping from what `publication` stored to the state and code `publishedcase` answers, and nothing
    else of the attempt: no sentence, no `step`, no `error`, no `detail` (the op is public; those stay in the row and the log).
    The reader's sentences, by state and code, are `screens-publish`'s. */
-/**
- * G54 (K4426): the closed set of codes a failed attempt to build a case file is stated by.
- * @type {ReadonlyArray<string>}
- */
 export const CASEFILE_CODES = Object.freeze(["NO_BUCKET", "STORE_SILENT", "MATERIAL_MISSING", "FINDING_MISSING", "BUCKET_FAILED",
   "NOT_RECORDED", "INTERRUPTED", "TOO_LARGE", "UNKNOWN"]);
-/**
- * G54 (K4426): the closed set of states `publishedcase` answers for a case file.
- * @type {ReadonlyArray<string>}
- */
 export const CASEFILE_PUBLIC_STATES = Object.freeze(["built", "being_prepared", "retrying", "stopped", "waiting_on_members"]);
-/**
- * G54: a `building` older than this is an attempt that was interrupted (`publication`'s `CASEFILE_BUILDING_WAIT_MS`).
- * @type {number}
- * @bound 120,000 ms (two minutes)
- */
+/** A `building` older than this is an attempt that was interrupted (`publication`'s `CASEFILE_BUILDING_WAIT_MS`). */
 export const CASEFILE_BUILDING_STALE_MS = 120000;
 const codeOf = (why) => (why && CASEFILE_CODES.includes(why.code) ? why.code : "UNKNOWN");
-/**
- * One case edition's case file ledger as `publication` stores it.
- * @typedef {Object} CaseFileLedger
- * @property {any} complete whether the edition is complete; not complete is `waiting_on_members`
- * @property {string|null} [manifest_sha] the manifest it records
- * @property {string|null} [state] `casefile_state`
- * @property {any} [attempts] `casefile_attempts`
- * @property {string|null} [attempted_at] `casefile_attempted_at`
- * @property {any} [why] `casefile_why`, as JSON text, an object or null
- */
-/**
- * The case file's state as the public read states it (G54).
- * @typedef {Object} CaseFileState
- * @property {string} state one of `CASEFILE_PUBLIC_STATES`
- * @property {string|null} code one of `CASEFILE_CODES`, or null
- * @property {string|null} attempted_at
- * @property {number} attempts
- */
-/**
- * G54 (K4426, K4565, K4566, K4571): `{state, code, attempted_at, attempts}` for one case edition: `complete`, the `manifest_sha` it records, and the ledger as
- * `publication` stores it (`casefile_state`, `casefile_attempts`, `casefile_attempted_at`, `casefile_why` as JSON text or
- * null); `now` in milliseconds. An edition with a manifest and no ledger state (every edition before G54) is `built`.
- * Never throws: a `why` that does not parse is `UNKNOWN`.
- * @param {CaseFileLedger} ledger
- * @param {number} [now] absent is `Date.now()`
- * @returns {CaseFileState}
- */
+/** `{state, code, attempted_at, attempts}` for one case edition: `complete`, the `manifest_sha` it records, and the ledger as
+ *  `publication` stores it (`casefile_state`, `casefile_attempts`, `casefile_attempted_at`, `casefile_why` as JSON text or
+ *  null); `now` in milliseconds. An edition with a manifest and no ledger state (every edition before G54) is `built`. */
 export function caseFileStateOf({ complete, manifest_sha = null, state = null, attempts = null, attempted_at = null, why = null }, now = Date.now()) {
   let parsed = null;
   try { parsed = typeof why === "string" && why ? JSON.parse(why) : why && typeof why === "object" ? why : null; } catch { parsed = null; }

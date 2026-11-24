@@ -10,7 +10,7 @@ import { inWorld, openAs, settled, readHeld, declareStandard } from "./world.mjs
 import { main, button, fill, ENT, CALC, PROC, STD, word, drew, notDrew } from "./fixtures.mjs";
 
 const page = readFileSync(new URL("../../../../docs/development/ux-substrate/screens/page.src.html", import.meta.url), "utf8");
-const css = page.split("<style>")[1].split("</style>")[0] + readFileSync(new URL("../../../../docs/development/ux-substrate/visual-language/civicsmith.css", import.meta.url), "utf8");
+const css = page.split("<style>")[1].split("</style>")[0] + readFileSync(new URL("../../../../docs/development/ux-substrate/visual-language/civicsmith.css", import.meta.url), "utf8") + (shell.STYLE || "");
 const DEFINED = new Set([...css.matchAll(/\.([a-zA-Z_][\w-]*)/g)].map((m) => m[1]));
 /* the classes the shell's own kit draws are the shell's to define (interface-shell R56's HOOK_CLASSES and STYLE) */
 for (const f of ["browser.mjs", "index.mjs"]) for (const m of readFileSync(new URL("../../../src/interface-shell/" + f, import.meta.url), "utf8").matchAll(/class=\\?["']([^"'$\\]*)/g)) for (const c of m[1].split(/\s+/).filter(Boolean)) DEFINED.add(c);
@@ -154,7 +154,7 @@ test("R23 no field asks for a record id: ties offers named people from the direc
   assert.deepEqual(who.querySelectorAll("option").map((o) => o.textContent), directory.map((r) => r.name || r.entity), "the people the directory names");
   assert.deepEqual(who.querySelectorAll("option").map((o) => o.getAttribute("value")), directory.map((r) => r.entity));
   assert.ok(["L. Chen", "Public Works Department"].every((n) => who.querySelectorAll("option").some((o) => o.textContent === n)), "by their names");
-  fill(p, { "tie-kind": "relative", "tie-who": works, "tie-note": "my cousin works there", "tie-says": "group" });
+  fill(p, { "tie-who": works, "tie-note": "my cousin works there" });
   await p.click(button(p, "declaretie"));
   await settled(p);
   assert.equal(p.byOp("declaretie")[0].body.entity, works);

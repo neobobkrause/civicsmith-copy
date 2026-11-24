@@ -7,9 +7,6 @@ import { feedWithItem, countWithItem } from "../queue/fixtures.mjs";
 import { signout } from "../credentials/fixtures.mjs";
 import { ok } from "./harness.mjs";
 
-/**
- * @returns {Promise<{groupidentity: Object<string, *>, interfacewords: Object<string, *>, queue: function(Object<string, *>): Object<string, *>, signout: Object<string, *>}>} the frame's four answers, as a test's plane takes them
- */
 export async function frameAnswers() {
   const words = await interfaceWordsAnswer();
   const ended = await signout();

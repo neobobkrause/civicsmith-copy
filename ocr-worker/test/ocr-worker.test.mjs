@@ -7,7 +7,7 @@
  *   a stand-in renderer or engine. It reaches every refusal R7 orders — including the two the real renderer never
  *   produces (a container other than PNG, a PNG its reader refuses) — and proves what the member touches (R15,
  *   R16, R21) rather than what its source says.
- *   Part B boots the bundle, built fresh from the source (R32), from its three upload parts under workerd (miniflare) with the real engine
+ *   Part B boots the COMMITTED BUNDLE from its three upload parts under workerd (miniflare) with the real engine
  *   and the real renderer, over a real scanned page, and over broken installs (a wrong model, a wasm core that did
  *   not arrive compiled).
  *
@@ -43,7 +43,7 @@ import { renderPictureToPixels as realRenderPicture } from "../../pdf-worker/src
 import { renderPictureToPixels } from "../../pdf-worker/src/picturepixels.mjs";
 import { checkAnchor, checkConfidence } from "../../bio-plane/src/textchain.mjs";
 import { BASIS_GRADES } from "../../bio-plane/src/record-grammar/index.mjs";
-import { discoverMembers, buildMember, manifestFrom } from "../../bio-plane/scripts/fleet-bundle.mjs";
+import { discoverMembers, verifyStatic } from "../../bio-plane/scripts/fleet-bundle.mjs";
 
 const hex = (b) => createHash("sha256").update(b).digest("hex");
 const F = (p) => new Uint8Array(readFileSync(fileURLToPath(new URL(p, import.meta.url))));
@@ -60,9 +60,10 @@ const t = (label, got, want) => {
   ok ? pass++ : fail++;
 };
 const keys = (o) => Object.keys(o || {}).sort();
-/* Part B boots the bundle built from the source (R32). Where it is compared with Part A's answer over the source, the
-   image's `turned_deg` is set aside, as it was while Part B booted an older committed bundle; the turn itself is tested
-   over the source in Part A (R26). */
+/* Part B boots the COMMITTED bundle, which BOB rebuilds once after batch B (fix round 9): until then it is the bundle of
+   the round's start, and after it the source's. What the rebuild adds to an answer (a PDF page's `legibility`, the
+   image's `turned_deg`) is set aside where the committed answer is compared, so the arm reads the same either side of it;
+   the new behaviour is tested over the source in Part A. */
 const settled = (o) => { if (!o || typeof o !== "object") return o; const { turned_deg, ...rest } = o; return rest; };
 
 /* Every wire answer this suite sees, for R20. */
@@ -1356,7 +1357,7 @@ console.log("\n--- A24 · R27 SEAM: the member over the REAL renderers asked a s
 }
 
 /* ============================================================================================================ *
- * Part B — the bundle built fresh from the source (R32) under workerd, the real engine, the real renderer
+ * Part B — the COMMITTED BUNDLE under workerd, the real engine, the real renderer
  * ============================================================================================================ */
 globalThis.fetch = realFetch;
 
@@ -1402,10 +1403,10 @@ const call = (body, worker = "ocr-worker") => workerCall(worker, "/transcribe", 
   method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const ask = (name, pages = [0], worker) => call({ capture_sha: shaOf.get(name), store: STORE, pages }, worker);
 
-console.log("\n--- B1 · R11, R12, R13, R19: the bundle built from the source boots, and the engine is really in it ---");
+console.log("\n--- B1 · R11, R12, R13, R19: the committed bundle boots, and the engine is really in it ---");
 {
   const v = await workerCall("ocr-worker", "/version");
-  t("R11 R12 R13 GET /version, from the bundle built from the source", [v.status, v.body],
+  t("R11 R12 R13 GET /version, from the committed bundle", [v.status, v.body],
     [200, { ok: true, name: "ocr-worker", version: "member-suite", engine: "tesseract-wasm", engine_version: "0.11.0",
             model: "tessdata_fast/eng", engine_loaded: true }]);
   const wm = await workerCall("ocr-wrong-model", "/version");
@@ -1423,15 +1424,13 @@ console.log("\n--- B1 · R11, R12, R13, R19: the bundle built from the source bo
       "BAD_SHA");
   }
   /* The core's exact bytes cannot be read back from a compiled module; they are pinned before deploy by the
-     bundle manifest, which hashes both upload parts (bundler R4, R6). The manifest is built from this checkout by the
-     recipe `scripts/build.mjs` uses, never read from a committed copy (R32). */
+     bundle manifest, which hashes both upload parts (bundler R4, R6). Q1 in the job record. */
   const member = discoverMembers().find((m) => m.name === "ocr-worker");
-  if (!member) throw new Error("R19: the bundler found no ocr-worker member to build");
-  const manifest = manifestFrom(member, await buildMember(member));
-  t("R19 the manifest built from the tree pins both upload parts by their own bytes' digests (a swapped engine is a different pin)",
-    (manifest.assets || []).map((a) => [a.path, a.sha256]), [["assets/tesseract-core.wasm", hex(readFileSync(WASM))], ["assets/eng.traineddata", hex(readFileSync(MODEL))]]);
+  const vs = verifyStatic(member);
+  t("R19 the committed manifest's input and asset hashes match the tree (a swapped engine is caught as stale)",
+    vs.findings, []);
   t("R19 the manifest pins both upload parts at the measured sizes",
-    (manifest.assets || []).map((a) => [a.path, a.bytes]),
+    (vs.manifest?.assets || []).map((a) => [a.path, a.bytes]),
     [["assets/tesseract-core.wasm", 1839004], ["assets/eng.traineddata", 4113088]]);
   t("R19 and the committed files are those sizes", [statSync(WASM).size, statSync(MODEL).size], [1839004, 4113088]);
 }
@@ -1589,7 +1588,7 @@ console.log("\n--- B8 · R23: a photograph of a printed sentence, transcribed in
     [junk.status, junk.body.reason, junk.body.refusal.render.reason], [200, "PAGE_NOT_RENDERABLE", "NOT_A_PDF"]);
 }
 
-console.log("\n--- B5 · R1–R5 and R14 on the bundle built from the source ---");
+console.log("\n--- B5 · R1–R5 and R14 on the committed bundle ---");
 {
   t("R1 a bad sha", [(await call({ capture_sha: "nope", store: STORE, pages: [0] })).status], [400]);
   t("R2 an absent store", (await call({ capture_sha: SCAN_SHA, pages: [0] })).body.reason, "BAD_STORE");

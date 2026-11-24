@@ -49,8 +49,8 @@ test("R23: an ai credential whose row carries a run is admitted to a write only 
   const spec = OPS[RUN_WRITES[0]];
   const c = cred({ writes: RUN_WRITES, run: "r" });
   assert.deepEqual(A.aiTaskScope(c, RUN_WRITES[0], spec, { named: ["r"] }), { ok: true, viewer: "member:ann" });
-  assert.equal(A.aiTaskScope(c, RUN_WRITES[0], spec).refusal?.body.reason, "AI_BEYOND_TASK_SCOPE");
-  assert.equal(A.aiTaskScope(c, RUN_WRITES[0], spec, { named: ["r", "s"] }).refusal?.body.reason, "AI_BEYOND_TASK_SCOPE");
+  assert.equal(A.aiTaskScope(c, RUN_WRITES[0], spec).refusal.body.reason, "AI_BEYOND_TASK_SCOPE");
+  assert.equal(A.aiTaskScope(c, RUN_WRITES[0], spec, { named: ["r", "s"] }).refusal.body.reason, "AI_BEYOND_TASK_SCOPE");
   assert.deepEqual(A.aiTaskScope(cred({ writes: RUN_WRITES, run: "" }), RUN_WRITES[0], spec), { ok: true, viewer: "member:ann" }, "an empty run binds nothing");
   assert.deepEqual(A.runsNamed({ url: urlOf({ run: "q" }), body: { run: "b" } }), ["b", "q"]);
   assert.deepEqual(A.runsNamed({ body: { run: 5 } }), [5]);

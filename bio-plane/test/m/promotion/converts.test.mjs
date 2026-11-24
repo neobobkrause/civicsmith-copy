@@ -26,12 +26,10 @@ test("R39 (d526): promotion's own refusals are asked before any registered fence
   for (const m of ["actions", "inquiry", "bias"])
     p.registerStep(m, { check: () => { asked.push(m); return { ok: false, reason: `${m.toUpperCase()}_FENCE` }; } });
   const before = record.dump();
-  /** @type {[string, {object_type: string}][]} each document, and an envelope whose type it contradicts */
-  const cases = [[infoDoc(ID), { object_type: "action" }], [infoDoc(ID), { object_type: "bias" }],
-                 [doc({ id: "INQ-2026-0001", object_type: "inquiry", title: "Q", current_state: "open", created: T0, last_updated: T0 }),
-                  { object_type: "information" }]];
-  for (const [text, meta] of cases) {
-    const id = parseFrontmatter(text).data?.id;
+  for (const [text, meta] of [[infoDoc(ID), { object_type: "action" }], [infoDoc(ID), { object_type: "bias" }],
+                              [doc({ id: "INQ-2026-0001", object_type: "inquiry", title: "Q", current_state: "open", created: T0, last_updated: T0 }),
+                               { object_type: "information" }]]) {
+    const id = parseFrontmatter(text).data.id;
     const r = p.promote(create(id, text, { meta }));
     assert.deepEqual([r.reason, r.check], ["ENVELOPE_TYPE_DISAGREES", PROMOTED_TYPE_CHECKS.ENVELOPE_TYPE_DISAGREES.check]);
   }

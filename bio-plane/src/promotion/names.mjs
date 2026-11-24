@@ -5,10 +5,6 @@
 import { parseFrontmatter, normalizeType } from "../record-grammar/index.mjs";
 import { localize } from "../setup-words/index.mjs";
 
-/**
- * The catalogue's finding shape, as C-77 answers it.
- * @typedef {{check: string, severity: string, message: string, repairable?: boolean, repairs?: any}} Finding
- */
 /* The catalogue's finding shape, `{check, severity, message, repairable?, repairs?}`. */
 const f = (check, severity, message, repairs) => ({ check, severity, message, ...(repairs ? { repairable: true, repairs } : {}) });
 const asText = (v) => (typeof v === "string" ? v : new TextDecoder().decode(v));
@@ -61,8 +57,8 @@ export function projectNameKey(title) {
  * result over a corpus with C-77.2 findings is a clean result over the part
  * that could be read, and the finding says which part could not.
  *
- * @param {Iterable<{folderName?: string, files: Map<string, string|Uint8Array>}> | null} [corpus]
- *   the catalog's own BundleInput shape, one per bundle; none is an empty corpus
+ * @param {Iterable<{folderName?: string, files: Map<string, string|Uint8Array>}>} corpus
+ *   the catalog's own BundleInput shape, one per bundle
  * @returns {{pass: boolean, findings: Finding[], projects: number, judged: number}}
  */
 export function checkProjectNameUniqueness(corpus) {

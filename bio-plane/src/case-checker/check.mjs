@@ -41,45 +41,28 @@ import { LENS_LIMIT_STATEMENT, lensOfArg, applicationOf, pairsUnderLens } from "
 
 /* ============================================================ the words (R1, R11, R18; the UX stream's, until it gives them) */
 
-/** R1: the sentence every answer carries (R27: the design's words, read by key).
- *  @type {string} */
+/** R1: the sentence every answer carries (R27: the design's words, read by key). */
 export const RECREATION_STATEMENT = word("case-checker.recreation_statement");
-/** R18: the sentence beside the findings another group published that a finding rests on.
- *  @type {string} */
+/** R18: the sentence beside the findings another group published that a finding rests on. */
 export const REST_ON_ANOTHER_GROUP_STATEMENT = word("case-checker.rest_on_another_group_statement");
-/** R3: the sentence an answer carries when no published keys were given.
- *  @type {string} */
+/** R3: the sentence an answer carries when no published keys were given. */
 export const KEYS_NOT_CHECKED_STATEMENT = word("case-checker.keys_not_checked_statement");
-/** R7: the sentence when the stated catalogue version is not this checker's: `stated` the version the case states (null
- *  or absent read as none), `own` this checker's.
- *  @type {(stated: string|null|undefined, own: string) => string} */
+/** R7: the sentence when the stated catalogue version is not this checker's. */
 export const CHECKS_VERSION_STATEMENT = (stated, own) => word("case-checker.text.publication_checks_ran",
   { own, stated: stated === null || stated === undefined ? localize("case-checker.check.none", "none") : String(stated) });
 
 /** R20 (K1448): the sentence beside a calculation this checker does not recompute (a workbook, or a value from a third
- *  party's engine).
- *  @type {string} */
+ *  party's engine). */
 export const NOT_RECOMPUTED_STATEMENT = word("case-checker.not_recomputed_statement");
-/** R20: the three answers for a calculation.
- *  @type {readonly string[]} */
+/** R20: the three answers for a calculation. */
 export const CALCULATION_RESULTS = Object.freeze(["agrees", "differs", "not_recomputed"]);
 
-/** R1: the three results.
- *  @type {readonly string[]} */
+/** R1: the three results. */
 export const RESULTS = Object.freeze(["recreated", "recreated_in_part", "did_not_recreate"]);
-/** R13: each result in words, as the standalone program prints it (the design's words, read by key).
- *  @type {Readonly<{recreated: string, recreated_in_part: string, did_not_recreate: string}>} */
+/** R13: each result in words, as the standalone program prints it (the design's words, read by key). */
 export const RESULT_WORDS = Object.freeze({ recreated: word("screen.imported.result.yes"),
   recreated_in_part: word("screen.imported.result.part"), did_not_recreate: word("screen.imported.result.no") });
-/**
- * R1: the versions a checker holds.
- * @typedef {Object} CheckerVersions
- * @property {string[]} grading_versions the grading method versions it recomputes grades by
- * @property {string} checks_version the catalogue version of its publication checks
- * @property {string[]} calc_versions the calculation engine versions it recomputes by
- */
-/** R1: the checker's versions, stated in every answer.
- *  @type {Readonly<CheckerVersions>} */
+/** R1: the checker's versions, stated in every answer. */
 export const CHECKER_VERSIONS = Object.freeze({ grading_versions: [...GRADING_METHOD_VERSIONS], checks_version: CATALOG_VERSION,
                                                 calc_versions: [CALC_METHOD] });
 const versionsOut = () => ({ ...CHECKER_VERSIONS, grading_versions: [...CHECKER_VERSIONS.grading_versions],
@@ -88,9 +71,6 @@ const versionsOut = () => ({ ...CHECKER_VERSIONS, grading_versions: [...CHECKER_
 /* R3: the account statement a capturing member signs is `signatures.captureAccountStatement` (its R41), the one
    spelling `capture` signs and checks too (N530); it is pure, so the standalone program carries it. Stated in this
    module's readable specification (R14). `accountStatement` is that very function, kept under its earlier name. */
-/** R3: the bytes a capturing member signs for their account of a capture: `bio-capture-account <capture sha>`, a
- *  newline, then the account's text.
- *  @type {(captureSha: string, text: string) => Uint8Array} */
 export const accountStatement = captureAccountStatement;
 const te = new TextEncoder();
 const td = new TextDecoder("utf-8", { fatal: false });
@@ -126,10 +106,7 @@ const fetchMaterial = (mat, kind) => localize("case-checker.check.fetch_material
 
 /* ============================================================ the case file read (R1, R2, R9) */
 
-/** The SSH fingerprint of a wire key (`SHA256:` and the unpadded base64 of its digest), as `ssh-keygen -l` prints it;
- *  null when the key cannot be read. Never throws.
- *  @param {string} keyB64 the key's wire bytes in base64
- *  @returns {string|null} */
+/** The SSH fingerprint of a wire key (`SHA256:` and the unpadded base64 of its digest), as `ssh-keygen -l` prints it. */
 export function keyFingerprint(keyB64) {
   try { return "SHA256:" + b64(asBytes(hexBytes(shaOf(b64ToBytes(keyB64))))).replace(/=+$/, ""); } catch { return null; }
 }
@@ -139,30 +116,12 @@ const entryOf = (path) => { const e = caseFileEntryOf(path); return isObj(e) ? e
 const departureWords = (d) => (typeof d === "string" ? d : isObj(d) && (d.detail || d.message)
   ? `${d.at ? `${d.at}: ` : ""}${String(d.detail || d.message)}` : canonicalJson(d));
 
-/**
- * One part the manifest lists: `state` `intact`, `missing` (no given part carries its files), `incomplete` or
- * `differs`.
- * @typedef {{index: number, sha256: string|null, state: string}} CaseFilePart
- */
-/**
- * R19's answer.
- * @typedef {Object} CaseFileRead
- * @property {Record<string, any>|null} manifest the parsed manifest, the same in every part, or null
- * @property {any[]} files each file the manifest lists, in its order: `{path, kind, sha256, bytes, content, state, part,
- *   finding, ref, capture, calc, input, detail}`, `content` its bytes (a `Uint8Array`) when it is carried and matches its
- *   row, else null; `state` `intact`, `missing` or `differs`; `bytes`, `part`, `finding`, `ref`, `capture`, `calc`,
- *   `input` and `detail` null when not stated (typed loosely: `checkCaseFile` keeps its working notes on these rows)
- * @property {string[]} departures each way the parts depart from `case-grammar` R13, a sentence
- * @property {CaseFilePart[]} parts each part the manifest lists
- */
 /** R19: the one reader of a case file. `parts` are the parts' bytes (`public-read` R6's stored ZIPs). Answers
  *  `{manifest, files: [{path, kind, sha256, bytes, content, state, part, finding, ref}], departures}`: `manifest` the
  *  parsed manifest (the same in every part), or null; each file the manifest lists, `content` its bytes when it is
  *  carried and matches its row, else null, and `state` one of `intact`, `missing` or `differs` (`finding` and `ref` read
  *  from its path by `case-grammar`'s `caseFileEntryOf`); `departures` every way the parts depart from `case-grammar`
- *  R13, each a sentence. Pure; never throws.
- *  @param {unknown} parts the parts' bytes, a list of `Uint8Array`; anything that is not a list is read as no parts
- *  @returns {CaseFileRead} */
+ *  R13, each a sentence. Pure; never throws. */
 export function readCaseFile(parts) {
   try { return readParts(parts); }
   catch (e) { return { manifest: null, files: [], departures: [word("case-checker.departures", { e: String(e && e.message ? e.message : e).slice(0, 200) })], parts: [] }; }
@@ -258,7 +217,7 @@ const lowerSha = (v) => (typeof v === "string" ? v.toLowerCase() : null);
 function carriedMaterials(files) {
   const doc = files.find((f) => f.kind === "case_document" && f.content);
   if (!doc) return null;
-  const p = parseFrontmatter(textOf(doc.content) ?? "");
+  const p = parseFrontmatter(textOf(doc.content));
   const read = isObj(p.data) ? materialsOf(p.data) : null;
   return isObj(read) && Array.isArray(read.materials) ? read.materials.filter(isObj) : null;
 }
@@ -291,11 +250,7 @@ const factFields = (leg) => {
 /** R4: the text at an extent of a document's carried extracted text. The extracted text is `case-grammar`'s one
  *  spelling (its R17, `extractedTextOf`): the canonical JSON of the reading's units, each `{extent, ref, text}`. The text
  *  at an extent is every unit's text whose extent overlaps it by `content.extentRelation` (the same place, one inside
- *  the other), in the units' order; null when no unit does or the text is not that spelling. Never throws on a string.
- *  @param {any} extracted the extracted text, as carried: a string (anything else, or text that is not that spelling,
- *    answers null)
- *  @param {unknown} extent the extent asked for (`content`'s grammar); anything that is not an object is the whole document
- *  @returns {string|null} the units' texts joined by newlines */
+ *  the other), in the units' order; null when no unit does or the text is not that spelling. */
 export function textAtExtent(extracted, extent) {
   let units;
   try { units = JSON.parse(extracted); } catch { return null; }
@@ -309,68 +264,7 @@ const squash = (s) => String(s).replace(/\s+/g, " ").trim();
 
 /* ============================================================ the answer */
 
-/**
- * `checkCaseFile`'s arguments (R1, R9, R23).
- * @typedef {Object} CheckArgs
- * @property {unknown} parts the case file's parts, each a `Uint8Array` (a stored ZIP)
- * @property {unknown} [documents] bytes supplied later for missing material (R9), each a `Uint8Array`; absent is none
- * @property {unknown} [keys] the publishing team's public signing keys, each an OpenSSH public key line or `{key}`;
- *   absent or null is none given, so the keys are not checked against them
- * @property {unknown} [lens] `as_published` (absent is this), `removed`, or a reader's own `{statements, applications}`
- */
-/**
- * An entry of a finding's `missing[]` or `differs[]` (R11): the check (`integrity`, `signature`, `passage`, `grade`,
- * `bar`, `publication_check`, `presentability`, `complete_edition`, `calculation`, `account`, ...), what it is about,
- * a sentence a reader can act on, and whatever else names it (`sha256`, `origin`, `code`, ...).
- * @typedef {{check: string, about: string, detail: string, [more: string]: any}} CheckEntry
- */
-/**
- * R1, R11: one finding's answer. `pair` is its pair per axis (`{capture, connection, testimony}`, each `{state,
- * grade}`), or null when it cannot be recomputed; `bar_met` `true`, `false`, `not_asked`, `no_bar` or null. Under a lens
- * other than `as_published` (R23) `pair` and `bar_met` are the lens's, beside `as_published` and `lens_changes`.
- * @typedef {Object} FindingResult
- * @property {string} finding
- * @property {string|null} role `load_bearing` or `supporting` for a member, null for a finding a chain reaches
- * @property {string} result one of `RESULTS`
- * @property {CheckEntry[]} missing
- * @property {CheckEntry[]} differs
- * @property {any} pair
- * @property {any} bar_met
- * @property {{pair: any, bar_met: any}} [as_published]
- * @property {any[]} [lens_changes] each application that changed its pair
- */
-/**
- * R1's answer. Recreating shows the case intact and consistent, never true (R12): it composes no case-level strength.
- * Members not written out here are answered as the requirements state them: `integrity` (R2, R9: `{intact, departures,
- * parts, files, documents: {used, unmatched, wanted}}`), `signatures` (R3: `{case, findings, attestations, keys_checked,
- * keys_statement}`), `publication_checks` (R7), `calculations` (R20), `standards_use` (R22: null when no `criteria`
- * file is carried), `obscured` (R8), `account` (R24: null when the document has no `account:` block), `lens` (R23),
- * `complete_edition` (R10).
- * @typedef {Object} CaseCheck
- * @property {string|null} format the manifest's format
- * @property {string|null} case
- * @property {number|null} edition
- * @property {string|null} group
- * @property {CheckerVersions} checker
- * @property {any} integrity
- * @property {any} signatures
- * @property {any} publication_checks
- * @property {any[]} calculations each `{calc, result, differs[], missing[], ...}`, `result` one of `CALCULATION_RESULTS`
- * @property {any} standards_use
- * @property {{ref: string|null, sha: string|null, copy: any, label: string|null}[]} obscured
- * @property {any} account
- * @property {any} lens
- * @property {string} lens_statement `LENS_LIMIT_STATEMENT`
- * @property {FindingResult[]} findings each finding a member's chain reaches, the members first
- * @property {any} complete_edition
- * @property {any[]} rests_on_another_group each other team's finding a leg rests on, `{group, case, edition, finding,
- *   manifest_sha}` (R18)
- * @property {string} rests_on_another_group_statement `REST_ON_ANOTHER_GROUP_STATEMENT`
- * @property {string} statement `RECREATION_STATEMENT`
- */
-/** R1: check a case file. Never throws; answers the whole answer, a malformed input included.
- *  @param {any} args a `CheckArgs`; anything that is not an object (null, a string, a list) is read as `{}`
- *  @returns {Promise<CaseCheck>} */
+/** R1: check a case file. Never throws; answers the whole answer, a malformed input included. */
 export async function checkCaseFile(args) {
   try { return await check(isObj(args) ? args : {}); }
   catch (e) {
@@ -616,8 +510,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     const t = ff && ff.content ? textOf(ff.content) : null;
     const p = t !== null ? parseFrontmatter(t) : null;
     /* R28: each member's `{basis, references}` from its own bytes, so a leg its references sever is not counted (`strength` R2) */
-    const d = p ? p.data : null;
-    if (d && isObj(d) && Array.isArray(d.basis)) memberBasis[id] = { basis: d.basis, references: Array.isArray(d.references) ? d.references : [] };
+    if (p && isObj(p.data) && Array.isArray(p.data.basis)) memberBasis[id] = { basis: p.data.basis, references: Array.isArray(p.data.references) ? p.data.references : [] };
     else basisAll = false;
   }
   const statedChecks = method && typeof method.checks === "string" ? method.checks : null;
@@ -650,12 +543,11 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     const rb = typeof rendered === "string" ? te.encode(rendered) : asBytes(rendered && rendered.bytes !== undefined ? rendered.bytes : rendered);
     if (!rb) { complete_edition.detail = word("case-checker.detail.checker_render_complete"); caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail)); }
     else {
-      const renderedSha = shaOf(rb);
-      complete_edition.rendered_sha256 = renderedSha;
+      complete_edition.rendered_sha256 = shaOf(rb);
       complete_edition.equal = complete_edition.rendered_sha256 === shaOf(ceFile.content);
       complete_edition.detail = complete_edition.equal ? word("case-checker.text.carried_complete_edition")
         : localize("case-checker.check.complete_edition_differs", "the carried complete edition (SHA-256 {sha}) is not the edition the rest of the case file renders (SHA-256 {rendered})",
-                   { sha: ceFile.sha256, rendered: renderedSha });
+                   { sha: complete_edition.sha256, rendered: complete_edition.rendered_sha256 });
       if (!complete_edition.equal) caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail));
     }
   }
@@ -930,34 +822,13 @@ function gradingContextOf(fm) {
   return { version, acceptedRows, levels, recompute };
 }
 
-/**
- * R23: the lens an answer was re-weighed under: `name` one of `LENS_NAMES`, `statements` a reader's statements (null
- * for the others), `departure` why the lens asked for was answered as published (or null), `not_applied` each
- * application that changed nothing, with why.
- * @typedef {Object} LensAnswer
- * @property {string} name
- * @property {string[]|null} statements
- * @property {string|null} departure
- * @property {any[]} not_applied
- */
-/**
- * R23: `reweigh`'s answer.
- * @typedef {Object} Reweighed
- * @property {LensAnswer} lens
- * @property {string} lens_statement `LENS_LIMIT_STATEMENT`
- * @property {{finding: string, pair: any, bar_met: any, as_published: {pair: any, bar_met: any}, lens_changes: any[]}[]} findings
- *   each finding of the answer, in its order
- */
 /** R23 (K2529): re-weigh an as-published answer under a lens, pure and synchronous, reading the case file's parts again
  *  (no signature is verified again; `documents` fill a file the parts lack, as R9). `answer` is `checkCaseFile`'s
  *  as-published answer (its findings' `pair`, `bar_met` and `role`). Answers `{lens: {name, statements, departure,
  *  not_applied}, lens_statement, findings: [{finding, pair, bar_met, as_published: {pair, bar_met}, lens_changes}]}`, a
  *  finding in the answer's order, `lens_changes` the applications that changed its pair (each `{finding, ord, target,
  *  statement, effect, from, to, how, through?}`). Under `as_published` each finding is answered as the answer gives it.
- *  Never throws.
- *  @param {any} args `{parts, documents?, answer, lens?}`, read as `checkCaseFile` reads them; anything that is not an
- *    object is read as `{}`
- *  @returns {Reweighed} */
+ *  Never throws. */
 export function reweigh(args) {
   const a = isObj(args) ? args : {};
   const lens = lensOfArg(a.lens);
@@ -975,7 +846,7 @@ export function reweigh(args) {
       for (const g of files.filter((f) => f.state === "missing" && f.sha256 === h)) { g.state = "supplied"; g.content = b; }
     }
     const docFile = files.find((f) => f.kind === "case_document" && f.content) || null;
-    const p = docFile ? parseFrontmatter(textOf(docFile.content) ?? "") : null;
+    const p = docFile ? parseFrontmatter(textOf(docFile.content)) : null;
     const fm = p && isObj(p.data) ? p.data : null;
     if (!fm) { out.lens.departure = word("case-checker.departure.case_document_carried"); for (const f of out.findings) { f.pair = null; f.bar_met = null; } return out; }
     const grading = gradingContextOf(fm);
@@ -1015,8 +886,7 @@ export function reweigh(args) {
 /* ============================================================ standards' use, offline (R22) */
 
 /** R22: the sentence beside a row frozen before T37, which carries no `captures` (`publication` R72), so whether its
- *  standard's whole text travels is not judged here; stated, never filled. The UX stream's words, later.
- *  @type {string} */
+ *  standard's whole text travels is not judged here; stated, never filled. The UX stream's words, later. */
 export const CAPTURES_NOT_CARRIED_STATEMENT = word("case-checker.captures_not_carried_statement");
 
 /** R22: R21 (`checkStandardsUse`) over the case document, the carried `criteria` file's rows, the document's

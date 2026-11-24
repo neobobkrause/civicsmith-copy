@@ -136,173 +136,6 @@
 import { levelEmptyHolds } from "../../bio-plane/src/run-rules/index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
-/** @import { Report, RefusedReturn } from './subsession.mjs' */
-/**
- * A mode a run may be in.
- * @typedef {Object} Mode
- * @property {boolean} deployed true: the gate lets a run in this mode through
- * @property {string} does what the mode does, in words
- */
-/**
- * One row of a control-flow table.
- * @typedef {Object} FlowRow
- * @property {string} does what the step does, in words
- * @property {string|null} judged what the model decides inside the step; null where nothing is judged
- * @property {boolean} logs
- * @property {string[]} to every step the row may move to; none for `close`
- */
-/**
- * A control-flow table (`CONTROL_FLOW` or `PLAN_FLOW`): its rows by step name.
- * @typedef {Object<string, FlowRow>} Flow
- */
-/**
- * One bound's row of a run's budget, as the plane hands it back. An allowance that is absent, not a number or not
- * positive is no bound.
- * @typedef {Object} BudgetRow
- * @property {unknown} [allowed]
- * @property {unknown} [consumed] absent is 0
- */
-/**
- * A run's budget, by bound name.
- * @typedef {Object<string, BudgetRow|null|undefined>} Budget
- */
-/**
- * A disagreement between two levels over one record, as a judgement names it (R19).
- * @typedef {Object} Disagreement
- * @property {string} record the record's id, non-empty
- * @property {string[]} levels two different members of `LEVELS`
- */
-/**
- * The fields of a run state the tables read and write (R11's resumable state among them). Each may be absent.
- * @typedef {Object} RunFields
- * @property {string|null} [step] the row the run is at; absent is `gate-mode`
- * @property {string|null} [mode] the run's mode, a key of `MODES`
- * @property {unknown} [pass] the passes done, a number; read through `Number`
- * @property {unknown} [maxPasses] the run's `max_passes`; only a positive number counts (R3)
- * @property {Budget|null} [budget]
- * @property {string|null} [resumeAt] the step a published state names, for `resume`
- * @property {string|null} [resumeBasis] why the run resumes as it does, in words
- * @property {number} [resumedFrom] the observations the run's log carries
- * @property {unknown[]} [targets] the search targets the plan judgement named
- * @property {Report[]} [reports] the reports taken at `collect`
- * @property {RefusedReturn[]} [reportsRefused] the returns refused at `collect`
- * @property {number} [rereads] the citations re-read by address
- * @property {Object<string, unknown>|null} [holdings] what `documentHoldings` answered
- * @property {unknown[]} [candidates] the candidates composed
- * @property {unknown[]} [queue] the candidates still to write, head first
- * @property {unknown} [submission] the candidate being written
- * @property {Object<string, unknown>|null} [refusal] the plane's refusal of the last write, named by its `code` or `reason`
- * @property {unknown} [refusedSubmission] the submission that earned the refusal
- * @property {boolean} [adjusted] true: the judgement at `adjust` changed the submission
- * @property {boolean} [passAdded] true: this pass sent a candidate to be written (R15)
- * @property {number|unknown[]|null} [composed] the candidates composed in the run, a count or a list (R16)
- * @property {number|unknown[]|null} [kept] those that survived dedup; absent or null is `composed`
- * @property {number|unknown[]|null} [wrote] the writes that succeeded
- * @property {unknown[]} [written] the shell's own list of what it wrote
- * @property {unknown} [scope] `{<level>: {reads, documents}}`, set by the shell (R18); any other value is no read
- * @property {string[]} [disagreed] the keys of the pairs already settled (R19)
- * @property {Disagreement[]} [disagreements] the pairs the `compose` judgement named (R19)
- * @property {string|null} [level] the level a step's look was at
- * @property {string|null} [observed] the state the step's judgement observed (D-129)
- * @property {boolean} [governed] true: our governor held a host (D-104)
- * @property {string|null} [condition] a word of the record's condition vocabulary
- * @property {string|null} [bound] the bound a closed run names
- * @property {unknown[]} [reads] `PLAN_FLOW`: the reads made
- * @property {unknown[]} [undetermined] `PLAN_FLOW`: the reads refused or silent
- */
-/**
- * A run state: the plain object the shell passes in and receives back. A field not named is carried through unread.
- * @typedef {RunFields & Object<string, unknown>} RunState
- */
-/**
- * What a table decides for one step.
- * @typedef {Object} Decision
- * @property {string} step the step to move to
- * @property {string} [why] the sentence for the observation log
- * @property {string} [bound] on a close: the bound that closed the run
- * @property {string} [reason] on a `nothing-written` close: why nothing was written (R16)
- * @property {boolean} [pass_done] `PLAN_FLOW`: the close ends the one pass
- */
-/**
- * A judgement: the model's answer inside one judged row, by key. Only the keys its table allows are applied.
- * @typedef {Object<string, any>} Judgement
- */
-/**
- * What applying a judgement answers: `ok` and the new state, or every key it may not carry and why.
- * @typedef {Object} Applied
- * @property {boolean} ok
- * @property {RunState} [state] when ok
- * @property {string[]} [overreach] when refused: each key named
- * @property {string} [detail] when refused: the sentence saying why
- */
-/**
- * Where a run's readings land (FL-11): the target, or null and why it is undetermined.
- * @typedef {Object} ContextTarget
- * @property {string|null} target
- * @property {string} basis which case holds, in words
- */
-/**
- * A level-empty candidate (§9), composed by the table for one level reported `LOOKED_ABSENT`.
- * @typedef {Object} LevelEmptyCandidate
- * @property {string} kind `level-empty`
- * @property {string|null} target
- * @property {string} level in the plane's spelling (`REPORTING_LEVEL`)
- * @property {string|null} observed_at the observation-log address the report carried
- * @property {string} name `level-empty-<level>`
- * @property {string} description names the question as "this question", never its id (R13, R14)
- */
-/**
- * A level reported empty over a scope with no document in it, with `run-rules` R35's answer (R18).
- * @typedef {Object} LevelWithoutScope
- * @property {string} level
- * @property {boolean} holds always false
- * @property {string} code
- * @property {string} check
- * @property {string} translation
- */
-/**
- * What a tick may publish under the plane's ceiling.
- * @typedef {Object} PublishedState
- * @property {RunFields} state
- * @property {number} bytes the UTF-8 length of its JSON
- * @property {{bytes: number, limit: number, at: string|null|undefined}|null} restarted null when it fits; else the size
- *   of the state that did not fit, the ceiling, and the step the published state restarts at
- */
-/**
- * What a segment continues from: a step and the state's table fields, or no step and why.
- * @typedef {Object} ResumePoint
- * @property {string|null} at
- * @property {RunState|null} state
- * @property {string|null} basis why the run starts its pass over, in words; null when it continues
- */
-/**
- * A control-flow entry of the observation log, in the plane's vocabulary.
- * @typedef {Object} LogEntry
- * @property {string|null} level
- * @property {string} subject `<step> -> <next step>`
- * @property {string} state a D-129 state; never `PRESENT` or `NEVER_LOOKED`
- * @property {boolean} governed
- * @property {string|null} condition
- * @property {boolean} terminal
- * @property {string|null} bound
- * @property {string} detail
- * @bound detail: at most 500 characters
- */
-/**
- * One read a plan-mode run asks the plane for.
- * @typedef {Object} PlaneRead
- * @property {string} op
- * @property {Object<string, unknown>} query
- */
-/**
- * A subject of an action plan, as `PLAN_READS.subject` reads it.
- * @typedef {Object} PlanSubject
- * @property {unknown} [kind] `outcome` or `inquiry`; any other gives no read
- * @property {unknown} [determination]
- * @property {unknown} [standard]
- * @property {unknown} [inquiry]
- * @property {unknown} [standards] a list of standard ids
- */
 /* THE FOUR LEVELS, IN FAN-OUT ORDER.
  *
  * CLAUDE.md's standing section: when anything goes looking it "may need to
@@ -321,7 +154,6 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
  * rather than silently going unsearched, which is the failure a hand-kept copy
  * normally has and the reason D-113's purge list is this project's stock
  * example. */
-/** @type {string[]} */
 export const LEVELS = ["meaning", "content", "document", "internet"];
 
 /* THE SAME FOUR LEVELS IN THE SPELLING A `level-empty` SUGGESTION IS WRITTEN
@@ -349,7 +181,6 @@ export const LEVELS = ["meaning", "content", "document", "internet"];
  * `LEVELS`, that every value is one the plane holds, and that the pairing is the
  * one `reportsAs` produces — floor and ceiling both. A fifth level, or a
  * renamed one, fails this member's suite rather than being refused live. */
-/** @type {Readonly<Object<string, string>>} each level in `SUGGEST_LEVELS`' spelling */
 export const REPORTING_LEVEL = Object.freeze({
   meaning: "meaning", content: "content", document: "documents", internet: "internet",
 });
@@ -362,7 +193,6 @@ export const REPORTING_LEVEL = Object.freeze({
  * what flips it. Flipping it is an EDIT TO THIS FILE under review — which is the
  * point, because a mode that could be enabled by a request parameter would be a
  * gate the caller holds. */
-/** @type {Object<string, Mode>} */
 export const MODES = {
   check:       { deployed: true,
                  does: localize("agent-harness.harness.mode_check_does", "read an EXISTING conclusion adversarially (DEC-24's CHECK role, §2)") },
@@ -421,14 +251,11 @@ export const MODES = {
    closed, and fleet rule 2 besides. The harness SPENDS; the plane WRITES. That
    is why the acceptance reads "a budget exhaustion WRITES
    `runtime-ceiling-reached`" and not "the harness emits it". */
-/** @type {string[]} */
 export const BUDGET_BOUNDS = ["fetches", "subsessions", "wallclock"];
-/** @type {Object<string, string>} */
 export const SPENT_NOT_WATCHED = {
   runtime: "the platform's CPU/subrequest ceiling (D-54, D-56). Spent one unit per plane call; "
          + "the PLANE decides when it is exhausted and writes `runtime-ceiling-reached` at its own exit",
 };
-/** @type {Object<string, string>} */
 export const NOT_OUR_BOUNDS = {
   lease: "the plane's heartbeat — a run that stopped heartbeating DIED rather than finished, and only "
        + "something outside the run can observe that (PL-5's `ai-run-reap` consumer)",
@@ -441,7 +268,6 @@ export const NOT_OUR_BOUNDS = {
  * carries one is a row where judgement happens, and every row that does not is a
  * row where nothing is up to the model. Read the two columns together and the
  * §14b.4 table is visible as data: what is scripted, and what is judged. */
-/** @type {Flow} */
 export const CONTROL_FLOW = {
   "gate-mode": {
     does:   localize("agent-harness.harness.sk_4s_gate_refuse_a", "SK-4's gate: refuse a mode that is not deployed, before anything is spent"),
@@ -532,7 +358,6 @@ export const CONTROL_FLOW = {
   },
 };
 
-/** @type {string} */
 export const FIRST_STEP = "gate-mode";
 
 /** FL-11 (INVESTIGATIVE-SESSION.md §11 item 5, RULE 1'S TARGET, BOB #28) — THE QUESTION A RUN'S
@@ -556,10 +381,6 @@ export const FIRST_STEP = "gate-mode";
  *  UNDETERMINED and STATED: a candidate then carries its own target, which the plane bounds, and a
  *  table-made candidate with none is refused by the plane in its own words. `basis` says which of these is
  *  true, so the run's output never implies a target it does not hold. */
-/**
- * @param {{context?: any}|null} [session] the run as read; `context` is `{type, id, questions}` as the run read publishes it
- * @returns {ContextTarget}
- */
 export function runContextTarget(session) {
   const ctx = session && typeof session === "object" ? session.context : null;
   const type = ctx && typeof ctx.type === "string" ? ctx.type : null;
@@ -604,11 +425,6 @@ export function runContextTarget(session) {
  *  the observation-log address that establishes it (`SUGGEST_EMPTY_LEVEL_UNSTATED`).
  *  Absence at one level is not evidence of absence at the next, so one candidate
  *  per empty level and never one for the run. */
-/**
- * @param {RunState|null} [state]
- * @param {string|null} [target] the run's target; absent is null
- * @returns {LevelEmptyCandidate[]} one per level reported `LOOKED_ABSENT` with a document in scope, in `LEVELS` order
- */
 export function emptyLevelCandidates(state, target) {
   const reports = Array.isArray(state?.reports) ? state.reports : [];
   const unscoped = new Set(levelsWithoutScope(state).map((x) => x.level));
@@ -685,10 +501,6 @@ export function emptyLevelCandidates(state, target) {
  *  documents}}`, set by the shell from the plane's four-level statement of each read (`retrieval` R13) and never from
  *  a report's words or a judgement: a level with no read, or whose `documents` is below 1, was not looked at, so no
  *  absence is written for it (`emptyLevelCandidates` composes none). A level absent from `scope` has no read. Pure. */
-/**
- * @param {RunState|null} [state]
- * @returns {LevelWithoutScope[]} in `LEVELS` order
- */
 export function levelsWithoutScope(state) {
   const reports = list(state?.reports);
   const scope = record(state?.scope) || {};
@@ -709,10 +521,6 @@ export function levelsWithoutScope(state) {
    reasoning transplanted — a hand-rolled synchronous hash would put a collision
    argument underneath the mechanism that decides whether a caller is told the
    truth about its own submission. */
-/**
- * @param {unknown} value
- * @returns {string}
- */
 export function canonical(value) {
   if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -721,11 +529,6 @@ export function canonical(value) {
 
 /** Did `adjust` actually adjust? F10's precondition, as a function so the table
  *  and the suite ask it the same way. */
-/**
- * @param {unknown} before the refused submission
- * @param {unknown} after the adjusted one
- * @returns {boolean}
- */
 export function adjustedFrom(before, after) {
   return canonical(before ?? null) !== canonical(after ?? null);
 }
@@ -748,10 +551,6 @@ const allowance = (budget, bound) => {
  *  continue past an exhausted budget. Deterministic in its ORDER too: the bounds
  *  are asked in `BUDGET_BOUNDS` order so two runs in the same state name the
  *  same bound, which is what lets a suite pin the answer. */
-/**
- * @param {RunState|null} [state]
- * @returns {string|null} the bound, or `completed` at the pass limit
- */
 export function stopBecause(state) {
   const s = state || {};
   for (const bound of BUDGET_BOUNDS) {
@@ -768,14 +567,9 @@ export function stopBecause(state) {
 
 /* R3 (was agent-worker R15): the pass limit is the run's `max_passes` when positive, else 3. Held here since T33-54
    so the table answers it alone; the shell (agent-worker) passes the run's figure through unchanged. */
-/** @type {number} */
 export const DEFAULT_MAX_PASSES = 3;
 
 /** The pass limit for a run's `max_passes`: the figure when it is a positive number, else `DEFAULT_MAX_PASSES`. */
-/**
- * @param {unknown} maxPasses
- * @returns {number}
- */
 export function passLimit(maxPasses) {
   const n = Number(maxPasses);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_PASSES;
@@ -783,10 +577,6 @@ export function passLimit(maxPasses) {
 
 /** THE GATE, the first row of either table (R2): a mode that is not deployed closes `mode-not-deployed` before any
  *  bound is consulted; a deployed one goes on to `resume`. Pure. */
-/**
- * @param {RunState|null} [state]
- * @returns {Decision}
- */
 export function gateStep(state) {
   const s = state || {};
   /* A mode that is not deployed must not even be able to report that it ran out of budget. */
@@ -826,10 +616,6 @@ export function gateStep(state) {
  *  Returns `{ step, why }`. `why` is a sentence for the observation log, so the
  *  log says WHERE it stopped and WHY in the table's own words rather than in a
  *  model's — §11's whole argument for the log existing. */
-/**
- * @param {RunState|null} [state]
- * @returns {Decision}
- */
 export function nextStep(state) {
   return nothingWrittenGuard(state || {}, tableStep(state));
 }
@@ -838,7 +624,6 @@ export function nextStep(state) {
    table's own (`advance` keeps them): `kept` is the candidates that survived dedup and went to be written (those
    dropped there as already held are on the record, so they are not lost), `wrote` the writes that succeeded; the shell's
    `written` list is honoured too. With no `kept` the figure falls to `composed`. */
-/** @type {string} */
 export const NOTHING_WRITTEN = "nothing-written";
 const countOf = (v) => (Array.isArray(v) ? v.length : Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : 0);
 
@@ -968,11 +753,6 @@ function tableStep(state) {
 /** THE MOVE FROM ONE ROW TO THE NEXT, as the driver applies it. Pure. `adjust` alone carries the refusal and the
  *  bytes that earned it; every other move clears them, so a stale refusal cannot route a later step into an adjust
  *  it did not earn. The pass counter moves on ENTERING `next-pass`: a pass counts when it is done (R3). */
-/**
- * @param {RunState|null} [state]
- * @param {Decision|null} [decision] absent closes
- * @returns {RunState}
- */
 export function advance(state, decision) {
   const s = state || {};
   const to = String((decision && decision.step) || "close");
@@ -1006,16 +786,11 @@ export function advance(state, decision) {
  * from the run on every segment; a copy here would be a second answer that ages, and one a published state could
  * then override. The model's transcript is not in it (DEC-61: never a transcript), nor are the spawn contracts,
  * which each `fanout` composes afresh from the plane's payload. */
-/** @type {string[]} */
 export const RESUMABLE = ["step", "pass", "targets", "reports", "reportsRefused", "rereads", "holdings",
                           "candidates", "queue", "submission", "refusal", "refusedSubmission", "adjusted", "passAdded",
                           "composed", "kept", "wrote", "scope", "disagreed"];
 
 /** The scratch a tick publishes: the table's own fields, nothing else. */
-/**
- * @param {RunState|null} [state]
- * @returns {RunFields} every field of `RESUMABLE`, absent as null
- */
 export function resumableState(state) {
   const s = state || {};
   const out = {};
@@ -1035,14 +810,9 @@ export function resumableState(state) {
  * from those fields). A later segment then fans out again rather than resuming from a state the record refuses; what
  * was already written stays written, and `dedup` keeps it from being written twice. A partial cut of the working
  * fields is not published: which half of a queue or a report list survived would be this member's guess. */
-/** @type {string[]} */
 export const STATE_RESTART_STEPS = ["next-pass", "close"];
 
 /** The UTF-8 length of a state's JSON: ai-runs R45's measure. */
-/**
- * @param {unknown} state
- * @returns {number}
- */
 export function stateBytes(state) {
   return new TextEncoder().encode(JSON.stringify(state ?? null)).length;
 }
@@ -1050,12 +820,6 @@ export function stateBytes(state) {
 /** `{ state, bytes, restarted }`: the state a tick may publish under `limit`. With no positive limit (the plane
  *  publishes none), the state as it is. `restarted` is null when it fits, else `{ bytes, limit, at }`: the measured
  *  size of the state that did not fit and the step the published one restarts at. */
-/**
- * @param {RunState|null} state
- * @param {unknown} limit the plane's ceiling in bytes; no positive number is none
- * @param {Flow} [flow] absent is `CONTROL_FLOW`
- * @returns {PublishedState}
- */
 export function publishableState(state, limit, flow = CONTROL_FLOW) {
   const full = resumableState(state);
   const bytes = stateBytes(full);
@@ -1075,10 +839,6 @@ const record = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : nul
 
 /** The steps a published state may name for a table to continue from: `resume`'s edges, and for `PLAN_FLOW` also
  *  `compose`, whose reads a state does not carry, so it continues by reading again (R6). */
-/**
- * @param {Flow} [flow] absent is `CONTROL_FLOW`
- * @returns {string[]}
- */
 export const resumeTargets = (flow = CONTROL_FLOW) =>
   (flow === PLAN_FLOW ? [...PLAN_FLOW.resume.to, "compose"] : CONTROL_FLOW.resume.to);
 
@@ -1086,11 +846,6 @@ export const resumeTargets = (flow = CONTROL_FLOW) =>
  *  row `resume` may move to, with the state's table fields; otherwise `at` is null and `basis` says why the run
  *  starts its pass at `plan`: no state published (null, or the empty scratch a run opens with), or one naming no
  *  step this table continues at. */
-/**
- * @param {unknown} published the state the run published
- * @param {Flow} [flow] absent is `CONTROL_FLOW`
- * @returns {ResumePoint}
- */
 export function resumeFrom(published, flow = CONTROL_FLOW) {
   const p = record(published);
   if (!p || !Object.prototype.hasOwnProperty.call(p, "step") || p.step == null)
@@ -1150,15 +905,9 @@ export function resumeFrom(published, flow = CONTROL_FLOW) {
  * (`present_unbacked`) so the downgrade is visible rather than silent. When a
  * look that can carry a referent exists (a sub-session's capture), it is the
  * PLANE's writers that record it with one — the capture drain already does. */
-/** @type {string} */
 export const PRESENT_UNBACKED_NOTE = localize("agent-harness.harness.the_model_judged_present_at",
   "the model judged PRESENT at this step, but this entry can name nothing that was found, and the record refuses a PRESENT that names nothing (C-22.10) — so it is recorded as LOOKED_INDETERMINATE: a look happened, and the record cannot tell from it that the thing is there");
 
-/**
- * @param {RunState|null} state
- * @param {Decision} decision
- * @returns {LogEntry|null} null when the step looked at nothing
- */
 export function stepLog(state, decision) {
   const s = state || {};
   const d = decision || {};
@@ -1196,19 +945,16 @@ export function stepLog(state, decision) {
  * deterministic-table review criterion fails the change". That criterion is not
  * a review habit: it is this refusal, and the suite drives it by handing a
  * judgement that tries to set `maxPasses`. */
-/** @type {string[]} */
 export const JUDGEABLE = ["targets", "reports", "candidates", "queue", "adjusted", "submission",
                           "level", "observed", "governed", "condition", "disagreements"];
 /* FL-11: `target` joins them. The question a run's readings land on is the run's CONTEXT (`runContextTarget`),
    the record's and never the model's; a judgement naming it was silently dropped before, which told the caller
    nothing. A candidate still names its own target — that is the candidate's field, and the plane bounds it. */
-/** @type {string[]} */
 export const NOT_JUDGEABLE = ["pass", "maxPasses", "step", "budget", "mode", "bound", "run", "store", "target"];
 
 /* R19 (T50; N1187; K3557; amends R4): THE DISAGREEMENTS A JUDGEMENT NAMES. A list of at most `DISAGREEMENTS_MAX`
    `{record, levels}`, `record` a non-empty id and `levels` two different members of `LEVELS`, nothing else on a pair
    (a free-text key would reach the member's statement). Applied at `compose` only. */
-/** @type {number} */
 export const DISAGREEMENTS_MAX = 10;
 
 const isPair = (p) => {
@@ -1235,20 +981,11 @@ function badDisagreements(v) {
 }
 
 /** A pair's identity: its record and its two levels, whichever order they were named in. */
-/**
- * @param {Disagreement} p
- * @returns {string}
- */
 export const disagreementKey = (p) => canonical([p.record, ...[...p.levels].sort()]);
 
 /** R19: the named pairs not yet settled: those of `state.disagreements` whose key is not in `state.disagreed`, each
  *  once, in order, while the run's settled pairs stay at most `DISAGREEMENTS_MAX`. `advance` adds them to `disagreed`
  *  when the step leaves `compose`. A pair adds no candidate, changes no `passAdded` and opens no pass. Pure. */
-/**
- * @param {RunState|null} [state]
- * @returns {Disagreement[]}
- * @bound at most 10 pairs settled in a run (`DISAGREEMENTS_MAX`)
- */
 export function disagreementsToSettle(state) {
   const held = new Set(list(state?.disagreed));
   const out = [];
@@ -1262,13 +999,6 @@ export function disagreementsToSettle(state) {
   return out;
 }
 
-/**
- * R4, R19: the one door a judgement comes through. Pure.
- * @param {RunState|null} state
- * @param {Judgement|string|number|boolean|null} [judgement] anything that is not an object is no judgement
- * @returns {Applied}
- * @bound disagreements: at most 10 pairs (`DISAGREEMENTS_MAX`)
- */
 export function applyJudgement(state, judgement) {
   const j = judgement && typeof judgement === "object" ? judgement : {};
   const overreach = Object.keys(j).filter((k) => NOT_JUDGEABLE.includes(k));
@@ -1306,7 +1036,6 @@ export function applyJudgement(state, judgement) {
  * order to the plane (one submission at a time, a resent candidate keeping its place), so the order the plane stores
  * the run's proposals in is the assistant's order of strength. No candidate carries a score, a rank figure or a
  * strength: `OPTION_KEYS` is an exact key set and a candidate carrying any other key is refused by name. */
-/** @type {Flow} */
 export const PLAN_FLOW = {
   "gate-mode": {
     does:   "the same gate: refuse a mode that is not deployed, before anything is spent",
@@ -1360,24 +1089,13 @@ export const PLAN_FLOW = {
 };
 
 /** Which table a run walks: `PLAN_FLOW` for mode `plan`, `CONTROL_FLOW` for every other word (R6). */
-/**
- * @param {unknown} mode
- * @returns {Flow}
- */
 export const flowFor = (mode) => (mode === "plan" ? PLAN_FLOW : CONTROL_FLOW);
 
 /* R6: `stopBecause` asks `proposals` then `wallclock` for this table; `fetches` and `subsessions` are 0 on a plan-mode
    run (ai-runs R46) and never asked. R3's pass limit is 1: the one pass is done when its queue is. */
-/** @type {string[]} */
 export const PLAN_BUDGET_BOUNDS = ["proposals", "wallclock"];
-/** @type {number} */
 export const PLAN_MAX_PASSES = 1;
 
-/**
- * R6: `stopBecause` for `PLAN_FLOW`. Pure.
- * @param {RunState|null} [state]
- * @returns {string|null} the bound, or `completed` once the one pass is done
- */
 export function planStopBecause(state) {
   const s = state || {};
   for (const bound of PLAN_BUDGET_BOUNDS) {
@@ -1389,10 +1107,6 @@ export function planStopBecause(state) {
 }
 
 /** `PLAN_FLOW` as a function, `nextStep`'s twin. Pure. */
-/**
- * @param {RunState|null} [state]
- * @returns {Decision}
- */
 export function nextPlanStep(state) {
   const s = state || {};
   const at = String(s.step || FIRST_STEP);
@@ -1439,11 +1153,6 @@ export function nextPlanStep(state) {
 }
 
 /** The move, `advance`'s twin for `PLAN_FLOW`: the pass counts when it is done (a `completed` close from a work row). */
-/**
- * @param {RunState|null} [state]
- * @param {Decision|null} [decision]
- * @returns {RunState}
- */
 export function planAdvance(state, decision) {
   const next = advance(state, decision);
   return decision && decision.pass_done ? { ...next, pass: (Number(next.pass) || 0) + 1 } : next;
@@ -1451,20 +1160,13 @@ export function planAdvance(state, decision) {
 
 /* R52 — WHAT A PLAN-MODE JUDGEMENT MAY CARRY. The top-level keys per judged row, and the exact key set of one
    candidate: `optionPropose`'s fields (`action-plans` R9's option fields, `why`, `sources`) and nothing else. */
-/** @type {string[]} */
 export const OPTION_KEYS = ["summary", "detail", "category", "subjects", "addressee", "dates", "tier", "enforces",
                             "lobbying", "why", "sources"];
-/** @type {Object<string, string[]>} the keys a plan-mode judgement may carry, by row */
 export const PLAN_JUDGEABLE = { compose: ["candidates"], adjust: ["submission"] };
 
 /** The one door a plan-mode judgement comes through (R16, R52). `{ok, state}` or `{ok: false, overreach, detail}`,
  *  naming every key it may not carry: a top-level key the row does not judge, and each candidate key outside
  *  `OPTION_KEYS` as `candidates[i].<key>` (a score, a rank or a strength among them). */
-/**
- * @param {RunState|null} state
- * @param {Judgement|string|number|boolean|null} [judgement] anything that is not a plain object is no judgement
- * @returns {Applied}
- */
 export function applyPlanJudgement(state, judgement) {
   const j = judgement && typeof judgement === "object" && !Array.isArray(judgement) ? judgement : {};
   const step = String((state || {}).step || "");
@@ -1492,20 +1194,11 @@ export function applyPlanJudgement(state, judgement) {
 }
 
 /** R52's duplicate: the canonical `{summary, category, subjects}`. */
-/**
- * @param {Object<string, unknown>|null} [o] a proposal
- * @returns {string}
- */
 export const proposalKey = (o) => canonical({ summary: o?.summary ?? null, category: o?.category ?? null,
                                                subjects: o?.subjects ?? null });
 
 /** R52 — dedup, before any write: the candidates whose canonical `{summary, category, subjects}` equals no option or
  *  proposal on the plan, nor an earlier candidate, in their order. `plan` is `op=plan`'s answer (action-plans R6). */
-/**
- * @param {unknown} candidates a list of proposals; anything else is none
- * @param {{options?: unknown, proposals?: unknown, planning_runs?: unknown}|null} [plan] `op=plan`'s answer
- * @returns {{queue: unknown[], dropped: unknown[]}} each in the candidates' order
- */
 export function planDedup(candidates, plan) {
   const p = plan && typeof plan === "object" ? plan : {};
   const pages = Array.isArray(p.planning_runs) ? p.planning_runs.flatMap((r) => list(r?.proposals)) : [];
@@ -1524,10 +1217,6 @@ export function planDedup(candidates, plan) {
 /* R51 — THE READS, AS DATA. What `read` asks the plane for: the run's plan, the earlier plans of its project, and per
    subject its record, each through the op the plane declares for it; once per run, the jurisdiction profiles. The op
    names are here and nowhere else, so a change the plane's declarations make is one line. */
-/**
- * @type {{plan: (planId: unknown) => PlaneRead, plans: (project: unknown) => PlaneRead, profile: () => PlaneRead,
- *   subject: (subject: PlanSubject|null|undefined) => PlaneRead[]}}
- */
 export const PLAN_READS = {
   plan:    (planId) => ({ op: "plan", query: { id: planId } }),
   plans:   (project) => ({ op: "plans", query: { project } }),
@@ -1549,14 +1238,9 @@ export const PLAN_READS = {
 };
 
 /** The profile view's three facts R51 names; an answer that does not carry one leaves it UNDETERMINED. */
-/** @type {string[]} */
 export const PROFILE_FACTS = ["deadlines", "venues", "legal_organisations"];
 
 /** R51 — the reads to make for a plan, in order, each once: the subjects' reads, then the profiles. */
-/**
- * @param {{subjects?: unknown}|null} [plan] `subjects`: a list of subjects, each bare or as `{subject}`
- * @returns {PlaneRead[]}
- */
 export function planSubjectReads(plan) {
   const seen = new Set(), out = [];
   for (const subject of list(plan?.subjects)) {
@@ -1574,29 +1258,16 @@ export function planSubjectReads(plan) {
 }
 
 /** R51 — the plans `op=plans` answered, kept to the SAME project and never the run's own plan. */
-/**
- * @param {{plans?: unknown, items?: unknown}|null} answer `op=plans`' answer
- * @param {unknown} project
- * @param {unknown} planId the run's own plan
- * @returns {Array<Object<string, unknown>>}
- */
 export function earlierPlans(answer, project, planId) {
   const items = list(answer?.plans ?? answer?.items);
   return items.filter((p) => p && typeof p === "object" && (p.project ?? project) === project
                              && String(p.id ?? p.plan ?? "") !== String(planId ?? ""));
 }
 
-/** @type {number} */
 export const WHY_MAX = 500;
 
 /** R51 — a proposal's `why` carries every read that was refused or silent as UNDETERMINED, never as an absence: the
  *  table appends the sentence, and the model's own words are cut to fit the 500 characters `optionPropose` holds. */
-/**
- * @param {unknown} why the model's own words; anything but a string is none
- * @param {unknown} undetermined a list of `{op, id, code}`; anything else is none
- * @returns {string}
- * @bound at most 500 characters (`WHY_MAX`)
- */
 export function whyWithUndetermined(why, undetermined) {
   const own = typeof why === "string" ? why.trim() : "";
   const u = list(undetermined);

@@ -13,10 +13,7 @@
    T50 (R43; U3; DEC-291, DEC-323): the screen leads with how things stand under its mark; the counts fold; the catalogue of
    outside-tool kinds is drawn only inside the fold "Add another checker"; a period is named by its first and last day, both
    included, and may end today (`to` the end of the present hour then). A member who does not administer reads only the
-   administrators (`memberlist`) to be told whose screen it is. The fold holds the counts by kind and by hour (a square for each
-   step `securitymap` answers, each named in words by its tip, shaded against its usual) and the totals by kind; the period's total
-   stands under the mark; "When you are told" says when administrators are told, with the notice's row for a period answered
-   `High`. No country is drawn (R15).
+   administrators (`memberlist`) to be told whose screen it is.
    T51 FR-25 (R74, R77; T-14, K4213; DEC-384): a credential field is labelled by `file-scanner.credential.<field>` for the four names the
    catalogue lists (`client_id`, `client_secret`, `api_key`, `api_secret`), the field sent staying the catalogue's own; and a scanner
    that holds no signatures is said so, by the key and words `scanstatus` answers (`no_signatures`), never drawn as "waiting".
@@ -48,9 +45,6 @@ export const security = {
     const W = cs.w, E = cs.esc, S = "screen.security.";
     const T = (k, f) => String(W(k, f)).replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e]));
     const D = (iso) => String(cs.date(iso, { year: true })).replace(/<[^>]*>/g, "").replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e]));
-    // a time of day (`time.clock`) and a day without its year (`date.daymonth`), as plain text for a fill, read in UTC as `cs.date` reads a day
-    const clock = (ms) => { const d = new Date(ms), hr = d.getUTCHours(); return T("time.clock", { hour: String(hr % 12 || 12), minute: String(d.getUTCMinutes()).padStart(2, "0"), ampm: T(hr < 12 ? "time.am" : "time.pm") }); };
-    const shortDay = (ms) => { const d = new Date(ms); return T("date.daymonth", { day: String(d.getUTCDate()), month: T("date.month." + ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"][d.getUTCMonth()]) }); };
     const me = view.me || {};
     const out = [cs.title()];
     const data = view.data || {};
@@ -89,45 +83,11 @@ export const security = {
       // one that did not answer and one not bound claim nothing; the scanner's own state is told under the queue (R77)
       const sc0 = data.scan && data.scan.state === "ok" && data.scan.value && data.scan.value.ok !== false ? data.scan.value : null;
       if (boot0 && boot0.part_scanner === true && sc0 && !sc0.no_signatures && Number.isFinite(sc0.signatures_age_ms)) h += `<p data-state="files">${W(S + "files.on")}</p>`;
-      // the period's total against its usual, under the mark (nothing drawn at zero, R28)
-      // (`totals.count` and `totals.usual` are by kind, their `total` the sum, credentials R45)
-      const tc = Number(t.count && t.count.total) || 0, tu = Number(t.usual && t.usual.total) || 0;
-      if (tc > 0 || tu > 0) h += `<p data-state="total">${W(S + "total", { count: tc.toLocaleString("en"), usual: tu.toLocaleString("en") })}</p>`;
-      // the counts, folded (R43 (1)): by kind and by hour, a square for each step of the period (`step`: an hour, six hours or a day,
-      // credentials R45), each named in words by its tip; then the totals by kind. Counts only: no country, address, role or member (R15)
-      const buckets = Array.isArray(v.buckets) ? v.buckets : [];
-      const stepH = v.step === "hour" ? 1 : v.step === "six-hours" ? 6 : 24;
-      // a square's shade against its usual (the design's four: at or below, up to 5 times, 5 to 50 times, over 50 times); a usual of 0 counts as 1
-      const shade = (n, u) => (n <= u ? 0 : n <= 5 * Math.max(u, 1) ? 1 : n <= 50 * Math.max(u, 1) ? 2 : 3);
-      const HOURLY = ["signin", "credential", "rate", "handover"];   // the kinds the design names by the hour (`tip.hour_<kind>`)
-      const gridKinds = HOURLY.filter((k) => sum(k) > 0 || usual(k) > 0);
-      let grid = "";
-      if (buckets.length && gridKinds.length) {
-        const label = (b, i) => { const ms = Date.parse(b.start), hr = new Date(ms).getUTCHours();
-          if (v.step === "hour") return hr % 6 === 0 ? E(clock(ms)) : "";
-          return hr === 0 && (v.step !== "day" || i % 7 === 0) ? E(shortDay(ms)) : ""; };
-        const square = (k, b) => { const ms = Date.parse(b.start), n = Number(b.counts && b.counts[k]) || 0, u = Number(b.usual && b.usual[k]) || 0;
-          const tip = W(S + "tip.hour_" + k, { from: clock(ms), to: clock(ms + stepH * 3600000), day: D(b.start), n: n.toLocaleString("en") }) + " " + W(S + "tip.hour_usual", { n: String(Math.round(u / stepH * 10) / 10) });
-          return `<i data-x="${shade(n, u)}" tabindex="0" role="img" aria-label="${tip}" data-level="2" data-tip="${tip}"></i>`; };
-        grid = `<div class="cs-heat" style="--n:${buckets.length}" role="group" aria-label="${W(S + "heat.heading")}"><span></span>${buckets.map((b, i) => `<span class="t">${label(b, i)}</span>`).join("")}`
-          + gridKinds.map((k) => `<span class="k">${W(S + "kind." + k)}</span>${buckets.map((b) => square(k, b)).join("")}`).join("") + "</div>"
-          + `<div class="cs-heatkey"><span><i></i>${W(S + "heat.usual")}</span><span><i style="background:color-mix(in srgb, var(--c-signal) 20%, var(--c-surface))"></i>${W(S + "heat.upto", { n: "5" })}</span><span><i style="background:color-mix(in srgb, var(--c-signal) 50%, var(--c-surface))"></i>${W(S + "heat.upto", { n: "50" })}</span></div>`
-          // the note says each square is one hour: drawn only where it is so
-          + (v.step === "hour" ? `<p class="mk-small">${W(S + "heat.note")}</p>` : "");
-      }
       const rows = KINDS.filter((k) => sum(k) > 0 || usual(k) > 0);
-      const totals = rows.length ? `<table class="mk-table"><thead><tr><th>${W(S + "col.kind")}</th><th>${W(S + "col.count")}</th><th>${W(S + "col.usual")}</th></tr></thead><tbody>${rows.map((k) => `<tr><td>${W(S + "kind." + k)}</td><td>${E(sum(k).toLocaleString("en"))}</td><td>${E(usual(k).toLocaleString("en"))}</td></tr>`).join("")}</tbody></table><p class="mk-small">${W(S + "totals.note")}</p>` : "";
-      const counts = (grid ? cs.sec(S + "heat.heading", grid) : "") + (totals ? cs.sec(S + "totals.heading", totals) : "");
+      const counts = (Number(t.count || 0) > 0 || Number(t.usual || 0) > 0 ? `<p>${W(S + "total", { count: Number(t.count || 0).toLocaleString("en"), usual: Number(t.usual || 0).toLocaleString("en") })}</p>` : "")
+        + (rows.length ? `<table class="mk-table"><thead><tr><th>${W(S + "col.kind")}</th><th>${W(S + "col.count")}</th><th>${W(S + "col.usual")}</th></tr></thead><tbody>${rows.map((k) => `<tr><td>${W(S + "kind." + k)}</td><td>${E(sum(k).toLocaleString("en"))}</td><td>${E(usual(k).toLocaleString("en"))}</td></tr>`).join("")}</tbody></table>` : "");
       return h + (counts ? `<details class="mk-details" data-fold="counts"><summary>${W(S + "counts.fold")}</summary>${counts}</details>` : "");
     }) + `${ui.periodBad ? `<details class="mk-details" open data-state="periodbad"><summary>${W(S + "period.bad.summary")}</summary><p>${W(S + "period.bad")}</p></details>` : ""}${cs.field("se-from", S + "from", { type: "date" })}${cs.field("se-to", S + "to", { type: "date" })}${cs.act("securitymap")}`));
-
-    // when administrators are told (R43 (1): "When you are told" stays): told once, in their queue, when the level becomes high (credentials R45,
-    // notice-producers); the notice's row is drawn for a period the owner answers `High` with the instant it became so, at that instant
-    const mv = data.map && data.map.state === "ok" && data.map.value ? data.map.value : null;
-    const told = mv && mv.level === "High" && mv.levelAt
-      ? `<div data-state="told">${cs.row("", `<b>${W(S + "name")}</b> · ${W(S + "notice.signin")}`, "", W(S + "notice.sent", { time: clock(Date.parse(mv.levelAt)) + ", " + D(mv.levelAt) }))}</div>`
-      : "";
-    out.push(cs.sec(S + "told.heading", told + `<p class="mk-small">${W(S + "told.note")}</p>`));
 
     // what is built in, as the plane answers it, and the scanner's queue
     out.push(cs.sec(S + "parts.heading", cs.state(data.boot, (b) => {

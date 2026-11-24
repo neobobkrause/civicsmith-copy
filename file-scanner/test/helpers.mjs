@@ -8,31 +8,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-/** A digest as R2 names a capture: SHA-256, 64 lower-case hex.
- * @param {*} b the bytes
- * @returns {string} */
 export const sha = (b) => createHash('sha256').update(b).digest('hex');
-/** A text's UTF-8 bytes.
- * @param {string} s
- * @returns {Uint8Array} */
 export const enc = (s) => new TextEncoder().encode(s);
-/** The tests' fixed clock, in milliseconds since the epoch (2026-10-07T12:00:00Z).
- * @type {number} */
 export const NOW = Date.parse('2026-10-07T12:00:00Z');
 const EICAR_PARTS = ['X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR', '-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'];
-/** The EICAR test file's bytes (R17, R28).
- * @type {Uint8Array} */
 export const EICAR = enc(EICAR_PARTS.join(''));
-/** True when ClamAV's `clamscan` and `sigtool` run on this machine.
- * @type {boolean} */
 export const toolsPresent = (() => { try { execFileSync('clamscan', ['--version']); execFileSync('sigtool', ['--version']); return true; } catch { return false; } })();
-/** True when LibreOffice's `soffice` and Poppler's `pdftoppm` run on this machine.
- * @type {boolean} */
 export const rendererPresent = (() => { try { execFileSync('soffice', ['--version']); execFileSync('pdftoppm', ['-v'], { stdio: 'ignore' }); return true; } catch { return false; } })();
 
-/** An R2 bucket in memory: head, get, put, delete, list; every call recorded in `calls`, each object in `objects`.
- * @param {Object<string, *>} [initial] objects by key, each bytes or text
- * @returns {*} the bucket */
+/** An R2 bucket in memory: head, get, put, delete, list; every call recorded in `calls`. */
 export function memoryBucket(initial = {}) {
   const objects = new Map();
   const calls = [];
@@ -62,11 +46,7 @@ export function memoryBucket(initial = {}) {
   return bucket;
 }
 
-/** Stores `bytes` as a capture (whole, or in parts of `split` bytes) and answers its target (`{capture_sha, parts}`).
- * @param {*} bucket a `memoryBucket`
- * @param {*} bytes bytes, or a text
- * @param {{store?: string, split?: number}} [options]
- * @returns {*} the target */
+/** Stores `bytes` as a capture (whole, or in parts of `split` bytes) and answers its target. */
 export function putCapture(bucket, bytes, { store = 'bio', split } = {}) {
   const capture_sha = sha(bytes);
   if (!split) { bucket.objects.set(`${store}/captures/${capture_sha}`, bytes); return { capture_sha, parts: null }; }
@@ -80,12 +60,7 @@ export function putCapture(bucket, bytes, { store = 'bio', split } = {}) {
 }
 
 /** Stores `bytes` as a derived copy (a safe view file-safety wrote under `derived/`, rendered or rebuilt) and answers its
- *  target, `area: "derived"` (R2).
- * @param {*} bucket a `memoryBucket`
- * @param {*} bytes bytes, or a text
- * @param {{store?: string, split?: number}} [options]
- * @returns {*} the target, `area: "derived"`
- */
+ *  target, `area: "derived"` (R2). */
 export function putDerived(bucket, bytes, { store = 'bio', split } = {}) {
   const capture_sha = sha(bytes);
   if (!split) { bucket.objects.set(`${store}/derived/${capture_sha}`, bytes); return { capture_sha, parts: null, area: 'derived' }; }
@@ -98,10 +73,7 @@ export function putDerived(bucket, bytes, { store = 'bio', split } = {}) {
   return { capture_sha, parts, area: 'derived' };
 }
 
-/** The test signature set (EICAR's MD5 as an `.hdb`), placed in the bucket as the mirror's current set.
- * @param {*} bucket a `memoryBucket`
- * @param {{published?: string, set?: string}} [options]
- * @returns {*} the set's `current` record */
+/** The test signature set (EICAR's MD5 as an `.hdb`), placed in the bucket as the mirror's current set. */
 export function mirrorTestSet(bucket, { published = new Date(NOW - 3_600_000).toISOString(), set = 'rtest1' } = {}) {
   const hdb = enc(`${createHash('md5').update(EICAR).digest('hex')}:${EICAR.length}:Eicar-Test-Signature\n`);
   const key = `clamav/sets/${set}/main.hdb`;
@@ -113,8 +85,7 @@ export function mirrorTestSet(bucket, { published = new Date(NOW - 3_600_000).to
 }
 
 let scannerServer = null, rendererServer = null;
-/** The ClamAV image's server, run locally once per process.
- * @returns {Promise<*>} */
+/** The ClamAV image's server, run locally once per process. */
 export async function scannerImage() {
   if (!scannerServer) {
     process.env.FILE_SCANNER_SIGS = join(mkdtempSync(join(tmpdir(), 'sigs-')), 'sigs');
@@ -126,8 +97,7 @@ export async function scannerImage() {
   }
   return scannerServer;
 }
-/** The safe-view image's server, run locally once per process.
- * @returns {Promise<*>} */
+/** The safe-view image's server, run locally once per process. */
 export async function rendererImage() {
   if (!rendererServer) {
     const { start } = await import('../container/renderer.mjs');
@@ -140,10 +110,7 @@ export async function rendererImage() {
 }
 
 /** A recording network: `routes` maps `host` to `(request, url) => Response`; every request is recorded, its body
- *  read whole (`text`) so a test can search it; an unrouted host answers a refusal and is recorded too.
- * @param {Object<string, *>} [routes]
- * @returns {{seen: *[], fetch: *}}
- */
+ *  read whole (`text`) so a test can search it; an unrouted host answers a refusal and is recorded too. */
 export function recordingNet(routes = {}) {
   const seen = [];
   const fetchFn = async (input, init) => {
@@ -160,23 +127,13 @@ export function recordingNet(routes = {}) {
   return { seen, fetch: fetchFn };
 }
 
-/** The member's dependencies for a test: a fresh bucket, images and network that refuse, the fixed clock; `over`
- *  replaces any of them.
- * @param {Object} [over]
- * @returns {*} */
+/** The member's dependencies for a test. */
 export function depsWith(over = {}) {
   return { bucket: memoryBucket(), scanner: async () => { throw new Error('no scanner'); },
     updater: async () => { throw new Error('no updater'); }, renderer: async () => { throw new Error('no renderer'); }, fetch: async () => { throw new Error('no network'); },
     connect: null, vpc: null, now: () => NOW, version: '0.79.0', ...over };
 }
 
-/** A POST to the member's surface with a JSON body.
- * @param {string} path
- * @param {*} body
- * @returns {Request} */
 export const post = (path, body) => new Request(`https://file-scanner${path}`, { method: 'POST', body: JSON.stringify(body),
   headers: { 'content-type': 'application/json' } });
-/** A 200 JSON answer, as a stub sends it.
- * @param {*} o
- * @returns {Response} */
 export const json = (o) => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });

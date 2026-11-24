@@ -29,14 +29,6 @@
    =========================================================================== */
 import { word, localize } from '../setup-words/index.mjs';
 
-/**
- * @typedef {Object} CheckRow one catalogue row (DEC-49)
- * @property {string} check the check id, `C-<family>.<n>`
- * @property {string} where the file and span whose code raises it
- * @property {string} translation the member's sentence, read from the word table
- */
-
-/** @type {{UNKNOWN_OP: CheckRow, STORE_DID_NOT_ANSWER: CheckRow, PLANE_INTERNAL_ERROR: CheckRow, STORE_INTERNAL_ERROR: CheckRow, PURGE_HOLD_IN_PLACE: CheckRow, SIGNINTRACE_NOT_TEST: CheckRow}} the rows the doors mint (R8, R16) */
 export const DISPATCH_CHECKS = {
   UNKNOWN_OP: {
     check: 'C-69.1',
@@ -96,7 +88,6 @@ export const DISPATCH_CHECKS = {
 /* C-68.2–.4 — THE BOOTSTRAP CLAIM (D-278). `claim`'s three bootstrap-credential complaints, pre-authentication, met
    before anyone holds anything, and each says no more than its `error` did. Addressed to whoever installed the copy,
    the only person who can act on them. Split from `INSTALLATION_CHECKS`, which keeps C-68.1. */
-/** @type {{BOOTSTRAP_CREDENTIAL_UNSET: CheckRow, BOOTSTRAP_CREDENTIAL_PUBLISHED: CheckRow, BOOTSTRAP_CREDENTIAL_MISMATCH: CheckRow}} C-68.2 to C-68.4 (R8) */
 export const BOOTSTRAP_CHECKS = {
   BOOTSTRAP_CREDENTIAL_UNSET: {
     check: 'C-68.2',
@@ -116,7 +107,6 @@ export const BOOTSTRAP_CHECKS = {
 };
 
 /* C-66.6 — A REPLAY THE PLANE COULD NOT VERIFY (D-512). Split from `SURFACE_CHECKS`. */
-/** @type {{REPLAY_UNVERIFIED: CheckRow}} C-66.6 (R8) */
 export const REPLAY_CHECKS = {
   /* D-512 (INVESTIGATIVE-SESSION.md §11 item 5, "`replay` IS THE SERVER'S WORD, NEVER THE CALLER'S", BOB #33's
      STEP (2)): `replay` exempts a promotion from every shape fence `promote` has, because a replay re-states the
@@ -172,7 +162,6 @@ export const REPLAY_CHECKS = {
    and the sentence below carries no member vocabulary. They are minted through
    the same helper, so the row's one `where` stays true.
    =========================================================================== */
-/** @type {{REQUIRED_ARGUMENT_MISSING: CheckRow}} C-61.1 (R8) */
 export const REQUIRED_ARGUMENT_CHECKS = {
   /* NOTHING WAS CHANGED, and the sentence says so first. A caller who cannot
      tell a refused request from a half-applied one has to go and look, and this

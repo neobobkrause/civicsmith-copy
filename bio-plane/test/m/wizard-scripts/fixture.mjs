@@ -14,52 +14,6 @@ import { filingTemplatesOf } from "../../../src/filing-templates/index.mjs";
 import { aiAccountsOf } from "../../../src/ai-accounts/index.mjs";
 import { wizardScriptsOf, WizardScripts } from "../../../src/wizard-scripts/index.mjs";
 
-/**
- * @typedef {Object} SqlHandle a Durable Object's SQL handle, as workerd's answers
- * @property {(query: string, ...args: unknown[]) => any} exec a cursor over the rows
- */
-/**
- * @typedef {Object} TestStorage a Durable Object's storage over an in-memory SQLite database
- * @property {DatabaseSync} db
- * @property {SqlHandle} sql
- * @property {<T>(fn: () => T) => T} transactionSync
- */
-/**
- * @typedef {Object} TestStep a script's step, whole (R2)
- * @property {string} screen
- * @property {string | null} act
- * @property {string} what
- * @property {string} why
- */
-/**
- * @typedef {Object} TestWorld wizard-scripts over the real modules it uses, on one storage
- * @property {TestStorage} st
- * @property {Object<string, any>} host
- * @property {any} record
- * @property {any} membership
- * @property {{now: string}} clock
- * @property {any} filingTemplates
- * @property {any} accounts
- * @property {(q: string, ...a: unknown[]) => any[]} rows
- * @property {(t: string) => number} count
- * @property {() => Object<string, string>} snapshot each `wiz_` table's rows, as text
- * @property {(id: string, opts?: {role?: string, status?: string}) => void} member
- * @property {(slug: string, owner: string) => string} project the new project's id
- * @property {(projectId: string, memberId: string, state?: string, owner?: boolean) => void} join
- * @property {WizardScripts} wz
- * @property {string} [P] `seeded`'s project P
- * @property {string} [Q] `seeded`'s project Q
- */
-/**
- * @typedef {Object} WorldOptions
- * @property {boolean} [register] register `registration(reg)` at once; default true
- * @property {Object<string, unknown>} [reg] changes to the test registration
- * @property {string} [templates] `"reviewed"` (default) or `"unreviewed"`
- * @property {string | null} [recordsRequest] the template's name; null keeps its kind's label
- * @property {{get: (id: string) => unknown} | null} [jurisdictions] a profile reader in place of either
- * @property {Object<string, unknown>} [env] the Worker environment
- */
-
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 function cursor(rows) {
   let i = 0;
@@ -71,7 +25,6 @@ function cursor(rows) {
   };
   return c;
 }
-/** @returns {TestStorage} */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -87,20 +40,16 @@ export function storage() {
   } };
 }
 
-/** A member's identity stamp. @param {string} id @returns {string} */
 export const V = (id) => `member:${id}`;
-/** @type {string} a machine's stamp */
 export const MACHINE = "class:ai";
-/** @type {string} */
 export const NOW = "2026-10-03T12:00:00Z";
-/** @type {string} the test profile's id */
 export const TEST = "test-port-ellery";
 /** The test profile's records-request template, which filing-templates offers while the profile is active and the
  *  template is attributed (`reviewed`). */
-export const OFFERED_TEMPLATE = /** @type {string} */ ("TPL-test-records-request");
+export const OFFERED_TEMPLATE = "TPL-test-records-request";
 /** R22 (T45): the name the attributed records-request template is given, so its handle is `records-request`
  *  (filing-templates R26). */
-export const RECORDS_REQUEST_NAME = /** @type {string} */ ("Records request");
+export const RECORDS_REQUEST_NAME = "Records request";
 
 /** filing-templates R15 (T45; v0.2 rule 11; K2851): the test profile filing-templates reads (through `get`, the one
  *  reading it makes), made up here, standing for the test profile's records request: one kind, its venue not a court,
@@ -108,11 +57,8 @@ export const RECORDS_REQUEST_NAME = /** @type {string} */ ("Records request");
  *  professional's review with no concerns and another approver) and named "Records request", so its handle is
  *  `records-request` (filing-templates R26); or, with `name` null, keeping its kind's label for a name. `reviewed: false`
  *  leaves out its sources and its professional review, so it is not offered (R15). No place, law or venue is real. */
-/** @type {Readonly<Object<string, string>>} */
 export const PRO_REVIEW = Object.freeze({ reviewer: "Dee Example", kind: "professional", organisation: "Test Legal Society",
                                           credential: "solicitor (test)", scope: "the whole text", outcome: "no_concerns", at: "2026-08-25" });
-/** @param {{reviewed?: boolean, name?: string | null}} [opts]
- *  @returns {{get: (id: string) => any}} */
 export function profiles({ reviewed = true, name = RECORDS_REQUEST_NAME } = {}) {
   const template = { id: OFFERED_TEMPLATE, version: 1, use: "file", ...(name ? { name } : {}),
                      text: "To the {{counterparty_role}}: under {{law}}, {{group}} asks for the records described below.",
@@ -126,49 +72,36 @@ export function profiles({ reviewed = true, name = RECORDS_REQUEST_NAME } = {}) 
 }
 
 const EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-/** @param {string} s @returns {string} the SHA-256, lowercase hex */
 export const sha = (s) => createHash("sha256").update(s, "utf8").digest("hex");
 
-/** A test screen registry: three screens and their acts.
- *  @type {readonly {id: string, acts: string[]}[]} */
+/** A test screen registry: three screens and their acts. */
 export const SCREENS = Object.freeze([
   { id: "case-home", acts: ["casenote", "casejoin"] },
   { id: "filing-draft", acts: ["filingsave", "filingapprove"] },
   { id: "publish", acts: ["publish", "whatchangedpropose"] },
 ]);
-/** @type {readonly string[]} the test op table */
 export const OPS = Object.freeze(["casenote", "casejoin", "filingsave", "filingapprove", "publish", "whatchangedpropose", "escalationreasondraft",
                                    "writinghelp", "groupdescriptiondraft"]);
-/** The acts a machine is refused (op-grades' MACHINE_REFUSALS keys, its R5, here a test's; K1974).
- *  @type {readonly string[]} */
+/** The acts a machine is refused (op-grades' MACHINE_REFUSALS keys, its R5, here a test's; K1974). */
 export const MACHINE_REFUSED = Object.freeze(["filingapprove", "publish"]);
-/** The labelled machine drafts (case-authoring R39's ops).
- *  @type {readonly string[]} */
+/** The labelled machine drafts (case-authoring R39's ops). */
 export const MACHINE_DRAFTS = Object.freeze(["whatchangedpropose", "escalationreasondraft"]);
-/** A step, whole.
- *  @param {string} screen @param {any} act the op, or null; a test may pass a wrong kind to see it refused @param {Object<string, unknown>} [extra]
- *  @returns {TestStep & Object<string, unknown>} */
+/** A step, whole. */
 export const step = (screen, act, extra = {}) => ({ screen, act, what: `Do ${act ?? "nothing"} on ${screen}`, why: "Because it moves the case", ...extra });
-/** @type {readonly TestStep[]} */
 export const STEPS = Object.freeze([step("case-home", "casenote"), step("filing-draft", "filingsave")]);
-/** A test Civicsmith library: one required script and one optional.
- *  @type {readonly {id: string, name: string, required: boolean, version: number, steps: TestStep[], approved: {by: string, at: string}}[]} */
+/** A test Civicsmith library: one required script and one optional. */
 export const LIBRARY = Object.freeze([
   { id: "WIZ-2026-9001", name: "Start a case", required: true, version: 2, steps: [step("case-home", "casejoin"), step("case-home", "casenote")],
     approved: { by: "Bob", at: "2026-10-01T00:00:00Z" } },
   { id: "WIZ-2026-9002", name: "Publish", required: false, version: 1,
     steps: [step("publish", "publish", { draft: { machine: "whatchangedpropose" } })], approved: { by: "Bob", at: "2026-10-02T00:00:00Z" } },
 ]);
-/** The test registration, with `x`'s changes. @param {Object<string, unknown>} [x] @returns {Object<string, any>} */
 export const registration = (x = {}) => ({ screens: SCREENS, ops: OPS, machineRefused: MACHINE_REFUSED, machineDrafts: MACHINE_DRAFTS,
                                            library: LIBRARY, ...x });
 
 /** `templates`: `"reviewed"` (the default: the test profile's template attributed, so filing-templates offers it as
  *  "Records request", or with `recordsRequest: null` under its kind's label) or `"unreviewed"` (not offered, R15);
  *  `jurisdictions`, a profile reader (`get`) in place of either. */
-/** @param {WorldOptions} [opts]
- *  @returns {TestWorld}
- *  @throws {Error} when the registration is refused */
 export function world({ register = true, reg = {}, templates = "reviewed", recordsRequest = RECORDS_REQUEST_NAME, jurisdictions = null, env = undefined } = {}) {
   const st = storage();
   /* `env`, the Worker environment, when a test gives one: `ai-runs` reads whether this is a test instance from it (R34) */
@@ -190,7 +123,7 @@ export function world({ register = true, reg = {}, templates = "reviewed", recor
   const accounts = aiAccountsOf(host, { record, membership });
   accounts.migrate();
   let n = 0;
-  const w = /** @type {any} */ ({
+  const w = {
     st, host, record, membership, clock, filingTemplates, accounts,
     rows: (q, ...a) => [...st.sql.exec(q, ...a)],
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n,
@@ -218,7 +151,7 @@ export function world({ register = true, reg = {}, templates = "reviewed", recor
       st.sql.exec(`INSERT OR REPLACE INTO project_participants (project_id, member_id, state, owner, created, updated)
                    VALUES (?, ?, ?, ?, 't', 't')`, projectId, memberId, state, owner ? 1 : 0);
     },
-  });
+  };
   w.wz = wizardScriptsOf(host, { record, membership, filingTemplates, accounts, now });
   if (register) { const r = w.wz.wizardRegister(registration(reg)); if (!r.ok) throw new Error(JSON.stringify(r)); }
   return w;
@@ -226,8 +159,6 @@ export function world({ register = true, reg = {}, templates = "reviewed", recor
 
 /** The common world: alice and bob joined owners of P; frank joined in P, not an owner; carol invited to P, not
  *  joined; dave outside P, owner of Q; erin an administrator outside P. */
-/** @param {WorldOptions} [opts]
- *  @returns {TestWorld & {P: string, Q: string}} */
 export function seeded(opts = {}) {
   const w = world(opts);
   for (const m of ["alice", "bob", "carol", "dave", "frank"]) w.member(m);
@@ -237,28 +168,22 @@ export function seeded(opts = {}) {
   w.join(w.P, "frank");
   w.join(w.P, "carol", "invited");
   w.Q = w.project("harbour", "dave");
-  return /** @type {TestWorld & {P: string, Q: string}} */ (w);
+  return w;
 }
 
 /** The object constructed again on the same storage (a Durable Object's next wake), registered with `reg`'s changes. */
-/** @param {TestWorld} w @param {Object<string, unknown>} [reg]
- *  @returns {WizardScripts & {registered: any}}
- *  @throws {Error} when the registration is refused */
 export function restart(w, reg = {}) {
   const x = new WizardScripts({ storage: w.st, record: w.record, membership: w.membership, filingTemplates: w.filingTemplates,
                                 accounts: w.accounts, now: () => Date.parse(w.clock.now) });
   x.migrate();
   const r = x.wizardRegister(registration(reg));
   if (!r.ok) throw new Error(JSON.stringify(r));
-  return Object.assign(x, { registered: r });
+  x.registered = r;
+  return x;
 }
 
 const must = (r, what) => { if (!r || !r.ok) throw new Error(`fixture ${what} refused: ${JSON.stringify(r).slice(0, 400)}`); return r; };
 /** A recorded draft in P by `who` (default frank), its steps revised to `steps`. */
-/** @param {TestWorld} w
- *  @param {{who?: string, steps?: readonly TestStep[], name?: string, project?: string | null}} [opts]
- *  @returns {any} the draft's answer, `{ok, script, version, sha, state}`
- *  @throws {Error} when the draft or its revision is refused */
 export function draft(w, { who = "frank", steps = STEPS, name = "Note and save", project = null } = {}) {
   const d = must(w.wz.wizardDraft({ project: project ?? w.P, name, recorded: steps.map((s) => ({ screen: s.screen, act: s.act ?? null })),
                                     author: V(who), viewer: V(who) }), "draft");
@@ -266,10 +191,6 @@ export function draft(w, { who = "frank", steps = STEPS, name = "Note and save",
   return d;
 }
 /** A draft submitted by its author and approved by alice (an owner who is not its author). */
-/** @param {TestWorld} w
- *  @param {{who?: string, by?: string, steps?: readonly TestStep[], name?: string, project?: string | null}} [x]
- *  @returns {any} the draft's answer
- *  @throws {Error} when an act is refused */
 export function approved(w, x = {}) {
   const d = draft(w, x);
   const who = x.who ?? "frank";
@@ -281,9 +202,6 @@ export function approved(w, x = {}) {
 
 /** D54 (membership R43, R44; K2408): a project's owner sets it discoverable, so an administrator neither invited nor
  *  joined sees it at FULL again (a hidden project, the default, it sees only at EXISTENCE: none of its scripts). */
-/** @param {TestWorld} w @param {string} [project] @param {string} [owner]
- *  @returns {any} membership's answer
- *  @throws {Error} when refused */
 export function discoverable(w, project = w.P, owner = "alice") {
   return must(w.membership.projectVisibilitySet({ projectId: project, setting: "discoverable", reason: "open to the group", by: owner, viewer: V(owner) }),
               "discoverable");

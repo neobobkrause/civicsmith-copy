@@ -9,7 +9,7 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, CONSEQUENCE_STATEMENTS,
          MARKS, MARK_SOURCES } from "../../../src/op-grades/index.mjs";
 import { MARKS_KIT_COMMIT } from "../../../src/op-grades/marks.mjs";
 import * as T50 from "../../../src/op-grades/t50.mjs";
-import { reqText, between, ticked, registeredWith, REGISTRY_OWNER_ROWS } from "./declared.mjs";
+import { reqText, between, ticked, registeredOpGrades } from "./declared.mjs";
 
 const root = (p) => fileURLToPath(new URL(`../../../../${p}`, import.meta.url));
 const gradeOf = (op) => (Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null);
@@ -126,7 +126,7 @@ test("R46: every rungless registered act has an entry, and the registry's watchi
   const nameOf = (a) => (a.startsWith("owed:") ? a.slice(5).split(" ")[0] : a);
   const ops = [...new Set(REGISTRY.screens.flatMap((s) => s.acts.map((a) => nameOf(a.op))))];
   /* rungless over the registered tables (R49): an op its owner grades (strengthbarset, reasoned) needs no mark of its own */
-  const reg = await registeredWith(REGISTRY_OWNER_ROWS);
+  const reg = await registeredOpGrades();
   const rungless = ops.filter((op) => !Object.hasOwn(reg.RUNGS, op) && !(Object.hasOwn(reg.RUNG_ABSENT, op)
     && reg.RUNG_ABSENT[op].ground === "undetermined"));
   for (const op of rungless) assert.ok(Object.hasOwn(MARKS, op), `${op} is rungless and has no mark`);

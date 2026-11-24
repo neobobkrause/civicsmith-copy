@@ -26,33 +26,21 @@ import { word } from "../../../src/setup-words/index.mjs";
 import { noSelection } from "../retrieval/fixtures.mjs";
 import { standardReadWorld } from "../standards/fixtures.mjs";
 
-/** @param {string|Uint8Array} s
- *  @returns {string} its SHA-256, 64 lowercase hex
- */
 export const sha = (s) => createHash("sha256").update(typeof s === "string" ? Buffer.from(s, "utf8") : s).digest("hex");
 /** standards' own answer for an id it does not hold, or one `viewer` may not read (its fixture `standardReadWorld`), made
  *  when first asked: the one answer (`NO_SUCH_STANDARD`) a stand-in for `standardRead` gives beside the ones it holds. */
 /* retrieval's own refusal of a selection it holds none of (its fixture `noSelection`), made when first asked */
 let heldNone = null;
 let heldStandards = null;
-/** @param {*} id
- *  @param {string} [viewer]
- *  @returns standards' `NO_SUCH_STANDARD` answer
- */
 export const absentStandard = (id, viewer = "nobody") =>
   (heldStandards ||= standardReadWorld()).standardRead({ id: String(id), viewer });
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
-/** workerd's `sql.exec` answers a cursor, never an array: rows are read by iterating it (or its `toArray()`/`one()`),
+/* workerd's `sql.exec` answers a cursor, never an array: rows are read by iterating it (or its `toArray()`/`one()`),
    and `[0]` or `.length` of it is undefined. It also refuses a LIKE or GLOB pattern over 50 bytes ("LIKE or GLOB
    pattern too complex"), which node:sqlite does not (K313). This storage answers as workerd does, so code that indexes
-   a cursor or writes a long pattern fails here as it would in the Durable Object (K316).
- *  @type {number}
- */
+   a cursor or writes a long pattern fails here as it would in the Durable Object (K316). */
 export const WORKERD_PATTERN_CAP = 50;
-/** @param {Array<*>} rows
- *  @returns a cursor over the rows, as workerd's `sql.exec` answers
- */
 export function cursor(rows) {
   let i = 0;
   const c = {
@@ -68,11 +56,8 @@ export function cursor(rows) {
   return c;
 }
 
-/** `workerd: false` answers arrays, as this fixture did before K316: another module's fixture builds on `world()` and
-   shapes the storage itself (filings'), so the default is kept for it; this module's own tests use `planeWorld`.
- *  @param {{workerd?: boolean}} [opts]
- *  @returns `{sql}` over an in-memory database
- */
+/* `workerd: false` answers arrays, as this fixture did before K316: another module's fixture builds on `world()` and
+   shapes the storage itself (filings'), so the default is kept for it; this module's own tests use `planeWorld`. */
 export function storage({ workerd = false } = {}) {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -101,22 +86,10 @@ export function storage({ workerd = false } = {}) {
   };
 }
 
-/** @param {string} id
- *  @returns {string} the viewer `member:<id>`
- */
 export const V = (id) => `member:${id}`;
-/** @type {string} the machine viewer
- */
 export const MACHINE = "class:daemon";
-/** @type {string} the fixture's clock
- */
 export const NOW = "2026-09-28T01:00:00Z";
-/** @param {number} [n]
- *  @returns {string} an armoured signature
- */
 export const SIG = (n = 1) => `-----BEGIN SSH SIGNATURE-----\nsig${n}\n-----END SSH SIGNATURE-----`;
-/** @type {string} an attesting key
- */
 export const KEY = "AAAAC3NzaC1lZDI1NTE5AAAAIKEY";
 
 /* The columns inquiry writes on record-core's `bundles` (its R40), which the store's additive list creates today. */
@@ -138,17 +111,9 @@ const NO_READINGS = {
   readingOf: () => null, unitsOf: () => ({ units: [], state: null }), capturesReadFor: () => [], onReading: () => ({ ok: true }),
 };
 
-/** This module's tests: the world over storage shaped as workerd's (K316).
- *  @param {*} [opts] as `world`'s
- *  @returns the world `world` makes
- */
+/** This module's tests: the world over storage shaped as workerd's (K316). */
 export const planeWorld = (opts = {}) => world({ ...opts, workerd: true });
 
-/** A world of the real modules publication uses, with the acts a test takes in it.
- *  @param {*} [opts] `group`, `workerd`, and stand-ins for `contradiction`, `standards`, `entities`, `carriage`,
- *    and `realRoster`
- *  @returns the world: its modules, `p` the publication, and its acts
- */
 export function world({ group = "test-group", workerd = false, contradiction = null, standards = null, entities = null,
                         carriage = null, realRoster = false } = {}) {
   const st = storage({ workerd });
@@ -347,12 +312,7 @@ export function world({ group = "test-group", workerd = false, contradiction = n
  *  `blocks`: `{captures?, sources?}`, R20's /5 blocks through `captureBlockLines` and
  *  `sourceBlockLines`. `materials`, `attestations`: /6's rows (case-grammar R12); `acceptedWork`, `acceptedWorkFlags`: its
  *  R16 rows, written when given. `calculations`, `timeline`: its R18 and R20 rows (T33), written with its line builders
- *  when given.
- *  @param {string} caseId
- *  @param {number} edition
- *  @param {*} [opts]
- *  @returns {string} the document's text
- */
+ *  when given. */
 export function caseDoc(caseId, edition, { project = "PROJ-1", roles = [], findings = null, strength = [], excluded = [],
                                            attributions = null, citations = [], tensions = null, format = null,
                                            excludes = "Nothing else.", ack = false, blocks = null,
@@ -405,11 +365,6 @@ export function caseDoc(caseId, edition, { project = "PROJ-1", roles = [], findi
   return [...fm, ...body].join("\n");
 }
 
-/** A finding's `bundle.md`.
- *  @param {string} id
- *  @param {*} [opts]
- *  @returns {string}
- */
 export function inquiryMd(id, { question = `Is ${id} answered?`, legs = [], refs = null, state = "open", extra = [] } = {}) {
   const references = refs ?? [...new Set(legs.map((l) => l.target))].map((t) => ({ target: t, rel: "cites" }));
   return ["---", `id: ${id}`, "object_type: inquiry", "schema: inquiry@1", `title: "${question}"`,
@@ -427,10 +382,6 @@ export function inquiryMd(id, { question = `Is ${id} answered?`, legs = [], refs
     word("conformance.falsify"), "", "## Session Log", "", "## Review Notes", ""].join("\n");
 }
 
-/** A document's `bundle.md`.
- *  @param {string} id
- *  @returns {string}
- */
 export function infoMd(id) {
   return ["---", `id: ${id}`, "object_type: information", "schema: information@1", `title: "Document ${id}"`,
           "current_state: collected", "prior_state: null", `created: "2026-09-27T00:00:00Z"`,
@@ -438,10 +389,6 @@ export function infoMd(id) {
           "---", "", "## Summary", "", "A document.", ""].join("\n");
 }
 
-/** A project's `bundle.md`.
- *  @param {string} title
- *  @returns {string}
- */
 export function projMd(title) {
   return ["---", "object_type: project", "schema: project@1", `title: "${title}"`, "current_state: forming",
           "prior_state: null", `created: "2026-09-27T00:00:00Z"`, `last_updated: "2026-09-27T00:00:00Z"`,

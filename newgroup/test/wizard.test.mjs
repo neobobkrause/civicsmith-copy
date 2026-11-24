@@ -1217,9 +1217,7 @@ t("ARMED: the built-in release carries IC-172, so an update from 0.70.0 CROSSES 
    NEGATIVE CONTROL: see the D-116 entry at the head of this file's controls. */
 console.log("\n--- D-116: the installer reads the store's and each member's OWN build, and names the one that lags ---");
 {
-  /* R15: built from the checkout by the plane's own recipe, in memory (no committed bundle is read; ARCH, "Committed built files"). */
-  const { planeMember, buildMember } = await import("../../bio-plane/scripts/fleet-bundle.mjs");
-  const planeBundle = Buffer.from((await buildMember(planeMember())).bytes).toString("utf8");
+  const planeBundle = readFileSync(new URL("../../bio-plane/dist/bio-plane.bundled.mjs", import.meta.url), "utf8");
   t("PIN: the plane this tree builds CAN report its builds — renaming either field fails HERE, not silently in the field",
     reportsBuilds(planeBundle), true);
   t("PIN: a plane without the fields is read as unable to report them (the pre-D-116 releases)",

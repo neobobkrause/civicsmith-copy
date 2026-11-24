@@ -123,7 +123,7 @@ const lawsStated = (level, citation) => ({ state: "stated", laws: [{ level, cita
 const SENT_ONLY = [{ ord: 1, direction: "sent", at: "2026-10-20", medium: "portal", party: "Office of Government Information Services", author: "member:mai" }];
 const FED_ACTION = { ...ACTION, addressee: { role: OGIS, body: OGIS, entity_id: "ENT-2026-9999999999999999" }, correspondence: SENT_ONLY, entries: [],
   governing_laws: lawsStated("federal", FED), governing_laws_proposals: { proposals: [] },
-  clock: [{ text: "foia_response", description: "20 business days from received", date: "2099-11-19", basis: FED_FIRST, status: "pending" }] };
+  clock: [{ text: "foia_response", description: "20 business days from received", date: "2026-11-19", basis: FED_FIRST, status: "pending" }] };
 const fedPlane = (over = {}) => ({ ...DATA_PLANE, action: ok(FED_ACTION), profiles: FED_PROFILES, filingsfor: ok(FILINGS([])), communicationprepare: ok({ id: "FIL-2026-cccccccccccccccc", text: "x" }), ...over });
 const REQUEST = `/app/request/${ACTION_ID}`;
 const said = (p, key, vars) => assert.ok(text(p).includes(W(key, vars)), key);
@@ -197,7 +197,7 @@ test("R9 (C64-law): the action's due dates name the kind in the profile's words,
   assert.ok(!text(nolabel).includes("foia_response"));
   assert.ok(text(nolabel).includes("20 business days from received"));
   // control: an entry whose text is not a rule (a member's own) is drawn as written
-  const own = await open(`/app/action/${ACTION_ID}`, fedPlane({ action: ok({ ...FED_ACTION, clock: [{ text: "Reply to the clerk", description: "x", date: "2099-11-19", basis: "our note", status: "pending" }] }) }));
+  const own = await open(`/app/action/${ACTION_ID}`, fedPlane({ action: ok({ ...FED_ACTION, clock: [{ text: "Reply to the clerk", description: "x", date: "2026-11-19", basis: "our note", status: "pending" }] }) }));
   assert.ok(text(own).includes("Reply to the clerk"));
 });
 

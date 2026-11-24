@@ -17,7 +17,7 @@ test('R17 R18 R31 runnerRefusal: each sign-in route code is the runner\'s real r
     assert.equal(status, STATUS[code], code);
     assert.deepEqual([body.ok, body.code], [false, code], code);
     assert.ok(typeof body.detail === 'string' && body.detail.length > 0 && body.detail.length <= 300, `${code}: a detail of at most 300 characters`);
-    assert.match(body.trace ?? '', /\S/, `${code}: a trace`);
+    assert.match(body.trace, /\S/, `${code}: a trace`);
     assert.ok(!body.detail.includes(GOOD_CODE), `${code}: the code is in no detail`);
   }
   // the codes this image keys to a row of the word table answer that row as their detail (R41)

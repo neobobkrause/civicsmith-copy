@@ -149,16 +149,7 @@ test("R2 R8 R19 (G50 control, R-OLD): the verdicts recorded at the G50 base over
     const parts = golden[g].parts_b64.map((b) => new Uint8Array(Buffer.from(b, "base64")));
     assert.equal(golden[g].format, "bio-case-file/3", g);
     const now = await CC.checkCaseFile({ parts });
-    /* The catalogue's version is not what G50 controls: R7 answers this checker's version, and states it when the case
-       states another, so those fields are read as R7 says and then set aside; every other byte is compared. */
-    const old = golden[g].verdict;
-    assert.equal(now.checker.checks_version, CC.CHECKER_VERSIONS.checks_version, g);
-    assert.equal(now.publication_checks.checker_version, CC.CHECKER_VERSIONS.checks_version, g);
-    assert.equal(now.publication_checks.stated_version, old.publication_checks.stated_version, g);
-    assert.equal(now.publication_checks.statement === null, now.publication_checks.stated_version === CC.CHECKER_VERSIONS.checks_version, g);
-    const aside = (v) => ({ ...v, checker: { ...v.checker, checks_version: null },
-      publication_checks: { ...v.publication_checks, checker_version: null, statement: null } });
-    assert.equal(canonicalJson(aside(now)), canonicalJson(aside(old)), g);
+    assert.equal(canonicalJson(now), canonicalJson(golden[g].verdict), g);
     assert.equal(now.format, "bio-case-file/3");
   }
   /* g1 departs for the included row's document beside the copy (the departure is judged by ref in /3), g2 does not */

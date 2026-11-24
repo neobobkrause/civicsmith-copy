@@ -13,45 +13,18 @@
 
 import { isLocale, PHRASING_KINDS } from "../../../jurisdictions/index.mjs";
 import { PHRASINGS } from "./phrasings.mjs";
-/** @import { Finding } from './grammar.mjs' */
-/**
- * @typedef {Object} PhrasingList the phrasings for a language and kind, or why there are none
- * @property {string} state `read`, or `undetermined`
- * @property {string} [why] when undetermined: `language_malformed`, `kind_unknown` or `no_list`
- * @property {*} [language] when read, the language asked
- * @property {{phrase: string, origin: string}[]} [phrases] when read, each phrasing once, `origin` `product` or `profile`
- * @property {{index: number|null, why: string}[]} [ignored] each profile item not used, and why
- */
-/**
- * @typedef {Object} PointedOut the sentences that match a phrasing, or why none is read
- * @property {string} state `read`, or `undetermined`
- * @property {string} [why] when undetermined, why
- * @property {*} [language] when read, the language asked
- * @property {*} [kind] when read, the kind asked
- * @property {{index: number, phrase: string, origin: string, start: number, end: number}[]} [pointed] when read, every match in sentence order, then position
- * @property {{index: number|null, why: string}[]} [ignored] each profile item not used, and why
- */
 
 export { PHRASINGS, PHRASING_KINDS };
 
 /** R2, R19: the two ways a member resolves a pointed-out assertion besides rewriting it. */
-/**
- * @type {ReadonlyArray<string>} the ways a member resolves a pointed-out assertion besides rewriting it
- * @bound exactly only_asks, breach_claim, in that order
- */
 export const ASSERTION_RESOLUTIONS = Object.freeze(["only_asks", "breach_claim"]);
 /** R16, R17: a phrasing's length, in characters. */
-/** @type {number} the shortest phrasing, in characters: 2 */
 export const PHRASING_MIN = 2;
-/** @type {number} the longest phrasing, in characters: 100 */
 export const PHRASING_MAX = 100;
 /** R18: the most sentences one text is read in, and the longest sentence. */
-/** @type {number} the most sentences one text is read in: 5000 */
 export const SENTENCES_MAX = 5000;
-/** @type {number} the longest sentence, in characters: 10000 */
 export const SENTENCE_MAX = 10000;
 /** R19: the longest of a member's own words that the act only asks. */
-/** @type {number} the longest of a member's own words that the act only asks: 500 */
 export const RESOLUTION_WORDS_MAX = 500;
 
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
@@ -91,10 +64,6 @@ const before = (t, at) => (at >= 2 && /[\uDC00-\uDFFF]/.test(t[at - 1]) && /[\uD
 const after = (t, at) => String.fromCodePoint(t.codePointAt(at));
 /** R18: a phrasing (or any text) as R18 reads it: NFC, case-folded, typographic apostrophes and quotes plain, each run
  *  of white space one space. Exported so a caller compares phrasings as the finder does. */
-/**
- * @param {*} text a phrasing or any text; anything but a string answers ""
- * @returns {string} the text as the finder reads it
- */
 export function readAs(text) { return typeof text === "string" ? reading(text).text : ""; }
 
 /* ---------------------------------------------------------------------------------------------- R16, R17: the phrasings */
@@ -119,11 +88,6 @@ const applies = (tag, language) => tag.toLowerCase() === language.toLowerCase() 
  *  phrasing equal to a product one, as R18 reads them, is answered once as `product`). A malformed item is named in
  *  `ignored` with why. Undetermined, never an empty `read`, when the language is malformed, the kind unknown, or no
  *  phrasing is held for them. Pure; never throws. */
-/**
- * @param {*} args `{language, kind, view}`; anything else reads as none of them
- * @returns {PhrasingList}
- * @bound a profile phrase: 2 to PHRASING_MAX characters on one line, not blank
- */
 export function phrasingsFor(args) {
   const { language, kind, view } = isObj(args) ? args : {};
   if (!isLocale(language)) return { state: "undetermined", why: "language_malformed" };
@@ -160,11 +124,6 @@ const sentencesWellFormed = (s) => Array.isArray(s) && s.length <= SENTENCES_MAX
  *  position, `start` and `end` its offsets in the sentence as given. A phrasing matches where no letter, mark or digit is
  *  immediately before or after it. A question is not exempt. Undetermined for sentences not a list of strings within
  *  R18's bounds, and wherever R17 is. It decides nothing. Pure; never throws. */
-/**
- * @param {*} args `{sentences, language, kind, view}`; anything else reads undetermined
- * @returns {PointedOut}
- * @bound sentences: at most SENTENCES_MAX strings, each at most SENTENCE_MAX characters
- */
 export function pointOut(args) {
   const { sentences, language, kind, view } = isObj(args) ? args : {};
   if (!sentencesWellFormed(sentences)) return { state: "undetermined", why: "not_sentences" };
@@ -233,12 +192,6 @@ function judge(args) {
 /** R19: the findings on a member's resolutions, one `ASSERTION_RESOLUTION_REFUSED` per faulty item (`filings`' row): a
  *  resolution naming no pointed-out sentence, a second of one sentence, or a malformed one. With `pointed` undetermined
  *  nothing is judged against it. Pure; never throws; pushes and answers nothing. */
-/**
- * @param {*} args `{sentences, pointed, resolutions}`; with `pointed` not a read of `assertion`, nothing is judged
- * @param {Finding[]} findings where each `ASSERTION_RESOLUTION_REFUSED` finding is pushed
- * @returns {void}
- * @bound only_asks words: 1 to RESOLUTION_WORDS_MAX characters on one line; each sentence resolved once
- */
 export function assertionResolutionFindings(args, findings) {
   const j = judge(args);
   if (!j) return;
@@ -254,10 +207,6 @@ export function assertionResolutionFindings(args, findings) {
  *  resolution treats the act as a breach claim. A resolution binds the exact text, so an edited sentence is unresolved
  *  again; a rewritten one no longer pointed out needs none. Undetermined, never `unresolved: []`, when `pointed` is.
  *  Pure; never throws. */
-/**
- * @param {*} args `{sentences, pointed, resolutions}`; with `pointed` not a read of `assertion`, undetermined
- * @returns {{state: string, why?: string, unresolved?: number[], breach_claim?: boolean}} `read` with the unresolved sentences' indexes, or `undetermined` with why
- */
 export function assertionsUnresolved(args) {
   const j = judge(args);
   if (!j) return { state: "undetermined", why: "not_pointed" };

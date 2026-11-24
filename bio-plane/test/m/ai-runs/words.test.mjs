@@ -68,9 +68,7 @@ test("R73 (words): a system step the steps module refuses is answered with the k
 });
 
 test("R73 (words): a run's step end that steps cannot be told of reads steps is not reachable, and one it did not answer reads steps did not answer", async () => {
-  /** @type {Array<[(undefined | (() => never)), string]>} */
-  const ends = [[undefined, "ai-runs.reason.steps_reachable"], [() => { throw new Error("x"); }, "ai-runs.reason.steps_did_answer"]];
-  for (const [stepEnd, key] of ends) {
+  for (const [stepEnd, key] of [[undefined, "ai-runs.reason.steps_reachable"], [() => { throw new Error("x"); }, "ai-runs.reason.steps_did_answer"]]) {
     const f = stepsWorld();
     const steps = { ...f.steps, stepEnd };
     const w = await runWorld({ steps });

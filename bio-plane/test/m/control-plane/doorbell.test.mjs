@@ -34,7 +34,7 @@ function callers() {
     { name: "ann", token: w.S.ann, params: {}, ns: "bio", session: true, viewer: "member:ann", identity: "member:ann",
       by: "ann", author: "ann" },
     { name: "agent", token: agent, params: {}, ns: "bio", session: false, viewer: "member:ann", identity: "member:ann",
-      by: "class:ai", author: "token:ai", aiCred: JSON.stringify({ tokenId: "agent-ann", principal: "member:ann" }) },
+      by: "class:ai", author: "token:ai" },
   ] };
 }
 
@@ -64,8 +64,7 @@ const ROUTES = {
   sourcepublishable:     [READ, null, "sourcepublishable", none],
   signerregister:        [SESSION_ACT, null, "signerregister", byOnly],
   signerrevoke:          [SESSION_ACT, null, "signerrevoke", byOnly],
-  /* store-request R17: an agent's publish check also carries the credential's `aiCred` (its id and principal), as op=publish does */
-  publishpreflight:      [READ, null, "publishpreflight", (c) => ({ viewer: c.viewer, author: c.author, ...(c.aiCred ? { aiCred: c.aiCred } : {}) })],
+  publishpreflight:      [READ, null, "publishpreflight", (c) => ({ viewer: c.viewer, author: c.author })],
 };
 const admits = (spec, c) => (c.session ? spec.classes.includes(c.session && c.name === "founder" ? "admin" : "member")
   : c.name === "agent" ? !Array.isArray(spec.machineClasses) && spec.classes.includes("member")

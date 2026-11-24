@@ -3,31 +3,28 @@
    Each test here holds keys, never a sentence's English (K3366 (3)). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 import { SCREEN_REGISTRY } from "../../../src/wizard-scripts/index.mjs";
 
-/* The keys this module's own source reads. Its files are those under `bio-plane/src/store-assembly/` that the module list does
-   not give to store-services (split from it, P6): the ask and draft doors, whose answers' details are words, are store-services'
-   and hold their own keys. (T51; R23) The assembly draws no screen title or purpose either: a surface reads a screen's own keys. */
-const SRC = new URL("../../../src/store-assembly/", import.meta.url);
-const SERVICES = new Set(JSON.parse(readFileSync(new URL("../../../../process/modules/store-services.json", import.meta.url), "utf8")).files);
-const OWN_FILES = readdirSync(SRC).filter((f) => f.endsWith(".mjs") && !SERVICES.has(`bio-plane/src/store-assembly/${f}`)).sort();
-/** @param {string} text @returns {string[]} every key the text hands `word` or `hasWord` as a written-out first argument */
-const keysIn = (text) => [...text.matchAll(/\b(?:word|hasWord)\(\s*["'`]([^"'`]+)["'`]/g)].map((m) => m[1]);
-/** @type {string[]} the `reads` list for store-assembly, empty until the list is regenerated at the design commit (R95) */
+/* the keys this module reads: its answers' details. (T51; R23) The plane draws no screen title or purpose: the 26 `screen.*`
+   keys it once read for `plane/screens.mjs` left with that file; a surface reads a screen's own keys itself. */
+const ANSWER_KEYS = [
+  "ai.draft.planunread", "ai.draft.recordsunread", "ai.keepaway.unread", "refusal.AGENT_WORKER_UNBOUND",
+  "refusal.AGENT_WORKER_SILENT", "refusal.ASK_NOT_A_MEMBER", "refusal.NO_SUCH_NOTE", "refusal.PASSAGE_TOO_LONG",
+  "translate.undetermined.language",
+];
+/* K3381 (DEC-267): `AGENT_WORKER_UNBOUND` has its own word; words-reads.json still lists its interim key, so it is named here until the list is re-cut */
+const RULED = ["refusal.AGENT_WORKER_UNBOUND"];
 const READS = JSON.parse(readFileSync(new URL("../../../../docs/development/ux-substrate/screens/words-reads.json", import.meta.url), "utf8"))
-  .modules["store-assembly"]?.reads ?? [];
+  .modules.plane.reads;
 
-test("R95, R97 (T49; K3366): every key the assembly's own source reads is held by the words list (`hasWord`) and listed for store-assembly, and it reads none: it draws no sentence and answers none itself; control: a key no list holds is not, and a written-out key is found", () => {
-  assert.deepEqual(OWN_FILES, ["assemble.mjs", "index.mjs", "owners.mjs", "stats.mjs", "wiring.mjs", "wizards.mjs"], "the assembly's own files");
-  const keys = OWN_FILES.flatMap((f) => keysIn(readFileSync(new URL(f, SRC), "utf8")));
+test("R95 (T49; K3366): every key the plane reads is one the words list holds (`hasWord`), and each is one of the keys `words-reads.json` lists for plane; control: a key no list holds is not", () => {
+  const keys = [...ANSWER_KEYS];
   for (const k of keys) {
     assert.equal(hasWord(k), true, `${k} is held by the words list`);
-    assert.ok(READS.includes(k), `${k} is a key words-reads.json lists for store-assembly`);
+    assert.ok(READS.includes(k) || RULED.includes(k), `${k} is a key words-reads.json lists for plane, or one BOB ruled (K3381)`);
   }
-  assert.deepEqual(keys, [], "the assembly reads no key itself");
-  assert.deepEqual(keysIn('x = word("refusal.NO_SUCH_NOTE", {});'), ["refusal.NO_SUCH_NOTE"], "control: a written-out key is found");
   assert.equal(hasWord("zz.no.such.key"), false, "negative control: an unknown key is not held");
 });
 

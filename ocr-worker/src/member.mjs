@@ -261,8 +261,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
       const unclear = !j.regions.length || (j.legibility != null && j.legibility.share < LEGIBLE_NOTE_BELOW);
       const sideways = claim.rotation !== 180 && linesRunUp(j.regions);
       if (unclear || sideways) {
-        /** @type {number} a quarter turn: the rotation was judged one above */
-        const turn = /** @type {number} */ (turnToUpright(claim.rotation));
+        const turn = turnToUpright(claim.rotation);
         tried.add(turn);
         at.stage = "orientation";
         const again = await readFrameOf(input, page, picture, turn, { psm, at });

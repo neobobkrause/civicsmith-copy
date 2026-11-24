@@ -361,7 +361,7 @@ test("R76 (2): a unit that is no page (the whole file) killed three times ends t
   let at = Date.now() + 1000;
   for (let i = 0; i < 4; i++, at += 3_600_000) { await alarm(x, at); x = await world(db, { readAnswer: NEVER }); }
   const r = pendingOf(x.ctx).jobRow({ sha: d, kind: "reading" });
-  assert.deepEqual([r?.state, r?.final_why], ["final", PAGE_KILLED_READER]);
+  assert.deepEqual([r.state, r.final_why], ["final", PAGE_KILLED_READER]);
   /* three kills on three different pieces: each piece killed once, the row goes on */
   const e = sha("a text killed once on each of three pieces");
   let n = 0;
@@ -373,7 +373,7 @@ test("R76 (2): a unit that is no page (the whole file) killed three times ends t
   for (let i = 0; i < 6; i++, at += 3_600_000) if ((await alarm(y, at)) === "killed") y = await world(ydb, { readAnswer: pieceAnswer });
   const q = pendingOf(y.ctx).jobRow({ sha: e, kind: "reading" });
   /* REPORT: a real piece's detail names no window, so each kill is charged to the whole read, not to its piece; the third kill ends it, stated */
-  assert.deepEqual([q?.state, q?.final_why], ["final", PAGE_KILLED_READER], `three kills end it, charged to the whole: ${q?.state} ${q?.final_why}`);
+  assert.deepEqual([q.state, q.final_why], ["final", PAGE_KILLED_READER], `three kills end it, charged to the whole: ${q.state} ${q.final_why}`);
 });
 
 test("R76 (2c item 8, K4904): with the real table, a window cursor stamped three times reaches `readHeld` as `killedCursor`, and the reader steps past it to the text's end; a page keeps `killedPages`", async () => {
@@ -448,7 +448,7 @@ test("R77: a firing run twice over one storage leaves the units of a single run;
   x = await world(db, { readAnswer: answer });
   await x.s.onAlarm(at + 3_600_000);
   assert.deepEqual(units, [0, 1, 2], "restarted at the cursor its row kept, never from the start");
-  assert.equal(pendingOf(x.ctx).jobRow({ sha: d, kind: "reading" })?.state, "finished");
+  assert.equal(pendingOf(x.ctx).jobRow({ sha: d, kind: "reading" }).state, "finished");
   /* control: once finished, a further firing writes nothing */
   await x.s.onAlarm(at + 7_200_000);
   assert.deepEqual(units, [0, 1, 2]);
@@ -607,7 +607,7 @@ test("R82 stampUnit: the reader is handed `stampUnit` for a paged read; a scan w
   assert.equal(row.state, "finished", JSON.stringify(row));
   assert.deepEqual([...read].sort(), [0, 1, 2, 3, 4, 6, 7]);
   const units = pendingOf(x.ctx).unitAttempts({ sha: d, kind: "ocr" });
-  assert.equal(units.find((u) => u.unit === "p5")?.tries, UNIT_KILLS_MAX, "the kills are charged to page 5");
+  assert.equal(units.find((u) => u.unit === "p5").tries, UNIT_KILLS_MAX, "the kills are charged to page 5");
   assert.ok(!units.some((u) => u.unit === "whole" && u.tries > 0), "and to the whole none");
   assert.ok(handed.every((t) => t === "function"));
 });
@@ -620,7 +620,7 @@ test("R82 control: a whole read with no unit stamped is charged to `whole` as be
   let at = Date.now() + 1000;
   for (let i = 0; i < 4; i++, at += 3_600_000) { await alarm(x, at); x = await world(db, { readAnswer: NEVER }); }
   const r = pendingOf(x.ctx).jobRow({ sha: d, kind: "reading" });
-  assert.deepEqual([r?.state, r?.final_why], ["final", PAGE_KILLED_READER]);
+  assert.deepEqual([r.state, r.final_why], ["final", PAGE_KILLED_READER]);
   assert.deepEqual(pendingOf(x.ctx).unitAttempts({ sha: d, kind: "reading" }).map((u) => [u.unit, u.tries]), [["whole", UNIT_KILLS_MAX]]);
   /* a fetch is handed none */
   const y = await world(undefined, {});

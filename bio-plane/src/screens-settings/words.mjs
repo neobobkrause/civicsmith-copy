@@ -2,5 +2,4 @@
    a word of `setup-words` read by key, and its keys are in `keys.mjs`. `SCREEN_WORDS` stays exported, empty, for the
    modules that still import it; the rows it held (`screen.<id>.<part>`, the AI account panel's `screen.panel.<part>`)
    are `words.json`'s now. */
-/** @type {ReadonlyArray<never>} empty: the module holds no English (R39) */
 export const SCREEN_WORDS = Object.freeze([]);

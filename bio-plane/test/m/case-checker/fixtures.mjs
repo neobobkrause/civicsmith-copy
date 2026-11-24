@@ -3,11 +3,8 @@
    answer from here and does not write it by hand. Each is called by a test of case-checker's own, `fixtures.test.mjs`,
    which checks the real answer. */
 import { checkAccount } from "../../../src/case-checker/account.mjs";
-/** @import { AccountJudgement } from '../../../src/case-checker/account.mjs' */
 
-/** `checkAccount` given an `account:` that is not a list of rows: the answer MALFORMED, naming the field (R24; account.mjs:205):
- *  `{ok: false, reason: "MALFORMED", field: "account"}`.
- *  @returns {AccountJudgement} */
+/* `checkAccount` given an `account:` that is not a list of rows: the answer MALFORMED, naming the field (R24; account.mjs:205). */
 export function checkAccountMalformed() {
   return checkAccount({ account: "x" });
 }

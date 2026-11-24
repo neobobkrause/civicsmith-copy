@@ -46,7 +46,7 @@ test("R24: interactions_stated reads 'each entry is a project statement on a sub
   const w = await lensWorld();
   const m = w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
   assert.equal(m.interactions_stated, INTERACTIONS_STATED);
-  assert.doesNotMatch(String(m.interactions_stated), RETIRED);
+  assert.doesNotMatch(m.interactions_stated, RETIRED);
   assert.deepEqual(m.interactions.map((i) => [i.statement_id, i.instance.map((x) => x.statement_id)]), [["p1", ["s1"]]]);
   assert.equal(w.ops(`scope=project&scopeId=${P}&viewer=member:owner`).biasmanifest().interactions_stated, INTERACTIONS_STATED);
 });

@@ -15,14 +15,10 @@ import * as FIX_SEND from "./words-fix-send.mjs";
 import * as FIX_ACTION from "./words-fix-action.mjs";
 import * as FIX_REQUEST from "./words-fix-request.mjs";
 import * as FIX_R56 from "./words-fix-r56.mjs";
-import * as FIX_FLAWS from "./words-fix-flaws.mjs";
 
 /** The fix round's word files (T51 FR-31), one per group of entries. */
-export const FIX = Object.freeze([FIX_MATTER, FIX_PLAN, FIX_SEND, FIX_ACTION, FIX_REQUEST, FIX_R56, FIX_FLAWS]);
+export const FIX = Object.freeze([FIX_MATTER, FIX_PLAN, FIX_SEND, FIX_ACTION, FIX_REQUEST, FIX_R56]);
 
-/** The module's own screen sentences, by key (R19): every `screen.<id>.<part>` key and the other keys these screens draw that
- *  no act's label names. Keys only; the English is `setup-words`'.
- *  @type {ReadonlyArray<string>} */
 export const SCREEN_WORDS = Object.freeze([
   "act.filingrecordsent.does",
   "act.optionadd.label.plan",
@@ -494,16 +490,6 @@ export const SCREEN_WORDS = Object.freeze([
   "screen.counsel.defense.pressure",
   "screen.counsel.defense.restson",
   "screen.counsel.defense.undetermined",
-  "screen.counsel.export.note",
-  "screen.counsel.made.head",
-  "screen.counsel.made.lead",
-  "screen.counsel.made.by",
-  "screen.counsel.made.by.noorg",
-  "screen.counsel.made.by.nocounsel",
-  "screen.counsel.made.changed",
-  "screen.counsel.made.exported",
-  "screen.counsel.made.exported.nocounsel",
-  "screen.counsel.made.version",
   "screen.counsel.marked.every",
   "screen.counsel.marked.heading",
   "screen.counsel.marked.none",
@@ -528,7 +514,6 @@ export const SCREEN_WORDS = Object.freeze([
   "screen.counsel.reason.help1",
   "screen.counsel.reason.help2",
   "screen.counsel.reason.label",
-  "screen.counsel.sections.marking",
   "screen.counsel.sub",
   "screen.counsel.who.heading",
   "screen.counsel.who.optional",

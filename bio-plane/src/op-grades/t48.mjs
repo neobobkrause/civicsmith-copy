@@ -66,7 +66,7 @@ export const T48_NON_ACTS = {
   /* R38 */
   proceedingdates: R("the dates of one proceeding the author may see, in two lanes never interleaved: what the record "
     + "already dates and what is followed (following R30)"),
-  readtranslate: "draft: a machine translation of one passage of the team's own writing (a note, question, finding or "
+  readtranslate: "draft: a machine translation of one passage of the group's own writing (a note, question, finding or "
     + "notice) into the member's language, labeled machine work, the original one tap away; held nowhere and writes "
     + "nothing (store-assembly R53)",
   /* R40 */

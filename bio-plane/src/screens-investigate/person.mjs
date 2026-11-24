@@ -552,15 +552,4 @@ const words = ["screen.person.name", "screen.person.purpose", ...NEW_KEYS,
   ...GRAPH_SHARED, ...FORM_SHARED, ...WHY_KEYS,
   "state.empty", "state.loading", "state.failed", ...PERSON_KEYS];
 
-/**
- * @typedef {Object} ScreenDef
- * @property {string} id the registry screen's id
- * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
- * @property {(cs: *, view: *) => string} render the screen's markup
- * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
- * @property {Array<string>} words the word keys the screen draws
- * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
- * @property {ReadonlyArray<string>} ABSENT_CODES the refusal codes drawn as a subject not found, never as a failed read
- */
-/** @type {Readonly<ScreenDef>} People › Person: the page of a person, an organization or a subject of another kind */
 export const PERSON_SCREEN = Object.freeze({ id: "person", ABSENT_CODES: Object.freeze(["NO_ENTITY", "NO_CALC"]), reads, render, acts, words, parts: PARTS });

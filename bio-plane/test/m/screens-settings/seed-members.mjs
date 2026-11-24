@@ -3,39 +3,24 @@
 import { storeWorld } from "../store-request/fixtures.mjs";
 import { env, refuse } from "./fixtures.mjs";
 
-/** One day, in milliseconds.
- *  @type {number} */
 export const DAY = 24 * 3600 * 1000;
 const JSON_POST = { method: "POST", headers: { "content-type": "application/json" } };
 
-/** A public key line's base64 field, as a member pastes it (`ssh-ed25519 <this> comment`): `tag` makes it distinct.
- *  @param {*} tag
- *  @returns {string} */
+/** A public key line's base64 field, as a member pastes it (`ssh-ed25519 <this> comment`): `tag` makes it distinct. */
 export const key = (tag) => "AAAAC3NzaC1lZDI1NTE5AAAAI" + String(tag).padEnd(40, "0");
-/** The seeded members' keys, by whose they are.
- *  @type {Readonly<{founder: string, rosa: string, lu: string, dev: string, devOld: string}>} */
 export const KEYS = Object.freeze({ founder: key("F"), rosa: key("R"), lu: key("L"), dev: key("D"), devOld: key("X") });
 
 /** An act made as the page's door would carry it, answered whatever the owner says (the world's `act` throws on a refusal). Answers the
- *  owner's `result`.
- *  @param {*} w the world
- *  @param {*} as the session that asks, or none
- *  @param {string} op
- *  @param {{query?: Object<string, string>, body?: *}} [o]
- *  @returns {Promise<*>} */
+ *  owner's `result`. */
 export async function attempt(w, as, op, { query = {}, body } = {}) {
   const a = await w.door({ url: `/api/?${new URLSearchParams({ op, ...query })}`, init: body === undefined ? { method: "GET" } : { ...JSON_POST, body: JSON.stringify(body) } }, as);
   return a.json && a.json.result !== undefined ? a.json.result : a.json;
 }
-/** The password asked again, as the page's re-ask does (changing administrators asks for it, `REAUTH_DUE` otherwise).
- *  @param {*} as the session
- *  @returns {Promise<*>} */
+/** The password asked again, as the page's re-ask does (changing administrators asks for it, `REAUTH_DUE` otherwise). */
 export const reauth = (as) => as.act("reauth", { body: { password: as.password } });
 
 /** The world's door recording each answer the page received: `answers` lists `{op, query, body, answer}` in order (the page's act answers are
- *  not kept by the harness); `world` is what `open` takes.
- *  @param {*} w the world
- *  @returns {{world: *, answers: Array<{op: string, query: *, body: *, answer: *}>, last: function(string): *}} */
+ *  not kept by the harness); `world` is what `open` takes. */
 export function recorded(w) {
   const answers = [];
   const world = Object.create(w, { boot: { value: (as) => {
@@ -50,12 +35,7 @@ export function recorded(w) {
   return { world, answers, last };
 }
 
-/** A member who joined under an id other than the handle she chose: `memberadd` under `memberId`, her `enroll` as `handle`, `login`.
- *  @param {*} w the world
- *  @param {*} founder the founder's session
- *  @param {{memberId: string, handle: string, cover: string}} who
- *  @returns {Promise<*>} her session
- *  @throws {Error} when the enrolment is refused */
+/** A member who joined under an id other than the handle she chose: `memberadd` under `memberId`, her `enroll` as `handle`, `login`. */
 export async function joined(w, founder, { memberId, handle, cover }) {
   const added = await founder.act("memberadd", { body: { memberId, cover, capabilities: ["contribute"] } });
   const password = `${handle}-world-passphrase`;
@@ -72,9 +52,7 @@ export async function joined(w, founder, { memberId, handle, cover }) {
 }
 
 /** A claimed world: the founder holding the handle `founder`, or (the default) none, as a founder holds none until she chooses one
- *  (membership R144): the claim made by the real `claim` with no handle.
- *  @param {boolean} [named]
- *  @returns {Promise<*>} the world */
+ *  (membership R144): the claim made by the real `claim` with no handle. */
 export async function claimed(named) {
   if (named) return storeWorld();
   const w = await storeWorld({ claimed: false });
@@ -84,10 +62,7 @@ export async function claimed(named) {
 
 /** A team of the roster the screen shows: the founder (no handle, or `founder` when `named`), two more active administrators (rosa and lu), dev (who may
  *  contribute), ana (who declared CPA), kim (an administrator proposed, whom the others have yet to endorse), old (revoked) and mai-k
- *  (invited, not enrolled), all made by the real acts. The founder and the administrators may each act.
- *  @param {{named?: boolean}} [o]
- *  @returns {Promise<{w: *, founder: *, rosa: *, lu: *, dev: *, ana: *}>}
- *  @throws {Error} when kim is not proposed */
+ *  (invited, not enrolled), all made by the real acts. The founder and the administrators may each act. */
 export async function team({ named = false } = {}) {
   const w = await claimed(named);
   const founder = await w.signIn(named ? "founder" : "admin");
@@ -107,9 +82,7 @@ export async function team({ named = false } = {}) {
 }
 
 /** The members' signing keys, by the real acts: the founder's and rosa's own, one rosa registered for lu a day later, dev's own, and an
- *  older one of dev's that rosa withdrew a day after that. Ana has none.
- *  @param {{w: *, founder: *, rosa: *, lu: *, dev: *, ana: *}} t the team
- *  @returns {Promise<*>} the team's sessions made again */
+ *  older one of dev's that rosa withdrew a day after that. Ana has none. */
 export async function keyed(t) {
   const { w } = t;
   const own = (as, k, comment) => as.act("signerregisterown", { body: { keyB64: k, ...(comment ? { comment } : {}) } });
@@ -136,10 +109,7 @@ async function refreshed(t) {
   return out;
 }
 
-/** A removal under way: rosa has voted to remove lu, which three administrators need two votes to carry (the founder is awaited).
- *  @param {*} t the team
- *  @returns {Promise<*>} the team
- *  @throws {Error} when the vote is not recorded */
+/** A removal under way: rosa has voted to remove lu, which three administrators need two votes to carry (the founder is awaited). */
 export async function removing(t) {
   await reauth(t.rosa);
   const voted = await attempt(t.w, t.rosa, "adminremove", { body: { memberId: "lu", reason: "moved away" } });
@@ -147,11 +117,7 @@ export async function removing(t) {
   return t;
 }
 
-/** A team of `n` administrators (the founder, rosa, lu, ...) and no one else.
- *  @param {number} n
- *  @param {{named?: boolean}} [o]
- *  @returns {Promise<{w: *, founder: *, all: Array<*>}>}
- *  @bound n: 1 to 7 */
+/** A team of `n` administrators (the founder, rosa, lu, ...) and no one else. */
 export async function admins(n, { named = false } = {}) {
   const w = await claimed(named);
   const founder = await w.signIn(named ? "founder" : "admin");
@@ -163,53 +129,31 @@ export async function admins(n, { named = false } = {}) {
 /* ---- what no act makes ---- */
 
 /** A roster the owner would not list (an empty one; a claimed team without its founder's row; fewer administrators than are counted): the real
- *  rows `rows`, as the screen reads them from `memberlist`.
- *  @param {Array<*>} rows
- *  @returns {{memberlist: *}} */
+ *  rows `rows`, as the screen reads them from `memberlist`. */
 export const rosterOf = (rows) => ({ memberlist: env({ members: rows }) });
-/** A roster with no row.
- *  @type {{memberlist: *}} */
 export const EMPTY_ROSTER = rosterOf([]);
-/** The same roster as the owner answered it, without the founder's row (an unclaimed team lists none).
- *  @param {Array<*>} rows
- *  @returns {Array<*>} */
+/** The same roster as the owner answered it, without the founder's row (an unclaimed team lists none). */
 export const withoutFounder = (rows) => rows.filter((m) => !(m.member_id === "admin" || m.founder === true));
-/** The faults: a read that never answers, one the store did not answer, and the arithmetic an administrator is refused.
- *  @param {string} op
- *  @returns {Object<string, string>} */
+/** The faults: a read that never answers, one the store did not answer, and the arithmetic an administrator is refused. */
 export const WAITING = (op) => ({ [op]: "pending" });
-/** A read the store did not answer.
- *  @param {string} op
- *  @returns {Object<string, string>} */
 export const SILENT = (op) => ({ [op]: "none" });
-/** The arithmetic an administrator is refused.
- *  @type {{adminarith: *}} */
 export const ARITH_REFUSED = { adminarith: refuse("NOT_AN_ADMIN") };
 
 /** A key list in which a key of an active member is shown withdrawn by a member who has left (credentials R7 refuses the reactivation): the
- *  owner's own rows, one changed; the roster lists only active members, so no act makes the two disagree.
- *  @param {Array<*>} signers the owner's rows
- *  @param {string} keyB64 the key shown withdrawn
- *  @returns {{signerlist: *}} */
+ *  owner's own rows, one changed; the roster lists only active members, so no act makes the two disagree. */
 export const keysOfAMemberWhoLeft = (signers, keyB64) => ({
   signerlist: env({ signers: signers.map((k) => (k.key_b64 === keyB64 ? { ...k, member_status: "revoked", attests_why: "member_revoked" } : k)) }),
 });
 
 /** Rows written before the registrar and the instant were kept (credentials R21): a NULL registrar, a NULL status author and instant; `''` for
- *  a registration instant the store did not keep (its column is not null). `w.sql` seeds them: no act writes a key without who made it.
- *  @param {*} w the world
- *  @param {{unregistered: string, unattributed: string, undated: string}} keys
- *  @returns {void} */
+ *  a registration instant the store did not keep (its column is not null). `w.sql` seeds them: no act writes a key without who made it. */
 export function legacyKeys(w, { unregistered, unattributed, undated }) {
   w.sql.exec("UPDATE signers SET registered_by = NULL WHERE key_b64 = ?", unregistered);
   w.sql.exec("UPDATE signers SET status_by = NULL, status_at = NULL WHERE key_b64 = ?", unattributed);
   w.sql.exec("UPDATE signers SET registered_by = NULL, added = '' WHERE key_b64 = ?", undated);
 }
 /** Keys registered or withdrawn by a member the roster does not hold (`ghost-7`) or who has no handle yet (`mai-k`): `w.sql` seeds the
- *  actors; no act registers a key as a member that is not there.
- *  @param {*} w the world
- *  @param {{registeredBy: string, withdrawnBy: string}} keys
- *  @returns {void} */
+ *  actors; no act registers a key as a member that is not there. */
 export function strangersKeys(w, { registeredBy, withdrawnBy }) {
   w.sql.exec("UPDATE signers SET registered_by = 'ghost-7', status_by = 'ghost-7' WHERE key_b64 = ?", registeredBy);
   w.sql.exec("UPDATE signers SET status_by = 'mai-k' WHERE key_b64 = ?", withdrawnBy);
@@ -217,6 +161,4 @@ export function strangersKeys(w, { registeredBy, withdrawnBy }) {
 /** A removal under way voted by a member the roster does not hold and awaiting one with no handle: the owner's shape, as no act can vote
  *  for an id that is not an administrator. */
 const strangersVote = env({ ok: true, removals: [{ target: "lu", voters: [{ voter: "ghost-7", at: "2026-10-14T00:00:00Z" }], awaiting: ["mai-k"], have: 1, need: 2 }] });
-/** The removal under way voted by a stranger.
- *  @type {{adminremovalsopen: *}} */
 export const removalByStrangers = { adminremovalsopen: strangersVote };

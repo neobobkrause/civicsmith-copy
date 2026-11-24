@@ -14,7 +14,7 @@ import { MARKS_KIT_COMMIT } from "../../../src/op-grades/marks.mjs";
 
 /* the source the marks of reads name (K4259; fix round 2, C76): a read asks no reason, so its mark is Reversible */
 const READ_RULING = "K4259, a ruling";
-import { reqText, ticked, readRows, asksNotTheAccount, declaredSentence, doesSentence, registeredWith, REGISTRY_OWNER_ROWS } from "./declared.mjs";
+import { reqText, ticked, readRows, asksNotTheAccount, declaredSentence, doesSentence, registeredOpGrades } from "./declared.mjs";
 
 const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
 const isRead = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("read: ")
@@ -55,7 +55,7 @@ test("R38: proceedingdates is a read, `read: …`, ungraded; readtranslate takes
   assert.ok(isRead("proceedingdates"));
   assert.equal(gradeOf("proceedingdates"), null);
   assert.match(NON_ACTS.proceedingdates, /following R30/);
-  assert.match(NON_ACTS.readtranslate, /^draft: a machine translation of one passage of the team's own writing/);
+  assert.match(NON_ACTS.readtranslate, /^draft: a machine translation of one passage of the group's own writing/);
   assert.match(NON_ACTS.readtranslate, /labeled machine work, the original one tap away; held nowhere and writes nothing/);
   assert.equal(gradeOf("readtranslate"), null);
   assert.ok(!NON_ACTS.readtranslate.startsWith("read: "));
@@ -239,7 +239,7 @@ test("R42: MARKS is frozen and total over the registry's rungless acts — a rea
    + "than `undetermined`, or an op no table grades — and holds no other op; each value is a kit weight name; each entry "
    + "names its source", async () => {
   assert.ok(Object.isFrozen(MARKS) && Object.isFrozen(MARK_SOURCES));
-  const reg = await registeredWith(REGISTRY_OWNER_ROWS);
+  const reg = await registeredOpGrades();
   const want = REGISTRY_OPS.filter((op) => rungless(reg, op));
   /* an owner's grade for an op a mark held before (its unread mark, B11) is the one exception: the mark is the owner's to drop */
   const graded = Object.keys(MARKS).filter((op) => !want.includes(op));

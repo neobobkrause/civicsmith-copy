@@ -50,8 +50,7 @@ test("R72 (G69): after a row ends `finished`, the last run of that digest and ki
     assert.deepEqual([last.kind, last.outcome, last.last_ms, last.own_ms, last.wait_ms, last.last_mem], ["reading", "finished", 1500, 1500, 0, null]);
     assert.equal(typeof last.at, "number");
     const said = await pendingOps(h, new URL(`http://do/owedwork?sha=${D}`)).owedwork();
-    /* owedwork lists the rows op=reading answers, the finished one among them (store-services R74; control-plane R135) */
-    assert.deepEqual([said.ok, said.owed.map((e) => [e.sha, e.kind, e.job_state]), said.last.length, said.last[0].last_ms], [true, [[D, "reading", "finished"]], 1, 1500]);
+    assert.deepEqual([said.ok, said.owed, said.last.length, said.last[0].last_ms], [true, [], 1, 1500]);
     /* control: a digest never run answers an empty list, and the counts read (no digest) carry no `last` */
     assert.deepEqual(h.ledgerLast({ sha: "e".repeat(64) }), []);
     assert.equal(Object.hasOwn(await pendingOps(h, new URL("http://do/owedwork")).owedwork(), "last"), false);

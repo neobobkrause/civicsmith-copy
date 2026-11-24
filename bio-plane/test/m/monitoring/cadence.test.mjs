@@ -19,13 +19,13 @@ test("R14 which frequency governs: an authored word the catalogue knows; an unkn
   assert.equal(cadenceFor("daily", { contract: "substance" }).source, "authored", "authored governs over the contract");
   const u = cadenceFor("fortnightly", { contract: "substance" });
   assert.deepEqual([u.frequency, u.source], [null, "undetermined"]);
-  assert.match(u.why ?? "", /the frequency 'fortnightly', which is not one the catalog knows/);
+  assert.match(u.why, /the frequency 'fortnightly', which is not one the catalog knows/);
   assert.deepEqual([cadenceFor(null, { contract: "membership", content_type: "roster" }).frequency, cadenceFor(null, { contract: "membership" }).source],
                    ["daily", "contract"]);
   assert.equal(cadenceFor("", { contract: "substance" }).frequency, "weekly");
   const shell = cadenceFor(null, { contract: "unmonitorable" });
   assert.deepEqual([shell.frequency, shell.source], [null, "contract"]);
-  assert.match(shell.why ?? "", /no check clock/);
+  assert.match(shell.why, /no check clock/);
   const none = cadenceFor(null, null);
   assert.deepEqual([none.frequency, none.source], [null, "undetermined"]);
   assert.ok(none.why);
@@ -345,7 +345,7 @@ test("R18 a document whose substance has not moved across repeated checks earns 
   }
   /* never shorter: a run of 0 is the default itself, and the rule never moves below it */
   for (const d of ["daily", "weekly", "monthly"]) for (const n of [0, 1, 9, 10, 25, 1000])
-    assert.ok(Number(monitorIntervalMs(lengthenedFrequency(d, n).frequency)) >= Number(monitorIntervalMs(d)), `${d} after ${n}`);
+    assert.ok(monitorIntervalMs(lengthenedFrequency(d, n).frequency) >= monitorIntervalMs(d), `${d} after ${n}`);
   assert.deepEqual(lengthenedFrequency("hourly", 50), { frequency: "hourly", step: 0 }, "only R14's contract ladder lengthens");
 });
 

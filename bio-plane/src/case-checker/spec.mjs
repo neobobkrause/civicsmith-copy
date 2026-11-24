@@ -293,9 +293,7 @@ const V4 = edit(V3, [
    + "the files of its own capture, and a passage in a capture is found in that capture's text. A row stating"],
 ]);
 
-/** R14: every specification held, by the format it specifies (`bio-case-file/<n>`): its Markdown text.
- *  @type {Readonly<Record<string, string>>} */
+/** R14: every specification held, by the format it specifies. */
 export const CASE_FILE_SPECS = Object.freeze({ "bio-case-file/1": V1, "bio-case-file/2": V2, "bio-case-file/3": V3, "bio-case-file/4": V4 });
-/** R15: the versions held, oldest first.
- *  @type {readonly string[]} */
+/** R15: the versions held, oldest first. */
 export const CASE_FILE_SPEC_VERSIONS = Object.freeze(Object.keys(CASE_FILE_SPECS));

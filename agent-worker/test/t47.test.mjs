@@ -208,7 +208,7 @@ section("R84 · trace on every /signin answer; the member's words on every refus
       /* The image's own answer, from agent-runner's published fixture; the two codes it never sends from a route are made up here. */
       // fixtures-generic: SIGNOUT_FAILED
       // fixtures-generic: RUNNER_NOT_STARTED
-      const given = NOT_FROM_THE_IMAGE.has(code) ? { status: 409, body: /** @type {import("../../agent-runner/test/fixtures.mjs").RefusalBody} */ ({ ok: false, code, detail: "Words for the member." }) } : await runnerRefusal(code);
+      const given = NOT_FROM_THE_IMAGE.has(code) ? { status: 409, body: { ok: false, code, detail: "Words for the member." } } : await runnerRefusal(code);
       const { body } = given, status = given.status ?? 409; /* a conversation frame has no HTTP status of its own: the wire here carries it as a 409 */
       const r = await signin({ member: MEMBER, step: "code", code: CODE }, { headers: DOOR, answer: () => Response.json(body, { status }) });
       t(`R84, R85: the runner's ${code} (agent-runner ${rid}) is relayed unchanged but for trace, and is in SIGNIN_CODES`,

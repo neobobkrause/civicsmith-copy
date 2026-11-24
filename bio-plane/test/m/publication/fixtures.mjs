@@ -42,9 +42,7 @@ function complete(w, project, c, { at = NOW } = {}) {
 
 /** R1, R2 (REC-130): `caseDocumentFacts` as the module answers it for an edition with no document (`NO_CASE_DOCUMENT`), for an
  *  unsigned document read by a viewer with standing in its project and by one without (a stranger gets the absent answer,
- *  the same object), and for the document once signed.
- *  @returns `{absent, member, stranger, signed}`, each the module's answer
- */
+ *  the same object), and for the document once signed. */
 export function caseDocumentFacts() {
   const { w, project, cases } = houses(1);
   const [c] = cases;
@@ -65,10 +63,7 @@ export function caseDocumentFacts() {
  *  Worker's store-internal hop `recordcasefile`, `owed({now, limit})` and `nextAt()` the one owed rule, `manifest(case, edition, {built})` the
  *  real `recordCaseManifest` (`built: true` records the file built in the same call, K5084). `refusals` are the ledger's own refusals, made by the real writer: a state it does not know
  *  (`MALFORMED`), an edition it does not hold (`NO_SUCH_CASE_EDITION`), and `built` before any manifest is recorded
- *  (`NO_MANIFEST`). The build's own refusals (`MATERIAL_MISSING`, `BUCKET_FAILED`) are `public-read`'s.
- *  @param {{editions?: number, at?: string}} [opts]
- *  @returns the ledger's acts and refusals
- */
+ *  (`NO_MANIFEST`). The build's own refusals (`MATERIAL_MISSING`, `BUCKET_FAILED`) are `public-read`'s. */
 export function caseFileLedger({ editions = 1, at = NOW } = {}) {
   const { w, project, cases } = houses(editions);
   for (const c of cases) complete(w, project, c, { at });
@@ -93,9 +88,7 @@ export function caseFileLedger({ editions = 1, at = NOW } = {}) {
 /** R42: a real publication whose published findings rest on the documents a test names. `rest({finding, docs, project})`
  *  makes the finding's documents, the finding, a case of `project` pinning it, and publishes it with a serve edge to each
  *  document (the real acts of `fixture.mjs`); `captureOf(doc)` is the sha of a document's capture. `publication` is the
- *  real instance on the world's host, so `restingCapturesOf` is its own.
- *  @returns `{world, publication, rest, captureOf}`
- */
+ *  real instance on the world's host, so `restingCapturesOf` is its own. */
 export function publicationWorld() {
   const w = planeWorld();
   w.member("olive");
@@ -130,10 +123,7 @@ export function publicationWorld() {
  *  signature) resting on exactly the captures `digests` names, each a document of the register holding that sha, served
  *  by a `serve` edge of the finding. A digest two findings name is one capture. `restingCapturesOf` answers as the real
  *  module does (pages, cursor, `findings_truncated`), over the project ids named; `publication` is the real instance, so
- *  a user takes `restingOf(held).publication` where it takes publication.
- *  @param {Array<*>} [held]
- *  @returns `{world, publication, restingCapturesOf}`
- */
+ *  a user takes `restingOf(held).publication` where it takes publication. */
 export function restingOf(held = []) {
   const w = planeWorld();
   w.member("olive");
@@ -163,9 +153,7 @@ export function restingOf(held = []) {
 
 /** R62 (docket's `stampEdition`): the module's two refusals of a stamp, made by the real writer: `NO_SUCH_CASE_EDITION` for a
  *  case holding no ratified edition, and `STAMP_NO_ORDER` for a ratified edition when no court-order source confirms the
- *  entry. `stamp` is the call, as docket makes it.
- *  @returns `{stamp, noEdition, noOrder}`
- */
+ *  entry. `stamp` is the call, as docket makes it. */
 export function stampEditionRefusal() {
   const { w, project, cases } = houses(1);
   const [c] = cases;
@@ -178,9 +166,7 @@ export function stampEditionRefusal() {
   };
 }
 
-/** R21: the real refusal of `storeCaseDocument` for a document that names no case, no edition or no text (`MALFORMED`).
- *  @returns the `MALFORMED` refusal
- */
+/** R21: the real refusal of `storeCaseDocument` for a document that names no case, no edition or no text (`MALFORMED`). */
 export function storeCaseDocumentRefusal() {
   const w = planeWorld();
   return {

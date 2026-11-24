@@ -19,9 +19,7 @@ import { localize } from "../setup-words/index.mjs";
 /** R22 (T33-12; docprofile R36; K617, K1513): the content types registered into docprofile's registry, in this order
  *  and once each: doctypes' seven, Legistar's, the roster and org-chart readers, the court registers, the budget
  *  readers, then `generic` last. Each register function is idempotent on the one `registerDoctype`, and docprofile's
- *  registry is the isolate's, so a second call registers nothing new. Answers each step's answer, in order.
- * @param {(type: any) => any} [register] the registry's register function, docprofile's `registerDoctype` when none is handed
- * @returns {any[]} each step's answer, in order */
+ *  registry is the isolate's, so a second call registers nothing new. Answers each step's answer, in order. */
 export function registerReaders(register = registerDoctype) {
   return [
     ["doctypes", registerDoctypes(register)],
@@ -47,9 +45,6 @@ export function registerReaders(register = registerDoctype) {
  *  Synchronous, as a roster source answers; it writes nothing. A read that fails answers `{ok: false, why}`, which
  *  roster-reader states as "held as a table, not read". */
 export const ROSTER_CONTENT_TYPES = Object.freeze(ROSTER_TYPES.map((t) => t.key));
-/** R23: the roster read above, over the object's SQL.
- * @param {{sql: any, sight?: (viewer: any, alias?: any) => any}} args the object's SQL and the viewer predicate (membership's `viewerPredicate` when none is handed)
- * @returns {(query?: {viewer?: any, organisation?: any}) => any} the read: `{items}`, or `{ok: false, why}` when it fails */
 export function rosterReads({ sql, sight = viewerPredicate }) {
   return ({ organisation = null, viewer = null } = {}) => {
     if (typeof organisation !== "string" || organisation === "") return { ok: false, why: localize("store-assembly.wiring.no-organisation", "no organisation was named by its entity id") };
@@ -87,9 +82,7 @@ export function rosterReads({ sql, sight = viewerPredicate }) {
 }
 
 /** K1563 (10), K1654: the seeded offices' two reads (instance-setup R50), asked of instance-setup's instance when it
- *  answers them, else null, so local-facts falls back to the profile and conformance names no entity, each saying so.
- * @param {any} instanceSetup a getter of instance-setup's instance
- * @returns {{officeOf: (entityId: any, profile?: any) => any, officeEntityOf: (office: any) => any}} each null when instance-setup does not answer */
+ *  answers them, else null, so local-facts falls back to the profile and conformance names no entity, each saying so. */
 export function officePorts(instanceSetup) {
   const ask = (name, ...a) => {
     let s;
@@ -103,9 +96,7 @@ export function officePorts(instanceSetup) {
 
 /** K1569 (duties R9; civil-time R9): the `factOf` civil-time reads a calendar entry's status through: a closure-list
  *  entry is the profile's list, never a local fact (K1519); an office-calendar entry is local-facts' answer, read as
- *  action-clocks' `factReader` reads it (its R12).
- * @param {any} localFacts a getter of local-facts' instance
- * @returns {(entry: any) => {status: string, [k: string]: any}} the read of one entry's status */
+ *  action-clocks' `factReader` reads it (its R12). */
 export function dutiesFactOf(localFacts) {
   return (h) => {
     if (h && typeof h === "object" && h.list !== undefined && h.list !== null) return { status: "profile_list" };
@@ -124,9 +115,7 @@ function createdOf(files) {
 /** K1593 (retrieval R68 route (b)): the projected fields' providers, each the owner's one rule. `standard`: the
  *  standards a bundle's readings cite (`standards.standardsFor`, its R21). `holder`: for each office a bundle's
  *  captures resolve to (entities' read contract, R35), its holder on the bundle's own date (`lines.holderAt`, its
- *  R11), only a holder `lines` determines. Synchronous; a read that refuses or throws gives nothing.
- * @param {{standards: any, lines: any, sql: any}} args getters of the two owners' instances, and the object's SQL
- * @returns {{standard: (a: {bundleId: any}) => any, holder: (a: {bundleId: any, files: any}) => any[]}} */
+ *  R11), only a holder `lines` determines. Synchronous; a read that refuses or throws gives nothing. */
 export function retrievalTerms({ standards, lines, sql }) {
   return {
     standard: ({ bundleId }) => {
@@ -152,10 +141,6 @@ export function retrievalTerms({ standards, lines, sql }) {
  *  `SHEET_WORKER` service binding (`POST /recompute {capture_sha, store}`), the store being the object's namespace.
  *  None bound: a refusal workbooks records as "not recomputed here", never a guess. */
 export const NO_ENGINE = Object.freeze({ ok: false, reason: "NO_ENGINE", why: "no engine bound: SHEET_WORKER is not bound to this plane" });
-/** R21: the recompute above.
- * @param {any} env the object's bindings, `SHEET_WORKER` read at each call
- * @param {() => string} storeName the object's namespace, asked at each call
- * @returns {(captureSha: any) => Promise<any>} the sheet worker's answer, or `NO_ENGINE` */
 export function sheetRecompute(env, storeName) {
   return async (captureSha) => {
     const w = env && env.SHEET_WORKER;
@@ -170,9 +155,7 @@ export function sheetRecompute(env, storeName) {
  *  the object at its time, copies its materials and assembles its container in-process, as `op=caseratify` does in the
  *  Worker: the environment (its buckets), a stub whose `fetch` is this object's own door (`door`, the class's `fetch`,
  *  answering through control-plane's frame as a stub of the object would), and the store's name, the object's own
- *  namespace read when asked.
- * @param {{env: any, door: (req: Request) => any, namespace: () => any}} args
- * @returns {{env: any, stub: {fetch: (u: any, init?: any) => any}, storeName: any}} */
+ *  namespace read when asked. */
 export function ratificationWorker({ env, door, namespace }) {
   return { env, stub: { fetch: (u, init) => door(u instanceof Request ? u : new Request(u, init)) },
            get storeName() { return namespace(); } };
@@ -188,9 +171,6 @@ function withFleet(host) {
 /* R28: a bare host name as instance-setup R7 forms one (lower-cased, a trailing dot removed; no scheme, path, port or IP
    literal; the last label begins with a letter), else null. */
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-/** R28: a bare host name, or null.
- * @param {any} entry
- * @returns {string | null} */
 export function bareHost(entry) {
   if (typeof entry !== "string") return null;
   const h = entry.trim().toLowerCase().replace(/\.$/, "");
@@ -214,11 +194,7 @@ const logSkipped = (correlation) =>
  *    (the door forwards every request as `http://do/`).
  *  Each `workers.dev` host also gives its account's suffix (`withFleet`). The claimed domain itself is the group's own
  *  website, which a member may capture, so it is never one. With neither the list is empty and the own-host checks
- *  refuse nothing (capture-sources R65: fail-open, F16 low). Never throws.
- * @param {any} identity instance-setup's `groupIdentity()`
- * @param {any} [ownHostsVar] the `OWN_HOSTS` binding, comma-separated host names
- * @param {{log?: (correlation: any) => void, correlation?: () => string}} [hooks] the log of a skipped entry, and the correlation id it is named by
- * @returns {any[]} the hosts, each once */
+ *  refuse nothing (capture-sources R65: fail-open, F16 low). Never throws. */
 export function ownHostsOf(identity, ownHostsVar = null, { log = logSkipped, correlation = () => crypto.randomUUID() } = {}) {
   const out = [];
   const add = (hosts) => { for (const h of hosts) if (!out.includes(h)) out.push(h); };
@@ -247,9 +223,6 @@ export function ownHostsOf(identity, ownHostsVar = null, { log = logSkipped, cor
  *  the record's search finds for it (`retrieval.search`, its viewer gate, D-15), each kept once by wizard-scripts. Each
  *  provider is asked of its getter at the call; one that throws or refuses contributes nothing. Writes nothing. */
 export const FRONT_DOOR_KINDS = Object.freeze({ inquiry: "question", project: "project" });
-/** The front door's finder above.
- * @param {{steps: any, retrieval: any, limit?: number}} args getters of the two owners' instances, and the most hits the search answers (20)
- * @returns {(message: any, viewer: any) => {kind: any, id: any, name: any}[]} */
 export function frontDoorFinder({ steps, retrieval, limit = 20 }) {
   return (message, viewer) => {
     const out = [];
@@ -272,9 +245,7 @@ export function frontDoorFinder({ steps, retrieval, limit = 20 }) {
  *  profile set later is seen. With no active profile (the setting unset or empty) it answers `{places: [], pointers: []}`;
  *  with active profiles, `{places: [each active profile's name], pointers: view.pointers || []}`, `jurisdictions.combine`
  *  over the ids in order; a `combine` answering `ok: false`, or anything that throws, answers `null`. It names no place
- *  itself (R9), and the viewer is not read (the view is the instance's, not a member's).
- * @param {{setting: any}} args record-core's setting read
- * @returns {() => {places: any[], pointers: any} | null} */
+ *  itself (R9), and the viewer is not read (the view is the instance's, not a member's). */
 export function frontDoorPointer({ setting }) {
   return () => {
     try {
@@ -299,9 +270,7 @@ export function frontDoorPointer({ setting }) {
  *  - `connections`: the records the project's document cites, the targets of its `references[]` entries of rel `cites`
  *    whose edge is not severed (`connections.edgeSevered`).
  *  A reader that throws, or reads nothing, adds nothing (membership R150: the reach narrows, never widens). Both are
- *  bounded by `Membership.PROJECT_REACH_LIMIT`. Neither writes.
- * @param {{record: any, provenance: any, connections: any, sql?: any}} args getters of the owners' instances, and the object's SQL
- * @returns {{provenance: (a?: {project?: any}) => any[], connections: (a?: {project?: any}) => any[]}} */
+ *  bounded by `Membership.PROJECT_REACH_LIMIT`. Neither writes. */
 export function projectReachReaders({ record, provenance, connections, sql = null }) {
   const LIMIT = Membership.PROJECT_REACH_LIMIT, PAGE = 200;
   const own = (project) => {

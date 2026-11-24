@@ -17,10 +17,7 @@ import { byteLedger } from "../byte-ledger.mjs";
    exported under this name and not as `DECLARED_OPS`, so no op is declared twice; `declarations.mjs` registers them under
    `store-assembly`, and Wave B, which deletes control-plane's copy, names this export `DECLARED_OPS`. Each row's classes,
    machineClasses, mutating, stamps and needs are the hand rows' (`op-declarations` and `control-plane`'s stamps); its weight is the grade's ground or rung, its description the grade's
-   sentence as a word key; its fields are what the arm reads (accepts) and what a refusal names when absent (requires).
-   The rows are in `op-declarations`' owner-row form, by op name. */
-/** @import { AssemblyRow } from './declared.mjs' */
-/** @type {Readonly<Object<string, AssemblyRow>>} */
+   sentence as a word key; its fields are what the arm reads (accepts) and what a refusal names when absent (requires). */
 export const OWNER_MAP_DECLARED_OPS = Object.freeze({
   captureupload: { classes: ["admin", "member"], machineClasses: [], mutating: true, stamps: ["viewer", "by"], needs: "contribute",
     weight: "undetermined", description: localize("control-plane.declared.captureupload", "upload-directed: a member's bytes held as a capture under their digest, in her own name, with its receipt; reached from the upload, never beside a bundle"),
@@ -51,13 +48,6 @@ const declaredOf = (q) => {
 /* only the fields an act names cross from the body: a machine arm's `run` or a caller's `at` never does */
 const pick = (b, keys) => Object.fromEntries(keys.filter((k) => b[k] !== undefined).map((k) => [k, b[k]]));
 
-/**
- * R86: the owner map's arms, by op name; each answers its owner's own answer, as given.
- * @param {Object<string, () => any>} of the getters of the owners' one instances (`ownerGettersOf(ctx, env)`, R61), each asked only when its op is served
- * @param {URL} url the request's address, holding the door's stamps
- * @param {any} body the request's parsed body; anything but a plain object is read as none
- * @returns {Object<string, () => any>}
- */
 export function ownerOps(of, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = body && typeof body === "object" && !Array.isArray(body) ? body : {};

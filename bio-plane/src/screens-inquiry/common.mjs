@@ -5,10 +5,7 @@
 /** A record document's front matter and body, as the record grammar writes it: top-level scalars (a quoted value
  *  JSON-read); a key with no value followed by `  - k: v` items as a list of maps (`references`, `basis`, `grounds`);
  *  one followed by `  k: v` lines as a map (`source`); and, from the body, the `## Question` text and the Session Log's
- *  regroupings (`### Session <at> | Grouped|Restructured | <who>`, with their `Reason:` and `Strength before:` lines).
- * @param {*} text the document's text; anything but a string gives the empty shape
- * @returns {{lists: Object<string, Object<string, string>[]>, maps: Object<string, Object<string, string>>, question: string, log: {at: string, act: string, who: string, reason: string, before: string}[]} & Object<string, *>} the top-level scalars by key beside these
- */
+ *  regroupings (`### Session <at> | Grouped|Restructured | <who>`, with their `Reason:` and `Strength before:` lines). */
 export function front(text) {
   const out = { lists: {}, maps: {}, question: "", log: [] };
   if (typeof text !== "string") return out;
@@ -51,15 +48,7 @@ export function front(text) {
 /** A read the screen makes as it draws: once per key and query (and `token`, to read again), its outcome kept in the
  *  screen's memory and drawn on arrival. An answer `ok: false` (top level or in `result`) is failed, with its words;
  *  `found: false` is empty. A refusal keeps its answer's fields (a project seen only to exist names its `name` and
- *  `owners`).
- * @param {*} cs the kit
- * @param {*} ui the screen's memory (`view.ui`)
- * @param {string} key
- * @param {string} op
- * @param {*} query
- * @param {*} [token]
- * @returns {{q: string, state: string, value?: *, refusal?: *}} the read: `loading`, `ok` with `value`, `empty`, or `failed` with `refusal` (`{code, words, fields}`, or null when the call itself failed)
- */
+ *  `owners`). */
 export function later(cs, ui, key, op, query, token) {
   const L = ui.later || (ui.later = {});
   const q = JSON.stringify(query) + "#" + (token || "");
@@ -79,23 +68,13 @@ export function later(cs, ui, key, op, query, token) {
   return L[key];
 }
 
-/** A word as plain text, for record-data options, a title and a fill (the kit escapes each once more).
- * @param {*} cs the kit
- * @param {string} key
- * @param {*} [fills]
- * @returns {string}
- */
+/** A word as plain text, for record-data options, a title and a fill (the kit escapes each once more). */
 export function plain(cs, key, fills) {
   return String(cs.w(key, fills)).replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e]));
 }
 
 /** A member as drawn (R40): her handle; the founder with no handle by `member.founder.unnamed`, never `admin`. A screen
-    that reads the founder's handle passes it as `founder` (R46): the credential `admin` is then drawn by that handle.
- * @param {*} cs the kit
- * @param {*} x a roster row or a member id (`member:`/`token:` prefixes dropped)
- * @param {*} [founder] the founder's handle
- * @returns {string}
- */
+    that reads the founder's handle passes it as `founder` (R46): the credential `admin` is then drawn by that handle. */
 export function who(cs, x, founder) {
   if (x && typeof x === "object") {
     if (x.handle) return String(x.handle);
@@ -109,11 +88,7 @@ export function who(cs, x, founder) {
 
 /** R40 (K5148; WALK-FINAL-03 R24): whether the roster row `x` is the viewer (`view.me`, `whoami`'s answer). project-roster R29 answers a participant by
  *  `handle` (null for a founder who chose none) and marks the founder's row `founder: true`; it carries no `member`, a row that does is matched by it. So
- *  a row is hers when its `member` is hers, when it is the founder's and `whoami` names the member `admin`, or when its handle is hers. Self-contained.
- * @param {*} view
- * @param {*} x a roster row
- * @returns {boolean}
- */
+ *  a row is hers when its `member` is hers, when it is the founder's and `whoami` names the member `admin`, or when its handle is hers. Self-contained. */
 export function isMe(view, x) {
   const me = view && view.me ? view.me : null;
   if (!me || !x || typeof x !== "object") return false;
@@ -121,22 +96,14 @@ export function isMe(view, x) {
   return (member !== "" && String(x.member || "") === member) || (member === "admin" && x.founder === true) || (!!x.handle && x.handle === me.handle);
 }
 
-/** R60: a project she cannot see, drawn as the shell's "unavailable" state b ("You can't open this"), with nothing beneath.
- * @param {*} cs the kit
- * @returns {string} html
- */
+/** R60: a project she cannot see, drawn as the shell's "unavailable" state b ("You can't open this"), with nothing beneath. */
 export function unavailable(cs) {
   return `<p class="cs-state" data-state="empty" data-unavailable="notyours"><b>${cs.w("shell.unavailable.notyours.title")}</b> ${cs.w("shell.unavailable.notyours.says")}</p>`;
 }
 
 
 /** R57: the ending's own words, never its code: `ai.run.ending.<bound>`, `ai.run.ending.unknown` for any other; a run that
- *  completed is `completed` when it left a proposal that waits (`left`), `completed.none` when it left none.
- * @param {*} cs the kit
- * @param {*} bound
- * @param {*} [left]
- * @returns {*} the word
- */
+ *  completed is `completed` when it left a proposal that waits (`left`), `completed.none` when it left none. */
 export function ending(cs, bound, left) {
   const b = String(bound || "");
   if (b === "completed") return cs.w(left === false ? "ai.run.ending.completed.none" : "ai.run.ending.completed");
@@ -146,12 +113,7 @@ export function ending(cs, bound, left) {
 
 /** R57: the cost line, to the account's owners only (`session.cost` is absent for anyone else, and before anything is
  *  reported): `so far` while it works, `final` once it has ended; money where the account reports it, tokens and calls
- *  otherwise; never a zero for a figure not reported.
- * @param {*} cs the kit
- * @param {*} session
- * @param {*} ended
- * @returns {string} html, empty when no figure is reported
- */
+ *  otherwise; never a zero for a figure not reported. */
 export function costLine(cs, session, ended) {
   const c = session && session.cost;
   if (!c || typeof c !== "object") return "";
@@ -171,12 +133,7 @@ export function costLine(cs, session, ended) {
 
 /** R58: a run's steps as its log makes them, each row added as it arrives (a polite live region), from the entries' fields
  *  (`read: {record, n, total, outcome}`, a compose tick's `found`, the check's ticks): no English is parsed. `title(record)`
- *  names a document the member may see; a refused read, or one she may not see, names none.
- * @param {*} cs the kit
- * @param {*} entries the run's log entries
- * @param {*} [o] `{title(record)}`
- * @returns {{html: string, answered: boolean, none: boolean}}
- */
+ *  names a document the member may see; a refused read, or one she may not see, names none. */
 export function progress(cs, entries, o) {
   const list = Array.isArray(entries) ? entries : [];
   const rows = [];
@@ -209,17 +166,13 @@ export function progress(cs, entries, o) {
     + (answered ? "" : `<p class="mk-small" data-hold="1">${cs.w("ai.progress.hold")}</p>`) + "</div>" : "", answered, none };
 }
 
-/** @type {readonly string[]} R82 (CR-19; DEC-368): the format ids the registry names, each with its `document.kind.<id>` word; any other id draws `document.kind.undetermined`. */
+/** R82 (CR-19; DEC-368): the format ids the registry names, each with its `document.kind.<id>` word; any other id draws `document.kind.undetermined`. */
 export const KIND_IDS = Object.freeze(["csv", "docx", "html", "jpeg", "odp", "ods", "odt", "pdf", "png", "pptx", "text", "undetermined", "xlsx", "zip"]);
 
 /** C36 (R2, R3, R24, R34): the words of the passage a leg cites, from a reading's text units. `want` is the leg's extent as the record states it
  *  (`{page: "2"}`, `{kind: "doc-para", para: "2"}`: strings); a unit's extent is the extent grammar's (reading-pipeline R15), the fields it does not
  *  narrow to null (`rect`, `run`), and a null field states nothing. A leg draws a unit's words when it names exactly the fields the unit states,
- *  equal; a leg narrower (a rect) or wider (no page) than the unit is not the unit's words, and a leg that names nothing has none.
- * @param {*} units a reading's text units
- * @param {*} want the leg's extent, strings by field
- * @returns {string} the unit's words, empty when none is the leg's
- */
+ *  equal; a leg narrower (a rect) or wider (no page) than the unit is not the unit's words, and a leg that names nothing has none. */
 export function legWords(units, want) {
   const stated = (e) => Object.entries(e).filter(([, v]) => v !== undefined && v !== null && v !== "").map(([k, v]) => [k, String(v)]);
   const keys = Object.keys(want || {}).filter((k) => k !== "kind");
@@ -234,12 +187,8 @@ export function legWords(units, want) {
 }
 
 /** C36: a leg's extent as the record states it, from its own `extent_*` fields (every one but the capture and how it was cited as) and an
- *  `extent` object when it has one; the leg's fields win.
- * @param {*} x a leg
- * @returns {Object<string, string>}
- */
+ *  `extent` object when it has one; the leg's fields win. */
 export function legExtent(x) {
-  /** @type {Object<string, string>} builds a leg's extent */
   const bag = {};
   if (!x) return bag;
   for (const [k, v] of Object.entries(x)) if (k.startsWith("extent_") && k !== "extent_capture" && k !== "extent_cited_as" && v !== undefined && v !== null && v !== "") bag[k.slice(7)] = String(v);
@@ -253,15 +202,7 @@ export function legExtent(x) {
  *  read `{sha256, after: next}` kept under `key` + the first page's totals + `next`, so a reading that grows while it is being read (its totals change) is read
  *  again and not taken from a page kept while it was shorter, and every consumer of one reading shares its pages. Returns `{units, state, more, failed}`:
  *  `state` `loading` while a page is on its way (the units so far), `failed` when one was refused (`failed` is that read; the units so far), else `ok`; `more`
- *  whether a page remains unread. A cursor that comes round again ends the walk. Self-contained.
- * @param {*} read
- * @param {string} key
- * @param {string} sha
- * @param {*} first
- * @param {*} [done]
- * @param {*} [limit]
- * @returns {{units: *[], state: string, more: boolean, failed: *}}
- */
+ *  whether a page remains unread. A cursor that comes round again ends the walk. Self-contained. */
 export function readPages(read, key, sha, first, done, limit) {
   const cursorOf = (v) => (v && v.next !== undefined && v.next !== null && v.next !== "" ? String(v.next) : null);
   const version = first ? [first.units_total, first.read_through, first.total].map((v) => (v === undefined || v === null ? "" : String(v))).join("/") : "";
@@ -283,12 +224,7 @@ export function readPages(read, key, sha, first, done, limit) {
 /** G12c (R1, R9; strength R6 as T51 fix round 6 amends it): the strength of many questions in ONE read for each 50 of them (`inquirystrength` with `ids`,
  *  comma-joined, strength's batch), never one read for each question. `read(key, query)` is the screen's own reader (`later`/`ask`); `esc` the kit's.
  *  Returns `of(id)`: that question's read as the single read gives it (`{state, value}`), loading while its batch is, failed with the plane's words when
- *  its entry is a refusal or the batch left it out. The answer holds `results`, one entry for each id asked, keyed by id.
- * @param {*} read
- * @param {*} ids
- * @param {*} esc
- * @returns {(id: *) => {state: string, value?: *, refusal?: *}}
- */
+ *  its entry is a refusal or the batch left it out. The answer holds `results`, one entry for each id asked, keyed by id. */
 export function strengths(read, ids, esc) {
   const list = [...new Set((Array.isArray(ids) ? ids : []).map(String).filter(Boolean))];
   const chunks = [];

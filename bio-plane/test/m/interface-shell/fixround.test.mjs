@@ -227,7 +227,7 @@ test("R12 control: a mutating op outside the set is not drawn, and a read whose 
   const who = { ...ADMIN, capabilities: ["contribute", "administer", "create_projects", "publish"] };
   assert.equal(OPS.export.mutating, true);
   assert.deepEqual(await drawnOps("group", ["export"], who, "/app/group"), [], "export mutates and no set holds it");
-  assert.equal((OPS.selftest.classes || []).includes("agent"), false);
+  assert.equal(OPS.selftest.classes.includes("agent"), false);
   assert.deepEqual(await drawnOps("updates", ["selftest"], { ...who, tokenClass: "agent" }, "/app/updates"), [], "a class the read does not list");
 });
 

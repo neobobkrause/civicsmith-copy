@@ -4,12 +4,6 @@
  * when the screen opens. An act that files a document (`filing`) leaves `rereads` unset and reads everything again; an act that
  * already names its reads keeps them. Data only: the screens are serialised into the page, and this runs once, at load. */
 
-/**
- * @param {Array<Object>} acts a screen's acts
- * @param {Array<string>} names the screen's reads an act changes, every one but the documents list
- * @param {Array<string>} [filing] the ops of the acts that file a document, which read everything again
- * @returns {Array<Object>} the acts, each without its own `rereads` given `names`
- */
 export function rereading(acts, names, filing = []) {
   return acts.map((a) => (a.rereads !== undefined || filing.includes(a.op) ? a : Object.assign({}, a, { rereads: names })));
 }

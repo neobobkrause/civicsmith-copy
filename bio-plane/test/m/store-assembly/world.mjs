@@ -262,8 +262,7 @@ function baseOf(claimed, instanceName) {
  *  `instanceName` is the slug the installer binds as `INSTANCE_NAME` for the first boot (default `WORLD_INSTANCE_NAME`); `null` binds none, as
  *  an older installation's first boot had, so instance-setup records no producing team. `deliver` is `control-plane`'s owed-render delivery,
  *  handed to `assembleStore` as the Durable Object class hands it (R1); none, a row that needs it stays owed (R67). `releaseKeys` is the list of
- *  release keys instance-setup verifies a release notice against, a test's own keys instead of the product's (a test signs with the private half).
- * @param {{claimed?: boolean, now?: number, env?: Record<string, any>, instanceName?: string | null, deliver?: import("../../../src/store-assembly/assemble.mjs").OwedDelivery | null, releaseKeys?: string[] | null}} [options] */
+ *  release keys instance-setup verifies a release notice against, a test's own keys instead of the product's (a test signs with the private half). */
 export async function storeWorld({ claimed = true, now = WORLD_NOW, env: extra = {}, instanceName = WORLD_INSTANCE_NAME, deliver = null, releaseKeys = null } = {}) {
   const base = await baseOf(claimed !== false, instanceName);
   const t0 = performance.now();

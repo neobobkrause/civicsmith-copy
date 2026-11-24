@@ -14,9 +14,9 @@ import { word } from "../setup-words/index.mjs";
 const R = (s) => `read: ${s}; writes nothing`;
 const STANDARD_THROUGH = "standard-directed: keyed by a standard's version, reached from the standard; records what a "
   + "checked source shows, with who, when and why; moves no bundle";
-const FILE_ASKED = "file-directed: keyed by a capture's digest; asks the team's outside tools about this file; records "
+const FILE_ASKED = "file-directed: keyed by a capture's digest; asks the group's outside tools about this file; records "
   + "no one";
-const SECURITY_TOOLS = "setting: the team's security tools, an administrator's act; moves no bundle";
+const SECURITY_TOOLS = "setting: the group's security tools, an administrator's act; moves no bundle";
 const SECURITY_WAKES = "scheduler: the security wakes; name no member and move no bundle";
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */

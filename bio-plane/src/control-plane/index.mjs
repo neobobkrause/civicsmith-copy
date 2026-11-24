@@ -181,7 +181,6 @@ async function withTrace(res, trace) {
    here exactly as op=verify and op=publishedmanifest are — and a probe's
    `scratch` rehearsal, which lives in a different Durable Object under a
    different PUBLISHED prefix, is therefore unreachable from the public surface. */
-/** @type {string} the one namespace the public read path answers from */
 const PUBLISHED_STORE = "bio";
 /* R105 (K3770): the longest an `acquire` is let run at the door. */
 const ACQUIRE_BOUND_MS = 25000;
@@ -235,12 +234,6 @@ async function keptInStore(stub, { address, session, viewer }) {
   return false;
 }
 
-/**
- * The first 8 bytes of a value's SHA-256, as 16 lower-case hex digits (a claim's credential fingerprint, R15).
- * @param {string | null | undefined} v
- * @returns {Promise<string | null>} null for an empty or absent value
- * @bound returns: 16 lower-case hex digits, or null
- */
 async function fingerprint(v) {
   if (!v) return null;
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
@@ -251,11 +244,6 @@ async function fingerprint(v) {
    `digests()` calls to name each normalised variant (CONSTRUCTS Step 2 / FW-4);
    it hashes the SAME raw bytes for `identity`, which is why identity must equal
    the capture sha and is asserted to. */
-/**
- * @param {string | ArrayBuffer | ArrayBufferView} v a string (hashed as UTF-8) or bytes
- * @returns {Promise<string>} the SHA-256, 64 lower-case hex digits
- * @bound returns: 64 lower-case hex digits
- */
 async function sha256Hex(v) {
   const b = await crypto.subtle.digest("SHA-256", typeof v === "string" ? new TextEncoder().encode(v) : v);
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -280,15 +268,6 @@ async function groupOf(stub, project = null) {
 }
 const INBAND_OVER = "this answer exactly as served, without its `inband` key: parse it, delete `inband`, and "
           + "hash JSON.stringify(rest, null, 1) as UTF-8";
-/**
- * The review copy's answer (R20, R102): the store's refusal at its status, a silence, `NO_REVIEW_COPY` at 404, or the copy with its in-band quartet.
- * @param {{answered: boolean, refused?: boolean, result?: any, correlation?: string, reply?: any}} out the store's answer, as `doAnswer` reads it
- * @param {string} op
- * @param {Record<string, any>} [extra] keys put in the answer before its hash is taken
- * @param {Record<string, any> | null} [group] the group fields for the quartet
- * @param {((project: string) => Promise<Record<string, any> | null>) | null} [batchGroup] the group fields for each copy of a batch, by its project
- * @returns {Promise<Response>}
- */
 async function reviewAnswer(out, op, extra = {}, group = null, batchGroup = null) {
   if (out.refused) return storeRefusal(out, extra);   /* R23: the store's own refusal, at its status */
   if (!out.answered) return storeSilent(op, out.correlation);
@@ -379,7 +358,7 @@ async function secretDoorRequest({ op, req, url, credential, reader, narrow = nu
 }
 
 const TEMPLATE_GRANT_DOORS = Object.freeze([...TEMPLATE_DOOR_ACTIONS, ...TEMPLATE_DOOR_READS]);   /* op-declarations R8 */
-const deadTemplateGrant = () => json(noTemplateGrant(), 404);
+const deadTemplateGrant = () => json({ ok: false, ...noTemplateGrant() }, 404);
 async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, credential }) {
   /* R138 (R136): the request is `store-request`'s `innerRequest` from the page's, a presented secret's digest its one stamp (store-request R23);
      only the reader's own `viewer` and `author` are set here, from the session `admit` held to a member */
@@ -389,7 +368,7 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
                                    method: req.method, presented: presentedAi, doAnswer, credential,
                                    background: url.searchParams.get("background") === "1" });
     if (admitted.silent) return storeSilent(admitted.silent.op, admitted.silent.correlation);
-    if (admitted.refusal || !admitted.caller || !admitted.caller.viaSession) return deadTemplateGrant();
+    if (admitted.refusal || !admitted.caller.viaSession) return deadTemplateGrant();
     reader = { viewer: admitted.caller.viewer, author: admitted.caller.identity };
   }
   const built = await secretDoorRequest({ op, req, url, credential, reader });
@@ -406,28 +385,16 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
 
 /* WHO IS ASKING, FOR A PUBLIC OP THAT ANSWERS WORKING MATERIAL ONLY TO SOME: `admission`'s `readerOf` (its R16), in the
    shape the arms behind plane's hooks read (`{viewer, cls}`, or `{silent: <op>, correlation}`). */
-/**
- * Who is asking, for a public op that answers working material only to some (admission R16): never refuses.
- * @param {URL} url
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {any} presentedAi the front door's looked-up agent credential; undefined asks the store
- * @param {any} [credential] the presented credential (admission R20)
- * @returns {Promise<{viewer: any, cls: string | undefined, silent: string | null, correlation: string | undefined}>} the reader, `viewer` (`""` for no one) and `cls`;
- *  or, when the store did not answer, `silent` the store route asked and `correlation` its id (`viewer` then `""`)
- */
 async function caseReader(url, env, storeName, presentedAi, credential = null) {
   /* R83 (T47; K3144): a background request's session read is no activity */
   const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential,
                            { background: url.searchParams.get("background") === "1" });
-  if (r.silent) return { viewer: "", cls: undefined, silent: r.silent.op, correlation: r.silent.correlation };
-  return { viewer: r.viewer, cls: r.cls, silent: null, correlation: undefined };
+  return r.silent ? { silent: r.silent.op, correlation: r.silent.correlation } : r;
 }
 
 /* The R2 key for a capture's bytes (I1 §2): content-addressed under the store
    prefix. The ONE place this shape is written, so op=capture and op=pdfstructure
    read the identical object rather than two copies of the key drifting apart. */
-/** @type {(storeName: string, sha: string) => string} the R2 key of a capture's bytes, `<store>/captures/<sha>` */
 const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
 
 /* THE CAPABILITY COMPLAINT (C-68.1, D-278). A copy installed with no evidence
@@ -438,12 +405,6 @@ const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
  * BYTE-IDENTICAL from each site — the sites said two different sentences before
  * this and still do. Handed to every arm this door routes those ops to (moved
  * from legacy-index at T19, its door share). */
-/**
- * C-68.1: the capability complaint of a copy with no evidence storage, enveloped (acquisition's row).
- * @param {string} op
- * @param {string} error the site's sentence, passed byte-identical
- * @returns {Response}
- */
 function storageAbsent(op, error) {
   const { status, body } = evidenceStorageAbsent(op, error);
   return json(body, status);
@@ -461,8 +422,7 @@ async function groupRead(op, url, env, presentedAi, credential, stateTiming = un
   const held = credential.token;
   const heldCls = held ? await classify(held, env) : null;
   const heldScope = heldCls ? scopeFor(heldCls, url) : null;
-  /* a scope with no error names its namespace (admission's `scopeFor`) */
-  const store = heldScope && typeof heldScope.name === "string" ? heldScope.name
+  const store = heldScope && !heldScope.error ? heldScope.name
     : (url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio");
   const reader = await caseReader(url, env, store, presentedAi.cred, credential);
   if (reader.silent) return storeSilent(reader.silent, reader.correlation);
@@ -489,15 +449,7 @@ async function groupRead(op, url, env, presentedAi, credential, stateTiming = un
    door cannot be used to skip a run. Condition (1), the ADMIN class, is the caller's to ask before calling this.
    WHAT THIS CANNOT CHECK, stated rather than hidden: the provenance capture is uploaded by the root of trust, whose
    honesty the record does not model (Membership §DEC-2, deferred). */
-/** @type {string} where the Drive era's provenance capture is registered */
 const DRIVE_PROVENANCE_PATH = "migration/drive-provenance.json";
-/**
- * R16: is this promotion a replay the server can verify (D-512)?
- * @param {Record<string, any>} env needs `CAPTURES`
- * @param {string} storeName
- * @param {Record<string, any>} b the promotion's body
- * @returns {Promise<{capture: string, promotion: string | null, bundleMdSha: string} | null>} null when any condition fails
- */
 async function migrationReplayOf(env, storeName, b) {
   const cap = typeof b.provenanceCapture === "string" ? b.provenanceCapture.trim() : "";
   if (!/^[0-9a-f]{64}$/.test(cap)) return null;
@@ -630,17 +582,14 @@ async function packOf(res) {
    to the `limits` of the plane's own configuration (`wrangler.jsonc`), which a test pins. The installer reads them from
    the verified plane bundle and holds no value of its own; the door carries them as `limits` on the function it makes,
    so a bundle of the door cannot leave them out. */
-/** @type {Readonly<{subrequests: number, cpu_ms: number}>} the plane's limits, as its configuration states them */
 const PLANE_LIMITS = Object.freeze({ subrequests: 10000, cpu_ms: PLATFORM_FIGURES.cpu_ms.value });   /* plane R99: stated once, runtime-limits' figure */
 /* The statement a release's verified bundle is read for (installer R20, K723, K724): the tag, then `key=<positive
    integer>` for each key of the limits, keys sorted, single spaces, no quotes or backslashes, so a reader of the bundle's
    text finds it whole. `PLANE_LIMITS` is its parsed form. */
-/** @type {string} @bound PLANE_LIMITS_STATEMENT: `bio-plane-limits/1` then `key=<positive integer>` per key, keys sorted, single spaces */
 const PLANE_LIMITS_STATEMENT = "bio-plane-limits/1 cpu_ms=300000 subrequests=10000";
 /* R1 (fix round 6, G1; K4566): THE PLANE'S CRON, stated in its code beside its limits so the bundle a release signs carries it: the tag, then the one five-field cron
    the watchdog runs on (`bio-plane/wrangler.jsonc` `triggers.crons`, which plane's test pins equal). The installer sets the plane's schedules from this statement
    and holds no value of its own. */
-/** @type {string} @bound PLANE_CRONS_STATEMENT: `bio-plane-crons/1` then one five-field cron */
 const PLANE_CRONS_STATEMENT = "bio-plane-crons/1 */5 * * * *";
 
 /* R53 (K1601, K1674; credentials R27, R28; agent-worker R54): AN ASK'S GRANT. Its token has a session's shape and is
@@ -659,7 +608,7 @@ async function grantAdmit(env, url, op, spec, token) {
   if (!out.answered) return { silent: { op: "aigrantadmit", correlation: out.correlation } };
   const g = out.result || {};
   if (g.ok === true) return { caller: { cls: "ai", viaSession: false, member: null, viewer: null, identity: null, rights: null,
-    caps: null, aiCred: { tokenId: "grant", principal: g.viewer, grant: token, writes: [] },
+    caps: null, aiCred: { tokenId: "grant", principal: g.viewer, grant: token },
     storeName: url.searchParams.get("store") === SCRATCH ? SCRATCH : "bio" } };
   return g.reason === "GRANT_OP_REFUSED" ? { refusal: { status: 403, body: g } } : {};
 }
@@ -735,11 +684,7 @@ async function heldWholeFacts(env, storeName, sha) {
  *  bundle (its text, id and register), run in process through the same `promote` step (promotion's `promote`, the route's own), filed
  *  under the project of the shell document (the capture session's primary, as its opener sees it) with the opener as author and
  *  the door's promote stamps; then R123's read of the document, inline when it fits, else written down for the alarm. Nothing is
- *  delivered for a session that is gone or has no opener; a refusal is `{ok: false, reason}` and the render stays owed.
- * @param {{ctx?: any, env?: Record<string, any>, storeName?: string, answer?: any, session?: string}} [args] the object's context, its environment, the namespace, the owed render's answer and the capture session
- * @returns {Promise<{ok: boolean, bundleId?: string, existed?: boolean, reading_pending?: boolean, reason?: string, detail?: any, capture_sha?: string, kind?: string | null, holder?: string | null}>}
- *  `ok: true` with `bundleId` (and `existed` or `reading_pending`), or `ok: false` with `reason` (and the refusal's facts for a capture held by another document)
- */
+ *  delivered for a session that is gone or has no opener; a refusal is `{ok: false, reason}` and the render stays owed. */
 export async function deliverOwedRender({ ctx, env, storeName = "bio", answer, session } = {}) {
   try {
     const doc = answer && typeof answer === "object" ? answer.document : null;
@@ -877,15 +822,6 @@ function requestDone(seen) {
                                queued_ms: seen.clock.queued(seen.op), isolate_ms, object_ms }));
 }
 
-/**
- * @typedef {((req: Request, env: Record<string, any>) => Promise<Response>) & {limits: Readonly<{subrequests: number, cpu_ms: number}>, limitsStatement: string, cronsStatement: string}} PlaneDoor
- * the Worker's entry, carrying the plane's limits and cron statements
- */
-/**
- * The instance's door (R1–R138): routing, admission in R28's order, the stamps through `innerRequest`, and the one envelope.
- * @param {Record<string, any>} [hooks] what `plane` composes from the arms' owners (plane R6): `publicOp(ctx)` and `gatedOp(ctx)` answer an op whose handler is a module's, or undefined for the forward to the store
- * @returns {PlaneDoor}
- */
 export function makeFetch(hooks = {}) {
   /* R25: the door's one outermost catch. */
   /* R50: `seen.session` is set once admission has admitted a member's session, so a refusal answered to it is tallied;
@@ -1263,8 +1199,6 @@ export function makeFetch(hooks = {}) {
     }
     if (admitted.refusal) return refused(admitted.refusal);
     const caller = admitted.caller;
-    /* admission's `admit` answers a caller whenever it answers no refusal and no silence */
-    if (!caller) throw new Error("admission admitted no caller");
     const { cls, viaSession, aiCred, storeName } = caller;
     /* REC-132: the session's two halves, apart: `sessViewer` wherever a VISIBILITY gate is stamped, `sessIdentity`
        wherever the question is WHO; `sessMember` the folded id every author, by and actor stamp carries. */
@@ -1342,7 +1276,7 @@ export function makeFetch(hooks = {}) {
     /* R136 (store-request R1): the store's request is made by `store-request`'s `innerRequest`, below, from the caller admitted and the
        request; this door stamps, strips and carries no credential of its own. `actor` and `stampOf` are the door's reading of who is
        acting, for the arms that follow. */
-    const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred?.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
+    const actor = viaSession ? sessViewer : cls === "ai" ? `${MACHINE_CLASS_PREFIX}ai/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}`;
     const stampOf = { viewer: viaSession ? sessViewer : cls === "ai" ? aiViewer : actor, by: actor };
     /* R28: admission R12 (`bearerFence`), the bearer fences on the §4 governance acts (C-32.17) and the group-identity
        acts (C-64.4), before any handler: how the caller ARRIVED, never which token it held. */
@@ -1369,7 +1303,8 @@ export function makeFetch(hooks = {}) {
     if (op === "purge") {
       const confirm = url.searchParams.get("confirm");
       if (confirm !== storeName)
-        return json({ ...requiredArgument("purge", "confirm", "<store name>",
+        return json({ ok: false,
+                      ...requiredArgument("purge", "confirm", "<store name>",
                                           "purge requires confirm=<store>"),
                       expected: storeName,
                       got: confirm, tokenClass: cls, store: storeName }, 400);
@@ -1388,9 +1323,9 @@ export function makeFetch(hooks = {}) {
        caller; the archive's project is the request body's `project`, read from a copy before the handler reads the body. */
     const archiveWho = { author: viaSession ? sessMember : `${MACHINE_AUTHOR_PREFIX}${cls}`,
       ...(viaSession ? { actorMemberId: sessMember } : {}),
-      actorIdentity: viaSession ? sessIdentity : cls === "ai" ? aiCred?.principal : `${MACHINE_CLASS_PREFIX}${cls}`,
+      actorIdentity: viaSession ? sessIdentity : cls === "ai" ? aiCred.principal : `${MACHINE_CLASS_PREFIX}${cls}`,
       actorViewer: viaSession ? sessViewer : cls === "ai" ? aiViewer : `${MACHINE_CLASS_PREFIX}${cls}`,
-      ...(viaSession ? {} : { assistantPrincipal: cls === "ai" ? `${aiCred?.principal}/${aiCred?.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}` }) };
+      ...(viaSession ? {} : { assistantPrincipal: cls === "ai" ? `${aiCred.principal}/${aiCred.tokenId}` : `${MACHINE_CLASS_PREFIX}${cls}` }) };
     let archiveProject = null, captureStep = null;
     if ((op === "acquire" || op === "unpack") && req.method === "POST")
       try {
@@ -1563,9 +1498,8 @@ export function makeFetch(hooks = {}) {
         if (kept !== "held" && viaSession && reqBody && typeof reqBody === "object" && !Array.isArray(reqBody)
             && await keptInStore(stub, { address: typeof reqBody.locator === "string" ? reqBody.locator : null,
                                          session: typeof reqBody.continue === "string" ? reqBody.continue : null, viewer: sessViewer })) kept = "held";
-        const keptKey = detailKey(kept);
         return json({ ok: false, reason: "ACQUIRE_TIMED_OUT", code: "ACQUIRE_TIMED_OUT", op, store: storeName, tokenClass: cls,
-                      ...(keptKey ? { detail: word(keptKey) } : {}), kept, timings: failedTimings(stages) }, 504);
+                      ...(detailKey(kept) ? { detail: word(detailKey(kept)) } : {}), kept, timings: failedTimings(stages) }, 504);
       }, (e) => { clearTimeout(timer); throw e; });
     };
     /* R120 (fix round 4, C5a/P8; K4434): THE READING THAT WILL NOT FIT THE BOUND FOLLOWS. The handler asks this of the document it has just
@@ -1783,8 +1717,6 @@ export function makeFetch(hooks = {}) {
       if (verdict.verdict === "deferred" || (verdict.verdict !== "stated" && readingWontFit(r.document))) return owed();
       /* R131: the gate admitted it: one inline read, its start written BEFORE the await; it makes no OCR call (extraction's `read` default, R131) */
       logRead("start", r.document, verdict);
-      /* R130 (R-LOG): `upload_read` is written before the slow await as well as after it */
-      try { console.log(JSON.stringify({ event: "upload_read", sha, phase: "start", pending: false, more: false, ocr_left: null, tier3_candidate: false })); } catch { /* a log is status */ }
       let read;
       try {
         read = await acquireReadingOp({ ok: true, document: r.document }, stub, { json, storeSilent, doAnswer, storeName,
@@ -1961,7 +1893,6 @@ export function makeFetch(hooks = {}) {
       /* admission R13: judged before the request was made (above); only the SHA-256 and the NORMALISED declaration crossed to the
          store, in the body store-request made (its R23), never the caller's spelling. */
       const mint = mintPlan;
-      if (!mint || !("secret" in mint)) throw new Error("aicredentialmint without its plan");
       const secret = mint.secret;
       const minted = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));
       if (minted.refused) return storeRefusal(minted, { op, store: storeName, tokenClass: cls });
@@ -1988,7 +1919,6 @@ export function makeFetch(hooks = {}) {
      * unsigned half of `casedocument`. 32 random bytes, base64url, behind a version
      * prefix — not an id, and not derivable from one. */
     if (op === "reviewgrant") {
-      if (!grantSecret) throw new Error(`${op} without its secret`);
       const { secret } = grantSecret;   /* admission R13, made before the request (above) */
       /* R64 (N761): the digest is in the body store-request made (its R23), never the query */
       const issued = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));
@@ -2009,7 +1939,6 @@ export function makeFetch(hooks = {}) {
        filing-templates, and the value returned once, in this answer. It opens the four grant doors (R44) to one version
        while the grant is live, and nothing else. */
     if (op === "templatereviewgrant") {
-      if (!grantSecret) throw new Error(`${op} without its secret`);
       const { secret } = grantSecret;   /* admission R13, made before the request (above) */
       /* R64 (N761): the digest is in the body store-request made (its R23), never the query */
       const issued = await doAnswer(stub.fetch(new Request(inner, { method: "POST", body: passBody })));

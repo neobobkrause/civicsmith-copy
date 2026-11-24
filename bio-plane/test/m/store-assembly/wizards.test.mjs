@@ -83,9 +83,9 @@ test("R17 (T34; DEC-152, DEC-153; K1818): before the first request it is registe
   const held = w.registeredScreens();
   assert.deepEqual(held.map((s) => s.id), SCREEN_REGISTRY.map((s) => s.id), "the registry's screens (K1869 (2))");
   for (const s of SCREEN_REGISTRY)
-    for (const a of s.acts) assert.ok(held.find((h) => h.id === s.id)?.acts.includes(a), `${s.id}: ${a}`);
-  assert.deepEqual(new Set(w.reg?.ops), new Set(Object.keys(OPS)), "the member op table");
-  assert.deepEqual(w.reg?.library.map((e) => e.id), CIVICSMITH_LIBRARY.map((e) => e.id), "the Civicsmith library");
+    for (const a of s.acts) assert.ok(held.find((h) => h.id === s.id).acts.includes(a), `${s.id}: ${a}`);
+  assert.deepEqual(new Set(w.reg.ops), new Set(Object.keys(OPS)), "the member op table");
+  assert.deepEqual(w.reg.library.map((e) => e.id), CIVICSMITH_LIBRARY.map((e) => e.id), "the Civicsmith library");
   /* behaviour through the door (`op=wizardcheck`, wizard-scripts R12) over what was registered */
   const check = async (steps) => {
     const r = await (await x.fetch("/wizardcheck?viewer=member:ann", { method: "POST", body: JSON.stringify({ steps }) })).json();
@@ -117,7 +117,7 @@ test("R17 (T34; DEC-152, DEC-153; K1818): before the first request it is registe
 
 test("R17, R6, R34: every op of wizard-scripts' map is in the route map, after review's and case-check's (T45), and answers through control-plane's door what its own map answers called directly", async () => {
   const u = new URL("http://do/");
-  const ops = Object.keys(wizardScriptsOps(/** @type {any} */ (null), u, null));
+  const ops = Object.keys(wizardScriptsOps(null, u, null));
   assert.ok(ops.length >= 15 && ops.includes("wizardsat") && ops.includes("wizardcheck"), ops.join());
   const x = await store(), twin = await store();
   const map = Object.keys(x.s.routes(u, null));

@@ -58,13 +58,14 @@ test("R11: refusals in order — not authored (C-26.9), not proposed (C-26.10), 
   for (const [who, by] of [["mo", "mo"], ["owner", "owner"], ["x", null]]) {
     const ask = by ? { author: who, identity: `member:${by}`, viewer: `member:${by}` } : { author: who, identity: "class:member", viewer: "class:member" };
     const r = w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ask });
-    assert.deepEqual([r.ok, r.reason, r.code, r.check, r.translation, r.by, r.scope], [false, "NOT_AN_ADMIN", "NOT_AN_ADMIN", "C-96.1", row.translation, by, "instance"]);
-    assert.ok(String(r.detail).startsWith(INSTANCE_ADOPTION_ACT), r.detail);
-    assert.equal(r.remedy, INSTANCE_ADOPTION_REMEDY);
     assert.deepEqual(r, notAnAdmin(by, INSTANCE_ADOPTION_ACT, { remedy: INSTANCE_ADOPTION_REMEDY, scope: "instance" }), who);
+    assert.deepEqual([r.ok, r.reason, r.code, r.check, r.translation, r.by, r.scope], [false, "NOT_AN_ADMIN", "NOT_AN_ADMIN", "C-96.1", row.translation, by, "instance"]);
+    assert.ok(r.detail.startsWith(INSTANCE_ADOPTION_ACT), r.detail);
+    assert.equal(r.remedy, INSTANCE_ADOPTION_REMEDY);
     assert.equal(r.message, `${row.translation} ${INSTANCE_ADOPTION_REMEDY}`);
   }
-  assert.equal(INSTANCE_ADOPTION_REMEDY, word("bias.project_owners_set"));
+  assert.match(INSTANCE_ADOPTION_REMEDY, /project you own/);
+  assert.match(INSTANCE_ADOPTION_REMEDY, /ask an administrator/);
   assert.equal(w.ops(`bundleId=${A}&author=mo&identity=member:mo&viewer=member:mo`).biasadopt instanceof Function, true);
   assert.equal((await w.ops(`bundleId=${A}&author=mo&identity=member:mo&viewer=member:mo`).biasadopt()).code, "NOT_AN_ADMIN");
   assert.equal(w.dump(), before, "every refusal writes nothing");
@@ -80,12 +81,12 @@ test("R11: refusals in order — not authored (C-26.9), not proposed (C-26.10), 
 test("R12: one adoption per (scope, project, bundle), replaced on re-adoption, pinning the head and the source fields, with author, instant and the adopter's reason; the answer's pin, author, instant, reason, in_force, pins_proposed and note", async () => {
   const w = await adoptWorld("proposed", { policy_source: "https://example.org/p", policy_retrieved: "2026-06-30", policy_sha256: "ABC123" });
   const head = w.record.head(A).bundleSha;
-  const r = w.bias.biasAdopt({ bundleId: A, ...ADMIN, at: T0 });
+  const r = w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN, at: T0 });
   assert.deepEqual({ ...r, note: undefined }, { ok: true, adopted: true, bundleId: A, scope: "instance", scope_id: "", author: "admin",
     at: T0, reason: WHY, pinned: { bundle_sha: head, source_url: "https://example.org/p", retrieved: "2026-06-30", source_sha256: "abc123" },
     in_force: false, pins_proposed: true, note: undefined });
-  assert.match(String(r.note), /PINS A PROPOSED REVISION/);
-  assert.match(String(r.note), /REPLACES this scope's lens/);
+  assert.match(r.note, /PINS A PROPOSED REVISION/);
+  assert.match(r.note, /REPLACES this scope's lens/);
   assert.deepEqual(at(w), { scope_type: "instance", scope_id: "", bundle_id: A, bundle_sha: head, author: "admin", at: T0,
     source_url: "https://example.org/p", retrieved: "2026-06-30", source_sha256: "abc123", reason: WHY });
   /* adopted, then re-adopted: replaced, never a second row */
@@ -186,7 +187,7 @@ test("R13: a project scope with no id, or one the viewer may not see, answers in
 
 test("R14: instance adoptions, and a project's too, of sets not retired and visible, each read from its PINNED revision's bytes; a pin at proposed is listed, not in force; an unreadable pin is undetermined", async () => {
   const w = await adoptWorld();
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   const pinned = w.record.head(A).bundleSha;
   /* read from the pinned revision: a later retitle moves the head, never the statements read */
   const m1 = w.bias.biasManifest({ viewer: "admin" });
@@ -204,7 +205,7 @@ test("R14: instance adoptions, and a project's too, of sets not retired and visi
   const m3 = w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
   assert.deepEqual(m3.pins_proposed, [{ bundle_id: B, revision: w.record.head(B).bundleSha, scope: "project",
     pinned_state: "proposed", adopted_by: "owner", adopted_at: "2026-07-09T00:00:00Z" }]);
-  assert.match(String(m3.pins_proposed_stated), /puts no lens in force/);
+  assert.match(m3.pins_proposed_stated, /puts no lens in force/);
   assert.deepEqual(m3.bundles.map((b) => b.bundle_id), [A], "the proposed pin puts nothing in force");
   assert.equal("pins_proposed" in w.bias.biasManifest({ viewer: "admin" }), false, "absent when there is none");
   /* retired sets are not read; an invisible set is not read (a member sees every non-project bundle, so the gate is
@@ -214,7 +215,7 @@ test("R14: instance adoptions, and a project's too, of sets not retired and visi
   w.sql.exec(`UPDATE bias_adoptions SET bundle_sha='0000' WHERE bundle_id=?`, A);
   const m4 = w.bias.biasManifest({ viewer: "admin" });
   assert.deepEqual([m4.in_force, m4.unresolved_pins, m4.statements_sha], [null, [{ bundle_id: A, revision: "0000", scope: "instance" }], null]);
-  assert.match(String(m4.stated), /cannot be computed/);
+  assert.match(m4.stated, /cannot be computed/);
   w.sql.exec(`UPDATE bias_adoptions SET bundle_sha=? WHERE bundle_id=?`, w.record.head(A).bundleSha, A);
   w.promote(A, FM(A, { statements: [S("s1")], current_state: "retired", prior_state: "adopted" }));
   assert.equal(w.bias.biasManifest({ viewer: "admin" }).in_force, false, "a retired set is out of force");
@@ -232,8 +233,8 @@ test("R16: group statements then the project's; a nullification of an unlocked s
   w.set("BIAS-2026-0003-inst", [S("s2"), S("s3", { locked: true }), S("s4")], "adopted");
   w.set("BIAS-2026-0000-proj", [S("p1"), S("n2", { text: "", nullifies: "s2" }), S("n3", { text: "", nullifies: "s3" }),
                                 S("r4", { nullifies: "s4", text: "A replacement lens for s4, stated in full." })], "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
-  w.bias.biasAdopt({ bundleId: "BIAS-2026-0003-inst", ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: "BIAS-2026-0003-inst", ...ADMIN });
   w.bias.biasAdopt({ reason: WHY, bundleId: "BIAS-2026-0000-proj", scope: "project", scopeId: P, author: "owner", identity: "member:owner", viewer: "member:owner" });
   const m = w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
   assert.deepEqual(m.statements.map((s) => [s.bundle_id, s.statement_id, s.scope]), [
@@ -247,12 +248,12 @@ test("R16: group statements then the project's; a nullification of an unlocked s
 test("R17: statements_sha is SHA-256 over the whole effective set before any paging — the same at limit 1, any offset, any page", async () => {
   const w = await adoptWorld("adopted");
   w.set(B, [S("t1"), S("t2"), S("t3")], "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
-  w.bias.biasAdopt({ bundleId: B, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: B, ...ADMIN });
   const whole = w.bias.biasManifest({ viewer: "admin" });
   for (const [limit, offset] of [[1, 0], [1, 3], [2, 1], [2000, 0], [null, 9]])
     assert.equal(w.bias.biasManifest({ viewer: "admin", limit, offset }).statements_sha, whole.statements_sha);
-  assert.match(String(whole.statements_sha), /^[0-9a-f]{64}$/);
+  assert.match(whole.statements_sha, /^[0-9a-f]{64}$/);
   const { createHash } = await import("node:crypto");
   const expect = createHash("sha256").update(JSON.stringify(whole.statements.map((s) =>
     [s.bundle_id, s.statement_id, s.kind, s.subject, s.text, s.justification, s.locked]))).digest("hex");
@@ -267,8 +268,8 @@ test("R18: bundles with their pins, each adoption's residue with whether it is s
   const w = await adoptWorld("adopted", { policy_source: "https://example.org/p" });
   const many = Array.from({ length: 2005 }, (_, i) => S(`x${String(i).padStart(4, "0")}`));
   w.set(B, many, "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN, at: T0 });
-  w.bias.biasAdopt({ bundleId: B, ...ADMIN, at: T0 });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN, at: T0 });
+  w.bias.biasAdopt({ reason: WHY, bundleId: B, ...ADMIN, at: T0 });
   const m = w.bias.biasManifest({ viewer: "admin" });
   assert.deepEqual(m.bundles[0], { bundle_id: A, revision: w.record.head(A).bundleSha, scope: "instance", adopted_by: "admin",
     adopted_at: T0, source_url: "https://example.org/p", retrieved: null, source_sha256: null });
@@ -286,7 +287,7 @@ test("R22: the fingerprint changes when any lens input changes, and is synchrono
   const f0 = w.bias.lensFingerprint();
   assert.equal(typeof f0, "string");
   assert.equal(f0, JSON.stringify([0]));
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   const f1 = w.bias.lensFingerprint();
   assert.notEqual(f1, f0, "the number of adoptions");
   assert.deepEqual(JSON.parse(f1), [1, ["instance", "", A, w.record.head(A).bundleSha, "proposed"]]);
@@ -310,7 +311,7 @@ test("R23: a successful adoption notifies each registered module once, after the
   w.bias.onLensChange("scheduler", () => seen.push(w.count("bias_adoptions")));
   w.bias.biasAdopt({ reason: WHY, bundleId: A, author: "mo", identity: "member:mo" });
   assert.deepEqual(seen, []);
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   await w.bias.noticesDelivered();
   assert.deepEqual(seen, [1]);
   /* the op awaits the notice, so an arm lands inside the request */
@@ -325,7 +326,7 @@ test("R24: a project statement on a group statement's subject that names no over
   w.set("BIAS-2026-0000-proj", [S("p1", { subject: "ENT-2026-0007", justification: "We hold the office to a higher bar here." }),
                                 S("p2", { subject: "ENT-2026-0099" }),
                                 S("r1", { subject: "ENT-2026-0007", nullifies: "s1", text: "A named replacement of s1, stated." })], "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   w.bias.biasAdopt({ reason: WHY, bundleId: "BIAS-2026-0000-proj", scope: "project", scopeId: P, author: "owner", identity: "member:owner", viewer: "member:owner" });
   const m = w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
   assert.equal(m.in_force, true);
@@ -337,7 +338,7 @@ test("R24: a project statement on a group statement's subject that names no over
   assert.deepEqual(m2.interactions, [{ statement_id: "p1", bundle_id: "BIAS-2026-0000-proj", subject: "ENT-2026-0007",
     justification: "We hold the office to a higher bar here.",
     instance: [{ statement_id: "s1", bundle_id: A, justification: S("s1").justification }] }]);
-  assert.match(String(m2.interactions_stated), /refuses nothing/);
+  assert.match(m2.interactions_stated, /refuses nothing/);
   assert.equal(m2.statements.length, 3, "listed, never removed or refused");
 });
 
@@ -346,21 +347,21 @@ test("R25: a statement whose subject is not in the registry is listed for review
   const w = world({ entities: { has: (id) => registry.has(id) } });
   await w.group();
   w.set(A, [S("s1"), S("s2", { subject: "ENT-2026-0404" })], "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   const m = w.bias.biasManifest({ viewer: "admin" });
   assert.deepEqual(m.unregistered_subjects, [{ statement_id: "s2", bundle_id: A, scope: "instance", subject: "ENT-2026-0404" }]);
-  assert.match(String(m.unregistered_subjects_stated), /does not hold/);
+  assert.match(m.unregistered_subjects_stated, /does not hold/);
   registry.add("ENT-2026-0404");
   assert.deepEqual(w.bias.biasManifest({ viewer: "admin" }).unregistered_subjects, []);
   const none = await adoptWorld();
-  none.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  none.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   const u = none.bias.biasManifest({ viewer: "admin" });
   assert.deepEqual([u.in_force, u.unregistered_subjects], [true, null]);
-  assert.match(String(u.unregistered_subjects_stated), /^undetermined/);
+  assert.match(u.unregistered_subjects_stated, /^undetermined/);
   const failing = world({ entities: { has: () => { throw new Error("registry down"); } } });
   await failing.group();
   failing.set(A, [S("s1")], "adopted");
-  failing.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  failing.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   assert.equal(failing.bias.biasManifest({ viewer: "admin" }).unregistered_subjects, null);
   /* the real registry: `entitiesOf` on the same storage, reached by default */
   const real = world({ entities: undefined });
@@ -371,101 +372,11 @@ test("R25: a statement whose subject is not in the registry is listed for review
     note: "The office these statements scrutinise, registered so they can name it." });
   assert.equal(made.ok, true, JSON.stringify(made));
   real.set(A, [S("s1", { subject: made.entity_id }), S("s2", { subject: "ENT-2026-0404" })], "adopted");
-  real.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  real.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   assert.deepEqual(real.bias.biasManifest({ viewer: "admin" }).unregistered_subjects.map((u) => u.statement_id), ["s2"]);
 });
 
-/* R26: a project lens over A's group statements, adopted for P by its owner. */
-const PB = "BIAS-2026-0000-proj";
-const OWNER = { reason: WHY, scope: "project", scopeId: P, author: "owner", identity: "member:owner", viewer: "member:owner" };
-const SUBJ = "ENT-2026-0007";
-const RELAX = "Claims from this office may be taken at face value in this project.";
-const BLOCK = "A lack of response from this office is not an indication of agreement with what others say.";
-const LICENSE = "In this project a lack of response from this office may be read as agreement.";
-async function lensWorld(group, project) {
-  const w = await adoptWorld("draft");
-  w.set(A, group, "adopted");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
-  if (project) { w.set(PB, project, "adopted"); w.bias.biasAdopt({ bundleId: PB, ...OWNER }); }
-  return w;
-}
-const inP = (w) => w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:owner" });
-
-test("R26: a project statement that relaxes a group statement's scrutiny on its subject, naming no override, is an override by its effect; the group statement applies and the looser is withheld from the set and its hash; it is still an interaction (R24), and nothing is refused (R28)", async () => {
-  const w = await lensWorld([S("s1")], [S("p1", { text: RELAX })]);
-  const m = inP(w);
-  assert.equal(m.in_force, true);
-  assert.deepEqual(m.overrides_by_effect, [{ statement_id: "p1", bundle_id: PB, subject: SUBJ, effect: "scrutiny",
-    loosens: { statement_id: "s1", bundle_id: A, locked: false }, names: null }]);
-  assert.deepEqual(m.strictest_applied, [{ subject: SUBJ, effect: "scrutiny",
-    applies: { statement_id: "s1", bundle_id: A, scope: "instance" }, withheld: { statement_id: "p1", bundle_id: PB, scope: "project" } }]);
-  assert.equal(m.overrides_by_effect_stated, word("bias.index.overrides_by_effect"));
-  assert.doesNotMatch(String(m.overrides_by_effect_stated), /instance statement/, "DEC-149");
-  assert.equal(m.strictest_applied_stated, word("bias.index.strictest_applied"));
-  assert.deepEqual([m.statements.map((s) => s.statement_id), m.total], [["s1"], 1]);
-  /* the looser adds nothing to the lens: the project's hash is the group's own */
-  assert.equal(m.statements_sha, w.bias.biasManifest({ viewer: "admin" }).statements_sha);
-  assert.deepEqual(m.interactions.map((i) => i.statement_id), ["p1"]);
-  assert.deepEqual(m.lock_violations, []);
-  /* R49 reads the same set */
-  const p1 = w.bias.statementInForce({ statement: "p1", scope: { type: "project", id: P }, viewer: "member:owner" });
-  assert.deepEqual([p1.in_force, p1.statements_sha], [false, m.statements_sha]);
-  assert.match(p1.stated, /stricter statement/);
-  assert.equal(w.bias.statementInForce({ statement: "s1", scope: { type: "project", id: P }, viewer: "member:owner" }).in_force, true);
-});
-
-test("R26: a project statement that licenses an inference a group statement blocks is an override by its effect; a LOCKED group statement so loosened stands and is reported locked, as a conformance error, refusing nothing", async () => {
-  const w = await lensWorld([S("s1", { kind: "inference", text: BLOCK, locked: true })],
-                            [S("p1", { kind: "inference", text: LICENSE })]);
-  const m = inP(w);
-  assert.deepEqual(m.overrides_by_effect, [{ statement_id: "p1", bundle_id: PB, subject: SUBJ, effect: "inference",
-    loosens: { statement_id: "s1", bundle_id: A, locked: true }, names: null }]);
-  assert.deepEqual(m.statements.map((s) => [s.statement_id, s.locked]), [["s1", true]]);
-  assert.equal(m.overrides_by_effect_stated, word("bias.index.overrides_by_effect"));
-  /* naming ANOTHER statement does not name this one: still an override by effect */
-  const w2 = await lensWorld([S("s1", { kind: "inference", text: BLOCK }), S("s2", { subject: "ENT-2026-0099" })],
-                             [S("p1", { kind: "inference", text: LICENSE, nullifies: "s2" })]);
-  const m2 = inP(w2);
-  assert.deepEqual(m2.overrides_by_effect.map((o) => [o.statement_id, o.loosens.statement_id, o.names]), [["p1", "s1", "s2"]]);
-  assert.deepEqual(m2.statements.map((s) => s.statement_id), ["s1"], "s2 nullified by name, p1 withheld by effect");
-});
-
-test("R26: where two group statements conflict with no named override, the strictest applies — listed under strictest_applied, and not an override by a project", async () => {
-  const w = await lensWorld([S("s1"), S("s2", { text: "Claims from this office need no cross-checking before they bear load." })]);
-  const m = w.bias.biasManifest({ viewer: "admin" });
-  assert.deepEqual(m.strictest_applied, [{ subject: SUBJ, effect: "scrutiny",
-    applies: { statement_id: "s1", bundle_id: A, scope: "instance" }, withheld: { statement_id: "s2", bundle_id: A, scope: "instance" } }]);
-  assert.deepEqual(m.overrides_by_effect, []);
-  assert.deepEqual([m.statements.map((s) => s.statement_id), m.total, m.count], [["s1"], 1, 1]);
-  /* paging reads the set after the strictest applied: a page of one holds s1, and nothing is past it */
-  const page = w.bias.biasManifest({ viewer: "admin", limit: 1, offset: 1 });
-  assert.deepEqual([page.statements, page.total, page.truncated, page.statements_sha], [[], 1, false, m.statements_sha]);
-});
-
-test("R26 negative controls: a stricter project statement, a second blocked inference, a pattern statement, a named replacement, another subject, and two statements that loosen each other are no override by effect and withhold nothing", async () => {
-  const quiet = async (group, project, ids) => {
-    const w = await lensWorld(group, project);
-    const m = inP(w);
-    assert.deepEqual([m.overrides_by_effect, m.strictest_applied], [[], []], JSON.stringify(project));
-    assert.deepEqual(m.statements.map((s) => s.statement_id), ids);
-    return m;
-  };
-  /* raising scrutiny further loosens nothing */
-  await quiet([S("s1")], [S("p1", { text: "Claims from this office need two independent records in this project." })], ["p1", "s1"]);
-  /* blocking a second inference licenses nothing */
-  await quiet([S("s1", { kind: "inference", text: BLOCK })],
-              [S("p1", { kind: "inference", text: "A late filing by this office is not evidence of bad faith." })], ["p1", "s1"]);
-  /* a pattern statement is not machine-judged (safeguard 5) */
-  await quiet([S("s1")], [S("p1", { kind: "pattern", text: RELAX, citations: ["EV-2026-0001"] })], ["p1", "s1"]);
-  /* a replacement that names s1 is R16's named override: s1 is gone, so nothing conflicts */
-  await quiet([S("s1")], [S("p1", { text: RELAX, nullifies: "s1" })], ["p1"]);
-  /* a relaxing statement on another subject touches nothing */
-  await quiet([S("s1")], [S("p1", { text: RELAX, subject: "ENT-2026-0099" })], ["p1", "s1"]);
-  /* each loosens the other: neither is judged stricter, so neither is withheld */
-  await quiet([S("s1", { text: "Claims from this office need a second record, and a filing date indicates when it was made." })],
-              [S("p1", { kind: "inference", text: "Silence from this office is not an indication of assent, and its filings may be relied on without checking." })],
-              ["p1", "s1"]);
-});
+test.todo("R26: a project statement that loosens a group statement on the same subject is an override whatever it calls itself, and the strictest applies (deferred by K102 until evaluation findings exist)");
 
 test("R27: nothing puts a lens in force but a member's authored adoption whose pinned revision stands at adopted", async () => {
   const w = await adoptWorld();
@@ -474,15 +385,15 @@ test("R27: nothing puts a lens in force but a member's authored adoption whose p
   w.bias.biasInhale({ policy: "Verify every claim with direct knowledge.", adopt: true });
   assert.equal(w.bias.biasManifest({ viewer: "admin" }).in_force, false, "no machine adopts, and reading a policy installs nothing");
   w.set(B, [S("t1")], "proposed");
-  w.bias.biasAdopt({ bundleId: B, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: B, ...ADMIN });
   assert.equal(w.bias.biasManifest({ viewer: "admin" }).in_force, false, "a pin at proposed is not in force");
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   assert.equal(w.bias.biasManifest({ viewer: "admin" }).in_force, true);
 });
 
 test("R28: bias is disclosed and never blocks — no promotion of another type is refused because a lens exists or changed", async () => {
   const w = await adoptWorld();
-  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
   const info = "INFO-2026-0001-x";
   const md = (st) => `---\nid: ${info}\nobject_type: information\ntitle: x\ncurrent_state: ${st}\ncreated: ${T0}\nlast_updated: ${T0}\ngroup: test-group\n---\n`;
   assert.equal(w.promotion.promote({ bundleId: info, base: null, snapKey: "i1", author: "member:ann", meta: {}, files: [{ path: "bundle.md", text: md("collected") }] }).ok, true);
@@ -495,7 +406,7 @@ test("R30: the tables are declared to record-core's purge — statements by bund
   const w = await adoptWorld();
   w.set(B, [S("t1")], "adopted");
   w.bias.biasAdopt({ reason: WHY, bundleId: A, scope: "project", scopeId: P, author: "owner", identity: "member:owner", viewer: "member:owner" });
-  w.bias.biasAdopt({ bundleId: B, ...ADMIN });
+  w.bias.biasAdopt({ reason: WHY, bundleId: B, ...ADMIN });
   w.sql.exec(`INSERT INTO bias_debts (run, context_type, context_id, recipients, raised, observed) VALUES ('RUN-1','project',?,'[]','t','t')`, P);
   w.sql.exec(`INSERT INTO bias_debt_settlements (run, kind, at) VALUES ('RUN-1','resolved','t')`);
   w.sql.exec(`INSERT INTO bias_debt_sweeps (k, fingerprint, target, cursor, at) VALUES ('lens','f','f','','t')`);

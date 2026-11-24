@@ -10,7 +10,7 @@ import { caseImportOps } from "../../../src/case-import/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsHolding = (op) => LISTS.filter(([, list]) => list.includes(op)).map(([name]) => name).sort();
 const plain = (spec) => ({ ...spec, ...(Array.isArray(spec.classes) ? { classes: [...spec.classes] } : {}),
                            ...(Array.isArray(spec.machineClasses) ? { machineClasses: [...spec.machineClasses] } : {}) });
@@ -56,7 +56,7 @@ test("R14, R2: OPS holds a spec for each op case-import and case-checker add —
 test("R14, R2: no machine class, agent credential or operator token imports, completes, accepts, withdraws, flags, clears or reads an import — machineClasses [] on each of the eight, so every bearer (admin, member, probe, daemon) is refused and only a session's kind is admitted", () => {
   assert.equal(SESSION_REACHED.length, 8);
   for (const op of SESSION_REACHED) {
-    assert.deepEqual(OPS[op].machineClasses, [], op);
+    assert.deepEqual([...OPS[op].machineClasses], [], op);
     for (const cls of ["admin", "member", "probe", "daemon"]) assert.equal(admitsBearer(op, cls), false, `${op}: ${cls}`);
     /* An agent credential is admitted only to an op a member reaches with no machineClasses (R2): not these. */
     assert.ok("machineClasses" in OPS[op], op);

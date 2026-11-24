@@ -67,7 +67,7 @@ test("R58 R57 R55 (N538; DEC-124, K1365 (1), K1367) a bio-case-document/7 prepar
     const frozen = w.p.caseDocMemberFrozen(CASE, 1);
     assert.ok(frozen && frozen.get(F), `${format}: its member blocks are read`);
     assert.equal(frozen.get(F).version_sha, roles[0].version_sha);
-    assert.equal(w.p.caseEditionState(CASE, 1)?.document.doc_sha, r.doc_sha);
+    assert.equal(w.p.caseEditionState(CASE, 1).document.doc_sha, r.doc_sha);
   }
 });
 

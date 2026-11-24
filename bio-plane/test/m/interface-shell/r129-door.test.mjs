@@ -14,7 +14,7 @@ test("R129 a boot with a recording door sends it every op the plane table does n
   const rosa = await world.signIn("rosa", { admin: true });
   const { door, session } = world.boot(rosa);
   const asked = [];
-  const p = await boot({ screens: ALL, session, now: world.now(), path: "/app/held", plane: { heldcaptures: ok({ items: [{ id: "h1", title: "Minutes", at: "2026-10-01" }] }) },
+  const p = await boot({ screens: ALL, session, path: "/app/held", plane: { heldcaptures: ok({ items: [{ id: "h1", title: "Minutes", at: "2026-10-01" }] }) },
     door: async (req) => { asked.push(req.op); return door(req); } });
   assert.ok(asked.includes("whoami"), "whoami is the door's");
   assert.ok(!asked.includes("heldcaptures"), "the plane table's own entry answers first");

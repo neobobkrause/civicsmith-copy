@@ -5,11 +5,6 @@
  * and is declared to record-core's purge by this module (K23). `migrateInquiry` brings a store created under an
  * earlier shape to this one. `inquiry_basis` is `leg-earning`'s since T33 (K1505 (2)), which creates and declares it. */
 
-/**
- * The storage this module's migrations write through: a statement and its bound values, answering rows.
- * @typedef {{exec: (query: string, ...bindings: any[]) => Iterable<any>}} SqlStorage
- */
-/** @type {string} R36: the tables' SQL, comment lines among it */
 export const INQUIRY_SCHEMA = `
 
 -- R12, R29, R40 (T33-45; K1505 (2)): the INQUIRY BASIS, inquiry_basis, its comments, columns and indexes, is
@@ -191,7 +186,6 @@ CREATE INDEX IF NOT EXISTS inquiry_ground_changes_bundle ON inquiry_ground_chang
 `;
 
 /** R36: the tables this module declares to purge, each keyed to a bundle by its `bundle_id`. */
-/** @type {string[]} R36: the tables declared to purge, each keyed by `bundle_id` */
 export const INQUIRY_TABLES = ["inquiry_exclusions", "inquiry_migration_replays", "inquiry_member_agents",
                               "inquiry_contradiction_links", "inquiry_bundle_facts", "inquiry_findings",
                               "inquiry_dated_waits", "inquiry_person_warnings", "inquiry_ground_changes"];
@@ -201,7 +195,6 @@ export const INQUIRY_TABLES = ["inquiry_exclusions", "inquiry_migration_replays"
  *  was read for (R53); the dated waits told to their setter alone, `sight: "owner"` (R54, R55). */
 const CLASSES = Object.freeze({ purge: "clear", expunge: "none", export: "admin-only", sight: "bundle", derive: "stored",
                                 version_chain: false });
-/** @type {readonly Readonly<{name: string, purge: string, expunge: string, export: string, sight: string, derive: string, version_chain: boolean, keys?: string[]}>[]} R36: one declaration for each table */
 export const INQUIRY_DECLARATIONS = Object.freeze(INQUIRY_TABLES.map((name) => Object.freeze({
   name, ...CLASSES,
   ...(name === "inquiry_findings" ? { keys: ["bundle_id", "project_id"] } : {}),
@@ -209,14 +202,11 @@ export const INQUIRY_DECLARATIONS = Object.freeze(INQUIRY_TABLES.map((name) => O
 
 /** R36 (N136): the table holding the leg count and the superseded-by index, and the relation `legs` is read through
  *  (retrieval R62). */
-/** @type {string} R36: `inquiry_bundle_facts` */
 export const BUNDLE_FACTS = "inquiry_bundle_facts";
-/** @type {Readonly<{table: string, key: string, col: string}>} R36: the relation `legs:` is read through (retrieval R62) */
 export const LEGS_RELATION = Object.freeze({ table: BUNDLE_FACTS, key: "bundle_id", col: "inquiry_basis_count" });
 /** R36: the two columns this module held on `bundles` before T18, moved once by `moveBundleFacts`. */
 const MOVED = ["inquiry_basis_count", "inquiry_superseded_by"];
 /** R36, R40 (N136's rest): the subject entity, held on `bundles` until T19, moved once by `moveSubjectEntity`. */
-/** @type {string} R36, R40: `inquiry_subject_entity` */
 export const SUBJECT_COLUMN = "inquiry_subject_entity";
 
 /* R54 (T41): `set_in`, the project the promoting act named, added to a dated-waits table created before T41. */
@@ -242,11 +232,6 @@ export function migrateInquiry(sql) {
  *  a store whose `bundles` never had the columns, or holds no value in them, copies nothing. The columns are left on
  *  such a store's `bundles`, inert: nothing writes or reads them after the move, and dropping a column of record-core's
  *  table is not this module's to do. */
-/**
- * R36: the leg count and the superseded-by index moved off `bundles` once. Idempotent.
- * @param {SqlStorage} sql
- * @returns {number} the rows the table holds after the move; 0 when nothing was moved
- */
 export function moveBundleFacts(sql) {
   const have = new Set([...sql.exec(`PRAGMA table_info(bundles)`)].map((r) => r.name));
   const cols = MOVED.filter((c) => have.has(c));
@@ -266,11 +251,6 @@ export function moveBundleFacts(sql) {
  *  same rows. A bundle that already has a row keeps its other facts. A store whose `bundles` never had the column copies
  *  nothing. The column is left on such a store's `bundles`, inert: nothing writes or reads it after the move, and
  *  dropping a column of record-core's table is not this module's to do. Answers the number of values copied. */
-/**
- * R36, R40: the subject entity moved off `bundles`. Idempotent.
- * @param {SqlStorage} sql
- * @returns {number} the values copied
- */
 export function moveSubjectEntity(sql) {
   const have = [...sql.exec(`PRAGMA table_info(bundles)`)].some((r) => r.name === SUBJECT_COLUMN);
   if (!have) return 0;

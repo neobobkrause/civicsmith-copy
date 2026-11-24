@@ -9,5 +9,9 @@
   },
   "dependencies": {
     "unpdf": "1.8.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "miniflare": "^4.20260722.0"
   }
 }

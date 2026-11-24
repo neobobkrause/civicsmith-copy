@@ -18,11 +18,9 @@
 
 import { word } from "../setup-words/index.mjs";
 
-/** R23: the sentence every answer states.
- *  @type {string} */
+/** R23: the sentence every answer states. */
 export const LENS_LIMIT_STATEMENT = word("case-checker.lens_limit_statement");
-/** R23: the lenses by name.
- *  @type {readonly string[]} */
+/** R23: the lenses by name. */
 export const LENS_NAMES = Object.freeze(["as_published", "removed", "reader"]);
 /** `inquiry-grammar` R18, `basis-versions` R48: what an application does. */
 export const LENS_EFFECTS = Object.freeze(["grade_lowered", "leg_excluded", "inference_refused", "scrutiny_raised"]);

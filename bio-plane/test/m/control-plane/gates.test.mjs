@@ -113,7 +113,7 @@ test("R28: the gates run in one order — admission R1, R2, R3, the public ops (
   env.calls.length = 0; log.length = 0;
   assert.equal((await call(env, { op: "knock", token: "garbage", hooks, method: "POST", body: {} })).json.publicOp, "knock");
   /* R10's session gate before R11: the member session asking a founder-only op whose classes also lack member */
-  const both = GATED.find((k) => k !== "export" && OPS[k].mutating && SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && !(OPS[k].classes ?? []).includes("member"));
+  const both = GATED.find((k) => k !== "export" && OPS[k].mutating && SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && !OPS[k].classes.includes("member"));
   assert.ok(both);
   await drive({ op: both, token: S.ann }, "SESSION_ROLE_CANNOT_REACH_OP");
   /* admission R8 (op-declarations R83): `export` reaches the founder's session alone; any other session is refused by name before
@@ -121,11 +121,11 @@ test("R28: the gates run in one order — admission R1, R2, R3, the public ops (
   await drive({ op: "export", token: S.bare }, "ROOT_OF_TRUST_REQUIRED");
   /* an op no session set holds is refused a session by the machine gate (R28's order as built: the probe is `cpuprobe`, read from
      the tables; BOB asked whether R28's text should name this gate) */
-  const unheld = Object.keys(OPS).find((k) => OPS[k].mutating && !SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && OPS[k].classes !== null && !(OPS[k].classes ?? []).includes("member") && (OPS[k].classes ?? []).includes("admin"));
+  const unheld = Object.keys(OPS).find((k) => OPS[k].mutating && !SESSION_OPS.admin.has(k) && !SESSION_OPS.member.has(k) && OPS[k].classes !== null && !OPS[k].classes.includes("member") && OPS[k].classes.includes("admin"));
   assert.ok(unheld);
   await drive({ op: unheld, token: S.bare }, "MACHINE_CREDENTIAL_REQUIRED");
   /* R11 before R6's scope refusal: probe asking an op it lacks, in bio */
-  const notProbe = GATED.find((k) => !(OPS[k].classes ?? []).includes("probe") && (OPS[k].classes ?? []).includes("admin") && !Array.isArray(OPS[k].machineClasses));
+  const notProbe = GATED.find((k) => !OPS[k].classes.includes("probe") && OPS[k].classes.includes("admin") && !Array.isArray(OPS[k].machineClasses));
   await drive({ op: notProbe, token: env.PROBE_TOKEN, params: { store: "bio" } }, "CLASS_FORBIDDEN");
   /* R12 before R14: an agent asking a governance act */
   const wide = aik();

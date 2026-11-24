@@ -15,26 +15,16 @@ import { frameAnswers } from "../interface-shell/frame-answers.mjs";
 
 export { SCREENS, ok, refused, refusedIn, silent, pending, settle, bytes, word, hasWord };
 
-/** @type {string} the project the fixtures name */
 export const P = "PROJ-2026-0012";
-/** @type {string} the draft the fixtures name */
 export const DR = "RVD-2026-0001";
-/** @type {string} the case the fixtures name */
 export const C = "CASE-2026-0012";
-/** @type {string} the case document's hash */
 export const SHA = "3b9f" + "0".repeat(56) + "c210";
-/** @type {string} the finding's bundle hash */
 export const B1 = "7d0e" + "1".repeat(56) + "91ab";
-/** @type {string} the evidence's bundle hash */
 export const E1 = "c41a" + "2".repeat(56) + "0f57";
-/** @type {string} the photo's capture hash */
 export const PHOTO = "ab12" + "3".repeat(56) + "ef90";
-/** @type {string} a docket statement's digest */
 export const DIGEST = "d".repeat(64);
-/** @type {string} a review grant's secret */
 export const GRANT_SECRET = "SENTINEL-GRANT-9f2cb7e1";
 /** The end of 20 October 2099 in Los Angeles (PDT, UTC-7), the group's zone in `PREFLIGHT`. */
-/** @type {string} a review grant's end, an instant */
 export const GRANT_UNTIL = "2099-10-21T06:59:59Z";
 
 const projectMd = ["---", `id: ${P}`, "object_type: project", "title: \"The Coliseum lease\"", "---", ""].join("\n");
@@ -141,10 +131,6 @@ export const provided = {
 };
 
 /** The plane every screen reads from, keyed by op. */
-/**
- * @param {Object} [o] ops answered in place of the defaults
- * @returns {Object<string, *>} the answers of each op the screens read
- */
 export function plane(o = {}) {
   /* publication R1: a case edition never authored answers NO_CASE_DOCUMENT; `publish` prepares it, and from then on the record holds its document */
   let prepared = false;
@@ -196,7 +182,6 @@ export function plane(o = {}) {
 }
 
 /** An IndexedDB holding a signing key kept on this device (interface-shell R40's form), and its public wire key. */
-/** @returns {Promise<Map<string, *>>} an IndexedDB holding a signing key kept on this device */
 export async function keptKey() {
   const pair = await webcrypto.subtle.generateKey({ name: "Ed25519" }, false, ["sign", "verify"]);
   const raw32 = new Uint8Array(await webcrypto.subtle.exportKey("raw", pair.publicKey));
@@ -204,20 +189,9 @@ export async function keptKey() {
   return idb;
 }
 /** Waits for the page's own work (WebCrypto, the kit's dialogs) until `f()` holds. */
-/**
- * @param {*} p the page
- * @param {() => *} f what is waited for, as long as it answers nothing true
- * @returns {Promise<void>}
- */
 export async function until(p, f) { for (let i = 0; i < 400 && !f(); i++) await new Promise((r) => setTimeout(r, 10)); await p.settle(); }
 /** The kit's "What your key signs, exactly" dialog (interface-shell R41): its listed lines, then confirmed or declined. */
 export const signDialog = (p) => p.root().querySelector('[data-overlay="sign"]');
-/**
- * @param {*} p the page
- * @param {boolean} [yes] confirmed or declined
- * @param {string|null} [sent] the op whose request the signing ends in
- * @returns {Promise<string>} the lines the dialog listed
- */
 export async function answerSign(p, yes = true, sent = null) {
   await until(p, () => signDialog(p));
   const lines = signDialog(p) ? signDialog(p).textContent : "";
@@ -229,11 +203,6 @@ export async function answerSign(p, yes = true, sent = null) {
 /** The served page at `path` with this module's screens over a real world (store-request, op-tables §5.3): the world's door answers every
  *  op the `plane` table does not (the table keeps what a world cannot make: a fault, the model's stream, a state no act reaches). `as` is a
  *  signed-in member of the world (`world.signIn`), or none for the public frame. Answers the page with its `world` and `as`. */
-/**
- * @param {string} path the address the page opens at
- * @param {{world?: *, as?: *, plane?: Object, boot?: Object}} [o] the world, the member signed in, ops answered in place of the world's
- * @returns {Promise<*>} the served page, with its `world`, `as` and `answered(op)`
- */
 export async function openWorld(path, o = {}) {
   if (!storeWorld && !o.world) throw new Error("openWorld: the declared ops were registered before this file was imported, so no world is built here");
   const world = o.world || (await storeWorld());
@@ -272,11 +241,6 @@ export async function rerunImport({ twice = false } = {}) {
 }
 
 /** The served page at `path` with this module's screens, over the plane. */
-/**
- * @param {*} path the address the page opens at
- * @param {*} [o] ops the plane answers in place of the defaults, and the page's boot options
- * @returns {Promise<*>} the served page
- */
 export async function open(path, o = {}) {
   await openDefaults();
   const p = await boot({ screens: SCREENS, plane: plane(o.plane || {}), path, ...(o.boot || {}) });
@@ -284,33 +248,21 @@ export async function open(path, o = {}) {
   return p;
 }
 
-/** @type {(p: *) => *} the page's main area */
 export const main = (p) => p.doc.getElementById("cs-main") || p.root();
 export const norm = (s) => String(s).replace(/\s+/g, " ").trim();
-/** @type {(p: *, el?: *) => string} the text drawn, its spaces made single */
 export const text = (p, el = main(p)) => norm(el ? el.textContent : "");
 /* R24: a sentence is asserted by its key, never by its English: `word(key, vars)` is what the page draws. */
-/** @type {(p: *, key: string, vars?: Object<string, *>, el?: *) => boolean} whether the word `key` is drawn, filled */
 export const drew = (p, key, vars = {}, el = main(p)) => text(p, el).includes(norm(word(key, vars)));
-/** @type {(el: *, key: string, vars?: Object<string, *>) => boolean} whether the word `key` is drawn in `el`, filled */
 export const drewIn = (el, key, vars = {}) => norm(el.textContent).includes(norm(word(key, vars)));
 /** The explanation an element carries (`data-tip`): its text, tags removed and entities read. */
 export const tipOf = (el) => norm(String(el.getAttribute("data-tip") || "").replace(/<[^>]*>/g, "").replace(/&(amp|lt|gt|quot|#39);/g, (m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'" }[e])));
 /** The day as the page draws a date (`cs.date`, interface-shell R6): `date.daymonthyear` with the month's own word (DEC-333). */
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-/** @type {(iso: string) => string} a day as the page draws it */
 export const day = (iso) => { const [y, m, d] = String(iso).slice(0, 10).split("-").map(Number); return word("date.daymonthyear", { day: String(d), month: word("date.month." + MONTHS[m - 1]), year: String(y) }); };
 /** A time of day `HH:MM` as the page draws it (`time.clock`, the 12-hour clock; DEC-299). */
-/** @type {(hhmm: string) => string} a time of day as the page draws it */
 export const clock = (hhmm) => { const [h, m] = String(hhmm).split(":").map(Number); return word("time.clock", { hour: String(h % 12 || 12), minute: String(m).padStart(2, "0"), ampm: word(h < 12 ? "time.am" : "time.pm") }); };
-/** @type {(p: *, el?: *) => string[]} the acts drawn, by op */
 export const ops = (p, el = main(p)) => el.querySelectorAll("button[data-act]").map((b) => b.getAttribute("data-act"));
 export const button = (p, op, nth = 0) => main(p).querySelectorAll(`button[data-act="${op}"]`)[nth] || null;
-/**
- * @param {*} p the page
- * @param {Object<string, *>} values each field's value, by its id
- * @returns {void}
- */
 export function fill(p, values) {
   for (const [id, v] of Object.entries(values)) {
     const el = p.doc.getElementById(id);
@@ -319,23 +271,11 @@ export function fill(p, values) {
   }
 }
 /** Ticks the option `value` of a `cs.checks` group. */
-/**
- * @param {*} p the page
- * @param {string} id the group of boxes
- * @param {string} value the box ticked
- * @returns {void}
- */
 export function tick(p, id, value) {
   const box = p.doc.getElementById(id).querySelectorAll("input").find((i) => i.getAttribute("value") === value);
   box.checked = true;
 }
 /** Presses an act: a reasoned act's reason field answered with `reason`, a dialog confirmed. */
-/**
- * @param {*} p the page
- * @param {*} op the act pressed
- * @param {{nth?: number, values?: Object, reason?: string, confirm?: boolean}} [o] which one, fields filled first, the reason asked, whether a dialog is confirmed
- * @returns {Promise<{b: *, slot: () => *}>} the button, and the slot its answer is drawn in
- */
 export async function press(p, op, { nth = 0, values = {}, reason, confirm = true } = {}) {
   fill(p, values);
   const b = button(p, op, nth);
@@ -349,7 +289,6 @@ export async function press(p, op, { nth = 0, values = {}, reason, confirm = tru
   await p.settle();
   return { b, slot: () => p.root().querySelector(`[data-slot="${b.getAttribute("data-ai")}"]`) };
 }
-/** @type {(p: *, op: string) => *} the last request the page sent for `op` */
 export const last = (p, op) => p.byOp(op).at(-1);
 /** The words the page draws for a refusal the plane answered (`refusal.<CODE>` filled from the refusal's own fields, DEC-342); the answer is the plane's `ok(refusal)`. */
 export const refusalWords = (answer) => { const r = answer.json.result; assert(hasWord("refusal." + r.code), `no word for ${r.code}`); return norm(word("refusal." + r.code, r)); };
@@ -363,9 +302,7 @@ export function choose(p, id, bytes, name = "f.pdf", type) {
 
 /* ---------- T51-121: one finding's page, a reader's minimum, printing, the review copy as a file ---------- */
 
-/** @type {string} */
 export const F1 = "FND-2026-0031";
-/** @type {string} */
 export const F2 = "FND-2026-0032";
 /** The signer's key as the answer states it (an SSH wire key, base64): its fingerprint is the SHA-256 of these bytes. */
 export const SIGNER_KEY = Buffer.from("civicsmith-test-signer-key-bytes").toString("base64");

@@ -49,9 +49,7 @@ function renderInbox(cs, view) {
     + `</div><p class="mk-small muted">${cs.w("screen.inbox.ladder.basis")}</p>`;
   /* C28 (R7; doorbell R27): what the sender stated of the file, drawn as stated (never a type check), in the list, the detail and the knocker's
      other material alike; nothing, not an empty label, for a knock stating neither */
-  /* each labelled by its own key (screen.inbox.knock.name, .type; outside-the-team C4) */
-  const stated = (k) => [["screen.inbox.knock.name", k.file_name], ["screen.inbox.knock.type", k.media_type]].filter(([, x]) => typeof x === "string" && x)
-    .map(([key, x]) => `${cs.w(key)} <span class="mk-data">${cs.esc(x)}</span>`).join(" · ");
+  const stated = (k) => [k.file_name, k.media_type].filter((x) => typeof x === "string" && x).map((x) => `<span class="mk-data">${cs.esc(x)}</span>`).join(" · ");
   const statedLine = (k) => (stated(k) ? `<span class="meta">${stated(k)}</span>` : "");
   const facts = (k) => `<span class="meta">${cs.w(`screen.inbox.status.${["new", "pulled", "discarded"].includes(k.status) ? k.status : "new"}`)}</span>`
     + statedLine(k)
@@ -60,9 +58,9 @@ function renderInbox(cs, view) {
     + (k.status === "discarded" && k.resolve_reason ? `<span class="meta">${cs.w("screen.inbox.resolved", { reason: k.resolve_reason })}</span>` : "");
   /* R10: each knock named is a reference of the kind `knock`, its card what was handed in and when (interface-shell R27) */
   const card = (k) => [size(k.bytes), k.received ? cs.date(k.received) : "", k.note || ""];
-  /* R60 (G20; S11): the list asks for 200 knocks; when the doorbell says there are more, the screen says so, in words that are true of a list
-     with no next page (`find.browse.more`; the inbox has no row of its own) */
-  const more = D.list && D.list.state === "ok" && D.list.value && D.list.value.truncated === true ? said("find.browse.more") : "";
+  /* G20 (fix round 6; S11): the list asks for 200 knocks; when the doorbell says there are more, the screen says so (the nearest held row, `screen.held.more`,
+     stands in; owed: a row for knocks) */
+  const more = D.list && D.list.state === "ok" && D.list.value && D.list.value.truncated === true ? said("screen.held.more", { count: String(all.length) }) : "";
   const list = cs.state(D.list, (v) => `<div class="cs-sheet" role="list">${v.inbox.map((k) => `<div class="cs-row" role="listitem"${k.knock_id === id ? ' aria-current="true"' : ""}>`
       + `<span><span style="display:inline-flex;align-items:center;max-width:100%">${cs.ref("knock", k.knock_id, plain(handed(k)), card(k))}</span>${facts(k)}</span></div>`).join("")}</div>`,
     { empty: "screen.inbox.empty" });

@@ -19,9 +19,6 @@ import { escalationOps } from "../../../src/escalation/index.mjs";
 import { membershipOps } from "../../../src/membership/index.mjs";
 import { actionClocksOps } from "../../../src/action-clocks/index.mjs";
 import { aiRunsOps, AiRuns } from "../../../src/ai-runs/index.mjs";
-/** @param {string} op @returns {readonly string[]} the op's session classes, asserted to be a list, so a negative check is never
- *  passed by a missing one */
-const classesOf = (op) => { const c = O.OPS[op].classes; assert.ok(Array.isArray(c), `${op}: classes is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_KINDS, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS,
         UNATTENDED_BY_DECISION, ACT_GATE, ACT_HELP_ABSENT, PLAN_RUN_SCOPE, ASK_GRANT_OPS } = O;
@@ -31,7 +28,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
   .concat([["PLAN_RUN_SCOPE.reads", PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", PLAN_RUN_SCOPE.writes]]);
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
@@ -184,7 +181,7 @@ test("R51 (N919; ai-runs R18; K2952, K2976): airundispatch — a member's own ac
   assert.deepEqual(stamps(op), ["by", "viewer"]);
   for (const f of ["run", "credential", "session", "member", "token", "secretSha", "principal"]) assert.ok(!stamps(op).includes(f), f);
   assert.ok(agentReaches(op), "an agent credential's scope does not reach airundispatch");
-  assert.ok(!classesOf(op).includes("probe") && !classesOf(op).includes("daemon"));
+  assert.ok(!OPS[op].classes.includes("probe") && !OPS[op].classes.includes("daemon"));
   assert.deepEqual(OP_FAMILIES["ai-runs"].actor, { key: "by", at: "query" });
   assert.deepEqual(listsOf(op), []);
   shared(op);

@@ -274,8 +274,8 @@ console.log("\n--- A3 · THE RETURN CONTRACT: a REPORT with a citation, NEVER do
   t("the corpus is non-empty", documentSpellings.length > 5, true);
   for (const [label, extra] of documentSpellings)
     t(`a return carrying \`${label}\` is REFUSED and the field is NAMED`,
-      [checkReport({ ...good, .../** @type {object} */ (extra) })?.code ?? null,
-       (checkReport({ ...good, .../** @type {object} */ (extra) })?.fields ?? [null])[0]],
+      [checkReport({ ...good, ...extra })?.code ?? null,
+       (checkReport({ ...good, ...extra })?.fields ?? [null])[0]],
       ["REPORT_UNKNOWN_FIELD", Object.keys(extra)[0]]);
   t("the refusal says why the rule is a key set rather than a list of names",
     /goes stale the moment a fourth is written/.test(checkReport({ ...good, bytes: "x" })?.detail ?? ""), true);

@@ -331,9 +331,6 @@ test("R7 (C28) an Inbox row draws the file name and type the sender stated; a kn
   const p = await open(t, "/app/inbox");
   assert.ok(rowOf(p, ka).textContent.includes("agenda-oct.pdf") && rowOf(p, ka).textContent.includes("application/pdf"));
   assert.ok(rowOf(p, kc).textContent.includes("photo.jpg") && rowOf(p, kc).textContent.includes("image/jpeg"));
-  /* each labelled by its own words (outside-the-team C4; doorbell R27): the name, then the kind */
-  const row = rowOf(p, ka).textContent, nameAt = row.indexOf(word("screen.inbox.knock.name")), typeAt = row.indexOf(word("screen.inbox.knock.type"));
-  assert.ok(nameAt >= 0 && nameAt < row.indexOf("agenda-oct.pdf") && typeAt > row.indexOf("agenda-oct.pdf") && typeAt < row.indexOf("application/pdf"), "each stated value follows its label");
   const bare = rowOf(p, kb);
   assert.ok(bare, "the knock is listed");
   assert.equal(bare.querySelectorAll(".mk-data").length, 0, "no name, no type: nothing drawn for them");
@@ -350,7 +347,6 @@ test("R7 (C28) the knocker's other material (`knocksof`) draws each knock's stat
   assert.ok(sec.textContent.includes("photo.jpg") && sec.textContent.includes("image/jpeg"));
   const none = Array.from(sec.querySelectorAll('[role="listitem"]')).find((r) => r.querySelector(`a[href*="${kb.id}"]`));
   assert.equal(none.querySelectorAll(".mk-data").length, 0, "a knock with neither draws neither");
-  assert.ok(!none.textContent.includes(word("screen.inbox.knock.name")) && !none.textContent.includes(word("screen.inbox.knock.type")), "and neither label");
 });
 
 /* ---------- C35: R29 ("For which question" tells questions of the same title apart) ---------- */

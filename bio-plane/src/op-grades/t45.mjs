@@ -171,7 +171,7 @@ export const T45_NON_ACTS = {
   cureunlink: "cure-directed: keyed by a cure link; a member ends it with a reason, the link kept; moves no bundle",
   cures: R("each standard's standing cure link of a determination, and the ended ones apart with their reasons"),
   /* instance-setup (R77; B6, K2896) */
-  declaredstakeset: "setting: the team's declared stake in its own words, carried beside its public identity on what it "
+  declaredstakeset: "setting: the group's declared stake in its own words, carried beside its public identity on what it "
     + "sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle",
   /* local-facts (R10–R13) */
   ruledraft: word("local-facts.declared.ruledraft"),

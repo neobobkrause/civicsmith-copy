@@ -105,7 +105,7 @@ test("R106 the screen is registered by this module with exactly the registry's t
   const reg = REGISTRY.screens.find((s) => s.id === "objective");
   assert.deepEqual(SCREEN.acts.map((a) => a.op).sort(), reg.acts.map((a) => a.op).sort());
   for (const a of SCREEN.acts) { assert.equal(a.label, `act.${a.op}.label.objective`); assert.ok(hasWord(a.label), a.label); assert.ok(SCREEN.words.includes(a.label)); }
-  assert.ok(/** @type {Record<string, *>} */ (SCREEN.reads({ subject: P, me: { member: "mai" } })).progress.subject === true, "R21: the subject read is marked");
+  assert.ok(SCREEN.reads({ subject: P, me: { member: "mai" } }).progress.subject === true, "R21: the subject read is marked");
   for (const k of SCREEN.words) assert.ok(hasWord(k), k);
   /* the design words the table lacks are reported, not listed as read; each is a key of this screen */
   for (const k of PENDING_WORDS) { assert.match(k, /^screen\.objective\./); assert.ok(!SCREEN.words.includes(k), k); }

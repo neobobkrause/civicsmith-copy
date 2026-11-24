@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-/* Build agent-worker into ONE self-contained module, in dist/, never committed (R120; ARCH's decision "Committed
- * built files", 22 Nov 2026: dist/ holds only its .gitignore, and whatever needs the bundle runs this first).
+/* Build agent-worker into ONE self-contained module, committed.
  *
  * ---- WHY THIS FILE EXISTS, AND WHOSE DECISION IT IS -------------------------
  *

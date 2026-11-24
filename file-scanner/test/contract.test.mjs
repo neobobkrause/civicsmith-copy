@@ -4,29 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handle } from '../src/handler.mjs';
 import { validateDescriptor } from '../src/providers/descriptor.mjs';
-import { PROVIDERS, REFUSED_PROVIDERS, HELD_PROVIDERS, engineFamily as familyOrNull, differentEngine, providerById as byIdOrNull } from '../src/providers/catalogue.mjs';
-/** @import { Descriptor } from '../src/providers/catalogue.mjs' */
+import { PROVIDERS, REFUSED_PROVIDERS, HELD_PROVIDERS, engineFamily, differentEngine, providerById } from '../src/providers/catalogue.mjs';
 import { depsWith, post, putCapture, memoryBucket, EICAR } from './helpers.mjs';
 import { specs, vendorNet, HANDLING } from './vendors.mjs';
 import { ELASTIC_DEFAULT_INDEX } from '../src/providers/sinks.mjs';
-
-/** R31: an offered provider's engine family; a test names only offered ones.
- * @param {string} id
- * @returns {string[]} */
-const engineFamily = (id) => {
-  const f = familyOrNull(id);
-  if (!f) throw new Error(`no engine family for ${id}`);
-  return f;
-};
-
-/** R20: an offered descriptor; a test names only offered ones.
- * @param {string} id
- * @returns {Descriptor} */
-const providerById = (id) => {
-  const d = byIdOrNull(id);
-  if (!d) throw new Error(`${id} is not offered`);
-  return d;
-};
 
 const ids = (l) => l.map((d) => d.provider_id);
 const good = () => JSON.parse(JSON.stringify(providerById('scanii')));
@@ -143,7 +124,6 @@ test('R21 the spec\'s checks answer 400 by name and send nothing: unknown, refus
 
 test('R17 every REFUSED_PROVIDERS and HELD_PROVIDERS id is refused by name on every route', async () => {
   const deps = depsWith({ fetch: vendorNet().fetch });
-  /** @type {[string, Object][]} R21's checks reach every outside route */
   const routes = [['/provider/scan', { store: 'bio', target: { capture_sha: 'a'.repeat(64), parts: null } }], ['/provider/sandbox', { store: 'bio', target: { capture_sha: 'a'.repeat(64), parts: null } }],
     ['/provider/cdr', { store: 'bio', target: { capture_sha: 'a'.repeat(64), parts: null } }], ['/provider/reputation', { address: 'https://example.org/' }],
     ['/provider/refresh', {}], ['/provider/forward', { record: { period: { from: '2026-10-07T10:00:00Z', to: '2026-10-07T11:00:00Z' }, counts: {} } }],
@@ -249,7 +229,7 @@ test('R29 GET /providers answers each descriptor\'s and each generic template\'s
 test('R31 engine families: clamav\'s is ["clamav"]; differentEngine is true exactly when two families share no name', () => {
   assert.deepEqual(engineFamily('clamav'), ['clamav']);
   for (const d of PROVIDERS) assert.ok(engineFamily(d.provider_id).length > 0);
-  assert.equal(familyOrNull('nobody'), null);
+  assert.equal(engineFamily('nobody'), null);
   const v = (tool, engine, extra = {}) => ({ tool, engine, engine_version: 'not reported', ...extra });
   const clam = v('clamav', 'clamav', { engine_version: '1.4.3' });
   assert.equal(differentEngine(clam, v('scanii', 'scanii')), true);

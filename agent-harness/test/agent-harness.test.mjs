@@ -210,7 +210,7 @@ test("R3: then pass count >= the pass limit closes `completed`; the limit is max
     assert.equal(passLimit(maxPasses), limit, `limit for ${JSON.stringify(maxPasses)}`);
     assert.equal(stopBecause({ pass: limit - 1, maxPasses }), null);
     assert.equal(stopBecause({ pass: limit, maxPasses }), "completed");
-    assert.equal(stopBecause({ pass: Number(limit) + 1, maxPasses }), "completed");
+    assert.equal(stopBecause({ pass: limit + 1, maxPasses }), "completed");
   }
   /* a spent bound is named before the pass limit */
   assert.equal(stopBecause({ budget: spent("wallclock"), pass: 3, maxPasses: 3 }), "wallclock");
@@ -297,9 +297,9 @@ test("R5: a report has only level, state, observed_at, summary, citations, gover
     const r = checkReport({ ...good, [extra]: "x" });
     assert.deepEqual([r.code, r.fields], ["REPORT_UNKNOWN_FIELD", [extra]]);
   }
-  assert.deepEqual(checkReport({ level: "meaning" })?.fields, ["state"]);
-  assert.deepEqual(checkReport({ state: "PRESENT" })?.fields, ["level"]);
-  assert.deepEqual(checkReport({ level: "", state: null })?.fields, ["level", "state"]);
+  assert.deepEqual(checkReport({ level: "meaning" }).fields, ["state"]);
+  assert.deepEqual(checkReport({ state: "PRESENT" }).fields, ["level"]);
+  assert.deepEqual(checkReport({ level: "", state: null }).fields, ["level", "state"]);
 });
 
 test("R5: level is one of the four, state one of the five", () => {
@@ -307,20 +307,20 @@ test("R5: level is one of the four, state one of the five", () => {
   assert.deepEqual(Object.keys(REPORT_STATES), ["NEVER_LOOKED", "LOOKED_ABSENT", "LOOKED_INDETERMINATE", "PRESENT", "partial"]);
   for (const level of LEVELS) assert.equal(checkReport({ ...good, level }), null);
   for (const state of Object.keys(REPORT_STATES)) assert.equal(checkReport({ ...good, state }), null);
-  for (const level of ["documents", "Meaning", "gossip"]) assert.equal(checkReport({ ...good, level })?.code, "REPORT_LEVEL_UNKNOWN");
-  for (const state of ["FOUND", "present", "ABSENT"]) assert.equal(checkReport({ ...good, state })?.code, "REPORT_STATE_UNKNOWN");
+  for (const level of ["documents", "Meaning", "gossip"]) assert.equal(checkReport({ ...good, level }).code, "REPORT_LEVEL_UNKNOWN");
+  for (const state of ["FOUND", "present", "ABSENT"]) assert.equal(checkReport({ ...good, state }).code, "REPORT_STATE_UNKNOWN");
 });
 
 test("R5: every state but NEVER_LOOKED needs observed_at; PRESENT and partial need a citation", () => {
   for (const state of ["LOOKED_ABSENT", "LOOKED_INDETERMINATE", "PRESENT", "partial"])
     for (const observed_at of [undefined, "", "  ", 7])
-      assert.equal(checkReport({ level: "meaning", state, observed_at, citations: [{ address: "a" }] })?.code, "REPORT_UNLOCATED");
+      assert.equal(checkReport({ level: "meaning", state, observed_at, citations: [{ address: "a" }] }).code, "REPORT_UNLOCATED");
   assert.equal(checkReport({ level: "meaning", state: "NEVER_LOOKED" }), null);
   assert.equal(checkReport({ level: "meaning", state: "LOOKED_ABSENT", observed_at: "l" }), null);
   assert.equal(checkReport({ level: "meaning", state: "LOOKED_INDETERMINATE", observed_at: "l" }), null);
   for (const state of ["PRESENT", "partial"])
     for (const citations of [undefined, null, []])
-      assert.equal(checkReport({ level: "meaning", state, observed_at: "l", citations })?.code, "REPORT_NO_CITATION");
+      assert.equal(checkReport({ level: "meaning", state, observed_at: "l", citations }).code, "REPORT_NO_CITATION");
 });
 
 test("R5: at most 20 citations, each exactly {address}, non-empty, at most 200 characters", () => {
@@ -329,20 +329,20 @@ test("R5: at most 20 citations, each exactly {address}, non-empty, at most 200 c
   assert.equal(CITATIONS_MAX, 20);
   assert.equal(ADDRESS_MAX, 200);
   const over = checkReport({ ...good, citations: n(21) });
-  assert.deepEqual([over?.code, over?.bound, over?.limit, over?.got], ["REPORT_OVER_BOUND", "citations", 20, 21]);
+  assert.deepEqual([over.code, over.bound, over.limit, over.got], ["REPORT_OVER_BOUND", "citations", 20, 21]);
   const long = checkReport({ ...good, citations: [{ address: "a".repeat(201) }] });
-  assert.deepEqual([long?.code, long?.bound], ["REPORT_OVER_BOUND", "address"]);
+  assert.deepEqual([long.code, long.bound], ["REPORT_OVER_BOUND", "address"]);
   for (const c of [{ address: "a", text: "x" }, { address: "" }, { address: "   " }, { address: 7 }, {}, "a", null, ["a"]])
-    assert.equal(checkReport({ ...good, citations: [c] })?.code, "REPORT_CITATION_NOT_AN_ADDRESS", JSON.stringify(c));
-  assert.equal(checkReport({ ...good, citations: "a" })?.code, "REPORT_CITATIONS_NOT_A_LIST");
+    assert.equal(checkReport({ ...good, citations: [c] }).code, "REPORT_CITATION_NOT_AN_ADDRESS", JSON.stringify(c));
+  assert.equal(checkReport({ ...good, citations: "a" }).code, "REPORT_CITATIONS_NOT_A_LIST");
 });
 
 test("R5: summary a string of at most 500; the whole at most REPORT_MAX_BYTES", () => {
   assert.equal(SUMMARY_MAX, 500);
   assert.equal(checkReport({ ...good, summary: "s".repeat(500) }), null);
   const over = checkReport({ ...good, summary: "s".repeat(501) });
-  assert.deepEqual([over?.code, over?.bound], ["REPORT_OVER_BOUND", "summary"]);
-  for (const summary of [{ pages: [] }, ["a"], 7]) assert.equal(checkReport({ ...good, summary })?.code, "REPORT_SUMMARY_NOT_PROSE");
+  assert.deepEqual([over.code, over.bound], ["REPORT_OVER_BOUND", "summary"]);
+  for (const summary of [{ pages: [] }, ["a"], 7]) assert.equal(checkReport({ ...good, summary }).code, "REPORT_SUMMARY_NOT_PROSE");
   /* the whole-report ceiling, reached through a field the per-field bounds do not cover */
   assert.equal(REPORT_MAX_BYTES, SUMMARY_MAX + CITATIONS_MAX * (ADDRESS_MAX + 20) + 400);
   const big = checkReport({ ...good, condition: "c".repeat(REPORT_MAX_BYTES) });
@@ -494,7 +494,7 @@ test("R7: sub-sessions run one per level, all four in LEVELS order, each under i
 
 test("R7: each returns only reports: the contract it is briefed with is R5's, and only returns that honour it are taken", () => {
   const { contracts } = spawnContracts(payload);
-  for (const c of contracts ?? [])
+  for (const c of contracts)
     assert.deepEqual(c.returns, {
       keys: Object.keys(REPORT_KEYS), required: ["level", "state"], citation_keys: ["address"],
       states: Object.keys(REPORT_STATES), summary_max: SUMMARY_MAX, conditions: Object.keys(CONDITION_KINDS),
@@ -539,8 +539,7 @@ const ARGS = {
 };
 
 test("R8: every export is pure: equal arguments give equal answers, with no network, clock or randomness reached", () => {
-  const fns = [...Object.entries(HARNESS), ...Object.entries(SUBSESSION)].filter(([, v]) => typeof v === "function")
-    .map(([k, v]) => /** @type {[string, Function]} */ ([k, v]));
+  const fns = [...Object.entries(HARNESS), ...Object.entries(SUBSESSION)].filter(([, v]) => typeof v === "function");
   assert.deepEqual(fns.map(([k]) => k).filter((k) => !(k in ARGS)), [], "every function export has a row");
   const real = { fetch: globalThis.fetch, now: Date.now, random: Math.random };
   const called = [];
@@ -569,7 +568,7 @@ test("R8: the module reads no binding, environment or storage: every export runs
     try {
       Object.defineProperty(globalThis, name, { configurable: true, get() { touched.push(name); throw new Error(`${name} read`); } });
       for (const [fname, fn] of [...Object.entries(HARNESS), ...Object.entries(SUBSESSION)].filter(([, v]) => typeof v === "function"))
-        /** @type {Function} */ (fn)(...structuredClone(ARGS[fname]));
+        fn(...structuredClone(ARGS[fname]));
     } finally {
       if (had) Object.defineProperty(globalThis, name, had); else delete globalThis[name];
     }
@@ -593,13 +592,13 @@ test("R9: no file of this module exports PLANE_OPS, NAMESPACES or MEANING_ARM (t
 /* ============================================================ R11: the contract's condition kinds */
 test("R11: a contract's returns.conditions is non-empty, in the vocabulary's fixed order, and each kind passes checkCondition", () => {
   const { contracts } = spawnContracts(payload);
-  for (const c of contracts ?? []) {
+  for (const c of contracts) {
     assert.ok(Array.isArray(c.returns.conditions) && c.returns.conditions.length > 0, "conditions is a non-empty list");
     assert.deepEqual(c.returns.conditions, Object.keys(CONDITION_KINDS));
     for (const kind of c.returns.conditions) assert.equal(checkCondition(kind), null, kind);
   }
   /* the same list the plane's own checker admits: every kind, and only those, passes it */
-  assert.deepEqual(spawnContract({ level: "meaning", payload })?.contract?.returns.conditions, Object.keys(CONDITION_KINDS));
+  assert.deepEqual(spawnContract({ level: "meaning", payload }).contract.returns.conditions, Object.keys(CONDITION_KINDS));
 });
 
 test("R11: control: a kind outside the vocabulary is not offered in returns.conditions, and checkCondition refuses it", () => {
@@ -727,7 +726,7 @@ test("R15: control: a pass that submits a new candidate goes on to the next pass
 test("R15: control: passAdded survives a segment break and a restart under the state ceiling", () => {
   const s = { step: "next-pass", pass: 1, passAdded: true };
   assert.equal(HARNESS.resumableState(s).passAdded, true);
-  assert.equal(HARNESS.resumeFrom(HARNESS.resumableState(s))?.state?.passAdded, true);
+  assert.equal(HARNESS.resumeFrom(HARNESS.resumableState(s)).state.passAdded, true);
   const big = { ...s, queue: ["x".repeat(500)] };
   const pub = HARNESS.publishableState(big, 100);
   assert.deepEqual([pub.restarted.at, pub.state.passAdded], ["next-pass", true]);
@@ -821,7 +820,7 @@ test("R18: scope is in RESUMABLE and survives a segment break and a restart unde
   const scope = { document: { reads: 1, documents: 3 } };
   const s = { step: "compose", pass: 1, scope };
   assert.deepEqual(HARNESS.resumableState(s).scope, scope);
-  assert.deepEqual(HARNESS.resumeFrom(HARNESS.resumableState(s))?.state?.scope, scope);
+  assert.deepEqual(HARNESS.resumeFrom(HARNESS.resumableState(s)).state.scope, scope);
   assert.deepEqual(HARNESS.publishableState({ ...s, queue: ["x".repeat(500)] }, 300).state.scope, scope);
   assert.equal(JUDGEABLE.includes("scope"), false);
   const a = applyJudgement({ step: "compose", scope }, { scope: { document: { reads: 9, documents: 9 } }, candidates: [] });

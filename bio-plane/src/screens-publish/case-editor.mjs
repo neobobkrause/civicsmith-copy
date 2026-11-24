@@ -6,37 +6,9 @@
  * parameters, the kit `cs` and the module's `parts`. */
 import { PARTS } from "./parts.mjs";
 
-/* The code differences ARCH placed on 22 Nov 2026 (Screens page "Publishing", case-editor V1 to V7; R44, R53): a refusal of what the case
- * states about itself, or of a citation taken out or put back, is said in its fold ("When the roles can't be saved" and the rest), in the
- * design's two sentences for its code; "" for a code that is none of these. Self-contained (interface-shell R21 (1)): an act's `refusals`
- * hands it `(r, cs)`, and the screen's `parts` carry it for a refusal inside a success (D29). */
-const EDITOR_REFUSED = function (r, cs) {
-  const code = String(r && (r.code || r.reason) || "");
-  const roles = "screen.case-editor.when_the_roles_cant_be_saved", saved = "screen.case-editor.when_it_cant_be_saved";
-  const said = {
-    NO_ROLE: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"], BAD_ROLE: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"],
-    BAD_ROLES: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"], NO_MEMBER_ROLE: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"],
-    BAD_MEMBER_ROLE: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"], NO_LOAD_BEARING_MEMBER: [roles, "a_finding_has_no_role_or", "choose_a_role_for_every_finding"],
-    BELOW_PROJECT_STRENGTH: [roles, "a_finding_you_rely_on_does", "make_it_supporting_or_strengthen_it"],
-    BAD_EXCLUSION: [saved, "an_item_names_nothing_or_has", "say_what_is_left_out_and"], NO_EXCLUSION_FIELD: [saved, "an_item_names_nothing_or_has", "say_what_is_left_out_and"],
-    BAD_COMPLETENESS: [saved, "a_field_is_longer_than_2000", "shorten_it_or_reword_it_then"],
-    NO_SUBJECT_POSITION: ["screen.case-editor.when_the_position_cant_be_saved", "no_position_is_chosen_or_it", "choose_one_and_say_why"],
-    NO_SUBJECT_JUSTIFICATION: ["screen.case-editor.when_the_position_cant_be_saved", "no_position_is_chosen_or_it", "choose_one_and_say_why"],
-    NO_BIAS_ACKNOWLEDGEMENT: [saved, "the_acknowledgement_is_missing_or_it", "write_it_for_this_edition"],
-    BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD: [saved, "the_acknowledgement_is_missing_or_it", "write_it_for_this_edition"],
-    NO_REASON: ["screen.case-editor.when_a_citation_cant_be_moved", "you_gave_no_reason_or_you", "write_why_or_ask_a_member"],
-    BAD_REASON: ["screen.case-editor.when_a_citation_cant_be_moved", "you_gave_no_reason_or_you", "write_why_or_ask_a_member"],
-    NOT_PERMITTED: ["screen.case-editor.when_a_citation_cant_be_moved", "you_gave_no_reason_or_you", "write_why_or_ask_a_member"],
-  };
-  const x = Object.hasOwn(said, code) ? said[code] : null;
-  if (!x) return "";
-  return '<details class="mk-details" open data-fold="' + x[0] + '" data-refused="' + cs.esc(code) + '"><summary>' + cs.w(x[0]) + "</summary><p>"
-    + cs.w("screen.case-editor." + x[1]) + " " + cs.w("screen.case-editor." + x[2]) + "</p></details>";
-};
-
 export const CASE_EDITOR = Object.freeze({
   id: "case-editor",
-  parts: Object.freeze({ ...PARTS, editorRefused: EDITOR_REFUSED }),
+  parts: PARTS,
 
   // R1's reads: the project (its title, for the path) and its case drafts; the chosen draft's own reads wait on these.
   reads: function (view) {
@@ -421,16 +393,8 @@ export const CASE_EDITOR = Object.freeze({
       refusals: { BAD_ACCOUNT: function (r, cs) {
         return '<details class="mk-details" open data-fold="screen.case-editor.account.refused.summary"><summary>' + cs.w("screen.case-editor.account.refused.summary")
           + "</summary>" + cs.w("refusal.BAD_ACCOUNT") + "</details>";
-      },
-      // V1 to V6: what the case states about itself, refused, is said in its fold
-      NO_ROLE: EDITOR_REFUSED, BAD_ROLE: EDITOR_REFUSED, BAD_ROLES: EDITOR_REFUSED, NO_MEMBER_ROLE: EDITOR_REFUSED, BAD_MEMBER_ROLE: EDITOR_REFUSED,
-      NO_LOAD_BEARING_MEMBER: EDITOR_REFUSED, BELOW_PROJECT_STRENGTH: EDITOR_REFUSED, BAD_EXCLUSION: EDITOR_REFUSED, NO_EXCLUSION_FIELD: EDITOR_REFUSED,
-      BAD_COMPLETENESS: EDITOR_REFUSED, NO_SUBJECT_POSITION: EDITOR_REFUSED, NO_SUBJECT_JUSTIFICATION: EDITOR_REFUSED, NO_BIAS_ACKNOWLEDGEMENT: EDITOR_REFUSED,
-      BIAS_ACKNOWLEDGEMENT_CARRIED_FORWARD: EDITOR_REFUSED },
+      } },
       done: function (view, answer, cs) {
-        // D29, V1 to V6: a refusal inside a success is not success; one of the case's own statements is said in its fold
-        const f = view.parts.carried(answer), fold = f ? view.parts.editorRefused(f, cs) : "";
-        if (fold && !/citation_cant_be_moved/.test(fold)) { view.parts.say(cs, view, "casedraft", fold, false); return; }
         if (view.parts.refused(cs, view, "casedraft", answer)) return; // D29: a refusal inside a success is not success
         view.ui.unsaved = false;
         view.parts.forget(view);
@@ -541,13 +505,7 @@ export const CASE_EDITOR = Object.freeze({
         // citation is the project's reference the row names. Nothing is deleted.
         op: op, label: "act." + op + ".label.case-editor", rereads: ["project"],
         send: function (view, el) { return { body: { project: String(view.subject || "").split("/")[0], handle: el.dataset.handle } }; },
-        // V7: no reason, or not a member of the project, said in its fold ("When a citation can't be moved")
-        refusals: { NO_REASON: EDITOR_REFUSED, BAD_REASON: EDITOR_REFUSED, NOT_PERMITTED: EDITOR_REFUSED },
-        done: function (view, answer, cs) {
-          const f = view.parts.carried(answer), fold = f ? view.parts.editorRefused(f, cs) : "";
-          if (fold && /citation_cant_be_moved/.test(fold)) { view.parts.say(cs, view, "citation", fold, false); return; }
-          if (!view.parts.refused(cs, view, "citation", answer)) view.parts.forget(view); // D29
-        },
+        done: function (view, answer, cs) { if (!view.parts.refused(cs, view, "citation", answer)) view.parts.forget(view); }, // D29
       };
     }),
     {

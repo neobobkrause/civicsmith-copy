@@ -103,7 +103,7 @@ const CFG = {
     ["bio-captures", "bio-published"]);
   /* the census: nothing declared was dropped, nothing undeclared appeared */
   t("nothing dropped, nothing invented — the derived set is exactly the declared one plus the two deploy-owned names",
-    (Array.isArray(b) ? b.map((x) => x.name) : [b.REFUSED]).sort(),
+    (Array.isArray(b) ? b : [b.REFUSED]).map((x) => x.name ?? x).sort(),
     ["CAPTURES", "EXTRA_VAR", "INSTANCE_NAME", "PDF_WORKER", "PUBLISHED", "SELF", "VERSION"]);
   t("no durable_object_namespace is SENT — STORE rides keep_bindings, deliberately",
     (Array.isArray(b) ? b : []).some((x) => x.type === "durable_object_namespace"), false);
@@ -163,7 +163,7 @@ const CFG = {
      T36-2 (BUNDLER #10; rev. 2 §2 R10, plane uses file-scanner): FILE_SCANNER/file-scanner, which the plane's config
      has carried since T36-49; six since. */
   t("the real config's six service bindings all derive",
-    (Array.isArray(b) ? b : []).filter((x) => x.type === "service").map((x) => x.name).sort(),
+    (Array.isArray(b) ? b : [b]).filter((x) => x.type === "service").map((x) => x.name).sort(),
     ["AGENT_WORKER", "FILE_SCANNER", "OCR_WORKER", "PDF_WORKER", "SELF", "SHEET_WORKER"]);
   t("the real config's fleet targets pre-flight (self excluded)",
     Array.isArray(b) ? serviceTargets(b, "biosmoke7").sort() : b, ["agent-worker", "file-scanner", "ocr-worker", "pdf-worker", "sheet-worker"]);

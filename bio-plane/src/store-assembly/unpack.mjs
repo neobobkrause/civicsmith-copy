@@ -14,37 +14,16 @@
    times is due at its last try + `UNPACK_BACKSTOP_MS` × 2^(a−1), and one tried `UNPACK_RETRY_LIMIT` times wants no
    wake (it stays queued, as capture holds it, and is tried again on any tick that runs for another reason). */
 
-/** The kind of capture's task events the drain reads, and the consumer's name.
- *  @type {"archive-unpack"} */
 export const ARCHIVE_UNPACK = "archive-unpack";
-/** The back-off's first step, in milliseconds.
- *  @type {number} */
 export const UNPACK_BACKSTOP_MS = 60000;
-/** The tries after which an event wants no wake.
- *  @type {number} */
 export const UNPACK_RETRY_LIMIT = 8;
-/** The most events one tick asks of the Worker.
- *  @type {number} */
 export const UNPACK_BATCH = 10;
-/** R59: the page the drain reads capture's queue in, capture R45's largest `limit`.
- *  @type {number} */
+/* R25: the page the drain reads capture's queue in, capture R45's largest `limit`. */
 export const UNPACK_PAGE = 1000;
 
 const stamp = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, "Z");
 
-/**
- * One of capture's `archive-unpack` task events, as the drain reads it.
- * @typedef {Object} UnpackEvent
- * @property {string} captureSha the archive's digest
- * @property {number} [attempts]
- * @property {string} [lastTry] an ISO instant
- * @property {string} [cursor] capture's opaque position of the event in its queue
- * @property {string} [project] the project the archive was filed under
- */
-/** When an event is next due, in milliseconds, or null when it has met the retry limit. Never tried: now.
- *  @param {any} ev an `UnpackEvent`; anything else is read as never tried
- *  @param {number} now
- *  @returns {number | null} */
+/** When an event is next due, in milliseconds, or null when it has met the retry limit. Never tried: now. */
 export function unpackDueAt(ev, now) {
   const a = Number(ev && ev.attempts) || 0;
   if (a <= 0) return now;
@@ -53,37 +32,14 @@ export function unpackDueAt(ev, now) {
   return Number.isFinite(last) ? last + UNPACK_BACKSTOP_MS * 2 ** (a - 1) : now;
 }
 
-/** How a Worker answer ends an event: `remove` (done, or refused for good) or `attempt` (try again later).
- *  @param {number} status the answer's HTTP status; 0 for none
- *  @param {any} body the answer's parsed body, or null
- *  @returns {"remove" | "attempt"} */
+/** How a Worker answer ends an event: `remove` (done, or refused for good) or `attempt` (try again later). */
 export function unpackOutcome(status, body) {
   if (status >= 200 && status < 300 && !(body && body.ok === false)) return "remove";
   if (status >= 400 && status < 500 && status !== 408 && status !== 429) return "remove";
   return "attempt";
 }
 
-/**
- * One event a tick asked of the Worker.
- * @typedef {Object} UnpackResult
- * @property {string} archive
- * @property {number} status
- * @property {"remove" | "attempt"} outcome
- * @property {string} [reason] the answer's own reason, when it named one
- */
-/**
- * The scheduler consumer of the drain (scheduler R8).
- * @typedef {Object} UnpackConsumer
- * @property {"archive-unpack"} name
- * @property {"archiveunpack"} key
- * @property {(now: number) => (number | null)} due
- * @property {(now: number) => (number | null)} wake
- * @property {(now: number) => Promise<{archiveunpack: any}>} tick `{configured: false, why}`, or `{configured: true, asked, removed, retried, results: UnpackResult[]}`
- * @bound tick: at most UNPACK_BATCH events asked a tick
- */
-/** The consumer `{name, key, due, wake, tick}` over capture's queue and the object's environment.
- *  @param {{capture: () => any, env: any}} parts `capture` the getter of capture's one instance; `env` the object's, whose `SELF` and `DAEMON_TOKEN` configure the drain
- *  @returns {UnpackConsumer} */
+/** The consumer `{name, key, due, wake, tick}` over capture's queue and the object's environment. */
 export function archiveUnpackConsumer({ capture, env }) {
   const configured = () => !!(env && env.SELF && typeof env.SELF.fetch === "function"
                               && typeof env.DAEMON_TOKEN === "string" && env.DAEMON_TOKEN !== "");

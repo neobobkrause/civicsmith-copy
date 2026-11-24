@@ -7,19 +7,7 @@ import { SCREENS } from "../../../src/screens-intake/index.mjs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 import { OWED_SESSION_TTL_MS } from "../../../src/acquisition/index.mjs";
 
-/** @import { Screen } from '../../../src/screens-intake/index.mjs' */
-/** @import { OwnerRow } from '../../../src/op-declarations/index.mjs' */
 export { ok, refused, refusedIn, bytes, MEMBER, ADMIN, word, hasWord };
-
-/** The module's screen of that id; a missing one fails the test that asked for it.
- * @param {string} id
- * @returns {Screen}
- * @throws {Error} when SCREENS holds no screen of that id */
-export function screenOf(id) {
-  const s = SCREENS.find((x) => x.id === id);
-  if (!s) throw new Error(`no screen ${id} in SCREENS`);
-  return s;
-}
 
 /* A fresh real world with the members a test names signed in by the real acts: `members({ mai: ["contribute", "create_projects"], rosa: [] })` answers `{ world, mai, rosa }`. */
 export async function members(spec = {}, opts = {}) {
@@ -45,7 +33,7 @@ function standInOps() {
   if (standIns) return;
   standIns = true;
   const rows = collectOwnerRows();
-  try { registerDeclaredOps({ "screens-intake fixture": Object.fromEntries(NEW_OPS.filter((op) => rows[op]).map((op) => { /** @type {OwnerRow} the owner's row as collected */ const row = /** @type {OwnerRow} */ (rows[op]); return [op, row.mutating && row.needs === undefined ? { ...row, needs: "contribute", stamps: ["author", "viewer"] } : row]; })) }); } catch { /* read already */ }
+  try { registerDeclaredOps({ "screens-intake fixture": Object.fromEntries(NEW_OPS.filter((op) => rows[op]).map((op) => [op, rows[op].mutating && rows[op].needs === undefined ? { ...rows[op], needs: "contribute", stamps: ["author", "viewer"] } : rows[op]])) }); } catch { /* read already */ }
 }
 
 /* The assistant reachable for this member (interface-shell R20): on, with the group's key held and on. */
@@ -82,7 +70,7 @@ export async function idle(p, rounds = 400) {
 
 export async function open(path, { plane = {}, me = MEMBER, reachable = false, screens = SCREENS } = {}) {
   standInOps();
-  const p = await boot({ screens: /** @type {any[]} the harness takes any screens */ (screens), path, plane: { whoami: ok(me), ...(reachable ? REACH : {}), ...Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])) } });
+  const p = await boot({ screens, path, plane: { whoami: ok(me), ...(reachable ? REACH : {}), ...Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])) } });
   await p.settle();
   return p;
 }
@@ -98,7 +86,7 @@ export async function openWorld(path, { world, as, plane = {}, screens = SCREENS
   const door = (req) => (req && typeof req === "object" && !(req instanceof Request)
     ? worlds({ ...req, ...(req.headers ? { headers: dropAuth(req.headers) } : {}), ...(req.init ? { init: { ...req.init, ...(req.init.headers ? { headers: dropAuth(req.init.headers) } : {}) } } : {}) })
     : worlds(req));
-  const p = await boot({ screens: /** @type {any[]} the harness takes any screens */ (screens), path, door, session, plane: Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])), ...rest });
+  const p = await boot({ screens, path, door, session, plane: Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])), ...rest });
   await p.settle();
   await idle(p);
   return p;

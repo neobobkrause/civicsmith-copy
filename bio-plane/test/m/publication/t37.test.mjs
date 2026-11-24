@@ -73,7 +73,7 @@ const sign = (w, proj, roles, caseId, materials, edition = 1) => {
   w.prepare(caseId, edition, { project: proj, roles, materials });
   return w.signCase(caseId, edition, { project: proj, roster: roles.map((r) => ({ bundle_id: r.target, version_sha: r.version_sha })) });
 };
-const capturesOf = (w, caseId, edition = 1) => w.p.caseEditionState(caseId, edition)?.criteria.map((r) => [r.standard, r.captures]);
+const capturesOf = (w, caseId, edition = 1) => w.p.caseEditionState(caseId, edition).criteria.map((r) => [r.standard, r.captures]);
 
 /* ---------------------------------------------------------------- R72's captures */
 
@@ -105,16 +105,16 @@ test("R72 (T37) the commit's rows are R75's rows for the same members with `capt
   const pre = w.p.criteriaFor({ members: roles.map((r) => ({ bundle_id: r.target, version_sha: r.version_sha })), signer: "olive", at: NOW });
   assert.ok(pre.rows.every((r) => !("captures" in r)));
   assert.equal(sign(w, proj, roles, CASE, [material(CAP1, true)]).ok, true);
-  const rows = w.p.caseEditionState(CASE, 1)?.criteria;
+  const rows = w.p.caseEditionState(CASE, 1).criteria;
   assert.deepEqual(rows.map(({ captures, ...rest }) => rest), pre.rows);
   /* a row frozen before T37 (as T35's commit wrote it) is answered exactly as frozen */
   w.prepare(CASE, 2, { project: proj, roles });
   w.signLegacy(CASE, 2, { project: proj, roster: roles.map((r) => ({ bundle_id: r.target, version_sha: r.version_sha })) });
   const frozen = pre.rows;
   w.st.sql.exec(`UPDATE published_cases SET criteria=? WHERE case_id=? AND edition=2`, JSON.stringify(frozen), CASE);
-  assert.deepEqual(w.p.caseEditionState(CASE, 2)?.criteria, frozen);
+  assert.deepEqual(w.p.caseEditionState(CASE, 2).criteria, frozen);
   w.p.migrate();
-  assert.ok(w.p.caseEditionState(CASE, 2)?.criteria.every((r) => !("captures" in r)), "never filled");
+  assert.ok(w.p.caseEditionState(CASE, 2).criteria.every((r) => !("captures" in r)), "never filled");
 });
 
 test("R72 (T37) an unreadable content table states no capture and never refuses the commit", () => {

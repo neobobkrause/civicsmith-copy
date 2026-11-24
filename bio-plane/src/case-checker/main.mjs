@@ -17,13 +17,7 @@ const sentenceOf = (says) => {
   try { return says && hasWord(says.key) ? word(says.key, says.vars) : null; } catch { return null; }
 };
 
-/** R13: the program, given its arguments and a way to read a file; answers the text it prints and its exit status.
- *  A file it cannot read, or arguments it cannot read, answer status 2 with the reason; it does not throw for them.
- *  @param {any[]} argv the arguments after the program's name, each a string
- *  @param {(path: string) => Promise<any>} readFile reads one named file's bytes (a `Uint8Array`); one that throws or
- *    hands back something else is answered as a file not read
- *  @returns {Promise<{text: string, status: number}>} `status` 0 when the check ran, whatever the results; 2 when the
- *    arguments could not be read */
+/** R13: the program, given its arguments and a way to read a file; answers the text it prints and its exit status. */
 export async function runProgram(argv, readFile) {
   const parts = [], documents = [];
   let keys = null, lens;

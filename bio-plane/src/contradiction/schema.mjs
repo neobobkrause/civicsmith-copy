@@ -1,7 +1,6 @@
 /* contradiction's tables (layers.md ruling 3: each module owns its tables; R15, R17, R22, R42, R47), the first moved
    from `schema.mjs`. `migrate` runs it at every boot, idempotent, and adds the columns `CONTRADICTION_COLUMNS` names to
    a table created before them. */
-/** @type {string} the tables' SQL, statements separated by `;`, `--` comment lines among them */
 export const CONTRADICTION_SCHEMA = `
 -- REC-147 / IC-318 (CONTRADICTION-IDENTIFY-DESIGN.md section 8): THE CONTRADICTION CANDIDATE. One row per
 -- PROPOSED conflict between two referents the pairing FORMED (op=contradictionpairs), written as labelled
@@ -115,7 +114,6 @@ CREATE INDEX IF NOT EXISTS contradiction_responses_candidate ON contradiction_re
 /* Columns added to a table after it was first created: `migrate` adds each one a held table lacks. `a_side` and
    `b_side` are each side as the plane formed it (JSON), so a candidate is read back with its sides verbatim (R15, R25)
    and a leg side keeps the inquiry it belongs to. `seq` ranks candidates in the order they were written. */
-/** @type {ReadonlyArray<string[]>} each `[table, column, type]` */
 export const CONTRADICTION_COLUMNS = Object.freeze([
   ["contradiction_candidates", "a_side", "TEXT"],
   ["contradiction_candidates", "b_side", "TEXT"],

@@ -12,7 +12,6 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { world, seeded, draft, V, step, STEPS } from "./fixture.mjs";
 import * as wz from "../../../src/wizard-scripts/index.mjs";
-import { found, scriptWhere } from "./found.mjs";
 import { GENERATED, SOURCES } from "../../../src/wizard-scripts/build-data.mjs";
 
 const F = V("frank"), G = V("gwen"), A = V("alice"), E = V("erin"), D = V("dave");
@@ -24,7 +23,7 @@ const REG_FILE = JSON.parse(src("registry.json")), LIB_T50 = JSON.parse(src("lib
 const COMMIT = "2a64c5ae77";
 const FIX = "1cc4a957f0";   /* R45: the fix round re-takes the doors and the library again */
 const LIB_R45 = JSON.parse(src("library-1cc4a957f0.json"));
-const REG_COMMIT = "e5feed33be";   /* the registry's pin, moved by R44, R45, DEC-389 (R41) and DEC-402 (R49) and DEC-419 (R50), and to the design file on the tranche (e5feed33be) by R50 */
+const REG_COMMIT = "b1adf4236d";   /* the registry's pin, moved by R44, R45, DEC-389 (R41) and DEC-402 (R49) and DEC-419 (R50) */
 const OWED = /^owed:([a-z][a-z0-9]*)(?:\s+(DEC-\d+|K\d+))?$/;
 const status = (s) => REG_FILE.screens.flatMap((f) => f.acts.filter((a) => a.status === s).map((a) => [f.id, a.op]));
 const OWED_OPS = [...new Set(status("owed").map(([, op]) => OWED.exec(op)[1]))];
@@ -37,7 +36,7 @@ const OWED_NOW = OWED_OPS.filter((op) => !INSTALL.includes(op));
 /* every declared and function act of the file: the member op table once the owed acts are not yet declared */
 const DECLARED_OPS = [...new Set(REG_FILE.screens.flatMap((f) => f.acts.filter((a) => a.status !== "owed").map((a) => a.op)))];
 const ALL_OPS = [...DECLARED_OPS, ...OWED_OPS];
-const by = (n) => scriptWhere((e) => e.name === n, n);
+const by = (n) => wz.CIVICSMITH_LIBRARY.find((e) => e.name === n);
 
 const run = (...args) => spawnSync(process.execPath, [join(GEN_DIR, "build-data.mjs"), ...args], { encoding: "utf8" });
 const flip = (text) => { const i = Math.floor(text.length / 2); return text.slice(0, i) + (text[i] === "a" ? "b" : "a") + text.slice(i + 1); };
@@ -115,7 +114,7 @@ test("R41 (T50; DEC-266, DEC-279, DEC-281) SCREEN_REGISTRY is the registry at th
   assert.deepEqual(wz.SCREEN_REGISTRY.map((s) => s.id), REG_FILE.screens.map((f) => f.id), "the file's order");
   const acts = REG_FILE.screens.flatMap((f) => f.acts);
   assert.deepEqual([acts.length, acts.filter((a) => a.status === "declared").length, acts.filter((a) => a.status === "function").length, acts.filter((a) => a.status === "owed").length],
-                   [662, 459, 82, 121]);
+                   [656, 452, 83, 121]);
   assert.equal(OWED_OPS.length, 105, "121 owed acts name 105 ops: updatelater, taskdecide and others are owed on more than one screen");
   REG_FILE.screens.forEach((f, i) => {
     const s = wz.SCREEN_REGISTRY[i];
@@ -139,7 +138,7 @@ test("R41 (T50; N1130; K3674) the check that every registry act has a declaratio
   assert.deepEqual(status("owed").map(([, op]) => OWED.exec(op)[1]).filter((op) => INSTALL.includes(op)), INSTALL, "the file owes the four");
   /* every function act is an op in the table or an alias: here, the table is the file's own acts */
   const functions = status("function");
-  assert.equal(functions.length, 82, "R50: 82 at e5feed33be, accountreferenceset and accountreferenceremove now declared and contradictionflag a function act");
+  assert.equal(functions.length, 83);
   assert.deepEqual(wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: DECLARED_OPS }).filter((g) => !g.owed), [], "every declared and function act has its declaration");
   for (const [screen, op] of functions) assert.ok(DECLARED_OPS.includes(op), `${screen}/${op}`);
   /* owed acts: gaps until declared, the installer's four never */
@@ -158,7 +157,7 @@ test("R41 (T50; N1130; K3674) the check that every registry act has a declaratio
   const some = wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: ALL_OPS.filter((o) => o !== "reauth" && o !== "installremove") });
   assert.deepEqual(some, [{ screen: "connect", act: "reauth", owed: false }], "reauth is a gap; installremove, a route of the installer's, is not");
   assert.deepEqual(wz.registryActGaps(), []);
-  assert.deepEqual(wz.registryActGaps({}), [], "neither given: no gap");
+  assert.deepEqual(wz.registryActGaps({ screens: null, declared: null }), []);
   /* an act the table holds only as an alias counts: the caller hands the aliases in with the ops */
   assert.deepEqual(wz.registryActGaps({ screens: wz.SCREEN_REGISTRY, declared: [...ALL_OPS.filter((o) => o !== "passwordreset"), "passwordreset"] }), []);
 });
@@ -184,7 +183,7 @@ test("R41 (T50; N1130; R13) each of the owed acts the file names is registered a
     assert.deepEqual(check(w), [], `${op}: admitted once declared`);
     assert.deepEqual(check(base), [["WIZARD_ACT_UNKNOWN", 1]], `${op}: refused while undeclared`);
   }
-  assert.equal(new Set(OWED_NOW).size, 101, "R52: 105 owed ops at e5feed33be less the installer's four");
+  assert.equal(new Set(OWED_NOW).size, 101, "R52: 105 owed ops at b1adf4236d less the installer's four");
   assert.ok(T50_OWED.every((op) => OWED_NOW.includes(op)), "T50's owed acts are still owed or declared in the file");
   /* aliaswithdraw is the entities' op, declared already (K3674): a table that holds it registers it now */
   assert.ok(where("aliaswithdraw").length > 0);
@@ -236,9 +235,8 @@ test("R42 (T50; N1130; DEC-266, DEC-279, DEC-281; K2241) the library is re-taken
   assert.deepEqual(same.map((e) => e.name).sort(), ["Build a timeline", "Check a claim", "Follow a proceeding", "Follow the money", "Keep asking this", "Pick up a plan", "Your first question"]);
   for (const e of gained) {
     assert.deepEqual([e.author, e.approved, e.origin, e.scope], ["civicsmith", { by: "BOB", at: "2026-10-17", ruling: "K2241" }, "civicsmith", "group"], e.name);
-    const earlier = found(e.earlier, `${e.name}: its earlier versions`), last = found(earlier.at(-1));
-    assert.ok(earlier.length >= 1 && last.version === e.version - 1, `${e.name}: the version it follows kept`);
-    assert.notDeepEqual(last.steps, e.steps, `${e.name}: it differs from the one it follows`);
+    assert.ok(e.earlier.length >= 1 && e.earlier.at(-1).version === e.version - 1, `${e.name}: the version it follows kept`);
+    assert.notDeepEqual(e.earlier.at(-1).steps, e.steps, `${e.name}: it differs from the one it follows`);
   }
   for (const e of same) assert.deepEqual([e.source === COMMIT, e.approved.at === "2026-10-17"], [false, false], `${e.name}: kept as it was`);
   /* the four renamed scripts */

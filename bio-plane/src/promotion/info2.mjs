@@ -31,10 +31,6 @@ function storedToHashable(v, encoding) {
   return v;
 }
 
-/** R55: the information@2 register grammar's arm (C-18.6, C-18.7), run by record-grammar's `checkBundle` in its slot.
- * @param {any} ctx the bundle as `checkBundle` hands it: its parsed front matter `fm`, its `files` and `sha256`
- * @param {any[]} findings the findings, to which this arm adds its own
- * @returns {Promise<void>} */
 export async function checkInfo2Contract(ctx, findings) {
   if (ctx.fm?.object_type !== 'information' || ctx.fm?.schema !== 'information@2') return;
   const raw = ctx.files.get('data/provenance.json');
@@ -99,6 +95,4 @@ export async function checkInfo2Contract(ctx, findings) {
 }
 
 /** R55: the grammar promotion registers, claiming the slot's two ids whole. */
-/** @type {Readonly<{ids: readonly string[], arm: (ctx: any, findings: any[]) => Promise<void>}>} the grammar R55
- *  registers with record-core: the two ids it claims, and its arm */
 export const INFO2_GRAMMAR = Object.freeze({ ids: Object.freeze(["C-18.6", "C-18.7"]), arm: checkInfo2Contract });

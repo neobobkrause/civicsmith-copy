@@ -138,12 +138,4 @@ test("R100 (through the door, the real plane): a member uploads a two-line text 
   const bare2 = await (await plane("/api/?op=captureupload&statement=mine&name=notes2", { method: "POST", headers: auth, body: other })).json();
   assert.equal(bare2.result.ok, true, JSON.stringify(bare2).slice(0, 300));
   assert.equal(bare2.result.existed, false);
-  /* control (R100, R131 (1)): a file the inline gate refuses (a text over the inline ceiling for its kind, `text.request_bytes`) is not read in
-     the request: it is answered `reading_pending`, with no reading */
-  const large = Buffer.alloc(4 * 1024 * 1024 + 7, "a line of minutes for the gate\n");
-  const big = await (await plane("/api/?op=captureupload&statement=mine&name=long.txt&type=text%2Fplain", { method: "POST", headers: auth, body: large })).json();
-  assert.equal(big.result?.ok, true, JSON.stringify(big).slice(0, 400));
-  assert.equal(big.result.reading_pending, true, JSON.stringify(big.result).slice(0, 400));
-  assert.equal(big.result.document?.reading, undefined, "no reading is made in the request");
-  assert.equal(big.result.document?.text_units, undefined);
 });

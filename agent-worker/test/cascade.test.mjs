@@ -29,7 +29,6 @@ import {
   resolveClaudeCascade, cascadeToken,
 } from "../src/cascade.mjs";
 import { meaningRowsBranch } from "../../agent-steps/test/plane-meaning.mjs";
-import { PUBLISHED_VALUE } from "./published.mjs";
 
 const WORKER_SRC = fileURLToPath(new URL("../src/index.mjs", import.meta.url));
 const SRC = readFileSync(WORKER_SRC, "utf8");
@@ -41,8 +40,11 @@ const t = (label, got, want) => {
   ok ? pass++ : fail++;
 };
 
-/* PUBLISHED_VALUE (./published.mjs) is a value GENUINELY on the denylist — DS-3's own discipline: a fabricated
-   "published" value would test the test, and R32's assertion that it is `revoked_by_publication` holds it to the list. */
+/* A value GENUINELY on the denylist, read from the file that put it there —
+   DS-3's own discipline: a fabricated "published" value would test the test. */
+const PUBLISHED_VALUE = readFileSync(
+  fileURLToPath(new URL("../../bio-plane/dist/SECRETS.txt", import.meta.url)), "utf8")
+  .split("\n").find((l) => l.startsWith("ADMIN_TOKEN=")).split("=")[1].trim();
 
 const KEY = "sk-ant-member-key-fixture-never-echoed";
 const TOKEN = "sk-ant-oat-member-subscription-fixture-never-echoed";

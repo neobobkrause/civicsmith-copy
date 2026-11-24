@@ -102,9 +102,9 @@ test("R74 refusals, in order, each writing nothing: required bundleId (R1's), AB
   assert.deepEqual(unseen, { ok: false, reason: "ABSENT", bundleId: id });
   /* 4: the shape, naming the field */
   const row = MONITOR_SET_CHECKS.MONITOR_SET_REFUSED;
-  for (const [o, field] of /** @type {[Record<string, any>, string][]} */ ([[{ enabled: "yes" }, "enabled"], [{}, "enabled"], [{ enabled: 1 }, "enabled"],
+  for (const [o, field] of [[{ enabled: "yes" }, "enabled"], [{}, "enabled"], [{ enabled: 1 }, "enabled"],
                             [{ enabled: null }, "enabled"], [{ enabled: true, frequency: "fortnightly" }, "frequency"],
-                            [{ enabled: false, frequency: 3 }, "frequency"], [{ enabled: true, frequency: "" }, "frequency"]])) {
+                            [{ enabled: false, frequency: 3 }, "frequency"], [{ enabled: true, frequency: "" }, "frequency"]]) {
     const r = await w.m.monitorSet({ bundleId: id, ...o, author: CAROL, viewer: CAROL });
     assert.deepEqual([r.ok, r.reason, r.code, r.check, r.translation, r.field],
       [false, "MONITOR_SET_REFUSED", "MONITOR_SET_REFUSED", "C-18.21", row.translation, field], JSON.stringify(o));

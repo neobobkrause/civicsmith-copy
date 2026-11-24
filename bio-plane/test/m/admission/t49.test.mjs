@@ -116,7 +116,7 @@ test("R27 (the gate): a public read presenting a live session — header or body
   assert.equal(env.calls.find((c) => c.route === "doorwindow").body.session, sha(t));
   assert.equal(total(sessionRows(w)), 2001);
   /* a page's own timer read is no activity: the door's mark, or the request's own, reaches the lookup */
-  for (const [extra, query, expected] of /** @type {[any, string, string | undefined][]} */ ([[{ background: true }, "", "1"], [{}, "?background=1", "1"], [{ background: false }, "?background=1", undefined], [{}, "", undefined]])) {
+  for (const [extra, query, expected] of [[{ background: true }, "", "1"], [{}, "?background=1", "1"], [{ background: false }, "?background=1", undefined], [{}, "", undefined]]) {
     env.calls.length = 0;
     await A.doorWindowGate({ req: reqOf({ token: t, query }), env, op: "groupidentity", spec: OPS.groupidentity, doAnswer, now: T0, ...extra });
     assert.equal(env.calls.find((c) => c.route === "session").params.background, expected, JSON.stringify([extra, query]));

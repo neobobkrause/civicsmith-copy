@@ -1,4 +1,3 @@
-/** @import { BudgetType } from '../index.mjs' */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -87,7 +86,6 @@ test("R1: a budget line-item sheet is matched by header words naming a fund or o
 
 test("R1: anything else does not match, and says why", () => {
   const floorText = "Statement of Accounts\nCash 1 2\nLand 3 4";
-  /** @type {[BudgetType, Record<string, any>, string][]} each type, a context it refuses, and its why */
   const cases = [
     [financialReport, ctxFor("Cash 1 2\n".repeat(20), FIRST), localize("budget-doctypes.index.not_a_pdf_a_what", "not a PDF: a {what} is read from a PDF's text", { what: "financial report" })],
     [financialReport, ctxFor(testPdf(["A letter to the council", "Cash 1 2\n".repeat(20)]), FIRST), localize("budget-doctypes.index.its_opening_does_not_name", "its opening does not name it a {what} in any words the view holds", { what: "financial report" })],
@@ -291,7 +289,6 @@ test("R7: each budget line keyed on fund and org, with its codes read by the vie
   for (const c of odd) {
     assert.equal(typeof c.as_written, "string");
     const column = COLUMNS_OF_CODE.find((col) => r.rows.some((x) => x[col] && x[col].as_written === c.as_written && x[col].form === null));
-    if (!column) assert.fail(`the code "${c.as_written}" of no form is in no row's code column`);
     assert.equal(c.why, localize("budget-doctypes.lines.no_form_of_the_views", "no form of the view's {column} classification matches \"{s}\"", { column, s: c.as_written.trim() }));
   }
   /* A wide table: each amount column's header is that amount's period and phase. */
@@ -423,9 +420,7 @@ test("R10: reading writes nothing: parse leaves its inputs as they were and give
 });
 
 test("R11: every figure given is as printed: each cell is a token of the line it was read from", () => {
-  /** @type {[string, BudgetType][]} each measured fixture and the type that reads it */
-  const measured = [["a24", financialReport], ["a14", financialReport], ["a19", financialReport], ["bb23", budgetBook]];
-  for (const [key, type] of measured) {
+  for (const [key, type] of [["a24", financialReport], ["a14", financialReport], ["a19", financialReport], ["bb23", budgetBook]]) {
     const { supplied } = pdfFixture(key);
     const r = type.parse(ctxFor(supplied, FIRST));
     const text = supplied.document.replace(/[ \t]+/g, " ");

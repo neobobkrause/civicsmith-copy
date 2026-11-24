@@ -21,8 +21,6 @@
    invitation was made under); and ticking "look after the team's Civicsmith" in the invitation draws what it hands over, the invitation
    waiting for the administrator's answer. */
 
-/** @import { SettingsScreen } from './account.mjs' */
-/** @type {SettingsScreen} Settings › Members */
 export const members = {
   id: "members",
 

@@ -4,7 +4,7 @@
    each act sends. The team's key and its account are `teamai`'s (teamai.test.mjs). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { acts, all, ancestor, day, has, lacks, open, panelOf, rowOf, said, squash, textOf, screen, SCREENS } from "./kit.mjs";
+import { acts, all, ancestor, day, has, lacks, open, panelOf, rowOf, said, squash, textOf, SCREENS } from "./kit.mjs";
 import { SHELL_OPS } from "../../../src/interface-shell/index.mjs";
 import { WORLD_ORIGIN } from "../store-request/fixtures.mjs";
 import { team, keyed, removing, admins, joined, attempt, reauth, recorded, KEYS, rosterOf, EMPTY_ROSTER, withoutFounder, WAITING, SILENT, ARITH_REFUSED,
@@ -34,15 +34,15 @@ test("R1 the reads: the roster for every member; the recovery step and the signi
   assert.deepEqual(reads, [["memberlist", {}], ["expertiselist", { memberId: "ana" }], ["adminrecoverystep", {}], ["signerlist", {}], ["adminarith", {}], ["adminremovalsopen", {}]]);
   // the team's key and its use are `teamai`'s reads (R47): whatever it reads beyond the roster's own and the frame's is not read here
   const admin = await t.founder.read("whoami"), member = await t.dev.read("whoami");
-  const mine = Object.values(screen("members").reads({ me: admin, subject: "ana" })).map((r) => r.op);
-  const teams = Object.values(screen("teamai").reads({ me: admin })).map((r) => r.op).filter((op) => !mine.includes(op) && !SHELL_OPS.includes(op));
+  const mine = Object.values(SCREENS.find((s) => s.id === "members").reads({ me: admin, subject: "ana" })).map((r) => r.op);
+  const teams = Object.values(SCREENS.find((s) => s.id === "teamai").reads({ me: admin })).map((r) => r.op).filter((op) => !mine.includes(op) && !SHELL_OPS.includes(op));
   assert.ok(teams.length >= 5, "the team's account reads");
   for (const op of teams) assert.ok(!a.p.requests.some((r) => r.op === op), `${op} is teamai's (R47)`);
   const m = await open("members", { world: t.w, as: t.dev });
   const mo = m.p.requests.map((r) => r.op);
   assert.deepEqual(mo.filter((op) => !SHELL_OPS.includes(op)), ["memberlist"]);
   // what the owners refuse a member: the reads the screen asks of an administrator beyond those it asks of a member (N1073)
-  const members = screen("members");
+  const members = SCREENS.find((s) => s.id === "members");
   const adminOnly = Object.values(members.reads({ me: admin, subject: "ana" })).map((r) => r.op).filter((op) => !Object.values(members.reads({ me: member })).some((r) => r.op === op));
   assert.ok(adminOnly.includes("adminrecoverystep") && adminOnly.includes("signerlist") && adminOnly.includes("adminarith") && adminOnly.includes("adminremovalsopen"), "the administrators' reads");
   for (const op of adminOnly) assert.ok(!m.p.requests.some((r) => r.op === op), `nothing the owners refuse a member is read (${op})`);
