@@ -12,9 +12,6 @@ import * as O from "../../../src/op-declarations/index.mjs";
 import { browserActs, OWED_BY_FIX_ROUND_AT_43379A1A44 } from "./browser.mjs";
 import { AI_GRANT_OPS, credentialsOps } from "../../../src/credentials/index.mjs";
 import { caseCarriageOps } from "../../../src/case-carriage/index.mjs";
-/** @param {string} op @returns {readonly string[]} the op's session classes, asserted to be a list, so a negative check is never
- *  passed by a missing one */
-const classesOf = (op) => { const c = O.OPS[op].classes; assert.ok(Array.isArray(c), `${op}: classes is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS,
         UNATTENDED_BY_DECISION, ACT_HELP_ABSENT, ACT_GATE } = O;
@@ -23,7 +20,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const neither = (op) => !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]))
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
   .concat([["PLAN_RUN_SCOPE.reads", O.PLAN_RUN_SCOPE.reads], ["PLAN_RUN_SCOPE.writes", O.PLAN_RUN_SCOPE.writes]]);
 const inNoTable = (op) => !Object.hasOwn(OPS, op) && !Object.hasOwn(NEEDS, op) && neither(op) && !Object.hasOwn(OP_STAMPS, op)
   && !LISTS.some(([, l]) => l.includes(op)) && !Object.hasOwn(UNATTENDED_BY_DECISION, op);
@@ -34,7 +31,7 @@ const shared = (op) => {
   assert.ok(both(op), `${op}: not in both session sets`);
   assert.ok(!GOVERNANCE_ACTIONS.includes(op) && !IDENTITY_ACTIONS.includes(op), `${op}: in a bearer fence`);
   assert.ok(!AI_GRANT_OPS.includes(op), `${op}: on AI_GRANT_OPS`);
-  assert.ok(!classesOf(op).includes("ai") && !(OPS[op].machineClasses ?? []).includes("ai"), op);
+  assert.ok(!OPS[op].classes.includes("ai") && !(OPS[op].machineClasses ?? []).includes("ai"), op);
   assert.ok(!Object.hasOwn(UNATTENDED_BY_DECISION, op), op);
   assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), `${op}: aliased`);
   assert.ok(Object.isFrozen(OPS[op]) && Object.isFrozen(OPS[op].classes), op);

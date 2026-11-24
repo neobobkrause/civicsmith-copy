@@ -710,7 +710,7 @@ function render(cs, view) {
     if (legGrade(l) && axis && axis !== "capture") return "";
     const ceiling = ceilingOf(target);
     if (!ceiling) return "";
-    const act = cs.act("leggrade", { label: "act.leggrade.label.question", data: { target, ord: String(l.ord) } });
+    const act = cs.act("leggrade", { label: "screen.question.leggrade.act", data: { target, ord: String(l.ord) } });
     if (!act) return "";
     return `<details class="mk-details" data-leggrade="${l.ord}"><summary>${W("screen.question.leggrade.head")}</summary><p class="mk-small">${W("screen.question.leggrade.help", { ceiling })}</p>`
       + cs.checks("question-leggrade-" + l.ord, "", GRADES.slice(GRADES.indexOf(ceiling)).map((g) => ({ value: g, text: g })), { radio: true })
@@ -1213,12 +1213,7 @@ function render(cs, view) {
  *  handle, or the founder unnamed) is drawn as `fallback` (common's `who`) draws it; an id, a stamp or a handle goes to the kit's
  *  `cs.memberName`: her handle, the founder with no handle by `member.founder.unnamed`, any other by `shell.card.member`, never the id. An
  *  `admin` the screen knows the founder's handle for is drawn by it. A machine identity (`class:`, `agent:`) and a kit with no `memberName`
- *  are the fallback's. Self-contained (the page carries it by its text); the other screens of this module import it.
- * @param {*} cs the shell's drawing kit (interface-shell R21)
- * @param {*} x a roster row, a member id, a stamp (`member:<id>`, `token:<id>`) or a handle
- * @param {*} founder the founder's handle, where the screen knows it
- * @param {(cs: *, x: *, founder: *) => string} fallback common's `who`
- * @returns {string} the markup of the name drawn */
+ *  are the fallback's. Self-contained (the page carries it by its text); the other screens of this module import it. */
 export function named(cs, x, founder, fallback) {
   if (x && typeof x === "object" && (x.handle || x.founder === true)) return fallback(cs, x, founder);
   const raw = x && typeof x === "object" ? (x.member_id ?? x.member ?? x.id ?? x.by ?? "") : x;
@@ -1741,7 +1736,7 @@ const acts = [
  *  document's `readheldActs` is: the act is carried only once the registry (or `RE_POINTS`) admits it (admit.mjs), so no screen is stopped by an act it does not yet hold. A refusal
  *  (`GRADE_OVER_CEILING`, `NOT_CITED`, `LEG_NOT_GRADABLE`, `LEG_GRADE_OTHER_AXIS`, a machine) is drawn by the owner's own words, and the question reads its legs and strength again. */
 const legGradeActs = Object.freeze(admitted("question", "leggrade") ? [
-  { op: "leggrade", label: "act.leggrade.label.question", reasonField: "reason", rereads: ["inquiry", "basis", "strength", "partition"],
+  { op: "leggrade", label: "screen.question.leggrade.act", reasonField: "reason", rereads: ["inquiry", "basis", "strength", "partition"],
     send(view, el, cs) {
       const ord = String(el.dataset.ord || ""), target = String(el.dataset.target || "");
       const grade = String((cs.value("question-leggrade-" + ord) || [])[0] || "");
@@ -1833,7 +1828,7 @@ const words = Object.freeze([
   ...["summary", "what", "case", "kept", "why", "why.help", "next", "next.link", "next.link.text", "refused.summary", "refused.noreason", "refused.badreason", "refused.notsetdown"].map((k) => "screen.question.reopen." + k),
   "act.writinghelp.does",
   /* R139 (DEC-439): the leg-grade fold, the Yes set aside, the other side beside Reinstate, a published case carrying the question */
-  "screen.question.leggrade.head", "screen.question.leggrade.help", "act.leggrade.label.question", "screen.question.yes.setaside", "screen.question.reinstate.otherside",
+  "screen.question.leggrade.head", "screen.question.leggrade.help", "screen.question.leggrade.act", "screen.question.yes.setaside", "screen.question.reinstate.otherside",
   "screen.question.reinstate.otherside.help", "screen.question.carried", "capture.fieldneeded", "shell.reason.needed",
   /* T51 CHANGE B22 (R110) */
   "act.owed_citeimported.label.question", "act.owed_withdrawimported.label.question", "refusal.IMPORTED_NOT_ACCEPTED",
@@ -1841,18 +1836,7 @@ const words = Object.freeze([
   "screen.imported.citeimp.inherit1", "screen.imported.citeimp.inherit2", "screen.imported.citeimp.tip",
 ]);
 
-/**
- * @typedef {Object} ScreenDef
- * @property {string} id the registry screen's id
- * @property {Object<string, *>} parts the screen parts handed to it as `view.parts`
- * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
- * @property {(cs: *, view: *) => string} render the screen's markup
- * @property {ReadonlyArray<Object>} acts the acts it draws, each with its `op`, `label` and `send`
- * @property {ReadonlyArray<string>} words the keys it may draw (R44)
- */
-/** The question screen (interface-shell R21), with the module's shared readers and the dock's bounds as its parts.
- * @param {Object<string, *>} parts the shared readers (`screens-document`'s common.mjs) and the dock's tables
- * @returns {Readonly<ScreenDef & {place: (view: *) => Object}>} the screen `question`, `place` naming its project */
+/** The question screen (interface-shell R21), with the module's shared readers and the dock's bounds as its parts. */
 export function questionScreen(parts) {
   return Object.freeze({ id: "question", reads, place, render, acts: [...acts, ...legGradeActs], words, parts: Object.freeze({ ...parts, named, leggrade: legGradeActs.length > 0 }) });
 }

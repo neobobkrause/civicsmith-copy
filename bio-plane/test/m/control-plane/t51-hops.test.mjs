@@ -49,7 +49,7 @@ test("R121 E10: an op's calls to the object, counted in Server-Timing, are withi
   console.log("hop counts", JSON.stringify(seen), "targets", JSON.stringify(TARGET));
 });
 
-test("R121, R125 (e) (E10 (i)): the object's own time is told as `in-<route>` beside `do-<route>`", async () => {
+test("R121 E10 (i) (red by name until plane R-timing has merged): the object's own time is told as `in-<route>` beside `do-<route>`", async () => {
   const auth = await signedIn();
   const res = await plane("/api/?op=projectlist", { headers: auth });
   await res.arrayBuffer();

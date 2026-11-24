@@ -1,10 +1,10 @@
 /* screens-settings' tests' helper for what only a browser can measure (fix round 3, C81): the real `SCREENS` page the shell serves,
    with the served stylesheets, drawn in Chromium at a given width over a scripted plane, and a function run in the page to measure it.
-   Needs `playwright-core` (found beside the product, or in the tools directory) and Chromium (CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, or the system's Chrome or Chromium);
+   Needs `playwright-core` (found beside the product, or in the tools directory) and Chromium (CHROMIUM, or /opt/pw-browsers/chromium);
    without them a test using it fails, saying so (as interface-shell's phone390.test.mjs does). */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { accessSync, constants, existsSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { interfacePage, interfaceScript, scriptPath } from "../../../src/interface-shell/index.mjs";
 import { ASSET_FILES } from "../../../src/interface-assets/index.mjs";
@@ -18,16 +18,14 @@ function engine() {
   }
   return null;
 }
-/* the browser: the first of these that is a file the machine can run (a folder, such as a Playwright install's, is passed over) */
-const EXE = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
-  .find((p) => { try { return !!p && statSync(p).isFile() && (accessSync(p, constants.X_OK), true); } catch { return false; } }) || "";
+const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 
 /** Draws `path` at `width` px over the world's `door` (a function of the request `{op, query, body}` → `{status, json}`), for the member whose `session` the page holds, waits for `ready`
  *  (a selector in the main area), and answers what `measure` (run in the page, given `width`) returns. */
 export async function measure({ path, width, door, session, ready, measure: fn, screens = SCREENS }) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(EXE && existsSync(EXE), "Chromium is needed at CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium or /usr/bin/chromium-browser");
+  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
   const html = interfacePage(screens), script = interfaceScript(screens);
   const browser = await pw.chromium.launch({ executablePath: EXE });
   try {

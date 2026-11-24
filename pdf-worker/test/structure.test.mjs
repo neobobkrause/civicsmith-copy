@@ -1,7 +1,7 @@
 /* pdf-worker's HTTP surface: R1–R12, R35–R38 and R41 of build/requirements/pdf-worker.md.
  *
- * The subject is a fresh build of the source by the bundle's own recipe (`subject.mjs`); `dist/pdf-worker.bundled.mjs`,
- * the file that deploys, is built by the same recipe and never committed (R45). It is driven two ways: under miniflare (workerd, the runtime it
+ * The subject is a fresh build of the source by the committed bundle's own recipe (`subject.mjs`); that the committed
+ * `dist/pdf-worker.bundled.mjs`, the file that deploys, equals such a build is `fleetbundles.test.mjs`'s guard. It is driven two ways: under miniflare (workerd, the runtime it
  * serves in) for the behaviour of each route, and imported into node with a
  * recording `env` where the question is what the Worker touches (R1, R37). */
 import "../../bio-plane/test/sandbox.mjs";
@@ -14,10 +14,11 @@ import { makePdf, content, image, hex, runner } from "./make-pdf.mjs";
 import { generate } from "../../bio-plane/test/pdfgen.mjs";
 import { BUNDLE } from "./subject.mjs";
 
-// miniflare comes only from test-support's manifest (bio-plane/package.json), never from whichever node_modules folder
-// lies nearest this file, so the version under test is the one test-support pins.
-const fromTestSupport = createRequire(fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url)));
-const { Miniflare } = await import(pathToFileURL(fromTestSupport.resolve("miniflare")).href);
+const { Miniflare } = await (async () => {
+  try { return await import("miniflare"); } catch { /* fall through */ }
+  const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
+  return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
+})();
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 const bundle = await import(pathToFileURL(BUNDLE).href);

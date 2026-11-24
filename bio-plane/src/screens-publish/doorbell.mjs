@@ -3,10 +3,7 @@
  * note and a secret phrase, each optional but the material; "Hand it over" sends them with no credential. The secret
  * phrase is never kept by the page. Every function is self-contained (interface-shell R21 (1)). */
 import { PARTS } from "./parts.mjs";
-/** @import { ScreenDef } from "./parts.mjs" */
 
-/** The doorbell (R9, R49, R56, R67): `groupidentity` read; acts `knock` and `knockerconsent`, each with no credential.
- *  @type {Readonly<ScreenDef>} */
 export const DOORBELL = Object.freeze({
   id: "doorbell",
   parts: PARTS,
@@ -45,12 +42,9 @@ export const DOORBELL = Object.freeze({
     // R56 (C17; DEC-375): the knocker's own form for what may be published about them: the secret phrase used, the detail's
     // reference, who may be told, and agree or take back. It asks nothing about who they are.
     out.push(cs.sec("screen.doorbell.consent.heading", "<p>" + cs.w("screen.doorbell.consent.intro1") + " " + cs.w("screen.doorbell.consent.intro2") + "</p>"
-      // The phrase is required here (`sources` R11), so its label is the page's "Your secret phrase", never "(optional)"
-      + cs.field("dc-secret", "screen.doorbell.consent.secret", { type: "password", autocomplete: "off" })
+      + cs.field("dc-secret", "screen.doorbell.secret.label", { type: "password", autocomplete: "off" })
       + cs.field("dc-entry", "screen.doorbell.consent.detail", { rec: true, help: "screen.doorbell.consent.detail.help" })
-      // R56: who may be told it, each of the three audiences `sources` R11 takes, narrowest first
-      + cs.choice("dc-audience", "screen.doorbell.consent.audience", [["member", "screen.doorbell.consent.audience.member"],
-        ["group", "screen.doorbell.consent.audience.team"], ["public", "screen.doorbell.consent.audience.public"]], { value: "member" })
+      + cs.choice("dc-audience", "screen.doorbell.consent.audience", [["member", "screen.doorbell.consent.audience.member"]], { value: "member" })
       + cs.choice("dc-answer", "screen.doorbell.consent.heading", [{ value: "", text: "–" }, { value: "yes", key: "screen.doorbell.consent.yes" }, { value: "no", key: "screen.doorbell.consent.no" }])
       + "<p class=\"muted\">" + cs.w("screen.doorbell.consent.permanent1") + " " + cs.w("screen.doorbell.consent.permanent2") + "</p>"
       + '<div class="mk-acts">' + cs.act("knockerconsent", { tone: "primary" }) + "</div>" + view.parts.said(view, "knockerconsent")));
@@ -108,8 +102,7 @@ export const DOORBELL = Object.freeze({
         const entry = String(cs.value("dc-entry") || "").trim();
         if (answer !== "yes" && answer !== "no") return null;
         if (!secret || !entry) return null;
-        const chosen = String(cs.value("dc-audience") || "member");
-        return { body: { knockerSecret: secret, entry: entry, audience: ["member", "group", "public"].includes(chosen) ? chosen : "member", withdraw: answer === "no" } };
+        return { body: { knockerSecret: secret, entry: entry, audience: String(cs.value("dc-audience") || "member"), withdraw: answer === "no" } };
       },
       done: function (view, answer, cs) {
         if (view.parts.refused(cs, view, "knockerconsent", answer)) return { stay: true };

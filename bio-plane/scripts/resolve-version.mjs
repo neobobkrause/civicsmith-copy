@@ -42,31 +42,12 @@ import { join } from "node:path";
 import { REPO_ROOT, discoverMembers, planeMember } from "./fleet-bundle.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* N12: the product's own reader */
 
-/**
- * One place a version is declared.
- * @typedef {Object} VersionSite
- * @property {string} file repository-relative: `<dir>/package.json` or `<dir>/wrangler.jsonc`
- * @property {"version"|"vars.VERSION"} key
- * @property {any} version the value declared there; null for a package.json that states none
- * @property {string} member the plane's or the member's name
- */
-/**
- * `resolveVersion`'s answer: every site agrees with the authority, or the findings that name each one that does not.
- * @typedef {{ok: true, version: string, sites: VersionSite[], findings: string[]}
- *   | {ok: false, version: string|null, sites: VersionSite[], findings: string[]}} VersionResolution
- * @bound findings: empty when ok; one per disagreeing site, or one alone when the authority declares no version
- */
-
 /* Discovery is fleet-bundle.mjs's (bundler R1) and is CONSUMED here, never
    re-implemented: a second walk could let the set this checks drift from the set
    that gets built and signed — which is the failure this file exists to make
    impossible one level up. */
 
-/**
- * Every place a version is declared: the plane first, then each discovered member, package.json before wrangler.jsonc.
- * @param {string} [repoRoot] absent is the repository's own root
- * @returns {VersionSite[]}
- */
+/** Every place a version is declared, as {file, key, version}. */
 export function versionSites(repoRoot = REPO_ROOT) {
   const sites = [];
   const add = (dir, name) => {
@@ -94,8 +75,6 @@ export function versionSites(repoRoot = REPO_ROOT) {
  * authority, or { ok: false, version, findings, sites } naming each
  * disagreement and the exact edit that fixes it. NEVER throws on skew — the
  * caller decides whether skew is fatal, and every caller so far says yes.
- * @param {string} [repoRoot] absent is the repository's own root
- * @returns {VersionResolution}
  */
 export function resolveVersion(repoRoot = REPO_ROOT) {
   const sites = versionSites(repoRoot);
@@ -118,12 +97,7 @@ export function resolveVersion(repoRoot = REPO_ROOT) {
   return { ok: findings.length === 0, version: want, sites, findings };
 }
 
-/**
- * The shape every caller wants: resolve, or print `REFUSED [VERSION_SKEW]` with the findings and exit 1.
- * @param {string} [repoRoot] absent is the repository's own root
- * @param {string} [label] the word the refusal uses for what is resolved
- * @returns {string} the fleet's one version
- */
+/** The shape every caller wants: resolve, or print the refusal and exit 1. */
 export function resolveVersionOrExit(repoRoot = REPO_ROOT, label = "version") {
   const r = resolveVersion(repoRoot);
   if (r.ok) return r.version;
@@ -133,7 +107,7 @@ export function resolveVersionOrExit(repoRoot = REPO_ROOT, label = "version") {
   console.error("  A release carries ONE version over a SET of artifacts. Two byte sets must");
   console.error("  never wear one number, and a member must not claim a version the plane has");
   console.error("  never been built as.");
-  return process.exit(1);
+  process.exit(1);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

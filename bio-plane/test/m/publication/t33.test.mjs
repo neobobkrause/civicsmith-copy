@@ -235,7 +235,7 @@ test("R63 a ratified edition's timeline is its signed document's timeline block,
   assert.deepEqual({ they_did: t.they_did, we_did: t.we_did }, timelineOf(parseFrontmatter(signedText).data));
   assert.deepEqual(t.they_did.map((i) => i.ref), ["EVT-bbbbbbbbbbbbbbbb", "EVT-aaaaaaaaaaaaaaaa"], "its lane, in its own order");
   assert.deepEqual(t.we_did.map((i) => [i.ref, i.source]), [["ACT-2026-0001", "docket:1"]], "never mixed with the other");
-  assert.deepEqual(w.p.caseEditionState(CASE, 1)?.timeline, { they_did: t.they_did, we_did: t.we_did });
+  assert.deepEqual(w.p.caseEditionState(CASE, 1).timeline, { they_did: t.they_did, we_did: t.we_did });
   /* a later edition with another timeline, and a change in the record, leave the signed one as it was */
   w.prepare(CASE, 2, { project: proj, roles, timeline: [TIMELINE[0]] });
   w.inquiry(F, { question: "Revised?", legs: [{ target: DOC }] });

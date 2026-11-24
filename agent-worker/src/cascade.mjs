@@ -21,58 +21,15 @@
 import { PUBLISHED_TOKEN_HASHES, sha256hex } from "../../bio-plane/src/tokens.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
-/**
- * The one Claude account that arrived with a call (R6), as the plane sends it: `kind` `apikey` or `signin`, `level`
- * `project`, `member` or `group`, `secret` the key or held token, `member` the member whose act it serves, `project`
- * the project's id at the project level (R71), never a secret. Any field may be missing or of another kind; R32 judges
- * what arrived.
- * @typedef {Object} Account
- * @property {string} [kind]
- * @property {string} [level]
- * @property {string} [secret]
- * @property {string} [member]
- * @property {string} [project]
- * @property {boolean} [suggestions]
- */
-/**
- * One level's judgement (R32): `state` is `unset`, `revoked_by_publication` or `available`.
- * @typedef {Object} LevelJudged
- * @property {string} level
- * @property {string} state
- */
-/**
- * R32's status, carrying no secret. Available: `kind`, `member` and, at the project level, `project`. Not available:
- * `reason` `NO_ACCOUNT` and a member-facing `detail`.
- * @typedef {Object} CascadeStatus
- * @property {boolean} available
- * @property {string} level
- * @property {LevelJudged[]} levels
- * @property {string} [kind]
- * @property {string | null} [member]
- * @property {string} [project]
- * @property {string} [reason]
- * @property {string} [detail]
- * @bound level: project, member or group; member when no usable level arrived
- */
-/**
- * R33's answer: the account's own level and the reference in `agent-model`'s terms, for the one call it serves.
- * @typedef {Object} CascadeReference
- * @property {string} level
- * @property {{kind: string, key?: string, member?: string, secret?: string}} reference
- */
-
 /** The levels an account arrives at (R32, R71; `credentials` R35, R56), in the order `credentials`' cascade tries them:
- *  a project's account, the member's own, the group's API key. Nothing else may restate them.
- *  @type {readonly string[]} */
+ *  a project's account, the member's own, the group's API key. Nothing else may restate them. */
 export const CASCADE_ORDER = Object.freeze(["project", "member", "group"]);
 /** The kinds `agent-model` takes (its R2): an API key, or (T38; N785, K2200) the member's own sign-in, which since T47
  *  carries its `secret`, the token `credentials` holds for that member (R82; K3060 D10; `agent-model` R16).
- *  `subscription` is retired (`credentials` R22).
- *  @type {readonly string[]} */
+ *  `subscription` is retired (`credentials` R22). */
 export const ACCOUNT_KINDS = Object.freeze(["apikey", "signin"]);
 /** The kinds each level holds: the group's account is an API key only (`credentials` R33; `agent-model` R11); a
- *  project's is an API key or its one member's own sign-in (`credentials` R54; R71).
- *  @type {Readonly<Record<string, readonly string[]>>} */
+ *  project's is an API key or its one member's own sign-in (`credentials` R54; R71). */
 export const LEVEL_KINDS = Object.freeze({ project: ACCOUNT_KINDS, member: ACCOUNT_KINDS, group: Object.freeze(["apikey"]) });
 
 /** The stated reasons. A caller renders these; it never invents one. */
@@ -81,7 +38,6 @@ export const LEVEL_UNSET = "unset";
 export const LEVEL_REVOKED = "revoked_by_publication";
 export const LEVEL_AVAILABLE = "available";
 
-/** @param {unknown} a @returns {boolean} */
 const isObject = (a) => a !== null && typeof a === "object" && !Array.isArray(a);
 const secretOf = (account) => (isObject(account) && typeof account.secret === "string" ? account.secret : "");
 const memberOf = (account) => (isObject(account) && typeof account.member === "string" ? account.member : "");
@@ -96,8 +52,7 @@ const levelOf = (account) => (isObject(account) && CASCADE_ORDER.includes(accoun
  *  `available`. An account naming no level, or another (an instance's), is judged at no level. A `signin` account is
  *  `available` exactly when its `member` is a non-empty string, the member whose own sign-in serves the act, and (T47,
  *  R82) its `secret`, the held token, is non-empty and unpublished; `unset` otherwise. A project's account naming no
- *  project is `unset` (R71).
- *  @param {any} account @returns {Promise<string>} */
+ *  project is `unset` (R71). */
 async function levelState(account) {
   if (!isObject(account) || !CASCADE_ORDER.includes(account.level)) return LEVEL_UNSET;
   if (!LEVEL_KINDS[account.level].includes(account.kind)) return LEVEL_UNSET;
@@ -114,8 +69,6 @@ async function levelState(account) {
  * level, R71) or `{available: false, reason: "NO_ACCOUNT", level, levels, detail}`, `level` the account's own (`member`
  * when none arrived). `account` is `{kind, level, secret, member, project?, suggestions?}` as the plane sends it (R6);
  * `member` is the member whose act it serves, at every level.
- * @param {any} account the account that arrived (an `Account` when well formed), of whatever shape: R32 judges it
- * @returns {Promise<CascadeStatus>}
  */
 export async function resolveClaudeCascade(account) {
   const level = levelOf(account);
@@ -148,8 +101,6 @@ export async function resolveClaudeCascade(account) {
  * the one call it serves; never logged, echoed or kept by any state of this module (R36). A project's sign-in is that
  * one member's own and becomes exactly the member's own reference; no reference names the project (R71;
  * `agent-runner` R2).
- * @param {any} account the account that arrived (an `Account` when well formed), of whatever shape: R32 judges it
- * @returns {Promise<CascadeReference | null>}
  */
 export async function cascadeToken(account) {
   const st = await resolveClaudeCascade(account);

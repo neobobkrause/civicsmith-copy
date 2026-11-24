@@ -7,8 +7,7 @@ import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v))
-  .map(([k, v]) => /** @type {[string, readonly string[]]} each act list by its name */ ([k, v]));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsHolding = (op) => LISTS.filter(([, list]) => list.includes(op)).map(([name]) => name).sort();
 const plain = (spec) => ({ ...spec, ...(Array.isArray(spec.classes) ? { classes: [...spec.classes] } : {}),
                            ...(Array.isArray(spec.machineClasses) ? { machineClasses: [...spec.machineClasses] } : {}) });
@@ -123,7 +122,7 @@ test("R13, R2: no machine class, agent credential or operator token reaches a do
   const member = Object.keys(R13).filter((op) => OPS[op].classes !== null);
   assert.equal(member.length, 7);
   for (const op of member) {
-    assert.deepEqual(OPS[op].machineClasses, [], op);
+    assert.deepEqual([...OPS[op].machineClasses], [], op);
     for (const cls of ["admin", "member", "probe", "daemon"]) assert.equal(admitsBearer(op, cls), false, `${op}: ${cls}`);
     /* An agent credential is admitted only to an op a member reaches with no machineClasses (R2): not these. */
     assert.ok("machineClasses" in OPS[op], op);

@@ -20,14 +20,9 @@ import { inquiryOf, inquiryFindings } from "../../../src/inquiry/index.mjs";
 import { standardsOf } from "../../../src/standards/index.mjs";
 import { captureOf } from "../../../src/capture/index.mjs";
 
-/** @type {(s: string | Uint8Array) => string} the SHA-256 of a text (as UTF-8) or of bytes, lowercase hex */
 export const sha = (s) => createHash("sha256").update(typeof s === "string" ? Buffer.from(s, "utf8") : s).digest("hex");
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
-/**
- * An in-memory SQLite storage shaped as the Durable Object's `storage.sql`.
- * @returns {any} `{sql: {exec, databaseSize}, transactionSync}`
- */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -48,18 +43,14 @@ export function storage() {
   };
 }
 
-/** @type {(id: string) => string} a member's stamp, `member:<id>` */
 export const V = (id) => `member:${id}`;
-/** @type {string} a machine credential, `class:daemon` */
 export const MACHINE = "class:daemon";
-/** @type {string} the tests' fixed instant */
 export const NOW = "2026-09-28T01:00:00Z";
 
 /* The column the store's additive list still creates on record-core's `bundles`, where this module wrote the subject
    entity until T19 (R40; since then it is written to this module's own table, and the column is inert). A store
    written before T18 also held the leg count and the superseded-by index there (`legacyColumns`, R36's move). */
 const BUNDLE_COLUMNS = ["inquiry_subject_entity TEXT"];
-/** @type {string[]} the two columns a store written before T18 held on `bundles` (R36) */
 export const LEGACY_BUNDLE_COLUMNS = ["inquiry_basis_count INTEGER", "inquiry_superseded_by TEXT"];
 /* The strength columns as they stood on `bundles` before strength moved them to `strength_cache` (its R23; legacy-store
    added them). No strength module is registered here, so the real retrieval's search reads them where they stand. */
@@ -72,11 +63,6 @@ const STRENGTH_COLUMNS = ["inquiry_capture_strength TEXT", "inquiry_capture_stat
  *  written before T18 holds it (R36's move). `bias`: the real bias module over the same storage, migrated, with this
  *  module's findings registered with it as `plane` registers them (R53, `inquiryFindings`). `view`: the active
  *  jurisdiction view the dated waits read their time zone from (R55, R57), a function; absent, the record's own. */
-/**
- * A whole world over one storage: record, membership, promotion, content and this module, each real.
- * @param {any} [opts] `{caseMembers?, published?, group?, realRetrieval?, legacyColumns?, bias?, view?, standards?, duties?, calculations?, capture?}`
- * @returns {any} the world's modules and helpers, `k` this module's instance
- */
 export function world({ caseMembers = new Set(), published = null, group = "test-group", realRetrieval = false,
                         legacyColumns = false, bias: withBias = false, view = undefined, standards: withStandards = false,
                         duties = undefined, calculations = undefined, capture: withCapture = false } = {}) {
@@ -237,12 +223,6 @@ const parseFm = (t) => (t ? parseFrontmatter(t).data : null);
 
 /** An inquiry document. `legs`: [{target, role?, grade?, grade_axis?, grade_source?, ground?, author?, date?, note?,
  *  content_id?}]; `refs` defaults to a confirmed `cites` entry per leg target. */
-/**
- * An inquiry document's text.
- * @param {string} id
- * @param {any} [opts] `{question?, legs?, refs?, state?, prior?, extra?, grounds?, subject?, history?, disposition?, body?}`
- * @returns {string}
- */
 export function inquiryMd(id, { question = `Is ${id} answered?`, legs = [], refs = null, state = "open",
                                prior = "null", extra = [], grounds = null, subject = null, history = "[]",
                                disposition = '""', body = [] } = {}) {
@@ -269,11 +249,6 @@ export function inquiryMd(id, { question = `Is ${id} answered?`, legs = [], refs
     word("conformance.falsify"), "", "## Session Log", "", ...body, "## Review Notes", ""].join("\n");
 }
 
-/**
- * An information document's text.
- * @param {string} id
- * @returns {string}
- */
 export function infoMd(id) {
   return ["---", `id: ${id}`, "object_type: information", "schema: information@1", `title: "Document ${id}"`,
           "current_state: collected", "prior_state: null", `created: "2026-09-27T00:00:00Z"`,
@@ -281,12 +256,6 @@ export function infoMd(id) {
           "---", "", "## Summary", "", "A document.", ""].join("\n");
 }
 
-/**
- * A project document's text citing the given ids.
- * @param {string} title
- * @param {string[]} [cites]
- * @returns {string}
- */
 export function projMd(title, cites = []) {
   return ["---", "object_type: project", "schema: project@1", `title: "${title}"`, "current_state: forming",
           "prior_state: null", `created: "2026-09-27T00:00:00Z"`, `last_updated: "2026-09-27T00:00:00Z"`,
@@ -295,11 +264,6 @@ export function projMd(title, cites = []) {
           "state_history: []", "---", "", "## Objective", "", "Find out.", ""].join("\n");
 }
 
-/**
- * A provenance document for a capture: its file, locator, authority, capture and origin.
- * @param {any} c the capture's facts
- * @returns {any} the document as an object
- */
 export function provDoc(c) {
   return {
     file: c.path, locator: `https://example.org/${c.path}`, retrieved: "2026-09-27T00:00:00Z",

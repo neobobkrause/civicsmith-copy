@@ -428,7 +428,7 @@ const tipOf = (e) => squash(unescape(e.attrs["data-tip"] || ""));
 const summaryOf = (o, key) => all(partOf(o, key), (e) => e.tag === "summary")[0];
 const sharedScanner = () => ({ FILE_SCANNER: scannerBinding() });
 
-test("R9 R22 before the claim only part 1, 'Make it yours', is open; the seven parts that follow are shown closed beneath it under screen.setup.coming", async () => {
+test("R22 before the claim only part 1, 'Make it yours', is open; the seven parts that follow are shown closed beneath it under screen.setup.coming", async () => {
   const o = await open("setup", { fragment: { boot: OTP }, world: await fresh() });
   assert.deepEqual(all(o.tree, (e) => e.attrs["data-part"]).map((e) => e.attrs["data-part"]), PARTS);
   assert.equal(partOf(o, "claim").tag, "details");
@@ -447,10 +447,8 @@ test("R9 R22 before the claim only part 1, 'Make it yours', is open; the seven p
   const tips = all(o.tree, (e) => /\bcs-card\b/.test(e.attrs.class || "")).map(tipOf);
   for (const k of ["screen.setup.otp.tip", "screen.setup.handle.tip"]) assert.ok(tips.includes(said(k)), k);
   lacks(o, "screen.setup.otp.tip"); lacks(o, "screen.setup.handle.tip");
-  // R9 (interface-shell R11): the claim is labelled by its act key, the registry's; control: not by the setup row
-  const claimLabel = all(o.tree, (e) => e.attrs["data-act"] === "claim")[0].children.map((c) => c.text).join("");
-  assert.equal(claimLabel, word("act.claim.label.setup"));
-  assert.notEqual(claimLabel, word("screen.setup.claim.button"));
+  // the act as the design names it
+  assert.equal(all(o.tree, (e) => e.attrs["data-act"] === "claim")[0].children.map((c) => c.text).join(""), word("screen.setup.claim.button"));
   // the head names the short name (the team's, as the plane answers it) until the team is named
   const slug = o.requests.find((r) => r.op === "groupidentity").answer.value.group;
   assert.deepEqual(all(o.tree, (e) => e.attrs.class === "muted").map((e) => e.children.map((c) => c.text).join("")), [slug]);

@@ -26,27 +26,6 @@ import { publishedRoutes } from "../publication/worker.mjs";
 import { PUBLIC_READ_NAME, PUBLIC_READ_RESERVED_PARAMS, PUBLIC_READ_NOT_REGISTERED, DOCKET_FEED_MEDIA_TYPE } from "./reads.mjs";
 import { creditPage } from "./credit.mjs";
 
-/**
- * The door's own helpers, handed in (`control-plane`'s, later in the order, as `capturePublicOp` is).
- * @typedef {Object} PublicReadDoorHelpers
- * @property {(body: any, status: number) => any} json the door's JSON answer at a status
- * @property {(op: string, name: string, shape: string) => any} requiredArgument the required-argument refusal's fields
- * @property {(op: string, correlation?: any) => any} storeSilent the answer for a store reply that is no answer (R9)
- * @property {(out: any) => any} storeRefusal the store's own refusal, relayed (R9)
- * @property {(reply: any) => Promise<any>} doAnswer reads a store reply as `{refused, answered, result, correlation}`
- * @property {any} [publicReads] the names of the registered reads the door routes as ops of their own (R18): an array, or
- *   anything with `has(name)`
- */
-/**
- * The published store the door hands in (`stub`, pinned to `bio`).
- * @typedef {Object} PublicReadStore
- * @property {(request: Request) => any} fetch
- */
-/**
- * R1, R4, R5, R18, R21, R30: the ops `publicReadDoorOp` answers by name. A registered read whose name is one of these is
- * not routed as an op of its own.
- * @type {ReadonlyArray<string>}
- */
 export const PUBLIC_READ_DOOR_OPS = Object.freeze(["verify", "publishedmanifest", "publishedlist", "publishedcase", "publishedbytes",
                                                    "publicread", "docketpublic", "docketfeed", "credit"]);
 
@@ -55,14 +34,7 @@ export const PUBLIC_READ_DOOR_OPS = Object.freeze(["verify", "publishedmanifest"
  *  `case` is forwarded (and, R25, `captures=omit` for the docket), and no header. No `case` is the required-argument
  *  refusal (400). A case the docket answers null for is the store's `NOT_PUBLISHED`, relayed at 404 exactly as `op=publishedcase` relays it for an absent case, so
  *  the two answers are the same bytes. R9: the store's own refusal through `storeRefusal`; a reply that is no answer is
- *  `storeSilent`'s.
- * @param {string} op `docketpublic` or `docketfeed`
- * @param {URL} url the request's URL; only `case`, and for the docket `captures=omit`, is read
- * @param {any} env
- * @param {PublicReadStore} stub
- * @param {PublicReadDoorHelpers} helpers
- * @returns {Promise<any>} the door's answer
- */
+ *  `storeSilent`'s. */
 export async function publicReadDoorDocket(op, url, env, stub, { json, requiredArgument, storeSilent, storeRefusal, doAnswer }) {
   const c = (url.searchParams.get("case") || "").trim();
   if (!c)
@@ -88,15 +60,7 @@ export async function publicReadDoorDocket(op, url, env, stub, { json, requiredA
 /** R18: one registered read, relayed from the published store under R10's terms. A name that is not a read's spelling
  *  is the required-argument refusal (400); an unregistered name is the store's `PUBLIC_READ_NOT_REGISTERED`, relayed at
  *  404; a read's own refusal at 400; the read's answer at 200, as `{ok: true, read, module, result}`. R9: the store's
- *  own refusal is relayed through `storeRefusal`, and a reply that is no answer is `storeSilent`'s.
- * @param {string} name the read's name
- * @param {URL} url the request's URL; every parameter but `PUBLIC_READ_RESERVED_PARAMS` is forwarded
- * @param {any} env
- * @param {PublicReadStore} stub
- * @param {PublicReadDoorHelpers} helpers
- * @returns {Promise<any>} the door's answer
- * @bound name: lowercase letters and digits (`PUBLIC_READ_NAME`)
- */
+ *  own refusal is relayed through `storeRefusal`, and a reply that is no answer is `storeSilent`'s. */
 export async function publicReadDoorRead(name, url, env, stub, { json, requiredArgument, storeSilent, storeRefusal, doAnswer }) {
   if (typeof name !== "string" || !PUBLIC_READ_NAME.test(name))
     return json({ ok: false, ...requiredArgument("publicread", "name", "<a registered read's name: lowercase letters and digits>"),
@@ -114,18 +78,6 @@ export async function publicReadDoorRead(name, url, env, stub, { json, requiredA
   return json(r, 200);
 }
 
-/**
- * R1, R4, R5, R9, R10, R18, R21, R25, R30: the door's half of the public read path. Answers one of
- * `PUBLIC_READ_DOOR_OPS`, or a registered read the door names in `helpers.publicReads`, with no credential and from
- * the published store only; null for any other op, so the door asks it and goes on. `publishedcase` and
- * `publishedbytes` are handed to the Worker's `publishedRoutes`.
- * @param {any} op
- * @param {URL} url
- * @param {any} env
- * @param {PublicReadStore} stub
- * @param {PublicReadDoorHelpers} helpers
- * @returns {Promise<any>} the door's answer, or null for an op not its own
- */
 export async function publicReadDoorOp(op, url, env, stub, helpers) {
   const { json, requiredArgument, storeSilent, storeRefusal, doAnswer, publicReads } = helpers;
   /* REC-22: THE PUBLIC READ PATH. Anyone, no token, no session, and — the

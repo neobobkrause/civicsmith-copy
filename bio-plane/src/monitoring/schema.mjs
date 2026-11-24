@@ -7,7 +7,6 @@
  * every attempt at a named request, is declared to purge by the bundle that carries the request. T24 (N506, K1159): the
  * link sweep's `sweep_runs` and `sweep_filed` left with the sweep for `link-sweep`, which creates and declares them. */
 
-/** @type {string} R21, R13, R41, R52, R71, R28: the statements that create this module's tables */
 export const MONITORING_SCHEMA = `
 -- REC-26 / MACHINE-PROCESSES.md risk 2: the IDEMPOTENCE KEY for the two periodic
 -- consumers that FIRE something (CAP-3's archive-monitor and REC-26's
@@ -160,7 +159,6 @@ const ADDED_COLUMNS = Object.freeze([
 ]);
 
 /** R41: this module's tables, as record-core's purge declaration names them. */
-/** @type {ReadonlyArray<{name: string, keys: string[]}>} R41: each table with the keys its purge goes by (none: whole-store only) */
 export const MONITORING_TABLES = Object.freeze([
   { name: "monitor_fired", keys: ["subject"] },
   { name: "monitor_tick_epoch", keys: [] },
@@ -172,21 +170,11 @@ export const MONITORING_TABLES = Object.freeze([
 ]);
 
 /** Which purge declaration names one of this module's tables (record-core R21). */
-/**
- * R41: whether a table is one of this module's, by its name or a declaration's `name`. Writes nothing; never throws.
- * @param {any} t a table name, or an object carrying `name`
- * @returns {boolean}
- */
 export function monitoringOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return MONITORING_TABLES.some((x) => x.name === name);
 }
 
-/**
- * R41, R18: creates this module's tables where absent and adds the columns a table that predates them lacks.
- * @param {any} sql the storage's `sql`, whose `exec(statement, ...args)` answers rows
- * @returns {void}
- */
 export function migrateMonitoring(sql) {
   const bare = MONITORING_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const s of bare.split(";").map((x) => x.trim()).filter(Boolean)) sql.exec(s);

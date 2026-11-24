@@ -19,8 +19,6 @@ const [dir, ...files] = process.argv.slice(2);
 if (!dir || !files.length) { console.error("usage: envelope-memory.probe.mjs <dir> <file.pdf>..."); process.exit(2); }
 const BIN = here("../node_modules/.bin/");
 mkdirSync(join(dir, "pdfs"), { recursive: true });
-/* No bundle is committed (R45): without PROBE_BUNDLE, build `dist/` first, by the module's own build script. */
-if (!process.env.PROBE_BUNDLE) await import("../scripts/build.mjs");
 copyFileSync(process.env.PROBE_BUNDLE || here("../dist/pdf-worker.bundled.mjs"), join(dir, "pdf-worker.bundled.mjs"));
 writeFileSync(join(dir, "worker.mjs"), `
 import pdfWorker from "./pdf-worker.bundled.mjs";

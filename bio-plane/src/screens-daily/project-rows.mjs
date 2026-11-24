@@ -13,15 +13,6 @@
    an instant or null); a row answering none of them draws none. `w` is the screen's own word prefix (`screen.home`,
    `screen.projects`). */
 
-/**
- * @param {*} cs the shell's kit
- * @param {*} view the screen's view
- * @param {string} w the screen's own word prefix
- * @param {boolean} glance whether each row also draws its owner, members, activity and last change
- * @param {string} [join] the label of "Join" on an invited project's row; absent draws none
- * @param {Object<string, string>} [states] the member's participation state for each project id
- * @returns {(list: Object) => string} draws `projectlist`'s answer as rows
- */
 export function projectRows(cs, view, w, glance, join, states) {
   const STAGES = ["forming", "investigating", "matured", "closed"];
   // C14 (P2.2; project-roster R42): the count is the roster row's own `question_count`, so no project is read one by one. A project the

@@ -8,10 +8,6 @@
    Every function here is self-contained (interface-shell R21 (1)). */
 import { languagesOf, marksFields, marksBody, draftsOf, stepOf, sendSteps, draftOf, readFiling, stakeLines, readOnly, officeLine, joinFirst, recordsLawsOf, chosenLawOf, templateOffered, PREPARE, APPROVE, RECORD_SENT, JOIN } from "./send-steps.mjs";
 
-/** @import { ScreenDef } from "./send-steps.mjs" */
-
-/** Request records (R4, R8, R11, R20, R21, R29, R39, R46, R57): the office, the law, the text, its approval and its sending.
- *  @type {Readonly<ScreenDef>} */
 export const request = Object.freeze({
   id: "request",
 

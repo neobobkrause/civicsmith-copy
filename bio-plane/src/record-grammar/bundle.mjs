@@ -72,29 +72,8 @@ function f(check, severity, message, repairs, code) {
 // ---------------------------------------------------------------------------
 
 /**
- * What `checkBundle` reads (R39). Every field but `folderName` and `files` may be absent; each is handed to the arms
- * unchanged.
- * @typedef {Object} BundleInput
- * @property {string} folderName the folder the document is filed under
- * @property {Map<string, Uint8Array|string>} files bundle-relative path to bytes or text
- * @property {(bytes: Uint8Array|string) => Promise<string>} [sha256] lowercase hex SHA-256 of the bytes
- * @property {number} [nowMs] absent is the clock
- * @property {number} [maxPackageAgeDays] absent is 14
- * @property {number} [maxReevalAgeDays] absent is 30
- * @property {Set<string>|string[]|null} [elidedPaths] paths held but not carried; presence checks count them present
- * @property {(id: string) => boolean} [resolveTarget] whether a reference target exists
- * @property {Object|null} [releaseRegistry] the key registry
- * @property {Object|null} [publishedRegistry] the published projection, by bundle id
- * @property {Object|null} [publishedCaseRegistry] the published case record, by case id
- * @property {Object|null} [earnedRegistry] the earned grades of the basis targets
- * @property {((bytes: Uint8Array) => Promise<Uint8Array>)|null} [sha512] the SHA-512 digest of the bytes
- * @bound sha256: needed only when a byte must be hashed: a PENDING_PROMOTION.json files entry whose .pending file is held, a live bundle.md under a manifest base, or a registered grammar that hashes; absent then, checkBundle rejects with a TypeError naming input.sha256
+ * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number, maxPackageAgeDays?: number}} BundleInput
  */
-
-/** @type {(bytes: Uint8Array|string) => Promise<string>} stands in for an absent input.sha256 (R39) */
-const noSha256 = async () => {
-  throw new TypeError('checkBundle: input.sha256 is needed to hash this bundle (a pending package, a manifest base, or a registered grammar that hashes) and none was given');
-};
 
 function asText(v) {
   if (typeof v === 'string') return v;
@@ -796,7 +775,7 @@ function grammarsOf(list) {
 /**
  * Run all applicable checks over one bundle.
  * @param {BundleInput} input
- * @param {{knownSchemas?: string[], grammars?: {module: string, ids: string[], arm: Function}[]|null}} [opts]
+ * @param {{knownSchemas?: string[], grammars?: {module: string, ids: string[], arm: Function}[]}} [opts]
  * @returns {Promise<{pass: boolean, findings: Finding[]}>}
  */
 export async function checkBundle(input, opts = {}) {
@@ -818,7 +797,7 @@ export async function checkBundle(input, opts = {}) {
     // here and is byte-complete as before.
     elided: input.elidedPaths instanceof Set ? input.elidedPaths
       : new Set(Array.isArray(input.elidedPaths) ? input.elidedPaths : []),
-    sha256: input.sha256 ?? noSha256,
+    sha256: input.sha256,
     nowMs: input.nowMs,
     maxPackageAgeDays: input.maxPackageAgeDays ?? 14,
     maxReevalAgeDays: input.maxReevalAgeDays ?? 30,

@@ -109,7 +109,7 @@ test("R21 interfacePage throws, naming the screen, for a screen whose id is not 
 test("R38 R21 (as R73 amends) admits an op on a screen only when the registry lists it there (acts, or owed under its op name), infolevelset, or the one named re-point; ratify on ceremony is no longer admitted; a screen naming an unlisted op throws at interfacePage", () => {
   const r = (id, ...ops) => ({ id, render: () => "", acts: ops.map((op) => ({ op })) });
   const reg = (id) => SCREEN_REGISTRY.find((s) => s.id === id);
-  const listed = (id, op) => { const x = reg(id); return !!x && (x.acts.includes(op) || (x.owed || []).some((o) => o.op === op)); };
+  const listed = (id, op) => !!reg(id) && (reg(id).acts.includes(op) || (reg(id).owed || []).some((o) => o.op === op));
   assert.equal(checkScreens([r("account", "infolevelset"), r("home", "infolevelset")]), true);
   /* R73: ratify goes (screens-publish sends caseratify); unlock on front and founderhandleset on setup are the registry's when it lists them */
   assert.throws(() => checkScreens([r("ceremony", "ratify")]), /ceremony.*ratify/);
@@ -129,7 +129,7 @@ test("R30 a screen of the public or published frame naming an act that is not a 
   const pub = SCREEN_REGISTRY.find((s) => s.id === "published");
   const member = pub.acts.find((op) => OPS[op] && OPS[op].classes !== null);
   if (member) assert.throws(() => checkScreens([r("published", member)]), /published.*public/);
-  assert.equal((SCREEN_REGISTRY.find((s) => s.id === "doorbell") || { acts: [] }).acts.includes("knock"), true);
+  assert.equal(SCREEN_REGISTRY.find((s) => s.id === "doorbell").acts.includes("knock"), true);
 });
 
 test("R23 no place is named in the shell's behaviour or words: its words, paths and program name none", () => {

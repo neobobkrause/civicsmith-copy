@@ -27,14 +27,11 @@ import { deployedModesFor, draftKindDeployed, draftMayRead, partRefusal, AI_RUN_
 const json = (body, status) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const idOf = (m) => (typeof m === "string" && m.startsWith("member:") ? m.slice(7) : m);
 
-const HEADER_VALUE = /^[\x21-\x7e]{1,200}$/;
 /** R55 (T48; N1015; K3103; `agent-worker` R87, R83; `control-plane` R93): the headers of a call to `agent-worker`'s `/ask`,
  *  `/run`, `/draft` or `/transcribe`: the door's `trace` and member ref in `x-civicsmith-trace` and
  *  `x-civicsmith-member-ref`, each only when handed as a non-empty printable string of at most 200 characters (the
- *  shape `signin-door` R3 mints), never in a body or an address. A call with none handed sends neither.
- *  @param {{trace?: any, memberRef?: any}} [handed]
- *  @returns {Object<string, string>} `content-type` always, and the two headers each only when handed
- *  @bound trace and memberRef: 1 to 200 printable characters, else not sent */
+ *  shape `signin-door` R3 mints), never in a body or an address. A call with none handed sends neither. */
+const HEADER_VALUE = /^[\x21-\x7e]{1,200}$/;
 export function doorHeaders({ trace = null, memberRef = null } = {}) {
   const h = { "content-type": "application/json" };
   if (typeof trace === "string" && HEADER_VALUE.test(trace)) h[TRACE_HEADER] = trace;
@@ -55,9 +52,7 @@ function presentedToken(req, url, body) {
 }
 
 /** The door's arm (in the Worker): admits only a member's own session or a presented grant's member, reads the body,
- *  and asks the `bio` object, which answers through `askOnObject`.
- *  @param {{req: Request, url: URL, env: any, viaSession: any, sessMember: any, grantMember: any, trace?: any, memberRef?: any}} args
- *  @returns {Promise<Response>} the object's answer, or `ASK_NOT_A_MEMBER` (403), `METHOD_NOT_ALLOWED` (405), `BAD_JSON` (400) */
+ *  and asks the `bio` object, which answers through `askOnObject`. */
 export async function askOp({ req, url, env, viaSession, sessMember, grantMember, trace = null, memberRef = null }) {
   const member = viaSession && sessMember ? `member:${idOf(sessMember)}` : typeof grantMember === "string" && grantMember ? grantMember : null;
   if (!member)
@@ -76,8 +71,7 @@ export async function askOp({ req, url, env, viaSession, sessMember, grantMember
   return storeStub(env, "bio").ask(args);
 }
 
-/** R51 (T45; K2824, K2881; op-declarations R49): the two action drafts whose door the plane builds.
- *  @type {ReadonlyArray<string>} */
+/** R41 (T45; K2824, K2881; op-declarations R49): the two action drafts whose door the plane builds. */
 export const ACTION_DRAFT_OPS = Object.freeze(["infractiondraft", "bearingdraft"]);
 
 /** R41: the door's arm (in the Worker) for `infractiondraft` (`{matter, audience}`) and `bearingdraft` (`{action, reply}`):
@@ -85,9 +79,7 @@ export const ACTION_DRAFT_OPS = Object.freeze(["infractiondraft", "bearingdraft"
  *  (`draftOnObject`, which gates, judges the account, assembles the records from her reads and posts), a conversation
  *  that reached the model counted to the member's day as a draft through the store's `askusage` (ai-runs R48, as
  *  control-plane's draft path counts it), and the draft answered as `{ok: true, result}`, or its refusal at its status.
- *  The grant and the read log are never answered.
- *  @param {{req: Request, url: URL, env: any, op: string, viaSession: any, sessMember: any, sessViewer: any, trace?: any, memberRef?: any}} args
- *  @returns {Promise<Response>} */
+ *  The grant and the read log are never answered. */
 export async function actionDraftOp({ req, url, env, op, viaSession, sessMember, sessViewer, trace = null, memberRef = null }) {
   if (!viaSession || !sessMember)
     return json({ ok: false, reason: "ASK_NOT_A_MEMBER", detail: word("refusal.ASK_NOT_A_MEMBER") }, 403);
@@ -136,10 +128,7 @@ function noteDraftGrant(ctx, token) {
   while (m.size > DRAFT_GRANTS_MAX) m.delete(m.keys().next().value);
 }
 /** R33: the use a read under `grant` is recorded with: `draft` for a grant this object's draft path minted and still
- *  live, else null (the entry's own use, `ask` by default, stands).
- *  @param {any} ctx
- *  @param {any} grant
- *  @returns {"draft" | null} */
+ *  live, else null (the entry's own use, `ask` by default, stands). */
 export function draftUse(ctx, grant) {
   if (typeof grant !== "string" || grant === "") return null;
   const until = draftGrants(ctx).get(grant);
@@ -159,10 +148,7 @@ export function draftUse(ctx, grant) {
 const GATES = new WeakMap();
 /** R40: this storage's gate deps, `{flags, testSet}`: `flags` as `deployedModesFor`/`draftKindDeployed` take them (null:
  *  run-rules' own), `testSet` the set the composition root hands ai-runs in place of `CIVICSMITH_TEST_SET` (null: its
- *  own). Read on the first call only.
- *  @param {any} ctx
- *  @param {{flags?: any, testSet?: any}} [deps]
- *  @returns {Readonly<{flags: Object<string, any> | null, testSet: any}>} */
+ *  own). Read on the first call only. */
 export function assistantGateOf(ctx, deps = {}) {
   const k = ctx && ctx.storage ? ctx.storage : ctx;
   let g = GATES.get(k);
@@ -175,8 +161,7 @@ export function assistantGateOf(ctx, deps = {}) {
 }
 /** R40: the draft kind (run-rules R22, R25, R27) each draft op is: a member's own words, a translation, one of the
  *  action drafts, or (T46; N920) a plan's status report. An op not named is no kind, and so never deployed (fail
- *  closed).
- *  @type {Readonly<Object<string, string>>} by draft op */
+ *  closed). */
 export const DRAFT_KIND_OF = Object.freeze({ writinghelp: "own_words", groupdescriptiondraft: "own_words",
   translationdraft: "translation", textcheck: "textcheck", infractiondraft: "infractiondraft", bearingdraft: "bearingdraft",
   statusreportdraft: "statusreport", readtranslate: "reading" });
@@ -190,12 +175,7 @@ function notDeployed(mode, kind = null) {
 /** R40: `{refusal: null, untested}` when `mode` (`ask`, or `draft` of `kind`) is deployed by its flag and admitted by
  *  `ai-runs.partAdmitted`, `untested` the test-instance label (run-rules R29) when it is admitted on the exception, else
  *  null; otherwise `{refusal}`, AI_RUN_MODE_NOT_DEPLOYED for the flag, run-rules' `partRefusal(part)` for the bar.
- *  Anything that throws refuses.
- *  @param {any} ctx
- *  @param {any} env
- *  @param {string} mode `ask` or `draft`
- *  @param {string | null} [kind] a draft's kind (DRAFT_KIND_OF)
- *  @returns {{refusal: Object<string, any> | null, untested: any}} */
+ *  Anything that throws refuses. */
 export function deployGate(ctx, env, mode, kind = null) {
   let flagged = false;
   try {
@@ -222,11 +202,7 @@ const accountOf = (a) => (a && a.account && typeof a.account === "object" ? a.ac
  *  member's reference's for an API key at level `member`, the group key's for `group`; a project's API key offers none.
  *  R47 (T47; K3084; agent-worker R82; credentials R70): every account carries its `key` as `secret`, a `signin`
  *  account's being its held token, as an API key's is; a project's account names its project. Anything that throws
- *  reads the switch as off.
- *  @param {any} c `credentials`' instance
- *  @param {any} ref the account `answers.askAccount` answered: `{kind, level, project?, key, member?}`
- *  @param {any} who the asking member, `member:<id>`
- *  @returns {{account: any, suggestions: boolean}} `account` is `{kind, level, project?, secret, member, suggestions}`, agent-worker R6's wire shape */
+ *  reads the switch as off. */
 export function wireAccount(c, ref, who) {
   let suggestions = false;
   try {
@@ -250,16 +226,12 @@ export function wireAccount(c, ref, who) {
 
 /* R47 (T47; K3084; credentials R70; agent-runner's `SIGNIN_TOKEN_REFUSED`): the code an answer carries when Anthropic
    refused the sign-in's token. */
-/** @type {"SIGNIN_TOKEN_REFUSED"} */
 export const SIGNIN_TOKEN_REFUSED = "SIGNIN_TOKEN_REFUSED";
 const refusesToken = (a) => !!a && typeof a === "object" && (a.code === SIGNIN_TOKEN_REFUSED || a.reason === SIGNIN_TOKEN_REFUSED);
 
 /** R47: what an answer refusing a sign-in's token sets off: for a `signin` account, `credentials` drops the token it
  *  holds for the member whose sign-in served (`subscriptionTokenRefused`, its R70), once; for any other account, or
- *  an answer refusing nothing, nothing. Never throws.
- *  @param {any} c `credentials`' instance
- *  @param {any} ref the account that served
- *  @returns {(answer: any) => boolean} true the one time it dropped the token */
+ *  an answer refusing nothing, nothing. Never throws. */
 export function tokenRefusal(c, ref) {
   let done = false;
   return (answer) => {
@@ -291,11 +263,7 @@ function watched(res, heard) {
 }
 
 /** On the `bio` object: judge the account and its limit (`answers.askAccount`), mint the grant (unless one was
- *  presented), unseal the account, read the suggestions switch, and post the ask.
- *  @param {any} ctx
- *  @param {any} env
- *  @param {Object<string, any>} args `{member, session?, grant?, question, conversation, store?, project?, trace?, memberRef?}`
- *  @returns {Promise<Response>} `agent-worker`'s stream as it came, or a refusal at its status */
+ *  presented), unseal the account, read the suggestions switch, and post the ask. */
 export async function askOnObject(ctx, env, { member, session = null, grant = null, question, conversation, store = null,
                                               project = null, trace = null, memberRef = null }) {
   /* R40 (K2853; T46): first, before the keep-away read, any account read or any grant: the mode deployed by its flag and
@@ -363,12 +331,7 @@ export async function askOnObject(ctx, env, { member, session = null, grant = nu
  *  named records (`draftMayRead`): a grant is minted whatever the switch (never for a firsthand field), and the records
  *  are assembled here from the asking member's own reads (`read`, the object's route map under her viewer stamp, as
  *  `assembleRecords` says), posted beside the task; a read refused ends the draft with that refusal, nothing minted or
- *  posted. Nothing is written.
- *  @param {any} ctx
- *  @param {any} env
- *  @param {Object<string, any>} [args] the draft's fields, `draftAsk`'s shape and each op's own
- *  @param {{read?: any}} [parts] `read(op, params)`, the object's route map under the member's viewer stamp
- *  @returns {Promise<Response>} */
+ *  posted. Nothing is written. */
 export async function draftOnObject(ctx, env, { op = null, member = null, session = null, told = null, act = null, field = null,
                                                 firsthand = false, pack = null, direction = null, language = null,
                                                 words = null, text = null, matter = null, audience = null, action = null,
@@ -491,11 +454,9 @@ export async function draftOnObject(ctx, env, { op = null, member = null, sessio
 }
 
 /** R50 (T48; N670; DEC-127 (3); `run-rules` R33; `agent-worker` R86; `instance-setup` R87): a passage over this many characters
- *  is refused before any account is read (a protective limit, K1881).
- *  @type {number} */
+ *  is refused before any account is read (a protective limit, K1881). */
 export const READ_PASSAGE_MAX = 20000;
-/** R53: the kinds of subject a member's reading names.
- *  @type {ReadonlyArray<string>} */
+/** R50: the kinds of subject a member's reading names. */
 export const READ_SUBJECT_KINDS = Object.freeze(["note", "question", "finding", "notice"]);
 const READ_NOTE_PAGES_MAX = 50;
 
@@ -554,10 +515,7 @@ const said = (v) => typeof v === "string" && v.trim() !== "";
  *    reads it (with its legs, the claims it makes), and `reply_record`, `{action, ord, entry, reading, text}`: the entry,
  *    its artifact's reading as `extraction` answers it to her (`op=reading`), and its text when that reading holds one,
  *    else `{state: "undetermined", why}`.
- *  Answers `{ok: true, records}`, or a read's own refusal as given, or `BAD_TASK`. Never throws.
- *  @param {any} ctx
- *  @param {{kind: any, matter?: any, action?: any, reply?: any, viewer?: any, read?: any}} args
- *  @returns {any} */
+ *  Answers `{ok: true, records}`, or a read's own refusal as given, or `BAD_TASK`. Never throws. */
 export function assembleRecords(ctx, { kind, matter = null, action = null, reply = null, viewer = null, read = null }) {
   try {
     if (typeof read !== "function") return badTask(localize("store-assembly.ask.records-unreadable", "the records this draft is about cannot be read here"));

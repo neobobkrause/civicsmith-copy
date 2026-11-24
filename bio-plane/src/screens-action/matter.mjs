@@ -159,14 +159,6 @@ export const matter = Object.freeze({
       const cause = cs.sec("screen.matter.why_it_happened_optional", cs.field("mt-d-cause", "screen.matter.f.cause", { rec: true, area: true }) + P.help(cs, view, "mt-d-cause", "determine", "cause")
         + P.note(cs, "screen.matter.say_a_cause_only_if_evidence_you") + P.note(cs, "screen.matter.otherwise_leave_it_empty_and_the_determination"));
       return why + acts + rests + rule + verdict + cause + '<div class="mk-acts">' + cs.act("determine", { tone: "primary", label: rev ? "screen.matter.record_the_revised_determination" : "screen.matter.record.this" }) + "</div>"
-        + P.when(cs, "when_it_cannot_be_recorded", ["it_needs_at_least_one_published_finding", "add_what_is_missing_then_record_it"])
-        + P.when(cs, "when_a_rule_does_not_bind_the", ["noncompliant_is_recorded_only_against_a_rule", "if_this_rule_does_not_bind_it"])
-        + P.when(cs, "when_a_rule_was_not_in_force", ["the_rule_was_not_in_force_when", "choose_the_rule_that_was_in_force"])
-        + P.when(cs, "when_you_choose_unclear", ["unclear_needs_at_least_one_question_that", "write_the_question_then_record_it_again"])
-        + P.when(cs, "when_the_cause_has_no_evidence", ["a_cause_is_recorded_only_when_evidence", "add_the_evidence_or_leave_the_cause"])
-        + P.when(cs, "when_it_says_how_serious_it_is", ["a_determination_says_what_was_required_what", "it_does_not_say_how_serious_the", "propose_an_action_for_that"])
-        + (rev ? P.when(cs, "when_the_reason_is_missing", ["a_new_determination_that_replaces_an_earlier", "write_the_reason_then_record_it_again"])
-          + P.when(cs, "when_the_earlier_one_is_already_replaced", ["an_earlier_determination_is_replaced_only_once", "replace_the_newest_one_instead"]) : "")
         + '<p class="mk-small muted">' + cs.w("screen.matter.this_cannot_be_edited_afterward") + " " + cs.w("screen.matter.a_mistake_is_put_right_by_recording") + "</p>";
     },
     // G20 (S11): the project's held documents, read page after page by the read's `next` (at most five pages of 200); `more` is true
@@ -323,10 +315,7 @@ export const matter = Object.freeze({
         + P.note(cs, "screen.matter.name_what_the_assessment_rests_on") + P.note(cs, "screen.matter.a_part_you_assess_is_shown_as") + "</details>"
         + cs.choice("mt-c-cause", "screen.matter.the_question_showing_the_harm_follows_from", [{ value: "", text: "" }].concat(qs.map(function (q) { return { value: q.inquiry, text: q.title || q.inquiry }; })))
         + P.note(cs, "screen.matter.without_a_concluded_question_the_part_is") + P.note(cs, "screen.matter.zero_is_recorded_as_no_harm_claimed")
-        + '<div class="mk-acts">' + cs.act("consequencerecord", { tone: "primary" }) + "</div>"
-        + P.when(cs, "when_a_part_cannot_be_recorded", ["a_consequence_is_what_a_breach_did", "choose_such_a_rule_or_record_the"])
-        + P.when(cs, "when_the_figure_cannot_be_worked_out", ["a_figure_is_worked_out_only_from", "name_the_figures_or_assess_it_yourself"])
-        + P.when(cs, "when_a_named_person_is_not_in", ["a_named_person_must_appear_in_a", "choose_the_passage_that_names_them_or"]));
+        + '<div class="mk-acts">' + cs.act("consequencerecord", { tone: "primary" }) + "</div>");
     },
     // R50: a recorded part revised, with the reason; what is left empty is kept as it was. It offers the same how-it-is-known controls and the
     // question as the record form (fix round 10, diagnosis 11 §4): a part recorded as not assessed can become assessed from here.
@@ -371,8 +360,7 @@ export const matter = Object.freeze({
         + '<details class="mk-details"><summary>' + cs.w("screen.matter.if_you_say_why_it_happened") + "</summary>"
         + cs.field("mt-s-cause", "screen.matter.f.cause", { rec: true, area: true }) + P.help(cs, view, "mt-s-cause", "successrecord", "cause")
         + P.note(cs, "screen.matter.your_team_s_own_act_cannot_be") + "</details>"
-        + '<div class="mk-acts">' + cs.act("successrecord", { tone: "primary" }) + "</div>"
-        + P.when(cs, "when_the_cause_is_only_your_own", ["evidence_that_your_team_s_own_letter", "add_evidence_from_elsewhere_or_leave_the"]));
+        + '<div class="mk-acts">' + cs.act("successrecord", { tone: "primary" }) + "</div>");
     },
     // R51: an action attached to the stage the escalation stands at
     attachForm: function (cs, view, k) {
@@ -388,10 +376,7 @@ export const matter = Object.freeze({
           + cs.choice("mt-t-purpose", "screen.matter.f.purpose", purposes)
           + cs.checks("mt-t-std", "screen.matter.the_rule_it_seeks_enforced", k.nc.map(function (s) { return { value: s.standard, text: P.cite(cs, view, s.standard) || s.standard, on: true }; })) + "</details>" : "")
         + P.note(cs, "screen.matter.only_a_breach_action_that_rests_on")
-        + '<div class="mk-acts">' + cs.act("escalationattach", { tone: "primary" }) + "</div>"
-        + P.when(cs, "when_it_cannot_be_attached", ["only_an_action_that_states_a_breach", "choose_such_an_action_or_move_the"])
-        + P.when(cs, "when_it_is_already_attached", ["that_action_is_already_attached_to_an"])
-        + P.when(cs, "when_the_office_is_the_wrong_kind", ["an_official_request_goes_to_an_elected", "choose_a_purpose_that_fits_the_office"]));
+        + '<div class="mk-acts">' + cs.act("escalationattach", { tone: "primary" }) + "</div>");
     },
     // R51: hold at the stage proposed, with a reason; a different act from declining to escalate at all
     holdForm: function (cs, view, k) {
@@ -400,23 +385,19 @@ export const matter = Object.freeze({
       return cs.sec("act.escalationdecline.label.matter", P.note(cs, "screen.matter.you_can_move_to_it_or_hold")
         + cs.field("mt-h-why", "screen.matter.why_you_are_holding_at_this_stage", { rec: true }) + P.help(cs, view, "mt-h-why", "escalationdecline", "reason")
         + '<div class="mk-acts">' + cs.act("escalationdecline", { data: { to: String(to) } }) + "</div>"
-        // U17: holding at the response clock (stage 3) says it is not proposed yet; either way the refusal's own words follow
-        + P.when(cs, "when_no_stage_is_proposed", (to === 3 ? ["stage_3_is_not_proposed_yet_missing"] : []).concat(["there_is_nothing_to_hold_at", "refusal.EDGE_NOT_PROPOSED"]))
         + P.note(cs, "screen.matter.holding_keeps_the_proposal_in_view_with") + P.note(cs, "screen.matter.the_escalation_stays_open"));
     },
     suspendForm: function (cs, view, k) {
       const P = view.parts;
       return cs.sec("screen.matter.pause", cs.field("mt-p-why", "screen.matter.why_you_are_suspending_it", { rec: true }) + P.help(cs, view, "mt-p-why", "escalationsuspend", "reason")
         + '<div class="mk-acts">' + cs.act("escalationsuspend", {}) + "</div>"
-        + P.when(cs, "when_it_is_already_suspended", ["resume_it_before_suspending_it_again"])
         + P.note(cs, "screen.matter.a_suspended_escalation_proposes_no_stage") + P.note(cs, "screen.matter.it_is_not_ended_and_any_deadline"));
     },
     resumeForm: function (cs, view, k) {
       const P = view.parts;
       return cs.sec("act.escalationresume.label.matter", P.note(cs, "screen.matter.no_stage_is_proposed_while_it_is") + P.note(cs, "screen.matter.nothing_already_recorded_is_lost")
         + cs.field("mt-u-why", "screen.matter.why_you_are_resuming_it_optional", { rec: true }) + P.help(cs, view, "mt-u-why", "escalationresume", "reason")
-        + '<div class="mk-acts">' + cs.act("escalationresume", { tone: "primary" }) + "</div>"
-        + P.when(cs, "when_it_is_not_suspended", ["this_escalation_is_open_not_suspended_so"]));
+        + '<div class="mk-acts">' + cs.act("escalationresume", { tone: "primary" }) + "</div>");
     },
     // R51: the government's response, read at the response evaluation stage; the replies are the received entries of the attached actions
     evalForm: function (cs, view, k) {
@@ -432,24 +413,13 @@ export const matter = Object.freeze({
         + cs.choice("mt-e-read", "question.conclude.own.field", [["complied", "screen.matter.reading.complied"], ["partial", "screen.matter.reading.partial"], ["denied", "screen.matter.reading.denied"], ["none", "screen.matter.no_response_by_the_deadline"]])
         + cs.field("mt-e-why", "shell.reason", { rec: true }) + P.help(cs, view, "mt-e-why", "escalationevaluate", "reason")
         + P.note(cs, "screen.matter.a_reading_of_complied_does_not_end") + P.note(cs, "screen.matter.it_ends_only_when_compliance_is_restored")
-        + '<div class="mk-acts">' + cs.act("escalationevaluate", { tone: "primary" }) + "</div>"
-        + P.when(cs, "when_there_is_nothing_to_read", ["a_reading_other_than_no_response_names", "choose_the_reply_or_choose_no_response"])
-        + P.when(cs, "when_it_is_not_at_stage_4", ["a_response_is_read_at_stage_4"]));
+        + '<div class="mk-acts">' + cs.act("escalationevaluate", { tone: "primary" }) + "</div>");
     },
     // R45 (b): no determination yet: the acts that need one, each saying why
-    // The Screens page (deciding-and-acting, `matter`): why an act is not done, under its design fold "When …", each sentence by key;
-    // no sentence fills a {why} or {missing} from a refusal's detail (U17); a `refusal.<CODE>` key is the refusal's own words (DEC-260)
-    when: function (cs, summary, keys) {
-      return '<details class="mk-details"><summary>' + cs.w("screen.matter." + summary) + "</summary>" + keys.map(function (k) {
-        return '<p class="mk-small">' + cs.w(k.indexOf("refusal.") === 0 ? k : "screen.matter." + k) + "</p>";
-      }).join("") + "</details>";
-    },
     unavailable: function (cs, view) {
       return cs.sec("screen.matter.unavailable", cs.sheet(cs.row("", "<b>" + cs.w("act.escalationopen.label.matter") + "</b>", "", cs.w("screen.matter.needs_a_recorded_determination_that_the_act"))
         + cs.row("", "<b>" + cs.w("screen.matter.saying_what_the_breach_did") + "</b>", "", cs.w("screen.matter.needs_the_same_determination"))
-        + cs.row("", "<b>" + cs.w("screen.matter.attaching_an_action_holding_at_a_stage") + "</b>", "", cs.w("screen.matter.needs_an_escalation_which_needs_the_same")))
-        + view.parts.when(cs, "when_the_determination_is_compliant_or_unclear", ["an_escalation_pursues_a_breach_so_it", "if_the_act_was_found_compliant_there",
-          "if_it_is_unclear_answer_the_question"]));
+        + cs.row("", "<b>" + cs.w("screen.matter.attaching_an_action_holding_at_a_stage") + "</b>", "", cs.w("screen.matter.needs_an_escalation_which_needs_the_same"))));
     },
     // the chosen form, under the choice of what to do
     doing: function (cs, view, k, first) {
@@ -535,14 +505,6 @@ export const matter = Object.freeze({
           const to = prop ? Number(prop.to || prop.stage) : stage + 1;
           const acts = open ? cs.act("escalationadvance", { label: "screen.matter.advance", fills: { stage: { html: cs.w("screen.matter.stage." + (to >= 1 && to <= 7 ? to : 1)) } }, data: { to: String(to) } })
             + cs.act("escalationend", {}) + cs.act("escalationstoppursuing", {})
-            // the Screens page's C6: why it cannot be ended, under the design's three folds
-            // U17: each fold's sentence, then the refusal's own words by its code (DEC-260), which say what is missing
-            + (cs.can("escalationend") ? P.when(cs, "when_it_cannot_be_ended_compliance_is", ["compliance_is_not_restored_why", "refusal.COMPLIANCE_NOT_RESTORED",
-              "an_escalation_ends_only_after_your_team", "record_it_then_end_the_escalation"])
-              + P.when(cs, "when_it_cannot_be_ended_the_consequences", ["whether_the_consequences_are_addressed_is_undetermined", "refusal.CONSEQUENCES_UNDETERMINED",
-                "if_your_team_judges_the_breach_had"])
-              + P.when(cs, "when_it_cannot_be_ended_the_consequences_2", ["the_consequences_are_not_addressed_why", "refusal.CONSEQUENCES_NOT_ADDRESSED",
-                "say_with_evidence_that_each_part_was"]) : "")
             : stopped ? cs.act("escalationreopen", {}) : "";
           const exit = x.exit ? '<ul class="mk-list"><li>' + cs.w("screen.matter.exit.compliance") + " · " + cs.esc(typeof x.exit.compliance === "object" && x.exit.compliance ? x.exit.compliance.says || x.exit.compliance.state || "" : String(x.exit.compliance || ""))
             + "</li><li>" + cs.w("screen.matter.exit.consequences") + " · " + cs.esc(typeof x.exit.consequences === "object" && x.exit.consequences ? x.exit.consequences.says || x.exit.consequences.state || "" : String(x.exit.consequences || "")) + "</li></ul>" : "";
@@ -558,12 +520,7 @@ export const matter = Object.freeze({
           }).join("");
           const says = av && !Array.isArray(av) && typeof av === "object" && !kinds.length && typeof av.says === "string" && av.says ? '<p class="mk-note">' + cs.esc(av.says) + "</p>" : "";
           const avail = av && (rows || says) ? (rows ? '<p class="mk-note">' + cs.w("screen.matter.available") + "</p>" + cs.sheet(rows) : "") + says : "";
-          // U17: where it stands, by the stage's name; paused, since the day its newest pause was recorded (the escalation's history)
-          const pauses = x.state === "suspended" && Array.isArray(x.history) ? x.history.filter(function (h) { return h && h.kind === "suspend" && h.at; }) : [];
-          const since = pauses.length ? pauses[pauses.length - 1].at : null;
           return '<p class="mk-sub">' + cs.w("screen.matter.escstate." + (["open", "suspended", "stopped_pursuing", "ended"].includes(x.state) ? x.state : "open")) + "</p>"
-            + '<p class="mk-note">' + cs.w("screen.matter.escalation.stands_at", { stage: { html: cs.w("screen.matter.stage." + (stage >= 1 && stage <= 7 ? stage : 1)) } })
-            + (since ? " " + cs.w("screen.matter.escalation.paused_since", { date: { html: cs.date(since) } }) : "") + "</p>"
             + ladder + proposed + '<div class="mk-acts">' + acts + "</div>"
             + (exit ? "<h3>" + cs.w("screen.matter.endswhen") + "</h3>" + exit : "")
             + (actions ? "<h3>" + cs.w("screen.matter.actions") + "</h3>" + actions : "") + avail;

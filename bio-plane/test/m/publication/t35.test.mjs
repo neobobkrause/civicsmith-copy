@@ -92,7 +92,7 @@ test("R72 at a case edition's commit the criteria are one row per distinct (stan
   ];
   const r = sign(w, proj, roles);
   assert.equal(r.ok, true, JSON.stringify(r));
-  const criteria = w.p.caseEditionState(CASE, 1)?.criteria;
+  const criteria = w.p.caseEditionState(CASE, 1).criteria;
   const row = (o) => ({ standard: null, portion: null, designation: null, edition: null, issuer: null, citation: null, access: null,
                         body: null, binds: null, passages: null, label: null, access_words: null,
                         captures: o.stated ? null : [], ...o });   /* T37: the edition carries no material, so no capture */
@@ -122,7 +122,7 @@ test("R72 at a case edition's commit the criteria are one row per distinct (stan
   /* frozen with the edition: a later change to the standard reaches it only through a later edition */
   standards.binding[`${A}|${BOARD}`] = "binds";
   standards.table[A].edition = "2026";
-  assert.deepEqual(w.p.caseEditionState(CASE, 1)?.criteria, criteria);
+  assert.deepEqual(w.p.caseEditionState(CASE, 1).criteria, criteria);
   assert.deepEqual(JSON.parse(w.row(`SELECT criteria FROM published_cases WHERE case_id=? AND edition=1`, CASE).criteria), criteria,
                    "held on the edition's published_cases row (R40)");
   const kept = w.snapshot(["published_cases"]);
@@ -139,7 +139,7 @@ test("R72 (K2483, D54) a commit no member signs reads as a machine viewer, never
   const roles = [member(w, "INFO-2026-0101-first", { subject: CLERK, legs: [{ target: A, content: C1 }] })];
   const r = sign(w, proj, roles, { signer: null });
   assert.equal(r.ok, true, JSON.stringify(r));
-  assert.deepEqual(w.p.caseEditionState(CASE, 1)?.criteria, [{ standard: A, portion: null, designation: null, edition: null,
+  assert.deepEqual(w.p.caseEditionState(CASE, 1).criteria, [{ standard: A, portion: null, designation: null, edition: null,
     issuer: null, citation: null, access: null, body: null, binds: null, passages: null, label: null, access_words: null,
     stated: "not held", captures: null }]);
   assert.deepEqual(standards.calls, [["standardRead", A, MACHINE]], "no member signs: a machine viewer reads");
@@ -161,7 +161,7 @@ test("R72 (K2483, D54) a commit no member signs reads as a machine viewer, never
   assert.equal(old.criteria, null);
   assert.match(old.criteria_detail, /not recorded/);
   w2.p.migrate();
-  assert.equal(w2.p.caseEditionState(CASE, 2)?.criteria, null, "never filled");
+  assert.equal(w2.p.caseEditionState(CASE, 2).criteria, null, "never filled");
   assert.deepEqual(s2.calls, [], "no standard read for an older edition");
 });
 
@@ -195,13 +195,13 @@ test("R75 criteriaFor answers {rows}, exactly the criteria R72's commit records 
   /* T37 (R72's `captures`): the commit adds each row's carried captures beside R75's row, which states none */
   const bare = (rows) => rows.map(({ captures, ...rest }) => rest);
   assert.ok(pre.rows.every((r) => !("captures" in r)));
-  assert.deepEqual(bare(w.p.caseEditionState(CASE, 1)?.criteria), pre.rows, "a preparation and its commit cannot disagree");
+  assert.deepEqual(bare(w.p.caseEditionState(CASE, 1).criteria), pre.rows, "a preparation and its commit cannot disagree");
   assert.deepEqual(Object.keys(pre), ["rows"]);
   /* a change in the record between them is the one way they differ: the read follows the record, the edition stays frozen */
   standards.binding[`${A}|${BOARD}`] = "binds";
   const later = w.p.criteriaFor({ members: asMembers(roles), signer: "olive", at });
   assert.deepEqual(later.rows.find((r) => r.body === BOARD && r.standard === A).binds, true);
-  assert.deepEqual(bare(w.p.caseEditionState(CASE, 1)?.criteria), pre.rows);
+  assert.deepEqual(bare(w.p.caseEditionState(CASE, 1).criteria), pre.rows);
   /* another day is read on that day */
   standards.calls.length = 0;
   w.p.criteriaFor({ members: asMembers(roles), signer: "olive", at: "2027-01-02T00:00:00Z" });
@@ -264,5 +264,5 @@ test("R72 R75 (K2483, D54) with no member signing, the criteria are read as a ma
   assert.deepEqual(held.calls.filter((x) => x[0] === "standardRead"), [["standardRead", A, V("zed")]]);
   /* and the commit records what R75 answers: with no signer, the machine viewer's row */
   assert.equal(sign(w, w.project("Parks2", "olive"), roles, { signer: null }).ok, true);
-  assert.equal(w.p.caseEditionState(CASE, 1)?.criteria[0].designation, "AI 4.12");
+  assert.equal(w.p.caseEditionState(CASE, 1).criteria[0].designation, "AI 4.12");
 });

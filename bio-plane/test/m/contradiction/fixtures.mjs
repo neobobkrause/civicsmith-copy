@@ -5,19 +5,13 @@ import { seeded, cand, IQ, M1 } from "./seed.mjs";
 import { flagWorld, HERE, OTHER, WHY, CID } from "./flag-seed.mjs";
 import { contradictionOps } from "../../../src/contradiction/index.mjs";
 
-/** @import { ContradictionCandidates, ContradictionNotices, ContradictionFlagged } from '../../../src/contradiction/index.mjs' */
-/** @import { ContradictionTestWorld } from './fixture.mjs' */
-
 const RUN = "RUN-2026-0001";
 const PA = "PROJ-2026-0001-alpha", PB = "PROJ-2026-0002-beta";
 
 /** R25: the real answers of `candidatesFor` in each shape a reader of it must treat as no clean read — `undetermined` (the
  *  candidate index cannot be read: `ok` with `undetermined: true`), `truncated` (more candidates than the page holds:
  *  `truncated: true` with one shown) and `noSubject` (called naming nothing: `CANDIDATES_NO_SUBJECT`). `clean` is the
- *  answer of the same call over a record holding no candidate, for a control.
- *  @param {{viewer?: string}} [opts]
- *  @returns {{clean: ContradictionCandidates, truncated: ContradictionCandidates, undetermined: ContradictionCandidates,
- *    noSubject: ContradictionCandidates}} */
+ *  answer of the same call over a record holding no candidate, for a control. */
 export function candidateReads({ viewer = M1 } = {}) {
   const clean = seeded().c.candidatesFor({ on: { inquiry: IQ.a }, viewer });
   const t = seeded();
@@ -34,10 +28,7 @@ export function candidateReads({ viewer = M1 } = {}) {
 /** R25, R61: the real answer of `candidatesFor` for a candidate a member flagged by hand (`contradictionflag`, as the door
  *  runs it), read by its flagger on the notice's passage: the candidate carries `flagged_by` (the member, the instant, the
  *  reason) and `machine: null`. Made over `flagWorld()` when the test runs, never stored; a user's test takes it in place
- *  of a hand-built `flagged_by`.
- *  @param {{viewer?: string}} [opts]
- *  @returns {{flagged: ContradictionFlagged, read: ContradictionCandidates, candidate: any}}
- *  @throws {Error} when the flag is refused */
+ *  of a hand-built `flagged_by`. */
 export function flaggedRead({ viewer = M1 } = {}) {
   const w = flagWorld();
   const flagged = contradictionOps(w.c, new URL(`http://x/?${new URLSearchParams({ op: "contradictionflag", viewer: M1, author: M1 })}`),
@@ -51,10 +42,7 @@ export function flaggedRead({ viewer = M1 } = {}) {
  *  (alpha, beta) in which `m2` takes part in alpha only and `m1` in both; `outsider` is invited to alpha and not joined.
  *  `unknownProject` is `conflictNotices` for a project the record does not hold (NO_SUCH_PROJECT), `notAParticipant` for a
  *  viewer invited and not joined (membership's NOT_A_PARTICIPANT), `noticesClean` (a joined participant's read before the index goes, for a control), `noticesUndetermined` and `candidatesUndetermined` the
- *  answers when the candidate index cannot be read.
- *  @returns {{world: ContradictionTestWorld, noticesClean: ContradictionNotices, unknownProject: ContradictionNotices,
- *    notAParticipant: ContradictionNotices, noticesUndetermined: ContradictionNotices,
- *    candidatesUndetermined: ContradictionCandidates}} */
+ *  answers when the candidate index cannot be read. */
 export function readRefusals() {
   const w = world();
   w.runs.set(RUN, { status: "running", principal: M1 });

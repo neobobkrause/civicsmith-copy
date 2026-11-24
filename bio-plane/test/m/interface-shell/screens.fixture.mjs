@@ -2,7 +2,6 @@
    part of the kit (reads in their four states, acts of each weight, references, marks, dates, rows with picks and the
    hold strip, fields, the dock). Every function refers only to its parameters, as R21's contract asks. */
 import { fitSend as fit, declaredFit } from "./harness.mjs";
-/** @type {ReadonlyArray<ReadonlyArray<*>>} the fixture screens' own word rows, `[key, en, protected]` */
 export const FIXTURE_WORDS = Object.freeze([
   ["screen.home.t.queue", "fx t queue", false],
   ["screen.home.t.queue.holds", "fx t queue holds", false],
@@ -29,7 +28,6 @@ export const FIXTURE_WORDS = Object.freeze([
 
 const own = (prefix) => FIXTURE_WORDS.filter((r) => r[0].startsWith(prefix));
 
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const HOME = {
   id: "home",
   words: own("screen.home."),
@@ -45,7 +43,6 @@ export const HOME = {
     done(view, answer, cs) { if (answer && answer.project) cs.go("project", answer.project); } }],
 };
 
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const HELD = {
   id: "held",
   words: own("screen.held."),
@@ -67,7 +64,6 @@ export const HELD = {
   ],
 };
 
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const DOCUMENT = {
   id: "document",
   words: own("screen.document."),
@@ -87,7 +83,6 @@ export const DOCUMENT = {
   ],
 };
 
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const MEMBERS = {
   id: "members",
   words: own("screen.members."),
@@ -96,7 +91,6 @@ export const MEMBERS = {
   acts: [{ op: "memberadd", send: fit("memberadd") }, { op: "membercaps", send: fit("membercaps") }],
 };
 
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const ASSISTANT = {
   id: "assistant",
   words: own("screen.assistant."),
@@ -107,7 +101,6 @@ export const ASSISTANT = {
 
 /* T47: the public frame's `front` (screens-entry R2's sign-in, as the shell's R46 hands it over) and `doorbell`, the
    published frame's `published`, and the setup frame's `join` (R45, R46). */
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const FRONT = {
   id: "front",
   words: own("screen.front."),
@@ -123,7 +116,6 @@ export const FRONT = {
     { op: "unlock", send(view, el, cs) { return { body: { password: cs.value("f-pass") } }; } },
   ],
 };
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const DOORBELL = {
   id: "doorbell",
   words: own("screen.doorbell."),
@@ -131,14 +123,12 @@ export const DOORBELL = {
   render(cs) { return cs.title() + cs.field("d-what", "screen.doorbell.t.what", { area: true }) + cs.act("knock"); },
   acts: [{ op: "knock", send(view, el, cs) { return { body: { content: cs.value("d-what") } }; } }],
 };
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const PUBLISHED = {
   id: "published",
   reads(view) { return { c: { op: "publishedcase", query: { id: view.subject }, subject: true } }; },
   render(cs, view) { return cs.state("c", view, (c) => cs.title(c.title)); },
   acts: [{ op: "verify" }],
 };
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const JOIN = {
   id: "join",
   words: own("screen.join."),
@@ -158,7 +148,6 @@ export const JOIN = {
     { op: "memberlanguageset", send() { return { body: { language: "en" } }; } },
   ],
 };
-/** @type {Object<string, *>} a test screen of R21's contract */
 export const PERSON = {
   id: "person",
   reads(view) { return { p: { op: "person", query: { id: view.subject }, subject: true } }; },
@@ -166,7 +155,5 @@ export const PERSON = {
   acts: [{ op: "personexpunge" }],
 };
 
-/** @type {Array<Object<string, *>>} */
 export const ALL = [HOME, HELD, DOCUMENT, MEMBERS, ASSISTANT];
-/** @type {Array<Object<string, *>>} */
 export const ENTRY = [FRONT, DOORBELL, PUBLISHED, JOIN];

@@ -4,17 +4,12 @@
  * refuses rather than guesses. */
 
 /** Frontmatter-safe for a derived or member's string: the restricted grammar has no escapes, so a line break folds to
- *  a space and a quote or backslash becomes an apostrophe.
- *  @param {any} s
- *  @returns {string} */
+ *  a space and a quote or backslash becomes an apostrophe. */
 export function fmSafe(s) {
   return String(s ?? "").replace(/[\r\n]+/g, " ").replace(/["\\]/g, "'").trim();
 }
 
-/** Remove a frontmatter BLOCK (its key line and its indented lines); the text unchanged when absent.
- *  @param {string} text
- *  @param {string} key
- *  @returns {string} */
+/** Remove a frontmatter BLOCK (its key line and its indented lines); the text unchanged when absent. */
 export function removeBlock(text, key) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return text;
@@ -31,11 +26,7 @@ export function removeBlock(text, key) {
 }
 
 /** Write frontmatter lines whole in place of any block the key already holds, just before the closing fence. `lines`
- *  begin with the key's own line. The text unchanged when it has no frontmatter.
- *  @param {string} text
- *  @param {string} key
- *  @param {string[]} lines
- *  @returns {string} */
+ *  begin with the key's own line. The text unchanged when it has no frontmatter. */
 export function setFrontmatterLines(text, key, lines) {
   const t = removeBlock(text, key);
   const all = t.split("\n");
@@ -46,10 +37,7 @@ export function setFrontmatterLines(text, key, lines) {
 }
 
 /** Append one entry under `## Session Log`, opening the section when absent (C-13.2: a moved `last_updated` has an
- *  account).
- *  @param {string} text
- *  @param {string} entry
- *  @returns {string} */
+ *  account). */
 export function appendSessionLog(text, entry) {
   const at = text.indexOf("## Session Log");
   if (at < 0) return text.replace(/\s*$/, "\n") + "\n## Session Log\n\n" + entry + "\n";
@@ -59,11 +47,7 @@ export function appendSessionLog(text, entry) {
   return head + (head.endsWith("\n") ? "" : "\n") + entry + "\n" + text.slice(cut);
 }
 
-/** Rewrite one column-0 scalar inside the frontmatter, or open it before the closing fence.
- *  @param {string} text
- *  @param {string} key
- *  @param {any} value
- *  @returns {string} */
+/** Rewrite one column-0 scalar inside the frontmatter, or open it before the closing fence. */
 export function setOrAddScalar(text, key, value) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return text;
@@ -74,9 +58,7 @@ export function setOrAddScalar(text, key, value) {
   return [...lines.slice(0, end), `${key}: ${value}`, ...lines.slice(end)].join("\n");
 }
 
-/** A snap-key suffix: `n` random bytes as lower-case hex.
- *  @param {number} [n]
- *  @returns {string} */
+/** A snap-key suffix. */
 export function rand(n = 4) {
   return [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
 }

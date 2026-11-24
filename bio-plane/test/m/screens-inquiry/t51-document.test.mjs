@@ -329,8 +329,7 @@ test("R68 control: a name whose grade or basis the read does not hold draws neit
   const w = await member({ kind: "page" });
   const none = await pageOn(w.world, w.ann, w.at, { plane: { connections: CONNS } });
   assert.equal(none.byOp("resolutions").length, 1, "the world's own answer: the document names no one");
-  { const s = section(none, "document.names.title"); /* R139: with no names the section holds only "Find the people and offices it names" (resolve, admitted by the registry) */
-    assert.ok(s !== undefined && s.querySelectorAll(".cs-row").length === 0 && s.querySelectorAll('button[data-act]').map((b) => b.getAttribute("data-act")).join() === "resolve", "R20 R139: no names, no rows, only the act that finds them"); }
+  assert.equal(section(none, "document.names.title"), undefined, "R20: no names, no section");
   const failed = await open(at, { plane: { resolutions: refusedIn("NO_SHA", "The names could not be read just now.") } });
   assert.ok(section(failed, "document.names.title").textContent.includes("The names could not be read just now."));
 });

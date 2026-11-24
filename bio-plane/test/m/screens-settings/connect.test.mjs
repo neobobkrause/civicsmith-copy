@@ -135,7 +135,7 @@ test("R4, R5, R13 connecting, in DEC-156's order: the subscription (only while b
     assert.equal((await tp.dev.read("bootstrap")).part_signin, part);
     const o = await page(tp);
     assert.ok(!ops(o).includes("subscriptionsignin"), `R13: no sign-in while part_signin is ${part}`);
-    has(o, String(key), fills);
+    has(o, key, fills);
     await o.choose("mc-way", "apikey");
     assert.ok(ops(o).includes("accountreferenceset"), "the API key either way");
   }

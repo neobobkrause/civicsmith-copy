@@ -61,7 +61,6 @@ import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
  *
  * `mutating` is FALSE on every row (fleet rule 2: a member ASSERTS nothing).
  * `version` is a GET that reads one env var, so it could not be anything else. */
-/** @type {{structure: {method: string, mutating: boolean}, version: {method: string, mutating: boolean}}} */
 export const SURFACE = {
   structure: { method: "POST", mutating: false },
   version:   { method: "GET",  mutating: false },
@@ -116,7 +115,6 @@ function overEnvelopeText(bytes, limit) {
 
 /* What tier 2 has done, as counts (R-CLOCK): documents opened by pdf.js and pages decoded. The answer never depends on it. */
 const WORK = { opens: 0, pagesDecoded: 0 };
-/** @returns {{opens: number, pagesDecoded: number}} the counts so far, a copy */
 export function tier2Work() { return { ...WORK }; }
 
 /* R10 (fix round 10, cause 8): a file cut before its trailer. pdf.js throws `InvalidPDFException` on it (no trailer names
@@ -353,20 +351,7 @@ function handleVersion(env) {
   return json({ ok: true, name: "pdf-worker", version: env.VERSION || "0.0.0" });
 }
 
-/**
- * @typedef {Object} PdfWorkerEnv
- * @property {{get: (key: string) => Promise<any>}} [CAPTURES] the R2 binding the capture is read from, by `.get` only
- * @property {string} [MAX_PDF_BYTES] the envelope, overriding the default
- * @property {string} [VERSION] the build serving
- */
 export default {
-  /**
-   * @param {Request} req POST /structure, GET /version; any other answers 404 UNKNOWN
-   * @param {PdfWorkerEnv} env
-   * @returns {Promise<Response>}
-   * @bound POST /structure body: capture_sha is 64 hex characters, either case; store is exactly "bio" or "scratch"; from and count, when given, are whole numbers, zero or more
-   * @bound the capture is read at tier 2 only up to MAX_PDF_BYTES bytes, by default boundOf("pdf", "worker_bytes")
-   */
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/+/, "");

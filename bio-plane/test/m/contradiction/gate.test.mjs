@@ -281,8 +281,8 @@ test("R13: over the corpus, each refusal by its C-93 name with its translation, 
     assert.deepEqual([r.ok, r.code], [false, code], what);
     if (code === "AI_RUN_NOT_PRINCIPAL") assert.equal(r.check, "C-22.12");
     else {
-      assert.equal(r.check, CONTRADICTION_CANDIDATE_CHECKS[String(code)].check, what);
-      assert.equal(r.translation, CONTRADICTION_CANDIDATE_CHECKS[String(code)].translation, what);
+      assert.equal(r.check, CONTRADICTION_CANDIDATE_CHECKS[code].check, what);
+      assert.equal(r.translation, CONTRADICTION_CANDIDATE_CHECKS[code].translation, what);
       assert.ok(r.translation.length > 60, what);
     }
     assert.equal(count(), 0, what);

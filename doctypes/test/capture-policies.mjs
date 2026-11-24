@@ -13,7 +13,7 @@
  * THE READING. pdf-reader's Tier 1 (`extractPdfStructure`); where Tier 1 read essentially nothing (reading-pipeline
  * R3: more undetermined regions than glyphs, unless every marker is a scan marker), pdf-worker's Tier 2 (`unpdf`'s
  * pdf.js text, shaped as its `tier2Text`), merged page by page by text-chain's `mergeTier2Text`; where neither read a
- * text layer (an image-only scan), the ocr-worker member's Tier 3: its bundle built fresh, its engine and model, booted
+ * text layer (an image-only scan), the ocr-worker member's Tier 3: its committed bundle, engine and model, booted
  * under miniflare as its own suite boots it, each page's line regions joined as the reading pipeline joins them. */
 import fs from "node:fs";
 import { createHash } from "node:crypto";
@@ -22,6 +22,7 @@ import { mergeTier2Text, glyphCount } from "../../bio-plane/src/textchain.mjs";
 
 const { getDocumentProxy, extractText } = await import("unpdf");
 if (typeof Math.sumPrecise !== "function") Math.sumPrecise = (xs) => { let s = 0; for (const x of xs) s += x; return s; };
+const root = new URL("../../", import.meta.url);
 const SCAN = ["no_text_layer", "image_content_unread", "image_content_undetermined"];
 
 function needsTier2(text) {
@@ -44,14 +45,20 @@ async function tier2Text(bytes) {
   return { document, pages, undetermined, counts: { chars: document.length, undetermined: undetermined.length } };
 }
 
-/* The OCR member, built fresh from its source and booted with its engine and model (ocr-worker/test/memberworker.mjs,
-   whose recipe this is; ocr-worker R32: no bundle is read from the checkout). */
+/* The OCR member, from its committed upload parts (the recipe of ocr-worker/test/memberworker.mjs). */
 let ocr = null;
 async function tier3Text(bytes) {
   if (!ocr) {
     const { Miniflare } = await import("miniflare");
-    const { ocrWorkerDef } = await import("../../ocr-worker/test/memberworker.mjs");
-    const mf = new Miniflare({ workers: [ocrWorkerDef({ name: "ocr-worker", bindings: { VERSION: "doctypes-r35-capture" } })] });
+    const part = (p) => new URL(`ocr-worker/${p}`, root).pathname;
+    const mf = new Miniflare({ workers: [{
+      name: "ocr-worker", modulesRoot: part(""), compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"],
+      bindings: { VERSION: "doctypes-r35-capture" },
+      modules: [
+        { type: "ESModule", path: part("dist/ocr-worker.bundled.mjs"), contents: fs.readFileSync(part("dist/ocr-worker.bundled.mjs"), "utf8") },
+        { type: "CompiledWasm", path: part("assets/tesseract-core.wasm"), contents: fs.readFileSync(part("assets/tesseract-core.wasm")) },
+        { type: "Data", path: part("assets/eng.traineddata"), contents: fs.readFileSync(part("assets/eng.traineddata")) },
+      ] }] });
     ocr = { mf, bucket: await mf.getR2Bucket("CAPTURES"), worker: await mf.getWorker("ocr-worker") };
   }
   const sha = createHash("sha256").update(bytes).digest("hex");

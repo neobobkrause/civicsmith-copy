@@ -9,10 +9,6 @@
    function here is self-contained (interface-shell R21 (1)). */
 import { readOnly, kindWord, kindsOf, officeLine, WRITE_HELP } from "./send-steps.mjs";
 
-/** @import { ScreenDef } from "./send-steps.mjs" */
-
-/** Start an action (R24, R28, R35): the composer for any kind but a records request; `actioncreate`.
- *  @type {Readonly<ScreenDef>} */
 export const actionNew = Object.freeze({
   id: "actionnew",
 
@@ -58,10 +54,7 @@ export const actionNew = Object.freeze({
     const project = String(view.subject || "");
     const questions = view.data.questions && view.data.questions.state === "ok" && view.data.questions.value && Array.isArray(view.data.questions.value.items)
       ? view.data.questions.value.items : [];
-    const ro = P.readOnly(cs, "screen.actionnew.name");
-    const head = ro + cs.title(null) + '<p class="mk-sub">' + cs.w("screen.actionnew.sub") + "</p>";
-    // R24: a member who may not act sees R27's read-only sentence and no field
-    if (ro) return head;
+    const head = P.readOnly(cs, "screen.actionnew.name") + cs.title(null) + '<p class="mk-sub">' + cs.w("screen.actionnew.sub") + "</p>";
     return cs.state("vocab", function () {
       // R28: the kinds are the vocabulary's; the drawing's last, "Another kind", is `other`'s words here
       const kinds = P.kindsOf(cs, view, false).map(function (o) { return o.value === "other" ? { value: "other", key: "screen.actionnew.kind.other" } : o; });

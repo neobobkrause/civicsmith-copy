@@ -4,64 +4,20 @@
  * model or throws. The draft itself is the assistant's model turn, layer 6's (N686, T35); until then `op=writinghelp`
  * answers `ASSISTANT_DRAFT_UNAVAILABLE` past every refusal (R27, in `index.mjs`). */
 
-/**
- * @typedef {Object} HelpAt whether writing help is offered for one field (R24)
- * @property {boolean} offered
- * @property {string} [code] when not offered: `AI_KEPT_AWAY`, `AI_NO_ACCOUNT`, `WRITING_HELP_REFUSED`, `WRITING_HELP_REASON_FIELD` or `WRITING_HELP_DRAFT_HELD`
- */
-/**
- * @typedef {Object} HelpAsk one field's request (R24)
- * @property {unknown} [op] the act whose field it is
- * @property {unknown} [field] the field's name
- * @property {unknown} [draftHeld] true, or a draft object, when a labelled draft already fills the field
- * @property {unknown} [assistant] `{on, account}` as the door resolves it
- */
-/**
- * @typedef {Object} DraftFact what a sentence states (R25)
- * @property {string} kind `quotation`, `figure`, `date` or `name`
- * @property {string} value
- */
-/**
- * @typedef {Object} WithheldSentence a sentence left out of a draft (R25)
- * @property {string} sentence
- * @property {string} code `WRITING_HELP_FACT_ADDED`
- */
-/**
- * @typedef {Object} DraftOptions what a draft may draw on (R25)
- * @property {unknown} [told] what the member typed or answered: a text, or a list of texts or `{text}`
- * @property {unknown} [readLog] what was read from the group's record, in the same forms
- * @property {unknown} [firsthand] true on a field recording what the member saw
- * @property {unknown} [suggestions] true while the serving account's suggestions switch is on
- * @property {unknown} [askedBy] the asking member's handle
- */
-/**
- * @typedef {Object} DraftChecked a checked draft, or its refusal (R25; `answers` R4's form)
- * @property {boolean} ok
- * @property {string} [text] the sentences kept, joined
- * @property {WithheldSentence[]} [withheld]
- * @property {{kind: string, asked_by: string | null}} [label] `{kind: "machine", asked_by}`
- * @property {string} [code] when refused: `WRITING_HELP_SUGGESTIONS_OFF`, `WRITING_HELP_FIRSTHAND_READ` or `WRITING_HELP_FACT_ADDED`
- */
-
-/** R24 item 2: the acts DEC-153 (4) names, the assistant never helping word them.
- *  @type {readonly string[]} */
+/** R24 item 2: the acts DEC-153 (4) names, the assistant never helping word them. */
 export const HELP_NAMED_REFUSED = Object.freeze(["release", "conclude", "withdrawconclusion", "reopen", "caseratify", "publish",
                                                  "personexpunge", "bootstrap"]);
 /** R24 item 2: the acts of publishing at a set time, which their owners refuse a machine by name (`ratification` C-32.13,
  *  `publication` R68, `affordances` R42), and `groupdescriptionset`, which keeps its own guided draft (`instance-setup`
  *  R65; DEC-153 (4)). */
-/** @type {readonly string[]} */
 export const HELP_SET_TIME_REFUSED = Object.freeze(["publishat", "publishatmove", "publishatcancel", "groupdescriptionset"]);
 /** R24 item 2: this module's named list, frozen: DEC-153 (4)'s acts, then the set-time publishing acts and
  *  `groupdescriptionset` (B3, K1861 (1): affordances R44 reads it through `writingHelpRefused`). */
-/** @type {readonly string[]} */
 export const WRITING_HELP_NAMED = Object.freeze([...HELP_NAMED_REFUSED, ...HELP_SET_TIME_REFUSED]);
 /** R25: the acts whose field records what the member saw, where the draft words only what the member told it (DEC-153
  *  (2): "testimony stays the witness's"). The registry's capture and calculation screens hold one such act today. */
-/** @type {readonly string[]} */
 export const FIRSTHAND_ACTS = Object.freeze(["testify"]);
-/** R27: the most a member tells the assistant in one request.
- *  @type {number} */
+/** R27: the most a member tells the assistant in one request. */
 export const TOLD_MAX = 4000;
 
 const nameSet = (v) => new Set(v instanceof Set ? [...v] : Array.isArray(v) ? v.filter((x) => typeof x === "string")
@@ -69,16 +25,12 @@ const nameSet = (v) => new Set(v instanceof Set ? [...v] : Array.isArray(v) ? v.
 
 /** R24 item 2: every act the assistant never helps word, from a registration's `machineRefused` and `irreversible` (read
  *  as registered) and this module's named lists. */
-/** @param {{machineRefused?: unknown, irreversible?: unknown}} [args] each a Set, a list of names or an object keyed by name
- *  @returns {Set<string>} */
 export function helpRefusedActs({ machineRefused = [], irreversible = [] } = {}) {
   return new Set([...nameSet(machineRefused), ...nameSet(irreversible), ...WRITING_HELP_NAMED]);
 }
 
 /** R24 item 3: whether `field` is where an act sends the member's reason (the `reason` a reasoned act requires, or any
  *  field named for a reason). The machine never words a member's reason (the Roles canon's rule 1; K1841 (1)). */
-/** @param {unknown} field
- *  @returns {boolean} */
 export function isReasonField(field) {
   return typeof field === "string" && /reason$/i.test(field.trim());
 }
@@ -87,7 +39,6 @@ export function isReasonField(field) {
  *  one site that mints it): `away` null while the group does not keep its material away; its refusal otherwise, also
  *  when the setting cannot be read; anything else (ai-accounts not reached) is read as kept away, failing closed as
  *  that service does. */
-/** @type {string} */
 export const KEPT_AWAY = "AI_KEPT_AWAY";
 const keptAwayCode = (away) => (away === null ? null : KEPT_AWAY);
 
@@ -96,10 +47,6 @@ const keptAwayCode = (away) => (away === null ? null : KEPT_AWAY);
  *  of the condition) or no account serving the viewer; an act the assistant is refused or that cannot be undone; a
  *  field stating the member's reason; a labelled draft already in the field. `refused` is `helpRefusedActs` of the
  *  registration; an `away` not given is not a reading, and fails closed. */
-/** @param {HelpAsk | null} [args]
- *  @param {Set<string>} [refused]
- *  @param {unknown} [away] `ai-accounts.aiKeptAway()`'s answer: null when not kept away
- *  @returns {HelpAt} */
 export function writingHelpAt(args = {}, refused = helpRefusedActs(), away = undefined) {
   try {
     const { op = null, field = null, draftHeld = false, assistant = null } = args && typeof args === "object" ? args : {};
@@ -128,9 +75,7 @@ const WORD_RE = /[A-Za-zÀ-ɏ][A-Za-zÀ-ɏ'’-]*/g;
 const flat = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
 const figure = (s) => s.replace(/,/g, "").replace(/\.$/, "");
 
-/** R25: the sentences of a text, each whole.
- *  @param {unknown} text read as a string
- *  @returns {string[]} */
+/** R25: the sentences of a text, each whole. */
 export function sentencesOf(text) {
   return String(text).split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
 }
@@ -138,8 +83,6 @@ export function sentencesOf(text) {
 /** R25: what a sentence states that must come from what the member told or what the group holds: each figure, each date
  *  word (a month or a weekday), each quotation, and each name (a capitalised word that is not the sentence's first, or
  *  a first word that a second capitalised word follows; "I" is no name). */
-/** @param {unknown} sentence read as a string
- *  @returns {DraftFact[]} */
 export function factsOf(sentence) {
   const s = String(sentence);
   const facts = [];
@@ -173,9 +116,6 @@ const asTexts = (v) => (typeof v === "string" ? [v] : Array.isArray(v) ? v.map((
  *  (`WRITING_HELP_FIRSTHAND_READ`); otherwise each sentence stating a figure, a date, a name or a quotation that is in
  *  neither `told` nor `readLog` is withheld whole (`WRITING_HELP_FACT_ADDED`), never rewritten. The text is answered
  *  with its label `{kind: "machine", asked_by}` and is never stored. Writes nothing; never throws. */
-/** @param {unknown} text the draft
- *  @param {DraftOptions | null} [opts]
- *  @returns {DraftChecked} */
 export function checkDraft(text, opts = {}) {
   try {
     const { told = [], readLog = [], firsthand = false, suggestions = false, askedBy = null } = opts && typeof opts === "object" ? opts : {};

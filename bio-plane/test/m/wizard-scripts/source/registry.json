@@ -24,9 +24,7 @@
      "label": "Continue to Cloudflare",
      "status": "declared",
      "modules": [
-      "control-plane",
       "installer",
-      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -84,9 +82,7 @@
      "label": "Continue to Cloudflare to update",
      "status": "declared",
      "modules": [
-      "control-plane",
       "installer",
-      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -280,7 +276,7 @@
      "label": "Choose whether members are told what a court can reach",
      "status": "function",
      "modules": [
-      "member-roster"
+      "membership"
      ]
     },
     {
@@ -313,15 +309,6 @@
      "status": "function",
      "modules": [
       "credentials"
-     ]
-    },
-    {
-     "op": "factconfirm",
-     "label": "Save the time zone",
-     "status": "declared",
-     "modules": [
-      "local-facts",
-      "op-declarations"
      ]
     }
    ],
@@ -386,7 +373,7 @@
      "status": "declared",
      "modules": [
       "admission",
-      "member-roster"
+      "membership"
      ]
     },
     {
@@ -520,7 +507,7 @@
     },
     {
      "op": "taskforward",
-     "label": "Pass it to another member",
+     "label": "Pass it to someone else",
      "status": "declared",
      "modules": [
       "op-declarations",
@@ -642,7 +629,7 @@
      "label": "Withdraw an unused invitation",
      "status": "function",
      "modules": [
-      "member-roster"
+      "membership"
      ]
     },
     {
@@ -650,7 +637,7 @@
      "label": "Create a website key",
      "status": "function",
      "modules": [
-      "member-roster"
+      "membership"
      ]
     },
     {
@@ -658,7 +645,7 @@
      "label": "Turn on the reusable join link",
      "status": "function",
      "modules": [
-      "member-roster"
+      "membership"
      ]
     }
    ],
@@ -709,6 +696,7 @@
      "op": "scanmirror",
      "label": "Check for new signatures now",
      "status": "declared",
+     "onTranche": "origin/tranche/T51",
      "modules": [
       "file-safety"
      ]
@@ -845,7 +833,7 @@
     {
      "op": "accountreferenceset",
      "label": "Connect with your own API key",
-     "status": "declared",
+     "status": "function",
      "modules": [
       "ai-accounts"
      ]
@@ -877,7 +865,7 @@
     {
      "op": "accountreferenceremove",
      "label": "Disconnect",
-     "status": "declared",
+     "status": "function",
      "modules": [
       "ai-accounts"
      ]
@@ -1064,6 +1052,7 @@
      "op": "officeconfirm",
      "label": "Confirm this office",
      "status": "declared",
+     "onTranche": "origin/tranche/T51",
      "modules": [
       "entities"
      ]
@@ -1137,7 +1126,7 @@
      "label": "Show the court notice",
      "status": "function",
      "modules": [
-      "member-roster"
+      "membership"
      ]
     },
     {
@@ -1254,7 +1243,6 @@
      "status": "declared",
      "modules": [
       "installer",
-      "installer-steps",
       "instance-setup",
       "op-declarations"
      ]
@@ -1264,9 +1252,7 @@
      "label": "Show what each part runs",
      "status": "declared",
      "modules": [
-      "control-plane",
       "installer",
-      "installer-steps",
       "instance-setup",
       "membership",
       "op-declarations"
@@ -1857,14 +1843,6 @@
      "modules": [
       "op-declarations"
      ]
-    },
-    {
-     "op": "signerknown",
-     "label": "I know about this key",
-     "status": "declared",
-     "modules": [
-      "credentials"
-     ]
     }
    ],
    "journeys": [
@@ -1883,17 +1861,10 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -1910,8 +1881,7 @@
      "label": "Find in these",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -2027,7 +1997,6 @@
      "status": "declared",
      "modules": [
       "capture",
-      "control-plane",
       "screens-intake"
      ]
     },
@@ -2044,7 +2013,7 @@
      "label": "Ask for a capture later",
      "status": "declared",
      "modules": [
-      "agent-steps",
+      "agent-worker",
       "capture-requests",
       "op-declarations"
      ]
@@ -2351,8 +2320,7 @@
      "label": "Find in this",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -2492,7 +2460,8 @@
     {
      "op": "contradictionflag",
      "label": "Say these two contradict",
-     "status": "function",
+     "status": "declared",
+     "onTranche": "origin/tranche/T51",
      "modules": [
       "contradiction"
      ]
@@ -2550,17 +2519,6 @@
      "op": "owed:registersearch DEC-406",
      "label": "Search the registers",
      "status": "owed"
-    },
-    {
-     "op": "resolve",
-     "label": "Find the people and offices it names",
-     "status": "declared",
-     "modules": [
-      "entities",
-      "op-declarations",
-      "queue",
-      "record-core"
-     ]
     }
    ],
    "journeys": [
@@ -2653,8 +2611,7 @@
      "label": "Find in this",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -2720,17 +2677,10 @@
      "label": "See all in Find",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     }
    ],
@@ -2771,8 +2721,7 @@
      "label": "Find in this project",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -2794,7 +2743,7 @@
     },
     {
      "op": "projectvisibilityset",
-     "label": "Change who can find this project",
+     "label": "Change who can find it",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -3180,8 +3129,7 @@
      "modules": [
       "basis-versions",
       "contradiction",
-      "op-declarations",
-      "review"
+      "op-declarations"
      ]
     },
     {
@@ -3291,17 +3239,10 @@
      "label": "Find another source",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -3383,7 +3324,7 @@
      "label": "Read in my language",
      "status": "declared",
      "modules": [
-      "store-assembly"
+      "plane"
      ]
     },
     {
@@ -3393,14 +3334,6 @@
      "modules": [
       "connections",
       "op-declarations"
-     ]
-    },
-    {
-     "op": "leggrade",
-     "label": "Record this grade",
-     "status": "declared",
-     "modules": [
-      "citation"
      ]
     },
     {
@@ -3418,7 +3351,7 @@
      "label": "Stop the assistant",
      "status": "declared",
      "modules": [
-      "agent-steps",
+      "agent-worker",
       "ai-runs",
       "op-declarations"
      ]
@@ -3443,8 +3376,8 @@
      "status": "declared",
      "modules": [
       "control-plane",
-      "screens-daily",
-      "store-assembly"
+      "plane",
+      "screens-daily"
      ]
     },
     {
@@ -3460,17 +3393,10 @@
      "label": "Search instead",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -3517,8 +3443,8 @@
      "status": "declared",
      "modules": [
       "control-plane",
-      "screens-daily",
-      "store-assembly"
+      "plane",
+      "screens-daily"
      ]
     },
     {
@@ -3526,7 +3452,7 @@
      "label": "Suggest",
      "status": "declared",
      "modules": [
-      "agent-steps",
+      "agent-worker",
       "ai-runs",
       "basis-versions",
       "op-declarations",
@@ -3538,7 +3464,7 @@
      "label": "Stop the run",
      "status": "declared",
      "modules": [
-      "agent-steps",
+      "agent-worker",
       "ai-runs",
       "op-declarations"
      ]
@@ -3559,17 +3485,10 @@
      "label": "Search people and organizations",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -3788,8 +3707,7 @@
      "label": "Look for dates in this project",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -3857,17 +3775,10 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -3955,8 +3866,7 @@
      "label": "Look for it in this project",
      "status": "declared",
      "modules": [
-      "retrieval",
-      "retrieval-browse"
+      "retrieval"
      ]
     },
     {
@@ -4025,17 +3935,10 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -4224,17 +4127,10 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {
@@ -4814,7 +4710,7 @@
      "label": "Show the routes",
      "status": "declared",
      "modules": [
-      "agent-steps",
+      "agent-worker",
       "reading-guides"
      ]
     },
@@ -4957,22 +4853,6 @@
     {
      "op": "counselpacket",
      "label": "Assemble the packet, with a reason",
-     "status": "declared",
-     "modules": [
-      "op-declarations"
-     ]
-    },
-    {
-     "op": "counselpacketread",
-     "label": "Read this version",
-     "status": "declared",
-     "modules": [
-      "op-declarations"
-     ]
-    },
-    {
-     "op": "counselpacketexport",
-     "label": "Save as a file",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -5406,7 +5286,6 @@
      "modules": [
       "case-authoring",
       "case-check",
-      "case-grammar",
       "case-inputs",
       "op-declarations",
       "review"
@@ -5538,8 +5417,7 @@
      "modules": [
       "op-declarations",
       "public-read",
-      "publication",
-      "screens-publish"
+      "publication"
      ]
     },
     {
@@ -5912,7 +5790,7 @@
     },
     {
      "op": "monitorslate",
-     "label": "Show what is due",
+     "label": "Read what is due",
      "status": "declared",
      "modules": [
       "op-declarations"
@@ -6044,17 +5922,10 @@
      "label": "Search",
      "status": "declared",
      "modules": [
-      "agent-steps",
-      "calculations",
-      "content",
-      "extraction",
+      "agent-worker",
       "op-declarations",
-      "plane",
-      "reading-pipeline",
       "retrieval",
-      "screens-daily",
-      "screens-inquiry",
-      "screens-intake"
+      "screens-daily"
      ]
     },
     {

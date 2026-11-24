@@ -70,8 +70,6 @@ const WORDS = {
     ...LABELS("group-identity", ["groupdescriptionset", "groupdescriptiondraft"])],
   security: [...STATES, "screen.security.name", ...own("screen.security."), "period.days", "member.founder.unnamed", "instance.part.scanner.present", "instance.part.scanner.absent",
     "instance.part.safeview.present", "instance.part.safeview.absent", "instance.part.unknown", "instance.scanner.absent.step",
-    // the counts by the hour (R43): a time of day and a day without its year, for the squares' tips, the grid's labels and the notice's time
-    "time.clock", "time.am", "time.pm", "date.daymonth", ...["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"].map((m) => "date.month." + m),
     ...own("file-scanner.credential."),
     // the scanner's state when it holds no signatures, under file-safety's keys (DEC-396; R77): the date and the reason each fill their own
     "file-safety.index.no_signatures", "file-safety.index.no_signatures_since", "file-safety.index.signatures_refused", "file-safety.index.signatures_failed", "file-safety.index.signatures_not_fetched", "screen.security.nosignatures.next",
@@ -105,15 +103,4 @@ const freeze = (s) => Object.freeze({
   parts: PARTS,
 });
 
-/**
- * @typedef {Object} Screen one screen of the member interface, in the form `interface-shell` R21 takes it
- * @property {string} id the registry's screen id
- * @property {function(*): Object<string, *>} reads the reads the screen asks for a view, by name (`{op, query, empty}`)
- * @property {function(*, *): string} render the screen's HTML, over the kit `cs` and the view
- * @property {ReadonlyArray<*>} acts the acts it may draw, each `{op, send, done, rereads, ...}`
- * @property {ReadonlyArray<string>} words the keys it draws (R39)
- * @property {Readonly<{aiPanel: Function, aiPanelSend: Function, aiUsageBars: Function}>} parts the AI account panel's functions (R9, R26)
- */
-/** The module's screens, `screens-account`'s among them, each frozen with its words and parts.
- *  @type {Array<Screen>} */
-export const SCREENS = /** @type {Array<Screen>} frozen */ (Object.freeze([settings, members, teamai, account, connect, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze)));
+export const SCREENS = Object.freeze([settings, members, teamai, account, connect, notes, group, identity, places, recovery, security, translations, updates, glossary, grouprules, bias].map(freeze));

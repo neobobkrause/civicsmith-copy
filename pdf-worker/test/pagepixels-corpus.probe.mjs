@@ -45,9 +45,8 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { createRequire } from "node:module";
 import { renderPageToPixels, loadPdf, analyzePage, REFUSALS } from "../src/pagepixels.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -55,10 +54,6 @@ const UA = "CivicOS/0.55.0 (+https://github.com/believeinoakland/bio; instance b
 const CACHE = join(tmpdir(), "cpdf12-corpus");
 const WORK = mkdtempSync(join(tmpdir(), "cpdf12-"));
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-// miniflare and esbuild come only from test-support's manifest (bio-plane/package.json),
-// never from whichever node_modules folder lies nearest this file.
-const fromTestSupport = createRequire(join(HERE, "../../bio-plane/package.json"));
-const viaTestSupport = (name) => import(pathToFileURL(fromTestSupport.resolve(name)).href);
 const argv = new Set(process.argv.slice(2));
 
 /* ── the provenance gate ──────────────────────────────────────────────────── */
@@ -389,11 +384,15 @@ trailer << /Root 1 0 R >>
 async function armWorkerd(docs) {
   console.log(`\nWORKERD — does the renderer run in the runtime the placement question is about?`);
   let Miniflare;
-  try { ({ Miniflare } = await viaTestSupport("miniflare")); }
-  catch (e) { console.log(`  NO NUMBER: miniflare unavailable (${String(e.message).split("\n")[0]})`); return null; }
+  try { ({ Miniflare } = await import("miniflare")); }
+  catch {
+    try { ({ Miniflare } = await import(join(HERE, "../../bio-plane/node_modules/miniflare/dist/src/index.js"))); }
+    catch (e) { console.log(`  NO NUMBER: miniflare unavailable (${String(e.message).split("\n")[0]})`); return null; }
+  }
   const bundle = join(WORK, "pagepixels.bundled.mjs");
   try {
-    const { build } = await viaTestSupport("esbuild");
+    const { build } = await import("esbuild").catch(() =>
+      import(join(HERE, "../../bio-plane/node_modules/esbuild/lib/main.js")));
     await build({
       entryPoints: [join(HERE, "../src/pagepixels-worker.mjs")],
       bundle: true, format: "esm", platform: "neutral",

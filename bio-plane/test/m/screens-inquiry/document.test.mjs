@@ -187,8 +187,7 @@ test("R32 R67 R68 the links this page carries, held ones a reference; the names 
   /* control: no links and no names, no section */
   const none = await open(at);
   assert.equal(section(none, "document.links.title"), undefined);
-  { const s = section(none, "document.names.title"); /* R139: with no names the section holds only "Find the people and offices it names" (resolve, admitted by the registry) */
-    assert.ok(s !== undefined && s.querySelectorAll(".cs-row").length === 0 && s.querySelectorAll('button[data-act]').map((b) => b.getAttribute("data-act")).join() === "resolve", "R20 R139: no names, no rows, only the act that finds them"); }
+  assert.equal(section(none, "document.names.title"), undefined);
 });
 
 test("R3 pagetranscribe only while the assistant is reachable (DEC-190); transcribe wherever pages are unread", async () => {

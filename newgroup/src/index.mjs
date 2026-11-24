@@ -53,23 +53,6 @@ import { verifySshsig, NS_RELEASE } from "../../bio-plane/src/sshsig.mjs";
    so is the block on who controls the copy, which the claim page shows in the same words (instance-setup R47). */
 import { GROUP_SLUG_RE, hostingControlBlock } from "../../bio-plane/src/setup-fleet.mjs";
 
-/**
- * @typedef {Object} InstallerConfig
- * @property {string} CLIENT_ID the OAuth client's id
- * @property {string} AUTHORIZE Cloudflare's authorize address
- * @property {string} TOKEN Cloudflare's token address
- * @property {string} API the management API's base address
- * @property {string} REDIRECT the registered return address
- * @property {string[]} SCOPES the scopes asked, in order
- * @property {string} LOGPUSH_SCOPE the scope that reads the Logpush job list
- * @property {string} COOKIE the cookie's name
- * @property {number} COOKIE_MAX_AGE_S the cookie's life, in seconds
- * @property {string} RELEASE_LATEST where the newest public release is read
- * @property {(version: string) => string} RELEASE_TAGGED where the release of a version is read
- * @bound SCOPES.items: exactly the scopes registered on the OAuth client, nothing more (R2)
- * @bound COOKIE_MAX_AGE_S.value: 900, fifteen minutes (R2, R3)
- */
-/** @type {InstallerConfig} the installer's fixed settings (R2, R3) */
 export const CFG = {
   CLIENT_ID: "1c2fdba3fc71cf88d26fcd7b90df95de",
   AUTHORIZE: "https://dash.cloudflare.com/oauth2/auth",
@@ -323,7 +306,6 @@ async function exchange(code, verifier, onWait = null) {
  * one, is set inside the copy by an administrator (`credentials`' sealed table), and a member's own account is connected
  * there by the member. Nothing here takes, generates, binds or shows one, and an update removes the binding a copy
  * installed before K1502 may hold (keep_bindings would otherwise keep it). */
-/** @type {string} the binding an update deletes and nothing writes (R36) */
 export const RETIRED_CLAUDE_BINDING = "INSTANCE_CLAUDE_TOKEN";
 
 /* R37 and R17 (T36; N711, N721; DEC-172) — THE BINDINGS NO INSTALLER WRITES ANY MORE. The install takes no choice about
@@ -332,13 +314,8 @@ export const RETIRED_CLAUDE_BINDING = "INSTANCE_CLAUDE_TOKEN";
    before the update is removed, a secret by its own deletion and a plain value by the update's upload (which keeps no
    plain value it does not restate), and a refused deletion is named. `RETIRED_BINDINGS` is every such name, with the
    suffix of the `installer.keys.retired.*` key that says what it was. */
-/** @type {string} a binding an update deletes and nothing writes (R17) */
 export const ASSISTANT_BINDING = "ASSISTANT_ENABLED";
-/** @type {string} a binding an update deletes and nothing writes (R9, R17) */
 export const MEMBER_BINDING = "MEMBER_TOKEN";
-/**
- * @type {ReadonlyArray<[string, string]>} each retired binding's name, with the suffix of the key that says what it was (R17, R36)
- */
 export const RETIRED_BINDINGS = Object.freeze([
   [RETIRED_CLAUDE_BINDING, "claude"],
   [MEMBER_BINDING, "member"],
@@ -545,7 +522,6 @@ async function accountSecretsNotice(emit, token, acct, slug, held, seal) {
 
 /* R37 (T36; N721, DEC-172; K1957): the installer takes no choice about the assistant and binds no Claude credential
    (R36); the page says where its two settings are made, in the install page's own words (ui.mjs, ASSISTANT_OFFER). */
-/** @type {string} the sentence that says where the assistant's settings are made (R37) */
 export const ASSISTANT_OWN_ACCOUNTS = ASSISTANT_OFFER.replace(/\s+/g, " ").trim();
 async function assistantNotice(emit) {
   await emit.step("assist", word("installer.step.assistant"));
@@ -969,7 +945,6 @@ function securityToolsNote(vpc) {
 const CHECK_WORD = Object.freeze({ ok: word("installer.check.passed"), no: word("installer.check.notyet"), und: word("installer.check.undetermined") });
 const checkRows = (checks) => `<h2 id="checks-heading">${esc(word("installer.checks.heading"))}</h2><div class="cs-sheet ng-log" id="checks">${checks.map((c) =>
   `<div class="cs-row" data-r="${c.r === "und" ? "go" : c.r}"><span class="mk">${CHECK_WORD[c.r]}</span><span>${esc(c.text)}</span><span></span></div>`).join("")}</div>`;
-/** @type {string} the path on the copy the finished panel hands over to (R51) */
 export const HANDOVER_PATH = "/app/setup";
 function successPanel(base, secrets, verified, verdict = null, vpc = null, checks = [], parts = [], notes = [], told = "") {
   const lagging = !!(verdict && !verdict.confirmed);
@@ -1419,10 +1394,6 @@ async function runRemove(emit0, code, saved, guard) {
    licences), as its own bytes and type, cacheable for good (each is frozen at ASSETS_COMMIT); null for any other name.
    Nothing is read or stored: the bytes are this bundle's. */
 const ASSET_BYTES = new Map();
-/**
- * @param {string} name a file's name under ASSET_PREFIX
- * @returns {Response | null} the file's own bytes and type, cacheable for good; null for a name interface-assets does not hold
- */
 export function assetResponse(name) {
   if (!Object.hasOwn(ASSET_FILES, name)) return null;
   const f = ASSET_FILES[name];
@@ -1433,13 +1404,6 @@ export function assetResponse(name) {
     "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" } });
 }
 
-/**
- * @typedef {Object} InstallerWorker
- * @property {(req: Request, env?: unknown) => Promise<Response>} fetch answers every request the installer's address receives; it reads nothing from env, having no binding (R27)
- * @bound fetch.request: GET / and GET /update serve their pages, GET /app/assets/<name> interface-assets' files, POST /begin and GET /callback the sign-in and the run; any other request is answered 404 with a plain page; nothing is stored (R1, R54)
- * @bound fetch.request: POST /begin answers 400 by name for a slug outside GROUP_SLUG_RE or equal to newgroup, and for an instanceAi present but not 16 to 512 printable characters without spaces (R2)
- */
-/** @type {InstallerWorker} the installer Worker */
 export default {
   async fetch(req) {
     const url = new URL(req.url);

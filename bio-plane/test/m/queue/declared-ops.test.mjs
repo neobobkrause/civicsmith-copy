@@ -4,8 +4,7 @@
    route map does, over a world with a member who has joined a project. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fileURLToPath } from "node:url";
-import { declaredOpHolds, declaredOpsOf } from "../../declared-ops.mjs";
+import { declaredOpHolds } from "../../declared-ops.mjs";
 import { DECLARED_OPS, queueOps } from "../../../src/queue/index.mjs";
 import { world, NOW } from "./world.mjs";
 
@@ -50,32 +49,13 @@ test("R92 queue declares queuesnooze: its requires alone raise no refusal naming
     values: { case: "PRJ-1", until: new Date(NOW + 86400000).toISOString() }, same: sameCode });
 });
 
-/* queue R92: the ops are declared here. The owners' declarations, collected from the module order up to queue and no later
-   (test-support's `declaredOpsOf`), hold the three ops as queue's own, each exactly as this module exports it, and no earlier
-   owner declares any of them. Their agreement with the hand rows of `op-declarations` and `op-grades` is proven by
-   op-declarations' `owners.test.mjs` (its R80, R81), which reads this module's export. */
-test("R92 the owners' declarations, found from the module order up to queue, hold proposedispose, queuemute and queuesnooze as queue's own, declared by no earlier owner", async () => {
-  const { ops, owners, duplicates } = await declaredOpsOf(fileURLToPath(new URL("../../../../", import.meta.url)), "queue");
-  assert.deepEqual(Object.keys(DECLARED_OPS).sort(), ["proposedispose", "queuemute", "queuesnooze"]);
-  for (const op of ["proposedispose", "queuemute", "queuesnooze"]) {
-    assert.equal(owners[op], "queue", op);
-    assert.deepEqual(ops[op], DECLARED_OPS[op], op);
-    assert.deepEqual(duplicates.filter((d) => d.op === op), [], op);
-  }
-});
-
-test("R92 each declaration carries its classes, mutating and weight: proposedispose reasoned, the two personal ops caller-owned, all three mutating", () => {
-  for (const op of ["proposedispose", "queuemute", "queuesnooze"]) {
-    const d = DECLARED_OPS[op];
-    assert.ok(Array.isArray(d.classes) && d.classes.length > 0, op);
-    assert.equal(d.mutating, true, op);
-  }
-  assert.equal(DECLARED_OPS.proposedispose.weight, "reasoned");
-  assert.equal(DECLARED_OPS.queuemute.weight, "caller-owned");
-  assert.equal(DECLARED_OPS.queuesnooze.weight, "caller-owned");
-});
-
-test("R92 proposedispose accepts definitionVersion, the field its instance arm reads (the disposition's `requires`), never the snake-case definition_version", () => {
+test("R92: the three rows are the ops' existing rows (control): classes, mutating, weight, description, and a field the arm reads is declared", async () => {
+  const O = await import("../../../src/op-declarations/index.mjs?queue-declared");
+  const G = await import("../../../src/op-grades/index.mjs?queue-declared");
+  assert.deepEqual(G.registerDeclaredOps({ queue: DECLARED_OPS }).agreed.sort(), ["proposedispose", "queuemute", "queuesnooze"]);
+  O.registerDeclaredOps({ queue: DECLARED_OPS });
+  for (const op of ["proposedispose", "queuemute", "queuesnooze"]) assert.deepEqual(O.declaredFields(op), DECLARED_OPS[op].fields, op);
+  /* `definitionVersion` is what the instance arm reads (the disposition's `requires`), never the snake-case spelling */
   assert.ok(DECLARED_OPS.proposedispose.fields.accepts.includes("definitionVersion"));
   assert.ok(!DECLARED_OPS.proposedispose.fields.accepts.includes("definition_version"));
 });

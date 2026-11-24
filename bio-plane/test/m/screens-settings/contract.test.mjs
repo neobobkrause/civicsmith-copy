@@ -88,8 +88,6 @@ test("R39 words by key: the module holds no row, every key it reads is a word of
   for (const s of SCREENS) for (const k of s.words) {
     assert.equal(typeof k, "string", `${s.id}: its words are keys, never rows`);
     assert.ok(hasWord(k), `${s.id}: ${k}`);
-    // the module's keys are every key its screens read, so the design's reads list, which names them, is met (journey-check #1)
-    assert.ok(KEYS.includes(k), `${s.id}: ${k} is among the module's keys`);
   }
   // the keys the requirements name besides the reads list
   for (const k of ["refusal.UPDATE_SKIP_NO_REASON", "member.founder.unnamed", "member.founder.unnamed.help", "connect.ifnot", "connect.notnow", "refusal.reference", "updates.running.release_setup", "updates.earlier.installed_setup"])

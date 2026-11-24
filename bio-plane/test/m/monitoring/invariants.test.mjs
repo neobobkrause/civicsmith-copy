@@ -100,7 +100,7 @@ test("R40 bias never shapes what is monitored: no service takes a lens, and a le
   w.monitored("INFO-2026-0840-a", "https://records.example.org/l1", "lens a", { freq: "daily" });
   w.monitored("INFO-2026-0841-b", "https://records.example.org/l2", "lens b", { freq: "per_meeting" });
   const plain = JSON.stringify(w.m.schedule(NOW_MS));
-  assert.equal(JSON.stringify(/** @type {any} */ (w.m).schedule(NOW_MS, { lens: "LENS-1" })), plain);
+  assert.equal(JSON.stringify(w.m.schedule(NOW_MS, { lens: "LENS-1" })), plain);
   const a = JSON.stringify(w.m.monitoring({ viewer: DAEMON, now: NOW_MS }));
   assert.equal(JSON.stringify(w.m.monitoring({ viewer: DAEMON, now: NOW_MS, lens: "LENS-1" })), a);
   const routed = monitoringOps(w.m, new URL(`http://do/monitoring?viewer=${DAEMON}&now=${NOW_MS}&lens=LENS-1`), { lens: "x" }).monitoring();

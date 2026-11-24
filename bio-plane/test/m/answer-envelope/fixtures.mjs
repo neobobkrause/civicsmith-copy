@@ -5,9 +5,6 @@
 import { M } from "./load.mjs";
 
 /* the real helpers, as the plane binds them (`bindPublishedPlane`, screens-publish and plane's door) */
-/** @import { StoreAnswer } from '../../../src/answer-envelope/index.mjs' */
-/** @type {Object<string, *>} the module's own `json`, `doAnswer`, `storeSilent`, `requiredArgument`, `StoreSilent`,
-    `STORE_SILENT_REASON` and `STORE_SILENT_DETAIL` */
 export const planeHelpers = {
   json: M.json, doAnswer: M.doAnswer, storeSilent: M.storeSilent, requiredArgument: M.requiredArgument, StoreSilent: M.StoreSilent,
   STORE_SILENT_REASON: M.STORE_SILENT_REASON, STORE_SILENT_DETAIL: M.STORE_SILENT_DETAIL,
@@ -15,22 +12,13 @@ export const planeHelpers = {
 
 /* a store's own refusal (`ok: false` below 500), read by the real `doAnswer`:
    `{answered: false, refused: true, result: undefined, reply: {status, body}}` */
-/** @returns {Promise<StoreAnswer>} */
 export const refusedAnswer = () =>
   M.doAnswer(new Response(JSON.stringify({ ok: false, reason: "BAD_JSON", detail: "d" }), { status: 400 }));
 
 /* the real 502 `STORE_DID_NOT_ANSWER` for `op`, as a Response */
-/**
- * @param {string} op
- * @returns {Response}
- */
 export const storeSilent = (op) => M.storeSilent(op);
 
 /* the same answer, parsed: `{status, body}` */
-/**
- * @param {string} op
- * @returns {Promise<{status: number, body: *}>}
- */
 export const storeSilentParsed = async (op) => {
   const res = M.storeSilent(op);
   return { status: res.status, body: await res.json() };

@@ -20,8 +20,6 @@ import { dutiesOps } from "../../../src/duties/index.mjs";
 import { calculationsOps } from "../../../src/calculations/index.mjs";
 import { standardsOps } from "../../../src/standards/index.mjs";
 import { captureRequestsOps } from "../../../src/capture-requests/index.mjs";
-/** @param {string} op @returns {readonly string[]} the op's machine classes, asserted to be a list */
-const machineOf = (op) => { const c = O.OPS[op].machineClasses; assert.ok(Array.isArray(c), `${op}: machineClasses is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS,
         UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
@@ -31,7 +29,7 @@ const plain = (s) => JSON.parse(JSON.stringify(s));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const neither = (op) => !SESSION_OPS.member.has(op) && !SESSION_OPS.admin.has(op);
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n).sort();
 const inNoTable = (op) => !Object.hasOwn(OPS, op) && !Object.hasOwn(NEEDS, op) && neither(op) && !Object.hasOwn(OP_STAMPS, op)
   && listsOf(op).length === 0 && !Object.hasOwn(UNATTENDED_BY_DECISION, op)
@@ -147,9 +145,9 @@ test("R30, R2, R4: none of T35's ops is in GOVERNANCE_ACTIONS or IDENTITY_ACTION
   assert.equal(AI_GRANT_OPS.includes("agentpack"), AI_GRANT_OPS.includes("affordances"));
   for (const op of ["securitymap", "signout", "signouteverywhere", "recoverycodesissue", "recoverycodesstate",
                     "adminrecoverystep", "noterevise", "notedelete", "subscriptiondisconnect"])
-    assert.deepEqual(OPS[op].machineClasses, [], op);
+    assert.deepEqual([...OPS[op].machineClasses], [], op);
   /* unpack: the daemon continues an automatic unpack, the probe as an operator's bearer; no member or admin bearer */
-  assert.ok(!machineOf("unpack").includes("member") && !machineOf("unpack").includes("admin"));
+  assert.ok(!OPS.unpack.machineClasses.includes("member") && !OPS.unpack.machineClasses.includes("admin"));
   /* negative control */
   assert.equal(agentReachable("signout"), false);
 });

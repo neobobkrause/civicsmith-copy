@@ -7,72 +7,6 @@ import { validateDescriptor, normaliseFamily } from './descriptor.mjs';
 import { hostPart } from './net.mjs';
 import { localize } from '../../../bio-plane/src/setup-words/index.mjs';
 
-/**
- * R19: what a tool does with what it is sent; each value stated, or the exact string `"not stated"`.
- * @typedef {Object} Handling
- * @property {string[]} sends what leaves for the tool (`file_bytes`, `hash_prefix`, `counts`, ...)
- * @property {string[]} never_sends always holds `file_name`, `member_identity` and `ip_address`
- * @property {string} recipient
- * @property {string[]} sub_processors
- * @property {string} region
- * @property {string} file_retention
- * @property {string} result_retention
- * @property {string} sample_sharing `none`, `vendor_internal_research`, `third_parties`, `public` or `"not stated"`
- * @property {boolean} on_own true when the recipient is the organization's own server or service (R33)
- * @bound sample_sharing: `third_parties` and `public` are refused, `"not stated"` held (R19)
- */
-/**
- * R19 (N777): one setting an adapter reads from the spec's `config`, asked by name on a settings page.
- * @typedef {Object} ConfigField
- * @property {string} name
- * @property {string|null} label
- * @property {boolean} required
- * @property {string} [structured] `list` or `handling` when the value is not one text (T38)
- */
-/**
- * R19: an outside tool's descriptor, frozen. A generic template (`template` true) is completed per call by
- * `resolveDescriptor`.
- * @typedef {Object} Descriptor
- * @property {string} provider_id
- * @property {string} vendor
- * @property {string} product
- * @property {string[]} kinds a non-empty subset of `scan`, `cdr`, `sandbox`, `url_reputation`, `log_sink`
- * @property {string} transport `https`, `icap`, `syslog_tls` or `azure_blob`
- * @property {string} reach `public` or `tunnel`
- * @property {*} hosts the hosts it may reach: a list, or lists keyed by region
- * @property {*} engine_family a non-empty list of engine-family names (R31); a template's is the administrator's
- * @property {string[]} credentials the credential fields' names, never values
- * @property {ConfigField[]} config
- * @property {*} test_probe
- * @property {Handling} handling
- * @property {*} mode_required the private mode's parameters, or null
- * @property {*} mode_check how the mode is confirmed before a send, or null
- * @property {string} licence_note
- * @property {string[]} source_urls
- * @property {string} read_on the date the handling was read, `YYYY-MM-DD`
- * @property {boolean} [template] a generic transport's template
- * @property {boolean} [per_engine] it reports one verdict per engine
- * @property {boolean} [host_from_spec] its address is the spec's `host`
- */
-/**
- * R20: a tool refused by name.
- * @typedef {Object} RefusedProvider
- * @property {string} provider_id
- * @property {string} reason R19's code, or `NOT_OFFERED`
- */
-/**
- * R20: a tool held until its vendor states its handling.
- * @typedef {Object} HeldProvider
- * @property {string} provider_id
- * @property {string} missing `HANDLING_NOT_STATED`
- */
-/**
- * R31: what `differentEngine` reads of a verdict.
- * @typedef {Object} EngineVerdict
- * @property {string} tool the descriptor's `provider_id`, or `clamav`
- * @property {string} engine
- */
-
 const READ_ON = '2026-10-07';
 const NEVER = Object.freeze(['file_name', 'member_identity', 'ip_address']);
 const ADMIN = localize('file-scanner.catalogue.stated_by_the_administrator', 'stated by the administrator');
@@ -132,8 +66,7 @@ const INTELIX = {
   source_urls: ['https://www.sophos.com/en-us/legal/product-privacy-information/sophoslabs-intelix'],
 };
 
-/** R20: the descriptors offered, frozen, keyed by `provider_id` in the catalogue's order.
- * @type {readonly Descriptor[]} */
+/** R20: the descriptors offered, frozen, keyed by `provider_id` in the catalogue's order. */
 export const PROVIDERS = Object.freeze([
   // ── scan
   descriptor({ provider_id: 'scanii', vendor: 'Uva Software, LLC', product: 'Scanii', kinds: ['scan'],
@@ -331,8 +264,7 @@ export const PROVIDERS = Object.freeze([
     licence_note: localize('file-scanner.catalogue.https_webhook_the_organizations_own_endpoint', 'the organization\'s own endpoint'), source_urls: [] }),
 ]);
 
-/** R20: refused by name, with R19's code or NOT_OFFERED (DEC-168 S10–S12). Frozen.
- * @type {readonly RefusedProvider[]} */
+/** R20: refused by name, with R19's code or NOT_OFFERED (DEC-168 S10–S12). */
 export const REFUSED_PROVIDERS = Object.freeze([
   ['virustotal-upload', 'PROVIDER_SHARES_SAMPLES'], ['jotti', 'PROVIDER_SHARES_SAMPLES'],
   ['hybrid-analysis', 'PROVIDER_SHARES_SAMPLES'], ['joe-sandbox-basic', 'PROVIDER_SHARES_SAMPLES'],
@@ -342,33 +274,18 @@ export const REFUSED_PROVIDERS = Object.freeze([
   ['cloudflare-url-scanner', 'NOT_OFFERED'], ['cloudflare-logpush', 'NOT_OFFERED'],
 ].map(([provider_id, reason]) => Object.freeze({ provider_id, reason })));
 
-/** R20: held until the vendor states its handling (K1949). Frozen.
- * @type {readonly HeldProvider[]} */
+/** R20: held until the vendor states its handling (K1949). */
 export const HELD_PROVIDERS = Object.freeze(['trend-vision-one', 'votiro', 'checkpoint-threat-extraction']
   .map((provider_id) => Object.freeze({ provider_id, missing: 'HANDLING_NOT_STATED' })));
 
-/** R20, R29: the generic templates' ids (`icap`, `syslog-tls`, `https-webhook`). Frozen.
- * @type {readonly string[]} */
 export const GENERIC = Object.freeze(PROVIDERS.filter((d) => d.template).map((d) => d.provider_id));
-/** R8: the date the catalogue's handling statements were read, `YYYY-MM-DD`.
- * @type {string} */
 export const CATALOGUE_READ_ON = READ_ON;
 
 const BY_ID = new Map(PROVIDERS.map((d) => [d.provider_id, d]));
-/**
- * R20: an offered descriptor by its id.
- * @param {string} id
- * @returns {Descriptor|null} null for an id not offered
- */
 export const providerById = (id) => BY_ID.get(id) || null;
 
 /** The descriptor a call works under: a template completed by the administrator's statement and the spec's host,
- *  validated by R19; any other descriptor as catalogued. `{ok:true, descriptor}` or `{ok:false, code, field?}`.
- * @param {Descriptor} d
- * @param {*} spec the tool spec (R21); a template reads its `host` and `config.engine_family`, `config.handling`,
- *   `config.source_urls`
- * @returns {{ok: boolean, descriptor?: Descriptor, code?: string, field?: string}}
- */
+ *  validated by R19; any other descriptor as catalogued. `{ok:true, descriptor}` or `{ok:false, code, field?}`. */
 export function resolveDescriptor(d, spec) {
   if (!d.template) return { ok: true, descriptor: d };
   const config = (spec && spec.config) || {};
@@ -384,11 +301,7 @@ export function resolveDescriptor(d, spec) {
   return v.ok ? { ok: true, descriptor: Object.freeze(resolved) } : v;
 }
 
-/**
- * R31: a provider's engine family; `clamav`'s is `["clamav"]`; null for an id not offered.
- * @param {string} providerId
- * @returns {string[]|null}
- */
+/** R31: a provider's engine family; `clamav`'s is `["clamav"]`; null for an id not offered. */
 export function engineFamily(providerId) {
   if (providerId === 'clamav') return ['clamav'];
   const d = BY_ID.get(providerId);
@@ -403,13 +316,7 @@ function verdictFamily(v) {
   return normaliseFamily(d.engine_family);
 }
 
-/**
- * R31: true exactly when two verdicts' engine families share no name. Pure; never throws: anything that is not a
- * verdict with an engine has no family and answers false.
- * @param {EngineVerdict|*} a a verdict, or anything
- * @param {EngineVerdict|*} b a verdict, or anything
- * @returns {boolean}
- */
+/** R31: true exactly when two verdicts' engine families share no name. Pure; never throws. */
 export function differentEngine(a, b) {
   try {
     const fa = verdictFamily(a), fb = verdictFamily(b);

@@ -2,12 +2,9 @@
  *
  * The copy is a fresh ZIP: the same parts in the same order (less `docProps/custom.xml`, R6), each written from its
  * verified bytes (`ooxml.readPart`) with its original method, one fixed time (1980-01-01 00:00), no extra field and
- * no comment; only image parts and the parts holding R6's metadata change (`xml.mjs` edits them). A part that is
- * neither (a workbook's sheets, a document's fonts) is verified as it streams through inflation, its length and CRC-32
- * against the central directory, and its own compressed bytes are written as they are: it is never held whole nor
- * deflated again. A part that is changed is read, edited and compressed one at a time, so the working set is about
- * that one part's size twice (R4). */
-import { readContainer, readPart, crc32, normalizePartName, ODF_MANIFEST_PART, CORE_PROPERTIES_PART, MEMBER_MAX, ARCHIVE_TOTAL_MAX } from "../ooxml.mjs";
+ * no comment; only image parts and the parts holding R6's metadata change (`xml.mjs` edits them). Parts are read,
+ * edited and compressed one at a time, so the working set is about one part's size twice (R4). */
+import { readContainer, readPart, crc32, normalizePartName, ODF_MANIFEST_PART, CORE_PROPERTIES_PART } from "../ooxml.mjs";
 import { CleanRefusal, cleanImage, imageKind, mediaKind, latin1 } from "./images.mjs";
 import { editXml, newScan } from "./xml.mjs";
 import { boundOf } from "../read-bounds.mjs";
@@ -107,72 +104,6 @@ async function deflateRaw(bytes) {
   let o = 0;
   for (const c of chunks) { out.set(c, o); o += c.length; }
   return out;
-}
-
-/** The leading bytes of a part read to judge whether it is an image or media (`imageKind`, `mediaKind`): more than
- *  any of their tests reads (an XML root within 4 KB, an MPEG transport stream's third packet at 376). */
-const HEAD_BYTES = 32 * 1024;
-const WINDOW = 1 << 20;
-let crcTable = null;
-function crcUpdate(c, d) {
-  if (!crcTable) {
-    crcTable = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) { let k = n; for (let i = 0; i < 8; i++) k = k & 1 ? 0xedb88320 ^ (k >>> 1) : k >>> 1; crcTable[n] = k >>> 0; }
-  }
-  for (let i = 0; i < d.length; i++) c = crcTable[(c ^ d[i]) & 255] ^ (c >>> 8);
-  return c;
-}
-
-/** An unchanged part's own compressed bytes, verified as they stream: inflated in windows, never held whole, its
- *  length and CRC-32 checked against the central directory as `readPart` checks them. Answers `{data}` (a view of
- *  the original's bytes), or `null` when the part must be read whole: its first bytes are an image's or media's
- *  (`ftyp` included, whose brands may lie past them), or anything about it is not as `readPart` would accept, so that
- *  `readPart` gives the refusal it always gave. */
-async function verifiedRaw(d, e, total) {
-  if ((e.method !== 0 && e.method !== 8) || !(e.uncompressedSize <= MEMBER_MAX) || !(total <= ARCHIVE_TOTAL_MAX)) return null;
-  const lh = e.localHeaderOffset;
-  if (!(lh + 30 <= d.length) || u32(d, lh) !== 0x04034b50 || ((e.flags ?? u16(d, lh + 6)) & 0x2041) !== 0) return null;
-  const start = lh + 30 + u16(d, lh + 26) + u16(d, lh + 28), data = d.subarray(start, start + e.compressedSize);
-  if (start + e.compressedSize > d.length) return null;
-  const directory = e.name.endsWith("/");
-  let crc = 0xffffffff, size = 0, head = [], headLen = 0, judged = directory;
-  /* One inflated window: counted, checked and, until the head is judged, kept. False stops the part. */
-  const take = (w) => {
-    size += w.length;
-    if (size > e.uncompressedSize) return false;
-    crc = crcUpdate(crc, w);
-    if (judged) return true;
-    head.push(w.subarray(0, HEAD_BYTES - headLen).slice());
-    headLen += head[head.length - 1].length;
-    return headLen < HEAD_BYTES || judge();
-  };
-  const judge = () => {
-    judged = true;
-    const h = new Uint8Array(headLen);
-    let o = 0;
-    for (const w of head) { h.set(w, o); o += w.length; }
-    head = null;
-    return !(mediaKind(h) || imageKind(h) || (h.length >= 8 && latin1(h, 4, 4) === "ftyp"));
-  };
-  try {
-    if (e.method === 0) {
-      for (let o = 0; o < data.length; o += WINDOW) if (!take(data.subarray(o, o + WINDOW))) return null;
-    } else {
-      let o = 0;
-      const reader = new ReadableStream({
-        pull(ctl) { if (o >= data.length) ctl.close(); else { ctl.enqueue(data.subarray(o, o + WINDOW)); o += WINDOW; } },
-      }).pipeThrough(new DecompressionStream("deflate-raw")).getReader();
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (!take(value)) { reader.cancel().catch(() => {}); return null; }
-      }
-    }
-  } catch {
-    return null;
-  }
-  if (!judged && !judge()) return null;
-  return size === e.uncompressedSize && ((crc ^ 0xffffffff) >>> 0) === e.crc32 ? { data } : null;
 }
 
 const DOS_DATE = 0x0021; // 1980-01-01
@@ -317,16 +248,9 @@ export async function cleanPackage(d, family, scan = newScan()) {
   const images = { stripped: 0, unchanged: 0 };
   const parts = [];
   let changed = removed.size > 0;
-  const total = c.entries.reduce((k, e) => k + e.uncompressedSize, 0);
   for (const e of c.entries) {
     const n = normalizePartName(e.name);
     if (removed.has(n)) continue;
-    const rules = family === "ooxml" ? ooxmlRules(n, removed, dropped.get(n)) : odfRules(n);
-    const raw = rules ? null : await verifiedRaw(d, e, total);
-    if (raw) {
-      parts.push({ name: e.name, method: e.method, size: e.uncompressedSize, crc: e.crc32, data: raw.data });
-      continue;
-    }
     const r = await readPart(d, c, e.name);
     if (!r.ok) throw refusal(r.why === "ARCHIVE_TOTAL_MAX" || r.why === "MEMBER_MAX" ? "DOCUMENT_TOO_LARGE" : "DOCUMENT_UNREADABLE", why(r));
     let bytes = r.bytes;
@@ -337,6 +261,7 @@ export async function cleanPackage(d, family, scan = newScan()) {
       const out = await cleanImage(bytes, kind, `part ${n}`, CLEAN_MAX_PART_BYTES, scan);
       if (out.changed) { bytes = out.bytes; images.stripped++; } else images.unchanged++;
     } else {
+      const rules = family === "ooxml" ? ooxmlRules(n, removed, dropped.get(n)) : odfRules(n);
       if (rules?.authorRuns) bytes = withoutAuthorRuns(bytes);
       if (rules) bytes = await editXml(bytes, rules, { inPlace: e.method === 8 && bytes === r.bytes, where: `part ${n}`, scan });
     }

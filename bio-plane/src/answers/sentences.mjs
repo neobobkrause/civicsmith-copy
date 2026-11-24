@@ -12,79 +12,6 @@ import { OBSERVATION_LEVELS, OBSERVATION_STATES } from "../observation-log/vocab
 import { ANSWERS_CHECKS, refusal } from "./checks.mjs";
 import { ReadLog, textOf } from "./readlog.mjs";
 
-/** @import { AnswersRefusal, RefusalFields } from './checks.mjs' */
-/** @import { ReadLog as ReadLogKind } from './readlog.mjs' */
-
-/**
- * One sentence of an answer (R3, R31): its text, its kind, and the items it rests on, each `h<i>`, `r<i>` or `l<i>`, a
- * 1-based place in the answer's `holdings`, `rules` or `looks`. A `baseline` sentence also carries its baselines and
- * the difference stated.
- * @typedef {Object} AnswerSentence
- * @property {string} text
- * @property {string} kind one of `SENTENCE_KINDS`
- * @property {string[]} support
- * @property {AnswerBaseline[]} [baselines] a `baseline` sentence's, one or more
- * @property {string|null} [difference] a `baseline` sentence's
- * @bound support: each h<i>, r<i> or l<i>, i from 1 to the length of that list
- */
-/**
- * One baseline of a `baseline` sentence (R31; D20): its value, what it rests on among its sentence's support, its basis,
- * and whether its document was looked for. A baseline read from a document rests on a holding and names no look.
- * @typedef {Object} AnswerBaseline
- * @property {string|number} value
- * @property {string[]} rests_on
- * @property {string} basis_kind one of `BASIS_KINDS`
- * @property {any} [looked] `not_yet_looked_for`, or `{state: "looked_for_and_not_found", where}`
- */
-/**
- * A holding an answer cites (R3): a record address and a quote, byte-exact, of the object the read log answered there.
- * @typedef {Object} AnswerHolding
- * @property {string} address
- * @property {string} quote
- */
-/**
- * A rule item an answer cites (R3, R6, R22): one of R7's answers in the read log, by the `rule_id` the log gave it, with
- * its service, value and label. A `legal_information` item carries its quote; a reading of a court ruling carries none.
- * @typedef {Object} AnswerRuleItem
- * @property {string} rule_id
- * @property {string} service
- * @property {any} value
- * @property {string} label one of `RULE_LABELS`
- * @property {string} [quote]
- * @property {any} [reading]
- * @property {any} [limits]
- */
-/**
- * A look an answer cites (R4): the level searched and the absence term found, observation-log's.
- * @typedef {Object} AnswerLook
- * @property {any} level one of `LEVELS`
- * @property {any} state one of `ABSENCE_TERMS`
- */
-/**
- * The items sentences cite, as an answer carries them.
- * @typedef {Object} AnswerCited
- * @property {AnswerHolding[]} holdings
- * @property {AnswerRuleItem[]} rules
- * @property {AnswerLook[]} looks
- */
-/**
- * One item withheld by R4's checks, with its code and the row's words: a sentence (`s<i>`), a holding, a rule item, a
- * look, or the summary.
- * @typedef {Object} AnswerWithheld
- * @property {string} [sentence]
- * @property {string} [holding]
- * @property {string} [rule]
- * @property {string} [look]
- * @property {boolean} [summary]
- * @property {string} code
- * @property {any} translation
- */
-/**
- * R33's answer: `ok` true with the sentences withheld, each with its code and words, and the ids (`s<i>`) of those
- * kept; or `ok` false with `ANSWER_MALFORMED`'s fields, naming the field.
- * @typedef {{ok: boolean, withheld?: AnswerWithheld[], kept?: string[]} & RefusalFields} SentencesChecked
- */
-
 /** R3, R31: a sentence's kinds. */
 export const SENTENCE_KINDS = Object.freeze(["quote", "list", "figure", "absence", "rule", "explain", "baseline"]);
 /** R6: a rule item's labels. */
@@ -152,11 +79,7 @@ function baselineShape(b, f, support) {
 }
 
 /** R3, R31: null for a sentence of the contract's shape, else `ANSWER_MALFORMED` naming the field. `n` counts the
- *  cited items (`h`, `r`, `l`).
- *  @param {any} s the sentence
- *  @param {string} f its field's name, for the refusal
- *  @param {{h: number, r: number, l: number}} n
- *  @returns {AnswersRefusal|null} */
+ *  cited items (`h`, `r`, `l`). */
 export function sentenceShape(s, f, n) {
   const inRange = (id) => { const m = /^([hrl])([1-9]\d*)$/.exec(typeof id === "string" ? id : "");
     return !!m && Number(m[2]) <= n[m[1]]; };
@@ -175,9 +98,7 @@ export function sentenceShape(s, f, n) {
   return null;
 }
 
-/** R3, R6: null for cited items of the contract's shape, else `ANSWER_MALFORMED`.
- *  @param {{holdings: any, rules: any, looks: any}} cited
- *  @returns {AnswersRefusal|null} */
+/** R3, R6: null for cited items of the contract's shape, else `ANSWER_MALFORMED`. */
 export function citedShape({ holdings, rules, looks }) {
   if (!Array.isArray(holdings)) return malformed("holdings", "holdings is a list");
   if (!Array.isArray(rules)) return malformed("rules", "rules is a list");
@@ -215,10 +136,7 @@ const ADDRESS = /\b[A-Z]{2,6}-\d{4}-[A-Za-z0-9-]+|\b[0-9a-f]{64}\b|\b(?:rule|occ
 const FIGURE = /(?:about |approximately |nearly |over |~)?(?:[$€£]\s?|\b(?:USD|EUR|GBP|CAD) ?)?\(?-?\d[\d,]*(?:\.\d+)?\)?(?: ?(?:%|percent\b|thousand\b|million\b|billion\b|trillion\b))?/g;
 
 /** The figures a text states outside its quotes (a date, a time, a record address and a section number are not
- *  figures; a bare four-digit year is read as a date), each as calc-grammar's `parseFigure` reads it.
- *  @param {any} text
- *  @param {string[]} [quotes] texts taken out first
- *  @returns {any[]} */
+ *  figures; a bare four-digit year is read as a date). */
 export function figuresIn(text, quotes = []) {
   let t = String(text);
   for (const q of quotes) if (q) t = t.split(q).join(" ");
@@ -302,10 +220,7 @@ function ownVoice(text, quotes) {
   return t.replace(QUOTED, " ");
 }
 
-/** R32: whether a text in Civicsmith's voice gives a verdict, likelihood or rating word.
- *  @param {any} text
- *  @param {string[]} [quotes] the quotes it cites, which are not its own voice
- *  @returns {boolean} */
+/** R32: whether a text in Civicsmith's voice gives a verdict, likelihood or rating word. */
 export function verdictIn(text, quotes = []) {
   const t = ownVoice(text, quotes);
   return VERDICT_RE.test(t) || PERCENT_LIKELIHOOD.test(t);
@@ -330,12 +245,7 @@ function asLog(readLog, viewer) {
   return log;
 }
 
-/** The judgement over sentences and their cited items: each item's state and each sentence's code (null kept). The
- *  sentences and items are of the contract's shape (`sentenceShape`, `citedShape`).
- *  @param {AnswerSentence[]} sentences
- *  @param {AnswerCited} cited
- *  @param {ReadLogKind} log
- *  @returns {{holdOk: boolean[], ruleOk: boolean[], lookOk: boolean[], codes: Array<string|null>}} */
+/** The judgement over sentences and their cited items: each item's state and each sentence's code (null kept). */
 export function judge(sentences, cited, log) {
   const { holdings, rules, looks } = cited;
   const holdOk = holdings.map((h) => holdingRead(h, log));
@@ -377,10 +287,7 @@ export function judge(sentences, cited, log) {
  *  `case-disclosures` R30 (through `case-checker` R24). `cited` is `{holdings, rules, looks}` as an answer carries
  *  them; `readLog` a read log, or the objects read as a list. Answers `{ok: true, withheld, kept}`, `withheld` listing
  *  `{sentence, code, translation}` for each sentence withheld and `kept` the ids of the rest (`s<i>`), or
- *  `ANSWER_MALFORMED` naming the field. Pure; never throws.
- *  @param {any} sentences
- *  @param {{cited?: any, readLog?: any, viewer?: any}} [opts]
- *  @returns {SentencesChecked} */
+ *  `ANSWER_MALFORMED` naming the field. Pure; never throws. */
 export function checkSentences(sentences, opts = {}) {
   try {
     const { cited = {}, readLog = null, viewer = undefined } = plain(opts) ? opts : {};

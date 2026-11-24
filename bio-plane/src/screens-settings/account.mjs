@@ -17,38 +17,6 @@
    kit's `cs.keyFile`, handed to `cs.signer.sign(statements, {keyFile})`, and the key it holds is registered, so no second key is made for one
    member on one device. */
 
-/* The kinds of this module's six screens, stated once here and named by each of them (screens-account's Purpose: pure, every
-   read and act an op, through interface-shell). `screens-settings` composes them into `SCREENS`, adding each screen's
-   `words` and `parts`; interface-shell (R21) draws them. The kit `cs` and the view reach a screen as arguments. */
-/**
- * @typedef {Object} ScreenRead
- * @property {string} op the read's op
- * @property {Object<string, string>} [query] the read's query, by name
- * @property {Object<string, string>} [body] the read's body, when the read is sent with one
- * @property {(value: any) => boolean} [empty] whether an answer is drawn as empty
- */
-/**
- * @typedef {Object} ScreenAct
- * @property {string} op the act's op
- * @property {string[]} rereads the reads, by name, read again after the act
- * @property {(view: any, ui: any, cs: any) => any} send the request's `{body}`, or `{refuse}` naming the word that refuses it in place, or null to send nothing
- * @property {(view: any, answer: any, cs: any) => any} [done] what the screen keeps of the answer
- * @property {(view: any, ui: any, cs: any) => ({refuse: string} | undefined)} [ready] a refusal in place before the act is offered
- * @property {Object<string, any>} [refusals] the act's own words for a refusal, by code
- * @property {string} [reasonField] the field that carries the reason the shell asks of an administrator's act
- * @property {string[]} [successCodes] the codes drawn as done, not refused
- * @property {boolean} [outward] whether the act sends the group's material outward
- */
-/**
- * @typedef {Object} SettingsScreen
- * @property {string} id the screen's id, as its address and its words name it
- * @property {(view: any) => Object<string, ScreenRead | undefined>} reads the reads, by name; one the view does not call for is absent
- * @property {(cs: any, view: any) => string} render the screen drawn, as HTML
- * @property {ScreenAct[]} acts the acts the screen offers
- * @property {(cs: any, view: any) => void} [closed] what leaves the page's memory when the member leaves the screen
- */
-
-/** @type {SettingsScreen} Settings › Your account */
 export const account = {
   id: "account",
 

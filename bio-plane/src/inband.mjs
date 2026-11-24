@@ -20,20 +20,9 @@
 
 import { localize } from "./setup-words/index.mjs";
 
-/**
- * The quartet's format word (R7).
- * @type {string}
- * @bound "bio-inband/1"
- */
 export const INBAND_FORMAT = "bio-inband/1";
 
 /* THE CANONICAL BYTES of a JSON value. */
-/**
- * The canonical bytes of a JSON value, the bytes the quartet's hash covers (R7).
- * @param {any} value
- * @returns {Uint8Array}
- * @bound JSON.stringify(value, null, 1) as UTF-8
- */
 export function canonicalBytes(value) {
   return new TextEncoder().encode(JSON.stringify(value, null, 1));
 }
@@ -46,19 +35,6 @@ async function sha256HexOf(bytes) {
 /* THE TWO FLOORS, read off a bar in the shape `#projectBar` returns and the case document freezes
    (`required_strength`: declared, capture, connection). Undetermined is first-class: an absent bar is
    NOT a bar of zero, so an axis nobody declared reads null and `declared` says false in words. */
-/**
- * The two threshold floors of a case (R7).
- * @typedef {Object} InbandFloors
- * @property {string|null} capture the declared grade, or null when none is
- * @property {string|null} connection the declared grade, or null when none is
- * @property {boolean} declared true only when the bar says declared and names at least one grade
- * @property {string} detail in words: the floors, or that no floor is declared
- */
-/**
- * The two floors read off a bar (R7).
- * @param {any} bar `{declared, capture, connection}`; anything else, or an axis written `null`, is no floor
- * @returns {InbandFloors}
- */
 export function floorsOf(bar) {
   /* A frozen case document writes an unset axis as the YAML word `null`; it is an absent floor either way. */
   const grade = (g) => (typeof g === "string" && g.trim() && g.trim() !== "null" ? g.trim() : null);
@@ -80,34 +56,6 @@ export function floorsOf(bar) {
    read them, answered unchanged as `group` (null with none given). They sit BESIDE `hash` and never inside what it
    covers, which is the subject's bytes only: two groups stamping the same bytes carry the same `hash.sha256`, so a
    joint text's body fingerprint is computed without them. The format stays `bio-inband/1`: the field is additive. */
-/**
- * What `inbandQuartet` is handed (R7, R34).
- * @typedef {Object} InbandArgs
- * @property {any} subject the JSON value whose canonical bytes are hashed
- * @property {string} over in words, what was hashed, so a reader knows what to re-hash
- * @property {any} [date] answered unchanged; absent is null
- * @property {any} [author] answered unchanged; absent is null
- * @property {any} [bar] the floors' bar (`floorsOf`); absent is null
- * @property {any} [group] the group's per-group fields (R34); absent is null
- */
-/**
- * The in-band quartet (R7): hash, date, author and both floors, with the group's fields beside them (R34).
- * @typedef {Object} InbandQuartet
- * @property {string} format
- * @property {{algorithm: string, sha256: string, over: string, bytes: number, canonical: string}} hash
- * @property {any} date
- * @property {any} author
- * @property {InbandFloors} floors
- * @property {any} group never inside what `hash` covers
- * @bound format: "bio-inband/1"
- * @bound hash: sha256 over JSON.stringify(subject, null, 1) as UTF-8, lowercase hexadecimal; `bytes` is that byte count
- */
-/**
- * The one hasher of the container manifest and the review copy (R7, R34).
- * @param {InbandArgs} args
- * @returns {Promise<{bytes: Uint8Array, quartet: InbandQuartet}>} `bytes` the canonical bytes hashed
- * @bound format "bio-inband/1", hash over JSON.stringify(subject, null, 1) as UTF-8
- */
 export async function inbandQuartet({ subject, over, date = null, author = null, bar = null, group = null }) {
   const bytes = canonicalBytes(subject);
   const sha256 = await sha256HexOf(bytes);

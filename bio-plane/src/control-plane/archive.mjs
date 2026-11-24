@@ -39,7 +39,7 @@ function filing(id, doc, { project, archiveSha, at }) {
   const cap = doc.capture || {};
   const fromArchive = !!(doc.container && doc.container.archive_sha256);
   const path = fromArchive ? clean(doc.container.path ?? `entry ${doc.container.index}`, 200) : null;
-  const title = clean(fromArchive ? word("file.archive.entry.title", { path: path ?? "", archive: archiveSha })
+  const title = clean(fromArchive ? word("file.archive.entry.title", { path, archive: archiveSha })
                                   : word("file.archive.title", { source: doc.locator ?? cap.sha256 }), 200);
   const blobs = Array.isArray(doc.parts) && doc.parts.length
     ? doc.parts.map((p) => ({ path: p.file, sha256: p.sha256, bytes: p.bytes }))

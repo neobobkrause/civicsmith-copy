@@ -336,12 +336,8 @@ function ocrOf(supplied, page) {
   return t && typeof t.engine === "string" && t.engine ? t : null;
 }
 
-/** @import { BudgetCtx, PdfReading } from './index.mjs' */
 /** R2–R6: the PDF reading of a financial report (`budget: false`) or a budget
- *  book (`budget: true`).
- *  @param {BudgetCtx} ctx
- *  @param {{budget: boolean}} options
- *  @returns {PdfReading} */
+ *  book (`budget: true`). */
 export function readTables(ctx, { budget }) {
   const supplied = ctx.supplied && typeof ctx.supplied === "object" ? ctx.supplied : null;
   const { noText, images } = markers(supplied);

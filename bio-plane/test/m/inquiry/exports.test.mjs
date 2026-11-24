@@ -117,12 +117,12 @@ test("R52 (2) leg-earning R2: the resolver caps each leg's capture letter as leg
   const cap = w.k.earned(null, [DC, DB, DU, NONE]).earned.capture;
   const got = resolve(legs);
   assert.deepEqual(got, legs.map((l) => legCapped(l.grade, cap[l.target_id], l.target_id)), "legCapped's answer over the earned ceiling, leg for leg");
-  assert.equal(got[0]?.grade, "C", "B above the archive replay's C is read at C");
+  assert.equal(got[0].grade, "C", "B above the archive replay's C is read at C");
   assert.equal(got[1], null, "B within the ceiling stands");
-  assert.equal(got[2]?.grade, null, "an undetermined ceiling answers a null grade");
-  assert.match(got[2]?.why ?? "", /no ruling grades/);
+  assert.equal(got[2].grade, null, "an undetermined ceiling answers a null grade");
+  assert.match(got[2].why, /no ruling grades/);
   assert.equal(got[3], null, "a target the record holds no capture of has no ceiling");
-  assert.equal(got[4]?.grade, "B");
+  assert.equal(got[4].grade, "B");
   assert.equal(got[5], null);
   assert.deepEqual(resolve([]), []);
   assert.deepEqual(w.k.legGrades([]), []);

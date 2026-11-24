@@ -3,8 +3,4 @@
    merged, is gone: `ACT_HELP` holds them. */
 import { ACT_HELP } from "../../../src/affordances.mjs";
 
-/**
- * @param {string} op
- * @returns {boolean} whether affordances' `ACT_HELP` holds a text for the op
- */
 export const explained = (op) => Object.hasOwn(ACT_HELP, op) && typeof ACT_HELP[op] === "string" && ACT_HELP[op].length > 0;

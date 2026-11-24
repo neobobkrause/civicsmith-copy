@@ -27,57 +27,13 @@
 
 import { word } from "../setup-words/index.mjs";
 
-/**
- * @typedef {Object} CheckRow one refusal's row: its check id, where it is raised, and the words a member reads
- * @property {string} check the check's id, `C-<n>.<n>`
- * @property {string} where the file, the function and the DEC-49 region that raise it
- * @property {string} translation the member's sentence, the word `refusal.<CODE>` read through setup-words each time it is read
- */
-/**
- * @typedef {Object} AdmissionChecks the admission gate's refusals, by code (C-38)
- * @property {CheckRow} NOT_AUTHENTICATED
- * @property {CheckRow} CLASS_FORBIDDEN
- * @property {CheckRow} MACHINE_CREDENTIAL_REQUIRED
- * @property {CheckRow} SESSION_ROLE_CANNOT_REACH_OP
- * @property {CheckRow} SESSION_ROUTE_NOT_RECORDED
- * @property {CheckRow} ROOT_OF_TRUST_REQUIRED
- * @property {CheckRow} NOT_CAPABLE
- * @property {CheckRow} SCOPE_REFUSED
- * @property {CheckRow} DOOR_RATE_LIMITED
- * @property {CheckRow} CREDENTIAL_IN_ADDRESS
- * @property {CheckRow} MEMBER_TOKEN_RETIRED
- */
-/**
- * @typedef {Object} NamespaceChecks the namespace refusals, by code (C-78)
- * @property {CheckRow} NAMESPACE_UNKNOWN
- * @property {CheckRow} NAMESPACE_PINNED
- * @property {CheckRow} NAMESPACE_CONFINED
- */
-/**
- * @typedef {Object} AiScopeChecks the agent credential's refusals, at the gate and at the mint, by code (C-29)
- * @property {CheckRow} AI_BEYOND_TASK_SCOPE
- * @property {CheckRow} AI_CREDENTIAL_REVOKED
- * @property {CheckRow} AI_CREDENTIAL_EXPIRED
- * @property {CheckRow} AI_SCOPE_UNKNOWN_OP
- * @property {CheckRow} AI_SCOPE_BEYOND_MEMBER_REACH
- * @property {CheckRow} AI_CONFINEMENT_NOT_SCRATCH
- */
-/**
- * @typedef {Object} OperatorFenceChecks the operator fence's refusal (C-32.17)
- * @property {CheckRow} OPERATOR_TOKEN_CANNOT_GOVERN
- */
-/**
- * @typedef {Object} GroupIdentityFenceChecks the group identity fence's refusal (C-64.4)
- * @property {CheckRow} GROUP_IDENTITY_NEEDS_SESSION
- */
-
 /* R28: a row's `translation` is the word `refusal.<CODE>`, read through setup-words' `word` each time it is read (the
    getter holds no sentence and keeps the row's `{check, translation}` shape for the readers of the families: the
    envelope's decoration, the door). DOOR_RATE_LIMITED's one placeholder is left as written, `{minutes}`, since a row
    knows no wait; the refusal itself (index.mjs `doorRateLimited`) fills it. */
 function worded(rows) {
   for (const code of Object.keys(rows)) {
-    const vars = code === "DOOR_RATE_LIMITED" ? { minutes: "{minutes}" } : undefined;
+    const vars = code === "DOOR_RATE_LIMITED" ? { minutes: "{minutes}" } : {};
     Object.defineProperty(rows[code], "translation", { enumerable: true, get: () => word(`refusal.${code}`, vars) });
   }
   return rows;
@@ -86,7 +42,6 @@ function worded(rows) {
 /* C-38 · THE ADMISSION GATE (REC-79): every refusal a caller meets before their op runs. ADDITIVE ON THE WIRE: each
    refusal keeps its `error` sentence byte-identical beside the code (IC-REC-79). `MACHINE_CREDENTIAL_REQUIRED` is named
    for what it requires, not what it forbids, and does not match the doctrine pack's `MACHINE_CANNOT_` prefix. */
-/** @type {AdmissionChecks} */
 export const ADMISSION_CHECKS = worded({
   /* Absent identity, and it is the FIRST thing a stranger meets. It says what to
      do rather than what happened, because a person reading this has not yet done
@@ -228,7 +183,6 @@ export const ADMISSION_CHECKS = worded({
 });
 
 /* C-78 · A NAMESPACE (D-456, D-461, D-463). */
-/** @type {NamespaceChecks} */
 export const NAMESPACE_CHECKS = worded({
   NAMESPACE_UNKNOWN: {
     check: 'C-78.1',
@@ -256,7 +210,6 @@ export const NAMESPACE_CHECKS = worded({
 
 /* C-29.6–.10 · AN AGENT CREDENTIAL'S REACH (PL-11 / IS-5, D-199): the gate on every call (.6, .7) and the declaration
    judged at the mint (.8–.10). The mint's and the revocation's rows are credentials'. */
-/** @type {AiScopeChecks} */
 export const AI_SCOPE_CHECKS = worded({
   /* ---- THE GATE. WHAT A DECLARED SCOPE ADMITS, ON EVERY CALL. ---- */
 
@@ -316,7 +269,6 @@ export const AI_SCOPE_CHECKS = worded({
 });
 
 /* C-32.17 · THE OPERATOR FENCE ON SECTION 4 GOVERNANCE (D-136). */
-/** @type {OperatorFenceChecks} */
 export const OPERATOR_FENCE_CHECKS = worded({
   /* D-136 / C-32.17 — D-421's RULING APPLIED TO SECTION 4 GOVERNANCE, and it is
      the same doctrine rather than a new one: *the credential that delivers an
@@ -340,7 +292,6 @@ export const OPERATOR_FENCE_CHECKS = worded({
 });
 
 /* C-64.4 · THE SAME FENCE FOR THE GROUP'S PUBLIC IDENTITY (REC-164). */
-/** @type {GroupIdentityFenceChecks} */
 export const GROUP_IDENTITY_FENCE_CHECKS = worded({
   /* REC-164 — BIO_Publication_v0_1.md §7 points 2 and 3: the display name and the domain are set by an
      administrator's own signed-in session, and the record names who set each one. */

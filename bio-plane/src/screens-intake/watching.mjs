@@ -155,7 +155,7 @@ function sendRequestSet(view, el, cs) {
   if (!text || text.length > 200) return { refuse: "screen.watching.nr.ref.target" };
   if (!places.length || places.some((x) => !/^https:\/\//.test(x))) return { refuse: "screen.watching.nr.ref.https" };
   const auth = String(cs.value("nr-auth") || "").trim();
-  if (!auth) return { refuse: "shell.field.needed", fills: { field: { html: cs.w("screen.watching.nr.f.auth") } } };
+  if (!auth) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.watching.nr.f.auth") } } };
   const desc = String(cs.value("nr-desc") || "").trim();
   const cadence = ["hourly", "daily", "weekly", "monthly", "none"].find((c) => c === cs.value("nr-often")) || "none";
   return { body: { bundle: String(cs.value("nr-project") || ""), target: desc ? { text, description: desc } : { text }, locators: places, authority: auth,
@@ -176,9 +176,9 @@ function sendSweepSet(view, el, cs) {
   const lines = (id) => String(cs.value(id) || "").split("\n").map((x) => x.trim()).filter(Boolean);
   const title = String(cs.value("sw-title") || "").trim(), sources = lines("sw-sources"), seeds = lines("sw-seeds"), terms = lines("sw-match");
   const per = Number(String(cs.value("sw-budget") || "").trim());
-  if (!title) return { refuse: "shell.field.needed", fills: { field: { html: cs.w("screen.watching.sweepdef.title") } } };
-  if (!sources.length || !seeds.length) return { refuse: "shell.field.needed", fills: { field: { html: cs.w(sources.length ? "screen.watching.sweepdef.seeds" : "screen.watching.sweepdef.sources") } } };
-  if (!Number.isInteger(per) || per < 1) return { refuse: "shell.field.needed", fills: { field: { html: cs.w("screen.watching.sweepdef.budget") } } };
+  if (!title) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.watching.sweepdef.title") } } };
+  if (!sources.length || !seeds.length) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w(sources.length ? "screen.watching.sweepdef.seeds" : "screen.watching.sweepdef.sources") } } };
+  if (!Number.isInteger(per) || per < 1) return { refuse: "capture.fieldneeded", fills: { field: { html: cs.w("screen.watching.sweepdef.budget") } } };
   return { body: { bundle: String(cs.value("sw-project") || ""), title, sources, seeds, match: { terms },
                    cadence: ["daily", "weekly", "monthly"].find((c) => c === cs.value("sw-often")) || "weekly", budget: { per_run: Math.min(per, 100), backlog: Math.min(per * 10, 1000) } } };
 }

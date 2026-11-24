@@ -51,7 +51,6 @@ test("R46 resolutionLines: the resolution's lines in one fixed order, frontmatte
   const md = ["---", "id: x", ...lines, "---", ""].join("\n");
   const p = parseFrontmatter(md);
   assert.deepEqual(p.findings, []);
-  assert.ok(p.data, "the lines parse to a document");
   assert.deepEqual(p.data.resolution, { kind: "dissolved", coordinates: ["scope", "time_or_occasion"], qualifier_a: "in 2024",
     qualifier_b: "in 2025", wrong_side: "a", reason: "he said 'no'' then yes", canon: "harmonization" });
   /* idempotent: writing what was read writes the same lines */

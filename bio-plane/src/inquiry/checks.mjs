@@ -12,19 +12,6 @@ import { word } from "../setup-words/index.mjs";
  * to be (`resolution`). The rows are judged at every promotion of an inquiry, which is every door that writes one
  * (take-up, resolve, `basis-versions`' `conclude`, a member's own edit), so no door concludes a contradiction inquiry
  * without its kind. */
-/**
- * A row of this module's own catalogue (DEC-49): its check id, the site that raises it, and the member's words.
- * @typedef {Object} CheckRow
- * @property {string} check the check id, `C-<family>.<n>`
- * @property {string} where the site in this module that raises the row
- * @property {string} translation the member-facing words, read from the word list
- */
-/**
- * R38, R47 (C-2.11 to C-2.18): the contradiction inquiry's rows, one for each code.
- * @type {{CONTRADICTION_LINK_MALFORMED: CheckRow, RESOLUTION_WITHOUT_CONTRADICTION: CheckRow, RESOLUTION_MISSING: CheckRow,
- *   RESOLUTION_KIND_UNKNOWN: CheckRow, RESOLUTION_INCOMPLETE: CheckRow, EXPLORES_MALFORMED: CheckRow,
- *   CANDIDATE_ALREADY_TAKEN_UP: CheckRow, CONTRADICTION_ARM_FAILED: CheckRow}}
- */
 export const INQUIRY_CONTRADICTION_CHECKS = {
   CONTRADICTION_LINK_MALFORMED: {
     check: 'C-2.11',
@@ -80,10 +67,6 @@ export const INQUIRY_CONTRADICTION_CHECKS = {
  * write. The comparison is of the value the record's parser reads out of each version's `bundle.md`, so a respelling of
  * the same value lands, and an unreadable or absent value is a value: a revision may not supply an origin its creation
  * did not record, nor drop one it did. */
-/**
- * R50 (C-66.5): the row of a revision that rewrites `surfaced_by`.
- * @type {{SURFACED_BY_REWRITTEN: CheckRow}}
- */
 export const INQUIRY_SURFACE_CHECKS = {
   SURFACED_BY_REWRITTEN: {
     check: 'C-66.5',
@@ -97,10 +80,6 @@ export const INQUIRY_SURFACE_CHECKS = {
  * that records it. The next free number of this module's C-2 family (C-2.18 the last held at the job's START); the
  * translation is BOB's draft until `words.json` holds a key for it, and the row awaits T41's stamp. Minted at one site,
  * `biasNotInForce`, which `basis-versions` R48 and `case-disclosures` R31 answer through (K231). */
-/**
- * R61 (C-2.19): the row of a bias application not in force.
- * @type {{BIAS_APPLICATION_NOT_IN_FORCE: CheckRow}}
- */
 export const INQUIRY_BIAS_CHECKS = {
   BIAS_APPLICATION_NOT_IN_FORCE: {
     check: 'C-2.19',
@@ -114,10 +93,6 @@ export const INQUIRY_BIAS_CHECKS = {
  * promotion is refused, never passed (fail closed). The next free number of this module's C-2 family (C-2.19 the last
  * held at the job's START); the translation is BOB's draft until `words.json` holds a key for it, and the row awaits
  * T42's stamp. Minted at one site, `machinePassageUnchecked`, which `basis-versions` R49 answers through (K231). */
-/**
- * R62 (C-2.20): the row of a machine-passage read that could not be read.
- * @type {{MACHINE_PASSAGE_UNCHECKED: CheckRow}}
- */
 export const INQUIRY_PASSAGE_CHECKS = {
   MACHINE_PASSAGE_UNCHECKED: {
     check: 'C-2.20',
@@ -129,10 +104,6 @@ export const INQUIRY_PASSAGE_CHECKS = {
 /* R39 (T41; DEC-188 (7)): the words of `words.json` (`docs/development/ux-substrate/screens/words.json`) this module's
  * refusals read by key, each `en` verbatim; the UX stream re-words them there (its `question.refused.drawnon` replaced
  * BOB's drafted words). */
-/**
- * R39: the words this module's refusals read by key, by that key.
- * @type {Readonly<{'question.refused.drawnon': string}>}
- */
 export const QUESTION_WORDS = Object.freeze({
   'question.refused.drawnon': word('question.refused.drawnon'),
 });
@@ -141,10 +112,6 @@ export const QUESTION_WORDS = Object.freeze({
  * person in no public role. A warning, never a refusal, so it takes no check number. Its words are BOB's draft
  * (INQUIRY #16 J1, K2480) until `words.json` holds the key, then read from there by key; `{persons}` is left for the
  * screen to fill with the persons the warning names. */
-/**
- * R59: the warning a question naming a person in no public role carries; never a refusal, so no check number.
- * @type {Readonly<{PERSON_IN_NO_PUBLIC_ROLE: Readonly<{key: 'question.warning.person', translation: string}>}>}
- */
 export const INQUIRY_WARNINGS = Object.freeze({
   PERSON_IN_NO_PUBLIC_ROLE: Object.freeze({
     key: 'question.warning.person',

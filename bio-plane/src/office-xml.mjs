@@ -422,47 +422,30 @@ export async function countObjects(bytes, container, parts, counted, { skipper, 
   return { n, exceeded, scanned };
 }
 
-/** G178 (R46): text made a piece at a time and kept as UTF-8 bytes (not one string per row), made one string once, at the
- *  end. `chars` counts the UTF-16 units added, so the string's offsets are known as it is made; `mark` and `reset` take
- *  back what a sheet that could not be read to its end added. The pieces added hold no lone surrogate (every text is
- *  decoded from bytes or made of whole references), and each is written whole into one block, so the bytes are the text.
- *  The bytes are kept in blocks that are added as the text grows (64 KiB, doubling to 1 MiB each), never in one buffer
- *  sized ahead or copied to grow: what the walk holds is the text made so far, not a guess at the whole beside it. */
+/** G178 (R46): text made a piece at a time and kept as UTF-8 bytes (a growing buffer, not one string per row), made one
+ *  string once, at the end. `chars` counts the UTF-16 units added, so the string's offsets are known as it is made; `mark`
+ *  and `reset` take back what a sheet that could not be read to its end added. The pieces added hold no lone surrogate
+ *  (every text is decoded from bytes or made of whole references), so the bytes are the text. */
 const SINK_ENC = new TextEncoder();
 const SINK_DEC = new TextDecoder("utf-8", { ignoreBOM: true });
-const SINK_FIRST_BLOCK = 1 << 16;
-const SINK_BLOCK_MAX = 1 << 20;
-export function textSink() {
-  /* `blocks[k]` is a block; `ends[k]` the bytes used in it (the last block's is `at`) */
-  let blocks = [new Uint8Array(SINK_FIRST_BLOCK)], ends = [0], cur = blocks[0], at = 0, n = 0, chars = 0;
+export function textSink(expected = 0) {
+  /* `expected`: about how many bytes the text will take; a buffer that starts near it is grown once, not many times */
+  let buf = new Uint8Array(Math.min(Math.max(Math.floor(expected) || 0, 1 << 16), 8 << 20)), n = 0, chars = 0;
   const room = (need) => {
-    if (at + need <= cur.length) return;
-    ends[blocks.length - 1] = at;
-    cur = new Uint8Array(Math.max(Math.min(cur.length * 2, SINK_BLOCK_MAX), need));
-    blocks.push(cur); ends.push(0);
-    at = 0;
+    if (n + need <= buf.length) return;
+    let size = buf.length;
+    while (size < n + need) size *= 2;
+    const next = new Uint8Array(size);
+    next.set(buf.subarray(0, n));
+    buf = next;
   };
   return {
     get chars() { return chars; },
-    add(s) { if (!s.length) return; room(s.length * 3); const w = SINK_ENC.encodeInto(s, cur.subarray(at)).written; at += w; n += w; chars += s.length; },
-    newline() { room(1); cur[at++] = 10; n++; chars++; },
-    mark() { return { block: blocks.length - 1, at, n, chars }; },
-    reset(m) {
-      blocks.length = m.block + 1; ends.length = m.block + 1;
-      cur = blocks[m.block]; at = m.at; n = m.n; chars = m.chars;
-    },
-    text() {
-      ends[blocks.length - 1] = at;
-      let bytes;
-      if (blocks.length === 1) bytes = cur.subarray(0, at);
-      else {
-        bytes = new Uint8Array(n);
-        let o = 0;
-        for (let k = 0; k < blocks.length; k++) { bytes.set(blocks[k].subarray(0, ends[k]), o); o += ends[k]; blocks[k] = null; }
-      }
-      blocks = null; cur = null;
-      return SINK_DEC.decode(bytes);
-    },
+    add(s) { if (!s.length) return; room(s.length * 3); n += SINK_ENC.encodeInto(s, buf.subarray(n)).written; chars += s.length; },
+    newline() { room(1); buf[n++] = 10; chars++; },
+    mark() { return { n, chars }; },
+    reset(m) { n = m.n; chars = m.chars; },
+    text() { const t = SINK_DEC.decode(buf.subarray(0, n)); buf = null; return t; },
   };
 }
 

@@ -67,7 +67,7 @@ test("R21 (Worker side): sourceOf answers doorbell R12's fingerprint of CF-Conne
   const key = "bound-key-0123";
   const w = storeWorld({ env: { KNOCK_FINGERPRINT_KEY: key } });
   for (const addr of ["203.0.113.9", "2001:db8::1"]) {
-    const fp = String(await A.sourceOf(reqFrom(addr), { KNOCK_FINGERPRINT_KEY: key }));
+    const fp = await A.sourceOf(reqFrom(addr), { KNOCK_FINGERPRINT_KEY: key });
     assert.equal(fp, await w.doorbell.sourceFingerprint(addr), "the same digest as the doorbell's");
     assert.match(fp, /^[0-9a-f]{32}$/);
     assert.equal(fp.includes(addr), false);

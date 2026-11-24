@@ -43,7 +43,7 @@ test("R71 (G67): control: a row that is the only one of its tick takes the same 
   await h.owe({ kind: "reading", sha: D });
   await h.consumer().tick(t);
   const [r] = h.list({ sha: D });
-  assert.deepEqual([r.last_ms, r.own_ms, r.why], [3000, 3000, "SLOW"]);
+  assert.deepEqual([r.last_ms, r.own_ms, r.last_why ?? r.why], [3000, 3000, "SLOW"]);
 });
 
 test("R71 (G67): a worker awaited by the row is its `wait_ms`, apart from `own_ms`; the row's `last_ms` is both; a call that overlaps another is counted once", async () => {

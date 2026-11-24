@@ -21,9 +21,7 @@ const IDENTITY = () => ({ ok: true, group: "parks-group", display_name: "Friends
                           domain_verified_at: "2026-10-01T00:00:00Z" });
 
 /** The registration refusals of the one identity source (R34): the answer to a malformed registration, the first
- *  registration that stands, and the answer to a second one, which is refused because the first holds. Serves the
- *  tests of R34.
- *  @returns {{malformed: any, first: any, declared: any, group: any}} `group` what `groupFields()` then answers */
+ *  registration that stands, and the answer to a second one, which is refused because the first holds. */
 export function groupIdentityRegistrar() {
   const w = world();
   const malformed = w.pr.registerGroupIdentity({});
@@ -58,9 +56,7 @@ const call = (w, env, extra = {}) => ({ env, stub: stubOf(w), storeName: "bio", 
 /** The case-file build refusals `assembleCaseContainer` gives (R6, R23, G54), each made by the real assembly over a real
  *  edition: a material the case lists and this copy does not hold (MATERIAL_MISSING, at step materials); a bucket that
  *  refuses its write (BUCKET_FAILED, at step bucket_put); and a finding whose bytes are absent, so no case file is
- *  built at all (CASE_FILE_NOT_ASSEMBLED, naming the finding).
- *  @returns {Promise<{materialMissing: any, bucketFailed: any, notAssembled: any}>}
- *  @throws {Error} when an edition does not sign or its finding does not sign */
+ *  built at all (CASE_FILE_NOT_ASSEMBLED, naming the finding). */
 export async function assembleCaseContainerRefusal() {
   const missing = scene({ extra: [{ ref: GONE, kind: "document", sha: "b".repeat(64), text_sha: null, origin: null,
                                     archived_copy: null, included: true, rests_under: "supporting" }] });
@@ -91,8 +87,7 @@ const readOp = (pr, name, query) => {
 };
 
 /** `publishedcase` for a published case edition whose finding is cited in several cases (R39, C-44.2): asked by the finding's
- *  id alone it is refused FINDING_IN_SEVERAL_CASES, naming both cases; asked with `caseId` it is that case's edition.
- *  @returns {Promise<{byFinding: any, byCase: any}>} */
+ *  id alone it is refused FINDING_IN_SEVERAL_CASES, naming both cases; asked with `caseId` it is that case's edition. */
 export async function publishedCaseSeveralCases() {
   const { w, pr } = docketWorld();
   w.publish(w.P, SECOND_CASE, 1, [{ id: w.F1, role: "supporting" }]);
@@ -100,8 +95,7 @@ export async function publishedCaseSeveralCases() {
            byCase: await readOp(pr, "publishedcase", { caseId: DOCKET_CASE }) };
 }
 
-/** `docketpublic` for CASE's public docket (R21): the docket's own answer once a public withdrawal of edition 1 is posted.
- *  @returns {Promise<any>} */
+/** `docketpublic` for CASE's public docket (R21): the docket's own answer once a public withdrawal of edition 1 is posted. */
 export async function docketPublicOfCase() {
   const { w, pr } = docketWorld();
   await post(w, { kind: "withdrawal", edition: 1, reason: "We no longer stand behind edition 1." });

@@ -18,12 +18,6 @@ import { projectRosterOps } from "../../../src/project-roster/index.mjs";
 import { connectionsOps } from "../../../src/connections/index.mjs";
 import { promoteArchive } from "../../../src/control-plane/archive.mjs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
-/** op-declarations' T48 family of an owner (t48.mjs) */
-function familyOf(owner) {
-  const f = T48_FAMILIES.find((x) => x.owner === owner);
-  assert.ok(f, `a T48 family for ${owner}`);
-  return f;
-}
 
 const { OPS } = O;
 const reply = (o, status = 200) => new Response(JSON.stringify(o), { status });
@@ -144,8 +138,8 @@ test("R96 (control): `stepsource` and `stepsourcewithdraw` still take no `member
 test("R96 (R29): an op that declares `member` in the address has the caller's copy there deleted and the session's set, whether or not its body `member` is kept: `accountreference`, `accountreferenceset`, `accountreferenceremove`, `stepsource`, `stepsourcewithdraw`", async () => {
   const declared = Object.keys(O.OP_STAMPS).filter((op) => O.OP_STAMPS[op].includes("member"));
   /* the ops t48.mjs declares with the `member` stamp: ai-accounts' three account-reference ops (`extra`) and connections' two acts (its actor) */
-  const MEMBER_ADDRESSED = [...Object.keys(familyOf("ai-accounts").extra ?? {}),
-                            ...Object.keys(familyOf("connections").ops)];
+  const MEMBER_ADDRESSED = [...Object.keys(T48_FAMILIES.find((f) => f.owner === "ai-accounts").extra),
+                            ...Object.keys(T48_FAMILIES.find((f) => f.owner === "connections").ops)];
   assert.equal(MEMBER_ADDRESSED.length, 5);
   for (const op of MEMBER_ADDRESSED)
     assert.ok(declared.includes(op), `${op} declares the member stamp`);
@@ -290,8 +284,8 @@ test("R99 (K3366; U260): the one-time answers carry the words of their keys: a m
   const mint = await call(env, { op: "aicredentialmint", token: S.ann, method: "POST", body: { writes: [] } });
   const grant = await call(env, { op: "reviewgrant", token: S.founder, method: "POST", body: {} });
   const tgrant = await call(env, { op: "templatereviewgrant", token: S.founder, method: "POST", body: {} });
-  for (const [r, field, key] of /** @type {[any, string, string][]} */ ([[mint, "tokenIsShownOnce", "credential.token.once"], [grant, "secretIsShownOnce", "screen.review-copy.link.once"],
-                                 [tgrant, "secretIsShownOnce", "template.review.secret.once"]])) {
+  for (const [r, field, key] of [[mint, "tokenIsShownOnce", "credential.token.once"], [grant, "secretIsShownOnce", "screen.review-copy.link.once"],
+                                 [tgrant, "secretIsShownOnce", "template.review.secret.once"]]) {
     assert.equal(r.status, 200, r.text.slice(0, 200));
     assert.equal(r.json.result[field], word(key), `${field} is ${key}`);
   }

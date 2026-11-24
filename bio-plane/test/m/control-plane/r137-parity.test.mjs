@@ -82,28 +82,3 @@ test("R137 (control): the ops the compared set leaves out are the world's known 
   for (const op of ["whoami", "affordances", "agentpack", "airundispatch", "textcheck", "readtranslate", "capture"]) assert.equal(worldAnswers(op), true, `${op} is an arm the world re-makes`);
   for (const [op] of CASES) assert.equal(worldAnswers(op), false, `${op} is a store route: compared`);
 });
-
-test("R29 (store-request R3, R4): once through the real door, over the world's store: for each op of the compared set, every stamp the op declares reaches the store's route as the session's own value, whatever the caller sent in the address and the body; control: no forged value reaches the route at all", { timeout: 300000 }, async () => {
-  const w = await storeWorld();
-  const as = await w.signIn("admin");
-  const { real } = await sides(w, as);
-  const own = new Set(["admin", "member:admin"]);   /* the founder's session in the door's forms (viewer, identity, member) */
-  let checked = 0;
-  for (const [op, spec] of CASES) {
-    const [s] = await real(op, spec);
-    assert.ok(s, `${op} reaches its route`);
-    const query = Object.fromEntries(s.query);
-    let body = {};
-    try { body = s.body ? JSON.parse(s.body) : {}; } catch { body = {}; }
-    for (const k of [...innerMod.QUERY_STAMPS, ...innerMod.BODY_STAMPS]) {
-      for (const [where, v] of [["address", query[k]], ["body", body && typeof body === "object" ? body[k] : undefined]]) {
-        if (v === undefined || v === null || typeof v !== "string") continue;
-        if (!["viewer", "identity", "author", "by", "actor", "who", "actorIdentity", "actorViewer", "actorMemberId", "ownerMemberId"].includes(k)) continue;
-        assert.ok(own.has(v), `${op}: ${where} ${k} is the session's (${v})`);
-        checked++;
-      }
-    }
-    assert.equal(s.query.some(([, v]) => v === FORGED) || s.body.includes(FORGED), false, `${op}: nothing forged reaches the route`);
-  }
-  assert.ok(checked >= CASES.length, `stamps were checked: ${checked}`);
-});

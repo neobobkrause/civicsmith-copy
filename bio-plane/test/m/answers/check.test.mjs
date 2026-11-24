@@ -37,7 +37,6 @@ test("R3 an answer of any other shape is refused ANSWER_MALFORMED naming the fie
     assert.equal(r.ok, false, f); assert.equal(r.code, "ANSWER_MALFORMED"); assert.equal(r.field, f);
     assert.equal(r.check, ANSWERS_CHECKS.ANSWER_MALFORMED.check); assert.equal(r.answer, undefined);
   }
-  /** @type {Array<[any, string]>} each case and the field its refusal names */
   const cases = [
     [answer({ verdict: "guilty" }), "verdict"],
     [answer({ question_as_read: "" }), "question_as_read"],

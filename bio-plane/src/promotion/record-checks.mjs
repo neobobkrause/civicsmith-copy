@@ -7,9 +7,7 @@ import { checkReleaseSignature } from "./release.mjs";
 
 /** `{folderName, files (path → text), raw?, releaseRegistry, sha256}` → the moved checks' findings, `{check, severity,
  *  message, repairs?}`, in the order `checkBundle` ran them. `raw`, optional, is the image as given (its blob
- *  references, C-20.1's held copies, R30).
- * @param {{folderName: any, files: any, raw?: any, releaseRegistry?: any, sha256: any}} image the bundle and its facts
- * @returns {Promise<any[]>} the findings */
+ *  references, C-20.1's held copies, R30). */
 export async function recordChecks({ folderName, files, raw = null, releaseRegistry = null, sha256 }) {
   const findings = [];
   const md = files.get("bundle.md");

@@ -49,9 +49,7 @@ import { resolveVersion } from "./resolve-version.mjs";
 
 /* G83 (R41): two flags take a value. A value is the next argument unless that is another flag or there is none, which is
    then no value at all (refused below, by name), so a flag's value is never taken for a positional argument. */
-const ARGS = process.argv.slice(2), VALUE_AT = new Set();
-/** @type {Record<string, string|null>} each flag given, and the value after it (null: none) */
-const FLAG_VALUES = {};
+const ARGS = process.argv.slice(2), FLAG_VALUES = {}, VALUE_AT = new Set();
 for (const flag of ["--store-location", "--store-generation"]) {
   const i = ARGS.indexOf(flag);
   if (i < 0) continue;
@@ -268,11 +266,9 @@ const wranglerCfg = parseJsonc(
   readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"), "bio-plane/wrangler.jsonc");
 /* G83 (R41): where the team's room runs, from the flags, validated before anything is requested. The hint list is
    runtime-limits' (`STORE_HINTS`), read only when a hint is given. */
-/** @type {(flag: string) => string|undefined} the flag's value; "" for a flag given with no value, which no check accepts */
-const flagValue = (flag) => (flag in FLAG_VALUES ? FLAG_VALUES[flag] ?? "" : undefined);
 const storePlace = deriveStorePlace(
-  { location: flagValue("--store-location"), generation: flagValue("--store-generation") },
-  "--store-location" in FLAG_VALUES ? [...(await import("../src/store-place.mjs")).STORE_HINTS] : []);
+  { location: FLAG_VALUES["--store-location"], generation: FLAG_VALUES["--store-generation"] },
+  "--store-location" in FLAG_VALUES ? (await import("../src/store-place.mjs")).STORE_HINTS : []);
 const meta = {
   main_module: "index.mjs",
   compatibility_date: wranglerCfg.compatibility_date,
@@ -530,7 +526,7 @@ if (DRY) {
     ? `schedules: after the upload PUT .../schedules sets ${cronText(crons)} and reads it back; a failure or a difference refuses success`
     : "schedules: wrangler.jsonc declares no cron; after the upload PUT .../schedules sets none and reads it back; a failure or a difference refuses success");
   console.log(`observability: the upload carries ${JSON.stringify(meta.observability)} and reads it back; a difference or an unreadable answer refuses success`);
-  console.log(`observability now: ${!onScript.settings ? "the script is not deployed, so Workers Logs are off" : obsMatch ? "on" : "off (" + (obsNow ? obsNow.why : "its settings could not be read") + ")"}`);
+  console.log(`observability now: ${!onScript.settings ? "the script is not deployed, so Workers Logs are off" : obsMatch ? "on" : "off (" + obsNow.why + ")"}`);
   if (schedNow.unreadable !== undefined) {
     console.error(`REFUSED [SCHEDULES_UNREADABLE]: could not read the schedules now on "${slug}" (${schedNow.unreadable}); a deploy that cannot read them back cannot verify them.`);
     process.exit(1);

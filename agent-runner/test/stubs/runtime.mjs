@@ -3,8 +3,6 @@
 // `webSocket` and status 101), and a Durable Object `ctx` whose container's port is the real runner image's server,
 // so every request the class passes on is answered by the image itself.
 import * as nodeModule from 'node:module';
-import { pathToFileURL } from 'node:url';
-import { buildAgentRunner } from '../../scripts/build.mjs';
 
 const STUB = new URL('./cloudflare-workers.mjs', import.meta.url).href;
 if (nodeModule.registerHooks) {
@@ -54,13 +52,7 @@ export function installRuntime() {
   return () => Object.assign(globalThis, saved);
 }
 
-// R43: the bundle is not committed; it is built first, the same way a deployment builds it (scripts/build.mjs).
-let building = null;
-export const loadWorker = async () => {
-  building ??= buildAgentRunner();
-  const { bundlePath } = await building;
-  return import(pathToFileURL(bundlePath).href);
-};
+export const loadWorker = () => import('../../dist/agent-runner.bundled.mjs');
 
 // A Node WebSocket to the image, seen as the runtime's: what the container's port answers an upgrade with.
 function imageSocket(url) {

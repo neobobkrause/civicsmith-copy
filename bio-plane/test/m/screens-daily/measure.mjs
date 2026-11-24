@@ -1,7 +1,6 @@
 /* screens-daily's tests' helper for what only a browser can measure (fix round 3, C23, C81): the real `SCREENS` page the shell serves,
    with the served stylesheets, drawn in Chromium at a given width over a scripted plane, and a function run in the page to measure it.
-   Needs `playwright-core` (found beside the product, or in the tools directory) and Chromium, the first installed of CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium
-   and /usr/bin/chromium-browser (GitHub's machines carry Google Chrome);
+   Needs `playwright-core` (found beside the product, or in the tools directory) and Chromium (CHROMIUM, or /opt/pw-browsers/chromium);
    without them a test using it fails, saying so (as interface-shell's phone390.test.mjs does). */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -20,15 +19,14 @@ function engine() {
   }
   return null;
 }
-const EXE = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
-  .find((p) => typeof p === "string" && p !== "" && existsSync(p)) || null;
+const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 
 /** Draws `path` at `width` px over `plane` (the harness's answers: `{status, json}`, or a function of the request), waits for `ready`
  *  (a selector in the main area), and answers what `measure` (run in the page, given `width`) returns. */
 export async function measure({ path, width, plane, ready, measure: fn, screens = SCREENS }) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(EXE, "Chromium is needed at CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, /usr/bin/google-chrome, /usr/bin/chromium or /usr/bin/chromium-browser");
+  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
   const html = interfacePage(screens), script = interfaceScript(screens);
   const answers = { ...FRAME, ...plane };
   const browser = await pw.chromium.launch({ executablePath: EXE });

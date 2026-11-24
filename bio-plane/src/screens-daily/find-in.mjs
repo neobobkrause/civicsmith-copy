@@ -7,16 +7,6 @@
 import { frontTitle } from "./front-title.mjs";
 import { forms } from "./find-in-forms.mjs";
 
-/**
- * @typedef {Object} ScreenDef
- * @property {string} id the registry screen's id
- * @property {Object<string, Function>} parts the screen parts handed to it as `view.parts`
- * @property {(view: *) => Object} reads the reads the screen makes for a view, each by its name
- * @property {(cs: *, view: *) => string} render the screen's markup
- * @property {Array<Object>} acts the acts it draws, each with its `op`, `label` and `send`
- * @property {(view: *) => (Object | null)} place where the find was opened, as its scope; `null` when not known
- */
-/** @type {Readonly<ScreenDef>} Find in this */
 export const findIn = Object.freeze({
   id: "find-in",
   parts: { frontTitle, forms },

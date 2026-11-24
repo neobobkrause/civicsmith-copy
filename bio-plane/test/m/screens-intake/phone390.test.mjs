@@ -3,7 +3,7 @@
  * K5054): the browser's `/api/` is answered by the world's door (the real modules, from what real acts made: projects and held documents, an unfinished
  * large capture, a request a site turned away for a login, a stored login, two knocks at the inbox, an address held and since changed); every control's width
  * and height and every part's edge are measured. Needs `playwright-core` (found beside the product, as interface-shell's `phone390.test.mjs` finds it) and
- * Chromium (CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN, or the usual system places); without them it fails, saying so. */
+ * Chromium (CHROMIUM, or /opt/pw-browsers/chromium); without them it fails, saying so. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -22,9 +22,7 @@ function engine() {
   }
   return null;
 }
-/* Chromium where this machine keeps it: the first of these that exists (a GitHub machine and a session's machine keep it in different places) */
-const EXE = [process.env.CHROMIUM, "/opt/pw-browsers/chromium", process.env.CHROME_BIN, "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"]
-  .find((x) => typeof x === "string" && x && existsSync(x)) || "/opt/pw-browsers/chromium";
+const EXE = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 
 const LONG = "A-very-long-member-name-or-digest-that-has-no-break-at-all-0123456789abcdef0123456789abcdef0123456789abcdef";
 const ADDRESS = "https://records.example-city.gov/agendas/2026-10-14-regular-meeting-of-the-board-of-supervisors.pdf";
@@ -87,7 +85,7 @@ async function scene() {
 async function measure(path, width, interact = async () => {}, at = null) {
   const pw = engine();
   assert.ok(pw && pw.chromium, "playwright-core is needed beside the product (`npm ci` in site/), with Chromium: this test cannot measure without them");
-  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM, /opt/pw-browsers/chromium, CHROME_BIN or a system place");
+  assert.ok(existsSync(EXE), "Chromium is needed at CHROMIUM or /opt/pw-browsers/chromium");
   const html = interfacePage(SCREENS), script = interfaceScript(SCREENS);
   const browser = await pw.chromium.launch({ executablePath: EXE });
   try {

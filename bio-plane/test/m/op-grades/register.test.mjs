@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { hasWord, word, WORD_ROWS } from "../../../src/setup-words/index.mjs";
-import { declaredSentence } from "./declared.mjs";
+import { collectDeclaredOps, declaredSentence } from "./declared.mjs";
 
 let n = 0;
 const load = () => import(`../../../src/op-grades/index.mjs?instance=${n++}`);
@@ -231,29 +231,51 @@ test("R50: a refused registration leaves the module open, so the corrected rows 
   assert.equal(m.RUNGS.fxbad, "reversible");
 });
 
-/* ---- R51 ----------------------------------------------------------------------------------------------------------- */
-test("R51 (K4247): a declared op's NON_ACTS reason is its owner's word: rows carrying each owner's word key register in "
-   + "agreement, and each reason reads the owner's word; control: a read whose hand reason differs from its owner's is refused, and the owner's "
-   + "own word is accepted", async () => {
-  /* Every NON_ACTS reason that is an owner's word: the words of the owner's key in the word table (`act.<op>.does`, or the
-     composed `<owner>.declared.<op>`). The owners come after this module, so each is registered as a row carrying that key and
-     the hand grade (a rung, a ground, or `read`); the registration meets no DECLARED_OP_DISAGREES and every reason reads the
-     owner's word. The absences' `is` (RUNG_ABSENT) are not compared (K4247). */
-  const [m, ref] = await twins();
-  const keys = WORD_ROWS.map(([key]) => key);
-  const rows = {};
-  for (const [op, reason] of Object.entries(ref.NON_ACTS)) {
-    const key = keys.find((k) => (k === `act.${op}.does` || k.endsWith(`.declared.${op}`)) && word(k) === reason);
-    if (!key) continue;
-    const weight = Object.hasOwn(ref.RUNGS, op) ? ref.RUNGS[op] : Object.hasOwn(ref.RUNG_ABSENT, op) ? ref.RUNG_ABSENT[op].ground : "read";
-    (rows[key.startsWith("act.") ? "owner" : key.split(".declared.")[0]] ??= {})[op] = row(weight, key);
+/** Every owner's rows registered on a fresh instance, as `{ m, owed }`. An owner's own row the module cannot grade (a
+    write-less op weighed as an act, `rung-on-read`) is that owner's to correct and is reported to BOB; the op is set aside
+    so the rest are still checked against their hand rows. A disagreement is never set aside (R50). */
+const registerOwners = async (ops, owners) => {
+  const byOwner = {};
+  for (const [op, d] of Object.entries(ops)) (byOwner[owners[op]] ??= {})[op] = d;
+  const owed = [];
+  for (let i = 0; i <= Object.keys(ops).length; i++) {
+    const m = await load();
+    try { m.registerDeclaredOps(byOwner); return { m, owed }; } catch (e) {
+      assert.notEqual(e.code, "DECLARED_OP_DISAGREES", e.message);
+      assert.equal(e.code, "DECLARED_OP_BAD_WEIGHT", e.message);
+      assert.ok(e.message.includes("rung-on-read"), e.message);
+      assert.ok(e.op, e.message);
+      owed.push(e.op);
+      delete byOwner[owners[e.op]][e.op];
+    }
   }
-  const compared = Object.values(rows).flatMap(Object.keys);
-  assert.ok(compared.length > 20, "the declared ops' reasons are found in the word table");
-  const { registered, agreed } = m.registerDeclaredOps(rows);
-  assert.deepEqual(registered, [], "every op compared has its hand row");
-  assert.deepEqual(agreed.sort(), compared.sort());
-  for (const op of compared) assert.equal(m.NON_ACTS[op], ref.NON_ACTS[op], op);
+  throw new Error("registerOwners: no registration of the owners' rows was accepted");
+};
+
+test("R50 (B21): registering every owner's DECLARED_OPS meets no DECLARED_OP_DISAGREES and no DECLARED_OP_DUPLICATE; a hand row follows its owner's declaration (K4168)", async () => {
+  const { ops, owners, duplicates } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
+  assert.deepEqual(duplicates, []);
+  const { owed } = await registerOwners(ops, owners);
+  assert.deepEqual(owed, [], "no owner row is set aside: link-sweep and store-door have merged (K4252)");
+});
+
+/* ---- R51 ----------------------------------------------------------------------------------------------------------- */
+/** A text as the owner declared it: a word key the list holds, or the sentence itself (R49's rule, read here). */
+const sentenceOf = (text) => (hasWord(text) ? word(text) : text);
+
+test("R51 (K4247): a declared op's NON_ACTS reason is its owner's word: after the owners register, each such reason equals the "
+   + "owner's declared description; control: a read whose hand reason differs from its owner's is refused, and the owner's "
+   + "own word is accepted", async () => {
+  /* The absences' `is` (RUNG_ABSENT) are not yet compared here: they disagree with their owners on 108 ops, open to BOB (K4247). */
+  const { ops, owners } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
+  const { m, owed } = await registerOwners(ops, owners);
+  const compared = [];
+  for (const [op, d] of Object.entries(ops)) {
+    if (owed.includes(op) || !Object.hasOwn(m.NON_ACTS, op)) continue;
+    assert.equal(m.NON_ACTS[op], sentenceOf(d.description), op);
+    compared.push(op);
+  }
+  assert.ok(compared.length > 0, "some declared op's reason was compared");
   /* control: a reason that differs from the owner's is refused naming the op; the owner's own word is accepted. Each
      instance is registered before any of its tables is read (R50), so the reads are of the untouched twin. */
   const [refuse, twin, accept] = [await load(), await load(), await load()];

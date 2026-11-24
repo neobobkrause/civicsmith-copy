@@ -64,7 +64,7 @@ test("R29 controls: an act REAUTH_ACTS names that is not an administrator's (cas
     assert.notEqual(r.refusal?.body.reason, "NOT_AN_ADMIN", op);
   }
   /* an administrator-only act REAUTH_ACTS does not name: admission adds nothing, the owner's own refusal answers */
-  const notNamed = [...own].filter((op) => OPS[op]?.mutating && !Object.hasOwn(REAUTH_ACTS, op) && (OPS[op].classes ?? []).includes("member"));
+  const notNamed = [...own].filter((op) => OPS[op]?.mutating && !Object.hasOwn(REAUTH_ACTS, op) && OPS[op].classes.includes("member"));
   assert.ok(notNamed.length > 5, "there are administrators' acts REAUTH_ACTS does not name");
   for (const op of notNamed) {
     env.calls.length = 0;
@@ -84,7 +84,7 @@ test("R29 controls: an act REAUTH_ACTS names that is not an administrator's (cas
   }
   /* the set is read from the declarations: a table handed in that names an administrator's act the declarations do not
      hold in REAUTH_ACTS is covered with no change here (memberremove-style op: any roster/admin-kind op named) */
-  const rosterOp = [...own].find((op) => OPS[op]?.mutating && !Object.hasOwn(REAUTH_ACTS, op) && (OPS[op].classes ?? []).includes("member"));
+  const rosterOp = [...own].find((op) => OPS[op]?.mutating && !Object.hasOwn(REAUTH_ACTS, op) && OPS[op].classes.includes("member"));
   const r2 = await gate(env, { op: rosterOp, token: old, reauthActs: { ...REAUTH_ACTS, [rosterOp]: null } });
   assert.equal(r2.refusal?.body.reason, "NOT_AN_ADMIN", `${rosterOp}: named in REAUTH_ACTS, covered`);
 });

@@ -7,12 +7,11 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { buildMember } from '../../bio-plane/scripts/fleet-bundle.mjs';
+import { discoverMembers, buildMember } from '../../bio-plane/scripts/fleet-bundle.mjs';
 import { WORD_ROWS } from '../../bio-plane/src/setup-words/index.mjs';
 import { SAYS_WORDS } from '../src/says-words.mjs';
 import { SAYS_KEYS, says } from '../src/says.mjs';
 import { carriedRows, saysWordsModule } from '../scripts/build-words.mjs';
-import { agentRunnerMember } from '../scripts/build.mjs';
 import { agentRunnerOf } from '../src/entry.mjs';
 import { signinOf } from '../src/signin.mjs';
 import { stubSdk, success, startRunner } from './helpers.mjs';
@@ -109,7 +108,7 @@ test('R41 each refusal of R17 to R20 answers the carried row of its code as deta
 
 test('R41 RUNNER_NOT_STARTED answers the carried row as detail', async () => {
   // the Worker as its source builds today (the committed bundle is regenerated at the layer close)
-  const built = await buildMember(agentRunnerMember(), { write: false });
+  const built = await buildMember(discoverMembers().find((m) => m.name === 'agent-runner'), { write: false });
   const dir = mkdtempSync(join(tmpdir(), 'agent-runner-worker-'));
   writeFileSync(join(dir, 'worker.mjs'), built.bytes);
   const restore = installRuntime();

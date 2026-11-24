@@ -10,7 +10,7 @@ import { ALL } from "./screens.fixture.mjs";
 const IMAGE = ok({ title: "A lease", pages: 3, grade: "B", why: "w", project: { id: "P1", title: "Pothole repairs" }, passages: [{ n: 1, text: "Closed" }] });
 const HELDA = ok({ items: [{ id: "h1", title: "Minutes", at: "2026-10-01" }, { id: "h2", title: "Budget", at: "2026-10-02" }] });
 const PLANE = { image: IMAGE, heldcaptures: HELDA, projectdirectory: ok({ projects: [{ id: "P1", title: "Pothole", questions: 2, due: "2026-10-20" }] }) };
-const en = (k) => String((WORD_ROWS.find((r) => r[0] === k) ?? [k, ""])[1]);
+const en = (k) => WORD_ROWS.find((r) => r[0] === k)[1];
 const tip = (p) => p.doc.getElementById("cs-tip");
 const MONTH = 31 * 24 * 3600 * 1000;
 

@@ -13,42 +13,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "./vendor/acorn.mjs";
-/** @import { WordRow } from './rows.mjs' */
-
-/**
- * One `localize(id, en)` call found in the product's source (R15).
- * @typedef {Object} LocalizeCall
- * @property {string} id
- * @property {string} en
- * @property {string} module the module that owns the file
- * @property {string} file the file's path from the repository root
- * @property {number} line
- */
-/**
- * One entry of the design's review list, words-unreviewed.json (R16).
- * @typedef {Object} Unreviewed
- * @property {string} id
- * @property {string} en
- * @property {string} module
- * @property {string} file
- * @property {number} line
- */
-/**
- * Everything the generator writes for a tree.
- * @typedef {Object} Built
- * @property {WordRow[]} rows
- * @property {string} sha the SHA-256 of words.json's bytes, in hex
- * @property {string} text the text of rows.mjs
- * @property {string} review the text of words-unreviewed.json
- */
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "../../..");
-/** @type {string} words.json's path */
 export const WORDS_PATH = join(ROOT, "docs/development/ux-substrate/screens/words.json");
-/** @type {string} rows.mjs's path */
 export const ROWS_PATH = join(HERE, "rows.mjs");
-/** @type {string} the pseudo-locale rows' default path (R17) */
 export const PSEUDO_PATH = join(HERE, "rows.pseudo.mjs");
 const WORDS_FROM_ROOT = "docs/development/ux-substrate/screens/words.json";
 const ROWS_FROM_ROOT = "bio-plane/src/setup-words/rows.mjs";
@@ -56,7 +25,6 @@ const ROWS_FROM_ROOT = "bio-plane/src/setup-words/rows.mjs";
 const fail = (message) => new Error(`setup-words build: ${message}`);
 
 /* R14's id: dotted, at least two segments, each of letters, digits, `_` and `-`. */
-/** @type {RegExp} a dotted word id (R14) */
 export const ID_RE = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
 const PLACEHOLDER = /\{[A-Za-z0-9_]+\}/g;
 /* R18: an ICU formatted argument, `{name, plural, …}`, `{name, select, …}` (an ICU argument type after the name); other
@@ -76,12 +44,7 @@ function meaningOf(key, byKey) {
   return null;
 }
 
-/**
- * The design rows R1 describes, from the file's bytes, each with its origin "design" (R15).
- * @param {Uint8Array} bytes words.json's bytes
- * @returns {WordRow[]}
- * @throws {Error} when the file holds no words list, a word lacks a string key or en, or a key is not distinct
- */
+/* The design rows R1 describes, from the file's bytes, each with its origin "design" (R15). */
 export function rowsOf(bytes) {
   const file = JSON.parse(bytes.toString("utf8"));
   if (!Array.isArray(file.words)) throw fail("the file holds no words list");
@@ -91,10 +54,9 @@ export function rowsOf(bytes) {
     if (byKey.has(w.key)) throw fail(`key ${w.key} is not distinct`);
     byKey.set(w.key, w);
   }
-  return file.words.map((w) => /** @type {WordRow} builds a WordRow */ ([w.key, w.en, w.note ?? null, meaningOf(w.key, byKey), w.protected === true, "design"]));
+  return file.words.map((w) => [w.key, w.en, w.note ?? null, meaningOf(w.key, byKey), w.protected === true, "design"]);
 }
 
-/** @type {(bytes: Uint8Array) => string} the SHA-256 of the bytes, in hex (R10) */
 export const versionOf = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
 /* ---- R15: the extraction ------------------------------------------------------------------------------------- */
@@ -184,14 +146,8 @@ function declared(node) {
   return into;
 }
 
-/**
- * Every call `localize(<id>, <en>, …)` of one source text, in source order. A `localize` the file declares itself
- * (a parameter, a local function or constant) is not the call.
- * @param {string} source
- * @param {string} where the file's name, for the error's words
- * @returns {{id: string, en: string, line: number}[]}
- * @throws {Error} when the text cannot be parsed, or a call's id or en is not a string literal, or its id is not a dotted id
- */
+/* Every call `localize(<id>, <en>, …)` of one source text, in source order: { id, en, line }. A `localize` the file declares itself
+   (a parameter, a local function or constant) is not the call. */
 export function callsOf(source, where) {
   let ast;
   const options = { ecmaVersion: "latest", locations: true, allowHashBang: true, allowReturnOutsideFunction: true };
@@ -221,12 +177,7 @@ export function callsOf(source, where) {
   return calls;
 }
 
-/**
- * The `localize` calls of the product's source, one for each id, in id order.
- * @param {string} root the repository root
- * @returns {LocalizeCall[]}
- * @throws {Error} when one id is given two different `en`, or as `callsOf`
- */
+/* The `localize` calls of the product's source: [{ id, en, module, file, line }], two different `en` for one id refused. */
 export function extract(root) {
   const first = new Map();
   for (const [file, module] of ownedFiles(root)) {
@@ -242,32 +193,20 @@ export function extract(root) {
 
 /* ---- the rows, the review list, the files ------------------------------------------------------------------- */
 
-/**
- * R15: the design's rows in the file's order, then one "code" row per extracted id the file lacks, in id order; R18
- * refuses a formatted argument in any of them.
- * @param {WordRow[]} designRows
- * @param {LocalizeCall[]} calls
- * @returns {{rows: WordRow[], unreviewed: Unreviewed[]}}
- * @throws {Error} when a row's en holds an ICU formatted argument (R18)
- */
+/* R15: the design's rows in the file's order, then one "code" row per extracted id the file lacks, in id order; R18
+   refuses a formatted argument in any of them. Returns { rows, unreviewed }. */
 export function combine(designRows, calls) {
   const held = new Set(designRows.map((r) => r[0]));
   const added = calls.filter((c) => !held.has(c.id));
-  const rows = [...designRows, ...added.map((c) => /** @type {WordRow} builds a WordRow */ ([c.id, c.en, null, null, false, "code"]))];
+  const rows = [...designRows, ...added.map((c) => [c.id, c.en, null, null, false, "code"])];
   for (const r of rows) if (FORMATTED.test(r[1])) throw fail(`${r[0]} holds a formatted argument ({name, …}); word and localize do not render these yet (R18)`);
   const unreviewed = added.map(({ id, en, module, file, line }) => ({ id, en, module, file, line }));
   return { rows, unreviewed };
 }
 
-/** @type {(unreviewed: Unreviewed[]) => string} the text of words-unreviewed.json (R16) */
 export const unreviewedText = (unreviewed) => `${JSON.stringify({ unreviewed }, null, 2)}\n`;
 
-/**
- * The text of rows.mjs.
- * @param {WordRow[]} rows
- * @param {string} sha
- * @returns {string}
- */
+/* The text of rows.mjs. */
 export function render(rows, sha) {
   const protectedCount = rows.filter((r) => r[4]).length;
   const codeCount = rows.filter((r) => r[5] === "code").length;
@@ -280,28 +219,16 @@ export function render(rows, sha) {
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
    and each row are frozen (R3). Written by \`node bio-plane/src/setup-words/build.mjs\` from the repository root
    (\`--check\` finds it stale); bio-plane/test/m/setup-words/ checks it. */
-/**
- * One word: [key, en, note, means, protected, origin] (R1, R15).
- * @typedef {readonly [string, string, (string | null), (string | null), boolean, ("design" | "code")]} WordRow
- */
-/** @type {string} the list's version: the first 10 hex digits of words.json's SHA-256 (R10) */
 export const WORDS_COMMIT = ${JSON.stringify(sha.slice(0, 10))};
-/** @type {readonly WordRow[]} the list, frozen with each row (R3) */
-export const WORD_ROWS = /** @type {readonly WordRow[]} */ (Object.freeze([
+export const WORD_ROWS = Object.freeze([
 ${body}
-].map((row) => Object.freeze(row))));
+].map((row) => Object.freeze(row)));
 `;
 }
 
 /* R17: every Latin letter an accented form, the sentence lengthened by about a third and bracketed, placeholders kept. */
 const PSEUDO_LOWER = "åƀçðéƒĝĥïĵķļɱñöþǫŕšţüṽŵẋýž";
 const PSEUDO_UPPER = "ÅƁÇÐÉƑĜĤÏĴĶĻṀÑÖÞǪŔŠŢÜṼŴẌÝŽ";
-/**
- * R17: the pseudo-locale form of one sentence.
- * @param {string} en
- * @returns {string}
- * @bound every {name} placeholder is kept unchanged; no ASCII letter is left outside the placeholders
- */
 export function pseudo(en) {
   const accent = (s) => s.replace(/[a-z]/g, (c) => PSEUDO_LOWER[c.charCodeAt(0) - 97]).replace(/[A-Z]/g, (c) => PSEUDO_UPPER[c.charCodeAt(0) - 65]);
   const body = en.split(/(\{[A-Za-z0-9_]+\})/).map((p, i) => (i % 2 ? p : accent(p))).join("");
@@ -309,14 +236,8 @@ export function pseudo(en) {
   return `[${body}${pad ? ` ${"ƥáđ".repeat(Math.ceil(pad / 3)).slice(0, pad - 1)}` : ""}]`;
 }
 
-/**
- * R17: the text of the pseudo-locale rows.
- * @param {WordRow[]} rows
- * @param {string} sha
- * @returns {string}
- */
 export function renderPseudo(rows, sha) {
-  const out = rows.map((r) => /** @type {WordRow} builds a WordRow */ ([r[0], pseudo(r[1]), r[2], r[3], r[4], r[5]]));
+  const out = rows.map((r) => [r[0], pseudo(r[1]), ...r.slice(2)]);
   return `/* GENERATED PSEUDO-LOCALE ROWS (setup-words R17): never commit, never import from the module. Every en of the list at
    SHA-256 ${sha} transformed for a pseudo-locale walk. */
 export const WORDS_COMMIT = ${JSON.stringify(sha.slice(0, 10))};
@@ -326,13 +247,8 @@ ${out.map((r) => `  ${JSON.stringify(r)},`).join("\n")}
 `;
 }
 
-/**
- * The first difference between the file on disk and what the generator writes, or null: a word first (by its key, in
- * the list's order), then the rest of the text.
- * @param {string} have
- * @param {string} want
- * @returns {string | null}
- */
+/* The first difference between the file on disk and what the generator writes, or null: a word first (by its key, in
+   the list's order), then the rest of the text. */
 export function firstDifference(have, want) {
   if (have === want) return null;
   const a = have.split("\n"), b = want.split("\n");
@@ -348,12 +264,7 @@ export function firstDifference(have, want) {
   return "differs";
 }
 
-/**
- * Everything the generator writes for a tree.
- * @param {{root?: string, wordsPath?: string}} [options] absent is the repository's own tree
- * @returns {Built}
- * @throws {Error} as `rowsOf`, `extract` and `combine`
- */
+/* Everything the generator writes for a tree: { rows, sha, text, review }. */
 export function build({ root = ROOT, wordsPath = join(root, WORDS_FROM_ROOT) } = {}) {
   const bytes = readFileSync(wordsPath);
   const { rows, unreviewed } = combine(rowsOf(bytes), extract(root));

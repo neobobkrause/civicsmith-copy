@@ -115,9 +115,7 @@ test('R14 the marker states kind, image, bundle, class_name, max_instances, bind
   assert.deepEqual(m.bind, [{ member: 'agent-worker', binding: 'RUNNER' }]);
   assert.equal(m.bundle.entry, 'src/worker.mjs');
   // bundler lists it and guards its Worker (its R24)
-  const found = discoverMembers().find((x) => x.name === 'agent-runner');
-  if (!found) throw new Error('bundler does not list agent-runner');
-  const listed = found;
+  const listed = discoverMembers().find((x) => x.name === 'agent-runner');
   assert.equal(listed.kind, 'container');
   assert.ok(isGuarded(listed));
   // its container.json part (bundler R25): refused by name until the digest is written, then built from these fields

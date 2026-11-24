@@ -15,7 +15,6 @@ const GATHERING = "data/gathering.json";
 /** R75: the statuses a member sets; `captured` is the daemon's. */
 const MEMBER_STATUSES = Object.freeze(["open", "retired"]);
 /** R76: the most requests one read answers. */
-/** @type {number} R76: the most requests one read answers, 1,000 */
 export const NAMED_REQUESTS_READ_MAX = 1000;
 
 const utf8 = (t) => new TextEncoder().encode(t);
@@ -41,17 +40,6 @@ const unrevisable = (why) => ({ ok: false, reason: "GATHERING_REFUSED", code: "G
  *  transaction as the write, so an id it minted is taken back with a refusal. R27's check and the registered sweep fence
  *  run in the promotion (R66) and their refusals are relayed unchanged. An object `mutate` leaves as it found it
  *  answers `{ok: true, existed: true}` and writes nothing. Answers `{ok: true, bundle, revision}`. */
-/**
- * Helpers `index.mjs` hands this file: R77's Session Log entry and R14's interval of a frequency word.
- * @typedef {{withSessionEntry: Function, monitorIntervalMs: Function}} MonHelpers
- */
-/**
- * R77: writes a bundle's `data/gathering.json` as `mutate` leaves it, in one promotion authored by the member.
- * @param {any} m this module's `Monitoring`, read through `record`, `membership`, `promotion` and `now`
- * @param {{bundle?: any, mutate?: any, author?: any, viewer?: any, log?: any}} args `{bundle, mutate, author, viewer?, log}`: the bundle id, the edit of the parsed file, the member, whose sight is read, and the Session Log sentence; each is checked, and a missing one is R1's required-argument refusal
- * @param {{withSessionEntry: Function}} h `index.mjs`'s helpers; its `withSessionEntry` is read
- * @returns {Record<string, any>} `{ok: true, bundle, revision}`, with `existed: true` when nothing moved; else a refusal (`ABSENT`, `GATHERING_REFUSED`, `GATHERING_MUTATE_FAILED`, `mutate`'s or the promotion's, relayed as given)
- */
 export function writeGathering(m, { bundle = null, mutate = null, author = null, viewer = null, log = null } = {}, h) {
   const op = "gatheringwrite";
   const who = typeof author === "string" ? author.trim() : "";
@@ -121,13 +109,6 @@ function slugOf(text) {
 
 /** R75: a member plants one named request of a bundle's `data/gathering.json`, or revises one. See the requirement.
  *  `h` is `{withSessionEntry, monitorIntervalMs}` from `index.mjs`. */
-/**
- * R75: a member plants one named request of a bundle's `data/gathering.json`, or revises one, through R77's writer.
- * @param {any} m this module's `Monitoring`
- * @param {{bundle?: any, request?: any, target?: any, locators?: any, authority?: any, criticality?: any, cadence?: any, status?: any, author?: any, viewer?: any}} a `{bundle, request?, target, locators, authority, criticality, cadence?, status?, author, viewer?}`: `request` names the one revised, absent plants a new one; each field is judged by C-18.5
- * @param {MonHelpers} h `index.mjs`'s helpers
- * @returns {Record<string, any>} `{ok: true, bundle, request, status, revision}` (or `existed: true` in place of `revision`); else `MACHINE_CANNOT_SET_REQUEST`, R1's required-argument refusal, `ABSENT`, `NAMED_REQUEST_REFUSED` with `findings`, `NO_SUCH_REQUEST`, or R77's refusal; each writes nothing
- */
 export function namedRequestSet(m, a = {}, h) {
   const op = "namedrequestset";
   const { bundle = null, request = null, target, locators, authority, criticality, cadence, status, author = null, viewer = null } = a || {};
@@ -196,14 +177,6 @@ export function namedRequestSet(m, a = {}, h) {
 
 /** R76: every request of every `data/gathering.json` the viewer may see, with its last attempt and when it is next due.
  *  Writes nothing and never throws. */
-/**
- * R76: every request of every `data/gathering.json` the viewer may see, with its last attempt and its clock. Writes nothing; a failed read is answered, not thrown.
- * @param {any} m this module's `Monitoring`
- * @param {{viewer?: any}} args `{viewer?}`: whose sight is read
- * @param {{monitorIntervalMs: Function}} h `index.mjs`'s helpers; its `monitorIntervalMs` is read
- * @returns {Record<string, any>} `{ok: true, as_of, paused, items, counts, limit, truncated}`, or `{ok: false, reason: null, items: [], counts: {}, limit, truncated: false, detail}`
- * @bound items: at most `NAMED_REQUESTS_READ_MAX` (1,000), `truncated` when more were held
- */
 export function namedRequests(m, { viewer = null } = {}, h) {
   const nowMs = m.now();
   try {

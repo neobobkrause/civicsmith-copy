@@ -73,40 +73,28 @@ export { CONTRADICTION_COORDINATES, PLURALITY_DIFFERENCES, DISSOLVED_BY, NORM_CA
 
 /** R20, R27, R9: a reason's bound (the edge-reason bound, K57: each module holds its own copy) and the longer bound on a
  *  division's or a grouping's reason and a child's question, which are accounts rather than labels. */
-/**
- * A refusal an act answers: `ok` false, the code twice (`reason` and `code`), the row's check and translation when the
- * code has one, and the act's own fields (the offenders, the target) beside them.
- * @typedef {{ok: false, reason: string, code?: string, check?: string, translation?: string, detail?: any} & Record<string, any>} Refusal
- */
-/** @type {number} R20, R9: the most characters of a disposition's or an edge's reason, 160 */
 export const EDGE_REASON_MAX = 160;
-/** @type {number} R23, R27: the most characters of a division's or a grouping's reason and of a child's question, 500 */
 export const RELEASE_ACK_MAX = 500;
 /** R13–R17, R39's read (T33-45; K617, K1505): the earned registry's names moved to `leg-earning` (its R1–R7), re-exported
  *  here as the same bindings for importers not yet re-pointed (plan Rules (9) item 4); this module holds no copy. */
 export { legCapped, LEG_BACKFILL_MAX, EARNED_TARGETS_MAX, PROJECTS_DRAWING_MAX, AUTHORED_ROUTE_BASES }
   from "../leg-earning/index.mjs";
 /** R41, R18 (N183): the most legs, stale rows past a notice's bound, or exclusions one statement reads. */
-/** @type {number} R41, R18: the most rows one statement reads, 500 */
 export const STALE_PAGE = 500;
 /** R44 (N149): the longest member-browser agent recorded; a longer or unprintable stamp is not an agent to present. */
-/** @type {number} R44: the most characters of a member-browser agent recorded, 512 */
 export const MEMBER_AGENT_MAX = 512;
 const agentOf = (v) => {
   const t = typeof v === "string" ? v.trim() : "";
   return t && t.length <= MEMBER_AGENT_MAX && !/[\u0000-\u001f\u007f]/.test(t) ? t : null;
 };
 /** R54, R55: the states that end every wait on an inquiry (nothing is awaited on a question no longer worked). */
-/** @type {readonly string[]} R55: `concluded`, `divided`, `dismissed` */
 export const WAIT_ENDING_STATES = Object.freeze(["concluded", "divided", "dismissed"]);
 /** R58: the most questions one call reads the document waits of (a question's screen asks one, its project's list
  *  that list's ids), the page of capture R84 read per statement, and the most pages read for one question. */
-/** @type {number} R58: the most questions one call asks about, 200 */
 export const DOCUMENT_WAITS_MAX = 200;
 const HELD_ACTS_PAGE = 1000;
 const HELD_ACTS_PAGES_MAX = 50;
 /** R56: the longest note a look carries. */
-/** @type {number} R56: the most characters of a look's note, 500 */
 export const LOOK_NOTE_MAX = 500;
 /** R55: a member's own stamp, as the control plane writes it. */
 const memberStamp = (m) => {
@@ -127,10 +115,6 @@ export { DISPOSITIONS };
  *  is retired, its number never reused (a different condition, T40-5). The translation is `words.json`'s
  *  `question.refused.drawnon`, read by key (`QUESTION_WORDS`); it names no project, which travel in the refusal as data.
  *  It awaits T41's stamp. */
-/**
- * R39 (C-106.2): the row of a disposition refused because a project shown to the caller draws on the question.
- * @type {{DRAWN_ON_BY_A_PROJECT: {check: string, where: string, translation: string, key: string}}}
- */
 export const INQUIRY_DISPOSE_CHECKS = {
   DRAWN_ON_BY_A_PROJECT: {
     check: 'C-106.2',
@@ -162,11 +146,6 @@ function withRow(answer) {
 }
 
 /** R16: the superseded-by column read back as a list; ONE parser, so no caller splits the string itself. */
-/**
- * R16: the superseded-by column of a row read back as a list. Pure; never throws.
- * @param {any} row a row holding `inquiry_superseded_by`, a comma-joined list of ids; anything else is no list
- * @returns {string[]} the ids, none empty
- */
 export function supersededByOf(row) {
   const v = row && typeof row.inquiry_superseded_by === "string" ? row.inquiry_superseded_by : "";
   return v ? v.split(",").filter((x) => x !== "") : [];
@@ -174,12 +153,6 @@ export function supersededByOf(row) {
 
 /** R45 (D-484 / C-33.40, N186): the one site at which the plane says a thing the record would stand behind rests on
  *  nothing; `basis-versions` answers through it too. `extra` adds the caller's fields and never replaces these. */
-/**
- * R45: the one site that mints `NO_BASIS` (C-33.40). Writes nothing; never throws.
- * @param {any} detail the caller's account, carried as given
- * @param {any} [extra] the caller's fields, added and never replacing the refusal's own; anything but an object is none
- * @returns {Refusal} `{ok: false, reason: "NO_BASIS", code: "NO_BASIS", check, translation, detail}`
- */
 export function actNoBasis(detail, extra = {}) {
   /* DEC-49 REGION is-act-no-basis */
   const row = SHARED_ACT_CHECKS.NO_BASIS;
@@ -193,11 +166,6 @@ export function actNoBasis(detail, extra = {}) {
  *  `basis[i]`, or a caller's own label: `basis-versions` R48 and `case-disclosures` R31 answer through it). `inForce` is
  *  what `bias.statementInForce` answered (`false`, or `null` for undetermined); `scope` the lens asked. Pure; never
  *  throws. */
-/**
- * R61: the one spelling of `BIAS_APPLICATION_NOT_IN_FORCE` (C-2.19), a finding inside `BASIS_REFUSED`. Pure; never throws.
- * @param {any} [args] `{statement?, where?, inForce?, scope?}`: the statement id, the place naming it, `false` or `null` (undetermined), and the lens asked (`{type: "project", id}`, else the group's)
- * @returns {{check: string, code: string, translation: string, statement: string | null, where: string | null, in_force: false | null, detail: string}}
- */
 export function biasNotInForce(args = {}) {
   const { statement = null, where = null, inForce = false, scope = null } = args && typeof args === "object" ? args : {};
   /* DEC-49 REGION is-bias-application-in-force */
@@ -218,12 +186,6 @@ export function biasNotInForce(args = {}) {
  *  `onMachinePassage` threw or answered neither null nor a refusal, so whether each leg may stand as the member's own is
  *  not known and the act is refused (fail closed). `basis-versions` R49 answers through it. `extra` adds the caller's
  *  fields and never replaces these. Pure; never throws. */
-/**
- * R62: the one spelling of `MACHINE_PASSAGE_UNCHECKED` (C-2.20). Pure; never throws.
- * @param {any} [detail] the caller's account; anything but a non-empty string is the module's own words
- * @param {any} [extra] the caller's fields, added and never replacing the refusal's own
- * @returns {Refusal}
- */
 export function machinePassageUnchecked(detail, extra = {}) {
   /* DEC-49 REGION is-machine-passage-checked */
   const row = INQUIRY_PASSAGE_CHECKS.MACHINE_PASSAGE_UNCHECKED;
@@ -241,12 +203,6 @@ export function machinePassageUnchecked(detail, extra = {}) {
  *  `from: "divided"`; `detail` is the caller's, saying to work on the child that carries the part meant. `extra` adds the
  *  caller's fields and never replaces these. The code has no catalogue row, so no check or translation travels with it.
  *  Pure; never throws. */
-/**
- * R64, R27, R86: the one spelling of `DIVIDED_CANNOT_RESTRUCTURE`; no catalogue row, so no check or translation. Pure; never throws.
- * @param {any} [detail] the caller's account; anything but a non-empty string is the module's own words
- * @param {any} [extra] the caller's fields, added and never replacing the refusal's own; `extra.target` is the answer's `target`
- * @returns {Refusal} with `target` (a string, or null) and `from: "divided"`
- */
 export function dividedCannotRestructure(detail, extra = {}) {
   const x = extra && typeof extra === "object" && !Array.isArray(extra) ? extra : {};
   /* DEC-49 REGION is-divided-closed */
@@ -273,13 +229,10 @@ const passageKey = (p) => { const { ord, ...rest } = p; return JSON.stringify(re
 /** R59 (K2479, K2480): the line kinds and the far end's kind that make a person's role public: an office the entity
  *  holds, is responsible for or acts (speaks) for; a government body it belongs to. Read from `lines` (its R17 read
  *  contract) and the far end's kind and sector from `entities`. */
-/** @type {Readonly<{office: readonly string[], government_body: readonly string[]}>} R59, R63: the lines that make a person's role public, by the far end's kind */
 export const PUBLIC_ROLE_LINES = Object.freeze({ office: Object.freeze(["holds", "responsible_for", "acts_for"]),
                                                  government_body: Object.freeze(["belongs_to", "seat_on"]) });
 /** R59: the most words of a question read as a name's run, the longest run, and the cap on persons named. */
-/** @type {number} R63: the most words of a text read for names, 120 */
 export const PERSON_TEXT_WORDS_MAX = 120;
-/** @type {number} R63: the most words in one name's run, 8 */
 export const PERSON_NAME_WORDS_MAX = 8;
 const ENTITY_ID_IN_TEXT = /\bENT-\d{4}-\d{4,}\b/g;
 /* A name's fold for matching inside a question: lower-cased, every run of characters that is no letter or digit one
@@ -291,11 +244,6 @@ const wordsFold = (t) => (typeof t === "string" ? t.toLowerCase().normalize("NFC
  *  `true`, and that is `named` (the caller found it named: a question's subject, or matched by alias), or whose id or
  *  label or an alias occurs in `text` as whole words. Answers `[{entity_id, label}]`, by id, each once. Pure; never
  *  throws. */
-/**
- * R59: the persons in no public role a text names, over facts the caller read. Pure; never throws.
- * @param {any} [args] `{text?, entities?}`: the text, and the facts, each `{entity_id, kind, label, aliases?, public_role, named?}` (as `personFacts` answers them)
- * @returns {{entity_id: string, label: string | null}[]} by id, each once
- */
 export function personsInNoPublicRole(args = {}) {
   try {
     const { text = "", entities = [] } = args && typeof args === "object" ? args : {};
@@ -318,11 +266,6 @@ export function personsInNoPublicRole(args = {}) {
  *  export: null when `text` (over `entities`, as `personsInNoPublicRole`) names no person in no public role; else the
  *  warning `{code: "PERSON_IN_NO_PUBLIC_ROLE", key, translation, persons}`, never an error. `viewer` is the member the
  *  warning is for, carried as the caller's (the facts are the caller's read). Pure; never throws. */
-/**
- * R59: the warning a question naming a person in no public role carries; never an error. Pure; never throws.
- * @param {any} [args] `{text?, entities?, viewer?}`, as `personsInNoPublicRole` reads them; `viewer` the member the warning is for
- * @returns {{code: string, key: 'question.warning.person', translation: string, persons: {entity_id: string, label: string | null}[], viewer?: string} | null} null when no such person is named
- */
 export function personWarning(args = {}) {
   const { text = "", entities = [], viewer = null } = args && typeof args === "object" ? args : {};
   const persons = personsInNoPublicRole({ text, entities });
@@ -388,14 +331,10 @@ const MEMBER_AUTHOR = /^member:([A-Za-z0-9._:-]{1,128}?)(?:\/.*)?$/;
 const FINDING_KEY = "finding:";
 /** R53 (K2442, D54): the viewer an internal read takes, a machine credential's (membership R43: it sees every bundle),
  *  never the founder's `admin`, which is blind to a hidden project the founder neither was invited to nor joined. */
-/** @type {string} R53: the viewer an internal read takes, `class:daemon` */
 export const INTERNAL_VIEWER = "class:daemon";
 
 /* ------------------------------------------------------------------ the module */
 
-/**
- * The module's instance for one host (`inquiryOf`); its acts, reads and registrations are its members.
- */
 export class Inquiry {
   #onRaised = null;      // {module, fn}: reevaluation's obligation (R21, R25)
   #onGrounded = null;    // {module, fn}: strength's pair (R28)
@@ -405,9 +344,6 @@ export class Inquiry {
   #view;                 // R55, R57: the active jurisdiction view, whose time_zone is the profile's
   #deps;
 
-  /**
-   * @param {any} [deps] `{storage, record, membership, promotion, content}` and the lazily reached `{connections?, entities?, retrieval?, provenance?, standards?, duties?, legEarning?, calculations?, capture?, bias?, host?, view?, now?}`; `now` answers an ISO instant at second precision
-   */
   constructor({ storage, record, membership, promotion, content, connections = null, entities = null, retrieval = null,
                 provenance = null, standards = null, duties = null, legEarning = null, calculations = null, capture = null, bias = null, host = null, view = null, now } = {}) {
     this.storage = storage;
@@ -424,16 +360,12 @@ export class Inquiry {
 
   /* The modules reached lazily: each is created on the same host on first use, unless a test passed its own. */
   /* connections is passed through to leg-earning, and reached by callers' fixtures through this instance */
-  /** @returns {any} `connections` on the same host, made on first use */
   get connections() { return this.#deps.connections ||= connectionsOf(this.#deps.host); }
-  /** @returns {any} `entities` on the same host, made on first use */
   get entities() { return this.#deps.entities ||= entitiesOf(this.#deps.host); }
 
-  /** @returns {any} `retrieval` on the same host, made on first use */
   get retrieval() { return this.#deps.retrieval ||= retrievalOf(this.#deps.host); }
   /** R11, R12, R29, R39, R52 (T33-45): the earned registry, the resting-on reads and `inquiry_basis`'s one write, which
    *  are `leg-earning`'s (K1505). Built on the same host with this module's own deps unless a test passes its own. */
-  /** @returns {any} `leg-earning` on the same host, made on first use with this module's deps */
   get legEarning() {
     const d = this.#deps;
     return d.legEarning ||= legEarningOf(d.host, { record: this.record, membership: this.membership, promotion: this.promotion,
@@ -441,20 +373,12 @@ export class Inquiry {
       standards: d.standards, duties: d.duties, now: this.now });
   }
   /* R11: the held standards a leg may rest on (reached on first use; the host has built it at start). */
-  /** @returns {any} `standards` on the same host, null with no host */
   get standards() { return this.#deps.standards ||= (this.#deps.host ? standardsOf(this.#deps.host) : null); }
   /* R11 (T34-29): whether a `CALC-` is held, visible and accepted (calculations R31), reached on first use. */
-  /** @returns {any} `calculations` on the same host, null with no host */
   get calculations() { return this.#deps.calculations ||= (this.#deps.host ? calculationsOf(this.#deps.host) : null); }
   /* R58 (T34-29): the set-asides and restores recorded with a question (capture R84), reached on first use. */
-  /** @returns {any} `capture` on the same host, null with no host */
   get capture() { return this.#deps.capture ||= (this.#deps.host ? captureOf(this.#deps.host) : null); }
   /** R53: the bias instance a finding's lens is read from, bound once (the first binding holds); null until bound. */
-  /**
-   * R53: binds the bias instance once; the first binding holds.
-   * @param {any} bias an object with `biasManifest`; anything else binds nothing
-   * @returns {any} the bound instance, or null
-   */
   bindBias(bias) { if (!this.#bias && bias && typeof bias.biasManifest === "function") this.#bias = bias; return this.#bias; }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
@@ -465,8 +389,6 @@ export class Inquiry {
   /** The tables, their migrations (with N136's move of the leg count and the superseded-by index off `bundles`, R36)
    *  and the superseded-by backfill (REC-17's boot pass, bounded by the number of `supersedes` edges, which is the
    *  number of divisions anybody has performed). Idempotent: every boot. */
-  /** R36: creates and migrates the tables and backfills the superseded-by index. Idempotent.
-   * @returns {void} */
   migrate() {
     migrateInquiry(this.sql);
     if (this.#rows(`PRAGMA table_info(refs)`).length > 0)
@@ -494,12 +416,6 @@ export class Inquiry {
   /* ---------------------------------------------------------------- registrations this module offers (K31) */
 
   /** R21, R25: `reevaluation`'s obligation. `fn({target, cause, since, viewer})` answers the dependents raised. */
-  /**
-   * R42: the one `onRaised` registration.
-   * @param {any} module the registering module's name
-   * @param {any} fn `({target, cause, since, viewer}) => raised`, a list or `{raised, listeners_failed?}`
-   * @returns {any} `{ok: true, module}`, or membership's `LISTENER_MALFORMED` or `LISTENER_DECLARED` refusal
-   */
   onRaised(module, fn) {
     /* N202: membership's one site of LISTENER_MALFORMED and LISTENER_DECLARED (its R81); a one-registration slot. */
     const refused = listenerRefusal(this.#onRaised, module, fn);
@@ -508,12 +424,6 @@ export class Inquiry {
     return { ok: true, module };
   }
   /** R28: `strength`'s pair. `fn(inquiryId)` answers `{capture, connection, testimony?}`, each `{state, grade}`. */
-  /**
-   * R42, R28: the one `onGrounded` registration.
-   * @param {any} module the registering module's name
-   * @param {any} fn `(inquiryId) => pair`, the strength pair
-   * @returns {any} `{ok: true, module}`, or membership's refusal
-   */
   onGrounded(module, fn) {
     const refused = listenerRefusal(this.#onGrounded, module, fn);
     if (refused) return refused;
@@ -523,12 +433,6 @@ export class Inquiry {
   /** R62 (T42; N834; run-productions R25): the read that says whether a member may cite as hers a passage a machine
    *  proposed. One registration, by any module (membership's `listenerRefusal`, its R81). `fn({legs, author, viewer})`
    *  answers synchronously null (each leg stands) or a refusal. */
-  /**
-   * R62: the one machine-passage registration.
-   * @param {any} module the registering module's name
-   * @param {any} fn `({legs, author, viewer}) => null | refusal`, synchronous
-   * @returns {any} `{ok: true, module}`, or membership's refusal
-   */
   onMachinePassage(module, fn) {
     const refused = listenerRefusal(this.#onMachinePassage, module, fn);
     if (refused) return refused;
@@ -625,11 +529,6 @@ export class Inquiry {
   /** Refuses a promotion whose document breaks the leg grammar, names an unknown subject, carries a malformed or
    *  unresolved supersession, discloses a division its parent does not record, or would close a basis cycle. Asked
    *  inside the promotion's transaction, before the write. */
-  /**
-   * R11, R50, R61, R62, R64: the promotion step's check, asked in the promotion's transaction before the write.
-   * @param {any} c promotion's step context
-   * @returns {any} null when the promotion may go on, else a refusal; nothing is written
-   */
   check(c) {
     const { pkg, bundleId, files, promotedType } = stepContext(c);
     /* R59: the held document as it stands before this write, for the projection to tell a revised question from one
@@ -849,11 +748,6 @@ export class Inquiry {
      A leg with no application asks nothing; a malformed one is inquiry-grammar R18's to refuse, so only a statement that
      is a non-empty string is asked here. Public, so an act that records a leg asks the same check before it writes; the
      promotion asks it over the document's legs. Answers the findings (empty: every statement in force); never throws. */
-  /**
-   * R61: the findings for legs whose `bias_applied` statements are not in force. Never throws.
-   * @param {{legs?: any, project?: string | null, viewer?: string | null}} [args] `legs` anything but a list finds nothing
-   * @returns {any[]} each a `biasNotInForce` finding; empty when every statement is in force
-   */
   biasAppliedFindings({ legs = [], project = null, viewer = null } = {}) {
     const out = [];
     if (!Array.isArray(legs)) return out;
@@ -930,11 +824,6 @@ export class Inquiry {
    *  leg's content row, `inquiry_exclusions` from `completeness_excluded[]`, the leg count and subject entity, and a
    *  migration replay's row. The answer's keys join the promotion's. A leg on an imported finding reference (N522) is
    *  projected with its ref as `target_id`, as spelled, and no content row: content's plan reads it as no document. */
-  /**
-   * R12, R54, R59: the promotion step's projection, in the promotion's transaction.
-   * @param {any} c promotion's step context
-   * @returns the keys joined to the promotion's answer: `content` (each leg's row), `migration_replay`, `warning`, as they apply
-   */
   project(c) {
     const { pkg, bundleId, meta, promotedType } = stepContext(c);
     const cur = c.head, docFm = c.docFm, isInquiry = promotedType === "inquiry";
@@ -1103,7 +992,6 @@ export class Inquiry {
         const wasSubject = typeof wasFm.subject_entity === "string" && wasFm.subject_entity.trim() ? wasFm.subject_entity.trim() : null;
         asked = questionOf(was) !== nextQ || wasSubject !== subject;
       }
-      /** @type {(NonNullable<ReturnType<typeof personWarning>> & {proposed_by_machine?: boolean}) | null} the warning, or a machine proposal's still pending */
       let warning = asked ? personWarning({ text: nextQ, entities: this.personFacts({ text: nextQ, subject, viewer: author }),
                                             viewer: machine ? null : author }) : null;
       if (!warning && !machine) {
@@ -1132,11 +1020,6 @@ export class Inquiry {
    *  `public_role` true when `lines` holds, not withdrawn, a line of `PUBLIC_ROLE_LINES` from it (an office it holds,
    *  is responsible for or acts for; a government body it belongs to or sits on). An id the record does not hold, or not
    *  a person, is left out; a read that fails leaves what was found standing. Writes nothing; never throws. */
-  /**
-   * R63: the record's facts for the persons a text and a subject may name. Writes nothing; never throws.
-   * @param {any} [args] `{text?, subject?, viewer?}`
-   * @returns {{entity_id: any, kind: any, label: any, named: boolean, public_role: boolean}[]} each person once, by id
-   */
   personFacts(args = {}) {
     const { text = "", subject = null, viewer = null } = args && typeof args === "object" ? args : {};
     const ids = new Set();
@@ -1222,10 +1105,6 @@ export class Inquiry {
    *  lens recorded in force, under which a lens since withdrawn has moved too), or null where no project lens was
    *  recorded (undetermined, never filled in), no re-run link, and `registered` (when it was made, null when not
    *  recorded); `visible` is the question's own sight (R33). */
-  /**
-   * R53: the source bias registers this module's findings through.
-   * @returns {{list: (after: any, limit: any) => string[], read: (key: any) => Promise<any>, visible: (key: any, viewer: any) => Promise<boolean>}}
-   */
   workProducts() {
     const idOf = (key) => (typeof key === "string" && key.startsWith(FINDING_KEY) ? key.slice(FINDING_KEY.length) : "");
     return {
@@ -1252,11 +1131,6 @@ export class Inquiry {
   /** R12, R16: ONE bundle's superseded-by index from the `supersedes` edges pointing at it (connections' `refs`), the
    *  ids comma-joined and sorted, NULL when nothing supersedes it, held in this module's table (R36). An id with no
    *  bundle is a no-op. */
-  /**
-   * R12, R16: rewrites one bundle's superseded-by index.
-   * @param {any} targetId
-   * @returns {any[] | null} the superseding ids written, none for an id with no bundle; null for an empty id
-   */
   writeSupersededBy(targetId) {
     if (!targetId) return null;
     const ids = this.#rows(`SELECT bundle_id FROM refs WHERE target_id=? AND kind='supersedes' ORDER BY bundle_id`, targetId)
@@ -1270,11 +1144,6 @@ export class Inquiry {
   }
 
   /** R16: the ids that supersede `id`, from the index. */
-  /**
-   * R16: the ids that supersede a bundle.
-   * @param {any} id
-   * @returns {string[]}
-   */
   supersededBy(id) {
     return supersededByOf(this.#one(`SELECT inquiry_superseded_by FROM ${BUNDLE_FACTS} WHERE bundle_id=?`, id));
   }
@@ -1282,12 +1151,6 @@ export class Inquiry {
   /** R18 (publication R12 reads it): the exclusions naming `targetId` the viewer may see, each with its inquiry, edition,
    *  description, reason, author and date, in (inquiry, ord) order. Every one is answered; they are read a page at a
    *  time, at most `STALE_PAGE` rows per statement (N183). An absent viewer fails closed. */
-  /**
-   * R18: every exclusion naming a target that the viewer may see, in (inquiry, ord) order.
-   * @param {any} targetId an empty id answers an empty list
-   * @param {string | null} [viewer] absent fails closed
-   * @returns {any[]} each `{inquiry, edition, description, reason, author, at}`
-   */
   exclusionsNaming(targetId, viewer = null) {
     if (!targetId) return [];
     const gate = viewerPredicate(viewer);
@@ -1306,12 +1169,6 @@ export class Inquiry {
 
   /** R19 (D-592): the inquiry's state transitions from its own `state_history`, each with who took it and when (a
    *  reopening is written there by promotion's `reopen`). */
-  /**
-   * R19, R60: the inquiry's state transitions, each with who took it and when.
-   * @param {any} id
-   * @param {string | null} [viewer] when given, the read is gated (R33) and answers `projects`
-   * @returns `{ok: true, id, transitions, projects?}`, or `{ok: false, reason}`
-   */
   stateHistory(id, viewer = undefined) {
     if (!id) return { ok: false, reason: "NO_ID" };
     if (viewer !== undefined && !this.membership.inSight(id, viewer)) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
@@ -1332,11 +1189,6 @@ export class Inquiry {
   /** R48 (N345): the inquiry's recorded `{candidate, resolution, explores}` as its latest promotion projected them, with
    *  `resolution` null unless the document was concluded; null for a plain inquiry. Not gated; for in-process callers
    *  (`contradiction`). Never throws. */
-  /**
-   * R48: the inquiry's recorded contradiction link. Not gated; never throws.
-   * @param {any} id
-   * @returns {{candidate: any, resolution: any, explores: any} | null} null for a plain inquiry
-   */
   contradictionLink(id) {
     try {
       if (!id || typeof id !== "string") return null;
@@ -1348,12 +1200,6 @@ export class Inquiry {
 
   /** R48 (N345): the one inquiry whose document names `candidate`, or null (`except` leaves one inquiry out: R11's
    *  one-candidate rule asks it of every inquiry but the one being written). Not gated; never throws. */
-  /**
-   * R48: the one inquiry whose document names a candidate. Not gated; never throws.
-   * @param {any} candidate
-   * @param {string | null} [except] an inquiry left out
-   * @returns {any} its id, or null
-   */
   inquiryOfCandidate(candidate, except = null) {
     try {
       if (typeof candidate !== "string" || !CANDIDATE_RE.test(candidate)) return null;
@@ -1366,11 +1212,6 @@ export class Inquiry {
   /** R44: the member-browser agent recorded when the inquiry was created (the control plane's stamp, N149; a division's
    *  children carry their parent's), else the one its own document records (`member_user_agent`, trimmed), or null:
    *  never a default, which would be an invented client (capture-requests reads it, its R3, R14). */
-  /**
-   * R44: the member-browser agent recorded at the inquiry's creation. Never throws.
-   * @param {any} id
-   * @returns {any} the agent, or null; never a default
-   */
   memberUserAgent(id) {
     try {
       if (!id || typeof id !== "string") return null;
@@ -1388,11 +1229,6 @@ export class Inquiry {
    *  words, with the capture and promotion the replay named. Null for any other bundle; the rest of `surfaced_in` is
    *  ai-runs' (its R27). Registered as this module's decoration of retrieval's single-bundle answer (its R56). Not gated
    *  (the answer it decorates is); never throws. */
-  /**
-   * R49: a migrated question's surfacing as the replay recorded it. Not gated; never throws.
-   * @param {any} id
-   * @returns {{recorded: boolean, stated: string, run: null, lens: null, migrated: {capture: any, promotion: any, at: any}} | null}
-   */
   migratedSurfacing(id) {
     try {
       if (!id || typeof id !== "string") return null;
@@ -1406,12 +1242,6 @@ export class Inquiry {
 
   /** R54 (scheduler R9): the notice a dated wait's setting raises, for `scheduler` to arm its alarm by; one registration
    *  (membership's `listenerRefusal`). `fn({inquiry, date, set_by})` is told after a promotion sets or re-dates a wait. */
-  /**
-   * R54: the one registration told when a promotion sets or re-dates a wait.
-   * @param {any} module the registering module's name
-   * @param {any} fn `({inquiry, date, set_by}) => void`
-   * @returns {any} `{ok: true, module}`, or membership's refusal
-   */
   onWaitSet(module, fn) {
     const refused = listenerRefusal(this.#onWaitSet, module, fn);
     if (refused) return refused;
@@ -1508,11 +1338,6 @@ export class Inquiry {
    *  `looked` once its setter recorded a look, `ended` when the inquiry is concluded, divided or dismissed, and
    *  `undetermined` (with why) while no zone is held. Only the member who set a wait is answered it. Writes nothing;
    *  never throws. */
-  /**
-   * R55: the waits a member set on inquiries the viewer may see, with each one's state. Writes nothing; never throws.
-   * @param {{member?: string | null, asOf?: string | null, viewer?: string | null}} [args]
-   * @returns `{ok: true, member, as_of, zone, waits}`; a viewer other than the setter is answered no waits
-   */
   datedWaits({ member = null, asOf = null, viewer = null } = {}) {
     try {
       const m = memberStamp(member);
@@ -1547,11 +1372,6 @@ export class Inquiry {
    *  carries R58's for that question, `document_waits` and `history`, as `documentWaits` gives them (`null` both, with
    *  `document_waits_why`, when capture's read cannot be read), and `projects` (R60, leg-earning R14). R55's due notice and R56's look stay the setter's alone. Writes nothing; never
    *  throws. */
-  /**
-   * R55, R58, R60: every dated wait on a question, its document waits and history, and its `projects`. Writes nothing; never throws.
-   * @param {any} [args] `{question, viewer, asOf?}`
-   * @returns `{ok: true, question, zone, waits, document_waits, history, projects}`; `{ok: false, question, waits: []}` for a question the viewer may not see
-   */
   questionWaits(args = {}) {
     const { question = null, viewer = null, asOf = null } = args && typeof args === "object" ? args : {};
     const absent = { ok: true, question: typeof question === "string" ? question : null, waits: [] };
@@ -1594,12 +1414,6 @@ export class Inquiry {
 
   /** R60 (H38): `{projects}` for question `id` read by `viewer` (leg-earning R14's answer for her), as every read of a
    *  question here answers it; `{projects: null, projects_undetermined}` when it cannot be read. Never throws. */
-  /**
-   * R60: the `projects` field of a question read by a viewer. Never throws.
-   * @param {any} id
-   * @param {any} viewer
-   * @returns `{projects}`, or `{projects: null, projects_undetermined}`
-   */
   projectsOf(id, viewer) { return this.#projectsField(id, viewer); }
 
   /* R60 (H38): the `projects` field of a read answering a question to `viewer`: leg-earning R14's answer for that viewer,
@@ -1615,11 +1429,6 @@ export class Inquiry {
   /** R56: the wait's setter records that they looked, with the instant; it reads `looked` until a later revision sets a
    *  new date. Refusals: `MACHINE_CANNOT_LOOK`, `NO_SUCH_WAIT` (absent, or on an inquiry `by` may not see, one answer),
    *  `NOT_YOUR_WAIT`, `BAD_NOTE`. It writes the look and nothing else, and moves nothing in the inquiry. */
-  /**
-   * R56: the wait's setter records a look.
-   * @param {{inquiry?: any, index?: any, note?: any, by?: string | null}} [args]
-   * @returns `{ok: true, inquiry, index, date, looked_at, state: "looked"}`, or a refusal: `MACHINE_CANNOT_LOOK`, `NO_SUCH_WAIT`, `NOT_YOUR_WAIT`, `BAD_NOTE`
-   */
   waitLook({ inquiry = null, index = null, note = null, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     if (!who || isMachineIdentity(who))
@@ -1648,11 +1457,6 @@ export class Inquiry {
   }
 
   /** R57 (scheduler R21): whether any wait reaches `due` on or before `now`'s local day and is not yet marked. */
-  /**
-   * R57: whether a wait reaches `due` on or before `now`'s local day and is not yet marked.
-   * @param {any} now an instant
-   * @returns {boolean}
-   */
   datedWaitsDue(now) {
     try {
       const today = this.#day(now, this.#zone());
@@ -1661,11 +1465,6 @@ export class Inquiry {
   }
 
   /** R57: the start of the next local day after `now`'s holding an unmarked wait, or null. */
-  /**
-   * R57: the start of the next local day holding an unmarked wait.
-   * @param {any} now an instant
-   * @returns {any} an instant, or null
-   */
   datedWaitsWake(now) {
     try {
       const zone = this.#zone(), today = this.#day(now, zone);
@@ -1678,11 +1477,6 @@ export class Inquiry {
   }
 
   /** R57: marks each newly due wait once (a second tick on the same day marks nothing) and answers those it marked. */
-  /**
-   * R57: marks each newly due wait once. Idempotent for a day.
-   * @param {any} now an instant
-   * @returns {{marked: {inquiry: any, index: any, date: any, set_by: any}[]}}
-   */
   datedWaitsTick(now) {
     try {
       const today = this.#day(now, this.#zone());
@@ -1708,11 +1502,6 @@ export class Inquiry {
    *  no viewer answers nothing (R33). A read of capture's that fails answers the question `undetermined`, with why, never
    *  as no wait. It is never a queue item, a notification, a scheduler's or a notice-producer's (DEC-94, K1618). Writes
    *  nothing; never throws. */
-  /**
-   * R58: for each question, the documents it waits on that were set aside, and its history of set-asides and restores. Writes nothing; never throws.
-   * @param {any} [args] `{questions, viewer}`; at most `DOCUMENT_WAITS_MAX` questions
-   * @returns `{ok: true, questions}`, or a refusal naming the bound
-   */
   documentWaits(args = {}) {
     try {
       const { questions = null, viewer = null } = args && typeof args === "object" ? args : {};
@@ -1769,7 +1558,6 @@ export class Inquiry {
   /** R52 (1) (K861, plane R10): this module's share of the instance's figures, exported for `plane` to register under
    *  this module's name through `record-core` R63 (`registerCounts("inquiry", Inquiry.COUNT_KEYS, (hid) =>
    *  k.counts(hid))`); plane registers it under this module's name, and the module registers nothing itself. */
-  /** @type {readonly string[]} R52 (1): the figure's keys, `inquiryMigrationReplays` */
   static COUNT_KEYS = Object.freeze(["inquiryMigrationReplays"]);
 
   /** R52 (1), D-464 (A COUNT IS TAKEN THROUGH THE CALLER'S OWN SIGHT): `record-core` R63's `counts(hid)` for this
@@ -1779,11 +1567,6 @@ export class Inquiry {
    *  `COALESCE(k, '')`: a NULL key names no bundle, and `NULL NOT IN (…)` is NULL, which would drop the row. A figure
    *  whose table cannot be read is left out, and R63 answers it null, never zero. Synchronous; writes nothing; never
    *  throws. */
-  /**
-   * R52 (1): this module's share of the instance's figures.
-   * @param {any} [hid] membership's `hiddenBundles` (`{sql, args}`); null counts whole
-   * @returns {{inquiryMigrationReplays: any}}
-   */
   counts(hid = null) {
     const out = {};
     try {
@@ -1800,11 +1583,6 @@ export class Inquiry {
    *  once, with no subject entity, over the list's distinct targets, and each leg, in order, answers R14's `legCapped`
    *  of its grade against its target's earned capture ceiling (null for a target with none). An empty list, or anything
    *  that is not a list, answers an empty list without asking. */
-  /**
-   * R52 (2): each leg's grade capped by its target's earned capture ceiling, in order.
-   * @param {any} legs each `{grade, target_id}`
-   * @returns {({grade: any, why: string} | {grade: null, why: any} | null)[]} null for a leg not capped
-   */
   legGrades(legs) {
     if (!Array.isArray(legs) || !legs.length) return [];
     const cap = this.legEarning.earned(null, [...new Set(legs.map((l) => l && l.target_id))])?.earned?.capture || {};
@@ -1817,12 +1595,6 @@ export class Inquiry {
    *  `inquiry-grammar`'s that no registration claims (a record nothing registered it with) is filled by its own arm
    *  (`INQUIRY_GRAMMARS`), so the inquiry is never left unjudged. A grammar whose arm throws is one error of its own,
    *  naming its module; a record that cannot answer its registrations is an error, never read as none. Never throws. */
-  /**
-   * R17, R11: the entry requirements over one document, with the grammars registered with record-core. Never throws.
-   * @param {unknown} bundleMd the document's text
-   * @param {any} [opts] as `checkInquiryEntry`'s
-   * @returns the error findings, each `{check, severity, message, repairs?}`
-   */
   async checkEntry(bundleMd, opts = {}) {
     let grammars;
     try {
@@ -1849,11 +1621,6 @@ export class Inquiry {
   /** Registered on content's `onStale`: the legs resting on each affected or undetermined row (and, past the notice's
    *  bound, on the capture's stale rows after `ungraded_after`) are told through `onRaised`, cause `restaled`; with
    *  none registered, the answer names them and nothing is written. Runs in content's transaction, so it never throws. */
-  /**
-   * R41: content's stale notice: each citing inquiry told once per re-read. Never throws.
-   * @param {any} notice content's `onStale` notice
-   * @returns `{since, citing, told, reevaluation?}`, or `{citing: [], failed: true}`
-   */
   staled(notice) {
     try {
       const ids = new Set((Array.isArray(notice && notice.rows) ? notice.rows : [])
@@ -1916,11 +1683,6 @@ export class Inquiry {
    * `disposition_reason` for both target states, so a disposition without one
    * produces a bundle the catalog rejects. Refusing here is the difference
    * between refusing a write and writing something that fails its own checks. */
-  /**
-   * R20 to R22, R39: defers or dismisses a set of inquiries, the whole set or none of it.
-   * @param {any} [args] `{handle, to, reason, viewer, owner, author}`
-   * @returns {any} `{ok: true, ...}` with each member moved, or a refusal with its row's check and translation
-   */
   dispose(args = {}) { return withRow(this.#dispose(args || {})); }
   #dispose({ handle, to, reason = "", viewer = null, owner = null, author = null } = {}) {
     /* DISPOSITIONS is progressions' one list (its R35), and a word outside it is answered by progressions'
@@ -2138,65 +1900,14 @@ export class Inquiry {
   /** R39, R11, R23 (T33-45; K617, K1505): the earned registry and the resting-on reads moved by copy to `leg-earning`
    *  (its R1–R7); each name below answers exactly what leg-earning's does, so importers not yet re-pointed read through
    *  them (plan Rules (9) item 4). This module asks leg-earning directly. */
-  /**
-   * leg-earning R7, through this module.
-   * @param {any} id
-   * @returns {any} leg-earning's answer
-   */
   projectsDrawingOn(id) { return this.legEarning.projectsDrawingOn(id); }
-  /**
-   * R16, through leg-earning.
-   * @param {any} id
-   * @returns {any} leg-earning's answer
-   */
   restsOnLive(id) { return this.legEarning.restsOnLive(id); }
-  /**
-   * R12, through leg-earning.
-   * @param {any} bundleId
-   * @param {any} ord
-   * @returns {any} leg-earning's answer
-   */
   ensureLegContent(bundleId, ord) { return this.legEarning.ensureLegContent(bundleId, ord); }
-  /**
-   * The earned registry, leg-earning R1, through this module.
-   * @param {any} subjectEntity
-   * @param {any[]} [targetIds]
-   * @param {any[]} [contentIds]
-   * @returns {any} leg-earning's answer
-   */
   earned(subjectEntity, targetIds = [], contentIds = []) { return this.legEarning.earned(subjectEntity, targetIds, contentIds); }
-  /**
-   * leg-earning's registry over a document's legs, through this module.
-   * @param {any} fm
-   * @param {any} legs
-   * @returns {any} leg-earning's answer
-   */
   earnedForDoc(fm, legs) { return this.legEarning.earnedForDoc(fm, legs); }
-  /**
-   * R29, leg-earning R6, through this module.
-   * @param {any} bundleId
-   * @param {any} targets
-   * @returns {any} leg-earning's answer
-   */
   cyclePath(bundleId, targets) { return this.legEarning.cyclePath(bundleId, targets); }
-  /**
-   * The basis read, leg-earning's, through this module.
-   * @param {any} bundleId
-   * @param {any} [opts]
-   * @returns {any} leg-earning's answer
-   */
   basisFor(bundleId, opts = {}) { return this.legEarning.basisFor(bundleId, opts); }
-  /**
-   * The resting-on read, leg-earning's, through this module.
-   * @param {any} targetId
-   * @returns {any} leg-earning's answer
-   */
   restingOn(targetId) { return this.legEarning.restingOn(targetId); }
-  /**
-   * `op=earnedbasis`, leg-earning's, through this module.
-   * @param {any} [args] `{id, targets, viewer}`
-   * @returns {any} leg-earning's answer
-   */
   earnedBasis(args = {}) { return this.legEarning.earnedBasis(args); }
 
   /* REC-16: DIVIDING an inquiry. open|surfaced|concluded -> `divided`, which is
@@ -2252,11 +1963,6 @@ export class Inquiry {
    * THE MACHINE IS THE CATALOG'S, through vocabFor over the DECLARED spelling,
    * so a legacy focus/problem document — whose own vocabulary has no `divided`
    * — is refused rather than quietly given a state its contract never had. */
-  /**
-   * R23 to R26: divides an inquiry into children; the parent and every child land together or none does.
-   * @param {any} [args] `{target, reason, children, viewer, author}`
-   * @returns {any} `{ok: true, ...}` with the children, the apportionment and the re-evaluation, or a refusal with its row's check and translation
-   */
   divide(args = {}) { return withRow(this.#divide(args || {})); }
   #divide({ target, reason = "", children = null, viewer = null, author = null } = {}) {
     const who = String(author ?? "").trim();
@@ -2825,11 +2531,6 @@ export class Inquiry {
    * keeps it: the pair AS IT STOOD BEFORE the act and after it, written into
    * the Session Log entry beside the reason, and returned to the caller.
    */
-  /**
-   * R27, R28, R85: groups an inquiry's supporting legs into grounds.
-   * @param {any} [args] `{target, grounds, reason, viewer, author}`
-   * @returns {any} `{ok: true, ...}` with the strength pair before and after, or a refusal with its row's check and translation
-   */
   ground(args = {}) { return withRow(this.#ground(args || {})); }
   #ground({ target, grounds, reason = "", viewer = null, author = null } = {}) {
     const who = String(author ?? "").trim();
@@ -3124,11 +2825,6 @@ export class Inquiry {
    *  pair now; where no module answers strength, the pairs are null and `strength_absent` says so (R28). A question the
    *  viewer may not see, or that is no question, is answered as an absent one (R33). A divided or published question is
    *  read. Writes nothing; never throws. */
-  /**
-   * R65: a question's partition with the history of its changes. Writes nothing; never throws.
-   * @param {{id?: string | null, viewer?: string | null}} [args]
-   * @returns `{ok: true, id, grouped, answered, groups, ungrouped, changes, strength_now, projects}`, or `{ok: false, reason}` for a question that is absent or unseen
-   */
   partitionOf({ id = null, viewer = null } = {}) {
     try {
       if (!id || typeof id !== "string" || this.membership.inSight(id, viewer) !== true)
@@ -3154,11 +2850,6 @@ export class Inquiry {
   /* R43: the inquiry's recorded subject, the column R12 writes from the document into this module's table (R40), or
      null; never throws. The bytes stay the authority: the write path and the gate read the document's own
      `subject_entity` (`earnedForDoc`), because at promote time the column has not been written yet. */
-  /**
-   * R43: the inquiry's recorded subject entity. Never throws.
-   * @param {any} bundleId
-   * @returns {any} the entity id, or null
-   */
   subjectEntityOf(bundleId) {
     try {
       const row = this.#one(`SELECT inquiry_subject_entity FROM ${BUNDLE_FACTS} WHERE bundle_id=?`, bundleId);
@@ -3171,12 +2862,6 @@ export class Inquiry {
 const instances = new WeakMap();
 
 /** The one inquiry instance for `host` (the Durable Object's `ctx`); `deps` are read on the first call only. */
-/**
- * The one instance for a host, created on the first call; at creation it joins promotion, content and retrieval.
- * @param {any} host the Durable Object's `ctx`
- * @param {any} [deps] read on the first call only: `{record?, membership?, promotion?, content?, connections?, entities?, retrieval?, provenance?, standards?, duties?, calculations?, capture?, bias?, view?, storage?, now?}`
- * @returns {Inquiry}
- */
 export function inquiryOf(host, deps) {
   let k = instances.get(host);
   if (!k) {
@@ -3224,11 +2909,6 @@ export function inquiryOf(host, deps) {
 /** R52 (2) (K861, plane R10): the resolver `retrieval`'s `registerLegGrades` takes, `(legs) => grades`, over the one
  *  instance for `host` (reached when the resolver is called, not when it is built). `plane` registers it under this
  *  module's name, `inquiry`; this module registers it nowhere itself. */
-/**
- * R52 (2): the leg-grade resolver over the host's instance, for `retrieval`'s `registerLegGrades`.
- * @param {any} host
- * @returns {(legs: any) => ({grade: any, why: string} | {grade: null, why: any} | null)[]} each leg's capped grade, in order
- */
 export function inquiryLegGrades(host) {
   return (legs) => inquiryOf(host).legGrades(legs);
 }
@@ -3237,12 +2917,6 @@ export function inquiryLegGrades(host) {
  *  bias under this module's kind, `finding` (`registerWorkProducts("finding", inquiryFindings(host, bias))`, bias R33),
  *  as it registers R52's shares; the module registers nothing itself. Binds `bias` as the instance a finding's lens is
  *  read from (`bindBias`). The source reaches the one instance for `host` when it is asked. */
-/**
- * R53: this module's findings as bias's work products, for `plane` to register with bias; binds `bias` first.
- * @param {any} host
- * @param {any} [bias] the host's bias instance; absent binds none
- * @returns {{list: (after: any, limit: any) => string[], read: (key: any) => Promise<any>, visible: (key: any, viewer: any) => Promise<boolean>}}
- */
 export function inquiryFindings(host, bias = null) {
   if (bias) inquiryOf(host).bindBias(bias);
   const src = () => inquiryOf(host).workProducts();
@@ -3251,11 +2925,6 @@ export function inquiryFindings(host, bias = null) {
 }
 
 /** Which purge declaration names one of this module's tables (record-core R21: each owner declares its own). */
-/**
- * R36: whether a purge declaration names one of this module's tables.
- * @param {any} t a table's name, or a declaration `{name}`
- * @returns {boolean}
- */
 export function inquiryOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return INQUIRY_TABLES.includes(name);
@@ -3263,11 +2932,6 @@ export function inquiryOwns(t) {
 
 /* R86 (T51; K4168, K4202; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their
    owner beside the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
-/**
- * An op the screens send, as its owner declares it beside the ops map.
- * @typedef {{classes: string[], mutating: boolean, weight: string, description: string, fields: {accepts: string[], requires: string[]}}} OpDeclaration
- */
-/** @type {Readonly<{inquirydivide: OpDeclaration, inquiryground: OpDeclaration}>} R86 */
 export const DECLARED_OPS = Object.freeze({
   inquirydivide: { classes: ["admin","member","probe"], mutating: true, weight: "reasoned", description: "act.inquirydivide.does",
     fields: { accepts: ["target","reason","children"], requires: ["target","reason","children"] } },
@@ -3278,14 +2942,6 @@ export const DECLARED_OPS = Object.freeze({
 /* The Durable Object routes this module answers (K3), as entries of plane's op map. `url` carries the control
    plane's stamps (`viewer`, `owner`, `author`); `body` the authored material. The stamps are spread AFTER the body, so a
    caller's `author` in the body is overwritten, never honoured, and a caller's `asserted_by`/`at` reach no act. */
-/**
- * The Durable Object routes this module answers, as entries of plane's op map; the control plane's stamps on `url`
- * override the body's.
- * @param {Inquiry} k the host's instance
- * @param {URL} url carries `viewer`, `owner` and `author`, and each op's own query fields
- * @param {any} body the authored material; anything but an object is none
- * @returns {Record<string, () => any>} `basis`, `restson`, `earnedbasis`, `dispose`, `inquirydivide`, `inquiryground`, `inquirypartition`, `questionwaits`, `waitlook`
- */
 export function inquiryOps(k, url, body) {
   const q = (key) => url.searchParams.get(key);
   const b = body && typeof body === "object" ? body : {};

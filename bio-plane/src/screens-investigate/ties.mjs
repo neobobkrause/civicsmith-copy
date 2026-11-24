@@ -12,15 +12,10 @@ function reads() {
 
 function render(cs, view) {
   const S = "screen.ties.";
-  /* each screen function is sent to the page as text, so it names its own constants */
-  const KINDS = ["employer", "relative", "business", "other"];
   const me = (view.me && view.me.handle) || "";
   const out = [cs.title()];
-  /* R9: why she is asked and who sees the list, in one open fold headed by `.summary`; "Who sees it" ends with `.who.change` */
-  const points = (keys) => `<ul class="mk-list">${keys.map((k) => `<li>${cs.w(S + k)}</li>`).join("")}</ul>`;
-  out.push(`<details class="mk-details" open data-fold="ties-why"><summary>${cs.w(S + "summary")}</summary>`
-    + cs.sec(S + "why", points(["why.1", "why.2", "why.3", "why.4"]))
-    + cs.sec(S + "who", points(["who.1", "who.2", "who.3", "who.change"])) + "</details>");
+  out.push(cs.sec(S + "why", `<ul class="mk-list">${["why.1", "why.2", "why.3", "why.4"].map((k) => `<li>${cs.w(S + k)}</li>`).join("")}</ul>`));
+  out.push(cs.sec(S + "who", `<ul class="mk-list">${["who.1", "who.2", "who.3"].map((k) => `<li>${cs.w(S + k)}</li>`).join("")}</ul>`));
   const mine = view.data.ties && view.data.ties.state === "ok" && view.data.ties.value ? (view.data.ties.value.ties || []).filter((t) => !t.withdrawn) : [];
   const who = view.parts.options(view, "people", (v) => v.rows, (r) => ({ value: r.entity, text: r.name || r.entity }));
   const nameOf = (id) => (who.find((o) => o.value === id) || {}).text || id;
@@ -34,16 +29,13 @@ function render(cs, view) {
       cs.ref("person", t.entity, nameOf(t.entity), [t.note || ""]) + (t.note ? ` <span class="mk-small">${cs.esc(t.note)}</span>` : ""),
       cs.w(t.attribution === "name" ? S + "says.name" : S + "says.group", { handle: me })],
     acts: (t) => cs.act("withdrawtie", { label: "act.withdrawtie.label.ties", data: { tie: t.tie_id } }) }))));
-  /* R34: the two disclosure choices with every fill answered: `{handle}` the member's, `{tie}` the tie she is adding, in words
-     (an ellipsis until she chooses a kind). R9 with every-screen rule 1: nothing is chosen for her; the kind and the
-     disclosure each open blank */
-  const kindNow = KINDS.includes(view.ui["choice:tie-kind"]) ? view.ui["choice:tie-kind"] : "";
-  const fills = { handle: me, tie: kindNow ? view.parts.plain(cs, S + "kind." + kindNow) : "\u2026" };
-  const blank = { value: "", text: "" };
-  out.push(cs.sec(S + "add", cs.choice("tie-kind", S + "kind", [blank, ...KINDS.map((k) => [k, S + "kind." + k])], { acts: {} })
+  /* R34: the two disclosure choices with every fill answered: `{handle}` the member's, `{tie}` the tie she is adding, in words */
+  const kindNow = ["employer", "relative", "business", "other"].includes(view.ui["choice:tie-kind"]) ? view.ui["choice:tie-kind"] : "employer";
+  const fills = { handle: me, tie: view.parts.plain(cs, S + "kind." + kindNow) };
+  out.push(cs.sec(S + "add", cs.choice("tie-kind", S + "kind", [["employer", S + "kind.employer"], ["relative", S + "kind.relative"], ["business", S + "kind.business"], ["other", S + "kind.other"]], { acts: {} })
     + cs.choice("tie-who", S + "whofield", who, {})
     + cs.field("tie-note", S + "note", { area: true, rec: true, help: S + "note.help" })
-    + cs.choice("tie-says", S + "says", [blank, ["group", S + "says.group.choice", fills], ["name", S + "says.name.choice", fills]], {})
+    + cs.choice("tie-says", S + "says", [["group", S + "says.group.choice", fills], ["name", S + "says.name.choice", fills]], {})
     + `<p class="mk-note">${cs.w(S + "either")}</p>`
     + cs.act("declaretie", { label: "act.declaretie.label.ties", tone: "primary" })));
   return out.join("");
@@ -55,13 +47,7 @@ const acts = [
     send(view, el, cs) {
       const entity = String(cs.value("tie-who") || "").trim(), note = String(cs.value("tie-note") || "").trim();
       if (!entity || !note) return { refuse: "screen.ties.add.empty" };
-      /* R9: a kind or a disclosure not chosen refuses in place, naming the choice; nothing is sent and nothing is chosen for her */
-      const KINDS = ["employer", "relative", "business", "other"];
-      const kind = String(cs.value("tie-kind") || ""), says = String(cs.value("tie-says") || "");
-      const needed = (key) => ({ refuse: "shell.field.needed", fills: { field: view.parts.plain(cs, key) } });
-      if (!KINDS.includes(kind)) return needed("screen.ties.kind");
-      if (says !== "name" && says !== "group") return needed("screen.ties.says");
-      return { body: { entity, kind, note, attribution: says } };
+      return { body: { entity, kind: String(cs.value("tie-kind") || "other"), note, attribution: cs.value("tie-says") === "name" ? "name" : "group" } };
     } },
   /* "Remove a tie", from its row, with a reason */
   { op: "withdrawtie", label: "act.withdrawtie.label.ties",
@@ -74,7 +60,7 @@ const TIES_KEYS = [
   "screen.ties.col.disclosed", "screen.ties.kind", "screen.ties.kind.employer", "screen.ties.kind.relative", "screen.ties.kind.business",
   "screen.ties.kind.other", "screen.ties.add", "screen.ties.whofield", "screen.ties.note", "screen.ties.note.help", "screen.ties.says",
   "screen.ties.says.name.choice", "screen.ties.says.group.choice", "screen.ties.says.name", "screen.ties.says.group", "screen.ties.either",
-  "screen.ties.add.empty", "screen.ties.summary", "screen.ties.who.change", "shell.field.needed",
+  "screen.ties.add.empty",
 ];
 
 const words = ["screen.ties.name", "screen.ties.purpose",

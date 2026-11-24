@@ -78,10 +78,7 @@ export function readCode(ctx, column, written) {
                              : localize("budget-doctypes.lines.the_view_holds_no_form", "the view holds no form for a {column} code", { column: String(column) }) };
 }
 
-/** @import { BudgetCtx, BudgetLine, Grouping, LinesReading } from './index.mjs' */
-/** R7, R8: the budget lines of every sheet supplied.
- *  @param {BudgetCtx} ctx
- *  @returns {LinesReading} */
+/** R7, R8: the budget lines of every sheet supplied. */
 export function readLines(ctx) {
   const supplied = ctx.supplied && typeof ctx.supplied === "object" ? ctx.supplied : null;
   const sheets = supplied && Array.isArray(supplied.sheets) ? supplied.sheets : [];
@@ -162,9 +159,7 @@ export function rowKey(r) {
 
 /** R8: each department as the table states it for one period, with the org
  *  codes its rows place under it. Never carried across periods; never merged
- *  by name across periods.
- *  @param {BudgetLine[]} rows
- *  @returns {Grouping[]} */
+ *  by name across periods. */
 export function groupings(rows) {
   const by = new Map();
   for (const r of rows) {

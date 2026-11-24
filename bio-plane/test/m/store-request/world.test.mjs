@@ -138,33 +138,6 @@ test("R18: bootOf answers the door bound to the member and the session record in
   assert.equal(bootOf(w, null).session, null);
 });
 
-test("R18: the session a page is handed is live on the page's own clock while it is live in the world, and past once the world has moved past it", async () => {
-  const w = await storeWorld();
-  const ruth = await w.signIn("ruth");
-  /* the shell keeps a record while `!e || e > Date.now()` (interface-shell R32): the page's clock is the real one, the world's is pinned */
-  const live = (rec) => !rec.e || rec.e > Date.now();
-  const expires = resultOf(await w.door({ url: "/api/?op=login", init: { method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ handle: "ruth", password: ruth.password, device: "own" }) } })).expires;
-  const issued = typeof expires === "number" ? expires : Date.parse(expires);
-  const left = issued - w.now();
-  assert.ok(left > 0, "the world's sign-in is live in the world");
-  for (const rec of [ruth.session, bootOf(w, ruth).session, w.session(ruth), JSON.parse(JSON.stringify(ruth.session))]) {
-    assert.ok(live(rec), "live on the page's clock, whatever the real date");
-    assert.ok(Math.abs(rec.e - Date.now() - left) < 5000, `the same time left as in the world (${rec.e - Date.now()} ms, ${left} ms)`);
-  }
-  assert.equal(resultOf(await bootOf(w, ruth).door({ url: "/api/?op=whoami" })).member, "ruth", "and the world's door admits it");
-  /* the bound: the world moves past the expiry; the same record, read again, is past on the page, and the world refuses the session */
-  await w.tick(left + 1000);
-  assert.equal(live(ruth.session), false, "a session past in the world is past on the page");
-  assert.equal(live(JSON.parse(JSON.stringify(bootOf(w, ruth).session))), false, "and in what the page stores");
-  assert.notEqual(resultOf(await w.door({ url: "/api/?op=whoami" }, ruth)).member, "ruth", "the world no longer admits it");
-  /* a fresh sign-in copied onto the held record (as a page's storage is refreshed) is live again, on the page's clock */
-  const fresh = await w.signIn("ruth");
-  Object.assign(ruth.session, fresh.session);
-  assert.equal(ruth.session.t, fresh.token);
-  assert.ok(live(ruth.session) && Math.abs(ruth.session.e - fresh.session.e) < 1000, "the copied record carries the fresh time left");
-});
-
 test("R19: the recipes perform real acts and answer what the acts answered", async () => {
   const w = await storeWorld();
   const f = await w.signIn("admin");

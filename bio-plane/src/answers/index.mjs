@@ -58,151 +58,6 @@ export { CADENCES, STANDING_TICK_MAX, STANDING_ANSWERS_MAX, STANDING_LABEL, STAN
   from "./standing.mjs";
 export { ANSWERS_SCHEMA, ANSWERS_TABLES } from "./schema.mjs";
 
-/* ================================================================ The interface's kinds (structured comments) */
-
-/** @import { AnswersRefusal, RefusalFields } from './checks.mjs' */
-/** @import { CheckedAnswer } from './check.mjs' */
-
-/**
- * What `answersOf` builds an instance over (the header above): each dependency an object, or a function answering one,
- * read once when first needed; an absent one answers `not_held` or is skipped where a read needs it.
- * @typedef {Object} AnswersDeps
- * @property {any} [storage] the host's storage, `{sql}`; the host's own when absent
- * @property {any} [record] record-core on the host when absent
- * @property {any} [membership] membership on the host when absent
- * @property {any} [standards]
- * @property {any} [content]
- * @property {any} [events]
- * @property {any} [entities]
- * @property {any} [lines]
- * @property {any} [people]
- * @property {any} [duties]
- * @property {any} [calculations]
- * @property {any} [retrieval]
- * @property {any} [query] query-language's `{savedForm}`
- * @property {any} [relations]
- * @property {any} [zone]
- * @property {any} [accounts] ai-accounts on the host when absent
- * @property {any} [credentials]
- * @property {any} [useCheck] `({owner, member, use, at})` → null or a refusal; ai-use's on the host when absent
- * @property {any} [combine] `jurisdictions.combine` when absent
- * @property {any} [now] an ISO instant, or a function answering one; the wall clock when absent
- */
-/**
- * R7's answer: a rule service's value with its basis, grade, status, label and the instant it is as of; or, where the
- * service holds nothing, `not_held` with the level, the reason and the act that would find it. Asked under a grant, it
- * also carries the `rule_id` its read log gave it. A refusal (`ok` false) carries `RefusalFields` and `service`.
- * @typedef {RuleAnswerFields & RefusalFields} RuleAnswer
- */
-/**
- * @typedef {Object} RuleAnswerFields
- * @property {boolean} ok
- * @property {any} [service] the service asked; a refusal names it only when it is unknown
- * @property {any} [value]
- * @property {any} [basis]
- * @property {any} [grade]
- * @property {any} [status]
- * @property {any} [label] one of `RULE_LABELS`
- * @property {string} [as_of]
- * @property {boolean} [quote_only] a court ruling's reading: its rule item carries the quote and no reading (D40)
- * @property {any} [limits]
- * @property {{level: any, reason: any, act: any}} [not_held]
- * @property {string} [rule_id]
- */
-/**
- * A refusal this module passes on from the module that answered it, or answers with no row of its own
- * (`GRANT_OP_REFUSED`, `BAD_TALLY`, `ACCOUNT_UNREADABLE`, `LIMITS_UNREADABLE`, `MINT_EXHAUSTED`, `SCOPE_TOO_LARGE`, and
- * the refusals of `ai-accounts`, `ai-use`, `membership`, `query-language` and `retrieval`): nothing was written.
- * @typedef {Object} AnswersOtherRefusal
- * @property {boolean} ok false
- * @property {any} reason
- * @property {any} [code]
- * @property {any} [check]
- * @property {any} [translation]
- * @property {any} [detail]
- */
-/**
- * R30's answer: `ok` true with the account that serves the act and the paying account, as `ai-use` R1 spells it; or
- * `ok` false with the refusal's fields, passed on unchanged or the module's own (`LIMITS_UNREADABLE`,
- * `ACCOUNT_UNREADABLE`).
- * @typedef {{ok: boolean, account?: any, owner?: any} & RefusalFields} AskAccount
- */
-/**
- * One count of R13: per local day, zone, mode, kind (`answered`, `withheld` or `refused`) and code.
- * @typedef {Object} AskTally
- * @property {any} day
- * @property {any} zone
- * @property {any} mode
- * @property {any} kind
- * @property {any} code
- * @property {any} n
- */
-/**
- * A standing question as its author reads it (R16, R34): its saved query or its find, cadence, end, each earlier end with
- * who changed it and when, and when it ended, last ran and is next due.
- * @typedef {Object} StandingQuestion
- * @property {any} id
- * @property {any} question
- * @property {any} query
- * @property {any} [find]
- * @property {any} cadence
- * @property {any} ends
- * @property {any} ends_changes
- * @property {any} created_at
- * @property {{at: any, by: any}|null} ended
- * @property {any} last_run_at
- * @property {any} next_due null once ended
- */
-/**
- * R15, R28: what a member sets: a saved query (`query`) or a find (`find`, `{scope, kinds, term?}` as `retrieval.findIn`
- * takes them), never both, a cadence and an end date.
- * @typedef {Object} StandingSetArgs
- * @property {any} [author] the member's stamp, `member:<id>`
- * @property {any} [owner]
- * @property {any} [question] the question in the member's words; a find's may be null
- * @property {any} [query]
- * @property {any} [find]
- * @property {any} [cadence] one of `CADENCES`
- * @property {any} [ends] a calendar day after today's local day
- * @bound cadence: daily, weekly or monthly
- * @bound ends: a calendar day after today's local day in the governing zone
- * @bound find: an enumerated scope or a selection holds at most 200 ids
- */
-/**
- * R15, R28: a standing question set.
- * @typedef {Object} StandingSet
- * @property {boolean} ok true
- * @property {any} id
- * @property {string} question
- * @property {any} [query]
- * @property {any} [find]
- * @property {any} cadence
- * @property {any} ends
- * @property {any} created_at
- */
-/**
- * R20, R28: one run of a member's own standing question that found something new, told once.
- * @typedef {Object} StandingEntry
- * @property {{id: any, question: any}} question
- * @property {any} run its sequence, the cursor's unit
- * @property {any} at
- * @property {any} finds
- * @property {any} answer null when the AI half was held back, and for a find
- * @property {any} withheld
- * @property {any} held_back the condition that held the AI half back, or null
- * @property {any} label "machine work, from your standing question", or a find's "Found by search"
- * @property {string} [origin] a find's: `search`
- * @bound finds: a find's entry carries at most 500 new matches, with truncated and the count of the rest
- */
-/**
- * R17: one tick's runs, and how many due questions it left for the next.
- * @typedef {Object} StandingTickAnswer
- * @property {string} at
- * @property {Array<{id: any, ran: boolean, new_found: boolean, held_back?: any}>} ran
- * @property {number} remaining
- * @bound ran: at most 50 questions, oldest due first
- */
-
 /** J1 (2), K1505 (14): the copy's switch for the rule services (off until M-Q9's bar is met). */
 export const RULE_SERVICES_SETTING = "answers_rule_services";
 /** R13: the modes a tally is kept per. */
@@ -220,9 +75,7 @@ const LOGS_MAX = 512;
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const filled = (v) => typeof v === "string" && v.trim() !== "";
 
-/** The module's instance, one per host (`answersOf`). Its members are the module's services. */
 export class Answers {
-  /** @param {AnswersDeps & {storage: any, record: any, membership: any}} opts */
   constructor({ storage, record, membership, ...deps }) {
     this.sql = storage.sql;
     this.record = record;
@@ -239,9 +92,7 @@ export class Answers {
   rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
   one(q, ...a) { const r = this.rows(q, ...a); return r.length ? r[0] : null; }
 
-  /** A dependency named in `deps`: an object, or a function answering one, read once.
-   *  @param {string} name
-   *  @returns {any} */
+  /** A dependency named in `deps`: an object, or a function answering one, read once. */
   dep(name) {
     if (name === "query") return this.deps.query ?? { savedForm };
     if (name === "useCheck") return this.deps.useCheck ?? null;
@@ -253,8 +104,6 @@ export class Answers {
     return v;
   }
 
-  /** The module's clock: `deps.now`'s instant, else the wall clock's.
-   *  @returns {string} */
   now() {
     const n = this.deps.now;
     const v = typeof n === "function" ? n() : n;
@@ -300,9 +149,7 @@ export class Answers {
   holdLog(log) { log.expires = null; this.logs.set(this.#key(log.grant), log); }
   dropLog(grant) { const k = this.#key(grant); if (k) this.logs.delete(k); }
 
-  /** The read log of a grant (an empty one when it has read nothing).
-   *  @param {any} grant
-   *  @returns {ReadLog} */
+  /** The read log of a grant (an empty one when it has read nothing). */
   readLog(grant) {
     this.#sweepLogs(Date.parse(this.now()));
     const k = this.#key(grant);
@@ -326,10 +173,7 @@ export class Answers {
   /** R2, R30: whether an id names a held bundle the viewer may not see, or one of a project that keeps its material
    *  away from AI for `use` (`ai-accounts.projectsKeptAway`, its R22: the project's own bundle or one it holds). When
    *  the limits cannot be read (the read throws, answers no list, or ai-accounts cannot be reached), every project's
-   *  bundle is dropped (fail closed).
-   *  @param {any} viewer
-   *  @param {string} [use]
-   *  @returns {(id: string) => boolean} */
+   *  bundle is dropped (fail closed). */
   hidden(viewer, use = "ask") {
     const accounts = this.dep("accounts");
     let away = null;
@@ -349,9 +193,7 @@ export class Answers {
   /** R1, R2, R30: a read served under a grant: refused outside ASK_SCOPE; otherwise its answer scrubbed of ties, source
    *  links, hidden rows and the rows of projects kept away from AI for the grant's use (`ask` unless named: `draft`,
    *  or `standing` for R19's run, fixed when the grant's log opens), recorded in the grant's read log, and answered as
-   *  recorded. Writes no row (R14).
-   *  @param {{grant?: any, op?: any, args?: any, answer?: any, viewer?: any, use?: string}} [read]
-   *  @returns {any} the scrubbed answer, or the refusal `GRANT_OP_REFUSED` naming the op */
+   *  recorded. Writes no row (R14). */
   logRead({ grant = null, op = null, args = null, answer = null, viewer = null, use = "ask" } = {}) {
     if (!askAdmits(op)) return { ok: false, reason: "GRANT_OP_REFUSED", code: "GRANT_OP_REFUSED", op: op ?? null,
                                  detail: "an ask reads only the asking scope's reads" };
@@ -367,11 +209,7 @@ export class Answers {
    * THE RULE SERVICES (R7–R12)
    * ===================================================================== */
 
-  /** R12: a later module's rule service, once per name, at start.
-   *  @param {any} name
-   *  @param {any} fn `(args, {viewer, at, dep, view})` → a value with its basis, grade, status and label, or `not_held`
-   *  @returns {{ok: boolean, service: any}|AnswersRefusal|Object} `RULE_SERVICE_EXISTS`, or membership's
-   *    `LISTENER_MALFORMED` */
+  /** R12: a later module's rule service, once per name, at start. */
   registerRuleService(name, fn) {
     const bad = listenerRefusal(null, filled(name) ? name : "", fn);
     if (bad && bad.reason === "LISTENER_MALFORMED") return bad;
@@ -381,9 +219,7 @@ export class Answers {
     return { ok: true, service: name };
   }
 
-  /** J1 (2): the administrator's switch for the rule services.
-   *  @param {{on?: any, by?: any}} [act]
-   *  @returns {{ok: boolean, on: boolean}|Object} or membership's `NOT_AN_ADMIN` */
+  /** J1 (2): the administrator's switch for the rule services. */
   ruleServicesSwitch({ on = null, by = null } = {}) {
     const m = S.memberOf(by);
     if (!m || !this.membership.isAdministrator(m)) return notAnAdmin(by ?? null, "switching the rule services");
@@ -393,8 +229,7 @@ export class Answers {
 
   /** R7 (K5131): whether the rule services are on, for any signed-in member (the control plane's class gate admits the
    *  caller), so a screen draws their control only while on. A read: writes nothing; the services stay off until the
-   *  administrator's switch (K1505 (14)).
-   *  @returns {{ok: boolean, on: boolean}} */
+   *  administrator's switch (K1505 (14)). */
   ruleServicesState() {
     return { ok: true, on: this.record.getSetting(RULE_SERVICES_SETTING) === true };
   }
@@ -402,9 +237,7 @@ export class Answers {
   /** R7: one rule service's answer, as of `at` (now when absent), recorded in the read log of the grant it was asked
    *  under. Non-mutating; never throws. (R35; K3089) `use` (`ask` or `draft`; absent or any other: `ask`) opens the
    *  grant's read log with it when this is the grant's first read, so a draft grant first read by `op=rule` is scrubbed
-   *  as a draft (R30); a log already open keeps the use it opened with.
-   *  @param {{service?: any, args?: any, viewer?: any, at?: any, grant?: any, use?: string}} [ask]
-   *  @returns {Promise<RuleAnswer>} refusals `RULE_SERVICES_OFF`, `RULE_SERVICE_UNKNOWN` */
+   *  as a draft (R30); a log already open keeps the use it opened with. */
   async ruleAnswer({ service = null, args = null, viewer = null, at = null, grant = null, use = "ask" } = {}) {
     if (this.record.getSetting(RULE_SERVICES_SETTING) !== true)
       return refusal("RULE_SERVICES_OFF", localize("answers.index.the_rule_services_are_switched", "the rule services are switched off in your team's Civicsmith"));
@@ -436,9 +269,7 @@ export class Answers {
    *  `{ok: true, account, owner}` (`owner` the paying account, as `ai-use` R1 spells it) or the refusal unchanged
    *  (`AI_KEPT_AWAY`, `PROJECT_AI_KEPT_AWAY`, `AI_USE_SWITCHED_OFF`, `NO_ACCOUNT`, `AI_LIMIT_REACHED`, ...). A limit that
    *  cannot be judged, or an account that cannot be read, refuses with no row (`LIMITS_UNREADABLE`,
-   *  `ACCOUNT_UNREADABLE`: the deployment's fault, fail closed). Writes nothing; never throws.
-   *  @param {{member?: any, project?: any, at?: any, kind?: any}} [ask]
-   *  @returns {Promise<AskAccount>} */
+   *  `ACCOUNT_UNREADABLE`: the deployment's fault, fail closed). Writes nothing; never throws. */
   async askAccount({ member = null, project = null, at = null, kind = null } = {}) {
     /* (K2508) `kind`: `ask` when absent, or `draft` for a draft; any other is refused as ai-accounts R3 refuses an act
        not the member's own (`NOT_YOUR_ACCOUNT`, its row, ai-accounts R33), before any account is read */
@@ -472,9 +303,7 @@ export class Answers {
    * THE CHECK AND THE TALLIES (R4, R13, R14)
    * ===================================================================== */
 
-  /** R4 over the grant's own read log, counted (R13).
-   *  @param {{answer?: any, grant?: any, viewer?: any, mode?: string}} [ask]
-   *  @returns {CheckedAnswer} */
+  /** R4 over the grant's own read log, counted (R13). */
   check({ answer = null, grant = null, viewer = null, mode = "ask" } = {}) {
     const log = this.readLog(grant);
     const r = checkAnswer(answer, { readLog: log.viewer === viewer ? log : null, viewer });
@@ -484,9 +313,7 @@ export class Answers {
   }
 
   /** R13: adds to the counts per local day of the group's jurisdiction and per mode. Carries no member, viewer,
-   *  question, address or answer text.
-   *  @param {{outcome?: any, codes?: any, mode?: string, at?: any}} [count]
-   *  @returns {{ok: boolean, day: string, mode: string}|AnswersOtherRefusal} `BAD_TALLY` */
+   *  question, address or answer text. */
   countAsk({ outcome = null, codes = [], mode = "ask", at = null } = {}) {
     if (!["answered", "refused"].includes(outcome) || !ASK_MODES.includes(mode)) return { ok: false, reason: "BAD_TALLY",
       detail: `outcome is answered or refused; mode is one of ${ASK_MODES.join(", ")}` };
@@ -505,9 +332,7 @@ export class Answers {
     return { ok: true, day, mode };
   }
 
-  /** R13: the counts, to an administrator only.
-   *  @param {{viewer?: any, from?: any, to?: any}} [read] `from` and `to` local days, inclusive
-   *  @returns {{ok: boolean, from: any, to: any, tallies: AskTally[]}|Object} or membership's `NOT_AN_ADMIN` */
+  /** R13: the counts, to an administrator only. */
   tallies({ viewer = null, from = null, to = null } = {}) {
     const m = S.memberOf(viewer);
     if (!m || !this.membership.isAdministrator(m)) return notAnAdmin(viewer ?? null, "reading the assistant's tallies");
@@ -521,9 +346,7 @@ export class Answers {
    * STANDING QUESTIONS (R15–R21)
    * ===================================================================== */
 
-  /** R19 (J1 (5)): the administrator's switch for the AI half of standing questions (off by default).
-   *  @param {{on?: any, by?: any}} [act]
-   *  @returns {{ok: boolean, on: boolean}|Object} or membership's `NOT_AN_ADMIN` */
+  /** R19 (J1 (5)): the administrator's switch for the AI half of standing questions (off by default). */
   standingAiSwitch({ on = null, by = null } = {}) {
     const m = S.memberOf(by);
     if (!m || !this.membership.isAdministrator(m)) return notAnAdmin(by ?? null, "switching the standing questions' AI half");
@@ -531,10 +354,7 @@ export class Answers {
     return { ok: true, on: on === true };
   }
 
-  /** R19 (J1 (5)): the one module that calls the model for a standing question's new finds (K31's pattern).
-   *  @param {any} module
-   *  @param {any} fn
-   *  @returns {{ok: boolean, module: any}|Object} or membership's listener refusal */
+  /** R19 (J1 (5)): the one module that calls the model for a standing question's new finds (K31's pattern). */
   registerStandingAnswerer(module, fn) {
     const bad = listenerRefusal(this.answerer, module, fn);
     if (bad) return bad;
@@ -543,10 +363,7 @@ export class Answers {
   }
 
   /** R27 (N605; K1666): one listener per module, told `{question, due}` after a standing question is set or ended by
-   *  its author, so `scheduler` re-arms R17's wake. Refused through `membership.listenerRefusal`.
-   *  @param {any} module
-   *  @param {(told: {question: any, due: any}) => any} fn
-   *  @returns {{ok: boolean, module: any}|Object} or membership's listener refusal */
+   *  its author, so `scheduler` re-arms R17's wake. Refused through `membership.listenerRefusal`. */
   onStandingSet(module, fn) {
     const bad = listenerRefusal(this.setListeners, module, fn);
     if (bad) return bad;
@@ -555,71 +372,28 @@ export class Answers {
   }
   /** R27: each listener once, after the act's transaction: at once outside one, or just after the outermost commits
    *  when the act runs inside another module's (`following` R25), never when that rolls back (`record-core` R66). One
-   *  that throws never undoes the act, nor stops the others. Writes nothing.
-   *  @param {any} question
-   *  @param {any} due
-   *  @returns {void} */
+   *  that throws never undoes the act, nor stops the others. Writes nothing. */
   tellStanding(question, due) {
     const tell = () => { for (const l of this.setListeners) { try { l.fn({ question, due }); } catch { /* the act stands (R27) */ } } };
     if (typeof this.record.afterCommit === "function") this.record.afterCommit(tell);
     else tell();
   }
 
-  /** R15, R28: a member's standing question, by that member's own act. Refusals, each writing nothing:
-   *  `MACHINE_CANNOT_AUTHOR`, `STANDING_NEEDS_SEARCH`, `BAD_CADENCE`, `STANDING_NEEDS_END`, and the saved-query form's or
-   *  `retrieval.findIn`'s own.
-   *  @param {StandingSetArgs} a
-   *  @returns {StandingSet|AnswersRefusal|AnswersOtherRefusal} */
   standingQuestionSet(a) { return S.standingQuestionSet(this, a); }
-  /** R16: one of the viewer's own questions; any other viewer is answered as for none.
-   *  @param {{id?: any, viewer?: any}} a
-   *  @returns {{ok: boolean, question: StandingQuestion}|AnswersRefusal} `NO_SUCH_STANDING_QUESTION` */
   standingQuestionRead(a) { return S.standingQuestionRead(this, a); }
-  /** R16: the viewer's own questions.
-   *  @param {{viewer?: any}} a
-   *  @returns {{ok: boolean, questions: StandingQuestion[]}} */
   standingQuestionsOf(a) { return S.standingQuestionsOf(this, a); }
-  /** R16: the author ends their own question, at any time; one already ended answers `already`.
-   *  @param {{id?: any, author?: any}} a
-   *  @returns {{ok: boolean, id: any, already?: boolean, ended: {at: any, by: any}}|AnswersRefusal}
-   *    `NO_SUCH_STANDING_QUESTION` */
   standingQuestionEnd(a) { return S.standingQuestionEnd(this, a); }
-  /** R34: the author changes their own question's end date. Refusals in order, each writing nothing:
-   *  `MACHINE_CANNOT_AUTHOR`, `NO_SUCH_STANDING_QUESTION`, `STANDING_ENDED`, `STANDING_NEEDS_END`. The same end answers
-   *  `unchanged`; otherwise `was` is the end it replaced.
-   *  @param {{id?: any, ends?: any, author?: any}} a
-   *  @returns {{ok: boolean, id: any, ends: any, unchanged?: boolean, was?: any}|AnswersRefusal|AnswersOtherRefusal} */
   standingQuestionEndSet(a) { return S.standingQuestionEndSet(this, a); }
-  /** R17: how many questions are due at `now` (the module's clock when absent).
-   *  @param {any} [now]
-   *  @returns {number} */
   standingDue(now) { return S.standingDue(this, now ?? this.now()); }
-  /** R17: `now` when a question is due, else the first instant of the earliest next due day, or null when no question
-   *  will run again.
-   *  @param {any} [now]
-   *  @returns {any} */
   standingWake(now) { return S.standingWake(this, now ?? this.now()); }
-  /** R17, R18, R19, R28: runs each due question, oldest due first, with no model call but R19's.
-   *  @param {any} [now]
-   *  @returns {Promise<StandingTickAnswer>} */
   standingTick(now) { return S.standingTick(this, now ?? this.now()); }
-  /** R20: the runs of a member's own questions that found something new, each told once, in run order after `after`,
-   *  with the cursor for the next page (null on the last).
-   *  @param {{member?: any, after?: any, limit?: any}} a
-   *  @returns {{ok: boolean, entries: StandingEntry[], cursor: any}}
-   *  @bound entries: at most 200, or `limit` when it is a smaller whole number */
   standingAnswersFor(a) { return S.standingAnswersFor(this, a); }
 }
 
 /* One instance per host (R23: the tables are declared once). */
 const instances = new WeakMap();
 
-/** The module's instance for a host: created on the first call with `deps`, its tables made and declared; a later call
- *  answers the same instance and reads no `deps`.
- *  @param {any} host the host, or its storage
- *  @param {AnswersDeps} [deps]
- *  @returns {Answers}
- *  @throws {Error} when record-core refuses to declare the module's tables */
+/** The module's instance for a host: created on the first call with `deps`, its tables made and declared. */
 export function answersOf(host, deps) {
   const storage = host && host.storage ? host.storage : host;
   let a = instances.get(storage);

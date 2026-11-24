@@ -34,27 +34,8 @@ const PLANE_KEYS = ["json", "doAnswer", "storeSilent", "requiredArgument", "STOR
 /* R9: bound when the plane hands it; absent, a refusal is answered as it answers one (below). */
 const PLANE_OPTIONAL = ["storeRefusal"];
 
-/**
- * A governed refusal of the public read path (R17: its row in `../public-read/checks.mjs`, through `rowOf`).
- * @typedef {Object} PublishedRefusal
- * @property {boolean} ok false
- * @property {string} reason the row's code, a string literal at its site (DEC-49)
- * @property {any} code the same code, as the row states it
- * @property {any} check its C-number
- * @property {any} translation the row's canned words
- * @property {string} [sha256] the hash asked, where the refusal names one
- * @property {Object<string, any>} [withheld] each withheld hash to its court orders (R28)
- * @property {string} [detail] the site's own sentence
- */
-
 /** Binds the control plane's helpers, once, at the control plane's load. A second binding replaces the first (a test
- *  binds its own); one missing a helper throws, loudly, since every public read depends on them. Serves R9 (the plane's
- *  `storeRefusal`, optional, relays a store refusal) and every public read (R3, R5).
- * @param {any} helpers the plane's helpers by name: `json`, `doAnswer`, `storeSilent`, `requiredArgument`,
- *  `STORE_SILENT_REASON`, `STORE_SILENT_DETAIL`, `PUBLISHED_STORE`, and optionally `storeRefusal`
- * @returns {Object<string, any>} the frozen binding
- * @throws {Error} when `helpers` is absent or lacks a required helper
- */
+ *  binds its own); one missing a helper throws, loudly, since every public read depends on them. */
 export function bindPublishedPlane(helpers) {
   const missing = PLANE_KEYS.filter((k) => !helpers || helpers[k] === undefined);
   if (missing.length) throw new Error(`bindPublishedPlane: missing ${missing.join(", ")}`);
@@ -93,7 +74,7 @@ function sectionWords(text, heading) {
 }
 const wordsOf = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
 
-/** THE PUBLISHED-STORE COMPLAINT (C-68.5, D-549; R5, R17). A copy installed with no store
+/* THE PUBLISHED-STORE COMPLAINT (C-68.5, D-549). A copy installed with no store
  * for its published documents cannot hand over a published document's bytes, at
  * `publishedbytes` (a refusal) or at `publishedcase` (a finding's body stated
  * `unavailable`). BOTH OPS ARE PUBLIC, so the reader of this code is most likely a
@@ -105,10 +86,7 @@ const wordsOf = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
  * code for a different fact — `OBJECT_MISSING` (a store bound and no object at
  * that hash) is the other condition and stays its own code at its own site.
  * Minted here rather than at two sites for the reason `storageAbsent` is: a
- * DEC-49 row holds one `where`.
- * @param {any} env the Worker's bindings; `env.PUBLISHED` is the published store
- * @returns {PublishedRefusal|null} `NO_PUBLISHED_STORE`, or null when a store is bound
- */
+ * DEC-49 row holds one `where`. */
 export function publishedStoreAbsent(env) {
   /* DEC-49 REGION is-published-store-absent
    * THE SPAN C-68.5 names: its one condition and its one mint, the code a STRING LITERAL at its site. */
@@ -118,15 +96,12 @@ export function publishedStoreAbsent(env) {
   /* END DEC-49 REGION is-published-store-absent */
 }
 
-/** D-561 (C-98.1; R5, R17): NO PUBLISHED PART ANSWERS TO THAT HASH, at `publishedbytes`. It answered `NOT_FOUND` until
+/* D-561 (C-98.1): NO PUBLISHED PART ANSWERS TO THAT HASH, at `publishedbytes`. It answered `NOT_FOUND` until
  * D-561, a code the plane also mints for three other conditions, so no row could be written for it without
  * putting this sentence on theirs. `detail` is the site's own sentence, BYTE-IDENTICAL to what it said before:
  * a hash that was never ratified and a hash that never existed stay ONE answer, and the translation keeps that.
  * Returns the refusal OBJECT, as `publishedObjectMissing` does, and its one site wraps it (404): the region then holds
- * the refusal itself, so the verdict reader judges it rather than a `json(` call it cannot see into (N242, N297).
- * @param {string} sha256 the hash asked
- * @returns {PublishedRefusal} `NO_PUBLISHED_PART`, naming the hash
- */
+ * the refusal itself, so the verdict reader judges it rather than a `json(` call it cannot see into (N242, N297). */
 export function noPublishedPart(sha256) {
   /* DEC-49 REGION is-no-published-part */
   return { ok: false, reason: "NO_PUBLISHED_PART", ...rowOf("NO_PUBLISHED_PART"), sha256,
@@ -134,14 +109,12 @@ export function noPublishedPart(sha256) {
   /* END DEC-49 REGION is-no-published-part */
 }
 
-/** D-561 (C-98.2; R3, R5, R17): A PUBLISHED HASH WHOSE BYTES THIS COPY'S STORE DOES NOT HOLD — the store bound and the object
+/* D-561 (C-98.2): A PUBLISHED HASH WHOSE BYTES THIS COPY'S STORE DOES NOT HOLD — the store bound and the object
  * absent. ONE condition met at both public ops: `publishedcase` states one finding's body unavailable with it
  * (D-549 left it bare there), and `publishedbytes` refuses with it where it used to answer `NOT_FOUND` with the
  * sentence "no published part answers to that hash" — FALSE of a hash the line above had just verified published.
  * Returns the refusal OBJECT so each site chooses its envelope; `NO_PUBLISHED_STORE` is the other condition and
- * is never this one.
- * @returns {PublishedRefusal} `OBJECT_MISSING`, naming no hash (each site adds it)
- */
+ * is never this one. */
 export function publishedObjectMissing() {
   /* DEC-49 REGION is-published-object-missing
    * THE SPAN C-98.2 names: its one mint, the code a STRING LITERAL at its site, the row's fields beside it. */
@@ -150,15 +123,11 @@ export function publishedObjectMissing() {
   /* END DEC-49 REGION is-published-object-missing */
 }
 
-/** R28 (K1480, K1493; C-98.11; R5, R17): BYTES A COURT ORDER WITHHOLDS, at `publishedbytes`. The hash is published and its bytes
+/* R28 (K1480, K1493; C-98.11): BYTES A COURT ORDER WITHHOLDS, at `publishedbytes`. The hash is published and its bytes
  * are held (nothing is deleted, `publication` R24); a court order this group complied with keeps them from being served,
  * and the answer says so, naming each order and the docket entry that names it, with HTTP 451 (unavailable for legal
  * reasons). `withheld` maps each withheld hash asked to its orders (`PublicRead.withheldOf`). Returns the refusal OBJECT,
- * as `noPublishedPart` does, and its one site wraps it.
- * @param {string} sha256 the hash asked
- * @param {Object<string, any>} withheld each withheld hash to its orders
- * @returns {PublishedRefusal} `WITHHELD_BY_COURT_ORDER`, naming the hash and the orders
- */
+ * as `noPublishedPart` does, and its one site wraps it. */
 export function withheldByCourtOrder(sha256, withheld) {
   /* DEC-49 REGION is-withheld-by-court-order */
   return { ok: false, reason: "WITHHELD_BY_COURT_ORDER", ...rowOf("WITHHELD_BY_COURT_ORDER"), sha256,
@@ -190,11 +159,6 @@ const OVER_CASE_FILE = "this case edition's case file manifest (MANIFEST.json, a
    memory at once (an edition over it is `TOO_LARGE`, stated and not attempted), and the cut an error message is logged and
    stored under. `publishedcase` answers the state and the code only (`../public-read/index.mjs`). */
 export { CASEFILE_CODES };
-/** G54 (R6, R44): the files one edition's case file may hold in memory at once; an edition estimated over it is stated
- *  `TOO_LARGE` at step `build`, and not attempted.
- * @type {number}
- * @bound a whole number of files, 4,000; an edition's estimate above it is TOO_LARGE
- */
 export const CASEFILE_FILES_MAX = 4000;
 const ERROR_CUT = 160;
 const cut = (v) => String(v ?? "").slice(0, ERROR_CUT);
@@ -223,35 +187,12 @@ function attemptLog(ok, fields) {
   try { (ok ? console.log : console.error)(JSON.stringify({ event: "casefile_attempt", ok, ...fields })); } catch { /* a log that cannot be written changes nothing */ }
 }
 
-/**
- * What a case file failure is recorded from (R6).
- * @typedef {Object} CaseFileFailureArgs
- * @property {any} [stub] the store's Durable Object, holding the ledger
- * @property {any} [cs] the case edition's state: `caseId` and `edition`
- * @property {any} [via] the op that reached the assembly, for the log
- * @property {any} [step] the step failed at, one of the assembly's, else `copy`
- * @property {any} [error] what was thrown, logged and stored cut to 160 characters
- * @property {any} [code] a code of `CASEFILE_CODES`; any other value is not used
- * @property {any} [absent] true only when a missing material is confirmed gone from the evidence store
- */
-/**
- * A case file attempt's recorded failure, as answered (R6).
- * @typedef {Object} CaseFileStatement
- * @property {boolean} ok the ledger recorded it
- * @property {any} state the state the ledger answered, else null
- * @property {string} code a code of `CASEFILE_CODES`
- * @property {string} step the step it is stated at
- */
-
 /** G54 (R6): a failure the caller met BEFORE the assembly was reached (ratification's copy of the findings' or the materials'
  *  bytes threw), recorded as the assembly records its own: `failed` at `step` (default `copy`) with a code of the closed
  *  set (default `BUCKET_FAILED` for a copy, `UNKNOWN` otherwise; any other value is `UNKNOWN`), one `casefile_attempt` error
  *  line, and the edition owed. `absent` is the caller's confirmation that a missing material is gone from the evidence store
  *  (`publication` stops an edition only then). Answers `{ok, state, code, step}`; never throws.
- *  Signature: `recordCaseFileFailure({ stub, cs, via, step = "copy", error = null, code = null, absent = false })`.
- * @param {CaseFileFailureArgs} [args]
- * @returns {Promise<CaseFileStatement>}
- */
+ *  Signature: `recordCaseFileFailure({ stub, cs, via, step = "copy", error = null, code = null, absent = false })`. */
 export async function recordCaseFileFailure({ stub, cs, via = null, step = "copy", error = null, code = null, absent = false } = {}) {
   try {
     const at = step === "copy" || step === "facts" || step === "materials" || step === "build" || step === "bucket_put" || step === "quartet"
@@ -270,18 +211,7 @@ export async function recordCaseFileFailure({ stub, cs, via = null, step = "copy
  *  records `failed` with a code of `CASEFILE_CODES`, writes one `casefile_attempt` line, and answers the statement. It
  *  records `built` only after the manifest's own bytes are in the bucket, and records no manifest while a material is
  *  missing or the bucket is not bound. Answers what `op=ratify` carries as `container`: the manifest's hash, its parts and
- *  their addresses (plus `case_file: "built"`), or `{ok: false, reason, code, step}`. Serves R6, R23, R44 (and R7's
- *  in-band quartet, carried in the answer).
- * @param {Object} args
- * @param {any} args.env the Worker's bindings; `env.PUBLISHED` is the published bucket
- * @param {any} args.stub the store's Durable Object
- * @param {any} args.storeName the store's name
- * @param {any} args.cs the case edition's state (`#caseEditionState`'s answer)
- * @param {any} args.via the op that reached the assembly
- * @param {any} [args.maxBytes] the container's byte bound, where the caller sets one
- * @param {any} [args.prior] what the caller's own copy met: `{materials_missing, copy_error, copy_code, absent}`, or null
- * @returns {Promise<any>} the container answer, or the failure statement; never rejects
- */
+ *  their addresses (plus `case_file: "built"`), or `{ok: false, reason, code, step}`. */
 export async function assembleCaseContainer({ env, stub, storeName, cs, via, maxBytes = undefined, prior = null }) {
   let step = "facts";
   const mark = (s) => { step = s; };
@@ -654,18 +584,9 @@ async function assembleCaseFile({ env, storeName, cs, stub, via, facts, maxBytes
   return answer;
 }
 
-/** REC-22 / DEC-34 / R3, R5: the public read path's control-plane side, `op=publishedcase` and `op=publishedbytes`,
+/* REC-22 / DEC-34 / R3, R5: the public read path's control-plane side, `op=publishedcase` and `op=publishedbytes`,
    for a caller holding no credential. `stub` is the published store's Durable Object (PUBLISHED_STORE). Answers the
-   Response. Also serves R9 (store refusals relayed), R17 (governed refusals), R28 (withheld bytes, 451) and R39
-   (each finding's page data).
- * @param {Object} args
- * @param {string} args.op `publishedcase` or `publishedbytes`
- * @param {URL} args.url the request's address, read for `sha256`, `id`, `format`, `part` and the like
- * @param {any} args.env the Worker's bindings; `env.PUBLISHED` is the published bucket
- * @param {any} args.stub the published store's Durable Object
- * @returns {Promise<Response>}
- * @throws {Error} when the control plane has not bound its helpers (`bindPublishedPlane`)
- */
+   Response. */
 export async function publishedRoutes({ op, url, env, stub }) {
   const P = plane();
   const shaParam = (url.searchParams.get("sha256") || "").toLowerCase();

@@ -118,8 +118,8 @@ const panel = (p) => p.root().querySelector(".cs-dock");
 test("R48 two ended runs draw the later's ending, not \"No run yet\"; the ask is offered", async () => {
   const w = await stateWorld({ n: 1 });
   await (await openRun(w)).end("cancelled");
-  /* a run is stamped to the second on the instance clock (ai-runs), which the world moves: the later run is a second on */
-  await w.world.tick(1000);
+  /* a run is stamped to the second by the wall clock, which the world does not move: the later run waits a second */
+  await new Promise((r) => setTimeout(r, 1100));
   await (await openRun(w)).end("wallclock");
   const p = await dock(w);
   assert.ok(says(panel(p), "screen.assistant.run.ended", { why: word("ai.run.ending.wallclock") }));

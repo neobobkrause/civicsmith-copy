@@ -64,6 +64,6 @@ export const T37_NON_ACTS = {
     + "obscured copy, to a member who may see it"),
   translations: R("every interface word in a language with its state, its shown or awaiting text and who kept it, its "
     + "drafts, adoptions, confirmations, undos and open marks, and the place's local names, to a granted speaker"),
-  interfacewords: R("every interface word in a language, the team's shown translation or the English, never blank, with "
+  interfacewords: R("every interface word in a language, the group's shown translation or the English, never blank, with "
     + "the English beside it"),
 };

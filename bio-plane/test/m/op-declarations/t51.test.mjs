@@ -27,11 +27,6 @@ import { localFactsOps } from "../../../src/local-facts/index.mjs";
 import { retrievalRoutes } from "../../../src/retrieval/index.mjs";
 import { actionClocksOps } from "../../../src/action-clocks/index.mjs";
 import { membershipOps } from "../../../src/membership/index.mjs";
-/** @param {string} op @returns {readonly string[]} the op's machine classes, asserted to be a list */
-const machineOf = (op) => { const c = O.OPS[op].machineClasses; assert.ok(Array.isArray(c), `${op}: machineClasses is a list`); return c; };
-/** @param {string} op @returns {readonly string[]} the op's session classes, asserted to be a list, so a negative check is never
- *  passed by a missing one */
-const classesOf = (op) => { const c = O.OPS[op].classes; assert.ok(Array.isArray(c), `${op}: classes is a list`); return c; };
 
 const { OPS, SESSION_OPS, NEEDS, OP_STAMPS, OP_FAMILIES, OP_ALIASES, GOVERNANCE_ACTIONS, IDENTITY_ACTIONS, UNATTENDED_BY_DECISION,
         ACT_GATE, ACT_HELP_ABSENT, BROWSER_ACTS, REAUTH_ACTS } = O;
@@ -39,7 +34,7 @@ const MP = ["admin", "member", "probe"];
 const plain = (s) => JSON.parse(JSON.stringify(s));
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
 const ground = (op) => Object.entries(ACT_HELP_ABSENT).filter(([, g]) => g.ops.includes(op)).map(([k]) => k);
@@ -227,7 +222,7 @@ test("R77, R78, R79: the kinds' controls — an `ai` credential is refused every
   assert.deepEqual(machineAdmits("heldat"), ["admin", "probe"]);
   /* negative control */
   assert.deepEqual(machineAdmits("projectdirectory"), MP);
-  assert.ok(!classesOf("adminremovalsopen").includes("probe"));
+  assert.ok(!OPS.adminremovalsopen.classes.includes("probe"));
 });
 
 test("R77, R78, R79, R4: each viewer, each `by` and each request field of the 12 ops an owner's map serves reaches the owner at the site it reads (the query), and a body copy does not, nor does another key (negative control per op); the two no owner map serves (approvedunsent and checkpointsdue) are the control plane's route (screens-action R30, control-plane R110)", async () => {
@@ -318,7 +313,7 @@ test("R78 (N858, N1046; DEC-340, U366, K3935): over the registry (77 screens at 
   assert.ok(!actsOn("action").includes("actionhold") && actsOn("action").includes("procedureguides"));
   assert.ok(Object.hasOwn(OPS, "procedureguides") && Object.hasOwn(OPS, "templatesforaction"));
   /* the three reads are for a member's session */
-  for (const op of ["holdsdue", "templatebyhandle", "rulefields"]) assert.ok(both(op) && NEEDS[op] === null && machineOf(op).length === 0, op);
+  for (const op of ["holdsdue", "templatebyhandle", "rulefields"]) assert.ok(both(op) && NEEDS[op] === null && OPS[op].machineClasses.length === 0, op);
   /* negative control: an undeclared name fails */
   assert.ok(!Object.hasOwn(OPS, "nosuchholdact"));
   assert.deepEqual(["actionhold", "nosuchholdact"].filter((a) => !Object.hasOwn(OPS, a)), ["nosuchholdact"]);
@@ -415,8 +410,8 @@ test("R22, R5, R6 (T51; K5232; action-holds R22, R5, R6; screens-action R32): ho
   assert.deepEqual(O.declaredFields("holdsplaced"), { accepts: ["after", "limit"], requires: [] });
   /* `from` is accepted by the two acts' previews and releases (action-holds R5, R6; K5232) */
   for (const op of ["actionholdpreview", "actionholdrelease"]) {
-    assert.ok(O.declaredFields(op)?.accepts.includes("from"), `${op}: does not accept from`);
-    assert.ok(O.declaredFields(op)?.accepts.includes("target") && O.declaredFields(op)?.accepts.includes("ord"), op);
+    assert.ok(O.declaredFields(op).accepts.includes("from"), `${op}: does not accept from`);
+    assert.ok(O.declaredFields(op).accepts.includes("target") && O.declaredFields(op).accepts.includes("ord"), op);
   }
   /* negative control: an op its owner declares no fields for answers undefined */
   assert.equal(O.declaredFields("holdsdue"), undefined);

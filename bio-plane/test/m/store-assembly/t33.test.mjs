@@ -379,7 +379,7 @@ test("R20 (queue R51; K1683): notice-producers is built over the plane's instanc
   /* through the door, queue asks the plane's instance */
   const asked = [];
   const was = np.noticeItems.bind(np);
-  np.noticeItems = (a) => { asked.push(a?.member); return was(a); };
+  np.noticeItems = (a) => { asked.push(a.member); return was(a); };
   try {
     const r = await (await x.fetch("/queue?member=bob&viewer=member:bob")).json();
     assert.equal(r.ok, true, JSON.stringify(r));

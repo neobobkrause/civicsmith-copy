@@ -21,7 +21,7 @@ const OWN = {
   actionnew: ["affordances", "list", "projectquestions"],
   hold: ["action", "holdsdue", "holdsplaced", "list", "memberlist", "projectlist"],
   holdnotice: ["list"],
-  counsel: ["action", "filingsfor", "list"],
+  counsel: ["action", "list"],
   "dash-action": ["action", "actions", "affordances", "checkpointsdue", "filingsfor", "list", "profiles", "projectlist"],
   "request on a project": ["entitieskind", "list", "peopledirectory", "profiles"],
   "plan on a project": ["list", "plans"],

@@ -11,11 +11,6 @@ const LOC = (n) => `https://records.example.org/fx-${n}.txt`;
 
 /** R48: `flagged({viewer, limit})` as it answers when the read cannot be made (the projection it reads is gone): `{ok: false,
  *  reason: null, items: [], limit, truncated: false, detail}`, the detail in words, never a throw. */
-/**
- * R48: the real `flagged({viewer, limit})` answer when its projection is gone, never a throw.
- * @param {{limit?: any}} [args] `{limit?}`: the limit asked; absent or null asks none
- * @returns {any} `{ok: false, reason: null, items: [], limit, truncated: false, detail}`
- */
 export function flaggedRefusal({ limit = null } = {}) {
   const w = world();
   w.st.db.exec(`DROP TABLE bundle_projection`);
@@ -26,11 +21,6 @@ export function flaggedRefusal({ limit = null } = {}) {
  *  day of the test's clock (the first at `NOW_MS`). `kind` is `modified` (the source serves new bytes at every tick: the
  *  answer is `modified` and carries `capture.sha256`, a distinct digest for each tick) or `unchanged` (the source serves
  *  the captured bytes: `capture` is null). `answers` has one entry per tick; `answer` is the last. */
-/**
- * R1–R10: the real answers of a monitored document ticked `ticks` times, a day apart; rejects a `kind` it does not know.
- * @param {{ticks?: number, kind?: string}} [args] `{ticks?, kind?}`: how many ticks (1), and `modified` (the default) or `unchanged`
- * @returns {Promise<{world: Record<string, any>, bundleId: string, locator: string, kind: string, answers: any[], answer: any}>} `answer` is the last of `answers`
- */
 export async function monitorAnswer({ ticks = 1, kind = "modified" } = {}) {
   if (kind !== "modified" && kind !== "unchanged") throw new Error(`monitorAnswer: no kind "${kind}"`);
   const w = world();
@@ -61,10 +51,6 @@ const readsOf = (w, viewer, now) => ({
  *  flagged, scheduled), and the addresses `gone` (three counted failures) and `young` (two failures in a young run: at the
  *  floor, not eligible), the first fallback-eligible. Each carries `monitoring`, `archiveEligible`, `flagged` (as `viewer`
  *  reads them at `now`), `configured` and `archiveDue`. */
-/**
- * R16, R19, R20, R32, R47, R48: the reads `queue`, its producers and `scheduler` make of monitoring, over an empty world and a seeded one.
- * @returns {Promise<{empty: Record<string, any>, seeded: Record<string, any>}>}
- */
 export async function monitoringReads() {
   const now = NOW_MS, viewer = DAEMON;
   const e = world();

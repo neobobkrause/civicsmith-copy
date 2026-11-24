@@ -191,8 +191,8 @@ test("R92 control: none chosen sends nothing and refuses in place, naming the mi
 /** What `screens-intake`'s drawing gives for an answer: its word where the table holds one, else the key it draws (the module owns both). */
 const outcomeWords = (status, note, title = "Pothole repair policy, Administrative Instruction 4.12") => {
   const key = "screen.capture.address.checked." + (status || "unknown");
-  if (!hasWord(key)) return key;
-  return status ? word(key, { title }) : word(key, { title, note });
+  const fills = status ? { title } : { title, note };
+  return hasWord(key) ? word(key, fills) : key;
 };
 test("R93 Check now draws what the check found: four answers draw four different outcomes through the drawing screens-intake owns", async () => {
   const page = (body) => async () => new Response(`<html><head><title>Council minutes</title></head><body>${body}</body></html>`, { status: 200, headers: { "content-type": "text/html" } });
@@ -243,8 +243,7 @@ test("R95 control: without the page serving person, the name is the kit's card, 
   assert.equal(section(p, "document.names.title").querySelectorAll("a.cs-ref").length, 0);
   assert.ok(text(section(p, "document.names.title")).includes("L. Chen"));
   const none = await openWith(at);
-  { const s = section(none, "document.names.title"); /* R139: with no names the section holds only "Find the people and offices it names" (resolve, admitted by the registry) */
-    assert.ok(s !== undefined && s.querySelectorAll(".cs-row").length === 0 && s.querySelectorAll('button[data-act]').map((b) => b.getAttribute("data-act")).join() === "resolve", "R20 R139: no names, no rows, only the act that finds them"); }
+  assert.equal(section(none, "document.names.title"), undefined);
 });
 
 /* ---- R111 ---- */
@@ -446,8 +445,7 @@ test("R10 the document draws exactly its registry acts, each labelled by a word 
   const REG = JSON.parse(readFileSync(new URL("./fixtures/registry-43379a1a44.json", import.meta.url), "utf8"));
   const want = REG.screens.find((s) => s.id === "document").acts.map((a) => a.op.replace(/^owed:(\w+) DEC-\d+$/, "$1"));
   const screen = SCREENS.find((s) => s.id === "document");
-  /* R139: `resolve` is carried once the live registry admits it (admit.mjs), which it now does; this registry copy predates it */
-  assert.deepEqual(screen.acts.map((a) => a.op).filter((op) => op !== "readheld").sort(), [...want, "resolve"].sort(), "the registry's acts, no more and no fewer (captureprogressions among them, B22 entry 2)");
+  assert.deepEqual(screen.acts.map((a) => a.op).filter((op) => op !== "readheld").sort(), want.sort(), "the registry's acts, no more and no fewer (captureprogressions among them, B22 entry 2)");
   /* `readheld` is interface-shell's re-point until the registry lists it (R129); its label is a held word as the others are */
   for (const a of screen.acts) assert.ok(hasWord(a.label) && screen.words.includes(a.label), `${a.op}: ${a.label}`);
 });

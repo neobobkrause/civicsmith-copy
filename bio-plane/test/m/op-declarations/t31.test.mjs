@@ -10,7 +10,7 @@ import { wizardScriptsOps } from "../../../src/wizard-scripts/index.mjs";
 import { REGISTERED } from "./register-owners.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
-const LISTS = Object.entries(O).filter(/** @returns {e is [string, readonly string[]]} the module's lists */ (e) => Array.isArray(e[1]));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsHolding = (op) => LISTS.filter(([, list]) => list.includes(op)).map(([name]) => name).sort();
 const plain = (spec) => ({ ...spec, ...(Array.isArray(spec.classes) ? { classes: [...spec.classes] } : {}),
                            ...(Array.isArray(spec.machineClasses) ? { machineClasses: [...spec.machineClasses] } : {}) });
@@ -140,7 +140,7 @@ test("R15, R6: every op R15 declares is a name the door can answer and is named 
 });
 
 test("R15, R6: every op wizard-scripts' ops map serves has a spec and is named by the tables, and the map serves exactly R15's fifteen beside its T34 family (`startfrom`, `baseupdates`; R15, R28) — the wizard lists name exactly the fifteen, its mutating ops the acts and its reads the reads (negative control: an op added to the map without a spec is seen)", () => {
-  const all = Object.keys(wizardScriptsOps(/** @type {any} */ ({}), new URL("https://instance.invalid/"), {}));
+  const all = Object.keys(wizardScriptsOps({}, new URL("https://instance.invalid/"), {}));
   const family = Object.keys(O.OP_FAMILIES["wizard-scripts"].kinds);
   for (const op of all.filter((o) => family.includes(o))) assert.ok(Object.hasOwn(OPS, op) && Object.hasOwn(O.OP_STAMPS, op), op);
   assert.deepEqual(all.filter((o) => family.includes(o)).sort(), ["baseupdates", "startfrom"]);

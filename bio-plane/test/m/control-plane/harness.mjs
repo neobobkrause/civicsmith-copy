@@ -28,8 +28,10 @@ export const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
 export const hex64 = () => randomBytes(32).toString("hex");
 export const aik = () => `aik-${hex64()}`;
 
-/* The stamp fields: the query ones and the body ones, store-request's own lists (store-request R22, R24; control-plane R29, R136). */
-export const { QUERY_STAMPS, BODY_STAMPS } = await import("../../../src/store-request/index.mjs");
+/* The stamp fields R17 names: the query ones and the body ones. */
+export const QUERY_STAMPS = ["viewer", "identity", "author", "by", "actor", "who", "origin", "administer"];
+export const BODY_STAMPS = ["actorIdentity", "actorViewer", "actorMemberId", "ownerMemberId", "assistantPrincipal",
+                            "migrationReplay"];
 export const FORGED = "member:forged-by-caller";
 
 const ok = (result, status = 200) => new Response(JSON.stringify({ ok: true, result }), { status });

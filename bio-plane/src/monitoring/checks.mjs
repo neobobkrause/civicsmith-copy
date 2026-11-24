@@ -50,14 +50,6 @@ const atNamed = (fn, region) => `src/monitoring/named-requests.mjs ${fn} > ${reg
    drivable — `op=acquire` drives the pair in `acquisition`, `op=monitor` drives
    this pair, and this module's tests drive both of these by name (`test/m/monitoring/tick.test.mjs` R4,
    `invariants.test.mjs` R42). */
-/**
- * One row of this module's checks (R42; DEC-49): its catalogue number, the site that answers it, and the member's words.
- * @typedef {Object} MonCheckRow
- * @property {string} check its catalogue number (C-48 or C-18)
- * @property {string} where the file, function and DEC-49 region that answers it
- * @property {string} translation the sentence a member reads (setup-words)
- */
-/** @type {Readonly<{DRIVE_TICK_EXPORT_IS_THE_SHELL: Readonly<MonCheckRow>, DRIVE_TICK_EXPORT_BYTES_ARE_THE_SHELL: Readonly<MonCheckRow>}>} R42: C-48.8 and C-48.9, a tick meeting the Drive shell */
 export const DRIVE_TICK_CHECKS = Object.freeze({
   DRIVE_TICK_EXPORT_IS_THE_SHELL: Object.freeze({
     check: 'C-48.8',
@@ -80,7 +72,6 @@ export const DRIVE_TICK_CHECKS = Object.freeze({
 /* C-18.10 — the gathering grammar's refusal at the write (R27; N242's share): a non-replay promotion carrying a
    `data/gathering.json` whose C-18.5 grammar finds an error. The `findings` beside it name each C-18.5 error; the
    translation is the sentence a member reads, so it says what happened and that nothing was saved. */
-/** @type {Readonly<{GATHERING_REFUSED: Readonly<MonCheckRow>}>} R27, R42: C-18.10, the gathering grammar's refusal at the write */
 export const GATHERING_CHECKS = Object.freeze({
   GATHERING_REFUSED: Object.freeze({
     check: 'C-18.10',
@@ -92,7 +83,6 @@ export const GATHERING_CHECKS = Object.freeze({
 /* C-18.11–C-18.15 — the refusals of R52's act, `addressFrequencySet` (monitoring R17 as Bob agreed it, K1019), each
    with nothing written, asked in this order. The translations are the sentences a member reads. All five were taken by
    the stamp 1.53.0 (T23's promotion job). */
-/** @type {Readonly<{MACHINE_CANNOT_SET_FREQUENCY: Readonly<MonCheckRow>, NO_SUCH_ADDRESS: Readonly<MonCheckRow>, BAD_FREQUENCY: Readonly<MonCheckRow>, NOT_A_SOURCE_OWNER: Readonly<MonCheckRow>, FREQUENCY_NO_REASON: Readonly<MonCheckRow>}>} R52: C-18.11 to C-18.15, the refusals of an address's frequency setting */
 export const FREQUENCY_CHECKS = Object.freeze({
   MACHINE_CANNOT_SET_FREQUENCY: Object.freeze({
     check: 'C-18.11',
@@ -125,7 +115,6 @@ export const FREQUENCY_CHECKS = Object.freeze({
    day nor null, a day before today's local day, or a day given where no zone is held to read today in. Minted here, its
    one site; `following` R22 refuses the same condition with this row. The translation is BOB's draft, the design
    stream's to re-word. */
-/** @type {Readonly<{WATCH_END_REFUSED: Readonly<MonCheckRow>}>} R71: C-18.19, the refusal of an address's end date */
 export const WATCH_END_CHECKS = Object.freeze({
   WATCH_END_REFUSED: Object.freeze({
     check: 'C-18.19',
@@ -137,7 +126,6 @@ export const WATCH_END_CHECKS = Object.freeze({
 /* C-18.20 and C-18.21 — R74's refusals of a member's act setting a bundle's `monitoring.enabled` (T47; N969; K3027
    doubt 6), each with nothing written: the next free rows of the C-18 family this table holds, awaiting T48's stamp. The
    translations are BOB's drafts, the UX stream's to re-word. */
-/** @type {Readonly<{MACHINE_CANNOT_SET_MONITORING: Readonly<MonCheckRow>, MONITOR_SET_REFUSED: Readonly<MonCheckRow>}>} R74: C-18.20 and C-18.21, the refusals of a member setting a bundle's monitoring */
 export const MONITOR_SET_CHECKS = Object.freeze({
   MACHINE_CANNOT_SET_MONITORING: Object.freeze({
     check: 'C-18.20',
@@ -154,7 +142,6 @@ export const MONITOR_SET_CHECKS = Object.freeze({
 /* C-18.22 and C-18.23 — R75's refusals of a member's act planting or revising one named request (T51; K4189; UC-035),
    each with nothing written: the next free rows of the C-18 family this table holds (`link-sweep` took C-18.24), awaiting
    the stamp. The translations are BOB's drafts, the UX stream's to re-word. */
-/** @type {Readonly<{MACHINE_CANNOT_SET_REQUEST: Readonly<MonCheckRow>, NAMED_REQUEST_REFUSED: Readonly<MonCheckRow>}>} R75: C-18.22 and C-18.23, the refusals of a member planting or revising a named request */
 export const NAMED_REQUEST_CHECKS = Object.freeze({
   MACHINE_CANNOT_SET_REQUEST: Object.freeze({
     check: 'C-18.22',
@@ -169,25 +156,11 @@ export const NAMED_REQUEST_CHECKS = Object.freeze({
 });
 
 /** R42: every row this module holds, keyed by code, for a reader that looks one up by the code an answer carries. */
-/** @type {Readonly<Record<string, Readonly<MonCheckRow>>>} R42: every row above, keyed by code */
 export const MONITORING_CHECKS = Object.freeze({ ...DRIVE_TICK_CHECKS, ...GATHERING_CHECKS, ...FREQUENCY_CHECKS,
                                                  ...WATCH_END_CHECKS, ...MONITOR_SET_CHECKS, ...NAMED_REQUEST_CHECKS });
 
 /** A refusal answer naming one of this module's rows (DEC-49): its code, row and member's sentence, and the detail.
  *  R52's rows, R71's (which shares R52's first two), R74's and R75's. */
-/**
- * A refusal this module answers (DEC-49): the code twice, the row's number and words, and what was wrong; nothing was
- * written. It carries any further fields the caller adds.
- * @typedef {{ok: false, reason: string, code: string, check: string, translation: string, detail: any, [field: string]: any}} MonRefusal
- */
-/**
- * R52, R71, R74, R75: the refusal naming one row of `FREQUENCY_CHECKS`, `WATCH_END_CHECKS`, `MONITOR_SET_CHECKS` or `NAMED_REQUEST_CHECKS`. Writes nothing.
- * @param {string} code a code of one of those four tables
- * @param {any} detail what was wrong, carried as given
- * @param {any} [extra] the caller's fields, spread last (so they may replace the refusal's own); absent or falsy is none
- * @returns {MonRefusal} `{ok: false, reason: code, code, check, translation, detail, ...extra}`
- * @throws {TypeError} when `code` names no row of those four tables
- */
 export function frequencyRefusal(code, detail, extra) {
   const row = FREQUENCY_CHECKS[code] || WATCH_END_CHECKS[code] || MONITOR_SET_CHECKS[code] || NAMED_REQUEST_CHECKS[code];
   return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...(extra || {}) };
@@ -195,13 +168,9 @@ export function frequencyRefusal(code, detail, extra) {
 
 /* R69 (S0-6, B0.10): a gathering id is the core `record-grammar`'s one id table answers for `GATH` (its R46, R47: a
    counter of four or more digits), then the request's slug; no pattern of this module's own. */
-/** @type {RegExp} R69: a gathering id, record-grammar's `GATH` core then the request's slug */
 export const GATH_ID_RE = new RegExp(`^${idPattern('GATH').source.slice(1, -1)}-[a-z0-9]+(-[a-z0-9]+)*$`);
-/** @type {string[]} C-18.5: the criticality words a named request may carry */
 export const CRITICALITY_ENUM = ['crucial', 'supporting'];
-/** @type {string[]} C-18.5: the cadence words a named request may carry */
 export const CADENCE_ENUM = ['hourly', 'daily', 'weekly', 'monthly', 'none'];
-/** @type {string[]} C-18.5: the status words a named request may carry */
 export const GATH_STATUS_ENUM = ['open', 'captured', 'retired'];
 
 /** C-18.5 (error): data/gathering.json field grammar. A leaked write token can
@@ -216,14 +185,6 @@ export const GATH_STATUS_ENUM = ['open', 'captured', 'retired'];
    which would be a second grammar pretending to be the same one.
    R66: `sweepArm`, when given, is the share a later module registered (`{module, grammar}`), which reads each
    `sweeps[]` entry that is an object. */
-/**
- * R27, R42, R66: C-18.5, the grammar of a `data/gathering.json`, appending a finding for each error. Writes nothing to the
- * record; with no such file, or one that is not JSON (C-14.3's), it adds nothing.
- * @param {{files: Map<string, any>}} ctx the files under check, by path; the gathering file is text or bytes
- * @param {any[]} findings the list each `{check: "C-18.5", severity, message, code?, refusal?}` finding is pushed onto
- * @param {any} [sweepArm] R66's registered share `{module, grammar}`; anything without a `grammar` function is none, and no `sweeps[]` entry is read
- * @returns {void}
- */
 export function checkGatheringGrammar(ctx, findings, sweepArm = null) {
   const raw = ctx.files.get('data/gathering.json');
   if (!raw) return;

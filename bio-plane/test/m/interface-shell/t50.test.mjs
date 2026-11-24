@@ -33,7 +33,7 @@ const audio = (p) => {
 
 test("R73 the registry is the design's: RE_POINTS holds only the named exception and none the registry lists; every act of the nine screen modules' real SCREENS composes; a stand-in naming an op neither lists throws; RE_POINTS is not consulted for an op the registry lists", async () => {
   /* R117 (fix round 3) named two more re-points, which G53 (fix round 6) removed: the registry lists both now */
-  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld"], person: ["linecurrentthrough"] });
+  assert.deepEqual(RE_POINTS, { explore: ["stepsourcewithdraw"], document: ["readheld", "resolve"], person: ["linecurrentthrough"], setup: ["factconfirm"], question: ["leggrade"], queue: ["signerknown"] });
   for (const [id, ops] of Object.entries(RE_POINTS)) for (const op of ops) {
     const reg = SCREEN_REGISTRY.find((r) => r.id === id);
     assert.ok(reg, id + " is a registry screen");
@@ -512,8 +512,7 @@ test("R86 a first load settles quickly: the working frame is drawn before the fi
   const slow = (op) => async (req) => { times[op] = p.clock.at(); await new Promise((r) => p.clock.setTimeout(r, 500)); return door(req); };
   const ops = [...SHELL_OPS, "bootstrap", "projectdirectory"];
   p = await bootAs(world, me, { screens: ALL, run: false, plane: Object.fromEntries(ops.map((op) => [op, slow(op)])) });
-  /* the page runs on the world's clock, so the session its sign-in made is live (R3) */
-  const base = world.now();
+  const base = Date.now();
   const FakeDate = class extends Date { static now() { return base + p.clock.at(); } };
   new Function("window", "setTimeout", "clearTimeout", "Date", scriptOf(p.html, ALL))(p.win, p.clock.setTimeout, p.clock.clearTimeout, FakeDate);
   await settle();

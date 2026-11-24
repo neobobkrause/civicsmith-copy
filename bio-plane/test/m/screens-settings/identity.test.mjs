@@ -134,7 +134,7 @@ test("R14 C87 (c) (interface-shell R119): the other reasoned acts with a require
     ["teamai", "groupkeyset", {}],
   ];
   for (const [screen, op, values] of cases) {
-    const o = await open(String(screen), { world: t.w, as: t.founder });
+    const o = await open(screen, { world: t.w, as: t.founder });
     const r = await o.press(op, { reason: null, values });
     assert.equal(r.asked, false, `${op}: no reason box`);
     assert.deepEqual(r.sent, [], `${op}: nothing sent`);

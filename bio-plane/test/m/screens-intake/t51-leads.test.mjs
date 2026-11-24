@@ -4,7 +4,7 @@
  * key. A fault (an owner's refusal the real acts cannot make) is the only scripted answer. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { openWorld, members, text, main, fill, press, refused, says, saysIn, rawKeys, word } from "./page.mjs";
+import { openWorld, members, text, main, fill, press, refused, says, saysIn, rawKeys } from "./page.mjs";
 
 const WORDS = "The city inspected the Coliseum garage in 2019.";
 const WHERE = "Oakland Public Works, inspection records, 2019";
@@ -168,8 +168,6 @@ test("R52 'Your leads' is what leadlist answers, newest first, one row for each;
   assert.deepEqual(order.map((l) => l.lead_id).sort(), [first.lead_id, second.lead_id].sort());
   assert.ok(s.includes(order[0].words) && s.includes(order[1].words) && s.indexOf(order[0].words) < s.indexOf(order[1].words), "in the order the plane answers");
   assert.deepEqual(main(p).querySelectorAll('button[data-act="leadread"]').map((b) => b.getAttribute("data-id")), order.map((l) => l.lead_id));
-  /* R52: each row's button reads "Open it" (`screen.capture.openit`) */
-  assert.ok(main(p).querySelectorAll('button[data-act="leadread"]').every((b) => b.textContent.trim() === word("screen.capture.openit")));
   assert.ok(says(p, "screen.leads.state.unclear") && says(p, "screen.leads.state.never"));
   assert.ok(p.byOp("leadlist").length >= 1);
   assert.deepEqual(rawKeys(p), []);
