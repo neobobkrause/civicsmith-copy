@@ -70,9 +70,9 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <li>Each whole-program test moves to the part it proves, as a new file there; the old file is then removed; duplicates are dropped.</li>
 <li>Two requirement files that are too large to read whole are split.</li>
 <li>The front door takes its screens from outside and stops importing them.</li>
-<li>A small top part plugs the screens into the launcher and holds the tests that start the whole program.</li>
+<li>A small top part plugs the screens into the launcher. It owns the deployment file, the build script and the built program, and holds the tests that start the whole program.</li>
 <li>The written promises that state today's order are reworded, and the front door and launcher move below the screens.</li>
-<li>Follow-ons, each small: the screens' tests use the real front door; shared addresses and words are written once.</li>
+<li>Follow-ons, each small: build and test tools that read every part move to the end of the order, or the release part; the screens' tests use the real front door; shared addresses and words are written once.</li>
 </ol>
 <p>Each step is merged on its own. The full table, with why each step can merge alone, is in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a>.</p>
 <h3>ARCH's answer, 24 Nov</h3>
@@ -83,7 +83,7 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <li><b>One home for each test.</b> A moved test is a new file in its part and uses only earlier parts; no test stays in two places, and none makes its inputs with screen code.</li>
 <li><b>Run time.</b> No part's test run may come near the 45-minute limit; ARCH splits a part if it would.</li>
 <li><b>Your promises.</b> A rewording that only makes a promise clearer ARCH makes and reports to you; one that changes what the product does comes to you first.</li>
-<li><b>The move itself</b> is made only if the order check finds nothing in the moved parts' code; otherwise the design comes back to this lane.</li>
+<li><b>The move itself</b> is made only if the order check finds nothing in the moved parts' code, and every place where the move would leave a part reading a later part's files has been ended first. The order check reads only import lines, so the lane listed those places itself: 139, nearly all of them tests that start the whole program. Otherwise the design comes back to this lane.</li>
 </ul>
 <p><b>Not yet known:</b> whether every route holds when built (17 of 120 tried); the run times of the parts that gain tests; which of 163 written promises that state today's order need rewording.</p>
 </section>
