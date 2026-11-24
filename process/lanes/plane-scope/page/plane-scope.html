@@ -28,81 +28,46 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <p>You opened this lane on 23 November 2026 to understand the plane module and fix its scope. This page is where you read the lane's findings and choose. It will be filled in as the research is recorded.</p>
 </header>
 
-<div class="status"><b>Status, 24 Nov 2026:</b> two choices wait for you: B below, and the re-stacking of the layers you asked about (last section). ARCH says both can be built as given. Development is halted on your instruction, so nothing here is being built.</div>
+<div class="status"><b>Status, 24 Nov 2026:</b> the lane's conclusion has changed since this page was first written; this page now gives the current one. The plan to build it is with ARCH, which decides whether it can be built as given. Development is halted on your instruction, so nothing here is being built.</div>
 
 <section>
 <h2>What the plane is, in one paragraph</h2>
-<p>Civicsmith is built as about two hundred parts, called modules, in a fixed order; each part may only use parts before it. The plane is the part near the end that puts all the others together into the one program a team actually runs on the hosting service. Its own code is small: it starts every other part on one store, hands requests to the front door, and wakes the scheduler. It decides nothing itself.</p>
+<p>Civicsmith is built as about two hundred parts, called modules, in a fixed order; each part may only use parts before it. The plane is the launcher: the part near the end that starts every other part on one store and hands requests to the front door, so that a team runs one program on the hosting service. Its own code is small and decides nothing itself.</p>
 </section>
 
 <section>
 <h2>Why it has become a problem</h2>
 <div class="facts">
-<div class="fact"><b>9</b><span>files of its own</span></div>
-<div class="fact"><b>105</b><span>test entries given to it</span></div>
-<div class="fact"><b>171</b><span>other parts it says it uses</span></div>
-<div class="fact"><b>33–44 min</b><span>to run its tests, against a 45 min limit</span></div>
+<div class="fact"><b>27</b><span>test files that check the plane itself</span></div>
+<div class="fact"><b>120</b><span>test files it holds that check other parts</span></div>
+<div class="fact"><b>33&ndash;44 min</b><span>to run its tests, against a 45 min limit</span></div>
 </div>
-<p>When the parts were put in order, any test that starts the whole program was given to the plane, because only the last part may use everything. Many of those tests were written to prove other parts' promises. So the plane carries other parts' proof, its test run is close to the time limit, and a change to any of those other parts is not proven when that part's own work runs.</p>
+<p>When the parts were put in order, any test that started the whole program was given to the plane, because only the last part may use everything. A test at the end finds a part's flaw late, after that part's own work has merged, and often not at all: the plane's tests run only when the plane has work. Measured counts; the timing of how flaws are found is read from the process design.</p>
 </section>
 
 <section>
-<h2>What its tests actually are</h2>
-<p>Plane's run holds 147 tests. Only 27 check plane itself. The other 120:</p>
+<h2>What the research found</h2>
+<p><b>None of the 120 needs the whole program.</b> Each was read and classed by what it tests, why it loads a later part today, and how it can be rebuilt not to. Every one can run in the part it proves, or in an earlier part, without a hand-made stand-in. 17 were moved or rebuilt on scratch copies and pass there, with the process's order check clean. No test was left without a route.</p>
 <ul>
-<li><b>27</b> check how other parts behave on the real hosting program: very large files, memory, timers that wake the program.</li>
-<li><b>86</b> walk through the real front door to check other parts' promises. More than half were written for the front door's own part; the rest for the screens and a dozen others.</li>
-<li><b>7</b> odd ones, among them the check that stores saved by every earlier release still open.</li>
+<li><b>Most</b> run as ordinary tests in the part they prove: 157 of the 207 tests and files counted.</li>
+<li><b>19</b> need the real hosting runtime, and get it through a small test-only store built from earlier parts.</li>
+<li><b>19</b> must be rebuilt so they no longer load a later part; each has a route.</li>
+<li><b>12</b> are duplicates and can be dropped; nine of them are old suites already ruled for deletion.</li>
 </ul>
-<p><b>A correction to what I told you earlier.</b> I expected many of these tests could go back to the parts they test. The measurement says otherwise: 138 of the 147 start plane's own program, 108 of them on the real hosting runtime. They cannot move earlier than plane without testing a copy of the program instead of the real one, which would undo your ruling that anything depending on the live service is checked on the real thing.</p>
-<p>So the fault is where the tests sit, not that they exist: they belong at the end of the order, but not inside plane.</p>
+<p>The research counts the front door's 46 files by test (133) and the rest by file; the report gives the table.</p>
+<p><b>One piece moves with them.</b> 86 of the front door's tests need the code that decides which part answers each request. That code sits in the plane today. Moved unchanged into the front door, it lets the door's own tests use the real thing: all 569 of the door's tests passed on a scratch copy, and the built program was byte for byte the same. Measured.</p>
+<p><b>A correction.</b> An earlier version of this page said these tests could not move earlier than the plane without testing a copy of the program. Reading each test showed otherwise.</p>
 </section>
 
 <section>
-<h2>The choices</h2>
-<h3>A. Leave them in plane, and make the run faster</h3>
-<p><b>Gives:</b> the least change. <b>Costs:</b> plane stays answerable for 120 tests about other parts. Its run stays near the limit and grows with every new whole-program test. A change to plane's few hundred lines still reruns everything.</p>
-<h3>B. Plane keeps only its own 27; the rest move to new checking parts placed right after plane</h3>
-<p>Two new parts at the end: one for behaviour on the real hosting program (with the old-stores check), one for the walks through the front door. ARCH can split them further if a run is still long.</p>
-<p><b>Gives:</b> plane's own run takes minutes. Each checking run stays well under the limit (expected from the measured shares; not yet measured). A failure lands on the part whose job is that check, which reports the faulty part to ARCH, as any work does. <b>Costs:</b> two or more new parts, and moved requirement text: ARCH's work. Each such promise is written twice, once at its owner and once as a whole-program check. The owner part's own work still does not run the whole-program check; the checking part runs it when something it uses changes, and the walks cover the rest. That the process tool spots those changes inside such a part is not yet proven.</p>
-<h3>C. Rewrite the tests so each part checks itself with stand-ins</h3>
-<p><b>Gives:</b> each part's own work proves its own promises. <b>Costs:</b> rewriting up to 86 tests, about 14,000 lines. A stand-in can drift from the real thing, so the real-program checks must stay at the end anyway. It narrows your real-hosting ruling.</p>
-</section>
-
-<section>
-<h2>The lane's recommendation: B</h2>
-<p>It returns plane to its purpose at once, takes its run far from the limit, and keeps every check on the real program, as you ruled. C stays open part by part: where a part can prove its own promise in its own tests without a stand-in that drifts, its work does so, and the whole-program check stays at the end beside it.</p>
-<h3>What B means once built (ARCH's answer, 23 Nov)</h3>
-<p>ARCH, which decides the order of parts and builds it, says B can be built as given, on these terms:</p>
-<ul>
-<li><b>Place.</b> The new parts sit right after plane, before the release part: first the real-hosting check part, then the front-door walks. Plan for the walks to be two parts from the start, since the front door's own 46 tests are most of them; ARCH splits further if any run passes about 20 minutes.</li>
-<li><b>Promises.</b> Every test there checks a promise written in its own part, and each such promise names the original promise it carries. ARCH writes them. A test without one stays with its owner part or goes to ARCH.</li>
-<li><b>Code.</b> The shared test helpers become their code. No file moves on disk; only who owns it changes.</li>
-<li><b>The plain cost.</b> These parts use nearly every part before them, so nearly any change to another part's interface gives them work: frequent short jobs that rerun their whole set. That is the price of keeping whole-program checks in one place. C avoids it, but loses the real-hosting checks.</li>
-<li><b>Open points.</b> Run times are known only after the first runs. Whether 10 of the platform tests can go back further, to the part that builds the store, ARCH settles when it builds this.</li>
-<li><b>When.</b> Nothing is built while your halt stands, and not before you choose. On B, ARCH changes the order of parts in one step and rewrites plane's description; plane's open work then keeps only its own 27 tests.</li>
-</ul>
-<p>Whichever you choose, plane's own description is corrected: it still describes work that moved to another part in October.</p>
-<p><b>Not yet known:</b> the exact run time of each new part; whether 10 of the platform tests need plane at all; and whether the 45-minute limit itself changes, which is with PROCESS and you, not this lane.</p>
-</section>
-
-<section>
-<h2>The layers you asked about: a second choice</h2>
-<p>On 23 November you asked to see civicsmith as five layers, stacked model, middleware, front door, launcher, UI, and what it would take to stack the code that way. Today the front door and the launcher (plane) sit above the screens. The full findings, the case for and against, and a step-by-step plan are in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a>.</p>
-<ul>
-<li><b>It can be done, and it was tried.</b> On a scratch copy the front door and the launcher stopped importing any screen code, and the screens were plugged in from one small part at the top. Every test set run passed as before. Users were sent byte-for-byte the same pages. Measured.</li>
-<li><b>It does not fix plane's scope on its own.</b> The whole-program tests still need a home at the end, which is what B gives them. Doing B first cuts the tests the re-stacking must move from 121 to about 27 (worked out, not run).</li>
-<li><b>Its main cost is paperwork.</b> 163 written promises in 26 parts state today's order; about 112 are likely to need rewording, which is ARCH's work. Measured count; the 112 is a judgment.</li>
-<li><b>One small step is worth taking either way.</b> Moving the capture screen's two document functions below the front door changes 4 files, leaves the page byte-identical, and removes the only place background work runs screen code. Measured.</li>
-</ul>
-<h3>The lane's recommendation</h3>
-<p>Choose B now, with the capture move. Choose the re-stacking separately, when you want it: ARCH can build it after B in small steps, each merged on its own.</p>
-<h3>ARCH's answer, 24 Nov</h3>
-<p>Both can be built as given. B and the capture move need only your choice of B. The re-stacking's steps need your choice of the re-stacking. ARCH adds two steps that split two oversized requirement files first. A rewording that only makes a promise clearer ARCH makes and reports to you; one that changes what the product does comes to you first. The last step, the move itself, is made only if the order check finds nothing in the moved parts' code; if it finds something, the design comes back to this lane.</p>
+<h2>The lane's recommendation</h2>
+<p>Prove each part's promises in its own tests. Each whole-program test moves to the part it proves, rebuilt where it now loads a later part. The plane keeps only its own 27. Checking parts at the end of the order (the earlier choice B) are made only for a test whose route fails when it is built; none is planned.</p>
+<p>This goes together with the layers work you asked about: the capture move, the front door taking its screens from outside, and the front door and launcher moving below the screens. The screens' own tests can then use the real front door. The whole plan, as one sequence, is in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a> once ARCH has answered.</p>
+<p><b>Not yet known:</b> whether every route holds when built (17 of 120 tried); the run times of the parts that gain tests; which of 163 written promises that state today's order need rewording.</p>
 </section>
 
 <section>
 <h2>How to answer</h2>
-<p>There are two choices: B, and the re-stacking. Type each in this lane's session, or tell the coordinator, beginning with “Decision:”. Anything else is taken as conversation.</p>
+<p>The direction is yours. Type it in this lane's session, or tell the coordinator, beginning with &ldquo;Decision:&rdquo;. Anything else is taken as conversation.</p>
 </section>
 </main>

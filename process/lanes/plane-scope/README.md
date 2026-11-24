@@ -7,12 +7,12 @@ The plane-scope lane of civicsmith: a standing design responsibility for the pla
 ## What is here
 
 - `research/`: the lane's research. Its index, `research/README.md`, gives one line for each file; every later session of the lane reads that index first and adds to it. `research/evidence-rules.md` holds the rules every finding is held to (measured, read, or not checked).
-- `design.md`: the lane's design: plane's scope (option B with ARCH's terms), the re-stacking's design proven on a scratch copy, the lane's recommendation (B and the capture move first; the re-stacking after, in steps, on the owner's choice), the 13-step plan. Rewritten 24 Nov 2026 by lane #2.
+- `design.md`: the lane's design: each module's promises proven by its own tests, plane's 120 whole-program tests moved to the modules they prove, the arm routing in the door, the re-stacking, and the plan as one sequence; proof modules after plane only for a test whose route fails. Rewritten 24 Nov 2026 by lane #3; sent to ARCH the same day.
 - `page/plane-scope.html`: the source of the first design page.
 
 ## Design pages
 
-- [Civicsmith Plane Scope](https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L): what plane holds and why, the choices A, B and C, and the lane's first recommendation. Published 23 Nov 2026.
+- [Civicsmith Plane Scope](https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L): what plane holds, what the research found about its 120 borrowed tests, and the lane's current recommendation. Rewritten 24 Nov 2026 by lane #3.
 - [Civicsmith layers: research report](https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL): the report of the layer research the owner asked for on 23 Nov 2026: the five layers (model, middleware, front door, launcher, UI) as they are stacked today, what that costs, the re-stacked architecture and the plan. A document on claude.ai, filled in stage by stage; the evidence behind each section is in `research/`.
 
 ## Settled with ARCH
