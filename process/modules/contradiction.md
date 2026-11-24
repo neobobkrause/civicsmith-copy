@@ -80,7 +80,7 @@ Terms. A **key** is one of `K1` (one inquiry, opposite roles: a `supports` and a
 - **R33** [met] `one_wrong`: - `wrongSide` must be `a` or `b`, else `WRONG_SIDE_UNNAMED` (C-93.20). - `reason` must not be blank, else `WRONG_SIDE_NO_REASON` (C-93.21). - On K5 it is `PLURALITY_HAS_NO_WRONG_SIDE` (C-93.22): neither project is made to adopt the other's answer.
 
   Otherwise the candidate is `resolved`, kind `corrected` (no category is asked; DEC-84 item 16), and the named side is marked stale with the reason, the member and the instant. The side is never deleted, and nothing resting on it moves (DEC-84 item 7). *(its K5 arm not yet met: no measured recommender run, K488)*
-- **R34** [met] `no_difference` applies to K5 only; on any other key it is `CLARIFY_CHOICE_UNKNOWN`. It records that the member found no named difference, and the candidate's weight becomes `duty` for both projects (R24; DEC-84 item 3).
+- **R34** [not yet met] `no_difference` applies to K5 only; on any other key it is `CLARIFY_CHOICE_UNKNOWN`. It records that the member found no named difference, and the candidate's weight becomes `duty` for both projects (R24; DEC-84 item 3).
 
 **takeUp({candidate, question, frame, viewer, author})** (`op=contradictiontakeup`)
 - **R35** [met] After R30 and R31's closed-state refusals: - a candidate already `taken_up` answers its inquiry with `existed: true` and writes nothing; - no question is `TAKE_UP_NO_QUESTION` (C-93.23). The plane fills in none: R25's `default_question` is shown, and the surface sends what the member accepts; - a `frame` other than `a` or `b` (the side the question is framed around) is `TAKE_UP_NO_FRAME` (C-93.24).
