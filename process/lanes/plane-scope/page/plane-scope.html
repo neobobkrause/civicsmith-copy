@@ -28,7 +28,7 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <p>You opened this lane on 23 November 2026 to understand the plane module and fix its scope. This page is where you read the lane's findings and choose. It will be filled in as the research is recorded.</p>
 </header>
 
-<div class="status"><b>Status, 24 Nov 2026:</b> the lane's conclusion has changed since this page was first written; this page now gives the current one. The plan to build it is with ARCH, which decides whether it can be built as given. Development is halted on your instruction, so nothing here is being built.</div>
+<div class="status"><b>Status, 24 Nov 2026:</b> one choice waits for you: the direction below. ARCH says the plan can be built as given, on the main branch's code. Development is halted on your instruction, so nothing here is being built.</div>
 
 <section>
 <h2>What the plane is, in one paragraph</h2>
@@ -62,12 +62,34 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <section>
 <h2>The lane's recommendation</h2>
 <p>Prove each part's promises in its own tests. Each whole-program test moves to the part it proves, rebuilt where it now loads a later part. The plane keeps only its own 27. Checking parts at the end of the order (the earlier choice B) are made only for a test whose route fails when it is built; none is planned.</p>
-<p>This goes together with the layers work you asked about: the capture move, the front door taking its screens from outside, and the front door and launcher moving below the screens. The screens' own tests can then use the real front door. The whole plan, as one sequence, is in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a> once ARCH has answered.</p>
+<p>This goes together with the layers work you asked about: the capture move, the front door taking its screens from outside, and the front door and launcher moving below the screens. The screens' own tests can then use the real front door.</p>
+<h3>The plan, in eight steps</h3>
+<ol>
+<li>The capture screen's two document functions move below the front door.</li>
+<li>The launcher's routing moves into the front door.</li>
+<li>Each whole-program test moves to the part it proves, as a new file there; the old file is then removed; duplicates are dropped.</li>
+<li>Two requirement files that are too large to read whole are split.</li>
+<li>The front door takes its screens from outside and stops importing them.</li>
+<li>A small top part plugs the screens into the launcher and holds the tests that start the whole program.</li>
+<li>The written promises that state today's order are reworded, and the front door and launcher move below the screens.</li>
+<li>Follow-ons, each small: the screens' tests use the real front door; shared addresses and words are written once.</li>
+</ol>
+<p>Each step is merged on its own. The full table, with why each step can merge alone, is in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a>.</p>
+<h3>ARCH's answer, 24 Nov</h3>
+<p>It can be built as given, on these conditions:</p>
+<ul>
+<li><b>Your choice first.</b> Nothing starts until you choose this direction with a marked decision and lift the halt.</li>
+<li><b>On the main branch's code.</b> The tranche has been dropped, so the plan starts from the code as it stands after the drop. The trials ran on the tranche's code: they are evidence, not proof. Each route is proven again at its own step.</li>
+<li><b>One home for each test.</b> A moved test is a new file in its part and uses only earlier parts; no test stays in two places, and none makes its inputs with screen code.</li>
+<li><b>Run time.</b> No part's test run may come near the 45-minute limit; ARCH splits a part if it would.</li>
+<li><b>Your promises.</b> A rewording that only makes a promise clearer ARCH makes and reports to you; one that changes what the product does comes to you first.</li>
+<li><b>The move itself</b> is made only if the order check finds nothing in the moved parts' code; otherwise the design comes back to this lane.</li>
+</ul>
 <p><b>Not yet known:</b> whether every route holds when built (17 of 120 tried); the run times of the parts that gain tests; which of 163 written promises that state today's order need rewording.</p>
 </section>
 
 <section>
 <h2>How to answer</h2>
-<p>The direction is yours. Type it in this lane's session, or tell the coordinator, beginning with &ldquo;Decision:&rdquo;. Anything else is taken as conversation.</p>
+<p>The direction is yours: each part's promises proven in its own tests, with the re-stacking, by the plan above. Type it in this lane's session, or tell the coordinator, beginning with &ldquo;Decision:&rdquo;. Anything else is taken as conversation.</p>
 </section>
 </main>
