@@ -1,4 +1,4 @@
-Length: 18 lines. Last section: "Settled with ARCH".
+Length: 22 lines. Last section: "Settled with ARCH".
 
 # The plane-scope lane's folder
 
@@ -7,7 +7,7 @@ The plane-scope lane of civicsmith: a standing design responsibility for the pla
 ## What is here
 
 - `research/`: the lane's research. Its index, `research/README.md`, gives one line for each file; every later session of the lane reads that index first and adds to it. `research/evidence-rules.md` holds the rules every finding is held to (measured, read, or not checked).
-- `design.md`: the lane's design for plane's scope (options A, B and C of 23 Nov 2026, with ARCH's terms for B). The layer research below may replace it.
+- `design.md`: the lane's design: plane's scope (option B with ARCH's terms), the re-stacking's design proven on a scratch copy, the lane's recommendation (B and the capture move first; the re-stacking after, in steps, on the owner's choice), the 13-step plan. Rewritten 24 Nov 2026 by lane #2.
 - `page/plane-scope.html`: the source of the first design page.
 
 ## Design pages
@@ -19,3 +19,4 @@ The plane-scope lane of civicsmith: a standing design responsibility for the pla
 
 - ARCH #11, 23 Nov 2026: option B can be built as given, on the terms recorded in `design.md`; nothing is built while the owner's halt stands or before he chooses.
 - ARCH #11, 23 Nov 2026: the layer research goes on as the owner asked; its proposal, with the dependency facts behind each move, goes to ARCH before anything appears on the owner's page as buildable. The module order and interfaces are ARCH's. The fault in `bio-plane/test/declared-ops.mjs` (it reads later modules' files) is placed against `test-support`.
+- ARCH #11, 24 Nov 2026: the layer proposal (PR 1310) can be built as given, B first and then the re-stacking in the lane's steps, on eight conditions recorded in `design.md` section 6 (splits 8a and 8b added; steps 7 to 12 only on the owner's choice of the re-stacking).

@@ -1,0 +1,2102 @@
+{
+ "Length": "data of 20-trials-quiet-and-combined.md; one JSON object. Last key: \"not_checked\".",
+ "about": "plane l79 restart test on base a26a8da2, the door trial (trial-door/diff.patch) and the capture trial (trial-capture/alt1.patch), quiet machine, runs interleaved base, door, capture; and the attempt to apply both patches together. 24 Nov 2026.",
+ "machine": "4 vCPU Intel Xeon 2.10GHz, Node v26.10.0; no other test run by this worker in parallel; loadavg read from /proc/loadavg before and after each run",
+ "command": "from the tree top: env -u GH_TOKEN -u GITHUB_TOKEN -u ACTIONS_RUNTIME_TOKEN -u ACTIONS_ID_TOKEN_REQUEST_TOKEN -u NODE_TEST_CONTEXT node --import ./bio-plane/test/platform-sqlite.mjs --test --test-reporter=spec --test-reporter=junit [--test-name-pattern=\"a restart over the same storage\"] bio-plane/test/m/plane/l79.test.mjs",
+ "labels": {
+  "file-<tree>": "the whole l79 file alone (5 tests); restart = the junit time of the restart test",
+  "pat-<tree>": "the restart test alone, by --test-name-pattern"
+ },
+ "note_run0": "file-base run 0 was a first trial run of the same command, kept but left out of the summary",
+ "summary": {
+  "file-base": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.488038,
+   "restart_seconds_median": 18.15805,
+   "restart_seconds_max": 19.046919,
+   "wall_seconds": [
+    56.9,
+    56.45,
+    57.23,
+    56.88,
+    57.52
+   ]
+  },
+  "file-door": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.869679,
+   "restart_seconds_median": 18.459765,
+   "restart_seconds_max": 18.63028,
+   "wall_seconds": [
+    57.93,
+    57.56,
+    57.1,
+    57.33,
+    57.45
+   ]
+  },
+  "file-capture": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0",
+    "5/0"
+   ],
+   "restart_seconds_min": 17.644344,
+   "restart_seconds_median": 17.982516,
+   "restart_seconds_max": 18.102708,
+   "wall_seconds": [
+    57.48,
+    57.8,
+    56.7,
+    57,
+    57.38
+   ]
+  },
+  "pat-base": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 33.526966,
+   "restart_seconds_median": 38.35034,
+   "restart_seconds_max": 39.375177,
+   "wall_seconds": [
+    38.85,
+    34,
+    38.92,
+    39.84,
+    38.83
+   ]
+  },
+  "pat-door": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 37.528818,
+   "restart_seconds_median": 38.646293,
+   "restart_seconds_max": 39.51507,
+   "wall_seconds": [
+    40.13,
+    39.09,
+    39.59,
+    38.65,
+    37.99
+   ]
+  },
+  "pat-capture": {
+   "runs": 5,
+   "restart_pass": 5,
+   "restart_fail": 0,
+   "file_tests_pass_fail": [
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0",
+    "1/0"
+   ],
+   "restart_seconds_min": 38.64974,
+   "restart_seconds_median": 38.885801,
+   "restart_seconds_max": 39.078032,
+   "wall_seconds": [
+    39.33,
+    39.13,
+    39.15,
+    39.52,
+    39.48
+   ]
+  }
+ },
+ "runs": [
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 0,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.95,
+   "loadavg_before": "0.42 0.51 0.26 1/120 2718",
+   "loadavg_after": "0.99 0.67 0.34 1/120 2841",
+   "started": "2026-11-24T01:58:03Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.167051,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.043559,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.661152,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024163,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581974,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.661152,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.9,
+   "loadavg_before": "0.84 0.65 0.33 2/117 2866",
+   "loadavg_after": "1.00 0.75 0.39 1/120 3091",
+   "started": "2026-11-24T01:59:11Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.622352,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.042013,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.15805,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.022654,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581913,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.15805,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.93,
+   "loadavg_before": "1.00 0.75 0.39 1/120 3099",
+   "loadavg_after": "1.20 0.89 0.46 1/117 3200",
+   "started": "2026-11-24T02:00:08Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.213658,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.043883,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.63028,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.027305,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.577127,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.63028,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 1,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.48,
+   "loadavg_before": "1.20 0.89 0.46 1/117 3208",
+   "loadavg_after": "0.86 0.86 0.47 1/120 3352",
+   "started": "2026-11-24T02:01:06Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.63774,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04241,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.761391,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025641,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580701,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.761391,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.45,
+   "loadavg_before": "0.86 0.86 0.47 1/120 3360",
+   "loadavg_after": "0.77 0.85 0.49 1/118 3523",
+   "started": "2026-11-24T02:02:04Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.841872,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.051273,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.488038,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024865,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.581306,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.488038,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.56,
+   "loadavg_before": "0.77 0.85 0.49 2/118 3531",
+   "loadavg_after": "0.79 0.86 0.52 1/120 3887",
+   "started": "2026-11-24T02:03:00Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.97075,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.040841,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.467004,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024443,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.582451,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.467004,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 2,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.8,
+   "loadavg_before": "0.79 0.86 0.52 1/120 3895",
+   "loadavg_after": "0.90 0.92 0.57 1/117 3993",
+   "started": "2026-11-24T02:03:58Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.602144,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.047967,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.102708,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.02342,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.577828,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.102708,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.23,
+   "loadavg_before": "0.90 0.92 0.57 2/117 4001",
+   "loadavg_after": "1.02 0.99 0.61 1/118 4106",
+   "started": "2026-11-24T02:04:56Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.738229,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.044976,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.401246,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026087,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580958,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.401246,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.1,
+   "loadavg_before": "1.02 0.99 0.61 1/118 4114",
+   "loadavg_after": "0.98 1.01 0.65 2/118 4214",
+   "started": "2026-11-24T02:05:53Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.723705,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04279,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.302424,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025441,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580886,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.302424,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 3,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.7,
+   "loadavg_before": "0.98 1.01 0.65 1/118 4222",
+   "loadavg_after": "0.76 0.96 0.65 1/117 4321",
+   "started": "2026-11-24T02:06:50Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.952168,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.054299,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.644344,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.029207,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.58818,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.644344,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 56.88,
+   "loadavg_before": "0.76 0.96 0.65 1/117 4329",
+   "loadavg_after": "0.83 0.96 0.67 1/116 4431",
+   "started": "2026-11-24T02:07:47Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.111649,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.044066,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.696048,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.025431,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.575933,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.696048,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.33,
+   "loadavg_before": "0.83 0.96 0.67 1/116 4439",
+   "loadavg_after": "0.61 0.89 0.66 1/116 4538",
+   "started": "2026-11-24T02:08:44Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.793663,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.04345,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.459765,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024588,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.576439,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.459765,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 4,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57,
+   "loadavg_before": "0.61 0.89 0.66 1/116 4546",
+   "loadavg_after": "0.78 0.92 0.69 1/115 4650",
+   "started": "2026-11-24T02:09:41Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.923716,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.041117,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 18.001263,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024861,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.580843,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 18.001263,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "file-base",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.52,
+   "loadavg_before": "0.78 0.92 0.69 1/115 4658",
+   "loadavg_after": "0.64 0.87 0.69 1/118 4757",
+   "started": "2026-11-24T02:10:38Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 22.381557,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.057589,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 19.046919,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026962,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.583723,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 19.046919,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "file-door",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.45,
+   "loadavg_before": "0.64 0.87 0.69 1/118 4765",
+   "loadavg_after": "0.84 0.90 0.72 1/118 4865",
+   "started": "2026-11-24T02:11:36Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.444509,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.054315,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.869679,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.024865,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.584611,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.869679,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "file-capture",
+   "run": 5,
+   "pattern": "",
+   "exit": 0,
+   "wall_s": 57.38,
+   "loadavg_before": "0.84 0.90 0.72 1/118 4873",
+   "loadavg_after": "0.71 0.87 0.72 1/118 4976",
+   "started": "2026-11-24T02:12:33Z",
+   "tests": 5,
+   "pass": 5,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: an object that owes work and has lost its alarm runs ",
+     "seconds": 23.289121,
+     "failed": false
+    },
+    {
+     "name": "R80 L: an administrator's `owedwork`, asked of the object, c",
+     "seconds": 0.049568,
+     "failed": false
+    },
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 17.982516,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an object held for fourteen seconds (every other call",
+     "seconds": 14.026648,
+     "failed": false
+    },
+    {
+     "name": "R79 L: an alarm seeded in the past on workerd: observed, the",
+     "seconds": 1.579832,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 17.982516,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.85,
+   "loadavg_before": "0.66 0.86 0.71 1/117 4994",
+   "loadavg_after": "1.18 0.97 0.76 1/114 5045",
+   "started": "2026-11-24T02:13:34Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.274572,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.274572,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 40.13,
+   "loadavg_before": "1.18 0.97 0.76 1/114 5053",
+   "loadavg_after": "1.20 1.00 0.78 1/112 5099",
+   "started": "2026-11-24T02:14:13Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.51507,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.51507,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 1,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.33,
+   "loadavg_before": "1.20 1.00 0.78 1/112 5107",
+   "loadavg_after": "1.45 1.09 0.83 1/116 5159",
+   "started": "2026-11-24T02:14:53Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.885801,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.885801,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 34,
+   "loadavg_before": "1.45 1.09 0.83 1/116 5167",
+   "loadavg_after": "1.30 1.10 0.84 1/118 5215",
+   "started": "2026-11-24T02:15:32Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 33.526966,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 33.526966,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.09,
+   "loadavg_before": "1.30 1.10 0.84 2/118 5223",
+   "loadavg_after": "1.40 1.15 0.87 1/114 5271",
+   "started": "2026-11-24T02:16:06Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.646293,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.646293,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 2,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.13,
+   "loadavg_before": "1.40 1.15 0.87 1/114 5279",
+   "loadavg_after": "1.85 1.27 0.92 1/114 5325",
+   "started": "2026-11-24T02:16:45Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.64974,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.64974,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.92,
+   "loadavg_before": "1.85 1.27 0.92 1/114 5333",
+   "loadavg_after": "1.43 1.24 0.93 1/119 5384",
+   "started": "2026-11-24T02:17:24Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.386892,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.386892,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.59,
+   "loadavg_before": "1.43 1.24 0.93 1/119 5392",
+   "loadavg_after": "1.46 1.27 0.95 1/115 5438",
+   "started": "2026-11-24T02:18:03Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.147255,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.147255,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 3,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.15,
+   "loadavg_before": "1.46 1.27 0.95 1/115 5446",
+   "loadavg_after": "1.49 1.30 0.98 1/116 5493",
+   "started": "2026-11-24T02:18:43Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.690703,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.690703,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.84,
+   "loadavg_before": "1.49 1.30 0.98 1/116 5501",
+   "loadavg_after": "1.30 1.28 0.98 1/118 5551",
+   "started": "2026-11-24T02:19:22Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.375177,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.375177,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.65,
+   "loadavg_before": "1.30 1.28 0.98 1/118 5559",
+   "loadavg_after": "1.40 1.31 1.01 1/116 5607",
+   "started": "2026-11-24T02:20:02Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.197929,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.197929,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 4,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.52,
+   "loadavg_before": "1.40 1.31 1.01 1/116 5615",
+   "loadavg_after": "1.55 1.37 1.04 1/115 5661",
+   "started": "2026-11-24T02:20:41Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.078032,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.078032,
+    "failed": false
+   }
+  },
+  {
+   "tree": "base",
+   "label": "pat-base",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 38.83,
+   "loadavg_before": "1.55 1.37 1.04 2/115 5669",
+   "loadavg_after": "1.69 1.42 1.07 1/119 5718",
+   "started": "2026-11-24T02:21:20Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 38.35034,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 38.35034,
+    "failed": false
+   }
+  },
+  {
+   "tree": "door",
+   "label": "pat-door",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 37.99,
+   "loadavg_before": "1.69 1.42 1.07 1/119 5726",
+   "loadavg_after": "1.47 1.40 1.08 1/116 5772",
+   "started": "2026-11-24T02:21:59Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 37.528818,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 37.528818,
+    "failed": false
+   }
+  },
+  {
+   "tree": "capture",
+   "label": "pat-capture",
+   "run": 5,
+   "pattern": "a restart over the same storage",
+   "exit": 0,
+   "wall_s": 39.48,
+   "loadavg_before": "1.47 1.40 1.08 1/116 5780",
+   "loadavg_after": "1.49 1.41 1.09 1/116 5828",
+   "started": "2026-11-24T02:22:37Z",
+   "tests": 1,
+   "pass": 1,
+   "fail": 0,
+   "cancelled": 0,
+   "cases": [
+    {
+     "name": "R79 L: a restart over the same storage (the deploy's), then ",
+     "seconds": 39.031658,
+     "failed": false
+    }
+   ],
+   "restart": {
+    "seconds": 39.031658,
+    "failed": false
+   }
+  }
+ ],
+ "combine": {
+  "door_then_capture_git_apply": "error: patch failed: bio-plane/src/control-plane/index.mjs:35; bio-plane/src/control-plane/index.mjs: patch does not apply",
+  "capture_then_door_git_apply": "error: patch failed: bio-plane/src/control-plane/index.mjs:35; patch does not apply",
+  "three_way": "git apply -3 of alt1.patch over diff.patch (staged): bio-plane/src/control-plane/index.mjs applied with conflicts (2 conflict regions, file lines 38-44 and 793-799); screens-intake/capture.mjs and process/modules/screens-capture.json applied cleanly; the new file capture/filing.mjs is not named in the output and was not inspected",
+  "conflict_diff": "diff --cc bio-plane/src/control-plane/index.mjs\nindex fb86e3fcf9,7efca1cd0a..0000000000\n--- a/bio-plane/src/control-plane/index.mjs\n+++ b/bio-plane/src/control-plane/index.mjs\n@@@ -35,8 -35,8 +35,13 @@@ import { jobRegistrar } from \"./jobs.mj\n  import { jobStateOf } from \"./job-state.mjs\";\n  import { PLATFORM_FIGURES } from \"../byte-ledger.mjs\";\n  import { acquireReadingOp } from \"../extraction/ops.mjs\";\n++<<<<<<< ours\n +/* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by the builder it is handed\n +   (TRIAL: the capture screen's `titleOf` and `promoteDocument` arrive as `deliverOwedRender`'s second argument; no screen is imported) */\n++=======\n+ /* R124 (fix round 4b; K4493): the alarm's delivery of an owed render is this door's promotion, built by the one builder the capture screen also lists in its `parts` (trial: capture's file) */\n+ import { titleOf, promoteDocument } from \"../capture/filing.mjs\";\n++>>>>>>> theirs\n  import { captureOf } from \"../capture/index.mjs\";\n  import { promotionOf } from \"../promotion/index.mjs\";\n  import { recordOf } from \"../record-core/index.mjs\";\n@@@ -785,8 -793,8 +790,13 @@@ export async function deliverOwedRender\n        } };\n      const address = String(doc.locator || \"\");\n      let title;\n++<<<<<<< ours\n +    try { title = composer.titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }\n +    const made = await composer.promoteDocument(cs, { doc, title, locator: address, project });\n++=======\n+     try { title = titleOf(cs, { reading: answer.reading, doc, address }); } catch { title = address; }\n+     const made = await promoteDocument(cs, { doc, title, locator: address, project });\n++>>>>>>> theirs\n      if (made.refused !== undefined) {\n        const refused = made.refused && typeof made.refused === \"object\" ? made.refused : {};\n        const reason = refused.reason || refused.code || \"PROMOTE_REFUSED\";\n",
+  "stopped": true
+ },
+ "joined": {
+  "about": "21-trial-combined.md: the capture route join (alt1.patch whole, then diff.patch without its composer hand-over) on a26a8da2, run on a quiet machine, 24 Nov 2026",
+  "patch": "trial-combined/combined.patch (git diff a26a8da2 in the scratch tree; 23 files, +319 -247; applies with git apply --check to a clean a26a8da2)",
+  "left_out_of_door_patch": [
+   "bio-plane/src/plane/store.mjs (whole)",
+   "control-plane/index.mjs hunks @@ -35,8 (import; alt1's kept), @@ -740 (second argument), @@ -783 (NO_DOCUMENT_COMPOSER), @@ -793 (composer calls; alt1's kept)",
+   "test/m/control-plane/r124-owed-render, t51-g43-embed, t51-visitor-copy (the three delivery fixes)",
+   "test/m/plane/worker.test.mjs (its assertion passed unfixed: 7/7)"
+  ],
+  "edited_after_apply": [
+   "plane/launch.mjs: re-exports Store only (no storeWith); header comment",
+   "plane/index.mjs: imports launch and INTERFACE; export { Store } from ./launch.mjs",
+   "plane/ui.mjs: no CAPTURE_SCREEN import, no DOCUMENT_COMPOSER; header comment",
+   "test/m/control-plane/harness-ui.mjs: imports and re-exports INTERFACE only"
+  ],
+  "machine": "4 vCPU, Node v26.10.0; nothing else run by this worker during the runs; loadavg from /proc/loadavg at start and end of each run",
+  "command": "from the tree top, env minus GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN NODE_TEST_CONTEXT: node --import ./bio-plane/test/platform-sqlite.mjs --test --test-reporter=spec --test-reporter=junit <files>; one call per set, one call per file for 'delivery'",
+  "member_bundles_built_in_scratch_tree": "pdf-worker, ocr-worker, sheet-worker, file-scanner, newgroup, agent-runner, agent-worker (node scripts/build.mjs each) before the runs, as research 16's equal-trees runs had them",
+  "runs": {
+   "worker": {
+    "files": 1,
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 23.9,
+    "load_first": "0.03 0.57 0.81 2/120 6613",
+    "load_last": "0.77 0.70 0.85 2/124 6649",
+    "codes": [
+     0
+    ],
+    "failing": []
+   },
+   "cp": {
+    "files": 95,
+    "tests": 564,
+    "pass": 564,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 197.4,
+    "load_first": "0.75 0.70 0.85 2/121 6826",
+    "load_last": "2.38 2.06 1.40 2/125 8006",
+    "codes": [
+     0
+    ],
+    "failing": []
+   },
+   "planeA1": {
+    "files": 27,
+    "tests": 99,
+    "pass": 98,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 254.2,
+    "load_first": "2.38 2.06 1.40 2/125 8014",
+    "load_last": "1.94 2.68 1.88 2/124 8573",
+    "codes": [
+     1
+    ],
+    "failing": [
+     "bio-plane/test/m/plane/r8-heal-door.test.mjs :: R102 G93 L: a member's ordinary read (op=whoami) re-arms a lost alarm as well"
+    ]
+   },
+   "sintake": {
+    "files": 41,
+    "tests": 375,
+    "pass": 375,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 350.5,
+    "load_first": "1.94 2.68 1.88 1/125 8582",
+    "load_last": "1.70 2.61 2.14 1/122 11009",
+    "codes": [
+     0
+    ],
+    "failing": []
+   },
+   "ishell": {
+    "files": 37,
+    "tests": 321,
+    "pass": 321,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 95,
+    "load_first": "1.70 2.61 2.14 2/125 11020",
+    "load_last": "2.49 2.78 2.26 1/127 12736",
+    "codes": [
+     0
+    ],
+    "failing": []
+   },
+   "capture": {
+    "files": 49,
+    "tests": 366,
+    "pass": 366,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 32.4,
+    "load_first": "2.49 2.78 2.26 2/127 12744",
+    "load_last": "3.19 2.94 2.33 1/127 13251",
+    "codes": [
+     0
+    ],
+    "failing": []
+   },
+   "delivery": {
+    "files": 13,
+    "tests": 159,
+    "pass": 151,
+    "fail": 8,
+    "cancelled": 0,
+    "skipped": 0,
+    "seconds": 1902.5,
+    "load_first": "3.19 2.94 2.33 2/127 13259",
+    "load_last": "0.16 0.37 0.80 1/132 15070",
+    "codes": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     1
+    ],
+    "failing": [
+     "bio-plane/test/m/control-plane/t51-round7-seam.test.mjs :: R105 (G60): a case whose cited document the case gate finds a problem in passes the pre-flight, is refused at `caseratify` with GATE_REFUSED and its findings, and the ceremony, given that answer, draws the refusal and each finding's check, text and repairs",
+     "bio-plane/test/m/control-plane/r9-seam-documents.mjs :: R9 seam §5 (K4833, G127c; R120 R123): the same file pressed by a second member is refused for the WHOLE only: `kind: whole` and the holder (red until provenance 21 merges)",
+     "bio-plane/test/m/control-plane/r9-seam-documents.mjs :: R9 seam §7 (G129a, PDF C14; R123 R130 R135): an AES-128 user-password PDF through the upload and the ticks ends in one tick `final` with PASSWORD_REQUIRED stated, never being read after (red until pdf-reader 7, reading-pipeline-1, extraction 28 are all merged)",
+     "bio-plane/test/m/control-plane/r9-seam-limits.mjs :: R9 seam §15 (G126a, G126e; R130, R125; SCAN C1, E3): with the OCR member back, the ticks fill the pages the press owed: their words are in `text_units` and no `ocr` row stands",
+     "bio-plane/test/m/control-plane/r9-seam-limits.mjs :: R9 seam §14 (G124, R132; K3268) (red until each quoting job below merges and runtime-limits records the rows its constants need): THE ALL-MODULES GREP: no module declares a reading ceiling as a number that `READ_BOUNDS` does not hold: every ceiling constant of every module resolves to the table through boundOf/statement or is an accepted non-ceiling",
+     "bio-plane/test/m/control-plane/r9-seam-parts.mjs :: R9 seam §11 (G135f, G126; R135 R130 R133) (red until the finished row carries the finishing pass's counters: it states written 0 and failed 1 `NO_HOME` for a read that wrote every unit): a scan read to its end: `op=reading`'s job state is finished, nothing owed, and its counters are the reading's own",
+     "bio-plane/test/m/control-plane/r9-seam-hostile.mjs :: R9 seam §18 (G125a, SCAN D1-D4, PDF D10; R100 R130): an 8 KB CCITT stream declaring 60,000 x 60,000 in a PDF is refused stated and final through the real renderer (a 200, the reading ended, not retried), and the plane is alive after",
+     "bio-plane/test/m/control-plane/r9-seam-hostile.mjs :: R9 seam §18 (G125a, SCAN D1-D4; R100 R130): a 330-byte JPEG declaring 60,000 x 60,000 and a PNG declaring 30,000,000 x 1 are each refused stated and final by their headers, not decoded and not retried"
+    ],
+    "per_file": [
+     {
+      "file": "bio-plane/test/m/control-plane/r124-owed-render.test.mjs",
+      "code": 0,
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "seconds": 8.6,
+      "load_before": "3.19 2.94 2.33 2/127 13259"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-visitor-copy.test.mjs",
+      "code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "seconds": 1.7,
+      "load_before": "2.85 2.88 2.31 1/126 13306"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-g43-embed.test.mjs",
+      "code": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "seconds": 103.2,
+      "load_before": "2.85 2.88 2.31 1/128 13332"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-held-failed.test.mjs",
+      "code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "seconds": 37.1,
+      "load_before": "1.38 2.34 2.17 2/129 13483"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-large-pdfs.test.mjs",
+      "code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "seconds": 29.4,
+      "load_before": "1.26 2.21 2.14 1/127 13547"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round10-seam-htmlparts.test.mjs",
+      "code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "seconds": 33.6,
+      "load_before": "1.11 2.08 2.10 1/127 13603"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round5-press-seam.test.mjs",
+      "code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "seconds": 24.2,
+      "load_before": "1.03 1.96 2.05 1/127 13667"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round5-seam.test.mjs",
+      "code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "seconds": 85.8,
+      "load_before": "0.94 1.86 2.02 1/128 13717"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round6-seam.test.mjs",
+      "code": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "seconds": 106.2,
+      "load_before": "0.56 1.55 1.89 2/127 13821"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round7-seam.test.mjs",
+      "code": 1,
+      "tests": 18,
+      "pass": 17,
+      "fail": 1,
+      "seconds": 93.5,
+      "load_before": "0.62 1.30 1.77 2/130 13962"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round8-seam.test.mjs",
+      "code": 0,
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "seconds": 92,
+      "load_before": "0.85 1.27 1.72 2/131 14078"
+     },
+     {
+      "file": "build/plan/walk-T51-final/scripts/05-vouch.test.mjs",
+      "code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "seconds": 31.4,
+      "load_before": "0.68 1.15 1.64 1/131 14207"
+     },
+     {
+      "file": "bio-plane/test/m/control-plane/t51-round9-seam.test.mjs",
+      "code": 1,
+      "tests": 81,
+      "pass": 74,
+      "fail": 7,
+      "seconds": 1255.8,
+      "load_before": "1.40 1.28 1.66 1/129 14289"
+     }
+    ],
+    "note": "the seven t51-round9-seam failures are reported under the helper files that define them (r9-seam-*.mjs); their names equal research 16's baseline list"
+   }
+  },
+  "build": {
+   "method": "fleet-bundle.mjs buildMember(planeMember() with entry set), write:false, twice each; nothing written into either tree",
+   "base": {
+    "bytes": 28418158,
+    "sha256": "da5f1a92c71a13f4bb99eeb66b5db289c080f808f3decba3c8ea2cffa18754fc",
+    "inputs": 853,
+    "ui_inputs": 130
+   },
+   "joined": {
+    "bytes": 28418968,
+    "sha256": "9c11f0e9b4e4691a5e81b06c1e3ed4e67034b9891d0233b14af70cbb8ca4e0a4",
+    "inputs": 856,
+    "ui_inputs": 130,
+    "inputs_added": [
+     "src/capture/filing.mjs",
+     "src/plane/launch.mjs",
+     "src/plane/ui.mjs"
+    ],
+    "inputs_removed": []
+   },
+   "launcher_only": {
+    "entry": "trial-door/launcher-only.mjs",
+    "bytes": 25146334,
+    "sha256": "fba95b67b3f462156392bbc6bbae17727aa0013b9764cda263b92a57485f1992",
+    "inputs": 725,
+    "ui_inputs": 0,
+    "inputs_of_joined_not_in_it": 132
+   }
+  },
+  "workerd_requests": {
+   "base": [
+    {
+     "request": "GET /version",
+     "status": 200,
+     "type": "text/plain; charset=utf-8",
+     "csp": null,
+     "bytes": 6,
+     "sha256": "f0ee3fde5ed2df319338d3046b51fd3c1901e7017f38e27efcbc255800eeaffc",
+     "ms": 5500
+    },
+    {
+     "request": "GET /api/?op=selftest",
+     "status": 401,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 261,
+     "sha256": "0419f5accf669dc6be234b05fcbaa24024687f281e72c61fc9b01d1e1399f4d0",
+     "ms": 12
+    },
+    {
+     "request": "GET /api/?op=bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 504
+    },
+    {
+     "request": "GET /api/?op=stats (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 1233,
+     "sha256": "ff40ef0b0217a67eb855c05bef656421d0905d13aa931b21745a3419a892d442",
+     "ms": 20
+    },
+    {
+     "request": "GET /api/?op=affordances (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 158458,
+     "sha256": "f98e30e3869fb84c28b9ada1edcc899cf74a11e9c3296fabfa2d3e97d221f3fa",
+     "ms": 34
+    },
+    {
+     "request": "GET /api/?op=nosuchop",
+     "status": 400,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 318,
+     "sha256": "0cdc48ff6c2bb184900944da3683b489f83d98f5d4dd26f97e928d5da2d121f5",
+     "ms": 3
+    },
+    {
+     "request": "GET /app",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 892
+    },
+    {
+     "request": "GET /",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 4
+    },
+    {
+     "request": "GET /app/shell-9.9.9.js",
+     "status": 200,
+     "type": "text/javascript; charset=utf-8",
+     "csp": null,
+     "bytes": 4423473,
+     "sha256": "ac144ee84971f9034ad6c5fa569439a0287aaa6703b7fa645995dc7bc743b234",
+     "ms": 142
+    },
+    {
+     "request": "GET /app/assets/civicsmith.css",
+     "status": 200,
+     "type": "text/css",
+     "csp": null,
+     "bytes": 47326,
+     "sha256": "abb663ba002f7c372e86d97f27c01a37a0ae241188115253571c355202850f95",
+     "ms": 16
+    },
+    {
+     "request": "GET /app/assets/group-logo",
+     "status": 404,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 6
+    },
+    {
+     "request": "GET /doorbell",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 2
+    },
+    {
+     "request": "GET /nothing-here",
+     "status": 404,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 3
+    },
+    {
+     "request": "GET /favicon.ico",
+     "status": 204,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 1
+    },
+    {
+     "request": "GET /bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 32
+    }
+   ],
+   "joined": [
+    {
+     "request": "GET /version",
+     "status": 200,
+     "type": "text/plain; charset=utf-8",
+     "csp": null,
+     "bytes": 6,
+     "sha256": "f0ee3fde5ed2df319338d3046b51fd3c1901e7017f38e27efcbc255800eeaffc",
+     "ms": 5153
+    },
+    {
+     "request": "GET /api/?op=selftest",
+     "status": 401,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 261,
+     "sha256": "0419f5accf669dc6be234b05fcbaa24024687f281e72c61fc9b01d1e1399f4d0",
+     "ms": 12
+    },
+    {
+     "request": "GET /api/?op=bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 568
+    },
+    {
+     "request": "GET /api/?op=stats (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 1233,
+     "sha256": "ff40ef0b0217a67eb855c05bef656421d0905d13aa931b21745a3419a892d442",
+     "ms": 19
+    },
+    {
+     "request": "GET /api/?op=affordances (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 158458,
+     "sha256": "f98e30e3869fb84c28b9ada1edcc899cf74a11e9c3296fabfa2d3e97d221f3fa",
+     "ms": 36
+    },
+    {
+     "request": "GET /api/?op=nosuchop",
+     "status": 400,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 318,
+     "sha256": "0cdc48ff6c2bb184900944da3683b489f83d98f5d4dd26f97e928d5da2d121f5",
+     "ms": 3
+    },
+    {
+     "request": "GET /app",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 876
+    },
+    {
+     "request": "GET /",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 4
+    },
+    {
+     "request": "GET /app/shell-9.9.9.js",
+     "status": 200,
+     "type": "text/javascript; charset=utf-8",
+     "csp": null,
+     "bytes": 4423473,
+     "sha256": "ac144ee84971f9034ad6c5fa569439a0287aaa6703b7fa645995dc7bc743b234",
+     "ms": 124
+    },
+    {
+     "request": "GET /app/assets/civicsmith.css",
+     "status": 200,
+     "type": "text/css",
+     "csp": null,
+     "bytes": 47326,
+     "sha256": "abb663ba002f7c372e86d97f27c01a37a0ae241188115253571c355202850f95",
+     "ms": 10
+    },
+    {
+     "request": "GET /app/assets/group-logo",
+     "status": 404,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 4
+    },
+    {
+     "request": "GET /doorbell",
+     "status": 200,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 2
+    },
+    {
+     "request": "GET /nothing-here",
+     "status": 404,
+     "type": "text/html; charset=utf-8",
+     "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; script-src 'self' 'sha256-rBRO6Elx+QNK1sX6VpQ5oCh6qmcDt/pkWZXce8dDsjQ='",
+     "bytes": 3520,
+     "sha256": "bb573c6f7d273a8dc77bcc497d0cc9e5ec6ca9ac5c332efc8ab071ebc4de9907",
+     "ms": 2
+    },
+    {
+     "request": "GET /favicon.ico",
+     "status": 204,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 2
+    },
+    {
+     "request": "GET /bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 26
+    }
+   ],
+   "launcher_only": [
+    {
+     "request": "GET /version",
+     "status": 200,
+     "type": "text/plain; charset=utf-8",
+     "csp": null,
+     "bytes": 6,
+     "sha256": "f0ee3fde5ed2df319338d3046b51fd3c1901e7017f38e27efcbc255800eeaffc",
+     "ms": 4077
+    },
+    {
+     "request": "GET /api/?op=selftest",
+     "status": 401,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 261,
+     "sha256": "0419f5accf669dc6be234b05fcbaa24024687f281e72c61fc9b01d1e1399f4d0",
+     "ms": 13
+    },
+    {
+     "request": "GET /api/?op=bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 532
+    },
+    {
+     "request": "GET /api/?op=stats (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 1233,
+     "sha256": "ff40ef0b0217a67eb855c05bef656421d0905d13aa931b21745a3419a892d442",
+     "ms": 21
+    },
+    {
+     "request": "GET /api/?op=affordances (admin bearer)",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 158458,
+     "sha256": "f98e30e3869fb84c28b9ada1edcc899cf74a11e9c3296fabfa2d3e97d221f3fa",
+     "ms": 35
+    },
+    {
+     "request": "GET /api/?op=nosuchop",
+     "status": 400,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 318,
+     "sha256": "0cdc48ff6c2bb184900944da3683b489f83d98f5d4dd26f97e928d5da2d121f5",
+     "ms": 3
+    },
+    {
+     "request": "GET /app",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 3
+    },
+    {
+     "request": "GET /",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 3
+    },
+    {
+     "request": "GET /app/shell-9.9.9.js",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 2
+    },
+    {
+     "request": "GET /app/assets/civicsmith.css",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 3
+    },
+    {
+     "request": "GET /app/assets/group-logo",
+     "status": 404,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 6
+    },
+    {
+     "request": "GET /doorbell",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 2
+    },
+    {
+     "request": "GET /nothing-here",
+     "status": 404,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 116,
+     "sha256": "1264b4f4aed68b9dbedc433c48c054af2e9457fbf15f5457e859d25c64f3b303",
+     "ms": 2
+    },
+    {
+     "request": "GET /favicon.ico",
+     "status": 204,
+     "type": null,
+     "csp": null,
+     "bytes": 0,
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "ms": 2
+    },
+    {
+     "request": "GET /bootstrap",
+     "status": 200,
+     "type": "application/json",
+     "csp": null,
+     "bytes": 237,
+     "sha256": "ddfa67e8c0881efe838a8ea1ec41181eb97e66d0bc258bd93a0998c39206e5b6",
+     "ms": 6
+    }
+   ],
+   "base_vs_joined_identical": 15
+  },
+  "page_script": {
+   "how": "research 16's script.mjs, run with --import platform-sqlite.mjs",
+   "base": {
+    "bytes": 5270912,
+    "sha256": "54986cba78d7d4a6e7e207faefde0b1f174e77f0a37901a5c0b9437faaae749b"
+   },
+   "joined": {
+    "bytes": 5270912,
+    "sha256": "54986cba78d7d4a6e7e207faefde0b1f174e77f0a37901a5c0b9437faaae749b"
+   },
+   "cmp": "identical",
+   "interfaceScriptHash": "sha256-VJhsunjX1Kbn4gf6794LHxdOd/CjeQGlwLlDf6qudJs="
+  },
+  "p4_check": {
+   "joined": {
+    "control-plane": "49 disagreement(s): 49 imports of later modules in 15 test-side files, 0 in src (interface-shell 19, screens-capture 7, product 1 (harness-ui.mjs), other UI modules 22)",
+    "plane": "159: the 48 of base (one moved from plane/index.mjs to plane/launch.mjs) and 111 imports of later modules in 64 files, 0 in src",
+    "product": "1: declares screens-capture in uses, but neither its source nor its tests import it",
+    "capture": "3: the same 3 lines as base (setup-words interface, capture/index.mjs:1938,1939, t50-words.test.mjs:15)",
+    "screens-capture": "no disagreement found"
+   },
+   "base": {
+    "control-plane": "no disagreement found",
+    "plane": "48",
+    "capture": "3",
+    "screens-capture": "no disagreement found",
+    "product": "no such module"
+   }
+  },
+  "cost": {
+   "total": {
+    "files": 23,
+    "added": 319,
+    "removed": 247
+   },
+   "rows": [
+    [
+     "capture code",
+     "capture/filing.mjs",
+     1,
+     107,
+     0
+    ],
+    [
+     "control-plane code",
+     "cp/index.mjs, cp/app.mjs",
+     2,
+     29,
+     35
+    ],
+    [
+     "plane code",
+     "plane/launch.mjs",
+     1,
+     82,
+     0
+    ],
+    [
+     "product (top module) code",
+     "plane/index.mjs, plane/ui.mjs",
+     2,
+     40,
+     71
+    ],
+    [
+     "screens-capture code",
+     "screens-intake/capture.mjs",
+     1,
+     3,
+     103
+    ],
+    [
+     "control-plane tests",
+     "9 page test files + harness-ui.mjs",
+     10,
+     23,
+     10
+    ],
+    [
+     "trial only",
+     "trial-door/launcher-only.mjs",
+     1,
+     7,
+     0
+    ],
+    [
+     "module list",
+     "order.txt, control-plane.json, plane.json, product.json, screens-capture.json",
+     5,
+     28,
+     28
+    ]
+   ],
+   "product_code": {
+    "files": 7,
+    "added": 261,
+    "removed": 209
+   },
+   "tests": {
+    "files": 10,
+    "added": 23,
+    "removed": 10
+   }
+  }
+ },
+ "not_checked": [
+  "step 3 on a combined copy: stopped at the conflict, as the brief says",
+  "the cause of the restart test taking about 38 s alone and about 18 s inside the file",
+  "set b (27 files) on a quiet machine",
+  "r8-timing-hook age test"
+ ]
+}

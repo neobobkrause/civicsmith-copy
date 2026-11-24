@@ -1,42 +1,75 @@
-Length: 42 lines. Last section: "4. What is not known".
+Length: 75 lines. Last section: "7. What is not known".
 
-# The plane module's scope: design
+# The plane module's scope and the layers: design
 
-The plane-scope lane's design, first written 23 Nov 2026 by civicsmith plane-scope lane #1 from the research in `research/` (index `research/README.md`). It is put to the owner on the lane's design page, https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L. The module list, the order and interfaces are ARCH's to decide and build; this is the lane's proposal to ARCH and the owner's choice of direction. Nothing here is built while development is halted.
+The plane-scope lane's design. First written 23 Nov 2026 by civicsmith plane-scope lane #1 (sections 1 and 2, options A, B, C); rewritten 24 Nov 2026 by lane #2 after the layer research the owner asked for on 23 Nov (research 09 to 21, index `research/README.md`). The report of that research is the lane's second design page, https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL; the first page, https://claude.ai/artifact/X5PJuyRPjLtP9G7Wsry37L, holds options A, B, C. The module list, the order and interfaces are ARCH's to decide and build. Nothing here is built while development is halted, or before the owner chooses a direction; ARCH has said it can be built as given, and section 6 says which steps each choice opens. Tags: measured, read, not checked (`research/evidence-rules.md`).
 
 ## 1. What plane is for
 
-- Plane is the shell that makes civicsmith one running program on the hosting service: the store's class (one Durable Object per team), the Worker's entry, the door's hooks, the watchdog, the build of its bundle and its deployment config. Its own code is five files, 371 lines (research 02, "Order facts"). Building every module on the store is `store-assembly`'s (K5046; research 01).
-- Its own requirements are the 27 about that shell (research 01, section 2). Its proof is the tests of group A1 (27 tests; research 02).
-- It is not the home of other modules' proof. Nothing in the canon says so (research 01, item 7); it holds that proof because whole-program tests use every module and only the end of the order may, and because only plane's entry starts the real runtime (research 01, section 3).
+- Plane is the shell that makes civicsmith one running program on the hosting service: the store's class, the Worker's entry, the door's hooks, the watchdog, the build of its bundle and its deployment config (research 01, 02). Its own requirements are the 27 about that shell; its own proof is its 27 A1 tests.
+- It is not the home of other modules' proof. It holds that proof because whole-program tests use every module and only the end of the order may, and because only plane's entry starts the real runtime (research 01, 02).
 
-## 2. The facts the design rests on
+## 2. Option B, unchanged, with ARCH's terms
 
-1. 138 of plane's 147 tests load plane's own code; 108 start the Worker and store under workerd (research 02). They cannot move earlier than plane without testing a copy of the program rather than the deployed one, which the owner's real-shape ruling (K4426) and the canon's "can prove it" (Distribution §1) argue against.
-2. Of the 147: 27 prove plane's own shell (A1); 27 are plane-numbered checks of other modules' behaviour at the platform's shape (A2); 86 prove other modules' requirements through the real door (B: control-plane 46, screens-inquiry 7, screens-intake 6, the rest 1 to 9 each); 7 are odd ones (D) (research 02).
-3. The run is throughput-bound: about 5,520 s of file time over three slots, 33 to 43 minutes measured; plane's own folder is 27 to 31% of it; migrate-released starts workerd 69 times; one reading test waits about 280 s on a timer (research 03).
-4. Every other module's run takes 2 to 4 minutes (research 03).
+Plane keeps only its own proof; the whole-program proofs move to proof modules placed after plane. ARCH #11, 23 Nov 2026: B can be built as given: both modules directly after plane and before `release` (the platform-shape module, then the door module, planned as door A and door B, split further if a run passes about 20 minutes on GitHub); every test there names a requirement of its own module, which ARCH writes; the group C kits are their code; A2's 10 store-only tests judged at the build; plane #1's pull request (1259) keeps only A1. Plane's requirements file is corrected either way (research 01, item 3).
 
-## 3. The choices, and the lane's recommendation
+## 3. The re-stacking: the design
 
-**A. Leave the tests in plane; make its run faster.** Fewer workerd starts per file, migrate-released run where it overloads nothing. Gives: least change. Costs: plane's work stays answerable for 113 tests of other modules' behaviour; its run stays near the limit and grows with every new whole-program test; a change to plane's 371 lines still runs every whole-program test.
+The owner's wanted order, lowest first: model, middleware, front door (control-plane), launcher (plane), UI (interface-assets, interface-shell, the screens parts). Today the door and the launcher sit after the UI.
 
-**B. Plane keeps only its own proof; the whole-program proofs move to proof modules placed after plane.** Plane keeps A1 (27 tests). Two new modules after plane, each with its own requirements (the whole-program restatements, as A2's already are, each naming the module requirement it proves) and the kits its tests use as its code:
-- a platform-shape proof module: A2, migrate-released and the odd real-runtime tests (D) — what the program does on the real runtime: large files, memory, alarms, stores from past releases;
-- a door proof module: B — the walks and seams through the real door, by area.
-ARCH may split either further by run time. Gives: plane's own run takes minutes; each proof run is well under the limit (expected from the shares in research 03, not measured); a failure lands on a module whose job is that proof, which reports another module's fault to ARCH as any job does. Costs: two (or more) new modules and moved requirement text, ARCH's work; each whole-program requirement is stated twice, at its owner and as a restatement; the owner module's own job still does not run the whole-program proof — the proof module, a user of everything, is told when an interface it uses changes (Process4's notice), and the walks cover the rest. That the tool follows such a module's uses is unproven.
+1. **Order.** control-plane and plane directly after store-request; then the UI; then a new top module that owns the entry `bio-plane/src/plane/index.mjs` (path kept) and the UI plug-in `src/plane/ui.mjs`; then option B's proof modules; then release.
+2. **The door knows no screen.** `makeFetch` is handed the UI as ready-made functions (page, script, script hash) plus the asset table and the public addresses, read from `hooks.ui`. With nothing handed in, every page route answers 404 JSON `NO_INTERFACE`; ops answer as before. (The trial handed in the builders, `interfacePage` and the rest, to change fewer lines; the design hands in composed functions so the door knows neither screens nor guide.)
+3. **The launcher** keeps its start-up code in `src/plane/launch.mjs`, `Store` unchanged in `src/plane/store.mjs`. plane keeps `wrangler.jsonc`, `scripts/build-plane.mjs` and `dist/`, which name the entry only as a path held as text.
+4. **The document builder moves below the door.** `titleOf` and `promoteDocument` move, unchanged, from the capture screen's file to `capture/filing.mjs` (capture, 56). The door's `deliverOwedRender` imports them; it keeps one argument and the store hands nothing in. K4493 names only the earlier process's session ("BOB's"), so by `process/ranking.md` it is rank 5; the lane decides this. capture's Purpose line "It writes no bundle" is reworded by ARCH.
+5. **Shared text.** The 12 addresses and words the door and the UI each write (research 11, N01, N03 to N13) stay as they are through the move; afterwards each UI module may take them from the door by import, as its own job.
+6. **Not part of this design:** the 20 modules that fit no one layer, and the layer definitions (research 10). `skills` is misplaced there as a shared foundation and belongs with the model: a correction to the map, not to code.
 
-**C. Move proof back to the owner modules by rewriting tests to run in plain Node with stand-ins.** store-assembly's Node store and a stand-in for the door's hooks. Gives: an owner's own job proves its requirement. Costs: rewriting up to 86 tests (about 14,000 lines); a stand-in can drift from the real program, so the real-shape checks still have to stay at the end; it narrows what the owner's real-shape ruling asked for.
+**Proven on a scratch copy (research 21, the design's join of research 15 and 16), measured on a quiet machine:** control-plane 564 of 564; plane A1 98 of 99 (the one failure fails on base); capture 366 of 366; screens-intake 375 of 375; interface-shell 321 of 321; the 13 delivery files 151 of 159, the same 8 failing as on base; 15 served answers and the page script byte-identical to base; the UI-less build answers ops and refuses pages; `p4 check` finds no disagreement in any code file. Code 7 files +261 -209; tests 10 files +23 -10. plane's l79 restart test: 30 of 30 on a quiet machine across base and both trials (research 20).
 
-**Recommendation: B.** It puts plane back to its purpose at once, takes plane's run far from the limit, and keeps every proof on the real program, as the owner ruled. C is not ruled out: where a module's job can prove its own requirement in its own tests without a stand-in that drifts, it does so as part of meeting that requirement; the whole-program proof stays at the end beside it.
+## 4. The lane's recommendation
 
-**ARCH's answer (ARCH #11, 23 Nov 2026): B can be built as given**, on these terms. Both modules sit directly after plane and before `release`: the platform-shape module, then the door module; plan the door module as two (door A and door B) from the start, split further if a whole run passes about 20 minutes on GitHub. Every test there names a requirement of its own module, which ARCH writes, restating a whole-program proof and naming the owner's requirement it carries; a test without one stays with its owner or goes to ARCH. The group C kits are their code; files change owner by naming paths in the new entries, none moves. Cost stated plainly: both use nearly every earlier module, so nearly every provider change tells them: frequent short jobs with whole-module runs. A2's 10 store-only tests are judged at the build (back to `store-assembly` if they need only its store). Nothing is built while the halt stands or before the owner chooses; on B, ARCH makes the list change in one pull request, rewrites its "Module list" decision in place, and plane #1's pull request keeps only A1.
+- **First: option B and the capture move.** B is the only choice that fixes plane's scope, the problem the lane was opened for. The capture move is the cheapest measured step toward the owner's order and removes the one call of UI code from background work.
+- **Then the re-stacking, as small steps, if the owner chooses that direction.** After B, the tests the re-stacking must move shrink from 121 to about 27 (control-plane's 20 and plane's 7 A1 files that reach the entry; worked out from research 15's refused list, not run).
+- **The case against re-stacking now** (research 19): it does not fix plane's scope; it costs the most text (163 requirements in 26 modules pin today's order, about 112 likely to need rewording); the door still refers to the UI by what it is handed; no recorded user needs the UI-less program; it overlaps PR 1259. **The case for:** the door imports nothing of the UI, a UI-less program builds and runs, nothing users get changes, and the order then allows screens tests to use the real door and the UI to take shared text from the door (both not checked).
+- The direction is the owner's: he asked for this order, but there is no marked decision for it.
 
-Either way, plane's requirements file is corrected: its Purpose sentence and Uses still describe what moved to `store-assembly` (research 01, item 3). That is ARCH's requirement text.
+## 5. The plan
 
-## 4. What is not known
+Each step is one merge that passes on its own (Process4 design part 2, section 8). Requirement text and the module list are ARCH's; "job" is one module's job.
 
-- The run time of each proposed module: shares in research 03 are worked out from test names (118 of 591 not matched).
-- Whether the 10 store-only tests in A2 need plane's store class or only `store-assembly`'s store; if only the latter, they may sit at `store-assembly` (research 02).
-- ARCH's twelve owed pieces: items 1, 4, 5 and 7 to 11a are in no file (research 02).
-- Whether the time limit itself changes: a process fault now with PROCESS and the owner, not this lane's.
+1. ARCH: B's list change (proof modules after plane; requirements; tests by path).
+2. Job plane: PR 1259 keeps only A1 and goes on; its blocked record (store-assembly's `deliver` option) is separate.
+3. ARCH: capture's Purpose reworded; requirements for the two functions.
+4. Job capture: `capture/filing.mjs` with the two functions; nothing uses it yet.
+5. Job screens-capture: the screen uses capture's copy and drops its own (page script byte-identical, research 16).
+6. Job control-plane: `deliverOwedRender` imports from capture; its six test files re-pointed.
+7. Job control-plane: `makeFetch` accepts `hooks.ui`, keeping its own UI imports as a fallback.
+8. Job plane: `launch.mjs` split from the entry; the entry hands the UI in (plane is still after the UI).
+8a. Job control-plane moves a part out of `index.mjs`; then ARCH splits control-plane (requirement numbers kept).
+8b. ARCH splits interface-shell along an existing file boundary (requirement numbers kept).
+9. ARCH rewords the door's page requirements; job control-plane drops its UI imports and the fallback (only after step 8 has merged), adds `NO_INTERFACE`, and its 9 page test files take the UI from a test helper.
+10. ARCH: the top module after plane, owning the entry and `ui.mjs`, and the test files that reach the entry (the list taken from `check`'s refusals at that step, not from the estimate of about 27); UI names out of plane's `uses`.
+11. ARCH: the remaining requirements that state today's order; its "Module list" decision and the rulings that name today's places (K5046, K5052) rewritten in place.
+12. ARCH: control-plane and plane moved to directly after store-request, merged only once `p4 check` on that list finds nothing in either's code. If it finds something in code, the boundary is an architecture bug and the step comes back to the lane; it is not worked round.
+13. Follow-ons, each its own job: UI modules import the shared text from the door; screens tests may use the real door; `bio-plane/test/declared-ops.mjs` stops reading later modules' files (test-support).
+
+Dependencies: the halt and the owner's choice; PR 1259 shares 2 files with steps 7 to 9 and none with steps 3 to 6; `control-plane.md` (121 KB) and `interface-shell.md` (120 KB) are over the 60 KB single-text maximum and are split at steps 8a and 8b; after step 12 the 19 UI modules are later modules of the door and the launcher, so their changes tell more modules.
+
+## 6. ARCH's answer
+
+ARCH #11, 24 Nov 2026: it can be built as given, B first, then the re-stacking in the steps above, on these conditions.
+
+1. Steps 1 to 6 (B and the capture move) are buildable on the owner's choice of B; steps 7 to 12 only on his choice of the re-stacking direction. Neither is built while his halt stands.
+2. Steps 8a and 8b (the splits) come before step 9.
+3. Step 7's fallback is the accept-both form (design part 2, section 8), removed at step 9 only after step 8 has merged.
+4. Requirement wording: a rewording that only says the same thing more clearly ARCH makes and names in the account; one that changes what the product does goes to the owner first. `NO_INTERFACE` is new behaviour of an unshipped build: ARCH writes it as a new requirement and names it in the account.
+5. Step 12 as written above.
+6. plane keeps `wrangler.jsonc`, `build-plane.mjs` and `bio-plane/dist/`.
+7. The owed render delivered by the alarm inside the built program becomes a walk area of the round that lands steps 7 to 9. The notice load after step 12 and B's run times are measured as they come and reported; neither stops a step.
+8. Step 10's test list is taken from `check`'s refusals at that step.
+
+## 7. What is not known
+
+- Which of the 112 requirements truly need rewording; whether `p4 check` passes at step 12; how many notices the door's changes cause after it; B's proof modules' run times.
+- About 190 test files that reach changed files were not run on a changed copy; each set ran once on the joined copy; an owed render delivered by the alarm in the built program; screens tests over the real door.
+- The full list is the report's section "What is not known".

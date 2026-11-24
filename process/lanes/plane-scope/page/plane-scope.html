@@ -28,7 +28,7 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 <p>You opened this lane on 23 November 2026 to understand the plane module and fix its scope. This page is where you read the lane's findings and choose. It will be filled in as the research is recorded.</p>
 </header>
 
-<div class="status"><b>Status, 23 Nov 2026:</b> the research is recorded and the choices are below, waiting for your choice. Development is halted on your instruction, so nothing here is being built. The order of parts is ARCH's to decide and build; ARCH has this proposal too.</div>
+<div class="status"><b>Status, 24 Nov 2026:</b> two choices wait for you: B below, and the re-stacking of the layers you asked about (last section). ARCH says both can be built as given. Development is halted on your instruction, so nothing here is being built.</div>
 
 <section>
 <h2>What the plane is, in one paragraph</h2>
@@ -87,7 +87,22 @@ p,ul{margin:.6rem 0} li{margin:.3rem 0}
 </section>
 
 <section>
+<h2>The layers you asked about: a second choice</h2>
+<p>On 23 November you asked to see civicsmith as five layers, stacked model, middleware, front door, launcher, UI, and what it would take to stack the code that way. Today the front door and the launcher (plane) sit above the screens. The full findings, the case for and against, and a step-by-step plan are in the <a href="https://claude.ai/artifact/HA4xENnaXEjX8cx4SQeAoL">layers research report</a>.</p>
+<ul>
+<li><b>It can be done, and it was tried.</b> On a scratch copy the front door and the launcher stopped importing any screen code, and the screens were plugged in from one small part at the top. Every test set run passed as before. Users were sent byte-for-byte the same pages. Measured.</li>
+<li><b>It does not fix plane's scope on its own.</b> The whole-program tests still need a home at the end, which is what B gives them. Doing B first cuts the tests the re-stacking must move from 121 to about 27 (worked out, not run).</li>
+<li><b>Its main cost is paperwork.</b> 163 written promises in 26 parts state today's order; about 112 are likely to need rewording, which is ARCH's work. Measured count; the 112 is a judgment.</li>
+<li><b>One small step is worth taking either way.</b> Moving the capture screen's two document functions below the front door changes 4 files, leaves the page byte-identical, and removes the only place background work runs screen code. Measured.</li>
+</ul>
+<h3>The lane's recommendation</h3>
+<p>Choose B now, with the capture move. Choose the re-stacking separately, when you want it: ARCH can build it after B in small steps, each merged on its own.</p>
+<h3>ARCH's answer, 24 Nov</h3>
+<p>Both can be built as given. B and the capture move need only your choice of B. The re-stacking's steps need your choice of the re-stacking. ARCH adds two steps that split two oversized requirement files first. A rewording that only makes a promise clearer ARCH makes and reports to you; one that changes what the product does comes to you first. The last step, the move itself, is made only if the order check finds nothing in the moved parts' code; if it finds something, the design comes back to this lane.</p>
+</section>
+
+<section>
 <h2>How to answer</h2>
-<p>Type your choice in this lane's session, or tell the coordinator, beginning with “Decision:”. Anything else is taken as conversation.</p>
+<p>There are two choices: B, and the re-stacking. Type each in this lane's session, or tell the coordinator, beginning with “Decision:”. Anything else is taken as conversation.</p>
 </section>
 </main>
