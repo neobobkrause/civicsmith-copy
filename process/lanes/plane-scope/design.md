@@ -50,7 +50,7 @@ Where they land (`research/classify/22a.json`, `22b.json`, `22c.json` give each 
 
 ## 4. What is proven on scratch copies
 
-All on `a26a8da2`, measured, each re-run by the lane from the saved patch: the capture move and the door taking its UI from outside, joined (research 21: control-plane 564 of 564, capture 366 of 366, the served answers and page script byte-identical); the routing in the door with three door tests over the real routing (research 23: control-plane 569 of 569 (the worker's run; the lane's re-run pending), three arm paths, mutations of the routing turn each red); 12 whole-program test files moved or rebuilt at store-assembly, test-support, control-plane, plane, screens-intake and lines (research 22a to 22c, each with `p4 check` clean at the owner; the lane re-ran the 10 held in the saved patches). Moved door tests run in 1.5 to 2.2 s in Node against 17 to 23 s over plane.
+All on `a26a8da2`, measured, each re-run by the lane from the saved patch: the capture move and the door taking its UI from outside, joined (research 21: control-plane 564 of 564, capture 366 of 366, the served answers and page script byte-identical); the routing in the door with three door tests over the real routing (research 23: control-plane 569 of 569, re-run by the lane from the saved patch (179 s, load 0.8 to 2.5), three arm paths, mutations of the routing turn each red); 12 whole-program test files moved or rebuilt at store-assembly, test-support, control-plane, plane, screens-intake and lines (research 22a to 22c, each with `p4 check` clean at the owner; the lane re-ran the 10 held in the saved patches). Moved door tests run in 1.5 to 2.2 s in Node against 17 to 23 s over plane.
 
 ## 5. The plan
 
