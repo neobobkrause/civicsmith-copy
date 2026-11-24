@@ -1,0 +1,752 @@
+diff --git a/bio-plane/src/control-plane/index.mjs b/bio-plane/src/control-plane/index.mjs
+index 6e420d06..74e2296d 100644
+--- a/bio-plane/src/control-plane/index.mjs
++++ b/bio-plane/src/control-plane/index.mjs
+@@ -8,12 +8,14 @@
+    prefixes) is record-grammar's. */
+ import { createSha256, MACHINE_AUTHOR_PREFIX, MACHINE_CLASS_PREFIX } from "../record-grammar/index.mjs";
+ /* C-68.1 (K794, K796, K850): the capability complaint is acquisition's, minted at its one region (`evidenceStorageAbsent`). */
+-import { evidenceStorageAbsent, ARCHIVE_CHECKS, FOR_MAX } from "../acquisition/index.mjs";
++import { ARCHIVE_CHECKS, FOR_MAX } from "../acquisition/index.mjs";
++/* plane-scope trial: the four helpers the arm routing is handed live beside the routing; this door imports them and exports them as before */
++import { sha256Hex, caseReader, captureKey, storageAbsent } from "../door-routing/helpers.mjs";
+ /* K617, K624 (2): who may call an op is `admission`'s — the namespace gates, the credential's resolution, the admission
+    in its order, the bearer fences, the reader of a public op's caller and the mint's secrets — called here in R28's
+    order; each gate answers `null`, a refusal `{status, body}` this door answers as given, or a silence. */
+ import { SCRATCH, classify, scopeFor, namespaceGate, confinedNamespaceGate, pinnedNamespaceGate,
+-         aiCredentialPresented, admit, bearerFence, readerOf, aiCredentialMint, reviewGrantSecret,
++         aiCredentialPresented, admit, bearerFence, aiCredentialMint, reviewGrantSecret,
+          queryGate, callerViewer } from "../admission/index.mjs";
+ /* T35 (admission R20–R22; F1, F4, N703; K2044): the credential read once from the header or the body, the public ops'
+    window and the caller's source and country, and the security tally of every refusal the door gives or relays. (T36;
+@@ -247,20 +249,6 @@ async function fingerprint(v) {
+   return [...new Uint8Array(b)].slice(0, 8).map((x) => x.toString(16).padStart(2, "0")).join("");
+ }
+ 
+-/* Full 64-hex SHA-256 of a string or a byte view. This is what docprofile's
+-   `digests()` calls to name each normalised variant (CONSTRUCTS Step 2 / FW-4);
+-   it hashes the SAME raw bytes for `identity`, which is why identity must equal
+-   the capture sha and is asserted to. */
+-/**
+- * @param {string | ArrayBuffer | ArrayBufferView} v a string (hashed as UTF-8) or bytes
+- * @returns {Promise<string>} the SHA-256, 64 lower-case hex digits
+- * @bound returns: 64 lower-case hex digits
+- */
+-async function sha256Hex(v) {
+-  const b = await crypto.subtle.digest("SHA-256", typeof v === "string" ? new TextEncoder().encode(v) : v);
+-  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+-}
+-
+ /* REC-126 / REC-198 — THE REVIEW COPY'S ANSWER SHAPE, ONE FUNCTION FOR EVERY READ OF A DRAFT. The store's
+    `#noReviewCopy` is carried at 404 with nothing added, so a caller outside the fence reads the same status and the
+    same bytes from the single read (`reviewcopy`) and from the list (`casedrafts`); a store that did not answer is a
+@@ -404,51 +392,6 @@ async function templateGrantDoor({ req, url, env, op, spec, presentedAi, stub, c
+   return json({ ok: true, ...r }, 200);
+ }
+ 
+-/* WHO IS ASKING, FOR A PUBLIC OP THAT ANSWERS WORKING MATERIAL ONLY TO SOME: `admission`'s `readerOf` (its R16), in the
+-   shape the arms behind plane's hooks read (`{viewer, cls}`, or `{silent: <op>, correlation}`). */
+-/**
+- * Who is asking, for a public op that answers working material only to some (admission R16): never refuses.
+- * @param {URL} url
+- * @param {Record<string, any>} env
+- * @param {string} storeName
+- * @param {any} presentedAi the front door's looked-up agent credential; undefined asks the store
+- * @param {any} [credential] the presented credential (admission R20)
+- * @returns {Promise<{viewer: any, cls: string | undefined, silent: string | null, correlation: string | undefined}>} the reader, `viewer` (`""` for no one) and `cls`;
+- *  or, when the store did not answer, `silent` the store route asked and `correlation` its id (`viewer` then `""`)
+- */
+-async function caseReader(url, env, storeName, presentedAi, credential = null) {
+-  /* R83 (T47; K3144): a background request's session read is no activity */
+-  const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential,
+-                           { background: url.searchParams.get("background") === "1" });
+-  if (r.silent) return { viewer: "", cls: undefined, silent: r.silent.op, correlation: r.silent.correlation };
+-  return { viewer: r.viewer, cls: r.cls, silent: null, correlation: undefined };
+-}
+-
+-/* The R2 key for a capture's bytes (I1 §2): content-addressed under the store
+-   prefix. The ONE place this shape is written, so op=capture and op=pdfstructure
+-   read the identical object rather than two copies of the key drifting apart. */
+-/** @type {(storeName: string, sha: string) => string} the R2 key of a capture's bytes, `<store>/captures/<sha>` */
+-const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
+-
+-/* THE CAPABILITY COMPLAINT (C-68.1, D-278). A copy installed with no evidence
+- * storage bound cannot serve `capture`, `pdfstructure`, `acquire` or `attest`.
+- * ONE row for the four, the op named beside it, minted at acquisition's one
+- * region (`evidenceStorageAbsent`, K850) for the same reason `requiredArgument`
+- * is minted once: a DEC-49 row holds one `where`. `error` is passed in
+- * BYTE-IDENTICAL from each site — the sites said two different sentences before
+- * this and still do. Handed to every arm this door routes those ops to (moved
+- * from legacy-index at T19, its door share). */
+-/**
+- * C-68.1: the capability complaint of a copy with no evidence storage, enveloped (acquisition's row).
+- * @param {string} op
+- * @param {string} error the site's sentence, passed byte-identical
+- * @returns {Response}
+- */
+-function storageAbsent(op, error) {
+-  const { status, body } = evidenceStorageAbsent(op, error);
+-  return json(body, status);
+-}
+-
+ /* REC-163 / IC-174 and REC-164: WHICH STORE `op=instancegroup` and `op=groupidentity` read, and WHO ASKS — the
+    resolution is the door's, the answer instance-setup's (`instanceGroupOp`, `groupIdentityOp`). Who asks decides which
+    projection, never whether: a caller the admission gate would admit (a machine class in its own namespace, a session,
+diff --git a/bio-plane/src/door-routing/helpers.mjs b/bio-plane/src/door-routing/helpers.mjs
+new file mode 100644
+index 00000000..a7fa7de2
+--- /dev/null
++++ b/bio-plane/src/door-routing/helpers.mjs
+@@ -0,0 +1,66 @@
++/* plane-scope trial: the four helpers the arm routing hands its arms (a hash, who is asking, a capture's key, the store's absence), moved as they stand from
++   `control-plane/index.mjs`, which imports them from here and exports them as before. This file imports nothing of the routing. */
++import { readerOf } from "../admission/index.mjs";
++import { evidenceStorageAbsent } from "../acquisition/index.mjs";
++import { json, doAnswer } from "../answer-envelope/index.mjs";
++
++/* Full 64-hex SHA-256 of a string or a byte view. This is what docprofile's
++   `digests()` calls to name each normalised variant (CONSTRUCTS Step 2 / FW-4);
++   it hashes the SAME raw bytes for `identity`, which is why identity must equal
++   the capture sha and is asserted to. */
++/**
++ * @param {string | ArrayBuffer | ArrayBufferView} v a string (hashed as UTF-8) or bytes
++ * @returns {Promise<string>} the SHA-256, 64 lower-case hex digits
++ * @bound returns: 64 lower-case hex digits
++ */
++async function sha256Hex(v) {
++  const b = await crypto.subtle.digest("SHA-256", typeof v === "string" ? new TextEncoder().encode(v) : v);
++  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
++}
++
++/* WHO IS ASKING, FOR A PUBLIC OP THAT ANSWERS WORKING MATERIAL ONLY TO SOME: `admission`'s `readerOf` (its R16), in the
++   shape the arms behind plane's hooks read (`{viewer, cls}`, or `{silent: <op>, correlation}`). */
++/**
++ * Who is asking, for a public op that answers working material only to some (admission R16): never refuses.
++ * @param {URL} url
++ * @param {Record<string, any>} env
++ * @param {string} storeName
++ * @param {any} presentedAi the front door's looked-up agent credential; undefined asks the store
++ * @param {any} [credential] the presented credential (admission R20)
++ * @returns {Promise<{viewer: any, cls: string | undefined, silent: string | null, correlation: string | undefined}>} the reader, `viewer` (`""` for no one) and `cls`;
++ *  or, when the store did not answer, `silent` the store route asked and `correlation` its id (`viewer` then `""`)
++ */
++async function caseReader(url, env, storeName, presentedAi, credential = null) {
++  /* R83 (T47; K3144): a background request's session read is no activity */
++  const r = await readerOf(url, env, storeName, presentedAi, doAnswer, credential,
++                           { background: url.searchParams.get("background") === "1" });
++  if (r.silent) return { viewer: "", cls: undefined, silent: r.silent.op, correlation: r.silent.correlation };
++  return { viewer: r.viewer, cls: r.cls, silent: null, correlation: undefined };
++}
++
++/* The R2 key for a capture's bytes (I1 §2): content-addressed under the store
++   prefix. The ONE place this shape is written, so op=capture and op=pdfstructure
++   read the identical object rather than two copies of the key drifting apart. */
++/** @type {(storeName: string, sha: string) => string} the R2 key of a capture's bytes, `<store>/captures/<sha>` */
++const captureKey = (storeName, sha) => `${storeName}/captures/${sha}`;
++
++/* THE CAPABILITY COMPLAINT (C-68.1, D-278). A copy installed with no evidence
++ * storage bound cannot serve `capture`, `pdfstructure`, `acquire` or `attest`.
++ * ONE row for the four, the op named beside it, minted at acquisition's one
++ * region (`evidenceStorageAbsent`, K850) for the same reason `requiredArgument`
++ * is minted once: a DEC-49 row holds one `where`. `error` is passed in
++ * BYTE-IDENTICAL from each site — the sites said two different sentences before
++ * this and still do. Handed to every arm this door routes those ops to (moved
++ * from legacy-index at T19, its door share). */
++/**
++ * C-68.1: the capability complaint of a copy with no evidence storage, enveloped (acquisition's row).
++ * @param {string} op
++ * @param {string} error the site's sentence, passed byte-identical
++ * @returns {Response}
++ */
++function storageAbsent(op, error) {
++  const { status, body } = evidenceStorageAbsent(op, error);
++  return json(body, status);
++}
++
++export { sha256Hex, caseReader, captureKey, storageAbsent };
+diff --git a/bio-plane/src/plane/door.mjs b/bio-plane/src/door-routing/index.mjs
+similarity index 98%
+rename from bio-plane/src/plane/door.mjs
+rename to bio-plane/src/door-routing/index.mjs
+index 2135133c..30095d36 100644
+--- a/bio-plane/src/plane/door.mjs
++++ b/bio-plane/src/door-routing/index.mjs
+@@ -26,7 +26,8 @@ import { askOp, actionDraftOp, ACTION_DRAFT_OPS } from "../store-assembly/index.
+    store's absence stay control-plane's, with the namespace names it re-exports from admission. */
+ import { json, doAnswer, storeSilent, storeRefusal, STORE_SILENT_REASON, STORE_SILENT_DETAIL,
+          requiredArgument } from "../answer-envelope/index.mjs";
+-import { SCRATCH, sha256Hex, caseReader, captureKey, storageAbsent } from "../control-plane/index.mjs";
++import { SCRATCH } from "../admission/index.mjs";
++import { sha256Hex, caseReader, captureKey, storageAbsent } from "./helpers.mjs";
+ import { storeStub } from "../store-place.mjs";
+ 
+ /* R96 (fix round 8, G106, G120; control-plane R128): the door's `stateTiming(name, ms)`, handed in the context the door gives these hooks, reaches
+diff --git a/bio-plane/src/plane/index.mjs b/bio-plane/src/plane/index.mjs
+index 2c78c8c3..8ffa1d1a 100644
+--- a/bio-plane/src/plane/index.mjs
++++ b/bio-plane/src/plane/index.mjs
+@@ -10,7 +10,7 @@ import { json, doAnswer, storeSilent, storeRefusal, requiredArgument, STORE_SILE
+          STORE_SILENT_DETAIL } from "../answer-envelope/index.mjs";   /* K1907, K2041: the envelope's */
+ import { bindPublishedPlane } from "../publication/worker.mjs";
+ import { publicInstanceGroup } from "../setup.mjs";
+-import { publicOp, gatedOp } from "./door.mjs";
++import { publicOp, gatedOp } from "../door-routing/index.mjs";
+ import { watchdog } from "./watchdog.mjs";
+ import { logArrival } from "./arrival.mjs";
+ 
+diff --git a/bio-plane/test/m/control-plane/real-door.mjs b/bio-plane/test/m/control-plane/real-door.mjs
+new file mode 100644
+index 00000000..67875eb8
+--- /dev/null
++++ b/bio-plane/test/m/control-plane/real-door.mjs
+@@ -0,0 +1,22 @@
++/* control-plane's real door over a real store, in plain node (a scratch trial, plane-scope research 23; after research 22b's `real-door.mjs`). The door is this module's own
++   `makeFetch`, handed THE REAL ARM ROUTING (`publicOp`, `gatedOp`), imported from where the trial puts it, so an op a module's arm answers (`acquire`, `knock`, `casedocument`,
++   `caseratify`, ...) is answered by the product's own composition and no copy of it is made here. The store behind the door is store-request's world (`storeWorld`: store-assembly's
++   `assembleStore` over node:sqlite, memory buckets, a pinned clock); every request the door or an arm makes to the object is passed to `world.send`. Built only from control-plane
++   and modules before it: nothing of plane is loaded. `publicInstanceGroup`, the third hook plane hands the door, is not handed here (no test over this file asks it). */
++import { storeWorld } from "../store-request/fixtures.mjs";
++import { memoryBucket } from "../store-assembly/world.mjs";
++import { makeFetch } from "../../../src/control-plane/index.mjs";
++import { publicOp, gatedOp } from "../../../src/door-routing/index.mjs";
++
++const ORIGIN = "https://group.example";
++
++/** `realDoor(opts)` → `{world, env, door, plane(url, init)}`: `opts` are `storeWorld`'s. The world's own `env` is the door's, with `STORE.get` answering a stub over `world.send`
++ *  and both buckets bound, as an installation that publishes has them; `plane(url, init)` asks the door as `Miniflare#dispatchFetch` asks the Worker, and answers its Response. */
++export async function realDoor(opts = {}) {
++  const world = await storeWorld({ ...opts, env: { PUBLISHED: memoryBucket(), ...(opts.env || {}) } });
++  const stub = { fetch: async (input, init) => world.send(input instanceof Request ? input : new Request(String(input), init)) };
++  world.env.STORE = { idFromName: (n) => n, get: () => stub };
++  const door = makeFetch({ publicOp, gatedOp });
++  const plane = (url, init = {}) => door(new Request(new URL(url, ORIGIN).href, init), world.env);
++  return { world, env: world.env, door, plane };
++}
+diff --git a/bio-plane/test/m/control-plane/real-kit.mjs b/bio-plane/test/m/control-plane/real-kit.mjs
+new file mode 100644
+index 00000000..41f76156
+--- /dev/null
++++ b/bio-plane/test/m/control-plane/real-kit.mjs
+@@ -0,0 +1,238 @@
++/* control-plane (a scratch trial, plane-scope research 23): THE SEAM KIT IN NODE. The helpers of `r8-kit.mjs` that the three moved walk files use, with the same names, arguments and
++   bodies (a member made by the founder's `memberadd` and her own `enroll` and `login`; a project and a question by the screens' own acts; a prepared case edition and its sitting; a
++   file served to a fetch), over `real-door.mjs` in place of a Miniflare plane: this module's `makeFetch` handed the real arm routing, over store-request's world. Three things differ
++   from `r8-kit.mjs`, and nothing else: (1) `plane(url, init)` asks the door in process; (2) an instant a helper writes is the world's pinned clock (`world.now()`), not the machine's;
++   (3) `until(fn, ms, every)` moves the world's clock on by `every` and runs the scheduler's firing (`world.tick`) where the Miniflare kit waited for the object's alarm.
++   `await makeKit({tag})` answers `{world, plane, ...helpers}`; nothing is disposed. Not ported (no moved file uses them): the counting door, `slowBody`, `reviseUnnamed`, `profileSet`,
++   `signStepOf`, `ceremonyPreflight`, service bindings. */
++import { createHash, webcrypto } from "node:crypto";
++import assert from "node:assert/strict";
++import { realDoor } from "./real-door.mjs";
++import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
++import { PARTS } from "../../../src/screens-publish/parts.mjs";
++import { word } from "../../../src/setup-words/index.mjs";
++
++/**
++ * The seam kit over the real door in Node.
++ * @param {{tag?: string, bindings?: Record<string, any>}} [options]
++ */
++export async function makeKit({ tag = "r8kit", bindings = {} } = {}) {
++  const ADM = `adm-${tag}-0123456789abcdef`, PASSWORD = `the founder's long password, ${tag}`;
++  const sha = (b) => createHash("sha256").update(b).digest("hex");
++  const te = (t) => new TextEncoder().encode(t);
++  const { world, plane } = await realDoor({ claimed: false, instanceName: `${tag}-town`,
++    env: { ADMIN_TOKEN: ADM, MEMBER_TOKEN: `mem-${tag}-0123456789abcdef`, PROBE_TOKEN: `prb-${tag}-0123456789abcdef`, VERSION: "4.8.0",
++           GOVERNOR_APPETITE_PER_MIN: "600000", GOVERNOR_SUBRESOURCE_STAGGER_MS: "0", ...bindings } });
++  const nowDate = () => new Date(world.now());
++  /* the network: a file by its last path segment, with its Content-Length or without (the world's network answers nothing else) */
++  const upstream = new Map();
++  function serve(name, bytes, { length = true, type = "application/pdf", disposition = null } = {}) { upstream.set(name, { bytes, length, type, disposition }); }
++  world.script(() => true, (req) => {
++    const name = new URL(req.url).pathname.split("/").pop();
++    const f = upstream.get(name);
++    if (!f) return new Response("not scripted", { status: 404 });
++    const headers = { "content-type": f.type, ...(f.disposition ? { "content-disposition": f.disposition } : {}), ...(f.length ? { "content-length": String(f.bytes.length) } : {}) };
++    return new Response(f.bytes, { headers });
++  });
++  let founderOnce = null;
++  async function founder() {
++    if (founderOnce) return founderOnce;
++    await (await plane("/api/?op=claim", { method: "POST", body: JSON.stringify({ bootstrapToken: ADM, password: PASSWORD }) })).arrayBuffer();
++    const signed = await (await plane("/api/?op=login", { method: "POST", headers: { "content-type": "application/json" },
++      body: JSON.stringify({ handle: "admin", password: PASSWORD, device: "own" }) })).json();
++    assert.equal(signed.ok, true, JSON.stringify(signed).slice(0, 300));
++    return (founderOnce = { authorization: `Bearer ${signed.result.token}` });
++  }
++  /* a member made as the screens make one: the founder invites (`memberadd`), the person enrols with the invitation, then signs in */
++  const people = new Map();
++  async function person(handle, role = "member", capabilities = null) {
++    if (people.has(handle)) return people.get(handle);
++    const adm = await founder();
++    if (role === "admin") {
++      const ra = await (await plane("/api/?op=reauth", { method: "POST", headers: { ...adm, "content-type": "application/json" }, body: JSON.stringify({ password: PASSWORD }) })).json();
++      assert.equal(ra.ok, true, "the founder's password again: " + JSON.stringify(ra).slice(0, 300));
++    }
++    const added = await (await plane("/api/?op=memberadd", { method: "POST", headers: { ...adm, "content-type": "application/json" },
++      body: JSON.stringify({ memberId: handle, cover: `cover of ${handle}`, role, capabilities }) })).json();
++    const invite = added.result && (added.result.invite || (added.result.invitation && added.result.invitation.invite));
++    assert.ok(invite, "an invitation: " + JSON.stringify(added).slice(0, 400));
++    const pw = `${handle}-long-passphrase-r7`;
++    const enrolled = await (await plane("/api/?op=enroll", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ invite, handle, password: pw }) })).json();
++    assert.equal(enrolled.ok, true, "enrolled: " + JSON.stringify(enrolled).slice(0, 400));
++    const signed = await (await plane("/api/?op=login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handle, password: pw, device: "own" }) })).json();
++    assert.equal(signed.ok, true, "signed in: " + JSON.stringify(signed).slice(0, 400));
++    const auth = { authorization: `Bearer ${signed.result.token}` };
++    people.set(handle, auth);
++    return auth;
++  }
++  const screenCall = (auth) => ({ now: () => world.now(), digest: async (s) => createHash("sha256").update(s).digest("hex"),
++    call: async (op, { query = {}, body } = {}) => (await plane(`/api/?${new URLSearchParams({ op, ...query })}`, { method: body === undefined ? "GET" : "POST",
++      headers: { ...auth, "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })).json() });
++  const get = async (auth, query) => (await plane(`/api/?${new URLSearchParams(query)}`, { headers: auth })).json();
++  const post = async (auth, op, body, query = {}) => {
++    const res = await plane(`/api/?${new URLSearchParams({ op, ...query })}`, { method: "POST", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify(body) });
++    return { status: res.status, body: await res.json(), headers: res.headers };
++  };
++  /* as `r8-kit.mjs`'s, on the world's clock: `fn` asked, then the clock moved on by `every` and the scheduler fired, until it answers or `ms` of the world's time has passed */
++  async function until(fn, ms, every = 3000) {
++    let left = ms;
++    let v = await fn();
++    while (left > 0 && !v) { await world.tick(every); left -= every; v = await fn(); }
++    return v;
++  }
++  /* a PDF of `bytes` bytes whose one page of text says `words`, filled out by a stream no page names */
++  function pdfOf(words, bytes) {
++    const pad = new Uint8Array(Math.max(0, bytes - 1500));
++    let x = 0x9e3779b9;
++    for (let i = 0; i < pad.length; i++) { x = (x * 1664525 + 1013904223) >>> 0; pad[i] = 0x41 + ((x >>> 24) % 26); }
++    const stream = (n, dict, data) => [te(`${n} 0 obj\n<< ${dict} /Length ${data.length} >>\nstream\n`), data, te("\nendstream\nendobj\n")];
++    const plain = (n, body) => [te(`${n} 0 obj\n${body}\nendobj\n`)];
++    const toUni = "/CIDInit /ProcSet findresource begin 1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfrange <20> <7E> <0020> endbfrange end";
++    const parts = [te("%PDF-1.7\n"), ...plain(1, "<< /Type /Catalog /Pages 2 0 R >>"), ...plain(2, "<< /Type /Pages /Kids [100 0 R] /Count 1 >>"),
++      ...plain(10, `<< /Type /Font /Subtype /TrueType /BaseFont /Plain /FirstChar 32 /Widths [${Array(95).fill(500).join(" ")}] /ToUnicode 11 0 R >>`), ...stream(11, "", te(toUni)),
++      ...plain(100, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 10 0 R >> >> /Contents 101 0 R >>"),
++      ...stream(101, "", te(`BT /F1 12 Tf 72 700 Td (${words}) Tj ET`)), ...stream(500, "", pad), te("trailer\n<< /Root 1 0 R >>\n%%EOF\n")];
++    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
++    let at = 0;
++    for (const p of parts) { out.set(p, at); at += p.length; }
++    return out;
++  }
++  const acquire = async (auth, body) => {
++    const t = Date.now();
++    const res = await plane("/api/?op=acquire", { method: "POST", headers: { ...auth, "content-type": "application/json" }, body: JSON.stringify(body) });
++    return { ms: Date.now() - t, status: res.status, body: await res.json() };
++  };
++  async function projectOf(auth, title) {
++    const cs = screenCall(auth);
++    const iso = nowDate().toISOString().replace(/\.\d{3}Z$/, "Z");
++    const made = await cs.call("promote", { body: { base: null, snapKey: iso.replace(/[-:]/g, "") + "_00c0ffee", meta: { object_type: "project", title, current_state: "forming", created: iso, last_updated: iso },
++      files: [{ path: "bundle.md", text: `---\nobject_type: project\ntitle: "${title}"\nobjective: "${title}"\ncurrent_state: forming\ncreated: "${iso}"\nlast_updated: "${iso}"\n---\n\n## Session Log\n\n### Session ${iso} | Formation | interactive\nTrigger: the seam test\nChanges: created.\n` }], register: [], visibility: "hidden" } });
++    const id = (made.result && made.result.bundleId) || made.bundleId;
++    assert.ok(id, "the project is made: " + JSON.stringify(made).slice(0, 300));
++    return id;
++  }
++  /* a member who may create projects and publish (the vocabulary the whoami lists), made as `person` makes one */
++  const owners = new Map();
++  async function ownerOf(handle) {
++    if (owners.has(handle)) return owners.get(handle);
++    const adm = await founder();
++    const added = await post(adm, "memberadd", { memberId: handle, cover: `cover of ${handle}`, role: "member", capabilities: ["contribute", "publish", "create_projects"] });
++    const invite = added.body.result && (added.body.result.invite || (added.body.result.invitation && added.body.result.invitation.invite));
++    assert.ok(invite, "an invitation: " + JSON.stringify(added.body).slice(0, 400));
++    const pw = `${handle}-long-passphrase-r7`;
++    const enrolled = await post({}, "enroll", { invite, handle, password: pw });
++    assert.equal(enrolled.body.ok, true, "enrolled: " + JSON.stringify(enrolled.body).slice(0, 400));
++    const signed = await post({}, "login", { handle, password: pw, device: "own" });
++    assert.equal(signed.body.ok, true, "signed in: " + JSON.stringify(signed.body).slice(0, 400));
++    const auth = { authorization: `Bearer ${signed.body.result.token}` };
++    owners.set(handle, { auth, password: pw });
++    return owners.get(handle);
++  }
++  /* an Ed25519 SSH signer (PROTOCOL.sshsig), as the signer kit signs a sitting; as test/m/ratification/fixture.mjs makes one */
++  const u8 = (...parts) => { const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; };
++  const u32 = (n) => new Uint8Array([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
++  const sstr = (v) => { const b = typeof v === "string" ? te(v) : v; return u8(u32(b.length), b); };
++  const armor = (blob) => `-----BEGIN SSH SIGNATURE-----\n${Buffer.from(blob).toString("base64").replace(/(.{70})/g, "$1\n")}\n-----END SSH SIGNATURE-----\n`;
++  async function newKey() {
++    const kp = await webcrypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
++    const raw = new Uint8Array(await webcrypto.subtle.exportKey("raw", kp.publicKey));
++    return { priv: kp.privateKey, raw, keyB64: Buffer.from(u8(sstr("ssh-ed25519"), sstr(raw))).toString("base64") };
++  }
++  async function signText(key, message, namespace) {
++    const h = new Uint8Array(await webcrypto.subtle.digest("SHA-512", te(message)));
++    const sig = new Uint8Array(await webcrypto.subtle.sign("Ed25519", key.priv, u8(te("SSHSIG"), sstr(namespace), sstr(new Uint8Array(0)), sstr("sha512"), sstr(h))));
++    return armor(u8(te("SSHSIG"), u32(1), sstr(u8(sstr("ssh-ed25519"), sstr(key.raw))), sstr(namespace), sstr(new Uint8Array(0)), sstr("sha512"), sstr(u8(sstr("ssh-ed25519"), sstr(sig)))));
++  }
++  const R = (a) => (a && a.result !== undefined ? a.result : a);
++
++  /* "Open a question" on the project page: `allocid`, `promote` of the inquiry document, then `drawquestion` (src/screens-inquiry/project.mjs `promote`) */
++  async function questionOf(auth, project, question) {
++    const cs = screenCall(auth);
++    const title = question.replace(/\s+/g, " ").slice(0, 120);
++    const now = nowDate().toISOString().split(".")[0] + "Z";
++    const a = R(await cs.call("allocid", { query: { prefix: "INQ", year: String(nowDate().getUTCFullYear()) } }));
++    assert.ok(a && a.id, "an id: " + JSON.stringify(a));
++    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40).replace(/-+$/, "");
++    const id = a.id + (slug ? "-" + slug : "");
++    const lines = ["---", "id: " + id, "object_type: inquiry", "schema: inquiry@1", "title: " + JSON.stringify(title), "current_state: open", "prior_state: null",
++      "created: " + now, "last_updated: " + now, "project: " + project, "produced_by:", "  mode: assisted", "  capability_tier: session", "references: []", "state_history: []",
++      "annotations_open: 0", "reeval_pending:", "  flag: false", "  since: null", "  source: null", "visuals: []", "surfaced_by: human", "recheck_triggers:",
++      "  - text: " + JSON.stringify(word("file.recheck.revisit")), "    description: " + JSON.stringify(word("file.recheck.none")), "---", ""];
++    ["## Question", word("conformance.rests"), "## Conclusion", word("conformance.falsify"), "## Session Log", "## Review Notes"].forEach((h, i) => { lines.push(h, ""); if (i === 0) lines.push(question, ""); });
++    const stamp = now.replace(/[-:]/g, "") + "_" + Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0");
++    const p = await cs.call("promote", { body: { bundleId: id, base: null, snapKey: stamp, meta: { object_type: "inquiry", title, current_state: "open", created: now, last_updated: now }, files: [{ path: "bundle.md", text: lines.join("\n") }] } });
++    assert.ok(p.ok !== false && R(p).ok !== false, "the question is filed: " + JSON.stringify(p).slice(0, 400));
++    const d = await cs.call("drawquestion", { query: { project, inquiry: id, note: "" } });
++    assert.ok(d.ok !== false && R(d).ok !== false, "the project draws on it: " + JSON.stringify(d).slice(0, 400));
++    return id;
++  }
++
++  /* the owner's own chain to a prepared case edition: a text uploaded and filed in her project, vouched or not, one sentence of it cited in a question she opened and
++     concluded, the case drafted in the editor and prepared by the ceremony's `publish` (src/screens-publish/case-editor.mjs, ceremony.mjs) */
++  const BIAS = "This group holds that contracts should be adopted in public session.";
++  async function preparedEdition(handle, tag, { vouch, prepare = true }) {
++    const { auth, password } = await ownerOf(handle);
++    const cs = screenCall(auth);
++    const project = await projectOf(auth, `Round seven ${tag} project`);
++    /* a 356-byte text, two paragraphs, made distinct by the tag (its upload's own snapshot file is `snapshots/upload-<sha>`, dotless) */
++    const first = "The clerk stamped the amended contract RECEIVED before the council voted on it.";
++    const body = [first, `The minutes of the meeting were filed on Tuesday morning, and the register ${tag} was signed by the deputy clerk, the city attorney and the chair of the council.`];
++    let text = body.join("\n\n");
++    text += " ".repeat(Math.max(0, 356 - te(text).length));
++    const bytes = te(text);
++    const up = (await (await plane(`/api/?op=captureupload&statement=${encodeURIComponent(tag)}&name=${encodeURIComponent(tag + "-minutes")}&type=text%2Fplain`, { method: "POST", headers: auth, body: bytes })).json()).result;
++    assert.equal(up.ok, true, JSON.stringify(up).slice(0, 400));
++    assert.equal(up.document.file, "snapshots/upload-" + sha(bytes), "the upload's own snapshot file is dotless");
++    const filed = await CAPTURE_SCREEN.parts.promoteDocument(cs, { doc: up.document, title: `${tag}-minutes`, locator: up.document.locator, project });
++    assert.equal(filed.refused, undefined, JSON.stringify(filed).slice(0, 400));
++    const bundle = filed.bundleId;
++    if (vouch) {
++      /* the Document screen's "Confirm": `select` the document, then `release` with the handle, her acknowledgment and her mitigation (document.mjs `release`) */
++      const sel = R(await cs.call("select", { body: { ids: [bundle] } }));
++      assert.ok(sel && sel.handle, "a selection: " + JSON.stringify(sel).slice(0, 300));
++      const rel = await cs.call("release", { query: { handle: sel.handle, acknowledgment: "I checked this file is the minutes as filed.", mitigation: "Nothing in it names a private person." } });
++      assert.ok(rel.ok !== false && R(rel).ok !== false && R(rel).released.includes(bundle), "vouched: " + JSON.stringify(rel).slice(0, 400));
++    }
++    const question = await questionOf(auth, project, "Did the clerk stamp the contract before the vote?");
++    /* Find in this document (a term), then "Cite in the question" the one sentence found (document.mjs `cite`: project = the question, role, found) */
++    const found = R(await cs.call("findin", { body: { scope: { capture: sha(bytes) }, kinds: ["term"], term: "stamped the amended contract" } }));
++    const item = found.kinds[0].items[0];
++    assert.equal(item.words, first, "one sentence of the document is found: " + JSON.stringify(item).slice(0, 300));
++    const cited = R(await cs.call("cite", { body: { project: question, role: "supports", found: item } }));
++    assert.deepEqual(cited.cited, [bundle], "the question rests on the document: " + JSON.stringify(cited).slice(0, 300));
++    const concl = R(await cs.call("conclude", { query: { target: question, project, reading: "The clerk stamped the contract before the vote.",
++      falsifier: "A received-log showing a later stamp would overturn this.", reason: "The minutes say so." } }));
++    assert.equal(concl.ok, true, "concluded: " + JSON.stringify(concl).slice(0, 400));
++    /* the case editor's "Prepare the draft", then the ceremony's Ties step: `publish` with `tieAttested` */
++    const draft = R(await cs.call("casedraft", { body: { project, targets: [question], scope: "Whether the contract was stamped before the vote, on the documents in hand.",
++      statement: "This case covers the stamp only; it leaves out the later amendments.", subjectPosition: "sought_and_answered",
++      subjectJustification: "We put the question to the Clerk and printed the answer.", roles: { [question]: "load_bearing" }, excluded: [] } }));
++    assert.ok(draft.draftId, "a draft: " + JSON.stringify(draft).slice(0, 300));
++    if (!prepare) return { auth, password, cs, project, question, bundle, draft: draft.draftId, prepared: null };
++    const prepared = R(await cs.call("publish", { body: { draft: draft.draftId, project, tieAttested: true, biasAcknowledgement: BIAS } }));
++    assert.equal(prepared.ok, true, "the edition is prepared: " + JSON.stringify(prepared).slice(0, 600));
++    return { auth, password, cs, project, question, bundle, draft: draft.draftId, prepared };
++  }
++
++  /* the Sign step's sitting, as the ceremony's `caseratify` send makes it: `casedocument`, the sitting list (`PARTS.sitting`), one signature a statement by her own key */
++  async function sitAndSign(e) {
++    const { cs, prepared: p } = e;
++    const key = await newKey();
++    const reg = R(await cs.call("signerregisterown", { body: { keyB64: key.keyB64 } }));
++    assert.equal(reg.ok, true, "her signing key is registered: " + JSON.stringify(reg).slice(0, 300));
++    const doc = R(await cs.call("casedocument", { query: { case: p.caseId, edition: String(p.edition) } }));
++    const list = PARTS.sitting(doc, { findings: p.findings.map((f) => ({ target: f.target, bundleSha: f.bundleSha })) });
++    assert.ok(list && list.length >= 2, "a sitting: " + JSON.stringify(doc).slice(0, 300));
++    const sigs = [];
++    for (const x of list) sigs.push(await signText(key, x.text, x.namespace));
++    /* the password again, as the ceremony asks it before a signature */
++    const ra = R(await cs.call("reauth", { body: { password: e.password } }));
++    assert.equal(ra.ok, true, "re-authenticated: " + JSON.stringify(ra).slice(0, 200));
++    const res = await post(e.auth, "caseratify", { caseId: p.caseId, edition: Number(p.edition), expectedSha: doc.doc_sha, sig: sigs[0],
++      members: list.slice(1).map((x, i) => ({ id: x.id, sha: x.sha, signature: sigs[i + 1] })) });
++    return { res, list, doc };
++  }
++  const gateLine = (res) => `${res.status} ${JSON.stringify(res.body).slice(0, 700)}`;
++  return { world, plane, ADM, PASSWORD, founder, person, screenCall, get, post, until, sha, te, serve, upstream, pdfOf, acquire, projectOf, ownerOf, questionOf,
++           preparedEdition, sitAndSign, gateLine, newKey, signText, R };
++}
+diff --git a/bio-plane/test/m/control-plane/walk-people-door.test.mjs b/bio-plane/test/m/control-plane/walk-people-door.test.mjs
+index 3bbb2ca1..3ba49535 100644
+--- a/bio-plane/test/m/control-plane/walk-people-door.test.mjs
++++ b/bio-plane/test/m/control-plane/walk-people-door.test.mjs
+@@ -3,14 +3,13 @@
+    (a) An administrator `personexpunge`s a person fact on the ground `court_order` naming the order; then `person` as two different members (Ana, Ben) answers `removed: [{ground, at, by}]`, with no
+        value and no order text. Control: a call with no session (nobody who may read) is answered no `removed`, and a person the record does not hold has none.
+    (b) `GET op=sourcepersonlinks&source_id=<id>` answers the link to a member the link lists and none to one it does not list (the read takes `source_id`; `source` is a stamp the door deletes).
+-   Run against the Miniflare plane (the seam kit); the person, the fact and the source are made by the members' own acts. */
+-import { after, test } from "node:test";
++   Run through this module's real door (`makeFetch` handed the real arm routing) over the real store, in Node (`real-kit.mjs`); no plane is loaded; the person, the fact and the source are made by the members' own acts. */
++import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
+-import { makeKit } from "./r8-kit.mjs";
++import { makeKit } from "./real-kit.mjs";
+ 
+-const kit = makeKit({ tag: "r12people" });
+-after(() => kit.mf.dispose());
++const kit = await makeKit({ tag: "r12people" });
+ const R = kit.R;
+ 
+ const STATEMENT = "The deputy clerk, Maren Kowalczyk-Bell, signed the register on Tuesday.";
+diff --git a/bio-plane/test/m/control-plane/walk-tasks-filed-project.test.mjs b/bio-plane/test/m/control-plane/walk-tasks-filed-project.test.mjs
+index fb83c721..740d409b 100644
+--- a/bio-plane/test/m/control-plane/walk-tasks-filed-project.test.mjs
++++ b/bio-plane/test/m/control-plane/walk-tasks-filed-project.test.mjs
+@@ -2,14 +2,13 @@
+    A member captures a document by its address into her project (`acquire`, a scripted fetch) and files it as the Add screen files it (`promoteDocument` with the project); the scheduler's alarm drains
+    the capture's authority event and the task is routed to the first active owner of the project the document is filed in: `op=tasks` shows her as the assignee. Before the fix `#routeTask` read only a
+    project bundle itself or a `cites` edge, so every such task read `unassigned`, role group-admin, in a team whose only administrator is the founder. Control: a document filed in no project is
+-   routed by the administrator rule, as before (not to the project's owner). The drain is the plane's own alarm (about a second after the filing), awaited by reading `op=tasks`. Run against the Miniflare plane (the seam kit). */
+-import { after, test } from "node:test";
++   routed by the administrator rule, as before (not to the project's owner). The drain is the scheduler's firing, run on the world's clock by the kit's `until`, and read by `op=tasks`. Run through this module's real door (`makeFetch` handed the real arm routing) over the real store, in Node (`real-kit.mjs`); no plane is loaded. */
++import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
+-import { makeKit } from "./r8-kit.mjs";
++import { makeKit } from "./real-kit.mjs";
+ 
+-const kit = makeKit({ tag: "wtasks" });
+-after(() => kit.mf.dispose());
++const kit = await makeKit({ tag: "wtasks" });
+ const R = kit.R;
+ 
+ /* the member's capture as the Add screen makes it: the address fetched (`acquire`), the document filed (`promote`), in a project or in none */
+diff --git a/bio-plane/test/m/control-plane/walk10b-docket.test.mjs b/bio-plane/test/m/control-plane/walk10b-docket.test.mjs
+index 908bd7ea..b87e954c 100644
+--- a/bio-plane/test/m/control-plane/walk10b-docket.test.mjs
++++ b/bio-plane/test/m/control-plane/walk10b-docket.test.mjs
+@@ -2,14 +2,13 @@
+    The manager of a published case files a `reaction` with `docketfile` (a summary typed at the filing) and prepares it as the screen sends it (`docketprepare`: case, entry, kind, no summary,
+    no shelf). Before the fix `docketFile` dropped a reaction's summary and `docketPrepare` asked for one as an argument, so the screens' own sequence ended DOCKET_NO_SUMMARY for every reaction.
+    The reaction rests on an upload, which has no co-archive copy offline, so the prepare goes on to DOCKET_NO_ARCHIVE_COPY (specified, R4): the case asserts the summary is no longer the
+-   refusal. Control: a reaction filed with the summary absent is refused DOCKET_NO_SUMMARY at the prepare as before. Run against the Miniflare plane (the seam kit). */
+-import { after, test } from "node:test";
++   refusal. Control: a reaction filed with the summary absent is refused DOCKET_NO_SUMMARY at the prepare as before. Run through this module's real door (`makeFetch` handed the real arm routing) over the real store, in Node (`real-kit.mjs`); no plane is loaded. */
++import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
+-import { makeKit } from "./r8-kit.mjs";
++import { makeKit } from "./real-kit.mjs";
+ 
+-const kit = makeKit({ tag: "w10bdkt" });
+-after(() => kit.mf.dispose());
++const kit = await makeKit({ tag: "w10bdkt" });
+ const R = kit.R;
+ const SUMMARY = "A column calling the case unfair.";
+ 
+diff --git a/bio-plane/test/m/plane/body.test.mjs b/bio-plane/test/m/plane/body.test.mjs
+index 7c20c7f8..49b4ceba 100644
+--- a/bio-plane/test/m/plane/body.test.mjs
++++ b/bio-plane/test/m/plane/body.test.mjs
+@@ -7,7 +7,7 @@ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { createHash } from "node:crypto";
+ import "./fixture.mjs";   /* answers `cloudflare:workers` */
+-const { publicOp } = await import("../../../src/plane/door.mjs");
++const { publicOp } = await import("../../../src/door-routing/index.mjs");
+ 
+ const SECRET = "a-review-grant-secret";
+ const SHA = createHash("sha256").update(SECRET).digest("hex");
+diff --git a/bio-plane/test/m/plane/fix4-defer.test.mjs b/bio-plane/test/m/plane/fix4-defer.test.mjs
+index dae10610..ee2a1075 100644
+--- a/bio-plane/test/m/plane/fix4-defer.test.mjs
++++ b/bio-plane/test/m/plane/fix4-defer.test.mjs
+@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
+ import { store } from "./fixture.mjs";
+ import { bucketStandIn } from "../case-carriage/fixture.mjs";
+ import { extractionOf } from "../../../src/extraction/index.mjs";
+-import { gatedOp } from "../../../src/plane/door.mjs";
++import { gatedOp } from "../../../src/door-routing/index.mjs";
+ 
+ async function press(x, locator, extra = {}) {
+   const stub = { fetch: (r, init) => x.s.fetch(r instanceof Request ? r : new Request(r, init)) };
+diff --git a/bio-plane/test/m/plane/g83-location.test.mjs b/bio-plane/test/m/plane/g83-location.test.mjs
+index b286f717..09b5d12f 100644
+--- a/bio-plane/test/m/plane/g83-location.test.mjs
++++ b/bio-plane/test/m/plane/g83-location.test.mjs
+@@ -17,7 +17,7 @@ import { multipartBucket } from "../record-core/storage.mjs";
+ import { recordOf } from "../../../src/record-core/index.mjs";
+ import { watchdog } from "../../../src/plane/watchdog.mjs";
+ import { askOp, actionDraftOp } from "../../../src/store-assembly/ask.mjs";
+-import { gatedOp } from "../../../src/plane/door.mjs";
++import { gatedOp } from "../../../src/door-routing/index.mjs";
+ 
+ /* ---- the plane's own sites, over a recording namespace ---- */
+ const recorder = (extra = {}) => {
+diff --git a/bio-plane/test/m/plane/r8-timing-hook.test.mjs b/bio-plane/test/m/plane/r8-timing-hook.test.mjs
+index 345e228c..ae1da610 100644
+--- a/bio-plane/test/m/plane/r8-timing-hook.test.mjs
++++ b/bio-plane/test/m/plane/r8-timing-hook.test.mjs
+@@ -37,7 +37,7 @@ function viaDoor(hand) {
+     await import(${JSON.stringify("file://" + FIXTURE)});
+     const seen = [];
+     ${mocks}
+-    const { gatedOp } = await import(${JSON.stringify(file("plane/door.mjs"))});
++    const { gatedOp } = await import(${JSON.stringify(file("door-routing/index.mjs"))});
+     const { EXTRACTION_OPS } = await import(${JSON.stringify(file("extraction/ops.mjs") + "?real")});
+     const entries = [];
+     const stateTiming = ${hand ? "(name, ms) => { entries.push([name, ms]); }" : "undefined"};
+@@ -91,11 +91,11 @@ function bootstrapViaDoor(readers) {
+   const script = `
+     import "${file("store-assembly/register.mjs")}";
+     import { mock } from "node:test";
+-    const real = { ...(await import(${JSON.stringify(file("control-plane/index.mjs") + "?real")})) };
++    const real = { ...(await import(${JSON.stringify(file("door-routing/helpers.mjs") + "?real")})) };
+     let reader = { viewer: "" };
+-    mock.module(${JSON.stringify(file("control-plane/index.mjs"))}, { namedExports: { ...real, caseReader: async () => reader } });
++    mock.module(${JSON.stringify(file("door-routing/helpers.mjs"))}, { namedExports: { ...real, caseReader: async () => reader } });
+     const { store } = await import(${JSON.stringify("file://" + FIXTURE)});
+-    const { publicOp } = await import(${JSON.stringify(file("plane/door.mjs"))});
++    const { publicOp } = await import(${JSON.stringify(file("door-routing/index.mjs"))});
+     const { instanceSetupOf } = await import(${JSON.stringify(file("setup.mjs"))});
+     const x = await store();
+     instanceSetupOf(x.ctx).memberLanguageSet({ language: "es", by: "member:ada" });
+diff --git a/bio-plane/test/m/plane/split.test.mjs b/bio-plane/test/m/plane/split.test.mjs
+index 55c81534..65edddc9 100644
+--- a/bio-plane/test/m/plane/split.test.mjs
++++ b/bio-plane/test/m/plane/split.test.mjs
+@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
+ 
+ import { store } from "./fixture.mjs";
+ 
+-const { gatedOp } = await import("../../../src/plane/door.mjs");   /* after the fixture: it reaches `cloudflare:workers` */
++const { gatedOp } = await import("../../../src/door-routing/index.mjs");   /* after the fixture: it reaches `cloudflare:workers` */
+ const { json } = await import("../../../src/answer-envelope/index.mjs");
+ 
+ test("R6 (N512): the door's `attest` arm is attestation's `attestOp`: a POST only, the evidence store required, a digest that is not 64 hex refused `BAD_SHA` with its status", async () => {
+diff --git a/bio-plane/test/m/plane/t42.test.mjs b/bio-plane/test/m/plane/t42.test.mjs
+index 81d6c01b..8d1cb0c2 100644
+--- a/bio-plane/test/m/plane/t42.test.mjs
++++ b/bio-plane/test/m/plane/t42.test.mjs
+@@ -28,7 +28,7 @@ import { CIVICSMITH_TEST_SET } from "../../../src/run-rules/index.mjs";
+ import { assistantGateOf } from "../../../src/store-assembly/ask.mjs";
+ import { transcriberOf, renderPages, TRANSCRIBE_PAGES_MAX, TRANSCRIBE_IMAGE_MAX_BYTES, TRANSCRIBE_LOAD_MAX, PAGES_MAX, OWED } from "../../../src/store-assembly/transcribe.mjs";
+ import { pendingOf } from "../../../src/store-assembly/pending.mjs";
+-import { publicOp, gatedOp } from "../../../src/plane/door.mjs";
++import { publicOp, gatedOp } from "../../../src/door-routing/index.mjs";
+ import * as AGENT_WORKER_OPS from "../../../../agent-worker/src/ops.mjs";
+ import { renderPageToPixels } from "../../../../pdf-worker/src/pagepixels.mjs";
+ import { pageRefusal } from "../../../../pdf-worker/test/pdf-pixels-fixtures.mjs";   /* pdf-pixels' published refusals, made by its real renderers */
+diff --git a/bio-plane/test/m/plane/t44.test.mjs b/bio-plane/test/m/plane/t44.test.mjs
+index 47031cf6..bcee2b87 100644
+--- a/bio-plane/test/m/plane/t44.test.mjs
++++ b/bio-plane/test/m/plane/t44.test.mjs
+@@ -5,7 +5,7 @@ import "../../../src/store-assembly/register.mjs";   /* R68: the start's registr
+ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ 
+-import { gatedOp } from "../../../src/plane/door.mjs";
++import { gatedOp } from "../../../src/door-routing/index.mjs";
+ 
+ 
+ /* The `by` each store request the gated hook makes for `op` carries. */
+diff --git a/bio-plane/test/m/plane/t45.test.mjs b/bio-plane/test/m/plane/t45.test.mjs
+index 669cbc5c..a36e24f3 100644
+--- a/bio-plane/test/m/plane/t45.test.mjs
++++ b/bio-plane/test/m/plane/t45.test.mjs
+@@ -47,7 +47,7 @@ async function doors({ gate = null, parts = [] } = {}) {
+ 
+ /* ===== R41 (K2824): the action drafts ===== */
+ 
+-import { gatedOp } from "../../../src/plane/door.mjs";
++import { gatedOp } from "../../../src/door-routing/index.mjs";
+ 
+ test("R41 (K2824, K2881; op-declarations R49): the door's arm for infractiondraft and bearingdraft asks the bio object's draft with the member's session and the task's own fields, counts a drafted conversation to her day, and answers the draft without its grant or read log; any caller but a member's session is refused, nothing asked", async () => {
+   const seen = [], counted = [];
+diff --git a/process/modules/control-plane.json b/process/modules/control-plane.json
+index 0ff8cc8e..99c5a834 100644
+--- a/process/modules/control-plane.json
++++ b/process/modules/control-plane.json
+@@ -130,6 +130,8 @@
+     "calculations",
+     "workbooks",
+     "op-grade-tranches",
+-    "record-core-tables"
++    "record-core-tables",
++    "door-routing",
++    "screens-public"
+   ]
+ }
+diff --git a/process/modules/door-routing.json b/process/modules/door-routing.json
+new file mode 100644
+index 00000000..47dd4790
+--- /dev/null
++++ b/process/modules/door-routing.json
+@@ -0,0 +1,36 @@
++{
++  "name": "door-routing",
++  "files": [
++    "bio-plane/src/door-routing/"
++  ],
++  "tests": [],
++  "public": [
++    "bio-plane/src/door-routing/helpers.mjs",
++    "bio-plane/src/door-routing/index.mjs"
++  ],
++  "uses": [
++    "instance-setup",
++    "signatures",
++    "record-grammar",
++    "public-read",
++    "publication",
++    "affordances",
++    "queue",
++    "provenance",
++    "attestation",
++    "bias",
++    "host-governor",
++    "doorbell",
++    "capture",
++    "monitoring",
++    "extraction",
++    "connections",
++    "ratification",
++    "op-declarations",
++    "store-assembly",
++    "answer-envelope",
++    "admission",
++    "acquisition",
++    "runtime-limits"
++  ]
++}
+diff --git a/process/modules/order.txt b/process/modules/order.txt
+index b9efec5c..411d7bec 100644
+--- a/process/modules/order.txt
++++ b/process/modules/order.txt
+@@ -173,6 +173,7 @@ signin-door
+ store-services
+ store-assembly
+ store-request
++door-routing
+ interface-assets
+ interface-shell
+ screens-entry
+diff --git a/process/modules/plane.json b/process/modules/plane.json
+index cc602757..c9d082d2 100644
+--- a/process/modules/plane.json
++++ b/process/modules/plane.json
+@@ -73,14 +73,11 @@
+     "bio-plane/test/m/control-plane/walk-contradiction-flag.test.mjs",
+     "bio-plane/test/m/control-plane/walk-investigate-door.test.mjs",
+     "bio-plane/test/m/control-plane/walk-monitoring-checknow-adopt.test.mjs",
+-    "bio-plane/test/m/control-plane/walk-people-door.test.mjs",
+     "bio-plane/test/m/control-plane/walk-photo-step.test.mjs",
+     "bio-plane/test/m/control-plane/walk-provenance-authority-taskdecide.test.mjs",
+     "bio-plane/test/m/control-plane/walk-publishcheck-held.test.mjs",
+     "bio-plane/test/m/control-plane/walk-selection-not-yours.test.mjs",
+     "bio-plane/test/m/control-plane/walk-standards-paywalled.test.mjs",
+-    "bio-plane/test/m/control-plane/walk-tasks-filed-project.test.mjs",
+-    "bio-plane/test/m/control-plane/walk10b-docket.test.mjs",
+     "bio-plane/test/m/control-plane/walk10b-recreate.test.mjs",
+     "bio-plane/test/m/control-plane/wrap-entry.mjs",
+     "bio-plane/test/m/host-governor/ops.test.mjs",
+@@ -290,6 +287,7 @@
+     "format-registry",
+     "op-grade-tranches",
+     "provenance-register",
+-    "credentials-tables"
++    "credentials-tables",
++    "door-routing"
+   ]
+ }
