@@ -1,4 +1,4 @@
-Length: 23 lines. Last section: "Files".
+Length: 25 lines. Last section: "Files".
 
 # The plane-scope lane's research: index
 
@@ -20,4 +20,6 @@ Recorded 23 Nov 2026 by civicsmith plane-scope lane #1 through four workers. Eve
 - `13-upper-tests.md` with `tests/upper-tests.json`: every test file of the modules from store-services to journey-check: its harness, what it reaches, run-time reads; the stand-in door against the real door; run times.
 - `14-build-and-run.md` with `build/bundle-by-module.json`: the build, the bundle's bytes by module, start-up time, what reaches the browser, bindings, the required run's mechanics and run times, where the entry is named.
 - `18-stage2-program-code.md` with `stage2/` and `tools/stage2-join.mjs`, `tools/stage2-tests-join.mjs`: the import graph joined to the layer map: the 45 program imports and the test references that run against the wanted stacking.
-- In progress (23 Nov 2026): `15-trial-door-inversion.md`, `16-trial-delayed-capture.md`, `17-what-pins-the-stacking.md`.
+- `15-trial-door-inversion.md` with `trial-door/` (diff.patch, results.json): the trial on a scratch copy in which the door and the launcher import nothing of the UI and a top entry plugs the UI in: tests before and after (control-plane 564 of 564 after 14 test files' set-up changed), the bundle, start-up, a UI-less program, the start order, what `p4 check` says of the new order, the 121 door and launcher test files the new order would refuse where they are, and the trial's 15 choices with their alternatives.
+- `16-trial-delayed-capture.md` with `trial-capture/` (alt1.patch, results.json): the CAPTURE_SCREEN tie: the three bundle composers compared (all differ), ruling K4493's words, the two functions moved to `capture/filing.mjs` with the page script byte-identical and no test changed, the rule the page puts on a moved function, and that this is the only background call of UI code.
+- `17-what-pins-the-stacking.md` with `pins/requirements.json`: everything written down that states today's stacking: 163 requirements in 26 modules, module records, ARCH's decisions, the rulings (DEC-122, K4493, K5046, K5052, K4426, K4990), the canon's `civicos-ui`, the Process4 rules a multi-module change must follow, and the open work that overlaps (PR 1259).
