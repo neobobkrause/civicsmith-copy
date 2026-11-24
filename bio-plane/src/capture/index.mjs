@@ -130,23 +130,39 @@ function withoutCutCodePoint(bytes) {
   }
   return bytes;
 }
-/** R94: the longest question id `recordCapturedFor` records, in characters (`acquisition` R47's bound). */
+/** R94: the longest question id `recordCapturedFor` records, in characters (`acquisition` R47's bound).
+ *  @type {number}
+ */
 export const CAPTURED_FOR_QUESTION_MAX = 200;
-/** R100: the longest project id `recordSeenIn` records, in characters. */
+/** R100: the longest project id `recordSeenIn` records, in characters.
+ *  @type {number}
+ */
 export const SEEN_IN_PROJECT_MAX = 200;
-/** R86: the longest statement of origin, and the longest stated file name, in characters. */
+/** R86: the longest statement of origin, and the longest stated file name, in characters.
+ *  @type {number}
+ */
 export const UPLOAD_STATEMENT_MAX = 2000;
+/** @type {number} R86: the longest stated file name, in characters */
 export const UPLOAD_NAME_MAX = 300;
+/** @type {number} R92: the longest declared media type, in characters */
 export const UPLOAD_TYPE_MAX = 255;
 /** R113 (fix round 9; G127f): the size of every part but the last of a file sent in parts: 16 MiB, three times R2's own minimum for a part (5 MiB) and far under the
- *  request-body ceiling, so a request carries one part and the object holds one part in memory; chosen, not measured. A scaled figure for a test lowers it (`bounds`). */
+ *  request-body ceiling, so a request carries one part and the object holds one part in memory; chosen, not measured. A scaled figure for a test lowers it (`bounds`).
+ *  @type {number}
+ */
 export const PARTED_PART_BYTES = 16 * 1024 * 1024;
 /** R113: how long an upload sent in parts may stay open before it is aborted and holds nothing: 24 hours from its begin; chosen. The platform's own cleanup of an
- *  incomplete multipart upload (seven days) is the backstop under it. */
+ *  incomplete multipart upload (seven days) is the backstop under it.
+ *  @type {number}
+ */
 export const PARTED_UPLOAD_TTL_MS = 24 * 60 * 60 * 1000;
-/** R113: the most expired sessions one begin (or `expireUploads`) aborts; the rest wait for the next. */
+/** R113: the most expired sessions one begin (or `expireUploads`) aborts; the rest wait for the next.
+ *  @type {number}
+ */
 export const PARTED_SWEEP_MAX = 20;
-/** R86: the one sentence `UPLOAD_WITHIN_FAILED` answers, whatever `within` threw or answered (N409's pattern). */
+/** R86: the one sentence `UPLOAD_WITHIN_FAILED` answers, whatever `within` threw or answered (N409's pattern).
+ *  @type {string}
+ */
 export const UPLOAD_WITHIN_FAILED_DETAIL =
   "the act run with the upload did not complete, so the upload was rolled back and nothing was written";
 
@@ -177,22 +193,27 @@ const uploadReader = (bytes) => {
    subject is how a plausible-looking instruction gets room to look like a message rather than a label. */
 /* R15 (T35; K1940): `archive-unpack` is the continuation of an automatic unpack past one call (`acquisition` R40),
    drained by the daemon as `op=unpack`; its digest is the archive's. `authority-undetermined` is `tasks`' (D-98). */
+/** @type {readonly string[]} the kinds R15's event queue accepts */
 export const TASK_KINDS = Object.freeze(["authority-undetermined", "archive-unpack"]);
 const boundedSubject = (v) =>
   String(v == null ? "" : v).replace(/[\r\n\t]+/g, " ").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 200);
 
 /* D-104. Closed on purpose: the value of the reachability table is that it tells kinds of not-getting-the-bytes
    apart, and a free string would let a caller collapse that distinction by accident. */
+/** @type {readonly string[]} R8's four outcomes of an attempt at a document address */
 export const SOURCE_OUTCOMES = Object.freeze(["success", "source_refused", "fetch_failed", "governed"]);
 
 /* R8, R43. CHOSEN, not measured (MEASUREMENTS.md). The third constant is the thread's own judgement: with a single
    failure able to age into eligibility, a document that failed once and was never retried becomes eligible after a
    fortnight, which reads OUR MONITORING NEGLECT as the source being unreachable — D-104's mistake one level up. So
    the age arm requires corroboration too. */
+/** @type {Readonly<{failures: number, days: number, minForAge: number}>} R8's three figures when no setting is set */
 export const REACHABILITY_DEFAULTS = Object.freeze({ failures: 3, days: 14, minForAge: 2 });
 /* The names of those settings in record-core, and of the walk's stagger (`acquisition` R19). */
+/** @type {Readonly<{failures: string, days: string, minForAge: string}>} the names of R8's settings in record-core */
 export const REACHABILITY_SETTINGS = Object.freeze({ failures: "reachability_consecutive_failures",
                                                      days: "reachability_stale_days", minForAge: "reachability_min_failures_for_age" });
+/** @type {string} the setting of the walk's stagger (`acquisition` R19) */
 export const SUBRESOURCE_STAGGER_SETTING = "subresource_stagger_ms";
 
 /* R23: a ceiling only ever learned downward would leave an upgraded account at the old caps forever. */
@@ -200,6 +221,7 @@ const PROBE_EVERY = 25;
 
 /* N90: the one bound this module's reads publish (R24–R28, R77, R84). CHOSEN, not measured: a page a member reads in one
    answer, never a size the record grows to. Every read over-fetches one row so `truncated` is a fact, not a guess. */
+/** @type {Readonly<{default: number, max: number}>} N90's bound on a read: the `limit` when none is given, and its clamp */
 export const READ_LIMIT = Object.freeze({ default: 200, max: 1000 });
 const limitOf = (asked) => {
   const n = Math.floor(Number(asked));
@@ -230,53 +252,71 @@ const taskCursorPlace = (after) => {
 
 /* The events a later module may listen to (R44, R55), and the observation a reuse verdict maps to (the
    observation log's, its Suggestion). */
+/** @type {readonly string[]} the events a later module may register a listener for (R44, R55) */
 export const CAPTURE_EVENTS = Object.freeze(["source-outcome", "task", "compute", "observation"]);
 
 /* The readers a later module may register, once at start, each taking one registration whoever makes it: the
    batch-release examination of one document (R78; `ratification` R34) and the questions a document was captured for
    (R83; `capture-requests` R48; T50: handed R94's asks beside). The litigation hold's reader is `doorbell`'s (its R3; T43, N849). */
+/** @type {readonly string[]} the reader slots a later module may register once (R78, R83) */
 export const CAPTURE_READERS = Object.freeze(["batch-examination", "captured-for"]);
 
 /* R77, R79 (DEC-141 (1)): the one sentence a row carries when a question the viewer may not see is among those its
    document was captured for, or waits on it. It names no question, no asker and no count. */
+/** @type {string} R77's `withheld` sentence */
 export const WITHHELD_QUESTION = say("screen.held.withheld");
 
 /* R79, R81: the longest reason a member may give, in characters. */
+/** @type {number} */
 export const REASON_MAX = 2000;
 /* R79, R81: a reason is a string with something other than white space in it, at most REASON_MAX characters. */
 const reasonGiven = (r) => typeof r === "string" && r.trim() !== "" && [...r].length <= REASON_MAX;
 
 /* R77: the directions `heldCaptures` sorts in. */
+/** @type {readonly string[]} */
 export const SORT_DIRS = Object.freeze(["asc", "desc"]);
 /* R77: the orders `heldCaptures` sorts by. */
+/** @type {readonly string[]} */
 export const HELD_SORTS = Object.freeze(["age", "source", "project"]);
 /* R88 (N969): the lists `heldCaptures` answers: the held documents (R77), or the ones set aside (R79), which a member
    restores from (R81); T51: `held_and_vouched`, the held ones with the documents a member has vouched for. */
+/** @type {readonly string[]} the `state`s `heldCaptures` takes (R88) */
 export const HELD_STATES = Object.freeze(["held", "set_aside", "held_and_vouched"]);
 /* R77 (T51; C14): the rows `heldCaptures` answers: `full` (R77's fields) or `picker`, the cheap read for a screen that lists documents
    to choose among: the document, its title, its project, its source, when it was collected, its capture's digest and actor, whether the
    evidence store holds it whole, and its standing, and nothing that asks the examination, the questions, the archives or a grade. */
+/** @type {readonly string[]} the row shapes `heldCaptures` answers (R77) */
 export const HELD_FIELDS = Object.freeze(["full", "picker"]);
 /* R77 (DEC-167 (8); K1881, BOB's): the most held files an archive's row carries; the rest are read through
    `acquisition.archiveList`. */
+/** @type {number} R77: the most files an archive's row lists beside it */
 export const HELD_FILES_IN_ROW = 50;
-/** R77 (fix round 4; P10): the most documents `bundle_ids` names in one read: the ones a screen draws, whose heavy fields it asks for. */
+/** R77 (fix round 4; P10): the most documents `bundle_ids` names in one read: the ones a screen draws, whose heavy fields it asks for.
+ *  @type {number}
+ */
 export const HELD_IDS_MAX = 50;
 /** R105 (fix round 6; G2): the most of a source's body a `check` reads, in bytes: 8 MiB, the size past which `acquisition` hands a fetch to
- *  the plane. A larger body is not read: the look says so (`large`) and decides nothing. */
+ *  the plane. A larger body is not read: the look says so (`large`) and decides nothing.
+ *  @type {number}
+ */
 export const HELD_AT_CHECK_MAX = LARGE_FETCH_BYTES;
-/** R96: the most captures at one address `heldAt` counts; `truncated` says when more lie past. */
+/** R96: the most captures at one address `heldAt` counts; `truncated` says when more lie past.
+ *  @type {number}
+ */
 export const HELD_AT_VERSIONS_MAX = 200;
 /* R91 (T49; N1080; M-T49-3): the one wait a page of held captures gives its documents' answers, in milliseconds: R78's
    examination of each document the page shows and the archive grouping (DEC-167 (8)) of each row, asked together for
    the whole page. CHOSEN, not measured, like `file-safety`'s `SCAN_WAIT_MS` and `acquisition`'s `REPUTATION_TIMEOUT_MS`
    (both 5 s, the waits on another module's answer); recorded by BOB. An answer not given within it reads undetermined. */
+/** @type {number} R91: the one wait for a page's examinations and archive groupings, in milliseconds */
 export const HELD_PAGE_WAIT_MS = 5000;
 /* R91: how many rows of a page are answered at once. Work is begun only while the page's wait has not run out, so a page
    that cannot be answered in time asks no more of the evidence store than it can wait for. */
 const HELD_PAGE_LANES = 8;
 /** R77 (fix round 7; G78): the most digests this instance remembers as proven held, for a draw not to ask the evidence store again; CHOSEN, not
- *  measured: a digest is 64 characters, so the set is under half a megabyte; past it the set is emptied and fills again. */
+ *  measured: a digest is 64 characters, so the set is under half a megabyte; past it the set is emptied and fills again.
+ *  @type {number}
+ */
 export const HELD_PROVEN_MAX = 5000;
 /* R88 (T51): a vouched row is not asked of R78's examination, so its eligibility reads undetermined with this basis. A
    builder's diagnostic: screens draw `standing` and `vouched`, not this sentence. */
@@ -318,7 +358,11 @@ const sameEnv = (a, b) => {
  *  another function refused). A later call's option is never silently
  *  dropped (N122: a first caller without `env` stripped the plane's renderer from every later one): an `env` or
  *  `governor` the instance took by default is adopted from the first later caller that supplies it, and one that
- *  differs from what an earlier caller supplied throws, naming the option. A test may pass its own. */
+ *  differs from what an earlier caller supplied throws, naming the option. A test may pass its own.
+ *  @param {any} ctx the Durable Object's state, or its storage
+ *  @param {any} [opts] the options above
+ *  @returns {any} the one Capture for that storage
+ */
 export function captureOf(ctx, opts = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let c = instances.get(storage);
@@ -351,8 +395,8 @@ export function captureOf(ctx, opts = {}) {
   if (typeof opts.now === "function" && given.has("now") && c.clock !== opts.now) refuse("now");
   /* R58 (T43; N863, K2672): an option is compared only when the caller supplies it, so a call supplying none reaches no
      other module's instance: `acquisition`'s, made when first reached (its tables with it), is read only to compare. */
-  for (const [name, held] of [["record", () => c.core], ["provenance", () => c.provenance], ["attestation", () => c.attestation],
-                              ["acquisition", () => c.acquisition]])
+  for (const [name, held] of /** @type {[string, () => any][]} */ ([["record", () => c.core], ["provenance", () => c.provenance], ["attestation", () => c.attestation],
+                              ["acquisition", () => c.acquisition]]))
     if (opts[name] != null && opts[name] !== held()) refuse(name);
   if (opts.env != null && !given.has("env")) { c.env = opts.env; given.add("env"); }
   if (opts.governor != null && !given.has("governor")) { c.governor = opts.governor; given.add("governor"); }
@@ -392,6 +436,7 @@ function resumedOf(state) {
   try { return createResumableSha256(state); } catch { return null; }
 }
 
+/** The capture store over one storage (R8 to R100): the acts, the reads and the services this file's requirements name; reached through `captureOf`. */
 export class Capture {
   #sql; #storage; #listeners = new Map(); #readers = new Map(); #declared = false; #acquisition = null; #acquisitionHost = null;
   #reputationReader = null; #fileScanner = null; #hasWhole = null; #provenHeld = new Set();
@@ -3787,7 +3832,10 @@ export class Capture {
   }
 }
 
-/** Whether a purge declaration names one of this module's tables (record-core R21: each owner declares its own). */
+/** Whether a purge declaration names one of this module's tables (record-core R21: each owner declares its own).
+ *  @param {any} t a purge declaration, or a table's name
+ *  @returns {boolean}
+ */
 export function captureOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return CAPTURE_PURGED_TABLES.includes(name) || CAPTURE_EXEMPT_TABLES.includes(name);
@@ -3798,6 +3846,14 @@ export function captureOwns(t) {
    stamps; `body` the parsed body; `h` the handler's in-process parts (R73; K4226), of which `timings` is forwarded to
    `acquire` as its `opts.timings` when given. N90: every read a route answers is bounded here, whatever the caller omits (`limit`
    defaults to READ_LIMIT's), and pages by `after`. */
+/**
+ * @param {any} c the instance (a Capture)
+ * @param {URL} url the request's address, carrying the control plane's stamps
+ * @param {any} body the parsed body
+ * @param {any} env the store's bindings
+ * @param {any} [h] the handler's in-process parts (`timings`)
+ * @returns {Record<string, () => any>} each route's answer, by op
+ */
 export function captureOps(c, url, body, env, h = {}) {
   /* R115: the store's environment is the instance clock's source (`BIO_NOW_MS`), so every op this map answers reads it */
   if (env && typeof env === "object") c.clockEnv = env;
@@ -3883,6 +3939,7 @@ export function captureOps(c, url, body, env, h = {}) {
 
 /* R97 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** @type {Readonly<Record<string, any>>} R97: the ops this module serves that the screens send, declared by their owner */
 export const DECLARED_OPS = Object.freeze({
   gradenote: { classes: ["admin","member","probe"], mutating: false, weight: "read", description: localize("capture.declared.gradenote", "read: one capture's grade note, the words op=acquire's answer carries, keyed by capture sha, null for a capture the viewer may not see; writes nothing"),
     fields: { accepts: ["capture","captureSha"], requires: [] } },

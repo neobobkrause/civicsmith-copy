@@ -5,6 +5,7 @@
  * `inbox`, `knock_rate`, `knocker_key`, `doorbell_tally`, `doorbell_limit_last`, `knock_key` and the `inbox` additive
  * columns are `doorbell`'s (T42, K2607): its DDL creates them and its declaration holds them; capture's copy of them was
  * deleted in T43 (N849, N864). */
+/** @type {string} the DDL of capture's tables */
 export const CAPTURE_SCHEMA = `
 -- What this RUNTIME was observed to allow, as opposed to what we choose to
 -- spend. Cloudflare's per-invocation subrequest limit differs by account, can
@@ -342,6 +343,7 @@ CREATE TABLE IF NOT EXISTS render_slots (
    per direct capture of the host that carried chrome, and one `link_chrome` row per contained address with its
    classification: `chrome` only when it recurred on two or more distinct pages of the host, else `undetermined`,
    with its basis and the date it was judged. A classification, never a deletion: every link stays filed. */
+/** @type {string} the DDL of the derived tables (site chrome), regenerable by scan */
 export const CAPTURE_DERIVED_SCHEMA = `
 CREATE TABLE IF NOT EXISTS site_chrome (
   host           TEXT NOT NULL,
@@ -508,6 +510,7 @@ CREATE INDEX IF NOT EXISTS parted_uploads_by_sha ON parted_uploads (by, sha256)`
 
 /* Columns an older store's tables gained after they were first written, added at boot (never back-filled; each
    reason is where the column is read). Moved from the legacy store's additive list. */
+/** @type {string[][]} each `[table, column, type]` an older store gains at boot */
 export const CAPTURE_ADDITIVE_COLUMNS = [
   ["site_assets", "last_fetched_by", "TEXT"],        // CAP-14: which capture's fetch served a reused part
   ["site_asset_refs", "reused_from", "TEXT"],        // CAP-14
@@ -519,12 +522,15 @@ export const CAPTURE_ADDITIVE_COLUMNS = [
 /* A derived table whose KEY changed shape is dropped and rebuilt rather than altered: `links` gained
    `citation_norm` when element references became part of a citation, and rows keyed without the fragment had
    already collapsed two citations into one (moved from the legacy store's reshape loop). */
+/** @type {string[][]} each `[table, column]` whose presence marks a table already reshaped */
 export const CAPTURE_RESHAPE = [["links", "citation_norm"]];
 
 /* record-core R21/R46: what purge clears (whole-store only: none is keyed to a bundle) and what it never clears.
    The exempt tables are operational facts about this instance (the platform's ceiling and the render allowance), not
    corpus-derived. The doorbell's tables are `doorbell`'s to declare (T43; N849, N864). */
+/** @type {string[]} the tables purge declares this module's (record-core R21) */
 export const CAPTURE_PURGED_TABLES = ["task_queue", "source_reachability", "link_verdicts", "links", "site_asset_refs",
   "site_assets", "reuse_verdicts", "capture_sessions", "site_chrome_refs", "site_chrome", "link_chrome", "capture_validators",
   "capture_actors", "capture_accounts", "late_attestations", "held_acts", "held_act_questions", "captured_for", "seen_in", "fetch_done", "parted_uploads"];
+/** @type {string[]} the tables exempt from purge: operational facts of this instance */
 export const CAPTURE_EXEMPT_TABLES = ["capture_limits", "render_allowance", "render_slots"];
