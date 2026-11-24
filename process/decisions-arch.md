@@ -1,4 +1,4 @@
-Length: 121 lines. Last section: "The word-table extractor".
+Length: 126 lines. Last section: "The bundler's discovery of the fleet".
 
 # civicsmith: ARCH's technical decisions
 
@@ -118,4 +118,9 @@ Decided: 24 Nov 2026.
 ## The word-table extractor
 Decision: the extractor `extract(root)` in `bio-plane/src/setup-words/build.mjs`, which reads the source of every module, and setup-words' tests that run it over the real tree move to `journey-check`, the last module. Its outputs `rows.mjs` and `words-unreviewed.json` stay with `setup-words` as committed data, and `pseudo` and `callsOf`, which `journey-check` and `case-checker` import, stay at `setup-words` in a file of their own. The rows each module shows do not change.
 Why: after the re-stacking it would read about 200 modules after `setup-words`, the second module. No script or workflow runs it; it runs by hand and in setup-words' own tests (lane research 24, measured).
+Decided: 24 Nov 2026.
+
+## The bundler's discovery of the fleet
+Decision: discovering the whole fleet (listing the top folders, reading each `fleet-member.json`, and its computed `import()` of members) moves from `bundler`'s `bio-plane/scripts/fleet-bundle.mjs` to `release`, which builds the fleet after every member. `bundler` keeps "build the member at this folder", with the path handed in by the member's own build, so its uses of a caller's path reach only that caller's folder. Bundler R1 is reworded to say so; nothing the product does changes.
+Why: `bundler` comes early in the order and its discovery reaches seven later members by path (lane research 24, measured in runs); `release`, after them all, is where the whole fleet is known.
 Decided: 24 Nov 2026.
