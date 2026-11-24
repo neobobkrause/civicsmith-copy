@@ -1,4 +1,4 @@
-Length: 111 lines. Last section: "agent-worker's checks of later modules".
+Length: 116 lines. Last section: "The top module".
 
 # civicsmith: ARCH's technical decisions
 
@@ -108,4 +108,9 @@ Decided: 24 Nov 2026.
 ## agent-worker's checks of later modules
 Decision: agent-worker's whole-program tests in plane's record (`agent-worker.test.mjs`, `harness.test.mjs`, `requirements.test.mjs`, `versions.test.mjs`, with the helper `plane-world.mjs`) are rebuilt by owner. What they check of a later module (`admission`, `control-plane`, `answer-envelope`) becomes a contract check at that provider, in its own tests, stating what agent-worker relies on, as K4995 rules for a later provider. What they check of an earlier module uses that module's published fixtures. What is left proves agent-worker's own promises and goes to agent-worker. `plane-world.mjs`, which copies all of `src/` and runs the copy, leaves with its last user.
 Why: agent-worker comes before those providers in the order, so its own tests cannot load them, and a test at plane that does is run by the wrong job. A contract check at the provider is found by the provider's own job when it changes what agent-worker relies on.
+Decided: 24 Nov 2026.
+
+## The top module
+Decision: a new module, `plane-program`, is added at step 6 directly after the UI modules and before `release`. Its promise is the assembled program: the UI plugged into the launcher, deployed as one Worker, the page served end to end. It owns the entry `bio-plane/src/plane/index.mjs` (path kept) and the file by which the entry hands the UI in, `bio-plane/wrangler.jsonc` (whose `main` names the entry), `bio-plane/scripts/build-plane.mjs` and `bio-plane/dist/`, with plane R116, which travels with `dist/`. The bundle stays uncommitted, as the decision "Committed built files" says. The plane's build description (`PLANE_ENTRY`, `planeMember`, today in `bio-plane/scripts/fleet-bundle.mjs`) moves into `build-plane.mjs`: `bundler`'s job first accepts a description handed in beside its own, then drops `planeMember`; `bundler` keeps building any member it is handed. `plane` keeps the launcher: the store's class, the Worker's start-up, the watchdog and arrival. The top module's tests are the only ones that start the entry: the door tests that assert screens, the test files that reach the entry by import (taken from `p4 check`'s refusals at that step) or by path (the lane's groups `boots-entry`, `computed-import` and `worker-program-text` still standing then), and plane's tests and halves that state the deployment config (`limits` against `wrangler.jsonc`, the deployed cron, the parts of `worker.test.mjs` that read it). Plane's census tests (`g83-census`, `worker.test.mjs` R8) and `sa-assembly.test.mjs`'s census are bounded to modules up to their owner, and the top module runs the same check on its own files. The UI modules leave plane's declared uses.
+Why: those files name and build the program with its UI. Kept at plane after the move, `wrangler.jsonc` would name a later module's file and `dist/` would hold a copy of 20 later modules (lane research 24, measured).
 Decided: 24 Nov 2026.
