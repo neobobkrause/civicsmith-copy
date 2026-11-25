@@ -275,9 +275,11 @@ test("R4 (C23) Held filtered by a project reads that project's captures and mark
 
 const statusLines = (p) => Array.from(main(p).querySelectorAll('[role="status"]')).map((e) => e.textContent.trim()).filter(Boolean);
 const DOUBLED = /(?<!\.)\.\.(?!\.)/;
+/* when the member saw it: three days before the world's clock, which the page's clock starts at (store-request R18), so never a time after now */
+const seenAt = (t) => new Date(t.world.now() - 3 * 86_400_000).toISOString().replace(/\.\d{3}Z$/, "Z");
 async function testified(t, words) {
   const saw = await open(t, "/app/capture/saw");
-  fill(saw, { "ci-words": words, "ci-where": "6012 Seminary Ave", "ci-when": "2026-10-04T09:10:00Z" });
+  fill(saw, { "ci-words": words, "ci-where": "6012 Seminary Ave", "ci-when": seenAt(t) });
   await press(saw, "testify");
   return saw;
 }

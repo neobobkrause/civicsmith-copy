@@ -72,7 +72,15 @@ const pathsOf = (F) => ({ capture: ["/app/capture/address", `/app/capture/addres
   inbox: ["/app/inbox", `/app/inbox/${F.knock || "KNOCK-2026-10-03-9c1f0a2b"}`] });
 const READ_FAULTS = (answer) => Object.fromEntries(READS.map((op) => [op, answer]));
 /* the ops a screen declares: its reads' and its acts' */
-const declared = (id) => { const s = SCREENS.find((x) => x.id === id); return [s, Object.values(s.reads({ subject: SHA, me: MEMBER, data: {}, ui: {} })).map((r) => r.op), s.acts.map((a) => a.op)]; };
+/** @import { Screen } from "../../../src/screens-intake/index.mjs" */
+/** A screen of SCREENS by its id, with the ops it reads and the ops of its acts.
+ * @param {string} id
+ * @returns {[Screen, string[], string[]]} */
+const declared = (id) => {
+  const s = SCREENS.find((x) => x.id === id);
+  assert.ok(s, id);
+  return [s, Object.values(s.reads({ subject: SHA, me: MEMBER, data: {}, ui: {} })).map((r) => r.op), s.acts.map((a) => a.op)];
+};
 
 test("R8 R15 SCREENS meets interface-shell R21: eight registry screens, archive and the three of the T51 fix round among them, served by interfacePage without a throw", async () => {
   await full();   /* the world registers the owners' declarations the screens' acts are held to */

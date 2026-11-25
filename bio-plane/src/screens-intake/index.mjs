@@ -240,7 +240,8 @@ export const SCREEN_KEYS = Object.freeze({
  * @property {readonly string[]} words
  */
 /** The module's screens, in this order: `capture` (`screens-capture`'s Add screen), `held`, `archive`, `open-file`, `inbox`,
- *  `about-knocker`, `leads` and `watching`; each carries its keys as `words`.
- * @type {readonly Readonly<Screen>[]} */
-export const SCREENS = Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
-  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })));
+ *  `about-knocker`, `leads` and `watching`; each carries its keys as `words`. The list and each screen are frozen when the module loads;
+ *  it is handed to `interface-shell`'s `interfacePage`, `interfaceScript` and `checkScreens` as the `Screen[]` they take.
+ * @type {Screen[]} */
+export const SCREENS = /** @type {Screen[]} builds the frozen list */ (Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
+  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] }))));

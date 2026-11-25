@@ -72,7 +72,7 @@ test("R49 existed: true with a visible document links it and files nothing", asy
   assert.equal(p.byOp("allocid").length, 0);
   assert.equal(p.byOp("promote").length, 0);
   assert.ok(main(p).querySelector(`a[href*="${home.bundle}"]`), "a link to the document that holds the bytes");
-  assert.ok(says(p, "screen.capture.address.existed", { title: untitled() }));
+  assert.ok(says(p, "screen.capture.address.existed", { title: untitled(t.world) }));
 });
 
 test("R49 existed: true with no document the viewer sees files a new one and links it", async () => {
@@ -85,7 +85,7 @@ test("R49 existed: true with no document the viewer sees files a new one and lin
   assert.equal(p.byOp("promote").length, 1, "promoted for the viewer");
   const id = p.byOp("promote")[0].body.bundleId;
   assert.ok(main(p).querySelector(`a[href*="${id}"]`), "and linked");
-  assert.ok(says(p, "screen.capture.address.done", { title: untitled() }));
+  assert.ok(says(p, "screen.capture.address.done", { title: untitled(t.world) }));
 });
 
 test("R49 control: existed: false promotes as before and looks nothing up by digest", async () => {
@@ -121,7 +121,7 @@ test("R50 (A2) the result is a status line directly under the act row", async ()
   const acts = btn(p, "acquire").closest(".mk-acts");
   const next = acts.nextElementSibling;
   assert.equal(next.getAttribute("role"), "status");
-  assert.ok(next.textContent.includes(word("screen.capture.address.done", { title: untitled() })));
+  assert.ok(next.textContent.includes(word("screen.capture.address.done", { title: untitled(t.world) })));
 });
 
 test("R50 (I-03) R54 a document is named by its title; without one by its host and the day, never the file part of its address", async () => {
@@ -134,7 +134,7 @@ test("R50 (I-03) R54 a document is named by its title; without one by its host a
   const p = await open(u);
   await capture(p);
   await p.settle();
-  assert.ok(says(p, "document.untitled.web", { site: "www.example.gov", date: dayOf(Date.now()) }));
+  assert.ok(says(p, "document.untitled.web", { site: "www.example.gov", date: dayOf(u.world.now()) }));
   assert.ok(!text(p).includes("street-maintenance-2026"), "no part of the address");
 });
 

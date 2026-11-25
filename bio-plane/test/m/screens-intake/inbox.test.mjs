@@ -240,7 +240,9 @@ test("R7 R12 sourcelink names the source read and a source chosen among the earl
 });
 
 test("R26 every key the inbox screen reads is a word of the list, and its states draw word(key, vars)", async () => {
-  for (const k of SCREENS.find((x) => x.id === "inbox").words) assert.ok(hasWord(k), k);
+  const screen = SCREENS.find((x) => x.id === "inbox");
+  assert.ok(screen, "the inbox screen is among SCREENS");
+  for (const k of screen.words) assert.ok(hasWord(k), k);
   const t = await inbox();
   const p = await at(t, "/app/inbox");
   for (const k of ["screen.inbox.sub", "screen.inbox.status.new", "screen.inbox.status.pulled", "screen.inbox.status.discarded"]) assert.ok(says(p, k), k);

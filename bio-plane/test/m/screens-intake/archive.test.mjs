@@ -178,7 +178,9 @@ test("R17 R15 a zero count is not drawn: an archive that opened with only filed 
 });
 
 test("R26 every key the archive screen reads is a word of the list, and its states draw word(key, vars)", async () => {
-  for (const k of SCREENS.find((x) => x.id === "archive").words) assert.ok(hasWord(k), k);
+  const screen = SCREENS.find((x) => x.id === "archive");
+  assert.ok(screen, "the archive screen is among SCREENS");
+  for (const k of screen.words) assert.ok(hasWord(k), k);
   const s = await scene();
   const p = await at(s);
   for (const [k, v] of [["screen.archive.files"], ["screen.archive.facts", { short: `${s.sha.slice(0, 4)}…${s.sha.slice(-4)}` }], ["screen.archive.gradeabout", { grade: (await s.list()).archive.grade }]]) assert.ok(says(p, k, v), k);

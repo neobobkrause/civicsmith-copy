@@ -387,7 +387,9 @@ test("R39 controls: the safe view is not verified against the original's digest;
 
 test("R26 every key the open-file screen reads is a word of the list, and its three states draw word(key, vars)", async () => {
   const { SCREENS } = await import("../../../src/screens-intake/index.mjs");
-  for (const k of SCREENS.find((x) => x.id === "open-file").words) assert.ok(hasWord(k), k);
+  const screen = SCREENS.find((x) => x.id === "open-file");
+  assert.ok(screen, "the open-file screen is among SCREENS");
+  for (const k of screen.words) assert.ok(hasWord(k), k);
   const t = await team();
   const held = await hold(t, t.mai, { address: "https://city.example/held.txt", bytes: "A file with a finding.\n", name: "held" });
   t.S.verdicts.set(held.sha, { result: "found", findings: ["Eicar-Test-Signature"] });
