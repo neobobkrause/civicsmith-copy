@@ -32,6 +32,7 @@ test("R154 over one store a delegate answers what member-roster answers: reads e
   const w = await world().group("ann", "bob");
   const m = w.m, r = w.m.members;
   assert.ok(r instanceof roster.Members);
+  /** @type {[string, *[]][]} each delegate read, by name, with its arguments */
   const reads = [
     ["isAdministrator", ["admin"]], ["isAdministrator", ["ann"]], ["isAdministrator", [null]], ["activeAdmins", []],
     ["memberFacts", ["ann"]], ["memberFacts", ["nobody"]], ["memberStatusSince", ["ann"]], ["memberByHandle", ["bob"]],
@@ -46,7 +47,7 @@ test("R154 over one store a delegate answers what member-roster answers: reads e
   for (const [name, args] of reads) assert.deepEqual(m[name](...args), r[name](...args), `${name} ${JSON.stringify(args)}`);
   /* writes through the delegate land in the module's tables */
   assert.equal(m.hostingAccessSet({ holders: "ann", by: "admin" }).ok, true);
-  assert.equal(r.hostingAccess({}).current.holders, "ann");
+  assert.equal(r.hostingAccess({})?.current?.holders, "ann");
   assert.equal((await m.expertiseDeclare({ memberId: "ann", label: "CPA" })).ok, true);
   assert.equal(r.expertiseList({ memberId: "ann" }).expertise[0].state, "declared");
   assert.deepEqual(m.expertiseAwaitingConfirmation({ by: "admin" }).map((x) => [x.memberId, x.label]), [["ann", "CPA"]]);
@@ -90,8 +91,8 @@ test("R154 the moved module-level names and statics are the module's own, and a 
 });
 
 test("R154 the row tables are the union of membership's rows and member-roster's, every code one row, none minted at two sites (K231)", () => {
-  for (const [name, table] of [["MEMBERSHIP_CHECKS", MEMBERSHIP_CHECKS], ["MEMBER_ID_CHECKS", MEMBER_ID_CHECKS], ["CUSTODIAL_CHECKS", CUSTODIAL_CHECKS]])
-    for (const [code, row] of Object.entries(MEMBER_ROSTER_ROWS[name])) assert.deepEqual(table[code], row, `${name}.${code}`);
+  for (const [name, table] of /** @type {[string, *][]} each member table by name */ ([["MEMBERSHIP_CHECKS", MEMBERSHIP_CHECKS], ["MEMBER_ID_CHECKS", MEMBER_ID_CHECKS], ["CUSTODIAL_CHECKS", CUSTODIAL_CHECKS]]))
+    for (const [code, row] of Object.entries(/** @type {Object<string, *>} the three member tables */ (MEMBER_ROSTER_ROWS)[name])) assert.deepEqual(table[code], row, `${name}.${code}`);
   assert.ok(Object.isFrozen(MEMBERSHIP_CHECKS));
   for (const code of ["NO_SUCH_PROJECT", "NOT_A_PARTICIPANT", "TARGET_NOT_A_PARTICIPANT", "LAST_COMMITTED_OWNER", "PROJECT_GUARD_UNCHECKED"])
     assert.ok(code in MEMBERSHIP_CHECKS, code);
@@ -100,8 +101,10 @@ test("R154 the row tables are the union of membership's rows and member-roster's
   for (const [name, table] of Object.entries(membership).filter(([n]) => /_CHECKS$/.test(n)))
     for (const code of Object.keys(table)) { assert.equal(seen.has(code), false, `${code} in ${name} and ${seen.get(code)}`); seen.set(code, name); }
   /* every code the module-level refusals mint answers with the one row */
-  for (const r of [membership.notAnAdmin("x", "an act"), membership.noSuchMember("x"), membership.listenerRefusal([], "", () => {})])
+  for (const r of [membership.notAnAdmin("x", "an act"), membership.noSuchMember("x"), membership.listenerRefusal([], "", () => {})]) {
+    assert.ok(r, "refused");
     assert.deepEqual([r.check, r.translation], [MEMBERSHIP_CHECKS[r.code].check, MEMBERSHIP_CHECKS[r.code].translation]);
+  }
   /* control: member-roster exports no *_CHECKS table of its own (its rows reach the census only through here) */
   assert.deepEqual(Object.keys(roster).filter((n) => /_CHECKS$/.test(n)), []);
 });
