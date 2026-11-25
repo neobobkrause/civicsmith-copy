@@ -42,6 +42,11 @@ const own = (extra, fixed) => {
   } catch { return {}; }
 };
 const FIXED_EVENT = new Set(["ok", "reason", "code", "check", "translation", "event_id", "detail"]);
+/**
+ * @param {any} eventId the id asked; answered back only when it is a string
+ * @param {any} [extra] a caller's own fields, added beside the fixed ones and never replacing them
+ * @returns {{[key: string]: any, ok: boolean, reason: string, code: string, check: null, translation: string, event_id: string | null, detail: string}} the refusal `NO_SUCH_EVENT`
+ */
 export function noSuchEvent(eventId, extra = null) {
   /* DEC-49 REGION is-event-held */
   const row = EVENT_CHECKS.NO_SUCH_EVENT;
@@ -52,6 +57,11 @@ export function noSuchEvent(eventId, extra = null) {
 /* K1568 (R7): THE ONE ANSWER TO ONE CONDITION, no dated fact with the id asked is held where the asker can see it
    (absent and out of sight alike). progressions answers through it. Writes nothing and never throws. */
 const FIXED_FACT = new Set(["ok", "reason", "code", "check", "translation", "dated_fact_id", "detail"]);
+/**
+ * @param {any} datedFactId the id asked; answered back only when it is a string
+ * @param {any} [extra] a caller's own fields, added beside the fixed ones and never replacing them
+ * @returns {{[key: string]: any, ok: boolean, reason: string, code: string, check: null, translation: string, dated_fact_id: string | null, detail: string}} the refusal `NO_SUCH_DATED_FACT`
+ */
 export function noSuchDatedFact(datedFactId, extra = null) {
   /* DEC-49 REGION is-dated-fact-held */
   const row = EVENT_CHECKS.NO_SUCH_DATED_FACT;
@@ -61,27 +71,37 @@ export function noSuchDatedFact(datedFactId, extra = null) {
 }
 
 /* ---- the closed vocabularies (Provides, Terms) ---- */
+/** @type {readonly string[]} the closed kinds of a dated fact (Terms) */
 export const DATED_KINDS = Object.freeze(["meeting", "adopted", "effective", "signed", "entered", "issued", "published",
   "received", "hearing", "period_covered", "edited"]);
+/** @type {readonly string[]} the closed kinds of an event (Terms; R43–R45 add discretion, waiver, assessment) */
 export const EVENT_KINDS = Object.freeze(["meeting", "vote", "adoption", "enactment", "signing", "award", "payment",
   "transfer", "filing", "order", "hearing", "issuance", "publication", "statement", "communication", "appointment",
   "departure", "inspection", "other", "discretion", "waiver", "assessment"]);
 /* schema.org's EventStatusType: a cancelled meeting is one event with status EventCancelled, never a missing one. */
+/** @type {readonly string[]} the closed statuses of an event */
 export const STATUSES = Object.freeze(["EventScheduled", "EventCancelled", "EventPostponed", "EventRescheduled",
   "EventMovedOnline"]);
 /* K1465. There is no payer or payee role: a payer or payee lives on the money fact. */
+/** @type {readonly string[]} the closed roles of a participant */
 export const ROLES = Object.freeze(["actor", "organizer", "mover", "seconder", "voted", "present", "speaker", "sender",
   "recipient", "copied", "signatory", "decider", "author", "implementer", "party", "subject"]);
 /* T48 (R51): `precedes` records which came first when no date settles it, cited and read by `sequence`. */
+/** @type {readonly string[]} the closed kinds of a relation between two events */
 export const RELATION_KINDS = Object.freeze(["authorises", "answers", "amends", "reverses", "stated_cause", "within", "precedes"]);
 
 /* R27, R29: the read bound, as entities' name lookup and the query language's. */
+/** @type {number} a read's limit when none is given */
 export const LIMIT_DEFAULT = 100;
+/** @type {number} the most a read answers in one page */
 export const LIMIT_MAX = 500;
+/** @type {number} the longest reason an act keeps, in characters */
 export const REASON_MAX = 2000;
 /* R50 (T48): at most this many participants are answered on one timeline item, with their total. */
+/** @type {number} the most participants one timeline item answers */
 export const ITEM_PARTICIPANTS_MAX = 50;
 /* R53 (T50): at most this many captures' dated facts are read by one timeline. */
+/** @type {number} the most captures one timeline reads dated facts for */
 export const CAPTURES_MAX = 200;
 /* R35 (T37-11): at most this many owner answers and waiting batch entries are kept between reads (a hub's votes, their pages and the batches waiting, with room). */
 const KEPT_MAX = 20000;
@@ -135,7 +155,11 @@ function ownerRead(a) {
 /** K61: the one Events for this object's storage. `opts` is read on the first call only: `record`, `membership`,
  *  `provenance`, `extraction`, `content`, `entities` (each its module's instance for `ctx`, reached on first use), `now`
  *  (a clock), `view` (the jurisdiction view, or a function answering it; otherwise `jurisdictions.combine` of the
- *  instance's active profiles, record-core R26) and `readHooks` (reading-pipeline's registry for this storage). */
+ *  instance's active profiles, record-core R26) and `readHooks` (reading-pipeline's registry for this storage).
+ *  @param {any} ctx the Durable Object's state, or its storage
+ *  @param {any} [opts] the options above
+ *  @returns {any} the one Events for that storage (an Events)
+ */
 export function eventsOf(ctx, opts = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let e = instances.get(storage);
@@ -154,6 +178,8 @@ export function eventsOf(ctx, opts = {}) {
   return e;
 }
 
+/** The module's instance for one storage (K61), reached through `eventsOf`: its acts (R1–R25, R38, R43–R45), its reads
+ *  (R26–R35, R46, R49) and its listener registries (R15, R16, R30), each as its requirement states. */
 export class Events {
   #sql; #record; #membership; #now; #viewOpt; #deps;
   #onWhen = []; #onChanged = []; #sources = []; #started = false; #migrated = false; #actAt = null;
@@ -1478,6 +1504,12 @@ export class Events {
 
 /* R36 (K1122): the route arms this module answers, spread into the plane's op map. `url` carries the control plane's
    stamps (`viewer`, `by`); `body` the act's arguments, whose `by` the control plane stamps. One append site per act. */
+/**
+ * @param {any} ev the instance (an Events)
+ * @param {URL} url the request's address, carrying the control plane's stamps
+ * @param {any} [body] the parsed body
+ * @returns {Record<string, () => any>} each route's answer, by op
+ */
 export function eventsOps(ev, url, body) {
   const q = (k) => url.searchParams.get(k);
   /* the author is the url's stamp alone: a body's own `by` is never read, and an act with no stamp has no author */
@@ -1519,6 +1551,7 @@ export function eventsOps(ev, url, body) {
 
 /* R55 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** @type {Readonly<Record<string, {classes: string[], mutating: boolean, weight: string, description: string, fields: {accepts: string[], requires: string[]}}>>} each op the screens send, by its door name */
 export const DECLARED_OPS = Object.freeze({
   recorddatedfact: { classes: ["admin","member","probe"], mutating: true, weight: "observational", description: localize("events.declared.recorddatedfact", "dated-fact-directed: keyed by (capture, extent); holds a document's own stated date and moves no bundle"),
     fields: { accepts: ["captureSha","extent","kind","value","method","question"], requires: ["captureSha","extent","kind","value","method"] } },
