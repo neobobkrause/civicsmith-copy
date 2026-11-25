@@ -47,6 +47,15 @@ export { CONFIDENCE } from "../../site-profiles/index.mjs";
  * @property {string} [key] a code's own key, which prefixes a reference's key
  * @property {string} [label] a code's own label, which shows it
  * @property {string} [column] the column a budget header heads (jurisdictions R6), one of its `BUDGET_COLUMNS`
+ * @property {string} [role] the role a roster header names (jurisdictions R6), one of its `ROSTER_ROLES`
+ * @property {string} [kind] the kind of document a roster word self-names (jurisdictions R6), `roster` or `chart`;
+ *   absent, both
+ * @property {string} [relation] what an amending clause does (jurisdictions R6), one of its `AMENDING_RELATIONS`
+ * @property {string} [marker] what a meeting marker says of a meeting (jurisdictions R6), one of its `MEETING_MARKERS`
+ * @property {string} [organisation] the organisation a body variant names (jurisdictions R6), its key
+ * @property {string} [field] the field a policy header labels (jurisdictions R69), one of its `POLICY_HEADER_FIELDS`
+ * @property {string} [system] the system a file number is the record of (jurisdictions R6), a system's origin in the
+ *   profile
  */
 /**
  * @typedef {Object} Tagged one compiled recogniser with the fact it came from, so a reader knows WHICH matched
