@@ -13,11 +13,27 @@
  * the catalogue in this one place.
  */
 
+/**
+ * @typedef {"event" | "notice" | "routine"} Significance how much a member should be troubled (R13)
+ */
+/**
+ * @typedef {Object} Event one event, built from the catalogue (R13)
+ * @property {string} type the catalogue's own name for this kind of event
+ * @property {Significance} significance the catalogue's grade for that type, never the caller's
+ * @bound type and significance are the catalogue's whatever the detail carries, and keep their place first
+ */
+
 /* How much a member should be troubled, ordered so a report leads with the worst
    thing rather than the first thing. */
+/** @type {{ EVENT: Significance, NOTICE: Significance, ROUTINE: Significance }} */
 export const SIGNIFICANCE = { EVENT: "event", NOTICE: "notice", ROUTINE: "routine" };
 const SIG_RANK = { routine: 0, notice: 1, event: 2 };
-/** Where a significance sits, for ordering and for deriving `meaningful`. */
+/**
+ * Where a significance sits, for ordering and for deriving `meaningful` (R14). Never throws.
+ * @param {*} s a significance; anything else ranks below routine
+ * @returns {number}
+ * @bound the ranks are ROUTINE 0, NOTICE 1, EVENT 2; anything the catalogue does not grade ranks -1 and is never the worst
+ */
 export function significanceRank(s) { return typeof s === "string" && Object.hasOwn(SIG_RANK, s) ? SIG_RANK[s] : -1; }
 
 /* The catalogue. Each entry names the fixed significance of that kind of event.
@@ -77,7 +93,13 @@ export const EVENTS = {
 /** Build an event, drawing its significance from the catalogue so the grade lives in
  *  ONE place. An unknown type throws rather than defaulting: a silently-routine typo
  *  is exactly the miscarriage the catalogue exists to prevent, and a new event type
- *  is a deliberate addition to the catalogue above, not an inline string. */
+ *  is a deliberate addition to the catalogue above, not an inline string.
+ *
+ * @param {*} type a type the catalogue holds
+ * @param {*} [detail] whatever else belongs on the event; anything but an object adds nothing
+ * @returns {Event}
+ * @throws {Error} when the catalogue does not hold `type`; a defect in the caller, never defaulted
+ */
 export function event(type, detail) {
   const spec = typeof type === "string" && Object.hasOwn(EVENTS, type) ? EVENTS[type] : null;
   if (!spec) throw new Error(`site-profiles: unknown event type "${type}" — add it to the catalogue in events.mjs`);
@@ -88,7 +110,12 @@ export function event(type, detail) {
   return out;
 }
 
-/** The worst significance among a set of events, or null when there are none. */
+/**
+ * The worst significance among a set of events, or null when there are none (R14). Never throws on a list of events.
+ * @param {*} events the events; each one's `significance` is read
+ * @returns {Significance | null}
+ * @bound a significance the catalogue does not grade is never the worst; null exactly when no event carries a graded one
+ */
 export function worstSignificance(events) {
   /* A significance outside the catalogue ranks below routine and is never the worst:
      only `event()` grades, so such an entry was not built from the catalogue. */
@@ -101,12 +128,21 @@ export function worstSignificance(events) {
 }
 
 /** `meaningful` is DERIVED, never a second fact carried beside the grade: a change is
- *  meaningful exactly when its worst event rises to EVENT. (CONSTRUCTS Step 0 #6) */
+ *  meaningful exactly when its worst event rises to EVENT. (CONSTRUCTS Step 0 #6)
+ *
+ * @param {*} events the events, as `worstSignificance` reads them
+ * @returns {boolean}
+ * @bound exactly `worstSignificance(events) === "event"`; never a second fact carried beside the grade
+ */
 export function isMeaningful(events) {
   return worstSignificance(events) === SIGNIFICANCE.EVENT;
 }
 
-/** Sort events worst-first, in place, so a report leads with the heaviest thing. */
+/**
+ * Sort events worst-first, in place, so a report leads with the heaviest thing (R14). Never throws on a list of events.
+ * @param {*[]} events the events, sorted in place
+ * @returns {*[]} the same list
+ */
 export function bySeverity(events) {
   return events.sort((a, b) => significanceRank(b && b.significance) - significanceRank(a && a.significance));
 }

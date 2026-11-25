@@ -28,10 +28,60 @@
    answer (framework invariant 5): a merely-likely recogniser declines to narrow and
    the conservative default applies. Content-type recognisers simply never use
    `possible`; the ladder is still one ladder. */
+/**
+ * @typedef {"certain" | "likely" | "possible" | "none"} Confidence a rung of the one ladder (R3, R4)
+ */
+/**
+ * @typedef {Object} Detection what a recogniser answers about one capture (R5)
+ * @property {boolean} match
+ * @property {Confidence} [confidence] where it matched; a match that states none ranks with NONE
+ * @property {string[]} [signals] what it saw; absent is none
+ */
+/**
+ * @typedef {Object} Member one recogniser of one axis (R5)
+ * @property {string} key the machine name
+ * @property {(ctx: *) => *} detect answers a `Detection`; anything else is read as no match
+ * @property {boolean} [fallback] whether this is the member reached by falling through
+ */
+/**
+ * @typedef {Object} Considered one member that matched, as `recognise` lists it (R5)
+ * @property {string} key
+ * @property {Confidence} confidence
+ * @property {string[]} signals
+ */
+/**
+ * @template {Member} M
+ * @typedef {Object} Recognition which member speaks for one capture (R5)
+ * @property {M} member
+ * @property {Confidence} confidence
+ * @property {string[]} signals
+ * @property {Considered[]} considered every member that matched, in the order they were asked
+ * @property {boolean} matched false exactly when no member matched and the fallback was reached
+ * @bound member: always a member; confidence is NONE and signals empty exactly when matched is false
+ */
+/**
+ * @template {Member} M
+ * @typedef {Object} Registry the recognisers of one axis, ordered most specific first (R5)
+ * @property {(m: M) => M} register appends the member and answers it
+ * @property {() => M[]} all the members in order, as a copy
+ * @property {() => M} fallbackMember
+ * @property {(ctx: *) => Recognition<M>} recognise
+ */
+
+/**
+ * The one confidence ladder, shared by every axis (R3, R4).
+ * @type {{ CERTAIN: Confidence, LIKELY: Confidence, POSSIBLE: Confidence, NONE: Confidence }}
+ * @bound the four rungs are exactly "certain", "likely", "possible" and "none", in that order of rank
+ */
 export const CONFIDENCE = { CERTAIN: "certain", LIKELY: "likely", POSSIBLE: "possible", NONE: "none" };
 
 const RANK = { none: 0, possible: 1, likely: 2, certain: 3 };
-/** Where a confidence sits on the single ladder, for comparing two detections. */
+/**
+ * Where a confidence sits on the single ladder, for comparing two detections (R4). Never throws.
+ * @param {*} c a rung of the ladder; anything else ranks with NONE
+ * @returns {number}
+ * @bound the ranks are NONE 0, POSSIBLE 1, LIKELY 2, CERTAIN 3; an unknown value ranks 0, with NONE
+ */
 export function confidenceRank(c) { return typeof c === "string" && Object.hasOwn(RANK, c) ? RANK[c] : 0; }
 
 /** Build a recogniser registry for one axis.
@@ -43,7 +93,15 @@ export function confidenceRank(c) { return typeof c === "string" && Object.hasOw
  *
  *  `recognise(ctx)` always returns a member: an unrecognised capture gets the
  *  fallback rather than an error, because refusing to profile would just move the
- *  special case back out into every caller. */
+ *  special case back out into every caller.
+ *
+ *  Never throws of itself; a member's own `detect` throwing propagates (R5).
+ *
+ * @template {Member} M
+ * @param {{ isFallback?: (m: M) => boolean }} [opts] `isFallback` names the member reached by falling
+ *   through; by default the one carrying `fallback: true`, else the last registered
+ * @returns {Registry<M>}
+ */
 export function makeRegistry(opts = {}) {
   const isFallback = opts.isFallback || ((m) => m.fallback === true);
   const members = [];
