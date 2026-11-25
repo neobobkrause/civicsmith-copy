@@ -58,7 +58,7 @@ function setup({ promotion, contradiction } = {}) {
   w.release = (handle, o = {}) => w.r.release({ handle, acknowledgment: ACK, mitigation: MIT, viewer: WHO,
                                                 owner: OWNER, author: WHO, ...o });
   w.state = (id) => w.record.head(id)?.currentState ?? null;
-  w.md = (id) => w.record.readFile(id, "bundle.md")?.text ?? null;
+  w.md = (id) => { const f = w.record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; };
   return w;
 }
 const row = (code) => ({ code, check: RELEASE_CHECKS[code].check, translation: RELEASE_CHECKS[code].translation });

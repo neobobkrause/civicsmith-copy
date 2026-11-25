@@ -65,7 +65,7 @@ function setup({ promotion, retrieval } = {}) {
   };
   w.retire = (handle, o = {}) => w.r.retire({ handle, reason: WHY, viewer: WHO, owner: OWNER, author: WHO, ...o });
   w.state = (id) => w.record.head(id)?.currentState ?? null;
-  w.md = (id) => w.record.readFile(id, "bundle.md")?.text ?? null;
+  w.md = (id) => { const f = w.record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; };
   return w;
 }
 
