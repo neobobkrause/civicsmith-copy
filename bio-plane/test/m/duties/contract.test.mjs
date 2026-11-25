@@ -204,7 +204,11 @@ test("R23 the group's own checkpoints are never occurrences of a body's duty; no
   /* (T48) with R33's reason codes and their words */
   const words = JSON.stringify({ DUTIES_CHECKS, CONNECTION_KINDS, MODALITIES, SOURCE_KINDS, TRIGGER_KINDS, BASIS_KINDS, OCCURRENCE_STATES,
                                  OCCURRENCE_REASONS, DUTIES_REASON_WORDS }).toLowerCase();
-  const real = profiles().filter((p) => !p.test).map((p) => profile(p.id));
+  const real = profiles().filter((p) => !p.test).map((p) => {
+    const held = profile(p.id);
+    assert.ok(held, p.id);
+    return held;
+  });
   assert.ok(real.length >= 1);
   for (const p of real) for (const c of [p.name, ...p.covers]) for (const part of String(c).toLowerCase().split(/[^a-z]+/).filter((x) => x.length > 4))
     assert.ok(!words.includes(part), part);
