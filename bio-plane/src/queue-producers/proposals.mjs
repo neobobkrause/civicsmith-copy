@@ -22,6 +22,7 @@ import { weakerGrade } from "../connections/index.mjs";
 import { localize } from "../setup-words/index.mjs";
 import { say, joined } from "./words.mjs";
 
+/** @type {string} the kind of R2's item for a stage holding more documents than declared (progressions R31) */
 export const CARDINALITY_EXCEEDED = "cardinality_exceeded";
 
 const count = (n) => (n === 1 ? "one" : "other");
@@ -107,7 +108,12 @@ export function cardinalityDetail(g) {
 /** R2, R10: the FINDING items of `proposalsFeed`'s answer.
  *  - subjectsOf(progressionKey, entityId) → the bundle ids the viewer may see behind that instance (R11);
  *  - homesOf(subjects) → the home set (queue R7); optionsOf(subjects) → the item's options (queue R12);
- *  - subjectsMax: how many subject bundles the item names (R2: 8). */
+ *  - subjectsMax: how many subject bundles the item names (R2: 8).
+ * @param {Object<string, *>} feed `progressions.proposalsFeed`'s answer
+ * @param {{subjectsOf?: *, homesOf?: *, optionsOf?: *, subjectsMax?: number}} [arg1] the three functions named above, and the bound
+ * @returns {Array<Object<string, *>>}
+ * @bound subjectsMax: the subject bundles one item names, 8 when absent
+ */
 export function proposalFindingItems(feed, { subjectsOf, homesOf, optionsOf, subjectsMax = 8 } = {}) {
   const subjectsFor = (instances, into = []) => {
     for (const inst of instances)
