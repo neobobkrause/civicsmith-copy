@@ -2728,7 +2728,7 @@ const isRawBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
  * (R4, R38).
  * @typedef {Object} OdfEntry
  * @property {string} format "odt", "ods" or "odp"
- * @property {(bytes: any, contentType: any) => OdfDetection|null} detect
+ * @property {(bytes: any, contentType?: any) => OdfDetection|null} detect
  * @property {(bytes: any) => Promise<OdfParts>} parts
  * @property {(partsOrBytes: any) => Promise<OdfStructure>} structure
  * @property {(partsOrBytes: any, opts?: OdfTextOptions) => Promise<OdfText>} text
