@@ -5,9 +5,11 @@ import assert from "node:assert/strict";
 import {
   TEXT_CHAIN_CHECKS, checkChain, appendStep, convertedChain, checkConfidence, checkAnchor, checkAttestation,
 } from "../../../src/textchain.mjs";
+/** @import { Refusal } from "../../../src/textchain.mjs" */
 
 /* Each C-35 condition driven through the service that refuses it: the row is read off the refusal the code
    path produced, never off the table beside it. */
+/** @type {Array<[string, string, () => *]>} each condition, its check, and the call that raises it */
 const DRIVEN = [
   ["TEXT_CHAIN_COLLAPSED", "C-35.1", () => checkChain("ocr")],
   ["TEXT_CHAIN_EMPTY", "C-35.2", () => checkChain([])],
@@ -73,5 +75,5 @@ test("R86: each C-35 row is carried by the refusal its own condition produces, e
     assert.deepEqual(Object.keys(r).sort(), ["check", "code", "detail", "ok", "translation"]);
   }
   /* The same rows reach a refusal relayed through a builder (convertedChain refuses what checkChain refuses, R16). */
-  assert.equal(convertedChain({ step: "convert", engine: "x" }, [{ step: "layer" }]).check, TEXT_CHAIN_CHECKS.TEXT_CHAIN_STEP_UNNAMED.check);
+  assert.equal(/** @type {Refusal} */ (convertedChain({ step: "convert", engine: "x" }, [{ step: "layer" }])).check, TEXT_CHAIN_CHECKS.TEXT_CHAIN_STEP_UNNAMED.check);
 });
