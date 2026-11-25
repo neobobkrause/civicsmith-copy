@@ -26,11 +26,11 @@ export function rich() {
       const out = w.pagesFor(manifest);
       const put = (s, text) => { if (typeof text === "string") out.set(s, new TextEncoder().encode(text)); };
       for (const b of manifest.bundles) {
-        for (const f of b.files) put(f.sha256, w.record.readFile(b.bundle_id, f.path)?.text);
+        for (const f of b.files) { const got = w.record.readFile(b.bundle_id, f.path); put(f.sha256, got && "text" in got ? got.text : undefined); }
         for (const s of b.snapshots)
           put(s.sha256, w.one(`SELECT content FROM history WHERE bundle_id=? AND snap_key=? AND path=?`, b.bundle_id, s.snap_key, s.path)?.content);
       }
-      for (const r of manifest.register) put(r.capture_sha, w.record.readFile(r.bundle_id, r.path)?.text);
+      for (const r of manifest.register) { const got = w.record.readFile(r.bundle_id, r.path); put(r.capture_sha, got && "text" in got ? got.text : undefined); }
       return out;
     },
     /** A money fact read from a capture (fenced in the project when `fenced`). */
