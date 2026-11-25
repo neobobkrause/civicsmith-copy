@@ -132,6 +132,94 @@ import { boundOf } from "../read-bounds.mjs";
  * formats-xlsx.mjs re-exports them, so their users are unchanged.
  * ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ *
+ * The kinds this module accepts and hands back (structured comments; Process4 build text 2b, section 5)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The IC-1 `sheet-cell` element reference (R10).
+ * @typedef {Object} SheetCellRef
+ * @property {string} kind "sheet-cell"
+ * @property {string} ref `<sheet>!<cell>`
+ * @property {string} sheet
+ * @property {string} cell A1 form
+ */
+/**
+ * The IC-124 `sheet-range` element reference (R11).
+ * @typedef {Object} SheetRangeRef
+ * @property {string} kind "sheet-range"
+ * @property {string} ref `<sheet>!<range>`
+ * @property {string} sheet
+ * @property {string} range A1:A1 form, top-left corner first
+ */
+/**
+ * The entry's optional second argument (R3, R17, R20).
+ * @typedef {Object} ReadOptions
+ * @property {number} [windowBytes] a scaled read window, for tests
+ * @property {string} [declared] a legacy charset the source declared
+ * @property {number} [inlineCellsMax] text() only: the most bytes of cells' JSON listed inline (R17)
+ * @property {*} [yieldNow] text() only: awaited between windows when a function (R20)
+ * @bound windowBytes: an integer of at least 16
+ */
+/**
+ * The dialect of a body (R7).
+ * @typedef {Object} Dialect
+ * @property {string|null} encoding
+ * @property {string} encodingConfidence
+ * @property {string[]} encodingSignals
+ * @property {string|null} delimiter "comma", "semicolon", "tab" or "pipe"; null when undetermined
+ * @property {string} delimiterConfidence
+ * @property {string[]} delimiterSignals
+ * @property {boolean} assumed no BOM or declaration decided the encoding
+ * @property {number[]} disagree byte offsets of the windows whose decision differs from the file's
+ * @property {string[]} undetermined
+ */
+/**
+ * What detect() says of a declared content type (R2).
+ * @typedef {Object} Detection
+ * @property {string} format "csv"
+ * @property {string} confidence "likely"
+ * @property {string[]} signals
+ */
+/**
+ * An answer of parts(), structure(), text() or cellsIn(): `ok` and the fields their requirements name, kept open here, the
+ * deep shape being the requirements'. parts(): `{ok:false, why}` ("empty_body", "decoder_unavailable:<encoding>") or the
+ * read body the other three take back in place of the bytes (R3). structure(): `{ok, container:"csv", links, counts,
+ * evidentiary, notes, active, dialect, sheets}` (R4). text(): `{ok, container:"csv", document, undetermined, counts, images,
+ * metadata, active, dialect, sheets}`, its one sheet `{sheet, name, hidden, rows, cols, usedRows, usedCols, range, text,
+ * lineRows, cells, cells_held?, undetermined}` and each cell `{source, value, type, declared, cached, formula}` (R5, R8, R16,
+ * R17). structure() and text() answer `{ok:false, container, reason}` when parts() failed. cellsIn(): `{ok:true, cells,
+ * rows:{from, to}, next_row?}` or `{ok:false, why}` (R18).
+ * @typedef {{ok: boolean} & Record<string, any>} CsvAnswer
+ * @bound text(), structure(), cellsIn(): a body over 50 MB (runtime-limits' csv bytes row), over 1,048,576 records (its csv
+ *   rows row), or with a record of more than 16,384 columns is refused whole with the over_size_bound marker (R6, R22)
+ * @bound text(): a cell longer than 32,767 characters is kept to 1 MiB and stated over_cell_bound (R22); a sheet lists at
+ *   most 200 unreadable cells in undetermined, counts.undetermined being the whole count (R9)
+ */
+/**
+ * cellsIn()'s query (R18).
+ * @typedef {Object} CellsQuery
+ * @property {number|string} [sheet] absent, 0 or "csv"
+ * @property {number} [fromRow]
+ * @property {number} [toRow]
+ * @property {number} [fromCol]
+ * @property {number} [toCol]
+ * @property {number} [maxCells]
+ * @property {number} [windowBytes]
+ * @property {string} [declared]
+ */
+/**
+ * The I7 registry entry (R1 to R9, R16 to R20).
+ * @typedef {Object} CsvEntry
+ * @property {string} format "csv"
+ * @property {(bytes: any, contentType?: any) => Detection|null} detect
+ * @property {(bytes: any, opts?: ReadOptions) => Promise<CsvAnswer>} parts
+ * @property {(bytes: any, opts?: ReadOptions) => Dialect|null} dialect
+ * @property {(partsOrBytes: any, opts?: ReadOptions) => Promise<CsvAnswer>} structure
+ * @property {(partsOrBytes: any, opts?: ReadOptions) => Promise<CsvAnswer>} text
+ * @property {(partsOrBytes: any, query?: CellsQuery) => Promise<CsvAnswer>} cellsIn
+ */
+
 /* IC-1: the sheet-cell element reference, produced by the container that
  * knows it. `ref` is the exact human form a citation surface displays.
  *
@@ -142,6 +230,11 @@ import { boundOf } from "../read-bounds.mjs";
  * same argument that made `linkWrapper` imported rather than re-derived.
  * Behaviour here is untouched; the over-strictness arm proves this entry's
  * outputs are byte-identical across the change. */
+/**
+ * @param {string} sheet
+ * @param {string} cell
+ * @returns {SheetCellRef}
+ */
 export function sheetCellRef(sheet, cell) {
   return { kind: "sheet-cell", ref: `${sheet}!${cell}`, sheet, cell };
 }
@@ -151,13 +244,18 @@ export function sheetCellRef(sheet, cell) {
  *  (`CONTENT-SEARCH-DESIGN.md` §4.1's workbook unit). `range` is A1:A1
  *  notation with the top-left corner first. EXPORTED for `odf.mjs`'s `.ods`
  *  entry — one builder per arm (COFF-10's rule, which is why `sheetCellRef`
- *  above is exported too). */
+ *  above is exported too).
+ *  @param {string} sheet
+ *  @param {string} range
+ *  @returns {SheetRangeRef} */
 export function sheetRangeRef(sheet, range) {
   return { kind: "sheet-range", ref: `${sheet}!${range}`, sheet, range };
 }
 
 /** A 1-based column number -> its A1 letters (1 -> A, 27 -> AA). Bijective
- *  base 26 — there is no zero digit, which is the mistake available here. */
+ *  base 26 — there is no zero digit, which is the mistake available here.
+ *  @param {number} n
+ *  @returns {string} */
 export function columnLetters(n) {
   let out = "";
   for (let c = n; c > 0; c = Math.floor((c - 1) / 26)) out = String.fromCharCode(65 + ((c - 1) % 26)) + out;
@@ -169,7 +267,11 @@ export function columnLetters(n) {
  *  empty. The used range and not the grid, deliberately and unlike the
  *  `sheet-cell` BOUND: this is a UNIT a reader is shown ("the sheet"), and a
  *  unit of a million blank rows is not what anybody means by the sheet. The
- *  bound a citation is REFUSED against stays the grid (`rows`/`cols`). */
+ *  bound a citation is REFUSED against stays the grid (`rows`/`cols`).
+ *  @param {string} name
+ *  @param {*} usedRows
+ *  @param {*} usedCols
+ *  @returns {SheetRangeRef|null} */
 export function usedSheetRange(name, usedRows, usedCols) {
   if (!(Number.isInteger(usedRows) && usedRows > 0 && Number.isInteger(usedCols) && usedCols > 0)) return null;
   return sheetRangeRef(name, `A1:${columnLetters(usedCols)}${usedRows}`);
@@ -428,7 +530,9 @@ function decideDelimiter(text, first) {
     undetermined: "delimiter_undetermined_none_consistent", tied: [] };
 }
 
-/** The delimiter decision of a decoded text (the first window of a body). */
+/** The delimiter decision of a decoded text (the first window of a body).
+ *  @param {unknown} text
+ *  @returns {{delimiter: string|null, name: string|null, confidence: string, lines: number, signals: string[], undetermined: string|null, tied: string[]}} */
 export function delimiterSignature(text) {
   return decideDelimiter(String(text ?? ""), true);
 }
@@ -446,7 +550,10 @@ export function delimiterSignature(text) {
  *  CR, an LF or a CRLF outside quotes ends the record. MEASURED against the corpus —
  *  `documents/Oakland-E-scooter-Survey_7-15-Filtered-1.csv` carries 934 LFs
  *  against 867 CRLFs because free-text survey answers hold bare LFs INSIDE
- *  quoted fields, so a line-oriented split would have shredded 67 records. */
+ *  quoted fields, so a line-oriented split would have shredded 67 records.
+ *  @param {string} text
+ *  @param {string|null} delimiter
+ *  @returns {string[][]} */
 export function walkRecords(text, delimiter) {
   const records = [];
   const w = createRecordWalk(delimiter, (record) => records.push(record));
@@ -466,7 +573,11 @@ export function walkRecords(text, delimiter) {
  *  kept to `CELL_KEPT_CHARS`), `open` `{col, chars}` for a quote still open at the end of the text (that field is `""`),
  *  `wide` the most fields the record would have under any one of the four delimiters, counted outside quotes while no delimiter
  *  is decided (`0` when one is), so the column bound (R22) judges a record whose delimiter R7 could not decide.
- *  `limits.maxColumns` stops a record keeping fields past it (`cols` still counts them). */
+ *  `limits.maxColumns` stops a record keeping fields past it (`cols` still counts them).
+ *  @param {string|null} delimiter
+ *  @param {(fields: string[], info: Object) => void} onRecord
+ *  @param {{maxColumns?: number}} [limits]
+ *  @returns {{feed: (text: string) => void, end: () => void, resumeAfterCR: () => void, setDelimiter: (delimiter: string|null) => void}} */
 export function createRecordWalk(delimiter, onRecord, limits = {}) {
   const maxColumns = limits.maxColumns ?? Infinity;
   let delim = delimiter ? delimiter.charCodeAt(0) : -1;
@@ -743,7 +854,9 @@ function fileDialectResult(ctx) {
   return { encoding: f.enc, delimiter: f.delimiter, disagree: f.disagree };
 }
 
-/** THE ENCODING over a body's windows (header §2). `{ encoding, confidence, bomBytes, signals, undetermined, assumed }`. */
+/** THE ENCODING over a body's windows (header §2). `{ encoding, confidence, bomBytes, signals, undetermined, assumed }`.
+ *  @param {unknown} bytes
+ *  @returns {{encoding: string|null, confidence?: string, bomBytes?: number, signals?: string[], undetermined?: string|null, assumed?: boolean}|undefined} */
 export function encodingSignature(bytes) {
   const b = toBytes(bytes);
   const s = scanDialect(b, undefined);
@@ -1199,7 +1312,10 @@ async function csvCellsIn(partsOrBytes, query) {
 
 /** The `sheet-cell` reference for a 1-based row and column of THE one sheet.
  *  Built on this module's `sheetCellRef` (R10) rather than a fourth copy of
- *  two lines (COFF-10's rule). */
+ *  two lines (COFF-10's rule).
+ *  @param {number} row
+ *  @param {number} col
+ *  @returns {SheetCellRef} */
 export function csvCellRef(row, col) {
   return sheetCellRef(CSV_SHEET_NAME, `${columnLetters(col)}${row}`);
 }
@@ -1247,7 +1363,12 @@ function looksTabular(h, s) {
 
 /** True exactly when `type` names a CSV, TSV or plain or opaque type, `name` ends in `.csv`, `.tsv`, `.tab` or `.txt`, and
  *  `head` (the first bytes of the file, up to 1 MiB) is delimited text: no binary signature, no NUL in an 8-bit head, an
- *  encoding R7 reads and one consistent delimiter. Never throws. */
+ *  encoding R7 reads and one consistent delimiter. Never throws.
+ *  @param {unknown} name
+ *  @param {unknown} type
+ *  @param {unknown} head
+ *  @returns {boolean}
+ *  @bound head: its first 1 MiB is read */
 export function isDelimitedText(name, type, head) {
   try {
     if (typeof name !== "string" || typeof type !== "string") return false;
@@ -1274,6 +1395,7 @@ export function isDelimitedText(name, type, head) {
  * and nothing anywhere else; that is the D-70 property)
  * ------------------------------------------------------------------ */
 
+/** @type {CsvEntry} */
 export const csvEntry = {
   format: "csv",
   detect(bytes, contentType) {
