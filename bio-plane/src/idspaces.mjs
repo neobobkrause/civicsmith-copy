@@ -1,5 +1,5 @@
 /* id-spaces — whether one identifier, appearing in two captured documents, is a shared identifier that
- * counts as a connection (`build/requirements/id-spaces.md`; `docs/architecture/BIO_Content_Framework_v0_10.md`
+ * counts as a connection (`process/modules/id-spaces.md`; `docs/architecture/BIO_Content_Framework_v0_10.md`
  * §8.3 "WHAT MAKES A SHARED IDENTIFIER COUNT", with BOB #34's amendment to rule 3, 2026-09-25).
  *
  * PURE: no store, no network, no clock (R23). It names no place (R24): every local fact (the spaces' forms,
@@ -20,8 +20,9 @@
  * WHAT IT CANNOT DO, stated: it cannot READ a referent. Agreement is either a determinate check (the fund
  * NAME, compared normalised) or a reading the caller supplies, returned labelled as theirs.
  *
- * It imports only `court-citations`' reporter data: the view's shape is `jurisdictions.combine`'s, which the caller makes. (R26, the
- * legacy adapter under the old names, is retired: entry N105, K143.)
+ * It imports `court-citations`' reporter data and `setup-words`' `word` and `localize` (every sentence people read
+ * is read by key): the view's shape is `jurisdictions.combine`'s, which the caller makes. (R26, the legacy adapter
+ * under the old names, is retired: entry N105, K143.)
  *
  * It also RECOGNISES court citations (R27–R29): volume, reporter, page, the reporter known only from the
  * reporter data `court-citations` holds (or the same data passed in). A citation recognised is a spelling
@@ -33,6 +34,108 @@
 
 import * as CourtCitations from "../../court-citations/index.mjs";
 import { word, localize } from "./setup-words/index.mjs";
+
+/**
+ * @typedef {Object} SpaceEntry one identifier space, as `spaces` lists it (R1)
+ * @property {string} space the space's name, one of the twelve
+ * @property {string} label the view's label for it, or the generic one
+ * @property {"name" | "reading"} referent how the referent is agreed: by the fund name, or by a reading
+ * @property {Object<string, *>[]} forms copies of the forms the view supplies for it
+ */
+/**
+ * @typedef {Object} Reach whether an enactment number is inside the record's reach (R6–R9)
+ * @property {"INSIDE" | "OUTSIDE_REACH" | "UNDETERMINED"} reach
+ * @property {number} [floor] the kind's coverage floor, with a kind whose floor is known
+ * @property {string} says the floors and why
+ * @bound reach: OUTSIDE_REACH is never "not found"; says states that the record's source holds nothing that old
+ */
+/**
+ * @typedef {Object} Recognised one value recognised in one space (R3–R5)
+ * @property {string} space
+ * @property {string} value the value as given, trimmed
+ * @property {string} form the name of the form it matched
+ * @property {string} normal the string two values are compared on
+ * @property {string | null} [kind] enactment only: the kind the profile names, or null
+ * @property {Reach} [reach] enactment only: `reach` for the normal number and kind
+ * @bound normal: the value with formatting removed only (spacing, letter case, a prefix, zero-padding); a digit is never changed
+ */
+/**
+ * @typedef {Object} ParcelStanding a parcel key's standing from the assessor's own evidence (R10–R12)
+ * @property {"CURRENT" | "RETIRED" | "UNDETERMINED"} standing
+ * @property {number} [roll_year] RETIRED only: the earliest roll year the lineage records
+ * @property {string[]} [children] RETIRED only: every child, deduplicated and sorted
+ * @property {string[]} [between] UNDETERMINED only: the two standings it lies between
+ * @property {string[]} vintages_searched
+ * @property {string} says
+ * @bound standing: never "no such parcel"; UNDETERMINED lies between retired before the earliest published lineage and never a parcel
+ */
+/**
+ * @typedef {Object} SystemAnswer the system a capture belongs to (R13–R15)
+ * @property {string | null} origin the system's origin, or null when no one system is named
+ * @property {string} [name] with an origin: the system's name
+ * @property {boolean} [republication] with an origin: whether the address is a republication of that system
+ * @property {boolean} [provenance_stated] with an origin: whether the system states its provenance
+ * @property {*} [basis] with an origin: the view's basis for the system
+ * @property {string[]} addresses the distinct addresses given
+ * @property {string} [why] with no origin: why no system is named
+ * @property {Object<string, *>[]} [each] with no origin and some addresses: each address's own answer
+ * @bound origin: null exactly when why is given
+ */
+/**
+ * @typedef {Object} Judgement §8.3's verdict over one pair (R16–R22)
+ * @property {"FORMS_UNJOINED" | "VALUES_DIFFER" | "SYSTEM_UNDETERMINED" | "SAME_SYSTEM" | "FUND_NAME_ABSENT" | "REFERENT_UNREAD" | "REFERENT_DISAGREES" | "SHARED"} verdict
+ * @property {boolean} counts
+ * @property {string} says
+ * @property {boolean} [near_miss] VALUES_DIFFER only: whether they differ only by leading zeros
+ * @property {{by: string, agrees: boolean}} [referent] how the referent was agreed or not
+ * @bound counts: true only for SHARED; a near miss is never counted
+ */
+/**
+ * @typedef {Object} Citation one court citation found in a text (R27)
+ * @property {number} volume
+ * @property {string} reporter the reporter's standard abbreviation
+ * @property {string} variant the spelling as written
+ * @property {number} page
+ * @property {number} [pin]
+ * @property {number} start offset in the text
+ * @property {number} end offset in the text
+ * @bound start, end: offsets in the text read, start before end; citations in reading order
+ */
+/**
+ * @typedef {Object} CitationsUndetermined what of a text's court citations could not be read, and why (R28)
+ * @property {string} why
+ * @property {{text: string, start: number, end: number}[]} [unrecognised] runs of volume-reporter-page shape no variant names
+ * @property {Object<string, *>[]} [ambiguous] spellings that name more than one reporter
+ */
+/**
+ * @typedef {Object} CitationsFound the court citations of one text (R27–R29)
+ * @property {Citation[]} citations
+ * @property {CitationsUndetermined} [undetermined]
+ * @bound undetermined: present whenever no reporter data is held, or a run of text could not be read; finding none is never "cites nothing"
+ */
+/**
+ * @typedef {Object} SeriesCitation one citation of a policy series' item or a standard designation (R30)
+ * @property {string} key the issuer's key
+ * @property {string} series the family's key
+ * @property {string | null} label
+ * @property {*} kind
+ * @property {*} issuer
+ * @property {string} number as written
+ * @property {string} normal the number's normal form
+ * @property {string} [portion] as written
+ * @property {string} [edition] as written; a standard only
+ * @property {number} start offset in the text
+ * @property {number} end offset in the text
+ * @property {*} basis
+ * @property {*} profile
+ * @bound edition: present only when the text names one; never defaulted
+ */
+/**
+ * @typedef {Object} SeriesFound the policy and standard citations of one text (R30–R33)
+ * @property {SeriesCitation[]} citations
+ * @property {{why: string, ambiguous?: Object<string, *>[], conflicts?: Object<string, *>[], unreadable?: Object<string, *>[]}} [undetermined] what could not be read, and why
+ * @bound undetermined: present whenever the view supplies no series, a family is withheld or unreadable, or readings overlap; finding none is never "cites nothing"
+ */
 
 /* The twelve spaces, in R1's order, their generic labels (used only when the view gives none) and what their
    referent is. `account`, `object` and `vendor` are the money record's identifiers; `proceeding` a proceeding's
@@ -96,7 +199,12 @@ function compile(p, mode) {
 
 /* ---------------------------------------------------------------- spaces (R1, R2) */
 
-/** The twelve spaces, each with the forms the view supplies (R1, R2). Never throws. */
+/**
+ * The twelve spaces, each with the forms the view supplies (R1, R2). Never throws.
+ * @param {*} v the combined view (`jurisdictions.combine`'s view, or its whole result); anything else reads as empty
+ * @returns {SpaceEntry[]}
+ * @bound result: the twelve spaces in R1's order; a space with no form in the view has forms []
+ */
 export function spaces(v) {
   const { view } = viewOf(v);
   return SPACE_NAMES.map((space) => {
@@ -160,7 +268,13 @@ function kindPrefix(view, value) {
   return { kind: null, rest: value };
 }
 
-/** One value recognised in one space, or null (R3). Never throws. */
+/**
+ * One value recognised in one space, or null (R3). Never throws.
+ * @param {*} v the combined view, as for `spaces`
+ * @param {*} space a space's name; any other gives null
+ * @param {*} [value] a string or a number; anything else, a missing value or an empty one gives null
+ * @returns {Recognised | null}
+ */
 export function recognise(v, space, value) {
   const { view } = viewOf(v);
   if (!SPACE_NAMES.includes(space)) return null;
@@ -174,6 +288,7 @@ export function recognise(v, space, value) {
     if (typeof f.form !== "string") continue;
     const normal = matchForm(f, rest);
     if (normal == null) continue;
+    /** @type {Recognised} builds a Recognised */
     const out = { space, value: raw, form: f.form, normal };
     if (space === "enactment") {
       out.kind = kind;
@@ -224,7 +339,13 @@ function floorOf(view, conflicts, kind) {
 
 const outsideSays = (view, kind, f) => word("idspaces.text.first_outside_record", { kind: String(kind), system: String(systemName(view, f.system)), floor: String(f.floor) });
 
-/** Whether an enactment number is inside the record's reach (R6–R9). Never throws. */
+/**
+ * Whether an enactment number is inside the record's reach (R6–R9). Never throws.
+ * @param {*} v the combined view, as for `spaces`
+ * @param {*} number a number, or a string of digits; anything else is UNDETERMINED
+ * @param {*} [kind] an enactment kind the profile names; absent or empty judges against every kind's floor
+ * @returns {Reach}
+ */
 export function reach(v, number, kind = null) {
   const { view, conflicts } = viewOf(v);
   const n = typeof number === "number" ? number
@@ -269,7 +390,14 @@ function lineageOf(lineage, key) {
   return arr(rec).filter((r) => isObj(r) && Number.isFinite(r.roll_year));
 }
 
-/** A parcel key's standing from the assessor's own evidence (R10–R12). Never throws. */
+/**
+ * A parcel key's standing from the assessor's own evidence (R10–R12). Never throws; missing evidence is empty.
+ * @param {*} key the parcel key
+ * @param {{current?: Set<*> | *[], lineage?: Map<*, *> | Object<string, *>, vintages?: *[]} | *} [evidence]
+ *   `current` the keys in the assessor's current layer; `lineage` key → its retirement records `{roll_year, children}`;
+ *   `vintages` the names of the published vintages searched
+ * @returns {ParcelStanding}
+ */
 export function parcelStanding(key, evidence) {
   const ev = isObj(evidence) ? evidence : {};
   const vintages = arr(ev.vintages).map(String);
@@ -313,7 +441,12 @@ function systemOfOne(view, address) {
   return { origin: null, unknown: true, why: word("idspaces.why.system_active_profiles", { host: String(host) }) };
 }
 
-/** The system a capture belongs to, from every address the record located it at (R13–R15). Never throws. */
+/**
+ * The system a capture belongs to, from every address the record located it at (R13–R15). Never throws.
+ * @param {*} v the combined view, as for `spaces`
+ * @param {*} addresses one address, or a list of them; anything else is no address
+ * @returns {SystemAnswer}
+ */
 export function systemOf(v, addresses) {
   const { view } = viewOf(v);
   const given = typeof addresses === "string" ? [addresses] : arr(addresses);
@@ -362,8 +495,17 @@ function throughCrosswalk(view, space, ra, rb) {
   return { sources: walks.map((c) => c.source), partners: [...partners] };
 }
 
-/** §8.3's counting rule over one pair (R16–R22). Throws TypeError only when an end is unrecognised or not in
- *  `space`; the caller must recognise both values first. */
+/**
+ * §8.3's counting rule over one pair (R16–R22). The caller must recognise both values first.
+ * @param {*} v the combined view, as for `spaces`
+ * @param {string} space the space both values were recognised in
+ * @param {*} a one end, `{rec, system?, name?}`: `rec` from `recognise` in `space`, `system` from `systemOf`, `name` a
+ *   fund's name as written
+ * @param {*} b the other end, as `a`
+ * @param {*} [reading] the caller's referent reading: "agrees", "disagrees"; anything else is no reading
+ * @returns {Judgement}
+ * @throws {TypeError} when a.rec or b.rec is not a recognised value, or either is not in `space`; only then
+ */
 export function judgePair(v, space, a, b, reading = null) {
   const ra = isObj(a) ? a.rec : null, rb = isObj(b) ? b.rec : null;
   if (!isObj(ra) || !isObj(rb)) throw new TypeError("judgePair: a.rec and b.rec must both be recognised values (recognise() first)");
@@ -519,9 +661,13 @@ function shapes(text) {
   return out;
 }
 
-/** The court citations in `text`, each volume, reporter and page (R27–R29). `reporters` is court-citations'
- *  data (its exports, or its `VARIANTS` map alone), taking precedence over the data this module holds.
- *  Never throws. */
+/**
+ * The court citations in `text`, each volume, reporter and page (R27–R29). Never throws.
+ * @param {*} text the text read; anything but a string gives no citations and says why
+ * @param {*} [reporters] court-citations' data (its exports, or its `VARIANTS` map alone), taking precedence over
+ *   the data this module holds
+ * @returns {CitationsFound}
+ */
 export function recogniseCitations(text, reporters = undefined) {
   try {
     const t = typeof text === "string" ? text : "";
@@ -556,7 +702,8 @@ export function recogniseCitations(text, reporters = undefined) {
       return !(i < taken.length && taken[i][0] < s.end);
     });
     if (!unrecognised.length && !ambiguous.length) return { citations };
-    const undetermined = {};
+    /** @type {CitationsUndetermined} builds a CitationsUndetermined; `why` is set below, as one of the two lists is not empty */
+    const undetermined = { why: "" };
     if (unrecognised.length) {
       undetermined.unrecognised = unrecognised;
       undetermined.why = word("idspaces.why.run_text_volume", { unrecognized: String(unrecognised.length) });
@@ -647,18 +794,23 @@ function readMatch(s, m) {
     normal = normalOf({ normal: s.normal }, m);
     if (!normal) return null;
   }
+  /** @type {SeriesCitation} builds a SeriesCitation */
   const out = { key: s.key, series: s.series.key, label: typeof s.series.label === "string" ? s.series.label : null,
-                kind: s.kind ?? null, issuer: s.issuer ?? null, number, normal };
-  if (typeof g.portion === "string" && g.portion) out.portion = g.portion;
-  if (s.kind === "standard" && typeof g.edition === "string" && g.edition) out.edition = g.edition;
-  out.start = m.index; out.end = m.index + m[0].length;
-  out.basis = s.basis ?? null; out.profile = s.profile ?? null;
+                kind: s.kind ?? null, issuer: s.issuer ?? null, number, normal,
+                ...(typeof g.portion === "string" && g.portion ? { portion: g.portion } : {}),
+                ...(s.kind === "standard" && typeof g.edition === "string" && g.edition ? { edition: g.edition } : {}),
+                start: m.index, end: m.index + m[0].length, basis: s.basis ?? null, profile: s.profile ?? null };
   return out;
 }
 
 const noSeries = (why, extra = {}) => ({ citations: [], undetermined: { why, ...extra } });
 
-/** The policy-series and standard citations in `text`, read from the view's series (R30–R33). Never throws. */
+/**
+ * The policy-series and standard citations in `text`, read from the view's series (R30–R33). Never throws.
+ * @param {*} v the combined view, as for `spaces`
+ * @param {*} text the text read; anything but a string gives no citations and says why
+ * @returns {SeriesFound}
+ */
 export function recogniseSeries(v, text) {
   try {
     const { view, conflicts } = viewOf(v);
