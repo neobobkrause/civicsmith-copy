@@ -62,10 +62,31 @@ import * as csv from "./csv.mjs";
 import * as ooxml from "./ooxml.mjs";
 import { localize } from "./setup-words/index.mjs";
 
+/**
+ * @typedef {Object} ReadingDialect the projection of an entry's dialect (R15)
+ * @property {?string} delimiter
+ * @property {?string} encoding
+ * @property {{delimiter: ?string, encoding: ?string}} confidence
+ * @property {{delimiter: string[], encoding: string[]}} signals
+ * @property {string[]} undetermined
+ * @property {?boolean} assumed
+ * @property {number[]} disagree
+ * @bound delimiter, encoding and each confidence: a non-empty string or null
+ * @bound disagree: finite numbers only
+ */
+
 /* Registration order is dispatch order within a pass: the first entry whose
    detect() answers wins that pass. Kept insertion-ordered by Map. */
 const REGISTRY = new Map();
 
+/**
+ * R1-R5: stores `entry` under `entry.format` and hands it back unchanged.
+ * An entry is `{format, detect(bytes, contentType), parts?, structure?, text?}`, and may carry more slots of its own (`dialect`, `cellsIn`).
+ * @param {*} entry
+ * @returns {*} the same entry
+ * @bound entry.format: a non-empty string; one entry per format at a time
+ * @throws {Error} when the entry names no format, has no detect, has a slot that is not a function or null, or its format is already registered
+ */
 export function registerFormat(entry) {
   if (!entry || typeof entry.format !== "string" || !entry.format)
     throw new Error("a format entry must name its format");
@@ -85,16 +106,30 @@ export function registerFormat(entry) {
    half of the negative control). It touches only in-memory dispatch; the
    record holds no registry state to corrupt. Returns the removed entry so a
    test can restore exactly what it took out. */
+/**
+ * R6: removes the entry under `format` and hands it back, or null when none is held. Never throws.
+ * @param {*} format
+ * @returns {*} the removed entry, or null
+ */
 export function unregisterFormat(format) {
   const entry = REGISTRY.get(format) || null;
   REGISTRY.delete(format);
   return entry;
 }
 
+/**
+ * R7: the entry under `format`, as registered, or null. Never throws.
+ * @param {*} format
+ * @returns {*} the entry, with whatever slots it was registered with, or null
+ */
 export function getFormat(format) {
   return REGISTRY.get(format) || null;
 }
 
+/**
+ * R8: every registered format key, in registration order. Never throws.
+ * @returns {string[]}
+ */
 export function listFormats() {
   return [...REGISTRY.keys()];
 }
@@ -187,6 +222,18 @@ async function detectRange(src, ct, nm) {
   return afterBytes(head, ct, nm);
 }
 
+/**
+ * R9-R13, R31, R32: which format a document is; bytes outrank the content type, then the name pass, else undetermined.
+ * A registered entry's detect error is not caught.
+ * The answer is `{format, confidence, signals}`: a registered entry's own detect answer verbatim (it may carry more keys), the name pass's csv answer,
+ * or `{format: "undetermined", confidence: "none", signals: [two reasons]}`.
+ * @param {*} [bytes] a Uint8Array, or a range source `{size, readRange(offset, length) -> Promise<Uint8Array>}` (the answer is then a Promise); anything else counts as no bytes
+ * @param {*} [contentType] counts only when a non-empty string
+ * @param {*} [name] the document's name; counts only when a non-empty string
+ * @returns {*} the answer, or a Promise of it for a range source
+ * @bound bytes: counted only when a Uint8Array of length above zero, or a range source
+ * @bound name pass: reads at most the first 1 MiB of the bytes
+ */
 export function detectFormat(bytes, contentType, name) {
   if (isRangeSource(bytes)) {
     const ct = typeof contentType === "string" && contentType ? contentType : null;
@@ -469,6 +516,11 @@ registerFormat({
    the key is then PRESENT AND NULL on the reading (an entry answered and this
    record cannot state what), which is a different fact from ABSENT (no entry
    with a decoding choice ever read this document). */
+/**
+ * R14-R16: a projection of the named keys of an entry's dialect, or null when `emitted` is not a non-array object. Never throws.
+ * @param {*} emitted
+ * @returns {?ReadingDialect}
+ */
 export function readingDialect(emitted) {
   /* NEVER THROWS (R16), even on an object whose key read throws (a getter, a
      revoked Proxy): a key that cannot be read is a key that holds no value of
