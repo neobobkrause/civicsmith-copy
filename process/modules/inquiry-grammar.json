@@ -15,7 +15,6 @@
   ],
   "uses": [
     "record-grammar",
-    "text-chain",
     "civil-time",
     "record-core",
     "content",
