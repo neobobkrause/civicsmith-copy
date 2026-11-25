@@ -8,6 +8,7 @@ import {
   STEP_KINDS, MACHINE_READ_KINDS, TEXT_CHAIN_CHECKS, checkChain, appendStep, mergedChain, derivationCap, captureBound,
   gradeCeiling, tiersEvidenced, describeChain, chainKindFor, isTranscribed, calibrationsOf, layerChain,
 } from "../../../src/textchain.mjs";
+/** @import { Refusal } from "../../../src/textchain.mjs" */
 import { BASIS_GRADES, EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 
 const AIT = (x = {}) => ({ step: "ai_transcription", engine: "vision-model", version: "3", ...x });
@@ -91,14 +92,14 @@ test("R104: a letter comes only from a measurement, its calibration named; once 
     for (const g of BASIS_GRADES) assert.equal(captureBound(measured, g), weakest(g, cap), `${cap} ${g}`);
   }
   /* The member-facing words (C-35.13, K2428) name both cases the refusal is for: a conversion, and an AI's reading. */
-  const words = checkChain([AIT({ cap: "C" })]).translation;
-  assert.equal(words, checkChain([{ step: "convert", engine: "host-export", format: "odt", cap: "C" }]).translation);
+  const words = /** @type {Refusal} */ (checkChain([AIT({ cap: "C" })])).translation;
+  assert.equal(words, /** @type {Refusal} */ (checkChain([{ step: "convert", engine: "host-export", format: "odt", cap: "C" }])).translation);
   assert.match(words, /a conversion of the document, or an AI's reading of a page/);
   assert.match(words, /an AI reads a scan/);
   assert.match(words, /"not yet determined"/);
-  assert.match(checkChain([AIT({ cap: "C" })]).detail, /ai_transcription step claims fidelity "C"/);
+  assert.match(/** @type {Refusal} */ (checkChain([AIT({ cap: "C" })])).detail, /ai_transcription step claims fidelity "C"/);
   /* Rule 2 holds: a measured reading stronger than the chain it extends is refused. */
-  assert.equal(appendStep([PIX, O("D")], AIT({ cap: "B", calibration: "CAL-AIT-1" })).code, "TEXT_CHAIN_STRENGTHENS");
+  assert.equal(/** @type {Refusal} */ (appendStep([PIX, O("D")], AIT({ cap: "B", calibration: "CAL-AIT-1" }))).code, "TEXT_CHAIN_STRENGTHENS");
 });
 
 test("R104: a member who checks a passage against the page raises it through gradeCeiling; the chain stays undetermined", () => {
