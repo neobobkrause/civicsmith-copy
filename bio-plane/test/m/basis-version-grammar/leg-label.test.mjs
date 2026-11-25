@@ -1,7 +1,9 @@
 /* basis-version-grammar R13 at the module's interface: every sentence this module writes about a version leg names it
    "Leg {n} of version '{name}'" (the key `basis-version-grammar.grammar.leg_of_version`), never the field spelling
    `basis_version_legs[i]`. Each test reads the finding's code and asserts its message begins with the leg's place, read by
-   key through `localize`; no test holds a sentence whole. Driven over frontmatter objects, as grammar.test.mjs is. */
+   key through `localize`; where the sentence is another module's (the lead-leg and leg-extent findings, worded by
+   `inquiry-grammar`), it asserts only that the message names the place, since that module may word the rest as it likes.
+   No test holds a sentence whole. Driven over frontmatter objects, as grammar.test.mjs is. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { basisVersionFindings } from "../../../src/basis-version-grammar/index.mjs";
@@ -17,14 +19,14 @@ const withCode = (code, legs, over = {}) => findingsOf(fm({ legs, ...over })).fi
 test("R13: a lead leg names its place in plain words, never basis_version_legs (C-54.1, through leadLegFindings)", () => {
   const found = withCode("LEAD_NOT_EVIDENCE", [{ version: "first", target: "LEAD-2026-0001-x", role: "supports", ground: "main" }]);
   assert.equal(found.length, 1, "control: the lead refusal is still raised");
-  assert.ok(found[0].message.startsWith(place(1, "first")), found[0].message);
+  assert.ok(found[0].message.includes(place(1, "first")), found[0].message);
   assert.doesNotMatch(found[0].message, /basis_version_legs/);
 });
 
 test("R13: an extent the record cannot evaluate names the leg's place (C-25.10, through checkLegExtentGrammar)", () => {
   const found = withCode("CONTENT_EXTENT_NO_PRODUCER", [{ version: "first", target: DOC, role: "supports", ground: "main", extent_kind: "dom" }]);
   assert.equal(found.length, 1, "control: the extent refusal is still raised");
-  assert.ok(found[0].message.startsWith(place(1, "first")), found[0].message);
+  assert.ok(found[0].message.includes(place(1, "first")), found[0].message);
   assert.doesNotMatch(found[0].message, /basis_version_legs/);
 });
 
