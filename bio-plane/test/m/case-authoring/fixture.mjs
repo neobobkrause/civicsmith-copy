@@ -197,7 +197,7 @@ export function world({ group = "test-group", provider = true, now = null, recor
   /* doorbell (layer 3, after capture), the real one on this host: it creates the `inbox` its knocks are pulled from
      (its R25; K2710: capture no longer creates it since T43-8), which `knocked` below writes and capture's R72 reads. */
   doorbellOf(host, { capture, record, provenance: prov, credentials });
-  const sources = sourcesOf(host, { record, membership, capture, now: () => Date.parse(clock.now) });
+  const sources = sourcesOf(host, { record, membership, now: () => Date.parse(clock.now) });
   const ex = extractionOf(host, { record, membership, calibration: { onCalibration() { return { ok: true }; } } });
   ex.migrate();
   const readings = {};
@@ -374,7 +374,7 @@ export function world({ group = "test-group", provider = true, now = null, recor
   Object.assign(w, { events, lines, money, people });
   let n = 0;
   Object.assign(w, {
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     head: (id) => record.head(id)?.bundleSha ?? null,
     fm: (text) => parseFrontmatter(String(text || "")).data || {},
     member(id, { role = "member" } = {}) {

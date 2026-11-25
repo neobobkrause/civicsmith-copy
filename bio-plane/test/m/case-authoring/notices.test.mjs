@@ -78,7 +78,7 @@ test("R41: no working_on when noticeReferenceOf answers null (or undefined); any
     const written = lines.filter((l) => l.startsWith("working_on:"));
     assert.deepEqual(written, workingOnLines(ref), `ref ${JSON.stringify(ref)}`);
     assert.equal(written.length, ref == null ? 0 : 1);
-    assert.equal(parseFrontmatter(text).data.case_id, r.caseId, "a line break in the answer begins no key");
+    assert.equal(parseFrontmatter(text).data?.case_id, r.caseId, "a line break in the answer begins no key");
     /* the case id and the project id are minted per world: compare the rest */
     texts.push(text.replaceAll(r.caseId, "CASE").replaceAll(P, "PROJ").replace(`${written[0]}\n`, ""));
   }
