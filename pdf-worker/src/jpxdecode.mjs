@@ -47,6 +47,10 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { READ_BOUNDS, boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
 
 export class JpxRefusal extends Error {
+  /**
+   * @param {string} code the refusal's code: `UNSUPPORTED`, `IMAGE_TOO_LARGE`, or the codec's own codes for damaged or short data
+   * @param {Object<string, *>} [detail] why: `feature`, a key of `JPX_REFUSES`, for `UNSUPPORTED`; a `note` for samples not decoded or damaged or short data; the working set, the bound and the image's size for `IMAGE_TOO_LARGE`
+   */
   constructor(code, detail = {}) {
     super(`${code}${detail.feature ? `: ${detail.feature}` : detail.note ? `: ${detail.note}` : ""}`);
     this.code = code;
@@ -60,9 +64,11 @@ const truncated = (note, extra = {}) => new JpxRefusal("TRUNCATED", { note, ...e
 
 /** The old `feature` of the memory refusal, an identifier read by code. The refusal is `IMAGE_TOO_LARGE` now (R4, R12) and no
  *  longer a key of `JPX_REFUSES`; the name stays exported so `pdf-pixels`' import of it still loads until it maps the code. */
+/** @type {string} */
 export const MEMORY_FEATURE = "image-past-memory-bound";
 
-/** Every `feature` an UNSUPPORTED refusal can carry. */
+/** Every `feature` an UNSUPPORTED refusal can carry.
+ * @type {Readonly<Record<string, string>>} each feature's key, and the sentence that says it */
 export const JPX_REFUSES = Object.freeze({
   "high-throughput coding": localize("image-codecs.jpxdecode.the_codestream_uses_part_15", "the codestream uses Part 15 (HTJ2K) block coding"),
   "a JP2 palette": localize("image-codecs.jpxdecode.the_image_s_samples_index", "the image's samples index a palette (pclr box)"),
@@ -973,9 +979,24 @@ function rintEven(v) {
 }
 
 /**
+ * @typedef {Object} JpxImage
+ * @property {number} width
+ * @property {number} height
+ * @property {number} comps 1 or 3
+ * @property {Uint8Array} samples interleaved 8-bit samples, rows top to bottom
+ * @property {Object<string, *>} detail what was decoded: the container, colour, tiles, layers, levels, transform and progression
+ */
+/**
  * Decode a `JPXDecode` stream (a JP2 file or a bare codestream). Returns
  * `{ width, height, comps, samples, detail }`: `samples` interleaved 8-bit,
  * one byte per component per pixel, rows top to bottom.
+ *
+ * @param {Uint8Array} d the stream's bytes
+ * @returns {JpxImage}
+ * @throws {JpxRefusal}
+ * @bound the image, its tiles and precincts: the declared sizes at most the `image` rows of READ_BOUNDS (`edge`,
+ * `pixels`), and the precinct and tile objects at most its retained-objects row, judged before any is allocated; a
+ * working set past the memory bound is refused `IMAGE_TOO_LARGE`
  */
 export function decodeJpx(d) {
   const box = container(d);
@@ -1052,7 +1073,7 @@ export function decodeJpx(d) {
     }
   }
   const cod = cs.main.cod;
-  return { width: W, height: H, comps: nc, samples: out,
+  return { width: W, height: H, comps: nc, samples: /** @type {Uint8Array} every tile written */ (out),
            detail: { container: box.jp2 ? "jp2" : "codestream", colour: box.colour, tiles: nTiles, layers: cod.layers,
                      levels: cod.sp.nl, transform, progression: ["LRCP", "RLCP", "RPCL", "PCRL", "CPRL"][cod.prog] ?? cod.prog,
                      colour_transform: !!cod.mct } };
