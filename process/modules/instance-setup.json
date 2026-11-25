@@ -31,7 +31,6 @@
     "lines",
     "scheduler",
     "wizard-scripts",
-    "queue-producers",
     "record-grammar",
     "action-grammar",
     "public-read",
