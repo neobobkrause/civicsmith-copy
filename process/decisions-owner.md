@@ -65,3 +65,8 @@ Rule now: notice-only follow-up checks are held until civicsmith has moved to th
 - 25 Nov 2026: "Instruction: lift the hold on notice-only checks" (given to ARCH; relayed by ARCH #18)
 - 25 Nov 2026: "Instruction: hold notice-only checks until civicsmith has moved to the latest Process4 version"
 Shown to the owner: not yet.
+
+## Dropping tranche t2
+Rule now: tranche t2, the refactoring tranche, is dropped, so that civicsmith returns to a clean state. The refactoring restarts from its plan once the provider/user fix is in and confirmed as correct. ARCH carries it out.
+- 25 Nov 2026: "1. Decision: drop tranche t2, the refactoring tranche, so that civicsmith returns to a clean state. The refactoring restarts from its plan once the provider/user fix is in and confirmed as correct."
+Shown to the owner: not yet.
