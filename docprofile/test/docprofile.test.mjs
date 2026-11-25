@@ -413,6 +413,9 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
   assert.equal(anyMatch(vocabPatterns({ view: PA }, "furniture"), "Town of Port Alder"), true);
   assert.equal(anyMatch(vocabPatterns({ view: LK }, "furniture"), "Town of Port Alder"), false);
   assert.deepEqual(vocabulary({ view: EMPTY }, "furniture"), []);
+  // an entry comes back as the view carries it, the column a budget header heads among its fields (jurisdictions R6)
+  const headers = { vocabulary: { budget_headers: [{ column: "fund", pattern: { re: "^Fund$" } }, null, "x"] } };
+  assert.deepEqual(vocabulary({ view: headers }, "budget_headers"), [{ column: "fund", pattern: { re: "^Fund$" } }]);
   // a reader through the helpers: Port Alder's items under its view only
   const items = (v) => keys(stubItems.parse({ text: PA_ITEMS, view: v }));
   assert.deepEqual(items(PA), ["PA-101", "PA-102", "PA-103"]);
