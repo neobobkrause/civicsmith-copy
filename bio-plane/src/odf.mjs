@@ -197,6 +197,8 @@ import { sheetCellRef, usedSheetRange, a1Corner, rangeUnitFor } from "./formats-
 import { slideShapeRef } from "./pptx.mjs";
 import { word, localize } from "./setup-words/index.mjs";
 
+/** @import { FlavourRow } from "./ooxml.mjs" */
+
 const UTF8 = new TextDecoder("utf-8", { fatal: false });
 
 /** Bytes as a Uint8Array view, from a Uint8Array, an ArrayBuffer, any typed
@@ -333,7 +335,16 @@ function spendChars(n) {
  * in `ooxml.mjs` plus one projection here — and, more to the point, these
  * entries cannot drift from the discriminator they dispatch on, because there
  * is only one place the facts live. */
-const ODF_ROWS = CONTAINER_FLAVOURS.filter((f) => f.partMap === "odf");
+/** A row of COFF-9's table that is one of the OpenDocument rows: its `partMap`
+ *  is `"odf"` (R31). `partMap` is absent on an `opc` row, which is why the
+ *  dispatch below selects on it; naming the test here is what lets the row
+ *  this module reads be an `OdfRow`, whose `partMap` is stated, rather than a
+ *  row whose `partMap` the table leaves open.
+ * @param {FlavourRow} f a row of `CONTAINER_FLAVOURS`
+ * @returns {f is OdfRow} */
+const isOdfRow = (f) => f.partMap === "odf";
+
+const ODF_ROWS = CONTAINER_FLAVOURS.filter(isOdfRow);
 
 function odfRow(flavour) {
   const row = ODF_ROWS.find((f) => f.flavour === flavour);
