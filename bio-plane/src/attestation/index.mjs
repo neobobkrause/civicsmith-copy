@@ -137,15 +137,16 @@ export async function attest(body, { head, put, fetch: fetchFn, holds, now = () 
         continue;
       }
       const parsed = parseTimestampResponse(new Uint8Array(await res.arrayBuffer()), sha);
-      if (!parsed.ok) {
-        attempts.push({ service: endpoint, attempted, ok: false, note: parsed.reason });
+      const granted = parsed.ok ? parsed.token : undefined;
+      if (!granted) {
+        attempts.push({ service: endpoint, attempted, ok: false, note: parsed.reason || "NO_TOKEN" });
         continue;
       }
-      tokenSha = hexBytes(await crypto.subtle.digest("SHA-256", parsed.token));
-      await put(tokenSha, parsed.token);
-      token = parsed.token; service = endpoint;
+      tokenSha = hexBytes(await crypto.subtle.digest("SHA-256", granted));
+      await put(tokenSha, granted);
+      token = granted; service = endpoint;
       attempts.push({ service: endpoint, attempted, ok: true, kind: "rfc3161",
-                      token_sha256: tokenSha, token_bytes: parsed.token.length });
+                      token_sha256: tokenSha, token_bytes: granted.length });
       break;
     } catch (e) {
       attempts.push({ service: endpoint, attempted, ok: false, note: String(e && e.message || e).slice(0, 120) });
