@@ -22,9 +22,10 @@ export const HEAD_MAX = 4 * SAFE_VIEW_TEXT_MAX;
 const TAIL_READ = 65_536 + 22;
 
 /* The office and OpenDocument entries in the order a container is asked to name itself. */
-const CONTAINERS = Object.freeze([["docx", docxEntry], ["xlsx", xlsxEntry], ["pptx", pptxEntry],
-                                  ["odt", odtEntry], ["ods", odsEntry], ["odp", odpEntry]]);
-const CONTAINER_NAMES = Object.freeze(CONTAINERS.map(([f]) => f));
+const CONTAINERS = Object.freeze([{ format: "docx", entry: docxEntry }, { format: "xlsx", entry: xlsxEntry },
+                                  { format: "pptx", entry: pptxEntry }, { format: "odt", entry: odtEntry },
+                                  { format: "ods", entry: odsEntry }, { format: "odp", entry: odpEntry }]);
+const CONTAINER_NAMES = Object.freeze(CONTAINERS.map(({ format }) => format));
 
 /* R11: the routes of a safe view, by format. `pdf` and `office` are rendered as page images (`file-scanner` R7); `data`
    is the cells the reader read. */
@@ -154,8 +155,8 @@ export function formatOf(bytes) {
   try {
     if (!(bytes instanceof Uint8Array) || bytes.length === 0) return "unknown";
     if (hasZipMagic(bytes)) {
-      for (const [format, entry] of CONTAINERS) {
-        try { if (entry.detect(bytes)) return format; } catch { /* not this one */ }
+      for (const { format, entry } of CONTAINERS) {
+        try { if (entry.detect(bytes, undefined)) return format; } catch { /* not this one: no content type is given, the bytes alone decide */ }
       }
       return "zip";
     }
