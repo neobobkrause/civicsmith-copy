@@ -44,7 +44,7 @@ test("R49: onMachinePassage takes one registration; a malformed or second one is
   for (const [m, f] of [["", fn], [null, fn], ["run-productions", "not a function"]]) {
     const bad = w.bv.onMachinePassage(m, f);
     assert.deepEqual(bad, listenerRefusal(null, m, f), "membership's one refusal, unchanged");
-    assert.equal(bad.reason, "LISTENER_MALFORMED");
+    assert.equal(bad?.reason, "LISTENER_MALFORMED");
   }
   /* a refused registration holds no slot: the leg on DOC lands */
   assert.equal(w.inquiry(Q, block(version("first", [DOC]))).ok, true);
@@ -52,7 +52,7 @@ test("R49: onMachinePassage takes one registration; a malformed or second one is
   assert.deepEqual(w.bv.onMachinePassage("run-productions", fn), { ok: true, module: "run-productions" });
   const second = w.bv.onMachinePassage("other", fn);
   assert.deepEqual(second, listenerRefusal({ module: "run-productions" }, "other", fn));
-  assert.deepEqual([second.reason, second.module], ["LISTENER_DECLARED", "run-productions"], "by any module, naming the holder");
+  assert.deepEqual([second?.reason, second?.module], ["LISTENER_DECLARED", "run-productions"], "by any module, naming the holder");
   assert.equal(w.bv.onMachinePassage("run-productions", fn).reason, "LISTENER_DECLARED", "the holder too");
 });
 

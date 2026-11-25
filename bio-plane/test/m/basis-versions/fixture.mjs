@@ -114,7 +114,7 @@ export function world({ now = "2026-09-28T01:00:00Z", caseMemberFact = true, wit
     row: (q, ...a) => st.sql.exec(q, ...a)[0] ?? null,
     rows: (q, ...a) => st.sql.exec(q, ...a),
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`)[0].n,
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     sha: (id) => record.head(id)?.bundleSha ?? null,
     member(id, { role = "member" } = {}) {
       st.sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, capabilities, created, updated)
@@ -141,11 +141,14 @@ export function world({ now = "2026-09-28T01:00:00Z", caseMemberFact = true, wit
     /** A revision of a held bundle's bundle.md, every other file carried. */
     revise(id, text, { author = V("alice"), type = "inquiry" } = {}) {
       const files = [{ path: "bundle.md", text }];
-      for (const p of record.livePaths(id)) if (p !== "bundle.md") {
+      const head = record.head(id), live = record.livePaths(id);
+      if (!head || !live) throw new Error(`fixture revise: ${id} is not held`);
+      for (const p of live) if (p !== "bundle.md") {
         const f = record.readFile(id, p);
-        files.push(f.text != null ? { path: p, text: f.text } : { path: p, blobSha: f.blobSha, bytes: f.bytes });
+        if (!f) throw new Error(`fixture revise: ${id} lists ${p} live and holds no file`);
+        files.push("text" in f ? { path: p, text: f.text } : { path: p, blobSha: f.blobSha, bytes: f.bytes });
       }
-      return promotion.promote({ bundleId: id, base: record.head(id).bundleSha, snapKey: `k${++n}`, author, files,
+      return promotion.promote({ bundleId: id, base: head.bundleSha, snapKey: `k${++n}`, author, files,
                                  meta: { object_type: type } });
     },
     /** A project, owned (and so joined) by `owner`, citing `cites` (inquiry ids); `severed` ones marked so. */
