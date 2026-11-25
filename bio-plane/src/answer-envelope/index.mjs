@@ -9,6 +9,77 @@ import { CHECK_FAMILIES, CHECK_FAMILY_FILES, dec49Row } from "./families.mjs";
 import { DISPATCH_CHECKS, BOOTSTRAP_CHECKS, REPLAY_CHECKS, REQUIRED_ARGUMENT_CHECKS } from "./checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/**
+ * @typedef {Object} RowRef a code with its row, as a refusal carries it (DEC-49)
+ * @property {string} code
+ * @property {string|null} check
+ * @property {string} translation
+ * @bound check: the row's C-number; null only where the family's row has none
+ * @bound translation: never empty
+ */
+/**
+ * @typedef {Object} StoreReply the store's reply as it came: its HTTP status and its JSON envelope
+ * @property {number} status
+ * @property {Object<string, *>} body
+ */
+/**
+ * @typedef {Object} StoreAnswered the store answered (`ok: true`): what its method returned, and its reply (R3)
+ * @property {true} answered
+ * @property {undefined} [refused]
+ * @property {*} result
+ * @property {StoreReply} reply
+ * @property {undefined} [correlation]
+ */
+/**
+ * @typedef {Object} StoreRefused the store's own refusal (`ok: false` below 500), relayed with its status (R3)
+ * @property {false} answered
+ * @property {true} refused
+ * @property {undefined} result
+ * @property {StoreReply} reply
+ * @property {undefined} [correlation]
+ */
+/**
+ * @typedef {Object} StoreSilence the store did not answer: no JSON, no boolean `ok`, or its own catch at 500 or above (R3, R5)
+ * @property {false} answered
+ * @property {undefined} [refused]
+ * @property {undefined} result
+ * @property {undefined} [reply]
+ * @property {string} [correlation]
+ * @bound correlation: a lower-case UUID, present only when the store's own STORE_INTERNAL_ERROR carried one
+ */
+/** @typedef {StoreAnswered|StoreRefused|StoreSilence} StoreOutcome what `doAnswer` reads from one store reply (R3) */
+/**
+ * @typedef {Object} PageOptions what the page's owner hands with an HTML answer (R6)
+ * @property {string[]} [scriptHashes]
+ * @bound scriptHashes: each "sha256-" and 44 base64 characters ending "="; one malformed, or none, keeps the nonce rule
+ */
+/**
+ * @typedef {Object} ArgumentComplaint the argument complaint (C-61.1, R8), spread into a refusal by its caller
+ * @property {false} ok
+ * @property {string} reason
+ * @property {string} code
+ * @property {string|null} check
+ * @property {string} translation
+ * @property {*} error
+ * @property {*} op
+ * @property {*} argument
+ * @property {*} shape
+ * @property {string} detail
+ * @bound reason: exactly "REQUIRED_ARGUMENT_MISSING"
+ */
+/**
+ * @typedef {Object} InternalErrorAnswer the Worker door's answer to a throw (C-69.3, R5): no stack, message, path or line
+ * @property {false} ok
+ * @property {string} error
+ * @property {string} reason
+ * @property {string} code
+ * @property {string|null} check
+ * @property {string} translation
+ * @property {string} correlation
+ * @bound error: exactly "internal error"
+ * @bound reason: exactly "PLANE_INTERNAL_ERROR"
+ */
+
 /* R6 (was control-plane R51; DEC-122 (3); N528; F17, K1881): the policy every `text/html` response the plane serves
    carries, so a browser loads no script, style, font, image or connection from another origin and sends nothing
    elsewhere. The pages served (since T47 `interface-shell`'s `interfacePage` at `/` and `/app/*`, the setup page no longer
@@ -19,8 +90,16 @@ import { word, localize } from "../setup-words/index.mjs";
    no `'unsafe-inline'`, no `'unsafe-eval'`), the nonce fresh for every response (128 bits from the platform's CSPRNG),
    and every `<script>` element of the page served is given it here, so the pages run as before and a script they did
    not ship does not. Styles stay inline (`style-src` is not F17's). */
+/** @type {string} R6: the page policy's directives other than `script-src`
+ * @bound names no other origin; img-src is exactly 'self' data: blob:; holds no script-src */
 const PAGE_POLICY = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; "
   + "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'";
+/**
+ * R6: the whole policy of an HTML answer that carries a nonce.
+ * @param {string} nonce
+ * @returns {string}
+ * @bound script-src is exactly 'nonce-<nonce>': no 'self', no host, no 'unsafe-inline', no 'unsafe-eval'
+ */
 const pagePolicy = (nonce) => `${PAGE_POLICY}; script-src 'nonce-${nonce}'`;
 /* R6 (fix round 3, C15, P2.4; K4359): the interface page carries no inline script, so its policy names the shell's versioned script by
    its hash (`interface-shell` exports it) with this origin, and no nonce */
@@ -30,6 +109,7 @@ const hashPolicy = (hashes) => PAGE_POLICY + "; script-src " + ["'self'", ...has
 /* `interfacePage`'s slot (`interface-shell` R1, R2; was `setup-page` R28, K2038): the literal the page holds in each
    script element's `nonce` attribute, which every HTML body served gets the response's nonce in place of, wherever it
    stands. */
+/** @type {string} R6: the literal an HTML body holds where each response's nonce goes */
 const NONCE_SLOT = "__CSP_NONCE__";
 
 /* 16 bytes from `crypto.getRandomValues`, in base64 (CSP's nonce grammar). */
@@ -87,6 +167,14 @@ function stampScripts(html, nonce) {
    leaves as it came. A body that cannot be read is the door's fault, answered as R5's. */
 /* whether an HTML text holds a script element with text of its own (no `src`), whatever its spelling */
 const hasInlineScript = (html) => (html.replace(/<!--[\s\S]*?-->/g, "").match(/<script\b[^>]*>/gi) || []).some((tag) => !/\ssrc\s*=/i.test(tag)) || html.includes(NONCE_SLOT);
+/**
+ * R6: an HTML answer with its page policy; any other answer as it came.
+ * @param {Response} res
+ * @param {PageOptions} [opts]
+ * @returns {Promise<Response>}
+ * @bound an answer whose content-type is not text/html, or no answer at all, is handed back unchanged
+ * @bound a body that cannot be read is answered as R5's PLANE_INTERNAL_ERROR
+ */
 async function withPagePolicy(res, opts = {}) {
   const type = res && res.headers ? res.headers.get("content-type") || "" : "";
   if (!/^\s*text\/html\b/i.test(type)) return res;
@@ -107,6 +195,13 @@ async function withPagePolicy(res, opts = {}) {
 }
 
 /* N630 (K1717, K1864 (1)): compact JSON, no indentation, so no answer carries whitespace it does not need. */
+/**
+ * R1, R2: an answer as JSON, open to every origin, its refusal decorated with its row.
+ * @param {*} o
+ * @param {number} [status]
+ * @returns {Response}
+ * @bound status: an HTTP status, 200 when absent
+ */
 const json = (o, status = 200) =>
   new Response(JSON.stringify(dec49Attach(o)), {
     status, headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
@@ -202,6 +297,11 @@ function dec49Decorate(r) {
    sub-objects that are DATA rather than refusals — `residue` entries, per-part
    verdicts, a run's steps — and put a member-facing sentence on something no
    member is being refused. Bounded on purpose. */
+/**
+ * R2: `o` with its refusal decorated, at the top level and in `result` only; a field already present is kept. The same object.
+ * @param {*} o
+ * @returns {*}
+ */
 function dec49Attach(o) {
   if (!o || typeof o !== "object" || Array.isArray(o)) return o;
   dec49Decorate(o);
@@ -260,7 +360,9 @@ function dec49Attach(o) {
    publishedbytes, publishedmanifest, bootstrap — is reachable with NO
    credential of any kind. An anonymous stack trace is a disclosure, and a
    diagnostic a stranger cannot act on is not worth one. */
+/** @type {string} R3: the code of a store that did not answer, "STORE_DID_NOT_ANSWER" */
 const STORE_SILENT_REASON = "STORE_DID_NOT_ANSWER";
+/** @type {string} R3: the sentence a store that did not answer carries; it claims nothing about the record */
 const STORE_SILENT_DETAIL =
   localize("answer-envelope.index.this_teams_civicsmith_could_not", "this team's Civicsmith could not consult its own record, so nothing here is a statement about the record. It is NOT a claim that what you asked for is absent, unpublished, unknown or refused — those are answers, and this is the absence of one. The question stands unanswered; ask again.");
 
@@ -273,6 +375,12 @@ const STORE_SILENT_DETAIL =
    at 500 or above is the store's catch, whose `error` is a stack (control-plane R30): a silence, never relayed. An
    answer carries its `reply` too, so a relay keeps the store's status and envelope without opening the reply a second
    time. */
+/**
+ * R3, R5: the store's reply read once, told apart as answered, refused or silent.
+ * @param {Response|Promise<Response>} res
+ * @returns {Promise<StoreOutcome>}
+ * @bound anything that is not a reply carrying JSON with a boolean ok is a silence, never an answer
+ */
 async function doAnswer(res) {
   let r = null, out = null;
   try { r = await res; out = await r.json(); } catch { out = null; }
@@ -288,6 +396,14 @@ async function doAnswer(res) {
 }
 
 /* R3 (K421): the store's own refusal, relayed with its status, code and sentence; `extra` is what the relay adds (R1). */
+/**
+ * R3: the store's own refusal, relayed with its status, code and sentence, `extra` added (R1).
+ * @param {*} out
+ * @param {Object<string, *>} [extra]
+ * @returns {Response}
+ * @throws {TypeError} when `out` carries no reply
+ * @bound out: a `doAnswer` outcome that carries the store's reply, its refused one (StoreRefused)
+ */
 function storeRefusal(out, extra = {}) {
   return json({ ...out.reply.body, ...extra }, out.reply.status);
 }
@@ -302,6 +418,12 @@ function storeRefusal(out, extra = {}) {
    (the store did not answer), stated inside an answer rather than refused; the DEC-49 guard's arm G declares the two
    spellings one condition by name. The wire only GAINS `code`, `check` and `translation`. */
 /* R5 (N333): `correlation`, when `doAnswer` read one from the store's own internal error, is carried. */
+/**
+ * R3, R5: the 502 `STORE_DID_NOT_ANSWER` refusal naming the op, with the store's correlation id when there was one.
+ * @param {*} op
+ * @param {string} [correlation]
+ * @returns {Response}
+ */
 function storeSilent(op, correlation = undefined) {
   /* DEC-49 REGION is-store-silent */
   return json({ ok: false, reason: "STORE_DID_NOT_ANSWER", ...dispatchRow("STORE_DID_NOT_ANSWER"),
@@ -314,6 +436,12 @@ function storeSilent(op, correlation = undefined) {
    anonymous caller "success" in the status line. An answer (a refusal the store returned inside `ok: true` included)
    is re-wrapped in the envelope the store answers, `{ok: true, result}`, at the store's own status; the store's own
    refusal (R3) is relayed at its status; anything else is `storeSilent`, never 200. */
+/**
+ * R3, R4: a store reply relayed: an answer as `{ok: true, result}` at the store's status, its refusal at its status, else R3's 502.
+ * @param {Response|Promise<Response>} res
+ * @param {*} op
+ * @returns {Promise<Response>}
+ */
 async function relayAnswer(res, op) {
   /* REC-52: the store's envelope is opened by `doAnswer` and nowhere else. */
   const out = await doAnswer(res);
@@ -327,6 +455,12 @@ async function relayAnswer(res, op) {
    is logged server-side with its stack under a CORRELATION id, and the caller receives the code, the canned
    translation and the id — no stack, no message, no path. A named refusal is RETURNED, never thrown, so none passes
    through here. */
+/**
+ * R5: a throw in the Worker's door, answered 500 with `PLANE_INTERNAL_ERROR` and a fresh correlation id; the stack is logged under it.
+ * @param {*} e
+ * @param {*} req
+ * @returns {Response}
+ */
 function planeInternalError(e, req) {
   const correlation = crypto.randomUUID();
   let op = "";
@@ -339,6 +473,11 @@ function planeInternalError(e, req) {
   } catch { /* a log that cannot be written never changes what the caller is told */ }
   return json(answer, 500);
 }
+/**
+ * R5: the body of that answer.
+ * @param {string} correlation
+ * @returns {InternalErrorAnswer}
+ */
 function planeInternalAnswer(correlation) {
   /* DEC-49 REGION is-plane-internal-error */
   return { ok: false, error: "internal error", reason: "PLANE_INTERNAL_ERROR", ...dispatchRow("PLANE_INTERNAL_ERROR"),
@@ -347,6 +486,12 @@ function planeInternalAnswer(correlation) {
 }
 
 /* D-512: C-66.6's row — a replay the plane could not verify — on `identityFenceRow`'s shape and its refusal to invent. */
+/**
+ * R8: C-66.6: a code's row from `REPLAY_CHECKS`.
+ * @param {string} code
+ * @returns {RowRef}
+ * @throws {Error} when the table holds no row with a canned translation for the code
+ */
 const replayRow = (code) => {
   const row = REPLAY_CHECKS[code];
   if (!row || typeof row.translation !== "string" || !row.translation)
@@ -358,6 +503,12 @@ const replayRow = (code) => {
 /* D-270 / C-61 (control-plane R39; moved from legacy-index with the row, K621, K636): the argument complaint's row
    reader, `admissionRow`'s shape and its refusal to invent — a code with no sentence behind it throws here rather than
    reaching a member. */
+/**
+ * R8: C-61.1: a code's row from `REQUIRED_ARGUMENT_CHECKS`.
+ * @param {string} code
+ * @returns {RowRef}
+ * @throws {Error} when the table holds no row with a canned translation for the code
+ */
 const requiredArgumentRow = (code) => {
   const row = REQUIRED_ARGUMENT_CHECKS[code];
   if (!row || typeof row.translation !== "string" || !row.translation)
@@ -370,6 +521,14 @@ const requiredArgumentRow = (code) => {
  * `shape`, rather than a row per op — `AI_BEYOND_TASK_SCOPE` is the standing precedent for one code whose producers
  * are told apart by a field. A HELPER and not edited sites, for the `where` field's sake: a DEC-49 row holds ONE
  * `where` naming the SMALLEST SPAN. Every module that answers this complaint is handed this one function. */
+/**
+ * R8 (C-61.1): the argument complaint, naming the op, the argument and the shape it wanted; `error` is carried byte for byte.
+ * @param {*} op
+ * @param {*} argument
+ * @param {*} shape
+ * @param {*} [error]
+ * @returns {ArgumentComplaint}
+ */
 function requiredArgument(op, argument, shape, error) {
   /* DEC-49 REGION is-required-argument
    * THE SPAN `REQUIRED_ARGUMENT_MISSING` names. Code a STRING LITERAL at its site. `error` is passed in BYTE-IDENTICAL
@@ -384,6 +543,12 @@ function requiredArgument(op, argument, shape, error) {
 /* D-278 / C-68 and C-69: the same reader again, one per family, and the same
    refusal to invent. */
 /* C-68.2–.4 are held here (R8; raised by `control-plane`, its R15). */
+/**
+ * R8: C-68.2 to C-68.4: a code's row from `BOOTSTRAP_CHECKS`.
+ * @param {string} code
+ * @returns {RowRef}
+ * @throws {Error} when the table holds no row with a canned translation for the code
+ */
 const installationRow = (code) => {
   const row = BOOTSTRAP_CHECKS[code];
   if (!row || typeof row.translation !== "string" || !row.translation)
@@ -394,6 +559,12 @@ const installationRow = (code) => {
 /* R14 (T47; DEC-198 (3), K3030): C-69.6 retired. Until `control-plane` answers through `credentials.disclosureDue` (its
    R65, T47-65) its door still mints `DISCLOSURE_DUE` through this reader; the code's row is then the one R2 decorates it
    with (`credentials`' C-29.40, read from the families), never a row of this table. No other code is answered so. */
+/**
+ * R8, R14: a code's row from `DISPATCH_CHECKS`; `DISCLOSURE_DUE`'s from the families (credentials' C-29.40).
+ * @param {string} code
+ * @returns {RowRef}
+ * @throws {Error} when no row with a canned translation is held for the code
+ */
 const dispatchRow = (code) => {
   if (code === "DISCLOSURE_DUE") {
     const held = dec49Row(code);
@@ -412,7 +583,10 @@ const dispatchRow = (code) => {
    throws this and the handler that owns the Response turns it into the same
    refusal. A sentinel class and not a bare string, so a genuine crash on the
    same path is re-thrown instead of being reported as a polite silence. */
+/** R3: thrown by a renderer whose store read went silent, for the handler that owns the answer to refuse as `storeSilent`
+ * @bound op: the op that went silent, kept on the error */
 class StoreSilent extends Error {
+  /** @param {*} op */
   constructor(op) { super(word("publication.super.store_did_answer", { op: String(op) })); this.op = op; }
 }
 

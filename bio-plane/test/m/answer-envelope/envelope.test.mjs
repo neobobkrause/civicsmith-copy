@@ -41,8 +41,8 @@ test("R1: every answer is JSON with access-control-allow-origin *, compact, at t
     assert.notEqual(JSON.parse(text), null, what);
     assert.equal(text, JSON.stringify(JSON.parse(text)), `${what}: compact`);
   }
-  for (const [o, status] of [[{ ok: true, result: { a: 1 } }, 200], [{ ok: true, result: [1, 2], extra: "kept" }, 207],
-                             [{ ok: true, result: { ok: false, reason: "NO_SUCH_BUNDLE" } }, 404], [{ ok: false }, 500]]) {
+  for (const [o, status] of /** @type {Array<[Object<string, *>, number]>} */ ([[{ ok: true, result: { a: 1 } }, 200], [{ ok: true, result: [1, 2], extra: "kept" }, 207],
+                             [{ ok: true, result: { ok: false, reason: "NO_SUCH_BUNDLE" } }, 404], [{ ok: false }, 500]])) {
     const r = M.json(clone(o), status);
     assert.equal(r.status, status);
     assert.deepEqual(await r.json(), M.dec49Attach(clone(o)));
@@ -79,9 +79,9 @@ test("R2: a refusal (ok:false, at the top level or under result) whose reason or
   /* the door reads module tables beside the catalogue's own: admission's C-38, capture's C-118 (N347), tasks' C-76.1 */
   assert.equal(M.dec49Attach({ ok: false, reason: "NOT_AUTHENTICATED" }).check, "C-38.1");
   assert.equal(M.dec49Attach({ ok: false, code: "CLASS_FORBIDDEN" }).check, "C-38.2");
-  assert.equal(M.dec49Row("EVIDENCE_NOT_HELD").check, "C-118.1");
-  assert.equal(M.dec49Row("NO_SUCH_KNOCK").check, "C-118.2");
-  assert.equal(M.dec49Row("TASK_NOT_YOURS").check, "C-76.1");
+  assert.equal(M.dec49Row("EVIDENCE_NOT_HELD")?.check, "C-118.1");
+  assert.equal(M.dec49Row("NO_SUCH_KNOCK")?.check, "C-118.2");
+  assert.equal(M.dec49Row("TASK_NOT_YOURS")?.check, "C-76.1");
   assert.equal(M.dec49Row("NOT_FOUND"), null);
   /* never overwritten */
   const mine = { ok: false, reason: "NOT_AUTHENTICATED", check: "C-0", translation: "mine", code: "X" };
@@ -268,8 +268,9 @@ test("R8, R16: this module's table holds exactly the rows of the checks the door
   /* store-door's two rows are DISPATCH_CHECKS' */
   for (const code of ["STORE_INTERNAL_ERROR", "PURGE_HOLD_IN_PLACE"]) assert.equal(M.DISPATCH_CHECKS[code], rows[code]);
   /* the readers: each its family, the row's three fields, and a throw for a code with no sentence */
-  for (const [reader, family] of [[M.dispatchRow, M.DISPATCH_CHECKS], [M.installationRow, M.BOOTSTRAP_CHECKS],
-                                  [M.replayRow, M.REPLAY_CHECKS], [M.requiredArgumentRow, M.REQUIRED_ARGUMENT_CHECKS]]) {
+  for (const [reader, family] of /** @type {Array<[(code: string) => Object<string, *>, Object<string, Object<string, *>>]>} */ (
+         [[M.dispatchRow, M.DISPATCH_CHECKS], [M.installationRow, M.BOOTSTRAP_CHECKS],
+          [M.replayRow, M.REPLAY_CHECKS], [M.requiredArgumentRow, M.REQUIRED_ARGUMENT_CHECKS]])) {
     for (const [code, row] of Object.entries(family)) assert.deepEqual(reader(code), { code, check: row.check, translation: row.translation });
     assert.throws(() => reader("NO_SUCH_CODE"), /DEC-49/);
     assert.throws(() => reader("UNKNOWN_OP" in family ? "REPLAY_UNVERIFIED" : "UNKNOWN_OP"), /DEC-49/);

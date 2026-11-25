@@ -162,6 +162,18 @@ import * as TRANSLATIONS from "../translations/checks.mjs";
 import * as INSTANCE_SETUP from "../setup.mjs";
 import * as OWN from "./checks.mjs";
 
+/**
+ * @typedef {Object<string, *>} FamilyRow a row as its owner's family holds it: `{check, translation, where, …}` (DEC-49)
+ * @bound check: its C-number, where the row has one
+ * @bound translation: a canned sentence where the row has one; a row without one decorates nothing (R2)
+ */
+/**
+ * @typedef {Object} DecoratedRow what R2's decoration adds for a code: its check id and its canned sentence
+ * @property {string|null} check
+ * @property {string} translation
+ * @bound translation: never empty
+ */
+
 /* R18 (T48; N1039, K3147; the `court-citations` R11 form): importing this module builds none of its tables. Each exported
    table is a plain binding to a proxy over an empty target of the right kind; the first operation on it fills the target,
    freezes it, and every operation after is forwarded to the filled, frozen target, so a read answers value for value as
@@ -272,6 +284,8 @@ const FILE_LIST = [
   ["src/admission/checks.mjs", ADMISSION],
   ["src/answer-envelope/checks.mjs", OWN],
 ];
+/** @type {ReadonlyArray<ReadonlyArray<*>>} R7, R10, R12, R15, R17: each source `[path under bio-plane/, namespace]`, frozen, in the order a code is resolved; built on first read (R18)
+ * @bound every product module's file of families, in the module order, this module's own `src/answer-envelope/checks.mjs` last and alone */
 export const CHECK_FAMILY_FILES = lazyTable([], (t) => { for (const e of FILE_LIST) t.push(Object.freeze(e)); });
 
 const translated = (row) => !!row && typeof row === "object" && typeof row.translation === "string" && row.translation !== "";
@@ -294,10 +308,18 @@ function compose(out) {
   for (const f of Object.keys(out)) Object.freeze(out[f]);
 }
 
+/** @type {Readonly<Object<string, Readonly<Object<string, FamilyRow>>>>} R2, R7: every family `{FAMILY: {code: row}}`, each code once, frozen; built on first read (R18)
+ * @bound each code is held by the first source in CHECK_FAMILY_FILES' order that holds it with a canned translation, else the first that holds it at all */
 export const CHECK_FAMILIES = lazyTable({}, compose);
 
 /* R2: a code's row, `{check, translation}`, or null when no source holds one with a canned translation. Read on first use (R18). */
 let ROWS = null;
+/**
+ * R2: a code's row, read from `CHECK_FAMILIES`; a fresh object each call.
+ * @param {*} code
+ * @returns {DecoratedRow|null}
+ * @bound null when no family holds a row for the code with a canned translation, a code that is not a string among them
+ */
 export function dec49Row(code) {
   ROWS ??= new Map(Object.values(CHECK_FAMILIES).flatMap((rows) => Object.entries(rows))
     .filter(([, row]) => translated(row)).map(([code, row]) => [code, { check: row.check ?? null, translation: row.translation }]));
