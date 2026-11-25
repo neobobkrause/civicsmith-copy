@@ -184,7 +184,7 @@ export class People {
 
   /**
    *  @param {*} storage the Durable Object's storage (its `sql`)
-   *  @param {Object<string, *>} [services] record, membership and the used modules' services, `registry` and `now`
+   *  @param {{record?: *, membership?: *, entities?: *, provenance?: *, content?: *, sources?: *, events?: *, lines?: *, money?: *, duties?: *, registry?: *, now?: (() => string)|null}} [services] record, membership, the used modules' services, connection-grammar's registry, and the clock
    */
   constructor(storage, { record, membership, entities, provenance = null, content = null, sources = null, events = null,
                          lines = null, money = null, duties = null, registry = null, now = null } = {}) {
@@ -1973,7 +1973,7 @@ defaultRegistry.registerOwner({ owner: MODULE, kinds: IDENTITY_KIND_WORDS.map((k
  *  @param {People} p
  *  @param {URL} url the request's address; reads take their fields from its query
  *  @param {*} body the request's body; writes take their fields from it
- *  @returns {Object<string, () => *>} one route arm for each op name
+ *  @returns one route arm for each op name above
  */
 export function peopleOps(p, url, body) {
   const q = (k) => url.searchParams.get(k);
