@@ -86,7 +86,6 @@
     "bio-plane/test/m/host-governor/ops.test.mjs",
     "bio-plane/test/m/instance-setup/reports.test.mjs",
     "bio-plane/test/m/instance-setup/worker-reports.test.mjs",
-    "bio-plane/test/m/lines/invariants.test.mjs",
     "bio-plane/test/m/reevaluation/r14-regrade-door.test.mjs",
     "bio-plane/test/m/scheduler/invariants.test.mjs",
     "bio-plane/test/m/scheduler/plane.test.mjs",
