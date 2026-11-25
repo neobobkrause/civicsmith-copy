@@ -1,4 +1,4 @@
-Length: 131 lines. Last section: "Reaches upward by path, and the test runners".
+Length: 137 lines. Last section: "The screens' paths the shell draws".
 
 # civicsmith: ARCH's technical decisions
 
@@ -129,3 +129,8 @@ Decided: 24 Nov 2026.
 Decision: the reaches to a later module that exist today, made by path and so unseen by `p4 check` (`process/lanes/plane-scope/design.md`, section 6a), end as follows, each by its own job at any point of tranche t2. The every-module test runners, `.github/scripts/module-tests.mjs` with `.github/workflows/regression.yml`, go to `journey-check`; the `test` script of `bio-plane/package.json` and the other package scripts that gather every module's tests stay with their owners and are pointed at journey-check's runner by their owners' jobs. No job removes the runners: the required run is the process's own workflow. The design-words builder `build_words.mjs` moves from `documents` to `journey-check`, whose mock files it reads. `words-reads.json` goes to `documents`, whose folder holds it. The fixture makers' PDFs go to `image-codecs`, which writes them. The single-file checks of `run-rules` and `wizard-library` move to the module each checks. `sa-parity`'s child fixture moves to `plane`. The census tests of `money`, `agent-worker`, `member-roster`, `stewards` and `pdf-worker` are bounded to modules up to their owner, each later module checking itself. `bio-plane/test/declared-ops.mjs` (`test-support`) stops reading later modules' files. `agent-worker/wrangler.jsonc`'s binding of the deployed Worker by name is not a reach and stays.
 Why: a reach by path to a later module breaks the order rule as surely as an import, though no check sees it; each of these has an owner where it no longer reaches upward (lane research 24).
 Decided: 24 Nov 2026.
+
+## The screens' paths the shell draws
+Decision: interface-shell's R8, R28 and R54 take each screen's path from `docs/development/ux-substrate/screens/mock-shell.js`' `PATH` in the same checkout as the code, and no longer at the commits `3f40899950`, `a0fab7abf0`, `f90b187c7b` and `4664e8efd4`. The paths each names stay as written. Where the checkout's `PATH` and the shell differ (measured on 25 Nov: `imported` only, under R28), interface-shell's job reports it, and ARCH judges whether the code or the design page is wrong, as for any difference from the Screens pages.
+Why: none of those commits is in this repository and the required run checks out one commit, so the tests' `git show` fails in every run; the checkout's mock is the design as it stands, which the UX lane owns (the decision "The design mock the walk compares against"). Measured by interface-shell #2: against the checkout's file R8 and R54 pass.
+Decided: 25 Nov 2026.
