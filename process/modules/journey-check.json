@@ -44,7 +44,8 @@
     "bio-plane/test/m/promotion/write-path.test.mjs",
     "bio-plane/test/m/test-support/corpus.test.mjs",
     "bio-plane/test/system/row-census.mjs",
-    "bio-plane/test/system/row-census.test.mjs"
+    "bio-plane/test/system/row-census.test.mjs",
+    "budget-doctypes/test/fixtures/build.mjs"
   ],
   "public": [],
   "uses": [
