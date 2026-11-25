@@ -9735,7 +9735,7 @@
   },
   {
    "key": "shell.step.imported",
-   "en": "Imported cases",
+   "en": "Imported",
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from interface-shell's own rows"
@@ -101718,7 +101718,7 @@
   },
   {
    "key": "workbooks.recomputed_engine_group",
-   "en": "recomputed by the engine your group's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",
+   "en": "recomputed by the engine your team's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",
    "protected": false,
    "source": "DEC-260"
   },

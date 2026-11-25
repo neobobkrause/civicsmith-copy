@@ -60,7 +60,7 @@ test("R4 divide and round give the stated places under each mode, exactly by the
     assert.equal(signed(r), asDecimal(want, places), `round ${a} ${mode} ${places}`);
     assert.equal(r.precision, exact ? "exact" : "rounded");
   }
-  for (const opts of /** @type {Array<*>} wrong roundings, on purpose */ ([undefined, {}, { places: 2 }, { mode: "half_even" }, { places: 2, mode: "bankers" }, { places: -1, mode: "up" }, { places: 1.5, mode: "up" }])) {
+  for (const opts of [undefined, {}, { places: 2 }, { mode: "half_even" }, { places: 2, mode: "bankers" }, { places: -1, mode: "up" }, { places: 1.5, mode: "up" }]) {
     assert.equal(divide(fig("1"), fig("3"), opts).refused, "ROUNDING_UNSTATED", JSON.stringify(opts));
     assert.equal(round(fig("1.25"), opts).refused, "ROUNDING_UNSTATED", JSON.stringify(opts));
   }
@@ -104,7 +104,6 @@ test("R5 an approximate operand makes the result approximate; a range operand ma
   const points = (r) => { const out = []; const lo = Number(r.low); const hi = Number(r.high); for (let k = 0; k <= 8; k++) out.push(lo + ((hi - lo) * k) / 8); return out; };
   for (const a of ranges) for (const b of [...ranges, fig("3"), fig("-2")]) {
     const bp = b.precision === "range" ? points(b) : [Number(signed(b))];
-    /** @type {Array<[*, (x: number, y: number) => number]>} each answer, with the arithmetic it bounds */
     const cases = [[add(a, b), (x, y) => x + y], [subtract(a, b), (x, y) => x - y], [multiply(a, b), (x, y) => x * y]];
     if (!(bp.some((y) => y <= 0) && bp.some((y) => y >= 0))) cases.push([divide(a, b, { places: 3, mode: "half_even" }), (x, y) => x / y]);
     for (const [r, f] of cases) {
@@ -135,9 +134,9 @@ test("R19 exact: 10,000 two-decimal figures summed with no difference from a dec
 });
 
 test("R20 every refusal names its kind and why; an invalid figure is refused, and a wrong JavaScript type is a TypeError", () => {
-  for (const bad of /** @type {Array<*>} figures that are not, on purpose */ ([{ value: "1e5", sign: "+", precision: "exact" }, { value: "-1", sign: "+", precision: "exact" },
+  for (const bad of [{ value: "1e5", sign: "+", precision: "exact" }, { value: "-1", sign: "+", precision: "exact" },
     { value: "1", sign: "*", precision: "exact" }, { value: "1", sign: "+", precision: "guess" },
-    { low: "2", high: "1", sign: "+", precision: "range" }, { value: 1, sign: "+", precision: "exact" }])) {
+    { low: "2", high: "1", sign: "+", precision: "range" }, { value: 1, sign: "+", precision: "exact" }]) {
     const r = add(bad, fig("1"));
     assert.equal(r.refused, "FIGURE_INVALID"); assert.ok(r.why);
   }

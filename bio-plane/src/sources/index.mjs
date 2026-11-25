@@ -47,50 +47,28 @@ import { localize } from "../setup-words/index.mjs";
 export { SOURCES_CHECKS, SECRET_NOT_RECOGNISED_ANSWER } from "./checks.mjs";
 export { SOURCES_SCHEMA, SOURCES_TABLES, SOURCES_TABLE_CLASSES } from "./schema.mjs";
 
-/** @import { Refusal } from './checks.mjs' */
-/** An answer of this module's acts and reads: `ok`, and the fields each one names. A refusal is a `Refusal`
- *  (`./checks.mjs`): `ok: false`, with its `reason`, `code`, `check` and `translation`.
- * @typedef {{ok: boolean, [field: string]: any}} Answer */
-/** R2: evidence as held: a statement, or a citation with an optional note. Only a citation is "public elsewhere"
- *  evidence (R8).
- * @typedef {{statement: string} | {cite: string, note?: string}} Evidence */
-
-/** R2: the vocabularies. An audience is ordered lowest to highest.
- * @type {readonly string[]} */
+/** R2: the vocabularies. An audience is ordered lowest to highest. */
 export const KINDS = Object.freeze(["pseudonym_link", "attribute", "name"]);
-/** @type {readonly string[]} R2: the attributes an `attribute` disclosure names. */
 export const ATTRIBUTES = Object.freeze(["occupation", "employer", "role"]);
-/** @type {readonly string[]} R2: how a detail became known. */
 export const HOWS = Object.freeze(["self", "filing", "third_party", "hostile"]);
-/** @type {readonly string[]} R2, R7, R8: the audiences, lowest first. */
 export const AUDIENCES = Object.freeze(["member", "group", "public"]);
-/** R9: the ladder, lowest first.
- * @type {readonly string[]} */
+/** R9: the ladder, lowest first. */
 export const RUNGS = Object.freeze(["unknown", "same_knocker", "partly_known", "known_to_group", "publicly_known"]);
-/** R6: a link's basis, strongest first.
- * @type {readonly string[]} */
+/** R6: a link's basis, strongest first. */
 export const LINK_BASES = Object.freeze(["same_secret", "evidence"]);
-/** R11: a presented secret shorter than this is never recognised (doorbell R14's floor, K497).
- * @type {number} */
+/** R11: a presented secret shorter than this is never recognised (doorbell R14's floor, K497). */
 export const SECRET_MIN = 20;
-/** Bounds on what a member writes: a value, an exposer's name, a statement of evidence, a citation; in characters.
- * @type {number} */
+/** Bounds on what a member writes: a value, an exposer's name, a statement of evidence, a citation. */
 export const VALUE_MAX = 400, CLAIMED_BY_MAX = 200, EVIDENCE_MAX = 2000;
-/** R16: bounds on a mark: the vendor's name, and its terms as the member states them; in characters.
- * @type {number} */
+/** R16: bounds on a mark: the vendor's name, and its terms as the member states them. */
 export const SERVICE_MAX = 200, TERMS_MAX = 2000;
 
-/** R7: the sentences a consent and a withdrawal answer with (DEC-78 item 5(d)).
- * @type {string} */
+/** R7: the sentences a consent and a withdrawal answer with (DEC-78 item 5(d)). */
 export const CONSENT_STATEMENT = word("sources.consent_permanent_anything");
-/** @type {string} R7: the sentence a withdrawal answers with. */
 export const WITHDRAWAL_STATEMENT = word("sources.withdrawal_binds_later");
-/** R4: what an entry recorded without its value reads as (DEC-78 item 5(c)).
- * @type {string} */
+/** R4: what an entry recorded without its value reads as (DEC-78 item 5(c)). */
 export const NOT_RECORDED = word("sources.known_group_recorded");
-/** R3: the sentence a hostile disclosure reads as (DEC-78 item 5(b)): named by `claimedBy` on the date `at` begins
- *  with, not confirmed by the team.
- * @type {(claimedBy: any, at: any) => string} each is read as text; of `at`, its first ten characters */
+/** R3: the sentence a hostile disclosure reads as (DEC-78 item 5(b)). */
 export const claimSentence = (claimedBy, at) =>
   word("sources.named_confirmed_group", { claimed_by: String(claimedBy), at: String(String(at).slice(0, 10)) });
 
@@ -103,10 +81,7 @@ const safeJson = (s) => { try { return s == null ? null : JSON.parse(s); } catch
 const hex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
 
 /** R2: evidence is a non-empty statement, or a citation `{cite, note?}`; anything else is none. Only a citation is
- *  "public elsewhere" evidence (R8).
- * @param {any} v the evidence as a call names it
- * @returns {Evidence | null} trimmed; null when it is neither, or is longer than `EVIDENCE_MAX`
- * @bound a statement and a citation: at most EVIDENCE_MAX characters; a note is cut to that */
+ *  "public elsewhere" evidence (R8). */
 export function evidenceOf(v) {
   if (typeof v === "string" && v.trim() && v.length <= EVIDENCE_MAX) return { statement: v.trim() };
   if (isObj(v) && typeof v.cite === "string" && v.cite.trim() && v.cite.length <= EVIDENCE_MAX) {
@@ -120,8 +95,6 @@ export function evidenceOf(v) {
  *  or an offset `±HH:MM`. A date alone, a local time with no zone, and anything `Date.parse` reads but ISO 8601 does
  *  not spell (`"2026"`, `"Sep 30 2026"`) are not instants. */
 const INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:Z|[+-](\d{2}):(\d{2}))$/;
-/** @param {any} v
- * @returns {boolean} whether `v` is text spelling an ISO 8601 instant, as above */
 export function isInstant(v) {
   const m = typeof v === "string" ? INSTANT.exec(v) : null;
   if (!m || Number(m[4]) > 23 || Number(m[5]) > 59 || Number(m[6] ?? 0) > 59 || Number(m[7] ?? 0) > 23 || Number(m[8] ?? 0) > 59)
@@ -131,8 +104,7 @@ export function isInstant(v) {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === day && Number.isFinite(Date.parse(v));
 }
 
-/** R20: the most changes one answer carries, and the default (N90's bound).
- * @type {number} */
+/** R20: the most changes one answer carries, and the default (N90's bound). */
 export const CHANGES_LIMIT_DEFAULT = 200, CHANGES_LIMIT_MAX = 1000;
 /** The first instant `stampInstant` no longer spells with a four-digit year. */
 const INSTANT_SPELLED_MAX = Date.parse("+010000-01-01T00:00:00Z");
@@ -144,33 +116,9 @@ function isWhen(v) {
   return /^\d{4}-\d{2}-\d{2}T/.test(v) && !Number.isNaN(Date.parse(v));
 }
 
-/** What a `Sources` is made from (`sourcesOf` makes one per storage).
- * @typedef {Object} SourcesDeps
- * @property {any} [storage] the Durable Object's storage, whose `sql` the tables live in (required in fact)
- * @property {any} [record] record-core's instance on the same storage (required in fact)
- * @property {any} [membership] membership's instance on the same storage (required in fact)
- * @property {any} [doorbell] the doorbell's instance, or a function answering it, read on first use
- * @property {any} [provenance] provenance's instance, or a function answering it, read once on first use
- * @property {(() => number | string) | null} [now] the module's clock: milliseconds since the epoch, or an instant
- *   `Date.parse` reads (default: the wall clock)
- */
-/** R1: a capture's own `source`, as doorbell R13 composed it for the pulled knock.
- * @typedef {Object} StatedSource
- * @property {string} kind always `knocker`
- * @property {boolean} named always false
- * @property {any} pseudonym the knock's pseudonym, or null for a knock sent without a secret
- * @property {{knock_id: any, sha256: any, bytes: any, received: any}} receipt the knock's receipt, from its row
- */
-
-/** The person behind material given to the group: a source's history of disclosures, its consents, what of it may be
- *  published, its ladder, and the marks of member-keyed results. Every act answers an `Answer`, never throws on a
- *  malformed call (each field is checked and refused by name), and writes nothing when it refuses. */
 export class Sources {
   #sql; #record; #membership; #doorbellRef; #provenanceRef; #clock; #listeners = [];
 
-  /** Makes the tables that do not yet exist, and declares each to record-core with its classes (R13, R19).
-   * @param {SourcesDeps} [deps] required in fact: without `storage` the constructor throws on reading its `sql`
-   * @throws {Error} when record-core refuses the tables' declaration, or no storage is named */
   constructor({ storage, record, membership, doorbell = null, provenance = null, now = null } = {}) {
     this.#sql = storage.sql;
     this.#record = record;
@@ -224,9 +172,7 @@ export class Sources {
     return Array.isArray(list) ? list.filter((k) => k && typeof k.knock_id === "string" && k.sha256 === captureSha) : [];
   }
 
-  /** R1: doorbell R13's `source`, verbatim, from the knock's row.
-   * @param {any} k a pulled knock's row, as the doorbell's `pulledKnocksOf` answers it
-   * @returns {StatedSource} */
+  /** R1: doorbell R13's `source`, verbatim, from the knock's row. */
   static stated(k) {
     return { kind: "knocker", named: false, pseudonym: k.pseudonym ?? null,
              receipt: { knock_id: k.knock_id, sha256: k.sha256, bytes: k.bytes, received: k.received } };
@@ -277,12 +223,7 @@ export class Sources {
   }
 
   /** R1: the source as it stood when the capture was received (the capture's own `source`, verbatim), and beside it the
-   *  source's current history, each value read as R5 allows.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; `captureSha` the capture's 64-hex digest; `viewer` the control
-   *   plane's stamp naming an active member
-   * @returns {Answer} `{ok: true, captureSha, sourceId, source, history, sources?}` (`sources` when more than one knock
-   *   was pulled into the capture), each value read once logged (R5); or `NO_SUCH_SOURCE` for a machine or absent
-   *   viewer, a malformed digest or a capture no pulled knock stands behind; or record-core's `mintExhausted` refusal */
+   *  source's current history, each value read as R5 allows. */
   sourceOf(args = {}) {
     const { captureSha, viewer } = isObj(args) ? args : {};
     const reader = this.#memberOf(viewer);
@@ -355,10 +296,7 @@ export class Sources {
     return this.#record.transact(() => entries.map((e) => this.#view(e, reader, sup, true)));
   }
 
-  /** R5: the read log, to the members listed on an entry (their entries' reads) and to administrators (every read).
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; the source's id, and the viewer's stamp
-   * @returns {Answer} `{ok: true, source, scope: "all" | "listed", log: [{source, entry, reader, at}]}`, or
-   *   `NO_SUCH_SOURCE` */
+  /** R5: the read log, to the members listed on an entry (their entries' reads) and to administrators (every read). */
   readLog(args = {}) {
     const { source, viewer } = isObj(args) ? args : {};
     const reader = this.#memberOf(viewer);
@@ -393,10 +331,7 @@ export class Sources {
     return { rung, basis, claims: current.filter((e) => e.how === "hostile"), sup, pseudonym: src ? src.pseudonym : null };
   }
 
-  /** R9: the ladder for a viewer, with who knows and how; a withheld value stays withheld (R5).
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; the source's id, and the viewer's stamp
-   * @returns {Answer} `{ok: true, source, rung, ladder, knocker?, basis, claims}` (`knocker` on the `same_knocker`
-   *   rung of a pseudonym), or `NO_SUCH_SOURCE` */
+  /** R9: the ladder for a viewer, with who knows and how; a withheld value stays withheld (R5). */
   rungOf(args = {}) {
     const { source, viewer } = isObj(args) ? args : {};
     const reader = this.#memberOf(viewer);
@@ -414,11 +349,7 @@ export class Sources {
 
   /* ---- listeners (R10) ---- */
 
-  /** R10: a later module registers once at start; each listener is called after every R2, R6, R7 or R11 commit, with
-   *  `{source, entry, rung_before, rung_after}`, and its failure never undoes the act.
-   * @param {any} module the registering module's name
-   * @param {any} fn the listener
-   * @returns {Answer} `{ok: true, module}`, or membership's `listenerRefusal` */
+  /** R10: a later module registers once at start; each listener is called after every R2, R6, R7 or R11 commit. */
   onDisclosure(module, fn) {
     const refused = listenerRefusal(this.#listeners, module, fn, { slot: "onDisclosure" });
     if (refused) return refused;
@@ -438,13 +369,7 @@ export class Sources {
 
   /* ---- recording a disclosure (R2–R5) ---- */
 
-  /** R2–R5 (`op=sourcedisclose`).
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; the disclosure, and
-   *   `by`, the control plane's stamp: `revealed` is `{kind, attribute?, value?, to?}`
-   * @returns {Answer} the entry appended, `{ok: true, source, entry, kind, how, knownTo, recorded, by, at,
-   *   rung_before, rung_after, notified, ...}` with no value (R13); or `NO_SUCH_SOURCE`, `BAD_DISCLOSURE` naming the
-   *   field, `NO_EVIDENCE` or `NO_SIGHT_LIST`, each writing nothing
-   * @bound a stored value: at most VALUE_MAX characters; an exposer's name: at most CLAIMED_BY_MAX */
+  /** R2–R5 (`op=sourcedisclose`). */
   recordDisclosure(args = {}) {
     const a = isObj(args) ? args : {};
     const by = this.#memberOf(a.by);
@@ -456,8 +381,7 @@ export class Sources {
   }
 
   /** R2–R5, in order: the fields (BAD_DISCLOSURE, naming the field), the evidence (NO_EVIDENCE), the sight list
-   *  (NO_SIGHT_LIST). Answers the entry to write, or the refusal.
-   * @returns {Refusal | {ok?: undefined, [field: string]: any}} */
+   *  (NO_SIGHT_LIST). Answers the entry to write, or the refusal. */
   #disclosureRefusal(a, src) {
     const rv = isObj(a.revealed) ? a.revealed : null;
     if (!rv || !KINDS.includes(rv.kind))
@@ -557,10 +481,7 @@ export class Sources {
   /* ---- R6: two sources claimed as one person ---- */
 
   /** R6 (`op=sourcelink`). A presented `knockerSecret` whose digest is either source's knocker digest makes the claim's
-   *  basis `same_secret`; the secret is never stored or answered. The claim merges nothing.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown;
-   * @returns {Promise<Answer>} the `pseudonym_link` entry appended, as `recordDisclosure` answers it, with `to` and
-   *   `basis`; or `NO_SUCH_SOURCE`, `BAD_DISCLOSURE` (`to` naming the same source) or `NO_EVIDENCE` */
+   *  basis `same_secret`; the secret is never stored or answered. The claim merges nothing. */
   async linkClaim(args = {}) {
     const a = isObj(args) ? args : {};
     const by = this.#memberOf(a.by);
@@ -602,8 +523,7 @@ export class Sources {
   }
 
   /** R7: one consent or withdrawal, the refusals common to both arms (the audience, the entry, the standing). Answers
-   *  the row to write, `{noop}` when nothing would change, or the refusal.
-   * @returns {Refusal | {ok?: undefined, [field: string]: any}} */
+   *  the row to write, `{noop}` when nothing would change, or the refusal. */
   #consentPlan(sourceId, entryId, audience, withdraw) {
     if (!AUDIENCES.includes(audience)) return badDisclosure("audience", `an audience is one of ${AUDIENCES.join(", ")}`);
     const e = typeof entryId === "string"
@@ -637,11 +557,7 @@ export class Sources {
              statement: plan.act === "consent" ? CONSENT_STATEMENT : WITHDRAWAL_STATEMENT, notified: notified.length };
   }
 
-  /** R7 (`op=sourceconsent`): a member records the source's consent, with its evidence.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown;
-   * @returns {Answer} `{ok: true, source, entry, audience, act, at, standing, statement, notified}`, or
-   *   `{ok: true, existed: true, ...}` when that consent already stands; or `NO_SUCH_SOURCE`, `BAD_DISCLOSURE`
-   *   (`audience`), `NO_EVIDENCE` or `CONSENT_NOT_STANDING` */
+  /** R7 (`op=sourceconsent`): a member records the source's consent, with its evidence. */
   recordConsent(args = {}) {
     const a = isObj(args) ? args : {};
     const by = this.#memberOf(a.by);
@@ -657,10 +573,7 @@ export class Sources {
     return this.#writeConsent(src.source_id, plan, { evidence, via: "member", by });
   }
 
-  /** R7 (`op=sourceconsentwithdraw`): binds only later publications.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown;
-   * @returns {Answer} as `recordConsent`, or `{ok: true, withdrawn: false, ...}` when no consent at that audience
-   *   stands; or `NO_SUCH_SOURCE`, `BAD_DISCLOSURE` (`audience`) or `CONSENT_NOT_STANDING` */
+  /** R7 (`op=sourceconsentwithdraw`): binds only later publications. */
   withdrawConsent(args = {}) {
     const a = isObj(args) ? args : {};
     const by = this.#memberOf(a.by);
@@ -677,11 +590,7 @@ export class Sources {
    *  and its basis; every other entry is left out, and nothing is said about it. Its answer is not a read under sight:
    *  it answers only what consent or the public record already opens to that audience, so it logs nothing (R5, K539).
    *  It writes nothing and never throws. A stated `at` is for in-plane callers (R20's among them); the route asks at
-   *  this module's own instant and passes none (`sourcesOps`, K3045).
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; `at` an instant `Date.parse` reads, or absent for now
-   * @returns {Answer} `{ok: true, source, audience, at, entries: [{entry, kind, attribute?, how, knownTo, recorded,
-   *   basis, to?, value?, confirmed?, claim?}]}`, `basis` being `consent` or `public_elsewhere`; or `NO_SUCH_SOURCE`,
-   *   or `BAD_DISCLOSURE` naming `audience` or `at` */
+   *  this module's own instant and passes none (`sourcesOps`, K3045). */
   publishableAt(args = {}) {
     const { source, audience, at = null } = isObj(args) ? args : {};
     try {
@@ -725,13 +634,7 @@ export class Sources {
    *  (`stampInstant("millisecond")`), so instants compare as text; `since` is put in that spelling first, its
    *  fraction past the millisecond dropped, which keeps "after" exact for instants held to the millisecond. `next`
    *  names the last change answered (`d<seq>` or `c<seq>`); an `after` that names no change of this source reads as
-   *  absent, from the first. It writes nothing, logs no read and never throws.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown; `since` an ISO 8601 instant (`isInstant`);
-   *   `limit` a number or numeric text; `after` the `next` of an earlier answer
-   * @returns {Answer} `{ok: true, source, since, at, changes: [{at, act, entry}], limit, truncated, next}`; or
-   *   `{ok: true, source, changes: null, since_invalid: true}` for a `since` that is not an instant; or
-   *   `NO_SUCH_SOURCE`
-   * @bound limit: whole number, CHANGES_LIMIT_DEFAULT when absent or unreadable, clamped to 1 to CHANGES_LIMIT_MAX */
+   *  absent, from the first. It writes nothing, logs no read and never throws. */
   sourceChangesSince(args = {}) {
     const { source, since, limit, after } = isObj(args) ? args : {};
     try {
@@ -773,11 +676,7 @@ export class Sources {
 
   /** R11 (`op=knockerconsent`). Counted in the knock's rate windows as a knock from its source (doorbell R2, R17; K530);
    *  a rate refusal answers as the knock's does. Every other failure answers `SECRET_NOT_RECOGNISED`, byte for byte
-   *  the same. `sourceAddress` and `now` are the control plane's, as for a knock.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown;
-   * @returns {Promise<Answer>} `{ok: true, entry, audience, act, at, statement}`, or `{ok: true, existed: true, entry,
-   *   audience, statement}` when nothing would change; or the doorbell's rate refusal; or `SECRET_NOT_RECOGNISED_ANSWER`
-   * @bound knockerSecret: at least SECRET_MIN characters, or it is never recognised */
+   *  the same. `sourceAddress` and `now` are the control plane's, as for a knock. */
   async consentBySecret(args = {}) {
     const a = isObj(args) ? args : {};
     const bell = this.#doorbell;
@@ -825,11 +724,7 @@ export class Sources {
    *  per act; the mark holds the vendor and the terms, never a query, a search term or a result not captured (R18:
    *  every other field of the call is dropped). Refusals, in order: `MACHINE_CANNOT_MARK`, `NO_SERVICE` (naming the
    *  field), `NO_SUCH_CAPTURE`, `NOT_YOUR_CAPTURE`; each writes nothing. Appended once with `by` and the instant; the
-   *  same mark again writes nothing.
-   * @param {any} [args] any value: a call that is not an object, or a field of the wrong kind, is refused, never thrown;
-   * @returns {Answer} `{ok: true, captureSha, service, terms, by, at}`, with `existed: true` when the same mark is
-   *   the latest; or `MACHINE_CANNOT_MARK`, `NO_SERVICE`, `NO_SUCH_CAPTURE` or `NOT_YOUR_CAPTURE`
-   * @bound service: at most SERVICE_MAX characters; terms: at most TERMS_MAX */
+   *  same mark again writes nothing. */
   markKeyedResult(args = {}) {
     const a = isObj(args) ? args : {};
     const by = this.#memberOf(a.by);
@@ -866,10 +761,7 @@ export class Sources {
    *  latest mark), else null; never throws. `grade_cap` is one rank below the letter `provenance.captureGrade` answers
    *  for the capture, in `BASIS_GRADES`' order, D staying D. Where it answers no letter (received, unrecorded or an
    *  unruled route) the cap is one rank below the ceiling it names, the most a leg on it could carry; an authored
-   *  observation, which earns none, is held at the testimony grade.
-   * @param {any} captureSha the capture's 64-hex digest
-   * @returns {any} `{member_keyed: true, service, by, at, reproducible_by_public: false, grade_cap}` (text each but
-   *   the two flags) for a marked capture, else null */
+   *  observation, which earns none, is held at the testimony grade. */
   keyedResultOf(captureSha) {
     try {
       const sha = typeof captureSha === "string" ? captureSha.trim().toLowerCase() : "";
@@ -894,11 +786,6 @@ export class Sources {
 
 /* K61: one instance per storage. */
 const OF = new WeakMap();
-/** K61: the one `Sources` for a Durable Object's storage, made on the first call; `deps` are read then only, and each
- *  absent one is made on the same storage (`doorbell` and `provenance` lazily, on first use).
- * @param {any} ctx the Durable Object's state, or its storage
- * @param {{record?: any, membership?: any, doorbell?: any, provenance?: any, now?: (() => number | string) | null}} [deps]
- * @returns {Sources} */
 export function sourcesOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let s = OF.get(storage);
@@ -915,16 +802,9 @@ export function sourcesOf(ctx, deps = {}) {
 /* The Durable Object routes this module answers (the control plane routes and stamps them, layer 11). `url` carries
    the stamps (`by`, `viewer`, and for `knockerconsent` the connecting `source` and `now`), read after the body is
    spread so a caller's own copy never wins (D-136). */
-/** @type {readonly string[]} The ops `sourcesOps` answers, by name. */
 export const SOURCES_OP_NAMES = Object.freeze(["knockerconsent", "sourceconsent", "sourceconsentwithdraw", "sourcedisclose",
   "sourcekeyed", "sourcelink", "sourceof", "sourcepublishable", "sourcereadlog", "sourcerung"]);
 
-/** The route arms, keyed by op name (`SOURCES_OP_NAMES`), each a function of no arguments answering what the named
- *  act or read answers.
- * @param {Sources} s the instance (`sourcesOf`)
- * @param {URL} url the request's address, whose query carries the stamps
- * @param {any} [body] the request's body
- * @returns {Object<string, () => any>} */
 export function sourcesOps(s, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = isObj(body) ? body : {};
@@ -945,8 +825,6 @@ export function sourcesOps(s, url, body) {
 
 /* R21 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
-/** R21, R22: one frozen row for each op the screens send, keyed by its door name: `{classes, mutating, weight,
- *  description, fields: {accepts, requires}}`; its kind is read from the rows themselves. */
 export const DECLARED_OPS = Object.freeze({
   sourcedisclose: { classes: ["admin","member","probe"], mutating: true, weight: "reasoned", description: localize("sources.declared.sourcedisclose", "source-directed: a member appends one disclosure to a source's history — what was revealed, how, to whom it is known, with its evidence — keyed by source id; never edited, a later entry superseding it on read"),
     fields: { accepts: ["source","revealed","how","knownTo","recorded","claimedBy","claimedAt","confirms","evidence","sight"], requires: ["source","revealed","how","knownTo","evidence"] } },

@@ -9,32 +9,23 @@ import { CleanRefusal, cleanImage, imageKind, mediaKind, latin1 } from "./images
 import { editXml, newScan } from "./xml.mjs";
 import { boundOf } from "../read-bounds.mjs";
 import { localize } from "../setup-words/index.mjs";
-/** @import { Scan, XmlRules, XmlName, AttrRule } from './xml.mjs' */
-/** @import { Cleaned, ImageCounts } from './images.mjs' */
 
-/** The most entries a package may hold (R3 `TOO_MANY_ENTRIES`; R12: the table's, not a figure of this module's).
- *  @type {number}
- *  @bound the `office` `entries` row of READ_BOUNDS */
+/** The most entries a package may hold (R3 `TOO_MANY_ENTRIES`; R12: the table's, not a figure of this module's). */
 export const CLEAN_MAX_ENTRIES = boundOf("office", "entries");
 /** The most one part may inflate to, over what it holds (R3 `DOCUMENT_UNREADABLE`; the archive table's ratio). */
 const RATIO_MAX = boundOf("archive", "ratio");
 /** The most uncompressed bytes one part may declare: the largest the plane's isolate holds with its working copies
- *  (R4; measured in workerd, the job's record). Quoted from `READ_BOUNDS` (R12).
- *  @type {number}
- *  @bound the `document` `part_bytes` row of READ_BOUNDS */
+ *  (R4; measured in workerd, the job's record). Quoted from `READ_BOUNDS` (R12). */
 export const CLEAN_MAX_PART_BYTES = boundOf("document", "part_bytes");
 
 const CUSTOM_PART = "docProps/custom.xml";
 /** The OOXML parts R6 removes (K2334, K2351): custom properties, custom XML data (which can carry a document
  *  library's properties, people's names among them) and printer settings (a printer's name). */
 const REMOVED_PART = (n) => n === CUSTOM_PART || /^customXml\//i.test(n) || /(^|\/)printerSettings\//i.test(n);
-/** The unqualified attributes `attrs` of the element `el`, each set to `value` (`""`), or removed when it is null.
- *  @param {XmlName} el @param {string[]} attrs @param {string | null} [value] @returns {AttrRule[]} */
-const named = (el, attrs, value = "") => attrs.map((a) => ({ el, attr: /** @type {XmlName} builds an XmlName */ (["", a]), value }));
+const named = (el, attrs, value = "") => attrs.map((a) => ({ el, attr: ["", a], value }));
 
 /** R6's edits (`xml.mjs` rules) for one part of an OOXML package, or `null` when the part holds none. `dropped` is
- *  the relationship ids of this part (or, for a `.rels` part, of its source) whose targets are removed.
- *  @param {string} name @param {Set<string>} removed @param {Set<string>} [dropped] @returns {XmlRules | null} */
+ *  the relationship ids of this part (or, for a `.rels` part, of its source) whose targets are removed. */
 function ooxmlRules(name, removed, dropped) {
   const own = ownRules(name.toLowerCase(), name, removed);
   if (!dropped?.size) return own;
@@ -43,8 +34,6 @@ function ooxmlRules(name, removed, dropped) {
   return { ...r, attrs: [...(r.attrs ?? []), { attr: ["r", "id"], value: null, when: (v) => dropped.has(v) }] };
 }
 
-/** R6's own edits for one OOXML part, by its lower-cased name `n` and its name; `null` when it holds none.
- *  @param {string} n @param {string} name @param {Set<string>} removed @returns {XmlRules | null} */
 function ownRules(n, name, removed) {
   if (name === CORE_PROPERTIES_PART)
     return { remove: [["dc", "creator"], ["cp", "lastModifiedBy"], ["cp", "revision"], ["cp", "lastPrinted"], ["dcterms", "created"], ["dcterms", "modified"]] };
@@ -53,8 +42,8 @@ function ownRules(n, name, removed) {
   if (n === "word/_rels/settings.xml.rels") return { drop: [{ el: ["rel", "Relationship"], when: (a) => /\/attachedTemplate$/.test(a.Type ?? "") }] };
   if (/^word\/.+\.xml$/.test(n))
     return {
-      attrs: [.../** @type {XmlName[]} */ ([["w", "author"], ["w", "initials"], ["w15", "author"], ["w15", "providerId"], ["w15", "userId"]]).map((attr) => ({ attr, value: "" })),
-        .../** @type {XmlName[]} */ ([["w", "date"], ["w16cex", "dateUtc"]]).map((attr) => ({ attr, value: null }))],
+      attrs: [...[["w", "author"], ["w", "initials"], ["w15", "author"], ["w15", "providerId"], ["w15", "userId"]].map((attr) => ({ attr, value: "" })),
+        ...[["w", "date"], ["w16cex", "dateUtc"]].map((attr) => ({ attr, value: null }))],
       remove: n === "word/settings.xml" ? [["w", "attachedTemplate"]] : [],
     };
   if (n === "ppt/commentauthors.xml") return { attrs: named(["p", "cmAuthor"], ["name", "initials"]) };
@@ -67,11 +56,10 @@ function ownRules(n, name, removed) {
   return null;
 }
 
-/** R6's edits for one part of an ODF package, or `null`.
- *  @param {string} name @returns {XmlRules | null} */
+/** R6's edits for one part of an ODF package, or `null`. */
 function odfRules(name) {
   if (name === "meta.xml")
-    return { remove: [...["initial-creator", "generator", "template", "editing-cycles", "editing-duration", "creation-date", "print-date", "printed-by", "user-defined"].map((l) => /** @type {XmlName} builds an XmlName */ (["meta", l])),
+    return { remove: [...["initial-creator", "generator", "template", "editing-cycles", "editing-duration", "creation-date", "print-date", "printed-by", "user-defined"].map((l) => ["meta", l]),
       ["dc", "creator"], ["dc", "date"]] };
   if (/\.xml$/i.test(name) && name !== ODF_MANIFEST_PART) return { empty: [["dc", "creator"], ["dc", "date"], ["meta", "creator-initials"]] };
   return null;
@@ -79,8 +67,7 @@ function odfRules(name) {
 
 /** A legacy Excel comment's text without its leading author run: the first run of a comment's `<text>`, bold, whose
  *  text is one of the part's authors followed by a colon, as Excel writes it (R6, K2351). Read before the authors are
- *  emptied.
- *  @param {Uint8Array} bytes @returns {Uint8Array} */
+ *  emptied. */
 function withoutAuthorRuns(bytes) {
   const s = latin1(bytes);
   const authors = new Set([...s.matchAll(/<(?:[\w.-]+:)?author>([^<]*)<\/(?:[\w.-]+:)?author>/g)].map((m) => `${m[1]}:`));
@@ -98,7 +85,6 @@ function withoutAuthorRuns(bytes) {
 
 // ---- the ZIP ----
 
-/** @param {Uint8Array} bytes @returns {Promise<Uint8Array>} the raw deflate of `bytes` */
 async function deflateRaw(bytes) {
   const chunks = [];
   let n = 0;
@@ -132,9 +118,7 @@ const FIELD16 = 0xffff, FIELD32 = 0xffffffff;
 /** A ZIP of `parts` (`{name, method, data, crc, size}`, `data` already compressed), in order. The end record states
  *  the count of entries written; past a 16-bit count (or a 32-bit size or offset) ZIP64's end record and locator are
  *  written before it, and the count and the fields that overflow are the sentinels (R6: nothing is dropped for want of
- *  a field's width).
- *  @param {{name: string, method: number, data: Uint8Array, crc: number, size: number}[]} parts
- *  @returns {Uint8Array} */
+ *  a field's width). */
 function zip(parts) {
   const local = [], central = [];
   let at = 0;
@@ -163,8 +147,7 @@ function zip(parts) {
 }
 
 /** Whether the original ZIP is already in the copy's form: no archive comment, and each entry's local and central
- *  record at the fixed time with no extra field and no comment.
- *  @param {Uint8Array} d @param {{localHeaderOffset: number}[]} entries @returns {boolean} */
+ *  record at the fixed time with no extra field and no comment. */
 function plainZip(d, entries) {
   const e = d.length - 22;
   if (e < 0 || u32(d, e) !== 0x06054b50 || u16(d, e + 20) !== 0) return false;
@@ -185,9 +168,7 @@ const refusal = (code, detail) => new CleanRefusal(code, detail);
 const why = (r) => localize("doc-clean.package.part_cannot_be_read_why", "part {name} cannot be read ({why})", { name: String(r.name ?? "?"), why: String(r.why) });
 
 /** For each `.rels` part that names a removed part, the ids of those relationships, keyed both by the `.rels` part
- *  and by its source part (whose `r:id` attributes naming them are removed too).
- *  @param {Uint8Array} d @param {*} c `ooxml.readContainer`'s answer @param {Set<string>} names @param {Set<string>} removed
- *  @returns {Promise<Map<string, Set<string>>>} */
+ *  and by its source part (whose `r:id` attributes naming them are removed too). */
 async function relsToRemoved(d, c, names, removed) {
   const out = new Map();
   for (const n of names) {
@@ -214,8 +195,7 @@ const resolvePath = (dir, target) => {
 };
 
 /** The entry count a ZIP's end record declares (ZIP64's record when the 16-bit field is the sentinel), for the refusal
- *  `ooxml.readContainer` answers on `OFFICE_ENTRIES_MAX` (R3): that refusal names the limit, not the count.
- *  @param {Uint8Array} d @returns {number} */
+ *  `ooxml.readContainer` answers on `OFFICE_ENTRIES_MAX` (R3): that refusal names the limit, not the count. */
 function declaredEntries(d) {
   let e = d.length - 22;
   for (; e >= 0 && e >= d.length - 22 - FIELD16; e--) if (u32(d, e) === 0x06054b50) break;
@@ -227,19 +207,13 @@ function declaredEntries(d) {
   return at + 56 <= loc ? u32(d, at + 32) + u32(d, at + 36) * 4294967296 : n;
 }
 
-/** R3's `TOO_MANY_ENTRIES` for a package whose end record declares more entries than `ooxml` reads (`OFFICE_ENTRIES_MAX`).
- *  @param {Uint8Array} d @returns {CleanRefusal} */
+/** R3's `TOO_MANY_ENTRIES` for a package whose end record declares more entries than `ooxml` reads (`OFFICE_ENTRIES_MAX`). */
 export function tooManyEntries(d) {
   const count = String(declaredEntries(d));
   return refusal("TOO_MANY_ENTRIES", localize("doc-clean.package.the_package_holds_count_entries", "the package holds {count} entries, over the {CLEAN_MAX_ENTRIES} this module copies", { count, CLEAN_MAX_ENTRIES: String(CLEAN_MAX_ENTRIES) }));
 }
 
-/** Clean an OOXML (`family` "ooxml") or ODF ("odf") package. Answers `{clean:true}` or `{clean:false, bytes, images}`.
- *  @param {Uint8Array} d the package
- *  @param {string} family `ooxml` or `odf`
- *  @param {Scan} [scan] the counters the XML edits add to
- *  @returns {Promise<Cleaned>}
- *  @throws {CleanRefusal} R3's refusals for a package */
+/** Clean an OOXML (`family` "ooxml") or ODF ("odf") package. Answers `{clean:true}` or `{clean:false, bytes, images}`. */
 export async function cleanPackage(d, family, scan = newScan()) {
   const c = readContainer(d);
   if (!c.ok && c.why === "OFFICE_ENTRIES_MAX") throw tooManyEntries(d);
@@ -271,7 +245,6 @@ export async function cleanPackage(d, family, scan = newScan()) {
   }
   const removed = new Set(family === "ooxml" ? [...names].filter(REMOVED_PART) : []);
   const dropped = removed.size ? await relsToRemoved(d, c, names, removed) : new Map();
-  /** @type {ImageCounts} builds the copy's ImageCounts */
   const images = { stripped: 0, unchanged: 0 };
   const parts = [];
   let changed = removed.size > 0;

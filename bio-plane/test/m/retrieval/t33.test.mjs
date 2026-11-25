@@ -276,8 +276,8 @@ test("R71: every table is declared explicitly with its classes: the projection, 
   w.st.sql.exec(`DELETE FROM bundle_terms WHERE bundle_id='INFO-2'`);
   for (const t of ["bundle_projection", "bundles_fts", "bundle_terms"]) {
     const r = w.record.rebuildAndCompare("retrieval", t);
-    assert.equal(r?.same, false, t);
-    assert.equal(r?.first?.key.bundle_id, "INFO-2", t);
+    assert.equal(r.same, false, t);
+    assert.equal(r.first.key.bundle_id, "INFO-2", t);
   }
   const key = w.row(`SELECT fts_id FROM bundle_projection WHERE bundle_id='INFO-2'`).fts_id;
   for (const t of ["bundle_projection", "bundles_fts", "bundle_terms"]) w.record.rebuildDerived("retrieval", t);

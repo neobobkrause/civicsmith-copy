@@ -109,7 +109,7 @@ test("R43 addIdentifier refuses, in order and writing nothing, NO_ENTITY, NO_SUC
   assert.equal(w.e.addIdentifier({ ...ok, entityId: "ENT-2026-0404", scheme: "nope" }).reason, "NO_SUCH_ENTITY");
   const us = w.e.addIdentifier({ ...ok, scheme: "nope", id: "?" });
   /* naming the active profiles' identifier_schemes, as jurisdictions' own combine gives them (its R52), never a list held here */
-  const schemes = (combine(PE).view ?? assert.fail("the active profiles combine to a view")).identifier_schemes.map((x) => x.scheme);
+  const schemes = combine(PE).view.identifier_schemes.map((x) => x.scheme);
   assert.deepEqual([us.reason, us.schemes], ["UNKNOWN_SCHEME", schemes]);
   assert.ok(schemes.includes("ellery_person") && schemes.includes("marlow_bar"));
   assert.equal(w.e.addIdentifier({ ...ok, scheme: "proceeding" }).reason, "UNKNOWN_SCHEME", "the reserved scheme is held only through a proceeding's facet");
@@ -247,7 +247,7 @@ test("R9 the identifier tier: a reference or its key recognised in a scheme's sp
     { kind: "person", key: "P099", label: "x" },           /* in the space, held by none */
   ]);
   w.held("INFO-1", sha("r9id"), [MIN]);
-  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("r9id"), resolvedBy: MACHINE }));
+  const r = w.e.resolve({ captureSha: sha("r9id"), resolvedBy: MACHINE });
   const got = r.resolved.map((m) => [m.ref, m.entity_id, m.grade]).sort();
   assert.deepEqual(got, [["person:P021", w.lee, "A"], ["person:P023", w.lee, "A"], ["person:bar 12345", w.pat, "A"]].sort());
   assert.ok(!got.some(([, id]) => id === other), "the A suppresses the C on another entity");
@@ -261,12 +261,12 @@ test("R9 the identifier tier: a reference or its key recognised in a scheme's sp
   assert.deepEqual(r.unresolved.map((u) => u.ref).sort(), ["person:P020", "person:P022", "person:P024", "person:P099"]);
   /* an alias fold of the reference is A as before, and both tiers' entities resolve together */
   w.e.addAlias({ entityId: other, alias: "person:bar 12345" });
-  const both = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("r9id"), ref: "person:bar 12345" }));
+  const both = w.e.resolve({ captureSha: sha("r9id"), ref: "person:bar 12345" });
   assert.deepEqual(both.resolved.map((m) => [m.entity_id, m.grade]).sort(), [[w.pat, "A"], [other, "A"]].sort());
   assert.match(both.resolved.find((m) => m.entity_id === other).method, /composite key/);
   /* with no retrieval instant held, a stated validity cannot be judged out, and the method says so */
   w.read("INFO-2", sha("r9noinst"), [{ kind: "person", key: "P020", label: "x" }]);
-  const ni = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("r9noinst") }));
+  const ni = w.e.resolve({ captureSha: sha("r9noinst") });
   assert.deepEqual(ni.resolved.map((m) => [m.entity_id, m.grade]), [[w.lee, "A"]]);
   assert.match(ni.resolved[0].method, /retrieval instant is not held/);
   /* the name lookup's grade_if_resolved is the recogniser's (R17) */
@@ -324,7 +324,7 @@ test("R45 a proceeding is created with its facet: a missing field PROCEEDING_FAC
   assert.equal(w.e.addAlias({ entityId: p.entity_id, alias: "In re the Harbour Bond" }).ok, true);
   /* a capture carrying the number resolves at grade A to every proceeding holding it */
   w.read("INFO-1", sha("docket"), [{ kind: "case", key: "mc-26-0001", label: "Ellery v. Harbour Trust" }]);
-  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("docket") }));
+  const r = w.e.resolve({ captureSha: sha("docket") });
   assert.deepEqual(r.resolved.map((m) => [m.entity_id, m.grade]).sort(), [[p.entity_id, "A"], [elsewhere.entity_id, "A"]].sort());
   assert.equal(w.e.entityByIdentifier({ scheme: "proceeding", id: "mc-26-0001" }).undetermined, true, "two forums hold it");
 });
@@ -526,7 +526,7 @@ test("R48 both ends are indexed: one indexed read per end, at most the fan-out p
 test("R26 a declared relation is walked only as a declared hop at the lowest grade, never resolving a reference, never answering concerns, carrying no grade of its own", () => {
   const w = related();
   w.read("INFO-1", sha("r26b"), [{ kind: "x", key: "1", label: "Treatment Program" }]);
-  assert.deepEqual(/** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("r26b") })).resolved.map((m) => m.entity_id), [w.b], "the program, never its department");
+  assert.deepEqual(w.e.resolve({ captureSha: sha("r26b") }).resolved.map((m) => m.entity_id), [w.b], "the program, never its department");
   assert.equal(w.e.concerns({ entityId: w.a, viewer: MACHINE }).count, 0);
   assert.equal("grade" in w.e.readRelation({ relationId: w.r1 }).relation, false);
   const hop = w.e.neighbours({ node: w.a, at: AT, viewer: "member:ann" }).items.find((i) => i.id === w.r1);

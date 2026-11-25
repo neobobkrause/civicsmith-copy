@@ -128,11 +128,6 @@ function runnerReport(host) {
   return { ...via, state: "SILENT", why: localize("instance-setup.setup.runner_host_answered_its_version", "{RUNNER_HOST} answered its version without saying whether the runner is bound", { RUNNER_HOST: String(RUNNER_HOST) }) };
 }
 
-/**
- * R17: each fleet member's own build, asked through its binding within 4 seconds.
- * @param {Record<string, any>} env the isolate's environment, its fleet bindings read by FLEET_BINDINGS' names
- * @returns {Promise<Record<string, any>>} by member name, each `{state, version?, why?}`: `SERVING` with its version, `UNBOUND`, `SILENT` or `MISNAMED`
- */
 export async function memberVersions(env) {
   const out = {};
   const asked = new Map();
@@ -154,7 +149,6 @@ export async function memberVersions(env) {
    answer; `part_scanner` and `part_safe_view` are one part today (`file-scanner` both scans and renders the safe view,
    and its `/version` names no separate renderer), so both follow `FILE_SCANNER`'s answer and are always alike. Each:
    `SERVING` true, `UNBOUND` false, otherwise null. No reason beyond the part. */
-/** @type {ReadonlyArray<string[]>} R82: each flat part key and the fleet member it follows, as `[key, member]` */
 export const PARTS = Object.freeze([["part_signin", RUNNER_MEMBER], ["part_scanner", "file-scanner"], ["part_safe_view", "file-scanner"]]);
 const presentOf = (report) => (report && report.state === "SERVING" ? true : report && report.state === "UNBOUND" ? false : null);
 /* R104 (fix round 8, G118; fix round 9, G118b; K4817, K4853: 60 s, BOB's figure): the fleet's versions are asked at most once a minute
@@ -165,7 +159,6 @@ const presentOf = (report) => (report && report.state === "SERVING" ? true : rep
    first look; a call that finds neither asks the fleet itself, and then tells the object, once. A call that finds the ask still
    running shares it, never starts a second. The first after a cold object waits as before. A read given its `versions`
    (`members=1`, which asks the whole fleet itself) is not kept: it asks nothing here. */
-/** @type {number} R104: how long the fleet's versions are kept, in milliseconds */
 export const PARTS_KEPT_MS = 60_000;
 const keptParts = new WeakMap();
 const PART_KEYS = Object.freeze(PARTS.map(([key]) => key));
@@ -236,12 +229,6 @@ async function partsResult(claim, env, versions, now, since) {
 const claimable = (env, versions) => !versions && !!env && typeof env === "object";
 /* `partsReport(env, versions, {now, stub, doAnswer})`: the parts alone. With the object (`stub`, `doAnswer`) the keep is shared with every
    isolate as `bootstrap` shares it; without, it is this isolate's. */
-/**
- * R82, R104: the three flat part keys alone, the fleet asked at most once a minute.
- * @param {Record<string, any>} env the isolate's environment
- * @param {Record<string, any> | null} [versions] the members' versions already asked (R17); null asks or reads the kept ones
- * @param {{now?: () => number, stub?: any, doAnswer?: ((res: any) => Promise<any>) | null}} [opts] the clock, and the team's object with the envelope's reader to share the keep across isolates
- */
 export async function partsReport(env, versions = null, { now = () => Date.now(), stub = null, doAnswer = null } = {}) {
   const since = now();
   const claim = claimable(env, versions) ? claimParts(env, now) : null;
@@ -263,10 +250,6 @@ const isolateOf = (now) => {
 
 /* R80 (T46; N897 (2); ai-runs R78): whether this is a test instance, asked of `ai-runs`' own `testInstance` over this
    isolate's environment (the one computation, never a copy of its condition); a read that throws is `false`. */
-/**
- * @param {Record<string, any> | null | undefined} env the isolate's environment
- * @returns {boolean} `ai-runs`' `testInstance` over it; false when the read throws
- */
 export function testInstanceOf(env) {
   try { return AiRuns.prototype.testInstance.call({ env: env || {} }) === true; } catch { return false; }
 }
@@ -277,7 +260,6 @@ export function testInstanceOf(env) {
  * (GROUP_UNDETERMINED, raised at the write) stays with the catalogue's family for `promotion`; C-64.4 (a bearer on
  * the two sets) is `control-plane`'s. C-119 is the jurisdiction profiles' (R14), a family of its own.
  * ============================================================================================================ */
-/** R30: the check rows this module holds, by code, each `{check, where, translation}`. */
 export const INSTANCE_SETUP_CHECKS = Object.freeze({
   GROUP_SLUG_MALFORMED: {
     check: 'C-64.2',
@@ -447,67 +429,46 @@ const projectAccount = (what) => draftUnavailable(localize("instance-setup.setup
 
 /* R60: the longest name a place is given, in characters. R65: the answers' bounds, and membership R109's limits on
    the focus and the purpose a draft must fit. */
-/** @type {number} R60: the longest place name, in characters */
 export const PLACE_NAME_MAX = 200;
-/** @type {number} R65: the most answers a draft takes */
 export const GROUP_DRAFT_ANSWERS_MAX = 20;
-/** @type {number} R65: the longest answer, in characters */
 export const GROUP_DRAFT_ANSWER_MAX = 1000;
-/** @type {number} R65: the longest drafted focus, in characters (membership R109) */
 export const GROUP_FOCUS_MAX = 1000;
-/** @type {number} R65: the longest drafted purpose, in characters (membership R109) */
 export const GROUP_PURPOSE_MAX = 4000;
 /* R77: the longest declared stake, in characters. The setting it is recorded under is public-read's name for it (its
    R34, the reader), one binding, re-exported. */
-/** @type {number} R77: the longest declared stake, in characters */
 export const DECLARED_STAKE_MAX = 1000;
 /* R79 (DEC-162, DEC-175): the two explanation levels, and where a new member starts. */
-/** @type {readonly string[]} R79: the explanation levels, `prompt` and `pause` */
 export const INFO_LEVELS = Object.freeze(["prompt", "pause"]);
-/** @type {string} R79: a member's level when none is set */
 export const INFO_LEVEL_DEFAULT = "prompt";
 export { DECLARED_STAKE_SETTING };
 /* R84 (DEC-205 (2)): the logo's bound in bytes (200 KB read as 200,000, the stricter reading), and the two pictures it may
    be, each known by its magic bytes alone, never by what the sender says it is. */
-/** @type {number} R84: the largest logo, in bytes */
 export const GROUP_LOGO_MAX_BYTES = 200_000;
-/** R84: the logo types accepted, each by its magic bytes (PNG, JPEG). */
 export const GROUP_LOGO_TYPES = Object.freeze([
   Object.freeze({ type: "image/png", magic: Object.freeze([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) }),
   Object.freeze({ type: "image/jpeg", magic: Object.freeze([0xff, 0xd8, 0xff]) }),
 ]);
 /* R85 (DEC-205 (1)): the languages a group's members use, record-core's setting of that name, 1 to 20 tags. */
-/** @type {string} R85: record-core's setting that holds the group's languages */
 export const GROUP_LANGUAGES_SETTING = "group_languages";
-/** @type {number} R85: the most languages a group sets */
 export const GROUP_LANGUAGES_MAX = 20;
 
 /* R88 (T48; N1047; DEC-226 (2)): the one public address of Civicsmith's release notice (the file `bundler` R32 writes
    beside a release's assets, in the release directory the installer reads its releases from), and the daily check's bounds.
    The address names no group, member or setting, and is fetched whole by the check, never with anything added to it. */
-/** @type {string} R88: Civicsmith's one fixed public address of the release notice */
 export const RELEASE_NOTICE_ADDRESS = "https://raw.githubusercontent.com/believeinoakland/bio/main/release/NOTICE.json";
-/** @type {number} R88: the most of the notice read, in bytes */
 export const RELEASE_NOTICE_MAX_BYTES = 65536;
 /* The check sends this and an `accept` header, and nothing else: no cookie, no `Authorization`, and not the user agent
    `acquisition` composes, which names the group (R88). */
-/** @type {string} R88: the one user agent the daily check sends */
 export const UPDATE_CHECK_USER_AGENT = "Civicsmith-update-check/1";
-/** @type {number} R88: the daily check's interval, in milliseconds */
 export const UPDATE_CHECK_EVERY_MS = 86_400_000;
 /* R90 (T48): the installer's update page; `updatestart` answers it with `?version=<version>` and nothing else. A release
    set aside by "Not now" returns after this many days, or at the start of the next local day for a security release. */
-/** @type {string} R90: the installer's update page, to which `updatestart` adds `?version=` */
 export const INSTALLER_UPDATE_ADDRESS = "https://newgroup.believeinoakland.workers.dev/update";
-/** @type {number} R90: how long `later` lasts for a release not marked security, in days */
 export const UPDATE_LATER_DAYS = 14;
 /* R89: the earlier releases an answer lists, at most. */
-/** @type {number} R89: the most earlier releases answered */
 export const UPDATE_EARLIER_MAX = 50;
 /* R90: a skip's reason, in characters. */
-/** @type {number} R90: the longest reason for a skip, in characters */
 export const UPDATE_SKIP_REASON_MAX = 1000;
-/** @type {readonly string[]} R90: the kinds of an administrator's decision on a release */
 export const UPDATE_DECISION_KINDS = Object.freeze(["start", "later", "skip"]);
 
 /* ============================================================================================================
@@ -515,7 +476,6 @@ export const UPDATE_DECISION_KINDS = Object.freeze(["start", "later", "skip"]);
  * is declared to record-core exempt from purge, in both forms (R28, R41): the instance's identity and its
  * measurements of the runtime are not derived from the corpus, in the family of `seq` and the settings.
  * ============================================================================================================ */
-/** @type {readonly string[]} R28, R41, R91: this module's own tables */
 export const INSTANCE_SETUP_TABLES = Object.freeze(["instance_group", "group_identity_history", "group_domain_checks",
   "runtime_observations", "cpu_probe_runs", "cpu_probe_steps", "assistant_switch", "assistant_disclosures",
   "place_wanted", "place_seen", "place_arrivals", "member_languages",
@@ -562,9 +522,7 @@ const TABLE_CLASSES = Object.freeze({
 });
 /* R50–R52: the seeding ledgers name entities and lines of the registry (`entities`, `lines`), which a whole-store purge
    clears, so a whole-store purge clears them with it and a later seeding starts afresh; a bundle's purge touches none. */
-/** @type {readonly string[]} R50–R52: the tables of what the seeding wrote */
 export const INSTANCE_SETUP_SEED_TABLES = Object.freeze(["seed_entities", "seed_lines", "seed_offices", "seed_bodies"]);
-/** @type {readonly any[]} R28, R41, R91: the tables as declared to record-core, with their purge class */
 export const INSTANCE_SETUP_TABLE_DECLARATIONS = Object.freeze([
   ...INSTANCE_SETUP_TABLES.map((name) => Object.freeze({
     name, purge: "exempt", expunge: "none", sight: "group", derive: "stored", ...TABLE_CLASSES[name] })),
@@ -572,7 +530,6 @@ export const INSTANCE_SETUP_TABLE_DECLARATIONS = Object.freeze([
     name, purge: "clear", expunge: "none", export: "admin-only", sight: "group", derive: "stored",
     version_chain: false })),
 ]);
-/** @type {string} the DDL of this module's tables */
 export const INSTANCE_SETUP_SCHEMA = `
 -- D-436 (State Rules v1.5 section 3.1, the core field group): THE PRODUCING GROUP'S SLUG, ONE VALUE FOR THE WHOLE
 -- INSTANCE. Every bundle this instance writes names it as its team, in the bytes that get signed, and nothing else may
@@ -885,7 +842,6 @@ const base64Of = (bytes) => { let t = ""; for (let i = 0; i < bytes.length; i +=
 /* R54 (D311): the assistant's disclosure. Its words are the design stream's (NOTICE to UX-DESIGN) and are shown by the
    surface; this module holds the version a shown disclosure is recorded against, and the meaning the words carry. A new
    version of the words is a new `version`, and a member shown only an earlier one reads `shown: false` until shown again. */
-/** R54: the disclosure's version and its meaning (its words are the interface's). */
 export const ASSISTANT_DISCLOSURE = Object.freeze({
   version: "D311-1",
   meaning: word("setup.meaning.questions_material_read"),
@@ -893,7 +849,6 @@ export const ASSISTANT_DISCLOSURE = Object.freeze({
 
 /* R50–R52: the machine's stamp on what it seeds (DEC-52), and the Legistar schemes the profiles declare for a body's
    `BodyId`, a person's `PersonId` and a seat's `OfficeRecordId` (jurisdictions R52; K1682's reading 2). */
-/** @type {string} R50–R52: the machine identity the seeding is attributed to */
 export const SEED_MACHINE = "class:admin";
 /* A profile's zone (jurisdictions R41: `time_zone`, its `value` an IANA name), or null when it states none. */
 const zoneOf = (p) => {
@@ -901,11 +856,9 @@ const zoneOf = (p) => {
   const v = z && typeof z === "object" ? z.value : z;
   return typeof v === "string" && v.trim() ? v.trim() : null;
 };
-/** R51, R52: the identifier schemes of a Legistar body, person and office record. */
 export const LEGISTAR_SCHEMES = Object.freeze({ body: "legistar_body_id", person: "legistar_person_id", seat: "legistar_office_record_id" });
 
 /* The probe run the trail held before runs were kept apart (R40): its rows, keyed on the step alone, become one run. */
-/** @type {string} R40: the run a probe step names when it names none */
 export const LEGACY_PROBE_RUN = "legacy";
 
 /* A metric's unit, for the metrics that predate the unit column (R34): a `_bytes` metric counts bytes. */
@@ -939,28 +892,20 @@ const unitOfMetric = (metric) => (/_bytes$/.test(String(metric)) ? "bytes" : "ms
  * ===================================================================== */
 
 /* What a store recording no group SAYS, in ONE copy: the credentialed read and the public reads both answer with it. */
-/** @type {string} R3: the stated absence when no slug is recorded */
 export const NO_GROUP_RECORDED = localize("instance-setup.setup.no_producing_team_is_recorded", "no producing team is recorded for this store. A store records it once: at its first boot, from the slug its installer bound, or — on a store that already held documents when the value arrived — by one act of the root of trust (op=instancegroupseed). Until then a write that must name its producing team is given no default: a caller's own statement of its team is kept as the caller's, and a write stating none is refused.");
 
 /* REC-164 — THE DISPLAY NAME AND THE DOMAIN (R5–R11): the bounds and the file. */
-/** @type {number} R6: the longest display name, in characters */
 export const GROUP_DISPLAY_NAME_MAX = 120;
 /* A bare lowercase host name with at least one dot, labels of 1-63 letters, digits and hyphens: no scheme, path, port
    or IP literal. The last label must begin with a letter, which is what excludes a dotted-quad. */
-/** @type {RegExp} R7: a bare host name, its last label beginning with a letter */
 export const GROUP_DOMAIN_RE = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 /* R8 (DEC-124; K1365 (5)): the file a group publishes, and the one it published before T31, read only when the first is
    `absent` so a group that already published it stays verified. The second answer decides. */
-/** @type {string} R8, R100: the website file's path */
 export const GROUP_WELL_KNOWN_PATH = "/.well-known/civicsmith-group.json";
-/** @type {string} R8: the path of the file a group published before T31 */
 export const GROUP_WELL_KNOWN_PATH_BEFORE_T31 = "/.well-known/civicos-group.json";
-/** @type {number} R8: the most of the website file read, in bytes */
 export const GROUP_WELL_KNOWN_MAX_BYTES = 16384;
-/** @type {number} R9: the re-check interval, in milliseconds, unless the instance sets its own */
 export const GROUP_DOMAIN_RECHECK_MS = 86_400_000;   // chosen, not measured: once a day
 /* IC-246: the check log answered newest first, cut at a NAMED bound and the cut PUBLISHED (R11). */
-/** @type {number} R11: the most domain checks answered */
 export const GROUP_DOMAIN_CHECKS_MAX = 20;
 
 /* The instance's own address as the control plane stamped it: an origin, lowercased, no trailing slash. */
@@ -1055,22 +1000,9 @@ function cmpVersion(a, b) {
  * `deps` lets a test hand its own record-core, membership, promotion, governor, scheduler, capture, `fetch` and
  * `sleep`; each defaults to the module's own factory on the same `ctx`.
  * ===================================================================== */
-/**
- * @typedef {Object} EnvelopeIo the answer envelope's helpers the door hands in (`answer-envelope`'s)
- * @property {(...args: any[]) => any} json \`json(body, status)\`: the body enveloped as a Response
- * @property {(...args: any[]) => any} doAnswer \`doAnswer(res)\`: the store's reply read, \`{answered, result, refused?, reply?, correlation?}\`
- * @property {(...args: any[]) => any} storeSilent \`storeSilent(op, correlation)\`: the store-silence refusal
- * @property {(...args: any[]) => any} storeRefusal \`storeRefusal(out, extra)\`: the store's own refusal, relayed
- */
-/** One team's instance setup over its Durable Object's storage (instanceSetupOf). */
 export class InstanceSetup {
   #ctx; #env; #deps; #sql; #started = false; #languageRegistered = null; #fleetKept = null;
 
-  /**
-   * @param {any} ctx the Durable Object's state, or its storage
-   * @param {Record<string, any>} [env]
-   * @param {Record<string, any>} [deps] the providers handed in
-   */
   constructor(ctx, env = {}, deps = {}) {
     this.#ctx = ctx;
     this.#env = env || {};
@@ -1139,7 +1071,6 @@ export class InstanceSetup {
   /** At start, once: the tables; the purge exemptions (R28, R41); the fact `producingGroup` (R1); the scheduler
    *  consumers `group-domain-recheck` (R9) and `update-check` (R88), scheduler R8; the release now running (R88); capture's compute listener (R42); at the first boot, R2 and R13;
    *  and last the scheduler's own `start` (its R11), so the reconcile sees this consumer and starts no probe. */
-  /** @param {{firstBoot?: boolean | null}} [opts] whether this is the first boot; absent asks record-core */
   async start({ firstBoot } = {}) {
     if (this.#started) return { ok: true, started: false, detail: "this module had already started on this storage" };
     this.#started = true;
@@ -1232,7 +1163,6 @@ export class InstanceSetup {
   }
 
   /** R4, op=instancegroupseed: DECISION (b), the root of trust's one act. The control plane stamps `author`. */
-  /** @param {{slug?: any, author?: any}} [args] the slug as sent (checked here) and the control plane's stamp */
   instanceGroupSeed({ slug = null, author = null } = {}) {
     const s = typeof slug === "string" ? slug.trim() : "";
     /* DEC-49 REGION is-instance-group-seed */
@@ -1300,7 +1230,6 @@ export class InstanceSetup {
   }
 
   /** R6, op=groupnameset — §7 point 2. `by` is the control plane's stamp. */
-  /** @param {{name?: any, by?: any}} [args] the name as sent (checked here) and the control plane's stamp */
   groupNameSet({ name = null, by = null } = {}) {
     const gate = this.#groupIdentityGate(by);
     if (gate) return gate;
@@ -1322,7 +1251,6 @@ export class InstanceSetup {
   /** R7, op=groupdomainset — §7 point 3. `by` and `origin` are the control plane's stamps: `origin` is the address the
    *  administrator's session reached, which the domain's well-known file must name. Recorded, checked at once (R8),
    *  and the scheduler armed for the re-check (R9; scheduler R9: a later producer arms itself). */
-  /** @param {{domain?: any, by?: any, origin?: any}} [args] the domain as sent (checked here), and the control plane's stamps */
   async groupDomainSet({ domain = null, by = null, origin = null } = {}) {
     const gate = this.#groupIdentityGate(by);
     if (gate) return gate;
@@ -1488,7 +1416,6 @@ export class InstanceSetup {
   /** R77, op=declaredstakeset: an administrator records the group's declared stake, or clears it with `stake: null`.
    *  `by` is the control plane's stamp (R29). Refusals, each writing nothing: `NOT_AN_ADMIN` (a machine included);
    *  `STAKE_MALFORMED`. Recorded through record-core's `setSetting` with `by`, then appended with who and when. */
-  /** @param {{stake?: any, by?: any}} [args] the stake as sent (checked here; null clears) and the control plane's stamp */
   declaredStakeSet({ stake = undefined, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     if (!who || isMachineIdentity(who) || !this.#isAdmin(who))
@@ -1534,7 +1461,6 @@ export class InstanceSetup {
    *  `rawType` its declared type, or clears it with `raw: null`. `by` is the control plane's stamp (R29). Refusals, each
    *  writing nothing: `NOT_AN_ADMIN` (a machine included); `LOGO_REFUSED` for anything that is not a PNG or a JPEG of at
    *  most `GROUP_LOGO_MAX_BYTES`, or whose declared type is not what its magic bytes say. */
-  /** @param {{raw?: any, rawType?: string | null, by?: any}} [args] the logo's raw bytes as sent (null clears) and their type, and the control plane's stamp */
   async groupLogoSet({ raw = undefined, rawType = null, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     if (!who || isMachineIdentity(who) || !this.#isAdmin(who))
@@ -1582,7 +1508,6 @@ export class InstanceSetup {
   /** R85, op=grouplanguagesset: an administrator sets the languages, 1 to 20 tags `jurisdictions.isLocale` accepts, kept
    *  in their canonical form, in order, each once. `by` is the control plane's stamp (R29). Refusals, each writing
    *  nothing: `NOT_AN_ADMIN` (a machine included); `LANGUAGE_MALFORMED`. Recorded through `setSetting` with `by`. */
-  /** @param {{languages?: any, by?: any}} [args] the tags as sent (checked here) and the control plane's stamp */
   groupLanguagesSet({ languages = undefined, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     if (!who || isMachineIdentity(who) || !this.#isAdmin(who))
@@ -1719,7 +1644,6 @@ export class InstanceSetup {
   }
 
   /** R14, op=profilesset: replaces the list. `by` is the control plane's stamp of an administrator's own session. */
-  /** @param {{profiles?: any, by?: any}} [args] the profile ids as sent (checked here) and the control plane's stamp */
   profilesSet({ profiles = undefined, by = null } = {}) {
     /* DEC-49 REGION is-profiles-admin */
     if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
@@ -1851,7 +1775,6 @@ export class InstanceSetup {
    *  `body`, each under the profile's identifier for it, with `post_in` from the office to its body and `part_of` from
    *  the body to the organisation the profile names it within. An administrator's act (`by`, the control plane's stamp);
    *  at setup the boot runs it once after R13 (`boot: true`). Answers what was seeded, already held, and could not be. */
-  /** @param {{by?: any, boot?: boolean}} [args] the control plane's stamp, and whether setup itself asks */
   officesSeed({ by = null, boot = false } = {}) {
     if (!boot && (typeof by !== "string" || !by || !this.#membership().isAdministrator(by)))
       return notAnAdmin(by ?? null, localize("instance-setup.setup.what_seeding_offices", "seeding the offices the jurisdiction profiles name"));
@@ -1987,10 +1910,6 @@ export class InstanceSetup {
 
   /** K1683: the office a seeded office entity is, as `{role, body}` (with its profile), or null for an entity this
    *  module did not seed from a profile office (`profile` given: from that profile only). Writes nothing; never throws. */
-  /**
-   * @param {any} entityId an entity's id
-   * @param {string | null} [profile] a profile's id, to read from that profile only
-   */
   officeOf(entityId, profile = null) {
     try {
       if (typeof entityId !== "string" || !entityId) return null;
@@ -2003,7 +1922,6 @@ export class InstanceSetup {
   /** K1683: the office entity seeded for a profile office `{role, body}`, or null: none seeded, or more than one
    *  entity seeded under that role and body (two profiles naming it with different identifiers), which is not
    *  settled here. Writes nothing; never throws. */
-  /** @param {{role?: string | null, body?: string | null}} [office] a profile office */
   officeEntityOf({ role = null, body = null } = {}) {
     try {
       const r = typeof role === "string" ? role.trim() : "", b = typeof body === "string" ? body.trim() : "";
@@ -2071,7 +1989,6 @@ export class InstanceSetup {
   /** R51, R52, op=seatsseed: from held captures of the client's `bodies`, `persons` and `officerecords` (each a sha, the
    *  office records one or more pages), the profile bodies matched to Legistar bodies (R51), each match's `BodyId`s held
    *  on the body entity, and each seat on a matched body seeded with its holder (R52). An administrator's act. */
-  /** @param {any} [args] `{bodies, persons, officerecords, by}`: the held captures' sha256s as sent, and the control plane's stamp, each checked here */
   async seatsSeed({ bodies = null, persons = null, officerecords = null, by = null } = {}) {
     if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
       return notAnAdmin(by ?? null, localize("instance-setup.setup.what_seeding_seats", "seeding the seats Legistar records"));
@@ -2260,7 +2177,6 @@ export class InstanceSetup {
   /** R54, op=disclosureshown: the disclosure was shown to `member` before they connected their own account (a reference
    *  set, or her own Claude subscription signed in: T46, N897 (3)). `by` is
    *  the control plane's stamp and must be that member's own session: no one records it on another's behalf. */
-  /** @param {any} [args] `{member, version, by}`: the member and the disclosure's version as sent, and the control plane's stamp, each checked here */
   disclosureShown({ member = null, version = null, by = null } = {}) {
     const m = typeof member === "string" ? member.trim() : "";
     const v = typeof version === "string" ? version.trim() : "";
@@ -2285,7 +2201,6 @@ export class InstanceSetup {
    *  `ai-accounts` (its R23), which asks this read through the registration the composition root makes
    *  (`disclosureReadOf`), so its R1 and `control-plane` R65 refuse `DISCLOSURE_DUE` while it answers `shown: false`.
    *  Writes nothing and never throws. */
-  /** @param {{member?: string | null, version?: string}} [args] the member, and the disclosure's version (the current one when absent) */
   disclosureOf({ member = null, version = ASSISTANT_DISCLOSURE.version } = {}) {
     const m = typeof member === "string" ? member.trim() : "";
     const v = typeof version === "string" && version.trim() ? version.trim() : ASSISTANT_DISCLOSURE.version;
@@ -2335,7 +2250,6 @@ export class InstanceSetup {
 
   /** R60, op=placewanted: an administrator names the place the group works in that no held profile covers, or clears
    *  it with `name: null`. `by` is the control plane's stamp (R29). Each set or clear is appended with who and when. */
-  /** @param {{name?: any, by?: any}} [args] the place's name as sent (checked here; null clears) and the control plane's stamp */
   placeWantedSet({ name = undefined, by = null } = {}) {
     if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
       return notAnAdmin(by ?? null, localize("instance-setup.setup.what_naming_place", "naming the place your team works in"));
@@ -2367,7 +2281,6 @@ export class InstanceSetup {
   }
 
   /** R60, op=placewantedstate: the named place, to an administrator only, with R62's open arrivals as `matches`. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp */
   placeWanted({ viewer = null } = {}) {
     if (typeof viewer !== "string" || !viewer || !this.#membership().isAdministrator(viewer))
       return notAnAdmin(viewer ?? null, localize("instance-setup.setup.what_reading_place", "reading the place your team named"));
@@ -2379,7 +2292,6 @@ export class InstanceSetup {
   /** R62: `{ok, arrivals}`, the open arrivals (those that have not left), each with the profile's name and covers: to
    *  an administrator, and to the plane's own in-process read (`viewer: null`, as `queue-producers` R38 reads it, which
    *  addresses its item to the administrators); `arrivals: []` to anyone else. Writes nothing; never throws. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp; null is the plane's own read */
   placeArrivals({ viewer = null } = {}) {
     try {
       if (viewer !== null && viewer !== undefined
@@ -2425,7 +2337,6 @@ export class InstanceSetup {
    * ===================================================================== */
 
   /** R64, op=memberlanguageset: `by` (the control plane's stamp) is the member, and nobody sets it for another. */
-  /** @param {{language?: any, by?: any}} [args] the tag as sent (checked here; null clears) and the control plane's stamp */
   memberLanguageSet({ language = undefined, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     /* DEC-49 REGION is-member-language */
@@ -2449,7 +2360,6 @@ export class InstanceSetup {
   }
 
   /** R64, op=memberlanguage: the viewer's own choice, `{language, set_at}`, and nobody else's. Writes nothing. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp */
   memberLanguage({ viewer = null } = {}) {
     const who = typeof viewer === "string" ? viewer.trim() : "";
     let r = null;
@@ -2472,7 +2382,6 @@ export class InstanceSetup {
    *  each writing nothing: a missing or machine `by` `MACHINE_CANNOT_SET_INFO_LEVEL`; a `level` other than `prompt` or
    *  `pause`, or an `asked` other than absent, `true` or `false`, `INFO_LEVEL_UNKNOWN` (K2996). Each set is appended with
    *  when. */
-  /** @param {any} [args] `{level, asked, by}`: the level and `asked` as sent, and the control plane's stamp, each checked here */
   infoLevelSet({ level = undefined, asked = undefined, by = null } = {}) {
     const who = typeof by === "string" ? by.trim() : "";
     /* DEC-49 REGION is-info-level */
@@ -2501,7 +2410,6 @@ export class InstanceSetup {
 
   /** R79, op=infolevel: the viewer's own `{level, set_at, asked_at}`, and nobody else's: `prompt` with `set_at` null
    *  when none is set, `asked_at` null until the first-month question is answered. Writes nothing; never throws. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp */
   infoLevel({ viewer = null } = {}) {
     const who = typeof viewer === "string" ? viewer.trim() : "";
     let r = null;
@@ -2519,7 +2427,6 @@ export class InstanceSetup {
   /** R66, op=adminrecoverystep: `{ok: true, administrators, codes_held, remaining, met}` to an administrator (`viewer`,
    *  the control plane's stamp, R29), `NOT_AN_ADMIN` to anyone else, a machine credential included. A provider that does
    *  not answer is the store's silence (R43), never `met: false`. Writes nothing and never throws. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp */
   adminRecoveryStep({ viewer = null } = {}) {
     const silent = (what, e) => ({ ok: false, reason: "STORE_DID_NOT_ANSWER", code: "STORE_DID_NOT_ANSWER",
       detail: localize("instance-setup.setup.what_did_not_answer_string", "{what} did not answer ({reason}), so whether the step is met is not known", { what: String(what), reason: String(String(e && e.message || e).slice(0, 160)) }) });
@@ -2559,7 +2466,6 @@ export class InstanceSetup {
    *  GROUP_DRAFT_NO_ANSWERS; then the draft, or, when the draft cannot be served, ASSISTANT_DRAFT_UNAVAILABLE. A draft
    *  carries no project (T40): a project's account handed in serves none. `turn` is the door's call to agent-worker's
    *  `/draft` (`{answers, account, holdings}` → `{focus, purpose, readLog}`), else the one this module was built with. */
-  /** @param {{answers?: any, assistant?: any, viewer?: any, by?: any, turn?: any}} [args] the answers as sent (checked here), the assistant the door resolved (`{on, account}`), the control plane's stamps, and the draft's turn */
   async groupDescriptionDraft({ answers = undefined, assistant = null, viewer = null, by = null, turn = null } = {}) {
     if (typeof by !== "string" || !by || !this.#membership().isAdministrator(by))
       return notAnAdmin(by ?? null, localize("instance-setup.setup.what_asking_draft", "asking the assistant to draft your team's description"));
@@ -2683,7 +2589,6 @@ export class InstanceSetup {
 
   /** R88, R92 (T50; N1113), the consumer's `tick`: one check at the alarm's `now` (milliseconds), answered under the
    *  consumer's key. A failed or tampered fetch stores no notice and raises no item; the next day's run tries again. */
-  /** @param {number} [now] the alarm's instant, in milliseconds; absent reads the clock */
   async updateCheckTick(now) { return { updatecheck: await this.#runUpdateCheck(now) }; }
 
   /* R92: the check's recorded instant is the alarm's `now` when one is handed in, else a read of the clock. */
@@ -2807,7 +2712,6 @@ export class InstanceSetup {
    *  `selftest` asks this through the store's route, for an administrator; the store is the only place extraction is held. */
   selftestMigrations() { return extractionOf(this.#ctx).migrationCounts(); }
 
-  /** @param {{facts?: boolean, viewer?: any, parts?: boolean}} [args] whether to read the seven facts (R95), the signed-in viewer (R103), and whether to answer the kept parts (R104) */
   bootstrapFacts({ facts = true, viewer = null, parts = false } = {}) {
     const read = (f) => { try { return f(); } catch { return null; } };
     const text = (f) => { const v = read(f); return typeof v === "string" && v ? v : null; };
@@ -2842,7 +2746,6 @@ export class InstanceSetup {
     const age = this.#now() - k.at;
     return age >= 0 && age < PARTS_KEPT_MS ? { ...k.parts, age_ms: age } : null;
   }
-  /** @param {any} parts the three flat part keys, as `partsReport` answers them */
   keepFleetParts(parts) {
     const flat = flatParts(parts);
     if (!flat) return { ok: false, reason: "PARTS_NOT_KEPT" };
@@ -2871,7 +2774,6 @@ export class InstanceSetup {
    *  `running`, `last_check`, `ready` (with `decision`, the latest on it, or null), `earlier` (newest first, at most 50),
    *  `holder` (who holds the hosting account, as `membership.hostingAccess` records it) and `viewer_holds`. A store that
    *  does not answer is the store's silence (R43). Writes nothing; never throws. */
-  /** @param {{viewer?: any}} [args] the control plane's viewer stamp */
   updateNotice({ viewer = null } = {}) {
     const who = typeof viewer === "string" ? viewer.trim() : "";
     if (!who || isMachineIdentity(who) || !this.#isAdmin(who))
@@ -2959,7 +2861,6 @@ export class InstanceSetup {
 
   /** R90, op=updatestart: an administrator chooses to update to the release ready, and gets the installer's update page
    *  set to that release and no other. Nothing is installed by this act, which carries no credential, slug or member. */
-  /** @param {{version?: any, by?: any}} [args] the release as sent (checked here) and the control plane's stamp */
   updateStart({ version = null, by = null } = {}) {
     const a = this.#updateActor(by, localize("instance-setup.setup.what_choosing_update", "choosing to update your team's Civicsmith"));
     if (a.refused) return a.refused;
@@ -2973,7 +2874,6 @@ export class InstanceSetup {
 
   /** R90, op=updatelater: an administrator sets the release ready aside: for 14 days, or, for a security release, until
    *  the start of the next local day (`civil-time`, the profile's zone, else UTC). A newer release replaces it at once. */
-  /** @param {{version?: any, by?: any}} [args] the release as sent (checked here) and the control plane's stamp */
   updateLater({ version = null, by = null } = {}) {
     const a = this.#updateActor(by, localize("instance-setup.setup.what_setting_aside_update", "setting aside an update of your team's Civicsmith"));
     if (a.refused) return a.refused;
@@ -3006,7 +2906,6 @@ export class InstanceSetup {
 
   /** R90, op=updateskip: an administrator skips the release ready, with a reason (1 to 1,000 characters on one line):
    *  recorded with who and when and never erased; the release is never ready again, and the next one is offered. */
-  /** @param {{version?: any, reason?: any, by?: any}} [args] the release and the reason as sent (checked here), and the control plane's stamp */
   updateSkip({ version = null, reason = null, by = null } = {}) {
     const a = this.#updateActor(by, localize("instance-setup.setup.what_skipping_update", "skipping an update of your team's Civicsmith"));
     if (a.refused) return a.refused;
@@ -3032,7 +2931,6 @@ export class InstanceSetup {
 
   /** R33: record what a run cost. The peak is kept beside the last because the peak is the run that will die first
    *  and a mean would hide it. `unit` is the metric's (R34), fixed by its first observation. Never throws. */
-  /** @param {{metric?: any, ms?: any, detail?: any, at?: string | null, unit?: string | null}} [obs] the metric and its value as given (checked here), its detail, instant and unit */
   recordRuntimeObservation({ metric, ms, detail = null, at = null, unit = null } = {}) {
     try {
       if (typeof metric !== "string" || !metric || typeof ms !== "number" || !Number.isFinite(ms)) return { recorded: false };
@@ -3069,7 +2967,6 @@ export class InstanceSetup {
   }
 
   /** R40: a probe run begins. Its steps are numbered and timed from this run's own start. */
-  /** @param {{run?: any, iterations?: number | null, budgetMs?: number | null, at?: string | null}} [args] the run's id (checked here), its figures and instant */
   recordCpuProbeStart({ run, iterations = null, budgetMs = null, at = null } = {}) {
     if (typeof run !== "string" || !run) return { recorded: false };
     this.#sql.exec(`INSERT INTO cpu_probe_runs (run, started_at, iterations, budget_ms) VALUES (?, ?, ?, ?)
@@ -3079,7 +2976,6 @@ export class InstanceSetup {
 
   /** R35: one completed step of one run (`run`, R40): its number, its elapsed time from its run's start, its
    *  iterations and the instant. Never throws for a well-formed call. */
-  /** @param {{run?: string, step?: number, elapsedMs?: number, iterations?: number, at?: string | null}} [args] the run, the step's number, its elapsed time from the run's start, its iterations and instant */
   recordCpuProbeStep({ run = LEGACY_PROBE_RUN, step, elapsedMs, iterations, at = null } = {}) {
     const now = at || stampInstant("second", this.#now());
     /* A step with no recorded start (a caller that names no run) belongs to a run whose end is not known either. */
@@ -3094,7 +2990,6 @@ export class InstanceSetup {
   }
 
   /** R40: a probe run returned, with what it completed and why it stopped. A run with no end is one cut off. */
-  /** @param {{run?: any, completed?: number | null, elapsedMs?: number | null, reason?: string | null, at?: string | null}} [args] the run's id (checked here), its last step, elapsed time, why it ended and the instant */
   recordCpuProbeEnd({ run, completed = null, elapsedMs = null, reason = null, at = null } = {}) {
     if (typeof run !== "string" || !run) return { recorded: false };
     this.#sql.exec(`UPDATE cpu_probe_runs SET ended_at = ?, completed = ?, elapsed_ms = ?, reason = ? WHERE run = ?`,
@@ -3162,12 +3057,6 @@ function profileView(combined) {
 const INSTANCES = new WeakMap();
 
 /** The one instance of this module for a Durable Object's storage (K61). `deps` is read on the first call only. */
-/**
- * @param {any} ctx the Durable Object's state, or its storage
- * @param {Record<string, any> | null} [env] the object's environment
- * @param {Record<string, any>} [deps] the providers handed in (read on the first call only)
- * @returns {InstanceSetup}
- */
 export function instanceSetupOf(ctx, env = null, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let m = INSTANCES.get(storage);
@@ -3180,12 +3069,7 @@ export function instanceSetupOf(ctx, env = null, deps = {}) {
  *  `ai-accounts` itself: the composition root registers it, `ai-accounts.registerDisclosureRead(DISCLOSURE_READER,
  *  disclosureReadOf(m))` (`plane`'s T48-78), and `ai-accounts` R1 and `control-plane` R65 then refuse `DISCLOSURE_DUE`
  *  through `ai-accounts.disclosureDue` while it answers `shown: false`. */
-/** @type {string} R54: the name this module's disclosure read is registered under */
 export const DISCLOSURE_READER = "instance-setup";
-/**
- * @param {any} m an InstanceSetup
- * @returns {(args?: {member?: any}) => any} R54's `disclosureOf({member})` of that instance
- */
 export function disclosureReadOf(m) {
   return ({ member = null } = {}) => m.disclosureOf({ member });
 }
@@ -3194,12 +3078,6 @@ export function disclosureReadOf(m) {
  *  control plane's, read from the query AFTER the body is spread, so a body naming its own is overwritten (R29).
  *  The map joins `control-plane`'s one route map (its R35; N348), so every route passes its frame: R26's body read,
  *  R27's existence read, the envelope and R25's catch. This module keeps no door or Durable Object class of its own. */
-/**
- * @param {any} m an InstanceSetup
- * @param {URL} url the store's request address, which carries the control plane's stamps
- * @param {any} body the request's parsed body
- * @returns {Record<string, () => any>} each route's handler, by op
- */
 export function instanceSetupOps(m, url, body) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -3266,7 +3144,6 @@ export function instanceSetupOps(m, url, body) {
    request; they are reads, so their weight is `read`. `officesseed` forces its own `boot`. */
 const ADMIN_ACT = Object.freeze(["admin", "member"]);
 const STAMPED_ACT = Object.freeze(["admin", "member", "probe"]);
-/** R101: a declaration for each op the screens send that this module serves, by op name. */
 export const DECLARED_OPS = Object.freeze({
   declaredstakeset: { classes: ADMIN_ACT, machineClasses: [], mutating: true, weight: "reversible",
     description: localize("instance-setup.declared.declaredstakeset", "setting: the group's declared stake in its own words, carried beside its public identity on what it sends or publishes from then; an administrator's act, every earlier value kept; moves no bundle"),
@@ -3339,15 +3216,7 @@ function notAnswered(out, op, { json, storeSilent, storeRefusal }) {
    STRANGER: op=instancegroup's and op=groupidentity's public arms (R3, R10).
    Exactly two projections may be named; any other value is answered as a silence rather than forwarded, so a typo
    cannot reach a Durable Object path. An instance with no store binding cannot be asked, and that is a silence too. */
-/** @type {readonly string[]} the two public projections of the producing group (R3, R10) */
 export const PUBLIC_GROUP_PROJECTIONS = Object.freeze(["instancegrouppublic", "groupidentitypublic"]);
-/**
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {string} [projection] one of PUBLIC_GROUP_PROJECTIONS; any other is a silence
- * @param {any} [doAnswer] the envelope's reader, `doAnswer(res)` answering `{answered, result}`
- * @returns {Promise<any>} the store's answer as `doAnswer` reads it, or `{answered: false}`
- */
 export async function publicInstanceGroup(env, storeName, projection = "instancegrouppublic", doAnswer) {
   if (!PUBLIC_GROUP_PROJECTIONS.includes(projection)) return { answered: false, result: undefined };
   let stub = null;
@@ -3358,13 +3227,6 @@ export async function publicInstanceGroup(env, storeName, projection = "instance
 
 /** R3 over the wire: a credentialed reader (`viewer` set by the control plane) is answered the whole row; anybody
  *  else the public projection. A silence is a silence (REC-52), never "no group is recorded". */
-/**
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {{viewer?: string | null, cls?: string | null}} args the control plane's viewer stamp and the caller's class
- * @param {Pick<EnvelopeIo, "json" | "doAnswer"> & Partial<EnvelopeIo>} io the envelope's helpers; a silence or the store's refusal needs the other two
- * @returns {Promise<Response>}
- */
 export async function instanceGroupOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   if (viewer) {
@@ -3378,13 +3240,6 @@ export async function instanceGroupOp(env, storeName, { viewer = null, cls = nul
 }
 
 /** R10, R11 over the wire: the credentialed read (R11) or the public projection (R10). */
-/**
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {{viewer?: string | null, cls?: string | null}} args the control plane's viewer stamp and the caller's class
- * @param {Pick<EnvelopeIo, "json" | "doAnswer"> & Partial<EnvelopeIo>} io the envelope's helpers; a silence or the store's refusal needs the other two
- * @returns {Promise<Response>}
- */
 export async function groupIdentityOp(env, storeName, { viewer = null, cls = null } = {}, io) {
   const { json, doAnswer } = io;
   const out = await doAnswer(storeStub(env, storeName)
@@ -3396,12 +3251,6 @@ export async function groupIdentityOp(env, storeName, { viewer = null, cls = nul
 /** R84, R86 (control-plane R84): the group's logo as served in public at `/app/assets/group-logo`, the store-internal
  *  route `grouplogo`'s bytes and headers relayed as given; 404 with no body when none is set; any other answer, or none,
  *  is a silence (R43). */
-/**
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {EnvelopeIo} io
- * @returns {Promise<Response>}
- */
 export async function groupLogoAsset(env, storeName, io) {
   let res = null;
   try { res = await storeStub(env, storeName).fetch("http://do/grouplogo"); } catch { res = null; }
@@ -3419,12 +3268,6 @@ export async function groupLogoAsset(env, storeName, io) {
  *  R95 (T51): to a credentialed `caller` only (`{cls: "admin"}` for an admin-class token, `{administrator: true}` for an
  *  administrator's signed-in session, as the control plane resolved it) it adds the seven flat facts of the copy, read from
  *  the store's own `bootstrapfacts` route; a caller with none, or of another class, is answered exactly R132's key set. */
-/**
- * @param {Record<string, any>} env the isolate's environment
- * @param {any} fp the presented credential's fingerprint, as the door hands it
- * @param {{members?: boolean, stub?: any, caller?: any, stateTiming?: ((name: string, ms: number, desc?: string) => void) | null, now?: () => number} & EnvelopeIo} args
- * @returns {Promise<Response>}
- */
 export async function bootstrapReport(env, fp, { members = false, stub, json, storeSilent, doAnswer, storeRefusal, caller = null, stateTiming = null, now = () => Date.now() }) {
   /* R104: `stateTiming(name, ms)`, when the door hands one, is told `fleet` (the time of the parts' ask, 0 when kept) and `facts` (the
      time of this report's hops to the store), which the door states in `Server-Timing` (`fleet;dur`, `facts;dur`). G118b (R-LOG): and
@@ -3466,7 +3309,6 @@ export async function bootstrapReport(env, fp, { members = false, stub, json, st
 }
 
 /* R95: the seven facts of a copy, by the wire names the installer reads (`newgroup/src/account.mjs`' `FACT_KEYS`). */
-/** @type {readonly string[]} R95: the seven facts answered to a credentialed caller only */
 export const BOOTSTRAP_FACT_KEYS = Object.freeze(["team_name", "installed_at", "last_used_at", "count_projects",
   "count_documents", "count_published", "count_members"]);
 /* R95: a caller the door admits as the deployer's or an administrator's: an `admin`-class token (`cls`), or an
@@ -3475,7 +3317,6 @@ export const BOOTSTRAP_FACT_KEYS = Object.freeze(["team_name", "installed_at", "
 const credentialedCaller = (caller) => !!caller && typeof caller === "object" && (caller.cls === "admin" || caller.administrator === true);
 /* R103 (fix round 8, G114): the keys of a signed-in caller, the viewer's screen language (R64) and the words stamp
    (`translations` R20); never in a stranger's answer. */
-/** @type {readonly string[]} R103: the keys answered to a signed-in caller only */
 export const BOOTSTRAP_VIEWER_KEYS = Object.freeze(["language", "words_version"]);
 /* R103: a caller the door signed in as a member: the control plane's `viewer` stamp, a member's id (never a machine identity). */
 const signedInViewer = (caller) => {
@@ -3519,13 +3360,6 @@ async function keepPartsOf(stub, doAnswer, parts) {
  *  caller's `viewer`), and round-trips R2 under the scratch prefix; it never returns a secret. `ok` is false when
  *  exactly one bucket is bound, when the store does not answer, when the round trip fails, or when a required token
  *  binding is not live. */
-/**
- * @param {Record<string, any>} env
- * @param {string} storeName
- * @param {{cls?: string | null, viewer?: string, scratch?: string}} args the caller's class, its viewer stamp and the rehearsal namespace
- * @param {Pick<EnvelopeIo, "json" | "doAnswer">} io
- * @returns {Promise<Response>}
- */
 export async function selftest(env, storeName, { cls = null, viewer = "", scratch = "scratch" } = {}, { json, doAnswer }) {
   /* R2 is optional by design: "not configured" is a first-class healthy state, distinct from "configured and
      broken", and the buckets are only ever added as a pair. */
@@ -3594,7 +3428,6 @@ export async function selftest(env, storeName, { cls = null, viewer = "", scratc
 }
 
 /* The sentence R37 states: the subrequest ceiling is known by being refused, the CPU ceiling by op=cpuprobe. */
-/** @type {string} R37: why the subrequest ceiling and the CPU ceiling are known differently */
 export const RUNTIME_ASYMMETRY = "a refused subrequest throws and is caught, so the subrequest ceiling is known by "
   + "having hit it. Exceeding the CPU limit TERMINATES the isolate, so no run can report its own death: consumption "
   + "is measured on every run and the ceiling is found by op=cpuprobe, whose checkpoints survive the kill.";
@@ -3602,11 +3435,6 @@ export const RUNTIME_ASYMMETRY = "a refused subrequest throws and is caught, so 
 /** R37, op=runtime: R34's measurements, R36's probe state and capture's subrequest ceiling (capture R23), through one
  *  surface. When any of the three reads does not answer, the op answers the store-silence refusal (REC-52); the first
  *  of them, in read order, that is the store's own refusal or a silence is relayed as R43 says (K444). */
-/**
- * @param {any} stub the team's object
- * @param {EnvelopeIo} io
- * @returns {Promise<Response>}
- */
 export async function runtimeOp(stub, io) {
   const { json, doAnswer } = io;
   const obsOut = await doAnswer(stub.fetch("http://x/runtimeobservations"));
@@ -3621,12 +3449,6 @@ export async function runtimeOp(stub, io) {
 /** R38–R40, op=cpuprobe: find the CPU ceiling by walking into it. R36 is read first (a store that does not answer
  *  burns nothing); a new run is started under its own id, each completed step is written, and CONFIRMED, before the
  *  next begins (R39: an unconfirmed checkpoint ends the probe); its end is written when it returns. */
-/**
- * @param {any} stub the team's object
- * @param {{iterations?: any, budget_ms?: any, run?: string | null, probe?: (...args: any[]) => any}} args the request's figures (read as numbers, with floors), a run id, and the probe
- * @param {EnvelopeIo} io
- * @returns {Promise<Response>}
- */
 export async function cpuProbeOp(stub, { iterations = null, budget_ms = null, run = null, probe = cpuProbe } = {},
                                  io) {
   const { json, storeSilent, doAnswer } = io;
@@ -3678,19 +3500,10 @@ export async function cpuProbeOp(stub, { iterations = null, budget_ms = null, ru
  * ============================================================================================================ */
 
 /* The admitted ops this module answers at the Worker. `bootstrap` is the public door's default answer (below). */
-/** @type {readonly string[]} the admitted ops this module answers at the Worker */
 export const INSTANCE_SETUP_OPS = Object.freeze(["selftest", "livefire", "runtime", "cpuprobe"]);
 
 /** One of INSTANCE_SETUP_OPS, answered. `storeName` is the namespace the door resolved, `cls` the caller's class,
  *  `viewer` the door's viewer stamp for that caller, `scratch` the rehearsal namespace's name. */
-/**
- * @param {string} op one of INSTANCE_SETUP_OPS; any other answers null
- * @param {URL} url the request's address
- * @param {Record<string, any>} env
- * @param {string} storeName the namespace the door resolved
- * @param {{cls?: string | null, viewer?: string, scratch?: string} & EnvelopeIo} args the caller's class, its viewer stamp, the rehearsal namespace and the envelope's helpers
- * @returns {Promise<Response | null>}
- */
 export async function instanceSetupOp(op, url, env, storeName, { cls = null, viewer = "", scratch = "scratch", json,
                                                                   doAnswer, storeSilent, storeRefusal } = {}) {
   const io = { json, doAnswer, storeSilent, storeRefusal };
@@ -3735,13 +3548,6 @@ export async function instanceSetupOp(op, url, env, storeName, { cls = null, vie
  *  bootstrap flag and NOTHING the store knows — an instance answering "here is what I am" while unable to say
  *  anything about itself. The installer and `newgroup` both read this op, so the false success reached a caller
  *  deciding whether an instance was ready. `members=1` adds each member's own build. */
-/**
- * @param {URL} url
- * @param {Record<string, any>} env
- * @param {any} fp the presented credential's fingerprint
- * @param {{stub?: any, caller?: any, stateTiming?: ((name: string, ms: number, desc?: string) => void) | null} & EnvelopeIo} args
- * @returns {Promise<Response>}
- */
 export function bootstrapOp(url, env, fp, { stub, json, storeSilent, storeRefusal, doAnswer, caller = null, stateTiming = null }) {
   return bootstrapReport(env, fp, { members: url.searchParams.get("members") === "1", stub, json, storeSilent,
                                     storeRefusal, doAnswer, caller, stateTiming });

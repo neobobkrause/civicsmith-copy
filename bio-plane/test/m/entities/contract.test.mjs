@@ -161,7 +161,7 @@ test("R11 R12 R14 a request naming no capture digest answers through extraction'
     assert.notEqual(act(sha("ns")).reason, "NO_SHA", `${name}: a named digest is past this refusal`);
   }
   /* R11's set form answers each item the single form's way */
-  const set = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ items: [{ captureSha: "" }] }));
+  const set = e.resolve({ items: [{ captureSha: "" }] });
   assert.deepEqual(set.items[0].reason, "NO_SHA");
   assert.equal(set.items[0].check, EXTRACTION_CHECKS.NO_SHA.check);
   assert.ok(!Object.values(ENTITY_CHECKS).some((r) => /NO_SHA/.test(r.where)), "no row of this module's is NO_SHA's");

@@ -8,7 +8,7 @@
    `dutiesOf` and `occurrencesOf` in `duties` R7's and R9's shapes. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, MACHINE, actionMd, CP, CLK, present } from "./fixture.mjs";
+import { world, V, MACHINE, actionMd, CP, CLK } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import * as actions from "../../../src/actions/index.mjs";
 import { get, combine } from "../../../../jurisdictions/index.mjs";
@@ -88,7 +88,7 @@ test("R2 (T45) the deadlines read are local-facts.governingView's, so a group's 
   w.action(A);
   sent(w, A, "2026-09-01");
   /* control: no group rule: the governing view is combine's, and the profile's rules apply. */
-  assert.deepEqual(w.localFacts.governingView().view.deadlines, present(combine([variant()]).view, "the variant's view").deadlines);
+  assert.deepEqual(w.localFacts.governingView().view.deadlines, combine([variant()]).view.deadlines);
   const g = w.c.clockPropose({ target: A, rule: "records_answer", proposer: M, viewer: M });
   assert.deepEqual([g.proposal.entry.owed_by, g.proposal.entry.date], ["group", "2026-09-07"], "the profile's owed_by");
   assert.equal(w.c.clockPropose({ target: A, rule: "records_served", proposer: M, viewer: M }).proposal.entry.owed_by, "body");

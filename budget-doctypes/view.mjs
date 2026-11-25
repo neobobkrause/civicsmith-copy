@@ -10,8 +10,6 @@
  * empty list, and every reader then says it found nothing for want of it. */
 import { readerView, vocabulary, vocabRegex } from "../docprofile/registry.mjs";
 
-/** The view's vocabulary keys this module reads (R12).
- * @type {Readonly<{REPORT_TITLES: string, BOOK_TITLES: string, HEADINGS: string, FISCAL_YEARS: string, HEADERS: string}>} */
 export const KEYS = Object.freeze({
   REPORT_TITLES: "financial_report_titles",
   BOOK_TITLES: "budget_book_titles",
@@ -20,8 +18,7 @@ export const KEYS = Object.freeze({
   HEADERS: "budget_headers",
 });
 
-/** The columns a budget line-item table's header words may name (R7).
- * @type {ReadonlyArray<string>} */
+/** The columns a budget line-item table's header words may name (R7). */
 export const COLUMNS = Object.freeze(["fund", "org", "department", "department_code", "program", "project",
                                       "account", "amount", "period", "phase"]);
 
@@ -70,10 +67,8 @@ const LIGATURES = ["fi", "fl", "ff", "ffi", "ffl"];
 /** The view's budget header words, `[{column, re}]`, in the profile's order. */
 export function headerWords(ctx) {
   const out = [];
-  for (const v of vocabulary(ctx, KEYS.HEADERS)) {
-    /** @type {{column?: string, pattern?: import("../docprofile/registry.mjs").Pattern}} checks a `budget_headers` entry: `{column, pattern, basis}`, this module's key (R7, R12) */
-    const e = v;
-    if (!e.column || !COLUMNS.includes(e.column)) continue;
+  for (const e of vocabulary(ctx, KEYS.HEADERS)) {
+    if (!COLUMNS.includes(e.column)) continue;
     const re = vocabRegex(e.pattern, null, "i");
     if (re) out.push({ column: e.column, re });
   }

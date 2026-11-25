@@ -8,23 +8,6 @@ import { spanOf, isNo, refuse, undetermined, zoneRefusal } from "./values.mjs";
 import { missing } from "./calendar.mjs";
 import { word } from "../setup-words/index.mjs";
 import { reason } from "./reasons.mjs";
-/** @import { DateTime, Instant, Refusal, Undetermined, Answered } from './values.mjs' */
-
-/**
- * One instance of a recurrence, in wall time.
- * @typedef {Object} RecurrenceInstance
- * @property {string} value YYYY-MM-DD, or YYYY-MM-DDTHH:MM
- * @property {string} precision day or minute, as the start is a day or not
- * @property {string} zone
- * @property {Instant} instant
- */
-/**
- * A fiscal year (R21).
- * @typedef {Object} FiscalPeriod
- * @property {string} label
- * @property {string} start its first day, YYYY-MM-DD
- * @property {string} end its last day, YYYY-MM-DD
- */
 
 const SUBSET = ["FREQ", "INTERVAL", "BYDAY", "BYMONTHDAY", "BYSETPOS", "EXDATE", "UNTIL"];
 const FREQS = ["WEEKLY", "MONTHLY", "YEARLY"];
@@ -45,9 +28,7 @@ function readStamp(s) {
   return { day, sec: +m[4] * 3600 + +m[5] * 60 + +m[6], utc: !!m[7] };
 }
 
-/** The rule's parts, or a refusal naming the first part outside the subset.
- *  @param {string} text
- *  @returns {{freq: string, interval: number, byday: Array<{n: number|null, day: string}>|null, bymonthday: Array<number>|null, bysetpos: Array<number>|null, until: {day: number, sec?: number, utc?: boolean}|null, exdates: Array<{day: number, sec?: number, utc?: boolean}>, refused?: undefined}|Refusal} */
+/** The rule's parts, or a refusal naming the first part outside the subset. */
 export function readRrule(text) {
   if (typeof text !== "string") throw new TypeError("an rrule is a string");
   const parts = {};
@@ -159,14 +140,7 @@ function instantOn(n, sec, zone) {
   return { t: wall - offsetAt(wall - 86400, zone), shifted: true };
 }
 
-/**
- * R20: the RFC 5545 subset expanded in `zone`, wall time kept across daylight-saving changes.
- * @param {{rrule: string, dtstart: DateTime|Instant|string, zone: string, from: DateTime|Instant|string, to: DateTime|Instant|string}} args a 10-character `dtstart`, `from` or `to` is a day in `zone`; a zone-less date-time `dtstart` is a minute or second in `zone`
- * @returns {({instances: Array<RecurrenceInstance>, truncated: boolean, trace: Object<string, *>} & Answered)|Undetermined|Refusal}
- * @bound rrule: FREQ (WEEKLY, MONTHLY or YEARLY), INTERVAL, BYDAY with an ordinal, BYMONTHDAY, BYSETPOS, EXDATE and UNTIL; any other part is refused RRULE_UNSUPPORTED naming it
- * @bound instances: at most 500, and none 24 months or more after from; reaching either sets truncated
- * @throws {TypeError} when `args` is not an object, `rrule` or `zone` is not a string, or `dtstart`, `from` or `to` is absent
- */
+/** R20. */
 export function expandRecurrence(args) {
   if (!args || typeof args !== "object") throw new TypeError("expandRecurrence takes {rrule, dtstart, zone, from, to}");
   const { rrule, dtstart, zone, from, to } = args;
@@ -249,12 +223,7 @@ function periodFor(y, f) {
   return { label, start: dayText(start), end: dayText(next - 1), startN: start, endN: next - 1 };
 }
 
-/**
- * R21: the fiscal year that contains a date, under the `fiscal_year` fact the view gives for `body` (or for "*").
- * @param {{date: DateTime|Instant|string, body: string, view: Object<string, *>}} args a 10-character `date` is a day
- * @returns {(FiscalPeriod & Answered)|Undetermined|Refusal} undetermined with both periods as candidates when the date spans two
- * @throws {TypeError} when `args` or `view` is not an object, `date` is absent, or `body` is not a string
- */
+/** R21. */
 export function fiscalPeriod(args) {
   if (!args || typeof args !== "object") throw new TypeError("fiscalPeriod takes {date, body, view}");
   const { date, body, view } = args;

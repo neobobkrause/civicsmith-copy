@@ -6,12 +6,7 @@ import { createHash } from "node:crypto";
 
 /* ---- the seeded draw ---- */
 
-/**
- * A 32-bit hash of any number of parts (strings or numbers): FNV-1a over their text, then a final mix.
- * @param {...unknown} parts the parts, each read as its text
- * @returns {number}
- * @bound result: whole number from 0 to 4294967295
- */
+/** A 32-bit hash of any number of parts (strings or numbers): FNV-1a over their text, then a final mix. */
 export function hash32(...parts) {
   let h = 0x811c9dc5;
   for (const p of parts) {
@@ -23,18 +18,7 @@ export function hash32(...parts) {
   return h >>> 0;
 }
 
-/**
- * A seeded draw's helpers; the draw itself, called, answers the next number in [0, 1).
- * @typedef {Object} SeededDraw
- * @property {(n: number) => number} int a whole number from 0 to n - 1
- * @property {(list: any[]) => any} pick one element of the list
- */
-
-/**
- * A seeded generator of numbers in [0, 1) (mulberry32 over the seed's hash): no clock, no unseeded randomness.
- * @param {...unknown} seed the seed's parts, as for hash32
- * @returns {(() => number) & SeededDraw}
- */
+/** A seeded generator of numbers in [0, 1) (mulberry32 over the seed's hash): no clock, no unseeded randomness. */
 export function rng(...seed) {
   let a = hash32(...seed);
   const next = () => {
@@ -49,49 +33,23 @@ export function rng(...seed) {
   return next;
 }
 
-/**
- * A position-addressed draw: the same (seed, ...at) gives the same number in [0, 1), with no sequence to replay.
- * @param {unknown} seed the seed
- * @param {...unknown} at the position's parts
- * @returns {number}
- * @bound result: in [0, 1)
- */
+/** A position-addressed draw: the same (seed, ...at) gives the same number in [0, 1), with no sequence to replay. */
 export const drawAt = (seed, ...at) => hash32(seed, ...at) / 4294967296;
 
 /* ---- the vocabulary (the units' words) ----
    Every unit carries a marker and one word, so it is checkable alone. The full list has accents, ligatures,
    CJK, RTL and a combining mark (C7, C8); a kind that cannot carry every script draws from its own subset. */
-/**
- * The full vocabulary: accents, ligatures, CJK, RTL and a combining mark.
- * @type {readonly string[]}
- */
 export const VOCAB = Object.freeze(["café", "naïve", "straße", "œuvre", "ﬁnance", "ﬂoor", "señor", "Ærø", "Zürich", "garçon",
   "市議会", "予算", "مدينة", "עירייה", "e\u0301tude", "budget", "council", "motion", "ordinance", "ledger"]);
-/**
- * Words every Latin-1 and Windows-1252 text can carry.
- * @type {readonly string[]}
- */
+/** Words every Latin-1 and Windows-1252 text can carry. */
 export const LATIN_VOCAB = Object.freeze(["café", "naïve", "straße", "señor", "Ærø", "Zürich", "garçon", "budget", "council", "motion", "ordinance", "ledger"]);
-/**
- * Words of plain ASCII letters, for the bitmap font of pictures and scans.
- * @type {readonly string[]}
- */
+/** Words of plain ASCII letters, for the bitmap font of pictures and scans. */
 export const ASCII_VOCAB = Object.freeze(["budget", "council", "motion", "ordinance", "ledger", "agenda", "minutes", "permit", "zoning", "audit", "parcel", "levy"]);
 
-/**
- * The canonical text of a recipe: keys sorted at every depth, so equal recipes have one key.
- * @param {unknown} v the recipe (or any JSON-like value)
- * @returns {string}
- */
+/** The canonical text of a recipe: keys sorted at every depth, so equal recipes have one key. */
 export function canonical(v) {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
   if (v && typeof v === "object") return `{${Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
   return JSON.stringify(v);
 }
-/**
- * A recipe's cache key: the SHA-256 of its canonical text, cut to 24 hex digits.
- * @param {unknown} recipe the recipe
- * @returns {string}
- * @bound result: 24 lowercase hex digits
- */
 export const recipeKey = (recipe) => createHash("sha256").update(canonical(recipe)).digest("hex").slice(0, 24);

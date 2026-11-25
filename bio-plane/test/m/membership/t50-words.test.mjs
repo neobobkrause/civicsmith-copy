@@ -19,11 +19,7 @@ import { rowKey, rowWord, keyed } from "../../../src/member-roster/words.mjs";
 const HELD = [...WORD_KEYS, ...MEMBER_WORD_KEYS];
 const TABLES = Object.fromEntries(Object.entries(membership).filter(([name]) => /_CHECKS$/.test(name)));
 /* a key's words as the list gives them, placeholders in place */
-const raw = (key) => {
-  const row = WORD_ROWS.find((r) => r[0] === key);
-  assert.ok(row, `setup-words holds ${key}`);
-  return row[1];
-};
+const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
 const reads = async () => JSON.parse(await readFile(
   new URL("../../../../docs/development/ux-substrate/screens/words-reads.json", import.meta.url), "utf8")).modules.membership;
 

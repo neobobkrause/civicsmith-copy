@@ -26,4 +26,4 @@ const t = await entry.text(parts, { inlineCellsMax: 512 * 1024, yieldNow });
 sample();
 const refusal = t.undetermined.find((u) => u.why === "TOO_MANY_OBJECTS") ?? null;
 process.stdout.write(JSON.stringify({ aboveStartMB: (peak - idle) / 1048576, ok: t.ok,
-  documentLength: t.document == null ? null : t.document.length, paragraphs: (/** @type {any} a docx or pptx text answer */ (t).paragraphs ?? /** @type {any} */ (t).slides).length, refusal }));
+  documentLength: t.document == null ? null : t.document.length, paragraphs: (t.paragraphs ?? t.slides).length, refusal }));

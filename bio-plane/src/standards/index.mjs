@@ -620,7 +620,7 @@ export class Standards {
                                 number: recognised.normal ?? recognised.number } : null;
     if (a.family == null) {
       if (read) return { ok: true, recognised, family: { state: "matched", ...read, family_key: familyKey(read),
-                                                         label: recognised?.label ?? null } };
+                                                         label: recognised.label ?? null } };
       return { ok: true, recognised, family: { state: "undetermined", key: null, family_key: null,
         why: view ? word("standards.why.citation_matches_series")
                   : why } };

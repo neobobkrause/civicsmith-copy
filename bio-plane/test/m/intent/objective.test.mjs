@@ -49,7 +49,7 @@ test("R22 C-2.9's objective arm moved to intent with its test: the bundle gramma
   w.st.sql.exec(`UPDATE files SET content=? WHERE bundle_id=? AND path='bundle.md'`, w.text(P).replace(/^objective: .*\n/m, ""), P);
   const pass = await w.record.auditPass({ limit: 50 });
   assert.equal(pass.tally["C-2.9"], 1);
-  assert.equal(pass.tallyDetail?.["C-2.9/NO_OBJECTIVE"], 1);
+  assert.equal(pass.tallyDetail["C-2.9/NO_OBJECTIVE"], 1);
   /* every refusal code intent.md names has its row here, with a check id and a translation */
   const named = ["NO_OBJECTIVE", "MACHINE_CANNOT_SET_OBJECTIVE", "CONDITION_UNREADABLE", "INTENT_NO_SUCH_PROGRESSION",
     "INTENT_BAD_STAGE", "CONDITION_BAD_GRADE", "BAD_SHARE", "MACHINE_CANNOT_DECLARE_GOAL", "PURSUIT_UNSTATED", "NO_SUCH_GOAL",

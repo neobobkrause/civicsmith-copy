@@ -245,7 +245,7 @@ export function world({ group = "test-group", workerd = false, contradiction = n
         author: V("alice"), files: [{ path: "bundle.md", text }], meta: { object_type: type } });
     },
     head: (id) => record.head(id)?.bundleSha ?? null,
-    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     /** A member's firsthand observation, through provenance's `testify`. */
     observe(author, words = `I saw it, ${author}.`) {

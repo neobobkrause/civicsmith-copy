@@ -124,7 +124,7 @@ test("R38, R14: an edition 2 with a statement stores case-grammar R8's block and
   assert.notEqual(after.doc_sha, doc.doc_sha, "the list was re-authored");
   const q = parseFrontmatter(after.text);
   assert.deepEqual(whatChangedOf(q.data, q.body), whatChangedOf(p.data, p.body));
-  assert.equal(q.data?.completeness.acknowledged, 1);
+  assert.equal(q.data.completeness.acknowledged, 1);
   /* the answer's document is the stored one: the publisher is shown exactly what will be printed */
   assert.equal(e2.caseDocument.bytes, new TextEncoder().encode(doc.text).length);
 });
@@ -213,7 +213,7 @@ test("R40: with no manifest in force the section states that none was, and the b
   const P = w.project("Team", "alice", [Q]);
   const r = w.publish(P, "alice", [Q]);
   const doc = docOf(w, r.caseId, 1), p = parseFrontmatter(doc.text);
-  assert.deepEqual([p.data?.lens_statements, p.data?.lens_citations, lensOf(p.data)], [[], [], { statements: [] }]);
+  assert.deepEqual([p.data.lens_statements, p.data.lens_citations, lensOf(p.data)], [[], [], { statements: [] }]);
   assert.ok(doc.text.includes(lensSectionLines({ acknowledgement: AUTHORED.biasAcknowledgement, inForce: false }).join("\n")));
   assert.ok(doc.text.includes(LENS_NONE_SENTENCE));
   const UNDETERMINED = word("bias.undetermined_adoption_pins");
@@ -222,7 +222,7 @@ test("R40: with no manifest in force the section states that none was, and the b
   u.member("alice"); u.doc(DOC); u.finding(Q, [{ target: DOC }]);
   const ur = u.publish(u.project("Team", "alice", [Q]), "alice", [Q]);
   const ut = docOf(u, ur.caseId, 1).text;
-  assert.deepEqual(parseFrontmatter(ut).data?.lens_statements, []);
+  assert.deepEqual(parseFrontmatter(ut).data.lens_statements, []);
   assert.ok(ut.includes(lensSectionLines({ acknowledgement: AUTHORED.biasAcknowledgement, inForce: null,
     stated: UNDETERMINED }).join("\n")));
 });

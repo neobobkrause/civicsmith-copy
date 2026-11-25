@@ -16,7 +16,7 @@ const help = (over = {}) => ({ law: "Sample Records Act", days: 10, extra_days: 
   status: "researched", basis: "2026-10-17", ...over });
 const bare = (over) => ({ id: "sample-town", name: "Sample Town", covers: ["Sample Town"], test: false, ...over });
 const breakHelp = (fn) => { const p = bare({ records_help: help() }); fn(p.records_help); return validate(p); };
-const other = (fn = (_p) => {}) => { const p = get(TEST); if (!p) throw new Error("the test profile is missing (R9)"); p.id = "test-other"; p.name = "Other (test)"; p.covers = ["Other"]; fn(p); return p; };
+const other = (fn = () => {}) => { const p = get(TEST); p.id = "test-other"; p.name = "Other (test)"; p.covers = ["Other"]; fn(p); return p; };
 
 test("R93 records_help is a known section; a well-formed block, with and without portal and faster, is accepted", () => {
   assert.ok(SECTIONS.includes("records_help"));

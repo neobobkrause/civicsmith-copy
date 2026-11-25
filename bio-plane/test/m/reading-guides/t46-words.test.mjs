@@ -83,9 +83,7 @@ test("R14 GUIDE_KIND_UNKNOWN is answered by the acts with words.json's sentence,
   assert.equal(reading.detail, localize("reading-guides.index.a_reading_guide_is_for", "a reading guide is for one of these kinds of document: {kinds}. Nothing was written.", { kinds: GUIDE_KINDS.join(", ") }));
   const proc = w.g.guideDraft({ kind: "staff_report", purpose: "procedure", items: STEPS, by: ANN });
   answers(proc, "GUIDE_KIND_UNKNOWN");
-  const view = combine(["test-port-ellery"]).view;
-  assert.ok(view, "the test profile combines");
-  assert.ok(proc.detail.includes(view.action_kinds.map((x) => x.kind).join(", ")), "it names the view's action kinds");
+  assert.ok(proc.detail.includes(combine(["test-port-ellery"]).view.action_kinds.map((x) => x.kind).join(", ")), "it names the view's action kinds");
   const purpose = w.g.guideDraft({ kind: "bylaw_complaint", purpose: "rules", items: STEPS, by: ANN });
   answers(purpose, "GUIDE_KIND_UNKNOWN");
   assert.deepEqual([purpose.kind, purpose.purpose], ["bylaw_complaint", "rules"]);

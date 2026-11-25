@@ -86,8 +86,8 @@ const refusesField = (notice, field, why) => assert.throws(() => releaseNoticeSt
 const REASONS_NOTICE = ["MALFORMED", "NAMESPACE", "UNKNOWN_KEY", "BAD_SIGNATURE", "CRYPTO_UNAVAILABLE", "NOT_NEWER"];
 /* Every "no" verifyReleaseNotice gives in these tests, checked at the end (R29's rule, R48's reasons). */
 const NOES = [];
-const judge = async (notice, armored, running, allowedKeys) => {
-  const r = await verifyReleaseNotice(notice, armored, running, allowedKeys);
+const judge = async (...a) => {
+  const r = await verifyReleaseNotice(...a);
   if (!r.ok) NOES.push(r);
   return r;
 };
@@ -121,9 +121,7 @@ test("R45 RELEASE_KEYS is exactly the release key and the recovery key, each an 
 
 test("R45 a signature by a key outside RELEASE_KEYS is UNKNOWN_KEY against it, for a release, a fleet statement and a release notice", async () => {
   const fleet = enc(fleetStatement({ version: "0.85.0", plane: { sha256: MANIFEST, bytes: 1, asset: "p.mjs" }, members: [] }));
-  /** @type {Array<[string, Uint8Array]>} */
-  const cases = [[NS_RELEASE, enc("asset bytes")], [NS_FLEET, fleet], [NS_RELEASE_NOTICE, releaseNoticeStatement(NOTICE)]];
-  for (const [ns, m] of cases) {
+  for (const [ns, m] of [[NS_RELEASE, enc("asset bytes")], [NS_FLEET, fleet], [NS_RELEASE_NOTICE, releaseNoticeStatement(NOTICE)]]) {
     const r = await verifySshsig(signSshsig(ENV, m, ns), m, ns, RELEASE_KEYS);
     assert.deepEqual(r, { ok: false, reason: "UNKNOWN_KEY", keyB64: ENV_PUB.split(" ")[1] });
   }

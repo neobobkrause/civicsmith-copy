@@ -209,7 +209,7 @@ async function capturePdf(titled, stated = null) {
   await press(add, "acquire");
   const filed = add.byOp("promote").map((r) => r.body);
   const held = await open(t, t.mai, "/app/held");
-  return { add, held, filed, world: t.world };
+  return { add, held, filed };
 }
 const rowOf = (p, id) => main(p).querySelector(`#pick-held-${id}`).closest("tr, .cs-r, li, div");
 
@@ -237,10 +237,10 @@ test("R54 (C25) control: a PDF with no title whose source states the very name i
 });
 
 test("R54 (C25) control: a PDF with no title whose source states no name is never named by the file part of its address, but by its host and the day", async () => {
-  const { add, held, filed, world } = await capturePdf(false);
-  assert.equal(filed[0].meta.title, untitled(world, "www.irs.gov"));
+  const { add, held, filed } = await capturePdf(false);
+  assert.equal(filed[0].meta.title, untitled("www.irs.gov"));
   assert.ok(!text(add).includes("f1040es.pdf"));
-  assert.ok(rowOf(held, filed[0].bundleId).textContent.includes(untitled(world, "www.irs.gov")));
+  assert.ok(rowOf(held, filed[0].bundleId).textContent.includes(untitled("www.irs.gov")));
 });
 
 /* ---------- C14: Held's read set (capture R102) ---------- */

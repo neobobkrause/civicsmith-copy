@@ -84,7 +84,7 @@ test("R14 R15 R23 R8: on a question concluded with no project, conclude is offer
   assert.deepEqual([m.ok, m.concludes_for_project, m.actor_is_machine], [true, null, true]);
   assert.equal(ids(m).includes("conclude"), false, "a machine is withheld conclude");
   /* the offer is conclude's own entry, decorated as everywhere else */
-  const d = decorate(deriveActs(as("iris")).find((x) => x.id === "conclude") ?? assert.fail("conclude is offered"), { needs: () => "contribute", mode: () => "session" });
+  const d = decorate(deriveActs(as("iris")).find((x) => x.id === "conclude"), { needs: () => "contribute", mode: () => "session" });
   assert.deepEqual([d.weight, d.rung, d.mode, d.prompt], ["single", "reasoned", "session", null]);
 });
 

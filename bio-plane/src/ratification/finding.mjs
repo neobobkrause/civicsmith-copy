@@ -15,11 +15,7 @@ import { word, localize } from "../setup-words/index.mjs";
 /** R4: the refusals `op=ratify` answers from the gate facts before the signature is weighed, in its order (C-58.1,
  *  C-53.10, C-53.11, C-92.12, RATIFY_STALE), as `{body, status}` without the envelope's `store` and `tokenClass`, or null.
  *  `statedInSitting` (R52) is the observations the case document signed in the same sitting states a chosen level for:
- *  that document is the ratified case document C-92.12 asks for, committed in the same transaction.
- * @param {any} facts the gate facts (R7)
- * @param {any} args `{bundleId, expectedSha, statedInSitting}`
- * @returns {any} `{body, status}`, or null
- */
+ *  that document is the ratified case document C-92.12 asks for, committed in the same transaction. */
 export function findingFactsRefusal(facts, { bundleId, expectedSha, statedInSitting = null }) {
   /* DEC-49 REGION is-ratify-project-bundle — REC-140 / C-58.1. BIO_Publication_v0_1.md
      §3 rule 2 as BOB #15 applied it to D-429 (2026-09-18): *"Only findings that are
@@ -76,12 +72,7 @@ const hexOf = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padSta
 
 /** R5, D-556: the parts an image publishes, `{shas, partShaSet}`: each text file by the SHA-256 of its bytes, each
  *  capture by its blob hash and the register's size, and each capture the gate admitted as held in parts (`partedRows`,
- *  whole hash to parts) as its parts.
- * @param {any} image the finding's image
- * @param {any} partedRows the whole hashes the gate admitted as held in parts
- * @param {any} registers the capture registers
- * @returns {Promise<any>} `{shas, partShaSet}`
- */
+ *  whole hash to parts) as its parts. */
 export async function findingShas(image, partedRows, registers) {
   /* REC-22: a capture part's SIZE, taken from the register the store already
      handed us with the gate facts. The public file manifest states per-file
@@ -121,10 +112,7 @@ export async function findingShas(image, partedRows, registers) {
 }
 
 /** R5: the commit's arguments (`publish`), every fact of the finding read out of the RATIFIED BYTES, the act's own facts
- *  (signature, key, member, gate version, deliverer) beside them.
- * @param {any} args the finding's prepared facts and the act's own
- * @returns {any} `publish`'s arguments
- */
+ *  (signature, key, member, gate version, deliverer) beside them. */
 export function findingPublishArgs({ bundleId, expectedSha, image, shas, sig, keyB64, attestorMember, gateVersion,
                                      deliveredBy }) {
   /* REC-14 / DEC-12: the EDITION, the frozen pair, the declared bar and the
@@ -184,12 +172,7 @@ export function findingPublishArgs({ bundleId, expectedSha, image, shas, sig, ke
 
 /** R6: the ratified bytes copied content-addressed into the published bucket (existing keys immutable and skipped;
  *  captures streamed from the working bucket where the gate just verified them), and every part re-verified at the
- *  destination (D-556). Answers `{copied, present, r2state, partsPublished}`.
- * @param {any} env the Worker's bindings
- * @param {any} storeName the store's name
- * @param {any} parts `{shas, partShaSet, partedRows}`
- * @returns {Promise<any>} `{copied, present, r2state, partsPublished}`
- */
+ *  destination (D-556). Answers `{copied, present, r2state, partsPublished}`. */
 export async function copyFinding(env, storeName, { shas, partShaSet, partedRows }) {
   const r2 = typeof env?.CAPTURES?.head === "function";
   let copied = 0, present = 0, r2state = "not configured";
@@ -240,10 +223,7 @@ export async function copyFinding(env, storeName, { shas, partShaSet, partedRows
 
 /** CAP-4 / CAPTURE-SCALING item 6 (R6): the reused parts re-fetched at ratification, each recorded with its outcome;
  *  `ask(path, init)` reads the store as the caller's `doAnswer` does. Answers the reuse report, or null when nothing was
- *  reused.
- * @param {any} args `{env, ask, bundleId, silentReason, silentDetail}`
- * @returns {Promise<any>} the reuse report, or null
- */
+ *  reused. */
 export async function reuseCheck({ env, ask, bundleId, silentReason, silentDetail }) {
   /* CAP-4 / CAPTURE-SCALING item 6: re-fetch the reused parts at
      ratification, which is where a working capture's reuse becomes evidence.
@@ -354,40 +334,29 @@ export async function reuseCheck({ env, ask, bundleId, silentReason, silentDetai
 
 /** R6, R57 (G54): whether a case edition's state says its case file is still owed: complete, and either no manifest was
  *  recorded or publication's ledger (`casefile_state`) says an attempt did not end `built` (a manifest recorded whose bytes
- *  were never stored is owed too). A state that carries no ledger field is judged by its manifest alone, as it was.
- * @type {(cs: any) => boolean}
- */
+ *  were never stored is owed too). A state that carries no ledger field is judged by its manifest alone, as it was. */
 export const owesCaseFile = (cs) => !!(cs && cs.complete
   && (!cs.manifest_sha || (cs.casefile_state && cs.casefile_state !== "built")));
 
 /** R6: the case editions a finding's commit answers complete and not yet assembled (`pub.case`, or, for a sha several
- *  cases pin, `pub.containerCases`; D-442, IC-74).
- * @param {any} pub the commit's answer
- * @returns {any[]} the case editions owed their case file
- */
+ *  cases pin, `pub.containerCases`; D-442, IC-74). */
 export function casesToAssemble(pub) {
   if (pub && pub.case && owesCaseFile(pub.case)) return [pub.case];
   return Array.isArray(pub?.containerCases) ? pub.containerCases.filter((cs) => owesCaseFile(cs)) : [];
 }
 
-/** R57 (G54): an error as the record states it, its message cut, never its stack.
- * @type {(e: any) => string}
- */
+/** R57 (G54): an error as the record states it, its message cut, never its stack. */
 export const errorText = (e) => String((e && e.message) || e).slice(0, 160);
 
 /** R57 (G54): a copy that threw (the published bucket refused or the store did not answer) stated where it would have
- *  counted: nothing copied is claimed, and the answer says why.
- * @type {(e: any) => any}
- */
+ *  counted: nothing copied is claimed, and the answer says why. */
 export const failedCopy = (e) => ({ copied: 0, present: 0, r2state: "COPY_FAILED", partsPublished: null,
                                     failed: { reason: "COPY_FAILED", detail: errorText(e) } });
 
 /** R57 (G54): what the caller's own copy knew when it reached the assembly (public-read's R6 `prior`): the materials it could
  *  not copy, each `{sha, absent}` (`absent` true when the evidence store ANSWERED it gone), `absent` true when there are some
  *  and every one is (the confirmation the ledger's writer needs to stop an edition), and the copy that threw (its text and
- *  code), else null.
- * @type {(found?: {missing?: any[], absent?: any[], copyError?: any}) => any}
- */
+ *  code), else null. */
 export const priorOf = ({ missing = [], absent = [], copyError = null } = {}) => {
   const gone = new Set(absent);
   return { materials_missing: missing.map((sha) => ({ sha, absent: gone.has(sha) })),
@@ -398,10 +367,7 @@ export const priorOf = ({ missing = [], absent = [], copyError = null } = {}) =>
 /** R6, R57 (G54): the assembly of one case edition's case file, after the commit, whoever calls it, and never a throw:
  *  `assemble` is public-read's one assembly (its R6), which records the attempt itself and answers a statement; should it
  *  throw all the same, the failure is recorded here through public-read's `recordFailure` (step `build`, the assembly's
- *  own) and the statement is `ASSEMBLY_FAILED`. The recording never changes the answer and never throws.
- * @param {any} args `{assemble, recordFailure, env, stub, storeName, cs, via, prior}`
- * @returns {Promise<any>} the assembly's statement
- */
+ *  own) and the statement is `ASSEMBLY_FAILED`. The recording never changes the answer and never throws. */
 export async function assembleEdition({ assemble, recordFailure, env, stub, storeName, cs, via, prior }) {
   try {
     return await assemble({ env, stub, storeName, cs, via, prior });
@@ -412,10 +378,7 @@ export async function assembleEdition({ assemble, recordFailure, env, stub, stor
 
 /** R57 (G54): a failure the caller met before the assembly was reached (`step` `copy`) or inside it (`build`), recorded
  *  for the edition through public-read's `recordCaseFileFailure`; answers the statement for the act's answer. A recorder
- *  that is absent, throws or does not answer changes nothing: the statement stands, and the sweep owes the edition.
- * @param {any} args `{recordFailure, stub, cs, via, step, error}`
- * @returns {Promise<any>} the statement, `{ok: false, reason, detail, code?}`
- */
+ *  that is absent, throws or does not answer changes nothing: the statement stands, and the sweep owes the edition. */
 export async function recordedFailure({ recordFailure, stub, cs, via, step, error }) {
   let recorded = null;
   try { if (typeof recordFailure === "function") recorded = await recordFailure({ stub, cs, via, step, error }); }
@@ -424,10 +387,7 @@ export async function recordedFailure({ recordFailure, stub, cs, via, step, erro
            ...(recorded && typeof recorded === "object" && recorded.code ? { code: recorded.code } : {}) };
 }
 
-/** R4–R6: `op=ratify`'s answer for a committed finding, without the envelope's `store` and `tokenClass`.
- * @param {any} args the committed finding's facts
- * @returns {any} the act's answer
- */
+/** R4–R6: `op=ratify`'s answer for a committed finding, without the envelope's `store` and `tokenClass`. */
 export function findingAnswer({ bundleId, expectedSha, pub, container, attestorMember, gateVersion, deliveredBy, copy,
                                 reuseReport, shaCount }) {
   return { ok: true, bundleId, bundleSha: expectedSha,
@@ -481,18 +441,12 @@ export function findingAnswer({ bundleId, expectedSha, pub, container, attestorM
 }
 
 /** R52: the observations a case document's attribution facts state a chosen level for, which C-92.12 counts as stated
- *  for a member of the same sitting (C-92.10 and C-92.11 having passed for that document).
- * @type {(attr: any) => Set<string>}
- */
+ *  for a member of the same sitting (C-92.10 and C-92.11 having passed for that document). */
 export const statedIn = (attr) => new Set((attr && Array.isArray(attr.stated) ? attr.stated : [])
   .filter((r) => r && r.observation && r.level && r.level !== "null").map((r) => String(r.observation)));
 
 /** R6 after R52: the case editions to assemble once, the case commit's own complete edition and each member commit's,
- *  one per edition, the last state read of each.
- * @param {any} completedCase the case commit's own edition state
- * @param {any} commits the member commits, each `{pub}`
- * @returns {any[]} the editions to assemble, one each
- */
+ *  one per edition, the last state read of each. */
 export function editionsToAssemble(completedCase, commits) {
   const byEdition = new Map();
   for (const cs of [completedCase, ...(commits || []).flatMap((c) => casesToAssemble(c.pub))])

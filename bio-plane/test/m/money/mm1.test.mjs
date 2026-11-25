@@ -33,10 +33,11 @@ test("M-M1 R1 the 200 figures: each read exactly by calc-grammar's parser and sc
   assert.equal(FIGURES.length, 200);
   const misses = [];
   for (const row of FIGURES) {
-    const read = parseFigure(row.as_read.replace(/\s+/g, " ").trim());
-    if (read.refused) { misses.push(`${row.id}: ${read.why}`); continue; }
-    const scaled = row.scale === "in thousands" ? multiply(read, { value: "1000", sign: "+", precision: "exact" }) : read;
-    const got = signed({ value: scaled.value, sign: SHARE.has(row.id) ? "+" : scaled.sign }).replace(/^-?0+(?=\d)/, (m) => (m.startsWith("-") ? "-" : ""));
+    let f = parseFigure(row.as_read.replace(/\s+/g, " ").trim());
+    if (f.refused) { misses.push(`${row.id}: ${f.why}`); continue; }
+    if (row.scale === "in thousands") f = multiply(f, { value: "1000", sign: "+", precision: "exact" });
+    if (SHARE.has(row.id)) f = { ...f, sign: "+" };
+    const got = signed(f).replace(/^-?0+(?=\d)/, (m) => (m.startsWith("-") ? "-" : ""));
     const norm = (x) => { const [i, d = ""] = x.replace(/^-/, "").split("."); const t = d.replace(/0+$/, ""); return (x.startsWith("-") && /[1-9]/.test(x) ? "-" : "") + String(BigInt(i)) + (t ? `.${t}` : ""); };
     if (norm(got) !== norm(row.expected)) misses.push(`${row.id}: read ${got}, expected ${row.expected}`);
   }

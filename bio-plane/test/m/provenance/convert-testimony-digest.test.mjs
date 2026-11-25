@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash, webcrypto } from "node:crypto";
-import { world, sha, V, provDoc, inlineText, pathsOf } from "./fixture.mjs";
+import { world, sha, V, provDoc } from "./fixture.mjs";
 import { observerRef, registerChecks } from "../../../src/provenance/index.mjs";
 import { TESTIMONY_CHECKS, PROVENANCE_ACT_CHECKS } from "../../../src/provenance/checks.mjs";
 import { checkBundle, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
@@ -19,7 +19,7 @@ const row = (code, table = TESTIMONY_CHECKS) => [false, code, table[code].check,
 
 /* Every live file of a bundle: the files a publication can carry (the record's promotion history is its own table,
    never a file of the bundle). */
-const image = (w, id) => new Map(pathsOf(w.record.livePaths(id)).map((p) => [p, inlineText(w.record.readFile(id, p))]));
+const image = (w, id) => new Map(w.record.livePaths(id).map((p) => [p, w.record.readFile(id, p).text]));
 
 /* ===================================================================== testify.test.mjs */
 
@@ -89,7 +89,7 @@ test("R3: a revision of an authored bundle that drops data/provenance.json, decl
   const w = world();
   const t = w.prov.testify({ words: "Exactly these words.", observedAt: "2026-09-21", author: V("ruth") });
   const head = w.head(t.bundle_id);
-  const live = (p) => inlineText(w.record.readFile(t.bundle_id, p));
+  const live = (p) => w.record.readFile(t.bundle_id, p).text;
   const s0 = w.snapshot();
   const gone = w.promotion.promote({ bundleId: t.bundle_id, base: head.bundleSha, snapKey: "drop", author: V("ruth"),
     meta: { object_type: "information" }, drop: ["data/provenance.json"],

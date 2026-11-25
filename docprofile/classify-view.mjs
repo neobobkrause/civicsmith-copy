@@ -4,55 +4,10 @@
  * `readText`; `readtext.mjs` re-exports these names unchanged. */
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-/**
- * @typedef {Object} Segment one container part's half-open span in the flat text, with where it came from (R23)
- * @property {number} start the first offset of the part's text in the flat string
- * @property {number} end one past its last offset
- * @property {*} source what the part is, as the caller's `sourceOf` named it; `readtext.mjs` supplies IC-1's own element reference
- * @bound start, end: offsets into the flat string, start before end; the segments are in ascending order and never overlap
- */
-/**
- * @typedef {Object} Window a half-open span of the text a view holds (R39)
- * @property {number} from the first offset held
- * @property {number} to one past the last offset held
- */
-/**
- * @typedef {Object} ViewLimits the bounds the view is cut to; the module's own exported constants, replaced only by a test
- * @property {number} view the most characters the whole view may hold
- * @property {number} head the characters of the head, before it is cut to a line end
- * @property {number} slack how far past `head` a line end is looked for
- * @property {number} windows how many windows are spread over the rest
- * @property {number} window the characters of one window
- * @property {number} sheetHeads the characters every sheet head together may hold
- * @property {number} sheetHead the characters one sheet head may hold
- */
-/**
- * @typedef {Object} ClassifiedOver what a view holds, as an answer states it (R19, R38, R39)
- * @property {number} chars the characters of the view
- * @property {number} of the characters of the whole text
- * @property {number} head_chars the characters of the head
- * @property {Window[]} windows the windows spread over the rest, in order, the last ending at the text's end
- * @property {Window[]} sheet_heads the sheets' first lines, empty where they were not used
- * @property {boolean} heads_used whether the sheets' boundaries were established and their heads kept within the bound
- * @bound chars: never over `ViewLimits.view`; offsets in `windows` and `sheet_heads` are into the whole text, not into the view
- */
-/**
- * @typedef {ClassifiedOver & {view: string}} ClassificationView the view itself, and what it holds
- */
-
-/**
- * The segment map of an itemised array over a `document` string it is compared with,
- * or null when the array's own join (joinItemised's) is not that string byte for byte.
- * The comparison walks the document in place and builds no joined copy (R38): the
- * answer is the one `joinItemised(...).text === document` gives, at no whole-text cost.
- * Never throws, provided `textOf` and `sourceOf` do not.
- * @param {string} document the flat string the items are compared with
- * @param {ArrayLike<*>} items the producer's own itemised parts, in order
- * @param {(item: *) => string} textOf one item's text; an empty one contributes no segment and no separator
- * @param {(item: *, i: number) => *} sourceOf what that item is; a falsy answer leaves the item out of the map
- * @returns {Segment[] | null} the map, or null where the items' own join is not `document`
- * @bound result: null is "no map", never an empty map; an empty map means the items named no part
- */
+/** The segment map of an itemised array over a `document` string it is compared with,
+ *  or null when the array's own join (joinItemised's) is not that string byte for byte.
+ *  The comparison walks the document in place and builds no joined copy (R38): the
+ *  answer is the one `joinItemised(...).text === document` gives, at no whole-text cost. */
 export function segmentsOver(document, items, textOf, sourceOf) {
   const segments = [];
   let pos = 0;
@@ -83,21 +38,13 @@ export function segmentsOver(document, items, textOf, sourceOf) {
 
    The numbers are protective bounds (BOB reports them, K1881), set by measure: the view is at most 1.5 MiB so that every
    `detect` is handed under the 2 MiB where the text is classified whole. */
-/** @type {number} the characters at or under which a text is classified whole; over it, from the view (R38, R39) */
 export const CLASSIFY_WHOLE_MAX_CHARS = 2 * 1024 * 1024;
-/** @type {number} the most characters a view may hold */
 export const CLASSIFY_VIEW_MAX_CHARS = 1536 * 1024;
-/** @type {number} the characters of the view's head, before it is cut forward to a line end */
 export const CLASSIFY_HEAD_CHARS = 256 * 1024;
-/** @type {number} how far past the head a line end is looked for before the head is cut where it stands */
 export const CLASSIFY_LINE_SLACK_CHARS = 16 * 1024;
-/** @type {number} how many windows are spread over the text after the head */
 export const CLASSIFY_WINDOWS = 12;
-/** @type {number} the characters of one window */
 export const CLASSIFY_WINDOW_CHARS = 96 * 1024;
-/** @type {number} the characters every sheet head together may hold */
 export const CLASSIFY_SHEET_HEADS_MAX_CHARS = 64 * 1024;
-/** @type {number} the characters one sheet's head may hold */
 export const CLASSIFY_SHEET_HEAD_CHARS = 16 * 1024;
 const LIMITS = {
   view: CLASSIFY_VIEW_MAX_CHARS, head: CLASSIFY_HEAD_CHARS, slack: CLASSIFY_LINE_SLACK_CHARS, windows: CLASSIFY_WINDOWS,
@@ -122,14 +69,7 @@ function lineEndBefore(t, from, to) {
  *  lines spread evenly over the rest, the last ending at the text's end; the pieces joined by one newline and never over
  *  `view` characters. `sheets` is the supplied `sheets` array: its boundaries are used only when its non-empty texts joined
  *  by a newline are `text` (as `segmentsOver` checks), else `heads_used` is false. When the pieces would pass `view`, the
- *  sheet heads are dropped first (`heads_used` false), then the earliest windows, never the last, then the head is cut back.
- * @param {string} text the whole flat text
- * @param {*[] | null} [sheets] the supplied `sheets` array, whose `text` fields give each sheet's own boundaries; null, or an
- *   array whose non-empty texts newline-joined are not `text`, gives no sheet heads and `heads_used` false
- * @param {ViewLimits} [limits] the bounds to cut to; the module's own constants unless a test replaces them
- * @returns {ClassificationView}
- * @bound text: read whole and copied only into the view's pieces; a cut never splits a surrogate pair
- */
+ *  sheet heads are dropped first (`heads_used` false), then the earliest windows, never the last, then the head is cut back. */
 export function classificationView(text, sheets = null, limits = LIMITS) {
   const n = text.length;
   let headEnd = Math.min(n, limits.head);
@@ -184,11 +124,7 @@ export function classificationView(text, sheets = null, limits = LIMITS) {
   return { view, of: n, chars: view.length, head_chars: headEnd, windows, sheet_heads: heads, heads_used: headsUsed };
 }
 
-/**
- * The sentence `readText` appends to `why` when it classified a text from a view; code-origin words (K3930).
- * @param {ClassifiedOver} co what the view held, as the answer states it
- * @returns {string}
- */
+/** The sentence `readText` appends to `why` when it classified a text from a view; code-origin words (K3930). */
 export function classifiedWhy(co) {
   return localize("docprofile.readtext.the_text_is_over_the_bound_so_its_type_was_judged_from_a_view",
     "the text is over {bound} characters, so its type was judged from {chars} of its {of} characters, the first {head} and {n} windows spread across it; the stack and the reading of it are from all of it",

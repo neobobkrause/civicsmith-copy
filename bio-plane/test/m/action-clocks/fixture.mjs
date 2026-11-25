@@ -85,24 +85,10 @@ export const CP = ["counterparty:", "  state: named", "  role: Town Clerk", "  b
 export const CLK = (d, st = "pending", text = "t") => [`  - text: "${text}"`, '    description: "d"', `    date: ${d}`,
   "    basis: Act s.2", `    status: ${st}`];
 
-/**
- * A value the tests rely on being held, such as a shipped profile or its combined view: answered as it is, or an Error
- * naming `what` when it is missing, so a test fails at the read and never later on a missing member.
- * @template T
- * @param {T} x
- * @param {string} [what]
- * @returns {NonNullable<T>}
- * @throws {Error} when `x` is null or undefined
- */
-export function present(x, what = "a value the test relies on") {
-  if (x == null) throw new Error(`not held: ${what}`);
-  return x;
-}
-
 /** The test profile with every closure-list selector taken off its deadlines: its business count then reads the office
  *  calendar (jurisdictions R43), as R10 and R11 describe. Its id is the test profile's own. */
 export function officeCalendarProfile() {
-  const p = structuredClone(present(get("test-port-ellery"), "the test profile"));
+  const p = structuredClone(get("test-port-ellery"));
   p.deadlines = p.deadlines.map((d) => { const { closures, observed, ...rest } = d; return rest; });
   return p;
 }
@@ -189,7 +175,7 @@ export function world({ profiles = ["test-port-ellery"], override = null, confor
       return standardsOf(host, { record, membership, promotion, content: () => content, now: () => new Date(clock.ms).toISOString() });
     },
     rows: (q, ...x) => st.sql.exec(q, ...x).toArray(),
-    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     /** A promotion of `id` with `text` as its bundle.md, by `author` (default a member). */
     promote(id, text, { author = V(ALICE), extra = {}, project = null } = {}) {

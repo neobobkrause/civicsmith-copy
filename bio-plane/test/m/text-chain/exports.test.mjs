@@ -3,7 +3,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as tc from "../../../src/textchain.mjs";
-/** @import { ReadingPosition, Refusal } from "../../../src/textchain.mjs" */
 import { BASIS_GRADES } from "../../../src/record-grammar/index.mjs";
 
 const {
@@ -41,7 +40,7 @@ test("R101: CONFIDENCE_BASES is exactly engine and none, the bases checkConfiden
   for (const basis of Object.keys(CONFIDENCE_BASES))
     assert.notEqual(checkConfidence({ basis, value: 0.5 })?.code, "TEXT_CONFIDENCE_PSEUDO", basis);
   for (const basis of ["model", "self", "Engine", "", "toString", "__proto__"])
-    assert.equal(/** @type {Refusal} */ (checkConfidence({ basis, value: 0.5 })).code, "TEXT_CONFIDENCE_PSEUDO", basis);
+    assert.equal(checkConfidence({ basis, value: 0.5 }).code, "TEXT_CONFIDENCE_PSEUDO", basis);
 });
 
 test("R102: perPageTierWinner is R76's award for one page, and TIER_RULE states it", () => {
@@ -71,7 +70,7 @@ test("R103: READING_POSITION_KINDS is exactly R61's four arms; READING_POSITION_
   assert.equal(READING_POSITION_UNPRODUCED, "dom");
   assert.equal(readingSource({ kind: READING_POSITION_UNPRODUCED, ref: "x" }), null);
   const full = { ref: "r", page: 0, sheet: "S", cell: "A1", slide: 1, shape: 0, para: 0 };
-  for (const kind of Object.keys(READING_POSITION_KINDS)) assert.equal(/** @type {ReadingPosition} */ (readingSource({ ...full, kind })).kind, kind);
+  for (const kind of Object.keys(READING_POSITION_KINDS)) assert.equal(readingSource({ ...full, kind }).kind, kind);
 });
 
 test("N416: EXTENT_KINDS is internal, not exported", () => {

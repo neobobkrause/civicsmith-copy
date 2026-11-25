@@ -38,7 +38,6 @@ test("R1, R4 a reported status is checked against the active profiles' response_
   const test = profiles().find((p) => p.test);
   const c = combine([test.id]);
   assert.equal(c.ok, true);
-  assert.ok(c.view);
   const vocab = c.view.vocabulary.response_statuses.map((x) => x.status);
   assert.ok(vocab.length >= 2);
   const w = world({ view: c.view });

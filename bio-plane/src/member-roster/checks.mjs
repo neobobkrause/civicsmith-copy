@@ -273,12 +273,4 @@ const CUSTODIAL_CHECKS = frozenRows({
 /* The three tables, held together under a name no census reads: until `membership`'s CR-4 swaps the exports, no `*_CHECKS`
    name is exported from this module (R68), so `answer-envelope`'s families test, which reaches every `*_CHECKS` export of
    every module's paths, sees each code's row once, in `membership`'s file. CR-4 re-exports the three under their names. */
-/**
- * @typedef {Object} RefusalRow one refusal's row (R68)
- * @property {string} check its check id, such as `C-96.1`
- * @property {string} where the function and DEC-49 region that mints it
- * @property {string} translation its key's words, placeholders left for the screen (R70)
- */
-/** @type {Readonly<{MEMBERSHIP_CHECKS: Readonly<Object<string, RefusalRow>>, MEMBER_ID_CHECKS: Readonly<Object<string, RefusalRow>>, CUSTODIAL_CHECKS: Readonly<Object<string, RefusalRow>>}>}
- *  each a frozen map from a refusal code to its frozen row; every code this module mints has exactly one row across them */
 export const MEMBER_ROSTER_ROWS = Object.freeze({ MEMBERSHIP_CHECKS, MEMBER_ID_CHECKS, CUSTODIAL_CHECKS });

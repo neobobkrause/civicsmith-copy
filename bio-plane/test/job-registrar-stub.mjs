@@ -9,58 +9,16 @@
  * the counters; `priority: "raised"` is "Read it" and is never lowered. The row commits or rolls back with the
  * caller's transaction (`transact(fn)` here, as `core.transact` there); arming the alarm is `armJobs()`, after. */
 
-/**
- * The kinds a job row may have: today's PENDING_KINDS and the four this round adds.
- * @type {readonly string[]}
- */
+/** The kinds a job row may have: today's PENDING_KINDS and the four this round adds. */
 export const JOB_KINDS = Object.freeze(["keep", "reading", "ocr", "subresources", "unpack", "fetch", "scan", "safe_view", "grade", "ingest"]);
-/**
- * The kinds keyed by capture session, not by digest.
- * @type {readonly string[]}
- */
+/** The kinds keyed by capture session, not by digest. */
 export const SESSION_KEYED = Object.freeze(["fetch", "subresources"]);
 const SHA = /^[0-9a-f]{64}$/;
-
-/**
- * @typedef {Object} RegisterJobArgs
- * @property {string} kind one of JOB_KINDS
- * @property {string} [sha] the whole digest; required unless the kind is session-keyed
- * @property {string} [session] the capture session; required for fetch and subresources
- * @property {unknown} [cursor]
- * @property {unknown} [owed]
- * @property {unknown} [carrier]
- * @property {unknown} [parts]
- * @property {unknown} [detail]
- * @property {unknown} [verdict]
- * @property {string} [priority] "raised" is "Read it"
- * @bound sha: 64 lowercase hex digits
- * @bound kind: keep, reading, ocr, subresources, unpack, fetch, scan, safe_view, grade or ingest
- */
-
-/**
- * registerJob's answer: `{ok: true, existed, state}` or `{ok: false, reason}`.
- * @typedef {Object} RegisterJobAnswer
- * @property {boolean} ok
- * @property {boolean} [existed] whether the row was already there (when ok)
- * @property {string} [state] the row's state (when ok)
- * @property {string} [reason] the refusal's code (when not ok)
- */
-
-/**
- * @typedef {Object} JobRegistrarStub
- * @property {(e: RegisterJobArgs) => RegisterJobAnswer} registerJob synchronous, never throws
- * @property {(fn: () => any) => any} transact runs fn as one transaction; rolls back and rethrows on a throw
- * @property {() => Promise<void>} armJobs
- * @property {() => Object[]} rows the committed rows, in the order first written
- * @property {() => boolean} armed whether armJobs ran since the last row changed
- * @property {(key: string, kind: string, fields: Object) => void} bump a reader's progress write; throws when no row
- */
 
 /**
  * `jobRegistrarStub()` -> `{registerJob, armJobs, rows(), armed(), transact(fn), bump(key, kind, fields)}`. `rows()`
  * lists the committed rows in the order first written; `bump` stands in for a reader's progress write (counters and
  * state), so a test can show a re-registration keeps them.
- * @returns {JobRegistrarStub}
  */
 export function jobRegistrarStub() {
   let table = new Map();

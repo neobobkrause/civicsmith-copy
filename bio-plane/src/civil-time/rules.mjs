@@ -8,60 +8,8 @@ import { spanOf, isNo, refuse, zoneRefusal } from "./values.mjs";
 import { calendar, calendarStated, missing } from "./calendar.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { reason } from "./reasons.mjs";
-/** @import { DateTime, Instant, Refusal, Undetermined, Answered, Reason } from './values.mjs' */
-
-/**
- * The parts of the combined jurisdiction view (`jurisdictions` `combine`) this module reads; every other field is
- * passed by. Each local fact comes from here, none from code (R27).
- * @typedef {Object<string, *>} CivilView
- * @bound reads: time_zone.value (R41), weekend.days, holidays (year, list, offices, days, basis; R33, R43), computation (key, rule), counterparties (role, hours; R42), action_kinds (kind, venue: hours, cutoff, receipt; R48), fiscal_year (body, start, named_by, label), conflicts (at; R15)
- * @bound a fact absent or withheld as a conflict is never read as an open day, a closed day or a zero (R28)
- */
-/**
- * A rule: a `deadlines` entry of the view (`jurisdictions` R26 as widened by T33-2).
- * @typedef {Object<string, *>} DeadlineRule
- * @bound units: days, hours, business_hours, months or years (days absent with `days` given reads that as days); amount: whole number, 1 or more; direction: forward (absent) or backward; count: calendar or business, only and always with days; roll: true or false; closures: a list's name; due_at: close_of_business or HH:MM; applies_on: three-letter day names; extension: {days whole 1 or more, count?, when?, citation?}; basis UNMEASURED is undetermined; any other form is undetermined RULE_INVALID naming the field
- */
-/**
- * A calendar entry's status as the caller reads it (`action-clocks` R12).
- * @typedef {(entry: *) => ({status: string, why?: *, by?: *, at?: *, value?: *, corrected?: boolean, says?: string}|null|undefined)} FactOf
- * @bound status: disputed or absent makes the count undetermined; unconfirmed or corrected is counted and stated in the trace
- */
-/**
- * A due date: a date-time, or an uncertain date with its two candidates, earliest first (R17).
- * @typedef {DateTime|Instant|{candidates: Array<DateTime>}} DueValue
- * @bound candidates: the group's own deadline is the earliest, a body's due the latest (K1444 (i))
- * @bound an instant only where a commitment or window due was given as one
- */
-/**
- * What a count says of itself (R25): the rule and its citation, the anchor, each day skipped with why, any roll,
- * extension, cutoff or receipt applied, each calendar entry's status, and the runtime's tz and ICU versions.
- * @typedef {Object<string, *>} Trace
- * @bound runtime: {tz, icu}, each `unknown` where the runtime does not state it
- */
-/**
- * The arguments of `evaluateRule`.
- * @typedef {Object} RuleArgs
- * @property {DeadlineRule} rule
- * @property {(DateTime & Answered)|(Instant & Answered)|{undetermined: true, why?: string|Reason, zone?: undefined}} anchor the date-time of the event the rule starts from; an undetermined anchor is undetermined
- * @property {CivilView} view
- * @property {string|{venue: string}|null} [office] the counterparty role or venue kind whose calendar governs
- * @property {Array<{from: string, to: string}>|null} [tolled] days the count is suspended, inclusive
- * @property {FactOf|null} [factOf]
- * @property {string|null} [practice] a practice closure list answered beside the rule, never as it (R10)
- * @bound tolled: each span calendar days in order, else refused DATE_INVALID
- */
-/**
- * The answer of `evaluateRule`.
- * @typedef {Object} RuleAnswer
- * @property {DueValue} due
- * @property {Trace} trace
- * @property {{due: DueValue, when: *, citation: *}} [extension] the extended due, counted from the original (R12)
- * @property {Array<Object<string, *>>} [observed] each practice calendar's answer, labelled "observed practice" (R10)
- */
 
 const UNITS = ["days", "hours", "business_hours", "months", "years"];
-/** @type {(code: string, why: Reason, extra?: Object<string, *>) => Undetermined} */
 const no = (code, why, extra) => ({ undetermined: true, code, why, ...(extra || {}) });
 const ruleInvalid = (field, why) => no("RULE_INVALID", why, { field });
 /* R30: a caller's own reason is passed on exactly as given when it is a key; a sentence of the caller's is a fill */
@@ -76,9 +24,7 @@ function minuteDt(t, zone) {
 /** The view's time zone (`jurisdictions` R41), or null. */
 const viewZone = (view) => (view && view.time_zone && typeof view.time_zone.value === "string" ? view.time_zone.value : null);
 
-/** A rule read into the shape the counter takes, or an undetermined RULE_INVALID naming the field (R16).
- *  @param {DeadlineRule} rule
- *  @returns {{units: string, amount: number, direction: string, count: string|undefined, roll: boolean, closures: string|null, undetermined?: undefined}|Undetermined} */
+/** A rule read into the shape the counter takes, or an undetermined RULE_INVALID naming the field (R16). */
 export function readRule(rule) {
   if (!rule || typeof rule !== "object") throw new TypeError("a rule is a deadlines entry (an object)");
   let units = rule.units, amount = rule.amount;
@@ -380,12 +326,7 @@ function extend(r, rule, base, view, office, tolled, zone, trace) {
   return lo === hi ? dueAtTime(rule, lo, zone, view, office, trace) : { candidates: [dayDt(lo, zone), dayDt(hi, zone)] };
 }
 
-/**
- * R9 to R17, R25: a time rule counted the law's way on the view's calendar.
- * @param {RuleArgs} args
- * @returns {(RuleAnswer & Answered)|Undetermined|Refusal}
- * @throws {TypeError} when `args` or `view` is not an object, the anchor is absent, `factOf` is not a function, the rule is not an object, or `tolled` is not a list
- */
+/** R9–R17, R25. */
 export function evaluateRule(args) {
   if (!args || typeof args !== "object") throw new TypeError("evaluateRule takes {rule, anchor, view, office?, tolled?, factOf?}");
   const { rule, anchor, view, office = null, tolled, factOf = null, practice = null } = args;
@@ -441,16 +382,7 @@ export function evaluateRule(args) {
 
 const BASIS_KINDS = ["rule", "commitment", "dependency", "window"];
 
-/**
- * R18: a due date with its basis kind. `law_set` is true only for `rule`.
- * @param {*} args an object: the basis kind, with what that kind needs
- * @bound basis: a string, one of rule, commitment, dependency or window
- * @bound rule: the arguments of `evaluateRule`; commitment and window: date (a DateTime or Instant) and, for a commitment, citation; dependency: precedes (a DateTime or Instant), lead (a number of calendar days, or {amount or days, count?, units?, roll?, closures?}), why?, and view?, office?, factOf?, tolled? as `evaluateRule` takes them
- * @returns {({due: DueValue, basis_kind: string, law_set: boolean, trace: Trace, extension?: RuleAnswer['extension'], observed?: RuleAnswer['observed']} & Answered)|Undetermined|Refusal}
- * @bound an undetermined or refused answer carries basis_kind and law_set too, except a refusal BASIS_UNKNOWN
- * @bound basis: rule, commitment, dependency or window; any other is refused BASIS_UNKNOWN
- * @throws {TypeError} when `args` is not an object, `basis` is not a string, or the arguments its kind needs are absent
- */
+/** R18. */
 export function due(args) {
   if (!args || typeof args !== "object") throw new TypeError("due takes {basis, ...}");
   const { basis } = args;
@@ -488,15 +420,7 @@ export function due(args) {
 
 /* ---- overdueOn (R19) ---- */
 
-/**
- * R19: compared on `at`'s local day in the due's zone, never the UTC day. For the group the earliest candidate
- * governs; for a body only the latest, and between the two the answer is undetermined.
- * @param {{due: *, at: Instant, side: string}} args
- * @bound due: a DueValue, an answer of `evaluateRule` or `due` (its `due` is read), or an undetermined or refused answer, which is undetermined
- * @returns {("overdue" & Answered)|("not_overdue" & Answered)|Undetermined|Refusal}
- * @bound side: group or body; any other is refused SIDE_UNKNOWN
- * @throws {TypeError} when `args` is not an object, `due` is absent, or `at` or `side` is not a string
- */
+/** R19. */
 export function overdueOn(args) {
   if (!args || typeof args !== "object") throw new TypeError("overdueOn takes {due, at, side}");
   let { due: d, at, side } = args;
@@ -506,7 +430,6 @@ export function overdueOn(args) {
   if (d && (d.undetermined || d.refused)) return no(d.code || "DUE_UNDETERMINED", passOn(d.why, "civil-time.rules.due_undetermined", "civil-time.rules.due_undetermined_unsaid"));
   const t = parseInstant(at);
   if (t === null) return refuse("DATE_INVALID", `'${at}' is not an instant (YYYY-MM-DDTHH:MM:SSZ)`);
-  /** @type {(dt: *) => Refusal|Undetermined|{over: boolean, day?: string, zone?: string, instant?: string, refused?: undefined, undetermined?: undefined}} */
   const past = (dt) => {
     const s = spanOf(dt);
     if (isNo(s)) return s;
@@ -545,16 +468,7 @@ function monthsBetween(a, b) {
   return m;
 }
 
-/**
- * R24: the count of `unit` from `a` to `b` on local days; `min` and `max` bound every reading a precision leaves open.
- * @param {DateTime|Instant} a
- * @param {DateTime|Instant} b
- * @param {{unit: string, view?: CivilView|null, office?: string|{venue: string}|null, factOf?: FactOf|null, closures?: string|null}} opts
- * @returns {({min: number, max: number, trace: Trace} & Answered)|Undetermined|Refusal}
- * @bound unit: days, business days, hours, months or years; any other is refused UNIT_UNKNOWN
- * @bound min, max: whole numbers, min not above max, negative when b is before a
- * @throws {TypeError} when `opts` or its `unit` is missing, or either date-time is absent
- */
+/** R24. */
 export function span(a, b, opts) {
   if (!opts || typeof opts !== "object" || typeof opts.unit !== "string") throw new TypeError("span takes (a, b, {unit, view?, office?})");
   if (a === undefined || a === null || b === undefined || b === null) throw new TypeError("span needs both date-times");

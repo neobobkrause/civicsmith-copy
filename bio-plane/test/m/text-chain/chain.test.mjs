@@ -7,7 +7,6 @@ import {
   derivationCap, isTranscribed, terminalStep, tiersEvidenced, describeChain, chainKindFor, CHAIN_KIND_MIXED,
   MACHINE_READ_KINDS, TEXT_CHAIN_CHECKS,
 } from "../../../src/textchain.mjs";
-/** @import { Chain } from "../../../src/textchain.mjs" */
 import { BASIS_GRADES } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -167,15 +166,15 @@ test("R13: a derivation step stronger than the chain's cap refuses STRENGTHENS; 
 
 test("R14: a verification step, or an unknown cap on either side, appends unconditionally", () => {
   for (const have of BASIS_GRADES) {
-    const r = /** @type {Chain} */ (appendStep([O(have)], { ...ok.attested, cap: "A" }));
+    const r = appendStep([O(have)], { ...ok.attested, cap: "A" });
     assert.equal(Array.isArray(r), true);
     assert.equal(r.length, 2);
   }
   /* Chain cap unknown (unmeasured) → append. */
-  assert.equal(/** @type {Chain} */ (appendStep([L(null)], O("A"))).length, 2);
+  assert.equal(appendStep([L(null)], O("A")).length, 2);
   /* Step cap unknown letter → append. */
-  assert.equal(/** @type {Chain} */ (appendStep([O("D")], O("Z"))).length, 2);
-  assert.equal(/** @type {Chain} */ (appendStep([O("D")], O(null))).length, 2);
+  assert.equal(appendStep([O("D")], O("Z")).length, 2);
+  assert.equal(appendStep([O("D")], O(null)).length, 2);
 });
 
 test("R15: layerChain returns a one-step layer chain carrying every argument, defaulting to null", () => {
@@ -231,7 +230,7 @@ test("R20: one part answers its chain unscoped and unchanged, or its refusal", (
 
 test("R21: several parts concatenate in order; any refusing part stops the merge with its refusal", () => {
   const a = [L(null)], b = [{ step: "pixels" }, O("C")], c = [{ ...ok.ai, cap: "D" }];
-  const r = /** @type {Chain} */ (mergedChain([{ chain: a, pages: [0] }, { chain: b, pages: [1] }, { chain: c, pages: [2] }]));
+  const r = mergedChain([{ chain: a, pages: [0] }, { chain: b, pages: [1] }, { chain: c, pages: [2] }]);
   assert.deepEqual(r.map((s) => s.step), ["layer", "pixels", "ocr", "ai"]);
   isRefusal(mergedChain([{ chain: a, pages: [0] }, { chain: [{ step: "ocr" }], pages: [1] }]), "TEXT_CHAIN_STEP_UNNAMED");
   isRefusal(mergedChain([{ chain: a, pages: [0] }, { chain: [], pages: [1] }]), "TEXT_CHAIN_EMPTY");
@@ -258,7 +257,7 @@ test("R22: each part's derivation steps are stamped with its pages (dedup, sorte
   assert.match(describeChain(r), /over an extent this record cannot read/);
   /* Parts that share a page are each stamped with their index as well (so R81 and R28 can tell them apart);
      partitioned parts carry no index. */
-  const shared = /** @type {Chain} */ (mergedChain([{ chain: [L(null)], pages: [0, 1] }, { chain: [{ step: "pixels" }, O("C")], pages: [1, 0] }]));
+  const shared = mergedChain([{ chain: [L(null)], pages: [0, 1] }, { chain: [{ step: "pixels" }, O("C")], pages: [1, 0] }]);
   assert.deepEqual(shared.map((s) => s.extent), [pages([0, 1], 0), pages([0, 1], 1), pages([0, 1], 1)]);
 });
 
@@ -416,7 +415,7 @@ test("R81: chainKindFor answers the one kind covering a page, mixed when parts o
   for (const k of KINDS.filter((x) => STEP_KINDS[x].role === "derivation"))
     assert.equal(chainKindFor([ok.layer, ok[k], ok.attested], { page: 4 }), k);
   /* A partitioned mixed document: each page its own part's last step; a part's pixels→ocr is one reading, ocr. */
-  const part = /** @type {Chain} */ (mergedChain([{ chain: [L(null)], pages: [0, 2] }, { chain: [ok.pixels, O("C")], pages: [1] }]));
+  const part = mergedChain([{ chain: [L(null)], pages: [0, 2] }, { chain: [ok.pixels, O("C")], pages: [1] }]);
   assert.equal(chainKindFor(part, { page: 0 }), "layer");
   assert.equal(chainKindFor(part, 2), "layer");
   assert.equal(chainKindFor(part, { page: 1 }), "ocr");

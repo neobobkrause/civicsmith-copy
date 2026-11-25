@@ -2,7 +2,7 @@
 import { frameAnswers } from "./frame-answers.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { WORD_ROWS, word } from "../../../src/setup-words/index.mjs";
 import { PATHS, FRAMES, PLACE_SCREENS } from "../../../src/interface-shell/index.mjs";
 import { fitSend, boot, ok, refused, silent, pending, httpError, STORE_KEY, tabs, SESSION } from "./harness.mjs";
@@ -115,17 +115,16 @@ test("R8 every screen opens its main area with its path, from its rail place to 
   assert.deepEqual(texts(crumbSteps(m.root())), [word("rail.settings.name"), word("screen.members.name")]);
 });
 
-/* R8, R28, R54: the design's PATH in mock-shell.js, in the same checkout as the code */
-const designPath = () => {
-  const src = readFileSync(new URL("../../../../docs/development/ux-substrate/screens/mock-shell.js", import.meta.url), "utf8");
+const pathAt = (commit) => {
+  const src = execFileSync("git", ["show", commit + ":docs/development/ux-substrate/screens/mock-shell.js"], { encoding: "utf8" });
   return new Function(/(const PATH = \{[\s\S]*?\n\};)/.exec(src)[1] + "; return PATH;")();
 };
 const PROJECTS = new Set(["The Coliseum lease", "Pothole repairs", "Sewer fund transfers"]);
 const step = (s) => (s === "@project" ? "@project" : /\.crumb$/.test(s) ? word(s, { name: "<name>" }) : /^(shell|screen)\./.test(s) ? word(s) : word("rail." + s + ".name"));
 const T46 = ["home", "queue", "inbox", "finder", "answers", "capture", "held", "open-file", "find-in", "project", "document", "question", "assistant", "members", "account", "connect", "notes"];
 
-test("R8 each screen's path is mock-shell.js' PATH for its id in the same checkout as the code, a project's step its title (members: Settings › Members; held: Add › Held captures; document: Projects › <project> › Document)", () => {
-  const PATH = designPath();
+test("R8 each screen's path is mock-shell.js' PATH for its id at 3f40899950, a project's step its title (members: Settings › Members; held: Add › Held captures; document: Projects › <project> › Document)", () => {
+  const PATH = pathAt("3f40899950");
   for (const id of T46) {
     const mock = id === "answers" ? ["Find", "Ask"] : PATH[id].map((x) => (PROJECTS.has(x) ? "@project" : x));
     assert.deepEqual(PATHS[id].map(step), mock, id);
@@ -135,8 +134,8 @@ test("R8 each screen's path is mock-shell.js' PATH for its id in the same checko
   assert.deepEqual(PATHS.document.map(step), [word("rail.projects.name"), "@project", word("screen.document.name")]);
 });
 
-test("R28 every screen of the new screen modules has its path from mock-shell.js' PATH in the same checkout as the code (plan: Projects › <project> › Action plan; wizards: Settings › Wizards; due-date: Queue › Due date; person: People › Person), and L11's screens from the same PATH; the public, published and setup frames have none", async () => {
-  const A = designPath(), B = A;
+test("R28 every screen of the new screen modules has its path from mock-shell.js' PATH at a0fab7abf0 (plan: Projects › <project> › Action plan; wizards: Settings › Wizards; due-date: Queue › Due date; person: People › Person), and L11's screens from PATH at PR #33's head; the public, published and setup frames have none", async () => {
+  const A = pathAt("a0fab7abf0"), B = pathAt("f90b187c7b");
   const NEW = ["wizards", "person", "explore", "timeline", "money", "calculation", "proceeding", "due-date", "standard", "ties", "case-editor", "review-copy", "ceremony", "imported", "docket", "plan", "start-send", "request", "action", "matter", "archive", "group-identity", "security", "translations"];
   /* the design's PATH is in its words of the day; the interface says "team" where it said "group" (setup-words) */
   const team = (x) => x.replace(/\bgroup('s)?\b/g, "team$1");

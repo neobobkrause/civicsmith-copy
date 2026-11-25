@@ -8,8 +8,6 @@ import { fresh, bundle, bucket, doc, sha, member, ocrAnswer, homesOver } from ".
 import { generate } from "../../pdfgen.mjs";
 // fixtures-contract: store-assembly job-registrar
 import { jobRegistrarStub } from "../../job-registrar-stub.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const register = (rows) => homesOver(rows);
 async function home(bytes) {
@@ -20,7 +18,7 @@ async function home(bytes) {
   rows.set(d, { bundleId: "INFO-1", path: "f", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d };
 }
 const scan = async (pages) => generate({ kind: "pdf", seed: "r10", fonts: ["type0"], size: { pages, lines: 3 }, kinds: ["scan"] }).bytes();

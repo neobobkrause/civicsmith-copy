@@ -20,8 +20,6 @@
    (retrieval R87) are request fields the door passes as given: they declare nothing, and R77's test pins that their
    specs are unchanged. `BROWSER_ACTS` (R76), the acts done in the browser alone, is the one table here that is no op's.
    This file is data only (R5, R7). */
-/** @import { FamilyShare, NewFamily } from './index.mjs' */
-/** @type {Readonly<Record<string, FamilyShare>>} */
 const T51_SHARES = Object.freeze({
   /* capture R96 (R77; K3826, K3852): whether the record already holds a source and whether it has changed; `by` set from
      the session only and the member's own, so `check: true` with no session reaches capture without one. */
@@ -51,7 +49,6 @@ const T51_SHARES = Object.freeze({
     adminremovalsopen: Object.freeze(["by"]) }), ops: Object.freeze({ adminremovalsopen: "ownread" }) }),
 });
 
-/** @type {ReadonlyArray<NewFamily>} */
 const T51_FAMILIES = Object.freeze([
   /* promotion R58 (R77; K3829): the bundle's own record of how it came to be what it is. */
   Object.freeze({ owner: "promotion", cite: "promotion R58; R77", ops: Object.freeze({ bundlehistory: "read" }) }),
@@ -64,7 +61,6 @@ const T51_FAMILIES = Object.freeze([
    no spec in `OPS`, no row in `NEEDS`, no place in either session set, `ACT_GATE`, `REAUTH_ACTS` or an act list, no route
    and no stamp, and is never sent to the op door. `registry` is the row each takes the place of in the screen registry.
    The rows are `{screen, census, registry}`. */
-/** @type {ReadonlyArray<readonly [string, string, string]>} each `[act, screen, census]` */
 const BROWSER_ACT_ROWS = Object.freeze([
   ["revisioncompare", "document", "A27"], ["hashcopy", "document", "A26"], ["linkopen", "document", "A30"],
   ["pubfloorset", "published", "A77"], ["pubfloorclear", "published", "A77"], ["pubprint", "published", "A79"],

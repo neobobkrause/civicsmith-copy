@@ -444,7 +444,7 @@ test("R53: the module's tables are declared explicitly through record-core's dec
   assert.deepEqual(["ai_runs", "ai_run_bounds", "inquiry_run_surfacings"].map((n) => decl[n].sight), ["bundle", "bundle", "bundle"]);
   assert.deepEqual([decl.ai_runs.keys, decl.ai_run_bounds.keys, decl.inquiry_run_surfacings.keys], [[], [], undefined]);
   /* ai_usage is declared, by ai-use */
-  assert.equal(w.record.declaredTables().find((t) => t.name === "ai_usage")?.module, "ai-use");
+  assert.equal(w.record.declaredTables().find((t) => t.name === "ai_usage").module, "ai-use");
   /* a bundle's purge leaves the counted use of a run over it; the whole store's clears it */
   await w.runs.open(OPEN());
   await w.runs.tick({ run: "R1", viewer: "admin", caller: ORG, at: at("00:05:00"), usage: [call()] });

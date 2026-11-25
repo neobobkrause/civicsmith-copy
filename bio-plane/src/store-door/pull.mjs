@@ -16,7 +16,6 @@ import { stampInstant } from "../record-core/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
 /* The id's stem is record-core's `INFO-<year>-NNNN`; the slug says where the material came from. */
-/** @type {string} */
 export const PULL_BUNDLE_SLUG = "doorbell-knock";
 
 const hexOf = (b) => [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -116,12 +115,7 @@ function readingOfAnswer(deps, answer) {
  *  refusals come first and in its order (`NO_SUCH_KNOCK`; a reason absent, not a string, blank or over its bound
  *  `RESOLVE_NO_REASON`, C-118.7, 400), each before anything is written, and which records the reason on the knock's
  *  row inside the pull, one act with the promotion through the same `within`. A direct pull is
- *  `pullKnock`'s and takes no reason (doorbell R13).
- *  @param {any} deps `{doorbell, promotion, record, provenance, extraction?}` of one record
- *  @param {any} [args] `{knockId, by, identity, viewer, resolve, reason, now}`: the knock, the stamps, whether this is the
- *  resolve at `pulled` and its reason, and the clock
- *  @returns {Promise<any>} the pull's answer with `bundle` (and `sha`, `reading_pending`, R18), or the first refusal
- */
+ *  `pullKnock`'s and takes no reason (doorbell R13). */
 export async function pullAndFile(deps, { knockId, by, identity, viewer, resolve = false, reason, now = Date.now } = {}) {
   const { doorbell, provenance } = deps;
   /* N386: the pull's instant, to the second, through record-core's one stamping helper (its R47). */

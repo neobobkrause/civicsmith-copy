@@ -124,10 +124,10 @@ test("R39: the tables are declared explicitly: the cache derived-rebuildable by 
   /* Negative control: the record moves beneath a held row, and the rebuild names the row that differs. */
   w.ceilings.set(DOC, { grade: "C", why: "re-read" });
   const diff = w.record.rebuildAndCompare("strength", STRENGTH_CACHE_TABLE);
-  if (!diff || diff.same) throw new Error("the rebuild must name the row that differs");
+  assert.equal(diff.same, false);
   assert.deepEqual(diff.first.key, { bundle_id: INQ });
-  assert.equal(diff.first.held?.capture_grade, "B");
-  assert.equal(diff.first.rebuilt?.capture_grade, "C");
+  assert.equal(diff.first.held.capture_grade, "B");
+  assert.equal(diff.first.rebuilt.capture_grade, "C");
 });
 
 test("R39, R13: a promotion marks stale the cached rows of the inquiries resting on what it promoted, to the depth bound; a stale row is never read as current until its own promotion rebuilds it", () => {

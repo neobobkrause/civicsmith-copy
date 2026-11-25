@@ -78,7 +78,6 @@ const td = new TextDecoder("utf-8", { fatal: false });
 /* ============================================================ small pure helpers */
 
 const HEX64 = /^[0-9a-f]{64}$/;
-/** @type {(v: any) => v is Record<string, any>} true for a plain object: not null, not an array */
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const str = (v) => (typeof v === "string" ? v : null);
 const shaOf = (bytes) => createSha256().update(bytes).hex();
@@ -218,7 +217,7 @@ const lowerSha = (v) => (typeof v === "string" ? v.toLowerCase() : null);
 function carriedMaterials(files) {
   const doc = files.find((f) => f.kind === "case_document" && f.content);
   if (!doc) return null;
-  const p = parseFrontmatter(td.decode(doc.content));
+  const p = parseFrontmatter(textOf(doc.content));
   const read = isObj(p.data) ? materialsOf(p.data) : null;
   return isObj(read) && Array.isArray(read.materials) ? read.materials.filter(isObj) : null;
 }
@@ -847,7 +846,7 @@ export function reweigh(args) {
       for (const g of files.filter((f) => f.state === "missing" && f.sha256 === h)) { g.state = "supplied"; g.content = b; }
     }
     const docFile = files.find((f) => f.kind === "case_document" && f.content) || null;
-    const p = docFile ? parseFrontmatter(td.decode(docFile.content)) : null;
+    const p = docFile ? parseFrontmatter(textOf(docFile.content)) : null;
     const fm = p && isObj(p.data) ? p.data : null;
     if (!fm) { out.lens.departure = word("case-checker.departure.case_document_carried"); for (const f of out.findings) { f.pair = null; f.bar_met = null; } return out; }
     const grading = gradingContextOf(fm);

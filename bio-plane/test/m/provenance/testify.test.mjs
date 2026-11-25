@@ -1,7 +1,7 @@
 /* provenance: a member's firsthand observation (R28), and no place named in the module's behaviour or text (R40). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, V, inlineText, pathsOf } from "./fixture.mjs";
+import { world, sha, V } from "./fixture.mjs";
 import { testimonyBytes, observerRef, TESTIMONY_FORMAT, TESTIMONY_MAX_BYTES, TESTIMONY_PATH } from "../../../src/provenance/index.mjs";
 import * as CHECKS from "../../../src/provenance/checks.mjs";
 import { TESTIMONY_GRADE } from "../../../src/record-grammar/index.mjs";
@@ -15,7 +15,7 @@ test("R28: testify writes an authored information bundle whose bytes are the hea
   const bytes = testimonyBytes({ id: t.bundle_id, observedAt: "2026-09-20T18:05Z", words });
   assert.equal(bytes, `${TESTIMONY_FORMAT}\nid: ${t.bundle_id}\nobserved_at: 2026-09-20T18:05Z\n\n${words}`);
   assert.equal(t.capture_sha, sha(bytes));
-  assert.equal(inlineText(w.record.readFile(t.bundle_id, t.file)), bytes, "the words exactly as written");
+  assert.equal(w.record.readFile(t.bundle_id, t.file).text, bytes, "the words exactly as written");
   assert.deepEqual([t.bytes, t.words_bytes], [Buffer.byteLength(bytes), Buffer.byteLength(words)]);
   assert.equal(w.head(t.bundle_id).currentState, "collected");
   assert.equal(w.head(t.bundle_id).title, "At the meeting");
@@ -25,8 +25,8 @@ test("R28: testify writes an authored information bundle whose bytes are the hea
   assert.equal(t.recorded_at, "2026-09-27T03:04:05Z");
   assert.equal(t.observed_at, "2026-09-20T18:05Z");
   /* No author identity in the bytes or any file of the bundle: the observer is named only by reference. */
-  for (const p of pathsOf(w.record.livePaths(t.bundle_id))) assert.equal(inlineText(w.record.readFile(t.bundle_id, p)).includes("ruth"), false, p);
-  const prov = JSON.parse(inlineText(w.record.readFile(t.bundle_id, "data/provenance.json"))).documents[0];
+  for (const p of w.record.livePaths(t.bundle_id)) assert.equal(w.record.readFile(t.bundle_id, p).text.includes("ruth"), false, p);
+  const prov = JSON.parse(w.record.readFile(t.bundle_id, "data/provenance.json").text).documents[0];
   assert.equal(prov.author, observerRef(t.bundle_id));
   assert.equal(observerRef(t.bundle_id), `observer:${t.bundle_id}`);
   assert.deepEqual([prov.authored, prov.origin.kind, prov.capture.actor_class, prov.capture.grade], [true, "member", "member", undefined]);

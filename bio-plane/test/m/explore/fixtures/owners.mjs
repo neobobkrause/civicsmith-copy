@@ -141,7 +141,7 @@ export function world(rowsByOwner, o = {}) {
 
 /** Rows by owner, from a flat list of connections. @param {any[]} conns */
 export function byOwner(conns) {
-  const out = Object.create(null);
+  const out = {};
   for (const c of conns) (out[c.owner] ??= []).push(c);
   return out;
 }

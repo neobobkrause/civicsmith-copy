@@ -17,20 +17,8 @@ import { assembleEdition, priorOf, errorText } from "./finding.mjs";
    `g54-paths.test.mjs`): the editions a tick takes, and the files and bytes after which it takes no further edition. The
    edition too large to attempt (`TOO_LARGE`) is public-read's (its R6), and the stopping rule (the sixth `MATERIAL_MISSING`
    with the absence confirmed) is publication's writer's alone (its R15): this module only says what it found. */
-/**
- * R57: the editions one tick takes.
- * @type {number}
- */
 export const CASEFILE_SWEEP_EDITIONS = 2;
-/**
- * R57: the files after which a tick takes no further edition.
- * @type {number}
- */
 export const CASEFILE_SWEEP_FILES = 400;
-/**
- * R57: the bytes after which a tick takes no further edition.
- * @type {number}
- */
 export const CASEFILE_SWEEP_BYTES = 16 * 1024 * 1024;
 
 /** R57 (G57): a member finding's bundle part, `{path, sha256, bytes}`: the entry of its `parts` whose `sha256` is its

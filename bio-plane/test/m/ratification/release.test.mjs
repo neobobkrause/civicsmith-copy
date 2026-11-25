@@ -13,9 +13,6 @@ import { parseFrontmatter, canonicalJson } from "../../../src/record-grammar/ind
 import { contradictionOf } from "../../../src/contradiction/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
-/* The front matter R24/R30 wrote; record-grammar answers `data` null for bytes it cannot read (its R6), which fails here. */
-const fmOf = (text) => { const { data } = parseFrontmatter(text); if (!data) throw new Error("the front matter does not parse"); return data; };
-
 const OWNER = "o";
 const WHO = V("ann");
 const ACK = "Batch of public jobs-board postings, uniform in kind; bulk-release risks weighed.";
@@ -58,7 +55,7 @@ function setup({ promotion, contradiction } = {}) {
   w.release = (handle, o = {}) => w.r.release({ handle, acknowledgment: ACK, mitigation: MIT, viewer: WHO,
                                                 owner: OWNER, author: WHO, ...o });
   w.state = (id) => w.record.head(id)?.currentState ?? null;
-  w.md = (id) => { const f = w.record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; };
+  w.md = (id) => w.record.readFile(id, "bundle.md")?.text ?? null;
   return w;
 }
 const row = (code) => ({ code, check: RELEASE_CHECKS[code].check, translation: RELEASE_CHECKS[code].translation });
@@ -275,7 +272,7 @@ test("R24, R26: every member is released as a new version authored by the member
   const instants = new Set();
   for (const id of ids) {
     const text = w.md(id);
-    const fm = fmOf(text);
+    const fm = parseFrontmatter(text).data;
     instants.add(fm.last_updated);
     assert.match(fm.last_updated, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/, "to the second");
     assert.deepEqual([fm.current_state, fm.prior_state, fm.criticality], ["verified", "collected", "supporting"]);
@@ -308,7 +305,7 @@ test("R24: a document with no Session Log gains the section at its end; one whos
   v.promotion.promote({ bundleId: "INFO-2026-0551", base: v.record.head("INFO-2026-0551").bundleSha, snapKey: "kx", author: WHO,
     files: [{ path: "bundle.md", text: t }, ...FULL], meta: { object_type: "information" } });
   assert.equal(v.release(await v.select(["INFO-2026-0551"])).ok, true);
-  const h = fmOf(v.md("INFO-2026-0551")).state_history;
+  const h = parseFrontmatter(v.md("INFO-2026-0551")).data.state_history;
   assert.deepEqual(h.map((x) => x.to_state), ["collected", "verified"], "chronological");
 });
 
@@ -373,7 +370,7 @@ test("R51: release reads its handle, acknowledgment and mitigation from the body
   assert.deepEqual([body.r.ok, body.r.released, body.r.acknowledgment, body.r.mitigation], [true, ["INFO-2026-0575"], ACK, MIT]);
   for (const x of [body, query]) {
     assert.equal(x.w.state("INFO-2026-0575"), "verified");
-    assert.equal(fmOf(x.w.md("INFO-2026-0575")).state_history.at(-1).author, WHO,
+    assert.equal(parseFrontmatter(x.w.md("INFO-2026-0575")).data.state_history.at(-1).author, WHO,
                  "the author is the query's stamp, never the body's");
   }
   /* controls: a body with no author stamp in the query is still a machine's release; the body's own field wins; a field

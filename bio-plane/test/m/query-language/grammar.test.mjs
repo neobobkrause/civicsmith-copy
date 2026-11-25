@@ -280,11 +280,11 @@ test("R24 NEAR: proximity in free text, text: and passage:, capitals only, with 
   assert.ok(clamp.warnings.some((x) => /distance 500 is outside 0–100; read as 100/.test(x)));
   assert.deepEqual(ids("NEAR(alpha beta, 500)"), ["A", "B"]);
   assert.ok(compile({ q: "NEAR(alpha beta, -2)", viewer: V }).warnings.some((x) => /read as 0/.test(x)));
-  for (const { q, whyKey, vars } of [{ q: "NEAR(alpha)", whyKey: "query.why.proximity_needs_two", vars: { kept: "one term" } },
-                                     { q: "NEAR(alpha beta, 2.5)", whyKey: "query.why.distance_whole_number", vars: { dist: '"2.5"' } },
-                                     { q: "NEAR(alpha beta, x)", whyKey: "query.why.distance_whole_number", vars: { dist: '"x"' } },
-                                     { q: "NEAR(alpha beta", whyKey: "query.why.closing_parenthesis", vars: {} },
-                                     { q: "NEAR(alpha --- , 3)", whyKey: "query.why.proximity_needs_two", vars: { kept: "one term" } }]) {
+  for (const [q, whyKey, vars] of [["NEAR(alpha)", "query.why.proximity_needs_two", { kept: "one term" }],
+                                   ["NEAR(alpha beta, 2.5)", "query.why.distance_whole_number", { dist: '"2.5"' }],
+                                   ["NEAR(alpha beta, x)", "query.why.distance_whole_number", { dist: '"x"' }],
+                                   ["NEAR(alpha beta", "query.why.closing_parenthesis", {}],
+                                   ["NEAR(alpha --- , 3)", "query.why.proximity_needs_two", { kept: "one term" }]]) {
     const c = compile({ q, viewer: V });
     assert.ok(hasWord("query.read_terms_joined"), "the joined-by-AND wrapper is held");
     assert.ok(c.warnings.some((x) => x.endsWith(word(whyKey, vars))), `${q}: ${c.warnings}`);

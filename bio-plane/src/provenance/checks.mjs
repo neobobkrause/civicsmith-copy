@@ -38,17 +38,6 @@
  * ========================================================================= */
 import { word, localize } from '../setup-words/index.mjs';
 
-/**
- * A refusal's one row (DEC-49): its catalogue number, the site that raises it, and the member's translation, read by key
- * from setup-words.
- * @typedef {Readonly<{ check: string, where: string, translation: string }>} CheckRow
- */
-/**
- * A family of rows, keyed by the refusal's wire code.
- * @typedef {Readonly<Record<string, CheckRow>>} CheckTable
- */
-
-/** @satisfies {CheckTable} builds a CheckTable */
 export const VERSION_CHAIN_CHECKS = {
   /* No address at all. There is no default document and there must not be one:
      the chain's entire subject is "at THIS address", and a chain answered for
@@ -100,7 +89,6 @@ export const VERSION_CHAIN_CHECKS = {
    is also answered by `provenance-routes`' `provenanceChainRebuild` for the same condition, and its sentence is true
    at both.
    =========================================================================== */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const PROVENANCE_ACT_CHECKS = {
   /* R1: the C-18 register rules at the write. The findings carry each rule's own C-18 id; this row is the act's. */
   PROVENANCE_REGISTER_REFUSED: {
@@ -216,7 +204,6 @@ export const PROVENANCE_ACT_CHECKS = {
  * R50), is provenance's too, in its own table below, `REGISTER_ENTRY_CHECKS`
  * (region `is-register-bytes` in `#registerEntries`).
  * ===================================================================== */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const TESTIMONY_CHECKS = {
   TESTIMONY_NOT_A_MEMBER: {
     check: 'C-53.1',
@@ -291,7 +278,6 @@ export const TESTIMONY_CHECKS = {
    failed the promotion as a bare `PROMOTE_FAILED` from the database, and one stating `-1` or `1.5` was stored as a
    size no capture can have. Refused by name, before anything is written; this module does not compare the stated
    size with the stored object's, which R7 and R8 read. */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const REGISTER_ENTRY_CHECKS = {
   REGISTER_BYTES_UNSTATED: {
     check: 'C-53.14',

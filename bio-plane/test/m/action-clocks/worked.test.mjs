@@ -7,12 +7,12 @@
    its source; a rule the profile holds is read from it. Dates in the comments are the example's own. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, actionMd, present } from "./fixture.mjs";
+import { world, V, actionMd } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import { combine } from "../../../../jurisdictions/index.mjs";
 
 const M = V("alice");
-const FIRST = present(combine(["oakland-alameda"]).view, "the first profile's view");
+const FIRST = combine(["oakland-alameda"]).view;
 const held = (rule) => FIRST.deadlines.find((d) => d.rule === rule);
 const SRC = "2026-10-05 time-law";
 const from = (day, kind = "records_request") => ({ action_kind: kind, counterparty: { state: "audience", description: "the public" },

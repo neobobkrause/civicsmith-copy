@@ -19,12 +19,7 @@ import { createSha256 } from "../record-grammar/index.mjs";
  *  (`json(reply.body, reply.status)`, which is what `storeRefusal` answers); only a reply that is no answer is
  *  `storeSilent(op)`, carrying the correlation id `doAnswer` read from the store's internal error, when it gave one
  *  (control-plane R25; N349). A sub-read inside a longer act is relayed the same way (K444). Null when `out` is an
- *  answer.
- *  @param {any} out what `doAnswer` read: `{answered, refused?, reply?, correlation?}`
- *  @param {string} op the op's name
- *  @param {any} helpers the control plane's `json`, `storeSilent` and `storeRefusal`
- *  @returns {any} the relayed Response, or null when `out` is an answer
- */
+ *  answer. */
 export function relayUnanswered(out, op, { json, storeSilent, storeRefusal }) {
   if (out.refused && out.reply)
     return typeof storeRefusal === "function" ? storeRefusal(out) : json(out.reply.body, out.reply.status);
@@ -34,12 +29,7 @@ export function relayUnanswered(out, op, { json, storeSilent, storeRefusal }) {
 
 /** R27, R29, D-701: op=links. `address=` what points at an address; `capture=` a document's outbound links with their
  *  verdicts; `host=` how a host's navigation changed between captures (R29's per-host read). Every row passes the
- *  caller's viewer before it is counted.
- *  @param {URL} url the request's address, its query naming `address`, `capture` or `host`
- *  @param {any} store the Durable Object stub
- *  @param {any} helpers the control plane's envelope helpers and the `viewer` stamp
- *  @returns {Promise<any>} the op's Response
- */
+ *  caller's viewer before it is counted. */
 export async function linksOp(url, store, { json, storeSilent, storeRefusal, doAnswer, viewer }) {
   /* N90: the caller's page, forwarded; the route bounds a read the caller did not. */
   const v = `viewer=${encodeURIComponent(viewer ?? "")}`
@@ -67,12 +57,7 @@ const EVIDENCE_ABSENT_FIXED = new Set(["ok", "reason", "code", "check", "transla
  *  `{ok: false, reason: "EVIDENCE_NOT_HELD", code, check, translation, sha256, store}` and a caller's `extra` fields
  *  beside them; the control plane's envelope sends it. The code was `NOT_FOUND`, a word any module could mint, so the
  *  door could not read this row without lending it to them (N347, K440); its row (C-118.1) and sentence are
- *  unchanged. It writes nothing and never throws.
- *  @param {any} sha the digest no object is held under
- *  @param {any} store the store's name
- *  @param {any} [extra] a caller's fields, added beside and never replacing these
- *  @returns {{status: number, body: any}} 404 and `EVIDENCE_NOT_HELD`'s body
- */
+ *  unchanged. It writes nothing and never throws. */
 export function evidenceAbsent(sha, store, extra = null) {
   let own = [];
   try {
@@ -109,13 +94,7 @@ function putTooLarge(size, request, bound, { storeName, cls }) {
  *  request-body entry of `PLATFORM_FIGURES`) is refused 413 naming its size and the figure before one byte is read, and a body that goes past it while it streams is
  *  refused and cancelled. The body is held ONCE (the old read held the request's buffer and a copy for the digest): its bytes are collected into one buffer as they
  *  arrive, hashed as they arrive, and put; the byte `ledger` (`runtime-limits`; none handed, none counted) counts what is held and is empty again when the put is
- *  answered. `bounds` only lowers the figures (a scaled bound for a test).
- *  @param {Request} req the request: a put's body, or a get's range
- *  @param {URL} url its address, naming `sha256`
- *  @param {any} env the bindings, `CAPTURES` the evidence store
- *  @param {any} helpers the envelope helpers, `key`, `storeName`, `cls`, and the byte `ledger` and `bounds` (none by default)
- *  @returns {Promise<any>} the op's Response
- */
+ *  answered. `bounds` only lowers the figures (a scaled bound for a test). */
 export async function captureObjectOp(req, url, env, { json, storageAbsent, requiredArgument, key, storeName, cls, ledger = null, bounds = null }) {
   if (typeof env.CAPTURES?.get !== "function") return storageAbsent("capture", "R2 is not configured on this instance");
   const sha = (url.searchParams.get("sha256") || "").toLowerCase();
@@ -203,13 +182,7 @@ export async function captureObjectOp(req, url, env, { json, storageAbsent, requ
  * discovered by probing for the wall. Bob, 2026-07-31: there is no need to
  * push traffic to the breaking point; there is plenty of time.
  * (Moved from `legacy-index` beside the op's call, N247.) */
-/** R73 (`acquisition` R3): op=archivelookup, forwarded to the service.
- *  @param {Request} req the request, a POST's body naming `address`
- *  @param {URL} url its address, else naming `address`
- *  @param {any} store the Durable Object stub
- *  @param {any} helpers the control plane's envelope helpers
- *  @returns {Promise<any>} the op's Response
- */
+/** R73 (`acquisition` R3): op=archivelookup, forwarded to the service. */
 export async function archiveLookupOp(req, url, store, { json, storeSilent, storeRefusal, doAnswer }) {
   const body = req.method === "POST" ? await req.json().catch(() => null) : null;
   const address = body?.address || url.searchParams.get("address");
@@ -242,13 +215,7 @@ const TRACE_VALUE = /^[\x21-\x7e]{1,200}$/;
 
 /** R73 (`acquisition` R1–R23), K72 (11): op=acquire, forwarded to the service with the control plane's stamps. Answers `{response}`
  *  (a refusal, a silence) or `{answer}`, the filed capture's answer, which `extraction` reads from the stored primary
- *  itself (`acquisition` R8, K49; N103: no second read of the primary here).
- *  @param {Request} req the request, its body the acquire's
- *  @param {any} env the bindings
- *  @param {any} store the Durable Object stub
- *  @param {any} helpers the envelope helpers and the stamps: `cls`, `member`, `sessMember`, `storeName`, `trace`, `viewer`
- *  @returns {Promise<any>} `{response}` (a refusal or a silence) or `{answer}`, the filed capture's answer
- */
+ *  itself (`acquisition` R8, K49; N103: no second read of the primary here). */
 export async function acquireOp(req, env, store, { json, storeSilent, storeRefusal, storageAbsent, doAnswer, cls, member, sessMember,
                                                     storeName, trace = null, viewer = null }) {
   if (req.method !== "POST") return { response: json({ ok: false, error: "acquire is a POST" }, 405) };
@@ -286,11 +253,7 @@ function readOverloaded(read) {
 }
 
 /** K72 (8): the op's answer, the reading block's findings placed on the document beside the profile, as the answer
- *  always carried them.
- *  @param {any} answer an acquire's answer, carrying `document`
- *  @param {{reading?: any, textUnits?: any, textUnitsOverBound?: any}} found the reading block's findings
- *  @returns {any} the answer with the findings placed on its document
- */
+ *  always carried them. */
 export function withReading(answer, { reading, textUnits, textUnitsOverBound }) {
   const { file, locator, retrieved, profile, ...rest } = answer.document;
   return { ...answer, document: { file, locator, retrieved, profile, reading,
@@ -306,15 +269,7 @@ export function withReading(answer, { reading, textUnits, textUnitsOverBound }) 
  *  by an op that asks the store) and `readAcquired(answer, store)`, the reading of what an acquire filed, which is
  *  `extraction`'s (its `acquireReadingOp`, a later module this one cannot import): the op forwards to the acquisition,
  *  hands the filed document to the reader and adds only the grade note, running no reading of its own (K72 (8), N265).
- *  Answers the op's Response, or null for an op that is not one of these four.
- *  @param {string} op the op's name
- *  @param {Request} req the request
- *  @param {URL} url its address
- *  @param {any} env the bindings
- *  @param {any} store the Durable Object stub
- *  @param {any} h the control plane's helpers, stamps, `key`, `store()` and `readAcquired`
- *  @returns {Promise<any>} the op's Response, or null for an op that is not this module's
- */
+ *  Answers the op's Response, or null for an op that is not one of these four. */
 export async function captureOp(op, req, url, env, store, h) {
   const { json, storeSilent, storeRefusal, doAnswer } = h;
   if (op === "links") return linksOp(url, store(), { json, storeSilent, storeRefusal, doAnswer, viewer: h.viewer });

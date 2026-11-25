@@ -8,17 +8,6 @@ import { word, localize } from "../setup-words/index.mjs";
 
 const at = (fn, region) => `src/sources/checks.mjs ${fn} > ${region}`;
 
-/** One refusal this module answers (DEC-49, R14): `ok: false`, its `reason` and `code` (the same word), its row's
- *  `check` (C-121.n) and the member's `translation`, a plain `detail`, and, where the refusal names one, the `field`
- *  at fault, or the `source` or `captureSha` asked about. A caller's `extra` fields sit beside these. No field carries
- *  a stored value (R13).
- * @typedef {{ok: false, reason: string, code: string, check: string, translation: string, detail: string,
- *            [field: string]: any}} Refusal */
-
-/** One row of the family: its check number, the one site that mints its refusal (`where`) and its translation.
- * @typedef {{check: string, where: string, translation: string}} SourcesCheckRow */
-
-/** R14: the family C-121, "a source's disclosures", one row for each code this module refuses with, frozen. */
 export const SOURCES_CHECKS = Object.freeze({
   NO_SUCH_SOURCE: Object.freeze({
     check: 'C-121.1', where: at("noSuchSource", "is-source-held"),
@@ -67,10 +56,6 @@ export const SOURCES_CHECKS = Object.freeze({
    guard can compare it with the row; `extra` adds a caller's own fields and never replaces the refusal's own. */
 const ROW = SOURCES_CHECKS;
 
-/** C-121.1: no source this caller may see answers to the id (or the capture).
- * @param {any} source the id asked about; kept, cut to 64 characters, when it is text, else null
- * @param {Object<string, any>} [extra] the caller's own fields, set beside the refusal's
- * @returns {Refusal} */
 export function noSuchSource(source, extra) {
   /* DEC-49 REGION is-source-held */
   return { ...(extra || {}), ok: false, reason: "NO_SUCH_SOURCE", code: "NO_SUCH_SOURCE",
@@ -80,11 +65,6 @@ export function noSuchSource(source, extra) {
   /* END DEC-49 REGION is-source-held */
 }
 
-/** C-121.2: a field of the call is not one of its listed choices, or is malformed; the refusal names it.
- * @param {string} field the field at fault, as the call names it (`revealed.kind`, `how`, `audience`, ...)
- * @param {string} detail what the field must be
- * @param {Object<string, any>} [extra] the caller's own fields
- * @returns {Refusal} */
 export function badDisclosure(field, detail, extra) {
   /* DEC-49 REGION is-disclosure-well-formed */
   return { ...(extra || {}), ok: false, reason: "BAD_DISCLOSURE", code: "BAD_DISCLOSURE",
@@ -93,9 +73,6 @@ export function badDisclosure(field, detail, extra) {
   /* END DEC-49 REGION is-disclosure-well-formed */
 }
 
-/** C-121.3: no evidence was named (R2).
- * @param {Object<string, any>} [extra] the caller's own fields
- * @returns {Refusal} */
 export function noEvidence(extra) {
   /* DEC-49 REGION is-evidence-named */
   return { ...(extra || {}), ok: false, reason: "NO_EVIDENCE", code: "NO_EVIDENCE",
@@ -104,10 +81,6 @@ export function noEvidence(extra) {
   /* END DEC-49 REGION is-evidence-named */
 }
 
-/** C-121.4: a stored value with no list, or a list naming no active member, of who may read it (R5).
- * @param {string} detail what is missing from the list
- * @param {Object<string, any>} [extra] the caller's own fields, the count of ids naming no one among them
- * @returns {Refusal} */
 export function noSightList(detail, extra) {
   /* DEC-49 REGION is-sight-listed */
   return { ...(extra || {}), ok: false, reason: "NO_SIGHT_LIST", code: "NO_SIGHT_LIST",
@@ -116,10 +89,6 @@ export function noSightList(detail, extra) {
   /* END DEC-49 REGION is-sight-listed */
 }
 
-/** C-121.5: the entry is not in the source's history, or consent to a wider audience already stands (R7).
- * @param {string} detail which of the two
- * @param {Object<string, any>} [extra] the caller's own fields (the entry named, or the audience standing)
- * @returns {Refusal} */
 export function consentNotStanding(detail, extra) {
   /* DEC-49 REGION is-consent-standing */
   return { ...(extra || {}), ok: false, reason: "CONSENT_NOT_STANDING", code: "CONSENT_NOT_STANDING",
@@ -130,8 +99,6 @@ export function consentNotStanding(detail, extra) {
 
 /* R11: one answer, byte for byte, for every failure of a consent by secret, built once and frozen, so no failure can
    be told from another by its fields or their order. */
-/** C-121.6: R11's one answer for every failure of a consent by secret, frozen.
- * @returns {Readonly<Refusal>} */
 export function secretNotRecognised() {
   /* DEC-49 REGION is-secret-recognised */
   return Object.freeze({ ok: false, reason: "SECRET_NOT_RECOGNISED", code: "SECRET_NOT_RECOGNISED",
@@ -139,13 +106,9 @@ export function secretNotRecognised() {
                          detail: "the secret was not recognised, so nothing was recorded" });
   /* END DEC-49 REGION is-secret-recognised */
 }
-/** R11: the one frozen answer `consentBySecret` gives for every failure, built once.
- * @type {Readonly<Refusal>} */
 export const SECRET_NOT_RECOGNISED_ANSWER = secretNotRecognised();
 
 /* R16: the refusals of a mark. None carries the terms, the service or anything else the member sent (R18). */
-/** C-121.7: the stamp names no active member acting for themselves (R16, R18).
- * @returns {Refusal} */
 export function machineCannotMark() {
   /* DEC-49 REGION is-member-marking */
   return { ok: false, reason: "MACHINE_CANNOT_MARK", code: "MACHINE_CANNOT_MARK",
@@ -154,9 +117,6 @@ export function machineCannotMark() {
   /* END DEC-49 REGION is-member-marking */
 }
 
-/** C-121.8: the capture's actor is not the member marking it (R16).
- * @param {string} captureSha the capture's digest
- * @returns {Refusal} */
 export function notYourCapture(captureSha) {
   /* DEC-49 REGION is-own-capture */
   return { ok: false, reason: "NOT_YOUR_CAPTURE", code: "NOT_YOUR_CAPTURE",
@@ -165,9 +125,6 @@ export function notYourCapture(captureSha) {
   /* END DEC-49 REGION is-own-capture */
 }
 
-/** C-121.9: no capture the record holds answers to the digest, or no digest was named (R16).
- * @param {string | null} captureSha the digest asked about, or null when none was well formed
- * @returns {Refusal} */
 export function noSuchCapture(captureSha) {
   /* DEC-49 REGION is-capture-held */
   return { ok: false, reason: "NO_SUCH_CAPTURE", code: "NO_SUCH_CAPTURE",
@@ -177,10 +134,6 @@ export function noSuchCapture(captureSha) {
   /* END DEC-49 REGION is-capture-held */
 }
 
-/** C-121.10: the mark names no service, or its terms are not text within their bound (R16).
- * @param {string} field `service` or `terms`
- * @param {string} detail what the field must be
- * @returns {Refusal} */
 export function noService(field, detail) {
   /* DEC-49 REGION is-service-named */
   return { ok: false, reason: "NO_SERVICE", code: "NO_SERVICE",

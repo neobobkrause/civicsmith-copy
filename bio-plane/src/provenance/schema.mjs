@@ -7,7 +7,6 @@
  * `receipt_keys` and `signed_receipts` are `attestation`'s (its R10), each created and written by that module alone
  * under the same name (N512), so a deployed instance keeps their rows. */
 
-/** @type {string} the tables' SQL, statements separated by `;`, comment lines beginning `--` */
 export const PROVENANCE_SCHEMA = `
 -- The register: the trust root. capture_sha is the only thing that proves bytes.
 CREATE TABLE IF NOT EXISTS register (
@@ -161,7 +160,6 @@ CREATE TABLE IF NOT EXISTS authority_decisions (
    receipt's `uploads` (R63): NULL on every receipt written before the upload route existed, none of which is one.
    The register's `last_registered` (R1, R48; T48): a row written before it existed keeps the `registered` it holds
    and takes that as its `last_registered` (`backfillLastRegistered`), the one instant the row knows it was written. */
-/** @type {Array<[string, string, string]>} each column added later: its table, its name, its declaration */
 export const REGISTER_ADDITIVE = [
   ["register", "authored", "INTEGER NOT NULL DEFAULT 0"],
   ["register", "author", "TEXT"],
@@ -178,10 +176,6 @@ export const REGISTER_ADDITIVE = [
    already merged them. It was derived then (re-derivable from the captures and the provenance documents, holding
    nothing a member wrote), so a table without the column is dropped and rebuilt rather than altered. Only such a
    table, written before `via` existed, is ever dropped; an upload's statements (R63) live only in tables that have it. */
-/**
- * @param {{ exec: (query: string) => Iterable<*> }} sql the Durable Object's SQL storage
- * @returns {void}
- */
 export function migrateProvenance(sql) {
   const cols = (t) => [...sql.exec(`PRAGMA table_info(${t})`)].map((r) => r.name);
   const cl = cols("captured_locators");

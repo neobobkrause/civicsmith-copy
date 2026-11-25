@@ -72,7 +72,6 @@ test("R43 R13 while the choice is tell, enrolment's success carries the court st
 test("R44 groupDescriptionSet: refusals in order, each writing nothing; whole records appended; texts trimmed; members by default", async () => {
   const w = await world().group("ann");
   assert.equal(w.m.groupDescriptionSet({ kinds: [], by: "ann" }).reason, "NOT_AN_ADMIN");
-  /** @type {[Object, string][]} each description and the refusal it must answer */
   const tries = [
     [{ kinds: undefined }, "GROUP_KIND_UNKNOWN"], [{ kinds: "issue" }, "GROUP_KIND_UNKNOWN"],
     [{ kinds: ["issue", "neighbourhood"] }, "GROUP_KIND_UNKNOWN"], [{ kinds: [null] }, "GROUP_KIND_UNKNOWN"],

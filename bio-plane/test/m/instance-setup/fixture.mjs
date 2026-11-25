@@ -253,7 +253,5 @@ export async function registryOver(view, captures = []) {
   Object.defineProperty(w.l, "lines", { get: () => w.rows(`SELECT * FROM lines ORDER BY rowid`)
     .filter((r) => !lineBefore.has(r.line_id)).map((r) => ({ line_id: r.line_id, kind: r.kind, from: r.from_entity, to: r.to_entity, capacity: r.capacity, valid: json(r.valid_json),
                    basis: json(r.basis_json), by: r.asserted_by })) });
-  /* the handle with the rows the seeding wrote, under the getter defined above */
-  const lines = /** @type {import('../../../src/lines/index.mjs').Lines & {lines: Array<Record<string, any>>}} */ (w.l);
-  return { entities: w.ents, lines };
+  return { entities: w.ents, lines: w.l };
 }

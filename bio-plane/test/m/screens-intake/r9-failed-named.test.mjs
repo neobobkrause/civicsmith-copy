@@ -21,11 +21,10 @@ const SESSION = "rs_n1";
 const sessionStore = (startedMs, failed = "CAPTURE_HELD_BY_ANOTHER_BUNDLE") => ({ liveCaptureSessions: () => [{ session: SESSION, locator: ADDRESS, created: iso(startedMs), updated: iso(Date.now()), expires: iso(Date.now() + 29 * 86400000), primarySha: null,
   state: { opened_by: "mai", queue: [], fetch_done: { since: iso(startedMs) }, fetch_pending: { since: iso(startedMs), declared_bytes: 17400000, why: "over_wait", failed } } }] });
 const listingAt = (startedMs, failed) => openCaptures(sessionStore(startedMs, failed), { by: "member:mai", now: iso(Date.now()) });
-/* the world each page is opened over: mai, who captures; rosa, who has no capture (her listing is the owner's empty one). Its clock starts at today, the clock the
-   listings above are made on, and the page's starts at the world's (store-request R18), so a listing's hours are the page's */
+/* the world each page is opened over: mai, who captures; rosa, who has no capture (her listing is the owner's empty one) */
 let team = null;
 const open = async (path, plane = {}, serve = null) => {
-  team = await members({ mai: ["contribute"], rosa: [] }, { now: Date.now() });
+  team = await members({ mai: ["contribute"], rosa: [] });
   if (serve) team.world.script(serve.address, async () => new Response(serve.body, { status: 200, headers: { "content-type": "text/html" } }));
   return openWorld(path, { world: team.world, as: team.mai, plane, screens: [...SCREENS, DOCUMENT_STUB] });
 };

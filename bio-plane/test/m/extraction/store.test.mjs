@@ -75,8 +75,7 @@ test("R24: a later module registers once (a second is LISTENER_DECLARED); listen
   const seen = [];
   assert.equal(w.x.onReading("content", (e) => { seen.push(["content", e]); return { staled: 2 }; }).ok, true);
   assert.equal(w.x.onReading("observation-log", (e) => { seen.push(["observation-log", Object.keys(e).sort()]); return { observed: 1 }; }).ok, true);
-  const twice = w.x.onReading("content", () => {});
-  assert.equal("reason" in twice ? twice.reason : undefined, "LISTENER_DECLARED");
+  assert.equal(w.x.onReading("content", () => {}).reason, "LISTENER_DECLARED");
   const first = await reading([], { text_source: layer(1) });
   w.x.writeReading({ bundleId: "B-1", captureSha: S1, reading: first, author: "member:m1" });
   const r = await reading([], { text_source: ocrChain() });
@@ -247,8 +246,8 @@ test("R28 R48: documentsByReference answers every document whose reading carries
   const all = w.x.documentsByReference("m:1", "member:outsider");
   assert.equal(all.count, 2);
   const one = all.documents.find((d) => d.capture_sha === S1);
-  assert.equal(one.position && "page" in one.position ? one.position.page : undefined, 0);
-  assert.deepEqual(one.occurrences.map((o) => (o && "page" in o ? o.page : undefined)), [0, 2, 4]);
+  assert.equal(one.position.page, 0);
+  assert.deepEqual(one.occurrences.map((o) => o.page), [0, 2, 4]);
   assert.equal(all.documents.find((d) => d.capture_sha === S2).bundle_id, null);
   assert.equal(all.documents.find((d) => d.capture_sha === S2).occurrences, undefined);
   const cut = w.x.documentsByReference("m:1", "class:admin", 1);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Build agent-worker into ONE self-contained module, built whenever needed and never committed (R120).
+/* Build agent-worker into ONE self-contained module, committed.
  *
  * ---- WHY THIS FILE EXISTS, AND WHOSE DECISION IT IS -------------------------
  *
@@ -16,12 +16,11 @@
  * script upload an installer has cannot resolve them. An installable fleet needs
  * one bundled, hashed, signed artifact per member.
  *
- * **The drift objection is ANSWERED, not overruled.** The built artifact
+ * **The drift objection is ANSWERED, not overruled.** The committed artifact
  * ships beside `dist/agent-worker.bundle.json` — its sha256, its byte length,
- * the exact recipe, and the sha256 of every input. Neither is committed (R120):
- * this script builds both into `dist/` whenever a test, a deployment or a release
- * needs them, and the member's own tests (R45) assert that a fresh build of the
- * same sources is byte-identical every time.
+ * the exact recipe, and the sha256 of every input — and
+ * `bio-plane/test/system/fleetbundles.test.mjs` asserts the artifact is byte-identical
+ * to a fresh build of its source. **A stale artifact FAILS instead of shipping.**
  * That is the instrument this record always reaches for: a hash-verified copy of
  * exact bytes, never a second codebase.
  *

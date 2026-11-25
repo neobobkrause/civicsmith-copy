@@ -10,31 +10,16 @@
 import courtlistenerDocket from "./courtlistener.mjs";
 import cpucProceeding from "./cpuc.mjs";
 import ecourtRoa from "./ecourt.mjs";
-/** @import { CourtType } from "./common.mjs" */
-
-/**
- * @typedef {Object} Registration what one call of the seam gave for one type
- * @property {string} key
- * @property {boolean} registered
- * @property {*} [result] what the seam returned
- * @property {string} [why] why the type was not registered
- */
 
 export { courtlistenerDocket, cpucProceeding, ecourtRoa };
 export { sealingOf } from "./common.mjs";
 
-/** @type {ReadonlyArray<CourtType>} the three types, in the order they are registered */
+/** The three types, in the order they are registered. */
 export const COURT_TYPES = Object.freeze([courtlistenerDocket, cpucProceeding, ecourtRoa]);
-/** @type {ReadonlyArray<string>} the three keys, in that order */
 export const KEYS = Object.freeze(COURT_TYPES.map((t) => t.key));
 
-/**
- * Register the three types through docprofile's seam (`register(type)`), in order. Returns what each
- * call returned, so the caller can see a refusal; never throws on a seam that refuses.
- * @param {*} register
- * @returns {Array<Registration>}
- * @bound one entry per type, in order; a seam that throws, or no function, gives `registered: false` with why
- */
+/** Register the three types through docprofile's seam (`register(type)`), in order. Returns what each
+ *  call returned, so the caller can see a refusal; never throws on a seam that refuses. */
 export function registerCourtTypes(register) {
   if (typeof register !== "function") return COURT_TYPES.map((t) => ({ key: t.key, registered: false, why: "no register function was given" }));
   return COURT_TYPES.map((t) => {

@@ -133,7 +133,7 @@ test("R36 the module's tables carry bundle_id and are declared to record-core's 
     assert.deepEqual({ purge: d.purge, expunge: d.expunge, export: d.export, sight: d.sight, derive: d.derive,
                        version_chain: d.version_chain }, { purge: "clear", expunge: "none", export: "admin-only",
       sight: d.name === "inquiry_dated_waits" ? "owner" : "bundle", derive: "stored", version_chain: false }, d.name);
-  assert.deepEqual([...(declared.find((d) => d.name === "inquiry_findings")?.keys ?? [])], ["bundle_id", "project_id"]);
+  assert.deepEqual([...declared.find((d) => d.name === "inquiry_findings").keys], ["bundle_id", "project_id"]);
   for (const t of INQUIRY_TABLES) {
     assert.ok(w.rows(`PRAGMA table_info(${t})`).some((c) => c.name === "bundle_id"), t);
     assert.ok(inquiryOwns(t) && inquiryOwns({ name: t }));
@@ -144,7 +144,7 @@ test("R36 the module's tables carry bundle_id and are declared to record-core's 
   const r = w.record.purge({ bundleId: "INQ-2026-0001-q" });
   assert.equal(w.count("inquiry_findings"), 0, "R53's finding is purged with its question");
   assert.equal(w.count("inquiry_basis"), 0, "leg-earning's table (R40, its R12) clears with the inquiry too");
-  assert.equal(w.record.declaredTables().find((d) => d.name === "inquiry_basis")?.module, "leg-earning",
+  assert.equal(w.record.declaredTables().find((d) => d.name === "inquiry_basis").module, "leg-earning",
     "inquiry_basis is declared by leg-earning, not here (K1505 (2))");
   assert.equal(w.count("inquiry_member_agents"), 0);
   assert.equal(w.count("inquiry_contradiction_links"), 0, "R48's projection is purged with its inquiry");
@@ -191,11 +191,11 @@ test("R11 K681 the entry arm at the write: inquiry-grammar's entry requirements,
   const Q = "INQ-2026-0011-e";
   const robot = w.promote(Q, inquiryMd(Q).replace("surfaced_by: human", "surfaced_by: robot"));
   assert.deepEqual([robot.ok, robot.reason], [false, "BASIS_REFUSED"]);
-  assert.ok(robot.findings.some((x) => x.check === "C-2.8" && /surfaced this inquiry is 'robot'/.test(x.detail)), JSON.stringify(robot));
+  assert.ok(robot.findings.some((x) => x.check === "C-2.8" && /surfaced_by 'robot'/.test(x.detail)), JSON.stringify(robot));
   assert.equal(w.record.head(Q), null, "nothing written");
   /* a question resting on nothing: no basis, no grounds, still judged (the arm is not only the leg grammar) */
   const deferred = w.promote(Q, inquiryMd(Q, { state: "deferred" }));
-  assert.ok(deferred.findings.some((x) => /deferred state requires a non-empty reason/.test(x.detail)));
+  assert.ok(deferred.findings.some((x) => /deferred state requires a non-empty disposition_reason/.test(x.detail)));
   const concluded = w.promote(Q, inquiryMd(Q, { state: "concluded" }));
   assert.deepEqual(concluded.reason, "BASIS_REFUSED");
   assert.ok(concluded.findings.some((x) => /concluded state requires a non-empty conclusion/.test(x.detail)));
@@ -203,9 +203,9 @@ test("R11 K681 the entry arm at the write: inquiry-grammar's entry requirements,
   const divided = w.promote(Q, inquiryMd(Q, { state: "divided", legs: [{ target: A }] }));
   assert.ok(divided.findings.some((x) => /divided state requires a division block/.test(x.detail)));
   const shape = w.promote(Q, inquiryMd(Q, { subject: "not-an-entity" }));
-  assert.ok(shape.findings.some((x) => x.check === "C-2.8" && /is not an entry in the subject registry/.test(x.detail)), "the shape before the registry");
+  assert.ok(shape.findings.some((x) => x.check === "C-2.8" && /subject registry key/.test(x.detail)), "the shape before the registry");
   const caseKey = w.promote(Q, inquiryMd(Q, { extra: ["case_id: CASE-2026-0001"] }));
-  assert.ok(caseKey.findings.some((x) => x.check === "C-2.8" && /carries case facts of its own/.test(x.detail)));
+  assert.ok(caseKey.findings.some((x) => /name a case \(case_id\)/.test(x.detail)));
   /* negative controls: the well-formed question lands, and a replay of the malformed one is held verbatim */
   assert.equal(w.promote(Q, inquiryMd(Q)).ok, true);
   assert.equal(w.promote("INQ-2026-0012-r", inquiryMd("INQ-2026-0012-r").replace("surfaced_by: human", "surfaced_by: robot"),

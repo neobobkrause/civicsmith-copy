@@ -212,7 +212,7 @@ test("R54 (C25) a document is named by its title, else its file name, else its h
   assert.ok(says(filedAs, "screen.capture.address.done", { title: "annual-report.pdf" }), "its file name");
   for (const type of ["application/pdf", "text/html"]) {
     const none = await pressed(t, { type, body: (n) => (type === "text/html" ? html("", n) : `%PDF-1.4\n% ${n}\n`) });
-    assert.ok(says(none, "screen.capture.address.done", { title: untitled(t.world) }), `${type}: host and day`);
+    assert.ok(says(none, "screen.capture.address.done", { title: untitled() }), `${type}: host and day`);
     assert.ok(!text(none).includes("street-maintenance-2026"), "never the file part of the address");
   }
 });

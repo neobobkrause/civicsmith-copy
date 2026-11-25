@@ -18,7 +18,7 @@ const ops = (w, op, params = {}, body = null) => {
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   return entitiesOps(w.e, url, body)[op]();
 };
-const raw = (key) => (WORD_ROWS.find((r) => r[0] === key) ?? assert.fail(`the word table holds ${key}`))[1];
+const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
 
 /* ---------------------------------------------------------------- R54 */
 

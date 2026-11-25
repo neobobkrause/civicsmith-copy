@@ -75,7 +75,7 @@ test("R3 translationGrant: refusals in order, each writing nothing (MACHINE_CANN
     [{ member: "class:ai", language: "es", by: "admin" }, "NO_SUCH_MEMBER"],
     [{ language: "es", by: "admin" }, "NO_SUCH_MEMBER"],
   ]) {
-    const r = w.m.translationGrant(/** @type {any} a row of the refusal table above */ (args));
+    const r = w.m.translationGrant(args);
     assert.deepEqual([r.ok, r.reason], [false, code], JSON.stringify(args));
     if (code === "NO_SUCH_MEMBER") assert.deepEqual(r, noSuchMember(args.member ?? null), JSON.stringify(args));
     else assert.equal(r.check, code === "NOT_AN_ADMIN" ? "C-96.1" : TRANSLATIONS_CHECKS[code].check, code);
@@ -135,7 +135,7 @@ test("R1 translationdraft to_language: refusals in order (TRANSLATION_DIRECTION_
     [{ language: "es", direction: "to_language", keys: "one", by: "ruth" }, "TRANSLATION_KEYS_MALFORMED"],
     [{ language: "es", direction: "to_language", keys: [ORDINARY.key, "no.such.key"], by: "ruth" }, "NO_SUCH_WORD"],
   ]) {
-    const r = w.m.translationDraft(/** @type {any} a row of the refusal table above */ (args));
+    const r = w.m.translationDraft(args);
     assert.deepEqual([r.ok, r.reason, r.check], [false, code, TRANSLATIONS_CHECKS[code].check], JSON.stringify(args).slice(0, 120));
   }
   assert.equal(counts(w), before);
@@ -253,7 +253,7 @@ test("R1 to_english (K2201, K2216): an administrator only (NOT_AN_ADMIN to a gra
     [{ language: "es", direction: "to_english", key: PROTECTED.key, by: "ruth" }, "NOT_AN_ADMIN"],
     [{ language: "es", direction: "to_english", key: "no.such", by: "admin" }, "NO_SUCH_WORD"],
     [{ language: "es", direction: "to_english", key: ORDINARY.key, by: "admin" }, "TRANSLATION_NOT_AWAITING"],
-  ]) assert.equal(w.m.translationDraft(/** @type {any} a row of the refusal table above */ (args)).reason, code, code);
+  ]) assert.equal(w.m.translationDraft(args).reason, code, code);
   assert.equal(counts(w), before);
   const asked = w.m.translationDraft({ language: "es", direction: "to_english", key: PROTECTED.key, by: "admin" });
   assert.deepEqual(asked.words, [{ key: PROTECTED.key, en: PROTECTED.en, text: typed, protected: true }]);
@@ -297,7 +297,7 @@ test("R4 translationAdopt: refusals in order (MACHINE_CANNOT_TRANSLATE, LANGUAGE
     [{ language: "es", key: PLACEHOLDER.key, text: "sin marcador", by: "ruth" }, "TRANSLATION_TEXT_REFUSED"],
     [{ language: "es", key: ORDINARY.key, text: "con {extra}", by: "ruth" }, "TRANSLATION_TEXT_REFUSED"],
   ]) {
-    const r = w.m.translationAdopt(/** @type {any} a row of the refusal table above */ (args));
+    const r = w.m.translationAdopt(args);
     assert.deepEqual([r.ok, r.reason], [false, code], JSON.stringify(args).slice(0, 100));
   }
   assert.equal(counts(w), before);
@@ -345,7 +345,7 @@ test("R5 translationConfirm: refusals in order (MACHINE_CANNOT_TRANSLATE, LANGUA
     [{ language: "es", key: PROTECTED.key, by: "ruth" }, "TRANSLATION_CONFIRM_SELF"],
     [{ language: "es", key: PROTECTED.key, by: "second" }, "TRANSLATION_NOT_READ_BACK"],
   ]) {
-    const r = await w.m.translationConfirm(/** @type {any} a row of the refusal table above */ (args));
+    const r = await w.m.translationConfirm(args);
     assert.deepEqual([r.ok, r.reason], [false, code], JSON.stringify(args));
   }
   assert.equal(counts(w), before);
@@ -390,7 +390,7 @@ test("R6 translationRevert: refusals in order (MACHINE_CANNOT_TRANSLATE, NOT_AN_
     [{ language: "not a tag", key: ORDINARY.key, by: "admin" }, "LANGUAGE_MALFORMED"],
     [{ language: "es", key: "no.such", by: "admin" }, "NO_SUCH_WORD"],
     [{ language: "es", key: ORDINARY.key, by: "admin" }, "TRANSLATION_NOTHING_TO_UNDO"],
-  ]) assert.equal(w.m.translationRevert(/** @type {any} a row of the refusal table above */ (args)).reason, code, code);
+  ]) assert.equal(w.m.translationRevert(args).reason, code, code);
   assert.equal(count(w, "translation_undos"), 0);
   /* a protected word: confirmed "Uno", then "Dos" awaiting */
   w.m.translationAdopt({ language: "es", key: PROTECTED.key, text: "Uno", by: "ruth" });
@@ -430,7 +430,7 @@ test("R7 translationMark: refusals in order (MACHINE_CANNOT_TRANSLATE, LANGUAGE_
     [{ language: "es", key: ORDINARY.key, by: "tom" }, "TRANSLATION_NOT_SHOWN"],
     [{ language: "es", key: PROTECTED.key, by: "tom" }, "TRANSLATION_NOT_SHOWN"],
     [{ language: "es", key: ORDINARY.key, by: "nobody" }, "TRANSLATION_NOT_SHOWN"],
-  ]) assert.equal(w.m.translationMark(/** @type {any} a row of the refusal table above */ (args)).reason, code, code);
+  ]) assert.equal(w.m.translationMark(args).reason, code, code);
   w.m.translationAdopt({ language: "es", key: ORDINARY.key, text: "Algo", by: "ruth" });
   /* past TRANSLATION_NOT_SHOWN, a by who is no member: membership's one refusal, nothing recorded */
   assert.deepEqual(w.m.translationMark({ language: "es", key: ORDINARY.key, by: "nobody" }), noSuchMember("nobody"));

@@ -419,9 +419,7 @@ test("R7 (K5129; WALK-FINAL-04B row R39): bytes the record already holds are pul
   const home = filed.json.result.bundle.bundleId;
   const deps = () => ({ doorbell: doorbellOf(r.ctx), promotion: promotionOf(r.ctx), record: recordOf(r.ctx), provenance: provenanceOf(r.ctx) });
   const who = { by: "ann", identity: "member:ann" };
-  /** @type {[string, object][]} each path's name and the arguments it adds */
-  const paths = [["pull", {}], ["resolve", { resolve: true, reason: "already in the record" }]];
-  for (const [name, extra] of paths) {
+  for (const [name, extra] of [["pull", {}], ["resolve", { resolve: true, reason: "already in the record" }]]) {
     const seen = await again();
     const a = await P.pullAndFile(deps(), { ...who, knockId: seen.knockId, viewer: "member:ann", ...extra });
     assert.equal(a.ok, true, `${name}: ${JSON.stringify(a).slice(0, 300)}`);

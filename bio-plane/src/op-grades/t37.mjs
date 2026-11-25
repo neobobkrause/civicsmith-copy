@@ -12,13 +12,7 @@
  * back, so `./t38.mjs` grades it `reversible`; its reason stays here. */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
 const TRANSLATION_WORD = "translation-directed: keyed by a language and an interface word; the group's own wording of "
   + "Civicsmith's words, shown to members reading that language; moves no bundle";
@@ -26,7 +20,6 @@ const TRANSLATION_WORD = "translation-directed: keyed by a language and an inter
 /* ---- the rungs. instance-setup R70–R72 (DEC-157 (5)): an administrator's one-act undo (`translationrevert`) takes an
    adoption or a confirmation back, and a later adoption takes an undo back; none asks a reason, so each is `reversible`
    on R3's rule. The protected words' second check (DEC-157 (4)) is instance-setup's refusal, not a rung. ---- */
-/** @type {RungTable} T37's ops */
 export const T37_RUNGS = {
   translationadopt:   "reversible", // instance-setup R70: taken back by translationrevert (R72)
   translationconfirm: "reversible", // instance-setup R71: taken back by translationrevert (R72)
@@ -34,7 +27,6 @@ export const T37_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T37's ops */
 export const T37_RUNG_ABSENT = {
   /* `obscuremark` (case-carriage R9) stood here, `undetermined` on R3's rule, until T38: R28 moves it to `RUNGS`
      (`./t38.mjs`) as `reversible`, a withdrawal (case-carriage R14) taking a mark back */
@@ -53,7 +45,6 @@ export const T37_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
-/** @type {ReasonTable} T37's ops */
 export const T37_NON_ACTS = {
   obscuremark: "photo-directed: keyed by a photo's capture, reached from the Photos step; a member's mark of areas to "
     + "obscure in the published copy; withdrawn only by a reasoned act, never erased (R28); moves no bundle",

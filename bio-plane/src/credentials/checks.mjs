@@ -11,38 +11,19 @@
 
 import { word, localize } from '../setup-words/index.mjs';
 
-/**
- * One refusal row: its check id in the catalogue, its one site in `credentials` (`where`), and the member's sentence
- * (`translation`), read from the word list by key through `setup-words`.
- * @typedef {Readonly<{ check: string, where: string, translation: string }>} CheckRow
- */
-/**
- * A table of refusal rows by their code.
- * @typedef {Readonly<Record<string, CheckRow>>} CheckTable
- */
-
-/**
- * A row's `where`: the function and the region of `credentials` that mint it.
- * @param {string} fn
- * @param {string} region
- * @returns {string}
- */
 const at = (fn, region) => `src/credentials/index.mjs ${fn} > ${region}`;
 
 /* R38 (F3; K1881, K1934 (2)): the sign-in window's bounds, BOB's under K1881. Refused attempts are estimated per source
    and per role over any 10 minutes by a two-bucket sliding window (capture R31's form); at `perSource` for the source,
    or `perRole` for the role, the next attempt is paused. `SIGN_IN_STATED` is the bound as the pause states it, composed
    from the same constants. Here, not in index.mjs, so the pause's words can read it without an import cycle. */
-/** @satisfies {Readonly<{ perSource: number, perRole: number, windowMs: number }>} builds the window's figures */
 export const SIGN_IN_WINDOW = Object.freeze({ perSource: 10, perRole: 10, windowMs: 10 * 60 * 1000 });
-/** @type {string} the bound as the pause states it */
 export const SIGN_IN_STATED = word("credentials.refused_attempts_place", { per_source: String(SIGN_IN_WINDOW.perSource), per_role: String(SIGN_IN_WINDOW.perRole), window_ms: String(SIGN_IN_WINDOW.windowMs / 60000) });
 
 /* (T49; N1075, K3269) The words of `words.json` (`docs/development/ux-substrate/screens/words.json`) this module's
    refusals carry, each `en` verbatim, read by key: the translation of each of the five rows that file keys is the word
    itself, never a copy. SIGN_IN_PAUSED's `{stated}` is filled here with the bound as R38 states it (`SIGN_IN_STATED`,
    DEC-436); no time is stated, since neither tells which count was full. */
-/** @satisfies {Readonly<Record<string, string>>} builds each keyed word's sentence */
 export const CREDENTIALS_WORDS = Object.freeze({
   'refusal.SIGN_IN_PAUSED': word('refusal.SIGN_IN_PAUSED', { stated: SIGN_IN_STATED }),
   'refusal.NOT_SIGNED_IN': word('refusal.NOT_SIGNED_IN'),
@@ -55,7 +36,6 @@ export const CREDENTIALS_WORDS = Object.freeze({
 /* D-158 / C-63: a signing key is registered to a member who can attest (Membership Architecture v2 §6). Two codes for
    two facts: a member with no handle has never enrolled; one who has a handle and is not `active` is not standing. Both
    are minted in one region, `#signerMemberBar`, which R6, R7's activation and R9 consume. */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const SIGNER_ENROLMENT_CHECKS = Object.freeze({
   SIGNER_MEMBER_NOT_ENROLLED: Object.freeze({
     check: 'C-63.1', where: at("#signerMemberBar", "is-signer-member-attesting"),
@@ -69,7 +49,6 @@ export const SIGNER_ENROLMENT_CHECKS = Object.freeze({
 
 /* C-29 — the `ai` credential (PL-11 / IS-5, D-199): the mint's and the revocation's rows (C-29.1–.5, C-29.11). The
    reach question, what a declared scope admits (C-29.6–.10), is the control plane's (`AI_SCOPE_CHECKS`). */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const AI_CREDENTIAL_CHECKS = Object.freeze({
   /* D-199 (3): "If an agent can request a broader token, the scoping is theatre." */
   AI_CREDENTIAL_MINT_NOT_A_MEMBER: Object.freeze({
@@ -122,7 +101,6 @@ export const AI_CREDENTIAL_CHECKS = Object.freeze({
 });
 
 /* C-96's rows for the acts on a member's keys: R6's key shape (C-96.8) and R9's three (C-96.15–.17). */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const CREDENTIALS_CHECKS = Object.freeze({
   BAD_KEY: Object.freeze({
     check: 'C-96.8', where: at("signerAdd", "is-signer-key-shape"),
@@ -153,7 +131,6 @@ export const CREDENTIALS_CHECKS = Object.freeze({
    .19–.22, .27, .29, .31, .32, .34–.40, .44, .45) moved with their code to `ai-accounts`' `AI_ACCOUNT_CHECKS`, numbers,
    codes and words unchanged, so the family spans both modules' files (C-44's and C-136's precedent); `index.mjs`
    answers the two together as `ACCOUNT_CHECKS` until its readers re-point (R72). */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const ACCOUNT_CHECKS = Object.freeze({
   GRANT_OP_REFUSED: Object.freeze({
     check: 'C-29.23', where: at("aiGrantAdmit", "is-grant-op"),
@@ -195,7 +172,6 @@ export const ACCOUNT_CHECKS = Object.freeze({
 
 
 /* R29 (K1449): the group's keys for keyed outside services. */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const KEYED_SERVICE_CHECKS = Object.freeze({
   UNKNOWN_KEYED_SERVICE: Object.freeze({
     check: 'C-96.19', where: at("#keyedService", "is-keyed-service"),
@@ -213,7 +189,6 @@ export const KEYED_SERVICE_CHECKS = Object.freeze({
 
 /* T35 (T35-15; F3, F14, N703, K1888; K1881, K1934): the sign-in window (R38), sign-out (R39), recovery (R47) and the
    security tally and map (R44, R45). New rows, the next free numbers of C-96, awaiting promotion's stamp (T35-16). */
-/** @satisfies {CheckTable} builds a CheckTable */
 export const SIGN_IN_CHECKS = Object.freeze({
   SIGN_IN_PAUSED: Object.freeze({
     check: 'C-96.39', where: at("#paused", "is-sign-in-window"),

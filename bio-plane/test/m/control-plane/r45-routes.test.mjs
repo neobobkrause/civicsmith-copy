@@ -7,7 +7,6 @@
    public reads, registered through public-read R18, answered with no credential on the public path by their own names
    (K1170) and as `op=publicread&name=<name>`. Driven through `makeFetch(hooks)`, T22's form (`new-ops.test.mjs`,
    `doorbell.test.mjs`). */
-import { publicOp } from "../../../src/control-plane/routing.mjs";   /* first: the routing's load registers every owner's ops (store-assembly) before the harness reads the tables */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { O, world, call, opCalls, aik, cred, hex64, member, refused, FORGED, QUERY_STAMPS, BODY_STAMPS } from "./harness.mjs";
@@ -16,6 +15,7 @@ const { caseInputsOps } = await import("../../../src/case-inputs/index.mjs");
 const { monitoringOps } = await import("../../../src/monitoring/index.mjs");
 const { linkSweepOps } = await import("../../../src/link-sweep/index.mjs");
 const { networkNoticesOps, networkNoticesPublicReads } = await import("../../../src/network-notices/index.mjs");
+const { publicReadDoorOp } = await import("../../../src/public-read/door.mjs");
 
 const { OPS } = O;
 const U = new URL("http://do/");
@@ -178,11 +178,13 @@ test("R45 (DEC-111, K1170; public-read R18, R10): network-notices' public reads 
   assert.deepEqual([...PUBLIC_READS].sort(), ["activitymethod", "groupkeyspublic", "noticespublic"]);
   assert.deepEqual(OPS.publicread, { classes: null, mutating: false });
   const answered = [], handed = [];
-  /* the routing's own public hook (R139; K4990), recorded as it is asked */
-  const hooks = { async publicOp(ctx) {
-    const { op, url, env, stub, ...rest } = ctx;
+  /* the public hook as plane composes it: public-read's door over the door's own helpers */
+  const { M } = await import("./harness.mjs");
+  const hooks = { async publicOp({ op, url, env, stub, ...rest }) {
     handed.push({ op, keys: Object.keys(rest).sort() });
-    return publicOp(ctx);
+    return (await publicReadDoorOp(op, url, env, stub, { json: M.json, requiredArgument: M.requiredArgument, storeSilent: M.storeSilent,
+                                                  storeRefusal: M.storeRefusal, doAnswer: M.doAnswer }))
+      ?? M.json({ ok: true, publicOp: op });
   } };
   const { env, S } = world({ answer: (c) => {
     if (c.route !== "publicread") return null;

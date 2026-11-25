@@ -233,7 +233,6 @@ section("R109 · every path reaches a runner through REMOTE and never RUNNER");
   t("R109 (control): an apikey account is unchanged: the ask answers from the model API, with no REMOTE and no RUNNER",
     [api.status, last(api)?.event, api.model.length > 0, api.local], [200, "answer", true, []]);
   const member = discoverMembers().find((m) => m.name === "agent-worker");
-  if (!member) throw new Error("R109: agent-worker declares no fleet-member.json, so its bundle cannot be built");
   const fresh = await buildMember(member);
   const bundled = Buffer.from(fresh.bytes).toString("utf8");
   t("R109: a fresh build of the bundle names no RUNNER binding (env.RUNNER, a RUNNER key or declaration)",

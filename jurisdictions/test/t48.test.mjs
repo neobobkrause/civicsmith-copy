@@ -22,7 +22,7 @@ const pointer = (over = {}) => ({ kind: "legalaid", name: "Town Legal Aid", does
 const bare = (pointers, over = {}) => ({ id: "sample-town", name: "Sample Town", covers: ["Sample Town"], test: false, pointers, ...over });
 const breakP = (fn) => { const p = bare([pointer()]); fn(p.pointers[0], p); return validate(p); };
 /* the test profile with another id, for combine */
-const other = (fn = (_p) => {}) => { const p = get(TEST); if (!p) throw new Error("the test profile is missing (R9)"); p.id = "test-other"; p.name = "Other (test)"; p.covers = ["Other"]; fn(p); return p; };
+const other = (fn = () => {}) => { const p = get(TEST); p.id = "test-other"; p.name = "Other (test)"; p.covers = ["Other"]; fn(p); return p; };
 
 test("R89 POINTER_KINDS is exported: legalaid, selfhelp, service, agency, representative, tipline, in that order, frozen", async () => {
   assert.deepEqual([...POINTER_KINDS], ["legalaid", "selfhelp", "service", "agency", "representative", "tipline"]);
@@ -186,7 +186,7 @@ test("R91 the test profile supplies pointers: each kind, two of one kind, one wi
 
 /* The first profile's pointers, read on 2026-10-14 (fixtures/pointers.mjs). */
 const digits = (s) => String(s).replace(/\D/g, "");
-const ofKind = (k) => get(FIRST)?.pointers.filter((x) => x.kind === k);
+const ofKind = (k) => get(FIRST).pointers.filter((x) => x.kind === k);
 
 test("R92 the first profile's pointers are researched: each from a page read, its source that page, the day read its basis", () => {
   const f = get(FIRST);

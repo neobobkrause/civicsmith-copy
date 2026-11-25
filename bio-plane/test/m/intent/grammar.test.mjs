@@ -204,7 +204,7 @@ test("R29 R22 the audit runs the grammar over every project held, beside R1's ob
   /* the ladder would have found 3 (C-9.1); the objective is missing (R1, C-2.9) */
   assert.equal(pass.tally["C-9.1"], undefined, "no C-9.1 finding");
   assert.equal(pass.tally["C-2.9"], 1);
-  assert.equal(pass.tallyDetail?.["C-2.9/NO_OBJECTIVE"], 1);
+  assert.equal(pass.tallyDetail["C-2.9/NO_OBJECTIVE"], 1);
   /* a project at closed with no reason: the grammar's one arm counts too */
   const closed = w.text(Q).replace("current_state: forming", "current_state: closed").replace("references: []", "references: []\nworkproduct_state: bogus");
   w.st.sql.exec(`UPDATE files SET content=? WHERE bundle_id=? AND path='bundle.md'`, closed, Q);

@@ -156,13 +156,12 @@ export function fakeIndexedDB(dbs = new Map()) {
 
 /**
  * Boot the page at `path` with `screens` registered, over `plane` (an op's answer, or `(req) => answer`).
- * `door` is the world's door (a function of the request); `now` (epoch ms) is the instant the page's clock starts at, the world's own clock when booted
- * over a world (absent, the machine's), so a session the world made expires by the page's clock as by the store's (R32); `session` is the record R32 keeps in localStorage (null for none); `testInstance` is `interfacePage`'s option (R58); `tabs` (from `tabs()`) shares one localStorage
+ * `door` is the world's door (a function of the request); `session` is the record R32 keeps in localStorage (null for none); `testInstance` is `interfacePage`'s option (R58); `tabs` (from `tabs()`) shares one localStorage
  * among pages, each told of the others' writes by the storage event; `idb` is the IndexedDB stand-in's store.
  * Answers `{doc, win, requests, root, clock, settle, click, choose, fire, back, assigned, store, local, byOp, location, ...}`:
  * `store` is the tab's sessionStorage, `local` its localStorage.
  */
-export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, now: startAt = null, declared = collectOwnerRows() } = {}) {
+export async function boot({ screens = [], plane = {}, session = SESSION, path = "/app", hash = "", phone = false, local = {}, localThrows = false, tabStore = null, tabThrows = false, html, run = true, tabs: group = null, idb = new Map(), guide = null, testInstance = false, version = null, door = null, declared = collectOwnerRows() } = {}) {
   const options = { ...(guide ? { guide } : {}), ...(testInstance ? { testInstance } : {}), ...(version ? { version } : {}) };
   html = html || served(interfacePage(screens, options));
   const doc = documentOf(html);
@@ -270,7 +269,7 @@ export async function boot({ screens = [], plane = {}, session = SESSION, path =
   if (group) group.pages.push(page);
   if (run) {
     /* the page's clock is the fake one: `Date.now()` advances with `clock.tick` (cs.now, K3002) */
-    const base = startAt ?? Date.now();
+    const base = Date.now();
     const FakeDate = class extends Date { static now() { return base + clock.at(); } };
     new Function("window", "setTimeout", "clearTimeout", "Date", scriptOf(html, screens, options))(win, clock.setTimeout, clock.clearTimeout, FakeDate);
     await settle();

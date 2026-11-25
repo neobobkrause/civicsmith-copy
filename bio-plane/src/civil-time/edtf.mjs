@@ -2,28 +2,6 @@
  * intervals) is read too, since level 1 contains it. Every level-2 feature is refused by name; anything else is not
  * EDTF. A band's ends are day numbers; an open (`..`) or unknown (empty) interval end is null, never a date. */
 import { dayNumber, monthLength, dayText } from "./days.mjs";
-/** @import { Refusal, Answered } from './values.mjs' */
-
-/**
- * What an EDTF value says beyond its band (R3).
- * @typedef {Object} EdtfQualifiers
- * @property {boolean} uncertain `?` or `%`
- * @property {boolean} approximate `~` or `%`
- * @property {boolean} unspecified digits written X
- * @property {boolean} season a season 21 to 24
- * @property {boolean} interval two ends joined by `/`
- * @property {string} start known, open or unknown
- * @property {string} end known, open or unknown
- * @bound start, end: one of known, open (`..`), unknown (an empty end)
- */
-/**
- * An EDTF value read as a band of days (R3).
- * @typedef {Object} EdtfBand
- * @property {string|null} earliest the first day, YYYY-MM-DD; null at an open or unknown start, never a date
- * @property {string|null} latest the last day, YYYY-MM-DD; null at an open or unknown end, never a date
- * @property {EdtfQualifiers} qualifiers
- * @bound years beyond four digits are written in ISO 8601's expanded form
- */
 
 const refused = (refused, why) => ({ refused, why });
 const invalid = (s, why) => refused("DATE_INVALID", `'${s}' is not an EDTF date: ${why}`);
@@ -46,19 +24,8 @@ function level2Feature(s) {
   return null;
 }
 
-/**
- * One date of an EDTF value as the module holds it: inclusive day numbers.
- * @typedef {Object} DateBand
- * @property {number} lo
- * @property {number} hi
- * @property {{uncertain: boolean, approximate: boolean, unspecified: boolean, season: boolean}} q
- * @property {undefined} [refused] absent
- * @property {undefined} [kind] absent
- */
 /** One date of level 0 or 1, with an optional whole-date qualifier: `{lo, hi, q}` (inclusive day numbers), or a
- *  refusal.
- *  @param {string} s @param {string} whole
- *  @returns {DateBand|Refusal} */
+ *  refusal. */
 function readDate(s, whole) {
   const q = { uncertain: false, approximate: false, unspecified: false, season: false };
   let t = s;
@@ -120,17 +87,7 @@ function readDate(s, whole) {
   return { lo: dayNumber(y, mo, d), hi: dayNumber(y, mo, d), q };
 }
 
-/**
- * An EDTF value as the module holds it: inclusive day numbers.
- * @typedef {Object} EdtfRead
- * @property {number|null} lo the first day; null at an open or unknown start
- * @property {number|null} hi the last day; null at an open or unknown end
- * @property {string} start known, open or unknown
- * @property {string} end known, open or unknown
- * @property {{uncertain: boolean, approximate: boolean, unspecified: boolean, season: boolean, interval: boolean}} qualifiers
- * @property {undefined} [refused] absent
- */
-/** @returns {EdtfRead|Refusal} The band as day numbers: `{lo, hi, start, end, qualifiers}` (`start`/`end` `known`, `open` or `unknown`; `lo`/`hi`
+/** The band as day numbers: `{lo, hi, start, end, qualifiers}` (`start`/`end` `known`, `open` or `unknown`; `lo`/`hi`
  *  null at an open or unknown end), or a refusal. */
 export function readEdtf(s) {
   if (typeof s !== "string" || s === "" || /\s/.test(s)) return invalid(String(s), "empty or containing white space");
@@ -143,7 +100,6 @@ export function readEdtf(s) {
     if (r.refused) return r;
     return { lo: r.lo, hi: r.hi, start: "known", end: "known", qualifiers: { ...r.q, interval: false } };
   }
-  /** @type {(p: string) => DateBand|Refusal|{kind: string, refused?: undefined, lo?: undefined, hi?: undefined, q?: undefined}} */
   const end = (p) => (p === ".." ? { kind: "open" } : p === "" ? { kind: "unknown" } : readDate(p, s));
   const a = end(parts[0]), b = end(parts[1]);
   if (a.refused) return a;
@@ -155,13 +111,7 @@ export function readEdtf(s) {
   return { lo: a.kind ? null : a.lo, hi: b.kind ? null : b.hi, start: a.kind || "known", end: b.kind || "known", qualifiers: q };
 }
 
-/**
- * R3, R4: reads EDTF level 1 (K1464). A level-2 feature is refused EDTF_UNSUPPORTED, naming it; anything that is not
- * EDTF is refused DATE_INVALID.
- * @param {string} s
- * @returns {(EdtfBand & Answered)|Refusal}
- * @throws {TypeError} when `s` is not a string
- */
+/** R3, R4: `{earliest, latest, qualifiers}` (days; an open or unknown end null), or a refusal. */
 export function parseEdtf(s) {
   if (typeof s !== "string") throw new TypeError("parseEdtf takes a string");
   const r = readEdtf(s);

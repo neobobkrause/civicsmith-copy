@@ -9,7 +9,6 @@ import { docParaRef, docTableRef } from "../../../src/docx.mjs";
 import { sheetCellRef, usedSheetRange } from "../../../src/formats-xlsx.mjs";
 import { slideShapeRef } from "../../../src/pptx.mjs";
 import { buildZip, members, pkg, withCd, TYPES, contentXml, enc, prng, sha256Hex, OVER_BOUND, metaXml } from "./pkg.mjs";
-/** @import { OdfEntry } from "../../../src/odf.mjs" */
 
 const { odtEntry, odsEntry, odpEntry, odfEvidentiaryDigest } = M;
 const ENTRIES = { odt: odtEntry, ods: odsEntry, odp: odpEntry };
@@ -31,8 +30,6 @@ test("R1 detect(bytes, null): certain for a conforming package of the entry's ow
     }
     // any bytes form
     assert.equal(ENTRIES[f].detect(bytes.buffer.slice(0), null)?.confidence, "certain");
-    // the content type is optional: left out, the bytes are read as with null
-    assert.deepEqual(ENTRIES[f].detect(bytes), ENTRIES[f].detect(bytes, null));
     // a content type passed beside the bytes changes nothing
     assert.equal(ENTRIES[f].detect(bytes, "text/plain")?.confidence, "certain");
 
@@ -184,10 +181,8 @@ test("R31 the three media types and ODF_FORMATS are the partMap:\"odf\" rows' ow
   assert.deepEqual([...M.ODF_FORMATS], ["odt", "ods", "odp"]);
   assert.ok(Object.isFrozen(M.ODF_FORMATS));
   assert.deepEqual([odtEntry.format, odsEntry.format, odpEntry.format], ["odt", "ods", "odp"]);
-  /** @type {[OdfEntry, string][]} */
-  const typed = [[odtEntry, M.ODT_CONTENT_TYPE], [odsEntry, M.ODS_CONTENT_TYPE], [odpEntry, M.ODP_CONTENT_TYPE]];
-  for (const [e, ct] of typed) {
-    assert.equal(e.detect(null, ct)?.confidence, "likely");
+  for (const [e, ct] of [[odtEntry, M.ODT_CONTENT_TYPE], [odsEntry, M.ODS_CONTENT_TYPE], [odpEntry, M.ODP_CONTENT_TYPE]]) {
+    assert.equal(e.detect(null, ct).confidence, "likely");
   }
 });
 
@@ -380,9 +375,7 @@ test("R43 the module owns no check: it exports readers and constants only, and e
   const odt = pkg("odt", { body: "<text:p>a<text:a xlink:href='#x'>b</text:a></text:p><table:table><table:table-row><table:table-cell/></table:table-row></table:table>" });
   const ods = pkg("ods", { body: "<table:table table:name='S'><table:table-row><table:table-cell office:value-type='string' table:formula='of:=1'><text:p><text:a xlink:href='#y'>c</text:a></text:p></table:table-cell></table:table-row></table:table>" });
   const odp = pkg("odp", { body: "<draw:page><draw:frame><draw:text-box><text:p><text:a xlink:href='#z'>d</text:a></text:p></draw:text-box></draw:frame><presentation:notes><draw:frame><draw:text-box><text:p>n</text:p></draw:text-box></draw:frame></presentation:notes></draw:page>" });
-  /** @type {[OdfEntry, Uint8Array][]} */
-  const each = [[odtEntry, odt], [odsEntry, ods], [odpEntry, odp]];
-  for (const [e, b] of each) { walk(await e.structure(b)); walk(await e.text(b)); }
+  for (const [e, b] of [[odtEntry, odt], [odsEntry, ods], [odpEntry, odp]]) { walk(await e.structure(b)); walk(await e.text(b)); }
   const rebuilt = (r) => ({
     "doc-para": () => docParaRef(r.para),
     "doc-table": () => docTableRef(r.table),

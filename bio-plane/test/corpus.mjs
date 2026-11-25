@@ -20,43 +20,9 @@ import * as docgen from "./docgen.mjs";
 export { hash32, rng, drawAt, VOCAB, LATIN_VOCAB, ASCII_VOCAB, canonical, recipeKey } from "./seeded.mjs";
 import { canonical, recipeKey } from "./seeded.mjs";
 
-/**
- * A recipe: the generator's kind, its seed and its size, and the generator's own options (R19).
- * @typedef {{kind: string, seed: number|string, size?: RecipeSize, [option: string]: any}} Recipe
- */
-
-/**
- * A recipe's size: what each generator counts (pages, lines, rows, cols, units, ...) and `bytes`, an exact file size.
- * @typedef {{[measure: string]: number|undefined}} RecipeSize
- */
-
-/**
- * A generated file: its kind, extension, media type, size (null when not known before it is built), its truth, a
- * lazy stream of its chunks and its whole bytes (R19). The truth's fields vary by kind (see each generator).
- * @typedef {Object} GeneratedFile
- * @property {string} kind
- * @property {string} ext
- * @property {string} type
- * @property {number|null} size
- * @property {Object<string, any>} truth
- * @property {() => AsyncIterable<Uint8Array>} chunks
- * @property {() => Promise<Uint8Array>} bytes
- */
-
-/**
- * A generator module: the kinds it builds, and its `generate` and `truthOf`.
- * @typedef {Object} CorpusGenerator
- * @property {readonly string[]} KINDS
- * @property {(recipe: Recipe) => GeneratedFile} generate
- * @property {(recipe: Recipe) => Object<string, any>} truthOf
- */
-
 /* ---- the generators by kind ---- */
 
-/**
- * The generator of each kind.
- * @type {() => Object<string, CorpusGenerator>}
- */
+/** The generator of each kind. */
 export const kinds = () => Object.fromEntries([pdfgen, imggen, sheetgen, docgen].flatMap((g) => g.KINDS.map((k) => [k, g])));
 
 function generatorOf(recipe) {
@@ -66,25 +32,13 @@ function generatorOf(recipe) {
   return g;
 }
 
-/**
- * The file of a recipe, from its generator: `{kind, ext, type, size, truth, chunks(), bytes()}` (R19).
- * @type {(recipe: Recipe) => GeneratedFile}
- * @throws {Error} when the recipe is not an object, its kind has no generator, or the generator refuses it
- */
+/** The file of a recipe, from its generator: `{kind, ext, type, size, truth, chunks(), bytes()}` (R19). */
 export const generate = (recipe) => generatorOf(recipe).generate(recipe);
 
-/**
- * The truth of a recipe without building its file (R24).
- * @type {(recipe: Recipe) => Object<string, any>}
- * @throws {Error} when the recipe is not an object, its kind has no generator, or the generator refuses it
- */
+/** The truth of a recipe without building its file (R24). */
 export const truthOf = (recipe) => generatorOf(recipe).truthOf(recipe);
 
-/**
- * Collects an async iterable of chunks into one Uint8Array.
- * @param {AsyncIterable<Uint8Array>} chunks the chunks, in order
- * @returns {Promise<Uint8Array>}
- */
+/** Collects an async iterable of chunks into one Uint8Array. */
 export async function collect(chunks) {
   const parts = [];
   let n = 0;
@@ -98,28 +52,15 @@ export async function collect(chunks) {
 /* ---- the fixture cache (R19, R9) ---- */
 
 /** The directory generated files are built into: `BIO_FIXTURE_CACHE`, or, when it is unset, a directory in the
- *  process's temporary directory (the sandbox, for a test that imports it). Created on first use, never removed.
- * @returns {string} */
+ *  process's temporary directory (the sandbox, for a test that imports it). Created on first use, never removed. */
 export function fixtureDir() {
   const dir = process.env.BIO_FIXTURE_CACHE || join(tmpdir(), "bio-fixture-cache");
   mkdirSync(dir, { recursive: true });
   return dir;
 }
 
-/**
- * A built fixture: its path in the cache, its size, its truth and whether this call built it.
- * @typedef {Object} Fixture
- * @property {string} path
- * @property {number} size
- * @property {Object<string, any>} truth
- * @property {boolean} built
- */
-
 /** Builds a recipe's file into the cache once, keyed by the recipe, streaming its chunks to disk so a large
- *  file is never held; a later call finds it there. Answers `{path, size, truth, built}`.
- * @param {Recipe} recipe the file's recipe
- * @returns {Promise<Fixture>}
- * @throws {Error} when the recipe is refused by its generator */
+ *  file is never held; a later call finds it there. Answers `{path, size, truth, built}`. */
 export async function buildFixture(recipe) {
   const file = generate(recipe);
   const path = join(fixtureDir(), `${recipe.kind}-${recipeKey(recipe)}.${file.ext}`);
@@ -142,32 +83,6 @@ const LOOPBACK = /^(127\.\d+\.\d+\.\d+|localhost|\[::1\])$/;
 const ENCODERS = { gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync };
 
 /**
- * What a route's body may be: bytes, a string, or a recipe whose file is served.
- * @typedef {Uint8Array|string|Recipe} RouteBody
- */
-
-/**
- * One route of a loopback origin (R25).
- * @typedef {Object} Route
- * @property {number} [status] the status, 200 (302 for a redirect) when not given
- * @property {Object<string, string>} [headers] headers added to the answer
- * @property {RouteBody|((req: any) => RouteBody|Promise<RouteBody>)} [body] the body, or a function answering it
- * @property {"gzip"|"deflate"|"br"} [encoding] compresses the body and sets Content-Encoding
- * @property {string} [redirect] a path of this origin, or an absolute URL on the loopback
- * @property {number} [delayMs] a wait before answering
- * @property {boolean} [hang] sends the headers and part of the body and never ends it
- */
-
-/**
- * A running loopback origin: its origin, a URL maker, the requests it has seen and its close.
- * @typedef {Object} LoopbackOrigin
- * @property {string} origin `http://127.0.0.1:<port>`
- * @property {(path: string) => string} url
- * @property {{method: string|undefined, path: string, headers: Object}[]} requests
- * @property {() => Promise<void>} close
- */
-
-/**
  * An HTTP origin on 127.0.0.1 serving `routes`: `{"/path": {status = 200, headers = {}, body, encoding, redirect,
  * delayMs, hang}}`. `body` is bytes, a string, a recipe (served from its generator, its chunks streamed) or a
  * function answering one of those. `encoding` ("gzip", "deflate", "br") compresses the body for real and sets
@@ -175,10 +90,6 @@ const ENCODERS = { gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync 
  * the loopback); `delayMs` waits before answering; `hang: true` sends the headers and part of the body and never
  * ends it. Answers `{origin, url(path), requests, close()}`; it closes when the process exits (the sandbox's end,
  * R2), keeps no process alive and makes no request of its own.
- * @param {Object<string, Route>} [routes] each path's answer; a path starts with "/"
- * @returns {Promise<LoopbackOrigin>}
- * @throws {Error} when a path does not start with "/", a redirect leaves the loopback, or an encoding is not gzip, deflate or br
- * @bound listens on 127.0.0.1 only, and makes no request to any host
  */
 export async function loopbackOrigin(routes = {}) {
   for (const [path, r] of Object.entries(routes)) {
@@ -247,22 +158,14 @@ export async function loopbackOrigin(routes = {}) {
 const has = (cmd) => spawnSync("sh", ["-c", `command -v ${cmd}`], { encoding: "utf8" }).status === 0;
 const scratch = (label) => mkdtempSync(join(tmpdir(), `oracle-${label}-`));
 
-/**
- * Info-ZIP `unzip -t` over a file: `{ok, output}`.
- * @param {string} path the file
- * @returns {{ok?: boolean, output?: string, skip?: string}} `skip` names the missing tool
- */
+/** Info-ZIP `unzip -t` over a file: `{ok, output}`. */
 export function unzipTest(path) {
   if (!has("unzip")) return { skip: "unzip is not installed" };
   const r = spawnSync("unzip", ["-t", path], { encoding: "utf8", maxBuffer: 64 << 20 });
   return { ok: r.status === 0, output: r.stdout + r.stderr };
 }
 
-/**
- * Python's `zipfile` over a file: `{ok, members: [{name, size, sha256}]}`, or `{ok:false, error}`.
- * @param {string} path the file
- * @returns {{ok?: boolean, members?: {name: string, size: number, sha256: string}[], error?: string, skip?: string}}
- */
+/** Python's `zipfile` over a file: `{ok, members: [{name, size, sha256}]}`, or `{ok:false, error}`. */
 export function pyZipfile(path) {
   if (!has("python3")) return { skip: "python3 is not installed" };
   const code = "import sys,zipfile,hashlib,json\ntry:\n z=zipfile.ZipFile(sys.argv[1])\n print(json.dumps({'ok':True,'members':[{'name':i.filename,'size':i.file_size,'sha256':hashlib.sha256(z.read(i)).hexdigest()} for i in z.infolist()]}))\nexcept Exception as e:\n print(json.dumps({'ok':False,'error':type(e).__name__+': '+str(e)}))";
@@ -271,10 +174,7 @@ export function pyZipfile(path) {
 }
 
 /** Pillow over a picture: `{format, frames: [{width, height, mode, sha256}]}`; each frame's pixels as Pillow decodes them,
- *  as bytes in its mode (`L`, `LA`, `RGB`, `RGBA`, `1` read as `L`, `I;16` as big-endian 16-bit).
- * @param {string} path the picture file
- * @returns {{format?: string, frames?: {width: number, height: number, mode: string, sha256: string}[], error?: string, skip?: string}}
- */
+ *  as bytes in its mode (`L`, `LA`, `RGB`, `RGBA`, `1` read as `L`, `I;16` as big-endian 16-bit). */
 export function pillowPixels(path) {
   if (!has("python3")) return { skip: "python3 is not installed" };
   const code = [
@@ -299,11 +199,7 @@ export function pillowPixels(path) {
 }
 
 /** pdf.js (the library the committed pdf-worker bundle carries, from bio-plane's own `pdfjs-dist`) over PDF bytes:
- *  `{pages, texts: [each page's text, its items joined in logical order, a line break where pdf.js marks one]}`, or `{error}`.
- * @param {Uint8Array} bytes the PDF
- * @param {{password?: string}} [options] the password to open it with
- * @returns {Promise<{pages?: number, texts?: string[], error?: string, skip?: string}>}
- */
+ *  `{pages, texts: [each page's text, its items joined in logical order, a line break where pdf.js marks one]}`, or `{error}`. */
 export async function pdfjsText(bytes, { password } = {}) {
   let lib;
   try { lib = await import("pdfjs-dist/legacy/build/pdf.mjs"); } catch { return { skip: "pdfjs-dist is not installed" }; }
@@ -325,11 +221,7 @@ export async function pdfjsText(bytes, { password } = {}) {
 }
 
 /** poppler's `pdftotext -layout` over a PDF file, page by page: `{texts}`, a second reader for the structure files
- *  (`-layout` keeps a line's marker and its word on one line, where the default reading order takes them as columns).
- * @param {string} path the PDF file
- * @param {number} pages how many pages to read, from page 1
- * @returns {{texts?: (string|null)[], skip?: string}} a page poppler could not read is null
- */
+ *  (`-layout` keeps a line's marker and its word on one line, where the default reading order takes them as columns). */
 export function pdftotext(path, pages) {
   if (!has("pdftotext")) return { skip: "pdftotext is not installed" };
   const texts = [];
@@ -341,12 +233,7 @@ export function pdftotext(path, pages) {
 }
 
 /** LibreOffice headless: converts a file to `to` ("txt", "csv", "html", "pdf") in a private profile and answers the
- *  converted file's text (for "pdf", its bytes). `{text}` or `{bytes}`, or `{error}`.
- * @param {string} path the file
- * @param {"txt"|"csv"|"html"|"pdf"} to the format to convert to
- * @returns {Object<string, any>} `{text: string}`, `{bytes: Uint8Array}` for "pdf", `{error: string}` or `{skip: string}`
- * @throws {Error} when `to` is not txt, csv, html or pdf
- */
+ *  converted file's text (for "pdf", its bytes). `{text}` or `{bytes}`, or `{error}`. */
 export function soffice(path, to) {
   const bin = has("soffice") ? "soffice" : has("libreoffice") ? "libreoffice" : null;
   if (!bin) return { skip: "LibreOffice is not installed" };
@@ -362,12 +249,7 @@ export function soffice(path, to) {
   return to === "pdf" ? { bytes: new Uint8Array(data) } : { text: data.toString("utf8").replace(/^\ufeff/, "") };
 }
 
-/**
- * Chromium (Playwright's) over an HTML page's bytes: the body's visible text, as a visitor sees it. `{text}` or `{skip}`.
- * @param {RouteBody} html the page, served from a loopback origin
- * @param {{contentType?: string}} [options] the page's media type, text/html when not given
- * @returns {Promise<{text?: string, skip?: string}>}
- */
+/** Chromium (Playwright's) over an HTML page's bytes: the body's visible text, as a visitor sees it. `{text}` or `{skip}`. */
 export async function chromiumText(html, { contentType = "text/html" } = {}) {
   let pw;
   try { pw = await import("playwright"); } catch {
@@ -386,12 +268,7 @@ export async function chromiumText(html, { contentType = "text/html" } = {}) {
   } finally { await browser.close(); }
 }
 
-/**
- * Writes bytes to a new file in the process's temporary directory (the sandbox, for a test that imports it).
- * @param {Uint8Array|string} bytes the file's content
- * @param {string} name the file's name
- * @returns {string} the file's path
- */
+/** Writes bytes to a new file in the process's temporary directory (the sandbox, for a test that imports it). */
 export function scratchFile(bytes, name) {
   const path = join(scratch("file"), name);
   writeFileSync(path, bytes);

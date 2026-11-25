@@ -29,7 +29,7 @@ async function rendering() {
 }
 
 /** A package of the generators for `kind`, built by their real code. */
-const generated = async (kind) => readFileSync((await buildFixture({ kind, seed: 1 })).path);
+const generated = async (kind) => readFileSync((await buildFixture({ kind, size: 10, seed: 1 })).path);
 
 /** A Word document made by the real LibreOffice, a plain ZIP. */
 function plainDocx() {

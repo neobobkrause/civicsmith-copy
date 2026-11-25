@@ -36,35 +36,7 @@ export function moduleCheck(mod) {
   return null;
 }
 
-/**
- * The bounds R3's checks 2-4 apply while the container is read without the engine loading it.
- * @typedef {Object} InspectBounds
- * @property {number} maxUnzippedBytes
- * @property {number} maxCells
- */
-/**
- * The engine as `member.mjs` takes it: one wasm instance at a time, opened per workbook and closed after it.
- * @typedef {Object} Engine
- * @property {string} name the engine's name (`ENGINE_NAME`)
- * @property {string} version the pinned commit (`ENGINE_VERSION`)
- * @property {{bytes: number, sha256: string}} wasm the vendored wasm's byte length and SHA-256 (R13)
- * @property {() => (string | null)} check null when the module is the pinned build and instantiates, else why not;
- *   leaves no instance behind (R8, R13)
- * @property {() => (string | null)} open a fresh instance: null, or why the engine is absent (R3's ENGINE_ABSENT)
- * @property {(bytes: Uint8Array, bounds: InspectBounds) => any} inspect R3 checks 2-4 on the container: `zip`,
- *   `workbook`, `why`, `over_unzipped`, `unzipped_bytes`, `over_cells`, `cells`, `macros` and `external`
- *   (`parts`, `formulas`, `defined_names`); throws when not open
- * @property {(bytes: Uint8Array) => void} load the engine's own xlsx import; throws the engine's error
- * @property {() => any} evaluate every formula cell of the loaded workbook, with `counts` and `spill_cells`; throws
- *   the engine's error, or when nothing is loaded
- * @property {() => (number | null)} memoryBytes the instance's linear memory now, in bytes; null when none is open
- * @property {() => void} close frees the workbook and drops the instance
- */
-/**
- * The engine as `member.mjs` takes it.
- * @param {WebAssembly.Module} mod the compiled engine wasm
- * @returns {Engine}
- */
+/** The engine as `member.mjs` takes it. */
 export function makeEngine(mod) {
   let opened = false;
   /* The loaded workbook, freed by `close()` before the instance is dropped: the glue's finalizer would otherwise

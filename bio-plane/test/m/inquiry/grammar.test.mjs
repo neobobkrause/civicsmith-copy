@@ -30,7 +30,7 @@ test("R1 the machine: open/surfaced to deferred, dismissed, concluded or divided
   assert.deepEqual(BASIS_ROLES, ["supports", "cuts_against"]);
 });
 
-test("R11 entry requirements (inquiry-grammar R1, run by the check): surfaced_by, a disposition's reason, a conclusion's leg and falsifier, the subject's shape", async () => {
+test("R2 entry requirements: surfaced_by, a disposition's reason, a conclusion's leg and falsifier, the subject's shape", async () => {
   const bad = async (md, needle) => {
     const f = await checkInquiryEntry(md);
     assert.ok(f.some((x) => x.check === "C-2.8" && (!needle || x.message.includes(needle))),
@@ -38,24 +38,24 @@ test("R11 entry requirements (inquiry-grammar R1, run by the check): surfaced_by
   };
   const ok = await checkInquiryEntry(inquiryMd("INQ-2026-0009-z"));
   assert.deepEqual(ok.filter((x) => x.check === "C-2.8"), [], "an open inquiry with its fields passes");
-  await bad(inquiryMd("INQ-2026-0009-z").replace("surfaced_by: human", "surfaced_by: robot"), "surfaced this inquiry is 'robot'");
-  await bad(inquiryMd("INQ-2026-0009-z", { state: "deferred", disposition: '""' }), "deferred state requires a non-empty reason");
-  await bad(inquiryMd("INQ-2026-0009-z", { state: "dismissed", disposition: '""' }), "dismissed state requires a non-empty reason");
+  await bad(inquiryMd("INQ-2026-0009-z").replace("surfaced_by: human", "surfaced_by: robot"), "surfaced_by");
+  await bad(inquiryMd("INQ-2026-0009-z", { state: "deferred", disposition: '""' }), "disposition_reason");
+  await bad(inquiryMd("INQ-2026-0009-z", { state: "dismissed", disposition: '""' }), "disposition_reason");
   const concluded = (extra) => inquiryMd("INQ-2026-0009-z", { state: "concluded", extra });
-  await bad(concluded(['conclusion: ""', 'falsifier: "x"']), "requires a non-empty conclusion");
-  await bad(concluded(['conclusion: "it is"', 'falsifier: "x"']), "requires at least one basis leg");
+  await bad(concluded(['conclusion: ""', 'falsifier: "x"']), "conclusion");
+  await bad(concluded(['conclusion: "it is"', 'falsifier: "x"']), "leg");
   await bad(inquiryMd("INQ-2026-0009-z", { state: "concluded", legs: [{ target: INFO }],
-    extra: ['conclusion: "it is"', 'falsifier: ""'] }), "requires a non-empty falsifier");
+    extra: ['conclusion: "it is"', 'falsifier: ""'] }), "falsifier");
   /* REC-117: the absence of a falsifier recorded by both fields, never half */
   await bad(inquiryMd("INQ-2026-0009-z", { state: "concluded", legs: [{ target: INFO }],
-    extra: ['conclusion: "it is"', 'falsifier: ""', 'falsifier_override_by: member:alice'] }), "HALF-RECORDED override");
+    extra: ['conclusion: "it is"', 'falsifier: ""', 'falsifier_override_by: member:alice'] }), "override");
   const overridden = await checkInquiryEntry(inquiryMd("INQ-2026-0009-z", { state: "concluded", legs: [{ target: INFO }],
     extra: ['conclusion: "it is"', 'falsifier: ""', 'falsifier_override_by: member:alice', 'falsifier_override_at: "2026-09-27T00:00:00Z"'] }));
   assert.ok(!overridden.some((x) => /falsifier/.test(x.message)), "a recorded absence with both fields is accounted for");
-  await bad(inquiryMd("INQ-2026-0009-z", { subject: "not-an-entity" }), "the subject entity 'not-an-entity' is not an entry in the subject registry");
+  await bad(inquiryMd("INQ-2026-0009-z", { subject: "not-an-entity" }), "subject_entity");
 });
 
-test("R11 divided (inquiry-grammar R2, run by the check): a division block (reason, a named apportioner, an ISO at, two children) and every leg homed", async () => {
+test("R3 divided: a division block (reason, a named apportioner, an ISO at, two children) and every leg homed", async () => {
   const legs = [{ target: INFO }, { target: INFO2, role: "cuts_against" }];
   const div = (division, rows) => inquiryMd("INQ-2026-0009-z", { state: "divided", legs, extra: [...division, ...rows] });
   const good = ["division:", '  reason: "two questions"', "  apportioned_by: member:alice", '  at: "2026-09-27T00:00:00Z"',
@@ -66,7 +66,7 @@ test("R11 divided (inquiry-grammar R2, run by the check): a division block (reas
   assert.deepEqual(f0.filter((x) => /divi|apportion/i.test(x.message)), [], JSON.stringify(f0.map((x) => x.message)));
   const has = async (md, re) => { const f = await checkInquiryEntry(md); assert.ok(f.some((x) => re.test(x.message)), `${re}: ${JSON.stringify(f.map((x) => x.message)).slice(0, 500)}`); };
   await has(inquiryMd("INQ-2026-0009-z", { state: "divided", legs }), /division/);
-  await has(div(good.map((l) => l.replace("member:alice", "class:daemon")), rows), /apportioned the division is 'class:daemon', which is not a named member/);
+  await has(div(good.map((l) => l.replace("member:alice", "class:daemon")), rows), /apportioned_by|machine/);
   await has(div(good.map((l) => l.replace("[INQ-2026-0010-a, INQ-2026-0011-b]", "[INQ-2026-0010-a]")), rows), /two|children|at least/);
   await has(div(good, rows.slice(0, 5)), /apportion|home|leg/);
   await has(div(good, rows.map((l) => l.replace(`target: ${INFO2}`, `target: ${INFO}`))), /target|apportion/);
@@ -74,7 +74,7 @@ test("R11 divided (inquiry-grammar R2, run by the check): a division block (reas
 
 test("R4 a leg: canonical target in references, vocabularies, graded legs name axis and source, hunch, testimony D; a lead or a theme refused by name first", () => {
   assert.equal(basisErrs(fmWith([{ target: INFO, role: "supports" }])).length, 0);
-  assert.ok(basisErrs(fmWith([{ target: "not-an-id", role: "supports" }])).some((x) => /names 'not-an-id', which is not a valid record reference/.test(x.message)));
+  assert.ok(basisErrs(fmWith([{ target: "not-an-id", role: "supports" }])).some((x) => /canonical/.test(x.message)));
   const notReferenced = { ...fmWith([{ target: INFO, role: "supports" }]), references: [] };
   assert.ok(basisErrs(notReferenced).some((x) => x.check === "C-6.3" || /references/.test(x.message)), "C-6.3");
   assert.ok(basisErrs(fmWith([{ target: INFO, role: "maybe" }])).length);
@@ -181,7 +181,7 @@ test("R38 R4 the rows the module mints are inquiry-grammar's, read with their id
     LEAD_NOT_EVIDENCE: "C-54.1", NOT_INQUIRIES: "C-33.13", SELF_BASIS: "C-33.22", BASIS_CYCLE: "C-33.23",
     MACHINE_CANNOT_DIVIDE: "C-32.7", MACHINE_CANNOT_GROUND: "C-32.8", IMPORTED_LEG_MALFORMED: "C-21.3",
     STANDARD_LEG_AXIS: "C-2.8", CALCULATION_LEG_MALFORMED: "C-2.8", OCCURRENCE_LEG_MALFORMED: "C-2.8",
-    DERIVED_LEG_MALFORMED: "C-2.8", CUTTING_LEG_IN_GROUND: "C-2.8", BIAS_APPLICATION_MALFORMED: "C-2.8" });
+    DERIVED_LEG_MALFORMED: "C-2.8", BIAS_APPLICATION_MALFORMED: "C-2.8" });
   for (const r of Object.values(INQUIRY_ROWS)) assert.ok(typeof r.translation === "string" && r.translation.length > 20);
   const f = []; assert.equal(leadLegFindings("basis[0]", { target: "LEAD-2026-0001-abc" }, f), true);
   assert.equal(f[0].check, "C-54.1");

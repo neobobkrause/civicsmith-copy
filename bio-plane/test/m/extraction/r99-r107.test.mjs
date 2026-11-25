@@ -14,8 +14,6 @@ import * as F from "../office-readers/fixtures.mjs";
 import { jobRegistrarStub } from "../../job-registrar-stub.mjs";
 import { read as readDocument } from "../../../src/reading-pipeline/index.mjs";
 import { extractionOps, LAND_BATCH_BYTES, READING_SHAPE, CAPTURE_TEXT_CAPTURE_UNIT_BOUND } from "../../../src/extraction/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const MiB = 1048576;
 const register = (rows) => homesOver(rows);
@@ -30,7 +28,7 @@ async function home(bytes, { ct = "text/plain", format = "undetermined", fromTex
   rows.set(d, { bundleId: "INFO-1", path: "f", encoding: "binary", bytes: u8.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, u8);
   const document = doc({ digest: d, bytes: u8.length, ct, format, fromText });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d, bytes: u8, document };
 }
 const readAll = async (w, d, extra = {}) => { let a, n = 0; do { a = await w.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {}, ...extra }); } while (a.more && ++n < 400); return a; };

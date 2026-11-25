@@ -6,9 +6,6 @@ import assert from "node:assert/strict";
 import { world, V } from "./fixture.mjs";
 import { provenanceRouteOps } from "../../../src/provenance-routes/ops.mjs";
 import { provenanceRouteOps as reexported } from "../../../src/provenance-routes/index.mjs";
-/* A live file as record-core's readFile answers it (an inline file, a blob file, or null): its sha256;
-   anything else fails the test that reads it. */
-const shaOf = (f) => { if (!f) throw new Error("expected a live file"); return f.sha256; };
 
 const ops = (w, query = "", body = null) => provenanceRouteOps(w.routes, new URL(`http://do/?${query}`), body);
 const qs = (o) => new URLSearchParams(o).toString();
@@ -34,10 +31,10 @@ test("R9: provenancechain, provenanceroute and provenanceroutes take the bundle,
     const r = ops(w, qs({ ...stamped, ...(apply === null ? {} : { apply }) })).provenancechain();
     assert.deepEqual([r.ok, r.applied, r.changed], [true, false, 1], `apply=${apply}`);
   }
-  const reg0 = shaOf(w.record.readFile("INFO-2026-0001-c", "data/provenance.json"));
+  const reg0 = w.record.readFile("INFO-2026-0001-c", "data/provenance.json").sha256;
   const applied = ops(w, qs({ ...stamped, apply: "1" })).provenancechain();
   assert.deepEqual([applied.ok, applied.applied], [true, true], JSON.stringify(applied));
-  assert.notEqual(shaOf(w.record.readFile("INFO-2026-0001-c", "data/provenance.json")), reg0, "the chain was written");
+  assert.notEqual(w.record.readFile("INFO-2026-0001-c", "data/provenance.json").sha256, reg0, "the chain was written");
   assert.equal(ops(w, qs({ bundleId: "INFO-2026-0001-c", viewer: V("ruth") })).provenancechain().reason, "NO_AUTHOR",
                "the author is the query's stamp");
   /* The body's identity is never read: an author or viewer in the body reaches nothing. */

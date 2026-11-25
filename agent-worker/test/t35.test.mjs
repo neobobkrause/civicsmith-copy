@@ -18,7 +18,6 @@ import { MODES, OPTION_KEYS } from "../../agent-harness/src/harness.mjs";
 import { MODEL_FOR_MODE } from "../../agent-model/src/model.mjs";
 import { ASK_BOUNDS } from "../../bio-plane/src/run-rules/index.mjs";
 import { MEMBER } from "./account.mjs";
-import { builtManifest } from "./built.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 let pass = 0, fail = 0;
@@ -627,8 +626,8 @@ section("R65 · this member re-exports no other module's code");
   t("R65: src/index.mjs's import closure holds neither, and holds agent-harness' and agent-model's own files",
     [GONE.filter((g) => closure.has(g)), closure.has(join(REPO, "agent-harness/src/harness.mjs")), closure.has(join(REPO, "agent-model/src/model.mjs"))],
     [[], true, true]);
-  const manifest = builtManifest();
-  t("R65: the manifest of the bundle scripts/build.mjs builds names neither file",
+  const manifest = JSON.parse(readFileSync(join(MEMBER_DIR, "dist/agent-worker.bundle.json"), "utf8"));
+  t("R65: the committed bundle's manifest names neither file",
     (manifest.inputs || []).map((i) => i.path).filter((p) => p === "src/harness.mjs" || p === "src/subsession.mjs"), []);
 }
 

@@ -256,11 +256,10 @@ export class MoneyChecks {
     let s;
     try { s = this.money.summable({ factIds: ids }); } catch (e) { return { undetermined: true, why: localize("money-checks.index.money_could_not_answer_message", "money could not answer: {message}", { message: String(e.message) }) }; }
     if (!s || s.ok === false) return { refused: s || { reason: "UNANSWERED" } };
-    let acc = factFigure(facts[0]);
-    for (const f of facts.slice(1)) {
-      const next = add(acc, factFigure(f));
-      if (next.refused) return { refused: { reason: next.refused, why: next.why } };
-      acc = next;
+    let acc = null;
+    for (const f of facts) {
+      acc = acc === null ? factFigure(f) : add(acc, factFigure(f));
+      if (acc && acc.refused) return { refused: { reason: acc.refused, why: acc.why } };
     }
     return { figure: acc };
   }
@@ -291,10 +290,7 @@ export class MoneyChecks {
     if (a.refused || c.refused) return MoneyChecks.#answer(check, { refused: a.refused || c.refused, sums, read, parameters });
     if (a.undetermined || c.undetermined) return MoneyChecks.#answer(check, { holds: "undetermined", why: (a.why || c.why), sums, read, parameters });
     if (a.empty) return MoneyChecks.#answer(check, { holds: "undetermined", why: word("money-checks.why.award_amount_held"), sums, read, parameters });
-    const share = shareFigure(p.value);
-    if (!share || "refused" in share || !a.figure || !c.figure)
-      return MoneyChecks.#answer(check, { holds: "undetermined", why: word("money-checks.why.threshold_stated"), sums, read, parameters });
-    const limit = multiply(a.figure, share);
+    const limit = multiply(a.figure, shareFigure(p.value));
     sums.share_of_award = limit;
     const r = MoneyChecks.#fromRelation(relation(c.figure, limit), word("money-checks.change_orders_sum"),
                                         word("money-checks.change_orders_sum_above"));

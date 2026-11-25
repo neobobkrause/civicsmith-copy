@@ -18,12 +18,7 @@ import { createHash } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { makeZip, crc32 } from "./make-zip.mjs";
 import { hash32, drawAt, ASCII_VOCAB, canonical } from "./seeded.mjs";
-/** @import { Recipe, GeneratedFile } from './corpus.mjs' */
 
-/**
- * The kinds this generator builds.
- * @type {readonly string[]}
- */
 export const KINDS = Object.freeze(["png", "bmp", "gif", "tiff"]);
 const TYPES = { png: "image/png", bmp: "image/bmp", gif: "image/gif", tiff: "image/tiff" };
 const EXT = { png: "png", bmp: "bmp", gif: "gif", tiff: "tif" };
@@ -55,28 +50,17 @@ const GLYPHS = {
   _: "00000 00000 00000 00000 00000 00000 11111", " ": "00000 00000 00000 00000 00000 00000 00000",
 };
 const FONT = Object.fromEntries(Object.entries(GLYPHS).map(([ch, rows]) => [ch, rows.split(" ").map((r) => [...r].map((b) => b === "1"))]));
-/**
- * The characters the bitmap font draws; a page's text uses only these.
- * @type {string}
- */
+/** The characters the bitmap font draws; a page's text uses only these. */
 export const FONT_CHARS = Object.freeze(Object.keys(GLYPHS).join(""));
 
-/**
- * The scale (font pixels to page pixels), advance and line height at a dpi.
- * @param {number} [dpi] dots per inch, 150 when not given
- * @returns {{scale: number, advance: number, lineHeight: number, margin: number}}
- */
+/** The scale (font pixels to page pixels), advance and line height at a dpi. */
 export function metrics(dpi = 150) {
   const scale = Math.max(1, Math.round(dpi / 50));
   return { scale, advance: 6 * scale, lineHeight: 11 * scale, margin: 8 * scale };
 }
 
 /** Draws `lines` on a white grey page of `width` x `height` (0 ink, 255 paper), top-left first; a line that does not
- *  fit whole is not drawn. Answers `{data, drawn}` (the indexes of the lines drawn).
- * @param {string[]} lines the text lines, top first
- * @param {{width: number, height: number, dpi?: number}} page the page's size in pixels and its dpi (150 when not given)
- * @returns {{data: Uint8Array, drawn: number[]}} one grey byte a pixel, row by row
- * @throws {Error} when a line that fits has a character the font cannot draw */
+ *  fit whole is not drawn. Answers `{data, drawn}` (the indexes of the lines drawn). */
 export function renderLines(lines, { width, height, dpi = 150 }) {
   const { scale, advance, lineHeight, margin } = metrics(dpi);
   const data = new Uint8Array(width * height).fill(255);
@@ -97,26 +81,14 @@ export function renderLines(lines, { width, height, dpi = 150 }) {
   return { data, drawn };
 }
 
-/**
- * The page size that holds `lines` at a dpi: a letter page, taller when the lines need it.
- * @param {string[]} lines the text lines
- * @param {number} [dpi] dots per inch, 150 when not given
- * @returns {{width: number, height: number}} in pixels
- */
+/** The page size that holds `lines` at a dpi: a letter page, taller when the lines need it. */
 export function pageSize(lines, dpi = 150) {
   const { advance, lineHeight, margin } = metrics(dpi);
   const longest = Math.max(0, ...lines.map((l) => l.length));
   return { width: Math.max(Math.round(8.5 * dpi), 2 * margin + longest * advance), height: Math.max(Math.round(11 * dpi), 2 * margin + lines.length * lineHeight) };
 }
 
-/**
- * The text lines of page `p` (1-based) of a recipe with `n` lines a page.
- * @param {string} seed the recipe's seed
- * @param {number} p the page, from 1
- * @param {number} n the lines on the page
- * @param {readonly string[]} [vocab] the words drawn from, ASCII_VOCAB when not given
- * @returns {string[]} each `<seed>-p<page>-l<line> <word>`
- */
+/** The text lines of page `p` (1-based) of a recipe with `n` lines a page. */
 export function pageLines(seed, p, n, vocab = ASCII_VOCAB) {
   return Array.from({ length: n }, (_, i) => `${seed}-p${p}-l${i + 1} ${vocab[hash32(seed, p, i + 1) % vocab.length]}`);
 }
@@ -478,12 +450,7 @@ function encode(recipe, p, pages, pad) {
 
 const POLYGLOT = () => makeZip([{ name: "polyglot.txt", data: "polyglot" }]);
 
-/**
- * The picture of a recipe (R19, R20): `{kind, ext, type, size, truth, chunks(), bytes()}`; the truth is the one above, with `size`.
- * @param {Recipe} recipe a recipe of kind png, bmp, gif or tiff and its options
- * @returns {GeneratedFile}
- * @throws {Error} when the kind, mode, seed, page count, degradation, TIFF option or polyglot is not one this generator writes, or the picture is over size.bytes or cannot grow to it exactly
- */
+/** The picture of a recipe (R19, R20): `{kind, ext, type, size, truth, chunks(), bytes()}`. */
 export function generate(recipe) {
   const p = plan(recipe);
   const pages = pagesOf(recipe, p);
@@ -506,12 +473,7 @@ export function generate(recipe) {
   };
 }
 
-/**
- * The truth of a recipe without encoding its file (R24).
- * @param {Recipe} recipe a recipe of kind png, bmp, gif or tiff and its options
- * @returns {Object<string, any>} the truth described at the top of this file, with `size` (size.bytes, or null)
- * @throws {Error} when the recipe's plan or pages are refused, as by generate
- */
+/** The truth of a recipe without encoding its file (R24). */
 export function truthOf(recipe) {
   const p = plan(recipe);
   const t = truthFrom(recipe, p, pagesOf(recipe, p));
@@ -520,8 +482,5 @@ export function truthOf(recipe) {
   return t;
 }
 
-/**
- * The key a recipe is cached by (for a caller that keys its own derived files).
- * @type {(recipe: Recipe) => string} 24 hex digits of the SHA-256 of the canonical recipe
- */
+/** The key a recipe is cached by (for a caller that keys its own derived files). */
 export const keyOf = (recipe) => createHash("sha256").update(canonical(recipe)).digest("hex").slice(0, 24);

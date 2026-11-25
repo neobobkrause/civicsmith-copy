@@ -8,10 +8,7 @@
    or changed here needs its golden entry recorded the same way, from the catalogue as it stood before the move
    (branch `snapshot/pre-refactor-2026-09-25`, or `tranche/T19` before this job's merge). Re-pinned once since, at T35
    (INQUIRY-GRAMMAR #8; K1972): `content`'s C-2.8 `CONTENT_EXTENT_NO_PRODUCER` sentence reads "Nothing produces a dom
-   address yet" (DEC-149's wording, T35-26), the only difference from the findings as recorded. Re-pinned again at
-   INQUIRY-GRAMMAR #3 (Process4): the C-2.8 case-facts finding (R1, CASE-5b) names the fact it refuses again, as the
-   catalogue's named its key, now in the member's words R69 asks ("this inquiry carries the case's identity, a case
-   fact of its own: ...", repair "remove the case's identity from this inquiry"); nothing else differs. */
+   address yet" (DEC-149's wording, T35-26), the only difference from the findings as recorded. */
 
 const T0 = "2026-07-01T00:00:00Z";
 export const INFO = "INFO-2026-0001-a", INFO2 = "INFO-2026-0002-b", INFO3 = "INFO-2026-0003-obs";

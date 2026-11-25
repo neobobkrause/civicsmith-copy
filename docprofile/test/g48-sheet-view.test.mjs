@@ -97,13 +97,11 @@ test("R19 R39 classified_over is answered only when the view was used, with the 
   const base = readText({ document: t.slice(0, MB) }, {});
   assert.equal("classified_over" in base, false);
   const r = readText(csv(t), {});
-  const co = r.classified_over;
-  if (!co) throw new Error("this text is over the bound, so classified_over is answered");
-  assert.deepEqual(Object.keys(co), ["chars", "of", "head_chars", "windows", "sheet_heads", "heads_used"]);
+  assert.deepEqual(Object.keys(r.classified_over), ["chars", "of", "head_chars", "windows", "sheet_heads", "heads_used"]);
   assert.deepEqual(Object.keys(r).filter((k) => k !== "classified_over"), Object.keys(base));
-  assert.ok(r.why.endsWith(`; ${dp.classifiedWhy(co)}`), "the sentence stating the view ends why");
-  for (const v of [dp.CLASSIFY_WHOLE_MAX_CHARS, co.chars, t.length, co.head_chars, co.windows.length])
-    assert.ok(dp.classifiedWhy(co).includes(String(v)), String(v));
+  assert.ok(r.why.endsWith(`; ${dp.classifiedWhy(r.classified_over)}`), "the sentence stating the view ends why");
+  for (const v of [dp.CLASSIFY_WHOLE_MAX_CHARS, r.classified_over.chars, t.length, r.classified_over.head_chars, r.classified_over.windows.length])
+    assert.ok(dp.classifiedWhy(r.classified_over).includes(String(v)), String(v));
   // exactly the bound: whole; one over: sampled
   const at = sheetOf(dp.CLASSIFY_WHOLE_MAX_CHARS).slice(0, dp.CLASSIFY_WHOLE_MAX_CHARS);
   reset();

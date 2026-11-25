@@ -22,11 +22,10 @@ export function bootAs(world, me, options = {}) {
   return boot({ ...options, ...doorAs(world, me) });
 }
 
-/** `world.boot(me)` with its door counted, so `settle` waits for the world's work behind a test's wrapper of it; `now` is the world's clock,
- *  which the page's clock starts at, so the session the world made (R32: its record's `e`) is read by the page as the store reads it. */
+/** `world.boot(me)` with its door counted, so `settle` waits for the world's work behind a test's wrapper of it. */
 export function doorAs(world, me) {
   const { door, session } = world.boot(me);
-  return { door: counted(door), session, now: world.now() };
+  return { door: counted(door), session };
 }
 
 /** `n` open obligations in `me`'s queue, by `n` real `checkrequest` acts of `me` on a project they start. Answers the queue's items. */

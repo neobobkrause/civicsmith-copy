@@ -137,28 +137,6 @@ function doneArchiveRelease(view, answer, cs) {
   cs.set("only", null);
 }
 
-/**
- * One act of a screen as the shell takes it (`interface-shell` R21): the op it sends, the reads it asks again, its label's key, the
- * functions that make its request and take its answer, and, where it has them, its reason field and its refusals drawn in words.
- * @typedef {Object} ArchiveAct
- * @property {string} op
- * @property {readonly string[]} rereads
- * @property {string} label a key of `setup-words`
- * @property {(view: any, el: any, cs: any, extra?: any) => any} send
- * @property {(view: any, answer: any, cs: any) => void} [done]
- * @property {string} [reasonField]
- * @property {Readonly<Object<string, (refusal: any, cs: any) => string>>} [refusals]
- */
-/**
- * A screen as the shell takes it (`interface-shell` R21): its id, its reads, its drawing and its acts.
- * @typedef {Object} ArchiveScreen
- * @property {string} id
- * @property {(view: any) => Object<string, any>} reads
- * @property {(cs: any, view: any) => string} render
- * @property {readonly Readonly<ArchiveAct>[]} acts
- */
-/** The `archive` screen (R15, R20, R30): an archive's entries by state, its grade note, and the hold strip's acts over its filed rows.
- * @type {Readonly<ArchiveScreen>} */
 export const ARCHIVE_SCREEN = Object.freeze({
   id: "archive",
   reads: archiveReads,

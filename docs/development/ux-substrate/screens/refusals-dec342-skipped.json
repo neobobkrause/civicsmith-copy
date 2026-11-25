@@ -557,6 +557,13 @@
    ]
   },
   {
+   "code": "PLATFORM_LIMIT",
+   "why": "per-reference capture outcome recorded in the capture record; not a refusal of a request",
+   "where": [
+    "subresources.mjs:1154"
+   ]
+  },
+  {
    "code": "PREPARATION_UNDETERMINED",
    "why": "internal: the case preparation could not be found after publication stored it",
    "where": [

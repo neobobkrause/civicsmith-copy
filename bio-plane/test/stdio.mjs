@@ -94,16 +94,6 @@ const applied = [];
    (which imports it), must not double-apply or throw. */
 let done = false;
 
-/**
- * @typedef {Object} StdioResult
- * @property {string[]} streams the streams made synchronous ("stdout", "stderr")
- * @property {boolean} already true when an earlier call already applied it
- */
-
-/**
- * Makes stdout and stderr write synchronously where the stream allows it (R6, R7). Never throws.
- * @returns {StdioResult}
- */
 export const synchronousStdio = () => {
   if (done) return { streams: applied.slice(), already: true };
   done = true;

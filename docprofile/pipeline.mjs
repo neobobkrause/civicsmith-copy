@@ -46,59 +46,19 @@ const pipelineText = (bytes) => {
   try { return new TextDecoder("utf-8", { fatal: false }).decode(bytes); } catch { return ""; }
 };
 
-/**
- * @typedef {Object} Layers the six layers, named so a trail entry and `stopped_at` spell the same name (R11)
- * @property {string} STACK which stack served it
- * @property {string} BYTES is anything different at the byte level
- * @property {string} NOTEWORTHY is the difference noteworthy
- * @property {string} CONTENT_TYPE what type of content changed
- * @property {string} MEANING is the change meaningful for that type
- * @property {string} CONNECTIONS what connections it implies
- */
-/** @type {Layers} */
 export const LAYER = {
   STACK: "L1_stack", BYTES: "L2_bytes", NOTEWORTHY: "L3_noteworthy",
   CONTENT_TYPE: "L4_content_type", MEANING: "L5_meaning", CONNECTIONS: "L6_connections",
 };
 
-/**
- * @typedef {Object<string, *>} TrailEntry one layer reached and what it said (R11): `layer`, one of `LAYER`'s values;
- *   `said`, what that layer said in words; and whatever that layer names beside it (the handler, the two digests, the
- *   characters normalised, the type, the event count)
- * @bound trail: one entry per layer reached, in the order reached; its last entry's `layer` is `stopped_at`
- */
-/**
- * @typedef {Object} Assessment what the layers said about two captures of one address (R11–R17)
- * @property {"unwatchable" | "identical" | "unchanged" | "restyled" | "undetermined" | "changed" | "routine"} verdict
- * @property {boolean | null} meaningful true only for `changed`; null where nothing was judged
- * @property {*[]} events the graded events the content type stated, from the one catalogue
- * @property {*[]} connections referential and temporal entries, never collapsed into one shape
- * @property {TrailEntry[]} trail
- * @property {*} profile `site-profiles`' `profileRecord` of the L1 identification
- * @property {string} stopped_at the last layer reached
- * @property {*} why why the verdict is this one, in words
- * @property {*} [confirmation] what was verified unchanged, whenever anything was; null where nothing was
- * @property {string} [content_type] the winning content type's key, once L4 is reached
- * @property {*} [significance] the worst significance of `events`, on a verdict the content type judged
- * @bound meaningful: always `worstSignificance(events) === "event"`, never a second fact beside the events
- * @bound profile: present on every answer, since L1 runs first
- */
-
-/**
- * Run the layers over two captures of one address.
+/** Run the layers over two captures of one address.
  *
  *  `before` and `after` are byte arrays; `ctx` carries the locator, the response
  *  headers, a sha256, and optionally `now` and `before_at` / `after_at` so L5 can
  *  reason about time, which a calendar and an agenda both need.
  *
  *  Always returns a result with `stopped_at`, so a reader can see how far the
- *  reasoning got and why. A verdict whose depth is invisible cannot be audited.
- * @param {*} before the bytes of the earlier capture; anything that is not bytes reads as no text
- * @param {*} after the bytes of the later capture
- * @param {*} ctx the locator, the headers, a sha256, and optionally `now`, `before_at` and `after_at`
- * @returns {Promise<Assessment>}
- * @bound result: never throws; a content type's own `parse`, `assess` or `connections` throwing is caught and stated
- */
+ *  reasoning got and why. A verdict whose depth is invisible cannot be audited. */
 export async function assess(before, after, ctx) {
   const trail = [];
   const note = (layer, said, detail) => { trail.push({ layer, said, ...(detail || {}) }); };

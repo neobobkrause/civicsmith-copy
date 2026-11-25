@@ -5,7 +5,6 @@ import assert from "node:assert/strict";
 import { odtEntry, odsEntry, odpEntry, odfEvidentiaryDigest, ODF_REPEAT_EXPANSION_MAX } from "../../../src/odf.mjs";
 import { MEASURED_OOXML_TEXT_BOUND_BYTES } from "../../../src/ooxml.mjs";
 import { pkg, metaXml, sha256Hex } from "./pkg.mjs";
-/** @import { OdfEntry } from "../../../src/odf.mjs" */
 
 const MAX = 262144;
 const UNITS = { text: "undetermined", why: "over_repeat_bound", units: MAX + 1, bound: MAX,
@@ -104,12 +103,10 @@ test("R45 text:c=\"2000000000\" answers over_repeat_bound on every entry, never 
   const huge = spaces(2000000000);
   await refusedOds(ods(row(cell(huge))), UNITS);
   const notes = (t) => `<presentation:notes><draw:frame><draw:text-box><text:p>${t}</text:p></draw:text-box></draw:frame></presentation:notes>`;
-  /** @type {[OdfEntry, string, string][]} */
-  const cases = [
+  for (const [entry, body, unit] of [
     [odtEntry, `<text:p>x<office:annotation><text:p>${huge}</text:p></office:annotation></text:p><text:p>${huge}</text:p>`, "paragraphs"],
     [odpEntry, `<draw:page><draw:frame><draw:text-box><text:p>${huge}</text:p></draw:text-box></draw:frame>${notes(huge)}</draw:page>`, "slides"],
-  ];
-  for (const [entry, body, unit] of cases) {
+  ]) {
     const f = entry.format;
     const t = await entry.text(pkg(f, { body }));
     assert.equal(t.ok, true);

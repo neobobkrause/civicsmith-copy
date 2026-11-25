@@ -4,7 +4,7 @@
    `testify` writes. Field and identifier names stay. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, V, inlineText } from "./fixture.mjs";
+import { world, sha, V } from "./fixture.mjs";
 import { PROVENANCE_ACT_CHECKS } from "../../../src/provenance/checks.mjs";
 import { ARCHIVE_VIA, DOORBELL_VIA } from "../../../src/provenance/index.mjs";
 
@@ -50,9 +50,9 @@ test("R28, DEC-149 (index.mjs:1387, :1402): 'The author is taken from the signed
   const w = world();
   const t = w.prov.testify({ words: "I was there.", observedAt: "2026-09-20", author: V("ruth") });
   assert.equal(t.ok, true, JSON.stringify(t));
-  const md = inlineText(w.record.readFile(t.bundle_id, "bundle.md"));
+  const md = w.record.readFile(t.bundle_id, "bundle.md").text;
   assert.match(md, / The author is taken from the signed-in session, not from the request\. /);
-  const doc = JSON.parse(inlineText(w.record.readFile(t.bundle_id, "data/provenance.json"))).documents[0];
+  const doc = JSON.parse(w.record.readFile(t.bundle_id, "data/provenance.json").text).documents[0];
   assert.equal(doc.authority_basis, `the author of these bytes is the signed-in member taken from the session at op=testify, `
     + `${t.recorded_at}; the request could not name it`);
   assert.doesNotMatch(md, OLD);

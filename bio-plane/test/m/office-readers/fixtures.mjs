@@ -5,28 +5,6 @@
  * fixture can declare sizes it does not carry, or carry a corrupt member. */
 import { deflateRawSync, crc32 as zcrc32 } from "node:zlib";
 
-/**
- * @typedef {Object} ZipMember
- * @property {string} name the member's path in the archive
- * @property {string|Uint8Array} [data] its bytes (text is UTF-8); absent is empty
- * @property {number} [method] 8 deflate (absent), 0 stored
- * @property {{usize?: number, crc?: number}} [cd] central-directory fields that override the true ones
- * @property {{usize?: number}} [ld] the declared size in the local header
- */
-/**
- * @typedef {Object} RelFixture
- * @property {string} id
- * @property {string} [type] absent is RT.hyperlink
- * @property {string} target
- * @property {boolean} [external] writes TargetMode="External"
- */
-/** @typedef {string|Uint8Array} PartData a part's text, or its bytes as written */
-
-/**
- * Text as its UTF-8 bytes; bytes are handed back unchanged.
- * @param {string|Uint8Array} s
- * @returns {Uint8Array}
- */
 export const enc = (s) => (typeof s === "string" ? new TextEncoder().encode(s) : s);
 
 function u16(v) { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, v, true); return b; }
@@ -40,10 +18,7 @@ function cat(parts) {
 }
 
 /** members: [{ name, data, method = 8, cd: {usize, crc}, ld: {usize} }] -> ZIP bytes (`ld` states the declared size in
- *  the local header too, so a member can claim a size both headers agree on). The office readers' container fixtures
- *  (R2, R5, R12, R35).
- *  @param {ZipMember[]} members in archive order
- *  @returns {Uint8Array} */
+ *  the local header too, so a member can claim a size both headers agree on). */
 export function zip(members) {
   const out = [];
   let offset = 0;
@@ -71,38 +46,24 @@ export function zip(members) {
 
 const REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships";
 const R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-/**
- * The OPC relationship types the fixtures write, by short name.
- * @type {Record<string, string>}
- */
 export const RT = {
   office: `${R}/officeDocument`, hyperlink: `${R}/hyperlink`, sheet: `${R}/worksheet`,
   table: `${R}/table`, slide: `${R}/slide`, notes: `${R}/notesSlide`, image: `${R}/image`,
   oleObject: `${R}/oleObject`, drawing: `${R}/drawing`, package: `${R}/package`,
 };
 
-/** A .rels part: [{id, type, target, external}]
- *  @param {RelFixture[]} list
- *  @returns {string} the part's XML */
+/** A .rels part: [{id, type, target, external}] */
 export function rels(list) {
   return `<?xml version="1.0"?><Relationships xmlns="${REL_NS}">`
     + list.map((r) => `<Relationship Id="${r.id}" Type="${r.type ?? RT.hyperlink}" Target="${r.target}"${r.external ? ' TargetMode="External"' : ""}/>`).join("")
     + `</Relationships>`;
 }
 
-/**
- * Each flavour's main-part content type, as the package declares it (R2).
- * @type {Record<string, string>} keyed "docx", "xlsx", "pptx"
- */
 export const MAIN_TYPE = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
 };
-/**
- * Each flavour's main part (R2).
- * @type {Record<string, string>} keyed "docx", "xlsx", "pptx"
- */
 export const MAIN_PART = { docx: "word/document.xml", xlsx: "xl/workbook.xml", pptx: "ppt/presentation.xml" };
 
 function contentTypes(flavour, mainType = MAIN_TYPE[flavour]) {
@@ -113,10 +74,7 @@ function contentTypes(flavour, mainType = MAIN_TYPE[flavour]) {
 }
 
 /** The OPC skeleton of a flavour: content types and the package rels.
- *  `mainType` declares another main content type (a macro-enabled twin's) (R33).
- *  @param {string} flavour "docx", "xlsx" or "pptx"
- *  @param {string} [mainType] absent is MAIN_TYPE[flavour]
- *  @returns {ZipMember[]} */
+ *  `mainType` declares another main content type (a macro-enabled twin's). */
 export function skeleton(flavour, mainType = MAIN_TYPE[flavour]) {
   return [
     { name: "[Content_Types].xml", data: contentTypes(flavour, mainType) },
@@ -124,11 +82,6 @@ export function skeleton(flavour, mainType = MAIN_TYPE[flavour]) {
   ];
 }
 
-/**
- * A docProps/core.xml part; each property present only when given (R10).
- * @param {{creator?: *, lastModifiedBy?: *, revision?: *, created?: *, modified?: *, title?: *}} [o]
- * @returns {string}
- */
 export const core = (o = {}) =>
   `<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">`
   + (o.creator != null ? `<dc:creator>${o.creator}</dc:creator>` : "")
@@ -142,17 +95,11 @@ export const core = (o = {}) =>
 /* ------------------------------------------------------------------ DOCX */
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-/** A word/document.xml around `body`. @param {string} body @returns {string} */
 export const wdoc = (body) => `<?xml version="1.0"?><w:document ${W}><w:body>${body}</w:body></w:document>`;
-/** A `<w:p>` of the runs. @param {...string} runs @returns {string} */
 export const wp = (...runs) => `<w:p>${runs.join("")}</w:p>`;
-/** A `<w:r>` of the text. @param {*} t @returns {string} */
 export const wr = (t) => `<w:r><w:t xml:space="preserve">${t}</w:t></w:r>`;
 
-/** A DOCX: { body, rels:[...], comments, core, extra:[members], cd:{usize...} for the main part }
- *  @param {{body?: string, document?: PartData, rels?: PartData, comments?: PartData, core?: PartData, extra?: ZipMember[],
- *    mainType?: string, mainCd?: Object, commentsCd?: Object}} [o]
- *  @returns {Uint8Array} */
+/** A DOCX: { body, rels:[...], comments, core, extra:[members], cd:{usize...} for the main part } */
 export function docx(o = {}) {
   return zip([
     ...skeleton("docx", o.mainType),
@@ -167,22 +114,15 @@ export function docx(o = {}) {
 /* ------------------------------------------------------------------ PPTX */
 
 const P = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-/** One text shape per entry of `texts`; `hlink` puts an r:id click on the first run of that shape.
- *  @param {*[]} texts
- *  @param {{show?: *, hlinks?: Object<number, string>}} [opts] `show` written on `<p:sld>` when not null
- *  @returns {string} */
+/** One text shape per entry of `texts`; `hlink` puts an r:id click on the first run of that shape. */
 export const slideXml = (texts, { show = null, hlinks = {} } = {}) =>
   `<?xml version="1.0"?><p:sld ${P}${show != null ? ` show="${show}"` : ""}><p:cSld><p:spTree>`
   + texts.map((t, i) => `<p:sp><p:txBody><a:p><a:r>${hlinks[i] ? `<a:rPr><a:hlinkClick r:id="${hlinks[i]}"/></a:rPr>` : ""}<a:t>${t}</a:t></a:r></a:p></p:txBody></p:sp>`).join("")
   + `</p:spTree></p:cSld></p:sld>`;
-/** A notesSlide part of one text. @param {*} t @returns {string} */
 export const notesXml = (t) => `<?xml version="1.0"?><p:notes ${P}><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>${t}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:notes>`;
 
 /** A PPTX. slides: [{ file, texts, show, hlinks, rels:[...], notes, sldIdShow }] listed in DECK order;
- *  their part names are `ppt/slides/<file>`, so a deck can be ordered unlike its filenames.
- *  @param {{slides?: Object<string, *>[], presentation?: PartData, presRels?: PartData|false, mainType?: string, mainCd?: Object,
- *    core?: PartData, extra?: ZipMember[]}} [o]
- *  @returns {Uint8Array} */
+ *  their part names are `ppt/slides/<file>`, so a deck can be ordered unlike its filenames. */
 export function pptx(o = {}) {
   const slides = o.slides ?? [{ file: "slide1.xml", texts: ["Title"] }];
   const presRels = rels(slides.map((s, i) => ({ id: `rId${i + 10}`, type: RT.slide, target: `slides/${s.file}` })));
@@ -208,9 +148,7 @@ export function pptx(o = {}) {
 /* ------------------------------------------------------------------ XLSX */
 
 const S = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
-/** rows: [{ r, hidden, cells:[{ r:"A1", t, v, f, is }] }], cols: [{min,max,hidden}], hyperlinks: [{ref, id, location}]
- *  @param {{rows?: Object[], cols?: Object[], hyperlinks?: Object[]}} [sheet]
- *  @returns {string} a worksheet part's XML */
+/** rows: [{ r, hidden, cells:[{ r:"A1", t, v, f, is }] }], cols: [{min,max,hidden}], hyperlinks: [{ref, id, location}] */
 export function sheetXml({ rows = [], cols = [], hyperlinks = [] } = {}) {
   return `<?xml version="1.0"?><worksheet ${S}>`
     + (cols.length ? `<cols>${cols.map((c) => `<col min="${c.min}" max="${c.max}"${c.hidden ? ' hidden="1"' : ""}/>`).join("")}</cols>` : "")
@@ -222,10 +160,7 @@ export function sheetXml({ rows = [], cols = [], hyperlinks = [] } = {}) {
 }
 
 /** An XLSX. sheets: [{ name, state, data (sheetXml opts) | xml, rels:[...], cd }] in workbook order,
- *  stored as xl/worksheets/sheet<i+1>.xml. definedNames: [{name, ref, localSheetId, hidden}] (R5, R9, R30).
- *  @param {{sheets?: Object[], workbook?: PartData, definedNames?: Object[], mainType?: string, workbookCd?: Object,
- *    wbRels?: PartData|false, sharedStrings?: PartData, sharedStringsCd?: Object, core?: PartData, extra?: ZipMember[]}} [o]
- *  @returns {Uint8Array} */
+ *  stored as xl/worksheets/sheet<i+1>.xml. definedNames: [{name, ref, localSheetId, hidden}]. */
 export function xlsx(o = {}) {
   const sheets = o.sheets ?? [{ name: "Sheet1", data: { rows: [{ r: 1, cells: [{ r: "A1", t: "inlineStr", is: "x" }] }] } }];
   const wb = o.workbook ?? (`<?xml version="1.0"?><workbook ${S}><sheets>`
@@ -246,20 +181,15 @@ export function xlsx(o = {}) {
   return zip([...members, ...(o.extra ?? [])]);
 }
 
-/** An xl/sharedStrings.xml of the strings. @param {*[]} strings @returns {string} */
 export const sst = (strings) => `<?xml version="1.0"?><sst ${S}>${strings.map((t) => `<si><t>${t}</t></si>`).join("")}</sst>`;
-/** A table part naming `ref` (R9). @param {string} name @param {string} ref @returns {string} */
 export const tablePart = (name, ref) => `<?xml version="1.0"?><table ${S} id="1" name="${name}" displayName="${name}" ref="${ref}"/>`;
 
-/** A member whose CRC is declared wrong, so readPart refuses it (crc_mismatch).
- *  @type {{crc: number}} */
+/** A member whose CRC is declared wrong, so readPart refuses it (crc_mismatch). */
 export const CORRUPT = { crc: 0x12345678 };
 /** A declared uncompressed size over the streamed ceiling, 32 MiB (R12, R35: the text is neither held nor read in
- *  pieces); the bytes themselves are small.
- *  @type {{usize: number}} */
+ *  pieces); the bytes themselves are small. */
 export const OVER = { usize: 32 * 1024 * 1024 + 1 };
-/** One over the 20 MiB bound a reader holds whole: such a part is read in pieces (R35).
- *  @type {{usize: number}} */
+/** One over the 20 MiB bound a reader holds whole: such a part is read in pieces (R35). */
 export const OVER_WHOLE = { usize: 20 * 1024 * 1024 + 1 };
 
 /* ------------------------------------------------------------------ VBA (R32) */
@@ -269,9 +199,7 @@ export const OVER_WHOLE = { usize: 20 * 1024 * 1024 + 1 };
  * next eight tokens are literal bytes. Valid compressed data, written so the
  * fixture needs no compressor of its own to trust. A chunk here decompresses
  * to at most 3,584 bytes, so its compressed size (448 flag bytes + the
- * literals) stays inside a chunk's 4,096-byte payload. (R32)
- * @param {string|Uint8Array} data
- * @returns {Uint8Array} a compressed container */
+ * literals) stays inside a chunk's 4,096-byte payload. */
 export function ovbaCompress(data) {
   const src = enc(data);
   const out = [0x01];
@@ -324,9 +252,7 @@ function vbaDir(project, modules) {
  * sector, the directory, the mini FAT and the mini stream, every stream in
  * the mini stream (all are under the 4,096-byte cutoff). `tree` is
  * { name: Uint8Array | { ...subtree } }; siblings are chained right-ward in
- * CFB name order (length, then upper case), a valid if unbalanced tree. (R32)
- * @param {Object<string, *>} tree a stream's bytes or a storage's subtree, by name
- * @returns {Uint8Array} */
+ * CFB name order (length, then upper case), a valid if unbalanced tree. */
 export function cfb(tree) {
   const entries = [{ name: "Root Entry", type: 5, kids: [] }];
   const add = (obj, parent) => {
@@ -400,10 +326,7 @@ export function cfb(tree) {
 
 /** A vbaProject.bin: { project, modules:[{ name, source, stream?, document? }] }.
  *  `corrupt: [name]` writes those modules' streams as bytes that are no
- *  compressed container, so the module's source cannot be read. (R32)
- *  @param {{project?: string, modules?: {name: string, source?: string, stream?: string, document?: boolean}[],
- *    corrupt?: string[]}} [vba]
- *  @returns {Uint8Array} the vbaProject.bin bytes */
+ *  compressed container, so the module's source cannot be read. */
 export function vbaProject({ project = "VBAProject", modules = [], corrupt = [] } = {}) {
   const vba = {
     _VBA_PROJECT: new Uint8Array([0xcc, 0x61, 0xff, 0xff, 0x00, 0x00, 0x00]),

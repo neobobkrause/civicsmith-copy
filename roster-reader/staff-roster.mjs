@@ -41,104 +41,17 @@ import { hasNameSpan, isName, leadingName, withoutContacts, titlePatterns, title
          rosterWordPatterns, selfNamingLines, selfNamingLine, namedAs, eachLine, statedDate, datesIn, isUnitLine, UNIT_WORDS, EMAIL } from "./lines.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-/**
- * A reader's context, as `docprofile`'s registry hands it to a content type: the document's text, the view whose
- * words it reads (R8), the locator from a text offset to the document's own place, and the date asked about.
- * @typedef {Object} ReaderCtx
- * @property {string} [text]
- * @property {Object} [view]
- * @property {(offset: number) => any} [locate]
- * @property {any} [at]
- */
-/**
- * A type's verdict on one document (R1, R3, R11): matched with its confidence and signals, or not matched with why.
- * @typedef {Object} Detection
- * @property {boolean} match
- * @property {string} confidence one of `docprofile`'s `CONFIDENCE`
- * @property {string[]} [signals]
- * @property {string} [why]
- * @bound confidence: CERTAIN only with a self-naming line as well as the body's own evidence; NONE whenever match is false
- */
-/**
- * The document's own stated date (R2), as its line states it, placed where the document says.
- * @typedef {Object} StatedDate
- * @property {string} text
- * @property {string|null} date
- * @property {string|null} precision
- * @property {any} source
- */
-/**
- * The organisation as the document's title line names it (R2).
- * @typedef {Object} NamedOrganisation
- * @property {string} text
- * @property {any} source
- */
-/**
- * One roster row as its line states it (R2): a name with its title and unit, or, where the line does not divide
- * into a name and a title, the line kept whole with why. No contact point is carried (R4).
- * @typedef {Object} RosterRow
- * @property {string} [name]
- * @property {string} [title]
- * @property {string} [unit]
- * @property {string} [line]
- * @property {string} [why]
- * @property {any} source
- * @bound a row carries `name` or `line`, never both
- */
-/**
- * `staff_roster`'s reading (R2).
- * @typedef {Object} RosterReading
- * @property {RosterRow[]} rows
- * @property {{rows: number, divided: number, whole: number}} counts
- * @property {StatedDate|null} as_of
- * @property {string|null} as_of_why
- * @property {NamedOrganisation|null} organisation
- * @property {string|null} organisation_why
- * @property {any} also_satisfies
- * @property {any} at
- */
-/**
- * Two readings compared (R5): the catalogue's events `delisted`, `item_added` and `item_changed`, or, where either
- * side read no row, nothing claimed, with why (R11).
- * @typedef {Object} Assessment
- * @property {boolean|null} meaningful
- * @property {any} significance
- * @property {any[]} events
- * @property {{rows: number, intact: number}|null} confirmed
- * @property {string} why
- */
-/** @import { Entity } from "../docprofile/registry.mjs" */
-/**
- * A reading compared by `assessRows`: `docprofile`'s entity, keyed by a row's name or line (or a chart's box).
- * @typedef {Entity} RowEntity
- */
-/**
- * The `staff_roster` content type (R1, R2, R4, R5), for `docprofile`'s registry.
- * @typedef {Object} RosterType
- * @property {string} key `staff_roster`
- * @property {string} label
- * @property {number} version
- * @property {string} contract `docprofile`'s `CONTRACT.MEMBERSHIP`
- * @property {(ctx: ReaderCtx) => Detection} detect
- * @property {(ctx: ReaderCtx) => RosterReading} parse
- * @property {(a: {rows?: RosterRow[]}, b: {rows?: RosterRow[]}) => Assessment} assess compares the readings' rows only
- * @bound detect: allocates at most 32 bytes per byte of text, and holds one line at a time
- */
-
 /* The fewest lines that carry a name with more beside it for the rows to be the body. MEASURED with the
    first profile's proposed words (test/fixtures.mjs): the rosters carry 18 (the board roster), 32 and 131;
    the look-alikes that stop here carry at most 4 (the two-column directory sheet, FW-18's agenda). Five is
    the staff directory's own floor, kept the same so the two list types cannot drift apart. */
-/** @type {number} */
 export const ROSTER_FLOOR = 5;
 /* The share of a document's lines that carry a name. MEASURED: the rosters sit at 0.71 to 0.90; the
    documents past the floor that only this refuses at 0.23 (the business-resources letter). Several
    look-alikes carry a higher share (the directories, the EIR's commenter tables, the candidate list) and
    are refused by (2) and (3), which is why those rules are decided first. */
-/** @type {number} */
 export const ROSTER_SHARE = 0.35;
 /* `staff_directory`'s own deciding leg: this many distinct addresses at one domain is its shape. */
-/** @type {number} */
 export const DIRECTORY_FLOOR = 5;
 
 const ROW_NUMBER = /^(?:\d{1,3}[.)]?|[ivx]{1,5}[.)])\s+/i;
@@ -270,7 +183,6 @@ export function asOfOf(lines, selfLines) {
   return statedDate(lines.filter((x) => near.has(x)));
 }
 
-/** @type {RosterType} */
 export default {
   key: "staff_roster",
   label: localize("roster-reader.staff-roster.a_staff_or_membership", "a staff or membership roster"),
@@ -359,12 +271,7 @@ export function rowEntities(parsed) {
 }
 
 /** Two readings' rows compared (R5): gone `delisted`, added `item_added`, a title or unit moved
- *  `item_changed`, each from the catalogue. Nothing read on either side is a failed reader.
- * @param {RowEntity[]} before
- * @param {RowEntity[]} after
- * @param {string} what the document's kind in words, "roster" or "chart"
- * @returns {Assessment}
- */
+ *  `item_changed`, each from the catalogue. Nothing read on either side is a failed reader. */
 export function assessRows(before, after, what) {
   if (!before.length || !after.length)
     return { meaningful: null, significance: null, events: [], confirmed: null,

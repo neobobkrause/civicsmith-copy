@@ -30,7 +30,7 @@ async function home(lines) {
   bundle(w.s, "INFO-1");
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/csv", format: "csv", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: sha(JSON.stringify({ documents: [document] })) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   /* The read, to its end: the cursor loop `readHeld` answers `more` for. */
   let out;
   do out = await w.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {} }); while (out && out.more);

@@ -341,7 +341,6 @@ test("R51 R52 seatsSeed is an administrator's act and reads only held Legistar c
   const n = [w.reg.entities.ents.size, w.reg.lines.lines.length];
   assert.equal((await w.m.seatsSeed({ ...SHAS, by: "ruth" })).reason, "NOT_AN_ADMIN");
   const named = (endpoint) => localize("instance-setup.setup.the_request_names_no_capture", "the request names no capture of Legistar's {endpoint}. Nothing was seeded.", { endpoint });
-  /** @type {Array<[Record<string, any>, string, string]>} each case's arguments, its code and its sentence */
   const cases = [
     [{ ...SHAS, persons: null }, "SEED_CAPTURE_UNREADABLE", named("persons")],
     [{ ...SHAS, officerecords: [] }, "SEED_CAPTURE_UNREADABLE", named("officerecords")],

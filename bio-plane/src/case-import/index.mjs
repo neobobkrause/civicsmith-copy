@@ -1782,8 +1782,7 @@ export class CaseImport {
       /* check 2: the signature, against the key it embeds; listed when a held manifest lists that key */
       let statement = null;
       try { statement = docketStatement(i.case_id, seq, digest); } catch { statement = null; }
-      if (!statement || !signature) { fail("signature", localize("case-import.index.the_signature_does_not_verify", "the signature does not verify over the entry's statement ({reason})", { reason: "MALFORMED" })); continue; }
-      let v = await verifySshsig(signature, statement, NS_DOCKET, listed);
+      let v = statement && signature ? await verifySshsig(signature, statement, NS_DOCKET, listed) : { ok: false, reason: "MALFORMED" };
       let keyListed = v.ok === true;
       if (!v.ok && v.reason === "UNKNOWN_KEY" && v.keyB64) {
         v = await verifySshsig(signature, statement, NS_DOCKET, [v.keyB64]);

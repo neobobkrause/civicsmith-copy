@@ -119,7 +119,6 @@ test("R2 K1315 an off-the-record capture's attesting member is a row keyed captu
      `  - observation: ${OBS}`, "    level: null", "    shown: null", "    chosen_at_edition: null"],
     "an observation keeps its key; a capture takes it only in the observation's place");
   const fm = parseFrontmatter(["---", "format: bio-case-document/6", ...attributionFrontmatterLines([{ capture: CAP, level: "name", shown: "olive", chosen_at_edition: 1 }]), "---", ""].join("\n"));
-  assert.ok(fm.data, "the document has front matter");
   assert.deepEqual([fm.findings, fm.data.observation_attributions], [[], [{ capture: CAP, level: "name", shown: "olive", chosen_at_edition: 1 }]]);
   const body = attributionBodyLines([{ capture: CAP, level: "name", shown: "olive", chosen_at_edition: 1 }, { capture: CAP, level: null, why: "not chosen" }]);
   assert.equal(body[4], `- **${CAP}** — attributed to the name its author chose to appear under: olive — level \`name\`, chosen at edition 1.`);
@@ -139,9 +138,7 @@ test("R3 K1317 attestations: from material_attestations: to the next top-level k
   const spliced = [...lines.slice(0, at.f0), ...chosen, ...lines.slice(at.f1, at.b0), ...lines.slice(at.b1)];
   assert.deepEqual(spliced.filter((l, i) => i < at.f0 || i >= at.f0 + chosen.length),
                    lines.filter((l, i) => i < at.f0 || i >= at.f1));
-  const splicedData = parseFrontmatter(spliced.join("\n")).data;
-  assert.ok(splicedData, "the document has front matter");
-  assert.deepEqual(splicedData.material_attestations[0],
+  assert.deepEqual(parseFrontmatter(spliced.join("\n")).data.material_attestations[0],
                    { ref: "INFO-2026-0001-m", by_kind: "member", by: "member:olive", level: "name", at: "2026-10-01T00:00:00Z",
                      signature: "SIG", recorded_in: null });
   /* an empty block is located too, and a document without it answers null */

@@ -23,7 +23,7 @@ test("R7 seam (ooxml decodeText, merged by OOXML #4): the encoding decodeText na
     const seen = ooxml.decodeText(body, { name: "x.csv", kind: "text" });
     assert.equal(seen.ok, true, name);
     assert.equal(seen.encoding, want, `${name}: decodeText`);
-    assert.equal(csvEntry.dialect(body)?.encoding, want, `${name}: dialect()`);
-    assert.equal(csvEntry.dialect(body)?.assumed, seen.assumed, `${name}: assumed`);
+    assert.equal(csvEntry.dialect(body).encoding, want, `${name}: dialect()`);
+    assert.equal(csvEntry.dialect(body).assumed, seen.assumed, `${name}: assumed`);
   }
 });

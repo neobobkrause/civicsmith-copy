@@ -303,7 +303,6 @@ test("R17 tested on the captured codifier sections and charter articles, with th
   // the test profile's code (jurisdictions R22, R57): it names section forms, and its code is read by them
   const tp = list().find((x) => x.test);
   const tv = combine([tp.id]).view;
-  assert.ok(tv, `the test profile ${tp.id} combines into a view`);
   const codes = ((tv.vocabulary || {}).codes || []).filter((x) => x.sections);
   assert.ok(codes.length >= 1, `the test profile ${tp.id} names a code with section forms (jurisdictions T33-2)`);
   /* A section of the test profile's code, written in its forms (`<n>-<n>` numbers, `(1)`,

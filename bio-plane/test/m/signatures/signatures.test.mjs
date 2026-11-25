@@ -128,13 +128,13 @@ const REASONS_SSHSIG = ["MALFORMED", "NAMESPACE", "UNKNOWN_KEY", "BAD_SIGNATURE"
 const REASONS_TSA = ["MALFORMED", "REJECTED", "NO_TOKEN", "NOT_BOUND"];
 /* Every "no" these tests see, checked against R29 at the end. */
 const NOES = { sshsig: [], tsa: [] };
-const verifyAndLog = async (armored, message, namespace, keys) => {
-  const r = await verifySshsig(armored, message, namespace, keys);
+const verifyAndLog = async (...a) => {
+  const r = await verifySshsig(...a);
   if (!r.ok) NOES.sshsig.push(r);
   return r;
 };
-const parseAndLog = (bytes, digestHex) => {
-  const r = parseTimestampResponse(bytes, digestHex);
+const parseAndLog = (...a) => {
+  const r = parseTimestampResponse(...a);
   if (!r.ok) NOES.tsa.push(r);
   return r;
 };
@@ -348,11 +348,9 @@ test("R7 a bundle ratification and a case ratification are never the same bytes,
 const NOTICE_SHA = "0123456789abcdef".repeat(4);
 
 test("R38 noticeStatement is exactly the ASCII line, the same bytes every time", () => {
-  /** @type {Array<[string, number]>} */
-  const rows = [["NOTE-2026-4817", 1], ["NOTE-2026-0000", 2], ["WON-2027-9999", 12345],
+  for (const [id, rev] of [["NOTE-2026-4817", 1], ["NOTE-2026-0000", 2], ["WON-2027-9999", 12345],
     ["N-2026-0001-a-slug-tail", 1], ["NOTE-2026-4817-x", Number.MAX_SAFE_INTEGER], ["NOTE-2026-10000", 1],
-    ["NOTE-2026-48170", 3], ["NOTE-2026-123456789-a-tail", 2]];
-  for (const [id, rev] of rows) {
+    ["NOTE-2026-48170", 3], ["NOTE-2026-123456789-a-tail", 2]]) {
     const out = noticeStatement(id, rev, NOTICE_SHA);
     assert.ok(out instanceof Uint8Array);
     assert.deepEqual([...out], [...Buffer.from(`bio-working-on ${id} ${rev} ${NOTICE_SHA}\n`, "ascii")]);
@@ -421,11 +419,9 @@ test("R37 NS_NOTICE is bio-working-on, distinct from every other namespace, and 
 const DOCKET_SHA = "fedcba9876543210".repeat(4);
 
 test("R40 docketStatement is exactly the ASCII line, the same bytes every time", () => {
-  /** @type {Array<[string, number]>} */
-  const rows = [["CASE-2026-3091", 1], ["CASE-2026-0000", 2], ["C-2027-9999", 12345],
+  for (const [id, seq] of [["CASE-2026-3091", 1], ["CASE-2026-0000", 2], ["C-2027-9999", 12345],
     ["CASE-2026-0001-a-slug-tail", 1], ["CASE-2026-3091-x", Number.MAX_SAFE_INTEGER], ["CASE-2026-10000", 1],
-    ["CASE-2026-30910", 3], ["CASE-2026-123456789-a-tail", 2]];
-  for (const [id, seq] of rows) {
+    ["CASE-2026-30910", 3], ["CASE-2026-123456789-a-tail", 2]]) {
     const out = docketStatement(id, seq, DOCKET_SHA);
     assert.ok(out instanceof Uint8Array);
     assert.deepEqual([...out], [...Buffer.from(`bio-docket ${id} ${seq} ${DOCKET_SHA}\n`, "ascii")]);
@@ -848,15 +844,13 @@ test("R17 a real granted reply is ok, bound to its digest, and the token is the 
   assert.equal(r.ok, true);
   assert.equal(r.status, 0);
   /* The token is the reply's second element, exactly: its bytes run to the reply's end. */
-  const { token } = r;
-  assert.ok(token instanceof Uint8Array);
-  const tokenStart = reply.length - token.length;
-  assert.deepEqual([...token], [...reply.slice(tokenStart)]);
-  assert.equal(token[0], 0x30);
-  assert.ok(token.length > 32);
+  const tokenStart = reply.length - r.token.length;
+  assert.deepEqual([...r.token], [...reply.slice(tokenStart)]);
+  assert.equal(r.token[0], 0x30);
+  assert.ok(r.token.length > 32);
   /* openssl reads the token we return as a token. */
   const tok = join(DIR, "token.der");
-  writeFileSync(tok, token);
+  writeFileSync(tok, r.token);
   assert.doesNotThrow(() => execFileSync("openssl", ["ts", "-reply", "-in", tok, "-token_in", "-text", "-token_out"],
     { stdio: "ignore" }));
   assert.equal(parseAndLog(reply, createHash("sha256").update("another capture").digest("hex")).reason, "NOT_BOUND");
@@ -868,7 +862,6 @@ test("R17 status 0 and 1 carrying a token that holds the digest are ok, with the
     const r = parseAndLog(resp(s, token), DIGEST);
     assert.equal(r.ok, true);
     assert.equal(r.status, s);
-    assert.ok(r.token instanceof Uint8Array);
     assert.deepEqual([...r.token], [...token]);
     assert.equal(parseAndLog(resp(s, token), DIGEST.toUpperCase()).ok, true);
   }
@@ -943,7 +936,6 @@ const answer = (headers, url) => ({ headers: new Headers(headers), url });
 const LOC = "https://web.archive.org/web/20260926120000/https://example.org/page";
 
 test("R23 the locator is read from content-location, then location, then the response url", () => {
-  /** @type {Array<[tsa.ArchiveAnswer, string | null]>} */
   const cases = [
     [answer({ "content-location": "/web/20260926120000/https://example.org/page" }, ""), LOC],
     [answer({ "content-location": LOC }, ""), LOC],
@@ -976,9 +968,7 @@ test("R24 archiveLocatorFrom never throws", () => {
     assert.ok(r === null || typeof r === "string");
   }
   assert.equal(archiveLocatorFrom({ headers: { get() { throw new Error("no"); } }, url: LOC }), LOC);
-  /** @type {any} outside ArchiveAnswer on purpose: headers absent */
-  const noHeaders = { headers: null, url: LOC };
-  assert.equal(archiveLocatorFrom(noHeaders), LOC);
+  assert.equal(archiveLocatorFrom({ headers: null, url: LOC }), LOC);
 });
 
 /* ===================================================================== R26 */

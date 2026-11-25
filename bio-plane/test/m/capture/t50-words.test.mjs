@@ -12,11 +12,7 @@ import { WITHHELD_QUESTION } from "../../../src/capture/index.mjs";
 import { WORD_KEYS, say, rowWord, keysRead } from "../../../src/capture/words.mjs";
 import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 
-const raw = (key) => {
-  const row = WORD_ROWS.find((r) => r[0] === key);
-  assert.ok(row, `${key} is a row of WORD_ROWS`);
-  return row[1];
-};
+const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
 const reads = async () => JSON.parse(await readFile(
   new URL("../../../../docs/development/ux-substrate/screens/words-reads.json", import.meta.url), "utf8")).modules.capture;
 const asserted = new Set();

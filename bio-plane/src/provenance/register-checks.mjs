@@ -38,16 +38,12 @@ const CAPTURE_GRADES = BASIS_GRADES.filter((g) => g !== TESTIMONY_GRADE);
 /* R51 · N381 (K560): material handed in at the doorbell and brought in by a member's pull (capture R65) was RECEIVED,
    never fetched, so its document carries no capture letter and says why: `grade: null` with this basis, the one
    `captureGrade` answers for its receipt. The one spelling of the basis, and of the origin kind the pull writes. */
-/** @type {'CAPTURE_RECEIVED_NOT_FETCHED'} the grade_basis a received document states (R51) */
 export const RECEIVED_NOT_FETCHED = 'CAPTURE_RECEIVED_NOT_FETCHED';
-/** @type {'doorbell'} the origin kind of a document received through the doorbell (R51) */
 export const DOORBELL_ORIGIN = 'doorbell';
 /* R63 · K2425 (4): a file a member holds and brought in herself (capture R86) was received too, never fetched. Its
    document's origin kind, its `capture.method`, and the member's own statement of where it came from, which is never
    evidence of its truth. One spelling each. */
-/** @type {'upload'} the origin kind of a file a member brought in (R63) */
 export const UPLOAD_ORIGIN = 'upload';
-/** @type {'uploaded'} the capture.method of a file a member brought in (R63) */
 export const UPLOADED_METHOD = 'uploaded';
 const ORIGIN_KINDS = ['named_request', 'sweep', 'member', DOORBELL_ORIGIN, UPLOAD_ORIGIN];
 const CAPTURE_ENCODINGS = ['utf8', 'base64', 'binary'];
@@ -55,7 +51,6 @@ const HIST_TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const RAW_SHA_RE = /^[0-9a-f]{64}$/;
 /* R42 · N688 (K1844, K1852): the `capture.method` of a file `acquisition.unpack` cut out of a captured archive (its
    R39), and the one document that carries a `container` block. */
-/** @type {'unpacked'} the capture.method of a file cut out of a captured archive (R42) */
 export const UNPACKED_METHOD = 'unpacked';
 const whole = (v) => Number.isSafeInteger(v) && v >= 0;
 /* A JSON value with every object's keys sorted, so two origins are compared as values, key order ignored. */
@@ -613,39 +608,10 @@ function checkInfo2Register(ctx, findings) {
   }
 }
 
-/**
- * The record's answers an `unpacked` document is judged against (R42, `checkContainer`), and a document's decided
- * authority (R65) where the record holds one.
- * @typedef {Object} RegisterResolve
- * @property {(archiveSha: string) => boolean} holds whether the record registers, or holds a receipt for, an archive
- * @property {(archiveSha: string, index: *) => *} gradeVia the archive's grade answer through one entry (R59)
- * @property {(captureSha: *) => *} [authority] the member's decided authority for a capture, if any
- */
-/**
- * One finding, in the catalogue's shape.
- * @typedef {Object} RegisterFinding
- * @property {string} check the catalogue id, C-18.n
- * @property {string} severity `error` or `warn`
- * @property {string} message
- * @property {boolean} [repairable]
- * @property {*} [repairs]
- * @property {string} [code]
- */
-/**
- * What the arms read of one bundle.
- * @typedef {Object} RegisterInput
- * @property {*} files a Map or a plain object from a path to its text or bytes
- * @property {*} fm the parsed `bundle.md` front matter; no findings when it is not an object
- * @property {*} [elided] a Set or a list of the paths held and not carried
- * @property {RegisterResolve | null} [resolve] where no record is at hand, null
- */
 /** The C-18 register arms over one bundle: `files` maps a path to its text (or bytes), `elided` names the paths held
  *  and not carried (a blob), `fm` is the parsed `bundle.md` front matter (null when unreadable), `resolve` the
  *  record's answers an `unpacked` document is judged against (R42, `checkContainer`; null where no record is at hand). Answers the
- *  catalogue's findings, in the order `checkBundle` ran the arms. Never throws for a well-formed call.
- * @param {RegisterInput} args
- * @returns {RegisterFinding[]}
- */
+ *  catalogue's findings, in the order `checkBundle` ran the arms. Never throws for a well-formed call. */
 export function registerChecks({ files, fm, elided = null, resolve = null }) {
   const findings = [];
   const ctx = { files: files instanceof Map ? files : new Map(Object.entries(files || {})), fm: fm || null,

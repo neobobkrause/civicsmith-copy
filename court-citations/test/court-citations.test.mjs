@@ -250,7 +250,7 @@ test("R7: reporterFor answers VARIANTS' entries as written, then after folding w
     const union = byFold.get(foldKey(s));
     assert.equal(got.length, new Set(union.map((x) => `${x.reporter}\u0000${x.edition}`)).size, s);
   }
-  assert.deepEqual([...(reporterFor("A 2d") ?? [])], [{ reporter: "A.", edition: "A.2d" }]);
+  assert.deepEqual([...reporterFor("A 2d")], [{ reporter: "A.", edition: "A.2d" }]);
   for (const x of ["No Such Rptr.", "", " . ", null, undefined, 12, {}, [], "\u0000", "x".repeat(100000), Symbol.iterator]) {
     assert.doesNotThrow(() => reporterFor(x)); assert.equal(reporterFor(x), null);
   }
@@ -308,7 +308,7 @@ test("R10: a recognised reporter or court is a spelling recognised, never a cita
   for (const c of COURTS.slice(0, 50)) for (const k of Object.keys(c)) assert.ok(!forbidden.test(k), k);
   const got = courtsNamed("Supreme Court of the United States");
   assert.ok(got.every((id) => typeof id === "string"));
-  assert.deepEqual([...(reporterFor("F.3d") ?? [])].map((x) => Object.keys(x)), [["reporter", "edition"]]);
+  assert.deepEqual([...reporterFor("F.3d")].map((x) => Object.keys(x)), [["reporter", "edition"]]);
 });
 
 /* R11: a fresh process imports the module, timing its evaluation as bundler R31 times a global scope (a fresh import),

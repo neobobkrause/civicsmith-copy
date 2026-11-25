@@ -5,7 +5,6 @@
  * in which nothing was read is a failed read, never a document emptied. */
 import { event, isMeaningful, worstSignificance } from "../docprofile/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { TablesReading, LinesReading, BudgetAssessment } from "./index.mjs" */
 
 /** Key each item by `keyOf`, a repeat of one key numbered in reading order. */
 function keyed(items, keyOf) {
@@ -31,10 +30,7 @@ const tableKey = (t) => `${t.title || "(untitled table)"} @ page ${t.page === nu
 const rowLabel = (r) => (r.label === null ? localize("budget-doctypes.assess.row_with_no_label_read", "(row with no label read)") : r.label);
 const cellsOf = (r) => r.cells.map((c) => c.as_read);
 
-/** Two PDF readings: tables matched by title and page, rows by label.
- * @param {TablesReading} before
- * @param {TablesReading} after
- * @returns {BudgetAssessment} */
+/** Two PDF readings: tables matched by title and page, rows by label. */
 export function assessTables(before, after) {
   const bt = before && Array.isArray(before.tables) ? before.tables : [];
   const at = after && Array.isArray(after.tables) ? after.tables : [];
@@ -71,10 +67,7 @@ export function assessTables(before, after) {
     events.length ? localize("budget-doctypes.assess.length_change_s_between_the", "{length} change(s) between the two readings' tables", { length: String(events.length) }) : localize("budget-doctypes.assess.every_table_and_figure_read", "every table and figure read is as it was"));
 }
 
-/** Two budget-table readings: rows by R7's key, groupings within a period.
- * @param {LinesReading} before
- * @param {LinesReading} after
- * @returns {BudgetAssessment} */
+/** Two budget-table readings: rows by R7's key, groupings within a period. */
 export function assessLines(before, after) {
   const bl = before && Array.isArray(before.rows) ? before.rows : [];
   const al = after && Array.isArray(after.rows) ? after.rows : [];

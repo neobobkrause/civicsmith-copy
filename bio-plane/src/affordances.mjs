@@ -141,75 +141,8 @@ import { composedVocabularies, EVENTS_VOCABULARY_KEYS } from "./affordances/word
 /* R62, R64 (K3366; DEC-253): this module holds no member-facing English; every label, prompt and sentence is a key read through `word`. */
 import { word, hasWord } from "./setup-words/index.mjs";
 
-/**
- * The facts `affordanceFacts` answers for one target and one caller (R13–R16): `ok` true with R14's keys, or `ok` false
- * with the refusal's `reason` (`NO_TARGET`, `NO_SUCH_BUNDLE`). Each positional fact is true, false or null (R10, R15);
- * counts are numbers, never ids (R16).
- * @typedef {{ok?: boolean, reason?: string} & Record<string, any>} Facts
- */
-/**
- * An object-directed act (R1, R8–R10, R51, R52): its op `id`, its name read by key (R64), its set-application `weight`
- * (`refuse`, `report`, `single`), the object types it is offered on, whether it applies to these facts, and, where it
- * has one, the `prompt` that must accompany it (R5) and `expand`, which answers it once per thing it names (R52).
- * @typedef {Object} Act
- * @property {string} id
- * @property {string} label
- * @property {string} [weight]
- * @property {string[]} types
- * @property {(facts: Facts, type: string) => any} applies
- * @property {string} [prompt]
- * @property {(facts: Facts) => Record<string, any>[]} [expand]
- * @property {string} [proposal] R52: an expanded `clockadopt`'s proposal key
- * @property {string[]} [purposes] R52: an expanded `escalationattach`'s admitted purposes
- */
-/**
- * A capture-directed act (REC-38; R1, R5): keyed by a capture sha, never derived against an object's state.
- * @typedef {Object} CaptureAct
- * @property {string} id
- * @property {string} label
- * @property {string} [prompt]
- */
-/**
- * A set act (R1): taken over a selection as `items` under the `per-item` weight, with its identity shapes and the fields
- * one value of which every item shares.
- * @typedef {Object} PerItemAct
- * @property {string} id
- * @property {string} label
- * @property {string} weight `per-item`
- * @property {string} set_key `items`
- * @property {string[][]} item_keys
- * @property {string[]} shared_keys
- */
-/**
- * The control plane's gate (R11), built from `NEEDS` and `SESSION_OPS`: the capability an op needs, and how it is
- * reached, `session`, `admin-session` or `machine`.
- * @typedef {{needs?: (op: string) => any, mode?: (op: string) => any}} Gate
- */
-/**
- * An act decorated for a caller (R11, R36): every key present, a value not held a stated null. An act R52 expands also
- * carries what it names, `proposal` or `purposes`.
- * @typedef {Object} DecoratedAct
- * @property {string} id
- * @property {string} label
- * @property {string|null} weight
- * @property {any} needs
- * @property {any} mode
- * @property {string|null} rung
- * @property {string|null} rung_absence
- * @property {string|null} prompt
- * @property {boolean} phone
- * @property {any} [proposal]
- * @property {any} [purposes]
- */
-
 /* R64: an act's name is `act.<id>.name` (`act.<id>.name.selected` for a set act, which names the act over a selection), read
  * through `word`. An act with no such key fails the load by its id, so the plane never publishes an act it cannot name. */
-/**
- * @param {string} id the act's op
- * @param {boolean} [selected] the name over a selection, a set act's
- * @returns {string}
- * @throws {Error} `NO_ACT_NAME` when the act has no word
- */
 export const actName = (id, selected = false) => {
   const key = `act.${id}.name${selected ? ".selected" : ""}`;
   if (!hasWord(key)) throw new Error(`NO_ACT_NAME: act ${id} has no word ${key}`);
@@ -320,7 +253,6 @@ import { STAGE_REQUIREDNESS } from "./progressions/index.mjs";
  * refuses to lose a leg, which is why division cannot do severance's work at a
  * discount); that THE OTHER QUESTION STAYS ON THE RECORD; and that A PUBLISHED
  * CHILD NAMES ITS PARENT AND ITS SIBLINGS to its readers. */
-/** @type {string} R5: `inquirydivide`'s prompt, `prompt.inquirydivide` */
 export const DIVIDE_PROMPT = word("prompt.inquirydivide");
 
 /* REC-45 / DEC-29(b), on REC-16's mechanism exactly: THE GROUPING PROMPT.
@@ -365,7 +297,6 @@ export const DIVIDE_PROMPT = word("prompt.inquirydivide");
  * not the word `ground` itself — including in this act's own label. The wire
  * name is `inquiryground` because a wire name is not a surface; the sentence a
  * member reads says GROUP. */
-/** @type {string} R5: `inquiryground`'s prompt, `prompt.inquiryground` */
 export const GROUND_PROMPT = word("prompt.inquiryground");
 
 /* REC-43 / DEC-39, on REC-16's mechanism exactly: THE CO-ATTESTATION HONESTY
@@ -423,12 +354,6 @@ export const GROUND_PROMPT = word("prompt.inquiryground");
  * failure, not a fallback: the module fails to evaluate and the whole plane
  * fails to start, which is the only honest outcome for a doctrine string whose
  * doctrine has moved out from under it. */
-/**
- * @param {string} ceiling the capture ceiling's grade letter
- * @param {string} unreachable the grade above it
- * @returns {string}
- * @throws {Error} when either letter is absent
- */
 export const attestFence = (ceiling, unreachable) => {
   if (!ceiling || !unreachable)
     throw new Error("the co-attestation fence states a ceiling AND the grade above it (DEC-39); "
@@ -436,7 +361,6 @@ export const attestFence = (ceiling, unreachable) => {
   return word("prompt.attest.fence", { ceiling, unreachable });
 };
 
-/** @type {string} R5: `attest`'s prompt, DEC-39's fence with its two grade letters */
 export const ATTEST_FENCE = attestFence(EARNED_CAPTURE_CEILING, UNREACHABLE_CAPTURE_GRADE);
 
 /* R28 (N364; DEC-81 item 3): THE SELF-ATTESTED PROMPT, ON `publish`. A load-bearing Grade B whose co-attestation failed
@@ -445,14 +369,12 @@ export const ATTEST_FENCE = attestFence(EARNED_CAPTURE_CEILING, UNREACHABLE_CAPT
  * readers", verbatim, and it is `case-authoring`'s very string (its R36), the one the case document prints beside the
  * mark — so the words offered before the act and the words published by it cannot drift. Not composed here, not
  * copied here. */
-/** @type {string} R28: `publish`'s prompt, `case-disclosures`' sentence */
 export const SELF_ATTESTED_PROMPT = SELF_ATTESTED_SENTENCE;
 
 /* R29 (N364; DEC-78 item 5(d)): THE CONSENT PROMPT, ON `sourceconsent`. Consent to go public is asked at the moment of
  * publishing and stated as permanent: what is published under it stays published, and a withdrawal binds only later
  * publications. The two sentences are `sources'` (its R7), the statements its consent and withdrawal acts answer with,
  * joined, so the prompt says exactly what the act will record and nothing the act does not keep. */
-/** @type {string} R29: `sourceconsent`'s prompt, `sources`' two statements joined */
 export const CONSENT_PROMPT = `${CONSENT_STATEMENT} ${WITHDRAWAL_STATEMENT}`;
 
 /* N80 (T8): op=acquire's `note` (`acquireGradeNote`, `ACQUIRE_GRADE_NOTE`) is `capture`'s, which composes its own
@@ -463,7 +385,6 @@ export const CONSENT_PROMPT = `${CONSENT_STATEMENT} ${WITHDRAWAL_STATEMENT}`;
 /* The object vocabularies, published the way op=searchfields publishes the
  * query language, so a surface never keeps a copy. Each is the object its
  * enforcing module refuses against (R4). */
-/** @type {Record<string, any>} R4, R26, R30, R34, R39, R51: the vocabularies, each its owner's object, with the product's kinds as `action_kind` */
 export const VOCABULARIES = {
   /* R26 (N65 (3)): the kinds an action may be created with are `actions'` answer (its R10, R40): the product's own,
      then the active profiles' `action_kinds`. Which profiles are active is an instance's setting, so this module-level
@@ -674,12 +595,6 @@ export const VOCABULARIES = {
  * active profiles know: `proceeding_kinds`, a list of `{kind, label, forum_kind}` (an entry without a string `kind` left
  * out), and `action_kind_labels`, an object from a profile-defined kind to its non-empty `label`. A key the store did not
  * answer as that shape is left out of the answer, never answered empty, so a surface can tell "none" from "could not ask". */
-/**
- * @param {any} kinds what this instance's `actions` accepts at the call (R26); anything but a list of non-empty strings
- *   publishes the product's kinds
- * @param {any} [profile] the store's `affordancevocab` answer (R67, R68, R39's carried events vocabularies), or null
- * @returns {Record<string, any>} R4's vocabularies, each the owner's object, with `action_kind` and those the profile adds
- */
 export function vocabulariesFor(kinds, profile = null) {
   const ok = Array.isArray(kinds) && kinds.length > 0 && kinds.every((k) => typeof k === "string" && k.length > 0);
   const p = profile && typeof profile === "object" ? profile : {};
@@ -766,7 +681,6 @@ export function vocabulariesFor(kinds, profile = null) {
  * words are Bob's and whose two grade letters are the enforced rule's. Nothing
  * about the RUNGS reasoning changes: `rung` here is still the sourced
  * `attested` and no rung is guessed anywhere in this file. */
-/** @type {CaptureAct[]} R1: attest, monitor, attesttext */
 export const CAPTURE_ACTS = [
   /* op=attest. The verb is "co-attest" because the group is not the only
      attestor: the plane asks an independent timestamp authority and stores what
@@ -864,7 +778,6 @@ const anyVersionEdgeTo = (f, to) =>
  * contradiction_sides_seen (whether the viewer sees both sides of the candidate it names: `contradictionresolve`), and
  * (R55) legs_in {live, severed} (how many questions the viewer may see hold a leg on an information target, by the leg's
  * status: a question's own leg is severed and reinstated by `sever` and `reinstate`, citation R15). */
-/** @type {Act[]} R1, R51, R52, R55, R58: the object-directed acts */
 export const ACTS = [
   /* S-11 step 5. collected -> verified is the one legal edge; the named-member
      and entry-requirement guards are act-time refusals the store words itself. */
@@ -1685,7 +1598,6 @@ export const ACTS = [
  * R49, N91), whose `perItem` enforces it, re-exported here unchanged (R6), so the number a surface reads is the
  * one the act enforces. */
 export { PER_ITEM_MAX } from "./record-core/index.mjs";
-/** @type {PerItemAct[]} R1: the set acts */
 export const PER_ITEM_ACTS = [
   /* REC-205: `item_keys` is the act's three IDENTITY SHAPES and is now ENFORCED as well as published —
      record-core's `perItem` is handed this very array by the acting module (tasks', queue's) and refuses to let a shared value of ONE shape reach an
@@ -1708,15 +1620,10 @@ export const PER_ITEM_ACTS = [
     set_key: "items", item_keys: [["captureSha"], ["captureSha", "ref"]], shared_keys: ["ref"] },
 ];
 
-/** @type {Set<string>} the ids of `ACTS` */
 export const ACT_IDS = new Set(ACTS.map((a) => a.id));
 
 /* The derivation: which acts exist for THIS object as it stands. Pure over the
  * facts the store read, so a suite can hold it to the store's own refusals. */
-/**
- * @param {Facts} facts R14's answer for one target and one caller
- * @returns {Act[]} R8–R10: the acts these facts admit, each expanded once per thing it names (R52)
- */
 export function deriveActs(facts) {
   const ty = normalizeType(facts.object_type);
   /* D-311: a machine is withheld what its class is refused — on a STATED true only; a null
@@ -1736,11 +1643,6 @@ const NAMED_KEYS = ["proposal", "purposes"];
  * option and an `op=affordances` act for the same subject are one shape from one function. `rung_absence` is the
  * ground of a classified absence (FW-14): a null rung beside a stated ground is undetermined STATED (R24). `phone` is
  * R36's, always a boolean. An act R52 expands also carries what it names (`proposal`, `purposes`). */
-/**
- * @param {{id: string, label: string, weight?: string, prompt?: string, proposal?: any, purposes?: any}} act
- * @param {Gate|null} [gate]
- * @returns {DecoratedAct}
- */
 export function decorate(act, gate) {
   const id = act.id;
   return {
@@ -1764,13 +1666,6 @@ export function decorate(act, gate) {
  * no row holds answers `translation: null` with `refusal.uncatalogued` in `detail`, read through `word` (R64, R21). Writes
  * nothing (R22) and never throws. `acts` is null with no target, and [] for a target the caller cannot see. */
 const ALL_PUBLISHED = () => [...ACTS, ...CAPTURE_ACTS, ...PER_ITEM_ACTS];
-/**
- * @param {any} arg `{op, code, facts?, gate?, rowOf?}`: `rowOf(code)` answers the refusal's catalogue row
- *   `{translation, check}`; `facts` R14's answer for the target, when there is one
- * @returns {{op: string|null, code: string|null, translation: string|null, check: string|null, detail: string|null,
- *   rung: string|null, rung_absence: string|null, prompt: string|null, weight: string|null,
- *   acts: DecoratedAct[]|null}} R41; never throws
- */
 export function explainRefusal(arg) {
   const { op = null, code = null, facts = null, gate = null, rowOf = null } = arg && typeof arg === "object" ? arg : {};
   const id = typeof op === "string" && op ? op : null;
@@ -1800,10 +1695,6 @@ export function explainRefusal(arg) {
  * `stale`: a key of `RUNGS` or `RUNG_ABSENT` the table does not carry as mutating, or of `NON_ACTS` the table does not
  * carry at all (K4279: an owner-declared read the door serves is not stale). An alias of a published act is published (R51). All three empty is the totality; each list is sorted, so
  * an answer names the ops. */
-/**
- * @param {any} opTable the control plane's table of ops, each `{op, mutating, gated}`; anything else is an empty table
- * @returns {{unpublished: string[], unranked: string[], stale: string[]}} R12: each sorted; all three empty is the totality
- */
 export function unaccounted(opTable) {
   const rows = Array.isArray(opTable) ? opTable.filter((r) => r && typeof r.op === "string") : [];
   const all = new Set(rows.filter((r) => r.gated !== false).map((r) => r.op));

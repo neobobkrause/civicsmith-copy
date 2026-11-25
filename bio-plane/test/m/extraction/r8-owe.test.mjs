@@ -10,8 +10,6 @@ import { join } from "node:path";
 import { fresh, bundle, bucket, hold, member, withEntry, i2, noText, ocrAnswer, doc, homesOver } from "./fixture.mjs";
 // fixtures-contract: store-assembly job-registrar
 import { jobRegistrarStub } from "../../job-registrar-stub.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const pdf = (text) => ({ format: "pdf", structure: async () => ({ ok: true, text: structuredClone(text), pages: (text.pages || []).length, notes: [] }) });
 const register = (rows) => homesOver(rows);
@@ -28,7 +26,7 @@ async function held({ env = {} } = {}) {
   const d = await hold(evidence, bytes);
   rows.set(d, { bundleId: "INFO-1", path: "a.pdf", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   const document = doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d, document };
 }
 /* the hook way: every call recorded */

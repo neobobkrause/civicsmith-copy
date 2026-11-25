@@ -7,26 +7,13 @@
 import { localize } from "../setup-words/index.mjs";
 import { reasonText as civilReasonText } from "../civil-time/index.mjs";
 
-/**
- * R24: a reason this module gives for an undetermined answer: `key` a `lines.why.*` row of the word table (or the key
- * an owner such as `civil-time` answered, carried as it answered it), `vars` the values the row fills. Never English.
- * @typedef {Object} LineReason
- * @property {string} key
- * @property {Record<string, any>} vars
- */
-/** R24: a reason, a key with its fills.
- *  @param {string} key
- *  @param {Record<string, any>} [vars] the fills; absent is none
- *  @returns {LineReason} */
+/** R24: a reason, a key with its fills. */
 export const reason = (key, vars = {}) => ({ key, vars });
 
 const isReason = (w) => w !== null && typeof w === "object" && typeof w.key === "string";
 
 /** A `why` any owner answered, as a reason: a `{key, vars}` as it is; anything else (a caught throw's message, an old
- *  string) as the reason that names it, so no `why` of this module is ever a string.
- *  @param {any} w
- *  @param {string} [fallback] the key for anything that is not a reason; absent is `lines.why.date_unjudged`
- *  @returns {LineReason} */
+ *  string) as the reason that names it, so no `why` of this module is ever a string. */
 export const asReason = (w, fallback = "lines.why.date_unjudged") =>
   isReason(w) ? w : reason(fallback, { message: String(w) });
 
@@ -41,14 +28,10 @@ const TEXT = {
   "lines.why.entity_lines_kinds": (v) => localize("lines.why.entity_lines_kinds", "this entity has more than {hub} lines of the kinds asked, so it is named, never expanded", v),
 };
 
-/** Every key a reason of this module can carry.
- *  @type {readonly string[]} */
+/** Every key a reason of this module can carry. */
 export const REASON_KEYS = Object.freeze(Object.keys(TEXT));
 
-/** A `why` as English: a string as it is, a `{key, vars}` through the list (this module's keys, else `civil-time`'s).
- *  @param {string|LineReason} why
- *  @returns {string}
- *  @throws {TypeError} when `why` is neither a string nor `{key, vars}` */
+/** A `why` as English: a string as it is, a `{key, vars}` through the list (this module's keys, else `civil-time`'s). */
 export function reasonText(why) {
   if (typeof why === "string") return why;
   if (!isReason(why)) throw new TypeError("a reason is a string or {key, vars}");

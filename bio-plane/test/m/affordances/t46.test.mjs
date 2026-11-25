@@ -105,7 +105,7 @@ test("R52 R18: at stage 7 attachment is offered only for the purposes attachCond
   assert.equal(conditions(board).official_request.state, "admitted");
   assert.ok(purposesOf(board)[0].includes("official_request"));
   /* decorated, the act keeps the purposes it names */
-  const d = decorate(acts(clerk).find((a) => a.id === "escalationattach") ?? assert.fail("attachment is offered"), null);
+  const d = decorate(acts(clerk).find((a) => a.id === "escalationattach"), null);
   assert.deepEqual(d.purposes, purposesOf(clerk)[0]);
   /* R18, driven: the withheld purpose is refused, an offered one accepted */
   const standards = [w.esc.escalationRead({ id: w.E, viewer: EV("bob") }).standards[0]];
@@ -158,7 +158,7 @@ test("R52 R18: clockadopt is offered once per standing dated proposal action-clo
   assert.equal(w.actions.actionCorrespond({ target: CA, direction: "sent", at: "2026-09-01", account: "sent", viewer: M, author: M }).ok, true);
   const p = w.c.clockPropose({ target: CA, rule: "records_answer", proposer: CMACHINE, viewer: CMACHINE });
   assert.deepEqual(adopts(), [p.proposal.key], "dated: offered, naming its key");
-  const d = decorate(acts().find((a) => a.id === "clockadopt") ?? assert.fail("clockadopt is offered"), null);
+  const d = decorate(acts().find((a) => a.id === "clockadopt"), null);
   assert.equal(d.proposal, p.proposal.key);
   assert.equal(w.c.clockAdopt({ target: CA, proposal: p.proposal.key, author: M, viewer: M }).ok, true);
   assert.deepEqual(adopts(), [], "adopted: no longer standing");

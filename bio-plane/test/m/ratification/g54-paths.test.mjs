@@ -63,7 +63,7 @@ async function house({ worker = null, steer = {} } = {}) {
     editions.push(e);
     return e;
   };
-  const act = async (fn, b, o = {}, tweak = (/** @type {any} */ _p) => {}) => {
+  const act = async (fn, b, o = {}, tweak = () => {}) => {
     const p = plane(w, { ...as("iris"), ...o });
     tweak(p);
     return { ...(await fn(p.request(b), p.stub, p.ctx)), p };
@@ -197,7 +197,7 @@ test("R6, R57: op=ratify — the last member's copy that throws is stated in the
   const sha = w.sha(DOC), sig = await signBundle(key, DOC, sha);
   const cs = { case_id: "CASE-2026-0001", edition: 1, complete: true, manifest_sha: null, awaiting: [], findings: [{ bundle_id: DOC }] };
   w.publication.commitEdition = () => ({ ok: true, existed: false, edition: 1, caseId: "CASE-2026-0001", case: cs });
-  const run = async (tweak = (/** @type {any} */ _p) => {}) => { const p = plane(w); tweak(p);
+  const run = async (tweak = () => {}) => { const p = plane(w); tweak(p);
     const res = await ratifyOp(p.request({ bundleId: DOC, expectedSha: sha, sig }), p.stub, p.ctx); return { ...res, p }; };
   const recorded = [];
   const recorder = async (a) => { recorded.push(a); return { ok: true, code: "BUCKET_FAILED" }; };

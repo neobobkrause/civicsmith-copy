@@ -95,10 +95,6 @@ const AGENT_ORGANISATION_STAMP = `${MACHINE_CLASS_PREFIX}ai`;
 
 /* Frontmatter-safe (once legacy-store's `#fmSafe`, the rule `caseConclusionRowLines` writes under): the restricted grammar
    has no escapes, and these strings are DERIVED rather than authored, so they are sanitised rather than refused. */
-/**
- * @param {any} s the derived string
- * @returns {string} one line, with no double quote or backslash
- */
 export function fmSafe(s) {
   return String(s ?? "").replace(/[\r\n]+/g, " ").replace(/["\\]/g, "'").trim();
 }
@@ -111,11 +107,6 @@ export function fmSafe(s) {
    record so the comparison is between two rows written by one function and
    read back by one parser — never between a row and a hand-copied idea of one.
    `c` null writes the row a member with no recorded conclusion gets. */
-/**
- * @param {any} m the roster member
- * @param {any} c its recorded conclusion, or null
- * @returns {string[]} the row's lines
- */
 export function caseConclusionRowLines(m, c) {
   return [
     `  - target: ${m}`,
@@ -131,19 +122,11 @@ export function caseConclusionRowLines(m, c) {
     `    concluded_by: ${c && c.by ? c.by : "null"}`,
     `    concluded_at: "${fmSafe(c && c.at ? c.at : "")}"`];}
 
-/**
- * The module's one instance per Durable Object storage (`ratificationOf`): the two ceremonies' store halves (R1–R7, R18,
- * R35–R45, R49, R50, R57), the case-member check (R9) and the bulk release and retirement (R20–R34).
- */
 export class Ratification {
   #deps;
   #holdReader = null;   /* R45: the one reader of litigation holds, registered once at start (`actions`) */
   #approvalReader = null;   /* R50: the one reader of the group's approvals, registered once at start (`review`) */
 
-  /**
-   * @param {any} deps the instance's dependencies: `storage`, `record`, `membership`, `promotion`, and each other
-   *   provider, made on first use when absent
-   */
   constructor({ storage, record, membership, promotion, host = null, provenance = null, inquiry = null,
                 basisVersions = null, publication = null, retrieval = null, connections = null,
                 credentials = null, contradiction = null, strength = null, reevaluation = null,
@@ -261,14 +244,6 @@ export class Ratification {
    * purpose. */
   static CASE_BEARING_STATES = ["open", "surfaced", "concluded"];
 
-  /**
-   * R1: whether the project's conclusion of the question stands, for a case to record.
-   * @param {any} projectId the project
-   * @param {any} inquiryId the question
-   * @param {any} viewer the member asking
-   * @param {any} currentState the question's state
-   * @returns {any} `{concluded, ...}` or `{not_concluded, why, ...}`
-   */
   caseConclusionFor(projectId, inquiryId, viewer, currentState) {
     const pid = String(projectId ?? "").trim();
     const inq = String(inquiryId ?? "").trim();
@@ -385,13 +360,6 @@ export class Ratification {
   static #CONCLUSION_ENTRY_FIELDS = ["project", "version", "claim_state", "claim", "falsifier",
     "falsifier_override_by", "falsifier_override_at", "concluded_by", "concluded_at"];
 
-  /**
-   * R1: which editions pinning the finding record the same conclusion, and which another.
-   * @param {any} bundleId the finding
-   * @param {any} rel the relationship
-   * @param {any} conc the conclusion
-   * @returns {any} `{same, other}`
-   */
   editionsRecordingConclusion(bundleId, rel, conc) {
     const editions = [
       ...(rel && Array.isArray(rel.pinned) ? rel.pinned : [])
@@ -482,12 +450,6 @@ export class Ratification {
      hidden bundle leaked twice: RATIFY_STALE echoed its real sha, and the ratifier-scoped image came back empty and
      was reported as "bundle.md is missing". A viewer that was NOT SENT (null) is not asked: every other reader of
      these facts is a tool, not a caller. */
-  /**
-   * R7: the facts op=ratify's gate reads.
-   * @param {any} bundleId the finding
-   * @param {any} [viewer] the member asking; null for a tool
-   * @returns {any} the facts, or `ABSENT` for an id the viewer cannot see
-   */
   gateFacts(bundleId, viewer = null) {
     const head = bundleId ? this.record.head(bundleId) : null;
     const row = head ? { bundle_id: bundleId, object_type: head.type, current_state: head.currentState,
@@ -540,11 +502,6 @@ export class Ratification {
      `partsHeld` (D-533, D-556). No evidence store bound is every row absent, as the Worker's unbound bucket was. The
      answer is the gate's verdict and `parted`, the whole-hash rows the gate admitted as held in parts with the parts
      the record names, which the Worker publishes part by part. */
-  /**
-   * R4 (N417): the store half of op=ratify's gate.
-   * @param {any} [args] `{bundleId, image, knownIds, registers, publishedRegistry, publishedCaseRegistry, earnedRegistry}`
-   * @returns {Promise<any>} the gate's verdict and `parted`
-   */
   async ratifyGate({ bundleId, image, knownIds, registers, publishedRegistry, publishedCaseRegistry,
                      earnedRegistry } = {}) {
     const evidence = this.record.evidenceStore();
@@ -584,11 +541,6 @@ export class Ratification {
      and over nothing else: the document is re-read at the `docSha` the Worker verified the signature over, and a
      document that moved since answers CASE_RATIFY_STALE. `priorCase` is C-21.1's fact at case altitude and comes from
      the one facts read that has the rows — passing null would not soften C-21.1, it would blind it. */
-  /**
-   * R2: the case gate over the bytes the signature covers.
-   * @param {any} [args] `{caseId, edition, docSha, viewer, secretSha}`
-   * @returns {any} the gate's verdict, or the refusal
-   */
   caseGate({ caseId, edition, docSha, viewer = null, secretSha = null } = {}) {
     const facts = this.publication.caseDocumentFacts(caseId, edition, viewer, secretSha);
     if (!facts || !facts.ok) return facts || { ok: false, reason: "NO_CASE_DOCUMENT" };
@@ -638,11 +590,6 @@ export class Ratification {
      the act's own; the act's envelope (`store`, `tokenClass` after the payload's refusals, the HTTP status) is the
      Worker's and is not here. It writes nothing and never throws: a part it cannot read makes the whole answer
      PREFLIGHT_UNDETERMINED, never a partial list read as a clear one. */
-  /**
-   * R18, R44: every refusal of the case ceremony that holds before a signature exists.
-   * @param {any} [args] `{text, signer, viewer}`
-   * @returns {any} the refusals in order and `publish_at`; writes nothing, never throws
-   */
   caseRatifyPreflight({ text = null, signer = null, viewer = null } = {}) {
     try {
       const src = typeof text === "string" ? text : "";
@@ -780,10 +727,7 @@ export class Ratification {
   }
 
   /** R35 in R2: the act's store half, asked by the Worker after C-92.11 (`./ops.mjs`): C-58.5 over the stored case
-   *  document, the pre-flight's own refusal, or null.
-   * @param {any} [args] `{caseId, edition}`
-   * @returns {any} `{ok: true, refusal}`
-   */
+   *  document, the pre-flight's own refusal, or null. */
   caseTestimony({ caseId = null, edition = null } = {}) {
     const doc = this.#caseDocumentRow(String(caseId ?? ""), edition);
     if (!doc) return { ok: true, refusal: null };
@@ -795,10 +739,7 @@ export class Ratification {
   /* ===== THE GROUP'S APPROVALS BEFORE SIGNING (T41; D60, N820; R49, R50) ================================== */
 
   /** R50: the reader of the group's approval rule and the approvals given (`review`, its R32), registered once at start;
-   *  a second is refused. With none, no rule is in force and R49 asks nothing.
-   * @param {any} reader `{rule(), approvals({case, edition, docSha})}`
-   * @returns {any} `{ok: true}`, or the refusal of a second
-   */
+   *  a second is refused. With none, no rule is in force and R49 asks nothing. */
   registerApprovalReader(reader) {
     if (this.#approvalReader)
       return { ok: false, reason: "APPROVAL_READER_DECLARED",
@@ -826,10 +767,7 @@ export class Ratification {
 
   /** R50 (K2533): the approvals in force for a case edition's document at its approval digest `docSha`, for
    *  `case-authoring` R68: `{ok: true, rule, approvals, missing}` (`rule` null, nothing missing, with no rule in force), or
-   *  `{ok: false}` when they cannot be read. Writes nothing; never throws.
-   * @param {any} [args] `{case, caseId, edition, docSha}`
-   * @returns {any} `{ok: true, rule, approvals, missing}` or `{ok: false}`
-   */
+   *  `{ok: false}` when they cannot be read. Writes nothing; never throws. */
   approvalsInForce({ case: caseArg = null, caseId = null, edition = null, docSha = null } = {}) {
     try {
       const read = this.#approvals(caseArg ?? caseId, Number(edition), docSha ?? null);
@@ -843,10 +781,7 @@ export class Ratification {
   }
 
   /** R49 in R2: the act's store half, asked by the Worker after CASE_RATIFY_STALE (`./ops.mjs`), over the stored
-   *  document at the `doc_sha` the Worker read: APPROVAL_MISSING (C-58.11) or null.
-   * @param {any} [args] `{caseId, edition, docSha}`
-   * @returns {any} `{ok: true, refusal}`
-   */
+   *  document at the `doc_sha` the Worker read: APPROVAL_MISSING (C-58.11) or null. */
   caseApproval({ caseId = null, edition = null, docSha = null } = {}) {
     const doc = this.#caseDocumentRow(String(caseId ?? ""), edition);
     if (!doc || doc.doc_sha !== docSha) return { ok: true, refusal: null };   /* the act's own refusals answer it */
@@ -859,10 +794,7 @@ export class Ratification {
      it again at its time and commits it only if nothing changed (R42, R48). */
 
   /** R45: the reader of litigation holds in place over a project (`actions`, its R58), registered once at start; a
-   *  second is refused. With none, R41's `holds` cannot be read, so `op=publishat` is refused and R42 stops.
-   * @param {any} reader `{holdsOn({project})}`
-   * @returns {any} `{ok: true}`, or `HOLD_READER_DECLARED`
-   */
+   *  second is refused. With none, R41's `holds` cannot be read, so `op=publishat` is refused and R42 stops. */
   registerHoldReader(reader) {
     if (this.#holdReader)
       return { ok: false, reason: "HOLD_READER_DECLARED",
@@ -945,10 +877,7 @@ export class Ratification {
   }
 
   /** R57 (G54): one tick of the case-file sweep at `now` (ms): the oldest owed editions, up to the tick's bound, each
-   *  copied and assembled (`./casefile.mjs`). Answers what it did; never throws.
-   * @param {any} now the instant, in ms
-   * @returns {Promise<any>} what the tick did
-   */
+   *  copied and assembled (`./casefile.mjs`). Answers what it did; never throws. */
   async caseFileSweep(now) {
     const w = this.#deps.worker;
     return sweepCaseFiles({ publication: this.publication, stateOf: (id, ed) => this.#editionState(id, ed),
@@ -958,20 +887,14 @@ export class Ratification {
       textAt: typeof this.record.textAtSha === "function" ? (b, h) => this.record.textAtSha(b, h) : undefined });
   }
 
-  /** R57 (G54): when the sweep next has work, in ms, or null; see `./casefile.mjs`.
-   * @param {any} now the instant, in ms
-   * @returns {any} when the sweep next has work, in ms, or null
-   */
+  /** R57 (G54): when the sweep next has work, in ms, or null; see `./casefile.mjs`. */
   caseFileWake(now) { return wakeOfCaseFiles({ publication: this.publication, worker: this.#deps.worker, now }); }
 
   /** R40: `op=publishat`'s store half. Every refusal R3 answers before its commit writes, in R3's order; then every
    *  refusal publication's commit would answer for the document now (the commit is made and rolled back, so the answer
    *  is the commit's own and nothing is written); then SCHEDULE_UNCHECKABLE (C-58.6) when R41 cannot be read; else, in
    *  this one transaction, `publish-schedule` R1 in place of the commit, its answer relayed as given. The same signature
-   *  and `at` again answer its `existed`. Nothing of R3's commit, R36, R37 or R39 happens here: each happens at R42.
-   * @param {any} [args] `{caseId, edition, docSha, sigArmored, attestorKey, attestorMember, gateVersion, deliveredBy, at, members}`
-   * @returns {any} `publish-schedule` R1's answer, or the refusal
-   */
+   *  and `at` again answer its `existed`. Nothing of R3's commit, R36, R37 or R39 happens here: each happens at R42. */
   publishAt({ caseId, edition, docSha, sigArmored, attestorKey, attestorMember, gateVersion, deliveredBy = null,
               at = null, members = null } = {}) {
     const id = String(caseId ?? "").trim();
@@ -1014,11 +937,7 @@ export class Ratification {
    *  publication holds at the waiting `doc_sha`, it runs again every check signing ran but those that read the arriving
    *  credential, then reads R41 again and compares it with `checked`. Any refusal, difference or unread part stops it,
    *  one entry per cause, nothing committed; otherwise it commits as R3 commits and answers `{published: true,
-   *  published_at}`, with R6's assembly, R37's sealed weeks and R39's copy after the commit. Never throws.
-   * @param {any} entry the waiting edition, with its `checked`
-   * @param {any} now the instant
-   * @returns {Promise<any>} `{published: true, published_at, after}` or `{stopped}`
-   */
+   *  published_at}`, with R6's assembly, R37's sealed weeks and R39's copy after the commit. Never throws. */
   async publishScheduled(entry, now) {
     try { return await this.#publishScheduled(entry || {}, now); }
     catch (e) { return { stopped: [unreadableStop(word("ratification.stopped.check_itself_failed", { e: String(String((e && e.message) || e).slice(0, 160)) }))] }; }
@@ -1229,11 +1148,6 @@ export class Ratification {
      outermost commit and is dropped with any refusal or rollback; a retry answering `existed` opens nothing. It is
      async, so the act answers once it settles: its answer is `seals`, and a failure never changes the ceremony's
      answer. It is stated there, and the `working-on-attest` consumer retries the opening. */
-  /**
-   * R3: the case commit.
-   * @param {any} [args] `{caseId, edition, docSha, sigArmored, attestorKey, attestorMember, gateVersion, deliveredBy, members}`
-   * @returns {Promise<any>} the commit's answer, or the refusal
-   */
   async ratifyCaseDocument({ caseId, edition, docSha, sigArmored, attestorKey, attestorMember,
                              gateVersion, deliveredBy = null, members = null } = {}) {
     const id = String(caseId ?? "").trim();
@@ -1570,11 +1484,6 @@ export class Ratification {
      — every one of them was a case fact the control plane read out of a MEMBER's frontmatter; the case's facts are
      committed by `ratifyCaseDocument` out of the case's own signed document, and this method resolves the relation
      from the pin. */
-  /**
-   * R5: the finding commit.
-   * @param {any} [args] the finding's facts and the act's own
-   * @returns {any} the commit's answer, or the refusal
-   */
   publish({ bundleId, bundleSha, attestorKey, attestorMember, gateVersion, sigArmored, shas,
             edition, title, completeness, strength, edges, group = null, deliveredBy = null,
             /* D-442: whether THESE signed bytes carry their own frozen blocks (a member published
@@ -1704,11 +1613,6 @@ export class Ratification {
   /* ---- R9: C-2.8's case-member arm, registered with promotion (a check before the write) and record-core (audit) ----
      A replay re-states the record's own past verbatim and is exempt, as every registered check is. The refusal
      names each finding with its check. */
-  /**
-   * R9: C-2.8's case-member arm, as a promotion step.
-   * @param {any} c the promotion's context
-   * @returns {any} null, or the refusal C-102.10 naming each finding
-   */
   check(c) {
     if (!c || c.replay || (c.pkg && c.pkg.replay)) return null;
     const md = Array.isArray(c.files) ? c.files.find((f) => f && f.path === "bundle.md") : null;
@@ -1722,36 +1626,24 @@ export class Ratification {
              findings: errs.map((x) => ({ check: x.check, detail: x.message, ...(x.repairs ? { repairs: x.repairs } : {}) })) };
   }
 
-  /** R9: the audit check (record-core R59) over one image: every case-member finding of its bundle.md.
-   * @param {any} image the bundle's image
-   * @returns {any[]} the case-member findings
-   */
+  /** R9: the audit check (record-core R59) over one image: every case-member finding of its bundle.md. */
   audit(image) { return caseMemberImageFindings(image, parseFrontmatter); }
 
-  /** R20–R27: the bulk release of a selection from collected to verified (`./release.mjs`).
-   * @param {any} a `{handle, acknowledgment, mitigation, viewer, owner, author}`
-   * @returns {any} the release's answer, or the refusal
-   */
+  /** R20–R27: the bulk release of a selection from collected to verified (`./release.mjs`). */
   release(a) {
     const self = this;   /* contradiction is reached only when a member is examined that far (R22) */
     return release({ sql: this.sql, promotion: this.promotion, retrieval: this.retrieval,
                      get contradiction() { return self.contradiction; } }, a);
   }
 
-  /** R34: R22's examination of one document, as `capture`'s `batch-examination` reader (its R78) reads it.
-   * @param {any} id the document
-   * @returns {any} `{eligible: true}` or `{eligible: false, class, reason}`
-   */
+  /** R34: R22's examination of one document, as `capture`'s `batch-examination` reader (its R78) reads it. */
   examine(id) {
     const self = this;
     const x = examineMember({ sql: this.sql, get contradiction() { return self.contradiction; } }, id);
     return x ? { eligible: false, class: x.class, reason: x.reason } : { eligible: true };
   }
 
-  /** R28–R31, R33: the bulk retirement of a selection from verified (`./retire.mjs`).
-   * @param {any} a `{handle, reason, viewer, owner, author}`
-   * @returns {any} the retirement's answer, or the refusal
-   */
+  /** R28–R31, R33: the bulk retirement of a selection from verified (`./retire.mjs`). */
   retire(a) {
     return retire({ sql: this.sql, promotion: this.promotion, retrieval: this.retrieval,
                     connections: this.connections }, a);
@@ -1788,11 +1680,7 @@ const MINT_SEED = Object.freeze([Object.freeze(["CASE", "cases", "case_id"]),
 /** K61: the one instance per host, created on the first call with `deps`. It registers the case-document catalogue
  *  with promotion (its R47; R8 here), R22's examination as capture's `batch-examination` reader (its R78; R34 here),
  *  C-2.8's case-member arm as a promotion check and an audit check (R9), and its mint-ledger seed sources with record-core (its R70); a refused seed registration is a wiring fault and throws,
- *  rather than leave the ledger blind to the case ids.
- * @param {any} host the Durable Object's state
- * @param {any} [deps] the instance's dependencies; read on the first call only
- * @returns {Ratification} the one instance for the host
- */
+ *  rather than leave the ledger blind to the case ids. */
 export function ratificationOf(host, deps) {
   let r = instances.get(host);
   if (!r) {
@@ -1825,12 +1713,7 @@ export function ratificationOf(host, deps) {
  *  the body's when it states them, else the query's (R51). `viewer`, and release's and retire's `owner` and `author`, are
  *  the control plane's stamps, read from the query, never from the body. `casegate`'s grant digest `secretSha` is the one
  *  exception: read from the internal request's body only, where the control plane sets it after removing any a caller
- *  sent; a `secretSha` in the query is never read (N761; K2129, K2175).
- * @param {any} r the instance (`ratificationOf`)
- * @param {URL} url the request's address, whose query the arms read
- * @param {any} [body] the internal request's body
- * @returns {Record<string, () => any>} the route arms
- */
+ *  sent; a `secretSha` in the query is never read (N761; K2129, K2175). */
 export function ratificationOps(r, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = body && typeof body === "object" ? body : {};
@@ -1860,9 +1743,6 @@ export function ratificationOps(r, url, body) {
 
 /* R53 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
-/**
- * @type {Readonly<Record<string, any>>}
- */
 export const DECLARED_OPS = Object.freeze({
   release: { classes: ["admin","member","probe"], mutating: true, weight: "reasoned", description: "act.release.does",
     fields: { accepts: ["handle","acknowledgment","mitigation"], requires: ["handle","acknowledgment","mitigation"] } },

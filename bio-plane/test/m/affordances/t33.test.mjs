@@ -37,9 +37,6 @@ import { world as eventsWorld } from "../events/fixture.mjs";
 
 const { ACTS, CAPTURE_ACTS, PER_ITEM_ACTS } = A;
 const { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS } = G;
-/* R39's `line_roles`: `lines.roles(kind)` answers null for a value that is not a line kind; every kind `kinds()` lists has an
-   array, and a null here fails by the kind's name. */
-const rolesOf = (kind) => lines.roles(kind) ?? assert.fail(`lines.roles(${kind}) answered null for a listed kind`);
 const url = new URL("http://x/");
 const keysOf = (f) => Object.keys(f({}, url, {}, {}));
 const isMutating = (op) => Object.hasOwn(RUNGS, op) || Object.hasOwn(RUNG_ABSENT, op);
@@ -242,7 +239,6 @@ test("R39 R4: each vocabulary's values are the very objects its owner answers â€
    + "every value carries its word", () => {
   eventsWorld().ev.start();
   const v = A.vocabulariesFor(null);
-  /** @type {[string, any][]} each vocabulary's key and its owner's object */
   const same = [["event_kinds", events.EVENT_KINDS], ["dated_fact_kinds", events.DATED_KINDS], ["event_statuses", events.STATUSES],
     ["participant_roles", events.ROLES], ["event_relation_kinds", events.RELATION_KINDS], ["line_kinds", lines.kinds()],
     ["line_capacities", lines.capacities()], ["money_kinds", money.kinds()], ["money_phases", money.phases()],
@@ -257,11 +253,11 @@ test("R39 R4: each vocabulary's values are the very objects its owner answers â€
     }
   }
   /* line_roles: each kind's own array from roles(kind), and only kinds that take roles */
-  const withRoles = lines.kinds().filter((k) => rolesOf(k).length);
+  const withRoles = lines.kinds().filter((k) => lines.roles(k).length);
   assert.deepEqual(Object.keys(v.line_roles.values), withRoles);
   for (const k of withRoles) {
     assert.equal(v.line_roles.values[k], lines.roles(k), k);
-    assert.deepEqual(Object.keys(v.line_roles.words[k]), [...rolesOf(k)], k);
+    assert.deepEqual(Object.keys(v.line_roles.words[k]), [...lines.roles(k)], k);
   }
   /* connection_kinds (N695, K1864): every kind connection-grammar's owners() lists, carried once: `values` the kind
      names in owners()' order, `words` each kind's registered word, class and owner, and nothing else beside them */
@@ -310,7 +306,7 @@ test("R39 R62 R63: each word is the design's, read by key through setup-words (D
   const read = [];
   for (const k of lines.kinds()) {
     read.push(expect("line_kinds", k, kindOf(`line:${k}`) ? `line:${k}` : null, "linekinds"));
-    for (const r of rolesOf(k)) {
+    for (const r of lines.roles(k)) {
       const key = labelKey(`lineroles.${k}`, r);
       assert.deepEqual(v.line_roles.words[k][r], hasWord(key) ? { word: word(key) } : { word: plainWord(r), provisional: true }, `${k}.${r}`);
       read.push(key);
@@ -394,7 +390,7 @@ test("R41: a refusal is explained from its catalogue row as its owner holds it, 
   assert.equal(e.translation, ROWS.NO_CONCLUSION.translation);
   assert.equal(e.check, "C-25.3");
   assert.equal(e.detail, null);
-  const d = A.decorate(ACTS.find((a) => a.id === "conclude") ?? assert.fail("conclude is an act"), GATE);
+  const d = A.decorate(ACTS.find((a) => a.id === "conclude"), GATE);
   assert.deepEqual([e.rung, e.rung_absence, e.prompt, e.weight], [d.rung, d.rung_absence, d.prompt, d.weight]);
   assert.deepEqual(e.acts, A.deriveActs(inquiryFacts).map((a) => A.decorate(a, GATE)));
   assert.ok(e.acts.some((a) => a.id === "conclude") && e.acts.every((a) => typeof a.rung === "string" || a.rung_absence));

@@ -6,7 +6,6 @@ import {
   checkConfidence, applyConfidenceFloor, checkAnchor, checkAttestation, extentCovers, gradeCeiling,
   captureBound, derivationCap, describeChain, convertedChain, layerChain, TEXT_CHAIN_CHECKS,
 } from "../../../src/textchain.mjs";
-/** @import { Chain, Refusal } from "../../../src/textchain.mjs" */
 import { BASIS_GRADES, EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 
 const isRefusal = (r, code) => {
@@ -56,12 +55,12 @@ test("R44: a refused or below-floor region is replaced by an undetermined one ke
   assert.deepEqual({ ...r.regions[0], why: undefined }, { ...und({ source: src, id: 1 }), why: undefined });
   assert.match(r.regions[0].why, /0\.4/);
   assert.match(r.regions[0].why, /0\.5/);
-  assert.equal(r.regions[1].why, /** @type {Refusal} */ (checkConfidence(regions[1].confidence)).detail);
+  assert.equal(r.regions[1].why, checkConfidence(regions[1].confidence).detail);
   assert.deepEqual({ ...r.regions[1], why: undefined }, { ...und({ source: src, id: 2 }), why: undefined });
   assert.deepEqual(r.regions[2], regions[2]);
   assert.notEqual(r.regions[2], regions[2]);
   assert.deepEqual(r.regions[3], regions[3]);
-  assert.equal(r.regions[4].why, /** @type {Refusal} */ (checkConfidence(undefined)).detail);
+  assert.equal(r.regions[4].why, checkConfidence(undefined).detail);
   assert.equal(r.regions[4].text, null);
   /* A floor that is not a number floors nothing on value. */
   for (const floor of [undefined, null, "0.9"]) assert.equal(applyConfidenceFloor([regions[0]], floor).floored, 0);
@@ -118,9 +117,9 @@ test("R51: the extent must be region, page or document; page needs a page; regio
   for (const page of [undefined, -1, 1.2, "1"]) isRefusal(checkAttestation(att({ kind: "page", page })), "TEXT_ATTEST_EXTENT");
   assert.equal(checkAttestation(att({ kind: "region", source: anchor() })), null);
   for (const source of [undefined, { ...anchor(), rect: [0] }, { ...anchor(), kind: "doc-para" }]) {
-    const r = /** @type {Refusal} */ (checkAttestation(att({ kind: "region", source })));
+    const r = checkAttestation(att({ kind: "region", source }));
     isRefusal(r, "TEXT_ATTEST_EXTENT");
-    assert.ok(r.detail.includes(/** @type {Refusal} */ (checkAnchor(source)).detail), "the anchor's refusal is wrapped in the detail");
+    assert.ok(r.detail.includes(checkAnchor(source).detail), "the anchor's refusal is wrapped in the detail");
   }
 });
 
@@ -200,7 +199,7 @@ test("R59: a host's conversion ahead of a text layer (convert then layer) bounds
   const layer = { step: "layer", tier: 1, container: "odt" };
   for (const layerCap of [null, ...BASIS_GRADES]) {
     const measuredLayer = layerChain({ ...layer, cap: layerCap, calibration: layerCap ? "CAL-9001" : null });
-    const chain = /** @type {Chain} */ (convertedChain(convert, measuredLayer));
+    const chain = convertedChain(convert, measuredLayer);
     assert.deepEqual(chain.map((s) => s.step), ["convert", "layer"]);
     /* R29: the unmeasured head makes the cap undetermined; R59: so the capture axis is bounded to null, for every byte grade. */
     assert.equal(derivationCap(chain), null);

@@ -35,208 +35,6 @@
 import { makeMeter } from "./cpu.mjs";
 import { localize } from "./setup-words/index.mjs";
 
-/**
- * @typedef {Object} SrcsetCandidate one candidate of a `srcset`/`imagesrcset` value, by HTML's own parse
- * @property {string} url the candidate's address, never empty
- * @property {string} descriptor its descriptor (`640w`, `2x`), trimmed; empty when it has none
- */
-/**
- * @typedef {Object} HtmlRef a reference the page makes to something it needs to render (R1, R8)
- * @property {string} ref the reference as written, trimmed
- * @property {string} kind what it is
- * @property {string} where the element and attribute it was found in, e.g. `img[src]`
- * @property {string} region `body` or `furniture` (R8)
- * @property {string} region_basis what decided the region: `<nav>`, `role=navigation`, `default`, ...
- * @property {string} [family] `srcset` for a member of a responsive family (R2)
- * @property {number} [family_size] how many candidates the family has
- * @property {string} [evidentiary_prior] `weak_against` for a family member
- * @property {boolean} [collapsed] true for a family member that is not the one fetched (R2)
- * @bound kind: one of stylesheet, css-asset, font, icon, image, media, script
- * @bound region: one of body, furniture
- */
-/**
- * @typedef {Object} ClassifiedRef a reference resolved and fenced (R6)
- * @property {boolean} ok true when the reference may be fetched
- * @property {string} url the resolved absolute address without its fragment; when not ok, the reference as given (or the resolved address a fence refused)
- * @property {string} [reason] when not ok: REFUSED_SCHEME, UNRESOLVABLE or REFUSED_LOCATOR
- * @property {string} [scheme] the refused scheme, with its colon, for REFUSED_SCHEME
- * @property {boolean} [final] true for UNRESOLVABLE: the same bytes fail the same way on every call (R36)
- */
-/**
- * @typedef {Object} LinkClass how the companion writes one `<a>`/`<area>` href (R15)
- * @property {string} type the link's partition, one of LINK_TYPES
- * @property {*} wrapper what the href becomes, `linkWrapper[type](...)`
- * @property {string|null} [address] the address kept beside the wrapper as `data-bio-href`; null or absent for none
- */
-/**
- * @typedef {Object} CompanionOptions what `renderCompanion` is told
- * @property {(ref: string, kind: string) => (string|null)} resolve the placeholder a subresource reference becomes, or null to leave it as written
- * @property {(ref: string) => LinkClass} classifyLink the partition, wrapper and address of a link href
- * @property {*} primarySha the hash of the raw capture the companion is derived from, named in its banner
- * @property {*} when the instant named in the banner
- */
-/**
- * @typedef {Object} Origin where an address sits against the page's host (R20, R21)
- * @property {string} origin same_host, same_site, third_party, or unknown when the address is unparseable
- * @property {string|null} host the address's hostname, lowercased; null when unparseable
- * @property {boolean} [approximate] true with same_site: compared by the last two labels, with no public-suffix list
- * @bound origin: one of same_host, same_site, third_party, unknown
- */
-/**
- * @typedef {Object} SiteAsset what `siteLookup` reports of an asset the host has served before (R11)
- * @property {string} [sha256] the bytes' hash; absent means not seen before
- * @property {number} [bytes]
- * @property {string} [content_type]
- * @property {number} [documents] distinct document addresses it was seen served across
- * @property {number} [documents_undetermined] earlier captures whose page the record does not name
- * @property {string} [last_fetched] when an earlier capture's fetch of it was filed (the Store's clock)
- * @property {string|null} [last_fetched_by] the capture that filed it
- * @property {string} [stable_since]
- * @property {number} [changes]
- */
-/**
- * @typedef {Object} ReuseOptions
- * @property {number} [now] the present instant, in milliseconds
- * @property {number} [freshWindowMs] absent is 24 hours
- * @property {number} [minDocuments] absent is 2
- */
-/**
- * @typedef {Object} ReuseDecision
- * @property {boolean} reuse
- * @property {string} [why] when not reused: not_seen_before, evidence_is_always_fetched, shared_across_documents_undetermined, not_yet_shared_across_documents, no_fetch_record or last_seen_served_too_long_ago
- * @property {number} [age_ms] with last_seen_served_too_long_ago
- * @property {number} [fetched_age_ms] when reused: how long ago the bytes were seen served
- * @property {number|null} [stable_for_ms] when reused; null when the record gives no stable instant
- * @property {number} [changes] when reused
- */
-/**
- * @typedef {Object} SpreadClock one of the two clocks a part's fetch instant is read on (R16)
- * @property {string} instant the record field the instant is read from
- * @property {string} clock whose clock it is, in words
- */
-/**
- * @typedef {Object} ClockSpread the fetch instants of the held parts on one clock (R16)
- * @property {string} instant
- * @property {string} clock
- * @property {number} parts
- * @property {string} earliest
- * @property {string} latest
- * @property {number} span_ms
- */
-/**
- * @typedef {Object} PartFetchSpread a composite capture's temporal spread, per clock (R16, D-191)
- * @property {number} parts held parts
- * @property {number} undetermined held parts whose instant is absent or unreadable, never placed
- * @property {*} clocks a ClockSpread by clock name, only for clocks that hold parts
- * @property {string} state no_instants, one_clock or two_clocks_not_compared
- * @property {string|null} clock the one clock, when exactly one holds parts
- * @property {string|null} earliest composite-wide; null unless exactly one clock holds parts
- * @property {string|null} latest composite-wide; null unless exactly one clock holds parts
- * @property {string} note
- * @bound state: one of no_instants, one_clock, two_clocks_not_compared
- * @bound clocks: names capture and record only
- */
-/**
- * @typedef {Object} FetchPolicy whether a reference is fetched (R7, R31)
- * @property {boolean} fetch
- * @property {string} [why] when fetched: layout, served_with_the_page or in_the_document
- * @property {string} [reason] when not: COLLAPSED_SRCSET_FAMILY, THIRD_PARTY or OUTSIDE_THE_DOCUMENT
- * @property {string} [detail] when not, in words
- */
-/**
- * @typedef {Object} LinkWrappers the four wrapper forms of a link, by partition (R22 to R25)
- * @property {(fragment: *) => *} anchor the fragment, unchanged
- * @property {(sha256: *) => string} intra `about:capture#` and the hash
- * @property {(url: *) => string} deferred `about:link#` and the address, URI-encoded
- * @property {(...ignored: *[]) => string} refused `about:link#refused`, whatever it is given
- * @bound anchor(fragment) is fragment, unchanged (R22)
- * @bound intra(sha256) is "about:capture#" + sha256 (R23)
- * @bound deferred(url) is "about:link#" + encodeURIComponent(url), a lone surrogate encoded as U+FFFD (%EF%BF%BD); never throws (R24, R36)
- * @bound refused() is "about:link#refused" (R25)
- */
-/**
- * @typedef {Object} ReadWrapper a wrapper read back
- * @property {string} type anchor, intra, deferred or refused
- * @property {string} [url] with deferred: the address, decoded
- * @property {string} [sha256] with intra
- * @property {string} [fragment] with anchor: the fragment, with its `#`
- */
-/**
- * @typedef {Object} FetchAnswer what the injected `fetchOne` answers
- * @property {boolean} [ok] true when the source served the bytes
- * @property {number|null} [status]
- * @property {Uint8Array} [bytes] the body, when ok
- * @property {string|null} [contentType]
- * @property {string} [reason] when not ok: SOURCE_REFUSED, FETCH_FAILED, or a word of the caller's own (kept as fetch_reason, recorded FETCH_FAILED)
- * @property {string} [detail]
- */
-/**
- * @typedef {Object} PutAnswer what the injected `put` answers
- * @property {boolean} [existed] true when the store already held the bytes
- */
-/**
- * @typedef {Object} CaptureArgs what `captureSubresources` is given (R1 to R17, R28)
- * @property {string} html the primary page's text; no default, as the four injected functions have none
- * @property {*} base the primary's own address, which references resolve against
- * @property {*} primarySha the raw capture's hash, named in the companion's banner and the manifest
- * @property {*} primaryFile the raw capture's file name, e.g. `snapshots/<name>`
- * @property {(url: string) => (FetchAnswer|Promise<FetchAnswer>)} fetchOne fetches one address; a throw naming a subrequest or runtime limit is the platform's limit (R10)
- * @property {(sha256: string, bytes: Uint8Array) => (PutAnswer|Promise<PutAnswer>)} put stores bytes under their hash
- * @property {(bytes: Uint8Array) => (string|Promise<string>)} sha256 hex hash of bytes
- * @property {(url: string) => *} isPublic the fence guarding the primary locator, applied to every reference (R30)
- * @property {number} [cap] absent is SUBRESOURCE_CAP
- * @property {number} [perMax] absent is SUBRESOURCE_MAX
- * @property {number} [budget] absent is SUBRESOURCE_BUDGET
- * @property {() => Date} [now] absent is the present
- * @property {number|null} [platformCeiling] the platform's limit as last observed; absent or null is none known
- * @property {number} [platformMargin] absent is 5
- * @property {number} [subrequestsAlreadySpent] absent is 1
- * @property {((addressNorm: string) => *)|null} [siteLookup] answers a SiteAsset or null, or a promise of one; absent, nothing is reused
- * @property {number} [reuseFreshWindowMs] absent is 24 hours
- * @property {number} [reuseMinDocuments] absent is 2
- * @property {((sha256: string) => *)|null} [readBack] reads stored bytes back as text (or a promise of it), null when not held
- * @property {Object<string, *>|null} [resume] an earlier run's resumeState
- * @property {*} [meter] absent is runtime-limits' makeMeter()
- * @bound cap: R4, R35; absent is SUBRESOURCE_CAP, 400: fetchOne is called for at most cap references, each further one recorded CAP_REACHED
- * @bound perMax: R5; a body over perMax bytes is recorded TOO_LARGE and not stored
- * @bound budget: R5; once bytes fetched this run reach budget, a further reference is recorded BUDGET_EXHAUSTED
- * @bound platformCeiling: R10; once attempted reaches platformCeiling - platformMargin - subrequestsAlreadySpent, every further reference is recorded DEFERRED
- * @bound reuseMinDocuments, reuseFreshWindowMs: R11; only a stylesheet, css-asset, font or icon is ever reused
- */
-/**
- * @typedef {Object} Rendition one file derived from the primary (R16)
- * @property {string} file
- * @property {string} kind render_companion or snapshot_manifest
- * @property {*} from_file the primary's file
- * @property {string} sha256
- * @property {number} bytes
- * @property {string} content_type
- * @property {string} transform
- * @property {string} reason
- */
-/**
- * @typedef {Object} CaptureResultCore what `captureSubresources` resolves to (R16)
- * @property {Object<string, *>[]} subresources every reference's record, one each, in the order settled
- * @property {Object<string, *>[]} links every link, one per distinct (type, citation-or-address) (R15, R34)
- * @property {Object<string, *>[]} siteObservations one per fetched-or-reused resource, for the caller to file
- * @property {number} reused
- * @property {*} meter
- * @property {Object<string, *>|null} resumeState non-null exactly when something was deferred this run (R13)
- * @property {Object<string, *>} manifest
- * @property {string} manifestSha
- * @property {Uint8Array} manifestBytes
- * @property {string} companionText
- * @property {string} companionSha
- * @property {Uint8Array} companionBytes
- * @property {boolean} truncated
- * @property {number} discovered
- * @property {number} attempted
- * @property {Rendition[]} renditions the render companion and the manifest
- * @bound each subresources record: reason, when not ok, is one of the closed set SOURCE_REFUSED, FETCH_FAILED, TOO_LARGE, REFUSED_SCHEME, REFUSED_LOCATOR, UNRESOLVABLE, OUTSIDE_THE_DOCUMENT, THIRD_PARTY, COLLAPSED_SRCSET_FAMILY, CAP_REACHED, BUDGET_EXHAUSTED, PLATFORM_LIMIT, DEFERRED (R16, R33); only a record whose fetch was issued this run carries fetched_at (R17)
- * @bound each links entry: type is one of LINK_TYPES; chrome is true or false and chrome_basis a furniture basis or null (R34)
- */
-/** @typedef {CaptureResultCore & Object<string, *>} CaptureResult the result, which a caller may add its own fields to */
-
 /** OUR policy ceiling: how many fetches this instance is willing to spend on a
  *  single document. This is a choice about appetite, and it exists because an
  *  adversary-chosen page can name ten thousand addresses.
@@ -249,17 +47,11 @@ import { localize } from "./setup-words/index.mjs";
  *  then be silently wrong everywhere at once.
  *
  *  The platform's limit is DISCOVERED, recorded, and acted on. See
- *  `platformCeiling` below and docs/development/CAPTURE-SCALING.md.
- *  @type {number}
- *  @bound 400: this instance's own fanout ceiling and captureSubresources' default cap, never the platform's limit (R27, R35) */
+ *  `platformCeiling` below and docs/development/CAPTURE-SCALING.md. */
 export const SUBRESOURCE_CAP = 400;
-/** Bytes for any one subresource. A stylesheet or an image, not a video.
- *  @type {number}
- *  @bound 8 * 1024 * 1024 bytes, this instance's own per-subresource ceiling (R27) */
+/** Bytes for any one subresource. A stylesheet or an image, not a video. */
 export const SUBRESOURCE_MAX = 8 * 1024 * 1024;
-/** Bytes across all subresources of one capture.
- *  @type {number}
- *  @bound 64 * 1024 * 1024 bytes, this instance's own per-capture ceiling (R27) */
+/** Bytes across all subresources of one capture. */
 export const SUBRESOURCE_BUDGET = 64 * 1024 * 1024;
 
 /* Depth: the primary HTML is depth 0. Everything it names directly is depth 1.
@@ -267,9 +59,6 @@ export const SUBRESOURCE_BUDGET = 64 * 1024 * 1024;
  * to depth 2, and there the following stops. That is the "one level deep" the
  * spec asks for, and it is what makes an @import chain terminate rather than
  * walk. A depth-2 stylesheet is still CAPTURED, it is just not READ. */
-/** R1: how deep stylesheets are followed; the primary is depth 0.
- *  @type {number}
- *  @bound 2: a stylesheet below this depth has its own targets followed; one at it is captured, never read (R1) */
 export const CSS_MAX_DEPTH = 2;
 
 /* Elements whose whole subtree leaves the render companion. Scripts are
@@ -286,12 +75,9 @@ const REFUSED_SCHEMES = ["javascript:", "data:", "blob:", "about:", "mailto:", "
 const ATTR_RE = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const LONE_SURROGATE_RE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
-/** R14: the placeholder a rewritten reference becomes, `about:capture#<sha256>`. Never throws.
- *  @param {*} sha the held bytes' hash
- *  @returns {string} */
+/** The placeholder a rewritten reference becomes. */
 export const placeholderFor = (sha) => `about:capture#${sha}`;
-/** R14: what a reference becomes when its bytes are not in the record.
- *  @type {string} */
+/** What a reference becomes when its bytes are not in the record. */
 export const PLACEHOLDER_MISSING = "about:capture#unavailable";
 
 /* ------------------------------------------------------------------ *
@@ -454,7 +240,7 @@ function cssUrls(t) {
   return out;
 }
 
-/** Every CSS import rule of `t` with its target, `url( … )` or a quoted string: `{index, end, g}`, `g` the five groups. */
+/** Every `@import` of `t` with its target, `url( … )` or a quoted string: `{index, end, g}`, `g` the five groups. */
 function cssImports(t) {
   const re = /@import\s+/gi, out = [];
   for (let m; (m = re.exec(t)); ) {
@@ -514,20 +300,14 @@ const attr = (as, n) => { const a = as.find((x) => x.name === n); return a ? a.v
  *  with trailing commas and no descriptor ends the candidate itself.
  *
  *  Getting this wrong is not cosmetic here: every invented reference is a fetch
- *  this instance makes at an address the page never named.
- *  R2: never throws; `v` is read as `String(v)` writes it.
- *  @param {*} v a `srcset` value
- *  @returns {string[]} each candidate's address, in order */
+ *  this instance makes at an address the page never named. */
 export function srcsetUrls(v) {
   return srcsetCandidates(v).map((c) => c.url);
 }
 
 /** The same parse, keeping each candidate's descriptor beside its URL. Pairing
  *  them by splitting the attribute on commas a second time misaligned every
- *  descriptor after a URL that itself contains a comma.
- *  R2: never throws; `v` is read as `String(v)` writes it.
- *  @param {*} v a `srcset` value
- *  @returns {SrcsetCandidate[]} in order, none with an empty address */
+ *  descriptor after a URL that itself contains a comma. */
 export function srcsetCandidates(v) {
   const out = [];
   const s = String(v);
@@ -562,7 +342,7 @@ export function srcsetCandidates(v) {
 /* A commented-out rule was not served to the renderer as a rule, so its url()
    is not a request the browser would make. */
 
-/** A stylesheet's own references, each `{url, kind}`: an import rule's target is a
+/** A stylesheet's own references, each `{url, kind}`: an @import target is a
  *  stylesheet (it ranks, and is read, as one); a url() is a css-asset. */
 function cssRefList(css) {
   const out = [];
@@ -662,10 +442,7 @@ function regionStack() {
  *  look like itself, in document order, each carrying what kind of thing it is
  *  and where in the source it was found. Comments are stripped first: a
  *  commented-out stylesheet was not served to the reader and fetching it would
- *  be inventing a request the browser never made.
- *  R1, R2, R8. Never throws; `html` is read as `String(html)` writes it.
- *  @param {*} html the page's text
- *  @returns {HtmlRef[]} in document order */
+ *  be inventing a request the browser never made. */
 export function parseHtmlRefs(html) {
   return scanHtml(html).refs;
 }
@@ -791,14 +568,7 @@ function scanHtml(html) {
 /** Resolve a reference against the page's address and decide whether this
  *  instance will fetch it. The fence is the caller's isPublicHttpsLocator, the
  *  same one guarding the primary locator and the gathering queue, so a
- *  subresource can never reach an address the primary could not.
- *  R6, R30, R36: a refused scheme, an unresolvable reference and a refused
- *  locator are answers, never throws.
- *  @param {string} ref the reference as written
- *  @param {*} base the address it resolves against
- *  @param {(url: string) => *} isPublic the fence; a truthy answer lets the address through
- *  @returns {ClassifiedRef}
- *  @throws {TypeError} when `ref` is not a string or `isPublic` is not callable (and whatever `isPublic` itself throws) */
+ *  subresource can never reach an address the primary could not. */
 export function classifyRef(ref, base, isPublic) {
   const lower = ref.toLowerCase();
   for (const s of REFUSED_SCHEMES) {
@@ -857,11 +627,7 @@ function rewriteCssText(css, resolve) {
  *  reference becomes, or null to leave it alone. `classifyLink(ref)` returns
  *  `{type, wrapper, address}` for an <a> or <area> href: the address is kept as
  *  a data attribute so what the page pointed at is never lost, while the href
- *  itself becomes a wrapper that cannot navigate anywhere on its own.
- *  R14, R29. Throws nothing of its own; only what `resolve` or `classifyLink` throws.
- *  @param {*} html the primary page's text, read as `String(html)` writes it
- *  @param {CompanionOptions} options
- *  @returns {string} the companion's text */
+ *  itself becomes a wrapper that cannot navigate anywhere on its own. */
 export function renderCompanion(html, { resolve, classifyLink, primarySha, when }) {
   let src = stripElements(String(html));
 
@@ -946,11 +712,7 @@ export function renderCompanion(html, { resolve, classifyLink, primarySha, when 
  *  same_site is approximate: with no public suffix list it compares the last
  *  two labels, so it is right for oaklandca.gov and wrong for a .co.uk. It is
  *  recorded AS an approximation, and the host is kept beside it, so a better
- *  rule can be applied later without the input having been destroyed.
- *  R20, R21. Never throws.
- *  @param {*} url the address
- *  @param {*} baseHost the page's host, compared case-insensitively
- *  @returns {Origin} */
+ *  rule can be applied later without the input having been destroyed. */
 export function originOf(url, baseHost) {
   let h;
   try { h = new URL(url).hostname.toLowerCase(); } catch { return { origin: "unknown", host: null }; }
@@ -992,13 +754,7 @@ export function originOf(url, baseHost) {
  * those stylesheets name, then the document's own images, and scripts last
  * because they are held as evidence and never rendered at all. Truncation then
  * costs the least important thing rather than an arbitrary one. */
-/** R3: each kind's rank in fetch order, lowest first.
- *  @type {Object<string, number>} */
 export const FETCH_PRIORITY = { stylesheet: 0, "css-asset": 1, font: 1, icon: 2, image: 3, media: 4, script: 5 };
-/** R3: a reference's place in fetch order, lowest first: twice its kind's rank (an unknown kind ranks as an image),
- *  plus one in a furniture region. Never throws for an object.
- *  @param {Object<string, *>} ref a reference, read for its `kind` and `region`
- *  @returns {number} */
 export const priorityOf = (ref) =>
   (FETCH_PRIORITY[ref.kind] ?? 3) * 2 + (ref.region === "furniture" ? 1 : 0);
 
@@ -1048,10 +804,7 @@ function makeQueue(items) {
  *
  *  Sorting query parameters is the one liberty taken, because Legistar's
  *  View.ashx?M=F&ID=..&GUID=.. is the shape most of this record's material
- *  arrives in and parameter order there carries no meaning.
- *  R18, R36. Never throws: an unparseable `url` answers `String(url).trim()`.
- *  @param {*} url the address
- *  @returns {string} */
+ *  arrives in and parameter order there carries no meaning. */
 export function normalizeAddress(url) {
   let u;
   try { u = new URL(url); } catch { return String(url).trim(); }
@@ -1102,10 +855,7 @@ export function normalizeAddress(url) {
  *  So both keys are kept on every link. The resource key resolves the link
  *  against what the store has captured; the citation key is the identity of the
  *  citation itself. Collapsing them, which the first cut did, made a link to
- *  #findings and a link to #methodology indistinguishable.
- *  R19, R36. Never throws.
- *  @param {*} url the address, with or without a fragment; a missing one is read as empty
- *  @returns {string} */
+ *  #findings and a link to #methodology indistinguishable. */
 export function normalizeCitation(url) {
   const raw = String(url || "").trim();
   const hash = raw.indexOf("#");
@@ -1114,9 +864,7 @@ export function normalizeCitation(url) {
   return normalizeAddress(raw.slice(0, hash)) + (frag ? "#" + frag : "");
 }
 
-/** The element a citation names, or null when it names the whole document. Never throws.
- *  @param {*} url the address
- *  @returns {string|null} the fragment after the first `#`, trimmed, without the `#` */
+/** The element a citation names, or null when it names the whole document. */
 export function fragmentOf(url) {
   const raw = String(url || "").trim();
   const hash = raw.indexOf("#");
@@ -1125,9 +873,6 @@ export function fragmentOf(url) {
   return frag || null;
 }
 
-/** R11: the kinds whose bytes may be reused; a script, an image or media never is.
- *  @type {Set<string>}
- *  @bound exactly stylesheet, css-asset, font, icon (R11) */
 export const REUSABLE_KINDS = new Set(["stylesheet", "css-asset", "font", "icon"]);
 
 /** Whether an earlier capture's bytes may stand in for a fetch now.
@@ -1147,13 +892,7 @@ export const REUSABLE_KINDS = new Set(["stylesheet", "css-asset", "font", "icon"
  *  evidence. The bytes must have been seen served within the freshness window.
  *  And it must appear across more than one document, because an asset referenced
  *  by exactly one page is that page's own whatever directory it sits in — a
- *  document being a PAGE (its address), not a capture of it (CAP-13).
- *  R11. Never throws for an object `ref`.
- *  @param {Object<string, *>} ref the reference, read for its `kind`
- *  @param {SiteAsset|null} [known] what the host served before; absent or without sha256 is not seen before
- *  @param {ReuseOptions} [options]
- *  @returns {ReuseDecision}
- *  @bound minDocuments: counts distinct document addresses; documents_undetermined never counts toward it (CAP-13) */
+ *  document being a PAGE (its address), not a capture of it (CAP-13). */
 export function reuseDecision(ref, known, { now, freshWindowMs = 24 * 3600 * 1000, minDocuments = 2 } = {}) {
   if (!known || !known.sha256) return { reuse: false, why: "not_seen_before" };
   if (!REUSABLE_KINDS.has(ref.kind)) return { reuse: false, why: "evidence_is_always_fetched" };
@@ -1196,16 +935,10 @@ export function reuseDecision(ref, known, { now, freshWindowMs = 24 * 3600 * 100
  *  A part is a record the capture HOLDS bytes for (`ok`). A reused part whose
  *  instant is absent or unreadable is counted `undetermined`, never placed. The
  *  primary is not a part here: its retrieval is the document's own. */
-/** R16: the two clocks a part's fetch instant is read on, by name.
- *  @type {{capture: SpreadClock, record: SpreadClock}} */
 export const SPREAD_CLOCKS = {
   capture: { instant: "fetched_at", clock: localize("subresources.subresources.the_capturing_worker_s_clock", "the capturing Worker's clock, stamped as this capture issued the request") },
   record: { instant: "reused_from_fetched_at", clock: "the Store's clock (site_assets.last_fetched), stamped when an earlier capture's fetch was filed" },
 };
-/** R16 (D-191): the earliest and latest fetch instants of the held (`ok`) records, per clock, never compared across
- *  clocks. Never throws: a missing list is empty, a missing record is skipped.
- *  @param {Iterable<*>|null} [records] subresource records
- *  @returns {PartFetchSpread} */
 export function partFetchSpread(records) {
   const acc = { capture: [], record: [] };
   let undetermined = 0, parts = 0;
@@ -1237,10 +970,6 @@ export function partFetchSpread(records) {
   };
 }
 
-/** R7, R31: whether a reference is fetched, by the rule set out above `FETCH_PRIORITY`. Never throws for an object `ref`.
- *  @param {Object<string, *>} ref the reference, read for `collapsed`, `family_size`, `kind`, `region` and `region_basis`
- *  @param {*} origin its `origin` from originOf
- *  @returns {FetchPolicy} */
 export function fetchPolicy(ref, origin) {
   if (ref.collapsed)
     return { fetch: false, reason: "COLLAPSED_SRCSET_FAMILY",
@@ -1291,15 +1020,10 @@ export function fetchPolicy(ref, origin) {
  * fact about the record's coverage, so it goes in the manifest, dated, where it
  * can be superseded without rewriting anything.
  */
-/** R26: the link partitions `linkWrapper` covers.
- *  @type {string[]}
- *  @bound exactly anchor, intra, deferred, refused, in that order; nothing else is a link type (R26) */
 export const LINK_TYPES = ["anchor", "intra", "deferred", "refused"];
 
 /** The wrapper each partition renders as. `deferred` is resolved by the viewer
- *  into linked-or-offsite; the other three are final at capture.
- *  R22 to R25: no form throws, for any string argument (R36).
- *  @type {LinkWrappers} */
+ *  into linked-or-offsite; the other three are final at capture. */
 export const linkWrapper = {
   anchor: (frag) => frag,
   intra: (sha) => `about:capture#${sha}`,
@@ -1309,10 +1033,7 @@ export const linkWrapper = {
 };
 
 /** Read a wrapper back. The viewer needs this and so does anything auditing a
- *  companion, so it lives beside the writer rather than being re-derived.
- *  Never throws: a deferred wrapper that does not decode reads as refused.
- *  @param {*} v the wrapper
- *  @returns {ReadWrapper|null} null when `v` is no wrapper */
+ *  companion, so it lives beside the writer rather than being re-derived. */
 export function readLinkWrapper(v) {
   const s = String(v || "");
   if (s === "about:link#refused") return { type: "refused" };
@@ -1336,20 +1057,6 @@ export function readLinkWrapper(v) {
  *    put(sha, bytes)   -> { existed: boolean }
  *    sha256(bytes)     -> hex string
  *    isPublic(url)     -> boolean
- *
- *  R16 Errors: never throws for anything about a reference or the source: a
- *  refused scheme, a refused locator, an oversized body, a cap, budget or
- *  platform limit, or a failed or throwing fetchOne all become records (R36).
- *
- *  What does throw is a defect of the caller's: an input it must supply and did
- *  not, or an injected function answering outside the shape stated above. A
- *  throw out of an injected function other than fetchOne (put, sha256,
- *  siteLookup, readBack, meter) is the caller's own store, hash or clock
- *  failing, and passes through: swallowing it would file a manifest saying
- *  bytes are held that no store holds.
- *  @param {CaptureArgs} args
- *  @returns {Promise<CaptureResult>}
- *  @throws {TypeError} when fetchOne, put, sha256 or isPublic is not a function, when html is not the page's text, or when put answers outside { existed }; none has a default
  */
 export async function captureSubresources({
   html, base, primarySha, primaryFile, fetchOne, put, sha256, isPublic,
@@ -1385,14 +1092,6 @@ export async function captureSubresources({
      a reference that would have called it. */
   for (const [name, fn] of [["fetchOne", fetchOne], ["put", put], ["sha256", sha256], ["isPublic", isPublic]])
     if (typeof fn !== "function") throw new TypeError(`captureSubresources: ${name} must be a function`);
-  /* The primary's own text has no default either, and a caller's defect about it
-     is named here rather than left to surface further in as a property read of
-     null. Taking a missing `html` for an empty page would file a manifest
-     saying the primary referenced nothing and was complete, which is a false
-     statement about this capture, not a capture of an empty page. A defect of
-     the caller's is a throw; the page's own bytes never are (R36). */
-  if (typeof html !== "string")
-    throw new TypeError("captureSubresources: html must be the primary page's text");
   /* Why an asset the host has served before was fetched anyway. Recorded so a
      reuse rate that quietly falls to zero is visible rather than mysterious. */
   const noReuse = [];
@@ -1458,10 +1157,7 @@ export async function captureSubresources({
     queue = makeQueue(queued);
     /* A resumed item was DEFERRED last tick and is being tried again, so its
        earlier row goes: leaving it would double-count and would leave a
-       "deferred" row beside the real outcome. PLATFORM_LIMIT is read here too:
-       nothing writes that reason any more (R10), but a resumeState written by an
-       earlier build can still carry one, and such a row must be dropped on
-       retry exactly as a DEFERRED one is. */
+       "deferred" row beside the real outcome. */
     const retry = new Set(queued.map((q) => q.retryUrl).filter(Boolean));
     for (let i = records.length - 1; i >= 0; i--)
       if ((records[i].reason === "DEFERRED" || records[i].reason === "PLATFORM_LIMIT") && retry.has(records[i].url)) {
@@ -1542,11 +1238,10 @@ export async function captureSubresources({
       continue;
     }
     /* Once the runtime has refused, every further attempt is another refusal.
-       0.37.0 kept trying and wrote 85 rows for it, spending time to record the
-       same fact repeatedly. Stop, and say the rest is outstanding rather than
-       failed. Where the ceiling was met is read from
-       manifest.platform.observed_ceiling, not from one row wearing a different
-       reason (R10). */
+       0.37.0 kept trying and wrote 85 identical PLATFORM_LIMIT rows, which
+       spends time to record the same fact repeatedly and buries the one row
+       that actually discovered the ceiling. Stop, and say the rest is
+       outstanding rather than failed. */
     if (platformHit || attempted >= ceilingBudget) {
       deferred++;
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
@@ -1640,10 +1335,7 @@ export async function captureSubresources({
          SOURCE into the manifest, which is the one kind of error this system
          exists to prevent. */
       const platform = /too many subrequests|subrequest limit|exceeded.*limit/i.test(msg);
-      /* A platform refusal is settled below as DEFERRED (R10), so no reason is
-         named here for it: the only reason this object ever carries is the
-         source's. */
-      r = { ok: false, status: 0, ...(platform ? {} : { reason: "FETCH_FAILED" }),
+      r = { ok: false, status: 0, reason: platform ? "PLATFORM_LIMIT" : "FETCH_FAILED",
             detail: platform
               ? localize("subresources.subresources.the_runtime_refused_another", "the runtime refused another outbound request in this invocation; the source was never asked, and this says nothing about whether it would have answered")
               : msg };
@@ -1659,22 +1351,13 @@ export async function captureSubresources({
     }
 
     if (limited) {
-      /* The runtime refused before the request left, so no fetch instant and no
-         status, and the reference is outstanding like the ones after it: a
-         continuation retries it rather than losing it.
-
-         R10: it is recorded THE SAME WAY as those that follow it — one DEFERRED
-         row, not a reason of its own. That the ceiling was discovered at this
-         reference is carried by manifest.platform.limited and
-         observed_ceiling, which is where a reader looks for it. A second word
-         for it on this one row said the same fact twice and made the row a
-         continuation must retry look unlike its neighbours, which are the same
-         fact and the same work. */
-      deferred++;
+      /* The runtime refused before the request left, so no fetch instant, and
+         the reference is outstanding like the ones after it: a continuation
+         retries it rather than losing it. */
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
         cssOwnerIdx: item.cssOwner ? (recIdx.get(item.cssOwner) ?? -1) : null,
         retryUrl: cls.url });
-      const rec = { ...stem, ok: false, status: null, reason: "DEFERRED", detail: r.detail };
+      const rec = { ...stem, ok: false, status: 0, reason: "PLATFORM_LIMIT", detail: r.detail };
       byUrl.set(cls.url, rec); settle(item, rec);
       continue;
     }
@@ -1702,15 +1385,7 @@ export async function captureSubresources({
     }
     spent += bytes.length;
     const sha = await meter.cpuAwait("hash_subresource", () => sha256(bytes), bytes.length);
-    /* put's stated answer is { existed }. One that answers outside that shape is
-       the caller's defect, named here rather than surfacing as a destructuring
-       error, which reads like a fault of the moment that a retry might clear
-       (R36). A throw out of put itself is the caller's own store failing and
-       passes through. */
-    const stored = await put(sha, bytes);
-    if (!stored || typeof stored !== "object")
-      throw new TypeError("captureSubresources: put must answer { existed }");
-    const { existed } = stored;
+    const { existed } = await put(sha, bytes);
     const ct = (r.contentType || "").split(";")[0].trim();
     const rec = { ...stem, ok: true, status: r.status ?? 200, sha256: sha, bytes: bytes.length,
                   ...(ct ? { content_type: ct } : {}), existed: !!existed, fetched_at: fetchedAt };
@@ -1872,10 +1547,6 @@ export async function captureSubresources({
     counts: {
       fetched: fetched.length,
       failed: records.filter((r) => !r.ok && (r.reason === "SOURCE_REFUSED" || r.reason === "FETCH_FAILED" || r.reason === "TOO_LARGE")).length,
-      /* Zero on anything this build captured: the reference the runtime refused
-         is one DEFERRED row like the rest (R10). It stays a count because a
-         resumed state written by an earlier build can still carry such a row,
-         and the totals below must still place it. */
       platform_limited: records.filter((r) => r.reason === "PLATFORM_LIMIT").length,
       deferred: records.filter((r) => r.reason === "DEFERRED").length,
       refused: records.filter((r) => !r.ok && (r.reason === "REFUSED_SCHEME" || r.reason === "REFUSED_LOCATOR" || r.reason === "UNRESOLVABLE")).length,

@@ -9,9 +9,7 @@ import { caseDocumentBlocks, acceptedWorkOf, peopleOf, memberTiesOf } from "../c
 import { rowOf } from "./checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
-/** R41: the parts of `checked`, in the order they are recorded and compared.
- * @type {readonly string[]}
- */
+/** R41: the parts of `checked`, in the order they are recorded and compared. */
 export const CHECKED_PARTS = Object.freeze(["sources", "ties", "holds", "signer_key", "approvals"]);
 
 /* R50 (T41; D60): the `approvals` part with no rule in force, which a waiting edition signed before the part existed
@@ -29,10 +27,7 @@ const listOf = (x, key) => (Array.isArray(x) ? x : x && typeof x === "object" &&
   ? x[key] : null);
 
 /** R41: an SSH key's fingerprint as `ssh-keygen -l` prints it, `SHA256:` and the unpadded base64 of the SHA-256 of the
- *  key blob (given as its base64); null when there is no key.
- * @param {any} keyB64 the key blob, as base64
- * @returns {string|null}
- */
+ *  key blob (given as its base64); null when there is no key. */
 export function keyFingerprint(keyB64) {
   if (!str(keyB64)) return null;
   const hex = createSha256().update(b64ToBytes(keyB64.trim())).hex();

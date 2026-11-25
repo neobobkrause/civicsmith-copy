@@ -17,7 +17,6 @@
  * under miniflare as its own suite boots it, each page's line regions joined as the reading pipeline joins them. */
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { withBuiltBundle } from "../../ocr-worker/test/memberworker.mjs";
 import { extractPdfStructure } from "../../bio-plane/src/pdfstructure.mjs";
 import { mergeTier2Text, glyphCount } from "../../bio-plane/src/textchain.mjs";
 
@@ -46,7 +45,7 @@ async function tier2Text(bytes) {
   return { document, pages, undetermined, counts: { chars: document.length, undetermined: undetermined.length } };
 }
 
-/* The OCR member, from its upload parts, its bundle built first (ocr-worker R32; the recipe of ocr-worker/test/memberworker.mjs). */
+/* The OCR member, from its committed upload parts (the recipe of ocr-worker/test/memberworker.mjs). */
 let ocr = null;
 async function tier3Text(bytes) {
   if (!ocr) {
@@ -56,7 +55,7 @@ async function tier3Text(bytes) {
       name: "ocr-worker", modulesRoot: part(""), compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"],
       bindings: { VERSION: "doctypes-r35-capture" },
       modules: [
-        { type: "ESModule", path: part("dist/ocr-worker.bundled.mjs"), contents: withBuiltBundle() },
+        { type: "ESModule", path: part("dist/ocr-worker.bundled.mjs"), contents: fs.readFileSync(part("dist/ocr-worker.bundled.mjs"), "utf8") },
         { type: "CompiledWasm", path: part("assets/tesseract-core.wasm"), contents: fs.readFileSync(part("assets/tesseract-core.wasm")) },
         { type: "Data", path: part("assets/eng.traineddata"), contents: fs.readFileSync(part("assets/eng.traineddata")) },
       ] }] });

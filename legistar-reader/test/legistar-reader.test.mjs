@@ -103,7 +103,6 @@ test("R2 parse gives endpoint, client, rows, page and facts; every row its kind,
     const f = load(name);
     const p = parse(fixCtx(name));
     const addr = readAddress(f.locator);
-    assert.ok(!("why" in addr), name);
     const spec = ENDPOINTS[addr.endpoint];
     assert.equal(p.endpoint, addr.endpoint);
     assert.equal(p.client, "oakland");

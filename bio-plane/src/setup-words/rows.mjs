@@ -1,26 +1,13 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
    list, docs/development/ux-substrate/screens/words.json (19467 design words, 1162 protected; SHA-256
-   5f1499b5a98ed98d9a22b65b78051f63fb65ad010e9d74a1e405566528e05ac2) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   2f703a67235910ca91f0cedfe835225d3a57a3819c0bb667d622e0e4ae224668) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
    and each row are frozen (R3). Written by `node bio-plane/src/setup-words/build.mjs` from the repository root
    (`--check` finds it stale); bio-plane/test/m/setup-words/ checks it. */
-/**
- * @typedef {readonly [string, string, string | null, string | null, boolean, "design" | "code"]} WordRow one word: [key, en, note, means, protected, origin]
- * @bound a row: key and en strings, note and means a string or null, protected true or false, origin "design" or "code"
- */
-/**
- * The list's version: the first 10 hex digits of the SHA-256 of words.json.
- * @type {string}
- */
-export const WORDS_COMMIT = "5f1499b5a9";
-/**
- * The list: the file's words in its order, then the code rows in id order.
- * @type {ReadonlyArray<WordRow>}
- * @bound keys distinct; the list and each row frozen
- */
-export const WORD_ROWS = Object.freeze(/** @type {WordRow[]} */ ([
+export const WORDS_COMMIT = "2f703a6723";
+export const WORD_ROWS = Object.freeze([
   ["weight.reversible.name","Reversible",null,"Reversible: you can undo this.",true,"design"],
   ["weight.reasoned.name","Asks for a reason",null,"Asks for a reason: you are asked why, and your reason becomes part of the record.",true,"design"],
   ["weight.terminal.name","Ends something",null,"Ends something: it ends or removes something; opening it again takes a reason.",true,"design"],
@@ -1431,7 +1418,7 @@ export const WORD_ROWS = Object.freeze(/** @type {WordRow[]} */ ([
   ["shell.card.person","A person or organization your team's record follows","adopted from interface-shell's own rows",null,false,"design"],
   ["shell.step.due-date","Due date","adopted from interface-shell's own rows",null,false,"design"],
   ["shell.step.ceremony","Publish","adopted from interface-shell's own rows",null,false,"design"],
-  ["shell.step.imported","Imported cases","adopted from interface-shell's own rows",null,false,"design"],
+  ["shell.step.imported","Imported","adopted from interface-shell's own rows",null,false,"design"],
   ["shell.mark","Civicsmith","adopted from interface-shell's own rows",null,false,"design"],
   ["shell.mark.means","The plumb bob is Civicsmith's mark. Wherever you see it, you are in your team's own Civicsmith, and the name beside it says whose.","adopted from interface-shell's own rows",null,false,"design"],
   ["shell.unavailable.nothing","Nothing you can open is here. If a member invited you to a project, the invitation waits on Home: join it there.","adopted from interface-shell's own rows; DEC-259: reworded",null,false,"design"],
@@ -14755,7 +14742,7 @@ export const WORD_ROWS = Object.freeze(/** @type {WordRow[]} */ ([
   ["workbooks.why.file_caches_value","the file caches no value",null,null,false,"design"],
   ["workbooks.recompute_recorded","no recompute is recorded",null,null,false,"design"],
   ["workbooks.open_spreadsheet_program","{not_recomputed}: {why}; open it in any spreadsheet program",null,null,false,"design"],
-  ["workbooks.recomputed_engine_group","recomputed by the engine your group's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",null,null,false,"design"],
+  ["workbooks.recomputed_engine_group","recomputed by the engine your team's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",null,null,false,"design"],
   ["workbooks.why.corpus_measure_recorded","no corpus measure is recorded for {engine} {engine_version}",null,null,false,"design"],
   ["workbooks.sheet_hidden","its sheet \"{sheet}\" is hidden",null,null,false,"design"],
   ["workbooks.row_hidden","row {row} is hidden",null,null,false,"design"],
@@ -27003,4 +26990,4 @@ export const WORD_ROWS = Object.freeze(/** @type {WordRow[]} */ ([
   ["workbooks.declared.bind","workbook-directed: keyed by (capture, project) and a range; writes a binding and moves no bundle",null,null,false,"code"],
   ["workbooks.declared.recordcheck","workbook-directed: keyed by (capture, project); a second member's check, disclosed and never a gate",null,null,false,"code"],
   ["workbooks.index.k1447_grade_rule","K1447 (ii): each bound input at its capture grade capped by its derivation; an unbound input is testimony (D); a third-party engine's value is a derivation step, undetermined until measured; the method is disclosed, not graded",null,null,false,"code"],
-]).map((row) => Object.freeze(row)));
+].map((row) => Object.freeze(row)));

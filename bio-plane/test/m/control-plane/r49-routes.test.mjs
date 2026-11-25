@@ -4,12 +4,12 @@
    `casefilespec`, credential-free on the public path through public-read's door read (its R18), by their own names and
    as `op=publicread&name=`, with no store route of this module's. Driven through `makeFetch(hooks)`, R48's form
    (`r48-routes.test.mjs`); the store's door through `dispatch` over case-import's own map. */
-import { publicOp } from "../../../src/control-plane/routing.mjs";   /* first: the routing's load registers every owner's ops (store-assembly) before the harness reads the tables */
 import "./register-declared.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { M, O, world, call, opCalls, aik, cred, refused, FORGED, QUERY_STAMPS, BODY_STAMPS } from "./harness.mjs";
 const { caseImportOps, CASE_IMPORT_OPS } = await import("../../../src/case-import/index.mjs");
+const { publicReadDoorOp } = await import("../../../src/public-read/door.mjs");
 const D = await import("../../../src/store-door/dispatch.mjs");
 const { importedCaseAnswer, importedCasesAnswer } = await import("../case-import/fixtures.mjs");
 
@@ -172,8 +172,11 @@ test("R49 (case-checker R15; public-read R18): `casechecker` and `casefilespec` 
     assert.equal(OPS[op].mutating, false, op);
     assert.equal(Object.hasOwn(D.controlPlaneRoutes({}, U, null), op), false, `${op}: no route of this module's`);
   }
-  /* the routing's own public hook (R139; K4990) */
-  const hooks = { publicOp };
+  const hooks = { async publicOp({ op, url, env, stub }) {
+    return (await publicReadDoorOp(op, url, env, stub, { json: M.json, requiredArgument: M.requiredArgument, storeSilent: M.storeSilent,
+                                                  storeRefusal: M.storeRefusal, doAnswer: M.doAnswer, publicReads: PUBLIC_READS }))
+      ?? M.json({ ok: true, publicOp: op });
+  } };
   const answer = (c) => (c.route === "publicread"
     ? new Response(JSON.stringify({ ok: true, result: { ok: true, read: c.params.name, module: "case-checker", result: { held: true } } })) : null);
   const { env, S } = world({ answer });

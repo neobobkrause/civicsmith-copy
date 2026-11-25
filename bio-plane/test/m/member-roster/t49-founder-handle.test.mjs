@@ -59,7 +59,7 @@ test("R59 R13 enroll with the founder's handle is refused HANDLE_TAKEN and write
   assert.deepEqual(await w.m.enroll({ invite: w.inv, handle: "  steward ", password: PASSWORD }),
     { ok: false, reason: "HANDLE_TAKEN", handle: "steward" }, "trimmed, then taken");
   assert.equal(snapshot(w), before, "nothing written");
-  assert.equal(w.m.memberFacts("cal")?.status, "invited");
+  assert.equal(w.m.memberFacts("cal").status, "invited");
   assert.deepEqual(await w.m.enroll({ invite: w.inv, handle: "stewards", password: PASSWORD }),
     { ok: true, memberId: "cal", handle: "stewards" });
 });

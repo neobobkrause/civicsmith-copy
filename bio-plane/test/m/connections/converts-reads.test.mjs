@@ -8,7 +8,7 @@
      citers of one target, and a severance that keeps the row. Its source-text arms are dropped. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, projMd, V, MACHINE, heldText } from "./fixture.mjs";
+import { world, projMd, V, MACHINE } from "./fixture.mjs";
 import { localize, word } from "../../../src/setup-words/index.mjs";
 
 const A = "INFO-2026-0001-a", B = "INFO-2026-0002-b", C = "INFO-2026-0003-c", D = "INFO-2026-0004-d";
@@ -155,7 +155,7 @@ test("R22, R23 (converts d280-strengthbar): citesInto over real severed referenc
   w.doc(B, ["b"], { references: [{ rel: "cites", target: A }] });
   assert.ok(gone.id < live.id, "fixture guard: the withdrawn citer sorts first");
   /* The withdrawal is really in the citing document, and the edge is still an edge (R19). */
-  assert.match(heldText(w.record, gone.id, "bundle.md"), /target: INFO-2026-0001-a\n    status: severed/);
+  assert.match(w.record.readFile(gone.id, "bundle.md").text, /target: INFO-2026-0001-a\n    status: severed/);
   assert.equal(w.row(`SELECT COUNT(*) AS n FROM refs WHERE target_id=? AND kind='cites'`, A).n, 7);
   const liveCiters = [B, live.id, noStatus.id, capital.id, padded.id, otherRel.id].sort();
   assert.deepEqual(w.k.citesInto(A), { confirmed: liveCiters, severed: [gone.id] });

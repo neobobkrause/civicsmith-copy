@@ -20,7 +20,6 @@
 import { classify, wraps, TOTAL, scaleIn, CAPTION, isProse, isSentence, isYear } from "./figures.mjs";
 import { KEYS, matchIn } from "./view.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { BudgetCtx, TablesReading, TableRow } from "./index.mjs" */
 
 /** R3's usability bar: the share of rows with two or more figures that have the
  *  table's modal number of cells (`measures-T33/money-people.md` §7). */
@@ -260,8 +259,8 @@ function buildTable(ctx, page, live, reg, prevEnd, nextStart, method, engine) {
 }
 
 function row(label, cells, line, span) {
-  /** @type {TableRow & {perLine?: boolean}} builds a TableRow */
-  const r = { label: label === null ? null : label, cells: cells.map((c) => ({ as_read: c })), span, source: line.source || null };
+  const r = { label: label === null ? null : label, cells: cells.map((c) => ({ as_read: c })), span };
+  r.source = line.source || null;
   return r;
 }
 
@@ -338,10 +337,7 @@ function ocrOf(supplied, page) {
 }
 
 /** R2–R6: the PDF reading of a financial report (`budget: false`) or a budget
- *  book (`budget: true`).
- * @param {BudgetCtx} ctx
- * @param {{budget: boolean}} opts
- * @returns {TablesReading} */
+ *  book (`budget: true`). */
 export function readTables(ctx, { budget }) {
   const supplied = ctx.supplied && typeof ctx.supplied === "object" ? ctx.supplied : null;
   const { noText, images } = markers(supplied);

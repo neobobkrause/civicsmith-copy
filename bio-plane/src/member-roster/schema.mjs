@@ -2,7 +2,6 @@
  * (T51-145; K624, K3946), and the additive columns an older store gains at boot. `Members#migrate` runs it. SQL comments are
  * `--` lines, dropped before the statements run. The project tables (participation, visibility, sight, removals) stay
  * `membership`'s. The comments cite the requirement ids `membership` held when they were written. */
-/** @type {string} this module's tables and indexes, as SQL statements separated by `;`; lines beginning `--` are comments */
 export const MEMBER_SCHEMA = `
 -- Members. Each member signs in with their own password, which is the credentials module's
 -- (under role 'member:<member_id>'; T19, K637). invite_hash is the SHA-256 of a
@@ -167,7 +166,6 @@ CREATE TABLE IF NOT EXISTS court_notice (
 
 /* Columns a store written before they existed gains at boot: additive and nullable, never back-filled (D-85).
    `members.cover` was `members.name` before 2026-07-24 and is renamed first. */
-/** @type {string[][]} each `[table, column, declaration]` a store written before it existed gains at boot */
 export const MEMBER_ADDITIVE_COLUMNS = [
   ["members", "handle", "TEXT"],
   ["members", "capabilities", "TEXT"],
@@ -185,7 +183,6 @@ export const MEMBER_ADDITIVE_COLUMNS = [
 
 /* R66, R46: the tables purge never clears (identity, governance and the group's own settings). The credential tables
    (credentials, sessions, bootstrap, signers, ai_credentials) are `credentials`', exempt by its R18. */
-/** @type {string[]} the tables purge never clears (R46, R66) */
 export const MEMBER_EXEMPT_TABLES = ["members", "member_expertise", "admin_votes", "hosting_access",
   /* R46 (T34): the doors, the group's description and the court-notice setting. */
   "join_doors", "group_description", "court_notice",
@@ -201,17 +198,6 @@ export const MEMBER_EXEMPT_TABLES = ["members", "member_expertise", "admin_votes
    leave); its other classes are the ones the default form gives it (exempt from purge, R46; keyed to no bundle, so
    `sight: group`). It stays in MEMBER_EXEMPT_TABLES, the list of what purge keeps, and is left out of the default
    form's declaration. During the copy window the declaration is `membership`'s, under the name "membership". */
-/**
- * @typedef {Object} DeclaredTable a table declared through record-core's `declareTable` with classes of its own (R55, R58)
- * @property {string} name
- * @property {"exempt"} purge
- * @property {"none"} expunge
- * @property {"never"} export
- * @property {"group" | "owner"} sight
- * @property {"stored"} derive
- * @property {false} version_chain
- */
-/** @type {readonly DeclaredTable[]} */
 export const MEMBER_DECLARED_TABLES = Object.freeze([
   Object.freeze({ name: "join_doors", purge: "exempt", expunge: "none", export: "never", sight: "group", derive: "stored",
                   version_chain: false }),

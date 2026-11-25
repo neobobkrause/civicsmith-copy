@@ -66,23 +66,6 @@
  * because no look ever carries it (C-22.4 checks a look's condition against observation-log's list alone). */
 import { CONDITION_KINDS } from "./observation-log/vocabulary.mjs";
 import { word, localize } from "./setup-words/index.mjs";
-/**
- * A queue item's class (R1): what a kind is, and so how its item leaves a list.
- * @typedef {"CONDITION" | "OBLIGATION" | "FINDING"} QueueKindClass
- */
-/**
- * A queue item as the mute decisions read it (R4): its kind, its class, its published id, and the homes its case's
- * every-ancestor walk gave it. Any field may be missing; a missing one mutes nothing.
- * @typedef {Object} QueueMuteItem
- * @property {unknown} [kind] the catalogue's kind slug
- * @property {unknown} [class] its class, as `classOfKind` answers it
- * @property {unknown} [id] the item's published id
- * @property {{ancestors?: unknown}|null} [case] its home; `ancestors` an array of `{id}`, nearest first
- */
-/**
- * R5: the condition kinds, observation-log's vocabulary with the kinds no look carries; kind to its one sentence.
- * @type {Readonly<Record<string, string>>}
- */
 export const QUEUE_CONDITION_KINDS = Object.freeze({
   ...CONDITION_KINDS,
   "action-clock-overdue":       "a deadline on one of the team's actions passed while its entry is still pending "
@@ -109,10 +92,6 @@ export const QUEUE_CONDITION_KINDS = Object.freeze({
  * `missing_predecessor` and `overdue_successor` are the two kinds
  * `queue-producers/proposals.mjs` emits from proposalsFeed. If one of those were absent here the fence would refuse it as
  * UNKNOWN rather than as MISCLASSED, which is a weaker and less true answer. */
-/**
- * R1: the OBLIGATION kinds; kind to its one sentence.
- * @type {Record<string, string>}
- */
 export const QUEUE_OBLIGATION_KINDS = {
   "authority-undetermined":      "authority undetermined at capture (D-98, RULED: created automatically) — LIVE: capture's task kinds, drained by tasks",
   /* CORRECTED 2026-08-05 (REC-47 / DEC-46 (d), D-188). This read "blocks a
@@ -230,10 +209,6 @@ export const QUEUE_OBLIGATION_KINDS = {
                               + "— LIVE: queue-producers R54",
 };
 
-/**
- * R1: the FINDING kinds; kind to its one sentence.
- * @type {Record<string, string>}
- */
 export const QUEUE_FINDING_KINDS = {
   "missing_predecessor":        "a required predecessor stage is absent (D-73) — LIVE: queue-producers/proposals.mjs",
   "overdue_successor":          "a required successor is past its declared deadline (DEC-10) — LIVE: queue-producers/proposals.mjs",
@@ -476,11 +451,6 @@ const QUEUE_KIND_IDS = {
 /* The catalogue id a kind was allocated, or null for a kind that has none — which is most of them
  * (a kind takes an id when its generator is built). Null is not an error: it says no generator has
  * taken a number, and a producer publishes it as such rather than inventing one. */
-/**
- * R2: the catalogue id a kind was allocated.
- * @param {any} kind any value; only a kind the catalogue allocated an id answers one
- * @returns {string|null} `N-1` for export-performed; null for every other value
- */
 export function catalogueIdOf(kind) {
   return Object.prototype.hasOwnProperty.call(QUEUE_KIND_IDS, kind) ? QUEUE_KIND_IDS[kind] : null;
 }
@@ -489,11 +459,6 @@ export function catalogueIdOf(kind) {
  * for a kind the catalogue does not name — three-valued in the same sense the
  * rest of this record is: unknown is not the same as wrong, and the refusals
  * below say which one happened. */
-/**
- * R1: a kind's class.
- * @param {unknown} kind
- * @returns {QueueKindClass|null} null for a kind the catalogue does not name, a non-string or empty string included
- */
 export function classOfKind(kind) {
   if (typeof kind !== "string" || !kind) return null;
   if (Object.prototype.hasOwnProperty.call(QUEUE_CONDITION_KINDS, kind)) return "CONDITION";
@@ -512,20 +477,12 @@ export function classOfKind(kind) {
  * What it guarded, one member erasing the group's question, a MEMBER-keyed mute
  * cannot do: the finding stays on every other feed and in op=proposals, and it
  * leaves the team's list only by op=proposedispose. OBLIGATION alone is refused. */
-/**
- * Why a kind of this class may not be muted, in the plane's words; OBLIGATION only.
- * @type {{OBLIGATION: string}}
- */
 export const MUTE_REFUSAL_DETAIL = {
   OBLIGATION: localize("queue.queuestate.a_to_do_is_something", "a to-do is something a named person must do for the record to proceed, and it leaves every list only when it is DONE (op=taskresolve, or the act its item names as `disposition.instead`): record state, not a preference. Quieting it would remove it from the only list that routes it while `tasks` keeps no per-member quiet, so the record would go on believing the question reached a person."),
 };
 
 /* The classes a PERSONAL mute may reach, in either form (D-125). A CONDITION and
  * a FINDING; never an OBLIGATION. One list, read by the one write. */
-/**
- * The classes a personal mute may reach: CONDITION and FINDING.
- * @type {unknown[]}
- */
 export const PERSONALLY_MUTABLE_CLASSES = ["CONDITION", "FINDING"];
 
 /* D-125's ITEM form (DEC-10 (b)) and D-170's widening: the class of a queue item
@@ -537,12 +494,6 @@ export const PERSONALLY_MUTABLE_CLASSES = ["CONDITION", "FINDING"];
  * answers null here and the store asks `tasks` to name it (the refusal must say
  * OBLIGATION, not merely "unknown"). A segment with nothing after it is not an
  * item id. */
-/**
- * R3: the class an item id names.
- * @param {unknown} id
- * @returns {string|null} `FINDING` or `CONDITION`, or null
- * @bound id: `FINDING::<rest>` or `CONDITION::<rest>`, trimmed, with a rest that is not blank; anything else answers null
- */
 export function itemClassOf(id) {
   if (typeof id !== "string") return null;
   const m = /^(FINDING|CONDITION)::(.+)$/.exec(id.trim());
@@ -554,12 +505,6 @@ export function itemClassOf(id) {
  * if its id were somehow in the set — the write refuses one, and this read does
  * not trust the column to have been written by that write alone (D-125: an
  * OBLIGATION stays unmutable). Returns true or false. */
-/**
- * R4: whether an item is muted by its own id.
- * @param {QueueMuteItem|null|undefined} item
- * @param {Set<unknown>|null|undefined} itemMutes the member's muted item ids
- * @returns {boolean} true only for a CONDITION or FINDING whose id is in the set
- */
 export function mutedAsItem(item, itemMutes) {
   if (!item || !itemMutes || itemMutes.size === 0) return false;
   if (!PERSONALLY_MUTABLE_CLASSES.includes(item.class)) return false;
@@ -571,19 +516,9 @@ export function mutedAsItem(item, itemMutes) {
  * suite can compare bytes, comma-separated because every kind is a slug and no
  * kind may contain a comma (the write refuses one). JSON would be the other
  * choice and buys nothing here except a parse that can throw. */
-/**
- * R4: the muted kinds as their one stored text.
- * @param {unknown[]|null|undefined} kinds
- * @returns {string} sorted, de-duplicated and comma-joined; values that are not non-empty strings are left out
- */
 export function serializeMutedKinds(kinds) {
   return [...new Set((kinds || []).filter((k) => typeof k === "string" && k))].sort().join(",");
 }
-/**
- * R4: the muted kinds read back from their stored text; the inverse of `serializeMutedKinds`.
- * @param {unknown} text
- * @returns {string[]} sorted and de-duplicated, each trimmed; empty for anything but a non-empty string
- */
 export function parseMutedKinds(text) {
   if (typeof text !== "string" || !text) return [];
   return [...new Set(text.split(",").map((k) => k.trim()).filter(Boolean))].sort();
@@ -592,11 +527,6 @@ export function parseMutedKinds(text) {
 /* R55 (T50; N1094): the instants a case's kinds were muted, stored beside `muted_kinds` as one JSON object, kind to
  * instant. A kind muted before they were kept has no entry, and answers no instant: it is never back-filled. Never
  * throws: text that is no such object reads as none held. */
-/**
- * The instants a case's kinds were muted, read from their stored text.
- * @param {unknown} text
- * @returns {Record<string, string>} kind to instant; only non-empty string instants are kept
- */
 export function parseMutedAt(text) {
   if (typeof text !== "string" || !text) return {};
   try {
@@ -606,11 +536,6 @@ export function parseMutedAt(text) {
   } catch { return {}; }
 }
 /* Sorted by kind, so one set of instants has one representation; null (not "{}") when none is held. */
-/**
- * The instants a case's kinds were muted, as their stored text.
- * @param {Record<string, unknown>|null|undefined} at kind to instant
- * @returns {string|null} JSON sorted by kind, non-empty string instants only; null when none is held
- */
 export function serializeMutedAt(at) {
   const keys = Object.keys(at || {}).filter((k) => typeof at[k] === "string" && at[k]).sort();
   return keys.length ? JSON.stringify(Object.fromEntries(keys.map((k) => [k, at[k]]))) : null;
@@ -638,13 +563,6 @@ export function serializeMutedAt(at) {
  * mute against, and inventing a pseudo-case for it would be the same invented
  * home REC-20 refuses to give it. Its way out is the ITEM form (`mutedAsItem`
  * above, D-125/D-170), keyed on the item's own id and on no case. */
-/**
- * R4: the case whose mute suppresses an item.
- * @param {QueueMuteItem|null|undefined} item
- * @param {Map<unknown, Set<unknown>>|null|undefined} mutes case id to the kinds muted there
- * @returns {unknown} the id of the first of the item's ancestors whose set holds its kind, else null
- * @bound mutes: no wildcard; a kind not in a case's set is not suppressed there
- */
 export function suppressedBy(item, mutes) {
   if (!item || !mutes || mutes.size === 0) return null;
   const kind = item.kind;

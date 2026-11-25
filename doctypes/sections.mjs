@@ -21,7 +21,7 @@
  * holds is listed with `section: null` and why, never dropped (R19). Nothing here records a
  * law relation: a definition or an exception is a reading, and a member records what it
  * means, in `standards` (R15). */
-import { readerView } from "../docprofile/doctypes/index.mjs";
+import { vocabulary } from "../docprofile/doctypes/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { lineIndex, spend } from "./windows.mjs";
 
@@ -52,10 +52,7 @@ const MARKERS = {
  *  recogniser for a citation of one of its sections in prose (R14's `cites`). */
 export function codeForms(ctx) {
   const out = [];
-  /* The codes are read from the view itself, jurisdictions' shape (its T33-2 `sections`). */
-  const v = readerView(ctx).vocabulary;
-  const codes = v && typeof v === "object" && Array.isArray(v.codes) ? v.codes : [];
-  for (const c of codes) {
+  for (const c of vocabulary(ctx, "codes")) {
     const s = c && c.sections;
     if (!s || typeof s !== "object" || !s.number || typeof s.number.re !== "string" || !s.number.re) continue;
     if (typeof c.key !== "string" || !c.key) continue;

@@ -22,11 +22,11 @@ test("R11 usedSheetRange(name, rows, cols): A1 to the used corner in bijective c
     assert.deepEqual(usedSheetRange("S", r, c), { kind: "sheet-range", ref: `S!A1:${letters(c)}${r}`, sheet: "S", range: `A1:${letters(c)}${r}` });
     assert.equal(columnLetters(c), letters(c));
   }
-  assert.equal(usedSheetRange("S", 1, 16384)?.range, "A1:XFD1");
-  assert.equal(usedSheetRange("S", 1, 26)?.range, "A1:Z1");
-  assert.equal(usedSheetRange("S", 1, 27)?.range, "A1:AA1");
-  assert.equal(usedSheetRange("S", 1, 702)?.range, "A1:ZZ1");
-  assert.equal(usedSheetRange("S", 1, 703)?.range, "A1:AAA1");
+  assert.equal(usedSheetRange("S", 1, 16384).range, "A1:XFD1");
+  assert.equal(usedSheetRange("S", 1, 26).range, "A1:Z1");
+  assert.equal(usedSheetRange("S", 1, 27).range, "A1:AA1");
+  assert.equal(usedSheetRange("S", 1, 702).range, "A1:ZZ1");
+  assert.equal(usedSheetRange("S", 1, 703).range, "A1:AAA1");
   assert.deepEqual(sheetRangeRef("S", "A1:B2"), { kind: "sheet-range", ref: "S!A1:B2", sheet: "S", range: "A1:B2" });
   for (const bad of [0, -1, 1.5, NaN, null, undefined, "3", Infinity]) {
     assert.equal(usedSheetRange("S", bad, 3), null, String(bad));
@@ -87,7 +87,7 @@ test("R13 never invents: a dialect, character or cell it cannot establish is sta
   const d = csvEntry.dialect(new Uint8Array([0x61, 0x81, 0x0a]));
   assert.equal(d.encoding, null);
   assert.ok(d.undetermined.includes("encoding_undetermined"));
-  assert.equal(csvEntry.dialect(F.enc("a,b;c\n1,2;3\n"))?.delimiter, null);
+  assert.equal(csvEntry.dialect(F.enc("a,b;c\n1,2;3\n")).delimiter, null);
   const t = await csvEntry.text(Uint8Array.from([0x78, 0x2c, 0x63, 0x61, 0x66, 0x81, 0x0a, 0x79, 0x2c, 0x7a, 0x0a]));
   assert.deepEqual(t.undetermined, [{ sheet: 0, cell: "B1", reason: "encoding_undetermined" }]);
   assert.ok(!t.document.includes("�") && !t.document.includes("é"));

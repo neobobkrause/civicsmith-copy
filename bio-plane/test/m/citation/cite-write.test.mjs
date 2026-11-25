@@ -216,11 +216,10 @@ test("R2: every other live file of the citing object is carried forward untouche
   const c = { path: "snapshots/kept.txt", text: "kept bytes", sha: sha("kept bytes") };
   const q = w.inquiry("INQ-2026-0001");
   w.put(q, w.md(q), { captures: [c] });
-  const shaOf = (x) => { const f = w.record.readFile(q, x); if (!f) throw new Error(`${q} holds no ${x}`); return f.sha256; };
-  const before = (w.record.livePaths(q) ?? []).filter((x) => x !== "bundle.md").map((x) => [x, shaOf(x)]);
+  const before = w.record.livePaths(q).filter((x) => x !== "bundle.md").map((x) => [x, w.record.readFile(q, x).sha256]);
   const h = await w.select(["INFO-2026-0001"]);
   assert.equal(w.cit.cite({ project: q, handle: h, ...ANN, role: "supports" }).ok, true);
-  assert.deepEqual((w.record.livePaths(q) ?? []).filter((x) => x !== "bundle.md").map((x) => [x, shaOf(x)]), before);
+  assert.deepEqual(w.record.livePaths(q).filter((x) => x !== "bundle.md").map((x) => [x, w.record.readFile(q, x).sha256]), before);
   assert.ok(before.length >= 2);
 });
 

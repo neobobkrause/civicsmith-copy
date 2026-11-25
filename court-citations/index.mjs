@@ -22,72 +22,7 @@ const TRAPS = ["get", "set", "has", "ownKeys", "getOwnPropertyDescriptor", "defi
   "setPrototypeOf", "isExtensible", "preventExtensions"];
 const lazy = (target) => new Proxy(target, Object.fromEntries(TRAPS.map((t) => [t, (_, ...a) => { load(); return Reflect[t](target, ...a); }])));
 
-/**
- * @typedef {Object} Edition one edition of a reporter, as reporters-db gives it
- * @property {string} key the edition's abbreviation
- * @property {string | null} start the first date the edition covers, null where the package gives none
- * @property {string | null} end the last date the edition covers, null where the package gives none
- * @property {ReadonlyArray<string>} patterns the edition's citation patterns, translated to JavaScript (R4)
- */
-/**
- * @typedef {Object} Reporter one reporter of the pinned reporters-db (R1)
- * @property {string} key the standard abbreviation
- * @property {string} name
- * @property {string} cite_type
- * @property {ReadonlyArray<Edition>} editions
- * @property {Readonly<Object<string, string>>} variations each variant spelling the package gives, to the edition it stands for
- * @property {ReadonlyArray<string>} examples the package's own example citations
- */
-/**
- * @typedef {Object} Court one court of the pinned courts-db (R2)
- * @property {string} id
- * @property {string} name
- * @property {string} citation_string
- * @property {string | null} type
- * @property {string | null} level
- * @property {string} system
- * @property {string | null} jurisdiction
- * @property {ReadonlyArray<Readonly<{start: (string | null), end: (string | null), [field: string]: *}>>} dates as the package gives them
- * @property {ReadonlyArray<string>} patterns the court's name patterns, translated to JavaScript (R4)
- * @property {string} name_pattern the court's name as a pattern, as courts-db matches it
- * @property {ReadonlyArray<string>} examples the package's own example names
- */
-/**
- * @typedef {Object} Source one pinned package the data was built from (R3)
- * @property {string} package
- * @property {string} version
- * @property {string} licence
- * @property {string} url
- * @property {string} project
- * @property {Readonly<{url: string, sha256: string}>} wheel
- * @property {ReadonlyArray<Readonly<{name: string, sha256: string}>>} files each source file the build read, with its SHA-256
- * @property {Readonly<Object<string, number>>} counts what the build found, by name
- * @property {string} pattern_flags the JavaScript flags every translated pattern of the package is compiled with
- * @property {string} copyright
- * @property {string} licence_text the package's licence, whole
- * @bound licence: "BSD-2-Clause"
- */
-/**
- * @typedef {Object} Variant one edition a spelling stands for (R1)
- * @property {string} reporter a reporter's key
- * @property {string} edition an edition's key of that reporter
- */
-
-/**
- * R3: each pinned package, deeply frozen; built on first read (R11).
- * @type {ReadonlyArray<Source>}
- */
-export const SOURCES = lazy(TARGETS.SOURCES);
-/**
- * R1: every reporter of the pinned reporters-db, in the package's order, deeply frozen; built on first read (R11).
- * @type {ReadonlyArray<Reporter>}
- */
-export const REPORTERS = lazy(TARGETS.REPORTERS);
-/**
- * R2: every court of the pinned courts-db, in the package's order, deeply frozen; built on first read (R11).
- * @type {ReadonlyArray<Court>}
- */
-export const COURTS = lazy(TARGETS.COURTS);
+export const SOURCES = lazy(TARGETS.SOURCES), REPORTERS = lazy(TARGETS.REPORTERS), COURTS = lazy(TARGETS.COURTS);
 
 /* R1: every variant and every standard abbreviation → each {reporter, edition} it stands for, in REPORTERS order. */
 function variantIndex(reporters, v) {
@@ -102,11 +37,6 @@ function variantIndex(reporters, v) {
   for (const list of Object.values(v)) { for (const x of list) Object.freeze(x); Object.freeze(list); }
   return Object.freeze(v);
 }
-/**
- * R1: every variant and every standard abbreviation, to each edition it stands for, deeply frozen; built on first read (R11).
- * @type {Readonly<Object<string, ReadonlyArray<Readonly<Variant>>>>}
- * @bound a spelling the package maps to more than one edition maps to each, never to one chosen
- */
 export const VARIANTS = lazy(TARGETS.VARIANTS);
 
 /* R7: white space and periods folded away, the only differences between many of the package's variants. */
@@ -123,12 +53,7 @@ function foldedIndex() {
   return folded;
 }
 
-/**
- * R7: VARIANTS' entries for a spelling as written, else after folding white space and periods, else null.
- * @param {*} spelling
- * @returns {ReadonlyArray<Readonly<Variant>> | null}
- * @bound never throws, for any input; not a string, or nothing left after folding, is null
- */
+/* R7: VARIANTS' entries for a spelling as written, else after folding, else null. Never throws. */
 export function reporterFor(spelling) {
   if (typeof spelling !== "string") return null;
   if (Object.hasOwn(VARIANTS, spelling)) return VARIANTS[spelling];
@@ -150,13 +75,8 @@ function courtMatchers() {
   return compiled;
 }
 
-/**
- * R7: the ids of every court one of whose patterns (or its name, as courts-db matches it) matches the whole text,
- * case-insensitively, after courts-db's white-space folding; in COURTS order, or [].
- * @param {*} text
- * @returns {string[]}
- * @bound never throws, for any input; not a string, or only white space, is []
- */
+/* R7: the ids of every court one of whose patterns (or its name, as courts-db matches it) matches the whole text,
+ * case-insensitively, after courts-db's white-space folding; in COURTS order, or []. Never throws. */
 export function courtsNamed(text) {
   if (typeof text !== "string") return [];
   const s = text.replace(RUNS, " ").replace(ENDS, "");

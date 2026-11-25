@@ -22,11 +22,7 @@ function cursor(rows) {
   return c;
 }
 
-/**
- * One Durable Object storage; `statements` keeps every statement run, for a test to show what an act wrote.
- * @param {any} [db] a node:sqlite database; a fresh in-memory one when absent
- * @returns {{sql: {exec: (q: string, ...args: any[]) => any}, db: any, statements: string[], transactionSync: (fn: () => any) => any}}
- */
+/** One Durable Object storage; `statements` keeps every statement run, for a test to show what an act wrote. */
 export function storage(db = new DatabaseSync(":memory:")) {
   const statements = [];
   const sql = {
@@ -48,11 +44,6 @@ export function storage(db = new DatabaseSync(":memory:")) {
   };
 }
 
-/**
- * record-core's schema run over a storage's database.
- * @param {{db: any}} st a storage, as `storage` answers it
- * @returns {void}
- */
 export const applyRecordSchema = (st) => {
   const bare = RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const t of bare.split(";")) if (t.trim()) st.db.exec(t);
@@ -60,9 +51,7 @@ export const applyRecordSchema = (st) => {
 
 /** Boot the module on a fresh storage, as the plane does: record-core is made before the record's schema pass, then the
  *  module is built (it creates and declares its tables). `more` hands in the providers (`membership`, `aiAccounts`,
- *  `jurisdictions`, `record`) and `now`.
- *  @param {{now?: any, more?: any, st?: any}} [opts]
- *  @returns {{m: import("../../../src/translations/index.mjs").Translations, st: any, ctx: {storage: any}, record: any} & Record<string, any>} the world; a test may add its own members */
+ *  `jurisdictions`, `record`) and `now`. */
 export function boot({ now = null, more = {}, st = null } = {}) {
   const store = st ? storage(st.db) : storage();
   const ctx = { storage: store };
@@ -76,11 +65,6 @@ export function boot({ now = null, more = {}, st = null } = {}) {
    absent body is null, a body that is not JSON is 400 `BAD_JSON` before the route runs, an answer is `{ok: true,
    result}`, and a route that throws is 500 `STORE_INTERNAL_ERROR` with a correlation id and no stack. `null` for a route
    that is not this module's. */
-/**
- * @param {any} m this module's instance
- * @param {Request} req a store request; its path names the op
- * @returns {Promise<Response|null>}
- */
 export async function frame(m, req) {
   const url = new URL(req.url);
   const op = url.pathname.slice(1);

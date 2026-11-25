@@ -2,7 +2,7 @@
    module's interface. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, world, draft, approved, V, MACHINE, TEST, TEXT, sha, secret, present } from "./fixture.mjs";
+import { seeded, world, draft, approved, V, MACHINE, TEST, TEXT, sha, secret } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
@@ -66,7 +66,7 @@ test("R18 no place, law, venue or template wording is in the module's behaviour 
   /* every place the held profiles name, read from the profiles themselves, appears in no file of the module */
   const names = new Set();
   for (const { id } of jurisdictions.list()) {
-    const p = present(jurisdictions.get(id), id);
+    const p = jurisdictions.get(id);
     for (const c of p.covers) names.add(c);
     for (const k of p.counterparties || []) names.add(k.body);
     for (const k of p.action_kinds || []) {
@@ -81,7 +81,7 @@ test("R18 no place, law, venue or template wording is in the module's behaviour 
   const out = JSON.stringify([w.ft.templatesFor({ viewer: A }), approved(w, { name: "Other" }), w.ft.templateRead({ template: d.template, viewer: A }),
     ft.FILING_TEMPLATE_CHECKS, ft.FILING_BLANKS, ft.noTemplateGrant(), w.ft.templateDraft({ author: MACHINE }),
     w.ft.templateApprove({ version: d.version, by: A, viewer: A }), w.ft.offeredVersion({ template: d.template, viewer: A })]);
-  const own = new Set(present(jurisdictions.get(TEST), TEST).action_kinds.flatMap((k) => [k.label, k.template && k.template.text,
+  const own = new Set(jurisdictions.get(TEST).action_kinds.flatMap((k) => [k.label, k.template && k.template.text,
     ...(k.templates || []).flatMap((t) => [t.text, t.name])]));
   for (const n of names) if (n && n.length > 3 && !own.has(n)) assert.ok(!out.includes(n), n);
   /* with no profile active, nothing local at all */

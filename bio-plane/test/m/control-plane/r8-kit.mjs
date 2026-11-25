@@ -15,15 +15,9 @@ import "./register-declared.mjs";
 import { wrapScript } from "./wrap-entry.mjs";
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
-/** @type {number} */
 export const MB = 1024 * 1024;
-/** @type {string} */
 export const BIAS = "This group holds that contracts should be adopted in public session.";
 
-/**
- * @param {{tag?: string, counting?: boolean, bindings?: Object<string, any>, outbound?: any, serviceBindings?: any, workers?: any}} [options]
- * @returns {Object<string, any>} `{mf, plane, ...helpers}`; the caller disposes `mf`
- */
 export function makeKit({ tag = "r8kit", counting = false, bindings = {}, outbound = null, serviceBindings = null, workers = null } = {}) {
   const ADM = `adm-${tag}-0123456789abcdef`, PASSWORD = `the founder's long password, ${tag}`, ORIGIN = "https://group.example";
   const sha = (b) => createHash("sha256").update(b).digest("hex");

@@ -11,7 +11,6 @@ import { membershipOf } from "../../../src/membership/index.mjs";
 import { promotionOf } from "../../../src/promotion/index.mjs";
 import { strengthOf } from "../../../src/strength/index.mjs";
 import { storage } from "./fixture.mjs";
-import { inlineText } from "./projectbar-world.mjs";
 const sameCode = (x, y) => x && y && x.ok === y.ok && (x.code ?? x.reason) === (y.code ?? y.reason);
 /* the project-bar test's world: alice owns P with bob joined; ann an administrator outside it */
 const NOW = "2026-10-13T12:00:00.000Z";
@@ -76,9 +75,9 @@ function world() {
         group: "grp-one", created: clock.now, lastUpdated: clock.now, criticality: null, at: clock.now }));
       return id;
     },
-    doc: (id) => inlineText(record.readFile(id, "bundle.md")),
+    doc: (id) => record.readFile(id, "bundle.md").text,
     /** What a refused act must leave as it was: the document, the head, the manifest and the group's default. */
-    snapshot: (id) => JSON.stringify([inlineText(record.readFile(id, "bundle.md")), record.head(id).bundleSha,
+    snapshot: (id) => JSON.stringify([record.readFile(id, "bundle.md").text, record.head(id).bundleSha,
       st.sql.exec(`SELECT COUNT(*) AS n FROM manifest`)[0].n, st.sql.exec(`SELECT * FROM group_strength_bar`)]),
   };
   for (const m of ["alice", "bob", "carol", "dave"]) w.member(m);

@@ -17,7 +17,7 @@ test("R9 the cascade: A on the reference's fold, else B on the key's (differing 
     { kind: "doc", key: "10", label: "nobody" },           /* unresolved */
     { ref: "file:7", kind: "file", key: "file:7", label: null },  /* key folds to the reference: no B tier */
   ]);
-  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r9"), resolvedBy: MACHINE }));
+  const r = e.resolve({ captureSha: sha("r9"), resolvedBy: MACHINE });
   const got = r.resolved.map((m) => [m.ref, m.entity_id, m.grade]).sort();
   assert.deepEqual(got, [["doc:9", byName, "C"], ["ORD:26-1", byRef, "A"], ["ord:26-2", byKey, "B"], ["ord:26-2", byKey2, "B"]].sort());
   assert.ok(!got.some(([, id]) => id === loser), "an A on one entity suppresses a C on another (the fall-through arm)");
@@ -38,11 +38,11 @@ test("R10 a resolution is keyed (capture, reference, entity): a stronger grade r
   const { e, read, rows } = world();
   const ent = e.createEntity({ note: "a subject the test registers", kind: "office", label: "Port Office" }).entity_id;
   read("INFO-1", sha("r10"), [{ kind: "po", key: "1", label: "Port Office" }]);
-  const c = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r10") })).resolved[0];
+  const c = e.resolve({ captureSha: sha("r10") }).resolved[0];
   assert.deepEqual([c.grade, c.established, c.needs_confirmation, c.raised], ["C", false, true, false]);
-  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r10") })).resolved[0].kept, true, "an equal grade is kept");
+  assert.equal(e.resolve({ captureSha: sha("r10") }).resolved[0].kept, true, "an equal grade is kept");
   e.addAlias({ entityId: ent, alias: "po:1" });
-  const a = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r10") })).resolved[0];
+  const a = e.resolve({ captureSha: sha("r10") }).resolved[0];
   assert.deepEqual([a.grade, a.raised, a.raised_from, a.established, a.needs_confirmation], ["A", true, "C", true, false]);
   assert.equal(rows(`SELECT COUNT(*) AS n FROM resolutions`)[0].n, 1, "never a second row");
   const t = e.testify({ captureSha: sha("r10"), ref: "po:1", entityId: ent, basis: "b" });
@@ -51,7 +51,7 @@ test("R10 a resolution is keyed (capture, reference, entity): a stronger grade r
   /* B is established */
   const k = e.createEntity({ note: "a subject the test registers", kind: "office", label: "K", aliases: ["77"] }).entity_id;
   read("INFO-2", sha("r10b"), [{ kind: "k", key: "77", label: "x" }]);
-  const bb = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r10b") })).resolved.find((m) => m.entity_id === k);
+  const bb = e.resolve({ captureSha: sha("r10b") }).resolved.find((m) => m.entity_id === k);
   assert.deepEqual([bb.grade, bb.established, bb.needs_confirmation], ["B", true, false]);
 });
 
@@ -63,14 +63,14 @@ test("R11 resolve refuses NO_SHA, NO_REF, then NO_SUCH_REFERENCE; without ref ev
   assert.equal(e.resolve({}).reason, "NO_SHA");
   assert.equal(e.resolve({ captureSha: sha("r11"), ref: "" }).reason, "NO_REF");
   assert.equal(e.resolve({ captureSha: sha("r11"), ref: "z:9" }).reason, "NO_SUCH_REFERENCE");
-  const one = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r11"), ref: "a:1" }));
+  const one = e.resolve({ captureSha: sha("r11"), ref: "a:1" });
   assert.deepEqual([one.references, one.resolved_count, one.unresolved_count], [1, 1, 0]);
-  const all = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r11") }));
+  const all = e.resolve({ captureSha: sha("r11") });
   assert.deepEqual([all.references, all.resolved_count, all.unresolved_count], [2, 1, 1]);
   assert.deepEqual(all.unresolved, [{ ref: "b:2", kind: "b", key: "2", label: "Nobody" }]);
-  const none = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("never-read") }));
+  const none = e.resolve({ captureSha: sha("never-read") });
   assert.deepEqual([none.ok, none.references], [true, 0]);
-  const set = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ items: [{ captureSha: sha("r11b") }, { captureSha: "" }, "x"], resolvedBy: MACHINE }));
+  const set = e.resolve({ items: [{ captureSha: sha("r11b") }, { captureSha: "" }, "x"], resolvedBy: MACHINE });
   assert.equal(set.op, "resolve");
   assert.equal(set.weight, "per-item");
   assert.equal(set.count, 3);
@@ -108,9 +108,9 @@ test("R13 onResolved and onResolveAttempt: one registration per module (LISTENER
   read("INFO-1", sha("r13"), [{ kind: "a", key: "1", label: "Alpha" }, { kind: "b", key: "2", label: "nobody" }]);
   const resolved = [], attempts = [];
   assert.equal(e.onResolved("connections", (x) => resolved.push(x)).ok, true);
-  assert.equal(/** @type {any} a second registration answers membership's listener refusal (R13) */ (e.onResolved("connections", () => {})).reason, "LISTENER_DECLARED");
+  assert.equal(e.onResolved("connections", () => {}).reason, "LISTENER_DECLARED");
   assert.equal(e.onResolveAttempt("observation-log", (x) => attempts.push(x)).ok, true);
-  assert.equal(/** @type {any} a second registration answers membership's listener refusal (R13) */ (e.onResolveAttempt("observation-log", () => {})).reason, "LISTENER_DECLARED");
+  assert.equal(e.onResolveAttempt("observation-log", () => {}).reason, "LISTENER_DECLARED");
   e.resolve({ captureSha: sha("r13"), resolvedBy: MACHINE });
   assert.deepEqual(resolved, [{ entityId: ent, captureSha: sha("r13"), ref: "a:1", grade: "C", raised: false }]);
   assert.equal(attempts.length, 2);
@@ -140,15 +140,15 @@ test("R27 grade states how a reference was matched and nothing else: a C never r
   const ent = e.createEntity({ note: "a subject the test registers", kind: "office", label: "Beta" }).entity_id;
   read("INFO-1", sha("r27"), [{ kind: "b", key: "1", label: "Beta" }]);
   e.testify({ captureSha: sha("r27"), ref: "b:1", entityId: ent, basis: "said so" });
-  const c = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r27") })).resolved[0];
+  const c = e.resolve({ captureSha: sha("r27") }).resolved[0];
   assert.deepEqual([c.grade, c.raised_from, c.established], ["C", "D", false]);
   for (const r of e.resolutionsFor({ captureSha: sha("r27"), viewer: MACHINE }).resolutions)
     assert.equal(r.established, false);
   e.addAlias({ entityId: ent, alias: "1" });
-  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r27") })).resolved[0].grade, "B");
+  assert.equal(e.resolve({ captureSha: sha("r27") }).resolved[0].grade, "B");
   e.withdrawAlias({ entityId: ent, alias: "1", reason: "wrong" });
   e.withdrawAlias({ entityId: ent, alias: "Beta", reason: "wrong" });
-  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r27") })).resolved_count, 0);
+  assert.equal(e.resolve({ captureSha: sha("r27") }).resolved_count, 0);
   assert.equal(e.resolutionsFor({ captureSha: sha("r27"), viewer: MACHINE }).resolutions[0].grade, "B", "never falls");
 });
 
@@ -165,7 +165,7 @@ test("R33 gradeRank ranks the catalogue's grades in its own order, strongest hig
   const ent = e.createEntity({ note: "a subject the test registers", kind: "office", label: "Rank" }).entity_id;
   read("INFO-1", sha("r33"), [{ kind: "k", key: "1", label: "Rank" }]);
   e.testify({ captureSha: sha("r33"), ref: "k:1", entityId: ent, basis: "b" });
-  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r33") })).resolved[0].raised_from, "D");
+  assert.equal(e.resolve({ captureSha: sha("r33") }).resolved[0].raised_from, "D");
 });
 
 test("R34 isEstablished(grade) is true exactly for A and B", async () => {

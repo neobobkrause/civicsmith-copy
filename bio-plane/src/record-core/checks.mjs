@@ -42,10 +42,10 @@
 
 import { word, localize } from '../setup-words/index.mjs';
 
-const at = (/** @type {string} */ fn, /** @type {string} */ region) => `src/record-core/index.mjs ${fn} > ${region}`;
+const at = (fn, region) => `src/record-core/index.mjs ${fn} > ${region}`;
 const BUILD_FAULT = word('record-core.build_fault');
 
-/** @type {RecordCoreChecks} */ export const RECORD_CORE_CHECKS = Object.freeze({
+export const RECORD_CORE_CHECKS = Object.freeze({
   MINT_EXHAUSTED: Object.freeze({
     check: 'C-59.6', where: at("mintExhausted", "is-mint-exhausted"),
     translation: word('refusal.MINT_EXHAUSTED'),
@@ -232,7 +232,7 @@ const BUILD_FAULT = word('record-core.build_fault');
  *   C-75.3 — one item is not an object; THAT item is retained and the others are still tried.
  *   C-75.4 — one item's act failed without a refusal (it threw); THAT item is retained and says so.
  *   C-75.5 — the summary: at least one item was retained. Carried beside `items[]`, never instead of it. */
-/** @type {PerItemChecks} */ export const PER_ITEM_CHECKS = Object.freeze({
+export const PER_ITEM_CHECKS = Object.freeze({
   SET_NO_ITEMS: Object.freeze({
     check: 'C-75.1', where: at("perItem", "is-per-item-set-shape"),
     translation: word('refusal.SET_NO_ITEMS'),
@@ -254,64 +254,3 @@ const BUILD_FAULT = word('record-core.build_fault');
     translation: word('refusal.SET_ITEMS_RETAINED'),
   }),
 });
-
-/* The kinds of this module's interface, written after the rows so that no row's line moves: setup-words' review list
-   names each row by the line that holds it. */
-/**
- * @typedef {Object} CheckRow one refusal's row (DEC-49): the row a refusal answers with, beside its code
- * @property {string} check the row's number, `C-<family>.<n>`
- * @property {string} where the function of `record-core` that refuses, and the region of it, as `src/record-core/index.mjs <function> > <region>`
- * @property {string} translation the member's sentence, read from setup-words' list by key, every placeholder filled
- * @bound check: one code names one row, and one row one code (DEC-49)
- * @bound translation: never empty; holds no unfilled `{name}`; a build fault ends with the `BUILD_FAULT` sentence (R82)
- */
-/**
- * @typedef {Object} RecordCoreChecks every refusal `record-core` answers, by its code, each with its row (R80, R81, R82)
- * @property {CheckRow} MINT_EXHAUSTED
- * @property {CheckRow} COUNTS_DECLARED
- * @property {CheckRow} COUNTS_MALFORMED
- * @property {CheckRow} ALLOCID_PREFIX_GATED
- * @property {CheckRow} AUDIT_CHECK_DECLARED
- * @property {CheckRow} AUDIT_CHECK_MALFORMED
- * @property {CheckRow} AUDIT_CHECK_FAILED
- * @property {CheckRow} GRAMMAR_DECLARED
- * @property {CheckRow} GRAMMAR_MALFORMED
- * @property {CheckRow} STATS_SOURCE_DECLARED
- * @property {CheckRow} STATS_SOURCE_MALFORMED
- * @property {CheckRow} OPAQUE_ID_MALFORMED
- * @property {CheckRow} OPAQUE_ID_SPENT
- * @property {CheckRow} OPAQUE_ID_NO_TRANSACTION
- * @property {CheckRow} MINT_SEED_DECLARED
- * @property {CheckRow} MINT_SEED_MALFORMED
- * @property {CheckRow} TABLE_CLASS_MISSING
- * @property {CheckRow} TABLE_CLASS_UNKNOWN
- * @property {CheckRow} TABLE_NAME_INVALID
- * @property {CheckRow} TABLE_DECLARED
- * @property {CheckRow} STORE_GATE_DECLARED
- * @property {CheckRow} STORE_GATE_MALFORMED
- * @property {CheckRow} STORE_GATE_FAILED
- * @property {CheckRow} EXPUNGE_GROUND_UNKNOWN
- * @property {CheckRow} EXPUNGE_NOT_DECLARED
- * @property {CheckRow} EXPUNGE_NOT_A_MEMBER
- * @property {CheckRow} EXPUNGE_NOTHING
- * @property {CheckRow} ANONYMOUS_LEASE
- * @property {CheckRow} SETTING_NAME_REQUIRED
- * @property {CheckRow} SETTING_BY_REQUIRED
- * @property {CheckRow} SETTING_VALUE_REQUIRED
- * @property {CheckRow} SETTING_NOT_JSON
- * @property {CheckRow} SETTING_INVALID
- * @property {CheckRow} ALLOCID_PREFIX_REQUIRED
- * @property {CheckRow} ALLOCID_YEAR_REQUIRED
- * @property {CheckRow} EVIDENCE_PARTS_MALFORMED
- * @property {CheckRow} EVIDENCE_PART_MISSING
- * @property {CheckRow} EVIDENCE_DIGEST_MISMATCH
- * @property {CheckRow} EVIDENCE_STORE_REFUSED
- */
-/**
- * @typedef {Object} PerItemChecks C-75, the set form's five refusals, by code, each with its row (R55)
- * @property {CheckRow} SET_NO_ITEMS
- * @property {CheckRow} SET_TOO_LARGE
- * @property {CheckRow} SET_ITEM_MALFORMED
- * @property {CheckRow} SET_ITEM_FAILED
- * @property {CheckRow} SET_ITEMS_RETAINED
- */

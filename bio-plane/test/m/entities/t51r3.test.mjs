@@ -225,7 +225,7 @@ test("C60 a vouched memo naming a registered organisation is found by connect: i
   const memo = sha("vouched memo");
   w.held("INFO-MEMO", memo);
   w.read("INFO-MEMO", memo, [{ kind: "org", key: "harbour-authority", label: "Harbour Authority" }]);
-  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: memo, resolvedBy: "bea" }));
+  const r = w.e.resolve({ captureSha: memo, resolvedBy: "bea" });
   assert.deepEqual([r.resolved_count, r.unresolved_count], [1, 0], JSON.stringify(r));
   const strongest = w.e.strongestByCapture(org);
   assert.deepEqual([...strongest.keys()], [memo]);

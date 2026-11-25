@@ -123,11 +123,6 @@ function toBytes(x) {
 const isBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
 
 
-/**
- * The plain xlsx package's registered content type; `detect(null, contentType)`
- * answers `likely` only on exact equality with it (or a macro-enabled twin's, R33) (R2).
- * @type {string}
- */
 export const XLSX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 /* R33 (K1903): the macro-enabled flavours' package types, read as xlsx. */
@@ -299,20 +294,11 @@ export { sheetCellRef, sheetRangeRef, columnLetters, usedSheetRange };
 
 const isCorner = (c) => c != null && Number.isInteger(c.col) && c.col > 0 && Number.isInteger(c.row) && c.row > 0;
 
-/**
- * @typedef {Object} A1Corner
- * @property {number} col 1-based column (`A` = 1)
- * @property {number} row 1-based row
- */
-/** One A1 corner (`$B$14`, `b14`) -> {col,row}, both 1-based, or null (R26). The
+/** One A1 corner (`$B$14`, `b14`) -> {col,row}, both 1-based, or null. The
  *  `$` markers are notation, not address; letters are read without case;
  *  surrounding whitespace is trimmed. Anything else — not a string, a whole
  *  row or column, a row of 0 or with a leading zero, more than three letters
- *  or seven digits — is null, never a guessed corner. Never throws (R21).
- * @param {*} s the corner text; anything not a string is null
- * @returns {A1Corner|null}
- * @bound letters A to ZZZ (col 1 to 18,278); row 1 to 9,999,999 with no leading zero
- */
+ *  or seven digits — is null, never a guessed corner. */
 export function a1Corner(s) {
   if (typeof s !== "string") return null;
   const m = /^\$?([A-Za-z]{1,3})\$?([1-9]\d{0,6})$/.exec(s.trim());
@@ -322,27 +308,14 @@ export function a1Corner(s) {
   return { col, row: parseInt(m[2], 10) };
 }
 
-/** @import { SheetRangeRef } from './csv-reader/index.mjs' */
-/**
- * @typedef {Object} RangeUnitAnswer
- * @property {SheetRangeRef} [unit] the rectangle's `sheet-range` reference, from csv-reader's builder
- * @property {string} [why] `not_a_range_reference`, `no_such_sheet` or `outside_grid`
- */
-/** A rectangle on a named sheet -> {unit} or {why} (R27). `a`/`b` are corners as
+/** A rectangle on a named sheet -> {unit} or {why}. `a`/`b` are corners as
  *  `a1Corner` returns them, in either order; `sheets` the workbook's sheet
  *  names; `grid` the format's bound `{rows, cols}`, or null when the format
  *  fixes none (`.ods`, csv). A sheet name matches exactly, else
  *  case-insensitively when exactly one sheet answers (the format resolves
  *  sheet names without case); the unit carries the WORKBOOK's spelling. Why
  *  not: `not_a_range_reference` (a corner is not one), `no_such_sheet`,
- *  `outside_grid`. Never throws (R21).
- * @param {*} sheetName the sheet's name as written
- * @param {*} a one corner, as `a1Corner` returns it
- * @param {*} b the other corner, either order
- * @param {*} sheets the workbook's sheet names (non-strings ignored)
- * @param {{rows: number, cols: number}|null} [grid] the format's bound, or null for none
- * @returns {RangeUnitAnswer}
- */
+ *  `outside_grid`. */
 export function rangeUnitFor(sheetName, a, b, sheets, grid = null) {
   if (!isCorner(a) || !isCorner(b)) return { why: "not_a_range_reference" };
   const names = Array.isArray(sheets) ? sheets.filter((s) => typeof s === "string") : [];
@@ -1578,10 +1551,6 @@ async function xlsxText(parts, opts) {
  * bounded by the rows asked for and a block, not by the sheet's size or the row's offset. A sheet that cannot be read to
  * its end gives `{ ok:false, reason }`. A cell with no readable column is in every column range. Never throws.
  */
-/**
- * The default `maxCells` of one `cellsIn` call (R37).
- * @type {number}
- */
 export const CELLS_IN_MAX = 20000;
 
 function cellsInArguments(range) {
@@ -1682,69 +1651,11 @@ async function xlsxCellsIn(parts, a) {
   return { ok: true, sheet: sheet.name, cells, rows: { from: a.fromRow, to }, ...(nextRow != null ? { next_row: nextRow } : {}), undetermined, served };
 }
 
-/**
- * @typedef {Uint8Array|ArrayBuffer|ArrayBufferView} XlsxBytes
- */
-/**
- * A detection: `format` "xlsx", `confidence` always "likely", never
- * "certain" (R2), and the `signals` it was judged on.
- * @typedef {{format: string, confidence: string, signals: string[]}} FormatDetection
- */
-/**
- * What `parts()` answers (R5): a refusal `{ok:false, why, signals?}` (an
- * unreadable workbook part is `workbook_unreadable:<reason>`), or the read
- * parts `{ok:true, format, variant, sheets, undetermined, ...}`, a part
- * other than the workbook that failed being in `undetermined`.
- * @typedef {{ok: boolean, why?: *, [field: string]: *}} XlsxParts
- */
-/**
- * What `structure()` answers (R9, R10): `{ok:true, container, sheets, links,
- * counts, evidentiary, ...}`, the evidentiary envelope being `{container,
- * kinds, items, undetermined, counts}`, or `{ok:false, container, reason}`
- * when `parts` failed.
- * @typedef {{ok: boolean, [field: string]: *}} XlsxStructure
- */
-/**
- * What `text()` answers (R11, R30, R36, R9): `{ok:true, container, document,
- * sheets, rangeUnits, rangeUnitsSkipped, undetermined, counts, images, ...}`
- * (`document` null over the size guard; `images` under `xl/media/`, or null
- * when not walked), or `{ok:false, container, reason}` when `parts` failed.
- * @typedef {{ok: boolean, [field: string]: *}} XlsxText
- */
-/**
- * What `cellsIn` answers (R37): `{ok:true, sheet, cells, rows:{from, to},
- * next_row?, undetermined, served:{bytes, blocks}}`, `next_row` absent when
- * nothing in range remains; or a refusal `{ok:false, reason, argument?}`.
- * @typedef {{ok: boolean, [field: string]: *}} CellsInAnswer
- */
-/**
- * The xlsx format entry (I7) the registry calls. `detect(bytes, contentType)`
- * answers by a full container's parts, else by exact content type, and is a
- * FormatDetection or null when neither answers (R2). `cellsIn(partsOrBytes,
- * range)` takes `range` `{sheet, fromRow?, toRow?, fromCol?, toCol?,
- * maxCells?}`, `sheet` a name or a 0-based position, rows and columns 1-based
- * and inclusive; anything else is refused `invalid_argument` (R37). `text`'s
- * `opts` are `{inlineCellsMax?, yieldNow?}` (R36, R42).
- * @typedef {Object} XlsxEntry
- * @property {string} format "xlsx"
- * @property {(bytes: Uint8Array|null, contentType?: *) => *} detect (R2)
- * @property {(bytes: *) => Promise<XlsxParts>} parts (R5)
- * @property {(partsOrBytes: *, opts?: *) => Promise<XlsxStructure>} structure (R9, R10)
- * @property {(partsOrBytes: *, opts?: *) => Promise<XlsxText>} text (R11, R30, R36, R46-R49)
- * @property {(partsOrBytes: *, range?: *) => Promise<CellsInAnswer>} cellsIn (R37)
- */
-
 /* ------------------------------------------------------------------ *
  * The I7 entry (registered by formats.mjs — one registerFormat call there,
  * nothing anywhere else; that is the D-70 property this axis exists to keep)
  * ------------------------------------------------------------------ */
 
-/**
- * The xlsx entry: detect, parts, structure, text and cellsIn; none throws (R21).
- * @type {XlsxEntry}
- * @bound a sheet's grid is 1,048,576 rows by 16,384 columns; a wider sheet is refused whole (R49)
- * @bound cellsIn answers at most maxCells cells a call, default CELLS_IN_MAX, 20,000 (R37)
- */
 export const xlsxEntry = {
   format: "xlsx",
   detect(bytes, contentType) {
