@@ -2,7 +2,7 @@
    project page's standing read. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, projectMd, ANN, BOB, DAN, OUT, AI, P1, P2, PH, Q1, Q2 } from "./fixture.mjs";
+import { world, projectMd, inlineText, ANN, BOB, DAN, OUT, AI, P1, P2, PH, Q1, Q2 } from "./fixture.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
 test("R17: quietState is quiet when every step of the project and its questions is ended or set aside and nothing is awaited; a display, never a stage", () => {
@@ -116,7 +116,7 @@ test("R18: projectCloseWithGaps closes the project with its closed_reason (inten
   assert.deepEqual(r.gaps.map((g) => g.key), ["intent::g9"]);
   const head = w.record.head(P);
   assert.deepEqual([head.currentState, head.priorState], ["closed", "forming"]);
-  const text = w.record.readFile(P, "bundle.md").text;
+  const text = inlineText(w.record.readFile(P, "bundle.md"));
   assert.match(text, /closed_reason: abandoned/);
   assert.match(text, /to_state: closed/);
   const act = w.rows(`SELECT * FROM inv_quiet_acts WHERE project_id = ? AND act = 'close'`, P)[0];
