@@ -49,6 +49,18 @@ const FIELD_WORD = {
   from: localize("inquiry-grammar.grammar.field_word_from", "the grade it started from"),
   to: localize("inquiry-grammar.grammar.field_word_to", "the grade it moved to"),
 };
+// R1 (CASE-5b), R69: the case facts an inquiry may not carry, in the order the catalogue checked them, each in the
+// member's words the refusal names it by.
+const CASE_FACT_WORD = {
+  case_id: localize("inquiry-grammar.grammar.case_fact_identity", "the case's identity"),
+  case_edition: localize("inquiry-grammar.grammar.case_fact_edition", "the case's edition"),
+  case_project: localize("inquiry-grammar.grammar.case_fact_project", "the case's producing project"),
+  case_scope: localize("inquiry-grammar.grammar.case_fact_scope", "the case's scope"),
+  case_findings: localize("inquiry-grammar.grammar.case_fact_roster", "the case's roster"),
+  case_roles: localize("inquiry-grammar.grammar.case_fact_partition", "the case's load-bearing partition"),
+  bias_acknowledgement: localize("inquiry-grammar.grammar.case_fact_bias", "the case's bias acknowledgement"),
+  required_strength: localize("inquiry-grammar.grammar.case_fact_bar", "the case's bar"),
+};
 
 /** A finding, record-grammar's shape (its R11), with the optional `code` (REC-56 / D-206): a discriminator within a
  *  rule, minted at the same call site as the finding it describes. */
@@ -324,12 +336,14 @@ export function checkInquiryExtension(ctx, findings, where) {
      second-authority drift D-21 names, arriving through bytes rather than
      through a table. Refused here, the deletion is a property of the FORMAT and
      not a property of op=publish remembering not to write it. */
-  for (const k of ['case_id', 'case_edition', 'case_project', 'case_scope', 'case_findings', 'case_roles',
-                   'bias_acknowledgement', 'required_strength']) {
+  /* R1 (CASE-5b) with R4 and R69: each finding names the case fact it refuses, as the catalogue's named its key, and
+     names it in the member's words (CASE_FACT_WORD), never by the field's own name. One finding per fact carried. */
+  for (const k of Object.keys(CASE_FACT_WORD)) {
     const v = fm?.[k];
     if (v === undefined || v === null || v === '' || v === 'null') continue;
-    findings.push(f('C-2.8', 'error', localize("inquiry-grammar.grammar.a_finding_s_bytes_name_p", "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed", { k: String(k) }),
-      [localize("inquiry-grammar.grammar.remove_k_from_this_documents_p", "remove the case facts from this inquiry", { k: String(k) }),
+    const fact = CASE_FACT_WORD[k];
+    findings.push(f('C-2.8', 'error', localize("inquiry-grammar.grammar.inquiry_carries_case_fact_p", "this inquiry carries {fact}, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed", { fact }),
+      [localize("inquiry-grammar.grammar.remove_case_fact_p", "remove {fact} from this inquiry", { fact }),
        localize("inquiry-grammar.grammar.the_case_states_these_facts_p", "the case states these facts once, in its own signed document")]));
   }
   /* REC-16: the `divided` ENTRY REQUIREMENTS, on the same principle again — a
