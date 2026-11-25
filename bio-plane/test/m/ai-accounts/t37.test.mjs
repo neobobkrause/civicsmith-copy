@@ -29,7 +29,7 @@ test("R7 R21 (was credentials R35 R52): aiKeptAway answers null while the group 
   const before = w.snapshot();
   const k = w.c.aiKeptAway();
   assert.deepEqual(shape(k), row(AI_ACCOUNT_CHECKS, "AI_KEPT_AWAY"));
-  assert.deepEqual(Object.keys(k).sort(), ["check", "code", "detail", "keep_away", "ok", "reason", "translation"]);
+  assert.deepEqual(Object.keys(k ?? {}).sort(), ["check", "code", "detail", "keep_away", "ok", "reason", "translation"]);
   assert.deepEqual(k.keep_away, { reason: "A confidentiality order.", set_by: "second", set_at: set.set_at });
   const { on, uses, ...state } = w.c.aiKeepAwayState();
   assert.deepEqual([on, k.keep_away], [true, state]);

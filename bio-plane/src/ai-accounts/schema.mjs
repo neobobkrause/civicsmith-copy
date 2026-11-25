@@ -2,6 +2,7 @@
  * N996, K624, K3101; split map §2), with the table names and columns unchanged so a running store keeps its rows, and
  * the additive columns an older store gains at boot. `AiAccounts#migrate` runs it. SQL comments are `--` lines,
  * dropped before the statements run. */
+/** @type {string} the tables and indexes, each created if absent, as `;`-separated statements */
 export const AI_ACCOUNTS_SCHEMA = `
 -- R1-R4 (T33-20; K1502): each member's own Claude account reference, one row per member, held only by that
 -- member's own act. THE SECRET IS STORED ONLY SEALED (R2): 'sealed' is AES-256-GCM ciphertext under a key derived
@@ -202,6 +203,7 @@ CREATE INDEX IF NOT EXISTS account_changes_project ON account_changes(project_id
 `;
 
 /* Columns a store written before they existed gains at boot: additive and nullable, never back-filled (D-85). */
+/** @type {Array<[string, string, string]>} each `[table, column, declaration]` an older store gains at boot */
 export const AI_ACCOUNTS_ADDITIVE_COLUMNS = [
   /* R19 (T47): a sign-in's held token, sealed, and what is known of its life */
   ["subscription_connections", "sealed", "TEXT"],
@@ -253,7 +255,20 @@ export const AI_ACCOUNTS_ADDITIVE_COLUMNS = [
    alone. The group key's tables are `sight: "group"`: record-core's R21 offers no administrator sight, and no read
    answers the key whatever its sight; `groupKeyState` answers its state to administrators alone (R6; K1760). The
    keep-away setting (R20, R21) is the group's, read by every member, and exported to administrators only. */
+/**
+ * @typedef {Object} TableDeclaration one table's classes for record-core's `declareTable` (its R21; R28)
+ * @property {string} name
+ * @property {readonly string[]} [keys] the columns that key a row to its project's bundle
+ * @property {string} [whole] the rows the whole-store purge clears
+ * @property {string} purge
+ * @property {string} expunge
+ * @property {string} derive
+ * @property {boolean} version_chain
+ * @property {string} export
+ * @property {string} sight
+ */
 const CLASSES = { purge: "exempt", expunge: "none", derive: "stored", version_chain: false };
+/** @type {readonly Readonly<TableDeclaration>[]} R28, R29: the group's and members' tables, exempt from purge */
 export const AI_ACCOUNTS_TABLES = Object.freeze([
   ["account_references", "never", "owner"], ["group_key", "never", "group"], ["group_key_acts", "never", "group"],
   ["group_key_notices", "never", "owner"], ["subscription_connections", "never", "owner"],
@@ -264,6 +279,7 @@ export const AI_ACCOUNTS_TABLES = Object.freeze([
    suggestion): exempt from purge for the group's and members' accounts, a project's rows deleted with their project
    (`purge: "clear"` keyed by `project_id`, and the whole-store purge clearing only rows that name a project, `whole`).
    Never exported; read only through R16's service, to the account's owners. */
+/** @type {Readonly<TableDeclaration & {keys: readonly string[], whole: string}>} R16, R28: every account's change history, `account_changes` */
 export const AI_ACCOUNTS_HISTORY_TABLE = Object.freeze({ name: "account_changes", keys: Object.freeze(["project_id"]),
   whole: "project_id IS NOT NULL", purge: "clear", expunge: "none", derive: "stored", version_chain: false,
   export: "never", sight: "group" });
@@ -273,6 +289,7 @@ export const AI_ACCOUNTS_HISTORY_TABLE = Object.freeze({ name: "account_changes"
    core R46), so a purge of the project, or the whole-store purge that removes every project, deletes them and nothing
    else does (K2404's reading (3)). Never exported, read only through R10's and R22's services; the material limits
    exported to administrators only, as R20's. */
+/** @type {readonly Readonly<TableDeclaration & {keys: readonly string[]}>[]} R28: a project's account, notices and limits, cleared with the project */
 export const AI_ACCOUNTS_PROJECT_TABLES = Object.freeze([
   ["project_accounts", "never"], ["project_account_acts", "never"], ["project_key_notices", "never"],
   ["project_keep_away", "admin-only"],

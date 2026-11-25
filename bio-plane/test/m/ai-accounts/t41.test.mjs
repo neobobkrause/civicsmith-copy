@@ -96,7 +96,7 @@ test("R14 R22 (was credentials R55, R57): a material limit may name the new kind
   assert.equal((await w.c.accountFor({ member: "bob", act: act("enquire", "bob", "P") })).level, "member");
   w.c.aiKeepAwaySet({ on: true, reason: "everything", by: "admin" });
   assert.deepEqual(w.c.aiKeepAwayState().uses, [...USE_KINDS], "no uses: every kind, the new ones included");
-  for (const kind of NEW) assert.equal(w.c.aiKeptAway({ use: kind }).reason, "AI_KEPT_AWAY", kind);
+  for (const kind of NEW) assert.equal(w.c.aiKeptAway({ use: kind })?.reason, "AI_KEPT_AWAY", kind);
 });
 
 test("R14 (was credentials R55): an account held before T41 reads the four new kinds at their defaults: the migration adds their columns on and keeps every stored switch", async () => {
@@ -158,7 +158,7 @@ test("R10 R14 R11 R22 R12 (was credentials R54, R55, R56, R57, R58): the six ref
   w.c.accountUsesSet({ owner: "member:cy", switch: "ask", on: false, by: "cy" });
   assert.equal((await w.c.accountFor({ member: "cy", act: act("ask", "cy") })).translation, WORDS["ai.refused.off"]);
   w.c.projectAiKeepAwaySet({ project: "S", on: true, reason: "r", by: "cy" });
-  assert.equal(w.c.aiKeptAway({ project: "S", use: "ask" }).translation, WORDS["ai.refused.projectkeptaway"]);
+  assert.equal(w.c.aiKeptAway({ project: "S", use: "ask" })?.translation, WORDS["ai.refused.projectkeptaway"]);
 });
 
 test("R12 (was credentials R58): the project key's notice is words.json's ai.disclosure.projectkey, {project} the project's name (its bundle's title, else its id); PROJECT_KEY_NOTICE_DUE (ai.refused.noticedue) carries the disclosure with it; once read, neither", async () => {

@@ -18,6 +18,7 @@ const at = (fn, region) => `src/ai-accounts/index.mjs ${fn} > ${region}`;
    disclosure is answered with `{project}` filled (R12). A row's `translation` is the word itself, never a copy. */
 const keep = (key, ...names) => word(key, Object.fromEntries(names.map((n) => [n, `{${n}}`])));
 
+/** @type {Readonly<Object<string, string>>} R10–R12, R14, R22, R23: each key this module reads of words.json, and its words with the screen's placeholders kept */
 export const AI_WORDS = Object.freeze({
   'ai.refused.off': keep('ai.refused.off', 'Use', 'whose', 'who'),
   'ai.refused.projectkeptaway': keep('ai.refused.projectkeptaway', 'for_uses', 'member', 'date', 'reason'),
@@ -33,6 +34,7 @@ export const AI_WORDS = Object.freeze({
 /* T33-20 (K1502, K1449): each member's own Claude account reference (R1–R4); T34 (K1755): the group's API key (R5–R9).
    The account refusals R1 names are minted in one region, `#accountBar`, which every act on a reference consumes, and
    credentials' grant mint through R25's `accountActBar`. */
+/** @type {Readonly<Object<string, Readonly<{check: string, where: string, translation: string}>>>} R33: this module's C-29 rows, keyed by code */
 export const AI_ACCOUNT_CHECKS = Object.freeze({
   MACHINE_CANNOT_HOLD_ACCOUNT: Object.freeze({
     check: 'C-29.13', where: at("#accountBar", "is-account-own-act"),

@@ -464,29 +464,29 @@ test("R7 R22 (was credentials R35 R57): aiKeptAway({project, use}) answers the g
   const w = await projectWorld();
   assert.equal(w.c.aiKeptAway({ project: "P", use: "ask" }), null);
   w.c.aiKeepAwaySet({ on: true, uses: ["explore"], reason: "no exploring", by: "admin" });
-  assert.equal(w.c.aiKeptAway({ use: "explore" }).reason, "AI_KEPT_AWAY");
+  assert.equal(w.c.aiKeptAway({ use: "explore" })?.reason, "AI_KEPT_AWAY");
   assert.equal(w.c.aiKeptAway({ use: "ask" }), null, "negative control: another use");
-  assert.equal(w.c.aiKeptAway().reason, "AI_KEPT_AWAY", "with neither argument: as now, whenever it is on");
+  assert.equal(w.c.aiKeptAway()?.reason, "AI_KEPT_AWAY", "with neither argument: as now, whenever it is on");
   const set = w.c.projectAiKeepAwaySet({ project: "P", on: true, uses: ["ask", "draft"], reason: "Under seal until March.", by: "ann" });
   assert.deepEqual({ ...set, set_at: null }, { ok: true, project: "P", on: true, uses: ["ask", "draft"], reason: "Under seal until March.",
     set_by: "ann", set_at: null });
   const before = w.snapshot();
   const k = w.c.aiKeptAway({ project: "P", use: "ask" });
   assert.deepEqual(shape(k), refusal("PROJECT_AI_KEPT_AWAY"));
-  assert.deepEqual([k.project, k.use, k.keep_away], ["P", "ask", { reason: "Under seal until March.", set_by: "ann", set_at: set.set_at }]);
+  assert.deepEqual([k?.project, k?.use, k?.keep_away], ["P", "ask", { reason: "Under seal until March.", set_by: "ann", set_at: set.set_at }]);
   assert.equal(w.c.aiKeptAway({ project: "P", use: "run" }), null, "a use it does not name");
   assert.equal(w.c.aiKeptAway({ project: "S", use: "ask" }), null, "another project");
-  assert.equal(w.c.aiKeptAway({ project: "P", use: "explore" }).reason, "AI_KEPT_AWAY", "the team's first");
-  assert.equal(w.c.aiKeptAway({ project: "P" }).reason, "AI_KEPT_AWAY");
+  assert.equal(w.c.aiKeptAway({ project: "P", use: "explore" })?.reason, "AI_KEPT_AWAY", "the team's first");
+  assert.equal(w.c.aiKeptAway({ project: "P" })?.reason, "AI_KEPT_AWAY");
   w.c.aiKeepAwaySet({ on: false, by: "admin" });
-  assert.equal(w.c.aiKeptAway({ project: "P" }).reason, "PROJECT_AI_KEPT_AWAY", "no use asked: covered while on");
+  assert.equal(w.c.aiKeptAway({ project: "P" })?.reason, "PROJECT_AI_KEPT_AWAY", "no use asked: covered while on");
   assert.equal(w.c.aiKeptAway(), null);
   /* binds every account: the member's own too, through R11 */
   await w.c.accountReferenceSet({ member: "bob", kind: "apikey", secret: "sk-bob", by: "bob" });
   assert.equal((await w.c.accountFor({ member: "bob", act: act("ask", "bob", "P") })).reason, "PROJECT_AI_KEPT_AWAY");
   assert.equal((await w.c.accountFor({ member: "bob", act: act("run", "bob", "P") })).level, "member");
   assert.equal((await w.c.accountFor({ member: "bob", act: act("ask", "bob") })).level, "member", "outside the project's context");
-  assert.equal(w.c.projectsKeptAway({ use: "ask" }).join(), "P");
+  assert.equal(w.c.projectsKeptAway({ use: "ask" })?.join(), "P");
   assert.notEqual(before, null);
   /* fails closed */
   w.sql.exec(`DROP TABLE project_keep_away`);

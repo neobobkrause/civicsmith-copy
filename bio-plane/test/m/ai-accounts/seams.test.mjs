@@ -98,12 +98,12 @@ test("R24: with no seal secret bound, sealText and unsealText each answer ACCOUN
 test("R25: accountActBar answers R1's refusals in R1's order, and null for the member's own act (control)", async () => {
   const w = await world().group("ann", "bob");
   assert.equal(w.a.accountActBar({ member: "ann", by: "member:ann" }), null);
-  assert.equal(w.a.accountActBar({ member: "ann", by: null }).code, "MACHINE_CANNOT_HOLD_ACCOUNT");
-  assert.equal(w.a.accountActBar({ member: "ann", by: "token:abc" }).code, "MACHINE_CANNOT_HOLD_ACCOUNT");
-  assert.equal(w.a.accountActBar({ member: "ann", by: "member:bob" }).code, "NOT_YOUR_ACCOUNT");
-  assert.equal(w.a.accountActBar({ member: "ann", by: "admin" }).code, "NOT_YOUR_ACCOUNT");
+  assert.equal(w.a.accountActBar({ member: "ann", by: null })?.code, "MACHINE_CANNOT_HOLD_ACCOUNT");
+  assert.equal(w.a.accountActBar({ member: "ann", by: "token:abc" })?.code, "MACHINE_CANNOT_HOLD_ACCOUNT");
+  assert.equal(w.a.accountActBar({ member: "ann", by: "member:bob" })?.code, "NOT_YOUR_ACCOUNT");
+  assert.equal(w.a.accountActBar({ member: "ann", by: "admin" })?.code, "NOT_YOUR_ACCOUNT");
   await w.m.memberSet({ memberId: "bob", status: "revoked", by: "admin" });
-  assert.equal(w.a.accountActBar({ member: "bob", by: "member:bob" }).code, "ACCOUNT_MEMBER_NOT_ACTIVE");
+  assert.equal(w.a.accountActBar({ member: "bob", by: "member:bob" })?.code, "ACCOUNT_MEMBER_NOT_ACTIVE");
   for (const [member, by] of [["ann", null], ["ann", "member:bob"], ["bob", "member:bob"]])
     assert.deepEqual(w.a.accountActBar({ member, by }), w.a.accountReferenceRemove({ member, by }));
 });

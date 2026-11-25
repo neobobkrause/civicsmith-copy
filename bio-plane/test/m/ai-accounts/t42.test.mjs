@@ -65,7 +65,7 @@ test("R17 (was credentials R62): accountUsesOf answers each account's uses exact
     accounts: { reference: { held: false, uses: null }, signin: { held: false, uses: null } } });
   /* it follows a change as R15 does */
   w.c.accountUsesSet({ owner: "project:P", switch: "explore", on: "yes", by: "ann" });
-  assert.equal(w.c.accountUsesOf({ owner: "project:P" }).uses.explore, "yes");
+  assert.equal(w.c.accountUsesOf({ owner: "project:P" }).uses?.explore, "yes");
   assert.deepEqual(w.c.accountUsesOf({ owner: "project:P" }), noKeptAway(w.c.accountUses({ owner: "project:P", viewer: "ann" })));
   /* the group key before any act on it: held false, its defaults, as R15 */
   const fresh = await world().group();

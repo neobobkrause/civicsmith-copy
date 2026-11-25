@@ -32,7 +32,7 @@ test("R2 R18 R19 (fixture accountReference): the member's own read of their acco
   assert.equal(connected.subscription.connected, true);
   assert.equal(connected.subscription.held, true);
   assert.equal(typeof connected.subscription.since, "string");
-  assert.deepEqual(Object.keys(connected.subscription.uses).slice(0, 3), ["ask", "draft", "run"]);
+  assert.deepEqual(Object.keys(connected.subscription.uses ?? {}).slice(0, 3), ["ask", "draft", "run"]);
   assert.ok(!JSON.stringify([without, connected]).includes(SIGNIN_TOKEN("ann")), "never the token");
 });
 

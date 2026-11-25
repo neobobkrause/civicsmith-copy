@@ -49,7 +49,7 @@ test("R23 (was credentials R64): registerDisclosureRead: one registration whoeve
   for (const a of notShown) {
     answer = a;
     const r = w.c.disclosureDue({ member: "ann" });
-    assert.deepEqual(Object.keys(r).sort(), DUE_KEYS, String(a));
+    assert.deepEqual(Object.keys(r ?? {}).sort(), DUE_KEYS, String(a));
     assert.deepEqual([r.ok, r.reason, r.code, r.check, r.translation, r.member],
       [false, "DISCLOSURE_DUE", "DISCLOSURE_DUE", "C-29.40", word("refusal.DISCLOSURE_DUE"), "ann"], String(a));
     assert.ok(typeof r.detail === "string" && r.detail.length > 20);
