@@ -46,6 +46,8 @@ import { DEPLOYMENT_SEQUENCE, GATE_ADDRESS, DEPLOYED_MODES } from "../../bio-pla
 import { reportsAs } from "../../bio-plane/src/skilldoctrine.mjs";
 import * as HARNESS from "../../agent-harness/src/harness.mjs";
 import { discoverMembers, verifyStatic, verifyFresh } from "../../bio-plane/scripts/fleet-bundle.mjs";
+import { withBuiltBundle, builtManifest } from "./built.mjs";
+import { execFileSync } from "node:child_process";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
 const { Miniflare } = await (async () => {
@@ -1242,7 +1244,7 @@ section("R48 · in the model mode the pack is the one the plane serves on op=age
   await runOp(mf, { ...base, account: ACCOUNTS, judgements: J() });
   t("R48: until turns run it changes nothing: the supplied mode never asks for the pack",
     (await planeState(mf)).log.some((l) => l.op === "agentpack" || l.op === "affordances"), false);
-  const bundle = JSON.parse(readFileSync(fileURLToPath(new URL("../dist/agent-worker.bundle.json", import.meta.url)), "utf8"));
+  const bundle = builtManifest();
   const inputs = (bundle.inputs || []).map((i) => String(i.path ?? i.file ?? i));
   t("R48: it renders nothing and imports neither the check catalogue nor skills' code: no such input in its bundle",
     [inputs.length > 0, inputs.filter((f) => /bio-checks\.mjs$|skillpack\.mjs$|skilldoctrine\.mjs$/.test(f))], [true, []]);
@@ -1482,19 +1484,26 @@ section("N53 · the skills doctrine's pins on this member, owned here (agent-har
      nextStep({ step: "gate-mode", mode: "check", pass: 0, maxPasses: 3 }).step], ["mode-not-deployed", "resume"]);
 }
 
-section("R45 · the committed bundle is a fresh build of src/index.mjs, its manifest naming every input");
+section("R45, R120 · the bundle scripts/build.mjs builds is the same on every fresh build, its manifest naming every input; none is committed");
 {
   const member = discoverMembers().find((m) => m.name === "agent-worker");
-  const stat = verifyStatic(member);
-  t("R45: the static check finds nothing", stat.findings, []);
+  if (!member) throw new Error("R45: bundler's discovery does not list agent-worker");
+  const stat = withBuiltBundle(() => verifyStatic(member));
+  t("R45: the manifest scripts/build.mjs wrote hashes the sources it was built from, and the bundle it names", stat.findings, []);
   const fresh = await verifyFresh(member, stat.committed);
-  t("R45: a fresh build is byte-identical to the committed bundle", [fresh.checked, fresh.findings], [true, []]);
+  t("R45: a second fresh build of the same sources is byte-identical to the first", [fresh.checked, fresh.findings], [true, []]);
   const inputs = (stat.manifest?.inputs || []).map((i) => i.path);
   t("R45, R119: the manifest names every input, bio-plane/src/tokens.mjs and the agent-steps files included",
     ["../bio-plane/src/tokens.mjs", "src/index.mjs", "src/cascade.mjs", "src/ops.mjs", "src/ask.mjs", "src/draft.mjs",
      "../agent-steps/src/index.mjs", "../agent-steps/src/drive.mjs", "../agent-steps/src/work.mjs",
      "../agent-harness/src/harness.mjs", "../agent-harness/src/subsession.mjs", "../agent-model/src/model.mjs"]
       .filter((p) => !inputs.includes(p)), []);
+  const git = (/** @type {string[]} */ ...a) => execFileSync("git", a, { cwd: fileURLToPath(new URL("../..", import.meta.url)), encoding: "utf8" });
+  t("R120: agent-worker/dist/ holds no committed file but its .gitignore",
+    git("ls-files", "agent-worker/dist").split("\n").filter(Boolean), ["agent-worker/dist/.gitignore"]);
+  t("R120: and that .gitignore ignores the bundle and the manifest built there",
+    git("check-ignore", "agent-worker/dist/agent-worker.bundled.mjs", "agent-worker/dist/agent-worker.bundle.json").split("\n").filter(Boolean),
+    ["agent-worker/dist/agent-worker.bundled.mjs", "agent-worker/dist/agent-worker.bundle.json"]);
 }
 
 section("R46 · no place is named in its behaviour or outward text; its account is the project's");
