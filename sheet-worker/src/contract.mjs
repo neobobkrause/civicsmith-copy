@@ -8,16 +8,26 @@
 import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 import { localize, word } from "../../bio-plane/src/setup-words/index.mjs";
 
+/** The engine's name in every answer (R4, R8).
+ *  @type {string} */
 export const ENGINE_NAME = "ironcalc";
 /** The IronCalc commit the engine is built from (`engine/Cargo.toml`), with the `xlsx` feature's reader: npm's
- *  `@ironcalc/wasm` reads no XLSX (courts-workbooks.md §3(c)). */
+ *  `@ironcalc/wasm` reads no XLSX (courts-workbooks.md §3(c)).
+ *  @type {string}
+ *  @bound 40 lower-case hex characters, a full commit id (R13) */
 export const ENGINE_VERSION = "4deab8f6e6a858744f8966f67f70f4ed8d29c78d";
-/** The vendored `assets/sheet-engine.wasm`: its byte length and SHA-256, as `scripts/build-engine.mjs` printed them. */
+/** The vendored `assets/sheet-engine.wasm`: its byte length and SHA-256, as `scripts/build-engine.mjs` printed them.
+ *  @type {number}
+ *  @bound whole number, the vendored wasm's exact byte length (R13) */
 export const WASM_BYTES = 1866957;
+/** @type {string}
+ *  @bound 64 lower-case hex characters, the vendored wasm's SHA-256 (R13) */
 export const WASM_SHA256 = "6cb03bcc9e5cf23e189b45fd88373b44576ec297b76db1675a430ee1254ced3d";
-/** The custom section the build appends, naming the commit and the code it was appended to. */
+/** The custom section the build appends, naming the commit and the code it was appended to.
+ *  @type {string} */
 export const ENGINE_SECTION = "bio-engine";
-/** The calls the glue makes into the wasm; a module without every one of them is not this engine. */
+/** The calls the glue makes into the wasm; a module without every one of them is not this engine (R13).
+ *  @type {ReadonlyArray<string>} */
 export const ENGINE_EXPORTS = Object.freeze(["memory", "book_load", "book_evaluate", "inspect", "engine_commit",
   "__wbg_book_free"]);
 
@@ -31,45 +41,75 @@ export const ENGINE_EXPORTS = Object.freeze(["memory", "book_load", "book_evalua
  * five workbooks of 14-30 MB that did not finish in 600 s. The job's record holds the full figures. The three values are
  * the `sheet_worker` rows of runtime-limits' `READ_BOUNDS` (R14), read through `boundOf` and typed nowhere else. */
 
-/** Unzipped bytes of every part of the package, counted as they decompress. */
+/** Unzipped bytes of every part of the package, counted as they decompress.
+ *  @type {number}
+ *  @bound whole number, 9,000,000: the `sheet_worker` `bytes` row of `READ_BOUNDS` (R14); a workbook above it is
+ *  refused OVER_BOUND (R3) */
 export const MAX_UNZIPPED_BYTES = boundOf("sheet_worker", "bytes");
-/** `<c>` elements across the worksheets. */
+/** `<c>` elements across the worksheets.
+ *  @type {number}
+ *  @bound whole number, 250,000: the `sheet_worker` `cells` row of `READ_BOUNDS` (R14); exactly this many is
+ *  recomputed, one more is refused OVER_BOUND (R3) */
 export const MAX_CELLS = boundOf("sheet_worker", "cells");
 /** Milliseconds the engine may spend loading before evaluation is not started: a backstop, since every load under the
  *  bounds took at most 6.3 s, and evaluation took at most 1.1 times its load, so a load within this leaves evaluation
- *  inside the CPU ceiling. Read after a turn boundary (workerd advances its clock only between turns). */
+ *  inside the CPU ceiling. Read after a turn boundary (workerd advances its clock only between turns).
+ *  @type {number}
+ *  @bound whole number, 120,000: the `sheet_worker` `ms` row of `READ_BOUNDS` (R14); a longer load is refused
+ *  TIME_LIMIT (R3) */
 export const TIME_BUDGET_MS = boundOf("sheet_worker", "ms");
 
 /* ---- the switch (R2) ------------------------------------------------------------------------------------------ */
 
-/** The instance setting that enables recompute; any value but exactly "on" leaves the member answering NOT_ENABLED. */
+/** The instance setting that enables recompute; any value but exactly "on" leaves the member answering NOT_ENABLED.
+ *  @type {string} */
 export const SETTING = "SHEET_RECOMPUTE";
+/** Whether recompute is enabled on the instance whose settings are `env` (R2).
+ *  @param {Record<string, unknown> | null | undefined} env the instance's settings and bindings
+ *  @returns {boolean} true only when `env.SHEET_RECOMPUTE` is exactly the string "on"; absent `env` is false */
 export const enabledIn = (env) => (env && env[SETTING]) === "on";
 
 /* ---- namespaces and plane ops (R11) --------------------------------------------------------------------------- */
 
 /** Exactly the two namespaces the plane's gate holds, a copy because a fleet member cannot import the plane;
- *  control-plane pins this export equal to its own gate (as `ocr-worker` R16). */
+ *  control-plane pins this export equal to its own gate (as `ocr-worker` R16).
+ *  @type {ReadonlyArray<string>}
+ *  @bound exactly "bio" and "scratch", in that order, frozen (R11) */
 export const NAMESPACES = Object.freeze(["bio", "scratch"]);
-/** The plane ops this member calls: none. It is called by the plane and reads only `CAPTURES.get`. */
+/** The plane ops this member calls: none. It is called by the plane and reads only `CAPTURES.get`.
+ *  @type {Readonly<Record<string, never>>}
+ *  @bound empty, frozen (R11) */
 export const PLANE_OPS = Object.freeze({});
 
 /* ---- answers --------------------------------------------------------------------------------------------------- */
 
+/** The words every refusal and every error cell carries as `not_recomputed` (R3, R5): "not recomputed here".
+ *  @type {string} */
 export const NOT_RECOMPUTED = word("workbooks.recomputed");
 
-/** The volatile functions R6 names. The engine marks a formula cell volatile when it calls one of them. */
+/** The volatile functions R6 names. The engine marks a formula cell volatile when it calls one of them.
+ *  @type {ReadonlyArray<string>}
+ *  @bound exactly NOW, TODAY, RAND, RANDBETWEEN, OFFSET, INDIRECT, CELL, INFO (R6) */
 export const VOLATILE_FUNCTIONS = Object.freeze(["NOW", "TODAY", "RAND", "RANDBETWEEN", "OFFSET", "INDIRECT", "CELL",
   "INFO"]);
 
-/** The causes R5 names for a cell whose result is an error value. */
+/** The causes R5 names for a cell whose result is an error value.
+ *  @type {ReadonlyArray<string>}
+ *  @bound exactly unsupported_function, implicit_intersection, circular, not_implemented, undetermined (R5) */
 export const CAUSES = Object.freeze(["unsupported_function", "implicit_intersection", "circular", "not_implemented",
   "undetermined"]);
 
-/** R3's refusals, in the order they are checked; the first that applies is the one reported. */
+/** R3's refusals, in the order they are checked; the first that applies is the one reported.
+ *  @type {ReadonlyArray<string>}
+ *  @bound exactly ENGINE_ABSENT, NOT_A_WORKBOOK, OVER_BOUND, EXTERNAL_LINKS, ENGINE_FAILED, TIME_LIMIT, in that order
+ *  (R3) */
 export const WORKBOOK_REFUSALS = Object.freeze(["ENGINE_ABSENT", "NOT_A_WORKBOOK", "OVER_BOUND", "EXTERNAL_LINKS",
   "ENGINE_FAILED", "TIME_LIMIT"]);
 
+/** Each refusal's reason code and the sentence an answer carries as its `detail` (R1, R2, R3, R9).
+ *  @type {Readonly<Record<string, string>>}
+ *  @bound keys exactly BAD_SHA, BAD_STORE, NAMESPACE_UNKNOWN, R2_NOT_CONFIGURED, NOT_FOUND, NOT_ENABLED, R3's six,
+ *  UNKNOWN */
 export const REFUSALS = Object.freeze({
   BAD_SHA: "capture_sha must be 64 hex characters",
   BAD_STORE: localize("sheet-worker.contract.store_must_be_named_this", "store must be named: this member reads a capture from one namespace and guesses none"),
