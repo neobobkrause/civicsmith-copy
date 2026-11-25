@@ -4,9 +4,12 @@
  * none; the sixth door, `ELSEWHERE_DOOR`, is always answered after them (R37). The doors' words are `words.json`'s `door.front.*`, read by the interface, not here. Do not edit: run
  * build-data.mjs. */
 import { deepFreeze } from "./data.mjs";
+/** @import { Door, SourceFile } from './data.mjs' */
 
+/** @type {Readonly<SourceFile>} */
 export const FRONT_DOORS_SOURCE = deepFreeze({"commit":"1cc4a957f0","path":"docs/development/ux-substrate/screens/library.json","sha256":"241837dec9ead614ffd81930dd9ee5e7ae0b5d9aff8816e531489fdd60e59c76"});
 
+/** @type {readonly Readonly<Door>[]} */
 export const FRONT_DOORS = deepFreeze([
   {"door":"problem","scripts":["WIZ-86b7f4007e3b0e3c","WIZ-cb0ad18a17a04233","WIZ-33b5887790b7561b"]},
   {"door":"person","scripts":["WIZ-86b7f4007e3b0e3c","WIZ-df0b5c4d0ffcdde7","WIZ-9f2b79390d6940a0"]},
@@ -15,5 +18,6 @@ export const FRONT_DOORS = deepFreeze([
   {"door":"tip","scripts":["WIZ-33b5887790b7561b","WIZ-9f2b79390d6940a0"]},
 ]);
 
-/** R37, R41: the sixth door, always answered after these (the file's own). */
+/** R37, R41: the sixth door, always answered after these (the file's own).
+ * @type {Readonly<Door>} */
 export const ELSEWHERE_DOOR = deepFreeze({"door":"elsewhere","scripts":[],"opens":"elsewhere"});

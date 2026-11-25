@@ -255,7 +255,11 @@ test("R14 peopleOf given no services reaches the real modules on the same host (
   w.st.sql.exec(`UPDATE line_bound_cache SET to_instant='2011-01-01' WHERE line_id=?`, shut);
   const stale = plane.personAt({ entityId: p, at: "2020-06-01", viewer: ANN });
   assert.ok(!stale.posts.some((x) => x.line_id === shut));
-  assert.deepEqual(stale.undetermined.find((x) => x.line_id === shut).undetermined.why, w.lines.readLine({ lineId: shut, viewer: ANN }).line.valid.why,
+  const owned = w.lines.readLine({ lineId: shut, viewer: ANN });
+  assert.equal(owned.found, true, "lines answers the stale line it holds");
+  const ownedLine = owned.line;
+  if (!ownedLine) throw new assert.AssertionError({ message: "lines' readLine answered found without the line" });
+  assert.deepEqual(stale.undetermined.find((x) => x.line_id === shut).undetermined.why, ownedLine.valid.why,
     "R40: the owner's reason, passed on exactly as lines answers it");
   /* the other services resolve too: candidates (entities), statements (events), interests (money), duties */
   for (const r of [plane.samePersonCandidates({ entityId: p, viewer: ANN }), plane.statementsOf({ entityId: p, viewer: ANN }),
