@@ -192,7 +192,7 @@ test("R7 R12 an evidentiary item is graded by its passage's transcription ceilin
   const at = "2022-05-05T18:00:00Z", day = "2022-05-05";
   const a = w.law.neighbours({ node: meeting, at, viewer: V("carol") });
   const reg = createRegistry();
-  reg.registerOwner({ owner: CONNECTION_OWNER, kinds: CONNECTION_KINDS.map((k) => ({ ...k })), neighbours: (q) => /** @type {LawRecords} the world is constructed */ (w.law).neighbours(q) });
+  reg.registerOwner({ owner: CONNECTION_OWNER, kinds: CONNECTION_KINDS.map((k) => ({ ...k })), neighbours: (q) => w.law.neighbours(q) });
   assert.equal(reg.neighbours({ owner: CONNECTION_OWNER, node: meeting, at, viewer: V("carol") }).items.length, a.items.length, "the registry judges the answer conforming");
   const covering = w.reads.idsCovering(day).filter((sid) => w.reads.inForceAt({ standard: sid, date: day, viewer: V("carol") }).state !== "not_in_force");
   assert.deepEqual(a.items.map((i) => i.to).sort(), covering.filter((sid) => w.reads.inForceAt({ standard: sid, date: day, viewer: V("carol") }).ok).sort());

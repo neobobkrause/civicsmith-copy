@@ -131,11 +131,11 @@ test("R6 R20 stillStanding answers not_standing on a held reversed, vacated, dep
   w.law.lawWithdraw({ relation: aff, reason: "a different case", author: V("bob") });
   assert.equal(ask(lower.id, "2011-06-01").state, "undetermined");
   /* refusals */
-  for (const [args, code] of /** @type {Array<[Object<string, *>, string]>} each a call and the code it is refused */ ([[{ decision: "", date: "2020-01-01" }, "STANDARD_NO_ID"], [{ decision: lower.id, date: "x" }, "STANDARD_DATE_INVALID"],
+  for (const [args, code] of [[{ decision: "", date: "2020-01-01" }, "STANDARD_NO_ID"], [{ decision: lower.id, date: "x" }, "STANDARD_DATE_INVALID"],
                               [{ decision: lower.id, date: "2021-02-30" }, "STANDARD_DATE_INVALID"], [{ decision: lower.id, date: null }, "STANDARD_DATE_INVALID"],
                               [{ decision: "STD-2026-9999-x", date: "2020-01-01" }, "NO_SUCH_STANDARD"],
                               [{ decision: lower.id, date: "2020-01-01", viewer: "nobody" }, "NO_SUCH_STANDARD"],
-                              [{ decision: w.standard().id, date: "2020-01-01" }, "NOT_A_COURT_STANDARD"]])) {
+                              [{ decision: w.standard().id, date: "2020-01-01" }, "NOT_A_COURT_STANDARD"]]) {
     const r = w.law.stillStanding({ viewer: V("carol"), ...args });
     assert.equal(codeOf(r), code, code);
     if (code === "STANDARD_NO_ID") assert.equal(r.op, "stillstanding");

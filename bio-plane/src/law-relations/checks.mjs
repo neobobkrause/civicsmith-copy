@@ -10,19 +10,6 @@
 
 import { word } from '../setup-words/index.mjs';
 
-/**
- * DEC-49: one refusal row: its check id, where it is minted, and the member's translation.
- * @typedef {Object} LawRow
- * @property {string} check
- * @property {string} where
- * @property {string} translation
- */
-/**
- * DEC-49: a refusal this module mints, carrying its row: `ok: false`, its code as `reason` and `code`, the row's check
- * id and translation, the detail, and any further fields the act names.
- * @typedef {{ok: false, reason: string, code: string, check: string, translation: string, detail: *, [field: string]: *}} LawRefusal
- */
-
 const at = (fn, region) => `src/law-relations/index.mjs ${fn} > ${region}`;
 
 export const LAW_RELATIONS_CHECKS = Object.freeze({
@@ -70,12 +57,7 @@ export const LAW_RELATIONS_CHECKS = Object.freeze({
 });
 
 /** A refusal carrying its row: its reason, code, check id and translation. Called with the code as a literal at each
- *  site, so the DEC-49 guard reads which code a marked region mints.
- *  @param {string} code one of `LAW_RELATIONS_CHECKS`' codes
- *  @param {*} detail the plain sentence of what was refused
- *  @param {Object<string, *>} [extra] further fields the act names
- *  @returns {LawRefusal}
- *  @throws {TypeError} for a code `LAW_RELATIONS_CHECKS` does not hold */
+ *  site, so the DEC-49 guard reads which code a marked region mints. */
 export function refusal(code, detail, extra) {
   const row = LAW_RELATIONS_CHECKS[code];
   return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...(extra || {}) };
