@@ -362,8 +362,8 @@ test("R10: liveCalibration answers the live calibration of an engine at that ver
   clock.t += DAY;
   rec(c, { version: "4.1", cap: null, at: "2026-09-02" });
   assert.equal(c.liveCalibration({ engine: "pdfjs", version: "4.0" }), null, "4.0 is superseded: never the nearest");
-  assert.deepEqual(c.liveCalibration({ engine: "pdfjs", version: "4.1" })?.calibration_id, "CAL-2");
-  assert.equal(c.liveCalibration({ engine: "pdfjs", version: "4.1" })?.cap, null);
+  assert.deepEqual(c.liveCalibration({ engine: "pdfjs", version: "4.1" }).calibration_id, "CAL-2");
+  assert.equal(c.liveCalibration({ engine: "pdfjs", version: "4.1" }).cap, null);
   assert.equal(c.liveCalibration({ engine: "tesseract", version: "4.1" }), null);
 });
 
@@ -520,9 +520,7 @@ test("R13: no service here writes a reading, a chain or a grade, and a signal st
 test("R15: every list read answers its limit and whether it was cut", () => {
   const { c } = fresh();
   rec(c);
-  /** @type {Array<[string, {limit: number, truncated: boolean}]>} */
-  const reads = [["calibrations", c.calibrations()], ["worseSupersessions", c.worseSupersessions()]];
-  for (const [name, r] of reads) {
+  for (const [name, r] of [["calibrations", c.calibrations()], ["worseSupersessions", c.worseSupersessions()]]) {
     assert.equal(typeof r.limit, "number", name); assert.equal(typeof r.truncated, "boolean", name);
   }
   assert.equal(typeof c.calibrations().subjects_truncated, "boolean");

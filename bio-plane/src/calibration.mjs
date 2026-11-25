@@ -108,53 +108,6 @@ import { BASIS_GRADES } from "./record-grammar/index.mjs";
 import { CALIBRATION_CHECKS } from "./calibration/checks.mjs";
 import { word, localize } from "./setup-words/index.mjs";
 
-/**
- * @typedef {Object} Calibration a dated fidelity measurement of one engine and version (R1)
- * @property {string} [calibration_id] `CAL-<n>`, minted by the store
- * @property {string} engine
- * @property {string} version
- * @property {string} at when the probe ran
- * @property {string|null} cap a `BASIS_GRADES` letter, or null when the probe could not establish one
- * @property {string} probe_id
- * @property {*} probe_inputs
- * @property {*} scores
- * @property {string} measured_by
- * @bound engine, version, at, probe_id and measured_by: non-empty after trimming
- * @bound cap: one of record-grammar's BASIS_GRADES (A, B, C, D), or null
- * @bound probe_inputs and scores: a non-empty string or an object with at least one key
- */
-/**
- * @typedef {Object} CalRefusal a refusal: the code, its catalogue row (C-42) and why, in words
- * @property {boolean} ok always false
- * @property {string} code a key of CALIBRATION_CHECKS
- * @property {string} check the catalogue row, `C-42.<n>`
- * @property {string} translation
- * @property {string} [detail]
- */
-/**
- * @typedef {Object} DriftConsequence what a drift verdict may cause (R2)
- * @property {string} verdict
- * @property {boolean} raises_obligation
- * @property {boolean} regrades always false
- * @property {string} why
- * @bound verdict: worse, better, same or incomparable
- * @bound raises_obligation: true only for worse
- */
-/**
- * @typedef {Object} ProbeDueArgs
- * @property {*} [lastAt] milliseconds since the epoch when the last probe ran; anything not a finite number is never-probed
- * @property {*} [signals] a list of `{probe_by}` in milliseconds; anything not a list, and any entry with no finite `probe_by`, is ignored
- * @property {number} [cadenceMs] default CALIBRATION_CADENCE_MS
- */
-/**
- * @typedef {Object} ProbeDue when the next probe is due (R3)
- * @property {number} at milliseconds since the epoch; 0 for a never-probed engine
- * @property {string} from never-probed, cadence or signal
- * @property {number} [cadence_at] lastAt plus the cadence; absent for a never-probed engine
- * @property {string} why
- * @bound at: never later than cadence_at
- */
-
 /* ------------------------------------------------------------------ *
  * The declared constants
  * ------------------------------------------------------------------ */
@@ -163,16 +116,11 @@ import { word, localize } from "./setup-words/index.mjs";
  *  One home: the store's consumer reads this, the suite reads this, and
  *  SCHEDULER.md quotes it by name rather than re-typing the number — the
  *  hand-carried-number failure is this project's most-repeated finding. */
-/** @type {number} */
 export const CALIBRATION_CADENCE_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** The human name for the cadence, composed FROM the constant so it cannot
  *  drift from it. A sentence that disagrees with the number beside it is the
  *  same defect one altitude up. */
-/**
- * @param {number} [ms] default CALIBRATION_CADENCE_MS
- * @returns {string}
- */
 export function cadenceSentence(ms = CALIBRATION_CADENCE_MS) {
   const days = ms / (24 * 60 * 60 * 1000);
   return word("calibration.probe_per_calibratable", { days: String(Number.isInteger(days) ? days : days.toFixed(2)) });
@@ -230,10 +178,6 @@ function rank(letter) {
  *  fidelity is UNDETERMINED — and recording it is strictly better than
  *  recording nothing, because it is DATED: a later reader knows somebody looked
  *  and when. What is refused is a calibration with no probe behind it at all. */
-/**
- * @param {*} cal
- * @returns {CalRefusal|null} null when `cal` is a well-formed calibration
- */
 export function checkCalibration(cal) {
   /* DEC-49 REGION is-calibration-shape */
   const c = cal && typeof cal === "object" && !Array.isArray(cal) ? cal : null;
@@ -290,12 +234,6 @@ export function checkCalibration(cal) {
  *  reason. Two nulls are the SAME: nothing was bounded before and nothing is
  *  now, and raising an obligation for that would be raising one every cadence
  *  for ever on an engine nobody has managed to measure. */
-/**
- * @param {*} next
- * @param {*} prev
- * @returns {string}
- * @bound returns: worse, better, same or incomparable
- */
 export function compare(next, prev) {
   if (checkCalibration(next)) return DRIFT.INCOMPARABLE;
   if (prev == null) return DRIFT.SAME;          /* the FIRST calibration drifts from nothing */
@@ -324,10 +262,6 @@ export function compare(next, prev) {
  *  argument is a boolean a caller can flip by accident. The field exists so the
  *  suite can assert on it by name rather than by inferring it from a store
  *  read — an absence proves nothing about whether the rule is enforced. */
-/**
- * @param {*} verdict
- * @returns {DriftConsequence}
- */
 export function drifted(verdict) {
   switch (verdict) {
     case DRIFT.WORSE:
@@ -367,10 +301,6 @@ export function drifted(verdict) {
  *  fidelity nothing has ever measured is the case with the LEAST standing to
  *  wait, and defaulting it to a cadence away would mean a newly registered
  *  engine sits unmeasured for a month while the record grades against it. */
-/**
- * @param {ProbeDueArgs} [args]
- * @returns {ProbeDue}
- */
 export function nextProbeDue({ lastAt = null, signals = [], cadenceMs = CALIBRATION_CADENCE_MS } = {}) {
   if (!Number.isFinite(lastAt)) return { at: 0, from: "never-probed",
     why: word("calibration.why.nothing_probed_engine") };
@@ -397,10 +327,6 @@ export function nextProbeDue({ lastAt = null, signals = [], cadenceMs = CALIBRAT
 /** Is this announcement signal well-formed, and is it asking for something a
  *  watch is allowed to ask for? The ONE refusal here is the one that matters:
  *  a signal that claims to BE a measurement. */
-/**
- * @param {*} sig
- * @returns {CalRefusal|null} null when `sig` is a well-formed signal that claims no measurement
- */
 export function checkSignal(sig) {
   /* DEC-49 REGION is-calibration-signal */
   const s = sig && typeof sig === "object" && !Array.isArray(sig) ? sig : null;

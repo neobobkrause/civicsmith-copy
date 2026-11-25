@@ -37,176 +37,13 @@ export { CALIBRATION_SCHEMA, CALIBRATION_TABLES } from "./schema.mjs";
 
 /** R6, R11, R15: every list read is bounded — 200 unless the caller asks, never more than 5,000 — and asked for as
  *  `limit + 1`, so `truncated` is measured rather than inferred from a full page. */
-/** @type {number} */
 export const CALIBRATION_LIMIT_DEFAULT = 200;
-/** @type {number} */
 export const CALIBRATION_LIMIT_MAX = 5000;
-
-/** @import { Calibration as CalibrationShape, CalRefusal, DriftConsequence, ProbeDue } from '../calibration.mjs' */
-/**
- * @typedef {Object} Registered the answer to a listener's registration: ok, or membership's refusal (its R81)
- * @property {boolean} ok
- * @property {*} [module]
- * @property {string} [reason] when refused: LISTENER_MALFORMED or LISTENER_DECLARED
- * @property {string} [code] when refused, as reason
- * @property {string} [check] when refused
- * @property {string} [translation] when refused
- * @property {string} [detail] when refused
- */
-/**
- * @typedef {Object} CalibrationNotice what each `onCalibration` listener is handed (R12)
- * @property {string} calibration_id
- * @property {string} engine
- * @property {string} version
- * @property {string|null} supersedes
- * @property {DriftConsequence} drift
- */
-/**
- * @typedef {Object} Recorded the answer to `op=calibrate` (R4)
- * @property {boolean} ok false when refused; the other fields are present when ok
- * @property {string} [calibration_id]
- * @property {string} [engine]
- * @property {string} [version]
- * @property {string} [at]
- * @property {string|null} [cap]
- * @property {string} [measured_by]
- * @property {string|null} [supersedes]
- * @property {DriftConsequence} [drift]
- * @property {number|null} [obligations_raised]
- * @property {Array<*>|null} [obligations]
- * @property {boolean|null} [obligations_truncated]
- * @property {number} [regraded] always 0
- * @property {string} [why]
- * @property {string} [reason] when refused: the code
- * @property {string} [code] when refused: a key of CALIBRATION_CHECKS
- * @property {string} [check] when refused: the catalogue row, `C-42.<n>`
- * @property {string} [translation] when refused
- * @property {string} [detail] when refused
- * @bound obligations, obligations_raised and obligations_truncated: null exactly when no listener is registered
- */
-/**
- * @typedef {Object} Subject an engine this instance probes, with its next probe
- * @property {string} engine
- * @property {string|null} version
- * @property {string} probe_id
- * @property {string} registered_at
- * @property {number|null} last_probe_ms
- * @property {number} enabled
- * @property {ProbeDue & {overdue: boolean}} next_probe
- */
-/**
- * @typedef {Object} CalibrationsArgs
- * @property {*} [engine] only this engine's when a non-empty string
- * @property {*} [limit]
- * @bound limit: a whole number 1 to 5,000; anything else is 200
- */
-/**
- * @typedef {Object} Calibrations the answer to `op=calibrations` (R6)
- * @property {boolean} ok
- * @property {string} [engine]
- * @property {number} cadence_ms
- * @property {string} cadence
- * @property {number} count
- * @property {number} limit
- * @property {boolean} truncated
- * @property {Array<CalibrationShape & {superseded_by: string|null, drift: string|null, note: string|null}>} calibrations newest first
- * @property {Array<Subject>} subjects
- * @property {boolean} subjects_truncated
- * @property {string} why
- * @bound calibrations: at most limit; truncated says whether more were held
- */
-/**
- * @typedef {Object} SignalRecorded the answer to `op=calibrationsignal` (R7)
- * @property {boolean} ok false when refused; the other fields are present when ok
- * @property {string} [signal_id]
- * @property {string} [engine]
- * @property {string} [source]
- * @property {string} [observed_at]
- * @property {number} [probe_by_ms]
- * @property {(ProbeDue & {overdue: boolean})|null} [next_probe] null with no subject registered for the engine
- * @property {boolean} [armed]
- * @property {number} [changed_grades] always 0
- * @property {boolean} [stood_in_for_probe] always false
- * @property {string} [why]
- * @property {string} [reason] when refused: the code
- * @property {string} [code] when refused: a key of CALIBRATION_CHECKS
- * @property {string} [check] when refused: the catalogue row, `C-42.<n>`
- * @property {string} [translation] when refused
- * @property {string} [detail] when refused
- */
-/**
- * @typedef {Object} SubjectRegistered the answer to `op=calibrationsubject` (R8)
- * @property {boolean} ok false when refused; the other fields are present when ok
- * @property {string} [engine]
- * @property {string} [probe_id]
- * @property {boolean} [enabled]
- * @property {number} [cadence_ms]
- * @property {string} [cadence]
- * @property {ProbeDue & {overdue: boolean}} [next_probe]
- * @property {boolean} [measured] always false
- * @property {string} [why]
- * @property {string} [reason] when refused: the code
- * @property {string} [code] when refused: a key of CALIBRATION_CHECKS
- * @property {string} [check] when refused: the catalogue row, `C-42.<n>`
- * @property {string} [translation] when refused
- * @property {string} [detail] when refused
- */
-/**
- * @typedef {Object} Tick the scheduler's tick (R9): the subjects due, and no probe run
- * @property {number} due
- * @property {Array<{engine: string, probe_id: string, last_probe_ms: number|null, from: string}>} subjects
- * @property {boolean} truncated
- * @property {number} probes_run always 0
- * @property {number} calibrations_written always 0
- * @property {string} why
- */
-/**
- * @typedef {Object} LiveCalibration R10's answer
- * @property {string} calibration_id
- * @property {string} engine
- * @property {string} version
- * @property {string} at
- * @property {string|null} cap
- * @property {string} measured_by
- */
-/**
- * @typedef {Object} Supersessions R11's answer
- * @property {Array<{superseded: CalibrationShape, verdict: string, current: CalibrationShape}>} supersessions oldest first
- * @property {number} limit
- * @property {boolean} truncated
- * @bound supersessions: each verdict is worse; at most limit, as R6's
- */
-/**
- * @typedef {Object} CalibrationHandle the one calibration instance of a Durable Object's storage (K61)
- * @property {() => {ok: boolean, created: string[]}} migrate R20
- * @property {(module: *, fn: *) => Registered} onCalibration R12
- * @property {(module: *, fn: *) => Registered} onSubjectRegistered R18
- * @property {(module: *, fn: *) => Registered} onSignalRecorded R19
- * @property {(pkg?: *, stamps?: {principal?: *}) => Recorded} calibrationRecord R4, R5
- * @property {(args?: CalibrationsArgs|null) => Calibrations} calibrations R6
- * @property {(pkg?: *) => Promise<SignalRecorded>} calibrationSignalRecord R7
- * @property {(pkg?: *) => Promise<SubjectRegistered>} calibrationSubjectRegister R8
- * @property {(now: number) => number} calibrationDue R9
- * @property {(now: number, graceMs?: *) => number|null} calibrationWake R9
- * @property {(now: number) => Tick} calibrationTick R9
- * @property {(args: *) => LiveCalibration|null} liveCalibration R10
- * @property {(args?: *) => Supersessions} worseSupersessions R11
- */
-/**
- * @typedef {Object} CalibrationDeps
- * @property {*} [record] record-core's handle; `recordOf(ctx)` when absent
- * @property {*} [order] the modules' total order; membership's MODULE_ORDER when not a list
- * @property {*} [now] the clock, milliseconds since the epoch; the wall clock when not a function
- */
 
 const safeJson = (s) => { try { return JSON.parse(s); } catch { return null; } };
 const nonEmpty = (v) => typeof v === "string" && v.trim().length > 0;
 
 /** R8: the state of a subject's probe that its `why` names: never probed, or probed at its own cadence. */
-/**
- * @param {*} lastProbeMs
- * @returns {string}
- */
 export const subjectProbeState = (lastProbeMs) => lastProbeMs == null
   ? localize("calibration.index.nothing_has_ever_probed", "Nothing has ever probed it, so a probe is due immediately")
   : localize("calibration.index.next_probe_at_cadence", "The next probe is due at its own cadence");
@@ -299,9 +136,6 @@ class Calibration {
   /** R20: creates this module's three tables and their indexes where they are absent, from its own schema text
    *  (`CALIBRATION_SCHEMA`), whose every statement is `IF NOT EXISTS`: a table or index already held is left as it
    *  is, nothing else is added or changed, and a second call changes nothing. Answers the tables it created. */
-  /**
-   * @returns {{ok: boolean, created: string[]}}
-   */
   migrate() {
     const absent = CALIBRATION_TABLES.filter((t) => !this.#rows(`PRAGMA table_info(${t})`).length);
     const bare = CALIBRATION_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
@@ -315,29 +149,14 @@ class Calibration {
    *  the same transaction, in the modules' order, and returns a list of obligations, or `{obligations, truncated}`.
    *  A malformed or repeated registration is refused through membership's `listenerRefusal` (its R81; N202), the one
    *  site of `LISTENER_MALFORMED` and `LISTENER_DECLARED`. */
-  /**
-   * @param {*} module
-   * @param {*} fn called with a CalibrationNotice; answers a list of obligations, `{obligations, truncated}`, or null
-   * @returns {Registered}
-   */
   onCalibration(module, fn) { return this.#register(this.#listeners, module, fn); }
 
   /** R18 (N223): a later module's listener, called once after each successful `calibrationSubjectRegister` with
    *  `{engine, probe_id, next_probe}`, in the modules' order (`scheduler` registers its `arm`). Refused as R12. */
-  /**
-   * @param {*} module
-   * @param {*} fn called with `{engine, probe_id, next_probe}`
-   * @returns {Registered}
-   */
   onSubjectRegistered(module, fn) { return this.#register(this.#subjectListeners, module, fn); }
 
   /** R19 (N223): a later module's listener, called once after each signal `calibrationSignalRecord` records with
    *  `{engine, next_probe}`, in the modules' order (`scheduler` registers its `arm`). Refused as R12. */
-  /**
-   * @param {*} module
-   * @param {*} fn called with `{engine, next_probe}`
-   * @returns {Registered}
-   */
   onSignalRecorded(module, fn) { return this.#register(this.#signalListeners, module, fn); }
 
   /* One registration into one slot: membership's `listenerRefusal` first (its R81, the one site of its two codes),
@@ -374,12 +193,6 @@ class Calibration {
    *  AND THE SIGNALS ARE CONSUMED. A probe that has run answers every announcement that was asking for one, so a
    *  spent signal stops accelerating anything — otherwise one changelog entry would pull every future probe
    *  forward for ever. */
-  /**
-   * @param {*} [pkg] the body: engine, version, at, cap, probe_id, probe_inputs, scores, note
-   * @param {{principal?: *}} [stamps] principal: the control plane's stamp of the caller
-   * @returns {Recorded}
-   * @throws {TypeError} when a listener answers something other than a list of obligations; and whatever a listener throws
-   */
   calibrationRecord(pkg = {}, { principal = null } = {}) {
     const p = pkg && typeof pkg === "object" && !Array.isArray(pkg) ? pkg : {};
     const now = this.#now();
@@ -401,7 +214,7 @@ class Calibration {
         localize("calibration.index.this_call_asks_the_new", "this call asks the new measurement to re-grade the transcriptions already made by {String}. A calibration records what an engine scores; it never moves a grade, in EITHER direction — a grade rises or falls only by an authored act (DEC-4, no machine mints a grade). Record the measurement, then read op=calibrationdrift for exactly which transcriptions a member should look at", { String: String(String(p.engine)) }));
     /* END DEC-49 REGION is-calibration-regrade */
     const bad = checkCalibration(cal);
-    if (bad) return { ok: false, reason: bad.code, code: bad.code, check: bad.check, translation: bad.translation, detail: bad.detail };
+    if (bad) return { ok: false, reason: bad.code, ...bad };
 
     return this.#record.transact(() => {
       const prev = this.#live(cal.engine);
@@ -463,10 +276,6 @@ class Calibration {
   /** `op=calibrations`. What this instance has measured, newest first, and when the next probe is due for each
    *  subject. The due instant comes from `nextProbeDue`, which is also what the scheduler's consumer reads — one
    *  answer, so the surface cannot tell a member something different from what the alarm will do. */
-  /**
-   * @param {CalibrationsArgs|null} [args]
-   * @returns {Calibrations}
-   */
   calibrations(args) {
     const { engine = null, limit = null } = args || {};
     const now = this.#now();
@@ -499,10 +308,6 @@ class Calibration {
    *  enforced three ways: `checkSignal` refuses a signal shaped like a measurement; `nextProbeDue` takes the minimum
    *  against the cadence's own instant; and nothing anywhere reads a signal when computing a cap, a grade or a
    *  drift verdict. ABSENCE OF AN ANNOUNCEMENT IS NOT EVIDENCE OF NO CHANGE. */
-  /**
-   * @param {*} [pkg] the body: engine, source, observed_at, probe_by_ms, detail
-   * @returns {Promise<SignalRecorded>}
-   */
   async calibrationSignalRecord(pkg = {}) {
     const p = pkg && typeof pkg === "object" && !Array.isArray(pkg) ? pkg : {};
     const now = this.#now();
@@ -510,7 +315,7 @@ class Calibration {
                   ...(p.cap !== undefined ? { cap: p.cap } : {}),
                   ...(p.scores !== undefined ? { scores: p.scores } : {}) };
     const bad = checkSignal(sig);
-    if (bad) return { ok: false, reason: bad.code, code: bad.code, check: bad.check, translation: bad.translation, detail: bad.detail };
+    if (bad) return { ok: false, reason: bad.code, ...bad };
     const observed = nonEmpty(p.observed_at) ? p.observed_at : new Date(now).toISOString();
     /* A signal with no explicit instant asks for a probe NOW — the strongest thing a watch may ask for, and still
        only an acceleration. */
@@ -545,10 +350,6 @@ class Calibration {
    *  calibration, because the engine that most needs calibrating is one nothing has ever measured, and that state
    *  must be registrable and visible. A never-probed subject is due immediately (`nextProbeDue`'s `never-probed`
    *  branch). REGISTERING IS NOT MEASURING: this writes no cap, no score, nothing a grade could rest on. */
-  /**
-   * @param {*} [pkg] the body: engine, probe_id, version, enabled
-   * @returns {Promise<SubjectRegistered>}
-   */
   async calibrationSubjectRegister(pkg = {}) {
     const p = pkg && typeof pkg === "object" && !Array.isArray(pkg) ? pkg : {};
     const now = this.#now();
@@ -587,10 +388,6 @@ class Calibration {
   /* ---------------------------------------------------------------- R9: for the scheduler */
 
   /** R9: how many enabled subjects are past their own next-probe instant at `now`. */
-  /**
-   * @param {number} now
-   * @returns {number}
-   */
   calibrationDue(now) {
     let n = 0;
     for (const s of this.#subjects().rows) if (this.#nextProbe(s, now).at <= now) n++;
@@ -601,11 +398,6 @@ class Calibration {
    *  the consumer self-terminating. A subject already overdue asks for `now` plus the caller's grace rather than an
    *  instant in the past, which the runtime would fire immediately and forever. The grace is the scheduler's (K74:
    *  this module reads nothing of a later one). */
-  /**
-   * @param {number} now
-   * @param {*} [graceMs]
-   * @returns {number|null}
-   */
   calibrationWake(now, graceMs = 0) {
     const subjects = this.#subjects().rows;
     if (!subjects.length) return null;
@@ -622,10 +414,6 @@ class Calibration {
   /** R9: THE TICK. It lists the subjects due and runs no probe: this plane holds no derivation engine, so a probe
    *  is OWED and not RUN, and the record says owed rather than treating the last measurement as current. It never
    *  records a calibration — that would be rule 1's claim-versus-measurement failure committed by the scheduler. */
-  /**
-   * @param {number} now
-   * @returns {Tick}
-   */
   calibrationTick(now) {
     const { rows, truncated } = this.#subjects();
     const due = [];
@@ -645,10 +433,6 @@ class Calibration {
   /** R10: the engine's live calibration when its version is `version`, else null. FAILS OPEN TO NULL, NEVER TO A
    *  GUESS: no calibration, another version live, a malformed argument or a store that cannot be read all answer
    *  null — never the nearest measurement, which would be the record claiming a join it does not have. */
-  /**
-   * @param {*} args `{engine, version}`
-   * @returns {LiveCalibration|null}
-   */
   liveCalibration(args) {
     try {
       const { engine, version } = args || {};
@@ -665,10 +449,6 @@ class Calibration {
   /** R11: each calibration superseded with verdict `worse` (only `supersededId` when given), with the calibration
    *  that superseded it, both in R1's shape; a row whose successor cannot be read is left out (the join drops it).
    *  Bounded as R6, oldest first. It names no transcription: which ones rest on these is `extraction`'s question. */
-  /**
-   * @param {*} [args] `{supersededId, limit}`, limit bounded as R6's
-   * @returns {Supersessions}
-   */
   worseSupersessions(args) {
     const { supersededId = null, limit = null } = args || {};
     const cap = this.#cap(limit);
@@ -697,11 +477,6 @@ const OF = new WeakMap();
 /** K61: the one calibration instance for this Durable Object's storage (`ctx`, or the storage itself). On first
  *  reaching it, its three tables are declared to record-core's purge as exempt (R16): they are measurements of
  *  engines, not of the record, and an id once minted from them must never be reissued. */
-/**
- * @param {*} ctx
- * @param {CalibrationDeps} [deps]
- * @returns {CalibrationHandle}
- */
 export function calibrationOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let c = OF.get(storage);
@@ -718,12 +493,6 @@ export function calibrationOf(ctx, deps = {}) {
    the request URL, whose query carries the control plane's stamps; `body` the parsed body. `identity` is the control
    plane's stamp of who is asking, deleted from every request before anything is stamped, so a caller can never name
    it (R5). `op=calibrationdrift` is `extraction`'s. */
-/**
- * @param {CalibrationHandle} c
- * @param {URL} url
- * @param {*} body
- * @returns {{calibrations: () => Calibrations, calibrate: () => Recorded, calibrationsubject: () => Promise<SubjectRegistered>, calibrationsignal: () => Promise<SignalRecorded>}}
- */
 export function calibrationOps(c, url, body) {
   return {
     calibrations: () => c.calibrations({ engine: url.searchParams.get("engine"),
