@@ -11,15 +11,6 @@ import { idPattern } from "../record-grammar/ids.mjs";
 import { PROMOTION_ROW_CHECKS } from "../promotion/checks.mjs";
 import { word, localize } from '../setup-words/index.mjs';
 
-/**
- * @typedef {Object} BiasFinding one finding of the set's own checks, in the catalogue's shape
- * @property {string} check the check id, `C-26.1` to `C-26.7`
- * @property {string} severity `error` for every finding this module makes
- * @property {string} message one sentence naming the statement (`statements[<n>]`) and what is wrong with it
- * @property {boolean} [repairable] true exactly when `repairs` is present
- * @property {string[]} [repairs] what the member can do instead, one sentence each
- */
-
 /* C-26.2's key shape (R3), a subject registry key: an `ENT-` id as record-grammar's `ID_TABLE` states it, read through
    its `idPattern` and never copied here (T33-38, S0-9), so `ENT-2026-10000` is a key and `ENT-2026-999` is not. */
 const ENTITY_ID_RE = idPattern('ENT');
@@ -52,7 +43,6 @@ function asText(v) {
  * the one that breaks the gate/disclose distinction the whole doctrine rests
  * on, and C-26.6 exists because it will be reached for in a statement's TEXT
  * even when it is not reached for here. */
-/** @type {string[]} the closed set of three statement kinds, in this order (R2) */
 export const BIAS_STATEMENT_KINDS = ['scrutiny', 'inference', 'pattern'];
 
 /* ===========================================================================
@@ -97,10 +87,8 @@ export const BIAS_STATEMENT_KINDS = ['scrutiny', 'inference', 'pattern'];
    candidate out of a proposal must be ONE predicate. A second copy would agree
    at zero cost and then drift, which this project has measured five times. R31's
    test (`test/m/bias/checks.test.mjs`) holds the checks and the inhale to them. */
-/** @type {RegExp} R5's wholesale-falsity arm, the one predicate R20 uses too (R31) */
 export const BIAS_VERDICT_WHOLESALE =
   /\b(everything|anything|all|every|each|nothing|none)\b[^.]{0,60}?\b(is|are)\b[^.]{0,30}?\b(false|untrue|lies|a lie|fabricated|fabrications?|invented|made up|propaganda|disinformation)\b/i;
-/** @type {RegExp[]} R5's speaker-as-liar arm, the one predicate R20 uses too (R31) */
 export const BIAS_VERDICT_SPEAKER = [
   /\b(is|are)\s+(a\s+)?(liars?|dishonest|untrustworthy|not\s+credible|never\s+credible|not\s+to\s+be\s+believed)\b/i,
   /\b(always|habitually|invariably|systematically)\s+lies\b/i,
@@ -116,7 +104,6 @@ export const BIAS_VERDICT_SPEAKER = [
    setting one is untouched. Reuters' "weigh the source's track record, position
    and motive" contains no threshold and is a clean kind=scrutiny statement; R6's
    test (`test/m/bias/checks.test.mjs`) holds it as an over-strictness arm. */
-/** @type {RegExp[]} R6's textual arm: a threshold phrasing, a bar and not a lens; the one predicate R20 uses too (R31) */
 export const BIAS_BAR_PHRASING = [
   /\b(more than one|at least (one|two|three|\d+)|two or more|\d+\s+or\s+more)\s+(independent\s+)?sources?\b/i,
   /\b(requires?|must (reach|be at|meet)|no (lower|less) than)\b[^.]{0,30}\bgrade\s*[A-D]\b/i,
@@ -285,11 +272,7 @@ function checkBiasExtension(ctx, findings) {
 }
 
 /** R1–R7: the findings for one bundle's front matter and files (a Map of path to text, or an object). A bundle whose
- *  type does not normalise to `bias` answers none. Writes nothing.
- *  @param {*} fm the bundle's front matter; anything that is not an object reads as none
- *  @param {Map<string, string | Uint8Array> | Object<string, string | Uint8Array> | null} [files] path to text; R7 reads `bundle.md`
- *  @returns {BiasFinding[]} each finding, in statement order, then R7's
- *  @bound subject: a registry key, an `ENT-` id as record-grammar's `idPattern("ENT")` reads it; a pattern statement's citation is required only outside `draft`; R7 only at `adopted` */
+ *  type does not normalise to `bias` answers none. */
 export function checkBiasSet(fm, files) {
   const findings = [];
   const map = files instanceof Map ? files : new Map(Object.entries(files || {}));
@@ -298,9 +281,7 @@ export function checkBiasSet(fm, files) {
 }
 
 /** R1–R7 over a gate's image (`{path: text | blob reference}`, or a Map of path to text): the findings of a bundle
- *  whose `bundle.md` is held as text. The audit (record-core R59) and the ratification gate (`withBiasChecks`).
- *  @param {*} image a Map of path to text or bytes, or an object of the same; a `bundle.md` that is neither text nor bytes, or none, answers no findings
- *  @returns {BiasFinding[]} */
+ *  whose `bundle.md` is held as text. The audit (record-core R59) and the ratification gate (`withBiasChecks`). */
 export function checkBiasImage(image) {
   const raw = image instanceof Map ? image.get("bundle.md") : image ? image["bundle.md"] : undefined;
   const md = typeof raw === "string" ? raw : raw instanceof Uint8Array ? asText(raw) : null;
@@ -310,11 +291,7 @@ export function checkBiasImage(image) {
 }
 
 /** The ratification gate's share: a `runGate` answer with C-26.1–C-26.7 added over the same image, in the gate's own
- *  shape (`ok` false exactly when an error finding exists). For the control plane to wrap the gate with.
- *  @param {*} image as `checkBiasImage`'s
- *  @param {*} gate the gate's answer; anything that is not an object is answered unchanged
- *  @returns {*} the gate's answer unchanged when no error finding exists; else a copy with `ok: false` and the findings
- *    (`{check, detail, repairs?}`) after the gate's own */
+ *  shape (`ok` false exactly when an error finding exists). For the control plane to wrap the gate with. */
 export function withBiasChecks(image, gate) {
   const errs = checkBiasImage(image).filter((x) => x.severity === "error")
     .map((x) => ({ check: x.check, detail: x.message, ...(x.repairs ? { repairs: x.repairs } : {}) }));
@@ -366,8 +343,6 @@ export function withBiasChecks(image, gate) {
  * ruled the inhale ("claiming a standard you don't follow, and denying a bias
  * that you do have").
  * ========================================================================= */
-/** The C-26 family, by code: each row's check id, where it fires and its translation (R29). `BIAS_ILLEGAL_TRANSITION`
- *  is promotion's row (C-26.12), joined by reference. */
 export const BIAS_CHECKS = {
   /* Statement anatomy, the shape half: an id that an override can name, a kind
      in the closed set of three, and a declarative to apply. */

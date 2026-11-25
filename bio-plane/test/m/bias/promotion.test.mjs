@@ -142,7 +142,7 @@ test("R23: registrations are refused through membership's listenerRefusal (LISTE
   for (const [m, fn] of [["", () => {}], [null, () => {}], ["x", "not a function"]]) {
     const r = w.bias.onLensChange(m, fn);
     assert.deepEqual(r, listenerRefusal([], m, fn));
-    assert.equal(r.reason, "LISTENER_MALFORMED");
+    assert.equal(r?.reason, "LISTENER_MALFORMED");
   }
   w.promote(A, FM(A));
   await w.bias.noticesDelivered();
