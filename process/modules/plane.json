@@ -87,7 +87,6 @@
     "bio-plane/test/m/instance-setup/reports.test.mjs",
     "bio-plane/test/m/instance-setup/worker-reports.test.mjs",
     "bio-plane/test/m/lines/invariants.test.mjs",
-    "bio-plane/test/m/office-readers/r46-memory.test.mjs",
     "bio-plane/test/m/reevaluation/r14-regrade-door.test.mjs",
     "bio-plane/test/m/scheduler/invariants.test.mjs",
     "bio-plane/test/m/scheduler/plane.test.mjs",
