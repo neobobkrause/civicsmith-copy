@@ -104,7 +104,7 @@ export function world({ deps = {}, profiles = ["test-port-ellery"], create = tru
     },
     rows: (q, ...x) => st.sql.exec(q, ...x).toArray(),
     row: (q, ...x) => st.sql.exec(q, ...x).toArray()[0] ?? null,
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     /** A bundle written directly through the record (record-core R33), `type` its object type. */
     commit(id, text, { type = "action", project = null } = {}) {
