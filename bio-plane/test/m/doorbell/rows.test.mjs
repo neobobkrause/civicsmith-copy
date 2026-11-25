@@ -25,16 +25,16 @@ test("R21 (K2609, N851): the table holds C-85.1–.5 and C-118.2, .3, .4, .7 and
   for (const r of Object.values(DOORBELL_CHECKS)) assert.ok(Object.isFrozen(r));
   assert.ok(Object.isFrozen(DOORBELL_CHECKS));
   assert.ok(!Object.isFrozen(KNOCK_CHECKS), "C-85 is not frozen: R9's missing row fails loud, and its test removes a row");
-  /* defined here alone: no row, and neither table, is another module's object (capture's while it keeps its copy) */
-  assert.notEqual(KNOCK_CHECKS, CAPTURE.KNOCK_CHECKS, "C-85's table is this module's own object");
-  for (const code of Object.keys(C118)) assert.notEqual(DOORBELL_CHECKS[code], CAPTURE.CAPTURE_CHECKS[code], `${code}: this module's own row`);
-  for (const code of Object.keys(C85)) assert.notEqual(KNOCK_CHECKS[code], CAPTURE.KNOCK_CHECKS?.[code], `${code}: this module's own row`);
-  /* C-118's other rows stay capture's: none of them is this module's */
-  for (const code of Object.keys(CAPTURE.CAPTURE_CHECKS).filter((code) => !(code in C118)))
-    assert.equal(DOORBELL_CHECKS[code], undefined, `${code} stays capture's`);
   /* every check id once across this module's table */
   const ids = [...Object.values(DOORBELL_CHECKS), ...Object.values(KNOCK_CHECKS)].map((r) => r.check);
   assert.equal(new Set(ids).size, 9);
+  /* defined here alone: capture keeps no copy of C-85's table, and no row of capture's carries one of these nine */
+  assert.ok(!Object.keys(CAPTURE).includes("KNOCK_CHECKS"), "capture exports no C-85 table");
+  for (const [code, r] of Object.entries(CAPTURE.CAPTURE_CHECKS)) {
+    assert.ok(!ids.includes(r.check), `capture's ${code} (${r.check}) is none of this module's rows`);
+    /* C-118's other rows stay capture's: none of them is this module's */
+    assert.equal(DOORBELL_CHECKS[code], undefined, `${code} stays capture's`);
+  }
 });
 
 test("R21 (K2627, K2629): each row's where names this module's code that raises it, the function and DEC-49 region the map's §2 names", () => {
