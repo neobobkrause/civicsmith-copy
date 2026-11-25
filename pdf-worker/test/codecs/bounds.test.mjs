@@ -42,7 +42,7 @@ test("R12 CCITT: 8,000 bytes declaring 60,000 x 60,000 are refused from the para
   assert.equal(error.detail.bound, PIXELS);
   assert.equal(error.detail.key, "limit.image.pixels");
   assert.deepEqual([error.detail.columns, error.detail.rows], [60000, 60000]);
-  assert.ok(error.detail.transient === undefined && error.transient === undefined, "final, never retried");
+  assert.ok(error.detail.transient === undefined && !("transient" in error), "final, never retried");
   assert.ok(peak <= data.length, `no allocation past the input (${peak} bytes)`);
 });
 
@@ -87,7 +87,7 @@ test("R12 DCT: a ~330-byte JPEG declaring 60,000 x 60,000 and one declaring 30,0
       assert.equal(error.detail.size, w * h);
       assert.equal(error.detail.bound, rowsRoute ? boundOf("image", "rows_pixels") : PIXELS);
       assert.deepEqual([error.detail.width, error.detail.height], [w, h]);
-      assert.ok(error.detail.transient === undefined && error.transient === undefined);
+      assert.ok(error.detail.transient === undefined && !("transient" in error));
       assert.ok(peak < 1 << 20, `${name} ${w}x${h}: no allocation sized by the frame (${peak} bytes)`);
     }
   }
@@ -127,7 +127,7 @@ test("R12 JBIG2: a page declaring 16,000 x 16,000 in 30 bytes is refused from th
   assert.equal(error.detail.size, 16000 * 16000);
   assert.equal(error.detail.bound, PIXELS);
   assert.equal(error.detail.segmentType, 48, "the refusal names the segment it arose in");
-  assert.ok(error.detail.transient === undefined && error.transient === undefined);
+  assert.ok(error.detail.transient === undefined && !("transient" in error));
   assert.ok(peak < 1 << 20, `no allocation sized by the page (${peak} bytes)`);
 });
 
@@ -199,7 +199,7 @@ test("R12 R4 JPX: SIZ 500, 1000, 2000 with 2 x 2 precincts and 1500 with 1 x 1, 
     assert.equal(error.detail.bound, OBJECTS);
     assert.ok(error.detail.size > OBJECTS, `${size}/${pp}: the count ${error.detail.size}`);
     assert.deepEqual([error.detail.width, error.detail.height], [size, size]);
-    assert.ok(error.detail.transient === undefined && error.transient === undefined);
+    assert.ok(error.detail.transient === undefined && !("transient" in error));
     assert.ok(peak < 16 << 20, `${size}/${pp}: no object table, no allocation sized by the precincts (${peak} bytes)`);
   }
 });

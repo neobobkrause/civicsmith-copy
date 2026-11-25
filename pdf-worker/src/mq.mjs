@@ -55,11 +55,18 @@ const Q_NLPS = Uint8Array.from(QE, (r) => r[2]);
 const Q_SWITCH = Uint8Array.from(QE, (r) => r[3]);
 
 /** Probability states for `n` contexts, each `(index << 1) | mps`, all zero:
- *  index 0, MPS 0, the initial state both standards give every context. */
+ *  index 0, MPS 0, the initial state both standards give every context.
+ * @param {number} n how many contexts
+ * @returns {Uint8Array} */
 export const mqContexts = (n) => new Uint8Array(n);
 
 export class MqDecoder {
-  /** Decode `data[start, end)`. `onShort(decoder)`, if given, is called each time the data is found short. */
+  /** Decode `data[start, end)`. `onShort(decoder)`, if given, is called each time the data is found short.
+   * @param {Uint8Array} data
+   * @param {number} [start] absent is 0
+   * @param {number} [end] absent is the data's length
+   * @param {{onShort?: ((decoder: MqDecoder) => void) | null}} [options]
+   */
   constructor(data, start = 0, end = data.length, { onShort = null } = {}) {
     this.d = data;
     this.bp = start;
@@ -96,13 +103,17 @@ export class MqDecoder {
     }
   }
 
-  /** The data is short by a byte: count it, and let the caller stop the decode here. */
+  /** The data is short by a byte: count it, and let the caller stop the decode here.
+   * @returns {void} */
   short() {
     this.overrun++;
     if (this.onShort) this.onShort(this);
   }
 
-  /** One binary decision in context `cx` of `ctx` (a `mqContexts` array). */
+  /** One binary decision in context `cx` of `ctx` (a `mqContexts` array).
+   * @param {Uint8Array} ctx the contexts' states, updated in place
+   * @param {number} cx the context's index
+   * @returns {number} the decision, 0 or 1 */
   decode(ctx, cx) {
     const s = ctx[cx];
     let i = s >> 1, mps = s & 1;

@@ -64,7 +64,103 @@ const PIXELS_MAX = boundOf("image", "pixels");
 const ROWS_ROW = Object.hasOwn(READ_BOUNDS.image, "rows_pixels") ? "rows_pixels" : "pixels";
 const ROWS_PIXELS_MAX = boundOf("image", ROWS_ROW);
 
+/**
+ * @typedef {Object} JpegComponent
+ * @property {number} id the component's identifier
+ * @property {number} h its horizontal sampling factor
+ * @property {number} v its vertical sampling factor
+ * @property {number} tq the quantisation table it uses
+ */
+/**
+ * @typedef {Object} JpegFrame
+ * @property {string} process the frame's coding process, by name (`baseline`, `extended-sequential-huffman`, ...)
+ * @property {number} precision bits a sample
+ * @property {number} width
+ * @property {number} height
+ * @property {JpegComponent[]} comps
+ */
+/**
+ * @typedef {Object} JpegHuffman
+ * @property {Int32Array} maxcode
+ * @property {Int32Array} valptr
+ * @property {Int32Array} mincode
+ * @property {Uint8Array} symbols
+ * @property {Int32Array} fast the look-ahead table, each entry `(length << 8) | symbol`, or -1
+ * @property {number} FAST the look-ahead's width in bits
+ */
+/**
+ * @typedef {Object} JpegScanComponent
+ * @property {number} id
+ * @property {number} td its DC table
+ * @property {number} ta its AC table
+ */
+/**
+ * @typedef {Object} JpegHeader
+ * @property {JpegFrame} frame
+ * @property {Int32Array[]} qt the quantisation tables, by id, in natural order
+ * @property {{dc: JpegHuffman[], ac: JpegHuffman[]}} hts the Huffman tables, by id
+ * @property {boolean} jfif a JFIF APP0 was found
+ * @property {{transform: number} | null} adobe the Adobe APP14's transform, or null
+ * @property {number} restart the restart interval, 0 for none
+ * @property {{comps: JpegScanComponent[], dataAt: number}} scan the first scan's components and where its data starts
+ */
+/**
+ * @typedef {Object} JpegColourEvidence
+ * @property {{comps: Array<{id: number}>}} frame
+ * @property {boolean} jfif
+ * @property {{transform: number} | null} adobe
+ */
+/**
+ * @typedef {Object} JpegColour
+ * @property {boolean} ycc libjpeg converts from YCbCr
+ * @property {string} why which rule decided it
+ */
+/**
+ * @typedef {Object} JpegSource
+ * @property {number} width the frame's width as stored
+ * @property {number} height the frame's height as stored
+ * @property {string} process
+ * @property {string} sampling each component's `HxV`, comma-separated
+ * @property {number} restart
+ * @property {string} colour the colour rule taken, or `grey`
+ */
+/**
+ * @typedef {Object} JpegImage
+ * @property {number} width the rotated width
+ * @property {number} height the rotated height
+ * @property {number} comps 1 or 3
+ * @property {Uint8Array} samples interleaved 8-bit samples, rows top to bottom
+ * @property {JpegSource} source
+ */
+/**
+ * @typedef {Object} JpegRowsInfo
+ * @property {number} width
+ * @property {number} height
+ * @property {number} comps 1 or 3
+ * @property {JpegSource} source
+ */
+/**
+ * @typedef {Object} JpegOptions
+ * @property {number} [rotate] degrees clockwise, a quarter turn; absent is 0
+ * @property {number | null} [expectComps] the components the caller declares; absent or null is not checked
+ * @property {number | null} [colorTransform] the PDF's /ColorTransform; absent or null leaves libjpeg's rule
+ */
+/**
+ * @typedef {Object} JpegRowsOptions
+ * @property {number | null} [expectComps]
+ * @property {number | null} [colorTransform]
+ * @property {(rows: Uint8Array, y0: number, count: number) => void} [onRows] receives each strip's finished rows, in order;
+ * required: without a function the call throws a TypeError
+ * @bound width × height: at most the `image` `pixels` row of READ_BOUNDS for the whole-frame decode, and its
+ * `rows_pixels` row (the `pixels` row until that row exists) for the row-by-row decode, judged from the header before
+ * anything is allocated
+ */
+
 export class DctRefusal extends Error {
+  /**
+   * @param {string} code the refusal's code
+   * @param {Object<string, *>} [detail] why: the process, the sampling, where the data ran out, or the size and its bound
+   */
   constructor(code, detail = {}) {
     super(`${code}${detail.note ? `: ${detail.note}` : ""}`);
     this.code = code;
@@ -95,7 +191,10 @@ const ZIGZAG = Int32Array.from([
 ]);
 
 /** Read the markers up to the first SOS. Returns the frame, tables and the
- *  colour-transform evidence; throws `DctRefusal` on anything not decoded. */
+ *  colour-transform evidence; throws `DctRefusal` on anything not decoded.
+ * @param {*} d the JPEG's bytes, a Uint8Array; anything else is refused `NOT_A_JPEG`
+ * @returns {JpegHeader}
+ * @throws {DctRefusal} */
 export function readJpegHeader(d) {
   if (!(d instanceof Uint8Array) || d.length < 4 || d[0] !== 0xff || d[1] !== 0xd8)
     throw new DctRefusal("NOT_A_JPEG", { note: "no SOI" });
@@ -391,7 +490,9 @@ for (let i = 0, x = -128; i < 256; i++, x++) {
 const clamp8 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
 
 /** Does libjpeg convert this 3-component file from YCbCr? `jdapimin.c`'s
- *  `default_decompress_parms`, in its order. Returns the answer and WHY. */
+ *  `default_decompress_parms`, in its order. Returns the answer and WHY.
+ * @param {JpegColourEvidence} h the parts of a `JpegHeader` the rule reads
+ * @returns {JpegColour} */
 export function colourTransformOf(h) {
   const ids = h.frame.comps.map((c) => c.id);
   if (h.jfif) return { ycc: true, why: "JFIF" };
@@ -412,6 +513,11 @@ export function colourTransformOf(h) {
  * own buffers (`decodeStrips`, below), which hold one MCU row and never a
  * full-size plane. At 4:2:0 that is about 3 bytes a pixel, where the decode
  * that upsampled whole chroma planes held about 6.5.
+ *
+ * @param {*} d the JPEG's bytes, a Uint8Array; anything else is refused `NOT_A_JPEG`
+ * @param {JpegOptions} [options]
+ * @returns {JpegImage}
+ * @throws {DctRefusal}
  */
 export function decodeBaselineJpeg(d, { rotate = 0, expectComps = null, colorTransform = null } = {}) {
   const deg = (((rotate | 0) % 360) + 360) % 360;
@@ -421,7 +527,7 @@ export function decodeBaselineJpeg(d, { rotate = 0, expectComps = null, colorTra
     decodeStrips(d, expectComps, colorTransform, () => {});
     throw new DctRefusal("UNSUPPORTED_ROTATION", { rotate });
   }
-  let out = null, W2 = 0, H2 = 0;
+  let out = /** @type {Uint8Array | null} built at the first strip */ (null), W2 = 0, H2 = 0;
   const info = decodeStrips(d, expectComps, colorTransform, (rows, y0, count, { W, H, nc }) => {
     if (!out) {
       [W2, H2] = deg === 90 || deg === 270 ? [H, W] : [W, H];
@@ -441,7 +547,7 @@ export function decodeBaselineJpeg(d, { rotate = 0, expectComps = null, colorTra
       }
     }
   });
-  return { width: W2, height: H2, comps: info.comps, samples: out, source: info.source };
+  return { width: W2, height: H2, comps: info.comps, samples: /** @type {Uint8Array} the frame's rows, every one handed over */ (out), source: info.source };
 }
 
 /**
@@ -464,6 +570,12 @@ export function decodeBaselineJpeg(d, { rotate = 0, expectComps = null, colorTra
  * above it (the context row its upsampling reads); one row of each upsampled
  * component; one block of coefficients; and the strip being handed over, at most
  * 8 × vmax rows of `width × comps` bytes (8 for a single component). Measured in `build/jobs/T44/image-codecs.md`.
+ *
+ * @param {*} d the JPEG's bytes, a Uint8Array; anything else is refused `NOT_A_JPEG`
+ * @param {JpegRowsOptions} [options]
+ * @returns {JpegRowsInfo}
+ * @throws {DctRefusal}
+ * @throws {TypeError} when `onRows` is not a function
  */
 export function decodeBaselineJpegRows(d, { expectComps = null, colorTransform = null, onRows } = {}) {
   if (typeof onRows !== "function") throw new TypeError("decodeBaselineJpegRows needs an onRows(rows, y0, count) function");
