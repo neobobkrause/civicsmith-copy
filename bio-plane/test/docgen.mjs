@@ -15,6 +15,75 @@
 import { zipChunks64, zipChunks64Sized, makeZip } from "./make-zip.mjs";
 import { hash32, VOCAB, LATIN_VOCAB } from "./seeded.mjs";
 
+/**
+ * A document recipe (R19, R22): the kind, the seed and the options the file header lists; any option left out takes its default.
+ * @typedef {Object} DocRecipe
+ * @property {string} kind one of KINDS
+ * @property {unknown} [seed] any value, written as `String(seed)`; without it the recipe is refused
+ * @property {{units?: number, chars?: number, bytes?: number, partBytes?: number}} [size] body units (6), characters per unit, exact file bytes, a ladder part's bytes
+ * @property {string[]} [parts] extra parts the kind has: footnote, endnote, header, footer, comment, deleted, textbox, notes, master, hidden
+ * @property {{rows: number, cols: number}} [table] a table, one unit per cell
+ * @property {string} [ladder] one-cell-tables, empty-paragraphs, tiny-paragraphs, hyperlinks or nested-tables (docx, odt, html; needs size.partBytes)
+ * @property {string} [flavour] "template" or "macro", where the kind has it
+ * @property {string|boolean} [encryptedMember] a member written as encrypted (true: the main part)
+ * @property {{member: string, more: number}} [declares] a member whose central directory declares `more` bytes than it holds
+ * @property {string} [encoding] for html, text, json and xml: utf-8 (default), utf-8-bom, utf-16le-bom, utf-16be-bom, latin-1, windows-1252, bad-byte
+ * @property {string} [charset] where the charset is named: meta, xml, header or none
+ * @property {{depth?: number, unterminated?: boolean}} [markup] deep or unterminated markup
+ * @property {boolean} [main] html: the body inside `<main>`
+ * @property {boolean} [clientRendered] html: the body written by a script
+ * @property {number} [bound] a size bound: a larger file's truth carries a TOO_LARGE refusal
+ */
+
+/**
+ * One unit of text: its number, id `<seed>-u<n>-k<part>`, part and text (a table cell's also its row and column).
+ * @typedef {Object} DocUnit
+ * @property {number} n
+ * @property {string} id
+ * @property {string} part
+ * @property {string} text
+ * @property {number} [row]
+ * @property {number} [col]
+ */
+
+/**
+ * The truth of a document (R19, R22): the text of each part.
+ * @typedef {Object} DocTruth
+ * @property {string} kind
+ * @property {DocRecipe} recipe
+ * @property {number} units the unit count
+ * @property {(n: number) => (DocUnit|undefined)} unit unit n (1-based), undefined past the last
+ * @property {() => Generator<DocUnit>} all every unit in document order
+ * @property {Object} parts the unit numbers of each part, by part name
+ * @property {{first: string, middle: string, last: string}} marks the ids of the first, middle and last body units
+ * @property {{n: number, reason: string}[]} unread units a reader cannot read (in an encrypted member)
+ * @property {Object|null} refusal `{code}` (ENCRYPTED, MALFORMED) or `{code: "TOO_LARGE", size, bound}`
+ * @property {Object|null} hostile `{encryptedMember?, declares?}`
+ * @property {string} contentType
+ * @property {string|null} encoding null for a package
+ * @property {{n: number, after: string}|null} badByte where the bad byte is written
+ * @property {boolean} clientRendered
+ * @property {string[]} oracleOmits the parts LibreOffice's export leaves out
+ * @property {string} ext
+ * @property {number|null} size
+ */
+
+/**
+ * A generated document: its bytes as a lazy stream of chunks, or collected whole, with its truth.
+ * @typedef {Object} DocFile
+ * @property {string} kind
+ * @property {string} ext
+ * @property {string} type the content type
+ * @property {number|null} size null when the recipe names no size
+ * @property {DocTruth} truth
+ * @property {() => AsyncGenerator<Uint8Array>} chunks a fresh stream of the file's bytes on each call
+ * @property {() => Promise<Uint8Array>} bytes the whole file
+ */
+
+/**
+ * The document kinds docgen writes.
+ * @type {ReadonlyArray<string>}
+ */
 export const KINDS = Object.freeze(["docx", "pptx", "odt", "odp", "html", "text", "json", "xml"]);
 const PACKAGES = ["docx", "pptx", "odt", "odp"];
 const PARTS = {
@@ -512,7 +581,12 @@ const memberOf = (kind, part) => ({
 const extOf = (pl) => (pl.recipe.flavour ? EXT[pl.kind][pl.recipe.flavour] : { text: "txt" }[pl.kind] ?? pl.kind);
 
 /** The document of a recipe (R19, R22): `{kind, ext, type, size, truth, chunks(), bytes()}`; `size` is null for a
- *  package whose size is not named (known once streamed). */
+ *  package whose size is not named (known once streamed).
+ * @param {DocRecipe} recipe
+ * @returns {DocFile}
+ * @throws {Error} when the recipe names an unknown kind, part, ladder, flavour or encoding, lacks a seed, or combines
+ *  options the kind does not have; streaming throws when a named member is absent or a size cannot be reached
+ */
 export function generate(recipe) {
   const pl = plan(recipe), U = unitsOf(pl);
   const size = pl.size.bytes ?? null;
@@ -524,7 +598,12 @@ export function generate(recipe) {
   };
 }
 
-/** The truth of a recipe without building its file (R24). */
+/**
+ * The truth of a recipe without building its file (R24).
+ * @param {DocRecipe} recipe
+ * @returns {DocTruth}
+ * @throws {Error} when the recipe is refused as by generate
+ */
 export function truthOf(recipe) {
   const pl = plan(recipe);
   return truthFrom(pl, unitsOf(pl), pl.size.bytes ?? null);

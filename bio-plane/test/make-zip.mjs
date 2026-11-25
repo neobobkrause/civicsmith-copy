@@ -27,7 +27,12 @@ const CRC_TABLE = (() => {
   return t;
 })();
 
-/** CRC-32 as APPNOTE §4.4.7 defines it (the ISO 3309 polynomial). */
+/**
+ * CRC-32 as APPNOTE §4.4.7 defines it (the ISO 3309 polynomial).
+ * @param {Uint8Array} bytes the data
+ * @returns {number}
+ * @bound result: whole number from 0 to 4294967295
+ */
 export function crc32(bytes) {
   let c = MAX32;
   for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
@@ -157,10 +162,45 @@ function resolve(e, i, resolved) {
 }
 
 /**
+ * One entry of makeZip (R10, R12).
+ * @typedef {Object} ZipEntrySpec
+ * @property {string | Uint8Array} name the name, or its raw bytes
+ * @property {string | Uint8Array} [data] the data (a string written as UTF-8); required unless sameDataAs
+ * @property {number} [method] 0 stored, 8 deflate (default); any other written as declared
+ * @property {boolean} [utf8] sets or clears general-purpose bit 11
+ * @property {Object} [local] what the local header states instead (name, method, flags, crc32, compressedSize, uncompressedSize)
+ * @property {Object} [central] what the central record states instead (the same fields and localOffset)
+ * @property {boolean} [dataDescriptor] sets bit 3 and writes a data descriptor
+ * @property {Object} [descriptor] what the descriptor states (crc32, compressedSize, uncompressedSize, signature)
+ * @property {boolean} [zip64] sizes and offset as 0xFFFFFFFF with a 0x0001 extra field
+ * @property {string} [encrypted] "traditional", "strong", "aes" or "directory"; never actually encrypted
+ * @property {number} [sameDataAs] index of an earlier entry whose local header and data this one points at
+ * @property {number} [dosDate]
+ * @property {number} [dosTime]
+ * @bound method: whole number from 0 to 65535
+ * @bound sameDataAs: whole number below this entry's index
+ */
+
+/**
+ * makeZip's archive-level options (R12).
+ * @typedef {Object} MakeZipOptions
+ * @property {boolean} [zip64] writes the ZIP64 end record and locator
+ * @property {Object} [zip64Record] what the ZIP64 end record states (entries, diskEntries, cdSize, cdOffset); needs zip64
+ * @property {Object} [eocd] what the end record states (entries, diskEntries, cdSize, cdOffset)
+ * @property {unknown} [comment] the archive comment, a string or bytes; anything else throws
+ * @property {boolean} [secondEocd] writes a second end-record candidate inside the comment
+ */
+
+/**
  * A ZIP archive (R10–R13). `entries`: `{name, data, method = 8}` plus R12's
  * overrides (`utf8`, `local`, `central`, `dataDescriptor`, `descriptor`,
  * `zip64`, `encrypted`, `sameDataAs`, and `dosDate`/`dosTime` for a time of
  * its own). `options`: `zip64`, `zip64Record`, `eocd`, `comment`, `secondEocd`.
+ * @param {unknown} entries an array of ZipEntrySpec, in order; anything else throws
+ * @param {MakeZipOptions} [options] archive-level overrides
+ * @returns {Uint8Array}
+ * @throws {Error} when a spec cannot be written (a missing name or data, a bad sameDataAs, an unknown encrypted
+ *   value or override field, a field out of its integer range), naming the field
  */
 export function makeZip(entries, options = {}) {
   if (!Array.isArray(entries)) throw new Error("makeZip: entries must be an array");
@@ -311,6 +351,10 @@ function positiveInteger(v, field) {
  * A ZIP bomb (R14): one deflated kernel of `kernel` zero bytes, written once,
  * and `entries` central-directory entries that all point at it, each declaring
  * `kernel` uncompressed bytes.
+ * @param {{kernel?: number, entries?: number}} [spec] the kernel's size and the entry count
+ * @returns {Uint8Array}
+ * @throws {Error} when kernel or entries is not a positive integer
+ * @bound kernel, entries: whole numbers, 1 or more
  */
 export function zipBomb({ kernel, entries } = {}) {
   positiveInteger(kernel, "zipBomb: kernel");
@@ -324,6 +368,10 @@ export function zipBomb({ kernel, entries } = {}) {
  * Nested archives (R14): `depth` levels (1 is a plain archive of leaves), each
  * level holding `fanout` entries, each the next level's archive; the deepest
  * holds `fanout` copies of `leaf`, written with `method` (R10).
+ * @param {{depth?: number, fanout?: number, leaf?: string | Uint8Array, method?: number}} [spec] the tree's shape and leaf
+ * @returns {Uint8Array}
+ * @throws {Error} when depth or fanout is not a positive integer, or leaf is missing
+ * @bound depth, fanout: whole numbers, 1 or more
  */
 export function nestedZip({ depth, fanout, leaf, method = 8 } = {}) {
   positiveInteger(depth, "nestedZip: depth");
@@ -395,6 +443,19 @@ async function* deflateStream(source, onRaw) {
 }
 
 /**
+ * One member of zipChunks64 (R23).
+ * @typedef {Object} ZipChunksEntry
+ * @property {string | Uint8Array} name the name, or its raw bytes
+ * @property {string | Uint8Array} [data] the whole data; or give chunks
+ * @property {any} [chunks] an iterable, async iterable, or a function answering one, of byte or string chunks
+ * @property {number} [method] 0 or 8 (default)
+ * @property {boolean} [zip64] false writes a classic member (data only)
+ * @property {number} [size] a stored streamed member's size, known before
+ * @property {number} [crc32] a stored streamed member's CRC-32, known before
+ * @property {Object} [central] what the central record states instead (crc32, compressedSize, uncompressedSize)
+ */
+
+/**
  * A ZIP written lazily (R23). `entries` is an array or an (async) iterable of
  * `{name, data}` (bytes or a string, compressed whole) or `{name, chunks}` (an
  * iterable, an async iterable or a function answering one, deflated as it
@@ -403,6 +464,13 @@ async function* deflateStream(source, onRaw) {
  * states in place of the truth, so a member can declare more than it holds.
  * `options.comment` is the archive comment. Answers an async iterable of
  * Uint8Array chunks.
+ * @param {Iterable<ZipChunksEntry> | AsyncIterable<ZipChunksEntry>} entries the members, in order
+ * @param {{comment?: string | Uint8Array}} [options] the archive comment
+ * @returns {AsyncGenerator<Uint8Array>}
+ * @throws {Error} when an entry has no name or no data and chunks, a method other than 0 or 8, a stated size or
+ *   crc32 its chunks do not hold, or the comment is over 65535 bytes
+ * @bound method: 0 or 8, default 8
+ * @bound options.comment: at most 65535 bytes
  */
 export async function* zipChunks64(entries, options = {}) {
   if (options === null || typeof options !== "object") throw new Error("zipChunks64: options must be an object");
@@ -498,7 +566,12 @@ export async function* zipChunks64(entries, options = {}) {
     le(4, SIG.eocd), le(2, 0), le(2, 0), le(2, fit16(n)), le(2, fit16(n)), le(4, fit32(cdSize)), le(4, fit32(cdOffset)), le(2, comment.length), comment);
 }
 
-/** A running CRC-32: `crc32Update(crc32Update(0, a), b)` is the CRC of a then b. */
+/**
+ * A running CRC-32: `crc32Update(crc32Update(0, a), b)` is the CRC of a then b.
+ * @param {number} c the CRC so far (0 to start)
+ * @param {Uint8Array} bytes the next chunk
+ * @returns {number}
+ */
 export const crc32Update = (c, bytes) => crcUpdate(c, bytes);
 
 /** The longest archive comment `zipChunks64Sized` writes: LibreOffice finds no end record behind a comment of 600
@@ -511,6 +584,12 @@ const SIZED_COMMENT_MAX = 256;
  * array whose `chunks` are functions, since the archive is counted by a pass that holds nothing before it is written.
  * `member: true` always writes the padding member (named `padName`), for a package that lists its members (an ODF
  * manifest must name it).
+ * @param {ZipChunksEntry[]} entries the members; their chunks, when given, are functions
+ * @param {number} size the archive's exact size in bytes
+ * @param {{padName?: string, member?: boolean}} [opts] the padding member's name, and whether to always write it
+ * @returns {AsyncGenerator<Uint8Array>}
+ * @throws {Error} when entries is not an array, a chunks is not a function, or size is below the archive's own
+ *   size or too small for the padding member
  */
 export async function* zipChunks64Sized(entries, size, { padName = "bio-pad.bin", member = false } = {}) {
   if (!Array.isArray(entries)) throw new Error("zipChunks64Sized: entries must be an array");
@@ -534,5 +613,7 @@ export async function* zipChunks64Sized(entries, size, { padName = "bio-pad.bin"
 
 /** The fixed bytes `zipChunks64` adds around an archive's members: per member
  *  its local header (30 + name + 20) and central record (46 + name + 28), plus
- *  a descriptor of 24 for a streamed member, and 98 bytes of end records. */
+ *  a descriptor of 24 for a streamed member, and 98 bytes of end records.
+ *  @type {{local: number, central: number, descriptor: number, end: number, classicLocal: number, classicCentral: number}}
+ */
 export const ZIP64_OVERHEAD = { local: 50, central: 74, descriptor: 24, end: 98, classicLocal: 30, classicCentral: 46 };
