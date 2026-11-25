@@ -82,7 +82,13 @@ const TEXT = {
 /** Every key a reason of this module can carry (the test asserts each is held by the list or written by `localize`). */
 export const REASON_KEYS = Object.keys(TEXT);
 
-/** A `why` as English: a string as it is, a `{key, vars}` through the list. */
+/**
+ * R30: a `why` as English through the word table: a string as it is, a `{key, vars}` filled.
+ * @param {string|{key: string, vars?: Object<string, *>}} why
+ * @returns {string}
+ * @bound why.key: one of `REASON_KEYS`
+ * @throws {TypeError} when `why` is neither a string nor a reason with a key this module gives
+ */
 export function reasonText(why) {
   if (typeof why === "string") return why;
   if (!why || typeof why !== "object" || typeof why.key !== "string" || !Object.hasOwn(TEXT, why.key))

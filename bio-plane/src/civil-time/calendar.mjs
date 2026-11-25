@@ -5,7 +5,9 @@
 import { civil, dayText, weekdayOf, parseDay } from "./days.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { reason } from "./reasons.mjs";
+/** @import { Reason, Undetermined } from './values.mjs' */
 
+/** @type {(code: string, why: Reason) => Undetermined} */
 const no = (code, why) => ({ undetermined: true, code, why });
 /* R30: the office a reason names, as a value: a role, or a venue kind; "" for every office */
 const officeName = (o) => (o === null || o === undefined ? "" : typeof o === "string" ? o : o && o.venue ? String(o.venue) : String(o));
@@ -17,7 +19,9 @@ export function conflictsAbout(view, key) {
 }
 
 /** Why a fact the count needs is absent: withheld as a conflict, or not held. `subject` names which (R30): `weekend`,
- *  `weekend_counting`, `computation`, `fiscal_year`, `closure_list`; `vars` its fills. */
+ *  `weekend_counting`, `computation`, `fiscal_year`, `closure_list`; `vars` its fills.
+ *  @param {*} view @param {string} key @param {string} subject @param {Object<string, *>} [vars]
+ *  @returns {Undetermined} */
 export function missing(view, key, subject, vars = {}) {
   const c = conflictsAbout(view, key);
   if (c.length) return no("FACT_WITHHELD", reason(`civil-time.missing.${subject}_withheld`, { ...vars, at: c.map((x) => x.at).join(", ") }));

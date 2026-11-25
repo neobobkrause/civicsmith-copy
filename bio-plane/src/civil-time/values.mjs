@@ -7,10 +7,109 @@ import { isZone, startOfDay, wallToInstants, instantText, parseInstant, localDay
 import { readEdtf } from "./edtf.mjs";
 import { reason } from "./reasons.mjs";
 
+/**
+ * A date-time (R2): a value held at a precision, in a zone.
+ * @typedef {Object} DateTime
+ * @property {string} value the date or time as written
+ * @property {string} precision how much of the value is known
+ * @property {string} zone the zone the value is read in
+ * @bound precision: one of day, minute, second, edtf; any other is refused DATE_INVALID
+ * @bound value: day YYYY-MM-DD, minute YYYY-MM-DDTHH:MM, second YYYY-MM-DDTHH:MM:SS, edtf an EDTF level-1 string (R3); a value not of its precision's form is refused DATE_INVALID
+ * @bound zone: an IANA name the runtime knows, never a bare offset; any other is refused ZONE_INVALID
+ */
+/**
+ * An instant: a string of `record-grammar`'s `ISO_TS_RE` (YYYY-MM-DDTHH:MM:SSZ), naming a real second.
+ * @typedef {string} Instant
+ */
+/**
+ * A reason (R30): a key of the word list with the values it fills, never English. A reason a caller handed in is
+ * passed on as it came.
+ * @typedef {Object} Reason
+ * @property {string} key
+ * @property {Object<string, *>} vars the values it fills; empty where it fills none
+ * @bound key: a row of the word list, or one this module writes first by `localize`; `REASON_KEYS` lists the module's own
+ */
+/**
+ * A refusal: a code and a detail string; its sentence is `refusal.<CODE>`. It may carry further fields of the answer
+ * it stands in for (`due` adds its basis kind).
+ * @typedef {{refused: string, why: Detail, undetermined?: undefined, [more: string]: *}} Refusal
+ * @bound refused: ZONE_INVALID, DATE_INVALID, EDTF_UNSUPPORTED, RANGE_INVERTED, BOUND_BOTH, BASIS_UNKNOWN, SIDE_UNKNOWN, UNIT_UNKNOWN or RRULE_UNSUPPORTED
+ */
+/**
+ * An undetermined answer: which kind of no and why (R28). Never read as yes, no or zero. It may carry further fields
+ * of the answer it stands in for (a rule's `trace`, `due`'s basis kind).
+ * @typedef {{undetermined: true, why: Reason, refused?: undefined, candidates?: Array<*>, also?: Array<Reason>, code?: string, field?: string, [more: string]: *}} Undetermined
+ * @bound candidates: the readings that remain, where there are some
+ * @bound also: the reasons after the first
+ * @bound code: the kind of no, where the answer names one (rules, calendars, fiscal years); field: for RULE_INVALID, the rule's field at fault
+ */
+/**
+ * A refusal's detail: a string of English for a log, with no key; its sentence for people is `refusal.<CODE>`.
+ * @typedef {string & {key?: undefined, vars?: undefined}} Detail
+ */
+/**
+ * The span of instants a date-time covers, as the module holds it: whole seconds since 1970-01-01T00:00:00Z.
+ * @typedef {Object} Span
+ * @property {number|null} lo the first second covered; null at an open or unknown start
+ * @property {number|null} hi the first second not covered; null at an open or unknown end
+ * @property {DateTime} dt the date-time read; an instant string reads as a second in UTC
+ * @property {boolean} [twice] a minute or second whose wall time occurs twice
+ * @property {string} [start] an EDTF value's start: known, open or unknown
+ * @property {string} [end] an EDTF value's end: known, open or unknown
+ * @property {*} [qualifiers] an EDTF value's qualifiers
+ * @property {undefined} [refused] absent
+ * @property {undefined} [undetermined] absent
+ * @property {undefined} [none] absent
+ */
+/**
+ * What every answer that is neither a refusal nor undetermined also states: none of their fields, so that a caller
+ * may ask any answer whether it is one.
+ * @typedef {Object} Answered
+ * @property {undefined} [refused] absent
+ * @property {undefined} [undetermined] absent
+ * @property {undefined} [why] absent
+ * @property {undefined} [also] absent
+ * @property {undefined} [code] absent
+ * @property {undefined} [field] absent
+ * @property {undefined} [candidates] absent
+ */
+/**
+ * The span of instants a date-time covers.
+ * @typedef {Object} Bounds
+ * @property {Instant|null} earliest the first instant covered; null at an open or unknown start
+ * @property {Instant|null} latest the first instant not covered; null at an open or unknown end
+ * @bound half-open: [earliest, latest)
+ */
+/**
+ * A local wall clock (R30).
+ * @typedef {Object} Clock
+ * @property {number} hour
+ * @property {number} minute
+ * @bound hour: whole number, 0 to 23
+ * @bound minute: whole number, 0 to 59
+ */
+/**
+ * A bound of a validity (R22, R23): a value in the validity's precision and zone, one with its own, an event's edge,
+ * or null for "not stated".
+ * @typedef {string|{value?: string|null, precision?: string, zone?: string, event?: string|null, edge?: string, at?: DateTime|Instant|null}|null|undefined} ValidityBound
+ * @bound a bound giving both a value and an event is refused BOUND_BOTH; an event with no `at` is undetermined
+ */
+/**
+ * A validity (R22, R23).
+ * @typedef {Object} Validity
+ * @property {{from?: ValidityBound, to?: ValidityBound, precision?: string, zone?: string}} valid
+ * @property {*} [basis]
+ * @bound valid.precision: absent is day; "instant" reads a string bound as an instant
+ * @bound valid.zone: absent is the view's time_zone; with neither, a bound that needs one is undetermined
+ */
+
+/** @type {(code: string, why: string) => Refusal} */
 export const refuse = (code, why) => ({ refused: code, why });
+/** @type {(why: Reason, candidates?: Array<*>) => Undetermined} */
 export const undetermined = (why, candidates) => (candidates ? { undetermined: true, why, candidates } : { undetermined: true, why });
 /* R30: the reasons after the first, each a `{key, vars}` too. */
 const withAlso = (answer, more) => (more.length ? { ...answer, also: more } : answer);
+/** @type {(r: *) => r is Refusal | Undetermined} */
 export const isNo = (r) => !!(r && (r.refused || r.undetermined));
 
 const PRECISIONS = ["day", "minute", "second", "edtf"];
@@ -28,7 +127,12 @@ function wallSeconds(day, h, m, s) {
   return n * 86400 + h * 3600 + m * 60 + s;
 }
 
-/** A date-time as a span `{lo, hi, dt}` of instants, or a refusal. An instant string is a second's span in UTC. */
+/**
+ * A date-time as a span `{lo, hi, dt}` of instants, or a refusal. An instant string is a second's span in UTC.
+ * @param {*} x a DateTime or an Instant
+ * @returns {Span|Refusal}
+ * @throws {TypeError} when `x` is neither a string nor an object, or its value, precision or zone is not a string
+ */
 export function spanOf(x) {
   if (typeof x === "string") {
     const t = parseInstant(x);
@@ -65,7 +169,12 @@ export function spanOf(x) {
 
 const text = (t) => (t === null ? null : instantText(t));
 
-/** R2. */
+/**
+ * R2: the half-open span of instants a date-time covers in its zone; an EDTF value at its widest reading (R3).
+ * @param {DateTime|Instant} dt an instant string is a second in UTC
+ * @returns {(Bounds & Answered)|Refusal}
+ * @throws {TypeError} when `dt` is neither a string nor an object, or its value, precision or zone is not a string
+ */
 export function bounds(dt) {
   const s = spanOf(dt);
   if (isNo(s)) return s;
@@ -90,7 +199,14 @@ export function compareSpans(a, b) {
     value_2: String(b.dt.value), precision_2: String(b.dt.precision), zone_2: zoneOf(b) }));
 }
 
-/** R5. */
+/**
+ * R5: the one sequence read. `before` only when all of `a` lies before all of `b`, `after` in the mirror case,
+ * otherwise undetermined naming the overlap or the open end. A day is never read as its midnight.
+ * @param {DateTime|Instant} a
+ * @param {DateTime|Instant} b
+ * @returns {("before" & Answered)|("after" & Answered)|Undetermined|Refusal}
+ * @throws {TypeError} as `bounds` throws, for either argument
+ */
 export function compare(a, b) {
   const sa = spanOf(a);
   if (isNo(sa)) return sa;
@@ -99,12 +215,22 @@ export function compare(a, b) {
   return compareSpans(sa, sb);
 }
 
-/** R6. */
+/**
+ * R6: true only for a YYYY-MM-DD naming a real day of the proleptic Gregorian calendar.
+ * @param {*} s any value; anything but such a string is false
+ * @returns {boolean}
+ */
 export function isCalendarDate(s) {
   return parseDay(s) !== null;
 }
 
-/** R1. */
+/**
+ * R1: the calendar day, in `zone`, on which `instant` falls, across daylight-saving changes.
+ * @param {Instant} instant
+ * @param {string} zone an IANA name
+ * @returns {(string & Answered)|Refusal} the day, YYYY-MM-DD (ISO 8601's expanded form outside 0000 to 9999)
+ * @throws {TypeError} when either argument is not a string
+ */
 export function localDay(instant, zone) {
   if (typeof instant !== "string" || typeof zone !== "string") throw new TypeError("localDay takes an instant and a zone, both strings");
   const t = parseInstant(instant);
@@ -114,7 +240,13 @@ export function localDay(instant, zone) {
   return dayText(localDayNumber(t, zone));
 }
 
-/** R30: the wall clock of `instant` in `zone`, from the same zone arithmetic as `localDay`. */
+/**
+ * R30: the wall clock of `instant` in `zone`, from the same zone arithmetic as `localDay`. It formats nothing.
+ * @param {Instant} instant
+ * @param {string} zone an IANA name
+ * @returns {(Clock & Answered)|Refusal}
+ * @throws {TypeError} when either argument is not a string
+ */
 export function localClock(instant, zone) {
   if (typeof instant !== "string" || typeof zone !== "string") throw new TypeError("localClock takes an instant and a zone, both strings");
   const t = parseInstant(instant);
@@ -125,7 +257,15 @@ export function localClock(instant, zone) {
   return { hour: Math.floor(secondOfDay / 3600), minute: Math.floor(secondOfDay / 60) % 60 };
 }
 
-/** R7. */
+/**
+ * R7: the inclusive local-day range: `start` is the first instant of `fromDay`, `end` the first instant after `toDay`.
+ * @param {string} fromDay YYYY-MM-DD
+ * @param {string} toDay YYYY-MM-DD
+ * @param {string} zone an IANA name
+ * @returns {({start: Instant, end: Instant} & Answered)|Refusal}
+ * @bound fromDay after toDay is refused RANGE_INVERTED; a day that is not a calendar date (R6) is refused DATE_INVALID
+ * @throws {TypeError} when any argument is not a string
+ */
 export function dayRange(fromDay, toDay, zone) {
   if (typeof fromDay !== "string" || typeof toDay !== "string" || typeof zone !== "string")
     throw new TypeError("dayRange takes two days and a zone, all strings");
@@ -137,7 +277,15 @@ export function dayRange(fromDay, toDay, zone) {
   return { start: instantText(startOfDay(a, zone)), end: instantText(startOfDay(b + 1, zone)) };
 }
 
-/** R8: a zone-less source date and a clock time written `h:mm AM` joined into a minute in `zone`. */
+/**
+ * R8: a zone-less source date and a clock time written `h:mm AM` joined into a minute in `zone`.
+ * @param {string} date YYYY-MM-DD, or the same followed by T00:00:00
+ * @param {string} time h:mm AM or hh:mm PM, case and spacing folded
+ * @param {string} zone an IANA name
+ * @returns {(DateTime & Answered)|Undetermined|Refusal} a minute-precision date-time; undetermined with both candidate instants when the wall time occurs twice, with why when it does not occur
+ * @bound time: hour 1 to 12, minute 0 to 59; any other is refused DATE_INVALID
+ * @throws {TypeError} when any argument is not a string
+ */
 export function joinLocal(date, time, zone) {
   if (typeof date !== "string" || typeof time !== "string" || typeof zone !== "string")
     throw new TypeError("joinLocal takes a date, a time and a zone, all strings");
@@ -158,6 +306,9 @@ export function joinLocal(date, time, zone) {
 
 /* ---- validAt (R22, R23) ---- */
 
+/** A validity's bound as a span; `{none: true}` when it is not stated.
+ *  @param {ValidityBound} b @param {string} precision @param {string|null} zone null only where no bound needs one (`validAt` answers first otherwise) @param {string} side
+ *  @returns {Span|Refusal|Undetermined|{none: true, refused?: undefined, undetermined?: undefined, lo?: undefined, hi?: undefined, dt?: undefined}} */
 function boundSpan(b, precision, zone, side) {
   if (b === null || b === undefined) return { none: true };
   if (typeof b === "string") return spanOf(precision === "instant" ? b : { value: b, precision, zone });
@@ -174,7 +325,15 @@ function boundSpan(b, precision, zone, side) {
   return { none: true };
 }
 
-/** R22, R23: `in`, `out` or undetermined. `view` (optional) gives the zone when the validity states none. */
+/**
+ * R22, R23: `in`, `out` or undetermined. A null bound means "not stated", never "always". Bounds are compared as
+ * R5 compares. `view` (optional) gives the zone when the validity states none.
+ * @param {Validity} validity
+ * @param {DateTime|Instant} date
+ * @param {{view?: {time_zone?: {value?: *}}|null}} [opts]
+ * @returns {("in" & Answered)|("out" & Answered)|Undetermined|Refusal}
+ * @throws {TypeError} when `validity.valid` is not an object, a bound is not a string, an object or null, or `date` is malformed as `bounds` throws
+ */
 export function validAt(validity, date, { view } = {}) {
   if (!validity || typeof validity !== "object" || !validity.valid || typeof validity.valid !== "object")
     throw new TypeError("validAt takes {valid: {from, to, precision, zone}, basis}");
