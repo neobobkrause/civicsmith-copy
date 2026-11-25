@@ -1,5 +1,6 @@
 /* lines: the three tables this module owns (R17, R19). `lines` and `line_bound_cache` are a stated read contract
    (R17); `line_withdrawals` holds who withdrew a line, when and why (R8). Every write to them is this module's. */
+/** @type {string} R17: the tables' SQL, the read contract other modules read on the terms of record-core R37 */
 export const LINES_SCHEMA = `
 CREATE TABLE IF NOT EXISTS lines (
   line_id      TEXT PRIMARY KEY,
@@ -61,6 +62,8 @@ CREATE TABLE IF NOT EXISTS line_withdrawals (
 
 /* Columns added to a table after its first release, each `[table, column, declaration]`: a store made before them gains
    them at boot (`migrate`), so a store migrated forward and a fresh one present the same table. */
+/** @type {ReadonlyArray<string[]>} the columns added to a store made before them: `[table, column, declaration]` */
 export const LINES_ADDITIVE_COLUMNS = Object.freeze([["lines", "title", "TEXT"]]);
 
+/** @type {readonly string[]} the four tables this module writes, and only it (R17) */
 export const LINES_TABLES = Object.freeze(["lines", "line_bound_cache", "line_withdrawals", "line_current_through"]);
