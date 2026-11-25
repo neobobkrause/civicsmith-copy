@@ -29,8 +29,23 @@ function defaultRefusedNaming(answer, field) {
 
 const asList = (entry) => (Array.isArray(entry) ? entry : [entry]);
 
+/**
+ * @typedef {Object} DeclaredOpHoldsArgs
+ * @property {string} op the op's name
+ * @property {any} declaration one `DECLARED_OPS[op]`: `{fields: {accepts, requires}}`
+ * @property {(fields: Object) => any} call runs the op; a Response is read as `{status, ...body}`
+ * @property {(answer: any, field: string) => any} [refusedNaming] whether an answer is a refusal naming the field
+ * @property {Object} [values] a sample value per field name
+ * @property {string[]} [outside] fields probed as outside the declaration
+ * @property {(x: any, y: any) => boolean} [same] answer equality; default JSON equality
+ */
+
 /** Holds `declaration` (one `DECLARED_OPS[op]`) true against the op that `call(fields)` runs as the door runs it.
- *  Rejects with an Error naming the op and the field at the first breach. */
+ *  Rejects with an Error naming the op and the field at the first breach.
+ *  @param {DeclaredOpHoldsArgs} args the op, its declaration and how to call it
+ *  @returns {Promise<void>}
+ *  @throws {Error} when the declaration lacks fields.accepts and fields.requires arrays, or at a breach
+ */
 export async function declaredOpHolds({ op, declaration, call, refusedNaming = defaultRefusedNaming, values = {}, outside, same }) {
   const accepts = declaration?.fields?.accepts;
   const requires = declaration?.fields?.requires;
@@ -105,8 +120,19 @@ async function pairsOf(root) {
   return pairs;
 }
 
+/**
+ * @typedef {Object} DeclaredOps
+ * @property {Object} ops the declarations by op name (the first in modules.json order)
+ * @property {Object} owners the module id of each op, by op name
+ * @property {{op: string, owners: string[]}[]} duplicates every op declared by two or more modules
+ */
+
 /** The declarations of every module, found from `build/modules.json` under `root` with no module listed by hand.
- *  → `{ops, owners, duplicates}`. */
+ *  → `{ops, owners, duplicates}`.
+ *  @param {string} root the repository root
+ *  @returns {Promise<DeclaredOps>}
+ *  @throws {Error} when a file has the export line but exports no object DECLARED_OPS
+ */
 export async function declaredOpsOf(root) {
   const ops = {}, owners = {}, who = {};
   for (const [owner, DECLARED_OPS] of await pairsOf(root)) {
@@ -124,7 +150,12 @@ const called = new WeakSet();
 
 /** Calls each registration function given (e.g. a module's `registerDeclaredOps`) once per process with every owner's
  *  declaration as `[owner, DECLARED_OPS]` pairs (the pairs `declaredOpsOf` reads). A registration already called is
- *  skipped; a registration's own refusal propagates and names what it refused. Test tooling: only tests call it. */
+ *  skipped; a registration's own refusal propagates and names what it refused. Test tooling: only tests call it.
+ *  @param {string} root the repository root
+ *  @param {...((pairs: any[][]) => any)} registrations the registration functions
+ *  @returns {Promise<void>}
+ *  @throws {Error} when a registration refuses, or a file exports no object DECLARED_OPS
+ */
 export async function registerDeclared(root, ...registrations) {
   const todo = [...new Set(registrations)].filter((registration) => !called.has(registration));
   if (todo.length === 0) return;
