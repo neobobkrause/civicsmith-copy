@@ -8,6 +8,7 @@
 import { openPdf } from "../pdfstructure.mjs";
 import { CleanRefusal, cleanImage, imageKind, jbig2WithoutComments, latin1 } from "./images.mjs";
 import { localize } from "../setup-words/index.mjs";
+/** @import { Cleaned, ImageCounts } from './images.mjs' */
 
 /** Keys removed from every dictionary: document and object metadata, applications' private data, edit dates. */
 const DROP_EVERYWHERE = new Set(["Metadata", "PieceInfo", "LastModified"]);
@@ -31,7 +32,11 @@ const filtersOf = (dict) => {
 };
 const refusal = (code, detail) => new CleanRefusal(code, detail);
 
-/** Clean a PDF (`d` is its bytes). Answers `{clean:true}` or `{clean:false, bytes, images}`. */
+/** Clean a PDF (`d` is its bytes). Answers `{clean:true}` or `{clean:false, bytes, images}`.
+ *  @param {Uint8Array} d the PDF
+ *  @param {number} maxInflated the most a compressed (gzip) image may inflate to
+ *  @returns {Promise<Cleaned>}
+ *  @throws {CleanRefusal} R3's refusals for a PDF */
 export async function cleanPdf(d, maxInflated) {
   const doc = await openPdf(d);
   if (!doc) throw refusal("DOCUMENT_UNREADABLE", localize("doc-clean.pdf.the_pdf_cannot_be_opened", "the PDF cannot be opened"));
@@ -50,6 +55,7 @@ export async function cleanPdf(d, maxInflated) {
 
   const ctx = context(table);
   const out = new Map(); // old number -> {value} or {dict, bytes}
+  /** @type {ImageCounts} builds the copy's ImageCounts */
   const images = { stripped: 0, unchanged: 0 };
   let removed = Boolean(read.trailer.Info || read.trailer.ID);
   const queue = [root.n];
