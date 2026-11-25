@@ -14,11 +14,29 @@ import { word } from "../setup-words/index.mjs";
 const at = (fn, region) => `src/translations/index.mjs ${fn} > ${region}`;
 /* A row's `translation` is the word itself, never a copy. A placeholder the sentence names as an example (`{name}`, in
    TRANSLATION_TEXT_REFUSED's) is written back as itself, so the sentence reads as it always has. */
+/**
+ * @param {string} check
+ * @param {string} where
+ * @param {string} code
+ * @param {...string} names
+ * @returns {Readonly<TranslationCheckRow>}
+ */
 const row = (check, where, code, ...names) => Object.freeze({ check, where,
   translation: word(`refusal.${code}`, Object.fromEntries(names.map((n) => [n, `{${n}}`]))) });
 
+/**
+ * R13: one refusal row of this module.
+ * @typedef {Object} TranslationCheckRow
+ * @property {string} check its check number, `C-64.<n>` or `C-119.12`
+ * @property {string} where `src/translations/index.mjs <function> > <region>`
+ * @property {string} translation the word `refusal.<CODE>`, read by key
+ */
 /* R1–R10 (T37-30; N669; DEC-127 (2), (5), DEC-157, DEC-179; K2200, K2201, K2216; T48, N670): the group's translation of
    the interface. */
+/**
+ * R13: this module's refusal rows, code → row, each a frozen `TranslationCheckRow`.
+ * @bound frozen; no check number held twice; C-64.18 never used
+ */
 export const TRANSLATIONS_CHECKS = Object.freeze({
   TRANSLATION_DIRECTION_UNKNOWN: row("C-64.11", at("#draftRequest", "is-translation-draft"), "TRANSLATION_DIRECTION_UNKNOWN"),
   MACHINE_CANNOT_TRANSLATE: row("C-64.12", at("#translationActor", "is-translation-actor"), "MACHINE_CANNOT_TRANSLATE"),
