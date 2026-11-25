@@ -6,11 +6,18 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
+/** @import { DeclaredRow } from '../../../src/op-grades/declared.mjs' */
 
 /* ---- this module's own requirements ------------------------------------------------------------------------------- */
 const REQ_LINES = readFileSync(new URL("../../../../build/requirements/op-grades.md", import.meta.url), "utf8").split("\n");
 
-/** Requirement R<n> as written: its line and its sub-bullets, to the next requirement or heading. */
+/**
+ * Requirement R<n> as written: its line and its sub-bullets, to the next requirement or heading.
+ * @param {number | string} n
+ * @returns {string}
+ * @throws {Error} when the requirements hold no R<n>
+ * @bound n: a requirement's number, as a number or its digits
+ */
 export const reqText = (n) => {
   const from = REQ_LINES.findIndex((line) => line.startsWith(`- **R${n}**`));
   if (from < 0) throw new Error(`op-grades requirements: no R${n}`);
@@ -19,7 +26,14 @@ export const reqText = (n) => {
   return REQ_LINES.slice(from, to).join("\n");
 };
 
-/** The text between the first `from` and the next `to` (the end of the text when `to` is absent), `from` excluded. */
+/**
+ * The text between the first `from` and the next `to` (the end of the text when `to` is absent), `from` excluded.
+ * @param {string} text
+ * @param {string} from
+ * @param {string} [to]
+ * @returns {string}
+ * @throws {Error} when `text` holds no `from`
+ */
 export const between = (text, from, to) => {
   const a = text.indexOf(from);
   if (a < 0) throw new Error(`no "${from}" in the requirement`);
@@ -39,51 +53,74 @@ const outsideParens = (text) => {
 };
 
 /** The ops a requirement text names in backticks outside parentheses (lower-case identifiers; codes and arms are other
-    shapes), in order. */
+    shapes), in order.
+    @param {string} text
+    @returns {string[]} */
 export const ticked = (text) => [...outsideParens(text).matchAll(/`([a-z][a-z0-9]*)`/g)].map((m) => m[1]);
 
-/** Every op a text names in backticks, parentheses included. */
+/** Every op a text names in backticks, parentheses included.
+    @param {string} text
+    @returns {string[]} */
 export const tickedAll = (text) => [...text.matchAll(/`([a-z][a-z0-9]*)`/g)].map((m) => m[1]);
 
-/** The codes a requirement text names in backticks (UPPER_CASE), in order. */
+/** The codes a requirement text names in backticks (UPPER_CASE), in order.
+    @param {string} text
+    @returns {string[]} */
 export const tickedCodes = (text) => [...text.matchAll(/`([A-Z][A-Z0-9_]+)`/g)].map((m) => m[1]);
 
 /** The ops a requirement states as plain words (R1's first sentences: "reversible actionlaws, cite, ..., and (N364) x"):
-    outside parentheses, each comma-, semicolon- or "and"-separated item that is a single lower-case word. */
+    outside parentheses, each comma-, semicolon- or "and"-separated item that is a single lower-case word.
+    @param {string} text
+    @returns {string[]} */
 export const worded = (text) => outsideParens(text).split(/[,;.]|\band\b/).map((item) => item.trim())
   .filter((item) => /^[a-z][a-z0-9]*$/.test(item));
 
 /** The refusal codes named, in backticks, on the lines of the requirements that say they join `JUSTIFICATION_REFUSALS`
-    (`own` are this module's exports, which are no codes). */
+    (`own` are this module's exports, which are no codes).
+    @param {object} own
+    @returns {string[]} */
 export const joinedCodes = (own) => [...new Set(REQ_LINES.filter((line) => line.includes("JUSTIFICATION_REFUSALS"))
   .flatMap(tickedCodes)
   .filter((c) => !Object.hasOwn(own, c) && !c.startsWith("MACHINE_CANNOT_") && c !== "ACTS" && !c.endsWith("_PATH")))];
 
 /** R1's exclusions as a rule over a code, not a list of codes: a refusal that asks an object, an identifier, a choice, a
-    form or a member (or is a machine's), and never the member's own account. */
+    form or a member (or is a machine's), and never the member's own account.
+    @param {string} code
+    @returns {boolean} */
 export const asksNotTheAccount = (code) => /^(NO_(TARGET|IDS?|KIND|CITATION|BODY|TITLE|CANDIDATE|COUNSEL)|NO_SUCH_|NOT_(A_|AN_)|MACHINE_CANNOT_|ALREADY_|KNOCK_EMPTY|BAD_)|_(NO_LABEL|NO_STATEMENT|TOO_LONG|NOT_FOUND|NOT_IN_PLACE|NOT_OPEN|NOT_PAUSED|LINKED|MISMATCH|INVALID|UNCHANGED|TEXT_REFUSED|NAME_REFUSED|STEP_REFUSED|SCOPE_REFUSED|WHY_REFUSED|ENTRY_INVALID|KIND_UNKNOWN|SIGNATURE_REFUSED|ACT_REFUSED|VALUE_REFUSED)$/.test(code);
 
 /* ---- this module's own tables ------------------------------------------------------------------------------------- */
-/** The ops of a NON_ACTS table whose reason is a read's ("read: …"), in table order. */
+/** The ops of a NON_ACTS table whose reason is a read's ("read: …"), in table order.
+    @param {Object<string, string>} table
+    @returns {string[]} */
 export const readRows = (table) => Object.keys(table).filter((op) => table[op].startsWith("read: "));
 
 /** The sentence an owner declared for `op` as `localize("<module>.declared.<op>", ...)`, read from the word table
  *  (`setup-words`, which this module uses) by its id, never copied here (P7, K3810). The id is composed, not typed: the
- *  words check judges a literal key against the design's list, and these ids are code-held until the design takes them. */
+ *  words check judges a literal key against the design's list, and these ids are code-held until the design takes them.
+ *  @param {string} module
+ *  @param {string} op
+ *  @returns {string}
+ *  @throws {Error} code UNKNOWN_WORD when the list lacks the id */
 export const declaredSentence = (module, op) => word(`${module}.declared.${op}`);
 
 /** The sentence an owner declared for `op` as its design key `act.<op>.does` (K4168: the owner's declaration is the truth, so
- *  a hand row holds this sentence and the test reads it from the word table, never from a copy). The id is composed. */
+ *  a hand row holds this sentence and the test reads it from the word table, never from a copy). The id is composed.
+ *  @param {string} op
+ *  @returns {string | null} */
 export const doesSentence = (op) => (hasWord(`act.${op}.does`) ? word(`act.${op}.does`) : null);
 
 /* ---- the owners' declarations (R49, R50) ------------------------------------------------------------------------- */
 /** Every module's `DECLARED_OPS`, found from `build/modules.json` with no module listed by hand, as `{ops, owners}` (an op's
  *  row, and the module that declares it); a module declaring an op twice is `duplicates`. This is the same search as
  *  test-support's `declaredOpsOf` (R16), kept here because this module uses nothing but `setup-words` (P4): only a test reads
- *  other modules' files, by path, and only to hand their rows to `registerDeclaredOps`. */
+ *  other modules' files, by path, and only to hand their rows to `registerDeclaredOps`.
+ *  @param {string} root the repository's folder
+ *  @returns {Promise<{ops: Object<string, DeclaredRow>, owners: Object<string, string>, duplicates: Array<{op: string, owners: string[]}>}>} */
 export async function collectDeclaredOps(root) {
   const { modules } = JSON.parse(readFileSync(join(root, "build", "modules.json"), "utf8"));
-  const ops = {}, owners = {}, who = {};
+  const ops = /** @type {Object<string, DeclaredRow>} builds each op's row */ ({}),
+    owners = /** @type {Object<string, string>} builds each op's owner */ ({}), who = {};
   const filesOf = (path) => {
     const abs = join(root, path);
     if (!statSync(abs).isDirectory()) return [abs];
@@ -102,7 +139,9 @@ export async function collectDeclaredOps(root) {
 /* ---- the registered instance (R42, R46; B27) --------------------------------------------------------------------------- */
 let registeredN = 0;
 /** A fresh instance of this module with every owner's `DECLARED_OPS` registered (R49, R50), so the rungless acts are the acts
- *  no owner grades either: a grade an owner declares is read from the registered tables, never typed here. */
+ *  no owner grades either: a grade an owner declares is read from the registered tables, never typed here.
+ *  @returns {Promise<typeof import('../../../src/op-grades/index.mjs')>}
+ *  @throws {Error} when an op is declared twice */
 export async function registeredOpGrades() {
   const { ops, owners, duplicates } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
   if (duplicates.length) throw new Error(`an op declared twice: ${JSON.stringify(duplicates)}`);
@@ -113,14 +152,17 @@ export async function registeredOpGrades() {
   return m;
 }
 
-/** op-declarations' alias table (R17, B27), read by path as the other modules' rows are: a test reads it, the module imports nothing. */
+/** op-declarations' alias table (R17, B27), read by path as the other modules' rows are: a test reads it, the module imports nothing.
+ *  @returns {Promise<Object<string, string>>} */
 export async function declaredAliases() {
   const path = join(new URL("../../../../", import.meta.url).pathname, "bio-plane", "src", "op-declarations", "index.mjs");
   return (await import(pathToFileURL(path).href)).OP_ALIASES;
 }
 
 /** The ops of a NON_ACTS table that their owner declares a read (`weight: "read"`), in table order, each with its owner. A read
- *  its owner words without the "read: " lead holds the owner's sentence (K4168), so it is found by the declaration, not the lead. */
+ *  its owner words without the "read: " lead holds the owner's sentence (K4168), so it is found by the declaration, not the lead.
+ *  @param {Object<string, string>} table
+ *  @returns {Promise<Array<{op: string, owner: string, sentence: string}>>} */
 export async function ownerReads(table) {
   const { ops, owners } = await collectDeclaredOps(new URL("../../../../", import.meta.url).pathname);
   return Object.keys(table).filter((op) => ops[op]?.weight === "read").map((op) => ({ op, owner: owners[op], sentence: ops[op].description }));
