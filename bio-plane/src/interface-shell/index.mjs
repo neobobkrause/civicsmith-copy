@@ -134,8 +134,32 @@ export const PUBLIC_ADDRESSES = Object.freeze({ doorbell: "doorbell", tour: "tou
    frame's `join`. The tab title of each is `page.title.public`, and none draws a weight mark, in the frame or the page. */
 export const PUBLIC_PAGES = Object.freeze(["front", "tour", "reset", "forgot", "doorbell", "published", "docket-public", "review-outside", "join"]);
 
+/**
+ * An act of a screen or the guide: `op` the op it sends, or a browser act's name (R100); `reasonField` the field that carries the
+ * member's own words for a Reasoned act (R87); `rereads` the reads asked again once it is answered (R113); `successCodes` the codes
+ * it counts as its success (R112); and the members the page's script reads (`send`, `done` and the rest).
+ * @typedef {{op: string, reasonField?: string, rereads?: ReadonlyArray<string> | "all", successCodes?: ReadonlyArray<string>} & Record<string, unknown>} ScreenAct
+ */
+/** A screen's or the guide's words: each a key, or its own `[key, en]` row. @typedef {ReadonlyArray<string | ReadonlyArray<unknown>>} Words */
+/**
+ * A screen (R21): `id` its registry id (`wizard-scripts`' `SCREEN_REGISTRY`), `render` and `reads` its functions, `acts` its acts,
+ * `words` its words, `ABSENT_CODES` the codes it draws as "not there", and the members the page's script reads.
+ * @typedef {{id: string, render: Function, reads?: Function, acts: ReadonlyArray<ScreenAct>, words?: Words, ABSENT_CODES?: ReadonlyArray<string>} & Record<string, unknown>} Screen
+ */
+/**
+ * The dock's wizard guide (`screens-wizards`' `GUIDE`, R31): `render`, its `acts`, the `ops` it reads by `cs.call`, its `words`, and
+ * the functions `marks`, `start`, `entered`, `pressed`, `ring` and `control`.
+ * @typedef {{render: Function, acts: ReadonlyArray<ScreenAct>, ops?: ReadonlyArray<string>, words?: Words} & Record<string, unknown>} Guide
+ */
+/**
+ * @typedef {Object} PageOptions
+ * @property {Guide | null} [guide] the dock's wizard guide (R31)
+ * @property {string} [version] the release version the script's address carries (R1)
+ * @property {boolean} [testInstance] true serves the test band in the page (R58)
+ */
 /* R100 (T51; `op-declarations` R76): the acts done in the page alone, read from `op-declarations`' table (`{screen, census,
    registry}` per act; the table is that module's and none is kept here). An absent table is the empty one. */
+/** @returns {Record<string, {screen: string}>} each browser act by name, with the screen it is done on */
 export function browserActs() {
   const t = DECLARATIONS.BROWSER_ACTS;
   return t && typeof t === "object" ? t : {};
@@ -180,6 +204,11 @@ export const SHELL_OPS = Object.freeze(["whoami", "interfacewords", "groupidenti
 
 /* R21: the screen contract. Throws, naming the screen, for a screen whose id the registry does not hold, an act naming
    an op `OPS` does not hold, or an op that is neither the registry's for that screen nor a named re-point. */
+/**
+ * @param {Screen[]} screens
+ * @returns {true}
+ * @throws {Error} naming the screen, for one that breaks the contract
+ */
 export function checkScreens(screens) {
   if (!Array.isArray(screens)) throw new Error("interface-shell: screens is not a list");
   const seen = new Set();
@@ -222,6 +251,11 @@ export function checkScreens(screens) {
    entered, pressed, ring, control}` (R51: `control` handles the guide's own `data-guide` controls): no registry id;
    `ops` (the ops it reads by `cs.call`) and its acts' ops each an op `OPS` holds, carried with their gate rows as a
    screen's. Throws, naming the guide, for one that is not. */
+/**
+ * @param {Guide | null | undefined} guide
+ * @returns {true}
+ * @throws {Error} naming the guide, for one that breaks its contract
+ */
 export function checkGuide(guide) {
   if (guide === undefined || guide === null) return true;
   if (typeof guide !== "object" || typeof guide.render !== "function") throw new Error("interface-shell: the guide has no render");
@@ -234,6 +268,10 @@ export function checkGuide(guide) {
 }
 
 /* The page's script holds the screens as JavaScript source: each function by its own text, every other value as JSON. */
+/**
+ * @param {unknown} v
+ * @returns {string} JavaScript source that makes `v`
+ */
 export function toSource(v) {
   if (typeof v === "function") {
     const src = v.toString();
@@ -249,6 +287,10 @@ export function toSource(v) {
 
 /* R5, R70: every word the page may draw, `[key, en]`: `WORD_ROWS` (the shell's own keys are its rows) and each screen's
    own rows. A screen's own row under a key `WORD_ROWS` holds wins (DEC-149's conformed form, R5). */
+/**
+ * @param {Screen[]} screens
+ * @returns {Array<[unknown, unknown]>} each word as `[key, en]`
+ */
 export function wordsOf(screens) {
   const m = new Map(WORD_ROWS.map((r) => [r[0], r[1]]));
   for (const s of screens) for (const x of s.words || []) if (Array.isArray(x)) m.set(x[0], x[1]);
@@ -371,6 +413,10 @@ export const HOOK_CLASSES = Object.freeze({
 
 /* R56: every class a served stylesheet defines: `civicsmith.css` (whose own elements' classes count with it), `shell.css`
    and the shell's `STYLE`. Comments and addresses are no selector. */
+/**
+ * @param {...(string | null | undefined)} sheets stylesheet texts
+ * @returns {Set<string>} every class they define
+ */
 export function stylesheetClasses(...sheets) {
   const out = new Set();
   for (const css of sheets) {
@@ -385,6 +431,10 @@ const definedClasses = () => DEFINED || (DEFINED = stylesheetClasses(ASSET_FILES
 /* R56: the classes written as literals in `class` attributes (and the `class` set by `setAttribute` or `classList.add`) in
    a source text. A literal cut by a quote of the program's own string, `${` or a backslash keeps its last word unless
    that word ends open (`cs-tag-` + a kind), so a class made at run time is never taken for a written one. */
+/**
+ * @param {unknown} src a source text
+ * @returns {Set<string>} the classes it writes as literals
+ */
 export function classLiterals(src) {
   const out = new Set();
   const take = (body, closed) => {
@@ -402,6 +452,13 @@ export function classLiterals(src) {
 }
 /* R56: throws, naming the screen (or the guide, or the shell) and the class, for a class no served stylesheet defines
    that is neither a hook class nor one of `civicsmith.css`' own. */
+/**
+ * @param {Screen[]} screens
+ * @param {Guide | null | undefined} guide
+ * @param {string} program the shell's own program text
+ * @returns {true}
+ * @throws {Error} naming who draws the class and the class
+ */
 export function checkClasses(screens, guide, program) {
   const defined = definedClasses();
   const check = (who, src) => {
@@ -425,6 +482,7 @@ const WORK = { scripts: 0, hashes: 0, checks: 0 };
 /* R126: how much work the page route has done in this isolate, as counts (the Worker's clock is frozen during synchronous work, so a time
    measured in it reads as nothing, R-CLOCK): the scripts composed, the hashes taken of one and the screen and guide checks run. For a release
    served by one isolate each is 1, however many pages and script fetches it has answered; control-plane's `page` log line states them. */
+/** @returns {{scripts: number, hashes: number, checks: number}} */
 export function pageWork() { return { ...WORK }; }
 let SCRIPT = null;
 function release(screens, options) {
@@ -440,18 +498,37 @@ function release(screens, options) {
   const source = `(${program})(${toSource(D)}, ${toSource(screens)}, window, ${toSource(guide)}).start();`;
   return (SCRIPT = { screens, guide, source, hash: null });
 }
+/**
+ * R1, R2: the shell's script for `screens` and `options.guide`.
+ * @param {Screen[]} [screens]
+ * @param {PageOptions} [options]
+ * @returns {string}
+ * @throws {Error} for screens or a guide that break their contract (R21, R31, R56)
+ */
 export function interfaceScript(screens = [], options = {}) {
   return release(screens, options).source;
 }
 const base64 = (hex) => btoa(hex.match(/../g).map((h) => String.fromCharCode(parseInt(h, 16))).join(""));
 /* R1: the hash the page policy names in place of a nonce (`answer-envelope` R6): `sha256-<base64>` of the script's UTF-8 bytes */
+/**
+ * @param {Screen[]} [screens]
+ * @param {PageOptions} [options]
+ * @returns {string} `sha256-<base64>`
+ * @throws {Error} for screens or a guide that break their contract (R21, R31, R56)
+ */
 export function interfaceScriptHash(screens = [], options = {}) {
   const made = release(screens, options);
   if (made.hash === null) { WORK.hashes++; made.hash = "sha256-" + base64(sha256HexSync(made.source)); }
   return made.hash;
 }
 /* R1: the address that carries the release version (`control-plane` R75 serves the script there, `immutable`) */
+/** @type {(version: unknown) => string} */
 export const scriptPath = (version) => "/app/shell-" + encodeURIComponent(String(version == null || version === "" ? "0" : version)) + ".js";
+/**
+ * R1: the release version a script address carries.
+ * @param {unknown} pathname
+ * @returns {string | null} the version, or null for an address that is not the script's
+ */
 export function versionOfScriptPath(pathname) {
   const m = /^\/app\/shell-([^/]+)\.js$/.exec(String(pathname || ""));
   if (!m) return null;
@@ -466,6 +543,10 @@ export function versionOfScriptPath(pathname) {
  * stands outside the words. R28: `screens` are the nine screen modules' `SCREENS`; R31: `options.guide` is
  * `screens-wizards`' `GUIDE`, the dock's wizard guide; R58: `options.testInstance` true serves the test band in the page
  * itself, above the frame, from first paint (`control-plane` R95). R56: throws for a class no served stylesheet defines.
+ * @param {Screen[]} [screens]
+ * @param {PageOptions} [options]
+ * @returns {string} the page's HTML
+ * @throws {Error} for screens or a guide that break their contract (R21, R31, R56)
  */
 export function interfacePage(screens = [], options = {}) {
   const hash = interfaceScriptHash(screens, options);
