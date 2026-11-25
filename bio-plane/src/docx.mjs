@@ -1524,9 +1524,7 @@ export function detectByContentType(format, plainType, twins, contentType) {
  * ------------------------------------------------------------------ */
 
 /** The DOCX entry: detect, parts, structure and text (R1, R2, R4, R7-R12, R31-R35, R38, R44). Never throws (R21).
- *  Its shape is DocxEntry above; the kind stated is `any` because the module's tests carry the entry in untyped
- *  tuples beside bytes and the other entries, which a stated kind would refuse.
- *  @type {any}
+ *  @type {DocxEntry}
  *  @bound text parts whose declared uncompressed bytes pass ooxml's streamed text ceiling are not read: text() states
  *  the guard's marker, `final: true`; a comments part over the 20 MiB text bound is stated unread */
 export const docxEntry = {
