@@ -7,6 +7,8 @@ import assert from "node:assert/strict";
 import { localize } from "../../../src/setup-words/index.mjs";
 import { fresh, bundle, bucket, withEntry, i2, doc, sha, homesOver } from "./fixture.mjs";
 import { extractionOps } from "../../../src/extraction/index.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const pdfEntry = (text) => ({ format: "pdf",
   detect: (b) => (b && b.length >= 5 && String.fromCharCode(...b.subarray(0, 5)) === "%PDF-" ? { format: "pdf", confidence: "certain", signals: [] } : null),
@@ -216,7 +218,7 @@ async function pieces({ pieceUnits = [3, 3, 3], perUnit = 40, order = null } = {
   rows.set(d, row("INFO-1", bytes.length));
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "text" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   const all = pieceUnits.reduce((a, b) => a + b, 0), total = all * perUnit, asked = [];
   const starts = pieceUnits.map((_, i) => pieceUnits.slice(0, i).reduce((a, b) => a + b, 0));
   w.x.read = async (docm, opts) => {

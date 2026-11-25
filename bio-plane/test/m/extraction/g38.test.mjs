@@ -6,6 +6,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
 import { extractionOps, READING_PAGE_BYTES, READING_KEY_BYTES } from "../../../src/extraction/index.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const register = (rows) => homesOver(rows);
 const viaOp = (w, d, after = null) => extractionOps(w.x, new URL(`http://x/reading?sha256=${d}&viewer=class:admin${after === null ? "" : `&after=${after}`}`), null, {}).reading();
@@ -88,7 +90,7 @@ test("R93 R94 (G38): through the op: a 1 MB CSV, read by the real reader as the 
   rows.set(d, { bundleId: "INFO-1", path: "t.csv", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/csv", format: "csv", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   let a; do { a = await w.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {} }); } while (a.more);
   let answer = viaOp(w, d), all = [...answer.text_units], guard = 0;
   assert.ok(answerBytes(answer) < 2_000_000, `the answer is ${answerBytes(answer)} B`);
