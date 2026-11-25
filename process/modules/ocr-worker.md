@@ -53,7 +53,7 @@ engine_loaded, engine_unavailable?}`.
 - **R30** [met] (fix round 9, G132i; N13) **A page routed here is read though it shows text.** A page the plane sends to this member has been judged to need OCR (a folio on a scanned page, a stamp): the page renderer is asked with `allowTextPage: true`, so it is never refused `PAGE_HAS_TEXT_LAYER` (`pdf-pixels` R16), and the OCR text is returned for the plane to append to the text already held. Test: a scanned page carrying a printed folio is transcribed, not refused.
 
 **Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
-- **R32** [not yet met] `ocr-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `ocr-worker/scripts/build.mjs` whenever needed, and this module's tests that read them (`doctypes/test/capture-policies.mjs` among them) build them first the same way.
+- **R32** [met] `ocr-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `ocr-worker/scripts/build.mjs` whenever needed, and this module's tests that read them (`doctypes/test/capture-policies.mjs` among them) build them first the same way.
 
 ## Private
 

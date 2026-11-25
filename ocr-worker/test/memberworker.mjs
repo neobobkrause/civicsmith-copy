@@ -17,16 +17,48 @@
  * committed bundle imports, which is why `modulesRoot` is the member directory
  * and the parts sit under `assets/`.
  *
- * THE COMMITTED ARTIFACT IS WHAT BOOTS, never the source. That is the property
- * `newgroup` needs and the one FL-9's guard exists to keep true.
+ * THE BUILT ARTIFACT IS WHAT BOOTS, never the source. It is not committed (R32):
+ * the first boot in a process builds it into `dist/` with `scripts/build.mjs`,
+ * the member's own build, and every boot after reads that build. Builds run
+ * under a lock folder in `dist/`, so suites running side by side never read a
+ * bundle another one is half way through writing.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 export const MEMBER_DIR = fileURLToPath(new URL("..", import.meta.url));
 export const BUNDLE = fileURLToPath(new URL("../dist/ocr-worker.bundled.mjs", import.meta.url));
 export const WASM = fileURLToPath(new URL("../assets/tesseract-core.wasm", import.meta.url));
 export const MODEL = fileURLToPath(new URL("../assets/eng.traineddata", import.meta.url));
+const BUILD = fileURLToPath(new URL("../scripts/build.mjs", import.meta.url));
+const DIST = fileURLToPath(new URL("../dist/", import.meta.url));
+const LOCK = fileURLToPath(new URL("../dist/.build-lock", import.meta.url));
+let builtHere = false;
+
+/* Runs `read` over the built bundle's text while holding the build lock, building the member first
+   once in this process (R32). A lock left by a process that died is taken after five minutes. */
+export function withBuiltBundle(read = (text) => text) {
+  mkdirSync(DIST, { recursive: true });
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  for (const giveUp = Date.now() + 600_000; ;) {
+    try { mkdirSync(LOCK); break; } catch (e) {
+      if (e.code !== "EEXIST") throw e;
+      try { if (Date.now() - statSync(LOCK).mtimeMs > 300_000) rmSync(LOCK, { recursive: true, force: true }); } catch { /* gone already */ }
+      if (Date.now() > giveUp) throw new Error(`ocr-worker: the build lock ${LOCK} was held for ten minutes`);
+      Atomics.wait(pause, 0, 0, 200);
+    }
+  }
+  try {
+    if (!builtHere) {
+      execFileSync(process.execPath, [BUILD], { cwd: MEMBER_DIR, stdio: "pipe" });
+      builtHere = true;
+    }
+    return read(readFileSync(BUNDLE, "utf8"));
+  } finally {
+    rmSync(LOCK, { recursive: true, force: true });
+  }
+}
 
 /** The miniflare worker definition for this member. `extra` folds in bindings a
  *  caller wants (a confidence floor, a version string) without a second recipe. */
@@ -35,7 +67,7 @@ export function ocrWorkerDef({ name = "ocr-worker", bindings = {}, r2 = true } =
     name,
     modulesRoot: MEMBER_DIR,
     modules: [
-      { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
+      { type: "ESModule", path: BUNDLE, contents: withBuiltBundle() },
       { type: "CompiledWasm", path: WASM, contents: readFileSync(WASM) },
       { type: "Data", path: MODEL, contents: readFileSync(MODEL) },
     ],

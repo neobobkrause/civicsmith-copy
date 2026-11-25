@@ -31,6 +31,20 @@ import { generate } from "../../bio-plane/test/imggen.mjs";
 import { pixelRefusal, pageRefusal, renderedPage } from "./pdf-pixels-fixtures.mjs";
 import { cropImage } from "../src/imagecrop.mjs";
 import { makePdf, onePage, content, image, readPng, turn, hex, deflateSync, runner } from "./make-pdf.mjs";
+/** @import { PngRead } from "./make-pdf.mjs" */
+
+/* A PNG this module's renderer made always states its size and kind in its header (R24); read it so,
+   refusing one that does not, so a test reads every field as a number. */
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Required<PngRead>}
+ */
+const readRendered = (bytes) => {
+  const p = readPng(bytes);
+  const { width, height, bitDepth, colorType } = p;
+  if (width === undefined || height === undefined || bitDepth === undefined || colorType === undefined) throw new Error("the rendered PNG's header does not state its size and kind");
+  return { width, height, bitDepth, colorType, rowBytes: p.rowBytes, samples: p.samples };
+};
 
 const { Miniflare } = await (async () => {
   try { return await import("miniflare"); } catch { /* fall through */ }
@@ -61,7 +75,9 @@ const jpeg = (name) => new Uint8Array(Buffer.from(VARIANTS.find((v) => v.name ==
    pdf-reader's own services. */
 const CCITT = await (async () => {
   const doc = await openPdf(SCAN);
-  return doc.streamRawBytes(imagePlacementSource((await pdfPageImages(doc, 0)).images[0]).stream);
+  const raw = doc.streamRawBytes(imagePlacementSource((await pdfPageImages(doc, 0)).images[0]).stream);
+  if (!raw) throw new Error("the scan fixture's CCITT stream could not be read");
+  return raw;
 })();
 
 /* A page painting one image named /Im at the full page box. */
@@ -262,30 +278,36 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
      and an all-0 mask with /Decode [1 0] white (checked 2026-09-26, D-622). */
   const bits = Uint8Array.from([0b10110011, 0b01000000, 0b00001111, 0b11000000, 0b11111111, 0b00000000]);
   const pad = (u) => Uint8Array.from(u, (b, i) => (i % 2 ? b & 0b11000000 : b));
-  for (const [label, extra, want] of [
+  /** @type {Array<[string, string, Uint8Array]>} */
+  const bitCases = [
     ["1-bpc grey", "/ColorSpace /DeviceGray /BitsPerComponent 1", pad(bits)],
     ["1-bpc grey with the default /Decode [0 1]", "/ColorSpace /DeviceGray /BitsPerComponent 1 /Decode [0 1]", pad(bits)],
     ["an /ImageMask", "/ImageMask true", pad(bits)],
     ["an /ImageMask, FlateDecode", "/ImageMask true /Filter /FlateDecode", pad(bits)],
     ["an /ImageMask with the default /Decode [0 1]", "/ImageMask true /Decode [0 1]", pad(bits)],
-  ]) {
+  ];
+  for (const [label, extra, want] of bitCases) {
     const data = /FlateDecode/.test(extra) ? deflateSync(bits) : bits;
     const r = await render(imagePage(image(10, 3, extra, data), { w: 10, h: 3 }), 0);
+    /** @type {Partial<PngRead>} */
     const png = r.ok ? readPng(r.bytes) : {};
     t(`R24 ${label}: a 1-bit PNG of exactly those samples`, [r.route, r.upright, png.bitDepth, png.width, png.height, png.samples && hex(png.samples)],
       ["raw-samples-1bit", true, 1, 10, 3, hex(want)]);
     t(`R26 ${label}: pixels_sha256 over the packed samples`, r.pixels_sha256, hex(want));
   }
   const rgb = Uint8Array.from({ length: 3 * 2 * 3 }, (_, i) => (i * 29 + 3) & 0xff);
-  for (const [label, extra, samples, comps, route, colorType] of [
+  /** @type {Array<[string, string, Uint8Array, number, string, number]>} */
+  const sampleCases = [
     ["8-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 8", G, 1, "raw-samples-grey8", 0],
     ["8-bit grey, FlateDecode", "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", G, 1, "raw-samples-grey8", 0],
     ["8-bit RGB", "/ColorSpace /DeviceRGB /BitsPerComponent 8", rgb, 3, "raw-samples-rgb8", 2],
     ["8-bit RGB, FlateDecode", "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode", rgb, 3, "raw-samples-rgb8", 2],
-  ]) {
+  ];
+  for (const [label, extra, samples, comps, route, colorType] of sampleCases) {
     for (const deg of [0, 90, 180, 270]) {
       const data = /FlateDecode/.test(extra) ? deflateSync(samples) : samples;
       const r = await render(imagePage(image(3, 2, extra, data), { w: 3, h: 2, pageExtra: `/Rotate ${deg}` }), 0);
+      /** @type {Partial<PngRead>} */
       const png = r.ok ? readPng(r.bytes) : {};
       const tr = turn((x, y) => samples.subarray((y * 3 + x) * comps, (y * 3 + x + 1) * comps), 3, 2, deg);
       const want = new Uint8Array(tr.W * tr.H * comps);
@@ -296,14 +318,16 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
       t(`R24 R26 ${label}, /Rotate ${deg}: pixels_sha256 over the samples`, r.pixels_sha256, hex(want));
     }
   }
-  for (const [label, extra, data, reason] of [
+  /** @type {Array<[string, string, Uint8Array, string]>} */
+  const refusedCases = [
     ["CMYK", "/ColorSpace /DeviceCMYK /BitsPerComponent 8", new Uint8Array(24), "UNSUPPORTED_SAMPLES"],
     ["16-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 16", new Uint8Array(12), "UNSUPPORTED_SAMPLES"],
     ["4-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 4", new Uint8Array(4), "UNSUPPORTED_SAMPLES"],
     ["an indirect colour space", "/ColorSpace [/Indexed /DeviceRGB 1 <000000ffffff>] /BitsPerComponent 8", new Uint8Array(6), "UNSUPPORTED_SAMPLES"],
     ["data short of the height", "/ColorSpace /DeviceGray /BitsPerComponent 8", new Uint8Array(5), "TRUNCATED_IMAGE_DATA"],
     ["a corrupt Flate stream", "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", new Uint8Array([1, 2, 3, 4, 5, 6]), "IMAGE_UNREADABLE"],
-  ]) {
+  ];
+  for (const [label, extra, data, reason] of refusedCases) {
     const r = await render(imagePage(image(3, 2, extra, data), { w: 3, h: 2 }), 0);
     t(`R24 ${label}: ${reason}`, [r.ok, r.reason, r.bytes], [false, reason, undefined]);
   }
@@ -377,6 +401,7 @@ console.log("\n--- R22, R40: DCT, every variant through the renderer against Pil
   };
   for (const v of ok) {
     const r = await render(variantPage(v, v.mode === "L" ? "/DeviceGray" : "/DeviceRGB"), 0, { decodeDct: true });
+    /** @type {Partial<PngRead>} */
     const png = r.ok ? readPng(r.bytes) : {};
     t(`R22 R40 ${v.name}: decoded-dct, Pillow's pixels`, [r.ok ? r.route : r.reason, r.width, r.height, r.upright, r.pixels_sha256, png.colorType],
       ["decoded-dct", v.width, v.height, true, v.pillow_sha256, v.mode === "L" ? 0 : 2]);
@@ -504,6 +529,7 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
   for (const v of PV.variants.filter((x) => x.expect.length && !x.name.startsWith("photo"))) {
     for (const e of v.expect) {
       const r = await picture(pic(v.name), 0, { maxEdge: e.max_edge, grey: e.grey });
+      /** @type {Partial<PngRead>} */
       const png = r.ok ? readPng(r.bytes) : {};
       t(`R42 R43 ${v.name}, maxEdge ${e.max_edge}${e.grey ? ", grey" : ""}: Pillow's pixels`,
         [r.ok ? r.route : r.reason, r.orientation, r.reduced_by, r.width, r.height, r.pixels_sha256, png.colorType, png.samples && hex(png.samples)],
@@ -719,7 +745,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
     return want.length ? hit / want.length : 0;
   };
   const readByEngine = async (png) => {
-    const p = readPng(png), rgba = new Uint8ClampedArray(p.width * p.height * 4);
+    const p = readRendered(png), rgba = new Uint8ClampedArray(p.width * p.height * 4);
     for (let i = 0; i < p.width * p.height; i++) rgba.fill(p.samples[i], i * 4, i * 4 + 3), rgba[i * 4 + 3] = 255;
     const engine = await createOCREngine({ wasmBinary: engineWasm });
     try {
@@ -732,7 +758,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   /* The tilt of the lines in grey samples, in degrees (positive when they rise to the right): the angle, over a
      tenth-degree sweep, at which the ink's rows are most unevenly filled. */
   const tiltOf = (png) => {
-    const p = readPng(png), pts = [];
+    const p = readRendered(png), pts = [];
     for (let y = 0; y < p.height; y++) for (let x = (y % 3); x < p.width; x += 3) if (p.samples[y * p.width + x] < 100) pts.push([x, y]);
     let best = 0, bestScore = -1;
     for (let a = -6; a <= 6.0001; a += 0.1) {
@@ -745,7 +771,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   };
   /* The text lines of grey samples: the runs of rows holding ink, and the median one's height in pixels. */
   const lineHeight = (png) => {
-    const p = readPng(png), runs = [];
+    const p = readRendered(png), runs = [];
     let run = 0;
     for (let y = 0; y <= p.height; y++) {
       let ink = 0;
@@ -757,7 +783,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   };
   /* The light: the mean of the brighter half of the pixels in each third of the width, and the darkest half percent. */
   const light = (png) => {
-    const p = readPng(png), mean = [];
+    const p = readRendered(png), mean = [];
     for (let i = 0; i < 3; i++) {
       const v = [];
       for (let y = 0; y < p.height; y++) for (let x = Math.floor((i * p.width) / 3); x < Math.floor(((i + 1) * p.width) / 3); x++) v.push(p.samples[y * p.width + x]);
@@ -1057,7 +1083,7 @@ console.log("\n--- R48: a turned page or picture is turned upright on request --
   /* a picture: after the EXIF orientation, a PNG too */
   const PV = JSON.parse(Buffer.from(F("fixtures/picture-variants.json")).toString("utf8"));
   const pic = (name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
-  const samplesOf = (r) => { const p = readPng(r.bytes); return { w: p.width, h: p.height, s: p.samples, c: p.colorType === 2 ? 3 : 1 }; };
+  const samplesOf = (r) => { const p = readRendered(r.bytes); return { w: p.width, h: p.height, s: p.samples, c: p.colorType === 2 ? 3 : 1 }; };
   const check = async (name, comps) => {
     const base = await renderPictureToPixels(pic(name), 0, { maxEdge: 4096, grey: true });
     const b = samplesOf(base);
