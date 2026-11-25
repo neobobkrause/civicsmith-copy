@@ -103,6 +103,7 @@ test("R15: the world's door makes every store request by innerRequest and by no 
   w.send = (r) => { sent.push(r); return send(r); };
   const door = doorOf(w);
   let compared = 0;
+  /** @type {[string, any, any][]} */
   const cases = [["search", { q: "x", viewer: "admin" }, null], ["list", {}, null], ["memberlist", { administer: "1" }, null], ["stats", {}, null],
     ["projectparticipants", { project: "P" }, null], ["resolve", {}, { resolvedBy: "x", entity: "E" }], ["thread", {}, { threadedBy: "x" }],
     ["biasadopt", { author: "x" }, {}], ["leadlist", { identity: "x" }, null], ["queuemute", { member: "x" }, {}], ["promote", { project: "P" },

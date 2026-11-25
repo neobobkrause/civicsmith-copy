@@ -30,6 +30,11 @@ export const WORLD_AI_SECRET = "world-account-seal-secret-3b9d71c4e0a5f628";
  *  `admitted(token, op?)` (admission's caller for a token) and `recipes.hold|project|trail|profiles` (R19), each of real acts;
  *  `store`, `ctx`, `sql`, `tick(ms)` are the world's own. The world binds `CAPTURES` (store-assembly's) and no `PUBLISHED`: `selftest` reads that as the owner does, one bucket bound without the other, and a test that unbinds
  *  `CAPTURES` leaves neither bound (SCREENS-SETTINGS #20 J37 (1); STORE-REQUEST #6 B15 (4)); `recipes.published` binds the published store when it publishes. */
+/**
+ * @param {{env?: Object<string, any>, ai?: boolean, deliver?: any, releaseKeys?: any, renderer?: any, follow?: boolean} & Record<string, any>} [o]
+ *  the rest (`claimed`, `now`, `instanceName`) as store-assembly's `storeWorld` takes them
+ * @returns {Promise<any>} the world, with `door`, `signIn`, `admitted`, `plane`, `boot`, `route`, `session` and `recipes` added
+ */
 export async function storeWorld({ env = {}, ai = false, deliver = null, releaseKeys = null, renderer = false, follow = false, ...opts } = {}) {
   const name = WORLD_GROUP;
   const holder = {};
@@ -114,8 +119,10 @@ export async function storeWorld({ env = {}, ai = false, deliver = null, release
   });
 }
 
-/** R19: an older installation (no producing team recorded: `groupidentity` answers `group: null`): `storeWorld` with a first boot that bound no `INSTANCE_NAME`. */
+/** R19: an older installation (no producing team recorded: `groupidentity` answers `group: null`): `storeWorld` with a first boot that bound no `INSTANCE_NAME`.
+ *  @type {(opts?: Object<string, any>) => Promise<any>} */
 export const olderInstallation = (opts = {}) => olderOf(storeWorld, opts);
 
-/** R19: a founder with no handle: an unclaimed world claimed with a password and no handle; `unnamed` is the founder signed in. */
+/** R19: a founder with no handle: an unclaimed world claimed with a password and no handle; `unnamed` is the founder signed in.
+ *  @type {(opts?: Object<string, any>) => Promise<any>} */
 export const unnamedFounderWorld = (opts = {}) => unnamedFounder(storeWorld, opts);

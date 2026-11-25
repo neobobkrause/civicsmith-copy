@@ -8,8 +8,9 @@ import { tokenRefusedSeen } from "../signin-door/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { machineFences, renderPack } from "../skillpack.mjs";
 
-/** (control-plane R57, R90) The two drafts the object is asked for with no owner before them. */
+/** (control-plane R57, R90) The two drafts the object is asked for with no owner before them: `textcheck`. */
 export const TEXT_CHECK = "textcheck";
+/** (control-plane R57, R90) The second: `readtranslate`. */
 export const READ_TRANSLATE = "readtranslate";
 /** What the plane's draft answer carries for its own use and never for the member. */
 const DRAFT_INTERNAL = Object.freeze(["ok", "grant", "suggestions", "read", "usage", "calls"]);
@@ -29,9 +30,18 @@ async function packOf(res) {
   return { fences, pack, ...(pack ? {} : { pack_absent: absent }) };
 }
 
-/** R26 (was `control-plane` R41): `op=agentpack`. `gatedOp` is the hook the plane composes (asked untargeted, with no body, for `affordances`
- *  and every stamp the door holds: `stamps` = `{env, cls, viaSession, sessMember, sessViewer, sessIdentity, sessRights, sessCaps, aiCred,
- *  aiViewer, storeName, stub, grantMember}`); a refusal or a silence is answered as that handler gives it. */
+/**
+ * R26 (was `control-plane` R41): `op=agentpack`. `gatedOp` is the hook the plane composes (asked untargeted, with no body, for `affordances`
+ * and every stamp the door holds: `stamps` = `{env, cls, viaSession, sessMember, sessViewer, sessIdentity, sessRights, sessCaps, aiCred,
+ * aiViewer, storeName, stub, grantMember}`); a refusal or a silence is answered as that handler gives it.
+ * @param {Object} a
+ * @param {string|URL} a.url the request's address
+ * @param {any} [a.headers] the request's headers, passed to the asked `affordances`
+ * @param {((asked: any) => Promise<Response|undefined>)|null|undefined} a.gatedOp the plane's hook; absent or answering nothing is a silence
+ * @param {{storeName?: string, cls?: string|null} & Record<string, any>} a.stamps
+ * @returns {Promise<Response>} `{ok: true, fences, pack | pack_absent, store, tokenClass}` at 200; the hook's own answer when it is not
+ *  `ok: true` with a result; `STORE_DID_NOT_ANSWER` (502) when it answers nothing
+ */
 export async function agentPackOp({ url, headers, gatedOp, stamps }) {
   const { storeName, cls } = stamps;
   const u = new URL(url);
@@ -44,8 +54,21 @@ export async function agentPackOp({ url, headers, gatedOp, stamps }) {
   return json({ ok: true, ...served, store: storeName, tokenClass: cls }, 200);
 }
 
-/** R27 (was `control-plane` R77, R80, R93): `op=airundispatch`. `who` is the viewer a session's, else the actor; `at` the door's instant;
- *  `trace` and `memberRef` the door's. A store without `dispatchMemberRun` answers `AGENT_WORKER_UNBOUND`. */
+/**
+ * R27 (was `control-plane` R77, R80, R93): `op=airundispatch`. `who` is the viewer a session's, else the actor; `at` the door's instant;
+ * `trace` and `memberRef` the door's. A store without `dispatchMemberRun` answers `AGENT_WORKER_UNBOUND`.
+ * @param {Object} a
+ * @param {any} a.stub the store's object; its `dispatchMemberRun` is asked
+ * @param {any} a.reqBody the request's parsed body; its `run`, a string, names the run
+ * @param {string|null} [a.who]
+ * @param {string} a.at ISO instant
+ * @param {any} [a.trace]
+ * @param {any} [a.memberRef]
+ * @param {string} [a.storeName]
+ * @param {string|null} [a.cls]
+ * @returns {Promise<Response>} the run at 200 in the envelope; a code the object answers as `{ok: false, reason}` at 403
+ *  (`AI_RUN_NOT_PRINCIPAL`, `MEMBER_RUN_MODE_NOT_ADMITTED`) or 400; `AGENT_WORKER_UNBOUND` at 503; `STORE_DID_NOT_ANSWER` at 502
+ */
 export async function airunDispatchOp({ stub, reqBody, who, at, trace, memberRef, storeName, cls }) {
   const op = "airundispatch";
   if (typeof stub.dispatchMemberRun !== "function") return unboundRun(storeName, cls);
@@ -65,10 +88,28 @@ const untestedOf = (drafted) => {
   return u && typeof u === "object" && !Array.isArray(u) ? { untested: u } : {};
 };
 
-/** R28 (was `control-plane` R57, R90, R93; `draft.mjs` `checkedDraft`'s two arms): `op=textcheck` and `op=readtranslate`, a draft with no owner
- *  before it. Only a member's session asks (`viaSession`); the object's `draft` is asked with the body's `text`, or `subject` and `language`
- *  alone. `session` is the presented session token, `by` the stamp `tokenRefusedSeen` names, `viewer` the session's viewer (the day the
- *  draft is counted to), `store(path, init)` the store's answered call (`doAnswer` over the object). */
+/**
+ * R28 (was `control-plane` R57, R90, R93; `draft.mjs` `checkedDraft`'s two arms): `op=textcheck` and `op=readtranslate`, a draft with no owner
+ * before it. Only a member's session asks (`viaSession`); the object's `draft` is asked with the body's `text`, or `subject` and `language`
+ * alone. `session` is the presented session token, `by` the stamp `tokenRefusedSeen` names, `viewer` the session's viewer (the day the
+ * draft is counted to), `store(path, init)` the store's answered call (`doAnswer` over the object).
+ * @param {Object} a
+ * @param {string} a.op `textcheck` or `readtranslate`
+ * @param {any} a.stub the store's object; its `draft` and `fetch` are asked
+ * @param {boolean} [a.viaSession]
+ * @param {string|null} [a.sessMember]
+ * @param {string|null} [a.session]
+ * @param {any} a.reqBody
+ * @param {any} [a.trace]
+ * @param {any} [a.memberRef]
+ * @param {string|null} [a.by]
+ * @param {string|null} [a.viewer]
+ * @param {any} a.store
+ * @param {string} [a.storeName]
+ * @param {string|null} [a.cls]
+ * @returns {Promise<Response>} the checked draft (`{draft, label, untested?}`) or the translation at 200 in the envelope; the draft's
+ *  refusal with its own status (502 below 400); `AGENT_WORKER_UNBOUND` at 503; `STORE_DID_NOT_ANSWER` at 502
+ */
 export async function draftCheckOp({ op, stub, viaSession, sessMember, session, reqBody, trace, memberRef, by, viewer, store, storeName, cls }) {
   if (!viaSession || typeof stub.draft !== "function") return unboundRun(storeName, cls);
   const asked = reqBody && typeof reqBody === "object" && !Array.isArray(reqBody) ? reqBody : {};
