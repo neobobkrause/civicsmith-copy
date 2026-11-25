@@ -1,6 +1,46 @@
 /* The `capture` screen (Add; R1–R3): three tabs, each its own, at `/app/capture/address`, `/app/capture/file` and
  * `/app/capture/saw` (the subject names the tab; none is the address tab). Every function is self-contained (interface-shell
- * R21 (1)): it refers only to its parameters, the kit `cs` and the language's own globals. */
+ * R21 (1)): it refers only to its parameters, the kit `cs` and the language's own globals.
+ * R72: a document's name and its promotion are `capture`'s (`titleOf`, `promoteDocument`, capture R115, R116), carried in `parts` as
+ * they are: each is self-contained in the same way, and this module keeps no copy of either. */
+import { titleOf, promoteDocument } from "../capture/filing.mjs";
+
+/**
+ * The part of the page's kit (`interface-shell`'s `cs`) that this module's exported drawings read.
+ * @typedef {Object} WordKit
+ * @property {(key: string, fills?: any) => string} w a word by key, filled; the key itself when the table holds none
+ * @property {(iso: string) => string} date a whole-second UTC instant written as a date
+ */
+/**
+ * A held row as `heldcaptures` answers it, as far as `heldTitle` reads it.
+ * @typedef {Object} HeldRow
+ * @property {string} [title] the row's own name
+ * @property {{address?: string, retrieved?: string}} [source] the address it was captured from and when
+ */
+/**
+ * What a check of a watched address answered (`monitor`, `monitoring` R10).
+ * @typedef {Object} CheckAnswer
+ * @property {string} [status] `modified`, `removed` or `unchanged`; anything else is not known
+ * @property {string} [note] the plane's note when the status names none
+ */
+/**
+ * A capture's supporting files not kept, sorted by why (R67). A kind with no reason is absent.
+ * @typedef {Object} SupportingWhy
+ * @property {{n: number, cap: number}} [cap] the cap was reached: how many, and the cap
+ * @property {{n: number}} [toolarge] too large, or the budget was spent
+ * @property {{n: number}} [unavailable] any other reason
+ * @bound n: whole number, 1 or more
+ */
+/**
+ * A screen as the shell takes it (`interface-shell` R21): its id, its reads, its drawing, the self-contained functions it carries
+ * in `parts`, and its acts.
+ * @typedef {Object} CaptureScreen
+ * @property {string} id
+ * @property {(view: any) => Object<string, any>} reads
+ * @property {(cs: any, view: any) => string} render
+ * @property {Readonly<Object<string, Function>>} parts
+ * @property {readonly Readonly<Object<string, any>>[]} acts
+ */
 
 /* R1–R3: nothing is read before an act, but on the address tab (R29, R31, R38): the member's open captures (`opencaptures`,
  * for "Unfinished"), the held and vouched documents (the title of the one that holds a capture's primary, and of the copy an
@@ -83,6 +123,12 @@ function notMemberWords(cs, f) {
 /* G75 (fix round 7): a held row's name where it stored none: the chain a delivery names a document by (R54), from what the row gives: its own
  * title; else its host and the day it was captured (`document.untitled.web`, the day of its source's `retrieved`); with neither, `screen.held.untitled`.
  * Plain text, at most 200 characters; never "Untitled capture" for a row whose host and day are known. */
+/**
+ * @param {WordKit} cs
+ * @param {HeldRow} r
+ * @returns {string}
+ * @bound plain text, at most 200 characters
+ */
 function heldTitle(cs, r) {
   const plain = (t) => String(t).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
   const own = r && typeof r.title === "string" ? r.title.replace(/\s+/g, " ").trim() : "";
@@ -93,32 +139,6 @@ function heldTitle(cs, r) {
   const when = Date.parse(String(s.retrieved || ""));
   if (!host || !Number.isFinite(when)) return plain(cs.w("screen.held.untitled")).slice(0, 200);
   return plain(cs.w("document.untitled.web", { site: host, date: { html: cs.date(new Date(when).toISOString().split(".")[0] + "Z") } })).slice(0, 200);
-}
-
-/* R54 (C25; amends R33, R50): one rule for a document's name, the same for a web page, a PDF and an upload: its own title (the
- * reading's `title`, else what the answer's document states), else its file name (an upload's own, or the name its source states,
- * `capture.file_name`; never the file part of an address), else its host and the day captured (`document.untitled.web`, never the
- * host alone). With no host either, `screen.held.untitled`. Plain text, at most 200 characters. */
-function titleOf(cs, o) {
-  const plain = (t) => String(t).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
-  const clean = (t) => (typeof t === "string" ? t.replace(/\s+/g, " ").trim() : "");
-  const doc = o.doc && typeof o.doc === "object" ? o.doc : {};
-  const own = clean(o.reading && o.reading.title) || clean(doc.title);
-  if (own) return own.slice(0, 200);
-  /* acquisition answers `file_name` as the last segment of an address when the source states no name: that is the file part of the address, which never names a document (R54).
-     The source states a name when the response it kept carries a `content-disposition` (`capture.transport.http_headers`); otherwise a name equal to the address's last segment is the address's */
-  let lastSegment = "";
-  try { lastSegment = decodeURIComponent(new URL(String(o.address || "")).pathname.split("/").pop() || ""); } catch (e) { lastSegment = ""; }
-  const sent = doc.capture && doc.capture.transport && Array.isArray(doc.capture.transport.http_headers) ? doc.capture.transport.http_headers : [];
-  const disposed = sent.some((h) => Array.isArray(h) && String(h[0]).toLowerCase() === "content-disposition");
-  const stated = clean(doc.capture && doc.capture.file_name);
-  const file = clean(o.fileName) || (stated && (disposed || stated !== lastSegment) ? stated : "") || clean(doc.name_stated && doc.name_stated.text);
-  if (file) return file.slice(0, 200);
-  let host = "";
-  try { host = new URL(String(o.address || "")).hostname; } catch (e) { host = ""; }
-  if (!host) return plain(cs.w("screen.held.untitled")).slice(0, 200);
-  const day = new Date(cs.now ? cs.now() : Date.now()).toISOString().split(".")[0] + "Z";
-  return plain(cs.w("document.untitled.web", { site: host, date: { html: cs.date(day) } })).slice(0, 200);
 }
 
 /* R13, DEC-342: a refusal in words, beside the act or the address that met it: `refusal.<CODE>` when the table holds the code,
@@ -133,83 +153,6 @@ function refusalHtml(cs, r) {
   if (code && cs.w("refusal." + code) !== "refusal." + code) return cs.w("refusal." + code, fills);
   if (typeof a.translation === "string" && a.translation) return cs.esc(a.translation);
   return code ? `${cs.w("refusal.uncatalogued")} <code>${cs.esc(code)}</code>` : "";
-}
-
-/* R1, R21, R23 (N747): a document the screen promotes as an information bundle at `collected`, the one composition both
- * the address path (R1) and the upload path (R21) use, under an id `allocid` mints: `bundle.md` at `information@2`
- * (naming the project when the capture has one, R22), `data/provenance.json` and its register, and, so that `release` is not
- * refused `ENTRY_REQUIREMENTS` (R23), `data/dataset.json` with the `content_hash` that canonical dataset hashes to
- * (capture grammar C-2.7), beside the capture's own files under `snapshots/`. Answers `{bundleId}`, or `{refused}` with the
- * answer, which `refusalHtml` words (`{}` when it gave none). */
-async function promoteDocument(cs, o) {
-  const doc = o.doc || {}, title = String(o.title || "").slice(0, 200), locator = String(o.locator || ""), project = o.project || "";
-  const why = (r) => (r && typeof r === "object" ? r : {});
-  const now = new Date(cs.now ? cs.now() : Date.now()).toISOString().split(".")[0] + "Z";
-  const minted = await cs.call("allocid", { query: { prefix: "INFO", year: now.slice(0, 4) } });
-  const mid = minted && (minted.result || minted);
-  if (!mid || mid.ok === false || typeof mid.id !== "string") return { refused: why(mid) };
-  /* R28: the cut comes first, then a trailing hyphen the cut left is trimmed, so the slug begins and ends with a letter or digit */
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40).replace(/-$/, "");
-  const id = slug ? `${mid.id}-${slug}` : mid.id;
-  const sha = doc.capture && doc.capture.sha256;
-  /* UTF-8 length, computed from the code points (REC-178: a file's bytes is its UTF-8 length, never text.length). */
-  const len = (s) => { let n = 0; for (const ch of String(s)) { const c = ch.codePointAt(0); n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4; } return n; };
-  /* record-grammar's canonical JSON: keys sorted, no space */
-  const canon = (v) => Array.isArray(v) ? "[" + v.map(canon).join(",") + "]"
-    : v !== null && typeof v === "object" ? "{" + Object.keys(v).filter((k) => v[k] !== undefined).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}"
-    : JSON.stringify(v);
-  const bytes = doc.capture && Number.isFinite(doc.capture.bytes) ? doc.capture.bytes : null;
-  const dataset = canon({ documents: [{ bytes, locator, sha256: sha || null }] });
-  const text = ["---", "id: " + id, "object_type: information", "schema: information@2", "title: " + JSON.stringify(title),
-    "current_state: collected", "prior_state: null", "created: " + now, "last_updated: " + now,
-    "produced_by:", "  mode: assisted", "  capability_tier: session", "references: []", "state_history: []",
-    "annotations_open: 0", "reeval_pending:", "  flag: false", "  since: null", "  source: null", "visuals: []",
-    "criticality: supporting", "source_status: unchanged", "content_hash: sha256:" + await cs.digest(dataset),
-    ...(project ? ["project: " + project] : []),
-    "source:", "  locator: " + JSON.stringify(locator), "  authority: member-entered", "  retrieved: " + now,
-    "monitoring:", "  enabled: false", "  frequency: none", "---", "",
-    "## Summary", "", title, "", "## Provenance Notes", "", "## Session Log", "", "## Review Notes", ""].join("\n");
-  /* G43 (K4649, K4651): promotion refuses a file over its `INLINE_MAX` (1,048,576 B, `promotion`; no edge to it from here, and this module is served to the
-     browser, so the bound is local, with room for the rest of the file; control-plane's suite fails if promotion's moves). A door-read document embeds
-     its reading and units whole, so over the bound the file is composed again without them: the document is promoted unread and followed as a deferred
-     large file is. `prov.length` first (a code unit is never fewer than one byte), then the UTF-8 length. */
-  const PROV_EMBED_MAX = 1048576 - 65536; /* inside the function: the page is served function by function */
-  /* G126h (fix round 9; R61; K4835): the door's units are chunked and never cut, and a sheet is not read at the door past its gate (the door gives the first
-     look and the job row reads the rest), so the size of the file is the only test of whether a reading that arrives fits */
-  let prov = JSON.stringify({ documents: [doc] }, null, 1), readingDropped = false;
-  if (prov.length > PROV_EMBED_MAX || len(prov) > PROV_EMBED_MAX) {
-    const { reading: _r, text_units: _u, text_units_over_bound: _o, text_units_skipped: _k, ...unread } = doc;
-    prov = JSON.stringify({ documents: [unread] }, null, 1);
-    readingDropped = true;
-  }
-  const parts = Array.isArray(doc.parts) && doc.parts.length ? doc.parts : null;
-  const atts = Array.isArray(doc.attestations) ? doc.attestations : [];
-  const files = [{ path: "bundle.md", text, bytes: len(text), sha256: await cs.digest(text) },
-                 { path: "data/provenance.json", text: prov, bytes: len(prov), sha256: await cs.digest(prov) },
-                 { path: "data/dataset.json", text: dataset, bytes: len(dataset), sha256: await cs.digest(dataset) },
-                 ...(parts ? parts.map((p) => ({ path: p.file, blobSha: p.sha256, sha256: p.sha256, bytes: p.bytes }))
-                   : [{ path: doc.file, blobSha: sha, sha256: sha, bytes: doc.capture && doc.capture.bytes }]),
-                 ...atts.map((t) => ({ path: t.file, blobSha: t.sha256, sha256: t.sha256, bytes: t.bytes }))];
-  /* R21 (G6, fix round 6; G127a, G127c, fix round 9; K4833; section 2c item 4): the register is WHOLES. A multipart document is one row, the capture's own
-     digest with its total bytes and its path, carrying `parts: [{sha256, path, bytes}]` in order; a part's digest is never a row of its own, so two
-     documents that share a part are two rows, each with the part among its `parts`, and provenance answers `CAPTURE_HELD_BY_ANOTHER_BUNDLE` for a whole
-     only. A document of one part (the part is the whole) is one row with no `parts`. */
-  const split = parts && parts.length > 1 ? parts : parts && parts.length === 1 && parts[0].sha256 !== sha ? parts : null;
-  const register = [...(split ? [{ sha256: sha, path: doc.file, encoding: "binary", bytes: doc.capture && doc.capture.bytes,
-                                   parts: split.map((p) => ({ sha256: p.sha256, path: p.file, bytes: p.bytes })) }]
-                      : [{ sha256: sha, path: doc.file, encoding: doc.capture && doc.capture.encoding, bytes: doc.capture && doc.capture.bytes }]),
-                    ...atts.map((t) => ({ sha256: t.sha256, path: t.file, encoding: "binary", bytes: t.bytes }))];
-  const hex = "0123456789abcdef";
-  let tail = "";
-  for (let i = 0; i < 8; i++) tail += hex[Math.floor(Math.random() * 16)];
-  const done = await cs.call("promote", { body: {
-    bundleId: id, base: null, snapKey: now.replace(/[-:]/g, "") + "_" + tail,
-    meta: { object_type: "information", title, current_state: "collected", created: now, last_updated: now },
-    files, register } });
-  const p = done && (done.result || done);
-  if (!p || p.ok === false) return { refused: why(p) };
-  /* R57: the door reads a document stored with no reading after `promote` (control-plane R123); its answer says when that reading follows */
-  return { bundleId: p.bundleId || id, readingPending: p.reading_pending === true, ...(readingDropped ? { readingDropped: true } : {}) };
 }
 
 /* G111 (C35): one project's questions, read once (kept in page memory, `qs:<id>`); a read already made or under way is not made again. */
@@ -987,6 +930,12 @@ function doneMonitor(view, answer, cs) {
  * it names none, its `note` (`monitoring` R10): four different sentences, never "Checked just now" for every outcome. The one
  * drawing of it: `screens-inquiry` imports `checkOutcome` for the document page and draws nothing of its own. Answers the
  * sentence's HTML. */
+/**
+ * @param {WordKit} cs
+ * @param {CheckAnswer} answer
+ * @param {string} title the document's title, as data
+ * @returns {string} the sentence's HTML
+ */
 function checkOutcome(cs, answer, title) {
   const a = answer && typeof answer === "object" ? answer : {};
   const st = a.status === "modified" || a.status === "removed" || a.status === "unchanged" ? a.status : "unknown";
@@ -996,6 +945,10 @@ function checkOutcome(cs, answer, title) {
 /* R67 (fix round 9; K4969): the one classification of a capture's `supporting.reasons`, for every screen that states why supporting files were not kept
    (the Add screen's line, screens-inquiry's Document page): by code, `CAP_REACHED` with a `limit` the cap, `TOO_LARGE` and `BUDGET_EXHAUSTED` too large, any other
    code unavailable; a reason's `count` summed (else 1); a non-object skipped. A kind with no reason is absent. */
+/**
+ * @param {any} reasons a capture's `supporting.reasons`: a list of `{reason or code, count?, limit?}`; anything else is no reason
+ * @returns {SupportingWhy}
+ */
 function supportingReasons(reasons) {
   const why = {};
   for (const r of Array.isArray(reasons) ? reasons : []) {
@@ -1400,6 +1353,8 @@ const CRED_REFUSALS = Object.freeze({
 });
 
 
+/** The Add screen (R1–R3).
+ * @type {Readonly<CaptureScreen>} */
 export const CAPTURE_SCREEN = Object.freeze({
   id: "capture",
   reads: captureReads,
