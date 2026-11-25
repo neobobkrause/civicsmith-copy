@@ -3,7 +3,7 @@
    the one reader R10's own count uses. On the test profile. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, officeCalendarProfile } from "./fixture.mjs";
+import { world, V, officeCalendarProfile, present } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import { factPath } from "../../../src/local-facts/index.mjs";
 import { combine } from "../../../../jurisdictions/index.mjs";
@@ -11,7 +11,7 @@ import { word } from "../../../src/setup-words/index.mjs";
 
 const M = V("alice"), BOB = V("bob");
 const A = "ACTN-2026-0001-a";
-const TEST = combine(["test-port-ellery"]).view;
+const TEST = present(combine(["test-port-ellery"]).view, "the test profile's view");
 const entryOf = (year, offices = null) =>
   TEST.holidays.find((h) => h.year === year && JSON.stringify(h.offices ?? null) === JSON.stringify(offices));
 const pathOf = (h) => factPath({ profile: h.profile, fact: "holidays", year: h.year, ...(h.offices ? { offices: h.offices } : {}) });
@@ -144,7 +144,7 @@ test("R12 factReader answers null when localFacts has no factStatus, and the cou
 
 test("R12 one reader: the same count through factReader and through the count's own path (clockPropose) answers alike, at each status", () => {
   const { w, act, propose } = setUp();
-  const VIEW = combine([officeCalendarProfile()]).view;
+  const VIEW = present(combine([officeCalendarProfile()]).view, "the office-calendar view");
   const rule = VIEW.deadlines.find((d) => d.rule === "records_answer" && d.applies_to === "records_request");
   const via = () => clocks.computeDeadline(rule, w.fm(A), VIEW, { factOf: clocks.factReader(w.localFacts, M) });
   const same = () => {
