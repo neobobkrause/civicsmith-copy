@@ -691,7 +691,9 @@ export class Connections {
           continue;
         }
       }
-      if (!bad) { reaching.push({ ...entry, why: localize("connections.index.read_inside_reference", "the determining reference was read at {ref}, inside {ref_2}", { ref: String((side === "a" ? view.determining_pair.a_position : view.determining_pair.b_position).ref), ref_2: String(row.ref) }) });
+      /* A reaching pair was read inside, so its position on this end is held. */
+      const pairPosition = side === "a" ? view.determining_pair.a_position : view.determining_pair.b_position;
+      if (!bad) { reaching.push({ ...entry, why: localize("connections.index.read_inside_reference", "the determining reference was read at {ref}, inside {ref_2}", { ref: String(pairPosition?.ref), ref_2: String(row.ref) }) });
                   continue; }
       (bad.code === "CONNECTION_PAIR_OUTSIDE_EXTENT" ? outside : undetermined)
         .push({ ...entry, code: bad.code, check: bad.check, translation: bad.translation, why: bad.detail });
@@ -999,12 +1001,12 @@ export class Connections {
     /* C-6.1's links_to arm: the entry is the SOURCE's on its face (`asserted_by: source`), carries the address the
        source wrote and a contemporaneity verdict, `undetermined` its resting state and stated rather than omitted. */
     const quoted = (v) => cut(String(v || "").replace(/["\\\n\r]/g, ""), 400);
-    let text = spliceReferences(md.text, add.map((e) => ({
+    const spliced = spliceReferences(md.text, add.map((e) => ({
       rel: "links_to", target: e.to, status: "confirmed", asserted_by: "source", address: quoted(e.address),
       verdict: LINK_VERDICTS.includes(e.verdict) ? e.verdict : "undetermined", note: quoted(e.address) })));
-    if (!text) return { ok: false, reason: "UNSPLICEABLE_REFERENCES",
-                        detail: localize("connections.index.references_block_shape", "the source document's references block is not in a shape this act can extend in place") };
-    text = setScalar(text, "last_updated", `"${when}"`);
+    if (!spliced) return { ok: false, reason: "UNSPLICEABLE_REFERENCES",
+                           detail: localize("connections.index.references_block_shape", "the source document's references block is not in a shape this act can extend in place") };
+    let text = setScalar(spliced, "last_updated", `"${when}"`);
     const by = typeof identity === "string" && identity.trim() ? identity.trim() : "system";
     const entry = localize("connections.index.session_when_projected_length_link", "### Session {when} | Projected {length} link{v1} | {by}\nTrigger: op=linkproject\nChanges: links_to edges added to {map}, each the source's own link, resolved to a held document; asserted by the source, never by the team.\n", { when: String(when), length: String(add.length), v1: String(add.length === 1 ? "" : "s"), by: String(by), map: String(add.map((e) => e.to).join(", ")) });
     const logAt = text.indexOf("## Session Log");
