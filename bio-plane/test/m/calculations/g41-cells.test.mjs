@@ -197,7 +197,8 @@ async function csvWorld() {
   assert.equal(reg.ok, true, JSON.stringify(reg).slice(0, 200));
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/csv", format: "csv", fromText: true });
-  x.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  const held = JSON.stringify({ documents: [document] });
+  x.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: held, sha256: sha(new TextEncoder().encode(held)) } : null);
   let a; do { a = await x.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {} }); } while (a.more);
   assert.equal(a.ok, true, `the 1 MB CSV is read: ${JSON.stringify(a).slice(0, 200)}`);
   /* the calculations world: its document is the same bytes (same capture digest), its extraction the real one */
