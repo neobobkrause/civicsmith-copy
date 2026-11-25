@@ -8,6 +8,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { LAND_BATCH_UNITS } from "../../../src/extraction/index.mjs";
 import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const register = (rows) => homesOver(rows);
 async function home(bytes) {
@@ -18,7 +20,7 @@ async function home(bytes) {
   rows.set(d, { bundleId: "INFO-1", path: "f", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "undetermined", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, d };
 }
 const lines = (n, f) => Array.from({ length: n }, (_, i) => f(i));

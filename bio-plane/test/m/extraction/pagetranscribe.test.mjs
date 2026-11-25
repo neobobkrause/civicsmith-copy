@@ -85,13 +85,14 @@ test("R72: registerTranscriber takes one well-formed transcriber, once, whoever 
     const r = x.registerTranscriber(module, bad);
     assert.deepEqual(r, listenerRefusal(null, module, typeof bad?.transcription === "function" && typeof bad?.deployable === "function"
       && typeof bad?.keptAway === "function" ? bad.transcription : null));
-    assert.equal(r.reason, "LISTENER_MALFORMED");
+    assert.equal("reason" in r ? r.reason : undefined, "LISTENER_MALFORMED");
   }
   assert.deepEqual(x.registerTranscriber("plane", t), { ok: true, module: "plane" });
   const again = x.registerTranscriber("other", transcriber().t);
-  assert.deepEqual([again.ok, again.reason, again.module], [false, "LISTENER_DECLARED", "plane"]);
+  assert.deepEqual([again.ok, "reason" in again ? again.reason : undefined, again.module], [false, "LISTENER_DECLARED", "plane"]);
   assert.deepEqual(again, listenerRefusal({ module: "plane", t }, "other", transcriber().t.transcription));
-  assert.equal(x.registerTranscriber("plane", t).reason, "LISTENER_DECLARED", "a second by the same module too");
+  const third = x.registerTranscriber("plane", t);
+  assert.equal("reason" in third ? third.reason : undefined, "LISTENER_DECLARED", "a second by the same module too");
 });
 
 test("R71 R47 R72: the refusals in order, each by its row, before any byte is read, any account is read or any page rendered; each request fails two at once, so the earlier one is the one answered", async () => {
