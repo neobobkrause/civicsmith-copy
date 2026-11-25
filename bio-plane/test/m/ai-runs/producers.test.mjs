@@ -158,7 +158,7 @@ test("R38: the three tables are declared to record-core's purge — the whole-st
   assert.equal(w.surface(Q2, { run: "RS" }).ok, true);
   assert.deepEqual(w.record.declarePurge("someone-else", ["ai_runs"]).reason ?? "refused", "TABLE_DECLARED");
   const one = w.purge({ bundleId: Q1 });
-  assert.equal(one.removed ? one.removed.inquiry_run_surfacings : one.tables.inquiry_run_surfacings, 1);
+  assert.equal(one.removed.inquiry_run_surfacings, 1);
   assert.deepEqual(w.rows(`SELECT bundle_id FROM inquiry_run_surfacings`), [{ bundle_id: Q2 }]);
   assert.equal(w.count("ai_runs"), 3);
   w.purge({});
