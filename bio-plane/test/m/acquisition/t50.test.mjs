@@ -414,6 +414,7 @@ test("R30 (T50, N1064): no place name any jurisdiction profile states (read from
   const generic = /^(?:city|town|county|village|state)\s+of\s+|\s+county$|\s*\(test\)$/gi;
   for (const l of jurisdictions.list()) {
     const p = jurisdictions.get(l.id);
+    assert.ok(p, `jurisdictions.list() names ${l.id}, so get() holds it`);
     for (const c of [...l.covers, ...((p.local_names || []).filter((n) => n.kind === "place").map((n) => n.name))]) {
       places.add(c.toLowerCase());
       const stem = c.replace(generic, "").trim().toLowerCase();
