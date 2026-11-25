@@ -36,7 +36,10 @@ function withContentHash(md, hash) {
  *  (default 2). Answers `{ok: true, files, contentHash, dataset}`, `files` in `promote`'s shape (`bundle.md`,
  *  `data/provenance.json`, `data/dataset.json`, then `snapshots`), or a refusal `{ok: false, reason, code, detail}`:
  *  `NO_DOCUMENT_DIGEST` for a document with no SHA-256 digest, `NO_CHAIN` for one with no chain, `NO_SNAPSHOT` for none
- *  under `snapshots/`, `NO_FRONT_MATTER` for an `md` that has none. */
+ *  under `snapshots/`, `NO_FRONT_MATTER` for an `md` that has none.
+ * @param {{ md?: *, doc?: *, locator?: *, snapshots?: *, indent?: number }} [args]
+ * @returns {{ ok: boolean, files?: Array<*>, contentHash?: string, dataset?: string, reason?: string, code?: string, detail?: string }}
+ */
 export function releasableBundle({ md, doc, locator, snapshots, indent = 2 } = {}) {
   try {
     const d = doc && typeof doc === "object" && !Array.isArray(doc) ? doc : {};
