@@ -19,7 +19,7 @@ test("R67 resolve without ref reads a reference-less document's prose: each foll
   const co = company(e, "Harbor Freight Co");
   const absent = person(e, "Nobody Named");
   prose(w, "INFO-1", sha("memo"), ["Memo to file. Councilmember MARÍA ALVAREZ met with", "the staff of harbor  freight co. about the lease."]);
-  const r = e.resolve({ captureSha: sha("memo"), resolvedBy: MACHINE });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("memo"), resolvedBy: MACHINE }));
   assert.deepEqual([r.ok, r.resolved_count, r.references], [true, 0, 0]);
   assert.deepEqual(r.unresolved, [
     { kind: "name", key: "Maria Alvarez", label: "Maria Alvarez", entityId: pat, grade: "C", needs_confirmation: true },
@@ -32,7 +32,7 @@ test("R67 resolve without ref reads a reference-less document's prose: each foll
     assert.deepEqual([t.ok, t.grade, t.established, t.resolved_by], [true, "D", false, "member:ann"]);
   }
   assert.equal(w.rows(`SELECT COUNT(*) AS n FROM resolutions WHERE grade='D'`)[0].n, 2);
-  assert.deepEqual(e.resolve({ captureSha: sha("memo") }).unresolved, [], "an entity already held on the capture is not offered again");
+  assert.deepEqual(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("memo") })).unresolved, [], "an entity already held on the capture is not offered again");
 });
 
 test("R67 a standing alias is read; a name that is part of another word, or a withdrawn alias, is not found", () => {
@@ -41,10 +41,10 @@ test("R67 a standing alias is read; a name that is part of another word, or a wi
   const gone = person(e, "Bo Chen", ["Bobby Chen"]);
   e.withdrawAlias({ entityId: gone, alias: "Bobby Chen", reason: "wrong", withdrawnBy: MACHINE });
   prose(w, "INFO-1", sha("p1"), ["Planned Annie Lee visit; Bobby Chen unmentioned; Dann Leesburg appears; Bo Chens too"]);
-  const r = e.resolve({ captureSha: sha("p1") });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("p1") }));
   assert.deepEqual(r.unresolved.map((u) => [u.entityId, u.key]), [[ann, "Annie Lee"]]);
   prose(w, "INFO-2", sha("p2"), ["Ann Leesburg and Dann Lee"]);
-  assert.deepEqual(e.resolve({ captureSha: sha("p2") }).unresolved, []);
+  assert.deepEqual(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("p2") })).unresolved, []);
 });
 
 test("R67 control: a document with a recognised reference resolves as R9 states and its prose is not read; a single-reference resolve reads no prose", () => {
@@ -55,7 +55,7 @@ test("R67 control: a document with a recognised reference resolves as R9 states 
   w.x.writeReading({ bundleId: "INFO-1", captureSha: sha("ref"), composed: true,
     reading: { content_type: "text/plain", reader_version: 1, found: true, at: "2026-09-27T00:00:00Z", entities: [{ kind: "ORD", key: "26-1", label: "x" }] },
     textUnits: [{ extent: { kind: "pdf-page", page: 0 }, ref: "p. 1", text: "Maria Alvarez signed ORD 26-1" }] });
-  const r = e.resolve({ captureSha: sha("ref") });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("ref") }));
   assert.deepEqual(r.resolved.map((m) => [m.entity_id, m.grade]), [[ord, "A"]]);
   assert.ok(!r.unresolved.some((u) => u.kind === "name"), "prose is not read when a reference resolved");
   prose(w, "INFO-2", sha("one"), ["Maria Alvarez"]);
