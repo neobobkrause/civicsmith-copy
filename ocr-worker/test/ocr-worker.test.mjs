@@ -1426,6 +1426,7 @@ console.log("\n--- B1 · R11, R12, R13, R19: the committed bundle boots, and the
   /* The core's exact bytes cannot be read back from a compiled module; they are pinned before deploy by the
      bundle manifest, which hashes both upload parts (bundler R4, R6). Q1 in the job record. */
   const member = discoverMembers().find((m) => m.name === "ocr-worker");
+  if (!member) throw new Error("bundler's discovery does not list ocr-worker");
   const vs = verifyStatic(member);
   t("R19 the committed manifest's input and asset hashes match the tree (a swapped engine is caught as stale)",
     vs.findings, []);
