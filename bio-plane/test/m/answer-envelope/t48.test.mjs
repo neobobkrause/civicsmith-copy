@@ -36,7 +36,7 @@ test("R17 (T48; N996, K3101; amends R7, R14): CHECK_FAMILY_FILES reads src/ai-ac
   }
   /* DISCLOSURE_DUE's C-29.40 is among them (R14) */
   assert.equal(M.CHECK_FAMILIES.AI_ACCOUNT_CHECKS.DISCLOSURE_DUE.check, "C-29.40");
-  assert.equal(M.dec49Row("DISCLOSURE_DUE").check, "C-29.40");
+  assert.equal(M.dec49Row("DISCLOSURE_DUE")?.check, "C-29.40");
   /* control: credentials' own rows (C-29.1–.5 among them) still decorate from its family */
   const own = families(CR).flatMap(([name, f]) => Object.entries(f).map(([code, row]) => [name, code, row]));
   assert.ok(own.some(([, , row]) => /^C-29\.[1-5]$/.test(row.check)));
