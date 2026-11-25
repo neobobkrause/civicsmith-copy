@@ -32,7 +32,9 @@ test("R18 instrumentKey composes an ELI-shaped key only from profile data (the v
   assert.equal(instrumentKey().state, "undetermined");
   /* no place in code: the only segments are the profiles' */
   assert.ok(!/oakland|alameda/i.test(JSON.stringify(instrumentKey({ cite: "PEBL § 12", view }))));
-  assert.equal(profileOf("test-port-ellery").instrument_key.jurisdiction, "xx-port-ellery");
+  const portEllery = profileOf("test-port-ellery");
+  assert.ok(portEllery, "the test profile is held");
+  assert.equal(portEllery.instrument_key.jurisdiction, "xx-port-ellery");
 });
 
 test("R18 a declaration composes and keeps its instrument key; a declared instrument must be that key (STANDARD_FIELD_INVALID otherwise); a portion is {path, content_id} with its extent among the standard's text (STANDARD_PORTION_NOT_IN_TEXT otherwise); standards sharing a key are its versions; R1's refusals come first", () => {

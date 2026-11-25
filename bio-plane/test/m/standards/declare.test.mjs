@@ -153,7 +153,9 @@ test("R4 the answer and every later read carry who declared it and when, by this
   assert.deepEqual({ ...after, superseded_by: null, texts: null }, { ...before, superseded_by: null, texts: null });
   /* no service edits a standard (R11 refuses the raw revision) */
   const head = w.record.head(r.id);
-  const text = w.record.readFile(r.id, "bundle.md").text.replace("PEBL § 12", "PEBL § 13");
+  const file = w.record.readFile(r.id, "bundle.md");
+  assert.ok(file && "text" in file, "the bundle document is held inline");
+  const text = file.text.replace("PEBL § 12", "PEBL § 13");
   assert.equal(w.promotion.promote({ bundleId: r.id, base: head.bundleSha, snapKey: "edit", author: V("bob"),
                                      files: [{ path: "bundle.md", text }], meta: {} }).reason, "STANDARD_WRITTEN_ELSEWHERE");
 });

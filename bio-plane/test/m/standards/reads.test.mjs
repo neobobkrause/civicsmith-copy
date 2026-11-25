@@ -223,7 +223,9 @@ test("R29 the move to layer 5 changes no answer: with a promotion step, a projec
   /* standards' own check runs in its place: a raw promotion of a standard is refused by it, so the checks of the
      modules after it in the order never run, and those before it do */
   ran.length = 0;
-  const doc = w.record.readFile(r.id, "bundle.md").text;
+  const file = w.record.readFile(r.id, "bundle.md");
+  assert.ok(file && "text" in file, "the bundle document is held inline");
+  const doc = file.text;
   const raw = w.promotion.promote({ bundleId: "STD-2026-0099-ordinance", base: null, snapKey: "raw", author: V("bob"),
                                     files: [{ path: "bundle.md", text: doc.replaceAll(r.id, "STD-2026-0099-ordinance") }], meta: {} });
   assert.equal(raw.reason, "STANDARD_WRITTEN_ELSEWHERE");

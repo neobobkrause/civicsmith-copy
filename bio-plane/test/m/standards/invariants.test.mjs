@@ -19,7 +19,9 @@ test("R11 nothing a machine writes is a standard: R1 and R10 by a member are its
   assert.equal(w.s.standardAdopt({ proposal: p.proposal.id, reason: REASON, author: MACHINE }).reason, "MACHINE_CANNOT_DECLARE_STANDARD");
   assert.equal(w.count("standards"), 0);
   const r = w.declare();
-  const doc = w.record.readFile(r.id, "bundle.md").text;
+  const file = w.record.readFile(r.id, "bundle.md");
+  assert.ok(file && "text" in file, "the bundle document is held inline");
+  const doc = file.text;
   /* a raw creation of a standard, by a member and by a machine */
   for (const author of [V("bob"), MACHINE]) {
     const raw = w.promotion.promote({ bundleId: "STD-2026-0099-ordinance", base: null, snapKey: `raw-${author}`, author,
@@ -79,7 +81,9 @@ test("R13 a fact the profile does not supply is undetermined, never a default; n
   const m = t.declare();
   assert.equal(m.source.profile, "test-port-ellery", "the facts come from the test profile's data");
   /* no place in the module's outward text: its translations, its sentences and every why it composes */
-  const places = profileOf("oakland-alameda").covers.flatMap((c) => c.split(/[ ,]+/)).filter((x) => x.length > 3);
+  const oakland = profileOf("oakland-alameda");
+  assert.ok(oakland, "the oakland-alameda profile is held");
+  const places = oakland.covers.flatMap((c) => c.split(/[ ,]+/)).filter((x) => x.length > 3);
   const u = t.declare({ cite: "Unmatched § 9" });
   const texts = [...Object.values(STANDARDS_CHECKS).map((c) => c.translation), u.source.why,
                  t.s.standardRead({ id: m.id, viewer: V("carol") }).says.note, t.s.inForce(m.id, "2021-01-01").why,
