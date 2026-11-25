@@ -46,6 +46,7 @@ export { CONFIDENCE } from "../../site-profiles/index.mjs";
  * @property {*} [profile] which profile supplied it
  * @property {string} [key] a code's own key, which prefixes a reference's key
  * @property {string} [label] a code's own label, which shows it
+ * @property {string} [column] the column a budget header heads (jurisdictions R6), one of its `BUDGET_COLUMNS`
  */
 /**
  * @typedef {Object} Tagged one compiled recogniser with the fact it came from, so a reader knows WHICH matched
