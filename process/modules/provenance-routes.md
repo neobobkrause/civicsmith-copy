@@ -1,8 +1,8 @@
-Length: 110 lines. Last section: "Suggestions".
+Length: 112 lines. Last section: "Suggestions".
 
 # provenance-routes: requirements
 
-Next number: 14
+Next number: 16
 
 For R8, the words "part of it on the same terms" are spelled out as those terms, because "it" (the register's contract) stays in `provenance`. R13 is a copy of `provenance` R40, stated in both modules. `provenance` retires R19–R23, R36 and R54 as moved, never reusing them, and re-words R37, R41, R48, R53 and R55. Every moved requirement was met in `provenance`; each is marked not yet met (T25) here, the move itself being T25's L3 job (accepted red 3). The route side moves whole in T25 (K1220, superseding decision 1 of BOB's review of these drafts): this module provides R1–R13 in T25 and owns `provenance_route_marks` and every write to it, the three route arms (R9), `routeMarks` (R10), R11 and R12; `provenance` keeps only pure copies of the names a later layer imports by name until each importer re-points (option B as K1220 reads it). Layer 3, directly after `attestation` and before `capture-sources` (provenance, attestation, provenance-routes). For BOB's review and Bob's approval (a product module, P17); the text is the text Bob's rulings (DEC-19, DEC-56, REC-158, K509 (3)) and BOB's (K763, K671) already settled.
 
@@ -88,6 +88,8 @@ Terms. A **capture**, its **home** and the **register** are `provenance`'s (its 
 - **R11** [met] Undetermined is stated, never rounded: a route that cannot be shown is reported as undetermined with the reason, and never counted as sound, present or absent (R4).
 - **R12** [met] This module owns `provenance_route_marks`; no other module writes it (K49).
 - **R13** [met] No place is named in this module's behaviour or outward text (`layers.md`, "No jurisdiction in the product").
+- **R14** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `provenanceroute`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`). (T51 K4266) Also `provenanceroutes` (accepts `after`, `limit`, `bundleId`; requires none; a read).
+- **R15** [met] (T51; K4259, K4266; screens-inquiry R98) `provenanceRouteOf({bundleId, viewer}) → {ok, bundleId, state, objectType, route} | {ok: false, reason: NO_SUCH_BUNDLE, bundleId}` reads one bundle's standing route for a viewer who may see it: `route` is `routeFinding` (R5) of the bundle's type and latest mark, so `NEVER_LOOKED` and `PRESENT` read apart and `route` is never absent; for a bundle that is not information it is R5's not-applicable statement. A bundle absent, unseen by the viewer (membership R43) or asked for with no viewer stamped answers `NO_SUCH_BUNDLE`, alike. Writes nothing. Test: each route state read for one document. Control: absent, fenced and unstamped answer alike.
 
 ### Satisfies
 

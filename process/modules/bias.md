@@ -1,8 +1,8 @@
-Length: 121 lines. Last section: "Suggestions".
+Length: 123 lines. Last section: "Suggestions".
 
 # bias: requirements
 
-Next number: 50
+Next number: 52
 
 **Size (P6).** About 1,400 lines move (about 640 without comment-only and blank lines): `store.mjs` 881, `bio-checks.mjs` 446, `schema.mjs` 73. With the debt mechanism, about 2,130. Well under 4,000.
 
@@ -104,6 +104,8 @@ Terms. A **statement** is `{id, kind, subject, text, justification, citations?, 
 - **R31** [met] One predicate, one place: the verdict and bar predicates R5 and R6 use for a member's statement are the ones R20 uses for the machine's proposal.
 - **R32** [met] No place is named in this module's behaviour or outward text.
 - **R47** [met] (plan T33, Rules (6)) This module declares its five tables explicitly through `record-core.declareTable` (its R21), keeping R30's purge (`bias_statements` and `bias_adoptions` keyed to their bundle, with that bundle's sight; the debts, settlements and sweeps whole-store, `sight: "group"`); the other classes as `declarePurge`'s default form gives them.
+- **R50** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `biasdebt`, `biasdebtresolve`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R51** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `biasmanifest`, `biasinhale`, `biasadopt`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
 
 ### Satisfies
 

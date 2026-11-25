@@ -1,8 +1,8 @@
-Length: 81 lines. Last section: "Suggestions".
+Length: 82 lines. Last section: "Suggestions".
 
 # attestation: requirements
 
-Next number: 11
+Next number: 12
 
 | old (`provenance`) | new | |
 |---|---|---|
@@ -59,6 +59,7 @@ Terms. A **capture**, its **home** and the **register** are `provenance`'s (its 
 - **R8** [met] Network calls are made only by `attest`, only to the compiled endpoints `signatures` names.
 - **R9** [met] No place is named in this module's behaviour or outward text (`layers.md`, "No jurisdiction in the product").
 - **R10** [met] This module owns `receipt_keys` and `signed_receipts`; no other module writes them. (K1218: BOB's wording)
+- **R11** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `attest`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
 
 ### Satisfies
 

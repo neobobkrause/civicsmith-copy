@@ -1,8 +1,8 @@
-Length: 101 lines. Last section: "Suggestions".
+Length: 103 lines. Last section: "Suggestions".
 
 # sources: requirements
 
-Next number: 21
+Next number: 23
 
 **Size (P6).** New. Expected well under 4,000 lines: a history table, a consent table, a read log and their reads.
 
@@ -66,6 +66,8 @@ Terms. A **source** is the person behind a capture that was given to the group r
 - **R13** [met] Every table here is exempt from purge. A value is never written to a log, an error or a listener payload.
 - **R19** [met] (plan T33, Rules (6)) This module declares every table explicitly through `record-core.declareTable` (its R21), keeping R13's exemption from purge; the tables holding a source's disclosures and stored values (R2, R5), its read log and R16's marks are declared `export: "never"`, as the link from a source to a person is (K1489), their sight being R5's.
 - **R14** [met] No place is named in this module's behaviour or outward text; C-121.1–C-121.10 are held in its own table.
+- **R21** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `sourcedisclose`, `sourcelink`, `sourceconsent`, `sourceconsentwithdraw`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R22** [met] (T51; K4206; the T51 fix round; R11; op-declarations R81; op-grades R50) **The module declares its knocker's consent, `knockerconsent`, with no field required.** Its row in `DECLARED_OPS` has no account class (`classes: null`), `mutating: true`, the weight `credential` and the description the op's hand sentence, which op-grades holds for it, so the owners' rows agree with the hand rows. Its `accepts` are the fields the arm reads: `knockerSecret`, `entry`, `audience`, `withdraw`; the connecting address and the instant are the control plane's stamps and are not accepts. Its `requires` is empty by design: every failure answers `SECRET_NOT_RECOGNISED`, which names no field (R11), so a refusal names no required field, and the declaration says so. Test: `declared-ops.test.mjs` holds it by `declaredOpHolds`, and a door-level test shows each omitted field answers the same refusal as a wrong secret.
 
 Rows C-121.1–C-121.10 (R14; N364; C-121.7–.10 K1549), a new family, "a source's disclosures", with their translations:
 
