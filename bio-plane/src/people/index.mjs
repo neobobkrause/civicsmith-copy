@@ -1926,7 +1926,7 @@ export class People {
 
   /** R26: each visible, unwithdrawn claim on `node` as one hop in connection-grammar's shape, evidentiary, its evidence
    *  and grade the claim's.
-   *  @param {{node?: string|null, kinds?: string[]|null, at?: *, page?: *, viewer?: string|null, scope?: *, host?: *}} [args]
+   *  @param {{node?: string|null, kinds?: string[]|null, at?: *, page?: number|null, viewer?: string|null, scope?: *, host?: *}} [args]
    *  @returns connection-grammar's hop shape `{items}`, or `{refused, why}`
    */
   neighbours({ node, kinds = null, at, page = null, viewer, scope = null, host: _host = null } = {}) {
