@@ -2,12 +2,12 @@
    own name and as `op=publicread&name=` through public-read's door read, with no route of this module's. The public reads are
    read from case-inputs' own DECLARED_OPS, never a list typed here (K3268). Driven through `makeFetch(hooks)`, as R49's
    routing test is (`r49-routes.test.mjs`). */
+import { publicOp } from "../../../src/control-plane/routing.mjs";   /* first: the routing's load registers every owner's ops (store-assembly) before the harness reads the tables */
 import "./register-declared.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { M, O, world, call, refused, FORGED, QUERY_STAMPS } from "./harness.mjs";
 const { DECLARED_OPS } = await import("../../../src/case-inputs/index.mjs");
-const { publicReadDoorOp } = await import("../../../src/public-read/door.mjs");
 const D = await import("../../../src/store-door/dispatch.mjs");
 
 const { OPS } = O;
@@ -15,13 +15,9 @@ const U = new URL("http://do/");
 /* case-inputs' own credential-free reads (its rows with `classes: null`, none of them acts) */
 const PUBLIC_READS = Object.keys(DECLARED_OPS).filter((op) => DECLARED_OPS[op].classes === null && DECLARED_OPS[op].mutating === false);
 
-/* The plane's public hook as plane/door.mjs calls public-read's door: without the control-plane's list, so a name is answered by
-   that list alone, and `op=publicread&name=` by the door's own route. */
-const hooks = { async publicOp({ op, url, env, stub }) {
-  return (await publicReadDoorOp(op, url, env, stub, { json: M.json, requiredArgument: M.requiredArgument, storeSilent: M.storeSilent,
-                                                storeRefusal: M.storeRefusal, doAnswer: M.doAnswer }))
-    ?? M.json({ ok: true, publicOp: op });
-} };
+/* The routing's own public hook (R139; K4990), which calls public-read's door without the control-plane's list, so a name is
+   answered by that list alone, and `op=publicread&name=` by the door's own route. */
+const hooks = { publicOp };
 
 test("R49, R2, R26 (case-inputs R24; K4230): case-inputs' public read is declared credential-free, and is routed by its own name and as `op=publicread&name=` through public-read's door read to bio's store, with its declared parameter `case` passed and no credential or stamp", async () => {
   assert.deepEqual(PUBLIC_READS, ["casedetailspublic"], "case-inputs declares one public read");

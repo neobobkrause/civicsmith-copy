@@ -9,11 +9,10 @@
        and a secret the store does not honour reads exactly as a stranger.
      - `textchain`: `op=image`'s forwarded answer carries the text chain whole, stamped with the caller's viewer.
    The old suites are not deleted (K619). */
+import { publicOp } from "../../../src/control-plane/routing.mjs";   /* first: the routing's load registers every owner's ops (store-assembly) before the harness reads the tables */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { M, world, call, opCalls, sha, hex64 } from "./harness.mjs";
-import { publicationDoorOp } from "../../../src/publication/door.mjs";
-import { NS_RATIFY, caseRatifyStatement } from "../../../src/sshsig.mjs";
 
 const reply = (o, status = 200) => new Response(JSON.stringify(o), { status });
 
@@ -113,13 +112,8 @@ test("R30, R2, R59 (reviewcopy convert; publication R73, K2146): op=casedocument
   const w = world({ answer: (c) => c.route === "casedocument"
     ? reply({ ok: true, result: c.body?.secretSha === sha(LIVE) && c.params.case === doc.case_id && c.params.edition === "2" ? doc : stranger })
     : null });
-  const hooks = {
-    publicOp: async (ctx) => publicationDoorOp(ctx.op, ctx.url, ctx.stub, { json: M.json, storeSilent: M.storeSilent,
-      storeRefusal: M.storeRefusal, doAnswer: M.doAnswer, sha256Hex: M.sha256Hex, NS_RATIFY, caseRatifyStatement,
-      readerOf: () => M.caseReader(ctx.url, ctx.env, "bio", ctx.presentedAi.cred),
-      body: () => ctx.req.clone().json() }) ?? M.json({ ok: false }, 500),
-    gatedOp: async () => undefined, publicInstanceGroup: async () => ({ answered: true, result: {} }),
-  };
+  /* the routing's own public hook (R139; K4990), which hands publication's door the door's reader and the request's body */
+  const hooks = { publicOp, gatedOp: async () => undefined, publicInstanceGroup: async () => ({ answered: true, result: {} }) };
   /* R59 (publication R73, K2011): the secret travels in the POST body, never the address */
   const read = async ({ secret, ...params }) => {
     w.env.calls.length = 0;
