@@ -33,6 +33,118 @@
 
 import { ID_TABLE, idPattern, canonicalJson } from "./record-grammar/index.mjs";
 
+/**
+ * A parsed OpenSSH public key line (`parsePubkeyLine`).
+ * @typedef {Object} PubkeyLine
+ * @property {string} keyType always "ssh-ed25519"
+ * @property {Uint8Array} raw the raw public key
+ * @property {string} b64 the wire public key's base64, as the line gave it
+ * @property {string} comment the words after the key, space-joined; empty when none
+ * @bound raw: 32 bytes
+ */
+
+/**
+ * The fields of an armored SSHSIG (`parseSshsig`), nothing verified.
+ * @typedef {Object} ParsedSshsig
+ * @property {number} version always 1
+ * @property {string} namespace
+ * @property {string} hashAlg "sha512" or "sha256"
+ * @property {Uint8Array} reserved
+ * @property {Uint8Array} pubRaw the raw ed25519 public key
+ * @property {Uint8Array} pubkeyBlob the wire public key blob
+ * @property {Uint8Array} sigRaw the raw ed25519 signature
+ * @property {string} pubB64 the wire public key's base64
+ * @bound pubRaw: 32 bytes; sigRaw: 64 bytes
+ */
+
+/**
+ * Whether a signature verified (R2), and when not, which kind of no (R3).
+ * @typedef {Object} SshsigVerdict
+ * @property {boolean} ok
+ * @property {string} [keyB64] ok, UNKNOWN_KEY and BAD_SIGNATURE: the signing key's wire base64
+ * @property {string} [namespace] ok: the signature's namespace
+ * @property {"MALFORMED"|"NAMESPACE"|"UNKNOWN_KEY"|"BAD_SIGNATURE"|"CRYPTO_UNAVAILABLE"} [reason] present exactly when ok is false
+ * @property {string} [detail] MALFORMED and CRYPTO_UNAVAILABLE: what could not be read or imported
+ * @property {string} [expected] NAMESPACE: the namespace asked for
+ * @property {string} [got] NAMESPACE: the signature's namespace
+ */
+
+/**
+ * One part of a fleet member's upload (R10, R13).
+ * @typedef {Object} FleetPart
+ * @property {string} path
+ * @property {string} type the part's module type
+ * @property {string} sha256
+ * @property {number} bytes
+ * @bound type: a non-empty string, or the statement throws REFUSED [PART_TYPE_UNSTATED]
+ */
+
+/**
+ * One service binding of a fleet member (R10).
+ * @typedef {Object} FleetService
+ * @property {string} binding
+ * @property {string} service
+ */
+
+/**
+ * One fleet member as the fleet statement renders it (R10 to R12).
+ * @typedef {Object} FleetMember
+ * @property {string} member the member's name; lines are sorted by it
+ * @property {string} sha256
+ * @property {number} bytes
+ * @property {string} asset
+ * @property {{date: string, flags: ReadonlyArray<string>}} compat
+ * @property {ReadonlyArray<FleetService>|null} [services] absent is none
+ * @property {ReadonlyArray<FleetPart>|null} [parts] absent is none
+ * @bound compat.date: a non-empty string, or the statement throws REFUSED [MEMBER_COMPAT_UNSTATED]
+ * @bound compat.flags: an array, or the statement throws REFUSED [MEMBER_FLAGS_UNSTATED]
+ */
+
+/**
+ * What the fleet statement is built from (R8).
+ * @typedef {Object} FleetInput
+ * @property {string} version
+ * @property {{sha256: string, bytes: number, asset: string}} plane
+ * @property {ReadonlyArray<FleetMember>} members in any order
+ */
+
+/**
+ * A release notice's three notes (R47).
+ * @typedef {Object} ReleaseNotes
+ * @property {string} members
+ * @property {string} administrators
+ * @property {string} must_do
+ * @bound each note: at most RELEASE_NOTES_MAX (8,000) characters; members and administrators not empty, must_do possibly empty; no other key
+ */
+
+/**
+ * A release notice as published beside a release (R47, R48).
+ * @typedef {Object} ReleaseNotice
+ * @property {string} version
+ * @property {string} date
+ * @property {string} manifest the release manifest's SHA-256
+ * @property {boolean} security
+ * @property {ReleaseNotes} notes
+ * @bound version: <n>.<n>.<n>, each part digits with no leading zero but 0
+ * @bound date: YYYY-MM-DD, a date that exists
+ * @bound manifest: 64 lowercase hex characters
+ */
+
+/**
+ * Whether a release notice verified and is newer than what runs, and when not, which kind of no (R48).
+ * @typedef {Object} ReleaseNoticeVerdict
+ * @property {boolean} ok
+ * @property {Readonly<ReleaseNotice>} [notice] ok: a frozen copy holding only R47's fields
+ * @property {"MALFORMED"|"NAMESPACE"|"UNKNOWN_KEY"|"BAD_SIGNATURE"|"CRYPTO_UNAVAILABLE"|"NOT_NEWER"} [reason] present exactly when ok is false
+ * @property {string} [field] MALFORMED: the field refused ("notice", "version", "date", "manifest", "security", "notes", "notes.<name>", "running" or "signature")
+ * @property {string} [version] NOT_NEWER: the notice's version
+ * @property {string} [running] NOT_NEWER: the running version
+ * @property {string} [detail] as SshsigVerdict's
+ * @property {string} [expected] as SshsigVerdict's
+ * @property {string} [got] as SshsigVerdict's
+ * @property {string} [keyB64] as SshsigVerdict's
+ */
+
 const te = new TextEncoder();
 
 const b64ToBytes = (b64) => {
@@ -42,6 +154,11 @@ const b64ToBytes = (b64) => {
   return out;
 };
 
+/**
+ * Standard base64 of bytes.
+ * @param {ArrayLike<number>} bytes each 0 to 255
+ * @returns {string}
+ */
 export const bytesToB64 = (bytes) => {
   let s = "";
   for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
@@ -66,6 +183,11 @@ const wStr = (bytes) => {
   out.set(bytes, 4);
   return out;
 };
+/**
+ * The given byte arrays, joined in order.
+ * @param {...Uint8Array} parts
+ * @returns {Uint8Array}
+ */
 export const cat = (...parts) => {
   const n = parts.reduce((a, p) => a + p.length, 0);
   const out = new Uint8Array(n);
@@ -76,6 +198,11 @@ export const cat = (...parts) => {
 
 /* Parse an OpenSSH public key line: "ssh-ed25519 AAAA... comment".
    Returns { keyType, raw (32 bytes), b64, comment } or throws. */
+/**
+ * @param {*} line read as a string; "ssh-ed25519 <base64> [comment]"
+ * @returns {PubkeyLine}
+ * @throws {Error} when it is not an ssh-ed25519 public key line with a 32-byte key
+ */
 export function parsePubkeyLine(line) {
   const m = String(line || "").trim().split(/\s+/);
   if (m.length < 2) throw new Error("pubkey: not an OpenSSH public key line");
@@ -92,6 +219,11 @@ export function parsePubkeyLine(line) {
 
 /* Build the OpenSSH wire public key blob from a raw 32-byte ed25519 key,
    and its authorized_keys base64. Used by the signer page and by tests. */
+/**
+ * @param {Uint8Array} raw the raw ed25519 public key
+ * @returns {Uint8Array} the wire blob: string "ssh-ed25519" | string raw
+ * @bound raw: 32 bytes
+ */
 export function wirePubkey(raw) {
   return cat(wStr(te.encode("ssh-ed25519")), wStr(raw));
 }
@@ -100,6 +232,10 @@ export function wirePubkey(raw) {
    authorized_keys base64 field, a full "ssh-ed25519 AAAA... comment" line,
    or an allowed_signers "principal ssh-ed25519 AAAA..." line. Returns the
    bare base64 of the wire public key, or null if it is not an ed25519 key. */
+/**
+ * @param {*} entry read as a string
+ * @returns {string|null} the wire public key's base64, or null when it names no ed25519 key
+ */
 export function normalizeKey(entry) {
   const toks = String(entry || "").trim().split(/\s+/);
   const i = toks.indexOf("ssh-ed25519");
@@ -116,6 +252,11 @@ const dearmor = (text) => {
 };
 
 /* Parse an armored SSHSIG. Returns fields without verifying anything. */
+/**
+ * @param {string} armored
+ * @returns {ParsedSshsig}
+ * @throws {Error} on bad armor, magic, version, key or signature type or length, or a hash other than sha512 or sha256
+ */
 export function parseSshsig(armored) {
   const blob = dearmor(armored);
   const r = new Rd(blob);
@@ -163,6 +304,13 @@ export function parseSshsig(armored) {
  * throws: a message that is not bytes, or anything else unusable, is
  * MALFORMED, and an allowedKeys that is not a list allows no key.
  */
+/**
+ * @param {string} armored
+ * @param {Uint8Array|ArrayBuffer|ArrayBufferView} message the exact signed bytes
+ * @param {string} expectNamespace
+ * @param {ReadonlyArray<string>} allowedKeys each a bare base64 key, a public key line or an allowed_signers line
+ * @returns {Promise<SshsigVerdict>} never rejects
+ */
 export async function verifySshsig(armored, message, expectNamespace, allowedKeys) {
   try { return await verify(armored, message, expectNamespace, allowedKeys); }
   catch (e) { return { ok: false, reason: "MALFORMED", detail: String((e && e.message) || e) }; }
@@ -170,6 +318,13 @@ export async function verifySshsig(armored, message, expectNamespace, allowedKey
 
 const isBytes = (m) => m instanceof ArrayBuffer || ArrayBuffer.isView(m);
 
+/**
+ * @param {string} armored
+ * @param {Uint8Array|ArrayBuffer|ArrayBufferView} message
+ * @param {string} expectNamespace
+ * @param {ReadonlyArray<string>} allowedKeys
+ * @returns {Promise<SshsigVerdict>}
+ */
 async function verify(armored, message, expectNamespace, allowedKeys) {
   let p;
   try { p = parseSshsig(armored); }
@@ -208,11 +363,19 @@ async function verify(armored, message, expectNamespace, allowedKeys) {
 /* The canonical statements this system signs. Centralised so the plane, the
    wizard, the signer page, and any future client all sign the same bytes.
    Each is single-line ASCII, so there is no canonicalisation to get wrong. */
+/** @type {string} the namespace a release is signed in (R1) */
 export const NS_RELEASE = "bio-release";
+/** @type {string} the namespace a ratification is signed in (R1) */
 export const NS_RATIFY = "bio-ratify";
 
 /* Releases sign the ASSET BYTES themselves, not a statement about them, so a
    verified signature IS the integrity check and cannot diverge from one. */
+/**
+ * R5: the bytes a member signs to ratify a bundle.
+ * @param {string} bundleId
+ * @param {string} bundleSha
+ * @returns {Uint8Array} `bio-ratify <bundleId> <bundleSha>` and a newline
+ */
 export const ratifyStatement = (bundleId, bundleSha) =>
   te.encode(`bio-ratify ${bundleId} ${bundleSha}\n`);
 
@@ -222,6 +385,7 @@ export const ratifyStatement = (bundleId, bundleSha) =>
    replayed as a signature over the fleet list, or the reverse. Domain
    separation costs one string here and cannot be retrofitted once signatures
    exist in the wild. */
+/** @type {string} the namespace a fleet statement is signed in (R1) */
 export const NS_FLEET = "bio-release-fleet";
 
 /* THE ONE PLACE THE FLEET STATEMENT IS BUILT, and the reason it is here rather
@@ -299,6 +463,12 @@ const renderParts = (parts) => [...(parts || [])]
    `flags=-` renders an EMPTY flag list — ocr-worker's deliberate, measured
    absence of nodejs_compat — distinctly from nothing at all, because absent
    and empty must not look alike, here as everywhere in this statement. */
+/**
+ * R8 to R14: the fleet statement.
+ * @param {FleetInput} fleet
+ * @returns {string}
+ * @throws {Error} REFUSED [MEMBER_COMPAT_UNSTATED], [MEMBER_FLAGS_UNSTATED] or [PART_TYPE_UNSTATED], before any byte of that member's line
+ */
 export const fleetStatement = ({ version, plane, members }) =>
   `${NS_FLEET}/2\n`
   + `version ${version}\n`
@@ -341,6 +511,13 @@ export const fleetStatement = ({ version, plane, members }) =>
    signers already have configured, and splitting it would make every existing
    signer page and wizard wrong for an act they are perfectly entitled to
    perform. The separation is in the message, which is where a verifier looks. */
+/**
+ * R6, R7: the bytes a member signs to ratify one edition of a case document.
+ * @param {string} caseId
+ * @param {number|string} edition
+ * @param {string} docSha
+ * @returns {Uint8Array} `bio-ratify-case <caseId> <edition> <docSha>` and a newline
+ */
 export const caseRatifyStatement = (caseId, edition, docSha) =>
   te.encode(`bio-ratify-case ${caseId} ${edition} ${docSha}\n`);
 
@@ -352,6 +529,7 @@ export const caseRatifyStatement = (caseId, edition, docSha) =>
    in the namespace, not only in the message: a notice is a statement to the
    whole network, and a signature gathered for it must never verify as consent
    to publish, nor the reverse, whatever the identifiers turn out to be. */
+/** @type {string} the namespace a "working on" notice is signed in (R37) */
 export const NS_NOTICE = "bio-working-on";
 
 /* An opaque id, as record-core's minter draws it (its R6): `<PREFIX>-<year>-<counter>`,
@@ -373,6 +551,10 @@ const statementIdPattern = () => {
     throw new Error("sshsig: record-grammar's sequential id pattern is not ^<PREFIX>…$");
   return new RegExp(`^[A-Z]+${core.source.slice(head.length, -1)}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?$`);
 };
+/**
+ * @type {RegExp} an opaque id, R38's shape, its counter record-grammar's
+ * @bound ^[A-Z]+-<year>-<record-grammar's sequential counter>(-<slug>)?$
+ */
 export const OPAQUE_ID_RE = statementIdPattern();
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 
@@ -381,6 +563,16 @@ const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
    that is not an opaque id, a revision that is not a whole number from 1, or a
    digest that is not 64 lowercase hex characters throws, so no signature can be
    asked for over a statement whose fields could be read two ways. */
+/**
+ * @param {string} noticeId
+ * @param {number} revision
+ * @param {string} sha
+ * @returns {Uint8Array} `bio-working-on <noticeId> <revision> <sha>` and a newline
+ * @throws {Error} when a field is outside its bound
+ * @bound noticeId: an opaque id (OPAQUE_ID_RE)
+ * @bound revision: a whole number, 1 or more
+ * @bound sha: 64 lowercase hex characters
+ */
 export const noticeStatement = (noticeId, revision, sha) => {
   if (typeof noticeId !== "string" || !OPAQUE_ID_RE.test(noticeId))
     throw new Error("noticeStatement: the notice id is not an opaque id");
@@ -399,6 +591,7 @@ export const noticeStatement = (noticeId, revision, sha) => {
    namespace as well as in the message: an entry is a public, final statement
    beside a published case (a withdrawal among them), and a signature gathered
    for it must never verify as a ratification or a notice, nor the reverse. */
+/** @type {string} the namespace a docket entry is signed in (R39) */
 export const NS_DOCKET = "bio-docket";
 
 /* R40: the bytes a manager signs for one docket entry: the case it stands
@@ -406,6 +599,16 @@ export const NS_DOCKET = "bio-docket";
    entry as it will be published. It refuses what it cannot state exactly, as
    noticeStatement does, so no signature is asked for over fields that could be
    read two ways. */
+/**
+ * @param {string} caseId
+ * @param {number} seq
+ * @param {string} sha
+ * @returns {Uint8Array} `bio-docket <caseId> <seq> <sha>` and a newline
+ * @throws {Error} when a field is outside its bound
+ * @bound caseId: an opaque id (OPAQUE_ID_RE)
+ * @bound seq: a whole number, 1 or more
+ * @bound sha: 64 lowercase hex characters
+ */
 export const docketStatement = (caseId, seq, sha) => {
   if (typeof caseId !== "string" || !OPAQUE_ID_RE.test(caseId))
     throw new Error("docketStatement: the case id is not an opaque id");
@@ -431,9 +634,15 @@ export const docketStatement = (caseId, seq, sha) => {
    ratification, a notice or a docket entry. It is signed in `NS_RATIFY`, the
    namespace a member's key is already configured for; the separation is in
    the message, as it is for `caseRatifyStatement`. */
+/** @type {string} the capture account's leading token (R41) */
 export const CAPTURE_ACCOUNT_TOKEN = "bio-capture-account";
 
-/* R41: the bytes a capturing member signs for their account of a capture. */
+/**
+ * R41: the bytes a capturing member signs for their account of a capture.
+ * @param {*} captureSha read as String(…)
+ * @param {*} text read as String(…), unchanged
+ * @returns {Uint8Array} `bio-capture-account <captureSha>`, a newline, then the text
+ */
 export const captureAccountStatement = (captureSha, text) =>
   te.encode(`${CAPTURE_ACCOUNT_TOKEN} ${String(captureSha)}\n${String(text)}`);
 
@@ -447,6 +656,7 @@ export const captureAccountStatement = (captureSha, text) =>
    from here, so the code a group runs and the notice that tells it of the next
    release trust exactly the same keys, and a rotation (Distribution §10) is one
    edit, here. Frozen: no caller can add a key to what it is told to trust. */
+/** @type {ReadonlyArray<string>} the public lines of the release key and the recovery key (R45) */
 export const RELEASE_KEYS = Object.freeze([
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICiA6JRm52rE3agZAKqb/4ATA34c8jEp3Yef0KZyCe18 bio-release",
   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMdvnsYToN22fqksnV1gLYWEJJmQA6vMyXnThPJMm7yJ bio-release-recovery",
@@ -460,10 +670,12 @@ export const RELEASE_KEYS = Object.freeze([
    acts on a notice (it tells every administrator an update is ready), and a
    signature gathered over a release asset or a fleet statement must never
    verify as one, nor a notice's as either of them. */
+/** @type {string} the namespace a release notice is signed in (R46) */
 export const NS_RELEASE_NOTICE = "bio-release-notice";
 
 /* The most characters (code points) each of a notice's three notes may hold.
    It bounds what is signed; how much a screen shows is the caller's. */
+/** @type {number} */
 export const RELEASE_NOTES_MAX = 8000;
 
 const VERSION_RE = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
@@ -515,6 +727,11 @@ const renderNotice = (n) => te.encode(`${NS_RELEASE_NOTICE}/1\n`
    account of a release must be the publisher's, byte for byte, or a mirror
    could rewrite "what an administrator must do". Anything it cannot state
    exactly is refused by name before a byte is built. */
+/**
+ * @param {ReleaseNotice} notice
+ * @returns {Uint8Array}
+ * @throws {Error} REFUSED [NOTICE_FIELD]: <field>, for a notice outside ReleaseNotice's bounds
+ */
 export const releaseNoticeStatement = (notice) => {
   let r;
   try { r = readNotice(notice); } catch { r = { field: "notice" }; }
@@ -543,6 +760,13 @@ const deepFreezeNotice = (c) => Object.freeze({ ...c, notes: Object.freeze({ ...
    that runs, is refused, so no one serving the feed can walk a group back.
    `allowedKeys` defaults to RELEASE_KEYS, the keys the running code carries.
    Never throws. */
+/**
+ * @param {ReleaseNotice} notice
+ * @param {string} armored
+ * @param {string} running the version the caller runs, ReleaseNotice's version form
+ * @param {ReadonlyArray<string>} [allowedKeys] absent is RELEASE_KEYS
+ * @returns {Promise<ReleaseNoticeVerdict>} never rejects
+ */
 export async function verifyReleaseNotice(notice, armored, running, allowedKeys = RELEASE_KEYS) {
   try {
     let r;
