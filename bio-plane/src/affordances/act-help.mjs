@@ -38,6 +38,8 @@
  *   - T51 (R71; DEC-438 to DEC-441, K5303): the five acts Standard draws, `standardinforcethrough`, `standardinforcethroughwithdraw`,
  *     `standardadoption`, `standardimpose` and `standardbenchmark`, are held in `T51_STANDARD_OPS`, each `act.<op>.does`. `leggrade` and
  *     `signerknown` (`credentials` R83) are held in `T51_STANDIN_HELP` under their own keys until the design's rows land;
+ *   - T51 (R48, R62, R65; flaw from affordances #1): `counselpacketexport`, `counselpacketread` and `linecurrentthrough`, whose
+ *     `act.<op>.does` words the design's reads list for this module gives, are held in `T51_DESIGN_OPS`;
  *   - T51 (R69): the seven browser acts, `BROWSER_ACTS`, are held under their own names from `act.owed_<name>.does`;
  *   - `projectownervotes` has no text in the design and is held none (`op-declarations` names it in `ACT_HELP_ABSENT`, R61);
  *   - `selftest` (FR-40, K4190): the word list holds `act.selftest.does` for the updates screen (DEC-376), but this module's reads
@@ -75,6 +77,8 @@ export const T51_DESIGN_OPS = Object.freeze([
   "contradictionresolve",
   "contradictionrespond",
   "contradictiontakeup",
+  "counselpacketexport",
+  "counselpacketread",
   "determine",
   "escalationattach",
   "escalationdecline",
@@ -97,6 +101,7 @@ export const T51_DESIGN_OPS = Object.freeze([
   "leadlook",
   "leadread",
   "leadshare",
+  "linecurrentthrough",
   "linewithdraw",
   "memberpairingset",
   "moneysets",
