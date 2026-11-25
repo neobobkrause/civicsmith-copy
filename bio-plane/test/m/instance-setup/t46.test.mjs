@@ -41,8 +41,10 @@ test("R79 asked: true records asked_at in the same act, and a later set without 
   now = "2026-11-13T09:00:00Z";
   const r = w.m.infoLevelSet({ level: "prompt", asked: true, by: "ruth" });
   assert.equal(r.asked_at, "2026-11-13T09:00:00.000Z");
-  for (const [t, args] of [["2026-11-14T09:00:00Z", { level: "pause" }], ["2026-11-15T09:00:00Z", { level: "prompt", asked: false }],
-                           ["2026-11-16T09:00:00Z", { level: "pause", asked: true }]]) {
+  /** @type {Array<[string, {level: string, asked?: boolean}]>} each set's instant and its arguments */
+  const sets = [["2026-11-14T09:00:00Z", { level: "pause" }], ["2026-11-15T09:00:00Z", { level: "prompt", asked: false }],
+                ["2026-11-16T09:00:00Z", { level: "pause", asked: true }]];
+  for (const [t, args] of sets) {
     now = t;
     w.m.infoLevelSet({ ...args, by: "ruth" });
     assert.deepEqual(w.m.infoLevel({ viewer: "ruth" }), { ok: true, level: args.level, set_at: new Date(t).toISOString(),
