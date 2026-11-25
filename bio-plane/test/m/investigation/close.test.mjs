@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { declaredOpHolds } from "../../declared-ops.mjs";
-import { world, projectMd, ANN, BOB, DAN, AI, Q1 } from "./fixture.mjs";
+import { world, projectMd, inlineText, ANN, BOB, DAN, AI, Q1 } from "./fixture.mjs";
 import { investigationOps, DECLARED_OPS } from "../../../src/investigation/ops.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { CLOSED_REASONS } from "../../../src/intent/index.mjs";
@@ -26,7 +26,7 @@ function openWorld() {
   /* what `project-stage` R2 rule 1 reads, and all it reads, of a project: its own document's recorded close (project-stage is
      a later layer's module, so its own R2 tests hold that this document reads as `closed` with the reason) */
   w.stage = () => {
-    const fm = parseFrontmatter(w.record.readFile(P, "bundle.md").text).data || {};
+    const fm = parseFrontmatter(inlineText(w.record.readFile(P, "bundle.md"))).data || {};
     const closed = fm.current_state === "closed" && CLOSED_REASONS.includes(fm.closed_reason);
     return { stage: closed ? "closed" : "open", closed_reason: closed ? fm.closed_reason : null };
   };
@@ -42,7 +42,7 @@ test("R24: an owner closes a project that is not quiet with each of the three re
     assert.deepEqual([r.project, r.closed_reason, r.gaps.map((g) => g.key)], [P, reason, ["intent::g9"]]);
     const head = w.record.head(P);
     assert.deepEqual([head.currentState, head.priorState], ["closed", "forming"]);
-    assert.match(w.record.readFile(P, "bundle.md").text, new RegExp(`closed_reason: ${reason}`));
+    assert.match(inlineText(w.record.readFile(P, "bundle.md")), new RegExp(`closed_reason: ${reason}`));
     const s = w.stage();
     assert.deepEqual([s.stage, s.closed_reason], ["closed", reason], "the document records the close as project-stage R2 reads it");
     const act = w.rows(`SELECT * FROM inv_quiet_acts WHERE project_id = ? AND act = 'close'`, P)[0];
