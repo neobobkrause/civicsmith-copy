@@ -143,11 +143,7 @@ const live = new Set();           /* R26 (K1563 (1)): every instance made in thi
 /** K61, K1563 (1): the one People for a Durable Object's storage. `deps` is read on the first call only: `record`,
  *  `membership`, `entities`, `provenance`, `content`, `sources`, `events`, `lines`, `money`, `duties` (each the real
  *  module on the same host when not given, reached on first use; a dep given as a function is called once, then), and
- *  `registry` (connection-grammar's; the default one when absent), `now`.
- *  @param {*} ctx the Durable Object's state, or its storage
- *  @param {Object<string, *>|null} [deps] the services this module reads through, each an instance or a function answering one
- *  @returns {People} the one People for that storage
- */
+ *  `registry` (connection-grammar's; the default one when absent), `now`. */
 export function peopleOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let p = instances.get(storage);
@@ -182,10 +178,6 @@ export class People {
   #onResult = [];        /* R25: {module, fn, seq} */
   #onChanged = [];       /* R35: {module, fn, seq} */
 
-  /**
-   *  @param {*} storage the Durable Object's storage (its `sql`)
-   *  @param {{record?: *, membership?: *, entities?: *, provenance?: *, content?: *, sources?: *, events?: *, lines?: *, money?: *, duties?: *, registry?: *, now?: (() => string)|null}} [services] record, membership, the used modules' services, connection-grammar's registry, and the clock
-   */
   constructor(storage, { record, membership, entities, provenance = null, content = null, sources = null, events = null,
                          lines = null, money = null, duties = null, registry = null, now = null } = {}) {
     this.#sql = storage.sql;
@@ -214,9 +206,7 @@ export class People {
    * BOOT (R33, R6, R22)
    * ===================================================================== */
 
-  /** This module's tables at every boot, idempotent; the declarations (R33) once; the shipped checks (R22) once.
-   *  @returns {void}
-   */
+  /** This module's tables at every boot, idempotent; the declarations (R33) once; the shipped checks (R22) once. */
   migrate() {
     const bare = PEOPLE_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.#sql.exec(t); }
@@ -228,9 +218,7 @@ export class People {
   }
 
   /** R33: every table declared explicitly through record-core's `declareTable`, the cluster cache derived-rebuildable
-   *  with its rebuild (R6; record-core R77). Once per instance; a refusal is a wiring defect and throws.
-   *  @returns record-core's answer to the declarations; `{ok: true, already: true}` when already declared
-   */
+   *  with its rebuild (R6; record-core R77). Once per instance; a refusal is a wiring defect and throws. */
   declare() {
     if (this.#declared) return { ok: true, already: true };
     const r = this.#record.declareTable(MODULE, [...PEOPLE_TABLES.map((t) => ({ ...t })),
@@ -445,10 +433,7 @@ export class People {
    * IDENTITY CLAIMS (R1–R4; K1488). Linked, never merged (R28).
    * ===================================================================== */
 
-  /** R1–R3.
-   *  @param {{a?: string|null, b?: string|null, kind?: string|null, basis?: string|null, evidence?: *, project?: string|null, note?: string|null, by?: string|null}} [args]
-   *  @returns the claim `{ok, claim_id, kind, grade, why, at}`, or a refusal `{ok: false, reason, detail}`
-   */
+  /** R1–R3. */
   claimIdentity({ a, b, kind, basis, evidence = null, project = null, note, by = null } = {}) {
     if (!filled(a) || !filled(b)) return refuse("NO_ENDS", "a claim names two person records by id: a and b");
     if (a === b) return refuse("SELF_CLAIM", "a claim is between two distinct person records");
@@ -553,10 +538,7 @@ export class People {
     return { because: word("people.records_carry_name_holds", { shared: String(shared), kind: String(la.kind), oa: String(oa), d_a: String(dA), d_b: String(dB) }) };
   }
 
-  /** R4: a claim withdrawn, never edited or deleted; it links nothing after. No entities row moves (R28).
-   *  @param {{claimId?: string|null, reason?: string|null, by?: string|null}} [args]
-   *  @returns `{ok: true}` (with `already: true` on a repeat), or a refusal
-   */
+  /** R4: a claim withdrawn, never edited or deleted; it links nothing after. No entities row moves (R28). */
   withdrawIdentityClaim({ claimId, reason, by = null } = {}) {
     const why = clean(reason);
     if (!why) return refuse("NO_REASON", "a withdrawal says why the claim was wrong; it is kept beside the claim");
@@ -663,10 +645,7 @@ export class People {
              withdrawn: c.withdrawn_at ? { by: c.withdrawn_by, at: c.withdrawn_at, reason: c.withdrawn_reason } : null };
   }
 
-  /** R5.
-   *  @param {{entityId?: string|null, viewer?: string|null}} [args]
-   *  @returns the identity cluster R5 states, `found: false` for an unregistered id, or a refusal
-   */
+  /** R5. */
   identityOf({ entityId, viewer = null } = {}) {
     if (!filled(entityId)) return noEntity("an identity cluster is read for one person, by its entity id");
     if (this.#denied(viewer)) return People.#noViewer();
@@ -689,11 +668,7 @@ export class People {
    * CANDIDATES (R7, R8; D167). Explained field by field; no probability, score or rank.
    * ===================================================================== */
 
-  /** R7.
-   *  @param {{entityId?: string|null, limit?: number|string|null, viewer?: string|null}} [args]
-   *  @bound limit: a whole number from 1 to 200; absent is 50
-   *  @returns the candidates R7 states, each explained field by field, or a refusal
-   */
+  /** R7. */
   samePersonCandidates({ entityId, limit = CANDIDATES_DEFAULT, viewer = null } = {}) {
     if (!filled(entityId)) return noEntity("candidates are read for one person, by its entity id");
     if (this.#denied(viewer)) return People.#noViewer();
@@ -751,10 +726,7 @@ export class People {
     return { names, identifiers, posts, life };
   }
 
-  /** R8: whether every compared field of a candidate agrees (the M-P6 measure's numerator and denominator).
-   *  @param {*} candidate one candidate as samePersonCandidates answers it
-   *  @returns {boolean} whether every compared field agrees
-   */
+  /** R8: whether every compared field of a candidate agrees (the M-P6 measure's numerator and denominator). */
   static agreesEverywhere(candidate) {
     return isObj(candidate) && isObj(candidate.fields) && Object.values(candidate.fields).every((f) => f.state === "agrees");
   }
@@ -764,10 +736,7 @@ export class People {
    * ===================================================================== */
 
   /** R9, R10. The citation may be an extent a find answered (R73's match); `question`, optional, is an inquiry bundle
-   *  the actor may see, kept beside the fact (DEC-164 (5)).
-   *  @param {{person?: string|null, kind?: string|null, value?: *, valid?: *, citation?: *, question?: string|null, by?: string|null}} [args]
-   *  @returns the fact `{ok, fact_id, ...}`, or a refusal
-   */
+   *  the actor may see, kept beside the fact (DEC-164 (5)). */
   recordPersonFact({ person, kind, value, valid, citation: given, question = null, by = null } = {}) {
     const citation = People.#cited(given);
     if (!filled(person)) return noSuchEntity(person ?? null);
@@ -805,10 +774,7 @@ export class People {
     });
   }
 
-  /** R11 (DEC-19): a wrong fact corrected forward: kept, marked withdrawn with who, when and why.
-   *  @param {{factId?: string|null, reason?: string|null, by?: string|null}} [args]
-   *  @returns `{ok: true}` (with `already: true` on a repeat), or a refusal
-   */
+  /** R11 (DEC-19): a wrong fact corrected forward: kept, marked withdrawn with who, when and why. */
   withdrawPersonFact({ factId, reason, by = null } = {}) {
     const why = clean(reason);
     if (!why) return refuse("NO_REASON", "a withdrawal says why the fact was wrong; it is kept beside the fact");
@@ -859,10 +825,7 @@ export class People {
   }
 
   /** R12 (K1493; record-core R79): a value removed, leaving a tombstone, only on the grounds K1493 lists and only by an
-   *  administrator. Any other wish to correct is a withdrawal (R11).
-   *  @param {{id?: string|{source?: string|null, person?: string|null}|null, ground?: string|null, demandKind?: string|null, order?: string|null, reason?: string|null, by?: string|null}} [args]
-   *  @returns the tombstone `{ok, id, ground, at, by}`, or a refusal
-   */
+   *  administrator. Any other wish to correct is a withdrawal (R11). */
   expunge({ id, ground, demandKind = null, order = null, reason, by = null } = {}) {
     const who = memberOf(by);
     if (!who || !this.#isAdmin(who)) return notAnAdmin(by ?? null, "removing a person fact, claim, tie or source link");
@@ -948,11 +911,6 @@ export class People {
   /* events R49 (K2116, K231): the shape's two own refusals, carrying their code and no catalogue row. */
   static #shapeRefusal(code, why) { return { ok: false, refused: code, code, reason: code, why }; }
 
-  /**
-   *  @param {{captureSha?: string|null, extent?: *, limit?: number|string|null, viewer?: string|null}} [args]
-   *  @bound limit: a whole number from 1 to 500; absent is 100
-   *  @returns the items in events R49's shape, or a refusal
-   */
   recordedBy({ captureSha, extent = null, limit = null, viewer = null } = {}) {
     if (viewer === undefined || viewer === null || (typeof viewer === "string" && viewer.trim() === ""))
       return People.#shapeRefusal("VIEWER_MISSING", "a read names the member reading, stamped by the control plane; with none, nothing is answered");
@@ -1056,10 +1014,7 @@ export class People {
     });
   }
 
-  /** R13, R14.
-   *  @param {{entityId?: string|null, at?: string|null, viewer?: string|null}} [args]
-   *  @returns the person at `at` (R14, R39, R44), or a refusal
-   */
+  /** R13, R14. */
   personAt({ entityId, at, viewer = null } = {}) {
     const o = this.#readOpen(entityId, viewer, "a person as of a date");
     if (o) return o.refusal;
@@ -1120,10 +1075,7 @@ export class People {
     return { items, truncated };
   }
 
-  /** R13, R15: every holds line of the cluster, in and out of government, in validity order.
-   *  @param {{entityId?: string|null, viewer?: string|null}} [args]
-   *  @returns every holds line of the cluster (R15), or a refusal
-   */
+  /** R13, R15: every holds line of the cluster, in and out of government, in validity order. */
   careerOf({ entityId, viewer = null } = {}) {
     const o = this.#readOpen(entityId, viewer, "a career");
     if (o) return o.refusal;
@@ -1133,10 +1085,7 @@ export class People {
     return { ok: true, found: true, entity_id: entityId, cluster, career: c.items, truncated: c.truncated, limit: READ_LIST_MAX };
   }
 
-  /** R13, R15: education and credentials, each credential with its issuer's scheme identifier.
-   *  @param {{entityId?: string|null, at?: string|null, viewer?: string|null}} [args]
-   *  @returns the education and credential lines (R15), or a refusal
-   */
+  /** R13, R15: education and credentials, each credential with its issuer's scheme identifier. */
   credentialsOf({ entityId, at = null, viewer = null } = {}) {
     const o = this.#readOpen(entityId, viewer, "a person's credentials");
     if (o) return o.refusal;
@@ -1170,10 +1119,7 @@ export class People {
   }
 
   /** R13, R15: interests held as lines, and the money where the person is payee of income or a gift, or payer of a
-   *  contribution. Facts, never a total.
-   *  @param {{entityId?: string|null, at?: string|null, viewer?: string|null}} [args]
-   *  @returns the interest lines and money facts (R15), or a refusal
-   */
+   *  contribution. Facts, never a total. */
   interestsOf({ entityId, at = null, viewer = null } = {}) {
     const o = this.#readOpen(entityId, viewer, "a person's interests");
     if (o) return o.refusal;
@@ -1203,10 +1149,7 @@ export class People {
   }
 
   /** R13, R16: statements and acts (decider, signatory, implementer, author; K1465), merged in events' order,
-   *  three-valued: two events whose order the record does not settle are answered as such, never placed.
-   *  @param {{entityId?: string|null, from?: string|null, to?: string|null, viewer?: string|null}} [args]
-   *  @returns the statements and acts in events' order (R16), or a refusal
-   */
+   *  three-valued: two events whose order the record does not settle are answered as such, never placed. */
   statementsOf({ entityId, from = null, to = null, viewer = null } = {}) {
     const o = this.#readOpen(entityId, viewer, "a person's statements and acts");
     if (o) return o.refusal;
@@ -1269,13 +1212,7 @@ export class People {
    * ===================================================================== */
 
   /** R37: the directory a member scans before knowing a name. Writes nothing; a malformed argument is refused naming
-   *  it; a project the viewer may not see counts as nothing and is never named.
-   *  @param {{q?: string|null, show?: string|null, office?: string|null, namedIn?: string|null, since?: number|string|null, cursor?: string|null, limit?: number|string|null, viewer?: string|null}} [args]
-   *  @bound limit: a whole number from 1 to 200; absent is 50
-   *  @bound since: 30, 90 or 365 days
-   *  @bound q: at most 200 characters
-   *  @returns a page of the directory's rows (R37, R38, R41), or a refusal naming the malformed argument
-   */
+   *  it; a project the viewer may not see counts as nothing and is never named. */
   peopleDirectory({ q = null, show = null, office = null, namedIn = null, since = null, cursor = null, limit = null, viewer = null } = {}) {
     if (this.#denied(viewer)) return People.#noViewer();
     const absent = (v) => v === null || v === undefined || v === "";
@@ -1432,17 +1369,9 @@ export class People {
    * STAFFING (R18, R19)
    * ===================================================================== */
 
-  /** R19: one roster source per module, asked in the modules' total order.
-   *  @param {*} module the registering module's name
-   *  @param {*} source its roster source, a function asked `{organisation, at}`
-   *  @returns `{ok: true}`, or membership's listener refusal
-   */
+  /** R19: one roster source per module, asked in the modules' total order. */
   registerRosterSource(module, source) { return People.#listen(this.#roster, module, source); }
-  /** R25: told of each new gated-open result, once.
-   *  @param {*} module the registering module's name
-   *  @param {*} fn told `{check, version, result}` of each new gated-open result, once
-   *  @returns `{ok: true}`, or membership's listener refusal
-   */
+  /** R25: told of each new gated-open result, once. */
   onCheckResult(module, fn) { return People.#listen(this.#onResult, module, fn); }
   static #listen(list, module, fn) {
     const refused = listenerRefusal(list, module, fn);
@@ -1454,10 +1383,7 @@ export class People {
   }
 
   /** R18: the persons holding a holds line to the organisation or its parts at `at`, and beside them each roster source's
-   *  answer with its level. Roster rows are never copied into lines.
-   *  @param {{organisation?: string|null, at?: string|null, viewer?: string|null}} [args]
-   *  @returns the holders and each roster source's answer (R18), or a refusal
-   */
+   *  answer with its level. Roster rows are never copied into lines. */
   staffingAt({ organisation, at, viewer = null } = {}) {
     if (!filled(organisation)) return noEntity("staffing is read for one organisation, by its entity id");
     if (this.#denied(viewer)) return People.#noViewer();
@@ -1493,10 +1419,7 @@ export class People {
    * MEMBERS' TIES (R20; K1490)
    * ===================================================================== */
 
-  /** R20: a member's own tie, by their own act; there is no field naming another member.
-   *  @param {{entity?: string|null, kind?: string|null, note?: string|null, attribution?: string|null, by?: string|null}} [args]
-   *  @returns the tie `{ok, tie_id, ...}`, or a refusal
-   */
+  /** R20: a member's own tie, by their own act; there is no field naming another member. */
   declareTie({ entity, kind, note, attribution, by = null } = {}) {
     const member = memberOf(by);
     if (!member) return refuse("MEMBER_ACT_ONLY", "a tie is declared by the member it is theirs, stamped from their session; the machine declares none");
@@ -1517,10 +1440,7 @@ export class People {
     });
   }
 
-  /** R20: a tie withdrawn by its member (or an administrator); kept, marked withdrawn. Another's tie answers as absent.
-   *  @param {{tieId?: string|null, reason?: string|null, by?: string|null}} [args]
-   *  @returns `{ok: true}`, or a refusal
-   */
+  /** R20: a tie withdrawn by its member (or an administrator); kept, marked withdrawn. Another's tie answers as absent. */
   withdrawTie({ tieId, reason, by = null } = {}) {
     const why = clean(reason);
     if (!why) return refuse("NO_REASON", "a withdrawal says why; it is kept beside the tie");
@@ -1543,10 +1463,7 @@ export class People {
              withdrawn: t.withdrawn_at ? { by: t.withdrawn_by, at: t.withdrawn_at, reason: t.withdrawn_reason } : null };
   }
 
-  /** R20: a member's ties, to them and administrators; any other viewer is answered exactly as for no tie.
-   *  @param {{member?: string|null, viewer?: string|null}} [args]
-   *  @returns the member's ties, or none to any other viewer
-   */
+  /** R20: a member's ties, to them and administrators; any other viewer is answered exactly as for no tie. */
   tiesOf({ member, viewer = null } = {}) {
     const m = filled(member) ? (member.startsWith("member:") ? member.slice(7) : member) : viewerMember(viewer);
     if (!filled(m) || !this.#seesTies(m, viewer)) return { ok: true, member: m ?? null, count: 0, ties: [] };
@@ -1555,10 +1472,7 @@ export class People {
              truncated: rows.length > READ_LIST_MAX };
   }
 
-  /** R20: for `case-disclosures`, the member's unwithdrawn ties to any of the entities, each with its attribution level.
-   *  @param {{entities?: *, member?: string|null, viewer?: string|null}} [args]
-   *  @returns the member's unwithdrawn ties to the entities, each with its attribution level
-   */
+  /** R20: for `case-disclosures`, the member's unwithdrawn ties to any of the entities, each with its attribution level. */
   tiesConcerning({ entities, member, viewer = null } = {}) {
     const m = filled(member) ? (member.startsWith("member:") ? member.slice(7) : member) : null;
     const want = Array.isArray(entities) ? entities.filter(filled) : [];
@@ -1572,10 +1486,7 @@ export class People {
    * THE PROTECTED SOURCE LINK (R21; DEC-78 item 5, K1484 row 18)
    * ===================================================================== */
 
-  /** R21.
-   *  @param {{source?: string|null, person?: string|null, evidence?: *, sight?: *, by?: string|null}} [args]
-   *  @returns `{ok: true, ...}`, or a refusal
-   */
+  /** R21. */
   linkSourceToPerson({ source, person, evidence, sight, by = null } = {}) {
     if (!memberOf(by)) return refuse("MEMBER_ACT_ONLY", "a source is linked to a person only by a member's own act");
     if (!filled(source) || !this.#sourceHeld(source, by)) return refuse("NO_SUCH_SOURCE", "no source with that id is held", { source: source ?? null });
@@ -1608,10 +1519,7 @@ export class People {
     } catch { return false; }
   }
 
-  /** R21: the links on a source or a person, to a listed member only; to anyone else exactly as if none were held.
-   *  @param {{source?: string|null, person?: string|null, viewer?: string|null}} [args]
-   *  @returns `{ok, count, links}`, empty to a viewer no link lists, or a refusal
-   */
+  /** R21: the links on a source or a person, to a listed member only; to anyone else exactly as if none were held. */
   sourceLinksOf({ source = null, person = null, viewer = null } = {}) {
     if (!filled(source) && !filled(person))
       return refuse("NO_LINK_SUBJECT", localize("people.index.link_read_names_source_or_person", "A source link is read for one source (source_id) or one person (person); this read names neither."));
@@ -1626,10 +1534,7 @@ export class People {
   /** R34 (N600): for other modules' code only, never an op and never answered to a viewer: null when no source link to
    *  `person` is held, else the members every held link to that person admits (the intersection of their sight lists).
    *  Synchronous; writes nothing; never throws; an unregistered or malformed id answers null. A store it cannot read
-   *  answers [], a link admitting no one: fail closed, never "no link".
-   *  @param {*} person a person's entity id
-   *  @returns `null` when no link to the person is held, else the members every held link admits
-   */
+   *  answers [], a link admitting no one: fail closed, never "no link". */
   sourceLinkSight(person) {
     if (!filled(person)) return null;
     try {
@@ -1648,10 +1553,7 @@ export class People {
    * INTEREST CHECKS (R22–R25; K1491, K1473). The hypothesis layer: never a fact, never stored on a person.
    * ===================================================================== */
 
-  /** R22: a member's own check, a new check or a new version of one.
-   *  @param {{name?: string|null, condition?: *, denominator?: string|null, project?: string|null, check?: string|null, by?: string|null}} [args]
-   *  @returns the check `{ok, check, version}`, or a refusal
-   */
+  /** R22: a member's own check, a new check or a new version of one. */
   defineCheck({ name, condition, denominator, project = null, check = null, by = null } = {}) {
     const n = clean(name, 200);
     if (!n) return refuse("NO_NAME", "a check carries a name");
@@ -1688,11 +1590,7 @@ export class People {
   }
 
   /** R35 (N605): told once, after the act, that a check was defined, given a new version, or switched in a project, so
-   *  `scheduler` re-arms its wake for R23's consumer.
-   *  @param {*} module the registering module's name
-   *  @param {*} fn told `{check, project}` once after each change
-   *  @returns `{ok: true}`, or membership's listener refusal
-   */
+   *  `scheduler` re-arms its wake for R23's consumer. */
   onChecksChanged(module, fn) { return People.#listen(this.#onChanged, module, fn); }
   /* R35: each listener called with {check, project} once the act has committed (record-core's `afterCommit`: at once
      outside a transaction, after the outermost one inside it, never when it rolls back); a throwing one never undoes the
@@ -1704,10 +1602,7 @@ export class People {
     if (typeof this.#record.afterCommit === "function") this.#record.afterCommit(tell); else tell();
   }
 
-  /** R22: any check switched off (or on again) in one project by a member of that project.
-   *  @param {{check?: string|null, project?: string|null, on?: *, by?: string|null}} [args]
-   *  @returns `{ok: true, ...}`, or a refusal
-   */
+  /** R22: any check switched off (or on again) in one project by a member of that project. */
   switchCheck({ check, project, on, by = null } = {}) {
     if (!filled(check) || !this.#one(`SELECT 1 AS x FROM interest_checks WHERE check_id=?`, check))
       return refuse("NO_SUCH_CHECK", "no check with that id is held", { check: check ?? null });
@@ -1756,10 +1651,7 @@ export class People {
   /** R23: every switched-on check over the held persons, within the budget, resuming where it stopped. A pass ends at
    *  the last person and records its denominator (the persons holding a fact of the first end); the next call starts a
    *  fresh pass, so a changed fact is evaluated again. A computation, never a model run; matches go to the checks' own
-   *  result table with their derivation and denominator.
-   *  @param {{budgetMs?: number}} [args]
-   *  @returns `{evaluated, remaining}`
-   */
+   *  result table with their derivation and denominator. */
   evaluateChecks({ budgetMs = 1000 } = {}) {
     const started = Date.now();
     const budget = Math.max(0, Number(budgetMs) || 0);
@@ -1824,11 +1716,7 @@ export class People {
              by: "the machine's", layer: "hypothesis", label: "Noticed", mark: HINT_MARK, detail: HINT_DETAIL };
   }
 
-  /** R24: a machine check version's gate, by an administrator: its gold set and measured false-alarm rate.
-   *  @param {{check?: string|null, version?: *, goldSet?: string|null, falseAlarmRate?: *, by?: string|null}} [args]
-   *  @bound falseAlarmRate: from 0 to 1; results are answered only at 0.2 or below
-   *  @returns `{ok: true, ...}`, or a refusal
-   */
+  /** R24: a machine check version's gate, by an administrator: its gold set and measured false-alarm rate. */
   recordCheckGate({ check, version, goldSet, falseAlarmRate, by = null } = {}) {
     const who = memberOf(by);
     if (!who || !this.#isAdmin(who)) return notAnAdmin(by ?? null, "recording a check's measured gate");
@@ -1859,10 +1747,7 @@ export class People {
   }
 
   /** R24, R25: a check version's results once open, each the machine's, "Noticed", in the hypothesis layer. A result
-   *  resting on any row the viewer may not see is withheld whole and not counted.
-   *  @param {{project?: string|null, check?: string|null, viewer?: string|null}} [args]
-   *  @returns each check version with its results once gated open, or `gated: true`
-   */
+   *  resting on any row the viewer may not see is withheld whole and not counted. */
   checkResults({ project = null, check = null, viewer = null } = {}) {
     if (this.#denied(viewer)) return People.#noViewer();
     if (filled(project) && !this.#seesProject(project, viewer)) return { ok: true, checks: [] };
@@ -1886,10 +1771,7 @@ export class People {
     return { ok: true, checks: out };
   }
 
-  /** R22: the checks with their versions, for the switch and the gate.
-   *  @param {{viewer?: string|null}} [args]
-   *  @returns the checks with their versions
-   */
+  /** R22: the checks with their versions, for the switch and the gate. */
   listChecks({ viewer = null } = {}) {
     if (this.#denied(viewer)) return People.#noViewer();
     return { ok: true, checks: this.#rows(`SELECT * FROM interest_checks ORDER BY check_id, version`).filter((c) => this.#seesProject(c.project, viewer))
@@ -1910,10 +1792,7 @@ export class People {
   }
 
   /** R26 (K1563 (1)): the instance a load-time registration reads through: the one for `host` when the walk passes it,
-   *  else the isolate's one instance, else none (`OWNER_HOST_AMBIGUOUS`).
-   *  @param {*} host the host a load-time registration names, or none
-   *  @returns {People|null} the instance for that host, or the one live instance
-   */
+   *  else the isolate's one instance, else none (`OWNER_HOST_AMBIGUOUS`). */
   static forHost(host) {
     if (host) {
       const storage = host.storage ? host.storage : host;
@@ -1925,10 +1804,7 @@ export class People {
   }
 
   /** R26: each visible, unwithdrawn claim on `node` as one hop in connection-grammar's shape, evidentiary, its evidence
-   *  and grade the claim's.
-   *  @param {{node?: string|null, kinds?: string[]|null, at?: *, page?: number|null, viewer?: string|null, scope?: *, host?: *}} [args]
-   *  @returns connection-grammar's hop shape `{items}`, or `{refused, why}`
-   */
+   *  and grade the claim's. */
   neighbours({ node, kinds = null, at, page = null, viewer, scope = null, host: _host = null } = {}) {
     if (viewer === undefined || viewer === null || viewer === "")
       return { refused: "VIEWER_MISSING", why: localize("people.index.read_names_member", "a read names the member reading; an absent viewer is neither an administrator nor the public") };
@@ -1969,12 +1845,7 @@ defaultRegistry.registerOwner({ owner: MODULE, kinds: IDENTITY_KIND_WORDS.map((k
 
 /** R27: the route arms, keyed by op name, each a function of no arguments answering what its service answers; the
  *  stamps (`viewer` in the query, `by` in the body) are the control plane's. Which credential reaches each op is
- *  `op-declarations`'.
- *  @param {People} p
- *  @param {URL} url the request's address; reads take their fields from its query
- *  @param {*} body the request's body; writes take their fields from it
- *  @returns one route arm for each op name above
- */
+ *  `op-declarations`'. */
 export function peopleOps(p, url, body) {
   const q = (k) => url.searchParams.get(k);
   const b = () => (body && typeof body === "object" ? body : {});

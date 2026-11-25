@@ -18,7 +18,7 @@ test("R20 a member declares only their own tie (MTI-), to a registered entity, o
   for (const t of TIE_KINDS) assert.ok(k.detail.includes(t));
   assert.equal(w.p.declareTie({ ...base, note: " " }).reason, "NO_NOTE");
   assert.equal(w.p.declareTie({ ...base, attribution: "public" }).reason, "UNKNOWN_ATTRIBUTION");
-  const t1 = w.p.declareTie(/** @type {any} a field naming another member, on purpose */ ({ ...base, member: "out" }));
+  const t1 = w.p.declareTie({ ...base, member: "out" });
   assert.match(t1.tie_id, /^MTI-2026-\d{4,}$/);
   assert.equal(t1.member, "ann", "the stamp names the member; a field naming another is never read");
   const t2 = w.p.declareTie({ ...base, entity: aunt, kind: "relative", attribution: "group" });

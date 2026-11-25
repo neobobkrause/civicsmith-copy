@@ -61,10 +61,7 @@ function selectorError(sel, end) {
   return null;
 }
 
-/** R22: the condition's shape, or the reason it is not one. Pure.
- *  @param {*} c a candidate condition, of any shape
- *  @returns {string|null} the reason it is not a condition, or null when it is one
- */
+/** R22: the condition's shape, or the reason it is not one. Pure. */
 export function conditionError(c) {
   if (!isObj(c)) return "a condition is {from, to, join, order?, hops?}";
   for (const end of ["from", "to"]) { const e = selectorError(c[end], end); if (e) return e; }
@@ -179,13 +176,7 @@ function ordered(f, t, order) {
 }
 
 /** R23: one person's matches for one condition, each `{person, rows, derivation}`; `has` is true when the person holds a
- *  fact of the first end (the denominator's set). Pure over the readers; writes nothing.
- *  @param {*} readers the readers of `lines`, `events`, `money` and `entities` the check reads through
- *  @param {string} person the person's entity id
- *  @param {*} condition a condition `conditionError` accepts
- *  @param {*} viewer whose sight the rows are read under
- *  @returns `{has, matches}`: whether the person holds a fact of the first end, and each match `{person, rows, derivation}`
- */
+ *  fact of the first end (the denominator's set). Pure over the readers; writes nothing. */
 export function evaluatePerson(readers, person, condition, viewer) {
   const fromFacts = factsAt(readers, person, condition.from, viewer);
   const matches = [];

@@ -13,7 +13,6 @@ test("R9 recordPersonFact records one PFA- fact (kind closed: name, birth, death
   const office = w.entity("office", "Port Warden");
   const c = w.capture("bio");
   const base = { person: p, kind: "locality", value: "  Port Ellery ", valid, citation: doc(c), by: ANN };
-  /** @type {Array<[any, string]>} the arguments, some malformed on purpose, and the refusal each must answer */
   const cases = [
     [{ ...base, person: "ENT-2026-9999", kind: "x" }, "NO_SUCH_ENTITY"], [{ ...base, person: "", kind: "x" }, "NO_SUCH_ENTITY"],
     [{ ...base, person: office, kind: "x" }, "NOT_A_PERSON"],
@@ -202,7 +201,7 @@ test("R9 (T35) recordPersonFact takes an optional question, an inquiry the recor
   const unseen = w.p.recordPersonFact({ ...base, question: hidden, by: OUT });
   const notInquiry = w.p.recordPersonFact({ ...base, question: c.bundle });
   const project = w.p.recordPersonFact({ ...base, question: w.project() });
-  for (const r of [absent, unseen, notInquiry, project, w.p.recordPersonFact({ ...base, question: /** @type {any} malformed on purpose */ (7) })]) assert.equal(r.reason, "QUESTION_NOT_HELD");
+  for (const r of [absent, unseen, notInquiry, project, w.p.recordPersonFact({ ...base, question: 7 })]) assert.equal(r.reason, "QUESTION_NOT_HELD");
   assert.equal(absent.detail, unseen.detail, "an absent and an unseen question answer alike");
   assert.equal(w.p.recordPersonFact({ ...base, question: q, by: null }).ok, false, "an unstamped act writes nothing");
   assert.equal(w.one(`SELECT COUNT(*) AS n FROM person_facts`).n, 0);

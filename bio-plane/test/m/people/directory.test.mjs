@@ -194,7 +194,7 @@ test("R37 writes nothing, and op=peopledirectory answers what the read answers, 
   const url = (qs) => new URL(`https://plane.example/?${qs}`);
   const viaOp = peopleOps(w.p, url(`viewer=${encodeURIComponent(ANN)}&q=chen&show=people&limit=5`), null).peopledirectory();
   assert.deepEqual(viaOp, w.p.peopleDirectory({ q: "chen", show: "people", limit: 5, viewer: ANN }));
-  assert.equal("rows" in viaOp && viaOp.rows[0].entity, chen);
+  assert.equal(viaOp.rows[0].entity, chen);
   assert.equal(peopleOps(w.p, url(""), null).peopledirectory().ok, false, "no stamped viewer: fails closed");
 });
 
