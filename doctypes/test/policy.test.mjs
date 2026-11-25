@@ -23,6 +23,7 @@ const without = (text, line) => text.split("\n").filter((l) => !l.startsWith(lin
 /* -------------------------------------------------------------------- R1, R25 */
 
 test("R1 R25 policy is registered after regulation, matches CERTAIN only on a header naming a series with its number, and is SUBSTANCE", () => {
+  assert.ok(PE, "the test profile combines into a view");
   const order = DOCTYPES.map((t) => t.key);
   assert.equal(order.indexOf("policy"), order.indexOf("regulation") + 1);
   assert.equal(policy.contract, CONTRACT.SUBSTANCE);
