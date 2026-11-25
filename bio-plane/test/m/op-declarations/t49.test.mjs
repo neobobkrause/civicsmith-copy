@@ -21,7 +21,8 @@ const SESSION = ["admin", "member"];
 const plain = (s) => JSON.parse(JSON.stringify(s));
 const stamps = (op) => (Object.hasOwn(OP_STAMPS, op) ? [...OP_STAMPS[op]].sort() : null);
 const familyOf = (op) => Object.values(OP_FAMILIES).filter((f) => Object.hasOwn(f.kinds, op)).map((f) => f.owner);
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
+/* the module's exported lists, by name */
+const LISTS = /** @type {Array<[string, ReadonlyArray<string>]>} */ (Object.entries(O).filter(([, v]) => Array.isArray(v)));
 const listsOf = (op) => LISTS.filter(([, l]) => l.includes(op)).map(([n]) => n)
   .filter((n) => !["FAMILY_OPS", "FAMILY_SESSION_OPS"].includes(n)).sort();
 const ground = (op) => Object.entries(ACT_HELP_ABSENT).filter(([, g]) => g.ops.includes(op)).map(([k]) => k);
@@ -83,8 +84,8 @@ test("R71 (T49; N1072; K3265; membership R144): founderhandleset, in membership'
   /* controls */
   assert.ok(!(await reaches(membershipOps, op, { body: { by: SENT } })), "a body `by` reached the owner");
   assert.ok(!(await reaches(membershipOps, op, { query: { handle: SENT } })), "a query `handle` reached the owner");
-  assert.equal(OPS[op].classes.includes("member"), false, "a member session is admitted by class");
-  assert.equal(OPS[op].classes.includes("ai"), false, "an ai credential is admitted");
+  assert.equal(OPS[op].classes?.includes("member"), false, "a member session is admitted by class");
+  assert.equal(OPS[op].classes?.includes("ai"), false, "an ai credential is admitted");
   assert.deepEqual(machineAdmits(op), [], "a binding token or an ai credential is admitted");
   assert.deepEqual(OPS[op].machineClasses, []);
   /* every other family op of a session kind is in both sets: this is the one the founder's set holds alone among the
@@ -131,7 +132,7 @@ test("R72 (T49; N1091; DEC-237 (3); project-roster R30): projectownervotes, in p
   /* controls */
   assert.ok(!(await reaches(projectRosterOps, op, { body: { viewer: SENT } })), "a body viewer reached the owner");
   assert.ok(!(await reaches(projectRosterOps, op, { body: { projectId: SENT } })), "a body project reached the owner");
-  for (const cls of ["ai", "probe", "daemon"]) assert.equal(OPS[op].classes.includes(cls), false, `${cls} is admitted by class`);
+  for (const cls of ["ai", "probe", "daemon"]) assert.equal(OPS[op].classes?.includes(cls), false, `${cls} is admitted by class`);
   assert.deepEqual(machineAdmits(op), [], "a binding token or an ai credential is admitted");
   assert.equal(OPS[op].mutating, false);
 });

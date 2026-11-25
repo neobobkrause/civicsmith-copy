@@ -28,6 +28,116 @@ import { composeNeeds } from "./compose.mjs";
 import { declaredRows, disagreement, specOf, stampsOf, needsOf, isPublic, needsRequired } from "./declared.mjs";
 import { localize } from "../setup-words/index.mjs";
 
+/** @import { DecoratedAct } from '../affordances.mjs' */
+/**
+ * @typedef {Object} OpSpec one op's spec in `OPS` (R2): who may call it, by session or machine, and whether it writes
+ * @property {ReadonlyArray<string>|null} classes the classes of caller it admits; null for a public op, which admits anyone
+ * @property {ReadonlyArray<string>} [machineClasses] the classes a machine credential reaching it may hold; empty for a
+ *   session's only op; absent where `classes` serve for both
+ * @property {boolean} mutating whether the op writes
+ * @bound classes, machineClasses: each one of admin, member, probe, daemon
+ */
+/**
+ * @typedef {Object} OpKind one kind of `OP_KINDS` (R19): the spec and capability a family op of that kind takes
+ * @property {OpSpec} spec
+ * @property {string|null} [needs] the capability `NEEDS` holds for it; null for a present null row; absent for none
+ * @property {boolean} [public] a public door or read, which stamps only what its family names (R22)
+ * @property {boolean} [stamped] whether the door stamps `viewer` on it
+ * @property {boolean} [founderOnly] reached only in the founder's session (R83)
+ */
+/**
+ * @typedef {Object} FieldAt the parameter an owner reads a stamp from, and where
+ * @property {string} key the parameter's name
+ * @property {string} at where the owner reads it
+ * @bound at: "query" or "body"
+ */
+/**
+ * @typedef {Object} OpFamily one owner's family in `OP_FAMILIES` (R17–R20): every op it serves, by kind, and the lists
+ *   built from them
+ * @property {string} owner the module that serves the family's ops
+ * @property {string} cite the requirements and records the family is read from
+ * @property {FieldAt|null} actor the stamp each act carries; null where the owner takes the stamped `viewer`
+ * @property {FieldAt|null} proposer the stamp each proposal carries; null where it has none
+ * @property {Readonly<Record<string, string>>} kinds each op the family serves, to the name of its kind in `OP_KINDS`
+ * @property {Readonly<Record<string, ReadonlyArray<string>>>} extra further stamps an op carries, by op
+ * @property {ReadonlyArray<string>} acts the family's acts
+ * @property {ReadonlyArray<string>} proposals the family's proposals
+ * @property {ReadonlyArray<string>} reads the family's reads
+ * @bound kinds: each value a name `OP_KINDS` holds
+ */
+/**
+ * @typedef {Object} FamilyShare an owner's share of a tranche's ops (`T48_SHARES` and the like), merged into its family
+ * @property {string} cite the requirements the share is read from
+ * @property {Readonly<Record<string, string>>} ops each op the share adds, to the name of its kind in `OP_KINDS`
+ * @property {Readonly<Record<string, ReadonlyArray<string>>>} [extra] further stamps an op carries, by op
+ * @bound ops: each value a name `OP_KINDS` holds
+ */
+/**
+ * @typedef {Object} NewFamily a family a tranche adds (`T48_FAMILIES` and the like), built as `OP_FAMILIES` builds each
+ * @property {string} owner the module that serves its ops
+ * @property {string} cite the requirements the family is read from
+ * @property {FieldAt} [actor] the stamp each act carries; absent where the owner takes the stamped `viewer`
+ * @property {Readonly<Record<string, string>>} ops each op the family serves, to the name of its kind in `OP_KINDS`
+ * @property {Readonly<Record<string, ReadonlyArray<string>>>} [extra] further stamps an op carries, by op
+ * @bound ops: each value a name `OP_KINDS` holds
+ */
+/**
+ * @typedef {Object} ActGate the act gate (R1), a `Gate` of affordances' with both members present
+ * @property {(op: string) => string|null} needs the capability `NEEDS` holds for the op, else null
+ * @property {(op: string) => string} mode how the op is reached
+ * @bound mode: "session", "admin-session" or "machine"
+ */
+/**
+ * @typedef {Object} BrowserAct one browser act of R76: done in the browser alone, never sent to the op door
+ * @property {string} screen the screen it is on
+ * @property {string} census the screen census's number for it
+ * @property {string} registry the screen registry's row it takes the place of, `owed:<act> DEC-330`
+ */
+/**
+ * @typedef {Object} HelpGround one ground of `ACT_HELP_ABSENT` (R34): why its ops have no text in affordances' `ACT_HELP`
+ * @property {string} ground the ground, in words
+ * @property {ReadonlyArray<string>} ops the ops named under it
+ */
+/**
+ * @typedef {Object} SessionOps the two session sets (R5): the ops a member's session, and an administrator's, reaches
+ * @property {ReadonlySet<string>} member
+ * @property {ReadonlySet<string>} admin
+ */
+/**
+ * @typedef {Object} PlanRunScope what a plan's run may read and write
+ * @property {ReadonlyArray<string>} reads
+ * @property {ReadonlyArray<string>} writes
+ */
+/**
+ * @typedef {{field: string, values: ReadonlyArray<string>|null}|null} ReauthRule when an act asks the password again
+ *   (R58): null for every call; else when the body's `field`, else the query's, is one of `values`, or, with `values`
+ *   null, is present at all
+ */
+/**
+ * @typedef {Object} DeclaredRow an owner's row for one op in its `DECLARED_OPS` (R80)
+ * @property {ReadonlyArray<string>|null} classes
+ * @property {ReadonlyArray<string>} [machineClasses]
+ * @property {boolean} mutating
+ * @property {ReadonlyArray<string>} [stamps]
+ * @property {string|null} [needs]
+ * @property {DeclaredFields} [fields]
+ * @property {*} [weight] `op-grades`' own; not read here
+ * @property {*} [description] `op-grades`' own; not read here
+ * @bound classes, machineClasses: each one of admin, member, probe, daemon; classes, when not null, not empty
+ * @bound stamps: each one of author, bodyBy, by, country, member, owner, principal, proposer, session, source, viewer
+ * @bound needs: when present and not null, a text that is not empty; a mutating op with no hand row must have it
+ */
+/**
+ * @typedef {Object} DeclaredFields the fields an owner declares an op takes (R80)
+ * @property {ReadonlyArray<string>} accepts the fields it accepts
+ * @property {ReadonlyArray<string|ReadonlyArray<string>>} requires the fields it requires; a list is one of them
+ * @bound accepts: each a text that is not empty; requires: each a text or a list of texts, none empty
+ */
+/**
+ * @typedef {Readonly<Record<string, Readonly<Record<string, DeclaredRow>>>>|ReadonlyArray<readonly [string, Readonly<Record<string, DeclaredRow>>]>} OwnersDeclarations
+ *   every owner's `DECLARED_OPS`, by owner, as an object or a list of pairs
+ */
+
 /* R69 (T48; N1039, K3147, K3200): EVALUATING THIS MODULE BUILDS NO TABLE. Every table and list below is frozen data
    (R5), built by `build()` on the first read of any export and reused after, so importing the module adds nothing to the
    plane's global scope. Each exported name stays a plain binding, to a proxy over an empty target of the right kind;
@@ -2799,6 +2909,13 @@ const lazy = (name, target) => {
    changing nothing: a malformed row, an op in two owners' rows, an owner's row that differs from the hand row of the same
    op (`disagreement`), a mutating op without a `needs`, a registration after the first read and a second registration.
    `declaredFields(op)` answers the frozen `{accepts, requires}` an owner declared for the op, else `undefined`. */
+/**
+ * @param {OwnersDeclarations} input
+ * @returns {void}
+ * @throws {TypeError} a malformed row, an op in two owners' rows, an owner's row that differs from the hand row, a
+ *   mutating op without a `needs`, a registration after the first read of any export, or a second registration
+ * @bound called at most once, and before the first read of any export
+ */
 export function registerDeclaredOps(input) {
   const rows = declaredRows(input);
   const first = rows.size ? rows.keys().next().value : "(no op)";
@@ -2816,117 +2933,339 @@ export function registerDeclaredOps(input) {
   registered = rows;
   for (const [op, rec] of rows) if (rec.fields) DECLARED_FIELDS.set(op, rec.fields);
 }
+/**
+ * @param {string} op
+ * @returns {DeclaredFields|undefined}
+ */
 export const declaredFields = (op) => DECLARED_FIELDS.get(op);
 
 /* R1: the act gate's decoration, shared by `op=affordances` and `op=queue`; the gate is read only when a request is decorated. */
+/**
+ * @param {{id: string, label: string, weight?: string, prompt?: string, proposal?: any, purposes?: any}} a
+ * @returns {DecoratedAct}
+ */
 const decorateAct = (a) => decorate(a, ACT_GATE);
 
+/** The browser acts of R76, by act; none is an op.
+ *  @type {Readonly<Record<string, BrowserAct>>} */
 export const BROWSER_ACTS = lazy("BROWSER_ACTS", {});
+/** Every op's spec, by op (R2): the ops the door answers.
+ *  @type {Readonly<Record<string, OpSpec>>} */
 export const OPS = lazy("OPS", {});
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const RETRIEVAL_READS = lazy("RETRIEVAL_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const READING_READS = lazy("READING_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const EDGE_ACTIONS = lazy("EDGE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const STATE_ACTIONS = lazy("STATE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_ACTIONS = lazy("ACTION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DECLARATION_ACTIONS = lazy("DECLARATION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const STRUCTURE_ACTIONS = lazy("STRUCTURE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const VERSION_ACTIONS = lazy("VERSION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const PROJECT_ACTIONS = lazy("PROJECT_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const GOVERNANCE_ACTIONS = lazy("GOVERNANCE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const IDENTITY_ACTIONS = lazy("IDENTITY_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CUSTODIAL_ACTIONS = lazy("CUSTODIAL_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ROSTER_SELF_ACTIONS = lazy("ROSTER_SELF_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const OWN_KEY_ACTIONS = lazy("OWN_KEY_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CAPTURE_MEMBER_ACTIONS = lazy("CAPTURE_MEMBER_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CAPTURE_VIEWER_ACTIONS = lazy("CAPTURE_VIEWER_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CAPTURE_READS = lazy("CAPTURE_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const SOURCE_ACTIONS = lazy("SOURCE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const SOURCE_READS = lazy("SOURCE_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const PROVENANCE_JUDGEMENT_ACTIONS = lazy("PROVENANCE_JUDGEMENT_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CALIBRATION_WRITE_ACTIONS = lazy("CALIBRATION_WRITE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const EXPERTISE_ACTIONS = lazy("EXPERTISE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const REGISTRY_ACTIONS = lazy("REGISTRY_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const TASK_ACTIONS = lazy("TASK_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const QUEUE_ACTIONS = lazy("QUEUE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const AI_RUN_ACTIONS = lazy("AI_RUN_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const RUN_VERB_ACTIONS = lazy("RUN_VERB_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const RUN_PRODUCTION_ACTIONS = lazy("RUN_PRODUCTION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const POSITIONAL_ACTS = lazy("POSITIONAL_ACTS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const BIAS_ACTIONS = lazy("BIAS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const BIAS_DEBT_ACTIONS = lazy("BIAS_DEBT_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const INTENT_ACTIONS = lazy("INTENT_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const INTENT_READS = lazy("INTENT_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const REEVALUATION_ACTIONS = lazy("REEVALUATION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const STANDARDS_ACTIONS = lazy("STANDARDS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const STANDARDS_READS = lazy("STANDARDS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONFORMANCE_ACTIONS = lazy("CONFORMANCE_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONFORMANCE_READS = lazy("CONFORMANCE_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONSEQUENCES_ACTIONS = lazy("CONSEQUENCES_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONSEQUENCES_READS = lazy("CONSEQUENCES_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FILINGS_ACTIONS = lazy("FILINGS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FILINGS_READS = lazy("FILINGS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FILING_TEMPLATES_ACTIONS = lazy("FILING_TEMPLATES_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FILING_TEMPLATES_READS = lazy("FILING_TEMPLATES_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const TEMPLATE_PROPOSAL_ACTIONS = lazy("TEMPLATE_PROPOSAL_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const TEMPLATE_DOOR_ACTIONS = lazy("TEMPLATE_DOOR_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const TEMPLATE_DOOR_READS = lazy("TEMPLATE_DOOR_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const GRANT_SECRET_ACTIONS = lazy("GRANT_SECRET_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const LOCAL_FACTS_ACTIONS = lazy("LOCAL_FACTS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const LOCAL_FACTS_READS = lazy("LOCAL_FACTS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ESCALATION_ACTIONS = lazy("ESCALATION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ESCALATION_READS = lazy("ESCALATION_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const MONITORING_ACTIONS = lazy("MONITORING_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const LINK_SWEEP_READS = lazy("LINK_SWEEP_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WHAT_CHANGED_PROPOSAL_ACTIONS = lazy("WHAT_CHANGED_PROPOSAL_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WHAT_CHANGED_READS = lazy("WHAT_CHANGED_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const NETWORK_NOTICES_ACTIONS = lazy("NETWORK_NOTICES_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const NETWORK_NOTICES_READS = lazy("NETWORK_NOTICES_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const NETWORK_NOTICES_BY = lazy("NETWORK_NOTICES_BY", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const NETWORK_NOTICES_PUBLIC_READS = lazy("NETWORK_NOTICES_PUBLIC_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DOCKET_ACTIONS = lazy("DOCKET_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DOCKET_READS = lazy("DOCKET_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DOCKET_AUTHOR = lazy("DOCKET_AUTHOR", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DOCKET_BY = lazy("DOCKET_BY", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const DOCKET_PUBLIC_READS = lazy("DOCKET_PUBLIC_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CASE_IMPORT_ACTIONS = lazy("CASE_IMPORT_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CASE_IMPORT_READS = lazy("CASE_IMPORT_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CASE_IMPORT_BY = lazy("CASE_IMPORT_BY", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CASE_CHECKER_PUBLIC_READS = lazy("CASE_CHECKER_PUBLIC_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_SCRIPTS_ACTIONS = lazy("WIZARD_SCRIPTS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_SCRIPTS_AUTHOR = lazy("WIZARD_SCRIPTS_AUTHOR", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_SCRIPTS_BY = lazy("WIZARD_SCRIPTS_BY", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_PROPOSAL_ACTIONS = lazy("WIZARD_PROPOSAL_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_PROGRESS_ACTIONS = lazy("WIZARD_PROGRESS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_SCRIPTS_READS = lazy("WIZARD_SCRIPTS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const WIZARD_CHECK_READS = lazy("WIZARD_CHECK_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONTRADICTION_ACTIONS = lazy("CONTRADICTION_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const CONTRADICTION_READS = lazy("CONTRADICTION_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTIONS_ACTIONS = lazy("ACTIONS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTIONS_READS = lazy("ACTIONS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_HOLDS_ACTIONS = lazy("ACTION_HOLDS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_HOLDS_READS = lazy("ACTION_HOLDS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_CLOCKS_ACTIONS = lazy("ACTION_CLOCKS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_PLANS_ACTIONS = lazy("ACTION_PLANS_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_PLANS_READS = lazy("ACTION_PLANS_READS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_PLANS_PREVIEWS = lazy("ACTION_PLANS_PREVIEWS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const PLAN_PROPOSAL_ACTIONS = lazy("PLAN_PROPOSAL_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const QUERY_AUTHOR_ACTIONS = lazy("QUERY_AUTHOR_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_LAYER_ACTIONS = lazy("ACTION_LAYER_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ACTION_LAYER_READS = lazy("ACTION_LAYER_READS", []);
+/** The ops a plan's run may read and write.
+ *  @type {PlanRunScope} */
 export const PLAN_RUN_SCOPE = lazy("PLAN_RUN_SCOPE", {});
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const RECOGNISER_ACTIONS = lazy("RECOGNISER_ACTIONS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const PROGRESSION_ACTIONS = lazy("PROGRESSION_ACTIONS", []);
+/** The kinds a family op takes (R19), by kind name.
+ *  @type {Readonly<Record<string, OpKind>>} */
 export const OP_KINDS = lazy("OP_KINDS", {});
+/** The op families (R17–R20), by owner.
+ *  @type {Readonly<Record<string, OpFamily>>} */
 export const OP_FAMILIES = lazy("OP_FAMILIES", {});
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FAMILY_OPS = lazy("FAMILY_OPS", []);
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const FAMILY_SESSION_OPS = lazy("FAMILY_SESSION_OPS", []);
+/** The registry's function names served under a declared op (R21): each alias to its op.
+ *  @type {Readonly<Record<string, string>>} */
 export const OP_ALIASES = lazy("OP_ALIASES", {});
+/** A frozen list of op names (R5).
+ *  @type {ReadonlyArray<string>} */
 export const ASK_GRANT_OPS = lazy("ASK_GRANT_OPS", []);
+/** The stamps the door sets on each op, by op (R22).
+ *  @type {Readonly<Record<string, ReadonlyArray<string>>>} */
 export const OP_STAMPS = lazy("OP_STAMPS", {});
+/** The two session sets (R5).
+ *  @type {SessionOps} */
 export const SESSION_OPS = lazy("SESSION_OPS", {});
+/** The capability each op needs, by op (R3); a present null row needs none.
+ *  @type {Readonly<Record<string, string|null>>} */
 export const NEEDS = lazy("NEEDS", {});
+/** The act gate (R1): an act's capability (`NEEDS`) and how it is reached (`SESSION_OPS`), read when an act is decorated.
+ *  @type {Readonly<ActGate>} */
 export const ACT_GATE = lazy("ACT_GATE", {});
+/** Where the decision is recorded that a verb is not a person's, by op.
+ *  @type {Readonly<Record<string, string>>} */
 export const UNATTENDED_BY_DECISION = lazy("UNATTENDED_BY_DECISION", {});
+/** The grounds on which an act has no explanation in affordances' `ACT_HELP` (R34), by ground.
+ *  @type {Readonly<Record<string, HelpGround>>} */
 export const ACT_HELP_ABSENT = lazy("ACT_HELP_ABSENT", {});
 
 export { REAUTH_ACTS, decorateAct };
