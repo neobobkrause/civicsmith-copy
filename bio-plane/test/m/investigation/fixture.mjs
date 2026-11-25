@@ -181,3 +181,9 @@ export function projectMd(id, title = "Project One") {
     "objective: Know whether the award was proper", "references: []", "state_history: []", "---", "", "## Objective", "",
     "Know whether the award was proper.", "", "## Session Log", ""].join("\n");
 }
+
+// A live file's inline text, as record-core R13 reads it; a blob or a missing file fails the test that reads it.
+export function inlineText(file) {
+  if (!file || typeof file.text !== "string") throw new Error("expected an inline file");
+  return file.text;
+}
