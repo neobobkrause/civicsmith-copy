@@ -283,15 +283,15 @@ test("R7 dialect encoding: BOM certain; UTF-16 without a BOM; no high byte us-as
   // a character the window's end cuts in two is not invalid
   const u = new Uint8Array(MiB + 10).fill(0x61);
   u[MiB - 1] = 0xc3; u[MiB] = 0xa9;
-  assert.equal(csvEntry.dialect(u).encoding, "utf-8");
+  assert.equal(csvEntry.dialect(u)?.encoding, "utf-8");
   // later windows count: ASCII first and non-ASCII after is not the us-ascii the head alone says
   const a = new Uint8Array(MiB + 10).fill(0x61);
   a[MiB + 5] = 0x96;
-  assert.equal(csvEntry.dialect(a).encoding, "windows-1252");
+  assert.equal(csvEntry.dialect(a)?.encoding, "windows-1252");
 });
 
 test("R7 dialect delimiter: exactly one candidate consistent on a majority of the records is certain; tied, none consistent and too few lines each undetermined by name", () => {
-  const d = (s) => csvEntry.dialect(F.enc(s));
+  const d = (s) => { const r = csvEntry.dialect(F.enc(s)); if (!r) throw new Error(`R7: no dialect for ${JSON.stringify(s)}`); return r; };
   for (const [s, name] of [["a,b\n1,2\n", "comma"], ["a;b\n1;2\n", "semicolon"], ["a\tb\n1\t2\n", "tab"], ["a|b\n1|2\n", "pipe"], ['a,"x;y"\n1,"2;3;4"\n', "comma"]]) {
     const r = d(s);
     assert.equal(r.delimiter, name, s);
@@ -316,7 +316,7 @@ test("R7 dialect delimiter: exactly one candidate consistent on a majority of th
   // the first 1,000 complete records decide
   assert.equal(d("a,b\n".repeat(1000) + "x\n".repeat(5000)).delimiter, "comma");
   // both undetermined at once
-  assert.deepEqual(csvEntry.dialect(new Uint8Array([0x81, 0x0a])).undetermined, ["encoding_undetermined", "delimiter_undetermined_too_few_lines"]);
+  assert.deepEqual(csvEntry.dialect(new Uint8Array([0x81, 0x0a]))?.undetermined, ["encoding_undetermined", "delimiter_undetermined_too_few_lines"]);
 });
 
 test("R7 dialect: null for empty bytes or an undecodable BOM; the same computation structure() and text() report; its keys", async () => {
@@ -324,6 +324,7 @@ test("R7 dialect: null for empty bytes or an undecodable BOM; the same computati
   for (const s of ["a,b\n1,2\n", "a;b\n", "é|x\n1|2\n", "\x96,1\n2,3\n", "\x81,1\n2,3\n"]) {
     const b = bytes(s);
     const d = csvEntry.dialect(b);
+    assert.ok(d, "a non-empty body has a dialect");
     assert.deepEqual((await csvEntry.structure(b)).dialect, d);
     assert.deepEqual((await csvEntry.text(b)).dialect, d);
     assert.deepEqual((await csvEntry.parts(b)).ok, true);
