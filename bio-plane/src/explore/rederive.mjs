@@ -110,11 +110,14 @@ const DERIVED_FIELDS = ['kind', 'from', 'to', 'as_of', 'method', 'id'];
 
 /**
  * One hop of a chain, by its form (R23): a derived connection's parameters, a hop of another class, or neither.
- * @param {any} registry @param {unknown} hop
+ * @param {any} registry @param {unknown} h
  */
-function formOf(registry, hop) {
-  if (!isObj(hop)) return null;
-  const h = /** @type {Record<string, any>} checks a hop of a chain */ (hop);
+function formOf(registry, h) {
+  if (!isObj(h)) return null;
+  return formOfObject(registry, Object(h));
+}
+
+function formOfObject(registry, h) {
   const cls = filled(h.kind) ? registry.kindOf(h.kind)?.class ?? null : null;
   if (filled(h.method) || filled(h.as_of)) {
     return DERIVED_FIELDS.every((f) => filled(h[f])) && isRecordId(h.from) && isRecordId(h.to) ? 'derived' : null;

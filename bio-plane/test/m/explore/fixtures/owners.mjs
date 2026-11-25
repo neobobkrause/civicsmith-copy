@@ -139,10 +139,9 @@ export function world(rowsByOwner, o = {}) {
   return { registry, store };
 }
 
-/** Rows by owner, from a flat list of connections. @param {any[]} conns @returns {Record<string, any[]>} */
+/** Rows by owner, from a flat list of connections. @param {any[]} conns */
 export function byOwner(conns) {
-  /** @type {Record<string, any[]>} */
-  const out = {};
+  const out = Object.create(null);
   for (const c of conns) (out[c.owner] ??= []).push(c);
   return out;
 }
