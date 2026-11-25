@@ -1,5 +1,5 @@
 /* subresources: requirement-named tests at the module's interface
- * (build/requirements/subresources.md). Each test names the requirement id it
+ * (process/modules/subresources.md). Each test names the requirement id it
  * checks in its title. No network and no store: every callback is a fake. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -211,7 +211,7 @@ test("R9: one resolved address is fetched once, and every reference to it resolv
   assert.equal(r.out.companionText.split(`about:capture#${sha}`).length - 1, 3);
 });
 
-test("R10: a known platform ceiling defers before the limit; a thrown limit is recorded once and observed", async () => {
+test("R10: a known platform ceiling defers before the limit; a thrown limit defers the reference it fell on and is observed", async () => {
   const html = "<main>" + Array.from({ length: 12 }, (_, i) => `<img src="/n${i}.png">`).join("") + "</main>";
   const k = await run(html, { platformCeiling: 10, platformMargin: 2, subrequestsAlreadySpent: 1 });
   assert.equal(k.calls.length, 7);
@@ -230,9 +230,22 @@ test("R10: a known platform ceiling defers before the limit; a thrown limit is r
   assert.equal(t.calls.length, 4, "never re-attempted after the refusal");
   assert.equal(t.out.manifest.platform.limited, true);
   assert.equal(t.out.manifest.platform.observed_ceiling, 5);
-  assert.equal(t.out.subresources.filter((r) => r.reason === "PLATFORM_LIMIT").length, 1, "reported once");
-  assert.equal(t.out.subresources.filter((r) => r.reason === "DEFERRED").length, 8);
+  /* The reference the throw fell on is recorded the same way as the nine after
+     it, and the ceiling it discovered is read from the platform block above,
+     not from a reason of its own. */
+  assert.equal(t.out.subresources.filter((r) => r.reason === "PLATFORM_LIMIT").length, 0);
+  assert.equal(t.out.manifest.counts.platform_limited, 0);
+  assert.equal(t.out.subresources.filter((r) => r.reason === "DEFERRED").length, 9);
+  const refused = t.one("/n3.png");
+  assert.deepEqual([refused.ok, refused.reason, refused.status, "fetched_at" in refused],
+    [false, "DEFERRED", null, false], "no fetch instant and no status: the request never left");
+  assert.equal(t.out.manifest.counts.deferred, 9);
+  assert.equal(t.out.manifest.complete, false);
   assert.equal(t.out.subresources.filter((r) => r.reason === "FETCH_FAILED").length, 0);
+  /* Outstanding, not failed: every one of the nine comes back on the next tick. */
+  assert.equal(t.out.manifest.outstanding, 9);
+  assert.equal(t.out.resumeState.queue.length, 9);
+  assert.ok(t.out.resumeState.queue.some((q) => q.retryUrl === ORIGIN + "/n3.png"));
   const plain = await run("<main><img src=/e.png></main>", { site: { [ORIGIN + "/e.png"]: () => { throw new Error("boom"); } } });
   assert.equal(plain.one("/e.png").reason, "FETCH_FAILED");
   assert.equal(plain.out.manifest.platform.limited, false);
@@ -268,6 +281,48 @@ test("R11: furniture kinds seen across enough documents within the window are re
   const past = await run(html, { siteLookup: lookup({ last_fetched: "2019-01-01T06:00:00Z" }),
     now: () => new Date("2019-01-01T12:00:00Z") });
   assert.equal(past.one("/s.css").fetched_this_capture, false, "the window is measured from the injected now()");
+});
+
+test("R11: a reused part the store holds as text/css is read back and followed exactly as a fetched one is", async () => {
+  /* A url() target is a css-asset, not a stylesheet, whatever it turns out to
+     be. The fetched path follows one the source serves as text/css, so the
+     reuse path must follow one the STORE holds as text/css: R11 asks for the
+     reused part to be followed "exactly as a freshly fetched stylesheet's would
+     be", and a part that stopped being followed the moment it was reused would
+     render without the sprites its own rules name. */
+  const html = `<main><style>body{background:url(/theme.css)}</style></main>`;
+  const deep = ".z{background:url(/deep.png)}";
+  const held = { sha256: "f".repeat(64), bytes: 9, content_type: "text/css", documents: 2,
+    last_fetched: "2026-09-26T06:00:00Z", last_fetched_by: "capture-9", stable_since: "2026-09-01T00:00:00Z" };
+
+  const reused = await run(html, {
+    siteLookup: async (a) => a.endsWith("/theme.css") ? held : null,
+    readBack: async (sha) => sha === held.sha256 ? deep : null });
+  assert.equal(reused.one("/theme.css").kind, "css-asset");
+  assert.equal(reused.one("/theme.css").fetched_this_capture, false);
+  assert.ok(!reused.calls.includes(ORIGIN + "/theme.css"));
+  assert.equal(reused.one("/deep.png").ok, true, "the reused part's own url() target is discovered");
+
+  /* The same page with nothing reused: the two paths agree, which is what
+     "exactly as" means. */
+  const fetched = await run(html, { site: { [ORIGIN + "/theme.css"]: { bytes: enc(deep), contentType: "text/css" } } });
+  assert.equal(fetched.one("/theme.css").kind, "css-asset");
+  assert.equal(fetched.one("/deep.png").ok, true);
+  assert.deepEqual(reused.out.subresources.map((r) => r.url), fetched.out.subresources.map((r) => r.url));
+
+  /* Depth still bounds it: a reused part at CSS_MAX_DEPTH is not read back. */
+  const two = await run(`<main><style>@import "/one.css"</style></main>`, {
+    site: { [ORIGIN + "/one.css"]: { bytes: enc(".a{background:url(/two.css)}"), contentType: "text/css" } },
+    siteLookup: async (a) => a.endsWith("/two.css") ? held : null,
+    readBack: async () => deep });
+  assert.equal(two.one("/two.css").fetched_this_capture, false);
+  assert.equal(two.out.subresources.filter((r) => r.url.endsWith("/deep.png")).length, 0,
+    "CSS_MAX_DEPTH is 2 and the primary is depth 0");
+
+  /* Without readBack nothing is read back, and the reuse still stands. */
+  const blind = await run(html, { siteLookup: async (a) => a.endsWith("/theme.css") ? held : null });
+  assert.equal(blind.one("/theme.css").fetched_this_capture, false);
+  assert.equal(blind.out.subresources.length, 1);
 });
 
 test("R12: a resumed capture keeps what was recorded, restores the queue and replaces each DEFERRED row", async () => {
@@ -396,7 +451,10 @@ test("R17: only a record whose fetch was issued this run carries fetched_at (D-6
   const lookup = async (a) => a.endsWith("/s.css") ? { sha256: "d".repeat(64), documents: 3, last_fetched: "2026-09-26T10:00:00Z" } : null;
   const check = (r) => {
     for (const x of r.out.subresources) {
-      const issued = r.calls.includes(x.url) && x.reason !== "PLATFORM_LIMIT";
+      /* The reference a platform refusal fell on IS in calls — the call was
+         made and the runtime answered it by refusing — and it is DEFERRED, so
+         it claims no instant either (R10). */
+      const issued = r.calls.includes(x.url) && x.reason !== "DEFERRED";
       assert.equal("fetched_at" in x, issued, `${x.url} ${x.reason ?? "ok"}`);
       if (issued) assert.equal(x.fetched_at, "2026-09-26T12:00:00Z");
       assert.equal(x.considered_at, "2026-09-26T12:00:00Z");
@@ -413,7 +471,9 @@ test("R17: only a record whose fetch was issued this run carries fetched_at (D-6
   assert.ok(c.out.subresources.some((x) => x.reason === "DEFERRED"));
   check(c);
   const d = await run(html, { perMax: 50, site: { ...site, [ORIGIN + "/n2.png"]: () => { if (++n) throw new Error("subrequest limit"); } } });
-  assert.ok(d.out.subresources.some((x) => x.reason === "PLATFORM_LIMIT"));
+  assert.equal(d.out.manifest.platform.limited, true);
+  assert.ok(d.calls.includes(ORIGIN + "/n2.png"));
+  assert.equal(d.one("/n2.png").reason, "DEFERRED");
   check(d);
 });
 
@@ -677,6 +737,47 @@ test("Errors: a missing callback is a TypeError; nothing about a reference or th
   assert.equal(one("/rej.png").reason, "FETCH_FAILED");
   assert.equal(one("/big.png").reason, "TOO_LARGE");
   assert.doesNotThrow(() => { normalizeAddress({}); normalizeCitation(undefined); originOf(null, null); });
+});
+
+test("R36: a defect of the caller's is one named TypeError, never a record and never a fault that reads as transient", async () => {
+  const base = { html: "<p>no refs</p>", base: BASE, primarySha: "p".repeat(64), primaryFile: "f",
+    fetchOne: async () => ({ ok: true }), put: async () => ({}), sha256: async (b) => hex(b), isPublic };
+  /* The primary's own text has no default. A missing one must not be taken for
+     an empty page: that would file a complete manifest saying the primary
+     referenced nothing, which is a statement about this capture that is false. */
+  for (const v of [undefined, null, 0, {}, new Uint8Array(3), ["<p>x</p>"]])
+    await assert.rejects(captureSubresources({ ...base, html: v }), TypeError, String(v));
+  assert.equal((await captureSubresources({ ...base, html: "" })).subresources.length, 0,
+    "an empty page is a page, and is captured");
+
+  /* put's stated answer is { existed }. One outside that shape is named, not
+     left to surface as a property read of null, which a caller could read as a
+     fault of the moment and retry for ever. */
+  const oneRef = { ...base, html: `<main><img src="/a.png"></main>`,
+    fetchOne: async () => ({ ok: true, status: 200, bytes: enc("a"), contentType: "image/png" }) };
+  for (const answer of [null, undefined, true, "ok"])
+    await assert.rejects(captureSubresources({ ...oneRef, put: async () => answer }), TypeError, String(answer));
+  assert.equal((await captureSubresources({ ...oneRef, put: async () => ({}) })).subresources[0].existed, false,
+    "an answer of the right shape saying nothing is an answer");
+
+  /* A throw out of an injected function other than fetchOne is the caller's own
+     store, hash or clock failing, and it passes through: swallowing it would
+     file a manifest saying bytes are held that no store holds. */
+  const boom = () => { throw new Error("the caller's own failure"); };
+  await assert.rejects(captureSubresources({ ...oneRef, sha256: boom }), /the caller's own failure/);
+  await assert.rejects(captureSubresources({ ...oneRef, put: boom }), /the caller's own failure/);
+  await assert.rejects(captureSubresources({ ...oneRef, siteLookup: boom }), /the caller's own failure/);
+  await assert.rejects(captureSubresources({ ...base, html: `<main><link rel=stylesheet href="/s.css"></main>`,
+    fetchOne: async () => ({ ok: true, status: 200, bytes: enc("@import '/x.css'"), contentType: "text/css" }),
+    put: async () => ({ existed: false }), readBack: boom,
+    siteLookup: async () => ({ sha256: "a".repeat(64), documents: 2, last_fetched: "2026-09-26T11:59:00Z" }),
+    now: () => new Date("2026-09-26T12:00:00Z") }), /the caller's own failure/);
+  await assert.rejects(captureSubresources({ ...oneRef,
+    meter: { sync: boom, cpuAwait: async (l, f) => f(), report: () => ({}) } }), /the caller's own failure/);
+  /* And fetchOne's own throw is the one that is a record instead (R10, R16). */
+  const thrown = await run(`<main><img src="/a.png"></main>`,
+    { site: { [ORIGIN + "/a.png"]: () => { throw new Error("net down"); } } });
+  assert.equal(thrown.one("/a.png").reason, "FETCH_FAILED");
 });
 
 /* Fix round 10, cause R15 (G3, R24 (c)): a page that opens markup and never closes it was read

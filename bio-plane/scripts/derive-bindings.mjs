@@ -69,6 +69,21 @@ const KNOWN_BINDING_KEYS = [
   "ai", "vectorize", "hyperdrive", "dispatch_namespaces",
   "mtls_certificates", "send_email", "wasm_modules", "data_blobs", "text_blobs",
 ];
+/* R14 refuses a binding class the config declares NON-EMPTY, and a key that
+   states nothing declares no binding: an empty list, an empty object, `null`,
+   `false` and the empty string carry no binding for a deploy to miscarry, so
+   refusing them would refuse a config that is carrying nothing. (The list form
+   was already read this way; the object and emptiness forms were not, and a
+   `"ai": null` left in a config refused the deploy of a plane that binds no
+   AI.) Anything else a key states — a non-empty list or object, a name, a
+   number, `true` — is a declaration this derivation would drop silently, which
+   is D-201 through the front door. */
+const declaresBinding = (v) => {
+  if (v === undefined || v === null || v === false || v === "") return false;
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "object") return Object.keys(v).length > 0;
+  return true;
+};
 
 /**
  * Derive the bindings deploy.mjs sends, from the parsed wrangler config.
@@ -80,21 +95,29 @@ const KNOWN_BINDING_KEYS = [
  * D-260's organisation `ai` credential (DIST-9), carried the same way and NEVER
  * generated here: a member mints it on the instance, so a deploy only carries
  * the value the operator's environment holds.
- * @param {Object<string, *>} cfg the parsed wrangler.jsonc
+ * @param {*} cfg the parsed wrangler.jsonc
  * @param {Object} [opts]
  * @param {string} [opts.slug] the instance slug
  * @param {string} [opts.version]
  * @param {string} [opts.instanceAiToken]
  * @returns {Binding[]}
- * @throws {Error} REFUSED [NO_SLUG] or [NO_VERSION] when either is missing; [UNKNOWN_BINDING_CLASS] naming each other binding key the config declares; [BROWSER_BINDING_UNNAMED] for a `browser` with no `binding`; [PHANTOM_TARGET] if a derived service still targets `bio-plane`
+ * @throws {Error} REFUSED [NO_SLUG] or [NO_VERSION] when either is missing; [NO_CONFIG] when `cfg` is not a config object; [UNKNOWN_BINDING_CLASS] naming each other binding key the config declares non-empty; [BROWSER_BINDING_UNNAMED] for a `browser` with no `binding`; [PHANTOM_TARGET] if a derived service still targets `bio-plane`
  * @bound never a Claude credential and no Durable Object binding; secret_text INSTANCE_AI_TOKEN only when given
  */
 export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
   if (!slug) throw new Error("REFUSED [NO_SLUG]: the binding derivation needs the instance slug — a default would be the hardcoded name D-292 exists to forbid.");
   if (!version) throw new Error("REFUSED [NO_VERSION]: the binding derivation needs the version the rollout gate will wait for.");
+  /* No config is REFUSED BY NAME, as every other derivation here refuses what it
+     was not given. Reading nothing as an empty config would derive VERSION and
+     INSTANCE_NAME alone and deploy a plane with none of its service or bucket
+     bindings — D-201's silent deletion, arriving as success. */
+  if (!cfg || typeof cfg !== "object" || Array.isArray(cfg)) {
+    throw new Error(
+      "REFUSED [NO_CONFIG]: the binding derivation was handed no parsed wrangler.jsonc, so the bindings it would "
+      + "send are VERSION and INSTANCE_NAME alone — a plane deployed without the classes the config declares (D-201).");
+  }
 
-  const present = KNOWN_BINDING_KEYS.filter((k) =>
-    cfg[k] !== undefined && (Array.isArray(cfg[k]) ? cfg[k].length > 0 : true));
+  const present = KNOWN_BINDING_KEYS.filter((k) => declaresBinding(cfg[k]));
   if (present.length) {
     throw new Error(
       `REFUSED [UNKNOWN_BINDING_CLASS]: wrangler.jsonc declares ${present.join(", ")}, `

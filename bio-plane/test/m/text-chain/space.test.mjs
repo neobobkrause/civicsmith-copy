@@ -6,6 +6,7 @@ import {
   RECT_USER_SPACE, rectSpace, readingSource, readingSourceJson, readingOccurrenceKey, readingSourceFromColumns,
   readingPositionInExtent, extentCovers, gradeCeiling,
 } from "../../../src/textchain.mjs";
+/** @import { PdfPagePosition, ReadingPosition } from "../../../src/textchain.mjs" */
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
 
 const pdf = (x = {}) => ({ kind: "pdf-page", ref: "p. 1", page: 0, ...x });
@@ -22,7 +23,7 @@ test("R87: readingSource carries a non-user space beside a valid rect, never bes
   const rect = [1, 2, 3, 4];
   assert.deepEqual(readingSource(pdf({ rect, space: "image-px" })), { kind: "pdf-page", ref: "p. 1", page: 0, rect, space: "image-px" });
   /* Key-ordered: space last, whatever the caller's order. */
-  assert.deepEqual(Object.keys(readingSource({ space: "image-px", rect, ...pdf() })), ["kind", "ref", "page", "rect", "space"]);
+  assert.deepEqual(Object.keys(/** @type {ReadingPosition} */ (readingSource({ space: "image-px", rect, ...pdf() }))), ["kind", "ref", "page", "rect", "space"]);
   /* User space, stated or not, is the pre-D-670 shape byte for byte. */
   for (const x of [{}, { space: null }, { space: "user" }]) {
     assert.deepEqual(readingSource(pdf({ rect, ...x })), { kind: "pdf-page", ref: "p. 1", page: 0, rect });
@@ -35,7 +36,7 @@ test("R87: readingSource carries a non-user space beside a valid rect, never bes
   for (const space of UNREADABLE)
     assert.deepEqual(readingSource(pdf({ rect, space })), { kind: "pdf-page", ref: "p. 1", page: 0, rect: null }, JSON.stringify(space));
   /* Truncated to 40 characters. */
-  assert.equal(readingSource(pdf({ rect, space: "s".repeat(90) })).space, "s".repeat(40));
+  assert.equal(/** @type {PdfPagePosition} */ (readingSource(pdf({ rect, space: "s".repeat(90) }))).space, "s".repeat(40));
   /* Other arms carry no space. */
   assert.deepEqual(readingSource({ kind: "doc-para", ref: "¶", para: 1, space: "image-px" }), { kind: "doc-para", ref: "¶", para: 1, run: null });
 });

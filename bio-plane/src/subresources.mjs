@@ -176,7 +176,7 @@ import { localize } from "./setup-words/index.mjs";
  */
 /**
  * @typedef {Object} CaptureArgs what `captureSubresources` is given (R1 to R17, R28)
- * @property {*} html the primary page's text
+ * @property {string} html the primary page's text; no default, as the four injected functions have none
  * @property {*} base the primary's own address, which references resolve against
  * @property {*} primarySha the raw capture's hash, named in the companion's banner and the manifest
  * @property {*} primaryFile the raw capture's file name, e.g. `snapshots/<name>`
@@ -1340,9 +1340,16 @@ export function readLinkWrapper(v) {
  *  R16 Errors: never throws for anything about a reference or the source: a
  *  refused scheme, a refused locator, an oversized body, a cap, budget or
  *  platform limit, or a failed or throwing fetchOne all become records (R36).
+ *
+ *  What does throw is a defect of the caller's: an input it must supply and did
+ *  not, or an injected function answering outside the shape stated above. A
+ *  throw out of an injected function other than fetchOne (put, sha256,
+ *  siteLookup, readBack, meter) is the caller's own store, hash or clock
+ *  failing, and passes through: swallowing it would file a manifest saying
+ *  bytes are held that no store holds.
  *  @param {CaptureArgs} args
  *  @returns {Promise<CaptureResult>}
- *  @throws {TypeError} when fetchOne, put, sha256 or isPublic is not a function; none has a default
+ *  @throws {TypeError} when fetchOne, put, sha256 or isPublic is not a function, when html is not the page's text, or when put answers outside { existed }; none has a default
  */
 export async function captureSubresources({
   html, base, primarySha, primaryFile, fetchOne, put, sha256, isPublic,
@@ -1378,6 +1385,14 @@ export async function captureSubresources({
      a reference that would have called it. */
   for (const [name, fn] of [["fetchOne", fetchOne], ["put", put], ["sha256", sha256], ["isPublic", isPublic]])
     if (typeof fn !== "function") throw new TypeError(`captureSubresources: ${name} must be a function`);
+  /* The primary's own text has no default either, and a caller's defect about it
+     is named here rather than left to surface further in as a property read of
+     null. Taking a missing `html` for an empty page would file a manifest
+     saying the primary referenced nothing and was complete, which is a false
+     statement about this capture, not a capture of an empty page. A defect of
+     the caller's is a throw; the page's own bytes never are (R36). */
+  if (typeof html !== "string")
+    throw new TypeError("captureSubresources: html must be the primary page's text");
   /* Why an asset the host has served before was fetched anyway. Recorded so a
      reuse rate that quietly falls to zero is visible rather than mysterious. */
   const noReuse = [];
@@ -1443,7 +1458,10 @@ export async function captureSubresources({
     queue = makeQueue(queued);
     /* A resumed item was DEFERRED last tick and is being tried again, so its
        earlier row goes: leaving it would double-count and would leave a
-       "deferred" row beside the real outcome. */
+       "deferred" row beside the real outcome. PLATFORM_LIMIT is read here too:
+       nothing writes that reason any more (R10), but a resumeState written by an
+       earlier build can still carry one, and such a row must be dropped on
+       retry exactly as a DEFERRED one is. */
     const retry = new Set(queued.map((q) => q.retryUrl).filter(Boolean));
     for (let i = records.length - 1; i >= 0; i--)
       if ((records[i].reason === "DEFERRED" || records[i].reason === "PLATFORM_LIMIT") && retry.has(records[i].url)) {
@@ -1524,10 +1542,11 @@ export async function captureSubresources({
       continue;
     }
     /* Once the runtime has refused, every further attempt is another refusal.
-       0.37.0 kept trying and wrote 85 identical PLATFORM_LIMIT rows, which
-       spends time to record the same fact repeatedly and buries the one row
-       that actually discovered the ceiling. Stop, and say the rest is
-       outstanding rather than failed. */
+       0.37.0 kept trying and wrote 85 rows for it, spending time to record the
+       same fact repeatedly. Stop, and say the rest is outstanding rather than
+       failed. Where the ceiling was met is read from
+       manifest.platform.observed_ceiling, not from one row wearing a different
+       reason (R10). */
     if (platformHit || attempted >= ceilingBudget) {
       deferred++;
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
@@ -1621,7 +1640,10 @@ export async function captureSubresources({
          SOURCE into the manifest, which is the one kind of error this system
          exists to prevent. */
       const platform = /too many subrequests|subrequest limit|exceeded.*limit/i.test(msg);
-      r = { ok: false, status: 0, reason: platform ? "PLATFORM_LIMIT" : "FETCH_FAILED",
+      /* A platform refusal is settled below as DEFERRED (R10), so no reason is
+         named here for it: the only reason this object ever carries is the
+         source's. */
+      r = { ok: false, status: 0, ...(platform ? {} : { reason: "FETCH_FAILED" }),
             detail: platform
               ? localize("subresources.subresources.the_runtime_refused_another", "the runtime refused another outbound request in this invocation; the source was never asked, and this says nothing about whether it would have answered")
               : msg };
@@ -1637,13 +1659,22 @@ export async function captureSubresources({
     }
 
     if (limited) {
-      /* The runtime refused before the request left, so no fetch instant, and
-         the reference is outstanding like the ones after it: a continuation
-         retries it rather than losing it. */
+      /* The runtime refused before the request left, so no fetch instant and no
+         status, and the reference is outstanding like the ones after it: a
+         continuation retries it rather than losing it.
+
+         R10: it is recorded THE SAME WAY as those that follow it — one DEFERRED
+         row, not a reason of its own. That the ceiling was discovered at this
+         reference is carried by manifest.platform.limited and
+         observed_ceiling, which is where a reader looks for it. A second word
+         for it on this one row said the same fact twice and made the row a
+         continuation must retry look unlike its neighbours, which are the same
+         fact and the same work. */
+      deferred++;
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
         cssOwnerIdx: item.cssOwner ? (recIdx.get(item.cssOwner) ?? -1) : null,
         retryUrl: cls.url });
-      const rec = { ...stem, ok: false, status: 0, reason: "PLATFORM_LIMIT", detail: r.detail };
+      const rec = { ...stem, ok: false, status: null, reason: "DEFERRED", detail: r.detail };
       byUrl.set(cls.url, rec); settle(item, rec);
       continue;
     }
@@ -1671,7 +1702,15 @@ export async function captureSubresources({
     }
     spent += bytes.length;
     const sha = await meter.cpuAwait("hash_subresource", () => sha256(bytes), bytes.length);
-    const { existed } = await put(sha, bytes);
+    /* put's stated answer is { existed }. One that answers outside that shape is
+       the caller's defect, named here rather than surfacing as a destructuring
+       error, which reads like a fault of the moment that a retry might clear
+       (R36). A throw out of put itself is the caller's own store failing and
+       passes through. */
+    const stored = await put(sha, bytes);
+    if (!stored || typeof stored !== "object")
+      throw new TypeError("captureSubresources: put must answer { existed }");
+    const { existed } = stored;
     const ct = (r.contentType || "").split(";")[0].trim();
     const rec = { ...stem, ok: true, status: r.status ?? 200, sha256: sha, bytes: bytes.length,
                   ...(ct ? { content_type: ct } : {}), existed: !!existed, fetched_at: fetchedAt };
@@ -1833,6 +1872,10 @@ export async function captureSubresources({
     counts: {
       fetched: fetched.length,
       failed: records.filter((r) => !r.ok && (r.reason === "SOURCE_REFUSED" || r.reason === "FETCH_FAILED" || r.reason === "TOO_LARGE")).length,
+      /* Zero on anything this build captured: the reference the runtime refused
+         is one DEFERRED row like the rest (R10). It stays a count because a
+         resumed state written by an earlier build can still carry such a row,
+         and the totals below must still place it. */
       platform_limited: records.filter((r) => r.reason === "PLATFORM_LIMIT").length,
       deferred: records.filter((r) => r.reason === "DEFERRED").length,
       refused: records.filter((r) => !r.ok && (r.reason === "REFUSED_SCHEME" || r.reason === "REFUSED_LOCATOR" || r.reason === "UNRESOLVABLE")).length,
