@@ -219,9 +219,10 @@ export function moveMember({ sql, promotion }, { id, when, author, to, blurb, se
   const liveMd = one(sql, `SELECT content FROM files WHERE bundle_id=? AND path='bundle.md'`, id);
   const cur = one(sql, `SELECT bundle_sha, current_state FROM bundles WHERE bundle_id=?`, id);
   if (!liveMd || liveMd.content === null) return { stop: "NO_DOCUMENT" };
-  let text = appendStateHistory(liveMd.content, {
+  const spliced = appendStateHistory(liveMd.content, {
     timestamp: when, from_state: cur.current_state, to_state: to, blurb, author });
-  if (!text) return { stop: "UNSPLICEABLE_STATE_HISTORY" };
+  if (!spliced) return { stop: "UNSPLICEABLE_STATE_HISTORY" };
+  let text = spliced;
   text = setScalar(text, "prior_state", cur.current_state);
   text = setScalar(text, "current_state", to);
   text = setScalar(text, "last_updated", `"${when}"`);
