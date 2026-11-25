@@ -6,7 +6,7 @@
    as the office calendar; each is a local fact at its own path (R12, N562; local-facts R6). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, ALICE, MACHINE, actionMd, CLK, officeCalendarProfile, determinations } from "./fixture.mjs";
+import { world, V, ALICE, MACHINE, actionMd, CLK, officeCalendarProfile, determinations, present } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import { factPath } from "../../../src/local-facts/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -14,7 +14,7 @@ import { combine, get } from "../../../../jurisdictions/index.mjs";
 
 const M = V("alice"), BOB = V("bob");
 const A = "ACTN-2026-0001-a", B = "ACTN-2026-0002-b", C = "ACTN-2026-0003-c", D = "ACTN-2026-0004-d";
-const TEST = combine(["test-port-ellery"]).view, FIRST = combine(["oakland-alameda"]).view;
+const TEST = present(combine(["test-port-ellery"]).view, "the test profile's view"), FIRST = combine(["oakland-alameda"]).view;
 const office = (role, body) => ({ state: "named", role, body });
 const fm = (counterparty, action_kind, at) => ({ counterparty, action_kind, correspondence: [{ direction: "sent", at }] });
 const R5 = { rule: "r", days: 5, count: "business", starts: "received", basis: "TEST" };

@@ -2,7 +2,7 @@
    America/Halifax (UTC−3 in September): R3's day is that local day (K1444 (iii)), never the UTC day. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, ALICE, MACHINE, actionMd, CP, CLK, determinations } from "./fixture.mjs";
+import { world, V, ALICE, MACHINE, actionMd, CP, CLK, determinations, present } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import { get as profile } from "../../../../jurisdictions/index.mjs";
 
@@ -160,11 +160,11 @@ test("R9 every read answers an invisible action as an absent one; the module's t
      ["action_reminders", "action-clocks", "clear", "none", "admin-only", "bundle", "stored", false]]);
   assert.ok(!clocks.actionClocksOwns("correspondence"));
   /* no place in outward text. */
-  const oak = profile("oakland-alameda");
+  const oak = present(profile("oakland-alameda"), "the first profile");
   const outward = JSON.stringify([clocks.ACTION_CLOCK_CHECKS, w.c.clockPropose({ target: B, rule: "x", proposer: M, viewer: M }),
     w.c.reminderSet({ target: B, entry: 9, on: "2026-09-20", author: M, viewer: M })]);
   for (const p of ["Oakland", "Alameda", "California", "CPRA", ...oak.covers]) assert.ok(!outward.includes(p), p);
-  assert.equal(profile("test-port-ellery").test, true);
+  assert.equal(profile("test-port-ellery")?.test, true);
   assert.deepEqual(w.record.getSetting("jurisdiction_profiles"), ["test-port-ellery"]);
 });
 
