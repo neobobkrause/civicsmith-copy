@@ -290,8 +290,9 @@ export default counted({
          SWAPPED is not: a published agenda or set of minutes that stops being the
          one it was is the quiet substitution, and it is an event. */
       for (const kind of ["agenda", "minutes"]) {
-        if (!f.has(kind)) continue;
-        const { was, now } = f.get(kind);
+        const m = f.get(kind);
+        if (!m) continue;
+        const { was, now } = m;
         if (!was && now)
           events.push(event(`${kind}_published`, { key: alt.entity.key, label: alt.entity.label,
                         document: now, why: localize("doctypes.meeting-calendar.published", "{kind} were published for a meeting that had none", { kind }) }));
