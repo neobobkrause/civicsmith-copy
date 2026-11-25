@@ -99,7 +99,7 @@ console.log("\n--- R21, R25: the page's /Rotate ---");
     const png = readPng(r.bytes);
     const tr = turn(px, v.width, v.height, deg);
     const want = [];
-    for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) want.push(...tr.at(X, Y));
+    for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) want.push(.../** @type {number[]} */ (tr.at(X, Y)));
     t(`R21 R25 /Rotate ${deg}: the picture turned, upright`, [r.route, r.upright, r.rotate_deg, png.width, png.height, hex(png.samples)],
       ["decoded-jpx", true, deg, tr.W, tr.H, hex(Uint8Array.from(want))]);
     t(`R26 /Rotate ${deg}: pixels_sha256 over the turned samples`, r.pixels_sha256, hex(png.samples));

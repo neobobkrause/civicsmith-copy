@@ -1479,9 +1479,18 @@ export async function buildMember(member, { write = false, mutateEntry = null } 
     mkdirSync(join(member.abs, dirname(member.bundle.outfile)), { recursive: true });
     writeFileSync(join(member.abs, member.bundle.outfile), bytes);
   }
+  /* Code-point order, as `discoverMembers` orders the fleet, and for the same
+     reason: `localeCompare` asks the machine's collation, which orders
+     `src/parta.mjs` and `src/part~two.mjs` one way under a full-ICU Node and
+     the other under code points — so the manifest's recorded order, and so its
+     bytes, moved with the locale a build ran under. R2 promises the same bytes
+     from any checkout, and R4 records this list. (Measured 25 Nov 2026: all
+     seven committed manifests record their inputs in an order that is both, so
+     this change moves no committed manifest.) */
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
   const inputs = Object.entries(res.metafile.inputs)
     .map(([path, v]) => ({ path, bytes: v.bytes }))
-    .sort((a, b) => a.path.localeCompare(b.path));
+    .sort((a, b) => cmp(a.path, b.path));
   return { bytes, sha256: sha256(bytes), inputs, metafile: res.metafile, words };
 }
 

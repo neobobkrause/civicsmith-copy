@@ -628,12 +628,13 @@ export async function decodeImage(doc, im, opts) {
     if (out.width !== im.width || out.height !== im.height) {
       return refuse("DECODE_FAILED", { filters, note: localize("pdf-pixels.pagepixels.the_jpeg_2000_image_is", "the JPEG 2000 image is {width}x{height}; the PDF declares {width_2}x{height_2}", { width: String(out.width), height: String(out.height), width_2: String(im.width), height_2: String(im.height) }) });
     }
-    const rot = rotate8(out.samples, out.width, out.height, out.comps, opts.rotate || 0);
-    out.samples = null;
+    const { comps, detail } = out;
+    const rot = rotate8(out.samples, out.width, out.height, comps, opts.rotate || 0);
+    out = null; /* the decoded frame is let go before the PNG is built (R46) */
     return { ok: true, route: "decoded-jpx", mediaType: "image/png", upright: true, width: rot.width, height: rot.height,
              pixelsSha256: await sha256Hex(rot.samples),
-             bytes: await encodePng8(rot.samples, rot.width, rot.height, out.comps),
-             jpx: { ...out.detail, comps: out.comps, stream_bytes: data.length } };
+             bytes: await encodePng8(rot.samples, rot.width, rot.height, comps),
+             jpx: { ...detail, comps, stream_bytes: data.length } };
   }
 
   /* FlateDecode or unfiltered raw samples. */

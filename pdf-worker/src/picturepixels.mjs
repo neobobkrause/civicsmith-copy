@@ -518,7 +518,7 @@ export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = 
   const k = reductionFor(...orientedSize(pic.width, pic.height, applied), maxEdge);
   const red = reducer(pic.width, pic.height, pic.comps, { grey, orientation: applied, k });
   red.rows(pic.samples, 0, pic.height);
-  pic.samples = null;
+  pic = null; /* the decoded frame is let go before the reduced picture is encoded (R46) */
   return answer(red.done(), { source, orientation: 1, k, turn }, prepare, maxEdge);
 }
 
