@@ -1,8 +1,8 @@
-Length: 156 lines. Last section: "Suggestions".
+Length: 159 lines. Last section: "Suggestions".
 
 # reevaluation: requirements
 
-Next number: 39
+Next number: 42
 
 **Size (P6).** About 700 lines move (about 330 without comment-only and blank lines): `store.mjs` 622, `bio-checks.mjs` 81. REC-222 and REC-223 add a notice table and two acts. Well under 4,000.
 
@@ -130,6 +130,9 @@ Terms. A **dependent** is a bundle with a basis leg naming the target (`inquiry_
 - **R22** [met] C-10.1, registered with `promotion` as a check: `reeval_pending` is a `{flag, since, source}` record or a legacy boolean; a legacy `true` warns; any other type errors; a non-boolean `flag` errors; `false` with a `since` or `source` warns; `true` needs an ISO-8601 UTC `since` (error) and, older than the policy age (30 days unless set), is reported (info); `source` is one of `deletion`, `source_status`, `wp_retraction`, `annotation` (error).
 - **R23** [met] Each check moves here as an invariant with its test (K6): C-10.1, C-80.1, C-80.2 (C-80.3 is `content`'s).
 - **R24** [met] No place is named in this module's behaviour or outward text.
+- **R39** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `versionnotice`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R40** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `adoptversion`, `keepversion`, `reevaluationrecord`, `reevaluations`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R41** [met] (fix round 7, G89; K4771; amends R14) **An open notice's grade follows the newest reading of its copy.** When the sweep reads again the newer capture an open notice waits on (its copy read since the notice was raised, or read again), the notice's stored grade and its `notices()` answer become `content.passageNotice`'s answer for that reading, in the same tick; a notice adopted, kept or closed keeps the grade it was settled with; no second notice is raised for the same (holder, reference, newer capture). The sweep is pending (R25) while an open UNDETERMINED notice's copy has been read and its candidate now grades otherwise, and rests once that notice is re-graded; a copy never read is not polled. Test: `bio-plane/test/m/reevaluation/r14-regrade-after-read.test.mjs`.
 
 ### Satisfies
 

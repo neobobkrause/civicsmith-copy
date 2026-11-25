@@ -1,8 +1,8 @@
-Length: 161 lines. Last section: "Suggestions".
+Length: 162 lines. Last section: "Suggestions".
 
 # ai-runs: requirements
 
-Next number: 90
+Next number: 91
 
 **Size (P6).** About 3,490 lines at T45 (K2826): `index.mjs` and `schema.mjs`. Under the 4,000 mark. A job reads it whole with its uses' public parts.
 
@@ -135,6 +135,7 @@ Terms. A **run** is `{run, status, label, mode, context_type, context_id, princi
 - **R39** [met] No place is named in this module's behaviour or outward text. A Cloudflare location hint is where the hosting platform runs the team's room, not a jurisdiction and not a place the product acts on (fix round 7, G3; K4752).
 - **R54** [met] (DEC-149, Bob's "S4: B"; BOB's review item 1) Every member-facing string this module answers (each refusal's `note` and `detail`, each row's `translation`, and the `says` of a dispatch decision written into a run's log, which `op=airunlog` serves to a viewer, R24) calls the group's own Civicsmith "your group's Civicsmith", or names the thing itself, and never "copy", "instance", "plane" or "server" for it; a possessive is turned round ("the instance's organisation credential" becomes "the organisation credential of your group's Civicsmith"). The sweep's rows for this module (`build/plan/draft-T35-dec149-l1-l7.md`, with the checks' verdict) are `bio-plane/src/ai-runs/index.mjs`:895 (`AI_RUN_MODE_NOT_DEPLOYED`'s `note`: "the mode '…' is not deployed in your group's Civicsmith: …") and :1688, :1694, :1698, :1699 (the resumption's `says`): five rows, each applied where it lands and named by a test. Codes, op names, field names (`withheld`'s values, `NOT_THE_INSTANCE_CREDENTIALS_RUN` among them), the principal note addressed to an operator (:867) and comments are not member-facing and stay.
 - **R53** [met] (plan T33, Rules (6)) This module declares its tables explicitly through `record-core.declareTable` (its R21), keeping R38's purge: `ai_runs`, `ai_run_bounds` and `inquiry_run_surfacings` as R38 says, with the sight R19 gives a run; the other classes as `declarePurge`'s default form gives them. (T40; K2400) The `ai_usage` and ceilings tables are no longer declared here: moved to `ai-use` R7.
+- **R90** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `airunopen`, `airunclose`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
 
 ### Satisfies
 

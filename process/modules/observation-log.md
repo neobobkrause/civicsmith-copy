@@ -1,8 +1,8 @@
-Length: 115 lines. Last section: "Suggestions".
+Length: 116 lines. Last section: "Suggestions".
 
 # observation-log: requirements
 
-Next number: 39
+Next number: 40
 
 **Size (P6).** About 3,120 lines move (about 1,210 without comment-only and blank lines): `store.mjs` 1,233, `airun.mjs` 1,496, `bio-checks.mjs` 266, `schema.mjs` 123. Under 4,000 only because `op=frontier`'s level arms (1,116 lines, map §2) are proposed for `retrieval`. With them here the module would be about 4,230, over the mark at which BOB reports a module: the frontier is a set of reads over the log and other modules' tables, and `retrieval` already uses this module and every table the arms read. The member-knowledge attribution act (MK-7, about 400 lines), filed under this module's name, is `publication`'s (map §5.1).
 
@@ -94,6 +94,7 @@ Terms. An **entry** is `{actor_class, actor, authority_kind, authority, level, s
 - **R28** [met] No place is named in this module's behaviour or outward text.
 - **R34** [met] (S0-8; B0.5) `LEAD_ID_RE` is built from `record-grammar`'s `idPattern("LEAD")` (`ID_TABLE`, its R46–R47), keeping R14's form (`LEAD-YYYY-MMDD-<12 hex>`) as the core and tail `ID_TABLE` states for `LEAD`, so no copy of the id's shape is held here and every lead minted before T33 stays valid.
 - **R35** [met] (plan T33, Rules (6)) This module declares every table (`observation_log`, `leads`, `lead_shares`) explicitly through `record-core.declareTable` (its R21), keeping R22–R23: whole-store purge only, `version_chain: true` for the append-only log; their sight governed by R13 (the log) and R15 (a lead and its shares), never wider; the other classes as `declarePurge`'s default form gives them.
+- **R39** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `lead`, `leadlook`, `leadshare`, `leadread`, `leadlist` (the leads the viewer may read, R20; K4243). Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
 
 ### Satisfies
 

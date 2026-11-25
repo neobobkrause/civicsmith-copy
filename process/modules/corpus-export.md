@@ -1,8 +1,8 @@
-Length: 72 lines. Last section: "Suggestions".
+Length: 74 lines. Last section: "Suggestions".
 
 # corpus-export: requirements
 
-Next number: 14
+Next number: 16
 
 ## Public
 
@@ -50,6 +50,8 @@ A group that cannot leave can be held. This module exports the working corpus ve
   The verifying import belongs to this module: `verifyCorpusExport({manifest, bytes})`, which writes nothing, never throws and has no op (K1058).
 - **R4** [met] (was `publication` R31, its `export_log` clause) `export_log` is exempt from purge.
 - **R5** [met] (was `publication` R34, copied) No place is named in this module's behaviour or outward text.
+- **R14** [met] (fix round 6, G22; K4571; amends R10) **A rendering past its bound is continued by part and says so in its own body.** `exportRendering({format, viewer, part})` (`op=exportrender`, key `part`) reads at most RENDER_MAX (5,000) records of each source in a part: part n (1-based, default 1) holds that source's records 5,000(n-1)+1 to 5,000n in id order. The answer carries `part`, `next` (the following part; null on the last) and `truncated` (true when `next` is set). A part that is not the whole rendering (any part after the first, or a first part with `next`) states it in the body an outside party receives, naming the part and the next, in its standard's own field: `description` for a Fiscal Data Package, a top-level `note` for every other envelope; a rendering that fits in one part carries no note. An item that refers to a record held in another part refers to it by id and keeps every field derived from it; a record an item names may also be rendered in the parts that name it (one id, one entity). Person facts are read whole for the persons of the part. A `part` that is not a whole number from 1 is refused `EXPORT_PART_MALFORMED`, rendering and logging nothing. Test: 5,001 records of a source, each format: part 1 states it is part 1 and names part 2; part 2 holds the 5,001st; a membership across parts keeps its post and organization.
+- **R15** [met] (T51; K4168, K4208; `op-declarations` R80, R81; `op-grades` R49, R50; `test-support` R15) **The module declares `exportrender`.** `DECLARED_OPS` holds `exportrender`: `{classes: ["admin","member"], machineClasses: [], mutating: true, weight: "substrate", description (the hand row's sentence), fields: {accepts: ["format","part"], requires: ["format"]}}`. Test: `declaredOpHolds` (`declared-ops.test.mjs`).
 
 ### Satisfies
 

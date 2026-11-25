@@ -1,8 +1,8 @@
-Length: 87 lines. Last section: "Suggestions".
+Length: 90 lines. Last section: "Suggestions".
 
 # explore: requirements
 
-Next number: 27
+Next number: 30
 
 **Size (P6).** New. Expected 1,200–1,800 lines. M-X1a (the synthetic chain at real volumes) runs inside the job; M-X1b (real data) only tunes the budget constant after the release.
 
@@ -71,6 +71,9 @@ Terms. A **hop** is one connection in `connection-grammar`'s shape `{id, from, t
 - **R16** [met] Never machine-asserted: no answer states that two nodes are connected beyond the cited hops, and no outward text uses "knows", "network", "conflict", "suspicious" or "most connected" (K1486, K1471).
 - **R17** [met] Constitutive relations (`entities`' declared relations) are walked only as R6's declared hops and never resolve a reference or carry a grade of their own (entities R26 as reworded, K1487).
 - **R18** [met] No place is named in this module's behaviour or outward text; hub thresholds and the budget are owner data or constants, never a place's.
+- **R27** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `explore`, `explorepreset`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R28** [met] (T51; K4206; op-declarations R80, op-grades R49; test-support R15; amends R27 for `exploreverify`; R12) **`exploreverify` is declared.** `DECLARED_OPS.exploreverify` is `DECLARED_OPS`'s row beside `explore` and `explorepreset`: classes `admin`, `member`, `probe`, `mutating` false, weight `read`, the description "read: whether a derived connection re-derives to its id, and which hops it rests on; writes nothing". Its fields: `accepts` are `chain`, `from`, `to`, `kind`, `as_of`, `method`, `id`, `scope`; `requires` are `from` or `chain`, and `to` or `chain` (a chain alone, the screen's call, or one derivation's ends). `kind`, `as_of`, `method` and `id` are not required: R12 answers a derivation that cannot be recomputed `matches: false` with the reason, which names the field, so the answer is deliberately uniform and no refusal is added. Test: `declaredOpHolds` for `exploreverify` (`declared-ops.test.mjs`), its requires alone, each missing end refused naming it, and a field outside accepts dropped or refused; and a chain alone answered with no refusal naming a declared field.
+- **R29** [met] (T51 fix round 10, live walk C/E; K5271) A node's label names an `INFO-` node by its document's title and an `EVT-` node by its kind in the Timeline's words (`screen.timeline.kind`) and its date, the kind alone when undated (T52, W9, C-K22), else null as before (amends R25; walk C C-M8).
 
 ### Satisfies
 

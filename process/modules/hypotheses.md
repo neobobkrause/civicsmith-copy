@@ -1,8 +1,8 @@
-Length: 89 lines. Last section: "Suggestions".
+Length: 90 lines. Last section: "Suggestions".
 
 # hypotheses: requirements
 
-Next number: 24
+Next number: 25
 
 **Size (P6).** New. Expected 500–700 lines. It is not added to `inquiry` (3,903 lines, P6).
 
@@ -73,6 +73,7 @@ Terms. A **note** is a member's own words kept in the group's copy, seen only by
 - **R14** [met] (DEC-136 (2), (3)) Notes are never cited, published, counted or shared: no read of this module but R12 answers a note or a count of notes; no figure source, tally, `retrieval` registration, `connection-grammar` owner, `bias` work product, queue item or notification is made from one; and a promotion leg, reference or citation naming a note is impossible by its key (R11's Terms). (T35; DEC-144) No history and no marker: after a revision no row, log entry or answer of this module holds the earlier text, and after a deletion none holds the note, its text, its turns or a sign that it existed; a later note never takes a deleted note's number. (T36; N727; K2007, K1489) No note's number is drawn from a sequence shared across members: the numbers a member's notes carry, their order and their gaps depend only on that member's own notes, so they reveal nothing of whether, or how many, notes any other member keeps, kept or deleted; a note kept before this rule is answered by such a number too. (T41, D18; amended) "Never shared" reads "never shared except by its author's R19 act, which shares a copy of its words"; R14's no-history rule holds for the private note, and R20's marker is the share's, never the note's.
 - **R15** [met] (DEC-136 (2), (3); K1489) The notes table is declared through `record-core.declareTable` with `sight: "owner"` and `export: "never"` (as `answers`' standing questions, K1481), `purge` `clear`, `version_chain` `false`; it is held in the group's copy like every other table (reachable as everything in the copy is, the reason for R11's court statement). No place is named in behaviour or outward text. (T35; DEC-144) A revision overwrites the note's row and a deletion removes the row and its turns in the one act; no table this module declares keeps the earlier text or the deleted note.
 - **R22** [met] (T42; N843; K231, K275, K2566) This module's codes name its own conditions. A proposal of the system's with no run (R16) is refused `HYPOTHESIS_PROPOSAL_NO_RUN` (C-134.22), and a proposal absent or unseen at R17's or R18's act is refused `NO_SUCH_HYPOTHESIS_PROPOSAL` (C-134.23). Each row keeps its number and translation. It never answers `PROPOSAL_NO_RUN` (action-plans') or `NO_SUCH_PROPOSAL` (intent's).
+- **R24** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `hypothesishold`, `hypothesisrevise`, `hypothesiswithdraw`, `notewrite`, `noterevise`, `noteturn`, `notedelete`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
 
 ### Satisfies
 

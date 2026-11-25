@@ -1,8 +1,8 @@
-Length: 153 lines. Last section: "Suggestions".
+Length: 156 lines. Last section: "Suggestions".
 
 # conformance: requirements
 
-Next number: 42
+Next number: 45
 
 **Size (P6).** New. Estimated 700–1,000 lines of code; one session reads it with the public parts of its uses.
 
@@ -125,6 +125,9 @@ Rows (T45), C-113's next numbers at the job's stamp, translations BOB's drafts a
 - **R16** [met] Determinations, supersessions and proposals are append-only; each table is declared to `record-core`'s purge (K23). No place is named in this module's behaviour or outward text.
 - **R17** [met] A determination is a record object of its own type: promoted through `promotion`, with history, audit and export like a finding; R7's rule holds, a correction being a new determination that supersedes it (`standards` R15).
 - **R24** [met] (K903 (4), DEC-36) Every read withholds whole what the viewer may not see. The reads are R9, R10's flag, R11, R12's `comparisonRead` and R22's cause. The things withheld are a pinned finding; a standard, with its outcome, rows and disagreement; a question's inquiry; an evidence content id of the act or the cause; a proposal's standard or its `contradiction`; and an R10 cause whose subject is one, its `detail` with it. Withheld whole means no id, title, state, placeholder or count. The item leaves its list. A key that named it is left out, never null. The determination's or proposal's answer states `out_of_view: true`, which says only that something was withheld. What is authored on the determination itself stands for every viewer who may read it: a question's text without its `inquiry` key; the act, author, time, supersession and `live`; `basis_changed` when any cause stands, with the withheld causes left out; and `outcomes_differ` over all its standards. That is the pattern of `strength` R6, which keeps every record fact about the axes. A viewer who may see everything is answered as before, with no `out_of_view` key. (T45) A pinned held check or accepted finding the viewer may not see is withheld whole, as a pinned finding is; an accepted finding's source group and edition date are the record's facts and stand for every viewer who may read the determination.
+- **R42** [met] (T51; K4168; the T51 declaration pass; op-declarations R80, R81; op-grades R49, R50; test-support R15) **The module declares the ops it serves that the screens send.** `DECLARED_OPS` is exported beside the ops map: a frozen object keyed by the op's door name, each row `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`, its class, weight and description copied from the op's existing rows and its fields read from the arm whole (the stamps and the shell's `reason` are not accepts unless the arm reads a `reason` of its own): `determine`. Test: `declaredOpHolds` for each, with only its requires, without each, and with a field outside its accepts (`declared-ops.test.mjs`).
+- **R43** [met] (T51 fix round 10, live walk C/E; K5271) `determine` refuses a standard whose binding on the actor's body is undetermined with its own code `STANDARD_BINDING_UNDETERMINED`, its `detail` stating why and that a member settles it in `standards`; `STANDARD_NOT_BINDING` is kept for a standard that does not bind (a benchmark) (amends R27; walk E C2a).
+- **R44** [met] (T51 fix round 10; DEC-438 (UX-DESIGN U480); K5299) The undetermined-binding refusal's own `detail` (`conformance.index.whether_standard_binds_v1_is`) ends by sending the member to the standard's page, "settle it on the standard's page first", not "a member settles it in standards first". Test: the walker's case answers the new ending; no other wording changes.
 
 ### Satisfies
 
