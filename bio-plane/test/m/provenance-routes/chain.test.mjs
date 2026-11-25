@@ -7,6 +7,9 @@ import { world, sha, V, provDoc } from "./fixture.mjs";
 import { chainFromEvidence, provenanceRouteOps } from "../../../src/provenance-routes/index.mjs";
 import { DOORBELL_ORIGIN, UPLOAD_ORIGIN } from "../../../src/provenance/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
+/* A live file as record-core's readFile answers it (an inline file, a blob file, or null): its inline text;
+   anything else fails the test that reads it. */
+const textOf = (f) => { if (!f || typeof f.text !== "string") throw new Error("expected a live inline file"); return f.text; };
 
 const fetched = { locator: "https://e.org/d", retrieved: "2026-09-01T00:00:00Z",
                   capture: { method: "acquire", actor_class: "session", sha256: sha("d") } };
@@ -120,7 +123,7 @@ test("R7: no hop is read from a request: every hop written is derived from field
   const r = w.routes.provenanceChainRebuild({ bundleId: "INFO-2026-0001-y", apply: true, author: V("ruth"), viewer: V("ruth"),
     hops: [{ who: "invented", asserts: "whatever the caller says" }], provenance_chain: [{ who: "invented" }] });
   assert.equal(r.ok, true, JSON.stringify(r));
-  const text = w.record.readFile("INFO-2026-0001-y", "data/provenance.json").text;
+  const text = textOf(w.record.readFile("INFO-2026-0001-y", "data/provenance.json"));
   assert.equal(text.includes("invented"), false);
   for (const d of JSON.parse(text).documents)
     for (const h of d.provenance_chain) assert.ok(h.reconstructed && Array.isArray(h.reconstructed.from) && h.reconstructed.from.length);
@@ -131,7 +134,7 @@ test("R7: no hop is read from a request: every hop written is derived from field
   const viaOp = provenanceRouteOps(w2.routes, url, { hops: [{ who: "invented" }], provenance_chain: [{ who: "invented" }] })
     .provenancechain();
   assert.equal(viaOp.applied, true, JSON.stringify(viaOp));
-  const text2 = w2.record.readFile("INFO-2026-0002-y", "data/provenance.json").text;
+  const text2 = textOf(w2.record.readFile("INFO-2026-0002-y", "data/provenance.json"));
   assert.equal(text2.includes("invented"), false);
   assert.match(JSON.parse(text2).documents[0].provenance_chain[0].who, /^instance test-instance /);
   /* A chain already in the register document is kept as recorded, never rewritten. */

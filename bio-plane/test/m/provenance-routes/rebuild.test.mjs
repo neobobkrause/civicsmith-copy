@@ -8,6 +8,12 @@ import { ROUTE_MARK_NOTE } from "../../../src/provenance-routes/index.mjs";
 import { registerChecks, PROVENANCE_ACT_CHECKS } from "../../../src/provenance/index.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
+/* A live file as record-core's readFile answers it (an inline file, a blob file, or null): its inline text, and its sha256;
+   anything else fails the test that reads it. */
+const textOf = (f) => { if (!f || typeof f.text !== "string") throw new Error("expected a live inline file"); return f.text; };
+const shaOf = (f) => { if (!f) throw new Error("expected a live file"); return f.sha256; };
+/* a held bundle's live paths (record-core answers null for a bundle not held, which fails the test) */
+const pathsOf = (p) => { if (!p) throw new Error("expected a held bundle"); return p; };
 
 /* An information bundle with two documents: one with a fetched route, and one whose route the record lacks. */
 function twoDocs(w, id, { secondRouted = false, state = "collected" } = {}) {
@@ -40,10 +46,10 @@ test("R2: the rebuild reports, refuses whole when any document is undetermined, 
   assert.deepEqual(report.documents.map((d) => d.outcome), ["reconstructed", "reconstructed"]);
   assert.equal(report.route.finding, "NEVER_LOOKED");
   assert.deepEqual(w2.snapshot(), snap0, "a report writes nothing");
-  const files0 = Object.fromEntries(w2.record.livePaths("INFO-2026-0002-y").map((p) => [p, w2.record.readFile("INFO-2026-0002-y", p).sha256]));
+  const files0 = Object.fromEntries(pathsOf(w2.record.livePaths("INFO-2026-0002-y")).map((p) => [p, shaOf(w2.record.readFile("INFO-2026-0002-y", p))]));
   const applied = w2.routes.provenanceChainRebuild({ bundleId: "INFO-2026-0002-y", apply: true, author: V("ruth"), viewer: V("ruth") });
   assert.deepEqual([applied.ok, applied.applied, applied.changed], [true, true, 2], JSON.stringify(applied));
-  const files1 = Object.fromEntries(w2.record.livePaths("INFO-2026-0002-y").map((p) => [p, w2.record.readFile("INFO-2026-0002-y", p).sha256]));
+  const files1 = Object.fromEntries(pathsOf(w2.record.livePaths("INFO-2026-0002-y")).map((p) => [p, shaOf(w2.record.readFile("INFO-2026-0002-y", p))]));
   assert.deepEqual(Object.keys(files1).sort(), Object.keys(files0).sort(), "no file added or dropped");
   for (const p of Object.keys(files0)) if (p !== "data/provenance.json") assert.equal(files1[p], files0[p], `${p} carried byte for byte`);
   assert.notEqual(files1["data/provenance.json"], files0["data/provenance.json"]);
@@ -55,7 +61,7 @@ test("R2: the rebuild reports, refuses whole when any document is undetermined, 
   assert.deepEqual({ ...w2.row(`SELECT criticality, created, last_updated FROM bundles WHERE bundle_id=?`, "INFO-2026-0002-y") }, { ...crit0 });
   const entry = w2.rows(`SELECT author FROM manifest WHERE bundle_id=? ORDER BY rowid DESC LIMIT 1`, "INFO-2026-0002-y")[0];
   assert.equal(entry.author, V("ruth"), "the promotion is the member's");
-  const chains = JSON.parse(w2.record.readFile("INFO-2026-0002-y", "data/provenance.json").text).documents.map((d) => d.provenance_chain.length);
+  const chains = JSON.parse(textOf(w2.record.readFile("INFO-2026-0002-y", "data/provenance.json"))).documents.map((d) => d.provenance_chain.length);
   assert.deepEqual(chains, [1, 1]);
   /* Already recorded: nothing to apply. */
   const again = w2.routes.provenanceChainRebuild({ bundleId: "INFO-2026-0002-y", apply: true, author: V("ruth"), viewer: V("ruth") });
@@ -121,10 +127,10 @@ test("R2: a witnessed chain survives an applied rebuild byte for byte, and the r
   const witnessed = [{ who: word("capture-sources.name.internet_archive_wayback"), asserts: "served the replay", evidence: "CDX record",
                        bound: false, via: "archive.org" }];
   assert.equal(w.promoteInfo(id, { captures: [cap, b], docs: [provDoc(cap, { provenance_chain: witnessed }), provDoc(b)] }).ok, true);
-  const before = JSON.parse(w.record.readFile(id, "data/provenance.json").text).documents[0];
+  const before = JSON.parse(textOf(w.record.readFile(id, "data/provenance.json"))).documents[0];
   const r = w.routes.provenanceChainRebuild({ bundleId: id, apply: true, author: V("riley"), viewer: V("riley") });
   assert.deepEqual([r.ok, r.applied, r.documents.map((d) => d.outcome)], [true, true, ["already_recorded", "reconstructed"]], JSON.stringify(r));
-  const after = JSON.parse(w.record.readFile(id, "data/provenance.json").text).documents[0];
+  const after = JSON.parse(textOf(w.record.readFile(id, "data/provenance.json"))).documents[0];
   assert.equal(JSON.stringify(after), JSON.stringify(before), "the witnessed document is carried byte for byte");
   /* A verified register with no chain: found by C-18.9 (provenance's arm) before, clean after the applied rebuild. */
   const w2 = world();
@@ -139,7 +145,7 @@ test("R2: a witnessed chain survives an applied rebuild byte for byte, and the r
   assert.deepEqual(findingsOf().map((x) => x.code), ["chain-absent"], "found before the rebuild");
   const applied = w2.routes.provenanceChainRebuild({ bundleId: v, apply: true, author: V("riley"), viewer: V("riley") });
   assert.deepEqual([applied.ok, applied.applied, applied.changed], [true, true, 1], JSON.stringify(applied));
-  const doc = JSON.parse(w2.record.readFile(v, "data/provenance.json").text).documents[0];
+  const doc = JSON.parse(textOf(w2.record.readFile(v, "data/provenance.json"))).documents[0];
   assert.equal(JSON.stringify(doc.provenance_chain).includes("web.archive.org"), false, "the co-archive did not become a hop");
   assert.equal(doc.co_archive, archive, "the co-archive is still recorded on the document, untouched");
   assert.match(doc.provenance_chain[0].who, /^instance test-instance /);
@@ -185,7 +191,7 @@ test("R1, R2, R4 (K581): the rebuild reconstructs a chainless doorbell document 
   assert.deepEqual([a.mark.route.finding, a.mark.documents[0].outcome], ["PRESENT", "derivable"]);
   const applied = w.routes.provenanceChainRebuild({ bundleId: "INFO-2026-0001-knock", apply: true, author: V("ruth"), viewer: V("ruth") });
   assert.equal(applied.applied, true, JSON.stringify(applied));
-  const chain = JSON.parse(w.record.readFile("INFO-2026-0001-knock", "data/provenance.json").text).documents[0].provenance_chain;
+  const chain = JSON.parse(textOf(w.record.readFile("INFO-2026-0001-knock", "data/provenance.json"))).documents[0].provenance_chain;
   assert.deepEqual(chain.map((h) => [h.via, h.asserts]), [["doorbell", "these bytes were received for knock:KNOCK-A at 2026-09-30T11:00:00Z"]]);
   const b = ask("INFO-2026-0002-knock");
   assert.deepEqual([b.rebuild.ok, b.rebuild.reason, b.rebuild.documents[0].outcome], [false, "EVIDENCE_INSUFFICIENT", "undetermined"]);
@@ -218,7 +224,7 @@ test("R1, R2, R4 (K2457): the rebuild reconstructs a chainless upload document f
   assert.deepEqual([a.mark.route.finding, a.mark.documents[0].outcome], ["PRESENT", "derivable"]);
   const applied = w.routes.provenanceChainRebuild({ bundleId: "INFO-2026-0001-up", apply: true, author: V("ruth"), viewer: V("ruth") });
   assert.equal(applied.applied, true, JSON.stringify(applied));
-  const doc = JSON.parse(w.record.readFile("INFO-2026-0001-up", "data/provenance.json").text).documents[0];
+  const doc = JSON.parse(textOf(w.record.readFile("INFO-2026-0001-up", "data/provenance.json"))).documents[0];
   assert.deepEqual(doc.provenance_chain.map((h) => [h.via, h.asserts]),
                    [["upload", localize("provenance-routes.index.these_bytes_were_received_for_2", "these bytes were received for upload:{rsha} at {received}",
                                         { rsha: sha("held A"), received: "2026-10-09T11:00:00Z" })]]);
