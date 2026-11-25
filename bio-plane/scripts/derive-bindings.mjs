@@ -28,6 +28,38 @@
  * defect that left biosmoke7 with zero service bindings for a month.
  */
 
+/**
+ * @typedef {Object} Binding one binding a deploy sends, as the upload metadata spells it
+ * @property {string} type
+ * @property {*} name
+ * @property {string} [text] a plain_text's or secret_text's value
+ * @property {*} [bucket_name] an r2_bucket's bucket
+ * @property {*} [service] a service's target worker
+ * @bound type: plain_text, r2_bucket, service, browser or secret_text
+ */
+/**
+ * @typedef {Object} Limits the `limits` object a deploy sends
+ * @property {number} subrequests
+ * @property {*} [cpu_ms] as the config states it
+ * @bound subrequests: a positive integer
+ */
+/**
+ * @typedef {Object} ReadBack a setting read back against what was sent
+ * @property {string} verdict
+ * @property {string} why
+ * @bound verdict: MATCH, MISMATCH, UNDETERMINED or UNREADABLE, as the reading function states
+ */
+/**
+ * @typedef {Object} Observability the `observability` object a deploy sends
+ * @property {boolean} enabled
+ * @bound enabled: true
+ */
+/**
+ * @typedef {Object} StorePlace
+ * @property {Binding[]} bindings the plain_text bindings to send
+ * @property {string[]} remove the names of held bindings that must not be kept
+ */
+
 const CARRIED = new Set(["vars", "r2_buckets", "services", "durable_objects", "browser"]);
 /* Binding-declaring wrangler keys this derivation would MISCARRY if present.
    Listed explicitly so a new class in the config fails the deploy loudly in
@@ -48,6 +80,14 @@ const KNOWN_BINDING_KEYS = [
  * D-260's organisation `ai` credential (DIST-9), carried the same way and NEVER
  * generated here: a member mints it on the instance, so a deploy only carries
  * the value the operator's environment holds.
+ * @param {Object<string, *>} cfg the parsed wrangler.jsonc
+ * @param {Object} [opts]
+ * @param {string} [opts.slug] the instance slug
+ * @param {string} [opts.version]
+ * @param {string} [opts.instanceAiToken]
+ * @returns {Binding[]}
+ * @throws {Error} REFUSED [NO_SLUG] or [NO_VERSION] when either is missing; [UNKNOWN_BINDING_CLASS] naming each other binding key the config declares; [BROWSER_BINDING_UNNAMED] for a `browser` with no `binding`; [PHANTOM_TARGET] if a derived service still targets `bio-plane`
+ * @bound never a Claude credential and no Durable Object binding; secret_text INSTANCE_AI_TOKEN only when given
  */
 export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
   if (!slug) throw new Error("REFUSED [NO_SLUG]: the binding derivation needs the instance slug — a default would be the hardcoded name D-292 exists to forbid.");
@@ -106,7 +146,11 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
  *  refusal should be ours and name the missing worker, not Cloudflare's 10143).
  *  The instance's own slug is excluded — the PUT that carries the binding is
  *  the PUT that creates/updates that very worker (the installer's noSelf
- *  lesson: the self-reference is the one target that cannot pre-exist). */
+ *  lesson: the self-reference is the one target that cannot pre-exist).
+ * @param {Binding[]} bindings
+ * @param {string} slug
+ * @returns {Array<*>}
+ */
 export function serviceTargets(bindings, slug) {
   return bindings.filter((b) => b.type === "service" && b.service !== slug)
                  .map((b) => b.service);
@@ -128,7 +172,11 @@ export function serviceTargets(bindings, slug) {
 const KNOWN_LIMIT_KEYS = new Set(["subrequests", "cpu_ms"]);
 
 /** The `limits` object deploy.mjs sends in the upload metadata (wrangler's own
- *  upload uses the same field, `limits: { cpu_ms, subrequests }`). */
+ *  upload uses the same field, `limits: { cpu_ms, subrequests }`).
+ * @param {*} cfg the parsed wrangler.jsonc
+ * @returns {Limits}
+ * @throws {Error} REFUSED [NO_SUBREQUEST_LIMIT] unless `limits.subrequests` is a positive integer; [UNKNOWN_LIMIT_KEY] for any key but `subrequests` and `cpu_ms`
+ */
 export function deriveLimits(cfg) {
   const lim = cfg && cfg.limits;
   const n = lim && lim.subrequests;
@@ -152,7 +200,12 @@ export function deriveLimits(cfg) {
 /** Read the deployed script's settings back against what was sent. Three honest
  *  answers and no fourth: MATCH, MISMATCH (a value that is not ours — the deploy
  *  must not report success), or UNDETERMINED (the settings did not state the
- *  field, or could not be read — never read as a match). */
+ *  field, or could not be read — never read as a match).
+ * @param {*} settings the script settings read, or nothing when they could not be read
+ * @param {Limits} want
+ * @returns {ReadBack}
+ * @bound verdict: MATCH, MISMATCH or UNDETERMINED; makes no request
+ */
 export function limitsReadBack(settings, want) {
   if (!settings || typeof settings !== "object") {
     return { verdict: "UNDETERMINED", why: "the script settings could not be read" };
@@ -175,7 +228,13 @@ export function limitsReadBack(settings, want) {
 const CRON_FIELDS = 5;       /* minute hour day-of-month month day-of-week */
 const MAX_CRONS = 3;         /* the platform's limit per Worker */
 
-/** The cron strings deploy.mjs sets, as the config states them; none declared is the empty list (the script is set to none). */
+/**
+ * The cron strings deploy.mjs sets, as the config states them; none declared is the empty list (the script is set to none).
+ * @param {*} cfg the parsed wrangler.jsonc
+ * @returns {string[]}
+ * @throws {Error} REFUSED [INVALID_CRONS] when `triggers` is not an object, `triggers.crons` is not a list, a cron is not of 5 fields, a cron repeats, or there are more than 3
+ * @bound at most 3 crons, distinct, each 5 whitespace-separated fields with no surrounding whitespace
+ */
 export function deriveCrons(cfg) {
   const t = cfg && cfg.triggers;
   if (t === undefined || t === null) return [];
@@ -192,7 +251,12 @@ export function deriveCrons(cfg) {
 }
 
 /** The schedules read back against the crons sent. MATCH only when the script holds exactly those, as a set; anything
- *  else is a MISMATCH saying what it holds. `held` is the list of cron strings read, or null when it could not be. */
+ *  else is a MISMATCH saying what it holds. `held` is the list of cron strings read, or null when it could not be.
+ * @param {string[] | null} held
+ * @param {string[]} want
+ * @returns {ReadBack}
+ * @bound verdict: MATCH, MISMATCH or UNREADABLE
+ */
 export function schedulesReadBack(held, want) {
   if (!Array.isArray(held)) return { verdict: "UNREADABLE", why: "the script's schedules could not be read" };
   const show = (l) => (l.length ? l.join(" | ") : "none");
@@ -214,7 +278,12 @@ export function schedulesReadBack(held, want) {
  * dropped, and never defaulted: nothing is sent that the config does not state. */
 const KNOWN_OBSERVABILITY_KEYS = new Set(["enabled"]);
 
-/** The `observability` object deploy.mjs sends in the upload metadata: `{ enabled: true }`. */
+/**
+ * The `observability` object deploy.mjs sends in the upload metadata: `{ enabled: true }`.
+ * @param {*} cfg the parsed wrangler.jsonc
+ * @returns {Observability}
+ * @throws {Error} REFUSED [NO_OBSERVABILITY] unless `observability.enabled` is `true`; [UNKNOWN_OBSERVABILITY_KEY] for any key but `enabled`
+ */
 export function deriveObservability(cfg) {
   const o = cfg && cfg.observability;
   if (!o || typeof o !== "object" || Array.isArray(o) || o.enabled !== true) {
@@ -233,7 +302,12 @@ export function deriveObservability(cfg) {
 
 /** Read the deployed script's settings back against what was sent. Three honest answers: MATCH (the settings report Workers
  *  Logs enabled), MISMATCH (they report it off, or state none: the platform reports an off script without the key), or
- *  UNREADABLE (the settings could not be read: never read as a match). Only `enabled` was sent, so only it is compared. */
+ *  UNREADABLE (the settings could not be read: never read as a match). Only `enabled` was sent, so only it is compared.
+ * @param {*} settings the script settings read, or nothing when they could not be read
+ * @param {Observability} want
+ * @returns {ReadBack}
+ * @bound verdict: MATCH, MISMATCH or UNREADABLE; makes no request
+ */
 export function observabilityReadBack(settings, want) {
   if (!settings || typeof settings !== "object") return { verdict: "UNREADABLE", why: "the script settings could not be read" };
   const got = settings.observability;
@@ -249,10 +323,21 @@ export function observabilityReadBack(settings, want) {
  * room; `1` is the first room, so it sends no STORE_GENERATION and removes a held one (the rollback). The hint list is
  * runtime-limits' own (`STORE_HINTS`), passed in, so this file keeps no second copy. Nothing is defaulted: a flag that is
  * not given sends nothing and a held binding is kept by deploy.mjs's rule (R34). */
+/**
+ * A STORE_GENERATION value: a whole number of 1 or more, with no sign, leading zero or space.
+ * @type {RegExp}
+ */
 export const STORE_GENERATION_PATTERN = /^[1-9][0-9]*$/;
 
 /** `{ bindings, remove }` for the flags: `bindings` the plain_text bindings to send, `remove` the names a held binding of
- *  which must NOT be kept. A value that is not valid is refused by name before anything is uploaded. */
+ *  which must NOT be kept. A value that is not valid is refused by name before anything is uploaded.
+ * @param {Object} [opts]
+ * @param {*} [opts.location] the `--store-location` hint
+ * @param {*} [opts.generation] the `--store-generation` value
+ * @param {string[]} [hints] runtime-limits' `STORE_HINTS`
+ * @returns {StorePlace}
+ * @throws {Error} REFUSED [BAD_STORE_LOCATION] for a location not in `hints`; [BAD_STORE_GENERATION] for a generation not matching STORE_GENERATION_PATTERN
+ */
 export function deriveStorePlace({ location, generation } = {}, hints = []) {
   const bindings = [], remove = [];
   if (location !== undefined) {
