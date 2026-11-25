@@ -31,6 +31,8 @@ test("R1 detect(bytes, null): certain for a conforming package of the entry's ow
     }
     // any bytes form
     assert.equal(ENTRIES[f].detect(bytes.buffer.slice(0), null)?.confidence, "certain");
+    // the content type is optional: left out, the bytes are read as with null
+    assert.deepEqual(ENTRIES[f].detect(bytes), ENTRIES[f].detect(bytes, null));
     // a content type passed beside the bytes changes nothing
     assert.equal(ENTRIES[f].detect(bytes, "text/plain")?.confidence, "certain");
 
