@@ -70,8 +70,10 @@ const LIGATURES = ["fi", "fl", "ff", "ffi", "ffl"];
 /** The view's budget header words, `[{column, re}]`, in the profile's order. */
 export function headerWords(ctx) {
   const out = [];
-  for (const e of vocabulary(ctx, KEYS.HEADERS)) {
-    if (!COLUMNS.includes(e.column)) continue;
+  for (const v of vocabulary(ctx, KEYS.HEADERS)) {
+    /** @type {{column?: string, pattern?: import("../docprofile/registry.mjs").Pattern}} checks a `budget_headers` entry: `{column, pattern, basis}`, this module's key (R7, R12) */
+    const e = v;
+    if (!e.column || !COLUMNS.includes(e.column)) continue;
     const re = vocabRegex(e.pattern, null, "i");
     if (re) out.push({ column: e.column, re });
   }
