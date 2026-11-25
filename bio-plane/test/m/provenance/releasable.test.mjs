@@ -1,4 +1,4 @@
-/* provenance R81: the one helper that files a releasable bundle (`releasableBundle`), and the testimony filer that calls it.
+/* provenance-register R81 (its tests stay with provenance until its own job takes them): the one helper that files a releasable bundle (`releasableBundle`), and the testimony filer that calls it.
    `ratification`'s `release` is a higher layer, so the entry requirements it asks (its R22: a well-formed `content_hash`,
    `data/dataset.json`, a file under `snapshots/`, a chain for each document) are read here off the filed bundle itself. */
 import { test } from "node:test";
@@ -14,7 +14,7 @@ const textOf = (r, path) => r.files.find((f) => f.path === path)?.text;
 function missing(files) {
   const by = (p) => files.find((f) => f.path === p);
   const md = by("bundle.md");
-  const ch = md && parseFrontmatter(md.text).data.content_hash;
+  const ch = md && parseFrontmatter(md.text).data?.content_hash; /* data is null for unreadable front matter (record-grammar R6): content_hash is then missing */
   const out = [];
   if (!(typeof ch === "string" && /^sha256:[0-9a-f]{64}$/.test(ch))) out.push("content_hash");
   if (!by("data/dataset.json")) out.push("dataset");
@@ -37,7 +37,7 @@ test("R81: the dataset is the canonical text of one row per whole document, and 
   assert.equal(textOf(r, "data/dataset.json"), expected, "byte-equal to the canonical text");
   assert.equal(r.dataset, expected);
   assert.equal(r.contentHash, `sha256:${sha(expected)}`);
-  assert.equal(parseFrontmatter(textOf(r, "bundle.md")).data.content_hash, r.contentHash);
+  assert.equal(parseFrontmatter(textOf(r, "bundle.md")).data?.content_hash, r.contentHash);
   assert.deepEqual(r.files.map((f) => f.path), ["bundle.md", "data/provenance.json", "data/dataset.json", "snapshots/a.pdf"]);
   assert.deepEqual(missing(r.files), []);
   const hashed = r.files.find((f) => f.path === "data/dataset.json");
