@@ -18,7 +18,7 @@ test("R20 a member declares only their own tie (MTI-), to a registered entity, o
   for (const t of TIE_KINDS) assert.ok(k.detail.includes(t));
   assert.equal(w.p.declareTie({ ...base, note: " " }).reason, "NO_NOTE");
   assert.equal(w.p.declareTie({ ...base, attribution: "public" }).reason, "UNKNOWN_ATTRIBUTION");
-  const t1 = w.p.declareTie({ ...base, member: "out" });
+  const t1 = w.p.declareTie(/** @type {any} a field naming another member, on purpose */ ({ ...base, member: "out" }));
   assert.match(t1.tie_id, /^MTI-2026-\d{4,}$/);
   assert.equal(t1.member, "ann", "the stamp names the member; a field naming another is never read");
   const t2 = w.p.declareTie({ ...base, entity: aunt, kind: "relative", attribution: "group" });
@@ -58,7 +58,7 @@ test("R21 a source is linked to a registered person with evidence and a non-empt
     assert.deepEqual(w.p.sourceLinksOf({ person: p, viewer: v }), { ok: true, count: 0, links: [] }, String(v));
     assert.deepEqual(w.p.sourceLinksOf({ source: "SRC-2026-1234abcd", viewer: v }), { ok: true, count: 0, links: [] });
   }
-  assert.equal(w.record.declaredTables().find((d) => d.name === "source_person_links").export, "never");
+  assert.equal(w.record.declaredTables().find((d) => d.name === "source_person_links")?.export, "never");
   const reads = JSON.stringify([w.p.personAt({ entityId: p, at: "2020-01-01", viewer: ANN }), w.p.careerOf({ entityId: p, viewer: ANN }),
     w.p.identityOf({ entityId: p, viewer: ANN }), w.p.interestsOf({ entityId: p, viewer: ANN }), w.p.credentialsOf({ entityId: p, viewer: ANN }),
     w.p.statementsOf({ entityId: p, viewer: ANN }), w.p.samePersonCandidates({ entityId: p, viewer: ANN }),
@@ -74,7 +74,7 @@ test("R21 a source is linked to a registered person with evidence and a non-empt
   const kept = w.rows(`SELECT * FROM source_person_link_history WHERE person=?`, p);
   assert.equal(kept.length, 1);
   assert.deepEqual([kept[0].evidence, kept[0].sight_json, kept[0].by_actor, kept[0].replaced_by], ["the same handwriting", JSON.stringify(["ann"]), ANN, OUT]);
-  assert.equal(w.record.declaredTables().find((d) => d.name === "source_person_link_history").export, "never");
+  assert.equal(w.record.declaredTables().find((d) => d.name === "source_person_link_history")?.export, "never");
 });
 
 test("R34 sourceLinkSight(person) is a synchronous internal read, never an op: null when no link to the person is held (and for an unregistered or malformed id), else the members every held link to that person admits (the intersection of their sight lists); it takes no viewer, writes nothing and never throws", () => {

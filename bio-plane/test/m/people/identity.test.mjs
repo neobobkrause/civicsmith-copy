@@ -24,6 +24,7 @@ test("R1 claimIdentity refuses in order NO_ENDS, SELF_CLAIM, NO_SUCH_ENTITY nami
   const { a, b, ev } = pair(w);
   const office = w.entity("office", "City Clerk");
   const base = { a, b, kind: "same_as", basis: "identifier", evidence: ev, note: "the same filer number", by: ANN };
+  /** @type {Array<[any, string]>} the arguments, some malformed on purpose, and the refusal each must answer */
   const cases = [
     [{ ...base, a: "" }, "NO_ENDS"], [{ ...base, b: undefined }, "NO_ENDS"],
     [{ ...base, b: a }, "SELF_CLAIM"],
@@ -62,7 +63,7 @@ test("R2 the grade is earned from the basis, never stated: identifier A only wit
   const w = world();
   /* identifier: held on one end only is refused A */
   const one = pair(w, { ids: ["P001", null] });
-  const r1 = w.p.claimIdentity({ a: one.a, b: one.b, kind: "same_as", basis: "identifier", evidence: one.ev, note: "n", by: ANN, grade: "A" });
+  const r1 = w.p.claimIdentity(/** @type {any} a caller's own grade field, on purpose */ ({ a: one.a, b: one.b, kind: "same_as", basis: "identifier", evidence: one.ev, note: "n", by: ANN, grade: "A" }));
   assert.equal(r1.reason, "IDENTITY_GRADE_UNEARNED");
   assert.match(r1.condition, /b holds the scheme identifier/);
   /* identifier valid on b only before b's record date is refused */
@@ -78,7 +79,7 @@ test("R2 the grade is earned from the basis, never stated: identifier A only wit
   assert.match(r3.condition, /date of b's cited record/);
   /* identifier earned A */
   const good = pair(w, { ids: ["P004", "P004"] });
-  const A = w.p.claimIdentity({ a: good.a, b: good.b, kind: "same_as", basis: "identifier", evidence: good.ev, note: "n", by: ANN, grade: "D" });
+  const A = w.p.claimIdentity(/** @type {any} a caller's own grade field, on purpose */ ({ a: good.a, b: good.b, kind: "same_as", basis: "identifier", evidence: good.ev, note: "n", by: ANN, grade: "D" }));
   assert.equal(A.grade, "A", "a caller's grade field is never read");
   assert.equal(A.why, "claimed the same person, grade A, because both records hold the identifier ellery_person P004, valid at 2020-03-01 and 2021-06-01");
   /* corroborated_name: the same post on each, valid at each date */
@@ -195,7 +196,7 @@ test("R6 the cluster is a derived cache rebuilt in each claim's and withdrawal's
   assert.ok(w.record.declaredTables().some((d) => d.name === "identity_cluster" && d.derive === "derived-rebuildable"));
   /* a cache that differs from its rebuild */
   w.st.sql.exec(`UPDATE identity_cluster SET component=? WHERE entity_id=?`, x, z);
-  assert.equal(w.record.rebuildAndCompare("people", "identity_cluster").same, false);
+  assert.equal(w.record.rebuildAndCompare("people", "identity_cluster")?.same, false);
   const d = w.p.identityOf({ entityId: z, viewer: ANN });
   assert.equal(d.state, "undetermined");
   assert.deepEqual(d.why, { key: "people.identity_cluster_cache_differs", vars: {} }, "R40");
