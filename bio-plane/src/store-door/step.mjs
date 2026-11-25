@@ -13,7 +13,11 @@ import { membershipOf } from "../membership/index.mjs";
  *  testimony slot's check (a refusal refuses the promotion); `project`, run after the commit in the same transaction,
  *  re-derives the promoted bundle's sight row and runs the slot's projection, whose refusal throws so the whole promotion
  *  rolls back, and answers `{testimony}` on the testimony path only, else null. The keys promotion's own answer carries
- *  (`bundleId`, `bundleSha`, `rowVersion`, `owner`, `visibility`) are promotion's, so the step adds none of them. */
+ *  (`bundleId`, `bundleSha`, `rowVersion`, `owner`, `visibility`) are promotion's, so the step adds none of them.
+ *  @param {any} host the record's object
+ *  @returns {{check: (c: any) => any, project: (c: any) => ({testimony: any} | null)}}
+ *  @throws {Error} from `project`, when the testimony slot's projection refuses, so the promotion rolls back
+ */
 export function promotionStep(host) {
   return {
     check: (c) => provenanceOf(host).testimonySlot().check(c),
