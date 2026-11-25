@@ -29,7 +29,7 @@ test("R11 every text() carries {ok, container, document, undetermined, counts, i
   common(await pptxEntry.text(F.pptx()), "pptx", "slides");
   common(await xlsxEntry.text(F.xlsx()), "xlsx", "sheets");
   const junk = F.enc("junk");
-  for (const [e, c] of [[docxEntry, "docx"], [pptxEntry, "pptx"], [xlsxEntry, "xlsx"]]) {
+  for (const [e, c] of /** @type {any[][]} rows of an entry and what it is handed */ ([[docxEntry, "docx"], [pptxEntry, "pptx"], [xlsxEntry, "xlsx"]])) {
     const t = await e.text(junk);
     assert.deepEqual(Object.keys(t).sort(), ["container", "ok", "reason"]);
     assert.equal(t.ok, false);
@@ -39,7 +39,7 @@ test("R11 every text() carries {ok, container, document, undetermined, counts, i
 });
 
 test("R11 images: every image under the format's media directory, content-addressed and exhaustive; null when it could not be walked", async () => {
-  for (const [e, build, dir] of [[docxEntry, F.docx, "word/media/"], [pptxEntry, F.pptx, "ppt/media/"], [xlsxEntry, F.xlsx, "xl/media/"]]) {
+  for (const [e, build, dir] of /** @type {any[][]} rows of an entry and what it is handed */ ([[docxEntry, F.docx, "word/media/"], [pptxEntry, F.pptx, "ppt/media/"], [xlsxEntry, F.xlsx, "xl/media/"]])) {
     const t = await e.text(build({ extra: [{ name: `${dir}a.png`, data: "PNG" }, { name: `${dir}b.jpeg`, data: "JPG" }, { name: `${dir}notes.txt`, data: "t" }, { name: "other/c.png", data: "C" }] }));
     assert.deepEqual(t.images, [
       { kind: "image", ref: `image ${sha("PNG").slice(0, 12)}`, part: sha("PNG"), mime: "image/png", name: "a.png" },
