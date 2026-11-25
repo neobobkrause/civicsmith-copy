@@ -27,6 +27,8 @@ const json = (v, status = 200) => new Response(JSON.stringify(v), { status, head
 const V = (id) => `member:${id}`;
 const NOW = "2026-10-22T20:00:00Z";
 const KEY = "AAAAC3NzaC1lZDI1NTE5AAAAIKEY";
+/* The text of a file the fixture's record holds inline (a bundle.md it laid always is); anything else fails the route. */
+const liveText = (f) => { if (!f || !("text" in f)) throw new Error("the record holds no inline text for this file"); return f.text; };
 const bare = (schema) => schema.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 const sha = async (bytes) => hex(await crypto.subtle.digest("SHA-256", typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes));
@@ -167,7 +169,7 @@ export class G54Held {
       }
       if (s === "finding") {
         /* the act that completes the edition: the finding's own commit, and its bytes in the published bucket */
-        const F = q("finding"), pin = record.head(F).bundleSha, text = record.readFile(F, "bundle.md").text;
+        const F = q("finding") ?? "", pin = record.head(F).bundleSha, text = liveText(record.readFile(F, "bundle.md"));
         const done = record.transact(() => pub.commitEdition({ bundleId: F, bundleSha: pin, title: `Finding ${F}`, completeness: null,
           strength: null, memberCarriesBlocks: false, group: "test-group", edges: [],
           shas: [{ sha256: pin, path: "bundle.md", kind: "bundle", bytes: text.length }],

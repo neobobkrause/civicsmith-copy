@@ -486,11 +486,11 @@ test("R4, R9 (multifinding): a finding whose own bytes name a case — its id, e
   revise(w, FIND_A, lie);
   const r = await ratifyAs(FIND_A);
   assert.deepEqual([r.status, r.body.reason], [409, "GATE_REFUSED"]);
-  /* inquiry-grammar's C-2.8 case-key arm answers one finding for each case key the bytes carry, in its own row's words,
-     which say the case's facts live in the case document (read by key, so its wording is its own) */
-  const named = r.body.findings.filter((x) => x.check === "C-2.8"
-    && x.detail === word("inquiry-grammar.grammar.a_finding_s_bytes_name_p"));
+  /* inquiry-grammar's C-2.8 case-key arm (its R1) answers one finding for each case key the bytes carry, each naming its
+     own fact, whose words say the case's facts live in the case document (its wording is inquiry-grammar's own) */
+  const named = r.body.findings.filter((x) => x.check === "C-2.8" && /a case fact of its own/.test(x.detail));
   assert.equal(named.length, 5, "one for each of case_id, case_edition, case_scope, bias_acknowledgement, case_findings");
+  assert.equal(new Set(named.map((x) => x.detail)).size, 5, "each finding names a different fact");
   assert.match(named[0].detail, /case document a member reviews and ratifies/);
   assert.equal(w.count("published_bundles"), 0);
   assert.deepEqual(w.publication.pinnedCaseEditionsOf(FIND_A, members[0].pin).map((x) => x.case_id), [CASE],

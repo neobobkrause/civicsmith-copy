@@ -15,6 +15,8 @@ export { G54Held };
 const json = (v, status = 200) => new Response(JSON.stringify(v), { status, headers: { "content-type": "application/json" } });
 const V = (id) => `member:${id}`;
 const NOW = "2026-10-22T20:00:00Z";
+/* The text of a file the fixture's record holds inline (a bundle.md it laid always is); anything else fails the route. */
+const liveText = (f) => { if (!f || !("text" in f)) throw new Error("the record holds no inline text for this file"); return f.text; };
 const bare = (t) => t;
 const projMd = (title) => ["---", "object_type: project", "schema: project@1", `title: "${title}"`, "current_state: forming",
   "prior_state: null", `created: "2026-09-27T00:00:00Z"`, `last_updated: "2026-09-27T00:00:00Z"`,
@@ -69,7 +71,7 @@ export class G57Held extends G54Held {
         gateVersion: "plane-gate/test", deliveredBy: V("olive"), at: NOW }));
       if (!signed.ok) return json({ error: "commitCaseEdition", detail: signed }, 500);
       const commit = (t, i) => {
-        const text1 = record.readFile(t.id, "bundle.md").text;
+        const text1 = liveText(record.readFile(t.id, "bundle.md"));
         const done = record.transact(() => pub.commitEdition({ bundleId: t.id, bundleSha: t.pin, title: `Finding ${t.id}`, completeness: null,
           strength: null, memberCarriesBlocks: false, group: "test-group", edges: [],
           shas: [{ sha256: t.pin, path: "bundle.md", kind: "bundle", bytes: new TextEncoder().encode(text1).length }],
@@ -86,13 +88,13 @@ export class G57Held extends G54Held {
     if (s === "textat") return json({ text: record.textAtSha(q("bundle"), q("sha")) });
     if (s === "revise") {
       /* a second version of the bundle: the first version's bytes then live only in the snapshot rows */
-      const id = q("bundle"), head = record.head(id);
+      const id = q("bundle") ?? "", head = record.head(id);
       const r = promotion.promote({ bundleId: id, base: head.bundleSha, snapKey: key(), author: V("alice"),
         files: [{ path: "bundle.md", text: inquiryMd(id, " (revised)") }], meta: { object_type: "inquiry" } });
       return json({ ok: r.ok, was: head.bundleSha, now: r.ok ? record.head(id).bundleSha : null, detail: r.ok ? null : r });
     }
     if (s === "shas") {
-      const id = q("bundle"), text = record.readFile(id, "bundle.md").text;
+      const id = q("bundle") ?? "", text = liveText(record.readFile(id, "bundle.md"));
       return json({ shas: [{ sha256: record.head(id).bundleSha, path: "bundle.md", kind: "bundle", bytes: new TextEncoder().encode(text).length, text }] });
     }
     if (s === "fault") {
