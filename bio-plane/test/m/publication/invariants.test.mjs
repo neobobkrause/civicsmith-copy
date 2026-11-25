@@ -70,7 +70,7 @@ test("R31 published bytes and the court-order stamps are exempt from purge; the 
   assert.deepEqual(w.p.caseTensionsModule.purgeDeclaration, { ok: true });
   for (const t of CASE_TENSIONS_TABLES) {
     assert.equal(publicationOwns(t.name), false, `${t.name} is case-tensions'`);
-    assert.equal(w.record.declaredTables().find((d) => d.name === t.name).module, "case-tensions");
+    assert.equal(w.record.declaredTables().find((d) => d.name === t.name)?.module, "case-tensions");
   }
   /* N532: the two tables of held materials are case-carriage's, declared exempt by it (its R6), created at this
      module's creation on the same host; this module's declaration and its both answer ok */

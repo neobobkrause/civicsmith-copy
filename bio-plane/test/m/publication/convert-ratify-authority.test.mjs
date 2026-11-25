@@ -32,7 +32,9 @@ const RESTING = [INFO, G2a, G2b, G3];
 test("R38 what a ratified case's finding rests on is the published graph's serve edges: every reference counts, a relates_to as a basis leg does, and a prepared (unsigned) case contributes nothing", () => {
   const { w, proj, pin } = fourResting();
   /* the finding's own bytes: one basis leg, four references */
-  const fm = parseFrontmatter(w.text(G)).data;
+  const gText = w.text(G);
+  assert.ok(gText, "the finding's bytes are held");
+  const fm = parseFrontmatter(gText).data;
   assert.deepEqual(fm.basis.map((l) => l.target), [INFO]);
   const serve = publishedGraphEdges(fm).filter((e) => e.disclosure === "serve");
   assert.deepEqual(serve.map((e) => [e.to, e.kind]).sort(),
@@ -59,7 +61,9 @@ test("R38 identity: the graph a ratified finding is published with is the same s
   assert.equal(w.signCase("CASE-2026-9470", 1, { project: proj, signer: "iris", roster: roster(G, pin) }).ok, true);
   /* G3 is published first (as the evidence before its finding), then G with its graph read at the pinned bytes */
   assert.equal(w.signFinding(G3, { signer: "iris", sig: SIG(3) }).ok, true);
-  const edges = publishedGraphEdges(parseFrontmatter(w.text(G)).data);
+  const gText = w.text(G);
+  assert.ok(gText, "the finding's bytes are held");
+  const edges = publishedGraphEdges(parseFrontmatter(gText).data);
   const fin = w.signFinding(G, { signer: "iris", edges });
   assert.deepEqual([fin.ok, fin.edges], [true, { serve: 1, name: 0, held: 3, dropped: 0 }]);
   const servedOrHeld = [
