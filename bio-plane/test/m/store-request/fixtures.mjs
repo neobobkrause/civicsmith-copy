@@ -26,7 +26,7 @@ export const WORLD_AI_SECRET = "world-account-seal-secret-3b9d71c4e0a5f628";
 /** `storeWorld({claimed?, now?, env?, ai?, deliver?, releaseKeys?, renderer?, follow?})` (op-tables §5.2, K5054): store-assembly's world (its producing team recorded at its first boot, K5149) with the binding tokens of
  *  `WORLD_TOKENS`, plus
  *  `door(req, as)` (R17: what a page's `fetch("/api/?op=...")` receives), `signIn(handle, {admin?, capabilities?, device?})` (R16),
- *  `plane(as)` and `boot(as)` (R18: `{door, session}` for interface-shell's `boot`), `route(as)` (R18: a Playwright route handler answering the page's `/api/` from the door, for a browser test), `session(as)` (the record `{t, e, d, w}`),
+ *  `plane(as)` and `boot(as)` (R18: `{door, session, now}` for interface-shell's `boot`, `now` the world's clock the page's starts at), `route(as)` (R18: a Playwright route handler answering the page's `/api/` from the door, for a browser test), `session(as)` (the record `{t, e, d, w}`),
  *  `admitted(token, op?)` (admission's caller for a token) and `recipes.hold|project|trail|profiles` (R19), each of real acts;
  *  `store`, `ctx`, `sql`, `tick(ms)` are the world's own. The world binds `CAPTURES` (store-assembly's) and no `PUBLISHED`: `selftest` reads that as the owner does, one bucket bound without the other, and a test that unbinds
  *  `CAPTURES` leaves neither bound (SCREENS-SETTINGS #20 J37 (1); STORE-REQUEST #6 B15 (4)); `recipes.published` binds the published store when it publishes. */

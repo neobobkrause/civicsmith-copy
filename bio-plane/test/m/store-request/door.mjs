@@ -87,6 +87,16 @@ import { boundOf, wholeReadRow } from "../../../src/read-bounds.mjs";
  * `Request`, answered for the caller `as` (a signed-in member, or anything with a `token`; none for a public op).
  * @typedef {(req: any, as?: any) => Promise<WorldAnswer>} WorldDoor
  */
+/**
+ * R18: what `bootOf` hands a booter: the world's door bound to the member, the session record the page holds (none for no member),
+ * and `now`, the world's clock (epoch ms) at the moment it was asked, which the page's clock starts at, so the session the world
+ * made expires by the page's clock as by the store's.
+ * @typedef {Object} WorldBoot
+ * @property {(req: any) => Promise<WorldAnswer>} door
+ * @property {WorldSession|null} session
+ * @property {number} now
+ */
+
 /** R17: the address a page's relative request is read against. */
 export const WORLD_ORIGIN = "https://group.example";
 /** R20: the declared ops the world's door cannot answer, each with its cause; closed (R20's test fails on any other). */
@@ -717,14 +727,17 @@ export async function signIn(world, handle, { admin = false, capabilities = null
 }
 
 /**
- * R18: `bootOf(world, as)` → `{door, session}` for interface-shell's `boot({screens, door, session})`.
+ * R18: `bootOf(world, as)` → `{door, session, now}` for interface-shell's `boot({screens, door, session, now})`. The session record stays on
+ * the world's clock (its `e`), and the world's door judges the token on that clock; `now` is the world's clock when asked, so a booter
+ * starts the page's clock there and the page reads the session as live exactly while the store does (ARCH's decision on screens-intake #2's
+ * report: the page runs on the world's clock).
  * @param {any} world store-assembly's world
  * @param {WorldMember|null} as
- * @returns {{door: (req: any) => Promise<WorldAnswer>, session: WorldSession|null}}
+ * @returns {WorldBoot}
  */
 export function bootOf(world, as) {
   const door = doorOf(world);
-  return { door: (req) => door(req, as), session: as ? as.session : null };
+  return { door: (req) => door(req, as), session: as ? as.session : null, now: world.now() };
 }
 
 /** R18 (K5178; SCREENS-INQUIRY #29 J42 (f)): `routeOf(world, as)` → a Playwright route handler for the page's `/api/` requests, answering each from the world's door as `as`
