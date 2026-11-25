@@ -91,7 +91,9 @@ async function measure(path, width, interact = async () => {}, at = null) {
   try {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
     await ctx.addInitScript((session) => localStorage.setItem("bio-session", session), JSON.stringify(at.as.session));
-    const { door } = at.world.boot(at.as);
+    /* the page's clock starts at the world's (store-request R18), so the browser reads the session as live exactly while the store does */
+    const { door, now } = at.world.boot(at.as);
+    await ctx.clock.install({ time: now });
     const page = await ctx.newPage();
     await page.route("**/*", async (r) => {
       const u = new URL(r.request().url());

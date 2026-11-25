@@ -78,15 +78,16 @@ export async function open(path, { plane = {}, me = MEMBER, reachable = false, s
 /* Fix round 10 (K5054; store-request R16-R19): a screen opened over the REAL store. `world` is `storeWorld()` (store-request's fixtures) and `as` a
    member `world.signIn(...)` made; the page's door is the world's, so every op the test's own `plane` table does not name is answered by the
    real modules from what real acts made. `plane` keeps only faults (a refusal, a silence, a delay) a real act cannot make. A test
-   makes its state by `as.act(op, {query, body})` or a recipe, and reads values from those answers, never from a literal. */
+   makes its state by `as.act(op, {query, body})` or a recipe, and reads values from those answers, never from a literal. The page's clock starts at
+   the world's (`now`, store-request R18), so the page reads the session as live exactly while the store does. */
 export async function openWorld(path, { world, as, plane = {}, screens = SCREENS, ...rest } = {}) {
-  const { door: worlds, session } = world.boot(as);
+  const { door: worlds, session, now } = world.boot(as);
   /* the sign-in is the member's `as` (a member who signed in again, `lapse`, goes on as hers): the page's own header is dropped and the door adds hers */
   const dropAuth = (h) => (h && !(h instanceof Headers) ? Object.fromEntries(Object.entries(h).filter(([k]) => k.toLowerCase() !== "authorization")) : h);
   const door = (req) => (req && typeof req === "object" && !(req instanceof Request)
     ? worlds({ ...req, ...(req.headers ? { headers: dropAuth(req.headers) } : {}), ...(req.init ? { init: { ...req.init, ...(req.init.headers ? { headers: dropAuth(req.init.headers) } : {}) } } : {}) })
     : worlds(req));
-  const p = await boot({ screens, path, door, session, plane: Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])), ...rest });
+  const p = await boot({ screens, path, door, session, now, plane: Object.fromEntries(Object.entries(plane).map(([op, a]) => [op, counted(a)])), ...rest });
   await p.settle();
   await idle(p);
   return p;
@@ -148,4 +149,5 @@ export const saysIn = (el, key, vars) => el.textContent.includes(word(key, vars)
 /* R54: a document with no title, no file name is named by its host and the day it was captured (`document.untitled.web`) */
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 export const dayOf = (iso) => { const d = new Date(iso); return word("date.daymonthyear", { day: String(d.getUTCDate()), month: word(`date.month.${MONTHS[d.getUTCMonth()]}`), year: String(d.getUTCFullYear()) }); };
-export const untitled = (site = "www.example.gov") => word("document.untitled.web", { site, date: dayOf(Date.now()) });
+/* the day is the world's (store-request R18): a document is captured on the store's clock, which the page's starts at */
+export const untitled = (world, site = "www.example.gov") => word("document.untitled.web", { site, date: dayOf(world.now()) });
