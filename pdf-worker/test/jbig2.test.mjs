@@ -102,7 +102,7 @@ console.log("\n--- R20, R25, R26, R40: the scanned page, a symbol dictionary in 
   t("R25 a 1-bit grey PNG", [png.width, png.height, png.bitDepth, png.colorType], [2560, 3360, 1, 0]);
   t("R26 pixels_sha256 is the digest of the PNG's packed samples", hex(png.samples), r.pixels_sha256);
   let black = 0;
-  for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) black += 1 - ((png.samples[y * png.rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1);
+  for (let y = 0; y < (png.height ?? 0); y++) for (let x = 0; x < (png.width ?? 0); x++) black += 1 - ((png.samples[y * png.rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1);
   t("R25 R40 the black-pixel count is jbig2dec's", black, want.black);
   t("R25 the decoder names what it decoded", r.jbig2.decoded,
     ["page information", "symbol dictionary, arithmetic", "text region, arithmetic"]);
@@ -144,7 +144,7 @@ console.log("\n--- R21, R25: the page's /Rotate ---");
 console.log("\n--- R25: the filter chain, the globals, the declared size ---");
 {
   const v = variant("symbols-arith-t0");
-  const s = b64(v.stream_b64), g = b64(v.globals_b64);
+  const s = new Uint8Array(Buffer.from(v.stream_b64, "base64")), g = new Uint8Array(Buffer.from(v.globals_b64, "base64"));
   const fl = await render(jbig2Page(deflateSync(s), g, v.width, v.height,
     { filter: "[/FlateDecode /JBIG2Decode]", parms: "/DecodeParms [null << /JBIG2Globals 6 0 R >>]" }), 0);
   t("R25 FlateDecode before JBIG2Decode is decoded first: the same picture", [fl.ok, fl.pixels_sha256], [true, v.pdf_samples_sha256]);
