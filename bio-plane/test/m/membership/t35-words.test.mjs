@@ -33,9 +33,11 @@ const clean = (r, label) => {
 
 test("R112 R151 the sweep's rows C-102.11 and C-102.12 read refusal.LISTENER_MALFORMED and refusal.LISTENER_DECLARED by key", () => {
   const malformed = listenerRefusal([], "", null);
+  assert.ok(malformed, "refused");
   assert.equal(malformed.check, "C-102.11");
   assert.equal(malformed.translation, word("refusal.LISTENER_MALFORMED"));
   const declared = listenerRefusal([{ module: "credentials" }], "credentials", () => {});
+  assert.ok(declared, "refused");
   assert.equal(declared.check, "C-102.12");
   assert.equal(declared.translation, word("refusal.LISTENER_DECLARED"));
   /* the same rows answer this module's own registrations (R79, R94, R95) */
