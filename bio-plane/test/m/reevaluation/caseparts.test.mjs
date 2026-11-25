@@ -51,13 +51,13 @@ test("R26: one registration; a malformed one is LISTENER_MALFORMED and a second 
                              ["publication", { cases: fns.cases }], ["publication", () => null]]) {
     const r = w.r.registerCaseParts(module, f);
     assert.deepEqual(r, listenerRefusal(null, module, null), `malformed: ${module} ${typeof f}`);
-    assert.equal(r.reason, "LISTENER_MALFORMED");
+    assert.equal(r?.reason, "LISTENER_MALFORMED");
   }
   assert.deepEqual(w.r.registerCaseParts("publication", fns), { ok: true, module: "publication" });
   for (const module of ["publication", "someone-else"]) {
     const r = w.r.registerCaseParts(module, fns);
     assert.deepEqual(r, listenerRefusal({ module: "publication" }, module, fns.parts));
-    assert.equal(r.reason, "LISTENER_DECLARED");
+    assert.equal(r?.reason, "LISTENER_DECLARED");
   }
 });
 
