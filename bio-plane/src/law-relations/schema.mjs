@@ -91,7 +91,9 @@ export const LAW_TABLES = Object.freeze([
 ].map((t) => Object.freeze({ ...t, keys: Object.freeze([...t.keys]), ...CLASSES })));
 
 /** Creates the five tables where absent (R16), and adds R9's `edition` column to a `law_relations` table created before
- *  it, never filling it. Idempotent; writes no row. */
+ *  it, never filling it. Idempotent; writes no row.
+ *  @param {*} sql the storage's SQL handle: `exec(query, ...bindings)`, answering a cursor of rows
+ *  @returns {void} */
 export function migrateLaw(sql) {
   const bare = LAW_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const s of bare.split(";").map((x) => x.trim()).filter(Boolean)) sql.exec(s);

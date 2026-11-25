@@ -25,6 +25,227 @@ import { LAW_RELATIONS_CHECKS, refusal } from "./checks.mjs";
 import { LAW_SCHEMA, LAW_TABLES, migrateLaw } from "./schema.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/** @import { LawRefusal } from './checks.mjs' */
+/**
+ * R13: a refusal the host mints and this module answers exactly as the host gives it (`NO_SUCH_STANDARD`,
+ * `PORTION_UNKNOWN`, `STANDARD_*`).
+ * @typedef {{ok: false, [field: string]: *}} HostRefusal
+ */
+/**
+ * R13: the reads `standards` passes at construction, every one required; what this module knows of a standard is
+ * what these answer, and it never reads or writes a `standards` table itself.
+ * @typedef {Object} LawHost
+ * @property {*} sql the storage's SQL handle: `exec(query, ...bindings)`
+ * @property {*} record `record-core`'s handle: `transact`, `declareTable`
+ * @property {*} membership `membership`'s handle: `inSight(bundle, viewer)`
+ * @property {*} rows SQL over the same storage, answering every row
+ * @property {*} one SQL over the same storage, answering the first row or null
+ * @property {*} row `row(id)`: a standard's row (`kind`, `portion_path`, `instrument`, `period_from`, `period_to`), or null
+ * @property {*} texts `texts(id)`: the standard's text content ids, in order
+ * @property {*} readable `readable(id, viewer)`: whether the viewer may read the standard
+ * @property {*} content `content()`: `content`'s handle (`contentRow`, `passageText`)
+ * @property {*} when `when()`: the clock, an instant to the second
+ * @property {*} nonce `nonce()`: a fresh value for a row id
+ * @property {*} inForceAt `standards` R20's read
+ * @property {*} periodOf a standard row's stated period, `{from, to}`
+ * @property {*} eventDay `eventDay(event, edge, viewer)`: an enactment event's day
+ * @property {*} eventWhen `eventWhen(event, viewer)`: an event's `{day}`, or null
+ * @property {*} gradeOf `gradeOf(contentIds)`: `{grade, why}` on the transcription axis (R12)
+ * @property {*} zone `zone()`: the zone a validity is stated in
+ * @property {*} recognise `recognise(text)`: `{citations}`, `id-spaces`' court-citation reading
+ * @property {*} citationLookup `citationLookup({text, viewer})`: the keyed lookup (`acquisition` R37)
+ * @property {*} idsAtKey `idsAtKey(key, portion)`: the standards held at an instrument key
+ * @property {*} idsOfKind `idsOfKind(kind, limit)`: the standards of a kind
+ * @property {*} idsCovering `idsCovering(day)`: the standards whose stated period does not exclude the day
+ * @property {*} noSuchStandard the host's `NO_SUCH_STANDARD`
+ * @property {*} portionUnknown the host's `PORTION_UNKNOWN`
+ * @property {*} refuseNoId the host's `STANDARD_NO_ID`
+ * @property {*} refuseDateInvalid the host's `STANDARD_DATE_INVALID`
+ * @property {*} refuseFieldUnknown the host's `STANDARD_FIELD_UNKNOWN`, or null when every field is the act's own
+ * @property {*} refuseReason the host's `STANDARD_NO_REASON`
+ * @property {*} refuseNoSuchProposal the host's `STANDARD_NO_SUCH_PROPOSAL`
+ * @property {*} refuseProposalAdopted the host's `STANDARD_PROPOSAL_ADOPTED`
+ * @property {*} refuseProposerUnnamed the host's `STANDARD_PROPOSER_UNNAMED`
+ * @property {*} refuseWhyInvalid the host's `STANDARD_WHY_INVALID`
+ */
+/**
+ * R2, R5, R6, R20: what a withdrawn relation, link or treatment is kept with.
+ * @typedef {Object} LawWithdrawal
+ * @property {string} by
+ * @property {string} at
+ * @property {string} reason
+ */
+/**
+ * R2, R5, R6: an adoption of a proposal by a member's act: the proposal and the fields taken from it.
+ * @typedef {Object} LawAdoption
+ * @property {string} proposal
+ * @property {string[]} from_proposal
+ */
+/**
+ * R1, R2, R9: a law relation as answered.
+ * @typedef {Object} LawRelation
+ * @property {string} id `lrel-` and 24 hex characters
+ * @property {string} type
+ * @property {string} class `temporal` or `referential`
+ * @property {{standard: string, portion: string | null}} from
+ * @property {{standard: string, portion: string | null}} to
+ * @property {string} citation the content id of the passage that makes it
+ * @property {{event: string, edge: string} | {date: string} | null} effective a temporal relation's; null for a referential one
+ * @property {string | null} [edition] an `incorporates` relation's only
+ * @property {string} reason
+ * @property {string} by
+ * @property {string} at
+ * @property {string | null} proposal
+ * @property {LawWithdrawal | null} withdrawn
+ * @bound edition: 1 to 50 characters
+ */
+/**
+ * R5, R8: a court link as answered.
+ * @typedef {Object} CourtLink
+ * @property {string} id `clink-` and 24 hex characters
+ * @property {string} type
+ * @property {{standard: string}} from
+ * @property {{standard: string, portion: string | null}} to
+ * @property {string} citation
+ * @property {string} reason
+ * @property {string} by
+ * @property {string} at
+ * @property {string | null} proposal
+ * @property {LawWithdrawal | null} withdrawn
+ */
+/**
+ * R6: a treatment row as answered.
+ * @typedef {Object} CourtTreatment
+ * @property {string} id `ctreat-` and 24 hex characters
+ * @property {string} decision
+ * @property {string} treatment
+ * @property {string} by_decision
+ * @property {string} citation
+ * @property {string} reason
+ * @property {string} by
+ * @property {string} at
+ * @property {string | null} proposal
+ * @property {LawWithdrawal | null} withdrawn
+ */
+/**
+ * R2, R9, R20: `lawRelate`'s act. Each field is read as given and refused by answer, never by a throw.
+ * @typedef {Object} LawRelateArgs
+ * @property {*} [type] one of `LAW_RELATIONS`' types
+ * @property {*} [from] an end: a standard id, or `{standard, portion?}`
+ * @property {*} [to] an end, as `from`
+ * @property {*} [citation] a content id of the `from` standard's text that the viewer may read
+ * @property {*} [effective] a temporal relation's: `YYYY-MM-DD`, `{date}` or `{event, edge}` (`edge` `start` or `end`)
+ * @property {*} [edition] an `incorporates` relation's only
+ * @property {*} [reason]
+ * @property {*} [author] the member whose act it is; a machine or none is refused
+ * @property {*} [viewer] the member reading; none is an internal caller
+ * @property {*} [proposal] a proposal this act adopts
+ * @bound edition: 1 to 50 characters, after trimming
+ * @bound reason: not blank, at most 2,000 characters
+ */
+/**
+ * R5, R8, R20: `courtLink`'s act, read as `lawRelate`'s is.
+ * @typedef {Object} CourtLinkArgs
+ * @property {*} [type] one of `COURT_LINKS`
+ * @property {*} [from] a `court` standard
+ * @property {*} [to] a portion of a held statute, regulation, ordinance or policy
+ * @property {*} [citation] a content id of the `from` standard's text that the viewer may read
+ * @property {*} [reason]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [proposal]
+ * @bound reason: not blank, at most 2,000 characters
+ */
+/**
+ * R6, R20: `courtTreat`'s act, read as `lawRelate`'s is.
+ * @typedef {Object} CourtTreatArgs
+ * @property {*} [decision] the `court` standard treated
+ * @property {*} [treatment] one of `TREATMENTS`
+ * @property {*} [by_decision] the later `court` standard that treats it
+ * @property {*} [citation] a content id of the later decision's text that the viewer may read
+ * @property {*} [reason]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [proposal]
+ * @bound reason: not blank, at most 2,000 characters
+ */
+/**
+ * R2, R20: `lawPropose`'s suggestion: `what`, `why`, `proposer`, and the fields of the act it proposes.
+ * @typedef {Object} LawProposeArgs
+ * @property {*} [what] `relation`, `link` or `treatment`
+ * @property {*} [why]
+ * @property {*} [proposer] who proposes it; a machine may
+ * @property {*} [viewer]
+ * @bound why: 1 to 240 characters, after trimming
+ */
+/**
+ * R2, R14: a proposal as answered, labelled through `record-grammar`'s `proposalLabel(proposer, "law_relation")`.
+ * @typedef {Object} LawProposal
+ * @property {string} id `lprop-` and 24 hex characters
+ * @property {*} what
+ * @property {Object<string, *>} fields
+ * @property {string} why
+ * @property {string} at
+ * @property {*} by
+ * @property {*} state
+ * @property {*} machine_work
+ * @property {*} label
+ * @property {null} adopted_as
+ */
+/**
+ * R3: one address a provision has been held under, with the relation that moved it.
+ * @typedef {Object} LawAddress
+ * @property {string} standard
+ * @property {string | null} key
+ * @property {string | null} portion
+ * @property {{relation: string, type: string, effective: {event: string, edge: string} | {date: string}}} via
+ * @property {number} depth
+ */
+/**
+ * R4: a held capture that states a court citation.
+ * @typedef {Object} StatedCapture
+ * @property {string} standard
+ * @property {string} content_id
+ * @property {string} capture_sha
+ * @property {string} bundle_id
+ * @property {Object<string, *>} extent
+ * @property {{start: number, end: number}} at
+ */
+/**
+ * R4, R20: the citation resolver's answer. It refuses nothing.
+ * @typedef {Object} CitationAnswer
+ * @property {boolean} ok always true: the resolver refuses nothing
+ * @property {{volume: number, reporter: string, page: number} | null} citation
+ * @property {*} as_given
+ * @property {string} state `verified` or `not verified`
+ * @property {boolean} verified
+ * @property {StatedCapture[]} held
+ * @property {string} why
+ * @property {{on: false, reason: *, says: string, [field: string]: *} | {on: true, service: *, citations: Array<*>, verified: false, label: *, [field: string]: *} | null} lookup
+ */
+/**
+ * R7 (`connection-grammar` R6–R8): one connection item `neighbours` answers.
+ * @typedef {Object} LawConnectionItem
+ * @property {string} id
+ * @property {string} from
+ * @property {string} to
+ * @property {string} kind
+ * @property {string} owner
+ * @property {{from: string | null, to: string | null, precision: string, zone: *}} valid
+ * @property {Array<{source: string, content_id: string}>} evidence
+ * @property {{assertion: *, ends: Array<*>}} grade
+ * @property {*} grade_why
+ * @property {*} derived
+ * @property {*} [undetermined]
+ * @property {*} [in_force]
+ * @property {string} [from_portion]
+ * @property {string} [to_portion]
+ */
+/**
+ * R7: `neighbours`' answer: a page of items, a hub named and never expanded, or the missing viewer refused.
+ * @typedef {{items: LawConnectionItem[], next?: {after: string}, truncated?: true, [field: string]: *} | {items: LawConnectionItem[], hub: {set_size: number, why: string}, [field: string]: *} | {refused: "VIEWER_MISSING", why: string, [field: string]: *}} LawNeighbours
+ */
+
 export { LAW_RELATIONS_CHECKS } from "./checks.mjs";
 export { LAW_SCHEMA, LAW_TABLES, migrateLaw };
 
@@ -99,7 +320,9 @@ const reasonFault = (r) => (typeof r !== "string" || !r.trim() ? word("law-relat
 /* ---- the refusals several acts answer, each minted at one site (DEC-49) ---- */
 
 /** R14, R21: null for a named member; else MACHINE_CANNOT_RELATE through its row, exactly as `lawRelate` answers it. A
- *  host answering the same code (`standards` R40, R43) mints it here, never from the row itself. */
+ *  host answering the same code (`standards` R40, R43) mints it here, never from the row itself.
+ *  @param {*} author the member whose act it is; a machine identity, a blank or a non-string is refused
+ *  @returns {LawRefusal | null} */
 export function machineRelate(author) {
   /* DEC-49 REGION is-law-member */
   if (str(author) && !isMachineIdentity(str(author))) return null;
@@ -116,7 +339,10 @@ function refuseRelationUnknown(type, allowed) {
 }
 
 /** R2, R21: LAW_RELATION_NO_CITATION through its row, naming the standard whose text the citation must be among, exactly
- *  as `lawRelate` answers it; the one site that mints it (a host answering the code mints it here). */
+ *  as `lawRelate` answers it; the one site that mints it (a host answering the code mints it here).
+ *  @param {*} of the standard whose text the citation must be among
+ *  @param {*} citation the citation as given; a string is named back cut to 80 characters
+ *  @returns {LawRefusal} */
 export function refuseNoCitation(of, citation) {
   /* DEC-49 REGION is-law-relation-cited */
   return refusal("LAW_RELATION_NO_CITATION", `the citation is a content id among the text of ${of}, the passage that makes `
@@ -158,9 +384,13 @@ function effectiveOf(v) {
 export class LawRecords {
   /** R13: `host`, the reads `standards` passes. Every read is required: one missing throws a `TypeError` naming every
    *  read missing, and nothing is written. Construction creates the five tables where absent (R16) and declares them
-   *  to `record-core` under `law-relations` (R15). */
+   *  to `record-core` under `law-relations` (R15).
+   *  @param {LawHost} host
+   *  @throws {TypeError} naming every read missing from `host`
+   *  @throws {Error} when `record-core` refuses a table's declaration (another module holds it) */
   constructor(host) {
-    const h = isObj(host) ? host : {};
+    /** @type {LawHost} checks a LawHost below: every read present, else a TypeError */
+    const h = /** @type {LawHost} */ (isObj(host) ? host : {});
     const missing = HOST_READS.filter((k) => h[k] === undefined || h[k] === null);
     if (missing.length)
       throw new TypeError(`LawRecords: the host does not supply ${missing.join(", ")} (law-relations R13)`);
@@ -239,6 +469,13 @@ export class LawRecords {
    * R2, R9: A LAW RELATION, BY A MEMBER'S ACT
    * ===================================================================== */
 
+  /** R2, R9, R20: record one relation from one standard or portion to another, by a member's act. Refusals, in order:
+   *  MACHINE_CANNOT_RELATE, the host's STANDARD_FIELD_UNKNOWN, LAW_RELATION_UNKNOWN, the host's NO_SUCH_STANDARD
+   *  naming the end, the host's PORTION_UNKNOWN, LAW_RELATION_SELF, LAW_RELATION_NO_CITATION, LAW_RELATION_NO_EDITION,
+   *  LAW_RELATION_NO_EFFECTIVE (temporal), the host's STANDARD_NO_REASON; each writes nothing. Naming `proposal`
+   *  adopts it, taking each field the member does not state from it.
+   *  @param {LawRelateArgs} [args]
+   *  @returns {{ok: true, relation: LawRelation, adopted?: LawAdoption, [field: string]: *} | LawRefusal | HostRefusal} */
   lawRelate(args = {}) {
     const a0 = isObj(args) ? args : {};
     const byMachine = machineRelate(a0.author);
@@ -321,7 +558,12 @@ export class LawRecords {
 
   /** R1, R11, R19: the relations a standard is an end of, temporal and referential in two lists, never mixed; a
    *  relation whose passage, or either end, the viewer may not read is neither answered nor counted. Withdrawn ones are
-   *  answered, marked. Writes nothing. */
+   *  answered, marked. At most 2,000 are read, `truncated` measured by reading one past. Refusals: the host's
+   *  STANDARD_NO_ID (op `lawrelations`) for a blank id, the host's NO_SUCH_STANDARD for one the viewer may not read.
+   *  Writes nothing.
+   *  @param {{standard?: *, viewer?: *}} [args]
+   *  @returns {{ok: true, standard: string, temporal: Array<LawRelation & {direction: string}>, referential: Array<LawRelation & {direction: string}>, truncated: boolean, says: string, [field: string]: *} | HostRefusal}
+   *  @bound temporal: at most 2,000 relations with referential, in relation id order; direction `out` or `in` */
   lawRelationsOf({ standard = null, viewer = null } = {}) {
     const id = str(standard);
     if (!id) return this.k.refuseNoId("lawrelations");
@@ -337,7 +579,12 @@ export class LawRecords {
              says: localize("law-relations.index.says_kept_apart", "temporal relations (amends, repeals, renumbers, recodifies) and referential ones (refers to, defines, excepts, implements, incorporates) are kept apart and never read as one list (D192)") };
   }
 
-  /** R2, R5, R6, R20: withdraw a relation, link or treatment, kept with who, when and why. */
+  /** R2, R5, R6, R20: withdraw a relation, link or treatment, kept with who, when and why. Refusals:
+   *  MACHINE_CANNOT_RELATE, NO_SUCH_LAW_ITEM, the host's STANDARD_NO_REASON, each writing nothing. A second withdrawal
+   *  answers `already: true` with the first.
+   *  @param {{relation?: *, reason?: *, author?: *}} [args] `relation` a `lrel-`, `clink-` or `ctreat-` id
+   *  @returns {{ok: true, relation: string, withdrawn: LawWithdrawal, already?: true, says?: string, [field: string]: *} | LawRefusal | HostRefusal}
+   *  @bound reason: not blank, at most 2,000 characters */
   lawWithdraw({ relation = null, reason = null, author = null } = {}) {
     const byMachine = machineRelate(author);
     if (byMachine) return byMachine;
@@ -365,7 +612,11 @@ export class LawRecords {
 
   /** R2, R5, R6, R14, R20: a suggestion of a relation, link or treatment, stored apart, labelled with who proposed it
    *  and whether it is machine work, through record-grammar's `law_relation` subject (its R49), never `standard`. It
-   *  moves no answer: only a member's act naming it (`proposal`) records a row. */
+   *  moves no answer: only a member's act naming it (`proposal`) records a row. Refusals: LAW_RELATION_UNKNOWN naming
+   *  `relation`, `link` and `treatment`; the host's STANDARD_FIELD_UNKNOWN, STANDARD_PROPOSER_UNNAMED and
+   *  STANDARD_WHY_INVALID.
+   *  @param {LawProposeArgs & Object<string, *>} [args]
+   *  @returns {{ok: true, proposal: LawProposal, recorded: false, says: string, [field: string]: *} | LawRefusal | HostRefusal} */
   lawPropose(args = {}) {
     const a = isObj(args) ? args : {};
     const what = a.what;
@@ -396,6 +647,13 @@ export class LawRecords {
    * R5, R6, R8: COURT LINKS AND TREATMENT ROWS
    * ===================================================================== */
 
+  /** R5, R8, R20: record a court link from an extent of a `court` standard's text to a portion of a held statute,
+   *  regulation, ordinance or policy, by a member's act. Refusals, in order: MACHINE_CANNOT_RELATE, the host's
+   *  STANDARD_FIELD_UNKNOWN, LAW_RELATION_UNKNOWN naming the link types, the host's NO_SUCH_STANDARD,
+   *  NOT_A_COURT_STANDARD, COURT_LINK_TARGET_NOT_LAW, the host's PORTION_UNKNOWN, LAW_RELATION_NO_CITATION, the host's
+   *  STANDARD_NO_REASON; each writes nothing.
+   *  @param {CourtLinkArgs} [args]
+   *  @returns {{ok: true, link: CourtLink, adopted?: LawAdoption, [field: string]: *} | LawRefusal | HostRefusal} */
   courtLink(args = {}) {
     const a0 = isObj(args) ? args : {};
     const byMachine = machineRelate(a0.author);
@@ -447,6 +705,12 @@ export class LawRecords {
              withdrawn: w ? { by: w.withdrawn_by, at: w.withdrawn_at, reason: w.reason } : null };
   }
 
+  /** R6, R20: record a treatment of a decision by a later one, by a member's act. Refusals, in order:
+   *  MACHINE_CANNOT_RELATE, the host's STANDARD_FIELD_UNKNOWN, TREATMENT_UNKNOWN before reading its ends, the host's
+   *  NO_SUCH_STANDARD, NOT_A_COURT_STANDARD naming which, LAW_RELATION_SELF, LAW_RELATION_NO_CITATION, the host's
+   *  STANDARD_NO_REASON; each writes nothing.
+   *  @param {CourtTreatArgs} [args]
+   *  @returns {{ok: true, treatment: CourtTreatment, adopted?: LawAdoption, [field: string]: *} | LawRefusal | HostRefusal} */
   courtTreat(args = {}) {
     const a0 = isObj(args) ? args : {};
     const byMachine = machineRelate(a0.author);
@@ -503,7 +767,10 @@ export class LawRecords {
   /** R6, R19, R20: whether a decision still stood on a date: `not_standing` on a held ending treatment effective (the
    *  later decision's stated start) on or before `date`; `standing` on a held affirmance so effective and no ending
    *  one; otherwise `undetermined`, saying the later history is not read. Never a default of standing. A withdrawn
-   *  treatment, or one whose passage or later decision the viewer may not read, is not read. Writes nothing. */
+   *  treatment, or one whose passage or later decision the viewer may not read, is not read. Refusals: the host's
+   *  STANDARD_NO_ID, STANDARD_DATE_INVALID and NO_SUCH_STANDARD, and NOT_A_COURT_STANDARD. Writes nothing.
+   *  @param {{decision?: *, date?: *, viewer?: *}} [args] `date` a day, `YYYY-MM-DD`
+   *  @returns {{ok: boolean, decision: string, date: string, treatments: Array<CourtTreatment & {effective: string | null}>, state: "standing" | "not_standing" | "undetermined", by: string[], why: string, [field: string]: *} | LawRefusal | HostRefusal} */
   stillStanding({ decision = null, date = null, viewer = null } = {}) {
     const id = str(decision);
     if (!id) return this.k.refuseNoId("stillstanding");
@@ -539,7 +806,9 @@ export class LawRecords {
 
   /** R10: the temporal relations whose `to` is `standardId` and which are not withdrawn, in relation id order, each a
    *  row with its type and its effective date, or its enactment event and edge. It reads no viewer: it is the host's
-   *  internal read, and the host's R20 answers the bound. Writes nothing. */
+   *  internal read, and the host's R20 answers the bound. Writes nothing.
+   *  @param {*} standardId
+   *  @returns {Array<Object<string, *>>} the `law_relations` rows */
   boundsOn(standardId) {
     return this.k.rows(`SELECT r.* FROM law_relations r WHERE r.to_standard=? AND r.class='temporal' AND NOT EXISTS
                           (SELECT 1 FROM law_withdrawals w WHERE w.item_id=r.relation_id) ORDER BY r.relation_id`, standardId);
@@ -547,7 +816,11 @@ export class LawRecords {
 
   /** R3, R19, R20: every key and portion the provision has been held under, following adopted `renumbers` and
    *  `recodifies` relations both ways, bounded by connection-grammar's default depth. A relation whose passage, or
-   *  either end, the viewer may not read is not followed. Never throws. */
+   *  either end, the viewer may not read is not followed. A blank key is the host's STANDARD_NO_ID. Never throws: a
+   *  read that fails answers no address, truncated, saying so.
+   *  @param {{key?: *, portion?: *, viewer?: *}} [args]
+   *  @returns {{ok: true, key: string, portion: *, held_under?: string[], addresses: LawAddress[], truncated: boolean, why?: string, [field: string]: *} | HostRefusal}
+   *  @bound addresses: followed to connection-grammar's BOUNDS.depth_default, truncated past it */
   addressesOf({ key = null, portion = null, viewer = null } = {}) {
     try {
       const k = str(key);
@@ -594,7 +867,11 @@ export class LawRecords {
   /** R4, R20: `verified` only when a held capture the viewer may see states the citation (volume, reporter and page): a
    *  passage of a `court` standard's text. Otherwise `not verified`, refusing nothing (D88). With `lookup: true` the
    *  keyed lookup's matches are added, labelled as the service's and never as verified; switched off, it says so. It
-   *  reads at most 2,000 court standards, saying so past it, and writes nothing. */
+   *  reads at most 2,000 court standards, saying so past it, and writes nothing. A lookup that throws is answered as
+   *  one that did not answer.
+   *  @param {{citation?: *, viewer?: *, lookup?: *}} [args] `citation` a text, or `{volume, reporter, page}`
+   *  @returns {Promise<CitationAnswer>}
+   *  @bound held: at most 2,000 court standards read */
   async resolveCourtCitation({ citation = null, viewer = null, lookup = false } = {}) {
     const read = typeof citation === "string" ? (this.k.recognise(citation).citations || [])[0] || null
       : isObj(citation) ? citation : null;
@@ -653,7 +930,10 @@ export class LawRecords {
   /** R7, R19, R20 (`connection-grammar` R6–R8): for a standard node, its relations and links valid at `at`; for an
    *  event node, the held standards in force at the event's `when` (`standards` R20, through the host), each a derived
    *  item. Sight: an evidentiary item is answered only when the viewer may read its passage and both its ends; a
-   *  derived one only when the viewer may read the event. */
+   *  derived one only when the viewer may read the event. A missing viewer is refused VIEWER_MISSING.
+   *  @param {{node?: *, kinds?: *, at?: *, page?: *, viewer?: *, scope?: *}} [args]
+   *  @returns {LawNeighbours}
+   *  @bound items: a node with more than BOUNDS.hub items is named, never expanded; at most BOUNDS.fanout a page */
   neighbours({ node = null, kinds = null, at = null, page = null, viewer, scope = null } = {}) {
     if (viewer === undefined || viewer === null || viewer === "")
       return { refused: "VIEWER_MISSING", why: localize("law-relations.index.read_names_member", "a read names the member reading; an absent viewer is neither an administrator nor the public") };
@@ -743,7 +1023,10 @@ export class LawRecords {
 
 /** R12: the grade a set of passages earns on the transcription axis: the weakest ceiling among them (`content.standings`'
  *  shape, BASIS_GRADES strongest first), the lowest grade with why when any is undetermined or not held, and the lowest
- *  grade when none is named. Pure; never throws. */
+ *  grade when none is named. Pure; never throws.
+ *  @param {*} standings `content.standings`' shape: content id to `{transcription: {ceiling, why}}`
+ *  @param {*} ids the passages' content ids
+ *  @returns {{grade: string, why: string | null}} */
 export function weakestCeiling(standings, ids) {
   let grade = null;
   const whys = [];

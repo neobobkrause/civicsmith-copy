@@ -164,13 +164,13 @@ test("R2 R14 R20 a machine's suggestion is a proposal labelled through record-gr
   const link = w.law.lawPropose({ ...asks[1], why: "w", proposer: MACHINE });
   assert.equal(codeOf(w.law.lawRelate({ proposal: link.proposal.id, reason: REASON, author: V("carol") })), "STANDARD_NO_SUCH_PROPOSAL", "a proposal of another kind");
   const before = w.snapshot();
-  for (const [args, code] of [[{ what: "relation", why: "", proposer: MACHINE }, "STANDARD_WHY_INVALID"],
+  for (const [args, code] of /** @type {Array<[Object<string, *>, string]>} each a call and the code it is refused */ ([[{ what: "relation", why: "", proposer: MACHINE }, "STANDARD_WHY_INVALID"],
                               [{ what: "relation", why: "x".repeat(241), proposer: MACHINE }, "STANDARD_WHY_INVALID"],
                               [{ what: "relation", why: "w", proposer: "" }, "STANDARD_PROPOSER_UNNAMED"],
                               [{ what: "opinion", why: "w", proposer: MACHINE }, "LAW_RELATION_UNKNOWN"],
                               [{ why: "w", proposer: MACHINE }, "LAW_RELATION_UNKNOWN"],
                               [{ what: "relation", why: "w", proposer: MACHINE, merit: 1 }, "STANDARD_FIELD_UNKNOWN"],
-                              [{ what: "treatment", why: "w", proposer: MACHINE, edition: "x" }, "STANDARD_FIELD_UNKNOWN"]]) {
+                              [{ what: "treatment", why: "w", proposer: MACHINE, edition: "x" }, "STANDARD_FIELD_UNKNOWN"]])) {
     const r = w.law.lawPropose(args);
     assert.equal(codeOf(r), code, code);
     if (code === "LAW_RELATION_UNKNOWN") { rowOf(r, code); assert.deepEqual(r.types, ["relation", "link", "treatment"]); }
@@ -187,12 +187,12 @@ test("R2 R20 lawWithdraw withdraws a relation, link or treatment, kept with who,
   const link = w.law.courtLink({ type: "applies", from: court.id, to: a, citation: court.t, reason: REASON, author: V("bob") }).link.id;
   const treat = w.law.courtTreat({ decision: court.id, treatment: "affirmed", by_decision: later.id, citation: later.t, reason: REASON, author: V("bob") }).treatment.id;
   const before = w.snapshot();
-  for (const [args, code] of [[{ relation: rel, reason: "wrong", author: MACHINE }, "MACHINE_CANNOT_RELATE"],
+  for (const [args, code] of /** @type {Array<[Object<string, *>, string]>} each a call and the code it is refused */ ([[{ relation: rel, reason: "wrong", author: MACHINE }, "MACHINE_CANNOT_RELATE"],
                               [{ relation: rel, reason: "wrong", author: "" }, "MACHINE_CANNOT_RELATE"],
                               [{ relation: "lrel-000", reason: "wrong", author: V("bob") }, "NO_SUCH_LAW_ITEM"],
                               [{ relation: "", reason: "wrong", author: V("bob") }, "NO_SUCH_LAW_ITEM"],
                               [{ relation: "STD-2026-0001-statute", reason: "wrong", author: V("bob") }, "NO_SUCH_LAW_ITEM"],
-                              [{ relation: rel, reason: "", author: V("bob") }, "STANDARD_NO_REASON"]]) {
+                              [{ relation: rel, reason: "", author: V("bob") }, "STANDARD_NO_REASON"]])) {
     const r = w.law.lawWithdraw(args);
     assert.equal(codeOf(r), code, code);
     if (LAW_RELATIONS_CHECKS[code]) rowOf(r, code);
