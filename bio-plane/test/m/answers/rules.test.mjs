@@ -67,7 +67,9 @@ test("R8 law: a held standard with its captured text, version and portion (legal
   assert.match(proof.value.standard_of_proof.standard, /Rule 9\.02/);
   assert.equal((await w.a.ruleAnswer({ service: "profiles", args: { section: "deadlines", key: "nothing" }, viewer: BOB })).not_held.level, "meaning");
   /* K1445: a rule without a primary source, or UNMEASURED, is not held */
-  const view = combine(["test-port-ellery"]).view;
+  const combined = combine(["test-port-ellery"]);
+  assert.ok(combined.view, JSON.stringify(combined));
+  const view = combined.view;
   const bare = { ...view, deadlines: [{ ...view.deadlines[0], citation: undefined }, { ...view.deadlines[1], basis: "UNMEASURED" }],
                  counterparties: [{ role: "clerk", body: "the town", level: "city", elected: false, basis: "UNMEASURED" }] };
   const u = answersWorld({ deps: { combine: () => ({ ok: true, view: bare }) } });
