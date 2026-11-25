@@ -87,7 +87,7 @@ The answer:
 - **R93** [met] (R085-9; K3486 (A); amends R91; `ai-runs` R84) The `segment_end` tick is sent only after the segment is marked not running, so the next segment the plane dispatches within that tick (`ai-runs` R84's continuation) is accepted, never refused `SEGMENT_RUNNING`. Test: a segment ends on its own bound, the fake plane dispatches the next segment from inside the `segment_end` tick, and that `/run` is answered `202`; control: a `/run` while a segment is still running is refused `409 SEGMENT_RUNNING`.
 
 **Built files (ARCH's decision "Committed built files", 22 Nov 2026)**
-- **R120** [not yet met] `agent-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `agent-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
+- **R120** [met] `agent-worker/dist/` holds no committed file but a `.gitignore` that ignores everything else in it; the bundle and its manifest are built there by `agent-worker/scripts/build.mjs` whenever needed, and this module's tests that read them build them first the same way.
 
 ## Private
 
