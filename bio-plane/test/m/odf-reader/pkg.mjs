@@ -98,6 +98,11 @@ export function metaXml(fields = {}) {
 
 /** The members of a conforming package: mimetype first and stored, the
  *  manifest, content.xml, then meta.xml when given, then `extra`. */
+/**
+ * A test package's members, built from parts given by name; `content` or `manifest` false leaves that member out.
+ * @param {string} flavour
+ * @param {{body?: string, styles?: string, fonts?: string, content?: any, meta?: any, manifest?: any, manifestEntries?: any[], extra?: any[], mimetype?: any}} [o]
+ */
 export function members(flavour, { body = "", styles = "", fonts = "", content, meta = null,
   manifest, manifestEntries = [], extra = [], mimetype = TYPES[flavour] } = {}) {
   return [
