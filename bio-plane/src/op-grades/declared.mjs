@@ -12,17 +12,48 @@
  * cycle (R19, R20). The row's other fields (`classes`, `machineClasses`, `fields`) are `op-declarations`'. */
 import { hasWord, word } from "../setup-words/index.mjs";
 
+/**
+ * @typedef {Object} DeclaredRow one op's row in its owner's `DECLARED_OPS` (R49); the fields read here, the rest being `op-declarations`'
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {string} description
+ * @property {string} [refusal]
+ * @bound weight: a rung of RUNG_LADDER, a ground of RUNG_ABSENCE_GROUNDS, or "read"; a rung or a ground with mutating true, "read" with mutating false; "irreversible" only for an op a hand row grades irreversible (R54)
+ * @bound description: a dotted setup-words key the list holds, or a sentence; never a sentence beginning "capture-directed:" for an op with no hand row
+ * @bound refusal: only with the weight "reasoned"; an upper-case code of letters, digits and _
+ */
+/**
+ * @typedef {Object<string, Object<string, DeclaredRow>> | Array<[string, Object<string, DeclaredRow>]>} DeclaredOwners each owner module's id with its `DECLARED_OPS`, as an object or as a list of pairs (R49)
+ * @bound an op is declared by one owner only (R50 (a))
+ */
+/**
+ * @typedef {Object} Registration what a registration did (R49)
+ * @property {string[]} registered the ops added to the tables, in the order given
+ * @property {string[]} agreed the ops that already had a hand row and agree with it, unchanged
+ */
+
 const KEY = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$/;
 const CODE = /^[A-Z][A-Z0-9_]+$/;
 
 /* the detail is a token for the developer reading the refusal, never a sentence a member reads */
 const fail = (code, op, detail) => Object.assign(new Error(`${code}: ${op}${detail ? ` ${detail}` : ""}`), { code, op });
 
+/**
+ * R49, R50: the guard over the published tables and the registration that adds owners' rows to them, built over the raw
+ * tables `./index.mjs` hands in. The tables are changed in place by `register` and by nothing else.
+ * @param {{ladder: string[], grounds: Object<string, string>, rungs: Object<string, string>, absent: Object<string, {ground: string, is: string}>, nonActs: Object<string, string>, machine: Object<string, string>, refusals: string[]}} tables
+ * @returns {{guard: <T extends object>(table: T) => T, register: (owners: DeclaredOwners) => Registration}}
+ */
 export function createDeclaredOps({ ladder, grounds, rungs, absent, nonActs, machine, refusals }) {
   let read = false;
   let registered = false;
 
-  /** The table, read through a proxy that closes registration at its first read (R50 (c)); writes pass through. */
+  /**
+   * The table, read through a proxy that closes registration at its first read (R50 (c)); writes pass through.
+   * @template {object} T
+   * @param {T} table
+   * @returns {T}
+   */
   const guard = (table) => new Proxy(table, {
     get(target, key, receiver) { read = true; return Reflect.get(target, key, receiver); },
     has(target, key) { read = true; return Reflect.has(target, key); },
@@ -78,9 +109,16 @@ export function createDeclaredOps({ ladder, grounds, rungs, absent, nonActs, mac
   };
   const handDescription = (op) => (has(nonActs, op) ? nonActs[op] : has(absent, op) ? absent[op].is : null);
 
+  /**
+   * R49, R50, R54: adds each owner's row for an op with no hand row to the tables, and checks a row for an op with one.
+   * @param {DeclaredOwners} owners
+   * @returns {Registration}
+   * @throws {Error} code DECLARED_OPS_LATE when a table was read or a registration already succeeded; DECLARED_OP_DUPLICATE when two owners declare one op; DECLARED_OP_BAD_WEIGHT, DECLARED_OP_BAD_DESCRIPTION or DECLARED_OP_BAD_REFUSAL when a row breaks its bounds; DECLARED_OP_DISAGREES when a row differs from its hand row in weight or description. The error's `op` names the op; a refused call changes no table
+   */
   function register(owners) {
     const pairs = Array.isArray(owners) ? owners : Object.entries(owners ?? {});
-    const entries = pairs.flatMap(([owner, rows]) => Object.entries(rows ?? {}).map(([op, r]) => [owner, op, r]));
+    /** @type {Array<[string, string, DeclaredRow]>} builds the owner, op and row of every row handed in */
+    const entries = pairs.flatMap(([owner, rows]) => Object.entries(rows ?? {}).map(([op, r]) => /** @type {[string, string, DeclaredRow]} builds one owner's row */ ([owner, op, r])));
     if (read || registered) throw fail("DECLARED_OPS_LATE", entries[0]?.[1] ?? "(no op)", "late");
 
     const seen = new Map();
