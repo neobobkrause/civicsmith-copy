@@ -691,7 +691,9 @@ export class Connections {
           continue;
         }
       }
-      if (!bad) { reaching.push({ ...entry, why: localize("connections.index.read_inside_reference", "the determining reference was read at {ref}, inside {ref_2}", { ref: String((side === "a" ? view.determining_pair.a_position : view.determining_pair.b_position).ref), ref_2: String(row.ref) }) });
+      /* A reaching pair was read inside, so its position on this end is held. */
+      const pairPosition = side === "a" ? view.determining_pair.a_position : view.determining_pair.b_position;
+      if (!bad) { reaching.push({ ...entry, why: localize("connections.index.read_inside_reference", "the determining reference was read at {ref}, inside {ref_2}", { ref: String(pairPosition?.ref), ref_2: String(row.ref) }) });
                   continue; }
       (bad.code === "CONNECTION_PAIR_OUTSIDE_EXTENT" ? outside : undetermined)
         .push({ ...entry, code: bad.code, check: bad.check, translation: bad.translation, why: bad.detail });
@@ -1353,6 +1355,11 @@ export function refsReplacedOf(c, kind) {
 
 /* R28: append whole reference entries to the frontmatter's `references` block, touching nothing else (the store's
    `#spliceReferences` discipline: no key, an inline `[]`, or a block; any other inline value is not ours). */
+/**
+ * @param {string} text
+ * @param {Object[]} additions
+ * @returns {string | null} null when the frontmatter or its references block is not in a shape this can extend
+ */
 function spliceReferences(text, additions) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -1376,6 +1383,12 @@ function spliceReferences(text, additions) {
 }
 
 /* A top-level scalar in the frontmatter, set or added before the closing fence. */
+/**
+ * @param {string} text
+ * @param {string} key
+ * @param {string} value
+ * @returns {string} the text unchanged when it has no frontmatter
+ */
 function setScalar(text, key, value) {
   const lines = text.split("\n");
   const end = lines.indexOf("---", 1);

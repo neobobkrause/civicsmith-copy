@@ -18,6 +18,21 @@ import { readingSourceJson, readingOccurrenceKey } from "../../../src/textchain.
 import { normalizeAddress } from "../../../src/subresources.mjs";
 import { unheldStructure } from "../extraction/fixtures.mjs";
 
+/* The text of a live file the test expects held inline, read through record-core's `readFile` (an inline file, a
+   blob's reference, or null); a file absent or held as a blob fails the test by name. */
+export function heldText(record, id, path) {
+  const f = record.readFile(id, path);
+  if (!f || !("text" in f)) throw new Error(`${path} of ${id} is not held inline`);
+  return f.text;
+}
+
+/* The live paths of a bundle the test expects held; a bundle not held fails the test by name. */
+export function heldPaths(record, id) {
+  const paths = record.livePaths(id);
+  if (!paths) throw new Error(`${id} is not held`);
+  return paths;
+}
+
 export const sha = (s) => createHash("sha256").update(typeof s === "string" ? Buffer.from(s, "utf8") : s).digest("hex");
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
@@ -132,9 +147,10 @@ export function world({ now = "2026-09-27T03:00:00.000Z", env = {} } = {}) {
     revise(id, references) {
       const head = record.head(id);
       const files = [{ path: "bundle.md", text: infoMd(id, references) }];
-      for (const p of record.livePaths(id)) if (p !== "bundle.md") {
+      for (const p of record.livePaths(id) || []) if (p !== "bundle.md") {
         const f = record.readFile(id, p);
-        files.push(f.text != null ? { path: p, text: f.text } : { path: p, blobSha: f.blobSha, bytes: f.bytes });
+        if (!f) continue;
+        files.push("text" in f ? { path: p, text: f.text } : { path: p, blobSha: f.blobSha, bytes: f.bytes });
       }
       const r = promotion.promote({ bundleId: id, base: head.bundleSha, snapKey: `k${++n}`, author: "member:alice", files,
                                     meta: { object_type: "information" } });
