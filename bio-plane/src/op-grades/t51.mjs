@@ -6,8 +6,10 @@
  * by R18 `phone` follows the rung and the ground, and a read answers `true`. */
 
 import { localize, word } from "../setup-words/index.mjs";
+/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
 /* ---- R48: the reads' reasons. Each names what it reads and writes nothing. ---- */
+/** @type {ReasonTable} T51's ops */
 export const T51_NON_ACTS = {
   /* R48 (`action-holds` R19): the hold screen's due list, the legal marks, docket marks and pressure records without a hold */
   holdsdue: "read: the legal marks, docket marks and pressure records that have no hold yet, each with where it arrived and who marked it (`action-holds` R19); writes nothing",
@@ -38,13 +40,16 @@ export const T51_NON_ACTS = {
  * (`entities` R64; an administrator confirms an office a member named) weighs Reversible; `captureseenin` (`capture` R101; a member records
  * once that she filed a held document in a project; a repeat changes nothing, nothing takes it back, no reason is asked) is an observation.
  * The sentences are the owners' descriptions, word for word (R50 (b): a disagreement refuses the registration). ---- */
+/** @type {RungTable} T51's ops */
 export const T51_RUNGS = {
   officeconfirm: "reversible",   // entities R64 · R3: an administrator's confirmation takes back nothing a member said; the mark returns by naming again
 };
+/** @type {AbsenceTable} T51's ops */
 export const T51_RUNG_ABSENT = {
   scanmirror: { ground: "substrate", is: localize("file-safety.declared.scanmirror", "setting: the group's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle") },
   captureseenin: { ground: "observational", is: localize("capture.declared.captureseenin", "member-directed: a member records once that she filed a held document in a project; a repeat changes nothing, and no reason is asked (capture R101)") },
 };
+/** @type {ReasonTable} T51's ops */
 export const T51_ACT_NON_ACTS = {
   scanmirror: localize("file-safety.declared.scanmirror", "setting: the group's file scanner, an administrator's act; asks it to check for new signatures now and answers at once; moves no bundle"),
   officeconfirm: word("entities.declared.officeconfirm"),

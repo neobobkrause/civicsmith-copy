@@ -12,9 +12,17 @@
  * consequence statement or Irreversible weight is added: `words.json` (@ `3f40899950`) holds no consequence sentence for
  * stopping pursuit, which the design stream owes (K2960). */
 
+/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
+
+/**
+ * builds one `NON_ACTS` reason from its particular words
+ * @param {string} s
+ * @returns {string}
+ */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
+/** @type {RungTable} T46's ops */
 export const T46_RUNGS = {
   /* escalation R31, R33: each refuses an absent reason ESCALATION_NO_REASON (R24, already in the family); a stop is taken
      back only by a reasoned reopening, and both are append-only (R18) */
@@ -23,6 +31,7 @@ export const T46_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
+/** @type {AbsenceTable} T46's ops */
 export const T46_RUNG_ABSENT = {
   /* instance-setup R79, as memberlanguageset (R17): a member's own setting, asking no reason */
   infolevelset: { ground: "caller-owned", is: "a member sets how quickly explanations open for her, promptly or after a longer pause, nothing ever hidden; no one sets it for another, and each set is appended with when (instance-setup R79)" },
@@ -31,6 +40,7 @@ export const T46_RUNG_ABSENT = {
 };
 
 /* ---- every non-act's NON_ACTS reason (R5; R32: a read "read: …", a draft "draft: …") ---- */
+/** @type {ReasonTable} T46's ops */
 export const T46_NON_ACTS = {
   /* instance-setup R79 */
   infolevelset: "personal state, keyed by member: how quickly explanations open, promptly or after a longer pause; "

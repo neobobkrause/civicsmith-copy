@@ -13,6 +13,24 @@ import { PROVIDERS } from '../src/providers/catalogue.mjs';
 import { parseJsonc } from '../../bio-plane/scripts/jsonc.mjs';
 import { discoverMembers, containerParts, classPackages, containerClasses } from '../../bio-plane/scripts/fleet-bundle.mjs';
 import { memoryBucket, depsWith, post, NOW } from './helpers.mjs';
+/** @import { Member, ContainerPart } from '../../bio-plane/scripts/fleet-bundle.mjs' */
+
+/** This member as bundler discovers it (R10).
+ * @returns {Member} */
+function discovered() {
+  const member = discoverMembers().find((x) => x.name === 'file-scanner');
+  if (!member) throw new Error('bundler discovers no file-scanner member');
+  return member;
+}
+
+/** The parts bundler makes for a member, refusing a refusal (R10).
+ * @param {Member} member
+ * @returns {ContainerPart[]} */
+function partsOf(member) {
+  const parts = containerParts(member, discoverMembers().map((x) => x.name));
+  assert.equal(parts.missing ?? parts.unread ?? null, null, 'bundler makes the parts with no refusal');
+  return parts.parts ?? [];
+}
 
 const here = (p) => new URL(`../${p}`, import.meta.url);
 const text = (p) => readFileSync(here(p), 'utf8');
@@ -108,10 +126,10 @@ test('R10 the marker states a container member with two digest-pinned classes, i
   assert.equal(m.optional_bindings[0].binding, 'SECURITY_VPC');
   assert.deepEqual(m.egress.containers, ['FileScanner, the signature-updater instance alone: database.clamav.net, by freshclam (R6, R34)']);
   // as bundler reads it: one part per class, each image's Debian packages from its statement
-  const member = discoverMembers().find((x) => x.name === 'file-scanner');
+  const member = discovered();
+  /** @type {Member} the member with each image published by digest */
   const published = { ...member, marker: { ...member.marker, containers: member.marker.containers.map((c) => ({ ...c, image: { ...c.image, digest: `sha256:${'a'.repeat(64)}` } })) } };
-  const parts = containerParts(published, discoverMembers().map((x) => x.name));
-  assert.deepEqual(parts.parts.map((p) => p.path), ['container/FileScanner.json', 'container/SafeViewRenderer.json']);
+  assert.deepEqual(partsOf(published).map((p) => p.path), ['container/FileScanner.json', 'container/SafeViewRenderer.json']);
   for (const c of containerClasses(member).classes) assert.equal(classPackages(member, c).ecosystem, 'Debian:12');
 });
 
@@ -138,12 +156,10 @@ test('R10 the release\'s registry rule: both images named docker.io/civicsmith/<
 });
 
 test('R10 an instance runs each image copied by its digest: the release describes each class by exactly that docker.io reference, never a tag', () => {
-  const member = discoverMembers().find((x) => x.name === 'file-scanner');
-  const parts = containerParts(member, discoverMembers().map((x) => x.name));
-  assert.equal(parts.conflict ?? null, null);
-  assert.deepEqual(parts.parts.map((p) => [p.class_name, p.descriptor.image]),
+  const parts = partsOf(discovered());
+  assert.deepEqual(parts.map((p) => [p.class_name, p.descriptor.image]),
     marker().containers.map((c, i) => [c.class_name, references(marker())[i]]), 'the part names the image the copy pulls, by digest');
-  for (const p of parts.parts) assert.match(p.descriptor.image, RULE);
+  for (const p of parts) assert.match(p.descriptor.image, RULE);
 });
 
 test('R10 the configuration: the classes by class_name with the marker\'s images, their bindings, the bucket, the trigger, no VPC binding by default', () => {
