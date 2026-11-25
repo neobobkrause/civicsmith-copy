@@ -119,7 +119,9 @@ test("R13 a procedure guide's kind is an action kind of the active profiles' vie
   assert.equal(r.detail, localize("reading-guides.index.a_procedure_guide_is_for_an_action", "a procedure guide is for an action kind of the team's jurisdiction profiles, and they list none. Nothing was written."));
   assert.equal(w.count("reading_guides"), 0, "nothing was written");
   /* controls: each action kind of the view, and a refusal of the items after the kind */
-  for (const k of combine(["test-port-ellery"]).view.action_kinds.map((x) => x.kind))
+  const view = combine(["test-port-ellery"]).view;
+  assert.ok(view, "the test profile combines");
+  for (const k of view.action_kinds.map((x) => x.kind))
     assert.equal(w.g.guideDraft({ kind: k, purpose: "procedure", items: STEPS, by: ANN }).ok, true, k);
   row(w.g.guideDraft({ kind: KIND, purpose: "procedure", items: [{ route: "Write to the Clerk" }], by: ANN }), "GUIDE_ITEM_UNSOURCED");
   row(w.g.guideDraft({ kind: KIND, purpose: "procedure", items: [step("Ask the model")], by: ANN }), "GUIDE_CARRIES_CONDUCT");
@@ -190,6 +192,7 @@ test("R13 R6 a procedure guide is offered with its purpose in its bytes, and ado
 test("R13 procedureGuidesFor: the profile's guide first, then the group's approved in the order approved, each with its origin, unranked, every answer labelled", () => {
   const w = world();
   const view = combine(["test-port-ellery"]).view;
+  assert.ok(view, "the test profile combines");
   const profileGuide = view.procedure_guides.find((g) => g.kind === KIND);
   const first = w.g.guideDraft({ kind: KIND, purpose: "procedure", items: [step("Write to the Harbour Master")], by: ANN }).guide;
   const second = w.g.guideDraft({ kind: KIND, purpose: "procedure", items: [step("Write to the Selectboard chair")], by: BOB }).guide;
@@ -258,6 +261,7 @@ test("R13 procedureGuidesFor never throws, and passes over a guide the check no 
 test("R15 a procedure guide says who approved it and where it came from: a group guide its approver and day, the profile's its status and basis; an unapproved one is not answered", () => {
   const w = world();
   const view = combine(["test-port-ellery"]).view;
+  assert.ok(view, "the test profile combines");
   const profileGuide = view.procedure_guides.find((g) => g.kind === KIND);
   const group = w.g.guideDraft({ kind: KIND, purpose: "procedure", items: STEPS, by: ANN }).guide;
   const pending = w.g.guideDraft({ kind: KIND, purpose: "procedure", items: [step("Write to the Examiner")], by: CY }).guide;
