@@ -15,7 +15,6 @@
     "doctypes",
     "test-support",
     "record-grammar",
-    "civil-time",
     "record-core",
     "membership",
     "jurisdictions",
