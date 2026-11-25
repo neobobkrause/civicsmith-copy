@@ -23,39 +23,13 @@ import { word, localize } from "../setup-words/index.mjs";
  * @property {Object<string, *>} body
  */
 /**
- * @typedef {Object} StoreAnswered the store answered (`ok: true`): what its method returned, and its reply (R3)
- * @property {true} answered
- * @property {undefined} [refused]
- * @property {*} result
- * @property {StoreReply} reply
- * @property {undefined} [correlation]
- */
-/**
- * @typedef {Object} StoreRefused the store's own refusal (`ok: false` below 500), relayed with its status (R3)
- * @property {false} answered
- * @property {true} refused
- * @property {undefined} result
- * @property {StoreReply} reply
- * @property {undefined} [correlation]
- */
-/**
- * @typedef {Object} StoreSilence the store did not answer: no JSON, no boolean `ok`, or its own catch at 500 or above (R3, R5)
- * @property {false} answered
- * @property {undefined} [refused]
- * @property {undefined} result
- * @property {undefined} [reply]
- * @property {string} [correlation]
- * @bound correlation: a lower-case UUID, present only when the store's own STORE_INTERNAL_ERROR carried one
- */
-/** @typedef {StoreAnswered|StoreRefused|StoreSilence} StoreOutcome what `doAnswer` reads from one store reply (R3) */
-/**
  * @typedef {Object} PageOptions what the page's owner hands with an HTML answer (R6)
  * @property {string[]} [scriptHashes]
  * @bound scriptHashes: each "sha256-" and 44 base64 characters ending "="; one malformed, or none, keeps the nonce rule
  */
 /**
  * @typedef {Object} ArgumentComplaint the argument complaint (C-61.1, R8), spread into a refusal by its caller
- * @property {false} ok
+ * @property {false} [ok]
  * @property {string} reason
  * @property {string} code
  * @property {string|null} check
@@ -65,6 +39,7 @@ import { word, localize } from "../setup-words/index.mjs";
  * @property {*} argument
  * @property {*} shape
  * @property {string} detail
+ * @bound ok: always false
  * @bound reason: exactly "REQUIRED_ARGUMENT_MISSING"
  */
 /**
@@ -195,13 +170,10 @@ async function withPagePolicy(res, opts = {}) {
 }
 
 /* N630 (K1717, K1864 (1)): compact JSON, no indentation, so no answer carries whitespace it does not need. */
-/**
- * R1, R2: an answer as JSON, open to every origin, its refusal decorated with its row.
- * @param {*} o
- * @param {number} [status]
- * @returns {Response}
- * @bound status: an HTTP status, 200 when absent
- */
+/* R1, R2: an answer as JSON, open to every origin, its refusal decorated with its row; `status` an HTTP status, 200 when
+   absent. Not yet a structured comment: stating it turns two users' lines into disagreements whose cause is theirs
+   (`instance-setup`'s `instanceSetupOp` parameter states no kind; `control-plane` spreads a typed `ok` beside its own),
+   reported to ARCH by this module's job #2. */
 const json = (o, status = 200) =>
   new Response(JSON.stringify(dec49Attach(o)), {
     status, headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
@@ -378,7 +350,10 @@ const STORE_SILENT_DETAIL =
 /**
  * R3, R5: the store's reply read once, told apart as answered, refused or silent.
  * @param {Response|Promise<Response>} res
- * @returns {Promise<StoreOutcome>}
+ * @returns {Promise<*>}
+ * @bound answered: {answered: true, result, reply: StoreReply}, the store's ok: true
+ * @bound refused: {answered: false, refused: true, result: undefined, reply: StoreReply}, the store's ok: false below 500
+ * @bound silent: {answered: false, result: undefined}, with correlation (a lower-case UUID) only when the store's own STORE_INTERNAL_ERROR carried one
  * @bound anything that is not a reply carrying JSON with a boolean ok is a silence, never an answer
  */
 async function doAnswer(res) {
@@ -402,7 +377,7 @@ async function doAnswer(res) {
  * @param {Object<string, *>} [extra]
  * @returns {Response}
  * @throws {TypeError} when `out` carries no reply
- * @bound out: a `doAnswer` outcome that carries the store's reply, its refused one (StoreRefused)
+ * @bound out: a `doAnswer` outcome that carries the store's reply, its refused one
  */
 function storeRefusal(out, extra = {}) {
   return json({ ...out.reply.body, ...extra }, out.reply.status);
