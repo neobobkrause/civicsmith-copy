@@ -14,11 +14,10 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
 /**
  * A jurisdiction profile (R1–R7 and the sections the later requirements add): a plain, JSON-serialisable object.
- * Every section beyond R1's identity is optional, and an absent one supplies nothing (R27). `validate` judges one.
+ * Every section beyond R1's identity is optional, and an absent one supplies nothing (R27). `validate` judges one:
+ * `id` matches `^[a-z0-9][a-z0-9-]*$`, `covers` names at least one jurisdiction, and `test` is true only for a profile
+ * whose facts are made up for tests (R1).
  * @typedef {{id: string, name: string, covers: string[], test?: boolean, [section: string]: *}} Profile
- * @bound id: matches ^[a-z0-9][a-z0-9-]*$
- * @bound covers: at least one name
- * @bound test: true only for a profile whose facts are made up for tests
  */
 /**
  * One held profile, as `list` names it (R8).
@@ -1715,8 +1714,7 @@ const clone = (o) => (o === undefined ? undefined : JSON.parse(JSON.stringify(o)
 const HELD = new Map([FIRST, TEST].map((p) => [p.id, deepFreeze(clone(p))]));
 
 /** Every profile held, sorted by id: `[{id, name, covers, test}]`. Never throws.
- * @returns {ProfileSummary[]}
- * @bound sorted by id */
+ * @returns {ProfileSummary[]} */
 export function list() {
   return [...HELD.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((p) => ({ id: p.id, name: p.name, covers: p.covers.slice(), test: p.test === true }));
