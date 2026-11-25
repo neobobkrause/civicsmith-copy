@@ -22,10 +22,17 @@ function setup(opts) {
   return { w, src, draft, confirm };
 }
 
+/* the test profile's combined view; `combine` states it may be absent, so its absence fails here by name */
+function testView() {
+  const view = combine([TP]).view;
+  if (!view) throw new Error("the test profile combines to a view");
+  return view;
+}
+
 /* a profile holding one entry of a section alone, over the test profile's own kinds, as `ruleDraft` validates it */
 function validates(section, entry) {
   const { effective_from: _from, ...own } = entry;
-  const kinds = combine([TP]).view.action_kinds.map((k) => ({ kind: k.kind, label: k.label, tier: k.tier, basis: "TEST" }));
+  const kinds = testView().action_kinds.map((k) => ({ kind: k.kind, label: k.label, tier: k.tier, basis: "TEST" }));
   return validate({ id: "group-rule", name: "Rule", covers: ["the team"], test: true, action_kinds: kinds,
                     [section]: [{ ...own, status: "researched", basis: "TEST" }] });
 }
@@ -56,7 +63,7 @@ test("R18 every choices list equals the vocabulary it names; applies_to's are th
   const { w } = setup();
   const by = (section) => Object.fromEntries(w.lf.ruleFields({ section, viewer: V("bob") }).fields.map((f) => [f.field, f]));
   const d = by("deadlines"), l = by("legal_facts");
-  const kinds = combine([TP]).view.action_kinds.map((k) => k.kind);
+  const kinds = testView().action_kinds.map((k) => k.kind);
   assert.deepEqual(d.units.choices, [...UNITS]);
   assert.deepEqual(d.count.choices, [...COUNTS]);
   assert.deepEqual(d.direction.choices, [...DIRECTIONS]);
