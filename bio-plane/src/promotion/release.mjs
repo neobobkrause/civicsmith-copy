@@ -81,7 +81,8 @@ async function verifyFor({ armored, message, signersText, namespace, principal, 
   const keys = signerKeysAt(signersText, principal, at);
   if (!keys.length) return { ok: false, reason: "no_valid_key_for_principal" };
   const v = await verifySshsig(armored, message, namespace, keys);
-  return v.ok ? { ok: true } : { ok: false, reason: REASON[v.reason] || String(v.reason).toLowerCase() };
+  const why = String(v.reason);
+  return v.ok ? { ok: true } : { ok: false, reason: REASON[why] || why.toLowerCase() };
 }
 
 /** The registry proves itself against the root keys the CALL SITE pins, never keys it carries (design 3.4.5). */
