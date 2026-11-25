@@ -8,7 +8,8 @@ const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, PLAN_RUN_SCOPE } = O;
 const BINDING_CLASSES = ["admin", "member", "probe", "daemon"];
 /* Membership §5's working capabilities (membership's vocabulary; `view` gates nothing, so no op needs it). */
 const CAPABILITIES = ["contribute", "publish", "create_projects"];
-const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
+/* the module's exported lists, by name */
+const LISTS = /** @type {Array<[string, ReadonlyArray<string>]>} */ (Object.entries(O).filter(([, v]) => Array.isArray(v)));
 const both = (op) => SESSION_OPS.member.has(op) && SESSION_OPS.admin.has(op);
 const inSession = (op) => SESSION_OPS.member.has(op) || SESSION_OPS.admin.has(op);
 const named = (k) => O[k];
@@ -54,7 +55,7 @@ test("R2, R30, R32 (daemon-token convert): exactly nine ops admit daemon — acq
                                    "scanbatch", "securityforward", "unpack"]);
   for (const op of daemon) {
     assert.equal(OPS[op].mutating, true, op);
-    if (op === "unpack") assert.deepEqual([...OPS[op].machineClasses], ["daemon", "probe"], op);
+    if (op === "unpack") assert.deepEqual(OPS[op].machineClasses && [...OPS[op].machineClasses], ["daemon", "probe"], op);
     else assert.ok(!("machineClasses" in OPS[op]), op);
   }
 });
@@ -115,7 +116,7 @@ test("R3 (rec155-session-routes, versionstate, members converts): §4.10's five 
   for (const op of ["provenancechain", "provenanceroute", "calibrate", "calibrationsubject", "calibrationsignal"]) {
     assert.ok(both(op), op);
     assert.equal(NEEDS[op], "contribute", op);
-    assert.ok(OPS[op].classes.includes("probe") && OPS[op].mutating, op);
+    assert.ok(OPS[op].classes?.includes("probe") && OPS[op].mutating, op);
   }
   assert.deepEqual([...named("PROVENANCE_JUDGEMENT_ACTIONS")], ["provenancechain", "provenanceroute"]);
   assert.deepEqual([...named("CALIBRATION_WRITE_ACTIONS")], ["calibrate", "calibrationsubject", "calibrationsignal"]);
@@ -167,13 +168,13 @@ test("R4: every act list is a list of distinct op names, each with a spec; the c
   assert.deepEqual([...O.IDENTITY_ACTIONS], ["groupnameset", "groupdomainset"]);
   for (const op of [...O.GOVERNANCE_ACTIONS, ...O.IDENTITY_ACTIONS]) assert.ok(both(op) && OPS[op].mutating, op);
   /* The custodial acts keep every bearer but the operator's two classes out by `machineClasses`. */
-  for (const op of O.CUSTODIAL_ACTIONS) assert.deepEqual([...OPS[op].machineClasses], ["admin", "probe"], op);
-  for (const op of O.OWN_KEY_ACTIONS) assert.deepEqual([...OPS[op].machineClasses], [], op);
+  for (const op of O.CUSTODIAL_ACTIONS) assert.deepEqual(OPS[op].machineClasses && [...OPS[op].machineClasses], ["admin", "probe"], op);
+  for (const op of O.OWN_KEY_ACTIONS) assert.deepEqual(OPS[op].machineClasses && [...OPS[op].machineClasses], [], op);
 });
 
 test("R3, R4 (transcribe convert): transcribe and transcriptionattest are a person's acts — both session sets, admin and member classes only, contribute — with the read beside them open", () => {
   for (const op of ["transcribe", "transcriptionattest"]) {
-    assert.deepEqual([...OPS[op].classes], ["admin", "member"], op);
+    assert.deepEqual(OPS[op].classes && [...OPS[op].classes], ["admin", "member"], op);
     assert.equal(OPS[op].mutating, true, op);
     assert.ok(both(op), op);
     assert.equal(NEEDS[op], "contribute", op);
@@ -206,7 +207,7 @@ test("R4, R3 (N-A12, K704, K709, K711, K705): the action layer's new ops — act
   const allActs = [...Object.values(acts).flat(), "communicationprepare", "templatesave"];
   for (const op of allActs) {
     /* A machine reaches each and its module refuses it by name or labels it (conclude's posture). */
-    assert.deepEqual([...OPS[op].classes], ["admin", "member", "probe"], op);
+    assert.deepEqual(OPS[op].classes && [...OPS[op].classes], ["admin", "member", "probe"], op);
     assert.ok(!("machineClasses" in OPS[op]), op);
     assert.equal(OPS[op].mutating, true, op);
     assert.ok(both(op), op);
@@ -217,7 +218,7 @@ test("R4, R3 (N-A12, K704, K709, K711, K705): the action layer's new ops — act
   /* Every act but the proposal reads `author` from the query; the proposal's stamp is its proposer. */
   for (const op of allActs) assert.equal(O.QUERY_AUTHOR_ACTIONS.includes(op), op !== "optionpropose", op);
   for (const op of [...Object.values(reads).flat(), "templates"]) {
-    assert.deepEqual([...OPS[op].classes], ["admin", "member", "probe"], op);
+    assert.deepEqual(OPS[op].classes && [...OPS[op].classes], ["admin", "member", "probe"], op);
     assert.equal(OPS[op].mutating, false, op);
     assert.ok(O.ACTION_LAYER_READS.includes(op), op);
     /* `templates` carries a null row since R8 (affordances R30 names it in NON_ACTS), and R12's two reads since T27
@@ -266,9 +267,9 @@ test("R6: an op spec for every op the tables name — the session sets, NEEDS, t
 
 test("R2, R3, R4, R6 (K899 (7), K902; actions R52): actionhold is declared as actionpressure is — admin, member and probe, mutating, no machineClasses; in ACTIONS_ACTIONS, so its author is query-stamped; in both session sets; contribute", () => {
   assert.ok(Object.hasOwn(OPS, "actionhold"));
-  assert.deepEqual({ ...OPS.actionhold, classes: [...OPS.actionhold.classes] },
-                   { ...OPS.actionpressure, classes: [...OPS.actionpressure.classes] });
-  assert.deepEqual([...OPS.actionhold.classes], ["admin", "member", "probe"]);
+  assert.deepEqual({ ...OPS.actionhold, classes: OPS.actionhold.classes && [...OPS.actionhold.classes] },
+                   { ...OPS.actionpressure, classes: OPS.actionpressure.classes && [...OPS.actionpressure.classes] });
+  assert.deepEqual(OPS.actionhold.classes && [...OPS.actionhold.classes], ["admin", "member", "probe"]);
   assert.equal(OPS.actionhold.mutating, true);
   assert.ok(!("machineClasses" in OPS.actionhold));
   /* Every list that names actionpressure names actionhold, and no other. */
@@ -404,7 +405,7 @@ test("R9, R2: OPS holds a spec for each op T22 adds — declinetoescalate as esc
     assert.ok(!JSON.stringify(OPS[op]).includes('"ai"'), op);
   }
   /* doorbelltally refuses every bearer: no machine class is admitted, so only a session reaches it. */
-  assert.deepEqual([...OPS.doorbelltally.machineClasses], []);
+  assert.deepEqual(OPS.doorbelltally.machineClasses && [...OPS.doorbelltally.machineClasses], []);
   /* Negative control: the comparison sees a drifted spec. */
   assert.notDeepEqual(plainSpec({ ...OPS.doorbelltally, machineClasses: ["admin"] }), R9.doorbelltally.spec);
   assert.notDeepEqual(plainSpec({ ...OPS.heldsetaside, mutating: false }), R9.heldsetaside.spec);
