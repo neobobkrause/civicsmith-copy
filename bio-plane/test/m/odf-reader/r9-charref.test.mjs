@@ -29,10 +29,12 @@ for (const ref of BAD) {
 
 test("R51 a bad reference in meta.xml, the manifest or styles.xml states that part and reads the rest", async () => {
   const good = tableOf("T", rowOf(cellOf("fine")));
-  for (const [name, patch] of [
+  /** @type {[string, Object][]} */
+  const patches = [
     ["meta.xml", { meta: metaXml({ "dc:title": "t &#xD800; t" }) }],
     ["META-INF/manifest.xml", { manifest: manifestXml(["Object 1/content.xml"], "ods").replace("</manifest:manifest>", "<!-- &#x110000; --></manifest:manifest>") }],
-  ]) {
+  ];
+  for (const [name, patch] of patches) {
     const bytes = buildZip(members("ods", { body: good, ...patch }));
     const s = await odsEntry.structure(bytes);
     assert.equal(s.ok, true);
