@@ -239,6 +239,7 @@ test("R39 R4: each vocabulary's values are the very objects its owner answers â€
    + "every value carries its word", () => {
   eventsWorld().ev.start();
   const v = A.vocabulariesFor(null);
+  /** @type {[string, any][]} each vocabulary's key and its owner's object */
   const same = [["event_kinds", events.EVENT_KINDS], ["dated_fact_kinds", events.DATED_KINDS], ["event_statuses", events.STATUSES],
     ["participant_roles", events.ROLES], ["event_relation_kinds", events.RELATION_KINDS], ["line_kinds", lines.kinds()],
     ["line_capacities", lines.capacities()], ["money_kinds", money.kinds()], ["money_phases", money.phases()],
@@ -390,7 +391,7 @@ test("R41: a refusal is explained from its catalogue row as its owner holds it, 
   assert.equal(e.translation, ROWS.NO_CONCLUSION.translation);
   assert.equal(e.check, "C-25.3");
   assert.equal(e.detail, null);
-  const d = A.decorate(ACTS.find((a) => a.id === "conclude"), GATE);
+  const d = A.decorate(ACTS.find((a) => a.id === "conclude") ?? assert.fail("conclude is an act"), GATE);
   assert.deepEqual([e.rung, e.rung_absence, e.prompt, e.weight], [d.rung, d.rung_absence, d.prompt, d.weight]);
   assert.deepEqual(e.acts, A.deriveActs(inquiryFacts).map((a) => A.decorate(a, GATE)));
   assert.ok(e.acts.some((a) => a.id === "conclude") && e.acts.every((a) => typeof a.rung === "string" || a.rung_absence));
