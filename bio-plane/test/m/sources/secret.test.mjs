@@ -56,7 +56,7 @@ test("R11 SECRET_NOT_RECOGNISED is answered identically for every failure: a wro
   const before = w.snapshot();
   const good = { knockerSecret: SECRET, entry: e.entry, audience: "group", sourceAddress: "s1" };
   const answers = [];
-  for (const [bad, why] of [
+  for (const [bad, why] of /** @type {[Object<string, any>, string][]} */ ([
     [{ knockerSecret: "a wrong secret of enough length" }, "a wrong secret"],
     [{ knockerSecret: SECRET.slice(0, 19) }, "a secret under 20 characters"],
     [{ knockerSecret: undefined }, "no secret"], [{ knockerSecret: 12345678901234567890 }, "a number"],
@@ -65,7 +65,7 @@ test("R11 SECRET_NOT_RECOGNISED is answered identically for every failure: a wro
     [{ audience: "world" }, "a bad audience"], [{ audience: undefined }, "no audience"],
     [{ audience: "member" }, "lower than the public consent that stands"],
     [{ withdraw: "yes" }, "a malformed withdraw flag"],
-  ]) {
+  ])) {
     w.tick(KNOCK_WINDOW);   // one attempt per window: the doorbell's instance limit (its R2) never answers in its place
     const r = await w.s.consentBySecret({ ...good, ...bad, sourceAddress: `s-${answers.length}` });
     assert.equal(r.reason, "SECRET_NOT_RECOGNISED", why);
