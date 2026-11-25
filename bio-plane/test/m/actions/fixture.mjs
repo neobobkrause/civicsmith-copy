@@ -152,7 +152,7 @@ export function world({ profiles = ["test-port-ellery"], retrieval = true, confo
     st, host, record, membership, promotion, prov, a, clock, reg, captures,
     rows: (q, ...x) => st.sql.exec(q, ...x).toArray(),
     row: (q, ...x) => st.sql.exec(q, ...x).toArray()[0] ?? null,
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     /** A promotion of `id` with `text` as its bundle.md, by `author` (default a member). */
     promote(id, text, { author = V(ALICE), extra = {}, files = [], register = [] } = {}) {
