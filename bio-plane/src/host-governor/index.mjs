@@ -18,6 +18,141 @@
 import { recordOf } from "../record-core/index.mjs";
 import { HOST_GOVERNOR_SCHEMA } from "./schema.mjs";
 
+/**
+ * The instance bindings R3 reads: `GOVERNOR_APPETITE_PER_MIN`, obeyed only when it is a positive finite number.
+ * @typedef {Object<string, *>} GovernorEnv
+ */
+/**
+ * R13: one host's row of `host_governor`, as recorded.
+ * @typedef {Object} GovernorRow
+ * @property {string} host the host key as callers give it
+ * @property {number | null} appetite_per_min the host's configured appetite; null means R3's precedence
+ * @property {number} tokens
+ * @property {number} refilled_at ms since the epoch
+ * @property {number} last_grant_at ms since the epoch; 0 for none
+ * @property {number} cooloff_until ms since the epoch; 0 for none
+ * @property {number} refusals consecutive refusals
+ * @property {number | null} last_refusal_at
+ * @property {number | null} last_refusal_status
+ * @property {number} granted
+ * @property {number} refused_total
+ * @property {string | null} updated_at an ISO instant
+ * @bound tokens: zero to 3 (burstTokens)
+ */
+/**
+ * R24: what the governor declares its purge exemption to: record-core's instance, or one that answers as it does.
+ * @typedef {Object} PurgeDeclarer
+ * @property {(module: string, tables: Array<*>, options: {exempt: string[]}) => *} declarePurge
+ */
+/**
+ * R1–R6, R29, R30: what `governorAdmit` reads.
+ * @typedef {Object} AdmitArgs
+ * @property {*} [host] a host is a non-empty string; anything else names no host (R1)
+ * @property {*} [peek] only `true` peeks; anything else books (R29)
+ * @property {number | string | null} [maxWaitMs] the longest wait the caller will sleep; absent or empty is no cap (R30)
+ */
+/**
+ * R1–R6, R30: an admission's answer.
+ * Admitted: `wait_ms` and `appetite_per_min`. Refused: `reason`, and `retry_in_ms` with any cool-off's `refusals` and
+ * `last_refusal_status`.
+ * @typedef {Object} Admission
+ * @property {boolean} admitted
+ * @property {number} [wait_ms]
+ * @property {number} [appetite_per_min]
+ * @property {string} [reason]
+ * @property {number} [retry_in_ms]
+ * @property {number} [refusals]
+ * @property {number | null} [last_refusal_status]
+ * @bound wait_ms: whole number of ms, zero or more
+ * @bound reason: "no host named", "cooling_off" or "appetite"
+ * @bound retry_in_ms: ms, zero or more
+ */
+/**
+ * R7–R10: what `governorReport` reads.
+ * @typedef {Object} ReportArgs
+ * @property {*} [host] a host is a non-empty string; anything else records nothing (R7)
+ * @property {*} [status] the response's status; 0 for a fetch that produced no response
+ * @property {*} [retry_after_ms] the counterparty's `Retry-After` in ms; null when absent
+ * @bound status: 200 to 399 resets the refusals; 429, 403 and 503 cool off; any other changes nothing
+ */
+/**
+ * R7–R10: a report's answer.
+ * @typedef {{recorded: boolean, refusals?: number, cooloff_until?: number, cooloff_ms?: number, ignored?: number}} ReportAnswer
+ */
+/**
+ * R11, R12: what `governorConfig` reads.
+ * @typedef {Object} ConfigArgs
+ * @property {*} [host] a host is a non-empty string; anything else configures nothing (R11)
+ * @property {*} [appetite_per_min] null or absent clears the host's appetite
+ * @bound appetite_per_min: a positive finite number, or the text of one
+ */
+/**
+ * R12, R19: the refusal of an appetite that is present and not a positive finite number.
+ * @typedef {{ok: false, configured: false, reason: string, code: string, check: string, translation: string, detail: string, host?: string}} BadAppetite
+ * @bound reason: "BAD_APPETITE"
+ */
+/**
+ * R11, R12: a configuration's answer.
+ * Configured: `host` and `appetite_per_min` (null when cleared). Refused: `configured: false`, and with a host
+ * BadAppetite's fields.
+ * @typedef {Object} ConfigAnswer
+ * @property {boolean} configured
+ * @property {string} [host]
+ * @property {number | null} [appetite_per_min]
+ * @property {false} [ok]
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [check]
+ * @property {string} [translation]
+ * @property {string} [detail]
+ */
+/**
+ * R15–R17: the governor `governedFetch` asks, in process or over the Durable Object's stub (K72); either may answer
+ * at once or by a promise, and an answer of `null` is a governor it cannot reach.
+ * @typedef {Object} GovernorPort
+ * @property {(q: AdmitArgs) => (Admission | null | Promise<Admission | null>)} admit
+ * @property {(q: ReportArgs) => (ReportAnswer | null | Promise<ReportAnswer | null>)} [report]
+ */
+/**
+ * R15–R17, R30: `governedFetch`'s options.
+ * @typedef {Object} FetchOptions
+ * @property {string | null} [userAgent] the agent the caller chose; absent sends none
+ * @property {(target: *, init?: *) => Promise<*>} [fetch] absent is the global fetch
+ * @property {GovernorPort | null} [governor] absent fetches ungoverned
+ * @property {() => number} [now] the clock a `Retry-After` date is read against
+ * @property {number} [maxWaitMs] absent is MAX_WAIT_MS
+ * @property {(ms: number) => Promise<*>} [sleep]
+ */
+/**
+ * R15–R17, R30: `governedFetch`'s answer: the response, or the governor's refusal with nothing fetched.
+ * Fetched: `res`, and `retry_in_ms` when the status cooled the host off (R30). Refused: `refusedByGovernor`, `reason`,
+ * `retry_in_ms` and `last_refusal_status`.
+ * @typedef {Object} FetchAnswer
+ * @property {*} [res]
+ * @property {number} [retry_in_ms]
+ * @property {true} [refusedByGovernor]
+ * @property {string} [reason]
+ * @property {number | null} [last_refusal_status]
+ */
+/**
+ * R27: the relay the control plane hands: its reader of the store's envelope and its relay of a store refusal.
+ * @typedef {Object} StoreRelay
+ * @property {(reply: Promise<*>) => Promise<*>} doAnswer
+ * @property {(answer: *) => *} storeRefusal
+ */
+/**
+ * R18, R19, R27: what `governorOp` answers for its two ops.
+ * Answered: `status` and `body`. The store's own refusal: `refused` and `response`. No answer: `silent`, with the
+ * store's `correlation` when it named one.
+ * @typedef {Object} GovernorOpAnswer
+ * @property {number} [status]
+ * @property {*} [body] the JSON answer
+ * @property {true} [refused]
+ * @property {*} [response]
+ * @property {true} [silent]
+ * @property {*} [correlation]
+ */
+
 export { HOST_GOVERNOR_SCHEMA };
 
 /** The chosen constants (R2, R3, R5, R6, R9), recorded in MEASUREMENTS.md as chosen. */
@@ -30,7 +165,10 @@ export const GOVERNOR = Object.freeze({
 });
 
 /** R3, R12: an appetite is a positive finite number, given as a number or as the text of one; anything else is
- *  no appetite (`null`). A binding, a stored value and a configured value are all judged by this one rule. */
+ *  no appetite (`null`). A binding, a stored value and a configured value are all judged by this one rule.
+ *  @param {*} value
+ *  @returns {number | null}
+ *  @bound returns: a positive finite number, or null */
 export function appetiteOf(value) {
   if (typeof value === "string") { if (value.trim() === "") return null; }
   else if (typeof value !== "number") return null;
@@ -39,7 +177,9 @@ export function appetiteOf(value) {
 }
 
 /** R12, R19: the one refusal of an appetite that is present and not a positive finite number. It has no catalogue
- *  row, so it carries its requirement as its check and its words as its translation. */
+ *  row, so it carries its requirement as its check and its words as its translation.
+ *  @param {string | null} [host]
+ *  @returns {BadAppetite} */
 export function badAppetite(host = null) {
   const detail = "appetite_per_min must be a positive number, or omit it to reset to your team's default";
   return { ok: false, configured: false, reason: "BAD_APPETITE", code: "BAD_APPETITE", check: "host-governor.R12",
@@ -47,7 +187,11 @@ export function badAppetite(host = null) {
 }
 
 /** R16: a `Retry-After` value in milliseconds: delta-seconds × 1000, or an HTTP-date minus `nowMs`, never below 0;
- *  `null` when absent or unreadable. The one parser (the Suggestion): `capture`'s subresource fetch reads it too. */
+ *  `null` when absent or unreadable. The one parser (the Suggestion): `capture`'s subresource fetch reads it too.
+ *  @param {*} value the header's value
+ *  @param {number} [nowMs] absent is the clock
+ *  @returns {number | null}
+ *  @bound returns: ms, zero or more, or null */
 export function retryAfterMs(value, nowMs = Date.now()) {
   if (value == null) return null;
   const s = String(value).trim();
@@ -62,7 +206,9 @@ const hostOf = (q) => (q && typeof q.host === "string" && q.host !== "" ? q.host
 export class HostGovernor {
   /** `sql` is the Durable Object's (`ctx.storage.sql`); `core` is record-core, for the purge declaration (R24);
    *  `env` carries the instance binding `GOVERNOR_APPETITE_PER_MIN` (R3), read at each admission; `now` and
-   *  `random` are the clock and the jitter source (the Suggestion), so R5, R6 and R9 are exact under test. */
+   *  `random` are the clock and the jitter source (the Suggestion), so R5, R6 and R9 are exact under test.
+   *  @param {{sql?: *, core?: PurgeDeclarer | null, env?: GovernorEnv | null, now?: () => number, random?: () => *}} [options]
+   *  @bound random: answers a number from 0 up to but not including 1 */
   constructor({ sql, core = null, env = null, now = () => Date.now(), random = () => Math.random() } = {}) {
     this.sql = sql;
     this.core = core;
@@ -92,7 +238,9 @@ export class HostGovernor {
   }
 
   /** This module's table, at every boot, idempotent; and its purge declaration (R24), once: exempt, because a
-   *  cool-off is a counterparty's refusal and a purged instance still honours it. Run by the host inside its boot. */
+   *  cool-off is a counterparty's refusal and a purged instance still honours it. Run by the host inside its boot.
+   *  @returns {void}
+   *  @throws {Error} when record-core refuses the purge declaration */
   migrate() {
     const bare = HOST_GOVERNOR_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.sql.exec(t); }
@@ -116,7 +264,9 @@ export class HostGovernor {
   /** R1–R6, R29. Never throws on its own logic. `{host, peek: true}` (the one option this op accepts besides `host`;
    *  declared for the census, K4208) answers exactly as the booking would at this instant and writes nothing: no
    *  state for a host not yet met (R2's full burst is answered), no token, no grant, no refusal counted. Only
-   *  `peek === true` peeks. */
+   *  `peek === true` peeks.
+   *  @param {AdmitArgs | null} [q]
+   *  @returns {Admission} */
   governorAdmit(q) {
     const host = hostOf(q);
     if (!host) return { admitted: false, reason: "no host named" };
@@ -165,7 +315,9 @@ export class HostGovernor {
     return { admitted: true, wait_ms: wait, appetite_per_min: appetite };
   }
 
-  /** R7–R10. Never throws on its own logic. */
+  /** R7–R10. Never throws on its own logic.
+   *  @param {ReportArgs | null} [q]
+   *  @returns {ReportAnswer} */
   governorReport(q) {
     const host = hostOf(q);
     if (!host) return { recorded: false };
@@ -199,7 +351,9 @@ export class HostGovernor {
   }
 
   /** R11, R12. A host is required, so a global appetite cannot be set; `null` or an omitted appetite clears the
-   *  host's, which is how an operator says "stop treating this host specially". Never throws. */
+   *  host's, which is how an operator says "stop treating this host specially". Never throws.
+   *  @param {ConfigArgs | null} [q]
+   *  @returns {ConfigAnswer} */
   governorConfig(q) {
     const host = hostOf(q);
     if (!host) return { configured: false };
@@ -214,21 +368,28 @@ export class HostGovernor {
   }
 
   /** R13: one host's row, or every row by host; never creates one. Never throws. R28: it reads only `host`, so a
-   *  `now` or `nowMs` a caller sends is never read, and the rows it answers are as recorded, judging no instant. */
+   *  `now` or `nowMs` a caller sends is never read, and the rows it answers are as recorded, judging no instant.
+   *  @param {{host?: *} | null} [q]
+   *  @returns {{hosts: GovernorRow[]}} */
   governorState(q) {
     const host = q && q.host != null && q.host !== "" ? String(q.host) : null;
     return { hosts: host ? this.#rows(`SELECT * FROM host_governor WHERE host = ?`, host)
                          : this.#rows(`SELECT * FROM host_governor ORDER BY host`) };
   }
 
-  /** R14: every host held at `now`, by R4's own test (`cooloff_until > now`); spends nothing, writes nothing. */
+  /** R14: every host held at `now`, by R4's own test (`cooloff_until > now`); spends nothing, writes nothing.
+   *  @param {{now?: *} | null} [q] `now` in ms since the epoch; absent or not a number is the clock
+   *  @returns {GovernorRow[]} ordered by host */
   governorHolding(q) {
     const now = q && Number.isFinite(Number(q.now)) && q.now !== null && q.now !== "" ? Number(q.now) : this.now();
     return this.#rows(`SELECT * FROM host_governor WHERE cooloff_until > ? ORDER BY host`, now);
   }
 
   /** R14: whether one host is held at `now`; `false` for a host with no state. A NON-CONSUMING read: a caller that
-   *  must not spend a token it is not about to use asks this, never `governorAdmit`. */
+   *  must not spend a token it is not about to use asks this, never `governorAdmit`.
+   *  @param {*} host
+   *  @param {*} [now] ms since the epoch; absent or not a number is the clock
+   *  @returns {boolean} */
   isHeld(host, now = this.now()) {
     if (typeof host !== "string" || host === "") return false;
     const r = this.#row(host);
@@ -257,7 +418,11 @@ const sameEnv = (a, b) => {
  *  (N132: a first caller without `env` left the instance binding unread for every later one): an `env`, `now` or
  *  `random` the instance took by default is adopted from the first later caller that supplies it; one that differs
  *  from what an earlier caller supplied, or a `record` other than the one held, throws, naming the option, and a
- *  refused call changes nothing. */
+ *  refused call changes nothing.
+ *  @param {*} ctx a Durable Object state (`{storage}`) or its storage
+ *  @param {{env?: GovernorEnv | null, now?: (() => number) | null, random?: (() => *) | null, record?: PurgeDeclarer | null}} [opts]
+ *  @returns {HostGovernor} the same instance for every caller over one storage
+ *  @throws {Error} naming the option, when a caller supplies one that differs from what an earlier caller gave */
 export function governorOf(ctx, { env = null, now = null, random = null, record = null } = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   const opts = { env, now, random };
@@ -285,7 +450,11 @@ export function governorOf(ctx, { env = null, now = null, random = null, record 
 
 /** The Durable Object's routes for this module, as entries of the plane's one route map (plane R5: `routes` spreads
  *  them in, and control-plane's `dispatch` answers every store request over it): the four paths a Worker reaches the
- *  governor by. */
+ *  governor by.
+ *  @param {HostGovernor} g
+ *  @param {URL} url
+ *  @param {*} body the request's JSON body, or null
+ *  @returns {{governoradmit: () => Admission, governorreport: () => ReportAnswer, governorconfig: () => ConfigAnswer, governorstate: () => {hosts: GovernorRow[]}}} */
 export function governorRoutes(g, url, body) {
   return {
     governoradmit: () => g.governorAdmit(body || { host: url.searchParams.get("host") }),
@@ -296,7 +465,9 @@ export function governorRoutes(g, url, body) {
 }
 
 /** K72 (2): R1–R10 from a Worker, over the Durable Object's stub, as `governedFetch`'s `{admit, report}`. A stub that
- *  does not answer throws or answers `null`, which `governedFetch` reads as a governor it cannot reach (R17). */
+ *  does not answer throws or answers `null`, which `governedFetch` reads as a governor it cannot reach (R17).
+ *  @param {{fetch: (url: string, init?: *) => Promise<*>}} stub the Durable Object's stub
+ *  @returns {{admit: (q: AdmitArgs) => Promise<Admission | null>, report: (q: ReportArgs) => Promise<ReportAnswer | null>}} */
 export function governorOverStub(stub) {
   const ask = async (path, body) => {
     const res = await stub.fetch(`http://x/${path}`, {
@@ -315,7 +486,11 @@ export const MAX_WAIT_MS = 8000;
  *  than guessed. Refusal by the governor is a named answer, not an exception. An UNREACHABLE governor never blocks
  *  the fetch: this is politeness, not coordination, and if the store is down the op fails by itself anyway. MEASURED
  *  case in point, 2026-07-30 on the deployed 0.46.0: eleven captures of one municipal site from Workers egress, one
- *  403 on the only cold back-to-back pair, ten paced or warmed requests admitted. */
+ *  403 on the only cold back-to-back pair, ten paced or warmed requests admitted.
+ *  @param {*} target the URL fetched
+ *  @param {FetchOptions} [options]
+ *  @returns {Promise<FetchAnswer>}
+ *  @throws {Error} what the fetch itself throws, unreported (R17) */
 export async function governedFetch(target, { userAgent = null, fetch: doFetch = globalThis.fetch, governor = null,
                                               now = () => Date.now(), maxWaitMs = MAX_WAIT_MS,
                                               sleep = (ms) => new Promise((s) => setTimeout(s, ms)) } = {}) {
@@ -382,6 +557,7 @@ async function storeCall(relay, call) {
 export const GOVERNOR_OPS = Object.freeze(["governorstate", "governorconfig"]);
 
 /* R18, R19, R27: what a store call that did not answer with an answer comes back as. */
+/** @type {(r: *) => GovernorOpAnswer} */
 const unanswered = (r) => (r.refused ? { refused: true, response: r.response }
                                      : { silent: true, ...(r.correlation ? { correlation: r.correlation } : {}) });
 
@@ -391,7 +567,12 @@ const unanswered = (r) => (r.refused ? { refused: true, response: r.response }
  *  working. Answers `null` for any other op; `{refused: true, response}` when the store refused (the response is
  *  `storeRefusal`'s, the store's status, code and sentence; only with a relay); `{silent: true, correlation?}` when
  *  the store gave no answer, which the control plane reports as `storeSilent(op, correlation)`, never as an empty
- *  `{ok: true}`, the correlation present only when the store named one; else `{status, body}`. */
+ *  `{ok: true}`, the correlation present only when the store named one; else `{status, body}`.
+ *  @param {string} op
+ *  @param {URL} url
+ *  @param {*} store the Durable Object's stub, or a function answering it
+ *  @param {StoreRelay | null} [relay]
+ *  @returns {Promise<GovernorOpAnswer | null>} */
 export async function governorOp(op, url, store, relay = null) {
   if (!GOVERNOR_OPS.includes(op)) return null;
   const rel = relayOf(relay);
@@ -425,7 +606,12 @@ export async function governorOp(op, url, store, relay = null) {
  *  map's §4.4 plain move, K649 (7)). `plane` is what the control plane hands every arm: `json`, `doAnswer`,
  *  `storeRefusal` and `storeSilent`. Answers the reply: the store's own refusal through `storeRefusal`, a store that
  *  gave no answer through `storeSilent(op, correlation)` (never an empty `{ok: true}`), else `governorOp`'s body at its
- *  status. `null` for any other op. */
+ *  status. `null` for any other op.
+ *  @param {string} op
+ *  @param {URL} url
+ *  @param {*} store
+ *  @param {{json: (body: *, status?: number) => *, doAnswer: (reply: Promise<*>) => Promise<*>, storeRefusal: (answer: *) => *, storeSilent: (op: string, correlation?: *) => *}} plane
+ *  @returns {Promise<*>} the reply, or null */
 export async function governorOpResponse(op, url, store, { json, doAnswer, storeRefusal, storeSilent }) {
   const g = await governorOp(op, url, store, { doAnswer, storeRefusal });
   if (!g) return null;
