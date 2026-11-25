@@ -107,9 +107,10 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {{rows: number, intact: number}|null} confirmed
  * @property {string} why
  */
+/** @import { Entity } from "../docprofile/registry.mjs" */
 /**
  * A reading compared by `assessRows`: `docprofile`'s entity, keyed by a row's name or line (or a chart's box).
- * @typedef {{key: string} & Record<string, any>} RowEntity
+ * @typedef {Entity} RowEntity
  */
 /**
  * The `staff_roster` content type (R1, R2, R4, R5), for `docprofile`'s registry.
