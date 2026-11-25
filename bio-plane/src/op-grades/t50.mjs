@@ -8,7 +8,10 @@
  * refuses a machine by its own code. None takes a `CONSEQUENCE_STATEMENTS` entry or joins `IRREVERSIBLE_WEIGHT`. By R18
  * `phone` follows the rung: every one answers `true`. `membertie`'s grade (R47) is in `./t33.mjs`, where its op is graded. */
 
+/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
+
 /* ---- R45, R47: the rungs. The five writing acts a further call takes back, R3's rule, as `declaredstakeset` (t45.mjs). ---- */
+/** @type {RungTable} T50's ops */
 export const T50_RUNGS = {
   /* R45 (`following` R32): a member's own watch on one item, read back only to its setter; a further watchitem takes it back */
   watchitem:          "reversible",   // following R32 · R3: a further watchitem call sets or clears it, and none asks a reason
@@ -28,6 +31,7 @@ export const T50_RUNGS = {
 };
 
 /* ---- R45: the stated absence. `actioninquiry` opens a question no published act takes back as such, and asks no reason. ---- */
+/** @type {AbsenceTable} T50's ops */
 export const T50_RUNG_ABSENT = {
   /* R45 (`action-records` R19): a question opened with an action as its reference; no published act takes it back as such,
      and it asks no authored reason, so by R3 it is `undetermined` (the reason the R3 tally rises by one for it) */
@@ -35,6 +39,7 @@ export const T50_RUNG_ABSENT = {
 };
 
 /* ---- R45: every op's NON_ACTS reason. Each read begins "read: " and names what it reads; each writing op names its key. ---- */
+/** @type {ReasonTable} T50's ops */
 export const T50_NON_ACTS = {
   /* the six writing ops, each `…-directed: …` naming its key */
   watchitem: "item-directed: a member's own watch on one followed item, read back only to its setter; moves no bundle",

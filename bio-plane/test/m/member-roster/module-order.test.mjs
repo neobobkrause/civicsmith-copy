@@ -124,12 +124,15 @@ test("R61 order.mjs is generated from build/modules.json, never hand-written: it
 test("R27 MODULE_ORDER is frozen: no write changes it", () => {
   const before = JSON.stringify(MODULE_ORDER);
   assert.ok(Object.isFrozen(MODULE_ORDER));
-  const writes = [
-    () => MODULE_ORDER.push("x"), () => MODULE_ORDER.pop(), () => MODULE_ORDER.reverse(), () => MODULE_ORDER.sort(),
-    () => MODULE_ORDER.splice(0, 1), () => { MODULE_ORDER[0] = "x"; }, () => { MODULE_ORDER.length = 0; },
-    () => { delete MODULE_ORDER[1]; },
-  ];
-  for (const w of writes) assert.throws(w, TypeError, String(w));
+  /* each write is made inside its own assertion, so that it reads as the refused write it is */
+  assert.throws(() => MODULE_ORDER.push("x"), TypeError, "push");
+  assert.throws(() => MODULE_ORDER.pop(), TypeError, "pop");
+  assert.throws(() => MODULE_ORDER.reverse(), TypeError, "reverse");
+  assert.throws(() => MODULE_ORDER.sort(), TypeError, "sort");
+  assert.throws(() => MODULE_ORDER.splice(0, 1), TypeError, "splice");
+  assert.throws(() => { MODULE_ORDER[0] = "x"; }, TypeError, "an index written");
+  assert.throws(() => { MODULE_ORDER.length = 0; }, TypeError, "length written");
+  assert.throws(() => { delete MODULE_ORDER[1]; }, TypeError, "an index deleted");
   assert.equal(JSON.stringify(MODULE_ORDER), before);
 });
 

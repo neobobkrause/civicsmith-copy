@@ -4,6 +4,7 @@ import { world } from "./fixture.mjs";
 
 /* R79 (DEC-386): the real answer of withdrawing a confirmed expertise through the module's `expertiseWithdraw`: `ok`, with
    state `withdrawn`, for a member's label declared by the member and confirmed by an administrator, withdrawn with a reason. */
+/** @returns {Promise<*>} `expertiseWithdraw`'s answer, `{ok: true, state: "withdrawn", ...}` */
 export async function expertiseWithdrawn() {
   const w = await world().group("ann");
   w.m.expertiseDeclare({ memberId: "ann", label: "CPA" });
@@ -15,6 +16,7 @@ export async function expertiseWithdrawn() {
    the module's own `registerPasswordSetter`: a second registration of a slot that takes one (LISTENER_DECLARED, naming the
    holder), and a registration whose function is not one (LISTENER_MALFORMED). Each carries its row's `check` and
    `translation`. The first registration is the real one, so the second is refused by the module, not by the test. */
+/** @returns {{registered: *, declared: *, malformed: *}} the first registration's answer, then the two refusals */
 export function listenerRefusals() {
   const w = world({ omit: ["setter"] });
   const registered = w.m.registerPasswordSetter(() => true, "credentials");

@@ -16,9 +16,44 @@
 
 import { localize } from "../setup-words/index.mjs";
 
+/* The kinds every tranche's tables here are, stated once and brought in by each file (`@import`). */
+/**
+ * @typedef {Object<string, string>} RungTable each graded op's rung, by its op's name (R5, R3; `op-grades` spreads it into `RUNGS`)
+ * @bound each value: a rung of `RUNG_LADDER`, here "reversible", "reasoned" or "terminal"
+ */
+/**
+ * @typedef {Object} Absence an op's stated absence of a rung (R3), as `op-grades` publishes it in `RUNG_ABSENT`
+ * @property {string} ground
+ * @property {string} is the sentence that says why the op has no rung
+ * @bound ground: a key of `RUNG_ABSENCE_GROUNDS`: "substrate", "credential", "caller-owned", "observational" or "undetermined"
+ */
+/**
+ * @typedef {Object<string, Absence>} AbsenceTable each writing op with no rung, by its op's name, with its ground (R3; spread into `RUNG_ABSENT`)
+ */
+/**
+ * @typedef {Object<string, string>} ReasonTable each gated op's `NON_ACTS` reason, a sentence, by its op's name (R5; spread into `NON_ACTS`)
+ * @bound each value: a read's begins "read: " and a draft's "draft: " (R32)
+ */
+/**
+ * @typedef {Object<string, string>} RefusalTable each act refused to a machine credential by name, with its owner's refusal code (R5; spread into `MACHINE_REFUSALS`)
+ */
+/**
+ * @typedef {Object} Consequence the friction and the statement shown beside an act's rung (R4, R21; spread into `CONSEQUENCE_STATEMENTS`)
+ * @property {string} friction
+ * @property {string} key
+ * @bound friction: "dialog" or "in-place"
+ * @bound key: a setup-words key the list holds; the surface reads its sentence through word(key, vars)
+ */
+
+/**
+ * a read's `NON_ACTS` reason (R32)
+ * @param {string} s what the read answers
+ * @returns {string}
+ */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs, each with the backing it names (`affordances` R19) ---- */
+/** @type {RungTable} T33's ops */
 export const T33_RUNGS = {
   /* events (R13, R14, R17, R20) */
   eventgovern:           "reversible", // a further eventgovern chooses another attestation; every choice is kept
@@ -90,6 +125,7 @@ export const T33_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
+/** @type {AbsenceTable} T33's ops */
 export const T33_RUNG_ABSENT = {
   /* events */
   datedfact:            { ground: "observational", is: "holds a document's own stated date, as read from one extent of a capture, with how it was read; the earlier reading stays true of the moment it was made (events R1, R2)" },
@@ -164,6 +200,7 @@ export const T33_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5, R13) ---- */
+/** @type {ReasonTable} T33's ops */
 export const T33_NON_ACTS = {
   /* events */
   datedfact: "dated-fact-directed: keyed by (capture, extent); holds a document's own stated date and moves no bundle",

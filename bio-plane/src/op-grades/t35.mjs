@@ -8,7 +8,13 @@
  * `subscriptionsignin` had no op in T35 and no grade (`op-declarations` R27); R27 grades it in `./t37.mjs` (T37). */
 
 import { word } from "../setup-words/index.mjs";
+/** @import { AbsenceTable, Consequence, ReasonTable, RungTable } from './t33.mjs' */
 
+/**
+ * builds one `NON_ACTS` reason from its particular words
+ * @param {string} s
+ * @returns {string}
+ */
 const R = (s) => `read: ${s}; writes nothing`;
 const NOTE_DIRECTED = "note-directed: a member's own note, keyed by the note and answered to its author alone; never a "
   + "record id, never cited, published or counted; moves no bundle";
@@ -16,6 +22,7 @@ const SESSION_DIRECTED = "session-directed: ends the caller's own session, or ev
   + "no bundle";
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
+/** @type {RungTable} T35's ops */
 export const T35_RUNGS = {
   /* acquisition R43: a further set takes it back, and it asks no reason (R3) */
   coarchiveset:         "reversible", // a further coarchiveset sets it again
@@ -35,6 +42,7 @@ export const T35_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
+/** @type {AbsenceTable} T35's ops */
 export const T35_RUNG_ABSENT = {
   /* acquisition R38, R40, on R3's rule, as inboxpull and caseimport */
   unpack:               { ground: "undetermined", is: "files a held archive's entries as captures of their own in a member's name, each at the archive's grade and promoted beside it; asks no authored reason, and no published act takes it back (acquisition R38, R40)" },
@@ -66,6 +74,7 @@ export const T35_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
+/** @type {ReasonTable} T35's ops */
 export const T35_NON_ACTS = {
   unpack: "archive-directed: keyed by a held archive's capture, reached from its screen; files its entries as captures of "
     + "their own at the archive's grade, each promoted beside it",
@@ -129,6 +138,7 @@ export const T35_NON_ACTS = {
    person's page, every question that cited it and every export, with no read answering it again (people R12), and a
    marker in its place. (R44, T49) The entry holds the sentence's key, never its English: the surface reads
    `word("screen.person.expunge.statement", {date, member})` by the act's id. ---- */
+/** @type {Readonly<Object<string, Readonly<Consequence>>>} T35's acts with a consequence statement, by op; frozen */
 export const T35_CONSEQUENCE_STATEMENTS = Object.freeze({
   personexpunge: Object.freeze({ friction: "dialog", key: "screen.person.expunge.statement" }),
   /* K2049 (DEC-143 applied): releasing a policy held at its source's sight is never undone (standards R37), so it carries
