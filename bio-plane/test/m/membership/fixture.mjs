@@ -5,39 +5,8 @@ import { DatabaseSync } from "node:sqlite";
 import { membershipOf, membershipOps } from "../../../src/membership/index.mjs";
 import { recordOf, RECORD_SCHEMA } from "../../../src/record-core/index.mjs";
 
-/** @import { Membership } from "../../../src/membership/index.mjs" */
-/**
- * @typedef {{exec: (query: string, ...bindings: *[]) => *[]}} ArraySql a `SqlStorage` whose statements answer arrays
- */
-/**
- * @typedef {WorldParts & Object<string, *>} World membership over an in-memory database with a stand-in record-core; a
- *   test may add its own fields to it
- */
-/**
- * @typedef {Object} WorldParts
- * @property {*} db the `node:sqlite` database
- * @property {ArraySql} sql
- * @property {*} core the stand-in record-core: `bundleInfo`, `declarePurge`, `declareTable`
- * @property {Membership} m the instance, migrated
- * @property {Object[]} declared each `declarePurge` call, `{module, tables, opts}`
- * @property {Object[]} tablesDeclared each `declareTable` call, `{module, entries}`
- * @property {{claimed: boolean, passwords: Map<*, *>, revoked: *[]}} creds what the stood-in `credentials` registrations hold
- * @property {(id: string, type?: string, title?: string, project?: *) => string} bundle adds a bundle (`project` the project it belongs to); its id
- * @property {(id: string, title?: string) => string} project adds a project and indexes its sight; its id
- * @property {(q: string, ...a: *[]) => *} row the first row of a query, or null
- * @property {(q: string, ...a: *[]) => *[]} rows
- * @property {() => Promise<{ok: boolean, role: string}>} claim the founder claims the instance
- * @property {(id: string, role?: string, by?: string, caps?: *) => Promise<*>} enrol invites and enrols a member to active; the enrol answer, or the refusal as it came
- * @property {(...members: string[]) => Promise<World>} group claims, enrols a second administrator, then each member
- * @property {(query?: string, body?: *) => Object<string, function(): *>} ops `membershipOps` over a request whose query is `query`
- */
-
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
-/**
- * @param {*} db a `node:sqlite` database
- * @returns {ArraySql} statements run on it, booleans bound as 1 and 0, undefined as null
- */
 export function sqlOver(db) {
   return {
     exec(q, ...args) {
@@ -48,10 +17,6 @@ export function sqlOver(db) {
 }
 
 /* `omit` leaves named stand-ins ("claimed", "setter", "revoked") to the test, for a test of that registration itself. */
-/**
- * @param {{omit?: string[]}} [opts] stand-ins left out: `claimed`, `setter`, `revoked`
- * @returns {World}
- */
 export function world({ omit = [] } = {}) {
   const db = new DatabaseSync(":memory:");
   db.exec(`CREATE TABLE bundles (bundle_id TEXT PRIMARY KEY, object_type TEXT NOT NULL, title TEXT, project TEXT)`);
@@ -109,15 +74,9 @@ export function world({ omit = [] } = {}) {
   return w;
 }
 
-/** @type {(id: string) => string} the viewer naming a member: `member:<id>` */
 export const V = (id) => `member:${id}`;
 
 /* The module over the REAL record-core (its schema and `recordOf`), for what only the two together show (R115). */
-/**
- * @returns {Promise<{db: *, sql: ArraySql, rc: *, m: Membership, creds: {claimed: boolean, passwords: Map<*, *>},
- *   claim: () => Promise<{ok: boolean, role: string}>, bundle: (id: string, type?: string) => void, row: (q: string, ...a: *[]) => *}>}
- *   membership over the real record-core's schema
- */
 export async function realWorld() {
   const db = new DatabaseSync(":memory:");
   const sql = sqlOver(db);

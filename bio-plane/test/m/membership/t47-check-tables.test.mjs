@@ -10,7 +10,6 @@ import { notAnAdmin, noSuchProject, notAParticipant, noSuchMember, notTheOwner, 
 
 const NAMED = ["MEMBERSHIP_CHECKS", "MEMBER_ID_CHECKS", "CUSTODIAL_CHECKS", "PROJECT_AUTHORITY_CHECKS",
   "PROJECT_VISIBILITY_CHECKS"];
-/** @type {() => [string, *][]} every exported `*_CHECKS` table, by name */
 const tables = () => Object.entries(membership).filter(([name]) => /_CHECKS$/.test(name));
 
 /* Each code's rows across a set of tables; the rule holds when every list has length one. */

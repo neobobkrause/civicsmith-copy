@@ -55,7 +55,7 @@ test("R144 `member-roster` R76 memberFacts(admin) answers null for the unclaimed
   await w.claim();
   assert.deepEqual(w.m.memberFacts("admin"), { cover: null, handle: null, role: "admin", status: "active" }, "claimed, no handle held");
   assert.equal(w.m.founderHandleSet({ handle: "steward", by: "admin" }).ok, true);
-  assert.equal(w.m.memberFacts("admin")?.handle, "steward", "claimed, handle held");
+  assert.equal(w.m.memberFacts("admin").handle, "steward", "claimed, handle held");
   /* control: R76 widens no other id, and a member's row is read as before */
   assert.equal(w.m.memberFacts("nobody"), null);
   assert.equal(w.m.memberFacts("steward"), null, "her handle is no member id");

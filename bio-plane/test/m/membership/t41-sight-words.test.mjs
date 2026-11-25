@@ -86,7 +86,7 @@ test("R44 T41 EXISTENCE has two forms: a member outside a discoverable project, 
   }
   assert.equal(w.m.sight("PROJ-D", V("dee")), EXISTENCE, "the first form: a member outside a discoverable project");
   /* a list, a count or a reverse edge is never widened: the owner arithmetic reads H as nothing */
-  assert.equal(w.m.projectOwnerArithmetic({ projectId: "PROJ-H", viewer: V("second") }).live?.owners, 0);
+  assert.equal(w.m.projectOwnerArithmetic({ projectId: "PROJ-H", viewer: V("second") }).live.owners, 0);
   /* negative control: an ordinary member outside hidden H, a viewer naming nobody, a revoked administrator: NONE */
   assert.equal(w.m.sight("PROJ-H", V("dee")), NONE);
   assert.equal(w.m.sight("PROJ-H", "junk"), NONE);
@@ -120,7 +120,7 @@ test("R77 T41 C-70.1 carries `owners`, the owners' current handles in R65's orde
   }
   /* the current handle: a handle changed before T46 (DEC-197; no act changes one now, R129) is what the owners read */
   w.sql.exec(`UPDATE members SET handle='bob-2' WHERE member_id='bob'`);
-  assert.deepEqual(w.m.existenceAct("PROJ-H", V("second"))?.owners, ["ann", "bob-2"]);
+  assert.deepEqual(w.m.existenceAct("PROJ-H", V("second")).owners, ["ann", "bob-2"]);
   /* negative control: the first form carries no `owners` key, and a hidden project answers nothing to a non-administrator */
   const first = w.m.existenceAct("PROJ-D", V("dee"));
   assert.equal("owners" in first, false);
@@ -179,12 +179,12 @@ test("R60 T41 an administrator's sight is never a position, and the acts it hold
   assert.equal(w.m.rescueRefusal("PROJ-H", "second"), null, "every owner inactive: the rescue may proceed");
   assert.equal(w.m.sight("PROJ-H", V("second")), EXISTENCE, "and the administrator still sees only that H exists");
   /* no position: EXISTENCE grants no act inside it, and no read of its contents */
-  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "joined", "an act")?.code, "PROJECT_ACT_NOT_A_PARTICIPANT");
-  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "owner", "an act")?.code, "PROJECT_ACT_NOT_THE_OWNER");
+  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "joined", "an act").code, "PROJECT_ACT_NOT_A_PARTICIPANT");
+  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "owner", "an act").code, "PROJECT_ACT_NOT_THE_OWNER");
   assert.equal(w.m.isProjectEditor("PROJ-H", "second"), false);
   assert.equal(w.m.inSight("NOTE-H", V("second")), false);
   /* negative control: an ordinary member is refused the rescue as not an administrator, and is at NONE */
-  assert.equal(w.m.rescueRefusal("PROJ-H", "dee")?.reason, "NOT_AN_ADMIN");
+  assert.equal(w.m.rescueRefusal("PROJ-H", "dee").reason, "NOT_AN_ADMIN");
   assert.equal(w.m.sight("PROJ-H", V("dee")), NONE);
 });
 

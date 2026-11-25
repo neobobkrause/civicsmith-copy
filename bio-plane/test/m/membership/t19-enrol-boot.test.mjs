@@ -32,7 +32,7 @@ test("R95 R16 enroll sets the password through the registered setter, inside its
     "membership holds no credential table");
   assert.deepEqual(w.rows(`SELECT * FROM members WHERE member_id='ann'`).map((r) => Object.values(r).includes("ann-passphrase-x")),
     [false], "and no password in its own rows");
-  assert.equal(w.m.memberFacts("ann")?.status, "active");
+  assert.equal(w.m.memberFacts("ann").status, "active");
 });
 
 test("R95 a setter that throws or answers ok:false is ENROL_NOT_RECORDED, C-96.18: nothing written, the invitation still live", async () => {

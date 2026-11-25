@@ -108,7 +108,7 @@ test("R71 projectCreated: the sole initial owner, the creation visibility record
   const r = w.m.projectCreated({ projectId: "PROJ-N", ownerId: "ann", visibility: "discoverable", by: "ann" });
   assert.deepEqual([r.ok, r.owner, r.setting], [true, "ann", "discoverable"]);
   assert.deepEqual(w.m.projectOwners("PROJ-N"), ["ann"]);
-  assert.equal(w.m.participation("PROJ-N", "ann")?.state, "joined");
+  assert.equal(w.m.participation("PROJ-N", "ann").state, "joined");
   assert.deepEqual(w.rows(`SELECT setting, set_by, reason FROM project_visibility WHERE project_id='PROJ-N'`).map((h) => [h.setting, h.set_by, h.reason]),
     [["discoverable", "ann", "chosen at creation"]]);
   assert.equal(w.m.sight("PROJ-N", V("cal")), Membership.SIGHT_EXISTENCE, "reindexed");

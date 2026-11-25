@@ -25,8 +25,8 @@ test("R55: projectActRefusals sets the owner and the participants through member
   const f = await projectActRefusals();
   const m = f.membership;
   assert.equal(m.isProjectOwner(f.project, f.owner), true);
-  assert.equal(m.participation(f.project, "bob")?.state, "joined");
-  assert.equal(m.participation(f.project, "cy")?.state, "invited");
+  assert.equal(m.participation(f.project, "bob").state, "joined");
+  assert.equal(m.participation(f.project, "cy").state, "invited");
   assert.equal(m.participation(f.project, "dee"), null);
 });
 

@@ -100,10 +100,10 @@ test("R75 rescueRefusal answers project-roster R5's caller-and-project refusals 
   // NOT_AN_ADMIN (R84) first, whatever the project: an ordinary member, an owner, a revoked administrator, nobody
   for (const by of ["cal", "ann", null, undefined, "", "class:admin"])
     assert.equal(both("PROJ-P", by)?.reason, "NOT_AN_ADMIN", JSON.stringify(by));
-  assert.equal(w.m.rescueRefusal("PROJ-M", "cal")?.reason, "NOT_AN_ADMIN", "asked before NO_OWNERS");
+  assert.equal(w.m.rescueRefusal("PROJ-M", "cal").reason, "NOT_AN_ADMIN", "asked before NO_OWNERS");
   // NO_OWNERS, for the founder and an administrator
-  for (const by of ["admin", "second"]) assert.equal(both("PROJ-M", by)?.reason, "NO_OWNERS");
-  assert.equal(w.m.rescueRefusal("PROJ-NEVER", "admin")?.reason, "NO_OWNERS", "no such project has no owner");
+  for (const by of ["admin", "second"]) assert.equal(both("PROJ-M", by).reason, "NO_OWNERS");
+  assert.equal(w.m.rescueRefusal("PROJ-NEVER", "admin").reason, "NO_OWNERS", "no such project has no owner");
   // OWNERS_ARE_ACTIVE naming the active owners, while any is active
   assert.deepEqual(both("PROJ-P", "second").active, ["ann", "bob"]);
   w.m.memberSet({ memberId: "ann", status: "revoked", by: "admin" });
@@ -115,7 +115,7 @@ test("R75 rescueRefusal answers project-roster R5's caller-and-project refusals 
   assert.equal(both("PROJ-P", "admin"), null);
   // a revoked administrator is no administrator
   w.sql.exec(`UPDATE members SET status='revoked' WHERE member_id='second'`);
-  assert.equal(w.m.rescueRefusal("PROJ-M", "second")?.reason, "NOT_AN_ADMIN");
+  assert.equal(w.m.rescueRefusal("PROJ-M", "second").reason, "NOT_AN_ADMIN");
   for (const [p, by] of [[null, null], [undefined, "admin"], [{}, []], [42, 7], ["PROJ-P", {}]])
     assert.doesNotThrow(() => w.m.rescueRefusal(p, by), JSON.stringify([p, by]));
 });

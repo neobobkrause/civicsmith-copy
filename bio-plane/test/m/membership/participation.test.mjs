@@ -68,7 +68,7 @@ test("R33 R116 an invitation tells the one registered listener inside the act, a
     answer = a;
     const r = w.m.projectInvite({ projectId: "PROJ-P", handle: who, by: "ann", viewer: V("ann") });
     assert.deepEqual([r.ok, "request" in r], [true, false], `${who}: ${a}`);
-    assert.equal(w.m.participation("PROJ-P", who)?.state, "invited");
+    assert.equal(w.m.participation("PROJ-P", who).state, "invited");
   }
   /* A refused invitation tells nobody. */
   const before = heard.length;
