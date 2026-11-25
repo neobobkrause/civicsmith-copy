@@ -14,6 +14,10 @@ async function requestWorld(...askers) {
 
 /** `declinedRequest`: the real `request` of `projectDirectory`'s row for the requester whose request to join PROJ-D the owner declined with
  *  `comment` (null for no word): `{state: "declined", asked, closed, closed_comment}`, `asked` and `closed` instants. */
+/**
+ * @param {*} [args] `{comment, member}`
+ * @returns {Promise<{state: string, asked: string, closed: string | null, closed_comment: string | null}>}
+ */
 export async function declinedRequest({ comment = "We are full this season.", member = "cal" } = {}) {
   const w = await requestWorld(member);
   w.r.projectRequest({ projectId: "PROJ-D", comment: null, by: member, viewer: V(member) });
@@ -24,6 +28,10 @@ export async function declinedRequest({ comment = "We are full this season.", me
 /** `answeredRequests`: the real `projectRequestsAnswered` answer `{ok, answered, count, limit, truncated}` that owner ann reads after answering
  *  each of `answers` (`[requester, "grant" | "decline", word]`, in the order answered) on PROJ-D. `answered` is newest first, each
  *  `{projectId, name, requester: {member, handle}, answer: "granted" | "declined", comment, closed}`. */
+/**
+ * @param {*} [args] `{answers}`
+ * @returns {Promise<Object<string, *>>} the real `projectRequestsAnswered` answer
+ */
 export async function answeredRequests({ answers = [["cal", "decline", "Not yet."], ["dee", "grant", null]] } = {}) {
   const w = await requestWorld(...answers.map(([who]) => who));
   for (const [who] of answers) w.r.projectRequest({ projectId: "PROJ-D", comment: null, by: who, viewer: V(who) });
@@ -34,6 +42,7 @@ export async function answeredRequests({ answers = [["cal", "decline", "Not yet.
 
 /** `answeredRequestsHidden`: the same read for a member who answered and has since been removed from the project (so it is below FULL for her):
  *  `{ok: true, answered: [], count: 0, ...}`, the real answer, a project she cannot see in full naming nothing. */
+/** @returns {Promise<Object<string, *>>} the real `projectRequestsAnswered` answer, empty */
 export async function answeredRequestsHidden() {
   const w = await requestWorld("cal");
   w.owned("PROJ-X", "ann", ["bob"]);

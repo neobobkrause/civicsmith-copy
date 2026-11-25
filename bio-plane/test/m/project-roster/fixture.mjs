@@ -9,6 +9,11 @@ import { projectRosterOf, projectRosterOps } from "../../../src/project-roster/i
 
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
+/**
+ * A store's `sql` over a node:sqlite database: `exec` answers a reading statement's rows, and runs any other.
+ * @param {*} db a `DatabaseSync`
+ * @returns {{exec: (q: string, ...args: *[]) => Object<string, *>[]}}
+ */
 export function sqlOver(db) {
   return {
     exec(q, ...args) {
@@ -33,6 +38,16 @@ function founderHandleOf(m) {
     if (!a.ok) throw new Error(`founderHandleSet refused: ${a.reason}`); return a; } };
 }
 
+/**
+ * @typedef {Object<string, *>} World a test's store: `db`, `sql`, `core` (the stub record-core), `m` (membership), `r`
+ *   (this module), `settings`, `time` (`now`, milliseconds or null), and the setup helpers `founderHandle`, `bundle`,
+ *   `project`, `doc`, `entry`, `row`, `rows`, `claim`, `enrol`, `group`, `owned` and `ops`
+ */
+/**
+ * This module and the real membership over one in-memory database, with a stub record-core.
+ * @returns {World}
+ * @throws {Error} when `projectRosterOf` answers a second instance for one storage
+ */
 export function world() {
   const db = new DatabaseSync(":memory:");
   db.exec(`CREATE TABLE bundles (bundle_id TEXT PRIMARY KEY, object_type TEXT NOT NULL, title TEXT, project TEXT,
@@ -123,13 +138,19 @@ export function world() {
   return w;
 }
 
+/** @type {(id: *) => string} the viewer a member's session stamps, `member:<id>` */
 export const V = (id) => `member:${id}`;
 
 /* Every table's rows, to show an answer wrote nothing. */
+/** @type {(w: *) => string} every table's rows, as text, to show an answer wrote nothing */
 export const snapshot = (w) => JSON.stringify(w.rows(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
   .map(({ name }) => [name, w.rows(`SELECT * FROM "${name}"`)]));
 
 /* Both modules over the REAL record-core (its schema and `recordOf`), for what only they together show (R17, R18). */
+/**
+ * This module and membership over the real record-core, for R17 and R18.
+ * @returns {Promise<World>} `db`, `sql`, `rc`, `m`, `r`, `creds`, `time` and the helpers `founderHandle`, `claim`, `enrol`, `bundle`, `row`, `rows`
+ */
 export async function realWorld() {
   const db = new DatabaseSync(":memory:");
   const sql = sqlOver(db);

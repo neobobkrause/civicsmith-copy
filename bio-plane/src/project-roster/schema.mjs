@@ -2,6 +2,7 @@
  * from membership's schema at the split (T38, N783; K624: copy, then delete), each table and index unchanged, so a store
  * written before the split is read as it is. `ProjectRoster#migrate` runs it. SQL comments are `--` lines, dropped
  * before the statements run. Every table is keyed by `project_id`, a bundle id, and cleared with the project (R18). */
+/** @type {string} the DDL of this module's tables and indexes; `--` lines are comments */
 export const PROJECT_ROSTER_SCHEMA = `
 -- R10-R16 (Membership Architecture v2 section 7, item 7.14, "The request to join"): a member outside a DISCOVERABLE
 -- project asks to be added. ONE ROW PER REQUEST, and the record is APPEND-ONLY AT THE FIELD (R13): the asking fields
@@ -95,5 +96,6 @@ CREATE INDEX IF NOT EXISTS project_stakes_project ON project_stakes(project_id, 
 
 /* R18: the tables keyed by project and cleared with it, the scope records and approval settings among them (T45) and the stake records (T50).
    None is exempt. */
+/** @type {readonly string[]} every table this module owns, each keyed by `project_id` (R18) */
 export const PROJECT_ROSTER_TABLES = Object.freeze(["project_join_requests", "project_owner_votes",
   "project_owner_decisions", "project_scopes", "project_approval_settings", "project_stakes"]);

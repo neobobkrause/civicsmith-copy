@@ -29,6 +29,227 @@ import { PROJECT_ROSTER_CHECKS, PROJECT_JOIN_REQUEST_CHECKS, PROJECT_SCOPE_CHECK
 export { PROJECT_ROSTER_TABLES } from "./schema.mjs";
 export { PROJECT_ROSTER_CHECKS, PROJECT_JOIN_REQUEST_CHECKS, PROJECT_SCOPE_CHECKS } from "./checks.mjs";
 
+/**
+ * @typedef {Object} RefusalFields the fields every refusal this module answers or relays carries (DEC-49)
+ * @property {boolean} ok always false
+ * @property {string} reason the refusal's code
+ * @property {string} [code] the same code, where the refusal carries its row
+ * @property {string} [check] its row's check id, such as `C-147.1`
+ * @property {string | null} [translation] its row's member-facing words, read by key; null while the list lacks them (R25)
+ * @property {string} [detail] one fixed sentence saying why
+ * @property {*} [project] the project id as asked, null when none
+ */
+/**
+ * @typedef {RefusalFields & Object<string, *>} Refusal an answer that refuses; the fields a refusal names beside its own
+ *   (`handle`, `state`, `have`, `awaiting`, `need`, `deciders`, `leaving`, `active`, `owners`, `entry`, `index`, `scope`,
+ *   `asked` and the like) are the caller's to read by its code
+ * @bound a refusal writes nothing, unless its code says what was recorded (CONSENSUS_REQUIRED and VOTES_SHORT record the caller's vote)
+ */
+/**
+ * @typedef {Object} PersonFields a member as a reader sees one (R29)
+ * @property {string} member the member's id; the founder's is `admin`
+ * @property {string | null} handle the member's handle; the founder's held handle, null while she holds none
+ * @property {boolean} [founder] true on the founder's, and only there
+ */
+/** @typedef {PersonFields & Object<string, *>} Person */
+/**
+ * @typedef {Object} ParticipantRow one participant of a project (R1, R29)
+ * @property {string | null} handle the participant's handle; the founder's held handle, null while she holds none
+ * @property {boolean} [founder] true on the founder's row, and only there
+ * @property {string} state `invited`, `joined` or `leaving`
+ * @property {number} owner 1 for an owner, else 0
+ * @property {string | null} comment
+ * @property {string | null} created the instant the row was made; neither `joined_at` nor `owner_since`
+ * @property {string | null} joined_at the instant the row last became `joined`; null when not joined or not recorded
+ * @property {string | null} owner_since the instant she became an owner; null for a non-owner and where none was recorded
+ */
+/**
+ * @typedef {Object} ParticipantsFields the roster and its records (R1, R2, R6, R21, R24)
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {ParticipantRow[]} participants owners first, then by handle, then by id
+ * @property {Object<string, *>[]} ownership every ownership decision `{kind, handle, deciders, reasons, at}`, in the order carried
+ * @property {Object<string, *>[]} removals every removal an owner made `{handle, removedBy, reason, at}`
+ * @property {Object<string, *>[]} scopes the scope's history `{scope, reason, by, at}`
+ * @property {Object<string, *>[]} approvals the second-approval setting's history `{needs, reason, by, at}`
+ */
+/** @typedef {ParticipantsFields & Object<string, *>} ParticipantsAnswer */
+/**
+ * @typedef {Object} OwnerChangeFields an owner act carried (R3, R4, R5)
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {*} handle the target's handle as asked
+ * @property {boolean} owner whether the target is now an owner
+ * @property {(string | null)[]} owners the project's owners after the act, by handle (the founder as R29 names her)
+ */
+/**
+ * @typedef {OwnerChangeFields & Object<string, *>} OwnerChanged `deciders` (R3, R4), `reasons` and `stillAParticipant`
+ *   (R4), `by`, `reason`, `addedNotReplaced` and `detail` (R5) beside these
+ */
+/**
+ * @typedef {Object} OwnerProposal an owner change with counted votes, not yet carried (R30)
+ * @property {string} change `add` or `remove`
+ * @property {string | null} target the target, by handle
+ * @property {string | null} proposed_by the first counted voter, by handle
+ * @property {string} proposed_at the instant of the first counted vote
+ * @property {(string | null)[]} agreed the owners whose votes count, by handle
+ * @property {(string | null)[]} awaiting the owners whose vote would count and is not in, by handle
+ */
+/**
+ * @typedef {Object} OwnerVotesFields
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {OwnerProposal[]} changes in the order first proposed
+ */
+/** @typedef {OwnerVotesFields & Object<string, *>} OwnerVotesAnswer */
+/**
+ * @typedef {Object} ScopeState a project's scope (R23)
+ * @property {string} scope `counsel_matter`, `own` or `none`
+ * @property {string | null} since the instant of the latest record, null with none
+ * @property {string | null} by the member id that set it (the founder's `admin`), null with none
+ */
+/**
+ * @typedef {Object} SettingFields a project setting recorded (R21, R24, R31)
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {string} at the instant recorded
+ */
+/**
+ * @typedef {SettingFields & Object<string, *>} SettingRecorded R21's `scope`, `previous`, `reason`, `by`, `detail`; R24's
+ *   `needs`, `reason`, `by`, `detail`; R31's `stake` and `by` (by handle) beside these
+ */
+/**
+ * @typedef {Object} ApprovalNeed whether an act needs a second approval (R24)
+ * @property {boolean} needed
+ * @property {Object<string, *>[]} matched the latest setting's entries that apply, each `{kind}`, `{tier}` or `{public: true}`
+ */
+/**
+ * @typedef {Object} StakeEntry one stake set (R32)
+ * @property {string | null} stake the text, null for a clear
+ * @property {string | null} set_by by handle, the founder as R29 names her
+ * @property {string} set_at
+ */
+/**
+ * @typedef {Object} StakeState a project's stake (R32)
+ * @property {string | null} stake the latest entry's text; null with none or cleared; `undetermined` when a record cannot be read
+ * @property {string | null} set_by
+ * @property {string | null} set_at
+ * @property {StakeEntry[]} history oldest first
+ */
+/** @typedef {StakeState & {ok: boolean, projectId: string} & Object<string, *>} StakeHistoryAnswer `ok` always true */
+/**
+ * @typedef {Object} OwnersGoneFields (R33)
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {boolean} gone true exactly when the project has owners and every one is inactive
+ * @property {string | null} since when gone, the instant the last owner stopped being active; else null, and null when not recorded
+ */
+/** @typedef {OwnersGoneFields & Object<string, *>} OwnersGone */
+/**
+ * @typedef {Object} VisibilityFields (R8)
+ * @property {boolean} ok always true
+ * @property {string} projectId
+ * @property {*} setting membership's setting, `discoverable` or `hidden`
+ * @property {boolean} recorded whether any act set it
+ * @property {Object<string, *>[]} history `{setting, set_by, reason, at}` in order, `set_by` by handle (the founder as R29 names her)
+ * @property {string} [note] present only when nothing is recorded
+ */
+/** @typedef {VisibilityFields & Object<string, *>} VisibilityAnswer */
+/**
+ * @typedef {Object} JoinRequestState the caller's own latest request to a project (R9, R44)
+ * @property {string} state `open`, `granted`, `declined`, `withdrawn` or `lapsed`
+ * @property {string} asked
+ * @property {string | null} closed null while open
+ * @property {string | null} closed_comment the answering owner's word, null when none
+ */
+/**
+ * @typedef {Object} DirectoryRow (R9)
+ * @property {string} id
+ * @property {string | null} name
+ * @property {JoinRequestState | null} request null where the caller never asked
+ */
+/**
+ * @typedef {Object} PageFields a capped page (R9, R14, R26, R35, R36)
+ * @property {boolean} ok always true
+ * @property {number} count the rows on the page
+ * @property {number} limit the cap applied
+ * @property {boolean} truncated measured by reading one row past the cap
+ */
+/**
+ * @typedef {PageFields & {projects: DirectoryRow[]} & Object<string, *>} DirectoryAnswer
+ * @bound limit: 1 to 200 (`PROJECT_DIRECTORY_LIMIT`); a caller lowers it, never raises it
+ */
+/**
+ * @typedef {Object} ProjectRow one project a viewer sees (R26, R27, R28, R34, R38, R39, R42)
+ * @property {string} id
+ * @property {string | null} name its title
+ * @property {string | null} stage its recorded `current_state`; null when none, and on a rescue row
+ * @property {Person | null} owner its opener; null when no longer an active member or none, and on a rescue row
+ * @property {Person[]} members its participants as the viewer sees them
+ * @property {number[]} activity eight weekly counts, oldest first
+ * @property {string | null} lastChange the instant of the newest act the viewer may see, null when none
+ * @property {string | null} participation the viewer's own state, null for a non-participant
+ * @property {{in: boolean, owner: boolean}} mine the viewer's own place in it
+ * @property {string | null} scope `none`, `own` or `counsel_matter`; null on a rescue row
+ * @property {boolean} [rescue_open] only for an administrator or the founder: true on a hidden project the rescue is open to her for
+ * @property {number | null} question_count null on a rescue row
+ * @property {{count: number, newest: string | null} | null} shared_drafts null on a rescue row and when no reader was handed in
+ */
+/**
+ * @typedef {PageFields & {projects: ProjectRow[], next: string | null} & Object<string, *>} ProjectListAnswer `next` the
+ *   last row's id when truncated, else null (R36)
+ * @bound limit: 1 to 200 (`PROJECT_LIST_LIMIT`); a caller lowers it, never raises it
+ */
+/**
+ * @typedef {Object} InvitationRow (R35)
+ * @property {string} projectId
+ * @property {string | null} name
+ * @property {Person | null} invited_by null when none was recorded or it names no member
+ * @property {string | null} invited_at
+ */
+/**
+ * @typedef {PageFields & {invitations: InvitationRow[], next: string | null} & Object<string, *>} InvitationsAnswer
+ * @bound limit: 1 to 200 (`PROJECT_INVITATIONS_LIMIT`); a caller lowers it, never raises it
+ */
+/**
+ * @typedef {Object} RequestActFields a request to join asked, withdrawn or answered (R10, R11, R12)
+ * @property {boolean} ok always true
+ * @property {*} projectId
+ * @property {string} state `open` when asked; `withdrawn`, `granted` or `declined` when closed
+ */
+/**
+ * @typedef {RequestActFields & Object<string, *>} RequestAct R10's `name`, `comment`, `asked`, `detail`; R11's `closed`;
+ *   R12's `handle`, `comment`, `closed`, and for a grant `participation: "invited"` and `detail`, beside these
+ * @bound comment: kept to 280 characters; blank reads as null
+ */
+/**
+ * @typedef {PageFields & {own: boolean, requests: Object<string, *>[]} & Object<string, *>} RequestsAnswer `own` true for
+ *   the caller's own requests (each `{project, member_id, name, comment, state, asked, closed_comment, closed}`), false
+ *   for a project's (`projectId` beside, each `{handle, member_id, comment, state, asked, closed_by, closed_comment, closed}`) (R14, R37)
+ * @bound limit: 1 to 200 (`PROJECT_REQUESTS_LIMIT`); a caller lowers it, never raises it
+ */
+/**
+ * @typedef {Object} AnsweredRow a join request a member answered (R44)
+ * @property {string} projectId
+ * @property {string | null} name
+ * @property {{member: string, handle: string | null}} requester
+ * @property {string} answer `granted` or `declined`
+ * @property {string | null} comment
+ * @property {string} closed
+ */
+/**
+ * @typedef {PageFields & {answered: AnsweredRow[]} & Object<string, *>} AnsweredAnswer newest first
+ * @bound limit: 1 to 200 (`PROJECT_REQUESTS_LIMIT`); a caller lowers it, never raises it
+ */
+/**
+ * @typedef {Object} DeclaredOp one op's declaration (R40, R41; op-declarations R80)
+ * @property {string[]} classes
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {string} description
+ * @property {{accepts: string[], requires: string[]}} fields
+ */
+
 const ROOT_ADMIN = Membership.ROOT_ADMIN;
 
 /** R43 (fix round 10; K5157): THE ACTOR `by` IN THE FORM THE DOOR STAMPS IT. A declared act arrives with `by` in the
@@ -37,6 +258,12 @@ const ROOT_ADMIN = Membership.ROOT_ADMIN;
  *  `member:<id>` answers `<id>`, anything else (a bare id, the founder's `admin`, a machine `class:<cls>`, a non-string)
  *  as it came, so a prefix is never added to one already there. */
 const MEMBER_FORM = /^member:([A-Za-z0-9._:-]{1,128})$/;
+/**
+ * R43: the member id an act's `by` names. Writes nothing and never throws.
+ * @param {*} by the stamped actor
+ * @returns {*} `<id>` for `member:<id>`; any other `by` as it came
+ * @bound <id>: 1 to 128 of letters, digits, `.`, `_`, `:` and `-`
+ */
 export function actorOf(by) {
   const m = typeof by === "string" ? MEMBER_FORM.exec(by) : null;
   return m ? m[1] : by;
@@ -46,6 +273,13 @@ export function actorOf(by) {
  *  `null` or trimmed text of 1 to 1,000 characters on one line with no control character; else the one refusal, its
  *  C-147 row and word by key (`of: "action"` reads `refusal.STAKE_MALFORMED.action`; null while the list lacks it).
  *  `projectId`, when given, rides on the answer as `projectStakeSet` answers it. */
+/**
+ * R31: the stake's two refusals, pure. Writes nothing and never throws.
+ * @param {*} [args] `{by, stake, of, projectId}`: `of` is `"project"` (absent) or `"action"`; `projectId` rides on the answer
+ * @returns {Refusal | null} null when `by` is a member's stamp and `stake` is null or well formed; else
+ *   MACHINE_CANNOT_SET_STAKE (C-147.9) or STAKE_MALFORMED (C-147.10)
+ * @bound stake: null, or trimmed text of 1 to 1,000 characters on one line with no control character
+ */
 export function stakeFault({ by, stake, of = "project", projectId = null } = {}) {
   const row = (code, detail, translation) => ({ ok: false, reason: code, code, check: PROJECT_SCOPE_CHECKS[code].check,
     translation, detail, project: projectId ?? null });
@@ -59,7 +293,12 @@ export function stakeFault({ by, stake, of = "project", projectId = null } = {})
   return null;
 }
 
+/** The acts on a project's working group that follow its setup, over one store (R1–R45). */
 export class ProjectRoster {
+  /**
+   * @param {*} [deps] `{sql, core, membership, clock}`: the store's `sql`, record-core, membership, and the host's clock
+   *   (`() => milliseconds`; absent is now)
+   */
   constructor({ sql, core = null, membership, clock = null } = {}) {
     this.sql = sql;
     this.core = core;
@@ -80,6 +319,11 @@ export class ProjectRoster {
   /* This module's tables, at every boot, idempotent: every table and index created if absent (a store written before
      the split already holds them, as membership made them), then R18's purge declaration. Run by the host inside its
      boot, after membership's. */
+  /**
+   * Creates this module's tables and indexes where absent, then declares them for purge (R18).
+   * @returns {void}
+   * @throws {Error} when record-core refuses the purge declaration
+   */
   migrate() {
     const bare = PROJECT_ROSTER_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.sql.exec(t); }
@@ -89,6 +333,11 @@ export class ProjectRoster {
   /* R18, through record-core's `declarePurge` (its R21, R46): each table keyed to a bundle (the project) by
      `project_id`. A refusal is thrown, as membership's is: a purge that silently skipped these tables would leave the
      project's votes and requests behind. */
+  /**
+   * R18: declares this module's tables to record-core's purge, once.
+   * @returns {boolean} true when declared now, false when already declared
+   * @throws {Error} when record-core refuses the declaration
+   */
   declareTables() {
     if (this.#declared) return false;
     const answer = this.core.declarePurge("project-roster",
@@ -109,6 +358,10 @@ export class ProjectRoster {
    * start (`projectRosterOf` calls it once per storage); each answer is membership's R81. Until membership offers a
    * slot there is nothing to register with, and its answer reads null. R22 (T45) registers the scope's guard in
    * membership's project-act guard (its R128) the same way. */
+  /**
+   * R15, R16, R22: registers in membership's two notice slots and its project-act guard.
+   * @returns {{invited: *, hidden: *, guard: *}} membership's answer to each registration, null where it offers no slot
+   */
   start() {
     const invited = typeof this.m.onProjectInvited === "function"
       ? this.m.onProjectInvited("project-roster", (notice) => this.#invited(notice)) : null;
@@ -141,8 +394,14 @@ export class ProjectRoster {
    * and for the direct internal call, which count whole. The table drops the rows whose `project_id` is in `hid` (D-464:
    * a count over rows the caller could not all read is a disclosure of existence). `COALESCE(project_id, '')`: a NULL
    * key names no bundle, and `NULL NOT IN (…)` is NULL, so without it the row would be dropped. Writes nothing. */
+  /** @type {readonly string[]} the keys `counts` answers (R17) */
   static COUNT_KEYS = Object.freeze(["projectOwnerVotes"]);
 
+  /**
+   * R17: this module's figures, shaped as record-core R63's `counts(hid)`. Writes nothing.
+   * @param {*} [hid] membership's hidden bundles `{sql, args}`; null counts whole
+   * @returns {{projectOwnerVotes: number}}
+   */
   counts(hid = null) {
     const n = (table) => (hid
       ? this.#one(`SELECT count(*) c FROM ${table} WHERE COALESCE(project_id, '') NOT IN ${hid.sql}`, ...hid.args)
@@ -197,6 +456,11 @@ export class ProjectRoster {
    * otherwise; membership R43). Anyone else sees nothing, and is told the same thing whether the project exists or not, because §7.9 says an
    * uninvited member cannot see that a project EXISTS. The ownership decisions (R6) and the removals an owner made (R2,
    * membership R36 writes them) are read here beside the participants, by the same readers. */
+  /**
+   * R1, R2, R6: the roster and its records, to a participant or an administrator at FULL sight; anyone else the absent answer.
+   * @param {*} [args] `{projectId, by}`
+   * @returns {Refusal | ParticipantsAnswer}
+   */
   projectParticipants({ projectId, by } = {}) {
     by = actorOf(by);
     const mine = this.m.participation(projectId, by);
@@ -293,6 +557,12 @@ export class ProjectRoster {
   /* R3 (§7.10 addition). The sole owner may add a second unilaterally; every addition past that needs the consensus of
      ALL existing owners. Consensus on addition is the load-bearing half, exactly as in §4.7: without it one owner
      recruits confederates and manufactures the majority that then removes the others. */
+  /**
+   * R3, R45: proposes or adds an owner. Sight first; then NOT_THE_OWNER, NO_SUCH_HANDLE, NOT_ACTIVE, TARGET_NOT_JOINED
+   * (C-56.5), ALREADY_AN_OWNER; past the second owner CONSENSUS_REQUIRED with `have` and `awaiting`, the vote recorded.
+   * @param {*} [args] `{projectId, handle, by, viewer}`
+   * @returns {Refusal | OwnerChanged}
+   */
   projectOwnerAdd({ projectId, handle, by, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT" }); if (refused) return refused; }
@@ -347,6 +617,13 @@ export class ProjectRoster {
      the inactive owners keep their rows, so a reactivated one is an owner again alongside the added one, and nothing
      about this exception strips anyone. Its caller-and-project refusals are membership's `rescueRefusal` (its R75),
      asked here so the offer (affordances) and the act cannot disagree. */
+  /**
+   * R5, R22, R45: an administrator adds an owner to a project whose owners are all inactive. Refusals: sight (reachable at
+   * an administrator's EXISTENCE of a hidden project), NOT_AN_ADMIN, PROJECT_SCOPE_OWN, membership's NO_OWNERS and
+   * OWNERS_ARE_ACTIVE, NO_REASON, NO_SUCH_HANDLE, NOT_ACTIVE.
+   * @param {*} [args] `{projectId, handle, by, reason, viewer}`
+   * @returns {Refusal | OwnerChanged}
+   */
   projectOwnerRescue({ projectId, handle, by, reason, viewer = null } = {}) {
     by = actorOf(by);
     /* Sight before position — so NOT_AN_ADMIN is said only to a member who can already see the project (an invited
@@ -386,6 +663,12 @@ export class ProjectRoster {
 
   /* R4 (§7.10 removal). A majority of all owners, the target in the denominator and not voting, EXCEPT at exactly two
      owners where both must agree and the target is one of them. The floor is one owner. */
+  /**
+   * R4, R45: votes an owner off. Sight first; then NOT_THE_OWNER, NO_SUCH_HANDLE, NOT_AN_OWNER, NO_REASON, LAST_OWNER,
+   * LAST_COMMITTED_OWNER, TARGET_CANNOT_VOTE, ALREADY_VOTED, VOTES_SHORT (the vote recorded).
+   * @param {*} [args] `{projectId, handle, by, reason, viewer}`
+   * @returns {Refusal | OwnerChanged}
+   */
   projectOwnerRemove({ projectId, handle, by, reason, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT" }); if (refused) return refused; }
@@ -452,7 +735,9 @@ export class ProjectRoster {
    *  vote would still count and is not in, as R3's `CONSENSUS_REQUIRED` and R4's count them (R4's target does not vote at
    *  three owners or more); `proposed_by` and `proposed_at` the first counted vote. Members are named by handle, the
    *  founder by `founderHandle()` (R29). A rescue is carried at once and is never pending. Any other viewer, existence
-   *  only included, gets the absent answer. Writes nothing and never throws. */
+   *  only included, gets the absent answer. Writes nothing and never throws.
+   *  @param {*} [args] `{projectId, viewer}`
+   *  @returns {Refusal | OwnerVotesAnswer} */
   projectOwnerVotes({ projectId, viewer = null } = {}) {
     try {
       const b = this.#bundle(projectId);
@@ -518,7 +803,9 @@ export class ProjectRoster {
    *             takes no invitation, and neither scope may be made discoverable. Its rescue is refused here (R22).
    *   APPROVAL  the acts that need a second member's approval before sending, set by an owner; enforced by `filings`.
    * Neither setting names a member: each is a fact about the project. */
+  /** @type {readonly string[]} the scopes a project takes (R21) */
   static PROJECT_SCOPES = Object.freeze(["counsel_matter", "own", "none"]);
+  /** @type {number} the most characters a scope's or an approval setting's reason holds (R21, R24) */
   static REASON_MAX = 2000;
 
   /* A refusal with its C-147 row. */
@@ -565,7 +852,9 @@ export class ProjectRoster {
 
   /** R23: THE SCOPE, `{scope, since, by}`, the latest record's; `none` with no record and for an id that names no
    *  project. It asks no viewer (it states only the scope, as membership's `visibilityOf` states only the setting; its
-   *  callers gate by sight), writes nothing and never throws. */
+   *  callers gate by sight), writes nothing and never throws.
+   *  @param {*} projectId
+   *  @returns {ScopeState} */
   projectScope(projectId) {
     try {
       if (typeof projectId !== "string" || !projectId) return { scope: "none", since: null, by: null };
@@ -577,7 +866,10 @@ export class ProjectRoster {
 
   /** R21: SET A PROJECT'S SCOPE. Sight first (the Terms'), then position, then the scope's own refusals, each writing
    *  nothing. The participant is asked of membership's fence (its R55, `joined`) as the member `by` names, so a caller
-   *  that is no member of the project, a machine credential or the founder included, is refused there. */
+   *  that is no member of the project, a machine credential or the founder included, is refused there.
+   *  @param {*} [args] `{projectId, scope, reason, by, viewer}`
+   *  @returns {Refusal | SettingRecorded}
+   *  @bound reason: trimmed, 1 to 2,000 characters */
   projectScopeSet({ projectId, scope, reason, by, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT", project: projectId });
@@ -636,7 +928,10 @@ export class ProjectRoster {
   }
 
   /** R24: SET WHICH ACTS NEED A SECOND MEMBER'S APPROVAL. An owner's act (administrators and the founder included, as
-   *  R3), after sight; each entry checked, then each kind against the active profiles' view, then the reason. */
+   *  R3), after sight; each entry checked, then each kind against the active profiles' view, then the reason.
+   *  @param {*} [args] `{projectId, needs, reason, by, viewer}`
+   *  @returns {Refusal | SettingRecorded}
+   *  @bound needs: a list, each entry exactly one of `{kind}`, `{tier}` (1, 2 or 3) or `{public: true}`; reason: trimmed, 1 to 2,000 characters */
   projectApprovalSet({ projectId, needs, reason, by, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT", project: projectId });
@@ -676,7 +971,9 @@ export class ProjectRoster {
   /** R24: DOES AN ACT NEED A SECOND APPROVAL? `{needed, matched}`, `matched` the latest setting's entries that apply:
    *  a `{kind}` entry naming `kind`; a `{tier}` entry equal to `tier`, and every `{tier}` entry when the tier is null
    *  or undetermined (anything but 1, 2 or 3: an undetermined tier is never read as Tier 1, v0.2 §6); `{public: true}`
-   *  when `public` is true. No setting, or an id naming nothing, needs none. Writes nothing and never throws. */
+   *  when `public` is true. No setting, or an id naming nothing, needs none. Writes nothing and never throws.
+   *  @param {*} [args] `{projectId, kind, tier, public}`
+   *  @returns {ApprovalNeed} */
   secondApprovalNeeded({ projectId, kind = null, tier = null, public: audience = false } = {}) {
     try {
       const r = typeof projectId === "string" && projectId
@@ -696,9 +993,14 @@ export class ProjectRoster {
    * The team's own words on what it has at stake in this matter beyond its usual stake (`instance-setup` R77), appended
    * with who set it and when; the latest entry is the stake, `null` clears it. It is read at the act that sends or
    * publishes, never applied to anything already signed, sent or published. */
+  /** @type {number} the most characters a stake holds (R31) */
   static STAKE_MAX = 1000;
 
-  /* R31: trimmed text of 1 to 1,000 characters on one line, no control characters; answers it, or undefined. */
+  /**
+   * R31: the stake as kept: trimmed text of 1 to 1,000 characters on one line, no control characters; else undefined.
+   * @param {*} stake
+   * @returns {string | undefined}
+   */
   static stakeText(stake) {
     if (typeof stake !== "string") return undefined;
     const t = stake.trim();
@@ -707,7 +1009,10 @@ export class ProjectRoster {
   }
 
   /** R31: SET OR CLEAR THE PROJECT'S STAKE. Sight first (the Terms'), then a machine credential, then position (joined,
-   *  or an administrator at FULL sight), then the text; each refusal writes nothing. */
+   *  or an administrator at FULL sight), then the text; each refusal writes nothing.
+   *  @param {*} [args] `{projectId, stake, by, viewer}`; `stake: null` clears it
+   *  @returns {Refusal | SettingRecorded}
+   *  @bound stake: null, or trimmed text of 1 to 1,000 characters on one line with no control character */
   projectStakeSet({ projectId, stake, by, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT", project: projectId });
@@ -729,7 +1034,9 @@ export class ProjectRoster {
 
   /** R32: THE STAKE, `{stake, set_by, set_at, history}`, history oldest first, each `{stake, set_by, set_at}`; none for
    *  a project with no record and for an id naming nothing; `"undetermined"` for a record that cannot be read. Asks no
-   *  viewer (its callers gate by sight), writes nothing, never throws. */
+   *  viewer (its callers gate by sight), writes nothing, never throws.
+   *  @param {*} projectId
+   *  @returns {StakeState} */
   projectStake(projectId) {
     const none = { stake: null, set_by: null, set_at: null, history: [] };
     try {
@@ -742,7 +1049,9 @@ export class ProjectRoster {
     } catch { return { ...none, stake: "undetermined" }; }
   }
 
-  /** R32: EVERY PARTICIPANT READS THE HISTORY, as R8 reads visibility: a caller at FULL gets it, any other the absent answer. */
+  /** R32: EVERY PARTICIPANT READS THE HISTORY, as R8 reads visibility: a caller at FULL gets it, any other the absent answer.
+   *  @param {*} [args] `{projectId, viewer}`
+   *  @returns {Refusal | StakeHistoryAnswer} */
   projectStakeHistory({ projectId, viewer = null } = {}) {
     const b = this.#bundle(projectId);
     if (!b || !this.m.inSight(projectId, viewer)) return noSuchProject(projectId);
@@ -753,7 +1062,9 @@ export class ProjectRoster {
   /** R33 (T50; N1124): WHETHER THE PROJECT'S OWNERS ARE ALL GONE, to a caller who may be offered R5's rescue: an active
    *  administrator or the founder, at FULL sight or at an administrator's EXISTENCE of a hidden project. `gone` is
    *  membership's `rescueRefusal` (R75) null; `since` the later of the owners' last status instants, null when not gone
-   *  or not recorded. Any other caller and a project naming nothing: the absent answer. Writes nothing, never throws. */
+   *  or not recorded. Any other caller and a project naming nothing: the absent answer. Writes nothing, never throws.
+   *  @param {*} [args] `{projectId, viewer}`
+   *  @returns {Refusal | OwnersGone} */
   projectOwnersGone({ projectId, viewer = null } = {}) {
     try {
       const b = this.#bundle(projectId);
@@ -780,7 +1091,9 @@ export class ProjectRoster {
   /** R8: THE SETTING AND ITS HISTORY, for a caller with FULL sight (a participant, an administrator, the founder:
    *  §7.14, "administrators and the founder see the setting and its history"). A READ, so it does not widen: a caller
    *  without full sight is answered as for a project that does not exist. The setting is membership's `visibilityOf`
-   *  (its R85), the one reading of the sight index; the history its act log (its R120). */
+   *  (its R85), the one reading of the sight index; the history its act log (its R120).
+   *  @param {*} [args] `{projectId, viewer}`
+   *  @returns {Refusal | VisibilityAnswer} */
   projectVisibility({ projectId, viewer = null } = {}) {
     const b = this.#bundle(projectId);
     if (!b || !this.m.inSight(projectId, viewer)) return noSuchProject(projectId);
@@ -813,7 +1126,9 @@ export class ProjectRoster {
    *
    *  `limit` is the cap APPLIED, the caller's to lower and never to raise; `truncated` is MEASURED by reading one row
    *  past it, never derived from the page (a full page and a complete answer read alike). The page is the first `limit`
-   *  in `bundle_id` order, so a page means the same thing twice. */
+   *  in `bundle_id` order, so a page means the same thing twice.
+   *  @param {*} [args] `{viewer, limit}`
+   *  @returns {Refusal | DirectoryAnswer} */
   projectDirectory({ viewer = null, limit = null } = {}) {
     /* T50 (R9; N1129): the founder's viewer, bare `admin` or `member:admin`, names a member here. */
     const gate = viewerPredicate(viewer === ROOT_ADMIN ? `member:${ROOT_ADMIN}` : viewer);
@@ -851,6 +1166,7 @@ export class ProjectRoster {
 
   /* D-479: THE DIRECTORY'S PAGE SIZE, a chosen ceiling and never a finding: generous enough that a member browsing for
      one project to ask to join rarely meets it, published whenever it cuts. It may be lowered, never raised (R9). */
+  /** @type {number} the directory's page ceiling (R9) */
   static PROJECT_DIRECTORY_LIMIT = 200;
 
   /** R26 (T47; N972): THE PROJECTS A VIEWER SEES AT FULL, each `{id, name, stage}`, in id order: the read Home draws
@@ -879,7 +1195,9 @@ export class ProjectRoster {
    *  at an administrator's EXISTENCE (R39).
    *
    *  R28 (T47; N1025; DEC-214 (3)): each project's `members`, eight weeks' `activity` and `lastChange`, by the viewer's
-   *  sight (`#projectFacts`). */
+   *  sight (`#projectFacts`).
+   *  @param {*} [asked] `{viewer, limit, after, sharedDraftsOf}`; anything but an object reads as none
+   *  @returns {ProjectListAnswer} */
   projectList(asked = {}) {
     const { viewer = null, limit = null, after = null, sharedDraftsOf = null } = asked && typeof asked === "object" ? asked : {};
     const gate = viewerPredicate(viewer);
@@ -1017,13 +1335,16 @@ export class ProjectRoster {
   }
 
   /* Every stored `object_type` spelling of an inquiry, the declared one and its legacy aliases (basis-versions' own). */
+  /** @type {string} a JSON list of every stored `object_type` spelling of an inquiry (R42) */
   static INQUIRY_TYPES = JSON.stringify(["inquiry", ...Object.keys(LEGACY_TYPE_ALIASES)
     .filter((t) => LEGACY_TYPE_ALIASES[t] === "inquiry")]);
 
   /** R35 (T51; N1209): THE VIEWER'S OWN INVITATIONS, each project where her participation is `invited`, `{projectId, name,
    *  invited_by, invited_at}` in project id order; `invited_by` is `{member, handle}` (the founder as R29 names her) or
    *  null when none was recorded or it names no member. Only her own rows; a viewer naming no active member gets an empty
-   *  list. Paged as R36 pages (`after`, `next`). Writes nothing, never throws. */
+   *  list. Paged as R36 pages (`after`, `next`). Writes nothing, never throws.
+   *  @param {*} [asked] `{viewer, limit, after}`; anything but an object reads as none
+   *  @returns {InvitationsAnswer} */
   projectInvitations(asked = {}) {
     const { viewer = null, limit = null, after = null } = asked && typeof asked === "object" ? asked : {};
     const cap = ProjectRoster.#cap(limit, ProjectRoster.PROJECT_INVITATIONS_LIMIT);
@@ -1050,14 +1371,18 @@ export class ProjectRoster {
     } catch { return empty; }
   }
 
+  /** @type {number} the invitations' page ceiling (R35) */
   static PROJECT_INVITATIONS_LIMIT = 200;
 
   /* R26's page size, R9's rule: a chosen ceiling, lowered by the caller and never raised. */
+  /** @type {number} the list's page ceiling (R26) */
   static PROJECT_LIST_LIMIT = 200;
 
   /* R28 (T47; N1025; DEC-214 (3)): eight weeks of activity, oldest first, each week seven days back from the server's
      instant, never a caller's. */
+  /** @type {number} the weeks `activity` counts (R28) */
   static ACTIVITY_WEEKS = 8;
+  /** @type {number} one week in milliseconds */
   static WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
   /* The server's instant in milliseconds: the host's clock when it gave one that reads as a finite number, else now. */
@@ -1137,6 +1462,7 @@ export class ProjectRoster {
    *   READ      `projectRequests` — a project's requests to its owners and administrators; with no project, the
    *             caller's OWN requests, which it keeps sight of after a lapse, naming only what it already saw.
    * The record is `project_join_requests` (`schema.mjs`): append-only at the field (R13). */
+  /** @type {readonly string[]} the answers an owner gives a request (R12) */
   static JOIN_REQUEST_ANSWERS = Object.freeze(["grant", "decline"]);
 
   /* The member a request is ABOUT is the server-stamped `by`, never a name the caller supplies; a machine credential
@@ -1213,7 +1539,9 @@ export class ProjectRoster {
   /** R10: ASK TO JOIN (§7.14 "Who may ask"). The one act a member at EXISTENCE may take. Who asks is settled first
    *  (a fact about the caller, saying nothing about any project); then sight, which says nothing a caller did not
    *  already know: NONE is the absent answer byte for byte; FULL is refused positionally. Only at EXISTENCE is a request
-   *  written, with the name the caller was shown. */
+   *  written, with the name the caller was shown.
+   *  @param {*} [args] `{projectId, comment, by, viewer}`
+   *  @returns {Refusal | RequestAct} */
   projectRequest({ projectId, comment = null, by, viewer = null } = {}) {
     const refusal = (code, detail, extra = {}) => {
       const row = PROJECT_JOIN_REQUEST_CHECKS[code];
@@ -1256,7 +1584,9 @@ export class ProjectRoster {
 
   /** R11: WITHDRAW (§7.14: "The requester may withdraw an open request"). The requester's own act on their own record,
    *  so it asks no sight of the project: a caller with no open request to that id is answered ONE way whether the
-   *  project is discoverable, hidden or absent. */
+   *  project is discoverable, hidden or absent.
+   *  @param {*} [args] `{projectId, by, viewer}`
+   *  @returns {Refusal | RequestAct} */
   projectRequestWithdraw({ projectId, by, viewer = null } = {}) {
     const me = this.#requester(by, viewer);
     if (!me)
@@ -1273,7 +1603,9 @@ export class ProjectRoster {
   /** R12: AN OWNER ANSWERS (§7.14 "Who answers"). Sight before position, as every roster act; then ownership, through
    *  membership's `isProjectOwner` (§7's one owner predicate), so an administrator, the founder and every machine
    *  credential are refused by name. GRANT writes `invited`, `invited_by` the granting owner — never `joined` (§7.4).
-   *  DECLINE is recorded with the owner's optional comment. A refused grant leaves the request open. */
+   *  DECLINE is recorded with the owner's optional comment. A refused grant leaves the request open.
+   *  @param {*} [args] `{projectId, handle, answer, comment, by, viewer}`
+   *  @returns {Refusal | RequestAct} */
   projectRequestAnswer({ projectId, handle, answer, comment = null, by, viewer = null } = {}) {
     by = actorOf(by);
     { const refused = this.#ownedProject(projectId, viewer, { ok: false, reason: "NOT_A_PROJECT", project: projectId });
@@ -1324,7 +1656,9 @@ export class ProjectRoster {
    *  requests, every project and every state, each naming the project by the id and the name the caller was shown when
    *  asking — so a request LAPSED by a project going hidden is still the requester's to read, and names nothing they had
    *  not already seen. Its answering owner is NOT in the requester's view: who owns a project is contents. Both lists
-   *  are bounded as R9's directory is (the first `limit` in the order made). */
+   *  are bounded as R9's directory is (the first `limit` in the order made).
+   *  @param {*} [args] `{projectId, by, viewer, limit}`
+   *  @returns {Refusal | RequestsAnswer} */
   projectRequests({ projectId = null, by, viewer = null, limit = null } = {}) {   /* R37: rows carry `member_id` */
     by = actorOf(by);
     const cap = ProjectRoster.#cap(limit, ProjectRoster.PROJECT_REQUESTS_LIMIT);
@@ -1373,7 +1707,9 @@ export class ProjectRoster {
    *  requester's own and a lapse the one who hid the project: neither is an answer), only for projects she sees at FULL
    *  (membership R43, the rule every list here applies), so a project she is out of names nothing. `by` and `viewer`
    *  must name one active member, as R14's own list asks (`PROJECT_REQUEST_NEEDS_A_MEMBER`). Capped as R14; writes
-   *  nothing; for `queue`'s answered list, which reads it in process. */
+   *  nothing; for `queue`'s answered list, which reads it in process.
+   *  @param {*} [args] `{by, viewer, limit}`
+   *  @returns {Refusal | AnsweredAnswer} */
   projectRequestsAnswered({ by, viewer = null, limit = null } = {}) {
     const me = this.#requester(by, viewer);
     if (!me)
@@ -1396,6 +1732,7 @@ export class ProjectRoster {
 
   /* THE REQUESTS READ'S PAGE SIZE, a chosen ceiling as R9's: a list a person reads to answer or to recall their own
      asks, generous enough that a legitimate caller rarely meets it, published whenever it cuts. */
+  /** @type {number} the requests' page ceiling (R14, R44) */
   static PROJECT_REQUESTS_LIMIT = 200;
 }
 
@@ -1403,6 +1740,12 @@ export class ProjectRoster {
    `recordOf(ctx)` and membership by `membershipOf(ctx)` on the same `ctx`, and started once (R15, R16). `record` and
    `membership` (a test's own) and `clock` (the host's, R28) are read on the first call only. */
 const OF = new WeakMap();
+/**
+ * K61: the one ProjectRoster of a store, made and started on first use.
+ * @param {*} ctx a Durable Object's state, or its storage
+ * @param {*} [opts] `{record, membership, clock}`, read on the first call only
+ * @returns {ProjectRoster}
+ */
 export function projectRosterOf(ctx, { record = null, membership = null, clock = null } = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let r = OF.get(storage);
@@ -1428,6 +1771,7 @@ const stakeParam = (url) => (!url.searchParams.has("stake") ? undefined
    declared by their owner beside the ops map: each row's class, weight and description are the op's existing rows' (the
    hand rows of `op-declarations` and `op-grades`, with which they agree), its fields are what the arm below reads from
    the request (the stamps `by` and `viewer` excluded). `reason` is accepted where the arm reads one of its own. */
+/** @type {Readonly<Object<string, DeclaredOp>>} keyed by the op's door name (R40, R41) */
 export const DECLARED_OPS = Object.freeze({
   projectowneradd: { classes: ["admin", "member", "probe"], mutating: true, weight: "credential",
     description: localize("project-roster.declared.projectowneradd", "roster act on a project"),
@@ -1452,6 +1796,14 @@ export const DECLARED_OPS = Object.freeze({
     fields: { accepts: ["projectId", "stake"], requires: ["projectId", "stake"] } },
 });
 
+/**
+ * The ops this module answers, as entries of the plane's op map; every parameter is read from the URL's query.
+ * @param {ProjectRoster} r
+ * @param {URL} url the request URL, carrying the control plane's stamps `by` and `viewer`
+ * @param {*} body not read
+ * @param {*} env the host's; its `sharedDraftsOf`, when a function, is handed to `projectlist` (R42)
+ * @returns {Object<string, () => *>} each op's name to its arm
+ */
 export function projectRosterOps(r, url, body, env) {
   const q = (k) => url.searchParams.get(k);
   return {

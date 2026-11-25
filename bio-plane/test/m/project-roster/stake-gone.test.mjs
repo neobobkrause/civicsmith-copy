@@ -172,7 +172,8 @@ test("R31 stakeFault({by, stake, of}) is pure and answers null for a member's st
   }
   /* of: 'action' reads its own word by key, null while the list lacks it, never inline English */
   const a = stakeFault({ by: "bob", stake: "a\nb", of: "action" });
+  assert.ok(a);
   assert.equal(a.reason, "STAKE_MALFORMED");
   assert.equal(a.translation === null, !hasWord("refusal.STAKE_MALFORMED.action"));
-  assert.equal(stakeFault({ by: m, stake: "x", of: "action" }).reason, "MACHINE_CANNOT_SET_STAKE");
+  assert.equal(stakeFault({ by: m, stake: "x", of: "action" })?.reason, "MACHINE_CANNOT_SET_STAKE");
 });
