@@ -416,6 +416,20 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
   // an entry comes back as the view carries it, the column a budget header heads among its fields (jurisdictions R6)
   const headers = { vocabulary: { budget_headers: [{ column: "fund", pattern: { re: "^Fund$" } }, null, "x"] } };
   assert.deepEqual(vocabulary({ view: headers }, "budget_headers"), [{ column: "fund", pattern: { re: "^Fund$" } }]);
+  // and every other per-key field jurisdictions R6 and R69 state, each handed back as the view carries it, absent where the entry has none
+  const perKey = {
+    roster_headers: { role: "title", pattern: { re: "^Title$" } },
+    roster_words: { kind: "chart", pattern: { re: "org chart" } },
+    amending: { relation: "repeals", pattern: { re: "is hereby repealed" } },
+    meeting_markers: { marker: "cancelled", pattern: { re: "CANCELLED" } },
+    body_variants: { organisation: "city_council", pattern: { re: "City Council" } },
+    policy_headers: { field: "effective", pattern: { re: "^Effective Date:" } },
+    file_numbers: { system: "https://pa.legistar.com", pattern: { re: "\\d{2}-\\d{4}" } },
+  };
+  const perKeyView = { vocabulary: Object.fromEntries(Object.entries(perKey).map(([k, e]) => [k, [e, null]])) };
+  for (const [k, e] of Object.entries(perKey)) assert.deepEqual(vocabulary({ view: perKeyView }, k), [e], k);
+  const words = vocabulary({ view: { vocabulary: { roster_words: [{ pattern: { re: "roster" } }] } } }, "roster_words");
+  assert.equal(words[0].kind, undefined);
   // a reader through the helpers: Port Alder's items under its view only
   const items = (v) => keys(stubItems.parse({ text: PA_ITEMS, view: v }));
   assert.deepEqual(items(PA), ["PA-101", "PA-102", "PA-103"]);
