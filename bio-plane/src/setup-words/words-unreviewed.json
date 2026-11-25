@@ -6977,14 +6977,14 @@
       "en": "the archives it was cut out of nest deeper than ARCHIVE_DEPTH_MAX ({max}): the archive {archive} (through entries {path}) was not read, so its attestations are not here",
       "module": "attestation",
       "file": "bio-plane/src/attestation/index.mjs",
-      "line": 301
+      "line": 302
     },
     {
       "id": "attestation.index.no_key_detail",
       "en": "your team's Civicsmith holds no receipt-signing key it can read, so nothing is signed. Whoever hosts your team's Civicsmith sets one as a secret; nothing is claimed signed until then",
       "module": "attestation",
       "file": "bio-plane/src/attestation/index.mjs",
-      "line": 232
+      "line": 233
     },
     {
       "id": "attestation.index.no_such_capture",
@@ -7005,7 +7005,7 @@
       "en": "a receipt names the capture's sha256, the retrieval locator and the instant it was fetched",
       "module": "attestation",
       "file": "bio-plane/src/attestation/index.mjs",
-      "line": 403
+      "line": 404
     },
     {
       "id": "attestation.index.register_names_bytes",
@@ -7019,7 +7019,7 @@
       "en": "attestationsOf takes the sha256 of a capture: 64 hex characters",
       "module": "attestation",
       "file": "bio-plane/src/attestation/index.mjs",
-      "line": 279
+      "line": 280
     },
     {
       "id": "basis-version-grammar.checks.suggest_kind_basis_version",
@@ -17169,175 +17169,175 @@
       "en": "connection derivation, keyed by entity",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1522
+      "line": 1524
     },
     {
       "id": "connections.declared.connectionassert",
       "en": "connection-directed: a member asserts a connection between two held documents with a stated basis, keyed by the document pair; writes an asserted-connection row, grade D, apart from derived ones",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1524
+      "line": 1526
     },
     {
       "id": "connections.declared.connectionchoose",
       "en": "connection-directed: records which mention is on point on ONE end of ONE connection, keyed by (capture, other capture, entity); writes a choice row beside the machine's pair and moves nothing existing",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1526
+      "line": 1528
     },
     {
       "id": "connections.declared.stepsource",
       "en": "relation-directed: keyed by a declared relation and a held capture's passage; a member's cited backing of a declared step, withdrawn only by a reasoned act and never erased; moves no bundle",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1528
+      "line": 1530
     },
     {
       "id": "connections.declared.stepsourcewithdraw",
       "en": "relation-directed: keyed by a declared relation and a held capture's passage; a member's cited backing of a declared step, withdrawn only by a reasoned act and never erased; moves no bundle",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1530
+      "line": 1532
     },
     {
       "id": "connections.declared.themedeclare",
       "en": "member-directed: a member declares a theme (an idea and its test) keyed by nothing the record holds; writes a `themes` row, no edge and no entity, and is never evidence",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1532
+      "line": 1534
     },
     {
       "id": "connections.declared.themeplace",
       "en": "theme-directed: a member places a document or a passage in a theme, keyed by (theme id, target); writes a `theme_placements` row as membership and no edge",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1534
+      "line": 1536
     },
     {
       "id": "connections.declared.themepropose",
       "en": "theme-directed: a member or a machine proposes a placement, keyed by (theme id, target); writes a `theme_placements` row as a hunch that is never membership",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1536
+      "line": 1538
     },
     {
       "id": "connections.declared.themeread",
       "en": "read: one theme by id — its idea, its test, its declarer, its members and its hunches apart, each placement gated by the viewer's sight of the document — or the themes, searchable by a phrase",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1538
+      "line": 1540
     },
     {
       "id": "connections.declared.themewithdraw",
       "en": "theme-directed: a member withdraws a placement or rejects a hunch in a theme with a reason, keyed by (theme id, target); the placement is kept, shown as withdrawn",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1540
+      "line": 1542
     },
     {
       "id": "connections.index.act_names_no_member",
       "en": "this act names no member; the plane stamps the member from the credential that asked",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1086
+      "line": 1088
     },
     {
       "id": "connections.index.assert_carries_basis",
       "en": "a member's connection carries its basis: why these two documents are connected",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1089
+      "line": 1091
     },
     {
       "id": "connections.index.assert_joins_two_held",
       "en": "a member's connection joins two documents this record holds and you can see",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1097
+      "line": 1099
     },
     {
       "id": "connections.index.assert_machine_credential",
       "en": "'{who}' is a machine credential; asserting a connection is a member's act, in their name",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1085
+      "line": 1087
     },
     {
       "id": "connections.index.assert_names_one_twice",
       "en": "a connection joins two documents; this names one twice",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1099
+      "line": 1101
     },
     {
       "id": "connections.index.asserted_says",
       "en": "connections asserted by a member, by a source's own link and by the system's positional inference, each labelled with who asserts it and kept apart from the connections derived from resolutions",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1150
+      "line": 1152
     },
     {
       "id": "connections.index.backlinks_need_target",
       "en": "backlinks are asked of an object: pass target=<record id>",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 894
+      "line": 896
     },
     {
       "id": "connections.index.basis_over_limit",
       "en": "{count} characters of basis, over {limit}; refused rather than cut",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1092
+      "line": 1094
     },
     {
       "id": "connections.index.cannot_be_placed",
       "en": "; {count} cannot be placed",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 708
+      "line": 710
     },
     {
       "id": "connections.index.choice_machine_credential",
       "en": "'{who}' is a machine credential. It may list a document's mentions (op=connections&content= names them where they bear on a citation); choosing which one a connection rests on is a member's act.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 759
+      "line": 761
     },
     {
       "id": "connections.index.choice_names_nobody",
       "en": "this act names no member, and a choice nobody made is not a choice.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 760
+      "line": 762
     },
     {
       "id": "connections.index.choice_no_connection",
       "en": "this record holds no connection between capture={capture} and other={other} through entity={entity} that you can see. Name the end the choice is about (capture), the other end (other) and the subject (entity).",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 763
+      "line": 765
     },
     {
       "id": "connections.index.choice_not_a_mention",
       "en": "this document does not carry '{ref}' as a mention of {entity}. Its mentions are the references the record resolved to that subject in it.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 767
+      "line": 769
     },
     {
       "id": "connections.index.choice_occurrence_unnamed",
       "en": "this document reads '{ref}' at {places_count} places ({places}), and each is its own mention. Pass occurrence= naming the one on point.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 777
+      "line": 779
     },
     {
       "id": "connections.index.choice_pass_ref",
       "en": "pass ref=: the mention, as the reading recorded it, that is on point for this connection.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 768
+      "line": 770
     },
     {
       "id": "connections.index.derivation_not_asserted",
@@ -17365,56 +17365,56 @@
       "en": "connection — this document is an end of no connection through this subject",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1344
+      "line": 1346
     },
     {
       "id": "connections.index.empty_level_outside",
       "en": "connection — every connection of this document was established outside this portion",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1345
+      "line": 1347
     },
     {
       "id": "connections.index.empty_level_where_read",
       "en": "where in the document the determining reference was read, or which mention is on point",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1343
+      "line": 1345
     },
     {
       "id": "connections.index.judge_is_member_act",
       "en": "confirming or rejecting an inferred membership is a member's judgement, in their name",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1272
+      "line": 1274
     },
     {
       "id": "connections.index.judgement_carries_reason",
       "en": "a judgement carries its reason",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1277
+      "line": 1279
     },
     {
       "id": "connections.index.membership_read_says",
       "en": "an agenda item's membership in a file, derived from where the file is printed; the publisher linked neither end to the other, so this is an inference from position, to be confirmed, never the publisher's own link",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1263
+      "line": 1265
     },
     {
       "id": "connections.index.membership_stored_says",
       "en": "each file is assigned to the agenda item printed above it; a pair is stored as a connection the system asserts, graded C and never established, once both documents are held, and a member may confirm or reject it. A pair whose documents are not both held is served only at the read",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1217
+      "line": 1219
     },
     {
       "id": "connections.index.no_capture_by_digest",
       "en": "this record holds no capture by that digest that you can see",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1197
+      "line": 1199
     },
     {
       "id": "connections.index.no_content_row",
@@ -17435,21 +17435,21 @@
       "en": "no place the reading recorded",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 772
+      "line": 774
     },
     {
       "id": "connections.index.no_stored_membership_by_id",
       "en": "this record holds no stored item-to-file membership by that id that you can see",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1281
+      "line": 1283
     },
     {
       "id": "connections.index.only_resolved_links_project_and",
       "en": "only resolved links project, and only to a target some record has registered. skipped_unregistered counts targets whose BYTES the record holds while no record claims them: those become edges when the target is promoted. Each edge is written into the source document's references as links_to and never cites, because the source asserted it and not the team; a member promoting it to cites is a member's act.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 983
+      "line": 985
     },
     {
       "id": "connections.index.pair_selection_by_rule",
@@ -17512,7 +17512,7 @@
       "en": "the determining reference was read at {ref}, inside {ref_2}",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 694
+      "line": 696
     },
     {
       "id": "connections.index.read_needs_key",
@@ -17533,56 +17533,56 @@
       "en": "the source document's references block is not in a shape this act can extend in place",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1006
+      "line": 1008
     },
     {
       "id": "connections.index.rel_rel_target_target_status",
       "en": "  - rel: {rel}\n    target: {target}\n    status: {status}{v1}{v2}{v3}\n    note: \"{v4}\"",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1362
+      "line": 1364
     },
     {
       "id": "connections.index.session_when_projected_length_link",
       "en": "### Session {when} | Projected {length} link{v1} | {by}\nTrigger: op=linkproject\nChanges: links_to edges added to {map}, each the source's own link, resolved to a held document; asserted by the source, never by the team.\n",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1009
+      "line": 1011
     },
     {
       "id": "connections.index.source_document_not_held",
       "en": "the source record's document is not held as text, so its links cannot be written into it",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 992
+      "line": 994
     },
     {
       "id": "connections.index.this_document_does_not_read",
       "en": "this document does not read '{ref}' {v1}{v2}. It reads it at: {v3}.",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 772
+      "line": 774
     },
     {
       "id": "connections.index.v1_on_end_side_of",
       "en": "{v1}on end {side} of this connection the on-point mention of {entityId} is {ref}{v2}, as chosen by {v3}. A citation of a part of this document now answers from this mention; the machine's strongest-graded pair is kept beside it, unchanged",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 792
+      "line": 794
     },
     {
       "id": "connections.index.verdict_confirm_or_reject",
       "en": "verdict is confirm or reject",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1275
+      "line": 1277
     },
     {
       "id": "connections.index.who_word_that_the_file",
       "en": "{who} {word} that the file belongs to the agenda item; the inference and every judgement are kept",
       "module": "connections",
       "file": "bio-plane/src/connections/index.mjs",
-      "line": 1287
+      "line": 1289
     },
     {
       "id": "connections.index.whole_document_citation",
@@ -18457,77 +18457,77 @@
       "en": "a part extent names the package part or the element reference of the unit as the reader emitted them, and this one names neither",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 585
+      "line": 586
     },
     {
       "id": "content.extent-core.a_part_extent_names_the",
       "en": "a part extent names the package part and the element reference of the unit as the reader emitted them, each a non-empty string. This one names '{String}' as its {k}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 582
+      "line": 583
     },
     {
       "id": "content.extent-core.a_slide_shape_extent_names",
       "en": "a slide-shape extent names which slide, as a 1-based integer (slide 1 is the first). This one names '{String}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 425
+      "line": 426
     },
     {
       "id": "content.extent-core.an_image_extents_page_is",
       "en": "an image extent's page is a 0-based integer. This one names '{String}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 490
+      "line": 491
     },
     {
       "id": "content.extent-core.an_images_part_is_the",
       "en": "an image's part is the SHA-256 of the embedded media member, 64 hexadecimal characters. This one names '{String}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 486
+      "line": 487
     },
     {
       "id": "content.extent-core.capture_is_not_an_office",
       "en": "this capture is {kind}, not an office container, so its own bytes hold no embedded media part and a part reference names bytes this document does not contain. An image served beside a page is its OWN document: acquire it at its own address and cite that document whole{pdf}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 771
+      "line": 772
     },
     {
       "id": "content.extent-core.cited_as_says_whether_a",
       "en": "cited_as says whether a part is cited for its TEXT or as its own BYTES, and is one of text, bytes. This one says '{String}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 446
+      "line": 447
     },
     {
       "id": "content.extent-core.doc_para_names_which_paragraph",
       "en": "a doc-para extent names which paragraph, as a 0-based integer. This one names '{para}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 411
+      "line": 412
     },
     {
       "id": "content.extent-core.doc_para_run_unreadable",
       "en": "a doc-para extent's run is a 0-based integer or absent. A run that is present and unreadable is worse than none, because it looks like a span somebody chose",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 414
+      "line": 415
     },
     {
       "id": "content.extent-core.doc_table_cell_unreadable",
       "en": "a doc-table extent's cell is A1 notation over the table's grid (B3) or absent. A cell that is present and unreadable is worse than none, because it looks like one somebody chose",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 468
+      "line": 469
     },
     {
       "id": "content.extent-core.doc_table_names_which_table",
       "en": "a doc-table extent names which table, as a 0-based ordinal in document order. This one names '{table}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 464
+      "line": 465
     },
     {
       "id": "content.extent-core.dom_names_a_region",
@@ -18541,63 +18541,63 @@
       "en": "this citation asks for the TEXT of an embedded image, and nothing in this record has read text off an embedded image — the container's transcription covers its text parts and never its media. Cite the image as itself (cited_as: bytes), or cite the passage that quotes it",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 528
+      "line": 529
     },
     {
       "id": "content.extent-core.extent_kind_kind_human_is",
       "en": "extent kind '{kind}' ({human}) is named in the grammar and what it covers cannot yet be evaluated, so it mints nothing. The pdf-page and document arms landed with REC-82 and the other three follow with REC-85",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 303
+      "line": 304
     },
     {
       "id": "content.extent-core.extent_kind_string_is_not",
       "en": "extent kind '{String}' is not one of: {keys}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 300
+      "line": 301
     },
     {
       "id": "content.extent-core.format_cannot_hold_kind",
       "en": "a {kind} extent cannot be held by a {format} document, which holds {holds}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 650
+      "line": 651
     },
     {
       "id": "content.extent-core.image_names_both_part_and_page",
       "en": "an image extent names EITHER the embedded part's content hash OR a page and rectangle, and this one names both — one image stated twice, where the two can disagree",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 482
+      "line": 483
     },
     {
       "id": "content.extent-core.image_names_neither_part_nor_page",
       "en": "an image extent names the embedded part's content hash (in a container) or the page it is on (in a PDF), and this one names neither",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 483
+      "line": 484
     },
     {
       "id": "content.extent-core.image_rect_unreadable",
       "en": "an image extent's rect is four finite numbers or absent. A rect that is present and unreadable is worse than none, because it looks like a region somebody chose",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 495
+      "line": 496
     },
     {
       "id": "content.extent-core.kind_not_held",
       "en": "this record does not hold which kind of document this capture is",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 788
+      "line": 789
     },
     {
       "id": "content.extent-core.kind_unheld_part_undetermined",
       "en": "{kind_why} — so whether this part is a member of the document's own bytes is UNDETERMINED, admitted and stated rather than guessed either way",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 788
+      "line": 789
     },
     {
       "id": "content.extent-core.no_extent_was_supplied",
@@ -18611,98 +18611,98 @@
       "en": "this capture is an office container and this record holds no list of its embedded images (it was acquired before the wire carried one, or no entry itemised it), so whether the part is among them is UNDETERMINED, admitted and stated rather than guessed",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 791
+      "line": 792
     },
     {
       "id": "content.extent-core.only_an_image_can_be",
       "en": "only an image can be cited as its bytes. A {kind} extent addresses text, and reading 'bytes' here as 'text' would silently change what the citation claims, so it is refused",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 449
+      "line": 450
     },
     {
       "id": "content.extent-core.part_ref",
       "en": "part {at}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 574
+      "line": 575
     },
     {
       "id": "content.extent-core.pdf_page_names_which_page",
       "en": "a pdf-page extent names which page, as a 0-based integer. This one names '{page}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 307
+      "line": 308
     },
     {
       "id": "content.extent-core.pdf_page_rect_unreadable",
       "en": "a pdf-page extent's rect is four finite numbers or absent. A rect that is present and unreadable is worse than none, because it looks like a region somebody chose",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 312
+      "line": 313
     },
     {
       "id": "content.extent-core.sheet_cell_names_which_cell",
       "en": "a sheet-cell extent names which cell in A1 notation (B14, $B$14). This one names '{cell}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 404
+      "line": 405
     },
     {
       "id": "content.extent-core.sheet_cell_names_which_sheet",
       "en": "a sheet-cell extent names which sheet, as the workbook spells it. This one names '{sheet}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 401
+      "line": 402
     },
     {
       "id": "content.extent-core.sheet_range_names_which_cells",
       "en": "a sheet-range extent names which cells in A1:A1 notation (A1:C10, $A$1:$C$10). This one names '{range}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 457
+      "line": 458
     },
     {
       "id": "content.extent-core.sheet_range_names_which_sheet",
       "en": "a sheet-range extent names which sheet, as the workbook spells it. This one names '{sheet}'",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 454
+      "line": 455
     },
     {
       "id": "content.extent-core.slide_shape_unreadable",
       "en": "a slide-shape extent's shape is a 0-based integer or absent. A shape that is present and unreadable is worse than none, because it looks like an element somebody chose",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 428
+      "line": 429
     },
     {
       "id": "content.extent-core.this_captures_page_set_holds",
       "en": "this capture's page set holds {pageCount} page(s) (0-{v1}) and the extent names page {page}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 322
+      "line": 323
     },
     {
       "id": "content.extent-core.this_captures_page_set_holds_2",
       "en": "this capture's page set holds {pageCount} page(s) (0-{v1}) and the image extent names page {page}",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 499
+      "line": 500
     },
     {
       "id": "content.extent-core.this_record_holds_no_extraction",
       "en": "this record holds no extraction chain for the capture this leg cites, so there is no transcription over {describeExtent} for the citation to point at",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 561
+      "line": 562
     },
     {
       "id": "content.extent-core.this_record_holds_no_extraction_2",
       "en": "this record holds no extraction chain for the capture this citation names, so there is no transcription over {describeExtent} for the citation to point at",
       "module": "content",
       "file": "bio-plane/src/content/extent-core.mjs",
-      "line": 588
+      "line": 589
     },
     {
       "id": "content.extent.an_envelope_extent_names_the",
@@ -20711,28 +20711,28 @@
       "en": "A credential that acts for one member acts for the member who creates it, and nobody else. You named another member, and nobody can authorise an agent in someone else's name: it would see what they see and its work would be recorded as theirs. Nothing was created. The member it should act for can create it themselves.",
       "module": "credentials",
       "file": "bio-plane/src/credentials/checks.mjs",
-      "line": 80
+      "line": 101
     },
     {
       "id": "credentials.checks.an_agent_credential_has_to",
       "en": "An agent credential has to say who stands behind it: the organisation as a whole, or one named member. The two carry different accountability and they see different things, so the record will not hold one that says neither.",
       "module": "credentials",
       "file": "bio-plane/src/credentials/checks.mjs",
-      "line": 61
+      "line": 82
     },
     {
       "id": "credentials.checks.only_a_key_a_member_registered",
       "en": "Only a key a member registered for themselves, and that is still in use, can be marked as one you know about. This key was registered by an administrator, or it has been withdrawn, so there is nothing to confirm. Nothing was changed.",
       "module": "credentials",
       "file": "bio-plane/src/credentials/checks.mjs",
-      "line": 125
+      "line": 147
     },
     {
       "id": "credentials.checks.only_a_named_person_signed",
       "en": "Only a named person signed in to your team's Civicsmith can create an agent credential. Deciding what an automated worker is allowed to reach is a judgement somebody has to be accountable for, so an automated worker cannot make it — not even about itself.",
       "module": "credentials",
       "file": "bio-plane/src/credentials/checks.mjs",
-      "line": 56
+      "line": 77
     },
     {
       "id": "credentials.declared.claim",
@@ -25758,14 +25758,14 @@
       "en": "a chain is a path's steps in order, 1 to {CHAIN_MAX}",
       "module": "explore",
       "file": "bio-plane/src/explore/rederive.mjs",
-      "line": 138
+      "line": 142
     },
     {
       "id": "explore.rederive.scope_chain",
       "en": "a scope names one inquiry: the inquiry the leg naming the chain belongs to",
       "module": "explore",
       "file": "bio-plane/src/explore/rederive.mjs",
-      "line": 134
+      "line": 138
     },
     {
       "id": "explore.rederive.scope_derived",
@@ -25814,7 +25814,7 @@
       "en": "no step in the walk states the quantity {sortBy}",
       "module": "explore",
       "file": "bio-plane/src/explore/walk.mjs",
-      "line": 181
+      "line": 182
     },
     {
       "id": "explore.walk.scope_names_one",
@@ -36706,434 +36706,434 @@
       "en": "section 4.7 governance — the subject is a proposed administrator, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2154
+      "line": 2811
     },
     {
       "id": "member-roster.declared.adminremove",
       "en": "section 4.7 governance — the subject is an administrator's standing, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2156
+      "line": 2813
     },
     {
       "id": "member-roster.declared.courtnoticeset",
       "en": "the group's setting: whether members are told what a court can reach; an administrator's, not an act on an object",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2158
+      "line": 2815
     },
     {
       "id": "member-roster.declared.enroll",
       "en": "an invitee becoming a member",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2160
+      "line": 2817
     },
     {
       "id": "member-roster.declared.expertiseconfirm",
       "en": "administrator act on a declaration, class-gated",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2162
+      "line": 2819
     },
     {
       "id": "member-roster.declared.expertisedeclare",
       "en": "a member's own declaration, not a corpus act",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2164
+      "line": 2821
     },
     {
       "id": "member-roster.declared.founderhandleset",
       "en": "member-directed: the founder's own handle, the one she signs in and is known by, chosen once and never changed (`HANDLE_FIXED`); writes no record and moves no bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2168
+      "line": 2825
     },
     {
       "id": "member-roster.declared.groupdescriptionset",
       "en": "the group's description of itself — the subject is the group's identity, not a bundle; an administrator's",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2170
+      "line": 2827
     },
     {
       "id": "member-roster.declared.handlecheck",
       "en": "read: whether a handle is free, taken or not allowed, never who holds it",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2172
+      "line": 2829
     },
     {
       "id": "member-roster.declared.hostingaccessset",
       "en": "operator record of who holds hosting access — the subject is the instance's operators, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2174
+      "line": 2831
     },
     {
       "id": "member-roster.declared.invitelook",
       "en": "read: what a live invitation offers the invitee (the cover, the role, the capabilities and the declared expertise), never the member's id",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2176
+      "line": 2833
     },
     {
       "id": "member-roster.declared.invitewithdraw",
       "en": "roster governance: an administrator's withdrawal of an invitation; the subject is who may join, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2178
+      "line": 2835
     },
     {
       "id": "member-roster.declared.joinlinkenable",
       "en": "roster governance: the join link, an administrator's; the subject is who may join, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2180
+      "line": 2837
     },
     {
       "id": "member-roster.declared.joinlinkinvite",
       "en": "a person holding the join link asks to be invited under a cover name (membership R104)",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2182
+      "line": 2839
     },
     {
       "id": "member-roster.declared.memberadd",
       "en": "roster governance (4.9), every administrator's — bounded by the roster against a stamped `by` (REC-159)",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2184
+      "line": 2841
     },
     {
       "id": "member-roster.declared.membercaps",
       "en": "roster governance — the subject is a member's capabilities, not a bundle (4.9)",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2186
+      "line": 2843
     },
     {
       "id": "member-roster.declared.memberpairingset",
       "en": "a member's published cover-and-handle pairing — the subject is how a member is shown, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2188
+      "line": 2845
     },
     {
       "id": "member-roster.declared.memberset",
       "en": "roster governance (4.9), every administrator's — bounded by the roster against a stamped `by` (REC-159)",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2190
+      "line": 2847
     },
     {
       "id": "member-roster.declared.websitekeycreate",
       "en": "roster governance: the website's key, an administrator's; the subject is who may join, not a bundle",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2192
+      "line": 2849
     },
     {
       "id": "member-roster.index.a_cover_is_the_label_you",
       "en": "a cover is the label you use to tell participants apart; it need not be, and often should not be, a legal name",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 945
+      "line": 1414
     },
     {
       "id": "member-roster.index.a_handle_is_chosen_when_a",
       "en": "a handle is chosen when a member joins and is never changed, by the member or anyone (DEC-197). Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1342
+      "line": 1855
     },
     {
       "id": "member-roster.index.a_listener_names_the_module",
       "en": "a listener names the module that registers it and its function",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 170
+      "line": 276
     },
     {
       "id": "member-roster.index.a_withdrawal_is_recorded_with_a",
       "en": "a withdrawal is recorded with a reason",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 644
+      "line": 1067
     },
     {
       "id": "member-roster.index.adding_a_member",
       "en": "adding a member",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 917
+      "line": 1386
     },
     {
       "id": "member-roster.index.an_administrator_is_removed_by",
       "en": "an administrator is removed by a majority of all administrators, counting the target in the denominator but not letting them vote (section 4.7). No administrator may strip another unilaterally.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1401
+      "line": 1927
     },
     {
       "id": "member-roster.index.capabilities_is_an_array",
       "en": "capabilities is an array",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 797
+      "line": 1239
     },
     {
       "id": "member-roster.index.changing_the_join_link",
       "en": "changing the join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1707
+      "line": 2286
     },
     {
       "id": "member-roster.index.changing_the_teams_join_link",
       "en": "changing the team's join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1706
+      "line": 2285
     },
     {
       "id": "member-roster.index.changing_the_teams_website_key",
       "en": "changing the team's website key",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1608
+      "line": 2159
     },
     {
       "id": "member-roster.index.changing_the_website_key",
       "en": "changing the website key",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1609
+      "line": 2160
     },
     {
       "id": "member-roster.index.choose_the_name_the_team_will",
       "en": "choose the name the team will know you by: it need not be, and often should not be, a legal name. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1748
+      "line": 2337
     },
     {
       "id": "member-roster.index.choosing_whether_members_are_told",
       "en": "choosing whether members are told what a court can reach",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1929
+      "line": 2537
     },
     {
       "id": "member-roster.index.confirming_or_withdrawing_a_members_declared",
       "en": "confirming or withdrawing a member's declared expertise",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 610
+      "line": 1024
     },
     {
       "id": "member-roster.index.creating_the_teams_website_key",
       "en": "creating the team's website key",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1592
+      "line": 2137
     },
     {
       "id": "member-roster.index.declared_and_unconfirmed_which_costs_nothing",
       "en": "declared and unconfirmed, which costs nothing: an unconfirmed entry carries the same capabilities, visibility and access as a confirmed one",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 603
+      "line": 1007
     },
     {
       "id": "member-roster.index.describing_the_team",
       "en": "describing the team",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2002
+      "line": 2626
     },
     {
       "id": "member-roster.index.endorsing_a_proposed_administrator",
       "en": "endorsing a proposed administrator",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 819
+      "line": 1269
     },
     {
       "id": "member-roster.index.every_existing_administrator_must_endorse",
       "en": "every existing administrator must endorse an addition beyond the second",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 839
+      "line": 1289
     },
     {
       "id": "member-roster.index.lowercase_letters_digits_and_dashes",
       "en": "lowercase letters, digits and dashes, 2 to 41 characters",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 930
+      "line": 1399
     },
     {
       "id": "member-roster.index.module_has_already_registered_its_listener",
       "en": "{module} has already registered its listener",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 173
+      "line": 279
     },
     {
       "id": "member-roster.index.reading_the_administrator_removals_under_way",
       "en": "reading the administrator removals under way",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1806
+      "line": 2400
     },
     {
       "id": "member-roster.index.reading_the_teams_website_key_and",
       "en": "reading the team's website key and join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1771
+      "line": 2363
     },
     {
       "id": "member-roster.index.recording_who_holds_hosting_access",
       "en": "recording who holds hosting access (4.8)",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 399
+      "line": 763
     },
     {
       "id": "member-roster.index.removals_are_recorded_with_a_reason",
       "en": "removals are recorded with a reason",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 884
+      "line": 1342
     },
     {
       "id": "member-roster.index.replacing_the_join_link",
       "en": "replacing the join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1720
+      "line": 2302
     },
     {
       "id": "member-roster.index.replacing_the_teams_join_link",
       "en": "replacing the team's join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1719
+      "line": 2301
     },
     {
       "id": "member-roster.index.resigning_administrator_status",
       "en": "resigning administrator status",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 382
+      "line": 738
     },
     {
       "id": "member-roster.index.setting_a_members_capabilities",
       "en": "setting a member's capabilities",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 793
+      "line": 1235
     },
     {
       "id": "member-roster.index.setting_a_members_status",
       "en": "setting a member's status",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1388
+      "line": 1914
     },
     {
       "id": "member-roster.index.switching_off_the_join_link",
       "en": "switching off the join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1731
+      "line": 2316
     },
     {
       "id": "member-roster.index.switching_off_the_teams_join_link",
       "en": "switching off the team's join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1730
+      "line": 2315
     },
     {
       "id": "member-roster.index.switching_off_the_teams_website_key",
       "en": "switching off the team's website key",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1621
+      "line": 2175
     },
     {
       "id": "member-roster.index.switching_off_the_website_key",
       "en": "switching off the website key",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1622
+      "line": 2176
     },
     {
       "id": "member-roster.index.switching_on_the_teams_join_link",
       "en": "switching on the team's join link",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1690
+      "line": 2263
     },
     {
       "id": "member-roster.index.the_registration_could_not_be_read",
       "en": "the registration could not be read: {reason}",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 184
+      "line": 290
     },
     {
       "id": "member-roster.index.the_target_is_counted_in_the",
       "en": "the target is counted in the denominator but does not vote",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 882
+      "line": 1340
     },
     {
       "id": "member-roster.index.this_listener_is_already_registered",
       "en": "this listener is already registered, and it takes one registration",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 180
+      "line": 286
     },
     {
       "id": "member-roster.index.this_listener_is_already_registered_by",
       "en": "this listener is already registered by {holder}, and it takes one registration",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 179
+      "line": 285
     },
     {
       "id": "member-roster.index.this_member_has_not_declared",
       "en": "this member has not declared that. An administrator confirms what a member claims and never introduces the claim, or it would be an assignment rather than a confirmation.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 623
+      "line": 1037
     },
     {
       "id": "member-roster.index.voting_to_remove_an_administrator",
       "en": "voting to remove an administrator",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 859
+      "line": 1317
     },
     {
       "id": "member-roster.index.withdrawing_a_members_confirmed_expertise",
       "en": "withdrawing a member's confirmed expertise",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 639
+      "line": 1062
     },
     {
       "id": "member-roster.index.withdrawing_an_invitation",
       "en": "withdrawing an invitation",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1509
+      "line": 2044
     },
     {
       "id": "member-roster.order-build.line_have_the_file_gives",
@@ -37189,7 +37189,7 @@
       "en": "a door makes at most a daily number of invitations the administrator sets: a whole number, at least 1, with no default. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1472
+      "line": 2000
     },
     {
       "id": "membership.index.a_member_joins_a_project",
@@ -37203,21 +37203,21 @@
       "en": "a member row already holds the id '{memberId}'; nothing was written",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 947
+      "line": 1416
     },
     {
       "id": "membership.index.act_acts_on_the_teams",
       "en": "{act} acts on the team's live website key, and there is none. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1577
+      "line": 2113
     },
     {
       "id": "membership.index.act_acts_on_the_teams_2",
       "en": "{act} acts on the team's join link, and it is off. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1586
+      "line": 2122
     },
     {
       "id": "membership.index.act_on_string_is_work",
@@ -37231,7 +37231,7 @@
       "en": "adding an administrator beyond the second requires the consensus of every existing administrator. No invitation is issued until they have all endorsed it.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1001
+      "line": 1470
     },
     {
       "id": "membership.index.adding_an_owner_to_a_project_whose_owners",
@@ -37245,7 +37245,7 @@
       "en": "administrator status is granted and removed only by the section 4 process, never by editing a field. 4.4: no administrator may strip another.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 800
+      "line": 1242
     },
     {
       "id": "membership.index.an_administrator_may_add_an",
@@ -37259,7 +37259,7 @@
       "en": "an invitation lasts a whole number of days from 1 to {INVITE_DAYS_MAX} (seven when none is chosen), and the number given is not one. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1461
+      "line": 1989
     },
     {
       "id": "membership.index.an_owner_is_not_removed",
@@ -37273,14 +37273,14 @@
       "en": "choose a handle. It is what the record shows: the author of a promotion, the attestor of a ratification, the participant list of a project. It is yours, not the label the administrator used to invite you.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1105
+      "line": 1589
     },
     {
       "id": "membership.index.detail_nothing_was_written",
       "en": "{detail} Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2003
+      "line": 2627
     },
     {
       "id": "membership.index.gate_mark_outside_or_participant",
@@ -37294,21 +37294,21 @@
       "en": "{name} is at most {max} characters.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2014
+      "line": 2638
     },
     {
       "id": "membership.index.name_who_holds_hosting_access",
       "en": "name who holds hosting access: the record keeps the team's answer as it was given, and an empty answer records nobody. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 405
+      "line": 769
     },
     {
       "id": "membership.index.no_member_of_your_team",
       "en": "no member of your team answers to that id here. Nothing was changed.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 108
+      "line": 193
     },
     {
       "id": "membership.index.no_other_owner_of_this",
@@ -37322,14 +37322,14 @@
       "en": "only a member whose status is 'proposed' is endorsed as an administrator (4.7), and this member's is not. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 828
+      "line": 1278
     },
     {
       "id": "membership.index.only_an_invitation_that_has",
       "en": "only an invitation that has not been used, live or expired, is withdrawn, and this member holds none: they have joined, theirs was withdrawn, or none was made yet. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1515
+      "line": 2050
     },
     {
       "id": "membership.index.only_an_owner_of_this",
@@ -37350,14 +37350,14 @@
       "en": "`other` was chosen, and the kind it describes was left empty.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2010
+      "line": 2634
     },
     {
       "id": "membership.index.reactivated_as_an_ordinary_member",
       "en": "reactivated as an ordinary member. Administrator status is not restored by reactivation: the team voted them out under 4.7, and putting them back is an appointment, which needs the consensus of all existing administrators like any other.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1432
+      "line": 1958
     },
     {
       "id": "membership.index.recorded_as_a_request_to",
@@ -37371,21 +37371,21 @@
       "en": "removal takes {votesNeeded} of {administrators} administrators and only {eligibleVoters} may vote, so it cannot be carried. That is the rule working, not a defect: a lone administrator must never be able to eject the other.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 889
+      "line": 1347
     },
     {
       "id": "membership.index.resigned_an_ordinary_member_now",
       "en": "resigned: an ordinary member now, holding the capabilities an administrator last set for them.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 392
+      "line": 748
     },
     {
       "id": "membership.index.root_admin_names_the_founding",
       "en": "'{ROOT_ADMIN}' names the founding administrator of your team's Civicsmith; no member may be enrolled under it",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 940
+      "line": 1409
     },
     {
       "id": "membership.index.stringify_is_not_a_setting",
@@ -37427,56 +37427,56 @@
       "en": "the choice is `tell` or `dont`, and nothing else. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1933
+      "line": 2541
     },
     {
       "id": "membership.index.the_description_is_seen_by",
       "en": "the description is seen by `members` or by the `public` too.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2017
+      "line": 2641
     },
     {
       "id": "membership.index.the_founders_handle_is_chosen",
       "en": "the founder's handle is chosen by the founder, under the founder's own session, and the caller is not the founder. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1374
+      "line": 1891
     },
     {
       "id": "membership.index.the_founders_handle_is_chosen_2",
       "en": "the founder's handle is chosen once and never changed (DEC-197), and one is held. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1377
+      "line": 1894
     },
     {
       "id": "membership.index.the_founding_administrator_holds_admin",
       "en": "the founding administrator holds ADMIN_TOKEN and does not resign inside the application; the remedy is at the hosting account (section 4.6). Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 380
+      "line": 736
     },
     {
       "id": "membership.index.the_founding_administrator_holds_admin_2",
       "en": "the founding administrator holds ADMIN_TOKEN and cannot be removed from inside the application. Whoever can set ADMIN_TOKEN can take the team over, and there is no arrangement in which nobody holds that power, because your team's Civicsmith runs in somebody's hosting account. The remedy is at the hosting account, not here (section 4.6).",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 869
+      "line": 1327
     },
     {
       "id": "membership.index.the_join_link_has_let",
       "en": "the join link has let in its daily number of people in the last 24 hours. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1752
+      "line": 2341
     },
     {
       "id": "membership.index.the_kinds_are_a_list",
       "en": "the kinds are a list drawn from {GROUP_KINDS}, and may be empty.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 2006
+      "line": 2630
     },
     {
       "id": "membership.index.the_member_named_holds_no",
@@ -37490,63 +37490,63 @@
       "en": "the password could not be recorded, so the enrolment did not happen: the member is not active and the invitation is still live. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1119
+      "line": 1604
     },
     {
       "id": "membership.index.the_team_holds_one_live",
       "en": "the team holds one live website key at a time (DEC-133). Nothing was created.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1596
+      "line": 2141
     },
     {
       "id": "membership.index.the_team_holds_one_live_2",
       "en": "the team holds one live join link at a time (DEC-133 (6)). Nothing was changed.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1694
+      "line": 2267
     },
     {
       "id": "membership.index.the_team_would_be_left",
       "en": "the team would be left with no administrator, so its last one does not step down (DEC-134 (4)). Add another administrator first. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 387
+      "line": 743
     },
     {
       "id": "membership.index.the_website_key_has_made",
       "en": "the website key has made its daily number of invitations in the last 24 hours. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1681
+      "line": 2245
     },
     {
       "id": "membership.index.the_website_names_the_person",
       "en": "the website names the person by the cover the team will know them by. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1677
+      "line": 2241
     },
     {
       "id": "membership.index.this_invitation_is_not_live",
       "en": "this invitation is not live. An invitation is spent the moment it is used, and a spent one cannot be told apart from one that never existed, nor from one that expired or was withdrawn.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1035
+      "line": 1505
     },
     {
       "id": "membership.index.this_key_opens_no_door",
       "en": "this key opens no door of this team: it was never made, was switched off, or is not a key, and the answer is the same for each. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1673
+      "line": 2237
     },
     {
       "id": "membership.index.this_link_opens_no_door",
       "en": "this link opens no door of this team: it was never made, was replaced or switched off, or is not a link, and the answer is the same for each. Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1744
+      "line": 2333
     },
     {
       "id": "membership.index.this_project_has_no_owner_rows",
@@ -37574,21 +37574,21 @@
       "en": "too many handles were checked for this invitation or member in the last few minutes, so this one was not read. Nothing was changed.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 1305
+      "line": 1811
     },
     {
       "id": "membership.index.what_is_an_administrators_act",
       "en": "{what} is an administrator's act (Membership Architecture v2 §4.9), and your team's Civicsmith takes who is asking from the signed-in session rather than from the caller. This caller is not one of the active administrators. Nothing was changed.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 97
+      "line": 182
     },
     {
       "id": "membership.index.whether_a_pairing_is_published",
       "en": "whether a pairing is published is the member's own decision or an administrator's (section 3). Nothing was written.",
       "module": "member-roster",
       "file": "bio-plane/src/member-roster/index.mjs",
-      "line": 440
+      "line": 819
     },
     {
       "id": "membership.index.whether_string_can_be_found",
@@ -37616,63 +37616,63 @@
       "en": "no denominator",
       "module": "money-checks",
       "file": "bio-plane/src/money-checks/index.mjs",
-      "line": 680
+      "line": 684
     },
     {
       "id": "money.declared.authoritychain",
       "en": "read: the chain of authorising events toward the event a fact concerns, bounded; writes nothing",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1491
+      "line": 1492
     },
     {
       "id": "money.declared.committedagainstpaid",
       "en": "read: a contract's committed and paid facts with their sums and the difference, never a verdict; writes nothing",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1489
+      "line": 1490
     },
     {
       "id": "money.declared.createset",
       "en": "money-set-directed: keyed by a new MSR- id; writes money's rows and moves no bundle",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1479
+      "line": 1480
     },
     {
       "id": "money.declared.exclude",
       "en": "money-set-directed: keyed by (set, fact); writes money's rows and moves no bundle",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1483
+      "line": 1484
     },
     {
       "id": "money.declared.include",
       "en": "money-set-directed: keyed by (set, fact); writes money's rows and moves no bundle",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1481
+      "line": 1482
     },
     {
       "id": "money.declared.moneysets",
       "en": "read: the money sets that concern an id, such as a project's trails, newest first, bounded; writes nothing",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1487
+      "line": 1488
     },
     {
       "id": "money.declared.reconcile",
       "en": "read: whether two money facts are consistent, or each dimension that differs; writes nothing",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1485
+      "line": 1486
     },
     {
       "id": "money.declared.recordfact",
       "en": "money-directed: keyed by a new MNY- id; holds one source's reading of one amount and moves no bundle",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1477
+      "line": 1478
     },
     {
       "id": "money.index.a_balance_class_is_read",
@@ -37693,7 +37693,7 @@
       "en": "a calculation is never a money fact's source",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1431
+      "line": 1432
     },
     {
       "id": "money.index.a_canonical_table_row_read",
@@ -37707,7 +37707,7 @@
       "en": "a chain of authority is read for one money fact (MNY-...)",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1212
+      "line": 1213
     },
     {
       "id": "money.index.a_code_names_one_of",
@@ -37728,7 +37728,7 @@
       "en": "a duty is never named in a money fact",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1437
+      "line": 1438
     },
     {
       "id": "money.index.a_figure_states_how_it",
@@ -37749,28 +37749,28 @@
       "en": "a fund's type is {list}",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1346
+      "line": 1347
     },
     {
       "id": "money.index.a_funds_type_names_its",
       "en": "a fund's type names its basis: the source that states it",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1347
+      "line": 1348
     },
     {
       "id": "money.index.a_hypothesis_is_never_named",
       "en": "a hypothesis is never named in a money fact ({k})",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1433
+      "line": 1434
     },
     {
       "id": "money.index.a_hypothesis_is_never_named_2",
       "en": "a hypothesis is never named in a money fact",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1442
+      "line": 1443
     },
     {
       "id": "money.index.a_kind_takes_a_stage",
@@ -37840,7 +37840,7 @@
       "en": "a money fact never concerns a duty",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1441
+      "line": 1442
     },
     {
       "id": "money.index.a_money_fact_never_names",
@@ -37994,7 +37994,7 @@
       "en": "a total is a calculation, never stored as a money fact",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1434
+      "line": 1435
     },
     {
       "id": "money.index.a_trail_concerns_one_id",
@@ -38141,7 +38141,7 @@
       "en": "events is not wired here",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1217
+      "line": 1218
     },
     {
       "id": "money.index.fact_id_is_withdrawn_and",
@@ -38155,7 +38155,7 @@
       "en": "{fund} is not registered as a fund",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1350
+      "line": 1351
     },
     {
       "id": "money.index.id_is_not_a_line",
@@ -38204,7 +38204,7 @@
       "en": "no authorising event is held for this event",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1243
+      "line": 1244
     },
     {
       "id": "money.index.no_money_fact_id_could",
@@ -38295,7 +38295,7 @@
       "en": "the authorising events held toward this event",
       "module": "money",
       "file": "bio-plane/src/money/index.mjs",
-      "line": 1243
+      "line": 1244
     },
     {
       "id": "money.index.the_capture_named",
@@ -39912,119 +39912,119 @@
       "en": "content.xml byte-identical across Google exports of an unchanged document: 3/3 (the MEASUREMENTS ledger 2026-09-14 §4) and 18/18 over 3 census targets (M-123)",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 2861
+      "line": 2872
     },
     {
       "id": "odf-reader.odf.content_xml_could_not_be",
       "en": "content.xml could not be read whole ({why})",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3009
+      "line": 3020
     },
     {
       "id": "odf-reader.odf.content_xml_is_not_valid",
       "en": "content.xml is not valid UTF-8, so it was not decoded lossily and no digest was taken",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3016
+      "line": 3027
     },
     {
       "id": "odf-reader.odf.content_xml_is_not_valid_2",
       "en": "content.xml is not valid UTF-8, so the normalisation was not applied and no digest was taken",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3023
+      "line": 3034
     },
     {
       "id": "odf-reader.odf.content_xml_is_over_the",
       "en": "content.xml is over the declared-uncompressed text bound ({v1}), so it was not inflated and no digest was taken",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3007
+      "line": 3018
     },
     {
       "id": "odf-reader.odf.content_xml_not_read_its",
       "en": "content.xml not read: its repeats expand past {boundName} (stated in evidentiary.undetermined and by text())",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 1305
+      "line": 1316
     },
     {
       "id": "odf-reader.odf.content_xml_not_read_over",
       "en": "content.xml not read: over the size bound (stated in evidentiary.undetermined and by text())",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 1304
+      "line": 1315
     },
     {
       "id": "odf-reader.odf.content_xml_references_length_package",
       "en": "content.xml references {length} package member(s) whose bytes it does not hold ({refs}{v1}); a digest of content.xml cannot speak for them, so none is claimed",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3020
+      "line": 3031
     },
     {
       "id": "odf-reader.odf.no_flavour_export_has_been",
       "en": "no .{flavour} export has been measured for content.xml stability, so no evidentiary digest is claimed",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3002
+      "line": 3013
     },
     {
       "id": "odf-reader.odf.no_intra_link_odf_manifest",
       "en": "no intra link: {ODF_MANIFEST_PART} could not be read ({manifestWhy}), so embedded members were not looked for (stated in evidentiary.undetermined)",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 1283
+      "line": 1294
     },
     {
       "id": "odf-reader.odf.no_intra_link_odf_manifest_2",
       "en": "no intra link: {ODF_MANIFEST_PART} lists no embedded member",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 1285
+      "line": 1296
     },
     {
       "id": "odf-reader.odf.no_odp_export_has_been",
       "en": "no .odp export has been measured for content.xml stability on a census target: M-167 read 8 public government Slides decks (content.xml raw byte-identical on every readable pair, every deck referencing a package member) and M-123's census holds no Slides target, so no evidentiary digest is claimed for .odp",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 2865
+      "line": 2876
     },
     {
       "id": "odf-reader.odf.part_odf_mimetype_part_is",
       "en": "part: {ODF_MIMETYPE_PART} is the FIRST member, STORED, CRC-verified",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 840
+      "line": 851
     },
     {
       "id": "odf-reader.odf.the_bytes_are_not_an",
       "en": "the bytes are not an OpenDocument package detected with certainty, so no container digest was taken",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 2998
+      "line": 3009
     },
     {
       "id": "odf-reader.odf.the_packages_central_directory_could",
       "en": "the package's central directory could not be read ({why})",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3004
+      "line": 3015
     },
     {
       "id": "odf-reader.odf.the_sha256_of_the_flavour",
       "en": "the sha256 of the .{flavour} package's content.xml member (inflated, length and CRC-32 verified){v1}, odf-evidentiary v{ODF_EVIDENTIARY_VERSION}; the ZIP envelope, meta.xml, settings.xml, styles.xml, thumbnails and embedded font faces are discounted; measured: {v2}",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 3027
+      "line": 3038
     },
     {
       "id": "odf-reader.odf.this_package_carries_no_meta",
       "en": "this package carries no meta.xml, so NO core-properties item is emitted; the absence of the part is not evidence the document has no author",
       "module": "odf-reader",
       "file": "bio-plane/src/odf.mjs",
-      "line": 961
+      "line": 972
     },
     {
       "id": "office-readers.csv.a_tab_separated_file_is_read_by_this_entry",
@@ -40409,28 +40409,28 @@
       "en": "a capture is read from the namespace the caller names, and no namespace by that name exists on any instance this member can be bound to, so nothing was read. There are two: the record itself and a scratch area kept apart for testing, and the name must match one of them exactly; they are listed beside this message. This is NOT the same answer as NOT_FOUND, which says the namespace exists and holds no such capture.",
       "module": "pdf-worker",
       "file": "pdf-worker/src/index.mjs",
-      "line": 281
+      "line": 290
     },
     {
       "id": "pdf-worker.index.a_capture_lives_inside_one",
       "en": "a capture lives inside one namespace and this member guesses none: the caller must say which. A default namespace here would read the real record for a caller who believed it was reading a scratch one.",
       "module": "pdf-worker",
       "file": "pdf-worker/src/index.mjs",
-      "line": 274
+      "line": 283
     },
     {
       "id": "pdf-worker.index.from_and_count_are_whole",
       "en": "the range asked is two whole numbers, the page to start at and how many pages, neither below zero.",
       "module": "pdf-worker",
       "file": "pdf-worker/src/index.mjs",
-      "line": 286
+      "line": 295
     },
     {
       "id": "pdf-worker.index.over_envelope",
       "en": "this document is {size} bytes and this member reads up to {bound} bytes, so its text was not read here.",
       "module": "pdf-worker",
       "file": "pdf-worker/src/index.mjs",
-      "line": 255
+      "line": 264
     },
     {
       "id": "people.checks.join_shape",
@@ -41599,35 +41599,35 @@
       "en": "Deciding who issued a document is a named member's judgment, so nothing was recorded. A machine, an assistant or a call that carries nobody may suggest an issuer and never decides one. Sign in as a member.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/checks.mjs",
-      "line": 133
+      "line": 145
     },
     {
       "id": "provenance.checks.nothing_was_recorded_a_decision",
       "en": "Nothing was recorded: a decision is either that the issuer is determined, or that after review it is still undetermined.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/checks.mjs",
-      "line": 153
+      "line": 165
     },
     {
       "id": "provenance.checks.nothing_was_recorded_name_the",
       "en": "Nothing was recorded: name the party that issued this document, in at most 500 characters. If you could not tell, choose that instead and say what you tried; no issuer is invented for you.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/checks.mjs",
-      "line": 148
+      "line": 160
     },
     {
       "id": "provenance.checks.nothing_was_recorded_say_how",
       "en": "Nothing was recorded: say how you know, or what you tried, in at most 2,000 characters. Not knowing is a fine answer, and it still needs its reason.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/checks.mjs",
-      "line": 143
+      "line": 155
     },
     {
       "id": "provenance.checks.nothing_was_recorded_the_capture",
       "en": "Nothing was recorded: the capture named is not a document held in that record. Name a document the record's register holds.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/checks.mjs",
-      "line": 138
+      "line": 150
     },
     {
       "id": "provenance.declared.authority",
@@ -41732,28 +41732,28 @@
       "en": "this document carries no provenance chain, so the bundle cannot be released.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/releasable.mjs",
-      "line": 50
+      "line": 53
     },
     {
       "id": "provenance.releasable.no_digest",
       "en": "this document has no SHA-256 digest, so a dataset naming it cannot be written and the bundle cannot be released.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/releasable.mjs",
-      "line": 47
+      "line": 50
     },
     {
       "id": "provenance.releasable.no_front_matter",
       "en": "this bundle's document has no front matter to carry its content hash.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/releasable.mjs",
-      "line": 61
+      "line": 64
     },
     {
       "id": "provenance.releasable.no_snapshot",
       "en": "this bundle holds no file under snapshots/, so it cannot be released.",
       "module": "provenance",
       "file": "bio-plane/src/provenance/releasable.mjs",
-      "line": 54
+      "line": 57
     },
     {
       "id": "public-read.casefile.a_finding_id_a_material",
@@ -45204,385 +45204,385 @@
       "en": "substrate: id allocation",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 2058
+      "line": 2602
     },
     {
       "id": "record-core.index.a_counts_registration_names_its",
       "en": "a counts registration names its module, a non-empty list of figure names and a function answering them; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1093
+      "line": 1545
     },
     {
       "id": "record-core.index.a_draft_of_a_new",
       "en": "a draft of a new edition's statement of what changed",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 122
+      "line": 470
     },
     {
       "id": "record-core.index.a_grammar_names_its_module",
       "en": "a grammar names its module, a non-empty list of the check ids it raises and a function to run; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1311
+      "line": 1790
     },
     {
       "id": "record-core.index.a_lease_is_taken_under",
       "en": "a lease is taken under a named actor — a member (from a session) or a machine identity (token:<class>). An unnamed writer cannot hold the courtesy lock.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 722
+      "line": 1130
     },
     {
       "id": "record-core.index.a_mint_seed_names_its",
       "en": "a mint seed names its module and a list of [prefix, table, column] sources, each three non-empty strings; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 705
+      "line": 1113
     },
     {
       "id": "record-core.index.a_part_of_the_document",
       "en": "Part {n} of {parts} of the document was not held. Nothing was kept.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1993
+      "line": 2529
     },
     {
       "id": "record-core.index.a_setting_is_recorded_under",
       "en": "a setting is recorded under a name, and none was given; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1913
+      "line": 2448
     },
     {
       "id": "record-core.index.a_setting_is_recorded_with",
       "en": "a setting is recorded with who set it, and no one was named; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1915
+      "line": 2450
     },
     {
       "id": "record-core.index.a_setting_is_recorded_with_2",
       "en": "a setting is recorded with a value, and none was given; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1917
+      "line": 2452
     },
     {
       "id": "record-core.index.a_settings_value_is_stored",
       "en": "a setting's value is stored as JSON, and this value cannot be stored as written; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1920
+      "line": 2455
     },
     {
       "id": "record-core.index.a_statistics_source_names_its",
       "en": "a statistics source names its module and is a function; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1175
+      "line": 1635
     },
     {
       "id": "record-core.index.a_store_gate_names_its",
       "en": "a store gate names its module, a table that module declared and a check to run; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1764
+      "line": 2281
     },
     {
       "id": "record-core.index.a_store_gate_names_its_2",
       "en": "a store gate names its module, a table that module declared and a check to run; nothing was registered ({table} is {owner}'s).",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1763
+      "line": 2280
     },
     {
       "id": "record-core.index.a_whole_document_is_named",
       "en": "A whole document is named by its fingerprint and the fingerprints of its parts, in order, and at least one part. Nothing was kept.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1982
+      "line": 2518
     },
     {
       "id": "record-core.index.allocid_needs_a_prefix",
       "en": "op=allocid needs a prefix, the kind of object the id is for. Nothing was allocated.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 597
+      "line": 991
     },
     {
       "id": "record-core.index.allocid_needs_a_year",
       "en": "op=allocid needs a year, the year the id is for. Nothing was allocated.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 603
+      "line": 997
     },
     {
       "id": "record-core.index.an_expunge_is_a_members",
       "en": "an expunge is a member's act, named by that member; a machine or absent actor removes nothing.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1840
+      "line": 2365
     },
     {
       "id": "record-core.index.an_expunge_names_one_of",
       "en": "an expunge names one of the grounds unlawful, confidential, court_order (with the recorded order) or lawful_demand (with the profile's demand kind); nothing was removed.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1836
+      "line": 2361
     },
     {
       "id": "record-core.index.an_opaque_id_to_record",
       "en": "an opaque id to record is a non-empty string; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 653
+      "line": 1055
     },
     {
       "id": "record-core.index.an_what_names_its_module",
       "en": "an {what} names its module{v1} and is a function; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1257
+      "line": 1725
     },
     {
       "id": "record-core.index.applied_of_count_item_s",
       "en": "{applied} of {count} item(s) applied and {retained} RETAINED; each retained item in items[] carries its own act's reason. The applied items stand — this is not a rollback.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 258
+      "line": 621
     },
     {
       "id": "record-core.index.every_one_of_the_count",
       "en": "every one of the {count} item(s) was applied, each by op={act}'s own rules.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 253
+      "line": 616
     },
     {
       "id": "record-core.index.gated_ids_are_minted_by",
       "en": "{gated}- ids are minted by the plane, opaque, by the act that creates the object; op=allocid allocates only a prefix whose objects every caller may see. Nothing was allocated.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 613
+      "line": 1007
     },
     {
       "id": "record-core.index.id_is_already_in_the",
       "en": "{id} is already in the opaque-id ledger, or the ledger could not confirm it free; an id is recorded once and never handed out again. Nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 656
+      "line": 1058
     },
     {
       "id": "record-core.index.id_was_not_recorded_an",
       "en": "{id} was not recorded: an opaque id is recorded inside the transaction of the act that uses it, so a rollback takes it back, and no transaction is open. Nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 655
+      "line": 1057
     },
     {
       "id": "record-core.index.item_i_is_not_an",
       "en": "item {i} is not an object naming one {act} subject; it was left as it was and the other items were still tried.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 232
+      "line": 595
     },
     {
       "id": "record-core.index.jurisdiction_profiles_is_an_ordered",
       "en": "jurisdiction_profiles is an ordered list of distinct profile ids; nothing was recorded.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1924
+      "line": 2459
     },
     {
       "id": "record-core.index.module_has_already_registered_its",
       "en": "{module} has already registered its mint seed; the first still stands.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 707
+      "line": 1115
     },
     {
       "id": "record-core.index.module_has_already_registered_its_2",
       "en": "{module} has already registered its figures; nothing more was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1103
+      "line": 1555
     },
     {
       "id": "record-core.index.module_has_already_registered_its_3",
       "en": "{module} has already registered its {what}; the first still runs.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1261
+      "line": 1729
     },
     {
       "id": "record-core.index.module_has_already_registered_its_4",
       "en": "{module} has already registered its grammar; the first still stands.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1315
+      "line": 1794
     },
     {
       "id": "record-core.index.module_s_check_on_table",
       "en": "{module}'s check on {table} did not answer a pass or a refusal{v1}. Nothing was written.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1806
+      "line": 2328
     },
     {
       "id": "record-core.index.no_row_of_name_matches",
       "en": "no row of {name} matches the key; nothing was removed.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1843
+      "line": 2368
     },
     {
       "id": "record-core.index.op_act_acts_on_at",
       "en": "op={act} acts on at most {PER_ITEM_MAX} items at once and this set holds {length}. Refused WHOLE, before any item was tried, so no item moved.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 200
+      "line": 563
     },
     {
       "id": "record-core.index.op_act_threw_on_item",
       "en": "op={act} threw on item {i} rather than refusing it: {String}. Nothing about the item is claimed.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 243
+      "line": 606
     },
     {
       "id": "record-core.index.op_act_was_sent_as",
       "en": "op={act} was sent as a set and the set holds no items. Send `items` as a non-empty array, or send one item's fields without `items` for the single act. Nothing was done.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 196
+      "line": 559
     },
     {
       "id": "record-core.index.read_only_a_record_whose",
       "en": "read-only: a record whose manifest holds fewer rows than it has promotions lost a row to a repeated snap key before REC-176; nothing is rewritten. 'undetermined' is one promotion of a record with no creation row, which an overwrite and a store predating the creation row both produce. Which key collided is not recorded and is not guessed.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1020
+      "line": 1465
     },
     {
       "id": "record-core.index.string_is_not_a_table",
       "en": "{String} is not a table {String_2} declared expunge: tombstone; nothing was removed.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1838
+      "line": 2363
     },
     {
       "id": "record-core.index.table_is_already_declared_by",
       "en": "{table} is already declared by {declaredBy}, and a table is declared once; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1528
+      "line": 2018
     },
     {
       "id": "record-core.index.table_is_derived_rebuildable_and",
       "en": "{table} is derived-rebuildable and names no rebuild; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1521
+      "line": 2011
     },
     {
       "id": "record-core.index.table_is_derived_rebuildable_and_2",
       "en": "{table} is derived-rebuildable and names no key columns; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1524
+      "line": 2014
     },
     {
       "id": "record-core.index.table_is_module_s_table",
       "en": "{table} is {module}'s table; {String} does not write it. Nothing was written.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1783
+      "line": 2305
     },
     {
       "id": "record-core.index.table_names_no_cls_class",
       "en": "{table} names no {cls} class; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1515
+      "line": 2005
     },
     {
       "id": "record-core.index.table_s_checks_are_already",
       "en": "{table}'s checks are already registered by {module}; the first still runs.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1767
+      "line": 2284
     },
     {
       "id": "record-core.index.table_s_cls_class_is",
       "en": "{table}'s {cls} class is one of {allowed}; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1517
+      "line": 2007
     },
     {
       "id": "record-core.index.table_was_not_declared_a",
       "en": "{table} was not declared: a table's name, and every column or table its declaration names, is a plain identifier; nothing was declared.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1512
+      "line": 2002
     },
     {
       "id": "record-core.index.the_audits_answer_key_key",
       "en": "the audit's answer key {key} is already held by {keyHeldBy}; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1260
+      "line": 1728
     },
     {
       "id": "record-core.index.the_check_id_is_already",
       "en": "the check {id} is already claimed by {heldBy}; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1316
+      "line": 1795
     },
     {
       "id": "record-core.index.the_figure_key_is_already",
       "en": "the figure {key} is already reported by {heldBy}; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1104
+      "line": 1556
     },
     {
       "id": "record-core.index.the_grammar_claims_part_of",
       "en": "the grammar claims part of {name}, whose ids are {ids}; a slot is claimed whole. Nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1310
+      "line": 1789
     },
     {
       "id": "record-core.index.the_instances_figures_are_already",
       "en": "the instance's figures are already supplied by {module}; nothing was registered.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 1178
+      "line": 1638
     },
     {
       "id": "record-core.index.the_parts_do_not_hash",
       "en": "The parts, read in order, do not hash to the document's fingerprint. Nothing was kept.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 2002
+      "line": 2538
     },
     {
       "id": "record-core.index.the_store_would_not_take",
       "en": "The store would not take the document whole ({why}). Nothing was kept.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 2008
+      "line": 2544
     },
     {
       "id": "record-core.index.your_teams_civicsmith_could_not",
       "en": "your team's Civicsmith could not find a free {what}: every one it drew was already taken. Nothing was written.",
       "module": "record-core",
       "file": "bio-plane/src/record-core/index.mjs",
-      "line": 147
+      "line": 498
     },
     {
       "id": "record-grammar.bundle.adjust_the_later_record_timestamp_suffix",
@@ -47668,161 +47668,161 @@
       "en": "a staff or membership roster",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 275
+      "line": 276
     },
     {
       "id": "roster-reader.staff-roster.atdomain_distinct_addresses_at_one",
       "en": "{atDomain} distinct addresses at one domain: this is a staff directory's shape, which staff_directory reads",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 290
+      "line": 291
     },
     {
       "id": "roster-reader.staff-roster.boxes_line_s_print_a",
       "en": "{boxes} line(s) print a post or unit with no name beside it, against {paired} row(s): posts laid out apart from their holders are a chart's boxes, not a roster's rows",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 302
+      "line": 303
     },
     {
       "id": "roster-reader.staff-roster.contactlines_line_s_carry_a",
       "en": "{contactLines} line(s) carry a contact point beside {paired} row(s): a directory or contact list, not a roster",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 292
+      "line": 293
     },
     {
       "id": "roster-reader.staff-roster.dates_date_s_beside_paired",
       "en": "{dates} date(s) beside {paired} row(s): the rows are dated events that name people, not a roster",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 296
+      "line": 297
     },
     {
       "id": "roster-reader.staff-roster.it_names_itself_a_roster",
       "en": "it names itself a roster (\"{text}\")",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 309
+      "line": 310
     },
     {
       "id": "roster-reader.staff-roster.it_names_itself_with_the_views",
       "en": "it names itself, with the view's words, as a chart and not as a roster",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 305
+      "line": 306
     },
     {
       "id": "roster-reader.staff-roster.named_of_length_lines_carry",
       "en": "{named} of {length} lines carry a name ({round}%), below {round_2}%: names are mentioned in this document, not listed",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 300
+      "line": 301
     },
     {
       "id": "roster-reader.staff-roster.named_of_length_lines_carry_2",
       "en": "{named} of {length} lines carry a name ({round}%)",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 307
+      "line": 308
     },
     {
       "id": "roster-reader.staff-roster.neither_its_first_line_nor",
       "en": "neither its first line nor the line before its self-naming line is a heading that names an organisation",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 334
+      "line": 335
     },
     {
       "id": "roster-reader.staff-roster.no_line_among_the_documents_first",
       "en": "no line among the document's first eight, or beside its self-naming line, states a date",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 332
+      "line": 333
     },
     {
       "id": "roster-reader.staff-roster.no_row_could_be_read",
       "en": "no row could be read from this {what} {v1}, so nothing is claimed about who left or joined",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 370
+      "line": 371
     },
     {
       "id": "roster-reader.staff-roster.no_short_line_names_it_a",
       "en": "no short line names it a roster with the view's words, so it is read as a roster on its rows alone",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 313
+      "line": 314
     },
     {
       "id": "roster-reader.staff-roster.no_text_was_read_so",
       "en": "no text was read, so there are no rows to recognise",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 283
+      "line": 284
     },
     {
       "id": "roster-reader.staff-roster.paired_line_s_carry_a",
       "en": "{paired} line(s) carry a name with more beside it, below the floor of {ROSTER_FLOOR}: the rows are not the body of this document",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 286
+      "line": 287
     },
     {
       "id": "roster-reader.staff-roster.paired_line_s_carry_a_2",
       "en": "{paired} line(s) carry a name with a title, unit or organisation beside it",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 306
+      "line": 307
     },
     {
       "id": "roster-reader.staff-roster.the_line_does_not_divide",
       "en": "the line does not divide into a post and the names after it: what follows its colon is not names alone",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 178
+      "line": 179
     },
     {
       "id": "roster-reader.staff-roster.the_line_opens_with_a",
       "en": "the line opens with a name but what follows it is not one of the view's staff titles, so where the name ends is not divided by guess",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 201
+      "line": 202
     },
     {
       "id": "roster-reader.staff-roster.the_line_prints_staff",
       "en": "the line prints staff titles and names that do not divide into one name beside its title, so it is not paired by guess",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 190
+      "line": 191
     },
     {
       "id": "roster-reader.staff-roster.the_what_lists_the_same",
       "en": "the {what} lists the same rows, each saying what it said",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 382
+      "line": 383
     },
     {
       "id": "roster-reader.staff-roster.the_what_now_lists_a",
       "en": "the {what} now lists a row it did not",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 374
+      "line": 375
     },
     {
       "id": "roster-reader.staff-roster.this_row_is_no_longer",
       "en": "this row is no longer listed in the {what}",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 373
+      "line": 374
     },
     {
       "id": "roster-reader.staff-roster.this_rows_map_in_the",
       "en": "this row's {map} in the {what} now reads otherwise",
       "module": "roster-reader",
       "file": "roster-reader/staff-roster.mjs",
-      "line": 377
+      "line": 378
     },
     {
       "id": "run-productions.declared.suggest",

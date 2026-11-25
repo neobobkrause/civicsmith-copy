@@ -1,6 +1,6 @@
 /* GENERATED: do not edit by hand. setup-words R10, R15 (R1's rule; DEC-179, DEC-257; K3366, K3930): the interface's word
    list, docs/development/ux-substrate/screens/words.json (19467 design words, 1162 protected; SHA-256
-   4aa0df0591299097c2ee2f0a983cba8abe9b9a805b7761bcdd25f89b05ccbe2e) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
+   5f1499b5a98ed98d9a22b65b78051f63fb65ad010e9d74a1e405566528e05ac2) followed by 7515 sentences written first in code, each [key, en, note, means, protected, origin]: key,
    en, note (or null) and protected as the file gives them, means the en of the word's sibling .means or .does entry
    (the nearest dotted prefix of at least two segments holding one), or null, origin "design" (a row of the file) or
    "code" (a localize(id, en) call whose id the file lacks). WORDS_COMMIT is the first 10 hex digits of that SHA-256. The list
@@ -14,7 +14,7 @@
  * The list's version: the first 10 hex digits of the SHA-256 of words.json.
  * @type {string}
  */
-export const WORDS_COMMIT = "4aa0df0591";
+export const WORDS_COMMIT = "5f1499b5a9";
 /**
  * The list: the file's words in its order, then the code rows in id order.
  * @type {ReadonlyArray<WordRow>}
@@ -14755,7 +14755,7 @@ export const WORD_ROWS = Object.freeze(/** @type {WordRow[]} */ ([
   ["workbooks.why.file_caches_value","the file caches no value",null,null,false,"design"],
   ["workbooks.recompute_recorded","no recompute is recorded",null,null,false,"design"],
   ["workbooks.open_spreadsheet_program","{not_recomputed}: {why}; open it in any spreadsheet program",null,null,false,"design"],
-  ["workbooks.recomputed_engine_group","recomputed by the engine your team's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",null,null,false,"design"],
+  ["workbooks.recomputed_engine_group","recomputed by the engine your group's Civicsmith runs ({engine} {engine_version}); open it in any spreadsheet program",null,null,false,"design"],
   ["workbooks.why.corpus_measure_recorded","no corpus measure is recorded for {engine} {engine_version}",null,null,false,"design"],
   ["workbooks.sheet_hidden","its sheet \"{sheet}\" is hidden",null,null,false,"design"],
   ["workbooks.row_hidden","row {row} is hidden",null,null,false,"design"],
