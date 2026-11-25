@@ -173,7 +173,7 @@ test("R40: onCandidates registers one extract source; a malformed or second regi
   for (const [m, f] of [["", noop], [null, noop], ["run-productions", "not a function"]]) {
     const bad = w.bv.onCandidates(m, f);
     assert.deepEqual(bad, listenerRefusal(null, m, f), "membership's one refusal, unchanged");
-    assert.equal(bad.reason, "LISTENER_MALFORMED");
+    assert.equal(bad?.reason, "LISTENER_MALFORMED");
   }
   assert.equal(w.bv.narrowCandidates(narrowArgs()).counts.extract, 0, "a refused registration holds no slot");
   const calls = [];
@@ -182,7 +182,7 @@ test("R40: onCandidates registers one extract source; a malformed or second regi
   assert.deepEqual(w.bv.onCandidates("run-productions", src), { ok: true, module: "run-productions" });
   const second = w.bv.onCandidates("other", src);
   assert.deepEqual(second, listenerRefusal({ module: "run-productions" }, "other", src));
-  assert.deepEqual([second.reason, second.module], ["LISTENER_DECLARED", "run-productions"], "by any module, naming the holder");
+  assert.deepEqual([second?.reason, second?.module], ["LISTENER_DECLARED", "run-productions"], "by any module, naming the holder");
   assert.equal(w.bv.onCandidates("run-productions", src).reason, "LISTENER_DECLARED", "the holder too");
   const r = w.bv.narrowCandidates(narrowArgs());
   assert.deepEqual(calls, [{ captureSha: cap, max: 50 }]);
