@@ -22,6 +22,61 @@ import { makeRegistry, CONFIDENCE, confidenceRank } from "../../site-profiles/in
 import { CONTRACT } from "./index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { classificationView, CLASSIFY_WHOLE_MAX_CHARS } from "../classify-view.mjs";
+/** @import { ClassifiedOver, Window } from "../classify-view.mjs" */
+
+/**
+ * @typedef {Object} ContentType one content type as a composer registers it through the seam (R36). What each type
+ *   reads, and the measurements it was written from, are its own module's; the seam holds only what it asks of every
+ *   type. The no-type answer carries the same fields and no `detect`, because it is not a content type.
+ * @property {string} key the name the type is registered and replaced under
+ * @property {*} [detect] `(ctx) => {match, confidence, signals}`: is this that kind of document? Every registered
+ *   type has one
+ * @property {*} [label] what the type is called, in words
+ * @property {number} [version] the type's own version
+ * @property {boolean} [fallback] true on the one type the registry answers when nothing detects
+ * @property {string} [contract] what watching this kind should do, one of `CONTRACT`'s three values (R29)
+ * @property {*} [parse] `(ctx) => {entities, ...}`: what is in it
+ * @property {*} [assess] `(before, after, ctx) => {meaningful, events, ...}`: did anything meaningful change
+ * @property {*} [connections] `(before, after, ctx) => Connection[]`: what links it implies
+ * @bound key: a type registered under a key already held replaces it in its own slot, so a re-registration never
+ *   moves the load-bearing order; a new key is appended
+ */
+/**
+ * @typedef {Object} Registration what `registerDoctype` answers; a refusal is stated, never thrown
+ * @property {boolean} ok
+ * @property {string} [key] on `ok`, the key registered
+ * @property {boolean} [replaced] on `ok`, whether a type of that key was already held
+ * @property {string} [why] on a refusal, which refusal it is: no key, or no detect function
+ * @bound ok: `key` and `replaced` are answered exactly when it is true, `why` exactly when it is false
+ */
+/**
+ * @typedef {Object} AlsoEntry one other registered type this same document satisfies (R5)
+ * @property {string} key the type's key
+ * @property {*} confidence the confidence its own `detect` gave, and null where that `detect` threw
+ * @property {*[]} signals what it matched on
+ * @property {string} [error] the words of a `detect` that threw: a recogniser that cannot answer is a different fact
+ *   from one that answered no
+ */
+/**
+ * @typedef {Object} Work the characters the detects of one classification have examined, and their shared limit (R40)
+ * @property {number} chars what the detects have examined so far
+ * @property {number} limit `CLASSIFY_WORK_FACTOR` times the view's characters times the number of registered types
+ * @property {string | null} [stopped_before] the key of the first type not asked, where the limit was passed
+ */
+/**
+ * @typedef {Object} DoctypeAnswer what kind of content this is, independently of the stack that served it (R4, R5)
+ * @property {ContentType} type the winner: the first type to detect at CERTAIN confidence, else the highest-confidence
+ *   match, else the registered fallback, else the no-type answer
+ * @property {*} confidence the winner's confidence on the one ladder; NONE where nothing matched
+ * @property {*[]} signals what the winner matched on
+ * @property {AlsoEntry[]} considered every type that matched, as the main walk asked them
+ * @property {AlsoEntry[]} also every OTHER non-fallback type whose own `detect` also matches this same document
+ * @property {Work} work
+ * @property {ClassifiedOver} [classified_over] answered only where the text was over the bound and judged from a view
+ * @property {string} [why] which "no" this is: nothing registered, nothing recognised, or the work budget run out
+ * @bound also: never changes the verdict — `type`, `confidence`, `signals` and `considered` are what they were
+ * @bound why: answered only where there is a "no" to state; a recognised document has none
+ */
 
 /* THE SEAM (T33-12; K1513; T34-8). `registerDoctype` (exported further down) is how a
    composer registers types: a type whose key is already held REPLACES it in its own
@@ -46,10 +101,14 @@ export const NO_TYPE = Object.freeze({
   contract: CONTRACT.SUBSTANCE,
 });
 
-/** Register one content type into the seam. A type whose `key` is held already
- *  replaces it in its slot (the order is load-bearing, R4); a new key is appended. A
- *  member with no string `key` or no `detect` function is refused, stated, never
- *  thrown. Returns `{ok:true, key, replaced}` or `{ok:false, why}`. */
+/**
+ * Register one content type into the seam. A type whose `key` is held already
+ * replaces it in its slot (the order is load-bearing, R4); a new key is appended. A
+ * member with no string `key` or no `detect` function is refused, stated, never
+ * thrown. Returns `{ok:true, key, replaced}` or `{ok:false, why}`.
+ * @param {*} type what the composer offers; anything that is not a content type is refused in words
+ * @returns {Registration}
+ */
 export function registerDoctype(type) {
   if (!type || typeof type !== "object" || typeof type.key !== "string" || !type.key)
     return { ok: false, why: "a content type is registered by its key, and this one carries no key" };
@@ -61,6 +120,10 @@ export function registerDoctype(type) {
   return { ok: true, key: type.key, replaced: i >= 0 };
 }
 
+/**
+ * Every type registered now, in registration order.
+ * @returns {ContentType[]}
+ */
 export function doctypes() { return types.all(); }
 
 /** Identify what KIND of content this is, independently of the stack that served it.
@@ -82,7 +145,13 @@ export function doctypes() { return types.all(); }
  *  in the reading's own facts, which is the surface a member actually sees.
  *
  *  A type whose `detect` THROWS is reported as such rather than silently dropped: a
- *  recogniser that cannot answer is a different fact from one that answered no. */
+ *  recogniser that cannot answer is a different fact from one that answered no.
+ * @param {*} ctx what the caller knows: the `identify` context (`headers`, `locator`, `content_type`, `text`), the
+ *   `handler` and `kind` `identify` gave, the supplied `pages` and `sheets`, and `view`, the combined view of the
+ *   active jurisdiction profiles every type reads its local vocabulary from
+ * @returns {DoctypeAnswer}
+ * @bound result: never throws, provided no registered type's own `detect` throws outside the `also` pass
+ */
 export function doctypeFor(ctx) {
   const g = walk(ctx);
   let s = g.next();
@@ -99,7 +168,12 @@ export const CLASSIFY_YIELD_AT_CHARS = 256 * 1024;
  *  yields a marker before each `detect`, `doctypeFor` drives it straight through and this awaits `yieldNow()` at each marker
  *  once `ctx.text` is longer than `CLASSIFY_YIELD_AT_CHARS`. A `yieldNow` that is not a function is no yield; one that throws
  *  or rejects is ignored (the answer is the same); with none, or on a text that is not long, nothing is awaited. A `detect`
- *  that throws in the main walk rejects the call, as it throws from `doctypeFor`. One `detect` is still one stretch. */
+ *  that throws in the main walk rejects the call, as it throws from `doctypeFor`. One `detect` is still one stretch.
+ * @param {*} ctx as `doctypeFor` takes it
+ * @param {*} [opts] `opts.yieldNow`, awaited before each `detect` on a long text; anything that is not a function
+ *   there, and no `opts` at all, is no yield, and a `yieldNow` that throws or rejects is ignored
+ * @returns {Promise<DoctypeAnswer>} exactly what `doctypeFor` answers, because it is the same walk
+ */
 export async function doctypeForYielding(ctx, opts) {
   const yieldNow = opts && typeof opts.yieldNow === "function" ? opts.yieldNow : null;
   const long = !!ctx && typeof ctx.text === "string" && ctx.text.length > CLASSIFY_YIELD_AT_CHARS;
@@ -123,6 +197,11 @@ export const CLASSIFY_WORK_FACTOR = 4;
    sample; `ctx.sheets`, when it is the supplied sheets, gives the sheets' heads), `window` saying which part of the text that is
    (`{from, to, of}`: the characters of `ctx.text` it holds and how many the whole text has), and the shared `work`. A text at or
    under the bound is handed whole and unchanged, the same string, copied nowhere. */
+/**
+ * @param {*} ctx the caller's context
+ * @param {number} typeCount how many types are registered, which the work limit is multiplied by
+ * @returns {{dctx: *, work: Work, classified_over: ClassifiedOver | null}}
+ */
 function bounded(ctx, typeCount) {
   const base = ctx && typeof ctx === "object" ? ctx : {};
   /* A `text` that is an accessor is read by each `detect` as it always was, never once here: such a ctx is wrapped, not copied. */
@@ -166,9 +245,10 @@ function* walk(ctx) {
        an unrecognised document is never read as a type that did not recognise it. */
     : { member: all.find((m) => m.fallback === true) || NO_TYPE, confidence: CONFIDENCE.NONE, signals: [], considered, matched: false };
   const also = yield* alsoWalk(dctx, r, all, work, (key) => { stopped = stopped || key; });
-  const out = { type: r.member, confidence: r.confidence, signals: r.signals, considered: r.considered, also };
-  if (classified_over) out.classified_over = classified_over;
-  out.work = { chars: work.chars, limit: work.limit, stopped_before: stopped };
+  /* `work` is answered on every classification (R40); `classified_over` keeps its place before it, where a view was used. */
+  const out = { type: r.member, confidence: r.confidence, signals: r.signals, considered: r.considered, also,
+                ...(classified_over ? { classified_over } : {}),
+                work: { chars: work.chars, limit: work.limit, stopped_before: stopped } };
   /* A "no" says which no (R35): nothing recognised, and so the registered fallback's reading. */
   if (r.member === NO_TYPE)
     out.why = localize("docprofile.registry.no_content_type_is_registered_to_recognise", "no content type is registered to recognise documents, so this one is not read as any type: nothing is read from it and what changes in it is not described");
@@ -206,10 +286,21 @@ function* alsoWalk(ctx, r, all, work, stop) {
   return [...out, ...rest];
 }
 
-/** Every registered type OTHER than `selfKey` whose own `detect` matches this text.
- *  Exported for the suite and for callers that want the fact without a full profile. */
+/**
+ * Every registered type OTHER than `selfKey` whose own `detect` matches this text.
+ * Exported for the suite and for callers that want the fact without a full profile.
+ * @param {*} ctx as `doctypeFor` takes it
+ * @param {*} [selfKey] the key to leave out, the asking type's own; the fallback is always left out
+ * @returns {AlsoEntry[]} in registration order; a `detect` that threw is an entry naming the error, never dropped
+ */
 export function alsoFor(ctx, selfKey) { return askAll(ctx, types.all(), selfKey); }
 
+/**
+ * @param {*} ctx
+ * @param {*[]} members
+ * @param {*} [selfKey]
+ * @returns {AlsoEntry[]}
+ */
 function askAll(ctx, members, selfKey) {
   const out = [];
   for (const m of members) {
