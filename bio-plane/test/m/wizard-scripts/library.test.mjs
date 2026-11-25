@@ -80,9 +80,9 @@ const refused = (r, c, why = "") => {
 
 test("R13 SCREEN_REGISTRY is DEC-139's registry as the file holds it, screen by screen and act by act: [{id, name, purpose, acts}], acts the declared and function ops in the file's order, owed acts apart; frozen; its source the vendored file", () => {
   const sha = createHash("sha256").update(src("registry.json"), "utf8").digest("hex");
-  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "b1adf4236d", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha });
+  assert.deepEqual(wz.SCREEN_REGISTRY_SOURCE, { commit: "e5feed33be", path: "docs/development/ux-substrate/screens/registry.json", sha256: sha });
   assert.equal(wz.SCREEN_REGISTRY.length, REG_FILE.screens.length);
-  assert.equal(wz.SCREEN_REGISTRY.length, 91, "R50: the file at b1adf4236d, the design commit of DEC-419 (G53)");
+  assert.equal(wz.SCREEN_REGISTRY.length, 91, "the file at e5feed33be, the design commit of DEC-453 (91 screens since b1adf4236d)");
   REG_FILE.screens.forEach((f, i) => {
     const s = wz.SCREEN_REGISTRY[i];
     assert.deepEqual([s.id, s.name, s.purpose], [f.id, f.name, f.purpose], f.id);
@@ -96,6 +96,22 @@ test("R13 SCREEN_REGISTRY is DEC-139's registry as the file holds it, screen by 
     for (const a of s.acts) assert.ok(!a.startsWith("owed:"), "an owed act names no op among acts");
   });
   assert.ok(Object.isFrozen(wz.SCREEN_REGISTRY) && Object.isFrozen(wz.SCREEN_REGISTRY[0]) && Object.isFrozen(wz.SCREEN_REGISTRY[0].acts));
+});
+
+test("R13 (DEC-453) the registry carried is the file at e5feed33be: document lists resolve ('Match a document to them'), and the five other acts declared since b1adf4236d (factconfirm on setup, signerknown on queue, leggrade on question, counselpacketread and counselpacketexport on counsel) are in their screens' acts and registered with the op table; control: the file at b1adf4236d, kept whole, lists none of the six, and a table without resolve registers document without it", () => {
+  const ADDED = [["document", "resolve"], ["setup", "factconfirm"], ["queue", "signerknown"], ["question", "leggrade"], ["counsel", "counselpacketread"], ["counsel", "counselpacketexport"]];
+  const w = seeded({ register: false });
+  w.wz.wizardRegister({ ops: ALL_OPS, library: [] });
+  const by = Object.fromEntries(w.wz.registeredScreens().map((s) => [s.id, s.acts]));
+  const earlier = JSON.parse(src("registry-b1adf4236d.json"));
+  for (const [id, op] of ADDED) {
+    assert.ok(wz.SCREEN_REGISTRY.find((s) => s.id === id).acts.includes(op), `${id}: ${op} is in SCREEN_REGISTRY`);
+    assert.ok(by[id].includes(op), `${id}: ${op} is registered`);
+    assert.ok(!earlier.screens.find((s) => s.id === id).acts.some((a) => a.op === op), `control: ${id} had no ${op} at b1adf4236d`);
+  }
+  const without = seeded({ register: false });
+  without.wz.wizardRegister({ ops: ALL_OPS.filter((o) => o !== "resolve"), library: [] });
+  assert.ok(!without.wz.registeredScreens().find((s) => s.id === "document").acts.includes("resolve"), "control: an op table without resolve does not register it");
 });
 
 test("R13 (T41; DEC-188; K2484) the registry keeps PR #19's screen projectai (re-taken since, R29, R31, R35); aiceilingset, aicopyceilingset, accountswitchset and groupswitchset appear nowhere in it; ailimitset, accountusesset, projectkeyset, projectsigninset and (DEC-217) projectaikeepaway, owed at PR #19 and declared or function acts since, are registered as their ops once the op table holds them and not before", () => {
@@ -146,7 +162,7 @@ test("R13 (T37; K2171) the registry is re-taken from PR #14's merge onward: conn
 test("R13 a registration without screens registers SCREEN_REGISTRY; an owed act is registered as its op, in the file's order, only once the member op table declares it; with no op table none is", () => {
   /* the acts the file still owes (R35, R38, R41): the installer's four routes, `founderhandleset`, members' `passwordresetlink` after
      memberadd, DEC-226's three update acts and the six T50 adds (K3674 among them); fifteen ops, `updatelater` on two screens */
-  assert.equal(OWED_OPS.length, 105, "R50: 105 owed ops at b1adf4236d (42 at R48's 654a735535, and T52's owed acts since)");
+  assert.equal(OWED_OPS.length, 105, "105 owed ops at e5feed33be, as at b1adf4236d (42 at R48's 654a735535, and T52's owed acts since)");
   for (const op of ["installupdate", "installalongside", "installremove", "installremoveconfirm", "founderhandleset", "passwordresetlink", "updatestart", "updatelater", "updateskip"])
     assert.ok(OWED_OPS.includes(op), op);
   const w = seeded({ register: false });
