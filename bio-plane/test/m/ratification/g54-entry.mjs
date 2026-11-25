@@ -75,6 +75,10 @@ const caseDocText = (caseId, edition, project, target, pin, materials = []) => [
   "method:", '  grading: "grading/1"', '  checks: "1.0.0"', ...materialsLines(materials), ...materialAttestationLines([]), "---", "",
   "## Scope", "", "The question.", "", "## What This Excludes", "", "Nothing else.", "", "## What Was Searched", "", "Everything.", ""].join("\n");
 
+/**
+ * R6, R57 (G54): the store's Durable Object for the case-file tests under Miniflare, with a fault it can be told to
+ * raise.
+ */
 export class G54Held {
   fault = newState();
   constructor(ctx, env) {
@@ -215,6 +219,10 @@ async function postCommit(env0, { fault, caseId, edition, waitMs }) {
   } finally { await stub.fetch("http://do/g54/fault?mode=none"); }
 }
 
+/**
+ * R6, R57 (G54): the Worker the case-file tests drive, one step per path.
+ * @type {{fetch: (req: Request, env: any) => Promise<Response>}}
+ */
 export default {
   async fetch(req, env) {
     const url = new URL(req.url), step = url.pathname.slice(6), q = (k) => url.searchParams.get(k);

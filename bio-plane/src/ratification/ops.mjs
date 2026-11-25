@@ -41,7 +41,13 @@ function storeRefused(out, { json, storeRefusal }) {
 }
 
 /** The two ceremonies' dispatch (legacy-index map §4.4, moved in T18): `op=caseratify` and `op=ratify` answered with the
- *  control plane's `ctx` (the union both handlers read); any other op is not this module's, and answers null. */
+ *  control plane's `ctx` (the union both handlers read); any other op is not this module's, and answers null.
+ * @param {any} op the op's name
+ * @param {any} req the Worker's request
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @returns {any} the act's response (a promise), or null for an op that is not this module's
+ */
 export function ratificationOp(op, req, stub, ctx) {
   if (op === "caseratify") return caseRatifyOp(req, stub, ctx);
   if (op === "publishat") return publishAtOp(req, stub, ctx);
@@ -54,12 +60,24 @@ export function ratificationOp(op, req, stub, ctx) {
      different is the SUBJECT — this act commits the CASE's own assertions, out
      of the case document, which is the signature those facts had nowhere to
      move to before this item. */
+/**
+ * R2, R3: op=caseratify, the case ceremony's Worker half.
+ * @param {any} req the Worker's request
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @returns {Promise<any>} the act's response
+ */
 export async function caseRatifyOp(req, stub, ctx) { return caseCeremony(req, stub, ctx, false); }
 
 /** R40 (DEC-147): `op=publishat`, "Publish at…": `op=caseratify`'s payload and `at: {date, time}`, every refusal
  *  `op=caseratify` answers before its commit, byte for byte and in its order (`MALFORMED` also covering an absent `at`),
  *  and then the store half (`publishat`), which calls `publish-schedule` R1 in place of the commit and answers as it
- *  does. */
+ *  does.
+ * @param {any} req the Worker's request
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @returns {Promise<any>} the act's response
+ */
 export async function publishAtOp(req, stub, ctx) { return caseCeremony(req, stub, ctx, true); }
 
 async function caseCeremony(req, stub, ctx, later) {
@@ -331,12 +349,23 @@ async function caseCeremony(req, stub, ctx, later) {
    changes `ok`, because the edition is committed. (T37; N757; K2206) A material held `derived`, a copy carried in place of
    its original (a photo's, case-carriage R1, R11, or, T39, a member document's, its R15, held beside it), is copied the same way and counted alike, read from where case-carriage holds it
    (`obscuredCopyKey`), never from `captures/`. `items` are `{sha, held}`; a bare SHA-256 is an `evidence` one. */
+/**
+ * R39: where case-carriage holds a material carried `derived`, in the evidence store.
+ * @type {(store: any, sha: any) => string}
+ */
 export const obscuredCopyKey = (store, sha) => `${store}/obscured/${sha}`;
 const sourceKey = (store, sha, held) => (held === "derived" ? obscuredCopyKey(store, sha) : `${store}/captures/${sha}`);
 
 /** R60 (G120): how many materials are copied together. */
 const COPY_GROUP = 8;
 
+/**
+ * R39: each material copied into the published bucket by its SHA-256.
+ * @param {any} env the Worker's bindings
+ * @param {any} storeName the store's name
+ * @param {any} items each `{sha, held}`, or a bare SHA-256 held `evidence`
+ * @returns {Promise<any>} `{copied, present, missing}`
+ */
 export async function copyMaterials(env, storeName, items) {
   const { absent, ...out } = await copyMaterialsDetailed(env, storeName, items);
   return out;
@@ -345,7 +374,12 @@ export async function copyMaterials(env, storeName, items) {
 /** R39, R57 (G54): `copyMaterials`' copy, and which of the materials it could not copy the evidence store answered ABSENT
  *  (`absent`, a subset of `missing`: the read answered, and held nothing under the hash) as against a copy that failed
  *  (a read or a put that threw, which a later try may mend). Only the sweep reads the difference (it stops an edition for a
- *  material confirmed absent, never for one whose copy failed); the act's answer is `copyMaterials`'. */
+ *  material confirmed absent, never for one whose copy failed); the act's answer is `copyMaterials`'.
+ * @param {any} env the Worker's bindings
+ * @param {any} storeName the store's name
+ * @param {any} items each `{sha, held}`, or a bare SHA-256
+ * @returns {Promise<any>} `{copied, present, missing, absent}`
+ */
 export async function copyMaterialsDetailed(env, storeName, items) {
   const out = { copied: 0, present: 0, missing: [], absent: [] };
   /* R60 (G120): the materials are copied in groups of COPY_GROUP, each group's copies together; the outcomes are counted in the
@@ -379,6 +413,13 @@ export async function copyMaterialsDetailed(env, storeName, items) {
      not seen. Order of operations is deliberate: verify everything, then
      commit the published rows, then copy bytes to the published bucket.
      A failure mid-copy leaves rows that a re-ratification converges. */
+/**
+ * R4–R6: op=ratify, the finding ceremony's Worker half.
+ * @param {any} req the Worker's request
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @returns {Promise<any>} the act's response
+ */
 export async function ratifyOp(req, stub, ctx) {
   const { env, json, doAnswer, storeSilent, storeRefusal, storeName, cls, aiCred, viaSession,
           sessViewer, sessRights, withBiasChecks, STORE_SILENT_REASON, STORE_SILENT_DETAIL } = ctx;
@@ -518,7 +559,13 @@ function publishRefusalStatus(pub) {
  *  and at once (fix round 10, cause 27a; K5057): its gate facts at the ratifier's scope, its image and the list of known ids
  *  (`list`: a sitting's one shared read), and, as soon as those three are in, the store-half gate over them (N417: it reads and
  *  writes nothing). Answers the asks; `weighFinding` weighs them in the act's order. A read still in flight when the act stops at
- *  an earlier refusal is left to finish: it writes nothing. */
+ *  an earlier refusal is left to finish: it writes nothing.
+ * @param {any} args `{bundleId}`
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @param {any} opts `{viewer, list, batched}`
+ * @returns {any} the asks, each a promise
+ */
 export function readFinding({ bundleId }, stub, ctx, { viewer, list = null, batched = false }) {
   const { doAnswer } = ctx;
   const v = encodeURIComponent(viewer);
@@ -551,7 +598,13 @@ export function readFinding({ bundleId }, stub, ctx, { viewer, list = null, batc
 /** R52 / R60 (fix round 10): the reads of a sitting, as `readFinding` makes them for each member, but the store-half gate for
  *  every member the act would gate is asked ONCE, in one `ratifygate` call (`{members: [...]}`), not once each: each member's
  *  answer is the store's answer for its own body, in the sitting's order, and a store refusal or silence is each member's. A
- *  member the act would not gate (its facts, image or list not readable, or its facts not ok) is not in the call, as before. */
+ *  member the act would not gate (its facts, image or list not readable, or its facts not ok) is not in the call, as before.
+ * @param {any} members the sitting's members, each `{id}`
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @param {any} opts `{viewer, list}`
+ * @returns {any} each member's asks, in the sitting's order
+ */
 export function readSitting(members, stub, ctx, { viewer, list }) {
   const { doAnswer } = ctx;
   const reads = members.map((m) => readFinding({ bundleId: m.id }, stub, ctx, { viewer, list, batched: true }));
@@ -589,7 +642,13 @@ export function readSitting(members, stub, ctx, { viewer, list }) {
  *  answers as one never minted), C-58.1, C-53.10, C-53.11, C-92.12, RATIFY_STALE, NO_SIGNERS, SIG_<reason> against `keys`
  *  (every active signer's, or, in a sitting, the one key the case verified against), the image, the known ids, the store-half
  *  gate with its register, bias and case-member arms. Answers `{response}` (a refusal, a store relay or a silence, `tag` added to
- *  a refusal of the finding's own) or `{prepared}` for `findingPublishArgs`, `copyFinding` and `findingAnswer`. Writes nothing. */
+ *  a refusal of the finding's own) or `{prepared}` for `findingPublishArgs`, `copyFinding` and `findingAnswer`. Writes nothing.
+ * @param {any} args `{bundleId, expectedSha, sig}`
+ * @param {any} ctx the control plane's context
+ * @param {any} opts `{keys, statedInSitting, tag}`
+ * @param {any} reads `readFinding`'s asks
+ * @returns {Promise<any>} `{response}` or `{prepared}`
+ */
 export async function weighFinding({ bundleId, expectedSha, sig }, ctx,
                                    { keys = null, statedInSitting = null, tag = {} } = {}, reads) {
   const { json, storeSilent, storeRefusal, storeName, cls, withBiasChecks } = ctx;
@@ -644,7 +703,13 @@ export async function weighFinding({ bundleId, expectedSha, sig }, ctx,
                        gateVersion: gate.gateVersion, image, shas, partShaSet, partedRows } };
 }
 
-/** R4: `op=ratify`'s reads and checks for one finding, in its order (`readFinding`, then `weighFinding`). */
+/** R4: `op=ratify`'s reads and checks for one finding, in its order (`readFinding`, then `weighFinding`).
+ * @param {any} args `{bundleId, expectedSha, sig}`
+ * @param {any} stub the store's Durable Object stub
+ * @param {any} ctx the control plane's context
+ * @param {any} [opts] `{viewer, keys, statedInSitting, tag, list}`
+ * @returns {Promise<any>} `weighFinding`'s answer
+ */
 export function prepareFinding(args, stub, ctx, { viewer, keys = null, statedInSitting = null, tag = {}, list = null } = {}) {
   return weighFinding(args, ctx, { keys, statedInSitting, tag }, readFinding(args, stub, ctx, { viewer, list }));
 }

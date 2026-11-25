@@ -37,6 +37,9 @@ import { word, localize } from "../setup-words/index.mjs";
 /* R20. Longer than a reason, because a release acknowledgment is a statement of what was weighed and what was checked,
    not a label. Same forbidden characters, because it is spliced into the Session Log and must stay one line per
    field. */
+/**
+ * @type {number}
+ */
 export const RELEASE_ACK_MAX = 500;
 
 const rows = (sql, q, ...a) => [...sql.exec(q, ...a)];
@@ -137,6 +140,10 @@ export function release(deps,
 }
 
 /* R22, R34: each class's reason, the one sentence the release's refusal and capture's held list (its R78) both give. */
+/**
+ * R22, R34: each class's reason.
+ * @type {Readonly<Record<string, string>>}
+ */
 export const CLASS_REASONS = Object.freeze({
   NOT_INFORMATION: localize("ratification.release.release_moves_an_information_state", "release moves an Information state, and this selection carries something else. The set is refused whole rather than narrowed."),
   ILLEGAL_TRANSITION: localize("ratification.release.only_collected_information_may_be", "only collected Information may be released. Something already verified has been released once and release is not repeatable; something retired is terminal."),

@@ -26,7 +26,9 @@ async function caseHouse({ edition = 1 } = {}) {
 
 /** The R18 pre-flight's answer for a signer who holds no attesting key: `refusal` is its `NO_ATTESTING_KEY` entry as the
  *  pre-flight answers it, `preflight` the whole answer, and `control` the same pre-flight for a signer who holds one (no such
- *  entry in it). `signer` is the member named. */
+ *  entry in it). `signer` is the member named.
+ * @returns {Promise<any>} `{signer, preflight, refusal, control}`
+ */
 export async function preflightRefusal() {
   const h = await caseHouse();
   const ask = (signer) => h.w.r.caseRatifyPreflight({ text: h.text, signer, viewer: V(signer) });
@@ -41,7 +43,10 @@ export async function preflightRefusal() {
  *  which the ratify gate's `casegate` and `caseratify`'s facts share): `holder` for a caller whose digest `secretSha` a live
  *  review grant admits (the grant is the one stand-in, answering for `review`, which is later in the order), `stranger` for
  *  a caller with standing nowhere and no grant, and `wrongSecret` for one whose digest no grant holds. A stranger's answer is the
- *  one for a document that does not exist. `caseId` and `edition` name the document. */
+ *  one for a document that does not exist. `caseId` and `edition` name the document.
+ * @param {any} [opts] `{secretSha}`
+ * @returns {Promise<any>} `{caseId, edition, secretSha, holder, stranger, wrongSecret, member, missing}`
+ */
 export async function noCaseDocument({ secretSha = "5".repeat(64) } = {}) {
   const h = await caseHouse();
   /* the one stand-in: review's live grant (review is a later module) admits the one digest to this case edition, as `reviewProvider()` is asked */
