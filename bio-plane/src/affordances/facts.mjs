@@ -537,6 +537,11 @@ class AffordanceFacts {
 
 const instances = new WeakMap();
 
+/**
+ * @param {object} host the Durable Object's `ctx`: one instance for each
+ * @param {Record<string, any>} [deps] a test's replacements for the modules it asks
+ * @returns {AffordanceFacts} R13–R16's facts, R37's screens, R41's explanation and R67's profile vocabularies
+ */
 export function affordancesOf(host, deps) {
   let a = instances.get(host);
   if (!a) { a = new AffordanceFacts(host, deps); instances.set(host, a); }
@@ -546,6 +551,11 @@ export function affordancesOf(host, deps) {
 /* N13's share (`legacy-store`'s map §4.1): the route this module answers, `op=affordancefacts` (R13–R16), as an op map
    the composition root spreads into the durable object's one route map, as every other module's is. The stamps arrive
    on the query exactly as the acts receive them; an absent one reads null (R15). */
+/**
+ * @param {AffordanceFacts} a this host's instance
+ * @param {URL} url the request, its stamps on the query
+ * @returns {{affordancefacts: () => any, affordancescreens: () => any, affordancevocab: () => any}}
+ */
 export function affordancesOps(a, url) {
   const q = (k) => url.searchParams.get(k);
   return {
