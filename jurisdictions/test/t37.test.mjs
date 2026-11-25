@@ -194,13 +194,13 @@ test("R72 R16 R18 combine of no profile, of one, and of the held test profile: n
   assert.equal(combine([FIRST]).view.local_names, undefined);
   const r = combine([TEST]);
   assert.deepEqual(r.conflicts, []);
-  assert.deepEqual(r.view.local_names.map(({ name, kind }) => ({ name, kind })), get(TEST).local_names.map(({ name, kind }) => ({ name, kind })));
+  assert.deepEqual(r.view.local_names.map(({ name, kind }) => ({ name, kind })), get(TEST)?.local_names.map(({ name, kind }) => ({ name, kind })));
   r.view.local_names[0].translations[0].text = "changed";
   assert.notEqual(combine([TEST]).view.local_names[0].translations[0].text, "changed");
   /* the first and the test profile together: the test profile's names stand, with no conflict */
   const both = combine([FIRST, TEST]);
   assert.ok(!both.conflicts.some((k) => k.at.startsWith("local_names")));
-  assert.equal(both.view.local_names.length, get(TEST).local_names.length);
+  assert.equal(both.view.local_names.length, get(TEST)?.local_names.length);
   /* a malformed section is refused before combine reads it */
   const bad = combine([other((p) => { p.local_names[0].kind = "nope"; })]);
   assert.equal(bad.ok, false); assert.equal(bad.errors[0].code, "INVALID_PROFILE");

@@ -49,7 +49,7 @@ test("R18 every answer is the caller's own copy: changing one changes no later a
   a.view.name = "changed";
   a.view.fiscal_year.length = 0;
   a.view.profiles.push("x");
-  a.conflicts.push({ at: "x" });
+  a.conflicts?.push({ at: "x", values: [], says: "" });
   delete a.view.deadlines;
   const c = combine(ids);
   assert.deepEqual(c, pristine);

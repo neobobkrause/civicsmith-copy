@@ -152,9 +152,10 @@ test("R12 docx guard: word/document.xml + word/comments.xml declared bytes over 
   assert.equal(t.document, null);
   assert.deepEqual(t.paragraphs, []);
   assert.equal(t.tables, null);
-  assert.deepEqual(t.undetermined, [textPlan(CEIL + 2).guard]);
   assert.equal(t.undetermined[0].final, true);
   assert.equal(t.undetermined[0].size, CEIL + 2);
+  const plan = textPlan(CEIL + 2);
+  assert.deepEqual(t.undetermined, [plan.read === "none" ? plan.guard : plan]);
   const s = await docxEntry.structure(b);
   assert.equal(s.links[0].target.url, "http://example.org/");
   assert.equal(s.evidentiary.items.find((i) => i.kind === "core-properties").creator, "c");
