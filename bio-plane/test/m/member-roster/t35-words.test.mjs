@@ -11,8 +11,13 @@ import { MEMBER_ROSTER_ROWS } from "../../../src/member-roster/checks.mjs";
 const { MEMBERSHIP_CHECKS, MEMBER_ID_CHECKS, CUSTODIAL_CHECKS } = MEMBER_ROSTER_ROWS;
 import { word, localize, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 
-/* A key's words as a row carries them: the list's English, placeholders left in place for the screen. */
-const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
+/* A key's words as a row carries them: the list's English, placeholders left in place for the screen. A key the list
+   lacks fails the test that asked for it, naming the key (setup-words' WORD_ROWS: a row is found or not). */
+const raw = (key) => {
+  const row = WORD_ROWS.find((r) => r[0] === key);
+  if (!row) throw new assert.AssertionError({ message: `${key} is no row of setup-words' list`, actual: key, operator: "find" });
+  return row[1];
+};
 
 const FORBIDDEN = /\b(cop(y|ies)|instances?|planes?|servers?)\b/i;
 /* T47-82 (P8): every `*_CHECKS` table the module holds, found from its checks file (R68's census), so a later
