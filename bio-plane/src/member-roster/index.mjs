@@ -24,13 +24,74 @@ import { keyed, rowKey, SENTENCE_KEYS } from "./words.mjs";
 import { MODULE_IDS } from "./order.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/**
+ * @typedef {Object} RefusalFields the fields every refusal this module answers carries
+ * @property {false} ok
+ * @property {string} reason the refusal's code
+ * @property {string} [code] the same code, where the refusal carries its row (DEC-49)
+ * @property {string} [check] its row's check id, such as `C-96.1`
+ * @property {string} [translation] its row's member-facing words (R70)
+ * @property {string} [detail] one fixed sentence saying why
+ */
+/**
+ * @typedef {RefusalFields & Object<string, *>} Refusal an answer that refuses; the fields a refusal names beside its own
+ *   (`have`, `awaiting`, `memberId`, `dailyCap` and the like) are the caller's to read by its code
+ * @bound a refusal writes nothing, unless its code says what was recorded (CONSENSUS_REQUIRED records the endorsement, VOTES_SHORT the vote)
+ */
+/**
+ * @typedef {Object} NotAnAdminFields the one answer to a caller who is not an administrator where the act is one (R28)
+ * @property {false} ok
+ * @property {"NOT_AN_ADMIN"} reason
+ * @property {"NOT_AN_ADMIN"} code
+ * @property {string} check C-96.1
+ * @property {string} translation the row's words
+ * @property {*} by the stamped caller as given, null when none
+ * @property {string} detail one fixed sentence naming the act; nothing was changed
+ * @property {string} [remedy] the caller's one fixed sentence of what to do next or instead, when it gave one
+ * @property {string} [message] the translation, a space, then the remedy; present exactly when `remedy` is
+ * @bound `extra`'s fields sit beside these and never replace one of them
+ */
+/** @typedef {NotAnAdminFields & Object<string, *>} NotAnAdmin */
+/**
+ * @typedef {Object} NoSuchMemberFields the one answer to an id no member answers to (R49)
+ * @property {false} ok
+ * @property {"NO_SUCH_MEMBER"} reason
+ * @property {"NO_SUCH_MEMBER"} code
+ * @property {string} check C-96.47
+ * @property {string} translation the row's words
+ * @property {string | null} member the id as asked, as a string, null when none
+ * @property {string} detail one fixed sentence; nothing was changed
+ * @bound member: at most 200 characters; `extra`'s fields sit beside these and never replace one of them
+ */
+/** @typedef {NoSuchMemberFields & Object<string, *>} NoSuchMember */
+/**
+ * @typedef {Object} ListenerRefusedFields a registration refused (R26)
+ * @property {false} ok
+ * @property {"LISTENER_MALFORMED" | "LISTENER_DECLARED"} reason
+ * @property {"LISTENER_MALFORMED" | "LISTENER_DECLARED"} code
+ * @property {string} detail one sentence saying why
+ * @property {string | null} [module] LISTENER_DECLARED only: the module already holding the slot, null when it named none
+ * @property {string} check C-102.11 or C-102.12
+ * @property {string} translation the row's words
+ * @bound `extra`'s fields (the caller's own, such as the `event` or `kind` its slot is keyed by) sit beside these and never replace one of them
+ */
+/** @typedef {ListenerRefusedFields & Object<string, *>} ListenerRefused */
+/**
+ * @typedef {Object} RegisteredFields a listener or slot registered
+ * @property {true} ok
+ * @property {*} module the module named
+ */
+/** @typedef {RegisteredFields & Object<string, *>} Registered a record; a field it does not name reads as absent */
+
 /* R70: every key this module reads, each held by `setup-words` (`hasWord`): its rows' (`refusal.<CODE>`, or the key
    `words.mjs` names) and the sentences it answers beside them. */
+/** @type {readonly string[]} every key this module reads, each once (R70) */
 export const WORD_KEYS = Object.freeze([...new Set([
   ...[MEMBERSHIP_CHECKS, MEMBER_ID_CHECKS, CUSTODIAL_CHECKS].flatMap((table) => Object.keys(table).map(rowKey)),
   ...SENTENCE_KEYS])]);
 
 /* The founder's internal member id (R29's list, R23): exported for a caller that must name her (N1067). */
+/** @type {"admin"} the founder's internal member id, the handle of no one (R57) */
 export const ROOT_ADMIN = "admin";
 
 /* R73 (T51; K624; split map §3 seam 3). THE SPELLING OF A VIEWER, as pure functions with no table read: nothing is
@@ -41,21 +102,37 @@ const CLS = MACHINE_CLASS_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const VIEWER = new RegExp(`^(${CLS}(admin|member|probe|daemon|ai)|member:([A-Za-z0-9._:-]{1,128})|admin)$`);
 const CARRIED = /^(member:[A-Za-z0-9._:-]{1,128}|admin)@([\s\S]+)$/;
 
-/** The viewer without the project it carries: who is asking, as distinct from what the project reaches. */
+/**
+ * R73: the viewer without the project it carries: who is asking, as distinct from what the project reaches. Nothing is
+ * trimmed or case-folded; writes nothing and never throws.
+ * @param {*} viewer the stamped viewer
+ * @returns {*} the part before the `@` of `member:<id>@<project>` or `admin@<project>`; any other `viewer` unchanged
+ */
 export function baseViewer(viewer) {
   const m = typeof viewer === "string" ? CARRIED.exec(viewer) : null;
   return m ? m[1] : viewer;
 }
 
-/** The project a viewer carries (`member:<id>@<project>`, `admin@<project>`), or null. */
+/**
+ * R73: the project a viewer carries (`member:<id>@<project>`, `admin@<project>`), or null. Writes nothing and never throws.
+ * @param {*} viewer the stamped viewer
+ * @returns {string | null} the text after the first `@`, or null for any other spelling
+ * @bound result: one or more characters when not null; `<id>` is 1 to 128 of letters, digits, `.`, `_`, `:` and `-`
+ */
 export function carriedProject(viewer) {
   const m = typeof viewer === "string" ? CARRIED.exec(viewer) : null;
   return m ? m[2] : null;
 }
 
-/** The member id a viewer spelling names: `identity` is read when it is a non-empty string, else `viewer`; the id in
- *  `member:<id>` (with or without a carried project), so `member:admin` answers `admin`; null for the founder's bare
- *  spelling, for a machine credential and for any other spelling. */
+/**
+ * R73: the member id a viewer spelling names: `identity` is read when it is a non-empty string, else `viewer`; the id in
+ * `member:<id>` (with or without a carried project), so `member:admin` answers `admin`; null for the founder's bare
+ * spelling, for a machine credential and for any other spelling. Nothing is trimmed or case-folded; never throws.
+ * @param {*} viewer the stamped viewer
+ * @param {*} [identity] a stamped identity, read in place of `viewer` when it is a non-empty string
+ * @returns {string | null}
+ * @bound result: 1 to 128 of letters, digits, `.`, `_`, `:` and `-` when not null
+ */
 export function viewerMember(viewer, identity = null) {
   const asked = typeof identity === "string" && identity !== "" ? identity : viewer;
   if (typeof asked !== "string") return null;
@@ -78,6 +155,14 @@ const viewerKnown = (v) => typeof v === "string" && VIEWER.test(baseViewer(v));
    what to do next or instead). `message` is this function's own, never a caller's; with no remedy there is none.
    Writes nothing and never throws. */
 const NOT_AN_ADMIN_FIXED = new Set(["ok", "reason", "code", "check", "translation", "by", "detail", "message"]);
+/**
+ * R28: the one NOT_AN_ADMIN refusal. Writes nothing and never throws.
+ * @param {*} by the stamped caller
+ * @param {*} act the caller's fixed phrase for its act; anything but a non-empty string reads as "this act"
+ * @param {*} [extra] the caller's own fields; a `remedy` that is a non-empty string becomes `remedy` and `message`
+ * @returns {NotAnAdmin}
+ * @bound act: trimmed and kept to 120 characters; remedy: trimmed and kept to 400 characters
+ */
 export function notAnAdmin(by, act, extra = null) {
   let own = [];
   try {
@@ -107,6 +192,12 @@ export function notAnAdmin(by, act, extra = null) {
    them. Writes nothing and never throws. */
 const NO_SUCH_MEMBER_DETAIL = localize("membership.index.no_member_of_your_team", "no member of your team answers to that id here. Nothing was changed.");
 const NO_SUCH_MEMBER_FIXED = new Set(["ok", "reason", "code", "check", "translation", "member", "detail"]);
+/**
+ * R49: the one NO_SUCH_MEMBER refusal. Writes nothing and never throws.
+ * @param {*} memberId the id asked
+ * @param {*} [extra] the caller's own fields
+ * @returns {NoSuchMember}
+ */
 export function noSuchMember(memberId, extra = null) {
   let own = [];
   try {
@@ -134,12 +225,19 @@ const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
    listeners by (this module's R79; promotion, provenance and the later modules import it), is its answer for the file
    itself. A module the file lists before its job has built it is in the list in its place all the same; which are not yet
    built is the file's to say (those without `paths`), never this module's. */
+/**
+ * R61: the frozen list of module ids a parsed copy of the module file names, in its order, each once.
+ * @param {*} modules the parsed file: a list of `{id}`, or an object whose `modules` is one; anything else reads as none
+ * @returns {readonly string[]}
+ * @bound an entry that is not an object with a non-empty string `id` is skipped; a repeated id is kept at its first place
+ */
 export function moduleOrderFrom(modules) {
   const list = Array.isArray(modules) ? modules : isObj(modules) && Array.isArray(modules.modules) ? modules.modules : [];
   const ids = [];
   for (const m of list) if (isObj(m) && typeof m.id === "string" && m.id && !ids.includes(m.id)) ids.push(m.id);
   return Object.freeze(ids);
 }
+/** @type {readonly string[]} the modules' total order, the one list every module orders its listeners by (R25, R61) */
 export const MODULE_ORDER = moduleOrderFrom(MODULE_IDS.map((id) => ({ id })));
 
 const LISTENER_REFUSAL_FIELDS = new Set(["ok", "reason", "code", "detail", "module", "check", "translation"]);
@@ -151,6 +249,14 @@ const LISTENER_REFUSAL_FIELDS = new Set(["ok", "reason", "code", "detail", "modu
  *  registration whoever makes it, that one registration or null. Answers the refusal, with `extra` (the caller's own
  *  fields) beside its own and never replacing them, and its row's `check` and `translation` (this module's C-102.11
  *  and C-102.12, N128); else null. Writes nothing and never throws. (Promotion's built text, moved as it was, K285.) */
+/**
+ * @param {*} held the registrations the caller already holds for the slot: a list of `{module}`, or that one registration
+ *   (an object with `module`) or null for a slot that takes one
+ * @param {*} module the registering module's name
+ * @param {*} fn the listener
+ * @param {*} [extra] the caller's own fields, set beside the refusal's
+ * @returns {ListenerRefused | null} null when the registration may be recorded
+ */
 export function listenerRefusal(held, module, fn, extra) {
   const refuse = (code, detail, fields) => {
     const row = MEMBERSHIP_CHECKS[code];
@@ -187,11 +293,220 @@ export function listenerRefusal(held, module, fn, extra) {
 }
 
 
+/**
+ * @typedef {Object} Sql the store's SQL door, `ctx.storage.sql` (R74)
+ * @property {(query: string, ...bindings: *[]) => Iterable<*>} exec runs one statement, answering its rows, each as the store holds it
+ */
+/**
+ * @typedef {Object} ReservedIdFindingFields the audit's finding for the reserved id (split map seam 1)
+ * @property {"admin"} reservedId
+ * @property {boolean} held whether a members row holds the id `admin`
+ * @property {*} role that row's role, null when none is held
+ * @property {*} status that row's status, null when none is held
+ * @property {string} check C-55.1
+ * @property {string} says the finding's words
+ */
+/** @typedef {ReservedIdFindingFields & Object<string, *>} ReservedIdFinding a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} MemberFactsFields a member's standing as later modules read it (R24, R76)
+ * @property {*} cover null for the founder
+ * @property {*} handle null when none is held
+ * @property {*} role `admin` or `member`
+ * @property {*} status `proposed`, `invited`, `active` or `revoked`
+ */
+/** @typedef {MemberFactsFields & Object<string, *>} MemberFacts a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} SessionRightsFields what a session may do, resolved at the call (R30)
+ * @property {string[]} capabilities words of R1's vocabulary
+ * @property {boolean} administer
+ * @property {string | null} member the member id, `admin` for the founder, null when the role names none
+ * @property {*} handle the held handle, null when none
+ * @property {boolean} rootOfTrust true for the founder alone
+ * @bound a missing or inactive member, or an unrecognised role, holds no capability and neither `administer` nor `rootOfTrust`
+ */
+/** @typedef {SessionRightsFields & Object<string, *>} SessionRights a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} AdminMath R2's arithmetic for a number of administrators
+ * @property {number} administrators n
+ * @property {number} votesNeeded floor(n/2)+1
+ * @property {number} eligibleVoters max(0, n-1)
+ * @property {boolean} possible votesNeeded <= eligibleVoters
+ */
+/**
+ * @typedef {Object} HostingRecord one answer to who holds hosting access (R8)
+ * @property {string} holders
+ * @property {string | null} note
+ * @property {*} recorded_by
+ * @property {string} at
+ * @bound holders: trimmed, 1 to 500 characters; note: at most 280 characters, an empty one null
+ */
+/**
+ * @typedef {Object} HostingAccessFields the hosting-access record, bounded (R8, R47)
+ * @property {true} ok
+ * @property {boolean} recorded whether any record exists
+ * @property {Object<string, *> | null} current the latest record, read on its own
+ * @property {Object<string, *>[]} history the first `limit` records in the order recorded
+ * @property {number} limit
+ * @property {boolean} truncated true exactly when a record past the first `limit` was read
+ * @bound limit: 1 to 200, the caller's to lower and never to raise; absent or not a number is 200
+ */
+/** @typedef {HostingAccessFields & Object<string, *>} HostingAccess a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} PairingsFields the pairings a viewer may see (R15, R47)
+ * @property {true} ok
+ * @property {{handle: *, cover: *, published: boolean}[]} pairings by handle
+ * @property {number} limit
+ * @property {boolean} truncated
+ * @bound limit: 1 to 200, as `HostingAccess`'s; only members holding a handle are listed
+ */
+/** @typedef {PairingsFields & Object<string, *>} Pairings a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} ExpertiseEvent one entry of a label's history (R19)
+ * @property {*} event `declared`, `confirmed` or `withdrawn`
+ * @property {*} actor who made it
+ * @property {*} at when
+ * @property {*} [reason] the withdrawal's reason, on a withdrawal made with one (R79)
+ */
+/**
+ * @typedef {Object} ExpertiseEntry one label's current state and its history (R20)
+ * @property {*} label
+ * @property {*} state the latest event
+ * @property {boolean} confirmed
+ * @property {*} by who made the latest entry
+ * @property {*} at when
+ * @property {ExpertiseEvent[]} history every entry for the label, in the order made
+ */
+/**
+ * @typedef {Object} ExpertiseListFields a member's expertise (R20); it gates nothing
+ * @property {true} ok
+ * @property {*} memberId as asked
+ * @property {ExpertiseEntry[]} expertise one per label, by label
+ * @property {"nothing"} gates
+ */
+/** @typedef {ExpertiseListFields & Object<string, *>} ExpertiseList a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} ExpertiseHolderFields (R72)
+ * @property {*} memberId
+ * @property {*} handle null when none is held
+ * @property {*} state `declared` or `confirmed`
+ */
+/** @typedef {ExpertiseHolderFields & Object<string, *>} ExpertiseHolder a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} RosterRowFields one row of `memberList` (R14, R41, R62, R71, R83)
+ * @property {*} member_id
+ * @property {*} handle
+ * @property {*} role
+ * @property {*} status
+ * @property {string} status_by who set the status, or `not recorded`
+ * @property {string} invited_by who invited, or `not recorded`
+ * @property {*[]} capabilities
+ * @property {boolean} pairing_published
+ * @property {ExpertiseEntry[]} expertise
+ * @property {*} created
+ * @property {*} updated
+ * @property {*} invite_pending 1 while an invitation is unspent
+ * @property {*} [cover] an administrator's roster only
+ * @property {true} [founder] the founder's row alone
+ * @property {*[]} [projects] an administrator's roster only, as `projectsOf` answers
+ * @property {string} [door] an administrator's roster only: `administrator`, `website` or `join link`
+ * @property {*} [approvedBy] an administrator's roster only
+ * @property {*} [expires] an administrator's roster only; null for a proposed administrator
+ * @property {string | null} [invitation] an administrator's roster only: `live`, `spent`, `expired`, `withdrawn`, null when proposed
+ * @property {{have: string[], awaiting: string[]}} [endorsements] an administrator's roster only, on a proposed administrator's row
+ */
+/** @typedef {RosterRowFields & Object<string, *>} RosterRow a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} HandleProblem one way a typed handle does not fit R9's pattern (R50)
+ * @property {"length" | "start" | "characters"} problem
+ * @property {number} [min] `length`: 2
+ * @property {number} [max] `length`: 41
+ * @property {string[]} [characters] `characters`: each character outside lower-case letters, digits and hyphens, once
+ * @bound characters: at most 20
+ */
+/**
+ * @typedef {Object} HandleCheckedFields whether a handle could be taken now (R50)
+ * @property {true} ok
+ * @property {string} handle the trimmed handle, at most 80 characters
+ * @property {"free" | "taken" | "not_allowed"} state
+ * @property {HandleProblem[]} problems empty unless `not_allowed`
+ * @property {string | null} suggestion `taken` only: the smallest free `<handle>-<n>`, null when none fits 41 characters
+ * @property {{key: string, en: string}} words the key and its English, placeholders left for the screen
+ */
+/** @typedef {HandleCheckedFields & Object<string, *>} HandleChecked a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} DoorRecord one record of a door's history (R54)
+ * @property {*} id the door's id, the one its invitations' actor names
+ * @property {*} event `create`, `set`, `revoke` (the key) or `enable`, `set`, `replace`, `off` (the link)
+ * @property {*[]} capabilities
+ * @property {*} dailyCap
+ * @property {*} expiresInDays
+ * @property {*} by
+ * @property {*} at
+ */
+/**
+ * @typedef {Object} DoorViewFields one door's settings and history, never its secret (R54)
+ * @property {boolean} live
+ * @property {{id: *, capabilities: *[], dailyCap: *, expiresInDays: *, since: *, by: *} | null} current the live door's, else null
+ * @property {DoorRecord[]} history the first `limit` records, in the order recorded
+ * @property {number} limit
+ * @property {boolean} truncated
+ * @bound limit: 1 to 200, the caller's to lower and never to raise
+ */
+/** @typedef {DoorViewFields & Object<string, *>} DoorView a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} RemovalOpenFields one administrator removal under way (R75)
+ * @property {*} target
+ * @property {{voter: *, at: *}[]} voters in the order cast
+ * @property {*[]} awaiting in R29's order
+ * @property {number} have
+ * @property {number} need
+ */
+/** @typedef {RemovalOpenFields & Object<string, *>} RemovalOpen a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} EndorsementOwedFields (R77)
+ * @property {*} memberId
+ * @property {*} handle null: a proposed member has none yet
+ * @property {string} proposed_by or `not recorded`
+ * @property {*} proposed_at
+ * @property {*[]} have sorted
+ * @property {*[]} awaiting sorted
+ */
+/** @typedef {EndorsementOwedFields & Object<string, *>} EndorsementOwed a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} ExpertiseAwaitingFields (R78)
+ * @property {*} memberId
+ * @property {*} handle null when none is held
+ * @property {*} label
+ * @property {*} declared_at
+ */
+/** @typedef {ExpertiseAwaitingFields & Object<string, *>} ExpertiseAwaiting a record; a field it does not name reads as absent */
+/**
+ * @typedef {Object} GroupDescriptionFields the group's self-description, as recorded (R44)
+ * @property {string[]} kinds
+ * @property {string | null} otherKind
+ * @property {string | null} focus
+ * @property {string | null} purpose
+ * @property {"members" | "public"} visibility
+ * @property {*} by
+ * @property {string} at
+ * @bound otherKind: at most 120 characters; focus: at most 1,000; purpose: at most 4,000; each trimmed, empty reads as null
+ */
+/** @typedef {GroupDescriptionFields & Object<string, *>} GroupDescription a record; a field it does not name reads as absent */
+
 export class Members {
+  /**
+   * One store's members (R74). `membersOf(ctx)` makes the one instance per storage.
+   * @param {Object} [deps]
+   * @param {Sql} [deps.sql] the store's SQL door; required in use, a store without one answers nothing
+   * @param {*} [deps.now] a clock, a function answering milliseconds; anything else is no clock (R82)
+   */
   constructor({ sql, now = null } = {}) {
-    this.sql = sql;
-    this.now = typeof now === "function" ? now : null;   /* R82: the clock handed in, else the store's environment, else the wall clock */
-    this.env = null;   /* R82: the store's environment, set by `membersOps` (`#nowMs`) */
+    /** @type {Sql} */
+    this.sql = /** @type {Sql} */ (sql);
+    /** @type {(() => *) | null} R82: the clock handed in, else the store's environment, else the wall clock */
+    this.now = typeof now === "function" ? now : null;
+    /** @type {*} R82: the store's environment, set by `membersOps` (`#nowMs`); its `BIO_NOW_MS` is the clock's second source */
+    this.env = null;
   }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
@@ -220,6 +535,10 @@ export class Members {
      every table and index created if absent; the additive columns an older store lacks added; the vestigial
      `members.expertise` column dropped (K57: `member_expertise` is the record, R17–R20). It declares nothing to
      record-core and reads no bundle: the composition declares `schema.mjs`'s tables, and reindexes project sight. */
+  /**
+   * R21, R66, R74: this module's tables, created or brought up to date; idempotent. A failed statement throws into the caller.
+   * @returns {void}
+   */
   migrate() {
     const cols = (t) => [...this.sql.exec(`PRAGMA table_info(${t})`)].map((r) => r.name);
     const memberCols = cols("members");
@@ -243,6 +562,7 @@ export class Members {
      stated finding, never a conformance error. It names only the reserved id, which is public, and that row's role
      and status. Registered once with record-core by `membership` (split map §3 seam 1), which asks this
      module for the finding; a host whose record-core does not offer the seam registers nothing. */
+  /** @returns {ReservedIdFinding} */
   reservedIdFinding() {
     const id = Members.ROOT_ADMIN;
     const m = this.#one(`SELECT role, status FROM members WHERE member_id = ?`, id);
@@ -268,6 +588,12 @@ export class Members {
    * leaves a revoked member revoked notifies nobody. Registration's refusals are R81's. */
   #revokedListeners = [];   // {module, fn, seq}
 
+  /**
+   * R25: a later module registers, once, the listener told of each revocation, `fn({memberId, by, at})`.
+   * @param {*} module the registering module's name
+   * @param {*} fn the listener
+   * @returns {Registered | ListenerRefused}
+   */
   onRevoked(module, fn) {
     const refused = listenerRefusal(this.#revokedListeners, module, fn);
     if (refused) return refused;
@@ -289,6 +615,11 @@ export class Members {
   /* ===== Services later modules read (K57, R64–R73), and the canon rules N18 built (R10, R11, R18, R19) ===== */
 
   /* R64: the founder (`admin`, once the instance is claimed) and every active member with role `admin`. */
+  /**
+   * R23: the founder once claimed, and every active member with role `admin`. Writes nothing.
+   * @param {*} memberId
+   * @returns {boolean}
+   */
   isAdministrator(memberId) {
     if (memberId === Members.ROOT_ADMIN) return this.#claimed();
     if (typeof memberId !== "string" || memberId === "") return false;
@@ -305,6 +636,12 @@ export class Members {
    * takes one registration whoever makes it, so its refusals are R81's, naming the holder. */
   #claimedSource = null;   // {module, fn}
 
+  /**
+   * R31: one later module registers, once, `fn()`, answering whether the instance is claimed.
+   * @param {*} module the registering module's name
+   * @param {*} fn answers true when claimed; anything else, or a throw, reads as not claimed
+   * @returns {Registered | ListenerRefused}
+   */
   registerClaimed(module, fn) {
     const refused = listenerRefusal(this.#claimedSource, module, fn);
     if (refused) return refused;
@@ -321,6 +658,12 @@ export class Members {
    * itself). */
   #passwordSetter = null;   // {module, fn}
 
+  /**
+   * R32: one module registers, once, the setter `enroll` calls, `fn({role, password})`.
+   * @param {*} fn the setter; an answer with `ok: false`, or a throw, is a password not recorded
+   * @param {*} [module] the registrant's name; anything but a non-empty string reads as `credentials`
+   * @returns {Registered | ListenerRefused}
+   */
   registerPasswordSetter(fn, module = "credentials") {
     const refused = listenerRefusal(this.#passwordSetter, typeof module === "string" && module ? module : "credentials", fn);
     if (refused) return refused;
@@ -346,6 +689,11 @@ export class Members {
   }
 
   /* R68: a member's cover, handle, role and status, or null; never a credential, key or expertise. */
+  /**
+   * R24, R76: a member's cover, handle, role and status, or null; the founder once claimed. Never a credential, key or expertise.
+   * @param {*} memberId
+   * @returns {MemberFacts | null}
+   */
   memberFacts(memberId) {
     const m = this.#one(`SELECT cover, handle, role, status FROM members WHERE member_id=?`, memberId);
     if (m) return { cover: m.cover, handle: m.handle ?? null, role: m.role, status: m.status };
@@ -362,7 +710,9 @@ export class Members {
 
   /** R152 (T50; N1124, K3624): the instant `memberId`'s status last changed, an ISO string, or null when none is recorded
    *  (a status set before this was recorded is never back-filled) and for an id naming no member. Every status-changing
-   *  write sets it and no other write moves it. Writes nothing; never throws. */
+   *  write sets it and no other write moves it. Writes nothing; never throws.
+   *  @param {*} memberId
+   *  @returns {*} the ISO instant, or null */
   memberStatusSince(memberId) {
     try {
       if (typeof memberId !== "string" || !memberId) return null;
@@ -374,6 +724,12 @@ export class Members {
      (4.6) — resigns, becoming an ordinary member, unless they are the last administrator R86 lists (the founder counted
      once the instance is claimed). The refusal at two (`RESIGN_AT_TWO`, C-96.10) is retired: one administrator is
      enough (DEC-134 (1)), and only the group left with none is refused (`LAST_ADMIN`, C-96.22). */
+  /**
+   * R7: an active administrator becomes an ordinary member.
+   * @param {Object} [args]
+   * @param {*} [args.by] the stamped caller
+   * @returns {Refusal | NotAnAdmin | ({ok: true, memberId: *, role: "member", administrators: number, detail: string} & Object<string, *>)}
+   */
   adminResign({ by = null } = {}) {
     if (by === Members.ROOT_ADMIN)
       return { ok: false, reason: "ROOT_OF_TRUST",
@@ -395,6 +751,14 @@ export class Members {
   /* R11 (section 4.8; DEC-134 (3)): the group's answer to who holds hosting access. It is asked at setup
      (the setup screen's act, `screens-entry` R6, and the group's settings, `screens-settings` R18; the setup page's
      `setup-page` R15 is retired, K1851), never on adding an administrator, so `memberAdd` asks nothing about it. The group's answer, recorded by an administrator; append-only, the latest record is the answer. */
+  /**
+   * R8: an administrator records who holds hosting access; appended, the latest record is the answer.
+   * @param {Object} [args]
+   * @param {*} [args.holders] who holds it, as the team says it
+   * @param {*} [args.note]
+   * @param {*} [args.by] the stamped caller
+   * @returns {NotAnAdmin | Refusal | ({ok: true} & HostingRecord & Object<string, *>)}
+   */
   hostingAccessSet({ holders = null, note = null, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.recording_who_holds_hosting_access", "recording who holds hosting access (4.8)"));   /* R84 */
     const refusal = (code, detail, extra) => Members.#custodialRefusal(code, detail, extra);   /* C-96.11 */
@@ -414,6 +778,12 @@ export class Members {
      `limit` is the cap applied (the caller may lower it, never raise it), `truncated` is measured by reading one row
      past it, and the page is the first `limit` records in the order they were recorded. `current`, the latest
      record, is read on its own, so a cut history never changes what the answer is. */
+  /**
+   * R8, R47: the hosting-access record, bounded. Writes nothing.
+   * @param {Object} [args]
+   * @param {*} [args.limit] the caller's lower cap
+   * @returns {HostingAccess}
+   */
   hostingAccess({ limit = null } = {}) {
     const cap = Math.max(1, Math.min(Number(limit) || Members.HOSTING_ACCESS_LIMIT, Members.HOSTING_ACCESS_LIMIT));
     const found = this.#rows(`SELECT holders, note, recorded_by, at FROM hosting_access ORDER BY seq LIMIT ?`, cap + 1);
@@ -425,11 +795,20 @@ export class Members {
 
   /* N70: the history's page size, a chosen ceiling (the directory's reasoning, now `project-roster`'s): generous enough that a
      group reading who holds its hosting access rarely meets it, published whenever it cuts. */
+  /** @type {number} R47's cap on the history, 200 */
   static HOSTING_ACCESS_LIMIT = 200;
 
   /* R19 (section 3, "Pairing"): whether a member's cover-and-handle pairing is published is a per-member decision
      the member or an administrator may make. The roster's cover stays an administrator's view (R17); the published
      pairings are read with `memberPairings`. */
+  /**
+   * R15: whether a member's cover-and-handle pairing is published, the member's own decision or an administrator's.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.published] true, 1, "1" or "true" publishes; anything else does not
+   * @param {*} [args.by] the stamped caller
+   * @returns {NoSuchMember | Refusal | ({ok: true, memberId: *, published: boolean, by: *} & Object<string, *>)}
+   */
   memberPairingSet({ memberId, published, by = null } = {}) {
     const m = this.#one(`SELECT member_id FROM members WHERE member_id=?`, memberId);
     if (!m) return noSuchMember(memberId);   /* R121 (N793): C-96.47 minted at its one site */
@@ -452,6 +831,14 @@ export class Members {
      Fails closed: with neither stamp a caller is shown the published pairings alone. */
   /* N70: bounded as `hostingAccess` is: the first `limit` pairings by handle (200 at most, the caller's to lower),
      `truncated` measured by reading one row past the cap. */
+  /**
+   * R15, R47: the pairings a viewer may see. Writes nothing.
+   * @param {Object} [args]
+   * @param {*} [args.viewer] the stamped viewer
+   * @param {*} [args.administer] the administer stamp, true or "1"
+   * @param {*} [args.limit] the caller's lower cap
+   * @returns {Pairings}
+   */
   memberPairings({ viewer = null, administer = null, limit = null } = {}) {
     const self = viewerMember(viewer);
     const admin = administer === true || administer === "1"
@@ -466,6 +853,7 @@ export class Members {
     return { ok: true, pairings: truncated ? found.slice(0, cap) : found, limit: cap, truncated };
   }
 
+  /** @type {number} R47's cap on the pairings, 200 */
   static MEMBER_PAIRINGS_LIMIT = 200;
 
   static async #sha256(v) {
@@ -510,6 +898,10 @@ export class Members {
    * R92 (K637): a named service, `credentials`' `session` reads it for every session (its R5). It writes nothing and
    * never throws: a read it cannot make holds no rights.
    */
+  /**
+   * @param {*} role the session's role: `admin` or `member:<id>`
+   * @returns {SessionRights}
+   */
   sessionRights(role) {
     const none = { capabilities: [], administer: false, member: null, handle: null, rootOfTrust: false };
     try { return this.#rightsOf(role, none); } catch { return none; }
@@ -533,6 +925,10 @@ export class Members {
 
   /* R119 (N783): the member whose handle is exactly `handle`, `{member_id, handle, status}`, or null. R32, R36 and
      `project-roster` R3–R5 and R12 resolve a handle through it. Writes nothing and never throws. */
+  /**
+   * @param {*} handle compared exactly
+   * @returns {{member_id: *, handle: *, status: *} | null}
+   */
   memberByHandle(handle) {
     if (typeof handle !== "string" || handle === "") return null;
     try {
@@ -570,6 +966,7 @@ export class Members {
 
   /* R17, R72: EXPERTISE_NO_LABEL is minted here alone; the declaration and the holders' read answer through it, each with
      its own detail. */
+  /** @param {string} detail @returns {Refusal} builds EXPERTISE_NO_LABEL */
   static #noLabel(detail) {
     /* DEC-49 REGION is-expertise-labelled */
     const row = MEMBERSHIP_CHECKS.EXPERTISE_NO_LABEL;
@@ -584,7 +981,14 @@ export class Members {
     return m || (this.#founderMember(memberId) ? { member_id: Members.ROOT_ADMIN, status: "active" } : null);
   }
 
-  /** The member's own statement about themselves. */
+  /**
+   * R17, R76: the member's own statement about themselves, appended.
+   * @param {Object} [args]
+   * @param {*} [args.memberId] the declaring member (the control plane stamps it), the founder once claimed
+   * @param {*} [args.label]
+   * @returns {NoSuchMember | Refusal | ({ok: true, memberId: *, label: string, state: "declared", confirmed: false, detail: string} & Object<string, *>)}
+   * @bound label: trimmed, whitespace collapsed, at most 120 characters; empty is EXPERTISE_NO_LABEL
+   */
   expertiseDeclare({ memberId, label } = {}) {
     const m = this.#expertiseSubject(memberId);
     if (!m) return noSuchMember(memberId);   /* R121 (N793): C-96.47 minted at its one site */
@@ -603,7 +1007,17 @@ export class Members {
              detail: localize("member-roster.index.declared_and_unconfirmed_which_costs_nothing", "declared and unconfirmed, which costs nothing: an unconfirmed entry carries the same capabilities, visibility and access as a confirmed one") };
   }
 
-  /** An administrator vouching, INCLUDING for another administrator (4.9). */
+  /**
+   * R18, R76, R79: an administrator vouching, INCLUDING for another administrator (4.9); with `withdraw`, taking a
+   * confirmation back without a reason, as before R79.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.label]
+   * @param {*} [args.by] the stamped caller
+   * @param {*} [args.withdraw] truthy withdraws
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, label: string, state: "confirmed" | "withdrawn", confirmed: boolean, by: *} & Object<string, *>)}
+   * @bound label: normalised as R17's
+   */
   expertiseConfirm({ memberId, label, by, withdraw = false } = {}) {
     /* R84 (N327, DEC-83). */
     if (!this.isAdministrator(by))
@@ -634,6 +1048,15 @@ export class Members {
   /** R79 (T51; DEC-386, DEC-376; `op=expertisewithdraw`): an administrator withdraws a confirmed expertise with a reason.
    *  The one `withdrawn` entry takes back the confirmation and the declaration together (the label then reads neither
    *  declared nor confirmed), and the earlier entries stay in its history (R19). */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.label]
+   * @param {*} [args.reason] trimmed; empty is NO_REASON
+   * @param {*} [args.by] the stamped caller
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, label: string, state: "withdrawn", confirmed: false, by: *, reason: string} & Object<string, *>)}
+   * @bound label: normalised as R17's
+   */
   expertiseWithdraw({ memberId, label, reason, by } = {}) {
     if (!this.isAdministrator(by))
       return notAnAdmin(by, localize("member-roster.index.withdrawing_a_members_confirmed_expertise", "withdrawing a member's confirmed expertise"));   /* R28 */
@@ -654,7 +1077,12 @@ export class Members {
     return { ok: true, memberId, label: lab, state: "withdrawn", confirmed: false, by, reason: why };
   }
 
-  /** The roster view: current state per label, with the history behind it. */
+  /**
+   * R20: the roster view: current state per label, with the history behind it. Writes nothing.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @returns {ExpertiseList}
+   */
   expertiseList({ memberId } = {}) {
     const rows = this.#rows(
       `SELECT seq, label, event, actor, created, reason FROM member_expertise WHERE member_id=? ORDER BY seq`,
@@ -681,6 +1109,7 @@ export class Members {
    * asserts it row by row, because this is the part of the design that is cheap
    * to get subtly wrong and expensive to discover wrong.
    */
+  /** @type {string[]} R1's vocabulary, exactly `contribute`, `publish`, `create_projects`; never `administer` */
   static CAPABILITIES = ["contribute", "publish", "create_projects"];
 
   /** Removal takes a MAJORITY OF ALL ADMINISTRATORS, counting the target in the
@@ -690,7 +1119,9 @@ export class Members {
    *  special case, demands unanimity while the group is small enough for
    *  unanimity to be reasonable, and loosens as the group grows. A lone captured
    *  administrator can never eject anyone at any size. It fails only to a
-   *  colluding majority, and nothing survives a colluding majority. */
+   *  colluding majority, and nothing survives a colluding majority.
+   *  @param {number} n the number of administrators
+   *  @returns {AdminMath} */
   static adminMath(n) {
     const votesNeeded = Math.floor(n / 2) + 1;
     const eligibleVoters = Math.max(0, n - 1);
@@ -699,7 +1130,8 @@ export class Members {
 
   /** The table, computed rather than transcribed, so the code and the document
    *  cannot drift. Exposed as an op because a UI must be able to tell a group
-   *  what it would take BEFORE they start a removal. */
+   *  what it would take BEFORE they start a removal. R2.
+   *  @returns {({ok: true, table: AdminMath[], live: AdminMath} & Object<string, *>)} the table for n = 1 to 9, and the live count's row */
   adminArithmetic() {
     const table = [];
     for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9]) table.push(Members.adminMath(n));
@@ -721,11 +1153,13 @@ export class Members {
    * of trust and every rule in the membership model sits beneath them.
    * Membership does not and cannot constrain them, and an interface that
    * implied otherwise would be lying. */
+  /** @type {"admin"} */
   static ROOT_ADMIN = ROOT_ADMIN;
 
   /* R86 (N329): the administrators in a stated order: the founder first once the instance is claimed, then every active
      member with role `admin` in the order their member rows were created, ties broken by member id (`tasks` R1's
      "earliest active administrator" is the first after the founder). Writes nothing and never throws. */
+  /** @returns {string[]} the founder first once claimed, then active administrators by creation, ties by id */
   activeAdmins() {
     const rows = this.#rows(`SELECT member_id FROM members WHERE role='admin' AND status='active'
                               ORDER BY created, member_id`)
@@ -788,6 +1222,14 @@ export class Members {
    *  IT IS ASKED BEFORE `NO_SUCH_MEMBER`, deliberately: who may ask is settled
    *  before the record answers whether a member exists, so a caller with no
    *  standing cannot use this op to enumerate the roster. */
+  /**
+   * R6: replaces a member's capabilities exactly.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.capabilities] a list of R1's words
+   * @param {*} [args.by] the stamped caller
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, capabilities: *[], by: *} & Object<string, *>)}
+   */
   memberCaps({ memberId, capabilities, by } = {}) {
     const admins = this.activeAdmins();
     if (!by || !admins.includes(by)) return notAnAdmin(by, localize("member-roster.index.setting_a_members_capabilities", "setting a member's capabilities"));   /* R84 */
@@ -813,6 +1255,14 @@ export class Members {
    *  CONSENSUS of every existing administrator, and that is the load-bearing
    *  half of 4.7: without it a captured administrator recruits confederates and
    *  manufactures the majority that ejects the honest ones. */
+  /**
+   * R3: an administrator's endorsement of a proposed administrator; the last one issues the invitation, returned once.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.by] the stamped caller
+   * @returns {Promise<NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, invite: string, expires: string, endorsedBy: string[]} & Object<string, *>)>}
+   *   CONSENSUS_REQUIRED, with `have` and `awaiting`, records the endorsement
+   */
   async adminEndorse({ memberId, by } = {}) {
     /* R6 (T38, K2276): the caller's standing first, so no one who may not act learns whether a member exists. */
     const admins = this.activeAdmins();
@@ -851,7 +1301,15 @@ export class Members {
     return { ok: true, memberId, invite, expires, endorsedBy: have.sort() };
   }
 
-  /** Vote to remove an administrator. Section 4.7. */
+  /**
+   * R4, R5: vote to remove an administrator. Section 4.7. A carried removal revokes the target and tells R25's listeners.
+   * @param {Object} [args]
+   * @param {*} [args.memberId] the target
+   * @param {*} [args.by] the stamped caller
+   * @param {*} [args.reason] trimmed; empty is NO_REASON
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | (AdminMath & ({ok: true, memberId: *, removed: true, deciders: *[], reasons: *[], alsoDo: string} & Object<string, *>))}
+   *   VOTES_SHORT, with `have`, `need` and `deciders`, records the vote
+   */
   adminRemove({ memberId, by, reason } = {}) {
     /* R7 (T38, K2276): the caller's standing first, before any fact about the target, so no one who may not act
        learns whether a member exists, is an administrator, or is the founder. */
@@ -911,6 +1369,17 @@ export class Members {
              alsoDo: word("membership.also_do") };   /* R151 */
   }
 
+  /**
+   * R9 to R11, R33: an administrator adds a member, `invited` with an invitation returned once; an administrator while
+   * two or more exist is `proposed` (CONSENSUS_REQUIRED, recording the proposer's endorsement).
+   * @param {{memberId?: *, cover?: *, role?: *, capabilities?: *, expertise?: *, expiresInDays?: *, by?: *} & Object<string, *>} [args]
+   *   `memberId`; `cover`; `role`, `admin` or else an ordinary member; `capabilities`, a list whose words outside R1's
+   *   vocabulary are dropped, absent `["contribute"]`; `expertise`, refused whenever given (EXPERTISE_IS_NOT_ASSIGNED);
+   *   `expiresInDays`; `by`, the stamped caller. Any other field (a `name`) is not read: the cover is `cover` alone
+   * @returns {Promise<NotAnAdmin | Refusal | ({ok: true, memberId: *, invite: string, expires: string, role: "admin" | "member", capabilities: *[], invited_by: string} & Object<string, *>)>}
+   * @bound memberId: 2 to 41 of a-z, 0-9 and -, starting with a letter or digit, never `admin`
+   * @bound expiresInDays: a whole number from 1 to 30, absent is 7
+   */
   async memberAdd({ memberId, cover, role = "member", capabilities = null,
                     expertise = null, expiresInDays = undefined, by = null } = {}) {
     /* REC-159: the roster first — before the id is judged or looked up. */
@@ -1031,6 +1500,7 @@ export class Members {
    * That is the security property and not tidiness: a response distinguishing
    * them would confirm to whoever found the archived link that it had once
    * addressed somebody real, which is exactly what the burner is for. */
+  /** @type {Refusal} builds NO_SUCH_INVITATION, the one answer for an invitation that is not live */
   static #INVITE_MISS = { ok: false, reason: "NO_SUCH_INVITATION",
     detail: localize("membership.index.this_invitation_is_not_live", "this invitation is not live. An invitation is spent the moment it is used, and a spent one cannot be told apart from one that never existed, nor from one that expired or was withdrawn.") };
 
@@ -1047,8 +1517,12 @@ export class Members {
     return m && !Members.#expired(m.invite_expires, this.#nowMs()) ? m : null;
   }
 
-  /** What a burner URL resolves to. Unauthenticated by necessity: the invitee
-   *  holds no credential yet, which is what the invitation is for. */
+  /** R12: what a burner URL resolves to. Unauthenticated by necessity: the invitee
+   *  holds no credential yet, which is what the invitation is for. Never the member id.
+   *  @param {Object} [args]
+   *  @param {*} [args.invite] the invitation
+   *  @returns {Promise<Refusal | ({ok: true, cover: *, role: *, capabilities: *[], expertise: ExpertiseEntry[]} & Object<string, *>)>}
+   *    a spent, expired, withdrawn and unknown invitation answer the identical NO_SUCH_INVITATION */
   async inviteLook({ invite } = {}) {
     const m = await this.#invited(invite);
     if (!m) return { ...Members.#INVITE_MISS };
@@ -1062,6 +1536,15 @@ export class Members {
              expertise: this.expertiseList({ memberId: m.member_id }).expertise };
   }
 
+  /**
+   * R13, R32, R43: an invitee becomes an active member with the handle chosen, spending the invitation.
+   * @param {{invite?: *, handle?: *, password?: *} & Object<string, *>} [args] `invite`; `handle`, trimmed; `password`,
+   *   set through the registered setter and never stored here; any other field (a cover, a role, capabilities) is not read
+   * @returns {Promise<Refusal | ({ok: true, memberId: *, handle: string, courtStatement?: string} & Object<string, *>)>}
+   *   `courtStatement` only while the court notice is `tell`
+   * @bound handle: R9's pattern; never `admin`, the founder's, or any handle a member holds or held
+   * @bound password: at least 12 characters
+   */
   async enroll({ invite, handle, password } = {}) {
     /* No member id. The token identifies the invitation, and requiring the id as
        well meant the link had to carry it, which is what leaked the invitee. */
@@ -1100,6 +1583,7 @@ export class Members {
      when another member holds it now, whatever their status (a member who has left keeps theirs), or held it before, the
      founder's included, R144; `admin` always, R141). `self` is the member who may keep it, none for the founder. Null when
      the handle is free. */
+  /** @param {string} h @param {*} self @returns {Refusal | null} builds NO_HANDLE, BAD_HANDLE or HANDLE_TAKEN */
   #handleRefusal(h, self) {
     if (!h) return { ok: false, reason: "NO_HANDLE",
       detail: localize("membership.index.choose_a_handle_it_is", "choose a handle. It is what the record shows: the author of a promotion, the attestor of a ratification, the participant list of a project. It is yours, not the label the administrator used to invite you.") };
@@ -1111,6 +1595,7 @@ export class Members {
 
   /* R95: the enrolment whose password could not be set. Nothing was written, the invitation is still live, and the
      answer says so; its row is this module's C-96.18. */
+  /** @returns {Refusal} builds ENROL_NOT_RECORDED */
   static #enrolNotRecorded() {
     /* DEC-49 REGION is-enrol-password-set */
     const row = MEMBERSHIP_CHECKS.ENROL_NOT_RECORDED;
@@ -1129,6 +1614,15 @@ export class Members {
      `projectsOf(memberId, viewer)` answers the list `membership` R18's rule gives that member for that viewer; it is called
      only for an administrator's roster (`administer`), for each row and for the founder's, in that order. Without a
      function, when it answers anything but a list, or when it throws, a row's `projects` is `[]`. */
+  /**
+   * R14, R62, R71: the roster; `cover` and an administrator's fields only when `administer` is the control plane's stamp.
+   * Writes nothing.
+   * @param {Object} [args]
+   * @param {*} [args.administer] the administer stamp, true or "1"; anything else is a member's roster
+   * @param {*} [args.viewer] handed to `projectsOf`
+   * @param {*} [args.projectsOf] `(memberId, viewer) => list`, called for an administrator's roster only
+   * @returns {{members: RosterRow[]}} the founder's row first once claimed, then the rows by member id
+   */
   memberList({ administer, viewer = null, projectsOf = null } = {}) {
     /* THE COVER↔HANDLE PROJECTION (Membership Architecture v1 §3 and v2 §3,
        identical and unambiguous: "Pairing. Only administrators see cover and
@@ -1209,12 +1703,15 @@ export class Members {
    * `handleChange` (R129) refuses every call `HANDLE_FIXED`, reading and writing nothing. R125's guard slot stands, so
    * reopening a change is one requirement, but no act here calls it. */
 
+  /** @type {RegExp} R9's pattern: 2 to 41 of a-z, 0-9 and -, starting with a letter or digit */
   static HANDLE_PATTERN = /^[a-z0-9][a-z0-9-]{1,40}$/;
 
   /* R123 (K1881): 60 checks in any 10 minutes, per invitation or per member, by a two-bucket sliding window
      (`credentials` R38's form; `capture` R31's). */
+  /** @type {Readonly<{perKey: number, windowMs: number}>} R50: 60 checks in any 10 minutes */
   static HANDLE_CHECK_WINDOW = Object.freeze({ perKey: 60, windowMs: 10 * 60_000 });
 
+  /** @type {string} the window's words, R50's `stated` */
   static HANDLE_CHECK_STATED = word("membership.handle_check_stated",
     { per_key: Members.HANDLE_CHECK_WINDOW.perKey, minutes: Members.HANDLE_CHECK_WINDOW.windowMs / 60_000 });
 
@@ -1229,7 +1726,9 @@ export class Members {
 
   /* R123: what in a typed handle does not fit R12's pattern: `length` (2 to 41), `start` (a letter or digit) and
      `characters`, naming each character outside lower-case letters, digits and hyphens, once, in the order typed. */
+  /** @param {string} h @returns {HandleProblem[]} */
   static #handleProblems(h) {
+    /** @type {HandleProblem[]} builds R50's problems */
     const problems = [];
     if (h.length < 2 || h.length > 41) problems.push({ problem: "length", min: 2, max: 41 });
     if (h.length && !/^[a-z0-9]/.test(h)) problems.push({ problem: "start" });
@@ -1281,7 +1780,14 @@ export class Members {
   /** R123 (DEC-184 (2), (3), DEC-186 (3); K1881; `op=handlecheck`): whether `handle` could be taken in this group now,
    *  as a person types it, asked with a live invitation or by an active member (`viewer`, a member checking a handle;
    *  T46: no handle is changed, R129). Free, taken (with a
-   *  suggestion) or not allowed (naming what does not fit), never who holds it. Writes only its count; never throws. */
+   *  suggestion) or not allowed (naming what does not fit), never who holds it. Writes only its count; never throws.
+   *  @param {Object} [args]
+   *  @param {*} [args.invite] a live invitation
+   *  @param {*} [args.handle] trimmed
+   *  @param {*} [args.viewer] the stamped viewer, an active member's
+   *  @returns {Promise<HandleChecked | Refusal>} NO_SUCH_INVITATION when asked by neither; HANDLE_CHECK_PAUSED with
+   *    `stated`, `retryAfter` (whole seconds) and `minutes`
+   *  @bound 60 checks in any 10 minutes per invitation, or per member */
   async handleCheck({ invite = null, handle = null, viewer = null } = {}) {
     try {
       /* Who asks: a live invitation (R15's reading), else an active member's own viewer; else R15's answer. */
@@ -1327,6 +1833,12 @@ export class Members {
      changed (R129), no act of this module calls it; the slot stands so that reopening a change is one requirement. */
   #handleGuard = null;   // {module, fn}
 
+  /**
+   * R51: one later module registers, once, the guard a change of handle would ask; no act calls it while handles are fixed.
+   * @param {*} module the registering module's name
+   * @param {*} fn the guard
+   * @returns {Registered | ListenerRefused}
+   */
   registerHandleGuard(module, fn) {
     const refused = listenerRefusal(this.#handleGuard, module, fn);
     if (refused) return refused;
@@ -1337,7 +1849,8 @@ export class Members {
   /** R129 (T46; DEC-197, DEC-196; N934, K2903; `op=handlechange`): a handle is chosen when a member joins and is never
    *  changed, by the member or anyone. The op stays declared and routed, and every call is refused HANDLE_FIXED before
    *  anything is read: whoever asks and whatever `handle` names, one answer, and nothing is written (no handle, no
-   *  handle-history row). Its arguments are taken and not read, so reopening a change is one requirement. */
+   *  handle-history row). Its arguments are taken and not read, so reopening a change is one requirement.
+   *  @type {(args?: *) => Refusal} always HANDLE_FIXED */
   handleChange() {
     return Members.#handleFixed(localize("member-roster.index.a_handle_is_chosen_when_a", "a handle is chosen when a member joins and is never changed, by the member or anyone (DEC-197). Nothing was written."));
   }
@@ -1357,7 +1870,8 @@ export class Members {
    * (R141). */
 
 
-  /** R144: the founder's held handle, or null while none is held. Writes nothing; never throws. */
+  /** R144: the founder's held handle, or null while none is held. Writes nothing; never throws.
+   *  @returns {*} */
   founderHandle() {
     try { return this.#one(`SELECT handle FROM founder_handle WHERE id=1`)?.handle ?? null; } catch { return null; }
   }
@@ -1365,7 +1879,10 @@ export class Members {
   /** R144 (`op=founderhandleset`; called in-plane by `credentials`' claim inside its act): records the handle the founder
    *  signs in and is known by. Refusals in order, each writing nothing: a `by` that is not the founder (`admin` or
    *  `member:admin`) is FOUNDER_HANDLE_NOT_FOUNDER (a machine credential included); a handle already held is
-   *  HANDLE_FIXED; then R16's NO_HANDLE, BAD_HANDLE and HANDLE_TAKEN. Answers `{ok: true, handle}`. */
+   *  HANDLE_FIXED; then R16's NO_HANDLE, BAD_HANDLE and HANDLE_TAKEN. Answers `{ok: true, handle}`.
+   *  @param {*} [args] `{handle, by}`; anything but an object reads as neither
+   *  @returns {Refusal | ({ok: true, handle: string} & Object<string, *>)}
+   *  @bound handle: trimmed; R9's pattern; never `admin` or any handle a member holds or held */
   founderHandleSet(args = {}) {
     const { handle = null, by = null } = isObj(args) ? args : {};
     /* DEC-49 REGION is-founder-handle-founder */
@@ -1383,6 +1900,15 @@ export class Members {
     return { ok: true, handle: h };
   }
 
+  /**
+   * R16: an administrator sets a member `active` or `revoked`; a revocation tells R25's listeners; reactivating a revoked
+   * administrator restores an ordinary member.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.status] `active` or `revoked`
+   * @param {*} [args.by] the stamped caller
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, status: *, by: string, demoted?: true, detail?: string} & Object<string, *>)}
+   */
   memberSet({ memberId, status, by = null } = {}) {
     /* REC-159: the roster first, before any lookup; `by` is the plane's stamp. */
     const barSet = this.#custodialBar(by, localize("member-roster.index.setting_a_members_status", "setting a member's status"));
@@ -1440,8 +1966,10 @@ export class Members {
    * invitation, a website key, a join link) is returned once and held only as its hash (R111). No service here sends a
    * message (R105): an invitation reaches its person only through the answer to its caller. */
 
+  /** @type {number} R33: the days an invitation lasts when none is chosen, 7 */
   static INVITE_DAYS_DEFAULT = 7;
 
+  /** @type {number} R33: the most days an administrator may choose, 30 */
   static INVITE_DAYS_MAX = 30;
 
   /* A refusal carrying its row from MEMBERSHIP_CHECKS: `reason` and `code` the same literal, `#custodialRefusal`'s
@@ -1505,6 +2033,13 @@ export class Members {
 
   /* ---- R98 (DEC-133 (3)): withdrawing an unused invitation ---- */
 
+  /**
+   * R34: an administrator withdraws an unused invitation, live or expired; the member becomes `revoked`, told as R16 tells.
+   * @param {Object} [args]
+   * @param {*} [args.memberId]
+   * @param {*} [args.by] the stamped caller
+   * @returns {NotAnAdmin | NoSuchMember | Refusal | ({ok: true, memberId: *, status: "revoked", invitation: "withdrawn", by: *, at: string} & Object<string, *>)}
+   */
   inviteWithdraw({ memberId, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.withdrawing_an_invitation", "withdrawing an invitation"));   /* R84 */
     const m = this.#one(`SELECT status, invite_hash FROM members WHERE member_id=?`, memberId);
@@ -1524,6 +2059,7 @@ export class Members {
 
   /* ---- R99-R105 (DEC-133): the group's two doors ---- */
 
+  /** @type {string} R35's warning, `membership.door_warning`'s words */
   static DOOR_WARNING = word("membership.door_warning");
 
   static #DOOR = {
@@ -1587,7 +2123,16 @@ export class Members {
     /* END DEC-49 REGION is-join-link-live */
   }
 
-  /** R99: an administrator creates the website key, at most one live. The key is answered once and never again. */
+  /** R35: an administrator creates the website key, at most one live. The key is answered once and never again; only its
+   *  hash is kept.
+   *  @param {Object} [args]
+   *  @param {*} [args.capabilities] a list of R1's words; absent is `["contribute"]`
+   *  @param {*} [args.dailyCap] required
+   *  @param {*} [args.expiresInDays] absent is 7
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, keyId: string, key: string, capabilities: *[], dailyCap: *, expiresInDays: *, warning: string} & Object<string, *>)}
+   *  @bound dailyCap: a whole number, at least 1; expiresInDays: a whole number from 1 to 30
+   *  @bound key: 64 lower-case hex characters */
   websiteKeyCreate({ capabilities, dailyCap, expiresInDays, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.creating_the_teams_website_key", "creating the team's website key"));   /* R84 */
     /* DEC-49 REGION is-website-key-one */
@@ -1603,7 +2148,13 @@ export class Members {
              warning: Members.DOOR_WARNING };
   }
 
-  /** R100: the live key's scope, cap or invitation days changed, each as R99 judges it, each kept when not given. */
+  /** R36: the live key's scope, cap or invitation days changed, each as R35 judges it, each kept when not given.
+   *  @param {Object} [args]
+   *  @param {*} [args.capabilities]
+   *  @param {*} [args.dailyCap]
+   *  @param {*} [args.expiresInDays]
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, keyId: *, capabilities: *[], dailyCap: *, expiresInDays: *, by: *, at: string} & Object<string, *>)} */
   websiteKeySet({ capabilities, dailyCap, expiresInDays, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.changing_the_teams_website_key", "changing the team's website key"));   /* R84 */
     const live = this.#liveWebsiteKey(localize("member-roster.index.changing_the_website_key", "changing the website key"));
@@ -1616,7 +2167,10 @@ export class Members {
              by, at };
   }
 
-  /** R100: the live key is dead at once; the invitations it made stay as they are (R98 withdraws them). */
+  /** R36: the live key is dead at once; the invitations it made stay as they are (R34 withdraws them).
+   *  @param {Object} [args]
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, keyId: *, revoked: true, by: *, at: string} & Object<string, *>)} */
   websiteKeyRevoke({ by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.switching_off_the_teams_website_key", "switching off the team's website key"));   /* R84 */
     const live = this.#liveWebsiteKey(localize("member-roster.index.switching_off_the_website_key", "switching off the website key"));
@@ -1646,6 +2200,8 @@ export class Members {
   /* R101, R104, R105: an ordinary member made through a door: role `member`, `invited` (never proposed), under a fresh
      member id R12's pattern admits and nothing in the request derives, `invited_by` and `status_by` the door's actor,
      the door's capabilities, an invitation that expires after the door's days. Answers `{invite, expires}` once. */
+  /** @param {"website" | "link"} kind @param {*} live @param {string} cover @param {string | null} approvedBy
+   *  @returns {Promise<({ok: true, invite: string, expires: string} & Object<string, *>)>} */
   async #doorMember(kind, live, cover, approvedBy) {
     const d = Members.#DOOR[kind];
     const actor = `${d.actor}:${live.id}`;
@@ -1664,7 +2220,15 @@ export class Members {
     return { ok: true, invite, expires };
   }
 
-  /** R101: the website's call: one invitation for one cover name, with the approver's name as the website reports it. */
+  /** R37: the website's call: one invitation for one cover name, with the approver's name as the website reports it.
+   *  Never the member id.
+   *  @param {Object} [args]
+   *  @param {*} [args.key] the website key
+   *  @param {*} [args.cover]
+   *  @param {*} [args.approvedBy] trimmed, at most 120 characters, empty is null
+   *  @returns {Promise<Refusal | ({ok: true, invite: string, expires: string} & Object<string, *>)>}
+   *    a key never made, revoked or malformed answers the identical WEBSITE_KEY_UNKNOWN
+   *  @bound at most the key's `dailyCap` invitations in the 24 hours before the call */
   async websiteInvite({ key, cover, approvedBy = null } = {}) {
     const live = this.#doorFor("website", key);
     /* DEC-49 REGION is-website-key-known */
@@ -1685,7 +2249,16 @@ export class Members {
     return this.#doorMember("website", live, label, a || null);
   }
 
-  /** R102: an administrator switches the join link on, at most one live. The link is answered once and never again. */
+  /** R38: an administrator switches the join link on, at most one live. The link is answered once and never again; only
+   *  its hash is kept.
+   *  @param {Object} [args]
+   *  @param {*} [args.capabilities] absent is `["contribute"]`
+   *  @param {*} [args.dailyCap] required
+   *  @param {*} [args.expiresInDays] absent is 7
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, linkId: string, link: string, capabilities: *[], dailyCap: *, expiresInDays: *, warning: string} & Object<string, *>)}
+   *  @bound dailyCap: a whole number, at least 1; expiresInDays: a whole number from 1 to 30
+   *  @bound link: 64 lower-case hex characters */
   joinLinkEnable({ capabilities, dailyCap, expiresInDays, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.switching_on_the_teams_join_link", "switching on the team's join link"));   /* R84 */
     /* DEC-49 REGION is-join-link-one */
@@ -1701,7 +2274,13 @@ export class Members {
              warning: Members.DOOR_WARNING };
   }
 
-  /** R103: the live link's settings changed, as R100 changes the key's. */
+  /** R39: the live link's settings changed, as R36 changes the key's.
+   *  @param {Object} [args]
+   *  @param {*} [args.capabilities]
+   *  @param {*} [args.dailyCap]
+   *  @param {*} [args.expiresInDays]
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, linkId: *, capabilities: *[], dailyCap: *, expiresInDays: *, by: *, at: string} & Object<string, *>)} */
   joinLinkSet({ capabilities, dailyCap, expiresInDays, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.changing_the_teams_join_link", "changing the team's join link"));   /* R84 */
     const live = this.#liveJoinLink(localize("member-roster.index.changing_the_join_link", "changing the join link"));
@@ -1714,7 +2293,10 @@ export class Members {
              by, at };
   }
 
-  /** R103: a new link, answered once, its settings kept; the old one is dead at once. */
+  /** R39: a new link, answered once, its settings kept; the old one is dead at once.
+   *  @param {Object} [args]
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, linkId: string, link: string, replaced: *, capabilities: *[], dailyCap: *, expiresInDays: *, by: *, at: string} & Object<string, *>)} */
   joinLinkReplace({ by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.replacing_the_teams_join_link", "replacing the team's join link"));   /* R84 */
     const live = this.#liveJoinLink(localize("member-roster.index.replacing_the_join_link", "replacing the join link"));
@@ -1725,7 +2307,10 @@ export class Members {
              expiresInDays: live.expiresInDays, by, at };
   }
 
-  /** R103: the live link is dead at once. */
+  /** R39: the live link is dead at once.
+   *  @param {Object} [args]
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, linkId: *, off: true, by: *, at: string} & Object<string, *>)} */
   joinLinkOff({ by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.switching_off_the_teams_join_link", "switching off the team's join link"));   /* R84 */
     const live = this.#liveJoinLink(localize("member-roster.index.switching_off_the_join_link", "switching off the join link"));
@@ -1735,7 +2320,11 @@ export class Members {
     return { ok: true, linkId: live.id, off: true, by, at };
   }
 
-  /** R104: the join page's call: one invitation for the cover the person chose; enrolment is R16's. */
+  /** R40: the join page's call: one invitation for the cover the person chose; enrolment is R13's. Never the member id.
+   *  @param {{link?: *, cover?: *} & Object<string, *>} [args] the join link and the cover; any other field (a role) is not read
+   *  @returns {Promise<Refusal | ({ok: true, invite: string, expires: string} & Object<string, *>)>}
+   *    a link never made, replaced, switched off or malformed answers the identical NO_SUCH_JOIN_LINK
+   *  @bound at most the link's `dailyCap` invitations in the 24 hours before the call */
   async joinLinkInvite({ link, cover } = {}) {
     const live = this.#doorFor("link", link);
     /* DEC-49 REGION is-join-link-known */
@@ -1758,13 +2347,16 @@ export class Members {
   /* ---- R130 (T46; N654, K1752): the doors' settings and history, for an administrator ---- */
 
   /* R130's bound: R113's rule, at most 200 records, lowered never raised. */
+  /** @type {number} R54's cap on each door's history, 200 */
   static JOIN_DOORS_LIMIT = 200;
 
   /** R130 (`op=joindoors`): the settings and history of the group's two doors, to an administrator (R64), never their
    *  secrets. Each door answers `{live, current, history, limit, truncated}`: `current` the live door's settings, its
    *  id the one its invitations' actor names (R105), `since` and `by` its latest record's; `history` every record R100
    *  and R103 appended for it, in the order recorded, the first `limit` of them, `truncated` read one row past. No
-   *  column holding a secret's hash is selected, and no invitation a door made is read. Writes nothing, never throws. */
+   *  column holding a secret's hash is selected, and no invitation a door made is read. Writes nothing, never throws.
+   *  @param {*} [args] `{by, limit}`; anything but an object reads as neither
+   *  @returns {NotAnAdmin | ({ok: true, websiteKey: DoorView, joinLink: DoorView} & Object<string, *>)} */
   joinDoors(args = {}) {
     const { by = null, limit = null } = isObj(args) ? args : {};
     try {
@@ -1799,7 +2391,9 @@ export class Members {
    *  `voters` are the administrators who have voted on that target (the target never counted), in the order cast,
    *  `{voter, at}`; `awaiting` the administrators who may vote on it and have not, in R29's order; `have` the votes as
    *  R4 counts them; `need` `adminMath(administrators).votesNeeded`. No reason is answered. A caller who is not an
-   *  administrator, a machine credential included, is refused NOT_AN_ADMIN (R28). Writes nothing; never throws. */
+   *  administrator, a machine credential included, is refused NOT_AN_ADMIN (R28). Writes nothing; never throws.
+   *  @param {*} [args] `{by}`; anything but an object reads as no caller
+   *  @returns {NotAnAdmin | ({ok: true, removals: RemovalOpen[]} & Object<string, *>)} */
   adminRemovalsOpen(args = {}) {
     const { by = null } = isObj(args) ? args : {};
     try {
@@ -1829,7 +2423,9 @@ export class Members {
    *  `{memberId, handle, state}`, in member-id order; `[]` for a label nobody holds and when a read fails. `label` is
    *  normalised as R17 does; an empty one is refused `EXPERTISE_NO_LABEL`. It reads this module's tables only, asks no
    *  sight, grants none (R20), writes nothing and never throws. (`membership`'s `checkAddressees` asks it and applies its
-   *  R80 to each holder.) */
+   *  R80 to each holder.)
+   *  @param {*} label normalised as R17's; absent or null reads as empty
+   *  @returns {ExpertiseHolder[] | Refusal} EXPERTISE_NO_LABEL for an empty label */
   expertiseHolders(label) {
     try {
       const lab = Members.#normLabel(label);
@@ -1858,6 +2454,7 @@ export class Members {
 
   /* The published bound of both reads: the first 50 rows, `truncated` (not enumerable, so an empty answer is the plain
      `[]`) true exactly when a row past the 50th was found. */
+  /** @type {number} R77, R78: the most rows either read answers, 50 */
   static OWED_LIMIT = 50;
 
   static #bounded(found) {
@@ -1876,7 +2473,10 @@ export class Members {
 
   /** R77: each `proposed` member `by` may endorse and has not (an active administrator's list, R23), oldest proposal
    *  first, `[{memberId, handle, proposed_by, proposed_at, have, awaiting}]`; `[]` for any other caller and when a read
-   *  fails. Writes nothing; never throws. */
+   *  fails. Writes nothing; never throws.
+   *  @param {*} [args] `{by}`; anything but an object reads as no caller
+   *  @returns {EndorsementOwed[] & {truncated?: boolean}}
+   *  @bound at most 50 rows; the list's own `truncated`, not enumerable, is true exactly when a row past the 50th was read */
   endorsementsOwed(args = {}) {
     const { by = null } = isObj(args) ? args : {};
     try {
@@ -1898,7 +2498,10 @@ export class Members {
 
   /** R78: each (active member, label) whose latest entry is `declared`, to an active administrator `by`, oldest
    *  declaration first, `[{memberId, handle, label, declared_at}]`; `[]` for any other caller and when a read fails.
-   *  Writes nothing; never throws. */
+   *  Writes nothing; never throws.
+   *  @param {*} [args] `{by}`; anything but an object reads as no caller
+   *  @returns {ExpertiseAwaiting[] & {truncated?: boolean}}
+   *  @bound at most 50 rows; the list's own `truncated`, not enumerable, is true exactly when a row past the 50th was read */
   expertiseAwaitingConfirmation(args = {}) {
     const { by = null } = isObj(args) ? args : {};
     try {
@@ -1922,9 +2525,14 @@ export class Members {
 
   /* ---- R107, R108 (DEC-136 (1)): whether members are told what a court can reach ---- */
 
+  /** @type {string} R43's statement, `court.statement`'s words */
   static COURT_STATEMENT = word("court.statement");
 
-  /** R107: an administrator's choice, `tell` or `dont`, the same act at setup and in the settings; appended. */
+  /** R42: an administrator's choice, `tell` or `dont`, the same act at setup and in the settings; appended.
+   *  @param {Object} [args]
+   *  @param {*} [args.choice] `tell` or `dont`
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true, choice: "tell" | "dont", by: *, at: string} & Object<string, *>)} */
   courtNoticeSet({ choice, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.choosing_whether_members_are_told", "choosing whether members are told what a court can reach"));   /* R84 */
     /* DEC-49 REGION is-court-notice-choice */
@@ -1937,7 +2545,9 @@ export class Members {
     return { ok: true, choice, by, at };
   }
 
-  /** R107: the setting and its history; `choice` null until an administrator has chosen, and null reads as not telling. */
+  /** R42: the setting and its history; `choice` null until an administrator has chosen, and null reads as not telling.
+   *  Writes nothing; never throws.
+   *  @returns {{choice: *, history: {choice: *, by: *, at: *}[]}} the history in the order recorded */
   courtNotice() {
     try {
       const history = this.#rows(`SELECT choice, set_by AS by, at FROM court_notice ORDER BY seq`);
@@ -1961,7 +2571,9 @@ export class Members {
 
   /** R143: `{since}`, the instant `by`'s previous look was recorded (null when none was), recording this call's instant as
    *  the new mark in the same act. A `by` without a mark records nothing and answers `{since: null}` (#markHolder).
-   *  Answers only the caller's own mark; never throws. */
+   *  Answers only the caller's own mark; never throws.
+   *  @param {*} [args] `{by}`, the stamped caller; anything but an object reads as none
+   *  @returns {{since: *}} the previous instant, or null */
   lookedSince(args = {}) {
     try {
       const id = this.#markHolder(isObj(args) ? args.by : null);
@@ -1976,7 +2588,9 @@ export class Members {
 
   /** R148 (`op=lookedat`, a read; N1092, DEC-238): `{since}`, the instant of `by`'s last recorded look at Home, the one
    *  R143's next `lookedSince` would answer, or null when none was recorded. It records nothing and moves no mark. Who has
-   *  a mark is R143's rule (#markHolder); any other `by` is answered `{since: null}`. Never throws. */
+   *  a mark is R143's rule (#markHolder); any other `by` is answered `{since: null}`. Never throws.
+   *  @param {*} [args] `{by}`, the stamped caller; anything but an object reads as none
+   *  @returns {{since: *}} the last instant, or null */
   lookedAt(args = {}) {
     try {
       const id = this.#markHolder(isObj(args) ? args.by : null);
@@ -1988,6 +2602,7 @@ export class Members {
 
   /* ---- R109, R110 (DEC-132): the group's optional self-description ---- */
 
+  /** @type {readonly string[]} R44's kinds of group */
   static GROUP_KINDS = Object.freeze(["professional", "issue", "community", "catch-all", "other"]);
 
   /* A text field: trimmed, empty reads as null. */
@@ -1997,7 +2612,16 @@ export class Members {
     return t ? t : null;
   }
 
-  /** R109: an administrator records the description; each call appends a whole record and overwrites none. */
+  /** R44: an administrator records the description; each call appends a whole record and overwrites none.
+   *  @param {Object} [args]
+   *  @param {*} [args.kinds] a list of `GROUP_KINDS`, empty allowed
+   *  @param {*} [args.otherKind] read only when `other` is chosen
+   *  @param {*} [args.focus]
+   *  @param {*} [args.purpose]
+   *  @param {*} [args.visibility] `members` or `public`; absent is `members`
+   *  @param {*} [args.by] the stamped caller
+   *  @returns {NotAnAdmin | Refusal | ({ok: true} & GroupDescription & Object<string, *>)}
+   *  @bound otherKind: at most 120 characters; focus: at most 1,000; purpose: at most 4,000; each trimmed */
   groupDescriptionSet({ kinds, otherKind = null, focus = null, purpose = null, visibility = null, by = null } = {}) {
     if (!this.isAdministrator(by)) return notAnAdmin(by, localize("member-roster.index.describing_the_team", "describing the team"));   /* R84 */
     const refuse = (code, detail, extra) => Members.#rowRefusal(code, localize("membership.index.detail_nothing_was_written", "{detail} Nothing was written.", { detail: String(detail) }), extra);
@@ -2034,7 +2658,12 @@ export class Members {
   }
 
   /** R110: the description and its history to an insider; to anyone else, the public, only the four texts, and only
-   *  while the latest visibility is `public`. Writes nothing, never throws. */
+   *  while the latest visibility is `public`. Writes nothing, never throws.
+   *  @param {Object} [args]
+   *  @param {*} [args.viewer] the stamped viewer
+   *  @returns {{description: GroupDescription | ({kinds: string[], otherKind: string | null, focus: string | null, purpose: string | null} & Object<string, *>) | null, history?: GroupDescription[]}}
+   *    `history` to an active member, the founder once claimed or a machine credential; one with no kind, focus or
+   *    purpose reads as none */
   groupDescription({ viewer = null } = {}) {
     try {
       const history = this.#rows(`SELECT kinds, other_kind, focus, purpose, visibility, set_by, at
@@ -2055,11 +2684,18 @@ export class Members {
 
 
 /* R1, R2: the vocabulary and the arithmetic, as the class states them, for a caller that reads them without an instance. */
+/** @type {string[]} R1's vocabulary */
 export const CAPABILITIES = Members.CAPABILITIES;
+/** R2. @param {number} n @returns {AdminMath} */
 export const adminMath = (n) => Members.adminMath(n);
 
 /* K61: the one Members of a Durable Object's storage, made on first use over its `sql` (R74). */
 const OF = new WeakMap();
+/**
+ * R74: the one Members of a storage, made on first use.
+ * @param {*} ctx a Durable Object's state, whose `storage.sql` is read, or the storage itself
+ * @returns {Members}
+ */
 export function membersOf(ctx) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let m = OF.get(storage);
@@ -2071,6 +2707,14 @@ export function membersOf(ctx) {
    URL, whose query carries the control plane's stamps (`by`, `viewer`, `administer`); `body` the parsed body; `env` the
    host's environment. Each stamp is read from the query AFTER the body is spread, so a caller's own copy never wins
    (D-136). `memberlist` is given no `projectsOf` here (R71): `membership`'s own `memberlist` replaces it with its own. */
+/**
+ * R74: the member ops, each a function answering the service's own answer, keyed by the op's door name.
+ * @param {Members} m
+ * @param {URL} url the request URL; its query carries the stamps `by`, `viewer`, `administer`, and `limit`, `memberId`
+ * @param {*} body the parsed body
+ * @param {*} env the host's environment; an object is kept as `m.env`, the clock's second source (R82)
+ * @returns {Object<string, () => *>}
+ */
 export function membersOps(m, url, body, env) {
   /* R82: the store's environment is the instance clock's source (`BIO_NOW_MS`), so every op this map answers reads it */
   if (env && typeof env === "object") m.env = env;
@@ -2150,6 +2794,19 @@ export function membersOps(m, url, body, env) {
    label alone; `expertiseconfirm` accepts `withdraw` (R79 keeps it); `handlecheck`'s invitee must send her `invite` (a
    member's own check rides her session's `viewer` stamp, and no screen sends one); `memberadd` refuses an `expertise`
    (R9), so it does not accept one. */
+/**
+ * @typedef {Object} DeclaredOp one op's declaration (R80, R81; test-support R15)
+ * @property {string[] | null} classes the credential classes it admits; null for an op a person without a session sends
+ * @property {string[]} [machineClasses] the machine classes it admits
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {string} description
+ * @property {string} [refusal] the code it refuses a missing reason with
+ * @property {string[]} [stamps]
+ * @property {null} [needs]
+ * @property {{accepts: string[], requires: string[]}} fields every field the arm reads, and each it refuses without
+ */
+/** @type {Readonly<Object<string, DeclaredOp>>} */
 export const DECLARED_OPS = Object.freeze({
   adminendorse: { classes: ["admin", "member", "probe"], mutating: true, weight: "credential", description: localize("member-roster.declared.adminendorse", "section 4.7 governance — the subject is a proposed administrator, not a bundle"),
     fields: { accepts: ["memberId"], requires: ["memberId"] } },

@@ -1,6 +1,7 @@
 /* credentials' tables (R18): the DDL this module owns, copied from `membership/schema.mjs` at the split (K617, K637),
  * and the additive columns an older store gains at boot. `Credentials#migrate` runs it. SQL comments are `--` lines,
  * dropped before the statements run. */
+/** @type {string} the DDL, statements separated by `;` */
 export const CREDENTIALS_SCHEMA = `
 -- Credentials live here rather than in Worker secrets, because a Worker cannot
 -- rewrite its own secret. ADMIN_TOKEN is a bootstrap credential used once; the
@@ -251,6 +252,7 @@ CREATE INDEX IF NOT EXISTS password_reset_links_member ON password_reset_links(m
 `;
 
 /* Columns a store written before they existed gains at boot: additive and nullable, never back-filled (D-85). */
+/** @type {string[][]} builds rows of [table, column, SQL type] */
 export const CREDENTIALS_ADDITIVE_COLUMNS = [
   ["signers", "status_by", "TEXT"],
   ["signers", "origin", "TEXT"],
@@ -276,6 +278,7 @@ export const CREDENTIALS_ADDITIVE_COLUMNS = [
 
 /* R18: every table this module owns, declared exempt from purge (identity and credentials outlive a reset corpus).
    (T48; K3101) Its own fourteen; the AI accounts' are `ai-accounts`' (its R29). */
+/** @type {string[]} builds the names of the tables exempt from purge */
 export const CREDENTIALS_EXEMPT_TABLES = ["credentials", "sessions", "bootstrap", "signers", "ai_credentials",
   "keyed_services", "ai_grants", "signin_window", "security_counts", "security_pending", "security_key",
   "recovery_codes", "recoveries", "password_reset_links"];
@@ -288,7 +291,12 @@ export const CREDENTIALS_EXEMPT_TABLES = ["credentials", "sessions", "bootstrap"
    are the group's (the tally's reading is administrators' alone, R45's own). (T48; K3101) Its own fourteen tables
    only: the AI accounts' eleven (account references, the group key's three, the material limits' two, connected
    subscriptions, a project's account's three and the change history) are declared by `ai-accounts` (its R28). */
+/**
+ * One table's classes for record-core's `declareTable`.
+ * @typedef {Readonly<{ name: string, purge: string, expunge: string, derive: string, version_chain: boolean, export: string, sight: string }>} TableClasses
+ */
 const CLASSES = { purge: "exempt", expunge: "none", derive: "stored", version_chain: false };
+/** @satisfies {ReadonlyArray<TableClasses>} builds each table's classes */
 export const CREDENTIALS_TABLES = Object.freeze([
   ["credentials", "never", "group"], ["sessions", "never", "group"], ["bootstrap", "admin-only", "group"],
   ["signers", "yes", "group"], ["ai_credentials", "never", "group"], ["keyed_services", "never", "group"],

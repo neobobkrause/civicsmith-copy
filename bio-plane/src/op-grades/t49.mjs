@@ -9,7 +9,10 @@
  * follows the ground: `founderhandleset` answers true (advisory; nothing refuses by device). R3's tally of `undetermined`
  * ops is unchanged: `founderhandleset` is `caller-owned`. */
 
+/** @import { AbsenceTable, ReasonTable } from './t33.mjs' */
+
 /* ---- the stated absences ---- */
+/** @type {AbsenceTable} T49's ops */
 export const T49_RUNG_ABSENT = {
   /* R43, as `handlechange` (R29, R34) and `setpassword` (R27): the founder's own handle asks no reason, and no published act
      takes it back — a second set is refused HANDLE_FIXED, and so is every `handlechange` (membership R129) — so by R3 it is
@@ -18,6 +21,7 @@ export const T49_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
+/** @type {ReasonTable} T49's ops */
 export const T49_NON_ACTS = {
   founderhandleset: "member-directed: the founder's own handle, the one she signs in and is known by, chosen once and never "
     + "changed (`HANDLE_FIXED`); writes no record and moves no bundle",

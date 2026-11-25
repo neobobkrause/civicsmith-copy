@@ -61,7 +61,7 @@ test("R33 R12 R13 an expired invitation answers byte for byte as a spent one, is
   assert.equal(spentLook.reason, "NO_SUCH_INVITATION");
   t.mock.timers.tick(100 * DAY);
   assert.deepEqual(await w.m.inviteLook({ invite: a.invite }), spentLook, "never revived");
-  assert.equal(w.m.memberFacts("ann").status, "invited", "the member stays invited");
+  assert.equal(w.m.memberFacts("ann")?.status, "invited", "the member stays invited");
   assert.equal(roster(w, "ann").invitation, "expired");
   /* an invitation made before invitations expired (no expiry held) still works as it was made */
   w.sql.exec(`UPDATE members SET invite_expires=NULL WHERE member_id='ann'`);
@@ -362,7 +362,7 @@ test("R41 a door's member is always an ordinary member, never proposed, its acto
     assert.deepEqual([r.role, r.status], ["member", "invited"]);
     assert.ok(/^(website|join-link):[0-9a-f]+$/.test(r.invited_by) && r.status_by === r.invited_by, r.invited_by);
     assert.equal(w.m.isAdministrator(r.member_id), false);
-    assert.equal(w.m.memberFacts(r.member_id).role, "member");
+    assert.equal(w.m.memberFacts(r.member_id)?.role, "member");
   }
   assert.deepEqual(doorRows.map((r) => [r.door, r.approvedBy]).sort(), [["join link", null], ["website", "Pat"]]);
   /* an administrator's roster: every row carries the four; the founder's enrolled members are 'administrator', spent */

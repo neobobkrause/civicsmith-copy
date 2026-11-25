@@ -13,7 +13,6 @@
   ],
   "uses": [
     "record-grammar",
-    "id-spaces",
     "test-support",
     "setup-words",
     "record-core-tables"

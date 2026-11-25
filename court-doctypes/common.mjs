@@ -18,6 +18,103 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
 export { CONFIDENCE, CONTRACT };
 
+/* ------------------------------------------------------------------ the kinds this module hands back */
+
+/**
+ * @typedef {Object} Proceeding the proceeding as the page states it (R3); each value as written, or null with why
+ * @property {*} number `id-spaces.recognise(view, "proceeding", number_as_written)`, or null
+ * @property {string|null} number_as_written
+ * @property {string|null} caption
+ * @property {string|null} forum_as_written
+ * @property {string|null} kind_as_written
+ * @property {string|null} status_as_written
+ * @property {string|null} filed
+ * @property {*} source where on the page it was read, as `ctx.locate` says, or null
+ * @property {Object<string, *>} [fields_as_written] every labelled field the page states, as written
+ * @property {null} [docket_number_core] CourtListener's core number, which its docket page does not state
+ * @property {Object<string, string>} [why] for a value given as null, why
+ * @bound every value is the page's own text, never inferred, completed or corrected (R14)
+ */
+/**
+ * @typedef {Object} Party a party, judge, commissioner or staff member the page names (R4)
+ * @property {string} name
+ * @property {string|null} role_as_written
+ * @property {string|null} [assigned_as_written] CPUC's "Assigned" date for a staff role, as written
+ * @property {*} source
+ * @bound role_as_written: only as written, never mapped to a closed role
+ */
+/**
+ * @typedef {Object} Link a document link on a row, its label as written (R5)
+ * @property {*} [document] the document's number on the row, where the register gives one
+ * @property {string|null} [description] the document's description as written
+ * @property {string|null} label
+ * @property {string} href
+ * @property {boolean} [fee] true for a fee-bearing link, which is never followed
+ */
+/**
+ * @typedef {Object} Row one register entry, in page order (R5, R6, R9)
+ * @property {string} key the row's key under the register's key basis
+ * @property {*} entry_id the entry number CourtListener assigns; null for every CPUC and eCourt row
+ * @property {string|null} date
+ * @property {string|null} text
+ * @property {string|null} filer
+ * @property {string|null} kind_as_written
+ * @property {Array<Link>} links
+ * @property {Array<*>} documents
+ * @property {"sealed"|"unsealed"|null} sealing what the row's text states, never this module's finding
+ * @property {*} source
+ * @bound key: unique within one reading; twins written identically are told apart as `<key>#<n>` by their order
+ */
+/**
+ * @typedef {Object} Page the register's pagination as it states it (R8)
+ * @property {number|null} n
+ * @property {number|null} of
+ * @property {boolean} may_continue
+ */
+/**
+ * @typedef {Object} Reading what `parse` gives (R3 to R9)
+ * @property {string} type the content type's key
+ * @property {Proceeding} proceeding
+ * @property {Array<Party>} parties
+ * @property {Array<Row>} rows
+ * @property {string} key_basis how the rows are keyed (R6)
+ * @property {boolean} complete true only when the reading holds every row the register says it has
+ * @property {string|null} complete_why
+ * @property {Page} page
+ * @property {boolean} provisional true for every `ecourt_roa` reading (R7)
+ * @property {boolean} register
+ * @property {Array<*>} entities each row as docprofile's entity
+ * @property {*} at
+ * @property {string} [failed] why no register row could be read (R12, R17)
+ * @property {*} [notes] entries read but given no key, with why
+ */
+/**
+ * @typedef {Object} Assessment what `assess` gives: docprofile's L5 shape (R10 to R12)
+ * @property {boolean|null} meaningful null on a failed read
+ * @property {*} significance
+ * @property {Array<*>} events events of `site-profiles`' catalogue only
+ * @property {{rows: number, intact: number}|null} confirmed
+ * @property {string} why
+ * @bound a failed read, or a reading with no row, gives no events and never a register emptied
+ */
+/**
+ * @typedef {Object} DetectAnswer what `detect` gives (R1, R2, R17)
+ * @property {boolean} match
+ * @property {string} confidence CERTAIN only with the address and the structure; LIKELY on the structure alone
+ * @property {Array<*>} signals
+ * @property {string} [why] why it is not matched, or matched below CERTAIN
+ */
+/**
+ * @typedef {Object} CourtType one of the three content types, in docprofile's shape
+ * @property {string} key `courtlistener_docket`, `cpuc_proceeding` or `ecourt_roa`
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract `CONTRACT.MEMBERSHIP`
+ * @property {(ctx: *) => DetectAnswer} detect
+ * @property {(ctx: *) => Reading} parse
+ * @property {(before: *, after: *) => Assessment} assess
+ */
+
 /* ------------------------------------------------------------------ markup, read as text */
 
 /* One tag, its attributes read so that a `>` inside a quoted value (a tooltip holding markup) does not
@@ -186,6 +283,12 @@ const SEALED_WORD = /(?<![a-z])sealed\b/i;
 const UNDER_SEAL = /\bunder\s+seal\b/i;
 const A_REQUEST = /^\s*(?:(?:joint|unopposed|consent|emergency|sealed)\s+)*(?:motion|request|application|petition)\b/i;
 
+/**
+ * What a row's text states about a document being sealed or unsealed (R9).
+ * @param {*} text
+ * @returns {"sealed"|"unsealed"|null}
+ * @bound a request to seal states nothing about a document being sealed and reads null, unless granted
+ */
 export function sealingOf(text) {
   const t = String(text || "");
   if (UNSEALED.test(t)) return "unsealed";
@@ -234,8 +337,12 @@ export function pageOf(n, of) {
     complete_why: complete ? null : localize("court-doctypes.common.this_is_page_n_of", "this is page {n} of the register's {of}, so it holds only some of its rows", { n: String(n), of: String(of) }) };
 }
 
-/** A reading, assembled: `{proceeding, parties, rows, key_basis, complete, page, provisional}`, with the
- *  rows' entities, and `failed` with why when the page held no register rows (R12, R17). */
+/**
+ * A reading, assembled: `{proceeding, parties, rows, key_basis, complete, page, provisional}`, with the
+ * rows' entities, and `failed` with why when the page held no register rows (R12, R17).
+ * @param {*} parts
+ * @returns {Reading}
+ */
 export function reading({ type, proceeding, parties, rows, key_basis, pagination, provisional, register = true, at = null, failed = null, notes = null }) {
   distinctKeys(rows);
   const out = {
@@ -284,8 +391,13 @@ function counterparts(gone, appeared) {
 const partyKey = (p) => `${p.role_as_written ?? ""}\u0000${p.name ?? ""}`;
 const show = (v) => (v == null ? "nothing" : `"${String(v).slice(0, 120)}"`);
 
-/** Compare two readings of one register (R10–R12). The result is docprofile's L5 shape:
- *  `{meaningful, significance, events, confirmed, why}`, `meaningful` derived from the catalogue's events. */
+/**
+ * Compare two readings of one register (R10–R12). The result is docprofile's L5 shape:
+ * `{meaningful, significance, events, confirmed, why}`, `meaningful` derived from the catalogue's events.
+ * @param {*} before
+ * @param {*} after
+ * @returns {Assessment}
+ */
 export function assessRegister(before, after) {
   const a = before || {}, b = after || {};
   if (a.failed || b.failed)
@@ -381,8 +493,12 @@ export function assessRegister(before, after) {
   };
 }
 
-/** The detect answer for a page: CERTAIN with the address and the structure, LIKELY on the structure
- *  alone (with why), never a match without the structure (R1, R17). */
+/**
+ * The detect answer for a page: CERTAIN with the address and the structure, LIKELY on the structure
+ * alone (with why), never a match without the structure (R1, R17).
+ * @param {*} args
+ * @returns {DetectAnswer}
+ */
 export function detectAnswer({ ctx, key, label, structure, structureSignals, what }) {
   if (!structure) return { match: false, confidence: CONFIDENCE.NONE, signals: [], why: notRegisterWhy(ctx && ctx.text, what) };
   const addr = addressOf(ctx, key, label);
