@@ -12,7 +12,11 @@ import { Membership, listenerRefusal, notAnAdmin, noSuchProject, notAParticipant
 import { word, localize, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 
 /* A key's words as a row carries them: the list's English, placeholders left in place for the screen. */
-const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
+const raw = (key) => {
+  const row = WORD_ROWS.find((r) => r[0] === key);
+  assert.ok(row, `setup-words holds ${key}`);
+  return row[1];
+};
 
 const FORBIDDEN = /\b(cop(y|ies)|instances?|planes?|servers?)\b/i;
 /* T47-82 (P8): every `*_CHECKS` table the module exports, found from the module itself (R133's census), so a later
