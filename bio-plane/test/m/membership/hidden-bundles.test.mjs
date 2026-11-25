@@ -63,7 +63,7 @@ test("R88 for every other viewer it names exactly the bundles R43 does not pass:
   const w = await hidWorld();
   const check = (v, label) => {
     const hid = hiddenBundles(v);
-    assert.deepEqual(Object.keys(hid).sort(), ["args", "sql"], `${label}: {sql, args}`);
+    assert.deepEqual(Object.keys(hid ?? {}).sort(), ["args", "sql"], `${label}: {sql, args}`);
     assert.ok(Array.isArray(hid.args), label);
     assert.match(hid.sql, /^\(.*\)$/s, `${label}: a parenthesised set, ready for NOT IN`);
     const hidden = named(w, hid), visible = seen(w, v);
@@ -91,7 +91,7 @@ test("R88 for every other viewer it names exactly the bundles R43 does not pass:
   assert.deepEqual(check(V("dee"), "a revoked member"), ["PROJ-D", "PROJ-H", "PROJ-M"]);
   w.sql.exec(`UPDATE members SET status='revoked' WHERE member_id='second'`);
   assert.deepEqual(check(V("second"), "a revoked administrator is no administrator"), ["PROJ-D", "PROJ-H", "PROJ-M"]);
-  assert.ok(hiddenBundles(V("ann")).sql.includes(GATE_MARK), "the compiled gate itself, marked");
+  assert.ok(hiddenBundles(V("ann"))?.sql.includes(GATE_MARK), "the compiled gate itself, marked");
 });
 
 test("R88 a viewer R43 refuses hides every bundle, the asked-but-absent viewer included", async () => {
@@ -153,5 +153,5 @@ test("R88 writes nothing and never throws, whatever it is handed; each answer is
   assert.equal(snapshot(w), before, "writes nothing, and running its answer writes nothing");
   const a = hiddenBundles(V("ann"));
   a.args.push("x");
-  assert.deepEqual(hiddenBundles(V("ann")).args, ["ann", "ann"], "a caller changing its answer changes no later one");
+  assert.deepEqual(hiddenBundles(V("ann"))?.args, ["ann", "ann"], "a caller changing its answer changes no later one");
 });

@@ -125,7 +125,7 @@ test("R20 R92 (members) a revoked ordinary member, reinstated, is active again a
   const r = w.m.memberSet({ memberId: "meilan", status: "active", by: "second" });
   assert.equal(r.ok, true);
   assert.equal(r.demoted, undefined, "an ordinary member is not demoted");
-  assert.equal(w.m.memberFacts("meilan").status, "active");
+  assert.equal(w.m.memberFacts("meilan")?.status, "active");
   assert.deepEqual(w.m.sessionRights("member:meilan").capabilities, ["contribute"]);
 });
 
@@ -155,11 +155,11 @@ test("R55 (project-authority) each refusal carries its row's check and translati
   assert.equal(w.m.projectAuthority("P", V("iris"), "owner", "x"), null, "the owner directs");
   /* D54 (T41-3): an administrator holds no position in P, whether it sees P at EXISTENCE (hidden) or whole */
   for (const who of [V("second"), V("admin")])
-    assert.equal(w.m.projectAuthority("P", who, "joined", "x").check, "C-56.1", `${who}: no position, hidden`);
+    assert.equal(w.m.projectAuthority("P", who, "joined", "x")?.check, "C-56.1", `${who}: no position, hidden`);
   w.m.projectVisibilitySet({ projectId: "P", setting: "discoverable", by: "iris", viewer: V("iris") });
   for (const who of [V("second"), V("admin")]) {
     assert.equal(w.m.inSight("P", who), true, `${who} sees discoverable P`);
-    assert.equal(w.m.projectAuthority("P", who, "joined", "x").check, "C-56.1", `${who}: sight confers nothing`);
+    assert.equal(w.m.projectAuthority("P", who, "joined", "x")?.check, "C-56.1", `${who}: sight confers nothing`);
   }
   for (const who of [null, undefined, BEARER]) assert.equal(w.m.projectAuthority("P", who, "owner", "x"), null, String(who));
 });
@@ -178,7 +178,7 @@ test("R56 R54 (ratify-authority) delivery needs a joined position, the signature
     ["CASE_SIGNER_NOT_AN_OWNER", "C-57.1", CASE_AUTHORITY_CHECKS.CASE_SIGNER_NOT_AN_OWNER.translation, "kit", "F-1"]);
   assert.equal(w.m.caseAuthority({ ...base, deliveredBy: V("kit"), signer: "iris" }), null, "joined deliverer, owner signer");
   assert.equal(w.m.caseAuthority({ ...base, deliveredBy: "founder", signer: "iris" }), null, "the founder delivers");
-  assert.equal(w.m.caseAuthority({ ...base, project: null, deliveredBy: "founder", signer: "iris" }).check, "C-57.1",
+  assert.equal(w.m.caseAuthority({ ...base, project: null, deliveredBy: "founder", signer: "iris" })?.check, "C-57.1",
     "a production naming no project has no owner to sign it");
 });
 

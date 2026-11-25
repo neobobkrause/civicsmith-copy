@@ -1,6 +1,19 @@
 /* membership's published fixtures (fix round 10): what a user module's test takes in place of membership's answers or
    membership itself. Each is made by membership's real code when the test runs, over `world()`, and is never stored. */
 import { world, V } from "./fixture.mjs";
+/** @import { Membership } from "../../../src/membership/index.mjs" */
+
+/**
+ * @typedef {Object} ProjectActRefusals
+ * @property {Membership} membership the whole real instance
+ * @property {string} project `PRJ-1`, discoverable
+ * @property {string} owner `ann`
+ * @property {string[]} joined `["bob"]`
+ * @property {string[]} invited `["cy"]`
+ * @property {(p: *, identity: *, need: *, act: *) => *} projectAuthority membership's R55, as the instance answers it
+ * @property {(v: *) => *} visibilitySettingRefusal membership's R47 at a creation, with no project
+ * @property {(id: string) => string} identity `member:<id>`
+ */
 
 const must = (answer, what) => {
   if (!answer.ok) throw new Error(`${what}: refused: ${JSON.stringify(answer)}`);
@@ -11,7 +24,9 @@ const must = (answer, what) => {
  *  owner and its participants set through membership's own acts (a creation naming an owner, an invitation, a join), and
  *  the two refusals as it answers them. `ann` owns `PRJ-1`; `bob` is invited and has joined; `cy` is invited and has not
  *  joined; `dee` is neither; `second` is an administrator, who directs no project. `membership` is the whole real instance,
- *  for a user that needs more than the two answers. */
+ *  for a user that needs more than the two answers.
+ *  @returns {Promise<ProjectActRefusals>}
+ *  @throws {Error} when membership refuses one of the acts that set it up */
 export async function projectActRefusals() {
   const w = world();
   const { m } = w;

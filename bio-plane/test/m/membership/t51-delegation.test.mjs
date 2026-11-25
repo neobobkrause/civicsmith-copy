@@ -32,6 +32,7 @@ test("R154 over one store a delegate answers what member-roster answers: reads e
   const w = await world().group("ann", "bob");
   const m = w.m, r = w.m.members;
   assert.ok(r instanceof roster.Members);
+  /** @type {[string, *[]][]} each delegate read, by name, with its arguments */
   const reads = [
     ["isAdministrator", ["admin"]], ["isAdministrator", ["ann"]], ["isAdministrator", [null]], ["activeAdmins", []],
     ["memberFacts", ["ann"]], ["memberFacts", ["nobody"]], ["memberStatusSince", ["ann"]], ["memberByHandle", ["bob"]],

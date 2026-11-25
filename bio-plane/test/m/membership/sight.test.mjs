@@ -76,7 +76,7 @@ test("R44 sight is FULL, EXISTENCE (discoverable, a member asking) or NONE; EXIS
   ];
   for (const c of calls) assert.deepEqual(c(), ex);
   // a read INSIDE the project is never widened by EXISTENCE (project-roster's reads hold it too, its R19)
-  assert.equal(w.m.projectOwnerArithmetic({ projectId: "PROJ-D", viewer: V("cal") }).live.owners, 0);
+  assert.equal(w.m.projectOwnerArithmetic({ projectId: "PROJ-D", viewer: V("cal") }).live?.owners, 0);
   assert.equal(w.m.inSight("PROJ-D", V("cal")), false);
 });
 
@@ -192,7 +192,7 @@ test("R77 existenceAct: C-70.1 (id and name only) at EXISTENCE; null at FULL, at
   w.m.projectVisibilitySet({ projectId: "PROJ-D", setting: "hidden", by: "ann", viewer: V("ann") });
   assert.equal(w.m.existenceAct("PROJ-D", V("cal")), null);
   w.m.projectVisibilitySet({ projectId: "PROJ-H", setting: "discoverable", by: "ann", viewer: V("ann") });
-  assert.equal(w.m.existenceAct("PROJ-H", V("cal")).project, "PROJ-H");
+  assert.equal(w.m.existenceAct("PROJ-H", V("cal"))?.project, "PROJ-H");
   // never throws, whatever it is handed
   for (const id of [null, undefined, "", 0, {}, [], "x'; DROP TABLE members; --"])
     for (const v of [V("cal"), "admin", {}, [], 0, true])
@@ -218,7 +218,7 @@ test("R43 R44 R80 R76 N357: the founder's member:admin sees as the bare admin do
     for (const p of ["PROJ-H", "PROJ-M"]) {
       assert.equal(w.m.sight(p, v), Membership.SIGHT_EXISTENCE, `${v} ${p}`);
       assert.equal(w.m.inSight(p, v), false, `${v} ${p}`);
-      assert.equal(w.m.existenceAct(p, v).code, "PROJECT_SEEN_NOT_A_PARTICIPANT", `${v} ${p}`);
+      assert.equal(w.m.existenceAct(p, v)?.code, "PROJECT_SEEN_NOT_A_PARTICIPANT", `${v} ${p}`);
     }
   }
   /* the founder as a participant sees the hidden project whole, in both spellings */
@@ -230,7 +230,7 @@ test("R43 R44 R80 R76 N357: the founder's member:admin sees as the bare admin do
   assert.equal(w.m.positionalMember(V("admin")), "admin");
   assert.equal(w.m.positionalMember("admin"), null);
   /* sight is not authority: the founder's spellings hold no position in a project (R55, R60) */
-  assert.equal(w.m.projectAuthority("PROJ-D", V("admin"), "joined", "an act").code, "PROJECT_ACT_NOT_A_PARTICIPANT");
+  assert.equal(w.m.projectAuthority("PROJ-D", V("admin"), "joined", "an act")?.code, "PROJECT_ACT_NOT_A_PARTICIPANT");
   /* no other member id is widened: a member named like no roster row still sees no project */
   assert.equal(w.m.inSight("PROJ-D", V("admin2")), false);
   assert.equal(w.m.inSight("PROJ-D", V("Admin")), false);

@@ -11,10 +11,22 @@
 import { rowWord } from "../member-roster/words.mjs";
 import { MEMBER_ROSTER_ROWS } from "../member-roster/checks.mjs";
 
+/**
+ * @typedef {Object} CheckRow one refusal code's catalogue row (DEC-49)
+ * @property {string} check its check id, `C-<n>.<m>`
+ * @property {string} where the source region that mints the code
+ * @property {string} translation the member's sentence, `words.json`'s `refusal.<CODE>`
+ */
+/**
+ * @typedef {Readonly<Object<string, Readonly<CheckRow>>>} CheckTable a frozen map from a refusal code to its frozen row (R133)
+ * @bound every code is answered by exactly one row across this module's tables
+ */
+
 const at = (fn, region) => `src/membership/index.mjs ${fn} > ${region}`;
 
 /* R133 (T47; K3037): every refusal-row table this module exports is a frozen map from a code to a frozen row, read by
    promotion's row census and answer-envelope and written by no one. */
+/** @type {(table: Object<string, CheckRow>) => CheckTable} */
 const frozenRows = (table) => Object.freeze(Object.fromEntries(
   Object.entries(table).map(([code, row]) => [code, Object.freeze({ ...row })])));
 
@@ -49,8 +61,11 @@ const OWN_ROWS = frozenRows({
 
 /* R154 (K231; `member-roster` R68): the three member tables are `member-roster`'s rows, exported here under the names
    every census reads, and `MEMBERSHIP_CHECKS` is the union of its rows and this module's, every code one row. */
+/** @type {CheckTable} */
 export const MEMBERSHIP_CHECKS = frozenRows({ ...MEMBER_ROSTER_ROWS.MEMBERSHIP_CHECKS, ...OWN_ROWS });
+/** @type {CheckTable} `member-roster`'s */
 export const MEMBER_ID_CHECKS = MEMBER_ROSTER_ROWS.MEMBER_ID_CHECKS;
+/** @type {CheckTable} `member-roster`'s */
 export const CUSTODIAL_CHECKS = MEMBER_ROSTER_ROWS.CUSTODIAL_CHECKS;
 
 /* REC-134 / C-56 — SIGHT IS NOT AUTHORITY (Membership Architecture v2 §7, the block of that
@@ -64,6 +79,7 @@ export const CUSTODIAL_CHECKS = MEMBER_ROSTER_ROWS.CUSTODIAL_CHECKS;
  * owner. §7.13's add-an-owner is the one administrator path and is NOT behind this family.
  * A machine credential carries no position and is not asked (the fences on machines are
  * their own and unchanged). */
+/** @type {CheckTable} */
 export const PROJECT_AUTHORITY_CHECKS = frozenRows({
   PROJECT_ACT_NOT_A_PARTICIPANT: {
     check: 'C-56.1',
@@ -89,6 +105,7 @@ export const PROJECT_AUTHORITY_CHECKS = frozenRows({
  * T41-3): an administrator neither invited nor joined to a HIDDEN project is at its EXISTENCE too, and this
  * code then also carries its owners' handles (membership R77). C-70.1's translation is true of both forms.
  * Minted in ONE region, `Membership#existenceOnly`, which every act's sight check relays. */
+/** @type {CheckTable} */
 export const PROJECT_VISIBILITY_CHECKS = frozenRows({
   PROJECT_SEEN_NOT_A_PARTICIPANT: {
     check: 'C-70.1',
@@ -119,6 +136,7 @@ export const PROJECT_VISIBILITY_CHECKS = frozenRows({
  * behind the project's case. The DELIVERY half of the same bullet (an enrolled administrator with
  * no role in the project may not carry the signature in) is NOT in this family: it is REC-134's
  * one positional check, `projectAuthority`, asked of the deliverer, and answers C-56.1. */
+/** @type {CheckTable} */
 export const CASE_AUTHORITY_CHECKS = frozenRows({
   CASE_SIGNER_NOT_AN_OWNER: {
     check: 'C-57.1',

@@ -57,7 +57,7 @@ test("R157 another owner inviting the founder's handle records her invited", asy
   const w = await group();
   const r = inv(w, "steward");
   assert.deepEqual([r.ok, r.state], [true, "invited"]);
-  assert.equal(w.m.participation("PROJ-P", "admin").state, "invited");
+  assert.equal(w.m.participation("PROJ-P", "admin")?.state, "invited");
   assert.equal(inv(w, "steward").reason, "ALREADY_INVITED");
 });
 

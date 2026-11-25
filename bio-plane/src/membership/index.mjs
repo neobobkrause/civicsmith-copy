@@ -28,13 +28,19 @@ export { MEMBERSHIP_CHECKS, MEMBER_ID_CHECKS, CUSTODIAL_CHECKS, PROJECT_AUTHORIT
          CASE_AUTHORITY_CHECKS } from "./checks.mjs";
 /* R154: the moved names, re-exported so a user's import still resolves. */
 export { listenerRefusal, notAnAdmin, noSuchMember, MODULE_ORDER, moduleOrderFrom };
+/** R154: `member-roster`'s tables exempt from purge, under the name every caller reads.
+ *  @type {typeof MEMBER_EXEMPT_TABLES} */
 export const MEMBERSHIP_EXEMPT_TABLES = MEMBER_EXEMPT_TABLES;
+/** R154: `member-roster`'s tables declared with their own classes, under the name every caller reads.
+ *  @type {typeof MEMBER_DECLARED_TABLES} */
 export const MEMBERSHIP_DECLARED_TABLES = MEMBER_DECLARED_TABLES;
 
 /* R151: every key this module reads, each held by `setup-words` (`hasWord`): its own rows' (`refusal.<CODE>`, or the key
    `words.mjs` names) and the sentences it answers beside them. `member-roster` reads its own rows, so its keys are its
    `WORD_KEYS` (DEC-345), not these; the membership table's codes that are member-roster's are left out here. */
 const MEMBER_ROSTER_CODES = new Set(Object.keys(MEMBER_ROSTER_ROWS.MEMBERSHIP_CHECKS));
+/** @type {readonly string[]} R151: the keys this module reads, each once
+ *    each a key `setup-words` holds */
 export const WORD_KEYS = Object.freeze([...new Set([
   ...[MEMBERSHIP_CHECKS, PROJECT_AUTHORITY_CHECKS, PROJECT_VISIBILITY_CHECKS, CASE_AUTHORITY_CHECKS]
       .flatMap((table) => Object.keys(table).filter((code) => !MEMBER_ROSTER_CODES.has(code)).map(rowKey)),
@@ -42,8 +48,50 @@ export const WORD_KEYS = Object.freeze([...new Set([
 import { recordOf } from "../record-core/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/**
+ * @typedef {Object} SqlStorage a Durable Object's SQL handle, or a stand-in of the same shape
+ * @property {(query: string, ...bindings: *[]) => Iterable<*>} exec runs one statement; its rows, each an object keyed by column
+ */
+/**
+ * @typedef {Object} Gate the compiled R43 rule for one viewer, over the alias `b` bound to record-core's `bundles`
+ * @property {string} sql a SQL condition over `b`, beginning with `GATE_MARK`
+ * @property {*[]} args its bindings, in the order of its `?`
+ * @property {?string} viewer the viewer as given; null when refused
+ * @property {string} scope `DENY` sees nothing; `member` (a machine credential) sees every bundle; `participant` is fenced by the arms
+ * @property {?string} member the viewer's member id; null for a machine credential, the founder's bare `admin` and a refused viewer
+ * @property {string} [project] the project a carried viewer is narrowed to (R149)
+ *   scope: DENY, member or participant
+ */
+/**
+ * @typedef {Object} SubtractSet the bundles a viewer may not see, as a parenthesised subquery to subtract (R88)
+ * @property {string} sql `(SELECT bundle_id FROM bundles EXCEPT ...)`
+ * @property {*[]} args its bindings
+ */
+/**
+ * @typedef {Object} Participation one member's participation in one project (R74)
+ * @property {string} state `invited`, `joined`, `leaving`, or another state the roster holds
+ * @property {boolean} owner
+ */
+/**
+ * @typedef {Object} JoinedParticipant a participant `joined` or `leaving` (R127)
+ * @property {string} member
+ * @property {boolean} owner
+ * @property {?string} since the instant the row last became `joined`; null for a row joined before it was recorded
+ */
+/**
+ * @typedef {Object} OwnerRow one row of the owner arithmetic (R38)
+ * @property {number} owners
+ * @property {number} votesNeeded
+ * @property {number} eligibleVoters
+ * @property {boolean} targetMayVote
+ * @property {boolean} possible
+ * @property {string} why
+ *   owners 1 or fewer: impossible; 2: both, the target voting; 3 or more: a majority of all owners, the target not voting
+ */
+
 /* The marker every generated statement carries (moved from query.mjs with `viewerPredicate`, K57). It is a SQL
    comment, so it changes nothing about what runs; the runtime test asserts each gated statement contains it. */
+/** The SQL comment every compiled gate begins with. */
 export const GATE_MARK = "/*viewer-gate*/";
 
 /* R43. THE ONE RULE OF WHAT A VIEWER MAY SEE (Membership Architecture v2 §7.9), moved here from query.mjs (K57).
@@ -68,6 +116,13 @@ export const GATE_MARK = "/*viewer-gate*/";
 /* A machine credential's viewer: the four token classes and an organisation-scoped `ai` credential (R43). */
 const MACHINE_VIEWER = new RegExp(`^${MACHINE_CLASS_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(admin|member|probe|daemon|ai)$`);
 const OWN_PROJECT = `(CASE WHEN b.object_type = 'project' THEN b.bundle_id ELSE b.project END)`;
+/**
+ * R43, R149: the one rule of what a viewer may see, compiled for `viewer`.
+ * @param {*} viewer a machine credential, `member:<id>`, the founder's bare `admin`, or either member spelling carrying a project (`projectViewer`)
+ * @param {?string[]} [reach] for a viewer carrying a project, the bundle ids the registered readers add (R150)
+ * @returns {Gate}
+ *   any other viewer is answered scope DENY; never throws
+ */
 export function viewerPredicate(viewer, reach = null) {
   const v = typeof viewer === "string" ? viewer : "";
   /* R149: a viewer that carries a project (`projectViewer`) is the member's own viewer narrowed to the project's reach. */
@@ -106,6 +161,12 @@ export function viewerPredicate(viewer, reach = null) {
    is intact. A machine credential, a viewer R43 admits to nothing, an absent or empty project and a viewer that already
    carries one are answered unchanged: a viewer with no project is exactly as R43 states, and a carried project is never
    re-scoped. Writes nothing and never throws. */
+/**
+ * @param {*} viewer
+ * @param {*} project
+ * @returns {*} the viewer spelled `<viewer>@<project>`, or `viewer` unchanged
+ *   unchanged for a viewer naming no member, one already carrying a project, and a project that is not a non-empty string
+ */
 export function projectViewer(viewer, project) {
   if (typeof viewer !== "string" || typeof project !== "string" || !project) return viewer;
   if (carriedProject(viewer) !== null || (viewerMember(viewer) === null && viewer !== ROOT_ADMIN)) return viewer;
@@ -141,6 +202,11 @@ function projectGate(v, project, reach) {
    `viewerPredicate` cannot disagree about who is hidden. A caller subtracts with `<key> NOT IN ${sql}` and binds `args`.
    What an absent viewer means stays the caller's: asked, it is R43's refusal and hides everything; an internal
    caller reads whole by not asking. Writes nothing and never throws. */
+/**
+ * @param {*} viewer
+ * @param {?string[]} [reach]
+ * @returns {?SubtractSet} null when the viewer sees every bundle
+ */
 export function hiddenBundles(viewer, reach = null) {
   const gate = viewerPredicate(viewer, reach);
   if (gate.scope === "member") return null;
@@ -157,6 +223,12 @@ export function hiddenBundles(viewer, reach = null) {
 const NO_SUCH_PROJECT_DETAIL = "no project answers to that id here. A project you cannot see is answered exactly as one "
   + "that does not exist (Membership Architecture v2 §7.9), so this is not a hint either way.";
 const NO_SUCH_PROJECT_FIXED = new Set(["ok", "reason", "code", "check", "translation", "project", "detail"]);
+/**
+ * @param {*} [projectId]
+ * @param {*} [extra] a caller's own fields, set beside the fixed ones and never replacing one; anything but a plain object adds none
+ * Answers reason and code NO_SUCH_PROJECT, `project` the id as asked (null when none)
+ *   detail: one fixed sentence, the same for every caller
+ */
 export function noSuchProject(projectId, extra = null) {
   let own = [];
   try {
@@ -180,6 +252,13 @@ export function noSuchProject(projectId, extra = null) {
 const NOT_A_PARTICIPANT_DETAIL = "the caller holds no participation in this project, and this act is taken by one of its "
   + "participants (Membership Architecture v2 §7). Nothing was changed.";
 const NOT_A_PARTICIPANT_FIXED = new Set(["ok", "reason", "code", "check", "translation", "project", "detail"]);
+/**
+ * @param {*} [projectId]
+ * @param {*} [by]
+ * @param {*} [extra] a caller's own fields, set beside the fixed ones and never replacing one; anything but a plain object adds none
+ * Answers reason and code NOT_A_PARTICIPANT, `project` the id as asked (null when none)
+ *   detail: one fixed sentence, the same for every caller
+ */
 export function notAParticipant(projectId, by, extra = null) {
   let own = [];
   try {
@@ -206,6 +285,13 @@ const NOT_THE_OWNER_DETAIL = "this is an act an owner of the project performs, a
   + "Seeing a project is not directing it: an administrator directs no project, whatever it sees (Membership "
   + "Architecture v2 §4.9, §7). Nothing was changed.";
 const NOT_THE_OWNER_FIXED = new Set(["ok", "reason", "code", "check", "translation", "by", "project", "detail", "message"]);
+/**
+ * @param {*} [by]
+ * @param {*} [projectId]
+ * @param {*} [extra] a caller's own fields, anything but a plain object adding none; `remedy`, one sentence, is kept as `remedy` with `message` the translation, a space, then the remedy
+ * Answers reason and code PROJECT_ACT_NOT_THE_OWNER, `by` and `project` as given (null when none)
+ *   by and project: at most 200 characters; remedy: at most 400 characters, trimmed; detail: one fixed sentence
+ */
 export function notTheOwner(by, projectId, extra = null) {
   let own = [];
   try {
@@ -228,8 +314,15 @@ export function notTheOwner(by, projectId, extra = null) {
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 
 export class Membership {
+  /**
+   * @param {Object} [args]
+   * @param {?SqlStorage} [args.sql] the storage's SQL
+   * @param {*} [args.core] record-core over the same storage (`bundleInfo`, `declarePurge`, `declareTable`, `registerAuditFinding`)
+   * @param {?Members} [args.members] the member-roster half; built over `sql` on this instance's clock when absent
+   * @param {?function(): number} [args.now] a clock of milliseconds, read first (R156)
+   */
   constructor({ sql, core = null, members = null, now = null } = {}) {
-    this.sql = sql;
+    this.sql = /** @type {SqlStorage} the storage's SQL */ (sql);
     this.core = core;
     this.now = typeof now === "function" ? now : null;   /* R156: the clock handed in, else the store's environment, else the wall clock */
     this.env = null;   /* R156: the store's environment, set by `membershipOps` through `membersOps` (`#nowMs`) */
@@ -272,6 +365,11 @@ export class Membership {
      the tables declared to record-core's purge when its `declarePurge` is present; and the sight index recomputed whole
      from the owners' acts (D-497: a derivation, so an index that disagreed with `project_visibility` cannot survive a
      restart). Run by the host inside its boot, after record-core's schema. */
+  /**
+   * R114, R115: this module's tables at every boot, idempotent; the sight index recomputed whole.
+   * @returns {void}
+   * @throws {Error} when record-core refuses its table declaration
+   */
   migrate() {
     this.members.migrate();
     const cols = (t) => [...this.sql.exec(`PRAGMA table_info(${t})`)].map((r) => r.name);
@@ -288,6 +386,11 @@ export class Membership {
   }
 
   /* R115 (was R59), through record-core's `declarePurge` (its R21's default form); R131 (T46) through its `declareTable`. */
+  /**
+   * R115: the project tables declared to record-core's purge, once.
+   * @returns {boolean} true when it declared; false when already declared
+   * @throws {Error} when record-core refuses a declaration
+   */
   declareTables() {
     if (this.#declared) return false;
     /* record-core R21/R46: the project-keyed tables, keyed to a bundle (the project) by `project_id`, and the
@@ -323,8 +426,16 @@ export class Membership {
    * whole. Each table drops the rows whose `project_id` is in `hid` (D-464: a count over
    * rows the caller could not all read is a disclosure of existence). `COALESCE(project_id, '')`: a NULL key names no
    * bundle, and `NULL NOT IN (…)` is NULL, so without it the row would be dropped. Synchronous; writes nothing. */
+  /**
+   * @type {readonly string[]} R114: the keys of `counts`
+   */
   static COUNT_KEYS = Object.freeze(["projectParticipants"]);
 
+  /**
+   * R114: this module's figures, less the rows of bundles in `hid`.
+   * @param {?SubtractSet} [hid] record-core R63's `hid`; null counts whole
+   * @returns {{projectParticipants: number}}
+   */
   counts(hid = null) {
     const n = (table) => (hid
       ? this.#one(`SELECT count(*) c FROM ${table} WHERE COALESCE(project_id, '') NOT IN ${hid.sql}`, ...hid.args)
@@ -343,6 +454,10 @@ export class Membership {
   #findingRegistered = false;
 
   /* R69: the member ids of the project's participants who have joined (not leaving, not invited) and are active. */
+  /**
+   * @param {*} projectId
+   * @returns {string[]} member ids, in member-id order
+   */
   activeParticipants(projectId) {
     return this.#rows(`SELECT p.member_id FROM project_participants p JOIN members m ON m.member_id = p.member_id
                         WHERE p.project_id=? AND p.state='joined' AND m.status='active' ORDER BY p.member_id`,
@@ -352,6 +467,14 @@ export class Membership {
   /* R71: what `promotion` calls when a promotion creates a project, inside the caller's transaction: `ownerId`
      (a member; a machine-created project has no owner, §7.1) becomes the sole initial owner as R31 makes one,
      the creation visibility is recorded as the first R45 record, and the project's sight is reindexed. */
+  /**
+   * @param {Object} [args]
+   * @param {*} [args.projectId]
+   * @param {?string} [args.ownerId] the sole initial owner; none for a machine-created project
+   * @param {*} [args.visibility] `discoverable` or `hidden`; none records no setting
+   * @param {?string} [args.by]
+   *   ok true carries projectId, owner (null for none) and setting
+   */
   projectCreated({ projectId, ownerId = null, visibility = null, by = null } = {}) {
     if (visibility !== null && visibility !== undefined) {
       const bad = this.visibilitySettingRefusal(visibility, projectId);
@@ -392,7 +515,11 @@ export class Membership {
 
   /** R76 (REC-132 / D-422) — WHO IS ASKING, as distinct from WHAT THEY MAY SEE: the member id R43 reads for `identity`
    *  when it is a non-empty string, else for `viewer`, through `member-roster` R73's spelling; null for a machine
-   *  credential and for a viewer or identity R43 admits to nothing. Writes nothing; never throws. */
+   *  credential and for a viewer or identity R43 admits to nothing. Writes nothing; never throws.
+   *  @param {*} viewer
+   *  @param {*} [identity]
+   *  @returns {?string}
+   */
   positionalMember(viewer, identity = null) {
     return viewerMember(viewer, identity);
   }
@@ -405,6 +532,12 @@ export class Membership {
    * `ownerOff` clears it, the member staying a participant; `rescue` makes the member a `joined` owner, next in R65's
    * order, adding the row when they hold none and changing no other row. True when it wrote; false, writing nothing, for
    * an unknown kind, an `invite` whose row exists, and an `ownerOn`/`ownerOff` whose row does not. Never throws. */
+  /**
+   * @param {*} kind `invite`, `ownerOn`, `ownerOff` or `rescue`
+   * @param {*} [args] `{projectId, memberId, by, comment, at}`: `projectId` and `memberId` non-empty strings; `at` the instant written, else the clock
+   * @returns {boolean} true when it wrote
+   *   false, writing nothing, for any other kind, an invite whose row exists, and an ownerOn or ownerOff whose row does not
+   */
   participationWrite(kind, args = {}) {
     try {
       const { projectId, memberId, by = null, comment = null, at = null } = args && typeof args === "object" ? args : {};
@@ -460,8 +593,19 @@ export class Membership {
    * module's tables to decide it. Registration's refusals are R81's. */
   #reachReaders = [];   // {module, fn, seq}
 
+  /**
+   * @type {number} R150: the most bundle ids a project's reach holds
+   *   5000
+   */
   static PROJECT_REACH_LIMIT = 5000;
 
+  /**
+   * R150: a later module's reader of a project's reach, once per module.
+   * @param {*} module
+   * @param {*} fn `({project}) => string[]`, the bundle ids it adds
+   * Answers LISTENER_MALFORMED or LISTENER_DECLARED, through `listenerRefusal`
+   *   ok true names the `module` registered
+   */
   registerProjectReach(module, fn) {
     const refused = listenerRefusal(this.#reachReaders, module, fn);
     if (refused) return refused;
@@ -472,7 +616,11 @@ export class Membership {
   }
 
   /** R150: the bundle ids the registered readers add to `project`'s reach, each once, in the readers' order. Writes
-   *  nothing; never throws. */
+   *  nothing; never throws.
+   *  @param {*} project
+   *  @returns {string[]}
+   *    at most PROJECT_REACH_LIMIT ids, in the readers' order
+   */
   projectReach(project) {
     const ids = new Set();
     if (typeof project !== "string" || !project) return [];
@@ -489,13 +637,19 @@ export class Membership {
   }
 
   /** R43, R149: the gate for `viewer` as this instance answers it: `viewerPredicate`, with the reach the registered
-   *  readers add (R150) when the viewer carries a project. `inSight` and `sight` ask it. Never throws. */
+   *  readers add (R150) when the viewer carries a project. `inSight` and `sight` ask it. Never throws.
+   *  @param {*} viewer
+   *  @returns {Gate}
+   */
   viewerGate(viewer) {
     const carried = carriedProject(viewer);
     return viewerPredicate(viewer, carried === null ? null : this.projectReach(carried));
   }
 
-  /** R88, R149: `hiddenBundles` with the reach this instance's readers add, for a viewer that carries a project. */
+  /** R88, R149: `hiddenBundles` with the reach this instance's readers add, for a viewer that carries a project.
+   *  @param {*} viewer
+   *  @returns {?SubtractSet}
+   */
   hiddenBundlesFor(viewer) {
     const carried = carriedProject(viewer);
     return hiddenBundles(viewer, carried === null ? null : this.projectReach(carried));
@@ -511,6 +665,13 @@ export class Membership {
   #invitedListener = null;   // {module, fn}
   #hiddenListener = null;    // {module, fn}
 
+  /**
+   * R116: the one listener told of each invitation R32 records.
+   * @param {*} module
+   * @param {*} fn `({projectId, memberId, by, at}) => number`, the requests it closed
+   * Answers LISTENER_MALFORMED or LISTENER_DECLARED, through `listenerRefusal`
+   *   ok true names the `module` registered
+   */
   onProjectInvited(module, fn) {
     const refused = listenerRefusal(this.#invitedListener, module, fn);
     if (refused) return refused;
@@ -518,6 +679,13 @@ export class Membership {
     return { ok: true, module };
   }
 
+  /**
+   * R117: the one listener told when R45 records the setting `hidden`.
+   * @param {*} module
+   * @param {*} fn `({projectId, by, at}) => number`, the requests it lapsed
+   * Answers LISTENER_MALFORMED or LISTENER_DECLARED, through `listenerRefusal`
+   *   ok true names the `module` registered
+   */
   onProjectHidden(module, fn) {
     const refused = listenerRefusal(this.#hiddenListener, module, fn);
     if (refused) return refused;
@@ -544,6 +712,13 @@ export class Membership {
    * takes one registration whoever makes it, so its refusals are R81's, naming the holder. */
   #projectActGuard = null;   // {module, fn}
 
+  /**
+   * R128: the one guard R32 and R45 ask inside their act.
+   * @param {*} module
+   * @param {*} fn `({act, projectId, by, setting?}) => Refusal | null`
+   * Answers LISTENER_MALFORMED or LISTENER_DECLARED, through `listenerRefusal`
+   *   ok true names the `module` registered
+   */
   registerProjectActGuard(module, fn) {
     const refused = listenerRefusal(this.#projectActGuard, module, fn);
     if (refused) return refused;
@@ -583,6 +758,12 @@ export class Membership {
    In one helper so the two call sites cannot drift apart, which is how the
    admin bypass came to sit on invite and remove with different shapes. */
 
+  /**
+   * R54: true exactly for a participant with the owner flag.
+   * @param {*} projectId
+   * @param {*} memberId
+   * @returns {boolean}
+   */
   isProjectOwner(projectId, memberId) {
     const p = this.participation(projectId, memberId);
     return !!(p && p.owner);
@@ -594,7 +775,11 @@ export class Membership {
    *  §7.6 says a request to leave *"does not remove them"*, and BOB #14's lead ruling
    *  already reads joined-or-leaving as the two states of full participation
    *  (`#leadReach`). An owner is a joined participant with the owner flag (§7.10), so
-   *  every owner passes. `invited` does not. */
+   *  every owner passes. `invited` does not.
+   *  @param {*} projectId
+   *  @param {*} memberId
+   *  @returns {boolean}
+   */
   isJoinedParticipant(projectId, memberId) {
     const p = this.participation(projectId, memberId);
     return !!(p && (p.state === "joined" || p.state === "leaving"));
@@ -633,6 +818,14 @@ export class Membership {
    * literal inside the region DEC-49's guard reads; C-56.2's is `notTheOwner`'s (R122, T40), answered
    * through it with this act's `act` and `needs`; the call sites RELAY both (`projectGate`'s
    * precedent at the run verbs). */
+  /**
+   * R55.
+   * @param {*} projectId
+   * @param {*} identity the positional identity; none, or one naming no member, is not asked
+   * @param {*} need `owner` or `joined`
+   * @param {*} act the caller's fixed phrase for its act
+   * Answers PROJECT_ACT_NOT_THE_OWNER or PROJECT_ACT_NOT_A_PARTICIPANT; null to proceed
+   */
   projectAuthority(projectId, identity, need, act) {
     const who = this.positionalMember(null, identity);
     if (who === null) return null;
@@ -677,6 +870,17 @@ export class Membership {
    *
    * Returns null to proceed, or the refusal. `extra` carries the caller's own identifying fields,
    * placed where `ratifyCaseDocument`'s refusal always carried them, so its answer is unchanged. */
+  /**
+   * R56.
+   * @param {Object} args
+   * @param {*} [args.project]
+   * @param {*} [args.deliveredBy] `founder`, or the positional identity of the session delivering
+   * @param {*} [args.signer]
+   * @param {*} [args.act]
+   * @param {*} [args.subject]
+   * @param {Object<string, *>} [args.extra] the caller's own fields, set in its refusal
+   * Answers PROJECT_ACT_NOT_A_PARTICIPANT or CASE_SIGNER_NOT_AN_OWNER; null to proceed
+   */
   caseAuthority({ project, deliveredBy = null, signer = null, act, subject, extra = {} }) {
     if (project && deliveredBy !== "founder") {
       const denied = this.projectAuthority(project, deliveredBy, "joined", act);
@@ -722,6 +926,12 @@ export class Membership {
    * the oracle (R61; `test/m/membership/sight.test.mjs`'s R61 test holds that an outsider never learns ownership). */
   /* N142: a named service (the layer-6 modules gate with it and `viewerPredicate`), so it is total: an id that is not
      a non-empty string names no bundle, and nothing it is handed makes it throw. */
+  /**
+   * R80.
+   * @param {*} bundleId
+   * @param {*} [viewer]
+   * @returns {boolean}
+   */
   inSight(bundleId, viewer) {
     if (typeof bundleId !== "string" || !bundleId) return false;
     const g = this.viewerGate(viewer);
@@ -744,16 +954,35 @@ export class Membership {
    * reverse edge and run report still compiles only FULL sight, because those reads return CONTENTS.
    * `inSight` IS the FULL level, asked first and unchanged, so every existing caller keeps its meaning; the
    * acts ask `existenceAct` just BEFORE their REC-138 line, so NONE still reaches that line and its answer. */
+  /**
+   * @type {string}
+   *   none
+   */
   static SIGHT_NONE = "none";
 
+  /**
+   * @type {string}
+   *   existence
+   */
   static SIGHT_EXISTENCE = "existence";
 
+  /**
+   * @type {string}
+   *   full
+   */
   static SIGHT_FULL = "full";
 
   /* D54 (K2408, K2409; T41-3): EXISTENCE has a second form. An administrator (the founder's viewer, either spelling, or
      an active administrator's) whom R43 does not admit to a HIDDEN project, being neither invited nor joined, sees that
      it exists: its id, its name and its owners' handles (R77), so a legal hold or a complaint can name it; never its
      contents. A discoverable project's EXISTENCE is unchanged, and administrators are FULL there already. */
+  /**
+   * R44.
+   * @param {*} bundleId
+   * @param {*} [viewer]
+   * @returns {string} `SIGHT_FULL`, `SIGHT_EXISTENCE` or `SIGHT_NONE`
+   *   full, existence or none
+   */
   sight(bundleId, viewer) {
     if (this.inSight(bundleId, viewer)) return Membership.SIGHT_FULL;
     /* R149: a viewer carrying a project sees at most that project's existence, the member's own sight of it, and every
@@ -791,6 +1020,10 @@ export class Membership {
      own CASE, one method down, and every project carries a row for it: the index is recomputed at every boot,
      at every promotion, and at every owner's act. This branch is reached only by an id the index does not hold
      — a bundle that is not a project, or one purged between the two reads — and it fails closed. */
+  /**
+   * @param {*} projectId
+   * @returns {"discoverable"|"hidden"}
+   */
   visibilityOf(projectId) {
     const r = this.#one(`SELECT setting FROM project_sight WHERE project_id=?`,
       typeof projectId === "string" ? projectId : null);   /* R85: an id that is not a string names no row */
@@ -837,6 +1070,10 @@ export class Membership {
    * lookup; given none, both run once over the projects in `bundles` — inside SQLite, nothing per row in JS,
    * at boot only, reached by no op. The work is inside SQL, so it is stated here rather than left for a reader of
    * this file's JS loops to miss. */
+  /**
+   * @param {?string} [projectId] one project; none reindexes every project
+   * @returns {void}
+   */
   reindexProjectSight(projectId = null) {
     /* A bundle that is no longer a project (or never was) holds no sight row. Written as a correlated NOT
        EXISTS rather than `NOT IN (SELECT …)` so the per-project form stays one indexed lookup. */
@@ -864,6 +1101,12 @@ export class Membership {
      NONE is still answered exactly as an id naming nothing (byte for byte) and FULL proceeds. Every act that
      names a project asks this immediately before its sight line. A viewer never SENT is not asked
      (`rosterInSight`'s precedent): it is an internal caller, and NONE's line decides for it as before. */
+  /**
+   * R77.
+   * @param {*} projectId
+   * @param {*} [viewer] none is not asked
+   * Answers PROJECT_SEEN_NOT_A_PARTICIPANT with `project` and `name`, and `owners` (handles, null for one with none) for an administrator at a hidden project; null otherwise
+   */
   existenceAct(projectId, viewer) {
     if (viewer === null || viewer === undefined) return null;
     try {
@@ -897,7 +1140,17 @@ export class Membership {
    *  a caller who cannot see the project is answered as for one that does not exist, a caller at EXISTENCE gets
    *  C-70.1, and only then is ownership asked — through `isProjectOwner`, §7's one owner predicate, so an
    *  administrator, the founder and every machine credential are refused (administrators direct nothing, §4.9,
-   *  and §7.13's rescue does not set it). A viewer never SENT is not asked, `rosterInSight`'s precedent. */
+   *  and §7.13's rescue does not set it). A viewer never SENT is not asked, `rosterInSight`'s precedent.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.setting]
+   *  @param {*} [args.reason]
+   *  @param {*} [args.by]
+   *  @param {*} [args.viewer]
+   *  Answers NOT_A_PROJECT, NO_SUCH_PROJECT, PROJECT_SEEN_NOT_A_PARTICIPANT, PROJECT_VISIBILITY_NOT_THE_OWNER, PROJECT_VISIBILITY_UNKNOWN_SETTING, or the guard's
+   *    ok true carries projectId, setting, set_by, reason and at
+   *    reason: at most 280 characters; requests_lapsed, a whole number, only when the setting is hidden
+   */
   projectVisibilitySet({ projectId, setting, reason = null, by, viewer = null } = {}) {
     const b = this.#one(`SELECT object_type FROM bundles WHERE bundle_id=?`, projectId);
     const existence = b ? this.existenceAct(projectId, viewer) : null;
@@ -941,6 +1194,12 @@ export class Membership {
      creation's `visibility` (`promote`, which a fork reaches through). "discoverable" or "hidden" and nothing
      else, compared exactly — a spelling the vocabulary does not write is not quietly read as either. Null when
      the value is a setting. `projectId` is echoed when the door has one (the owner's act); a creation has none. */
+  /**
+   * R47.
+   * @param {*} value
+   * @param {*} [projectId] echoed as `project` unless null
+   * Answers PROJECT_VISIBILITY_UNKNOWN_SETTING unless `discoverable` or `hidden`
+   */
   visibilitySettingRefusal(value, projectId) {
     const want = String(value ?? "");
     const refusal = (code, detail) => {
@@ -963,6 +1222,11 @@ export class Membership {
      parameter not sent at all: null) is NOT ASKED here, on that precedent; ANY viewer that was sent,
      including an empty one, is asked through `inSight` and fails closed. The control plane stamps
      every roster act (`PROJECT_ACTIONS`): without the stamp these acts would fall back to disclosing. */
+  /**
+   * @param {*} projectId
+   * @param {*} viewer none is not asked
+   * @returns {boolean}
+   */
   rosterInSight(projectId, viewer) {
     return viewer === null || viewer === undefined || this.inSight(projectId, viewer);
   }
@@ -988,7 +1252,11 @@ export class Membership {
    *  predicate a refusal also runs. A LIMIT is deliberately NOT taken — a bound
    *  that stopped before an owner row would withhold the act from a genuine
    *  owner, the over-strictness failure, and what bounds this set is roster ACTS
-   *  (an invite, a join) and never a corpus. */
+   *  (an invite, a join) and never a corpus.
+   *  R67.
+   *  @param {*} memberId
+   *  @returns {boolean}
+   */
   ownsAnyProject(memberId) {
     return this.#rows(`SELECT project_id FROM project_participants WHERE member_id=?`, memberId)
                .some((p) => this.isProjectOwner(p.project_id, memberId));
@@ -1005,6 +1273,12 @@ export class Membership {
      NEEDS table, where every other corpus write is gated. An administrator gains
      nothing here: sight of every project is not a position in any of them (§7.3).
      No new right is minted; this is §7.5 said once. */
+  /**
+   * R66.
+   * @param {*} projectId
+   * @param {*} memberId
+   * @returns {boolean}
+   */
   isProjectEditor(projectId, memberId) {
     if (this.isProjectOwner(projectId, memberId)) return true;
     const p = this.participation(projectId, memberId);
@@ -1014,6 +1288,10 @@ export class Membership {
   /* R127 (K2404; for `credentials` R54, R59): every participant `joined` or `leaving` (R54's set), whatever the member's
      status, in member-id order: `{member, owner, since}`, `since` the instant the row last became `joined` (null for a row
      joined before T40 recorded it). An unknown project answers []. Writes nothing and never throws. */
+  /**
+   * @param {*} projectId
+   * @returns {JoinedParticipant[]}
+   */
   joinedParticipants(projectId) {
     try {
       if (typeof projectId !== "string" || !projectId) return [];
@@ -1024,6 +1302,11 @@ export class Membership {
   }
 
   /* R74: one member's participation in one project, `{state, owner}`, or null (promotion's forkProject reads it). */
+  /**
+   * @param {*} projectId
+   * @param {*} memberId
+   * @returns {?Participation}
+   */
   participation(projectId, memberId) {
     const p = this.#one(`SELECT state, owner FROM project_participants WHERE project_id=? AND member_id=?`,
       projectId, memberId);
@@ -1032,7 +1315,14 @@ export class Membership {
 
   /** 7.1: the creator is the owner. Called when a project bundle is promoted by
    *  an identified member; a project created by a machine credential has no
-   *  owner row, which is honest rather than inventing one. */
+   *  owner row, which is honest rather than inventing one.
+   *  R31.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.memberId]
+   *  Answers NO_SUCH_PROJECT, NOT_A_PROJECT or OWNED
+   *    ok true carries projectId and owner
+   */
   projectClaimOwner({ projectId, memberId } = {}) {
     const b = this.#one(`SELECT object_type FROM bundles WHERE bundle_id=?`, projectId);
     if (!b) return noSuchProject(projectId);   /* R78 */
@@ -1050,7 +1340,16 @@ export class Membership {
   /** 7.2: the owner invites by handle, and only an owner (the code below). CORRECTED 2026-09-23
    *  (D-311): this read "Administrators may also invite, because 7.7 already gives them authority
    *  over participation" — v1.4's 7.7, which Membership Architecture v2 REVERSED; its §11 item 5
-   *  requires such a comment corrected rather than left to disagree in silence. */
+   *  requires such a comment corrected rather than left to disagree in silence.
+   *  R32, R157.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.handle]
+   *  @param {*} [args.by]
+   *  @param {*} [args.viewer]
+   *  Answers NO_SUCH_PROJECT, PROJECT_SEEN_NOT_A_PARTICIPANT, NOT_A_PROJECT, NOT_THE_OWNER, NO_SUCH_HANDLE, THAT_IS_YOU, NOT_ACTIVE, ALREADY_INVITED, ALREADY_A_PARTICIPANT, or the guard's
+   *    ok true carries projectId, handle and state invited, and request granted when the listener closed a request
+   */
   projectInvite({ projectId, handle, by, viewer = null } = {}) {
     const b = this.#one(`SELECT object_type FROM bundles WHERE bundle_id=?`, projectId);
     /* REC-138 / D-426: sight BEFORE position (see `inSight`). */
@@ -1089,7 +1388,15 @@ export class Membership {
     return { ok: true, projectId, handle, state: "invited", ...(granted ? { request: "granted" } : {}) };
   }
 
-  /** 7.4: joining is selecting the checkbox. There is no acceptance ceremony. */
+  /** 7.4: joining is selecting the checkbox. There is no acceptance ceremony.
+   *  R34.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.by]
+   *  @param {*} [args.viewer]
+   *  Answers PROJECT_SEEN_NOT_A_PARTICIPANT or NOT_INVITED
+   *    ok true carries projectId and state joined
+   */
   projectJoin({ projectId, by, viewer = null } = {}) {
     /* REC-149: at EXISTENCE (a discoverable project, a member outside it) the positional C-70.1; otherwise the
        answer below is unchanged, and it already says the same thing for an absent id and a hidden one. */
@@ -1106,7 +1413,17 @@ export class Membership {
 
   /** 7.6: unchecking the box is a REQUEST to leave. It greys the checkmark and
    *  removes nobody; removal is 7.7's, which v2 gives to an OWNER of the project
-   *  (CORRECTED 2026-09-23 by D-311 — this read "to administrators alone", v1.4's rule). */
+   *  (CORRECTED 2026-09-23 by D-311 — this read "to administrators alone", v1.4's rule).
+   *  R35.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.by]
+   *  @param {*} [args.comment]
+   *  @param {*} [args.viewer]
+   *  Answers PROJECT_SEEN_NOT_A_PARTICIPANT, NOT_A_PARTICIPANT, NOT_JOINED or LAST_COMMITTED_OWNER
+   *    ok true carries projectId, state leaving, comment and detail
+   *    comment: at most 280 characters
+   */
   projectLeave({ projectId, by, comment = null, viewer = null } = {}) {
     /* REC-149: at EXISTENCE (a discoverable project, a member outside it) the positional C-70.1; otherwise the
        answer below is unchanged, and it already says the same thing for an absent id and a hidden one. */
@@ -1143,7 +1460,18 @@ export class Membership {
    *  not. CORRECTED 2026-09-23 by D-311 — this comment still stated v1.4's rule
    *  ("only an administrator removes … Project owners invite; they do not remove")
    *  over code that has enforced v2's since the reversal; §11 item 5 requires it
-   *  corrected rather than left to disagree in silence. */
+   *  corrected rather than left to disagree in silence.
+   *  R36.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.handle]
+   *  @param {*} [args.by]
+   *  @param {*} [args.comment]
+   *  @param {*} [args.viewer]
+   *  Answers PROJECT_SEEN_NOT_A_PARTICIPANT, NOT_THE_OWNER, NO_SUCH_HANDLE, TARGET_NOT_A_PARTICIPANT or OWNER
+   *    ok true carries projectId, handle, removed true, comment, by and at
+   *    comment: at most 280 characters
+   */
   projectRemove({ projectId, handle, by, comment = null, viewer = null } = {}) {
     /* REC-149: at EXISTENCE (a discoverable project, a member outside it) the positional C-70.1; otherwise the
        answer below is unchanged, and it already says the same thing for an absent id and a hidden one. */
@@ -1180,7 +1508,12 @@ export class Membership {
    *  `op=affordances` asks the SAME predicate the act refuses on (the `#citesInto` discipline):
    *  the caller is an administrator, the project has owner rows, and EVERY owner is inactive.
    *  Returns the refusal the act answers, byte for byte as it answered before the extraction, or
-   *  null. What it leaves to the act is what turns on a PARAMETER (the reason, the handle). */
+   *  null. What it leaves to the act is what turns on a PARAMETER (the reason, the handle).
+   *  R75.
+   *  @param {*} projectId
+   *  @param {*} by
+   *  Answers NOT_AN_ADMIN, NO_OWNERS or OWNERS_ARE_ACTIVE; null when none holds
+   */
   rescueRefusal(projectId, by) {
     /* R84 (N327, DEC-83): the rescue is the single exception to administrators holding no authority over projects,
        and an administrator's to use; the remedy names who acts instead. */
@@ -1219,6 +1552,11 @@ export class Membership {
    * the other's assent. It opens nothing, because the only removal it permits is
    * one the target has agreed to, and a hostile removal at two stays impossible
    * exactly as in 4.7. */
+  /**
+   * R38.
+   * @param {number} n the number of owners
+   * @returns {OwnerRow}
+   */
   static ownerMath(n) {
     if (n <= 1)
       return { owners: n, votesNeeded: 0, eligibleVoters: 0, targetMayVote: false, possible: false,
@@ -1240,7 +1578,14 @@ export class Membership {
    *  exists" 7.9 forbids. Gated through the ONE compilation point (`inSight`,
    *  which is false for an absent bundle AND for an invisible one), so an
    *  invisible project now answers exactly what a nonexistent one answers —
-   *  ownerMath(0) — rather than a refusal that would itself be a signal. */
+   *  ownerMath(0) — rather than a refusal that would itself be a signal.
+   *  R38.
+   *  @param {Object} [args]
+   *  @param {*} [args.projectId]
+   *  @param {*} [args.viewer]
+   *  Answers `live` the project's row, `ownerMath(0)`'s for one the viewer cannot see, null when none is named
+   *    table: rows for 1 to 9 owners; ok: true
+   */
   projectOwnerArithmetic({ projectId, viewer = null } = {}) {
     const table = [];
     for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9]) table.push(Membership.ownerMath(n));
@@ -1252,6 +1597,11 @@ export class Membership {
 
   /* R65: the owners' member ids in the order they became owners (`owner_order`, the project's owner counter; a row
      written before that column existed orders first, by its creation, then id); [] for no owner or no such project. */
+  /**
+   * R65.
+   * @param {*} projectId
+   * @returns {string[]} member ids in the order they became owners
+   */
   projectOwners(projectId) {
     return this.#rows(`SELECT member_id FROM project_participants WHERE project_id=? AND owner=1
                         ORDER BY COALESCE(owner_order, 0), created, member_id`, projectId)
@@ -1286,74 +1636,324 @@ export class Membership {
   /* ===== R154 — EACH MOVED NAME ANSWERS WHAT `member-roster` ANSWERS (K3268: no user re-points) =====
    * Each name whose requirement moved to `member-roster` is a delegate of the same name and shape; the class statics are
    * its aliases. */
+  /* R154: `member-roster`'s ROOT_ADMIN, under its old name. */
   static ROOT_ADMIN = ROOT_ADMIN;
+  /**
+   * @type {typeof CAPABILITIES} R154: `member-roster`'s, under its old name
+   */
   static CAPABILITIES = CAPABILITIES;
+  /**
+   * @type {typeof adminMath} R154: `member-roster`'s, under its old name
+   */
   static adminMath = adminMath;
+  /**
+   * @type {typeof Members.HOSTING_ACCESS_LIMIT} R154: `member-roster`'s, under its old name
+   */
   static HOSTING_ACCESS_LIMIT = Members.HOSTING_ACCESS_LIMIT;
+  /**
+   * @type {typeof Members.MEMBER_PAIRINGS_LIMIT} R154: `member-roster`'s, under its old name
+   */
   static MEMBER_PAIRINGS_LIMIT = Members.MEMBER_PAIRINGS_LIMIT;
+  /**
+   * @type {typeof Members.HANDLE_PATTERN} R154: `member-roster`'s, under its old name
+   */
   static HANDLE_PATTERN = Members.HANDLE_PATTERN;
+  /**
+   * @type {typeof Members.HANDLE_CHECK_WINDOW} R154: `member-roster`'s, under its old name
+   */
   static HANDLE_CHECK_WINDOW = Members.HANDLE_CHECK_WINDOW;
+  /**
+   * @type {typeof Members.HANDLE_CHECK_STATED} R154: `member-roster`'s, under its old name
+   */
   static HANDLE_CHECK_STATED = Members.HANDLE_CHECK_STATED;
+  /**
+   * @type {typeof Members.INVITE_DAYS_DEFAULT} R154: `member-roster`'s, under its old name
+   */
   static INVITE_DAYS_DEFAULT = Members.INVITE_DAYS_DEFAULT;
+  /**
+   * @type {typeof Members.INVITE_DAYS_MAX} R154: `member-roster`'s, under its old name
+   */
   static INVITE_DAYS_MAX = Members.INVITE_DAYS_MAX;
+  /**
+   * @type {typeof Members.DOOR_WARNING} R154: `member-roster`'s, under its old name
+   */
   static DOOR_WARNING = Members.DOOR_WARNING;
+  /**
+   * @type {typeof Members.JOIN_DOORS_LIMIT} R154: `member-roster`'s, under its old name
+   */
   static JOIN_DOORS_LIMIT = Members.JOIN_DOORS_LIMIT;
+  /**
+   * @type {typeof Members.COURT_STATEMENT} R154: `member-roster`'s, under its old name
+   */
   static COURT_STATEMENT = Members.COURT_STATEMENT;
+  /**
+   * @type {typeof Members.GROUP_KINDS} R154: `member-roster`'s, under its old name
+   */
   static GROUP_KINDS = Members.GROUP_KINDS;
 
+  /**
+   * R154: `member-roster`'s `Members#onRevoked`, delegated.
+   * @param {...*} a its arguments
+   */
   onRevoked(...a) { return this.members.onRevoked(...a); }
+  /**
+   * R154: `member-roster`'s `Members#registerClaimed`, delegated.
+   * @param {...*} a its arguments
+   */
   registerClaimed(...a) { return this.members.registerClaimed(...a); }
+  /**
+   * R154: `member-roster`'s `Members#registerPasswordSetter`, delegated.
+   * @param {...*} a its arguments
+   */
   registerPasswordSetter(...a) { return this.members.registerPasswordSetter(...a); }
+  /**
+   * R154: `member-roster`'s `Members#registerHandleGuard`, delegated.
+   * @param {...*} a its arguments
+   */
   registerHandleGuard(...a) { return this.members.registerHandleGuard(...a); }
+  /**
+   * R154: `member-roster`'s `Members#isAdministrator`, delegated.
+   * @param {...*} a its arguments
+   */
   isAdministrator(...a) { return this.members.isAdministrator(...a); }
+  /**
+   * R154: `member-roster`'s `Members#activeAdmins`, delegated.
+   * @param {...*} a its arguments
+   */
   activeAdmins(...a) { return this.members.activeAdmins(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberFacts`, delegated.
+   * @param {...*} a its arguments
+   */
   memberFacts(...a) { return this.members.memberFacts(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberStatusSince`, delegated.
+   * @param {...*} a its arguments
+   */
   memberStatusSince(...a) { return this.members.memberStatusSince(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberByHandle`, delegated.
+   * @param {...*} a its arguments
+   */
   memberByHandle(...a) { return this.members.memberByHandle(...a); }
+  /**
+   * R154: `member-roster`'s `Members#sessionRights`, delegated.
+   * @param {...*} a its arguments
+   */
   sessionRights(...a) { return this.members.sessionRights(...a); }
+  /**
+   * R154: `member-roster`'s `Members#adminResign`, delegated.
+   * @param {...*} a its arguments
+   */
   adminResign(...a) { return this.members.adminResign(...a); }
+  /**
+   * R154: `member-roster`'s `Members#adminArithmetic`, delegated.
+   * @param {...*} a its arguments
+   */
   adminArithmetic(...a) { return this.members.adminArithmetic(...a); }
+  /**
+   * R154: `member-roster`'s `Members#adminEndorse`, delegated.
+   * @param {...*} a its arguments
+   */
   adminEndorse(...a) { return this.members.adminEndorse(...a); }
+  /**
+   * R154: `member-roster`'s `Members#adminRemove`, delegated.
+   * @param {...*} a its arguments
+   */
   adminRemove(...a) { return this.members.adminRemove(...a); }
+  /**
+   * R154: `member-roster`'s `Members#adminRemovalsOpen`, delegated.
+   * @param {...*} a its arguments
+   */
   adminRemovalsOpen(...a) { return this.members.adminRemovalsOpen(...a); }
+  /**
+   * R154: `member-roster`'s `Members#hostingAccessSet`, delegated.
+   * @param {...*} a its arguments
+   */
   hostingAccessSet(...a) { return this.members.hostingAccessSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#hostingAccess`, delegated.
+   * @param {...*} a its arguments
+   */
   hostingAccess(...a) { return this.members.hostingAccess(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberPairingSet`, delegated.
+   * @param {...*} a its arguments
+   */
   memberPairingSet(...a) { return this.members.memberPairingSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberPairings`, delegated.
+   * @param {...*} a its arguments
+   */
   memberPairings(...a) { return this.members.memberPairings(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberCaps`, delegated.
+   * @param {...*} a its arguments
+   */
   memberCaps(...a) { return this.members.memberCaps(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberAdd`, delegated.
+   * @param {...*} a its arguments
+   */
   memberAdd(...a) { return this.members.memberAdd(...a); }
+  /**
+   * R154: `member-roster`'s `Members#memberSet`, delegated.
+   * @param {...*} a its arguments
+   */
   memberSet(...a) { return this.members.memberSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#inviteLook`, delegated.
+   * @param {...*} a its arguments
+   */
   inviteLook(...a) { return this.members.inviteLook(...a); }
+  /**
+   * R154: `member-roster`'s `Members#inviteWithdraw`, delegated.
+   * @param {...*} a its arguments
+   */
   inviteWithdraw(...a) { return this.members.inviteWithdraw(...a); }
+  /**
+   * R154: `member-roster`'s `Members#enroll`, delegated.
+   * @param {...*} a its arguments
+   */
   enroll(...a) { return this.members.enroll(...a); }
+  /**
+   * R154: `member-roster`'s `Members#expertiseDeclare`, delegated.
+   * @param {...*} a its arguments
+   */
   expertiseDeclare(...a) { return this.members.expertiseDeclare(...a); }
+  /**
+   * R154: `member-roster`'s `Members#expertiseConfirm`, delegated.
+   * @param {...*} a its arguments
+   */
   expertiseConfirm(...a) { return this.members.expertiseConfirm(...a); }
+  /**
+   * R154: `member-roster`'s `Members#expertiseList`, delegated.
+   * @param {...*} a its arguments
+   */
   expertiseList(...a) { return this.members.expertiseList(...a); }
+  /**
+   * R154: `member-roster`'s `Members#expertiseWithdraw`, delegated.
+   * @param {...*} a its arguments
+   */
   expertiseWithdraw(...a) { return this.members.expertiseWithdraw(...a); }
+  /**
+   * R154: `member-roster`'s `Members#expertiseAwaitingConfirmation`, delegated.
+   * @param {...*} a its arguments
+   */
   expertiseAwaitingConfirmation(...a) { return this.members.expertiseAwaitingConfirmation(...a); }
+  /**
+   * R154: `member-roster`'s `Members#endorsementsOwed`, delegated.
+   * @param {...*} a its arguments
+   */
   endorsementsOwed(...a) { return this.members.endorsementsOwed(...a); }
+  /**
+   * R154: `member-roster`'s `Members#handleCheck`, delegated.
+   * @param {...*} a its arguments
+   */
   handleCheck(...a) { return this.members.handleCheck(...a); }
+  /**
+   * R154: `member-roster`'s `Members#handleChange`, delegated.
+   * @param {...*} a its arguments
+   */
   handleChange(...a) { return this.members.handleChange(...a); }
+  /**
+   * R154: `member-roster`'s `Members#founderHandle`, delegated.
+   * @param {...*} a its arguments
+   */
   founderHandle(...a) { return this.members.founderHandle(...a); }
+  /**
+   * R154: `member-roster`'s `Members#founderHandleSet`, delegated.
+   * @param {...*} a its arguments
+   */
   founderHandleSet(...a) { return this.members.founderHandleSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#websiteKeyCreate`, delegated.
+   * @param {...*} a its arguments
+   */
   websiteKeyCreate(...a) { return this.members.websiteKeyCreate(...a); }
+  /**
+   * R154: `member-roster`'s `Members#websiteKeySet`, delegated.
+   * @param {...*} a its arguments
+   */
   websiteKeySet(...a) { return this.members.websiteKeySet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#websiteKeyRevoke`, delegated.
+   * @param {...*} a its arguments
+   */
   websiteKeyRevoke(...a) { return this.members.websiteKeyRevoke(...a); }
+  /**
+   * R154: `member-roster`'s `Members#websiteInvite`, delegated.
+   * @param {...*} a its arguments
+   */
   websiteInvite(...a) { return this.members.websiteInvite(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinLinkEnable`, delegated.
+   * @param {...*} a its arguments
+   */
   joinLinkEnable(...a) { return this.members.joinLinkEnable(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinLinkSet`, delegated.
+   * @param {...*} a its arguments
+   */
   joinLinkSet(...a) { return this.members.joinLinkSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinLinkReplace`, delegated.
+   * @param {...*} a its arguments
+   */
   joinLinkReplace(...a) { return this.members.joinLinkReplace(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinLinkOff`, delegated.
+   * @param {...*} a its arguments
+   */
   joinLinkOff(...a) { return this.members.joinLinkOff(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinLinkInvite`, delegated.
+   * @param {...*} a its arguments
+   */
   joinLinkInvite(...a) { return this.members.joinLinkInvite(...a); }
+  /**
+   * R154: `member-roster`'s `Members#joinDoors`, delegated.
+   * @param {...*} a its arguments
+   */
   joinDoors(...a) { return this.members.joinDoors(...a); }
+  /**
+   * R154: `member-roster`'s `Members#courtNoticeSet`, delegated.
+   * @param {...*} a its arguments
+   */
   courtNoticeSet(...a) { return this.members.courtNoticeSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#courtNotice`, delegated.
+   * @param {...*} a its arguments
+   */
   courtNotice(...a) { return this.members.courtNotice(...a); }
+  /**
+   * R154: `member-roster`'s `Members#lookedSince`, delegated.
+   * @param {...*} a its arguments
+   */
   lookedSince(...a) { return this.members.lookedSince(...a); }
+  /**
+   * R154: `member-roster`'s `Members#lookedAt`, delegated.
+   * @param {...*} a its arguments
+   */
   lookedAt(...a) { return this.members.lookedAt(...a); }
+  /**
+   * R154: `member-roster`'s `Members#groupDescriptionSet`, delegated.
+   * @param {...*} a its arguments
+   */
   groupDescriptionSet(...a) { return this.members.groupDescriptionSet(...a); }
+  /**
+   * R154: `member-roster`'s `Members#groupDescription`, delegated.
+   * @param {...*} a its arguments
+   */
   groupDescription(...a) { return this.members.groupDescription(...a); }
 
   /* R14, R71 (`member-roster`): the roster, given this module's own rule for the projects of a member (R18). */
+  /**
+   * R18; `member-roster`'s roster, with this module's projects of a member.
+   * @param {Object} [args]
+   * @param {*} [args.administer]
+   * @param {*} [args.viewer]
+   */
   memberList({ administer, viewer = null } = {}) {
     return this.members.memberList({ administer, viewer, projectsOf: (memberId, v) => this.#projectsOf(memberId, v) });
   }
@@ -1361,7 +1961,12 @@ export class Membership {
   /* ---- R106 (DEC-135 (2), (5)): who a check request reaches ---- */
 
   /** Every active member whose current state for `label` is declared or confirmed (`member-roster` R72) and whom R80
-   *  admits to `target`, in member-id order. It addresses only: writes nothing, grants nothing, and never throws. */
+   *  admits to `target`, in member-id order. It addresses only: writes nothing, grants nothing, and never throws.
+   *  @param {Object} [args]
+   *  @param {*} [args.target] a bundle id
+   *  @param {*} [args.label]
+   *  Answers `[{memberId, handle, state}]`, or `member-roster`'s refusal EXPERTISE_NO_LABEL
+   */
   checkAddressees({ target, label } = {}) {
     try {
       const holders = this.members.expertiseHolders(label);
@@ -1377,6 +1982,11 @@ export class Membership {
    K5202), so an instant member-roster records follows the store's environment; `membersOf(ctx)` stays member-roster's
    reads. `record` (a test's own record-core) is read on the first call only. */
 const OF = new WeakMap();
+/**
+ * @param {*} ctx a Durable Object's state (`ctx.storage.sql`), or its storage
+ * @param {{record?: *}} [opts] `record`, a test's own record-core, read on the first call only
+ * @returns {Membership} the one instance for that storage
+ */
 export function membershipOf(ctx, { record = null } = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let m = OF.get(storage);
@@ -1389,6 +1999,14 @@ export function membershipOf(ctx, { record = null } = {}) {
    `adminremovalsopen` is answered here, R154), beside the project ops. `url` is the request URL, whose query carries the
    control plane's stamps (`by`, `viewer`, `who`, `administer`); `body` the parsed body; `env` the host's environment. Each
    stamp is read from the query AFTER the body is spread, so a caller's own copy never wins (D-136). */
+/**
+ * @param {Membership} m
+ * @param {URL} url
+ * @param {*} body
+ * @param {*} env
+ * Answers each op's arm by its door name
+ *   the stamps by, viewer, who and administer are read from the query, never the body
+ */
 export function membershipOps(m, url, body, env) {
   return {
     ...membersOps(m, url, body, env),
@@ -1419,6 +2037,8 @@ export function membershipOps(m, url, body, env) {
 
 /* R155 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** R155: each op this module serves that the screens send, by its door name: `{classes, machineClasses?, mutating, weight, description, fields: {accepts, requires}}`; each key an op
+ *  `membershipOps` answers. */
 export const DECLARED_OPS = Object.freeze({
   projectinvite: { classes: ["admin","member","probe"], mutating: true, weight: "credential", description: localize("membership.declared.projectinvite", "roster act on a project, position-enforced by the store"),
     fields: { accepts: ["projectId","handle"], requires: ["projectId","handle"] } },

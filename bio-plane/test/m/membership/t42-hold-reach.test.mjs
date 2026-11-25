@@ -72,7 +72,7 @@ test("R60 R44 T42 the hold's reach opens nothing inside the project: no bundle o
       .map((r) => r.bundle_id), ["NOTE-H", "PROJ-H"], `${v}: still subtracted from every count`);
   }
   /* EXISTENCE is never a position (R60's first sentence) */
-  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "joined", "placing a hold").code, "PROJECT_ACT_NOT_A_PARTICIPANT");
+  assert.equal(w.m.projectAuthority("PROJ-H", V("second"), "joined", "placing a hold")?.code, "PROJECT_ACT_NOT_A_PARTICIPANT");
   assert.equal(w.m.isProjectEditor("PROJ-H", "second"), false);
   /* negative control: what a hold act answers for a project its author may NOT name is this module's, in R52's order:
      `existenceAct` first (null for an ordinary member at a hidden project: NONE), then `noSuchProject`, byte for byte
