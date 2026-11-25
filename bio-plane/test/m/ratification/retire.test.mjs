@@ -14,6 +14,9 @@ import { RETIRE_CITED_DETAIL } from "../../../src/promotion/index.mjs";
 import { parseFrontmatter, canonicalJson } from "../../../src/record-grammar/index.mjs";
 import { contradictionOf } from "../../../src/contradiction/index.mjs";
 
+/* The front matter R24/R30 wrote; record-grammar answers `data` null for bytes it cannot read (its R6), which fails here. */
+const fmOf = (text) => { const { data } = parseFrontmatter(text); if (!data) throw new Error("the front matter does not parse"); return data; };
+
 const OWNER = "o";
 const WHO = V("ann");
 const ACK = "Batch of public jobs-board postings, uniform in kind; bulk-release risks weighed.";
@@ -211,7 +214,7 @@ test("R30, R31: every member is retired as a new version authored by the stamped
   const instants = new Set();
   for (const id of ids) {
     const text = w.md(id);
-    const fm = parseFrontmatter(text).data;
+    const fm = fmOf(text);
     instants.add(fm.last_updated);
     assert.match(fm.last_updated, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/, "to the second");
     assert.deepEqual([fm.current_state, fm.prior_state, fm.criticality], ["retired", "verified", "supporting"]);
@@ -244,7 +247,7 @@ test("R30: with no author stamped the retirement is authored `member`; a documen
   const r = w.retire(await w.select(["INFO-2026-0740"]), { author: null });
   assert.equal(r.ok, true, JSON.stringify(r).slice(0, 300));
   const text = w.md("INFO-2026-0740");
-  const fm = parseFrontmatter(text).data;
+  const fm = fmOf(text);
   assert.equal(fm.state_history.at(-1).author, "member");
   assert.ok(text.endsWith(`\n## Session Log\n\n### Session ${fm.last_updated} | Retired | member\nTrigger: selection `
     + `${r.handle}\nChanges: state verified to retired. Reason: ${WHY}.\n`), text.slice(-300));
@@ -299,7 +302,7 @@ test("R32: the ops map answers retire beside the other nine, reading the control
   assert.equal(theirs.reason, "SELECTION_NOT_YOURS", "the owner stamp is the query's");
   const ok = ratificationOps(w.r, url({ handle: h, reason: WHY, viewer: WHO, owner: OWNER, author: V("vera") }), stamps).retire();
   assert.deepEqual([ok.ok, ok.retired, ok.reason], [true, ["INFO-2026-0760"], WHY]);
-  assert.equal(parseFrontmatter(w.md("INFO-2026-0760")).data.state_history.at(-1).author, V("vera"), "the author stamp is the query's");
+  assert.equal(fmOf(w.md("INFO-2026-0760")).state_history.at(-1).author, V("vera"), "the author stamp is the query's");
 });
 
 test("R51: retire reads its handle and reason from the body, else the query: a body carrying them answers as the same fields in the query do, never NO_REASON; a body carrying author, viewer or owner changes no stamp", async () => {
@@ -320,7 +323,7 @@ test("R51: retire reads its handle and reason from the body, else the query: a b
   assert.deepEqual([body.r.ok, body.r.reason, body.r.retired], [true, WHY, ["INFO-2026-0765"]]);
   for (const x of [body, query]) {
     assert.equal(x.w.state("INFO-2026-0765"), "retired");
-    assert.equal(parseFrontmatter(x.w.md("INFO-2026-0765")).data.state_history.at(-1).author, WHO,
+    assert.equal(fmOf(x.w.md("INFO-2026-0765")).state_history.at(-1).author, WHO,
                  "the author is the query's stamp, never the body's");
   }
   /* controls: the body's field wins over the query's; a field the body does not state as a string is the query's */

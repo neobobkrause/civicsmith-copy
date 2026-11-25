@@ -13,6 +13,11 @@ import { word, localize } from "../setup-words/index.mjs";
    it is the FENCE that answers a machine and never a payload complaint behind it (REC-73's lesson). Driven: before
    this, an `ai` credential whose scope named this op, carrying a registered member's valid signature, COMMITTED THE
    CASE and the record named the member. */
+/**
+ * R2, R18: C-32.13, a machine credential's refusal of op=caseratify.
+ * @param {any} cls the credential's class
+ * @returns {any} the refusal, `{ok: false, reason, code, check, translation, op, tokenClass, detail}`
+ */
 export function machineCaseRefusal(cls) {
   /* DEC-49 REGION is-machine-ratify-case */
   return { ok: false, reason: "MACHINE_CANNOT_RATIFY_CASE", ...rowOf("MACHINE_CANNOT_RATIFY_CASE"),
@@ -24,6 +29,11 @@ export function machineCaseRefusal(cls) {
 /* REC-125 / C-32.15, D-421 DECIDED by BOB #14. An attested act is delivered
    ONLY by a signed-in member's own session, so every caller that did not arrive through one is refused, NAMING its
    class, whoever's valid signature it carries. */
+/**
+ * R2, R18: C-32.15, the refusal of op=caseratify not delivered through a member's own session.
+ * @param {any} cls the credential's class
+ * @returns {any} the refusal, naming the class
+ */
 export function operatorCaseRefusal(cls) {
   /* DEC-49 REGION is-operator-ratify-case */
   return { ok: false, reason: "OPERATOR_TOKEN_CANNOT_RATIFY_CASE",
@@ -36,6 +46,13 @@ export function operatorCaseRefusal(cls) {
    depth, on an observation that still NAMES ITS AUTHOR in its own files (written before MK-6) does not cross:
    MEMBER-KNOWLEDGE-DESIGN.md §4.1 keeps those fenced, because the level lives outside the bundle and cannot hide a
    name the bundle itself prints. `legacy` is publication's `attributionFacts(doc).legacy`; none answers null. */
+/**
+ * R2, R18: C-53.12, a case resting on an observation that names its author.
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} legacy publication's `attributionFacts(doc).legacy`
+ * @returns {any} the refusal, or null when none is legacy
+ */
 export function testimonyCaseRefusal(caseId, edition, legacy) {
   if (!Array.isArray(legacy) || !legacy.length) return null;
   /* DEC-49 REGION is-testimony-publish-case */
@@ -59,6 +76,13 @@ export function testimonyCaseRefusal(caseId, edition, legacy) {
    level (publication R60; DEC-119 (3)), asked as an observation's is. */
 const keyOf = (r) => (r.observation || !r.capture ? { observation: r.observation } : { capture: r.capture });
 const idOf = (r) => Object.values(keyOf(r))[0];
+/**
+ * R2, R18: C-92.10, a reached observation or off-the-record capture whose level is not chosen.
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} attr the attribution facts (publication's `attributionFacts`)
+ * @returns {any} the refusal, or null when every level is chosen
+ */
 export function attributionUnchosenRefusal(caseId, edition, attr) {
   const unchosen = (attr && Array.isArray(attr.current) ? attr.current : []).filter((r) => !r.level);
   if (!unchosen.length) return null;
@@ -70,6 +94,13 @@ export function attributionUnchosenRefusal(caseId, edition, attr) {
   /* END DEC-49 REGION is-attribution-unchosen */
 }
 
+/**
+ * R2, R18: C-92.11, a stated level that is no longer the one in force.
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} attr the attribution facts
+ * @returns {any} the refusal, or null when every statement is current
+ */
 export function attributionStaleRefusal(caseId, edition, attr) {
   const current = attr && Array.isArray(attr.current) ? attr.current : [];
   const stated = attr && Array.isArray(attr.stated) ? attr.stated : [];
@@ -96,6 +127,12 @@ export function attributionStaleRefusal(caseId, edition, attr) {
    off-the-record source a member attests at those levels (strength R34; DEC-119 (3)). `offenders` is each `{member,
    observation}` or `{member, document}` strength answers uncorroborated, as the act's store half and the pre-flight
    both compute it (`./index.mjs`); it names no author, attesting member or source. None answers null. */
+/**
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} offenders each `{member, observation}` or `{member, document}` strength answers uncorroborated
+ * @returns {any} the refusal C-58.5, or null when there are none
+ */
 export function anonymousTestimonyRefusal(caseId, edition, offenders) {
   if (!Array.isArray(offenders) || !offenders.length) return null;
   /* DEC-49 REGION is-anonymous-testimony */
@@ -109,6 +146,13 @@ export function anonymousTestimonyRefusal(caseId, edition, offenders) {
    still stands on the conclusion it records (INVESTIGATIVE-SESSION.md §7.1 items 4 and 9). `moved` is each roster
    member whose project conclusion is not the one the document records, as `ratifyCaseDocument` and the pre-flight
    both compute it; none answers null. */
+/**
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} project the document's project
+ * @param {any} moved the roster members whose project conclusion moved
+ * @returns {any} the refusal C-65.1, or null when none moved
+ */
 export function conclusionMovedRefusal(caseId, edition, project, moved) {
   if (!Array.isArray(moved) || !moved.length) return null;
   /* DEC-49 REGION is-caseratify-conclusion-moved */
@@ -125,6 +169,10 @@ export function conclusionMovedRefusal(caseId, edition, project, moved) {
    signature from a key nobody registered fails as `SIG_UNKNOWN_KEY` only once it is made; before it is made, the
    member is told they hold no key the ceremony will accept, and how to get one (credentials R9, was membership R89). Like `NO_SIGNERS`, it
    has no catalogue row. */
+/**
+ * @param {any} signer the member who would sign
+ * @returns {any} the refusal `NO_ATTESTING_KEY`, with its remedy
+ */
 export function noAttestingKeyRefusal(signer) {
   return { ok: false, reason: "NO_ATTESTING_KEY", code: "NO_ATTESTING_KEY", signer: signer ?? null,
     detail: localize("ratification.refusals.you_hold_no_registered_active", "you hold no registered, active signing key, so a signature you make now would not be accepted by the ceremony. Nothing was written."),
@@ -136,6 +184,14 @@ export function noAttestingKeyRefusal(signer) {
    whose approval is held but not carried in the document's own `approvals:` block (`notCarried`), so a signed file
    proves its own approvals. `read` is `approvalsRead`'s answer: null (no rule, nothing asked) answers null;
    `{unreadable}` refuses too, since an edition is never signed with its approvals unchecked. */
+/**
+ * @param {any} caseId the case
+ * @param {any} edition the edition
+ * @param {any} approvalSha the document's approval digest
+ * @param {any} read `approvalsRead`'s answer
+ * @param {any} [notCarried] the approvers whose approval is held but not carried in the document
+ * @returns {any} the refusal C-58.11, or null when nothing is missing
+ */
 export function approvalMissingRefusal(caseId, edition, approvalSha, read, notCarried = []) {
   const missing = read && Array.isArray(read.missing) ? read.missing : [];
   const uncarried = Array.isArray(notCarried) ? notCarried : [];
@@ -154,6 +210,11 @@ export function approvalMissingRefusal(caseId, edition, approvalSha, read, notCa
 
 /* R49 (K2533): the approvers whose approval R50's reader holds that the document's own `approvals:` block (`case-grammar`
    R26, `carried` its rows `{by, at}`, null for a document carrying none) does not carry. */
+/**
+ * @param {any} read `approvalsRead`'s answer
+ * @param {any} carried the document's own `approvals:` rows `{by, at}`, or null
+ * @returns {any[]} the approvers held but not carried
+ */
 export function approvalsNotCarried(read, carried) {
   if (!read || read.unreadable || !Array.isArray(read.approvals)) return [];
   const inFile = new Set((Array.isArray(carried) ? carried : []).map((a) => memberOf(a && a.by)).filter(Boolean));
@@ -167,6 +228,11 @@ export function approvalsNotCarried(read, carried) {
    the approvers with none (a `member:` prefix read as the member); `{unreadable}` when a door throws or answers neither
    shape. `rule()` answers null, `{approvers: [ids]}` or the bare list; `approvals(...)` the list or `{approvals}`. */
 const memberOf = (v) => (typeof v === "string" && v.trim() ? v.trim().replace(/^member:/, "") : null);
+/**
+ * @param {any} reader the registered approval reader, or null
+ * @param {any} args `{caseId, edition, docSha}`
+ * @returns {any} null with no rule in force, `{approvers, approvals, missing}`, or `{unreadable}`
+ */
 export function approvalsRead(reader, { caseId, edition, docSha }) {
   if (!reader) return null;
   let rule, given;
