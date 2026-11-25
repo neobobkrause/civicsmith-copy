@@ -161,7 +161,7 @@ test("R1 R2 capture: bytes received through the doorbell, never fetched, keep th
   assert.match(cap[B].why, /doorbell/);
   for (const id of [A, D]) { assert.equal(cap[id].grade, EARNED_CAPTURE_CEILING); assert.equal(cap[id].stated_as, undefined, id); }
   /* R2 reads it so: the author's letter at or under the ceiling stands, above it is capped (inquiry-grammar's write refuses it, its R6) */
-  assert.equal(legCapped("A", cap[B], B)?.grade, EARNED_CAPTURE_CEILING);
+  assert.equal(legCapped("A", cap[B], B).grade, EARNED_CAPTURE_CEILING);
   assert.equal(legCapped("C", cap[B], B), null);
 });
 

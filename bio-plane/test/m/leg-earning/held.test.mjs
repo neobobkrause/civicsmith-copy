@@ -41,14 +41,14 @@ test("R8 a held standard earns the capture ceiling of the capture holding its te
   assert.equal(r.earned.connection[S], undefined, "a standard earns no connection grade, whatever the subject");
   assert.equal(r.earned.occurrence, undefined, "no occurrence asked about, no occurrence key");
   assert.equal(legCapped(EARNED_CAPTURE_CEILING, e, S), null);
-  assert.equal(legCapped("A", e, S)?.grade, EARNED_CAPTURE_CEILING);
+  assert.equal(legCapped("A", e, S).grade, EARNED_CAPTURE_CEILING);
   /* the standard's text derived by a machine measured at C: the ceiling falls to C, bounded by fidelity */
   const ocr = w.passage("ocr", { address: "https://example.org/ocr" });
   w.chain(ocr.capSha, OCR_C);
   const T = w.std([ocr]);
   const t = w.le.earned(null, [T]).earned.capture[T];
   assert.deepEqual([t.grade, t.bounded_by], ["C", "CAPTURE_BOUNDED_BY_FIDELITY"]);
-  assert.equal(legCapped(EARNED_CAPTURE_CEILING, t, T)?.grade, "C");
+  assert.equal(legCapped(EARNED_CAPTURE_CEILING, t, T).grade, "C");
   /* text in two captures: the weakest of them, since a leg on the standard rests on all of its text */
   const both = w.std([direct, ocr]);
   assert.deepEqual([w.le.earned(null, [both]).earned.capture[both].grade, w.le.earned(null, [both]).earned.capture[both].captures], ["C", 2]);

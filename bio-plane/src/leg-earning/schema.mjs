@@ -4,8 +4,6 @@
  * only through this module's one write (`writeBasis`). `migrateLegEarning` brings a store created under an earlier shape
  * to this one (the `ground` and `content_id` columns REC-42 and REC-82 added). */
 
-/** R12: the table `inquiry_basis` and its indexes, as SQL statements with their comments.
- * @type {string} */
 export const LEG_EARNING_SCHEMA = `
 
 -- REC-11 / DATA-MODEL D4: the INQUIRY BASIS -- the legs an inquiry rests on,
@@ -145,9 +143,7 @@ CREATE INDEX IF NOT EXISTS inquiry_basis_content ON inquiry_basis(content_id);
 `;
 
 /** R12: the table this module holds, its declaration to record-core (R21), in the classes `declarePurge`'s default form
- *  gave it while `inquiry` held it (no change of meaning): cleared with its bundle, keyed by `bundle_id`.
- * @type {ReadonlyArray<Readonly<{name: string, keys: readonly string[], purge: string, expunge: string, export: string,
- *   sight: string, derive: string, version_chain: boolean}>>} */
+ *  gave it while `inquiry` held it (no change of meaning): cleared with its bundle, keyed by `bundle_id`. */
 export const LEG_EARNING_TABLES = Object.freeze([
   Object.freeze({ name: "inquiry_basis", keys: Object.freeze(["bundle_id"]), purge: "clear", expunge: "none",
                   export: "admin-only", sight: "bundle", derive: "stored", version_chain: false }),
@@ -156,9 +152,7 @@ export const LEG_EARNING_TABLES = Object.freeze([
 const ADDITIVE = [["inquiry_basis", "ground", "TEXT"], ["inquiry_basis", "content_id", "TEXT"]];
 
 /** Create the table and its indexes, then add a column an earlier shape lacks (an absent table has no columns and was
- *  just created whole). Idempotent: every boot.
- * @param {any} sql the storage's SQL handle, whose `exec` answers an iterable of rows
- * @returns {void} */
+ *  just created whole). Idempotent: every boot. */
 export function migrateLegEarning(sql) {
   const bare = LEG_EARNING_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const [table, column, decl] of ADDITIVE) {

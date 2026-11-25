@@ -37,78 +37,29 @@ import { word, localize } from "../setup-words/index.mjs";
 
 export { LEG_EARNING_SCHEMA, LEG_EARNING_TABLES, migrateLegEarning } from "./schema.mjs";
 
-/** An answer of this module's reads and its one write: `ok`, and the fields each one names. A refusal is `ok: false`
- *  with its `reason` (`NO_ID`, `NO_SUCH_BUNDLE`, `NOT_AN_INQUIRY`, `NO_LEG`, or the refusal `content` answers a mint
- *  with) and, as each names, its `detail` or `target` (R3, R11).
- * @typedef {{ok: boolean, [field: string]: any}} Answer */
-/** R1, R8, R9, R15, R16: the earned registry for a subject over a set of targets. `earned.connection` and
- *  `earned.capture` are keyed by target; `earned.testimony` is present only when a target asked about is a member's
- *  authored observation, `earned.content` only when content rows were named, and `earned.occurrence` only when a duty
- *  occurrence was asked about. Each entry carries its `mode` (`value`, `ceiling` or `derived`), its `grade` (a letter,
- *  or null for undetermined or for an occurrence) and its `why`.
- * @typedef {Object} EarnedRegistry
- * @property {string | null} subject_entity the subject asked about, or null for none
- * @property {string | null} subject_label the subject entity's label, or null when `entities` holds none
- * @property {boolean} subject_known whether `entities` holds the subject
- * @property {{connection: Object<string, any>, capture: Object<string, any>, testimony?: Object<string, any>,
- *   content?: Object<string, any>, occurrence?: Object<string, any>}} earned the entries, by axis
- */
-/** R5: one live leg resting on a target, as `restsOnLive` answers it.
- * @typedef {Object} LiveLeg
- * @property {string} bundle_id the inquiry or project whose basis holds the leg
- * @property {number} ord the leg's place in that basis
- * @property {string | null} role the leg's role, or null for none
- * @property {string} state the citer's current state
- */
-/** What a `LegEarning` is made from (`legEarningOf` makes one per host). The modules it reaches lazily are created on
- *  the same host on first use unless one is passed.
- * @typedef {Object} LegEarningDeps
- * @property {any} [storage] the Durable Object's storage, whose `sql` the table lives in (required in fact)
- * @property {any} [record] record-core's instance on the same storage (required in fact)
- * @property {any} [membership] membership's instance (required in fact)
- * @property {any} [promotion] promotion's instance (required in fact)
- * @property {any} [content] content's instance (required in fact)
- * @property {any} [connections] connections' instance, else reached lazily
- * @property {any} [entities] entities' instance, else reached lazily
- * @property {any} [provenance] provenance's instance, else reached lazily
- * @property {any} [standards] standards' instance, else reached lazily
- * @property {any} [duties] duties' instance, else reached lazily
- * @property {any} [host] the host the lazily reached modules are created on
- * @property {any} [now] the module's clock, a function answering an ISO instant at second precision (default: the
- *   wall clock); R9's `asOf`. An answer that is not text is read as the wall clock
- */
-
-/** R3: how many legs one `earnedBasis` read backfills, and how many targets it answers.
- * @type {number} */
+/** R3: how many legs one `earnedBasis` read backfills, and how many targets it answers. */
 export const LEG_BACKFILL_MAX = 50;
-/** @type {number} R3: the most targets one `earnedBasis` read answers; more are not read. */
 export const EARNED_TARGETS_MAX = 200;
 /** R3: how many ids one statement binds in `#legVersions` (D-36's variable ceiling); this module's own copy of the
  *  bound retrieval holds for its selections, which is not a service it provides (K57). */
 const ID_CHUNK = 64;
 /** R7 (N183): the projects drawing on one question, at most, the first by id (basis-versions R37's bound); deciding
- *  "more than one" is never cut by it.
- * @type {number} */
+ *  "more than one" is never cut by it. */
 export const PROJECTS_DRAWING_MAX = 32;
-/** R13: a page of the projects drawing on a question, at most and by default.
- * @type {number} */
+/** R13: a page of the projects drawing on a question, at most and by default. */
 export const PROJECTS_PAGE_MAX = 500;
-/** @type {number} R13: a page's size when none is asked. */
 export const PROJECTS_PAGE_DEFAULT = 100;
-/** R14: the projects shown on one question, at most.
- * @type {number} */
+/** R14: the projects shown on one question, at most. */
 export const PROJECTS_SHOWN_MAX = 200;
 
 /** R1 (provenance R26, R51; K538): the capture-grade bases whose bytes no fetch measured, on which a leg keeps its
  *  author's letter under the ceiling, stated as authored: no recorded route, and material received through the
- *  doorbell.
- * @type {readonly string[]} */
+ *  doorbell. */
 export const AUTHORED_ROUTE_BASES = Object.freeze(["CAPTURE_ROUTE_UNRECORDED", "CAPTURE_RECEIVED_NOT_FETCHED"]);
 
 /** R16 (K2457, K2472): the words an authored ceiling's `why` names each route by, keyed by provenance's answered
  *  `route` (its R26 `unrecorded`, R51 `doorbell`, R63 `upload`), in the order they are named. A received route this
- *  table does not know is named by its own spelling, never as the doorbell.
- * @type {Readonly<Object<string, string>>} */
+ *  table does not know is named by its own spelling, never as the doorbell. */
 export const AUTHORED_ROUTE_WORDS = Object.freeze({
   [DOORBELL_VIA]: word("leg-earning.freeze.received_through_doorbell"),
   [UPLOAD_VIA]: word("leg-earning.freeze.uploaded_member"),
@@ -140,13 +91,7 @@ const targetTypeOf = (t) => normalizeType(OBJECT_TYPES[String(t).split("-")[0]])
 
 /** R2: ONE leg's capture letter against what the record can earn for its target (the registry's own entry). Null when
  *  the stated grade is within it (or the registry states no ceiling); otherwise the earned grade and why; a ceiling the
- *  record cannot determine answers a null grade with the reason.
- * @param {any} stated the capture letter the leg states
- * @param {any} earned the registry's entry for the leg's target (one entry of `earned`'s answer); anything that is not
- *   an entry of `mode: "ceiling"` answers null
- * @param {any} targetId the leg's target, named in the why
- * @returns {{grade: string | null, why: string} | null} null when within; else the earned grade (null when
- *   undetermined) and why */
+ *  record cannot determine answers a null grade with the reason. */
 export function legCapped(stated, earned, targetId) {
   if (!earned || earned.mode !== "ceiling") return null;
   if (earned.grade == null)
@@ -161,13 +106,9 @@ export function legCapped(stated, earned, targetId) {
 
 /* ------------------------------------------------------------------ the module */
 
-/** What the record can earn for a leg of an inquiry's basis, and which questions rest on a target (R1 to R17). Its
- *  reads answer an `Answer` or a plain value and never throw on a malformed call; its one write is `writeBasis` (R12). */
 export class LegEarning {
   #deps;
 
-  /** Makes the table and its indexes when absent, and adds a column an earlier shape lacks (R12).
-   * @param {LegEarningDeps} [deps] required in fact: without `storage` the constructor throws on reading its `sql` */
   constructor({ storage, record, membership, promotion, content, connections = null, entities = null, provenance = null,
                 standards = null, duties = null, host = null, now } = {}) {
     this.storage = storage;
@@ -182,23 +123,17 @@ export class LegEarning {
   }
 
   /* The modules reached lazily: each is created on the same host on first use, unless a test passed its own. */
-  /** @returns {any} connections' instance */
   get connections() { return this.#deps.connections ||= connectionsOf(this.#deps.host); }
-  /** @returns {any} entities' instance */
   get entities() { return this.#deps.entities ||= entitiesOf(this.#deps.host); }
-  /** @returns {any} provenance's instance */
   get provenance() { return this.#deps.provenance ||= provenanceOf(this.#deps.host); }
-  /** @returns {any} standards' instance */
   get standards() { return this.#deps.standards ||= standardsOf(this.#deps.host); }
-  /** @returns {any} duties' instance */
   get duties() { return this.#deps.duties ||= dutiesOf(this.#deps.host); }
 
   #rows(q, ...a) { return [...this.sql.exec(q, ...a)]; }
   #one(q, ...a) { for (const r of this.sql.exec(q, ...a)) return r; return null; }
   #when() { const w = this.now(); return typeof w === "string" && w ? w : stampInstant("second"); }
 
-  /** The table and its added columns (R12). Idempotent: every boot; the constructor runs it too.
-   * @returns {void} */
+  /** The table and its added columns (R12). Idempotent: every boot; the constructor runs it too. */
   migrate() { migrateLegEarning(this.sql); }
 
   /* A published case's member (promotion's fact `caseMember`, publication's). Unprovided, it counts as a member: the
@@ -215,10 +150,7 @@ export class LegEarning {
    *  `{ord?, target, role?, grade?, grade_axis?, grade_source?, note?, at?, ground?, content_id?}`, `ord` defaulting to
    *  the row's place; a row whose target is not a string is unprojectable and skipped (its ord is kept for the rest).
    *  `target_type` is derived here from the target's prefix, never taken from a caller. Asked inside the caller's
-   *  transaction (the promotion's); answers the number of legs written.
-   * @param {any} bundleId the inquiry; anything but non-empty text is refused `NO_ID`, writing nothing
-   * @param {any} [legs] the rows, in order; anything but an array writes none (the inquiry's legs are still cleared)
-   * @returns {Answer} `{ok: true, bundleId, written}`, or `NO_ID` */
+   *  transaction (the promotion's); answers the number of legs written. */
   writeBasis(bundleId, legs = []) {
     if (typeof bundleId !== "string" || !bundleId) return { ok: false, reason: "NO_ID", detail: localize("leg-earning.index.write_basis_requires_bundle_id", "writeBasis requires a bundle id") };
     const list = Array.isArray(legs) ? legs : [];
@@ -246,11 +178,8 @@ export class LegEarning {
    *  the citation not severed (connections R22), over every project whatever any viewer sees. At most
    *  `PROJECTS_DRAWING_MAX`, the first by id, the list carrying `truncated` when one more draws on it (N183). The
    *  candidates are read a page at a time, one past the bound, and a severed citer takes no slot, so the bound never
-   *  decides whether more than one project draws on it.
-   * @param {any} id the question; an empty one answers an empty list
-   * @returns {string[] & {truncated?: boolean}} the projects' ids, ascending, with `truncated` */
+   *  decides whether more than one project draws on it. */
   projectsDrawingOn(id) {
-    /** @type {string[] & {truncated?: boolean}} builds the answer */
     const out = [];
     out.truncated = false;
     if (!id) return out;
@@ -274,10 +203,7 @@ export class LegEarning {
    *  severed), over every project whatever any viewer sees — a page at a time: the ids after `after`, ascending, at
    *  most `limit` (a positive integer, at most `PROJECTS_PAGE_MAX`, default `PROJECTS_PAGE_DEFAULT`), with `cursor` the
    *  last id answered when more draw on it, else null. A severed citer takes no slot. In-process only: no op routes
-   *  to it, and R7's bound stays for R7's callers.
-   * @param {{id?: any, after?: any, limit?: any}} [call] `after` read only when text; `limit` only when a positive
-   *   integer
-   * @returns {Answer} `{ok: true, id, projects, limit, cursor}`, or `NO_ID` */
+   *  to it, and R7's bound stays for R7's callers. */
   projectsDrawingOnPaged({ id, after = null, limit = null } = {}) {
     if (typeof id !== "string" || !id) return { ok: false, reason: "NO_ID", detail: "projectsDrawingOnPaged requires an id" };
     const n = Number.isInteger(limit) && limit > 0 ? Math.min(limit, PROJECTS_PAGE_MAX) : PROJECTS_PAGE_DEFAULT;
@@ -303,9 +229,7 @@ export class LegEarning {
    *  R44's `sight` lets the viewer see it at all (FULL, or EXISTENCE's id and name), each `{id, name}`; a hidden
    *  project is never answered, named or counted: it takes no slot and never sets `truncated`, so the answer is the
    *  same whether or not one draws. At most `PROJECTS_SHOWN_MAX`, the first by id, with `truncated` when one more
-   *  would be shown. Read over R13's pages, so every project drawing on it is considered.
-   * @param {{id?: any, viewer?: any}} [call] `viewer` is the control plane's stamp, read through `membership`
-   * @returns {Answer} `{ok: true, id, projects: {id, name}[], truncated}`, or `NO_ID`, or `NO_SUCH_BUNDLE` */
+   *  would be shown. Read over R13's pages, so every project drawing on it is considered. */
   projectsShownOn({ id, viewer = null } = {}) {
     if (typeof id !== "string" || !id) return { ok: false, reason: "NO_ID", detail: "projectsShownOn requires an id" };
     if (!this.membership.inSight(id, viewer)) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
@@ -369,10 +293,6 @@ export class LegEarning {
     return this.connections.edgeSevered(bundleId, targetId);
   }
 
-  /** R5, R17: the live legs resting on `id`, as the comment above says: a divided citer skipped, a severed leg
-   *  `severed`, a case member's `frozen`, the rest `confirmed`; `all` is the confirmed and the frozen.
-   * @param {any} id the target
-   * @returns {{confirmed: LiveLeg[], frozen: LiveLeg[], severed: LiveLeg[], all: LiveLeg[]}} */
   restsOnLive(id) {
     const confirmed = [], severed = [], frozen = [], own = new Map();
     for (const r of this.#rows(
@@ -427,11 +347,7 @@ export class LegEarning {
    *  inquiry is not a document — DEC-21 — and IC-83's "every leg targets
    *  content" is written about the information arm); a leg whose target
    *  information object the record holds no bytes for has nothing to address.
-   *  Both answer null and say which.
-   * @param {any} bundleId the inquiry
-   * @param {any} ord the leg's place in its basis
-   * @returns {Answer} `{ok: true, content_id, minted, backfilled}`, with `null_case` and `why` when the content id
-   *   is null; `NO_LEG`; or content's refusal of the mint */
+   *  Both answer null and say which. */
   ensureLegContent(bundleId, ord) {
     const leg = this.#one(
       `SELECT bundle_id, ord, target_id, target_type, content_id
@@ -576,11 +492,7 @@ export class LegEarning {
    *  `document` row earns what its document earns, taken from the map this
    *  function just built rather than recomputed — so the two grains cannot
    *  disagree, which is the same reason this is ONE function with three
-   *  consumers in the first place.
-   * @param {any} subjectEntity the subject entity, or none
-   * @param {any} [targetIds] the targets asked about; anything but non-empty text in it is left out
-   * @param {any} [contentIds] the content rows the caller's legs point at; none leaves `earned.content` out
-   * @returns {EarnedRegistry} */
+   *  consumers in the first place. */
   earned(subjectEntity, targetIds = [], contentIds = []) {
     const asked = [...new Set((Array.isArray(targetIds) ? targetIds : [])
       .filter((t) => typeof t === "string" && t))];
@@ -1030,10 +942,6 @@ export class LegEarning {
      document declares, over the targets this document's basis names. Takes the
      frontmatter because at promote time the bytes are the only authority — the
      projection column is written from them a few lines later. */
-  /** R1: `earned` for the subject the front matter declares (`subject_entity`, else none) over its legs' targets.
-   * @param {any} fm the document's front matter
-   * @param {any} legs its basis legs; a leg whose `target` is not text is left out
-   * @returns {EarnedRegistry} */
   earnedForDoc(fm, legs) {
     const subject = fm && typeof fm.subject_entity === "string" && fm.subject_entity
       ? fm.subject_entity : null;
@@ -1054,10 +962,6 @@ export class LegEarning {
    *
    * Returns the full cycle path [bundleId, target, ..., bundleId] for the
    * refusal to name, or null. */
-  /** R6: the one cycle walk, as the comment above says.
-   * @param {any} bundleId the inquiry whose legs would be written
-   * @param {Iterable<any>} targets the legs' targets
-   * @returns {any[] | null} the whole cycle path, or null */
   cyclePath(bundleId, targets) {
     for (const t of targets) {
       const path = [bundleId, t];
@@ -1084,10 +988,6 @@ export class LegEarning {
      authority. */
   /* R4 (B4, STRENGTH #1): `limit`, a positive integer, bounds the read in SQL (at most `limit` legs, the first by
      ord, `truncated` measured by reading one more); without it the basis is read whole, as a walk over it needs. */
-  /** R4: the projected legs in order.
-   * @param {any} bundleId the inquiry
-   * @param {{limit?: any}} [options] `limit` read only when a positive integer
-   * @returns {Answer} `{ok: true, bundleId, legs}`, with `limit` and `truncated` when bounded; or `NO_ID` */
   basisFor(bundleId, { limit = null } = {}) {
     if (!bundleId) return { ok: false, reason: "NO_ID", detail: "basis requires ?id=" };
     const cols = `ord, target_id, target_type, role, grade, grade_axis, grade_source, note, at, ground`;
@@ -1103,9 +1003,6 @@ export class LegEarning {
      REC-17's re-evaluation obligation — as ONE indexed lookup on
      inquiry_basis_target, never a graph walk. Answers for an INFO- target and
      for an INQ- target alike, because a leg to an inquiry is the same edge. */
-  /** R4, R17: every leg naming the target, each with its own `status`, `severed` or `confirmed`.
-   * @param {any} targetId the target
-   * @returns {Answer} `{ok: true, targetId, dependents}`, or `NO_ID` */
   restingOn(targetId) {
     if (!targetId) return { ok: false, reason: "NO_ID", detail: "restson requires ?id=" };
     /* D-280, site (d) — `#restsOnLive`'s UNCONFIRMED TWIN. `inquiry_basis` is a
@@ -1199,12 +1096,7 @@ export class LegEarning {
   }
 
   /** R3, R11: the earned registry over an inquiry's legs as `viewer` may read it, each document leg with its content
-   *  row (backfilled, bounded) and which capture it rests on.
-   * @param {{id?: any, targets?: any, viewer?: any}} [call] `targets` a comma-separated list, at most
-   *   `EARNED_TARGETS_MAX` read; none reads the basis's own targets. `viewer` is the control plane's stamp
-   * @returns {Answer} the registry (`EarnedRegistry`'s fields) with `bundleId`, `asked`, `legs` and `detail`, and
-   *   `backfill_truncated`, `legs_out_of_view` and `out_of_view` when so; or `NO_ID`, `NO_SUCH_BUNDLE`, or
-   *   `NOT_AN_INQUIRY` */
+   *  row (backfilled, bounded) and which capture it rests on. */
   earnedBasis({ id, targets = null, viewer = null } = {}) {
     if (!id) return { ok: false, reason: "NO_ID", detail: "earnedbasis requires ?id=<inquiry>" };
     if (!this.membership.inSight(id, viewer)) return { ok: false, reason: "NO_SUCH_BUNDLE", target: id };
@@ -1316,10 +1208,7 @@ export class LegEarning {
 const instances = new WeakMap();
 
 /** The one leg-earning instance for `host` (the Durable Object's `ctx`); `deps` are read on the first call only. At
- *  creation the table exists (R12) and is declared to record-core.
- * @param {any} host the Durable Object's `ctx`, whose `storage` the table lives in unless `deps` names one
- * @param {LegEarningDeps} [deps]
- * @returns {LegEarning} */
+ *  creation the table exists (R12) and is declared to record-core. */
 export function legEarningOf(host, deps) {
   let k = instances.get(host);
   if (!k) {
@@ -1336,9 +1225,7 @@ export function legEarningOf(host, deps) {
   return k;
 }
 
-/** Which declaration names this module's table (record-core R21: each owner declares its own).
- * @param {any} t a table's name, or a declaration `{name}`
- * @returns {boolean} */
+/** Which declaration names this module's table (record-core R21: each owner declares its own). */
 export function legEarningOwns(t) {
   const name = typeof t === "string" ? t : t && t.name;
   return LEG_EARNING_TABLES.some((x) => x.name === name);
@@ -1347,9 +1234,6 @@ export function legEarningOwns(t) {
 /* The Durable Object routes this module answers (K3), as entries of plane's op map, for `plane` to take when `inquiry`'s
    job (T33-45) re-points them here. `url` carries the control plane's stamps (`viewer`). R4: `basis` and `restson` are
    in-process reads the control plane routes to no member; R3's `earnedbasis` is gated by the viewer. */
-/** @param {LegEarning} k the module's instance
- * @param {{searchParams: URLSearchParams}} url the request's address: `id`, `targets` and the stamp `viewer`
- * @returns {{basis: () => Answer, restson: () => Answer, earnedbasis: () => Answer}} */
 export function legEarningOps(k, url) {
   const q = (key) => url.searchParams.get(key);
   return {

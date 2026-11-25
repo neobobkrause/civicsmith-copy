@@ -188,7 +188,7 @@ test("R15 at an extent a member attested against the page the passage earns the 
   const replayGrade = w.prov.captureGrade(rCap).grade;
   assert.notEqual(replayGrade, EARNED_CAPTURE_CEILING);
   assert.deepEqual([e.content[r1].capture.grade, e.content[r1].capture.determined], [replayGrade, true]);
-  assert.equal(legCapped(EARNED_CAPTURE_CEILING, e.content[r1].capture, REPLAY)?.grade, replayGrade);
+  assert.equal(legCapped(EARNED_CAPTURE_CEILING, e.content[r1].capture, REPLAY).grade, replayGrade);
   /* negative control: page 2 was not attested */
   assert.deepEqual([e.content[d2].capture.grade, e.content[d2].capture.undetermined_because], [null, "CAPTURE_FIDELITY_UNMEASURED"]);
   /* the document grain is unchanged by a page's attestation */
