@@ -40,6 +40,13 @@
  */
 import { createPrivateKey, createPublicKey, sign as cryptoSign, createHash } from "node:crypto";
 
+/**
+ * A Node KeyObject; only the members stated here are part of this interface.
+ * @typedef {Object} NodeKey
+ * @property {string} type "private" from keyFromSeed
+ * @property {string} [asymmetricKeyType] "ed25519" from keyFromSeed
+ */
+
 const te = new TextEncoder();
 const wStr = (bytes) => {
   const out = new Uint8Array(4 + bytes.length);
@@ -55,7 +62,13 @@ const cat = (...parts) => {
   return out;
 };
 
-/** Pull the 32-byte ed25519 seed out of the `BIOKEY-RAW1.<label>.<b64>` envelope. */
+/**
+ * Pull the 32-byte ed25519 seed out of the `BIOKEY-RAW1.<label>.<b64>` envelope (R34).
+ * @param {string} envelope surrounding whitespace ignored
+ * @returns {{label: string, seed: Uint8Array}}
+ * @throws {Error} "release seed is not a BIOKEY-RAW1 envelope", or "release seed is <n> bytes, expected 32"
+ * @bound envelope: BIOKEY-RAW1.<label>.<canonical padded base64 of 32 bytes>
+ */
 export function seedFromEnvelope(envelope) {
   const text = String(envelope || "").trim();
   /* Exactly the envelope the signer page mints: canonical, padded base64 only,
@@ -73,6 +86,12 @@ export function seedFromEnvelope(envelope) {
    ssh-keygen, which is the only claim that matters. */
 const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 
+/**
+ * The Ed25519 private key of a seed (R35).
+ * @param {Uint8Array} seed
+ * @returns {NodeKey} a Node private KeyObject
+ * @bound seed: 32 bytes
+ */
 export function keyFromSeed(seed) {
   return createPrivateKey({
     key: Buffer.concat([PKCS8_ED25519_PREFIX, Buffer.from(seed)]),
@@ -80,7 +99,11 @@ export function keyFromSeed(seed) {
   });
 }
 
-/** The raw 32-byte public key, derived from the private one. */
+/**
+ * The raw 32-byte public key, derived from the private one (R35).
+ * @param {NodeKey} key a Node private KeyObject, as keyFromSeed gives
+ * @returns {Uint8Array} 32 bytes
+ */
 export function publicFromKey(key) {
   /* A PRIVATE key object cannot export SPKI — `createPublicKey` derives the
      public half first. Measured 2026-09-13: exporting spki straight off the
@@ -93,7 +116,12 @@ const b64 = (bytes) => Buffer.from(bytes).toString("base64");
 
 /**
  * Sign `message` (Uint8Array/Buffer) in `namespace`, returning an armored
- * SSHSIG. Shapes are openssh PROTOCOL.sshsig, the same ones sshsig.mjs parses.
+ * SSHSIG. Shapes are openssh PROTOCOL.sshsig, the same ones sshsig.mjs parses (R33).
+ * @param {string} envelope as seedFromEnvelope reads it
+ * @param {Uint8Array} message the exact bytes to sign
+ * @param {string} namespace
+ * @returns {string} the armored signature, base64 wrapped at 70 columns, ending in a newline
+ * @throws {Error} as seedFromEnvelope
  */
 export function signSshsig(envelope, message, namespace) {
   const { seed } = seedFromEnvelope(envelope);
@@ -125,7 +153,12 @@ export function signSshsig(envelope, message, namespace) {
 }
 
 /** The signer's own public key as an authorized_keys line, for comparison
- *  against ARMED_SIGNERS. Public material only — safe to print. */
+ *  against ARMED_SIGNERS. Public material only — safe to print (R35).
+ * @param {string} envelope as seedFromEnvelope reads it
+ * @param {string} [comment] absent is "bio-release"
+ * @returns {string} `ssh-ed25519 <base64 wire public key> <comment>`
+ * @throws {Error} as seedFromEnvelope
+ */
 export function signerPublicLine(envelope, comment = "bio-release") {
   const { seed } = seedFromEnvelope(envelope);
   const pubRaw = publicFromKey(keyFromSeed(seed));
