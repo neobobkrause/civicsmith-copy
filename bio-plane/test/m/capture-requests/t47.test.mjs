@@ -3,7 +3,7 @@
    the drain, the reads, the retry, the registrations, `migrate`), each with a negative control (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, MACHINE, storage, sha } from "./fixture.mjs";
+import { world, V, MACHINE, storage, sha, textOf } from "./fixture.mjs";
 import { captureRequestAttribution, captureRequestsOps, CAPTURE_REQUEST_CHECKS, MEMBER_REQUEST_WAITS,
          MEMBER_REQUEST_DRAINS, CAPTURE_REQUEST_ADDRESS_MAX } from "../../../src/capture-requests/index.mjs";
 import { migrateCaptureRequests, CAPTURE_REQUESTS_NULLABLE } from "../../../src/capture-requests/schema.mjs";
@@ -136,7 +136,7 @@ test("R56 the drain judges a member's request by R14 and files it by R15 with no
   assert.equal(c.promoted.ok, true, JSON.stringify(c.promoted));
   const b = w.row(`SELECT * FROM bundles WHERE bundle_id=?`, c.promoted.bundle_id);
   assert.deepEqual([b.object_type, b.current_state], ["information", "collected"]);
-  const md = w.record.readFile(c.promoted.bundle_id, "bundle.md").text;
+  const md = textOf(w.record, c.promoted.bundle_id, "bundle.md");
   assert.match(md, /at the request of member:ann/);
   assert.doesNotMatch(md, /run null|investigative session's request/);
   /* the sweep: refused by name, nothing fetched */
