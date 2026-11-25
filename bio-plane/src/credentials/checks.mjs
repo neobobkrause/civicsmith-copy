@@ -21,6 +21,12 @@ import { word, localize } from '../setup-words/index.mjs';
  * @typedef {Readonly<Record<string, CheckRow>>} CheckTable
  */
 
+/**
+ * A row's `where`: the function and the region of `credentials` that mint it.
+ * @param {string} fn
+ * @param {string} region
+ * @returns {string}
+ */
 const at = (fn, region) => `src/credentials/index.mjs ${fn} > ${region}`;
 
 /* R38 (F3; K1881, K1934 (2)): the sign-in window's bounds, BOB's under K1881. Refused attempts are estimated per source
