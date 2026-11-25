@@ -13,14 +13,96 @@ import { Refused, stop, objectTable, heldTable, streamFault, streamTable, filter
   answerOf } from "./tables.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/** @import { Figure, Refusal, Undetermined, Rounding, OneOf } from './decimal.mjs' */
+/**
+ * A recipe in the closed grammar (R6): data only, never code.
+ * @typedef {Object} Recipe
+ * @property {string} method
+ * @property {RecipeInput[]} inputs
+ * @property {RecipeStep[]} steps
+ * @property {string} output the name of the step whose result is the answer
+ * @bound method: bio-calc/1
+ */
+/**
+ * One input a recipe names, which the caller binds.
+ * @typedef {Object} RecipeInput
+ * @property {string} name
+ * @property {string} kind
+ * @bound name: a letter or "_", then letters, digits or "_", at most 64 in all
+ * @bound kind: table or figure
+ */
+/**
+ * One step: `op` one of OPS, `as` its name, and the fields of that op's form.
+ * @typedef {{op: string, as: string, [field: string]: *}} RecipeStep
+ */
+/**
+ * A table's field (Table Schema's types).
+ * @typedef {Object} TableField
+ * @property {string} name
+ * @property {string} type
+ * @property {string} [unit]
+ * @property {string} [currency]
+ * @property {string} [zone] the time zone a date or datetime is read in; absent is UTC
+ * @property {boolean} [composed] a value composed in the recipe from more than one quantity, which `sort` refuses
+ * @bound type: one of string, number, integer, date, datetime, boolean
+ */
+/**
+ * A table input or answer (R22): row objects keyed by field name, or streamed, `rows` a function answering a new
+ * iterator over arrays of cells in `fields` order on each call.
+ * @typedef {Object} Table
+ * @property {TableField[]} fields
+ * @property {Array<Object<string, *>>|(() => Iterable<Array<*>>|Iterator<Array<*>>)} rows
+ */
+/**
+ * One error `checkRecipe` finds.
+ * @typedef {Object} RecipeError
+ * @property {string} code RECIPE_INVALID, METHOD_UNKNOWN, NAME_UNDEFINED or JOIN_UNKEYED
+ * @property {string|number|null} step the step's `as`, or its place when it has none; null for the recipe itself
+ * @property {string|null} field
+ * @property {string} why
+ */
+/**
+ * One step of the trace (R14).
+ * @typedef {Object} TraceEntry
+ * @property {string} step
+ * @property {string} op
+ * @property {number|null} input_rows
+ * @property {*} output a table's `{rows}` count, or the step's figure, ratio, comparison or undetermined answer
+ * @property {Array<{row: number, why: string, side?: string}>} undetermined the rows set aside, and why
+ * @property {string} method
+ */
+/**
+ * What `evaluate` answers. `result` is the output step's: a figure; a ratio `{numerator, denominator, value}`; a
+ * comparison `{relation, label, why?}`; a table, answered as its source was bound; or undetermined.
+ * @typedef {Object} Evaluation
+ * @property {*} result
+ * @property {number} undetermined_rows
+ * @property {TraceEntry[]} trace
+ */
+/**
+ * A refusal of `evaluate`: by name, with the step, the recipe's errors, or the trace up to the refused step.
+ * @typedef {Object} RecipeRefusal
+ * @property {string} refused
+ * @property {string} why
+ * @property {string|null} [step]
+ * @property {RecipeError[]} [errors]
+ * @property {TraceEntry[]} [trace]
+ */
+
+/** @type {string} the method version (R6, R15) */
 export const METHOD = "bio-calc/1";
+/** @type {ReadonlyArray<string>} the twelve ops of the closed grammar (R6) */
 export const OPS = Object.freeze(["select", "count", "sum", "difference", "ratio", "share", "group", "span", "compare",
   "round", "join", "sort"]);
+/** @type {ReadonlyArray<string>} the tests a select condition may make (R7) */
 export const TESTS = Object.freeze(["eq", "ne", "lt", "le", "gt", "ge", "in", "between"]);
+/** @type {ReadonlyArray<string>} a table field's types */
 export const FIELD_TYPES = Object.freeze(["string", "number", "integer", "date", "datetime", "boolean"]);
+/** @type {ReadonlyArray<string>} the units a span is counted in (R9) */
 export const SPAN_UNITS = Object.freeze(["days", "business days", "hours", "months", "years"]);
+/** @type {Readonly<Rounding>} how a ratio or share is divided when its step states no rounding (R8) */
 export const RATIO_DEFAULT = Object.freeze({ places: 12, mode: "half_even" });
-/** R13: a declared field whose values must agree across a sum, and the refusal when they do not. */
+/** @type {ReadonlyArray<string[]>} R13: each pair is a declared field whose values must agree across a sum, and the refusal when they do not */
 export const SUM_RULE = Object.freeze([["kind", "SUM_MIXED_KIND"], ["phase", "SUM_MIXED_STAGE"],
   ["stage", "SUM_MIXED_STAGE"], ["basis", "SUM_MIXED_BASIS"], ["currency", "SUM_MIXED_CURRENCY"],
   ["period", "SUM_MIXED_PERIOD"]]);
@@ -98,7 +180,11 @@ function checkShape(kind, v, bad, field) {
   }
 }
 
-/** R6: whether a recipe is in the closed grammar. `{ok: true}` or `{ok: false, errors: [{code, step, field, why}]}`. */
+/**
+ * R6: whether a recipe is in the closed grammar. `{ok: true}` or `{ok: false, errors: [{code, step, field, why}]}`.
+ * @param {*} recipe any value; what is not a recipe is answered with its errors
+ * @returns {OneOf<{ok: true}, {ok: false, errors: RecipeError[]}>}
+ */
 export function checkRecipe(recipe) {
   const errors = [];
   const err = (code, step, field, why) => errors.push({ code, step, field, why });
@@ -178,7 +264,11 @@ function tableFault(t) {
 const empty = (v) => v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 
 /** A cell read as its field's type: `{v}` or `{undetermined, why}`. Never coerced: a cell that does not read as
- *  its type is undetermined (R7). */
+ *  its type is undetermined (R7).
+ * @param {TableField} field
+ * @param {*} raw
+ * @returns {OneOf<{v: *}, Undetermined & {mismatch?: boolean}>}
+ */
 function readCell(field, raw) {
   if (empty(raw)) return undetermined(`"${field.name}" is empty`);
   switch (field.type) {
@@ -643,7 +733,13 @@ function summary(r) {
  *  `{refused, why, step?, errors?}`. A table input is bound as row objects or streamed (`tables.mjs`); a table
  *  result is answered as its source was bound: row objects, or a streamed table over the same rows. `opts.resolveId(space, value)`
  *  is the caller's normaliser for a join (R11); `opts.view` and `opts.office` pass to civil-time's `span` for a
- *  business-day count (R9). */
+ *  business-day count (R9). Throws `TypeError` for bindings or options that are not objects, or a `resolveId` that is
+ *  not a function.
+ * @param {Recipe} recipe checked by `checkRecipe` first; refused with its first error's code
+ * @param {Object<string, OneOf<Table, Figure>>} bound each input's table or figure, by name
+ * @param {{resolveId?: (space: string, value: *) => string, view?: *, office?: *}} [opts]
+ * @returns {OneOf<Evaluation, RecipeRefusal>}
+ */
 export function evaluate(recipe, bound, opts = {}) {
   if (bound === null || typeof bound !== "object") throw new TypeError("evaluate's bindings are an object");
   if (opts === null || typeof opts !== "object") throw new TypeError("evaluate's options are an object");
@@ -689,7 +785,15 @@ export function evaluate(recipe, bound, opts = {}) {
     undetermined_rows: undeterminedRows, trace };
 }
 
-/** R15: the result key: SHA-256 of the canonical JSON of `{recipe, inputs, method_version}`. */
+/**
+ * R15: the result key: SHA-256 of the canonical JSON of `{recipe, inputs, method_version}`. Throws `TypeError` for a
+ * recipe or hashes that are not objects, or a method version that is not a string.
+ * @param {Object} recipe
+ * @param {Object<string, string>} inputHashes each input's hash, by name
+ * @param {{methodVersion?: string}} [opts] absent is METHOD
+ * @returns {string}
+ * @bound returns: 64 lowercase hex characters
+ */
 export function resultKey(recipe, inputHashes, { methodVersion = METHOD } = {}) {
   if (recipe === null || typeof recipe !== "object") throw new TypeError("resultKey takes a recipe object");
   if (inputHashes === null || typeof inputHashes !== "object") throw new TypeError("resultKey takes the inputs' hashes as an object");

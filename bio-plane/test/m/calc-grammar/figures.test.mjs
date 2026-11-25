@@ -70,6 +70,7 @@ test("R2 precision: approximate when qualified, range for two figures joined by 
     const f = parseFigure(`${q}$1,200`);
     assert.equal(f.precision, "approximate", q); assert.equal(f.value, "1200"); assert.equal(f.as_read, `${q}$1,200`);
   }
+  /** @type {Array<[string, Object<string, string>]>} each text, with the fields it must read as */
   const cases = [
     ["$4-5 million", { low: "4000000", high: "5000000", currency: "USD" }],
     ["4 to 5%", { low: "4", high: "5", unit: "percent" }],
