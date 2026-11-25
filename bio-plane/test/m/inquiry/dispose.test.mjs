@@ -89,7 +89,7 @@ test("R21 R42 each member gains its history entry, prior and current state, reas
   assert.deepEqual(w.k.onRaised("reevaluation", () => []), listenerRefusal({ module: "reevaluation" }, "reevaluation", () => []));
   for (const [m, fn] of [["", () => []], [7, () => []], ["x", null]]) {
     const bad = w2.k.onRaised(m, fn);
-    assert.deepEqual(bad, listenerRefusal(null, m, fn)); assert.equal(bad.reason, "LISTENER_MALFORMED");
+    assert.deepEqual(bad, listenerRefusal(null, m, fn)); assert.equal(bad?.reason, "LISTENER_MALFORMED");
   }
   /* a dismissal raises none */
   w2.inquiry(Q2); w2.select("d", [Q2]);
