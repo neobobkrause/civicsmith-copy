@@ -48,6 +48,20 @@ import { T51_NON_ACTS, T51_RUNGS, T51_RUNG_ABSENT, T51_ACT_NON_ACTS } from "./t5
 /* R49, R50 (T51 fix round; K4168): the owners' op declarations, taken into the tables above (`registerDeclaredOps`). */
 import { createDeclaredOps } from "./declared.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+/** @import { DeclaredOwners, Registration } from './declared.mjs' */
+/**
+ * @typedef {Object} Absence an op's stated absence of a rung (R2)
+ * @property {string} ground
+ * @property {string} is the sentence that says why the op has no rung, or its owner's declared description (R49)
+ * @bound ground: a key of RUNG_ABSENCE_GROUNDS
+ */
+/**
+ * @typedef {Object} Consequence the friction and the statement shown beside an act's rung (R4, R8, R21)
+ * @property {string} friction
+ * @property {string} key
+ * @bound friction: "dialog" or "in-place"
+ * @bound key: a setup-words key the list holds; the surface reads its sentence through word(key, vars) (R44)
+ */
 export { OP_ALIASES, aliased } from "./t34.mjs";
 /* R42 (T48): the design's weight for each rungless act a registered screen lists; it grades nothing. */
 export { MARKS, MARK_SOURCES } from "./marks.mjs";
@@ -102,12 +116,15 @@ export { MARKS, MARK_SOURCES } from "./marks.mjs";
  * visibility: an `attested` act cannot be undone SILENTLY (every correction is
  * itself an act with a name and a date on it), and an `irreversible` act's
  * output never stops answering at all. */
+/** @type {string[]} R1: the rungs, low to high
+ * @bound exactly reversible, reasoned, terminal, attested, irreversible, in that order */
 export const RUNG_LADDER = ["reversible", "reasoned", "terminal", "attested", "irreversible"];
 
 /* The correction path DEC-19 requires to be stated beside the top rung rather than instead of it, as a KEY (R44): the
  * sentence is `setup-words`' `screen.ceremony.permanent` (publishing makes an edition permanent and public; it is
  * corrected by a new edition, never removed), read through `word(key)`. Published with the ladder so a surface that renders
  * "irreversible" cannot render it without the sentence that makes it honest. */
+/** @type {string} R1, R44: the setup-words key of the correction path stated beside the top rung (DEC-19) */
 export const IRREVERSIBLE_CORRECTION_KEY = "screen.ceremony.permanent";
 
 /* THE REFUSAL FAMILY THAT BACKS THE `reasoned` RUNG. Constructs:161 defines the
@@ -131,6 +148,8 @@ export const IRREVERSIBLE_CORRECTION_KEY = "screen.ceremony.permanent";
  * of what the member knows about a PERSON, and their account IS their evidence (sources R2, R6, R7: "evidence is
  * required"). R1 grades them `reasoned` on "a reason, or a question or conclusion, or evidence", so `sources'`
  * `NO_EVIDENCE` (C-121.3) joins the family. `NO_CITATION` and the rest above stay out. */
+/** @type {string[]} R1, R6, R9, R10, R11, R15, R49: the refusal codes that back the `reasoned` rung
+ * @bound each code asks the member's own reason, conclusion, account or evidence, never an object, an identifier or a form; a registered row's `refusal` joins it once (R49) */
 export const JUSTIFICATION_REFUSALS = [
   "NO_REASON", "VERSION_NO_REASON", "NO_ACKNOWLEDGMENT", "NO_MITIGATION",
   "NO_CONCLUSION", "NO_FALSIFIER", "NO_JUSTIFICATION",
@@ -260,6 +279,8 @@ export const JUSTIFICATION_REFUSALS = [
  * DEC-149 (T34-87, K1849 (7)): served to every surface as `vocabularies.rung_absence_grounds`, so these sentences take
  * the member voice: none names the group's Civicsmith as "the plane", "this instance" or "this copy" ("server-side"
  * below says where a selection is kept, and stays). */
+/** @type {Object<string, string>} R2: each ground on which an op that writes has no rung, with its sentence
+ * @bound exactly the grounds substrate, credential, caller-owned, observational, undetermined */
 export const RUNG_ABSENCE_GROUNDS = {
   substrate:
     "the machinery a decided act rides on, not a decision. A member never chooses op=promote; they "
@@ -297,6 +318,7 @@ export const RUNG_ABSENCE_GROUNDS = {
  * `{date}` and `{member}` the surface fills, and `screen.open-file.warn.ends`, the design's own). Each sentence says only
  * what the owning module enforces; their look is the redesign's. */
 const ENTRY = (friction, key) => Object.freeze({ friction, key });
+/** @type {Readonly<Object<string, Readonly<Consequence>>>} R4, R8, R21: each act with a consequence statement, by its op's name; frozen, published by reference */
 export const CONSEQUENCE_STATEMENTS = Object.freeze({
   attribute:    ENTRY("dialog", "consequence.attribute"),
   leadshare:    ENTRY("dialog", "consequence.leadshare"),
@@ -321,6 +343,8 @@ export const CONSEQUENCE_STATEMENTS = Object.freeze({
  * set; it answers `false` through `IRREVERSIBLE_WEIGHT`, so no op is in both.)
  * Advisory only: nothing refuses by device and the plane cannot know one. Published as
  * `VOCABULARIES.larger_screen_acts`, the same frozen array, so a change of the phone set is a change here only. */
+/** @type {ReadonlyArray<string>} R18, R26: the acts kept for a larger screen beyond the rung and the Irreversible weight; advisory, frozen
+ * @bound no op is both here and in IRREVERSIBLE_WEIGHT */
 export const LARGER_SCREEN_ACTS = Object.freeze([
   "filingsent",
 ]);
@@ -1588,6 +1612,8 @@ const NON_ACTS_DATA = {
  * `reasoned`, its name honest, and (K2049) `standardrelease`, `reasoned` too. No other op: derived here before the aliases below are applied, so it names ops, never
  * an alias of one. It changes no rung and no decorated act's shape (`affordances` R11); `affordances` publishes it as
  * `VOCABULARIES.irreversible_weight`, the same frozen array (its R4), served as JSON, which is why it is not a `Set`. */
+/** @type {ReadonlyArray<string>} R21: every act that can never be undone, whatever its rung; frozen, names ops and never an alias
+ * @bound exactly the ops RUNGS grades irreversible by hand row, personexpunge and standardrelease */
 export const IRREVERSIBLE_WEIGHT = Object.freeze([
   ...Object.keys(RUNGS_DATA).filter((op) => RUNGS_DATA[op] === "irreversible"),
   "personexpunge",
@@ -1608,16 +1634,37 @@ const declared = createDeclaredOps({
   ladder: RUNG_LADDER, grounds: RUNG_ABSENCE_GROUNDS, rungs: RUNGS_DATA, absent: RUNG_ABSENT_DATA, nonActs: NON_ACTS_DATA,
   machine: MACHINE_REFUSALS_DATA, refusals: JUSTIFICATION_REFUSALS,
 });
+/** @type {Object<string, string>} R1, R3, R49: each graded op's rung, by its op's or alias's name; its first read closes registration (R50 (c))
+ * @bound each value: a rung of RUNG_LADDER; no op is also in RUNG_ABSENT */
 export const RUNGS = declared.guard(RUNGS_DATA);
+/** @type {Object<string, Absence>} R2, R49: each op that writes and has no rung, with its ground; its first read closes registration (R50 (c))
+ * @bound no op is also in RUNGS */
 export const RUNG_ABSENT = declared.guard(RUNG_ABSENT_DATA);
+/** @type {Object<string, string>} R5: each act refused to a machine credential by name, with the code; its first read closes registration (R50 (c))
+ * @bound each value: an upper-case refusal code */
 export const MACHINE_REFUSALS = declared.guard(MACHINE_REFUSALS_DATA);
+/** @type {Object<string, string>} R5, R49, R51: each gated op's reason, a sentence; its first read closes registration (R50 (c))
+ * @bound a reason begins "capture-directed:" exactly for a capture act */
 export const NON_ACTS = declared.guard(NON_ACTS_DATA);
+/**
+ * R49, R50, R54: adds owners' declared ops to RUNGS, RUNG_ABSENT, NON_ACTS and JUSTIFICATION_REFUSALS, once, before any of the
+ * tables or phoneOf is read.
+ * @type {(owners: DeclaredOwners) => Registration}
+ * @throws {Error} code DECLARED_OPS_LATE, DECLARED_OP_DUPLICATE, DECLARED_OP_BAD_WEIGHT, DECLARED_OP_BAD_DESCRIPTION, DECLARED_OP_BAD_REFUSAL or DECLARED_OP_DISAGREES, its `op` naming the op; a refused call changes no table
+ */
 export const registerDeclaredOps = declared.register;
 
 /* fix round 3 (C64; `entities` R63; K4356, K4364): THE ACTS A MEMBER WHO DOES NOT ADMINISTER MAY DO ON ONE SCREEN ONLY. An office named from a
  * request is a member's act on `request` and on no other screen: `entitycreate` keeps its grade (Reasoned) and is admitted there to
  * a member; on another screen it is as it was. `memberMayDo(op, screen)` answers whether `screen` is one of the op's. Data only. */
+/** @type {Readonly<Object<string, ReadonlyArray<string>>>} R52: for an act otherwise an administrator's, the screens a member may do it from; frozen */
 export const MEMBER_SCREEN_ACTS = Object.freeze({ entitycreate: Object.freeze(["request"]) });
+/**
+ * R52: whether a member may do `op` from `screen`.
+ * @param {string} op
+ * @param {string} screen
+ * @returns {boolean}
+ */
 export const memberMayDo = (op, screen) => Object.hasOwn(MEMBER_SCREEN_ACTS, op) && MEMBER_SCREEN_ACTS[op].includes(screen);
 
 /* R18 (DEC-122 (1); K1363 B5): the advisory phone flag — false at the rungs `terminal`, `attested` and `irreversible`,
@@ -1627,6 +1674,13 @@ export const memberMayDo = (op, screen) => Object.hasOwn(MEMBER_SCREEN_ACTS, op)
  * alias answers as its op (R17): both sets name ops, so `filingrecordsent` is kept for a larger screen as `filingsent`
  * is. */
 const NOT_ON_PHONE_RUNGS = new Set(["terminal", "attested", "irreversible"]);
+/**
+ * R18, R26: the advisory phone flag of an act, a capture act or a set act; an alias answers as its op. Reading it closes
+ * registration (R50 (c)).
+ * @param {*} id
+ * @returns {boolean}
+ * @bound id: an op's or an alias's name; a name no table holds answers true
+ */
 export function phoneOf(id) {
   const op = Object.hasOwn(OP_ALIASES, id) ? OP_ALIASES[id] : id;
   if (Object.hasOwn(RUNGS, op) && NOT_ON_PHONE_RUNGS.has(RUNGS[op])) return false;
