@@ -167,7 +167,7 @@ export function world({ caseMembers = new Set(), published = null, group = "test
       return promotion.promote({ bundleId: id, base: b, snapKey: `k${++n}`, author: "member:alice",
         files: [{ path: "bundle.md", text }], meta: { object_type: "inquiry" }, ...(extra || {}) });
     },
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     project(title, owner, cites = []) {
       const r = promotion.promote({ base: null, snapKey: `k${++n}`, author: `member:${owner}`, ownerMemberId: owner,
         files: [{ path: "bundle.md", text: projMd(title, cites) }], meta: { object_type: "project" } });
