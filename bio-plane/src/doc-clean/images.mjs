@@ -232,8 +232,10 @@ export async function cleanImage(bytes, kind, where, maxInflated, scan) {
   switch (kind) {
     case "jpeg": case "png": case "gif": case "webp": case "jp2": case "j2k": {
       const r = stripMetadata(bytes);
-      if (!r || !r.ok) throw new CleanRefusal(r?.code ?? "IMAGE_NOT_CLEANABLE", `${where}: ${r?.detail ?? localize("doc-clean.images.the_image_could_not_be_stripped", "the image could not be stripped")}`);
-      return { bytes: r.bytes, changed: r.changed };
+      if (!r || !r.ok || !(r.bytes instanceof Uint8Array)) throw new CleanRefusal(r?.code ?? "IMAGE_NOT_CLEANABLE", `${where}: ${r?.detail ?? localize("doc-clean.images.the_image_could_not_be_stripped", "the image could not be stripped")}`);
+      /** @type {ImageOut} checks a StripAnswer that is `ok`: its bytes, and `changed` false exactly when nothing was removed */
+      const out = { bytes: r.bytes, changed: r.changed === true };
+      return out;
     }
     case "tiff": case "heif": case "jxl":
       throw new CleanRefusal("IMAGE_NOT_CLEANABLE", localize("doc-clean.images.where_v1_image_whose_metadata", "{where}: {v1} image, whose metadata this module cannot strip", { where: String(where), v1: String(NAMES[kind]) }));
