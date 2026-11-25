@@ -25,8 +25,8 @@ const isHit = (r, format, confidence) => {
 
 test("R23: at module load the registry holds exactly the twelve built-in entries, in order, the readers' own objects unmodified", () => {
   assert.deepEqual(listFormats(), ["jpeg", "png", "html", "pdf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "zip"]);
-  for (const [f, e] of [["docx", docxEntry], ["xlsx", xlsxEntry], ["pptx", pptxEntry], ["odt", odtEntry],
-    ["ods", odsEntry], ["odp", odpEntry], ["csv", csvEntry]]) {
+  for (const [f, e] of Object.entries({ docx: docxEntry, xlsx: xlsxEntry, pptx: pptxEntry, odt: odtEntry,
+    ods: odsEntry, odp: odpEntry, csv: csvEntry })) {
     assert.equal(getFormat(f), e, `${f} is the reader's own entry object`);
     assert.equal(e.format, f);
   }
