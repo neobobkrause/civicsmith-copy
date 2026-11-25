@@ -141,7 +141,7 @@ test("R65 land(request, filed, at, say) is R28's landing: a new Information bund
   assert.deepEqual([fm.current_state, fm.project, fm.title], ["collected", P, say.title]);
   assert.match(w.text(r.bundle_id), /The document served at the address, brought in by a sweep\./);
   assert.match(w.text(r.bundle_id), /Brought in by a ratified sweep\./);
-  const reg = JSON.parse(w.record.readFile(r.bundle_id, "data/provenance.json").text).documents[0];
+  const reg = JSON.parse(w.inline(r.bundle_id, "data/provenance.json")).documents[0];
   assert.deepEqual(reg.origin, doc.origin, "the register origin filed carries");
   assert.equal(w.row(`SELECT bundle_id FROM register WHERE capture_sha=?`, cap).bundle_id, r.bundle_id);
   assert.equal(w.rows(`SELECT count(*) c FROM bundles WHERE current_state='verified'`)[0].c, 0, "never verified");

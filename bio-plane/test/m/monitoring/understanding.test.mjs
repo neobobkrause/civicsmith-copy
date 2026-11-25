@@ -91,7 +91,7 @@ test("R28 each open named request whose cadence is due is captured through captu
   assert.equal(a.landed.ok, true);
   const text = w.text(ida);
   assert.match(text, new RegExp(`named request ${A}, carried by ${GB}'s data/gathering.json, which authorised the fetch; locator 2 of 2`));
-  const reg = JSON.parse(w.record.readFile(ida, "data/provenance.json").text).documents[0];
+  const reg = JSON.parse(w.inline(ida, "data/provenance.json")).documents[0];
   assert.deepEqual([reg.origin.kind, reg.capture.sha256, reg.authority_state ?? reg.capture.authority_state ?? null],
                    ["named_request", a.sha, "undetermined"], "the request's own authority is never asserted onto the bytes");
   assert.equal(w.row(`SELECT bundle_id FROM register WHERE capture_sha=?`, a.sha).bundle_id, ida, "registered under the landed bundle");
@@ -358,6 +358,7 @@ test("R34 a pending clock entry whose date has passed is marked overdue by a mec
   assert.deepEqual(r.marked.map((m) => [m.action, m.ords, m.dates]), [[ACT, [0], ["2026-09-01"]]], "a deadline of today is not yet past");
   const after = w.text(ACT);
   const fa = parseFrontmatter(after).data, fb = parseFrontmatter(before).data;
+  if (!fa || !fb) throw new Error("the action's frontmatter did not parse");
   assert.deepEqual(fa.clock.map((e) => e.status), ["overdue", "pending", "pending"]);
   const m = w.manifest(ACT).at(-1);
   assert.deepEqual([m.writer, m.operation, m.author], ["mechanical", "deadline-recheck", MONITOR_AUTHOR]);
