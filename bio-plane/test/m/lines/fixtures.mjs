@@ -1,9 +1,11 @@
 /* lines' published fixture (the fixture rule, K4990): the answers other modules' tests need from `lines`, made by
    the real `recordLine` over the real world of this module's fixture when the test runs, never stored. */
 import { world, ANN, MACHINE } from "./fixture.mjs";
+/** @import { LinesTestWorld } from './fixture.mjs' */
 
 /** The refusals of `recordLine` that a module with a `lines` seam is relied on to relay, each made by the real code:
- *  `{ w, answers: { <CODE>: <the answer recordLine gave> } }` over a fresh world `w`. */
+ *  `{ w, answers: { <CODE>: <the answer recordLine gave> } }` over a fresh world `w`.
+ *  @returns {{w: LinesTestWorld, answers: Record<string, any>}} */
 export function linesWorld() {
   const w = world();
   const person = w.ent("person", "Pat Holder"), other = w.ent("person", "Sam Seat");

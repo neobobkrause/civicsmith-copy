@@ -17,11 +17,7 @@
   ],
   "uses": [
     "record-grammar",
-    "jurisdictions",
     "subresources",
-    "odf-reader",
-    "format-registry",
-    "docprofile",
     "record-core",
     "membership",
     "credentials",

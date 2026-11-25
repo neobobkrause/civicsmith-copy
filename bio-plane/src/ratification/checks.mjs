@@ -20,6 +20,10 @@ export * from "../case-catalogue/checks.mjs";
 
 /* C-32.12–C-32.15: the machine and operator-token fences of `op=ratify` and `op=caseratify` (moved out of
    `MACHINE_FENCE_CHECKS`, whose other rows stay in the catalogue). */
+/**
+ * R14: C-32.12–C-32.15, each row's check, the region that mints it and the member's translation.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RATIFY_MACHINE_FENCE_CHECKS = {
   /* REC-123 / IC-132 — THE TWO RATIFICATIONS, and they are the first of this
      family that live in the CONTROL PLANE rather than at the top of a store
@@ -70,6 +74,10 @@ export const RATIFY_MACHINE_FENCE_CHECKS = {
 };
 
 /* C-53.10–C-53.12: the publication fence (moved out of `TESTIMONY_CHECKS`, whose other rows are `provenance`'s). */
+/**
+ * R14: C-53.10–C-53.12, the publication fence's rows.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RATIFY_TESTIMONY_CHECKS = {
   /* MK-1 (A) — THE PUBLICATION FENCE, measured before it was built
      (`test/mk1-publish-probe.mjs`): op=ratify on an observation whose bytes were
@@ -104,6 +112,10 @@ export const RATIFY_TESTIMONY_CHECKS = {
 
 /* C-92.10–C-92.12: the attribution gate (MEMBER-KNOWLEDGE-DESIGN.md §4.4; moved out of `ATTRIBUTION_CHECKS`, whose
    C-92.1–C-92.9 are `publication`'s). */
+/**
+ * R14: C-92.10–C-92.12, the attribution gate's rows.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RATIFY_ATTRIBUTION_CHECKS = {
   /* PROVISIONAL (§4.4, carried to Bob): THE NARROW VETO. An edition reaching an unchosen observation is not
      signed, so each member has a veto over the use of their own words and over nothing else: the owner's
@@ -135,6 +147,10 @@ export const RATIFY_ATTRIBUTION_CHECKS = {
  * in `ratifyCaseDocument`, per roster member, after the owner-signer check and the idempotent retry
  * and before any write: the question must be concluded for the document's project AND that
  * conclusion must be the one the document records. The route out is item 9's: publish again. */
+/**
+ * R14: C-65.1, the case-conclusion row.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const CASE_CONCLUSION_CHECKS = {
   CASE_CONCLUSION_MOVED: {
     check: 'C-65.1',
@@ -153,6 +169,10 @@ export const CASE_CONCLUSION_CHECKS = {
  * the project's own document under that member's name. Asked AFTER sight (a caller who
  * cannot see the project is answered as for a bundle that does not exist, so this refusal is
  * said only to someone who can already see it) and BEFORE the signature is weighed. */
+/**
+ * R14, R46, R49: the C-58 rows, what op=ratify may publish at all and the set-time and approval refusals.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RATIFY_SCOPE_CHECKS = {
   RATIFY_PROJECT_BUNDLE: {
     check: 'C-58.1',
@@ -229,6 +249,10 @@ export const RATIFY_SCOPE_CHECKS = {
 /* C-32.1 and C-33.10–C-33.12: the bulk release's refusals (R20, R22; N400, K636), copied from the catalogue's
    `MACHINE_FENCE_CHECKS` and `ACT_SHAPE_CHECKS` with their ids and translations unchanged when `release` moved here
    (`./release.mjs`). Split tables: the catalogue's copies are deleted in T19 (plan T18 rule (3)). */
+/**
+ * R20, R22: the bulk release's rows, C-32.1 and C-33.10–C-33.12.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RELEASE_CHECKS = {
   MACHINE_CANNOT_RELEASE: {
     check: 'C-32.1',
@@ -254,6 +278,10 @@ export const RELEASE_CHECKS = {
 
 /* C-102.10: the refusal this module's registered promotion step answers (R9), copied from the catalogue's
    `REGISTRATION_CHECKS` with its id and translation unchanged (split tables; T19 deletes the catalogue's copy). */
+/**
+ * R9: C-102.10, the refusal of the registered promotion step.
+ * @type {Record<string, any>} each row `{check, where, translation}`
+ */
 export const RATIFY_REGISTRATION_CHECKS = {
   CASE_MEMBER_REFUSED: {
     check: 'C-102.10',
@@ -267,7 +295,11 @@ const FAMILIES = [RATIFY_MACHINE_FENCE_CHECKS, RATIFY_TESTIMONY_CHECKS, RATIFY_A
 
 /** DEC-49: a refusal code's `{code, check, translation}`, from the one row that holds it. IT THROWS RATHER THAN
  *  RETURNING A PARTIAL ROW: a code with no canned sentence behind it must not reach a member, and a throw is loud where
- *  a missing sentence is silent. */
+ *  a missing sentence is silent.
+ * @param {string} code a refusal code this module's rows hold
+ * @returns {{code: string, check: string, translation: string}} the code's row
+ * @throws {Error} when no row holds the code with a canned translation
+ */
 export function rowOf(code) {
   for (const fam of FAMILIES) {
     const row = fam[code];

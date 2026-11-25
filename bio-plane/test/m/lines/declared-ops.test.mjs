@@ -8,7 +8,7 @@ import { DECLARED_OPS, linesOps } from "../../../src/lines/index.mjs";
 import { world, ANN } from "./fixture.mjs";
 const sameCode = (x, y) => x && y && x.ok === y.ok && (x.code ?? x.reason) === (y.code ?? y.reason);
 /* a world with an office and a body, which stand for the sample ends */
-const mkEnv = async () => { const w = world(); w.office = w.ent("office", "Harbour Master"); w.body = w.ent("body", "Port Board"); return w; };
+const mkEnv = async () => { const w = world(); return { ...w, office: w.ent("office", "Harbour Master"), body: w.ent("body", "Port Board") }; };
 const ends = (f, env) => ({ ...f, ...("from" in f ? { from: env.office } : {}), ...("to" in f ? { to: env.body } : {}) });
 
 /* a refusal names a field by its code (the table; an entry {code, end} also needs the answer to carry that end) or, as the default does, by the field as a whole word of its code or detail */
@@ -35,7 +35,7 @@ test("R25 lines declares recordline: its requires alone raise no refusal naming 
 });
 
 /* R26: a line recorded beforehand, so that the requires alone withdraw a real line; the line's id is the one the call names */
-const withLine = async () => { const w = await mkEnv(); w.lineId = w.l.recordLine({ kind: "custodian_of", from: w.office, to: w.body, basis: { statement: "I read it on the office's page" }, by: ANN }).line_id; return w; };
+const withLine = async () => { const w = await mkEnv(); return { ...w, lineId: w.l.recordLine({ kind: "custodian_of", from: w.office, to: w.body, basis: { statement: "I read it on the office's page" }, by: ANN }).line_id }; };
 const onLine = (fields, env) => ("lineId" in fields ? { ...fields, lineId: env.lineId } : fields);
 
 test("R26 lines declares linewithdraw: its requires alone raise no refusal naming a field, each missing one is refused naming it, and a field outside accepts is dropped or refused", async () => {

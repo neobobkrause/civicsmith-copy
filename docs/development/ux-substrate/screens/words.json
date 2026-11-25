@@ -9735,7 +9735,7 @@
   },
   {
    "key": "shell.step.imported",
-   "en": "Imported",
+   "en": "Imported cases",
    "protected": false,
    "source": "DEC-252",
    "note": "adopted from interface-shell's own rows"

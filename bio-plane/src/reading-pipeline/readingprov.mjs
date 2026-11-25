@@ -183,15 +183,19 @@ function chainTierOf(chain, page) {
 /**
  * The provenance of ONE reading.
  *
- * @param {object} a
- * @param {object|string|null} a.text   the I2 text the content-type reader was handed (or null: none)
- * @param {Array|null}         a.chain  the reading's `text_source` chain
- * @param {number|null}        a.tier   the reading's document-level `text_tier`
- * @param {string|null}        a.container  the format key
- * @param {string|null}        a.planeVersion  the plane's VERSION binding, which names tier 1's producer
- * @param {string|null}        a.member  the producer to name when the text is on NO tier of the ladder —
+ * Every field may be left out; each absent one is null (`yielding` false).
+ *
+ * @param {object} [a]
+ * @param {object|string|null} [a.text]   the I2 text the content-type reader was handed (or null: none)
+ * @param {Array<object>|null} [a.chain]  the reading's `text_source` chain
+ * @param {number|null}        [a.tier]   the reading's document-level `text_tier`
+ * @param {string|null}        [a.container]  the format key
+ * @param {string|null}        [a.planeVersion]  the plane's VERSION binding, which names tier 1's producer
+ * @param {string|null}        [a.member]  the producer to name when the text is on NO tier of the ladder —
  *                                       an HTML page's text, read at intake in the plane
- * @param {boolean}            a.yielding  a big text's digest gives the turn back between its slices (G82: a read in pieces); false keeps
+ * @param {string|null}        [a.textFrom]  `"document"` when the text was handed without its joined `document`, which
+ *                                       is the pages' own join: `text_from` then names it
+ * @param {boolean}            [a.yielding]  a big text's digest gives the turn back between its slices (G82: a read in pieces); false keeps
  *                                         it one stretch and the caller's memory as R36 holds it
  */
 export async function readingProvenance({ text = null, chain = null, tier = null, container = null,

@@ -45589,644 +45589,644 @@
       "en": "adjust the later record timestamp suffix by one second, logged",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 146
+      "line": 160
     },
     {
       "id": "record-grammar.bundle.annotation_file_name_does_not",
       "en": "annotation file '{name}' does not match its id (expected '{expectedFile}')",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 143
+      "line": 157
     },
     {
       "id": "record-grammar.bundle.annotation_file_name_is_not",
       "en": "annotation file '{name}' is not a .json record",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 129
+      "line": 143
     },
     {
       "id": "record-grammar.bundle.annotation_id_rid_does_not",
       "en": "annotation id '{rid}' does not match the v1.1 timestamp-author grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 135
+      "line": 149
     },
     {
       "id": "record-grammar.bundle.annotation_record_name_does_not",
       "en": "annotation record '{name}' does not parse",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 132
+      "line": 146
     },
     {
       "id": "record-grammar.bundle.annotation_rid_does_not_belong",
       "en": "annotation '{rid}' does not belong to parent '{folderName}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 139
+      "line": 153
     },
     {
       "id": "record-grammar.bundle.annotations_open_is_annotations_open",
       "en": "annotations_open is {annotations_open} but {pending} annotation record(s) are pending",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 157
+      "line": 171
     },
     {
       "id": "record-grammar.bundle.append_the_missing_session_log_entry",
       "en": "append the missing Session Log entry naming the gap",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 287
+      "line": 301
     },
     {
       "id": "record-grammar.bundle.apply_disjoint_if_file_sets_prove",
       "en": "apply-disjoint if file sets prove disjoint (requires history manifests)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 432
     },
     {
       "id": "record-grammar.bundle.complete_consumption_archive_manifest_delete_consumed",
       "en": "complete consumption: archive manifest, delete consumed files (idempotent)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 366
+      "line": 380
     },
     {
       "id": "record-grammar.bundle.complete_consumption_or_discard_with_reason",
       "en": "complete consumption or discard with reason",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 400
+      "line": 414
     },
     {
       "id": "record-grammar.bundle.current_state_cur_is_not",
       "en": "current_state '{cur}' is not legal for {ot} (legal: {legal})",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 258
+      "line": 272
     },
     {
       "id": "record-grammar.bundle.data_changes_json_records_were_mutated",
       "en": "data/changes.json records were mutated or removed (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 507
+      "line": 521
     },
     {
       "id": "record-grammar.bundle.delete_the_stale_claim_or_presence",
       "en": "delete the stale claim or presence marker",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 358
+      "line": 372
     },
     {
       "id": "record-grammar.bundle.discard_the_package_never_promote",
       "en": "discard the package (never promote)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 395
+      "line": 409
     },
     {
       "id": "record-grammar.bundle.discard_the_package_with_a_finding",
       "en": "discard the package with a finding to the producing author",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 404
     },
     {
       "id": "record-grammar.bundle.discard_with_reason_if_superseded_preserving",
       "en": "discard with reason if superseded, preserving the manifest as a record",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 406
+      "line": 420
     },
     {
       "id": "record-grammar.bundle.duplicate_annotation_id_rid",
       "en": "duplicate annotation id '{rid}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 146
+      "line": 160
     },
     {
       "id": "record-grammar.bundle.duplicate_manifest_key_key",
       "en": "duplicate manifest key '{key}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 605
+      "line": 619
     },
     {
       "id": "record-grammar.bundle.escaped_markdown_character_v1_in",
       "en": "escaped markdown character '{v1}' in {path}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 302
+      "line": 316
     },
     {
       "id": "record-grammar.bundle.filename_path_violates_the_naming",
       "en": "filename '{path}' violates the naming rule",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 297
+      "line": 311
     },
     {
       "id": "record-grammar.bundle.folder_name_foldername_does_not",
       "en": "folder name '{folderName}' does not equal frontmatter id '{id}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 121
+      "line": 135
     },
     {
       "id": "record-grammar.bundle.forbidden_alias_alias_present_canonical",
       "en": "forbidden alias '{alias}' present (canonical name is '{canonical}')",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 182
+      "line": 196
     },
     {
       "id": "record-grammar.bundle.frontmatter_id_id_does_not",
       "en": "frontmatter id '{id}' does not match the canonical ID grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 118
+      "line": 132
     },
     {
       "id": "record-grammar.bundle.heading_h_is_not_in",
       "en": "heading '{h}' is not in the canonical set for {ot}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 237
+      "line": 251
     },
     {
       "id": "record-grammar.bundle.history_file_p_maps_to",
       "en": "history file '{p}' maps to no manifest entry",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 684
+      "line": 698
     },
     {
       "id": "record-grammar.bundle.id_prefix_prefix_implies_wanttype",
       "en": "id prefix '{prefix}' implies '{wantType}' but object_type is '{ot}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 190
+      "line": 204
     },
     {
       "id": "record-grammar.bundle.insert_canonical_heading_h_with",
       "en": "insert canonical heading '{h}' with empty body",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 225
+      "line": 239
     },
     {
       "id": "record-grammar.bundle.insert_canonical_heading_heading_with",
       "en": "insert canonical heading '{heading}' with the assertion in it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 234
+      "line": 248
     },
     {
       "id": "record-grammar.bundle.key_i_was_modified_retroactively",
       "en": "{key}[{i}] was modified retroactively (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 483
+      "line": 497
     },
     {
       "id": "record-grammar.bundle.key_shrank_from_length_to",
       "en": "{key} shrank from {length} to {length_2} entries vs. the latest snapshot",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 479
+      "line": 493
     },
     {
       "id": "record-grammar.bundle.key_v1_is_not_iso",
       "en": "{key} '{v1}' is not ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 202
+      "line": 216
     },
     {
       "id": "record-grammar.bundle.last_updated_last_updated_precedes",
       "en": "last_updated '{last_updated}' precedes created '{created}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 274
+      "line": 288
     },
     {
       "id": "record-grammar.bundle.last_updated_precedes_the_newest",
       "en": "last_updated precedes the newest state_history timestamp '{newest}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 280
+      "line": 294
     },
     {
       "id": "record-grammar.bundle.live_last_updated_last_updated",
       "en": "live last_updated '{last_updated}' precedes an earlier history entry '{newestPrior}': the live bundle.md is older than a version already superseded",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 715
+      "line": 729
     },
     {
       "id": "record-grammar.bundle.manifest_created_created_is_not",
       "en": "manifest created '{created}' is not ISO 8601 UTC",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 409
+      "line": 423
     },
     {
       "id": "record-grammar.bundle.manifest_files_entry_stringify_lacks",
       "en": "manifest files entry {stringify} lacks name+sha256",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 384
+      "line": 398
     },
     {
       "id": "record-grammar.bundle.manifest_keys_out_of_order",
       "en": "manifest keys out of order at '{key}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 606
+      "line": 620
     },
     {
       "id": "record-grammar.bundle.manifest_target_target_does_not",
       "en": "manifest target '{target}' does not match record '{folderName}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 378
+      "line": 392
     },
     {
       "id": "record-grammar.bundle.map_to_the_nearest_vocabulary_value",
       "en": "map to the nearest vocabulary value",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 519
+      "line": 533
     },
     {
       "id": "record-grammar.bundle.object_type_ot_is_not",
       "en": "object_type '{ot}' is not a known type",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 186
+      "line": 200
     },
     {
       "id": "record-grammar.bundle.orphaned_pending_file_p_with",
       "en": "orphaned pending file '{p}' with no manifest",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 366
+      "line": 380
     },
     {
       "id": "record-grammar.bundle.package_file_name_pending_listed",
       "en": "package file '{name}.pending' listed in manifest is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 404
     },
     {
       "id": "record-grammar.bundle.path_does_not_parse_as",
       "en": "{path} does not parse as JSON",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 306
+      "line": 320
     },
     {
       "id": "record-grammar.bundle.pending_file_p_is_not",
       "en": "pending file '{p}' is not listed in the manifest",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 400
+      "line": 414
     },
     {
       "id": "record-grammar.bundle.pending_package_base_matches_live_bundle",
       "en": "pending package base matches live bundle.md: fast-forward eligible",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 416
+      "line": 430
     },
     {
       "id": "record-grammar.bundle.pending_package_base_string_does",
       "en": "pending package base {String}… does not match live bundle.md {liveHash}…: divergence",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 432
     },
     {
       "id": "record-grammar.bundle.pending_package_is_floor_days",
       "en": "pending package is {floor} days old (policy {maxPackageAgeDays})",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 406
+      "line": 420
     },
     {
       "id": "record-grammar.bundle.preserved_refusal_payload_p_has",
       "en": "preserved refusal payload '{p}' has no refusal record at '{sibling}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 675
+      "line": 689
     },
     {
       "id": "record-grammar.bundle.promotion_record_for_key_is",
       "en": "promotion record for '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 615
+      "line": 629
     },
     {
       "id": "record-grammar.bundle.re_produce_the_package_from_the",
       "en": "re-produce the package from the originating session outputs",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 404
     },
     {
       "id": "record-grammar.bundle.rebase_via_a_reconciliation_session",
       "en": "rebase via a reconciliation session",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 432
     },
     {
       "id": "record-grammar.bundle.rebuild_manifest_entry_from_surviving_files",
       "en": "rebuild manifest entry from surviving files",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 591
+      "line": 605
     },
     {
       "id": "record-grammar.bundle.record_a_history_loss_finding_and",
       "en": "record a history-loss finding and re-snapshot current state",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 615
+      "line": 629
     },
     {
       "id": "record-grammar.bundle.record_a_tamper_finding_if_history",
       "en": "record a tamper finding if history lacks the original",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 491
+      "line": 505
     },
     {
       "id": "record-grammar.bundle.record_has_been_updated_but_carries",
       "en": "record has been updated but carries no Session Log entry",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 287
+      "line": 301
     },
     {
       "id": "record-grammar.bundle.references_i_is_not_an",
       "en": "references[{i}] is not an object",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 518
+      "line": 532
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is",
       "en": "references[{i}].rel '{rel}' is not in the closed vocabulary",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 519
+      "line": 533
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is_2",
       "en": "references[{i}].rel '{rel}' is source-asserted and must carry asserted_by: 'source', so it is never read as a member's claim",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 527
+      "line": 541
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is_3",
       "en": "references[{i}].rel '{rel}' is a member's relation and cannot be asserted_by 'source'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 533
+      "line": 547
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_must",
       "en": "references[{i}].rel '{rel}' must carry the address the source wrote, as a comment string beside the canonical target",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 529
+      "line": 543
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_must_2",
       "en": "references[{i}].rel '{rel}' must carry a contemporaneity verdict of contemporaneous, superseded or undetermined; undetermined is the resting state and must be stated rather than omitted",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 531
+      "line": 545
     },
     {
       "id": "record-grammar.bundle.references_i_status_status_is",
       "en": "references[{i}].status '{status}' is not one of: {EDGE_STATUS}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 535
+      "line": 549
     },
     {
       "id": "record-grammar.bundle.references_i_target_string_looks",
       "en": "references[{i}].target '{String}' looks like a substrate locator; targets are canonical IDs only",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 538
+      "line": 552
     },
     {
       "id": "record-grammar.bundle.references_i_target_t_does",
       "en": "references[{i}].target '{t}' does not match the canonical ID grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 540
+      "line": 554
     },
     {
       "id": "record-grammar.bundle.references_i_target_t_does_2",
       "en": "references[{i}].target '{t}' does not resolve in the store",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 543
+      "line": 557
     },
     {
       "id": "record-grammar.bundle.refusal_record_p_does_not",
       "en": "refusal record '{p}' does not parse or names no outcome",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 666
+      "line": 680
     },
     {
       "id": "record-grammar.bundle.remove_the_orphaned_preserved_payload",
       "en": "remove the orphaned preserved payload",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 676
+      "line": 690
     },
     {
       "id": "record-grammar.bundle.remove_the_unexplained_refusal_artifacts",
       "en": "remove the unexplained refusal artifacts",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 667
+      "line": 681
     },
     {
       "id": "record-grammar.bundle.rename_alias_to_canonical",
       "en": "rename '{alias}' to '{canonical}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 182
+      "line": 196
     },
     {
       "id": "record-grammar.bundle.rename_file_and_update_references",
       "en": "rename file and update references",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 297
+      "line": 311
     },
     {
       "id": "record-grammar.bundle.rename_to_the_canonical_heading_preserving",
       "en": "rename to the canonical heading, preserving body",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 237
+      "line": 251
     },
     {
       "id": "record-grammar.bundle.required_core_field_key_is",
       "en": "required core field '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 179
+      "line": 193
     },
     {
       "id": "record-grammar.bundle.required_heading_h_is_missing",
       "en": "required heading '{h}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 225
+      "line": 239
     },
     {
       "id": "record-grammar.bundle.required_heading_heading_is_missing",
       "en": "required heading '{heading}' is missing: a member of a published case carries it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 234
+      "line": 248
     },
     {
       "id": "record-grammar.bundle.restore_folder_name_from_frontmatter_id",
       "en": "restore folder name from frontmatter id",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 122
+      "line": 136
     },
     {
       "id": "record-grammar.bundle.restore_frontmatter_id_from_folder_name",
       "en": "restore frontmatter id from folder name if history confirms it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 122
+      "line": 136
     },
     {
       "id": "record-grammar.bundle.restore_the_newer_bundle_md_from",
       "en": "restore the newer bundle.md from history",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 716
+      "line": 730
     },
     {
       "id": "record-grammar.bundle.restore_the_refusal_record_from_history",
       "en": "restore the refusal record from history",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 667
+      "line": 681
     },
     {
       "id": "record-grammar.bundle.review_notes_content_from_the",
       "en": "Review Notes content from the prior version is missing or altered (verbatim-immutable)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 491
+      "line": 505
     },
     {
       "id": "record-grammar.bundle.schema_stamp_form",
       "en": "schema stamp '{schema}' is not of the form <type>@<n>",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 194
+      "line": 208
     },
     {
       "id": "record-grammar.bundle.schema_stamp_schema_does_not",
       "en": "schema stamp '{schema}' does not match object_type '{ot}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 196
+      "line": 210
     },
     {
       "id": "record-grammar.bundle.schema_version_schema_is_not",
       "en": "schema version '{schema}' is not known to this check catalog",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 197
+      "line": 211
     },
     {
       "id": "record-grammar.bundle.session_log_entry_header_from",
       "en": "Session Log entry '{header}' from the prior version is missing (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 496
+      "line": 510
     },
     {
       "id": "record-grammar.bundle.sever_the_edge_with_a_reason",
       "en": "sever the edge with a reason note",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 543
+      "line": 557
     },
     {
       "id": "record-grammar.bundle.snapshot_snappath_recorded_in_manifest",
       "en": "snapshot '{snapPath}' recorded in manifest entry '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 630
+      "line": 644
     },
     {
       "id": "record-grammar.bundle.stale_advisory_artifact_p_crashed",
       "en": "stale advisory artifact '{p}' (crashed or ended actor)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 358
+      "line": 372
     },
     {
       "id": "record-grammar.bundle.state_history_i_is_not",
       "en": "state_history[{i}] is not an object",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 263
+      "line": 277
     },
     {
       "id": "record-grammar.bundle.state_history_i_timestamp_timestamp",
       "en": "state_history[{i}].timestamp '{timestamp}' is not ISO 8601 UTC",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 265
+      "line": 279
     },
     {
       "id": "record-grammar.bundle.svg_svg_on_disk_is",
       "en": "svg '{svg}' on disk is absent from the visuals array",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 320
+      "line": 334
     },
     {
       "id": "record-grammar.bundle.visuals_entry_file_has_no",
       "en": "visuals entry '{file}' has no file on disk",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 316
+      "line": 330
     },
     {
       "id": "record-grammar.bundle.visuals_entry_stringify_lacks_file",
       "en": "visuals entry {stringify} lacks file+description",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 313
+      "line": 327
     },
     {
       "id": "record-grammar.frontmatter.array_item_indented_indent_expected",

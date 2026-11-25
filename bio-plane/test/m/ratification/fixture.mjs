@@ -32,9 +32,17 @@ import { holdsRegister } from "../provenance/fixtures.mjs";
    writers (its R11, R12). */
 const METHOD = Object.freeze({ grading: GRADING_METHOD_VERSION, checks: CATALOG_VERSION });
 
+/**
+ * The SHA-256 of a text's UTF-8 bytes, or of bytes, as hex.
+ * @type {(s: any) => string}
+ */
 export const sha = (s) => createHash("sha256").update(typeof s === "string" ? Buffer.from(s, "utf8") : s).digest("hex");
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
+/**
+ * An in-memory Durable Object storage over SQLite, with `sql.exec` and `transactionSync`.
+ * @returns {any}
+ */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -57,8 +65,20 @@ export function storage() {
 
 const bare = (schema) => schema.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
 
+/**
+ * A member's viewer stamp.
+ * @type {(id: any) => string}
+ */
 export const V = (id) => `member:${id}`;
+/**
+ * The world's clock.
+ * @type {string}
+ */
 export const NOW = "2026-09-28T01:00:00Z";
+/**
+ * A pin no bundle holds.
+ * @type {string}
+ */
 export const PIN0 = "0".repeat(64);
 
 /* ---------------------------------------------------------------- an SSHSIG signer (PROTOCOL.sshsig) */
@@ -75,12 +95,23 @@ const b64 = (bytes) => Buffer.from(bytes).toString("base64");
 const armor = (blob) =>
   `-----BEGIN SSH SIGNATURE-----\n${b64(blob).replace(/(.{70})/g, "$1\n")}\n-----END SSH SIGNATURE-----\n`;
 
+/**
+ * A fresh Ed25519 key: its private key, raw public bytes and SSH key blob as base64.
+ * @returns {Promise<any>} `{priv, raw, keyB64}`
+ */
 export async function newKey() {
   const kp = await webcrypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
   const raw = new Uint8Array(await webcrypto.subtle.exportKey("raw", kp.publicKey));
   return { priv: kp.privateKey, raw, keyB64: b64(u8(sstr("ssh-ed25519"), sstr(raw))) };
 }
 
+/**
+ * An armored SSH signature of `message` by `key` in `namespace`.
+ * @param {any} key `newKey`'s answer
+ * @param {any} message the statement signed
+ * @param {any} [namespace] the namespace, `NS_RATIFY` by default
+ * @returns {Promise<string>}
+ */
 export async function sign(key, message, namespace = NS_RATIFY) {
   const h = new Uint8Array(await webcrypto.subtle.digest("SHA-512", typeof message === "string" ? enc(message) : message));
   const signed = u8(enc("SSHSIG"), sstr(namespace), sstr(new Uint8Array(0)), sstr("sha512"), sstr(h));
@@ -88,18 +119,34 @@ export async function sign(key, message, namespace = NS_RATIFY) {
   return armor(u8(enc("SSHSIG"), u32(1), sstr(u8(sstr("ssh-ed25519"), sstr(key.raw))), sstr(namespace),
     sstr(new Uint8Array(0)), sstr("sha512"), sstr(u8(sstr("ssh-ed25519"), sstr(sig)))));
 }
+/**
+ * A signature of a case edition's statement (`caseRatifyStatement`).
+ * @type {(key: any, caseId: any, edition: any, docSha: any) => Promise<string>}
+ */
 export const signCase = (key, caseId, edition, docSha) => sign(key, caseRatifyStatement(caseId, edition, docSha));
+/**
+ * A signature of a finding's statement (`ratifyStatement`).
+ * @type {(key: any, id: any, bundleSha: any) => Promise<string>}
+ */
 export const signBundle = (key, id, bundleSha) => sign(key, ratifyStatement(id, bundleSha));
 
 /* ---------------------------------------------------------------- the world */
 
-/** An in-memory R2 bucket over a Map of key to bytes. */
+/** An in-memory R2 bucket over a Map of key to bytes.
+ * @type {(m: Map<any, any>) => any}
+ */
 export const bucketOver = (m) => ({
   head: async (k) => (m.has(k) ? { size: m.get(k).length } : null),
   get: async (k) => (m.has(k) ? { body: m.get(k), arrayBuffer: async () => m.get(k) } : null),
   put: async (k, v) => { m.set(k, v instanceof Uint8Array ? v : new TextEncoder().encode(String(v))); },
 });
 
+/**
+ * A store world: this module's instance over in-memory storage, with the providers it reads and helpers that mint
+ * bundles, cases and signers.
+ * @param {any} [opts] `{steer, worker, carriage, schedule, retrieval}`, stand-ins for the providers named
+ * @returns {any} the world
+ */
 export function world({ steer = {}, worker = null, carriage = null, schedule = null, retrieval = null } = {}) {
   const st = storage();
   const host = { storage: st };
@@ -297,6 +344,12 @@ export function world({ steer = {}, worker = null, carriage = null, schedule = n
 
 /* ---------------------------------------------------------------- documents */
 
+/**
+ * A question's bundle.md.
+ * @param {any} id the question
+ * @param {any} [opts] `{state, extra}`
+ * @returns {string}
+ */
 export function inqMd(id, { state = "open", extra = [] } = {}) {
   return ["---", `id: ${id}`, "object_type: inquiry", "schema: inquiry@1", `title: "Question ${id}"`,
           `current_state: ${state}`, "prior_state: null", `created: "2026-09-27T00:00:00Z"`,
@@ -304,6 +357,11 @@ export function inqMd(id, { state = "open", extra = [] } = {}) {
           "state_history: []", ...extra, "---", "", "## Question", "", "What happened?", "", "## Session Log", ""].join("\n");
 }
 
+/**
+ * An information document's bundle.md.
+ * @param {any} id the document
+ * @returns {string}
+ */
 export function infoMd(id) {
   return ["---", `id: ${id}`, "object_type: information", "schema: information@1", `title: "Document ${id}"`,
           "current_state: collected", "prior_state: null", `created: "2026-09-27T00:00:00Z"`,
@@ -311,6 +369,11 @@ export function infoMd(id) {
           "---", "", "## Summary", "", "A document.", ""].join("\n");
 }
 
+/**
+ * A project's bundle.md.
+ * @param {any} title the project's title
+ * @returns {string}
+ */
 export function projMd(title) {
   return ["---", "object_type: project", "schema: project@1", `title: "${title}"`, "current_state: forming",
           "prior_state: null", `created: "2026-09-27T00:00:00Z"`, `last_updated: "2026-09-27T00:00:00Z"`,
@@ -318,7 +381,10 @@ export function projMd(title) {
 }
 
 /** A /6 case document's text (the format op=publish authors) over `members` ([{id, pin, role}]), with `conclusions` rows ([[member, conclusion]])
- *  written by this module's one writer, and `extra` frontmatter lines. */
+ *  written by this module's one writer, and `extra` frontmatter lines.
+ * @param {any} args `{caseId, edition, project, members, conclusions, extra, rowLines}`
+ * @returns {string}
+ */
 export function caseMd({ caseId, edition, project, members, conclusions = [], extra = [], rowLines }) {
   return ["---", "format: bio-case-document/6", `case_id: ${caseId}`, `case_edition: ${edition}`,
     `case_project: ${project}`, `case_scope: "whether the permits were issued as the minutes say"`,
@@ -332,7 +398,11 @@ export function caseMd({ caseId, edition, project, members, conclusions = [], ex
 }
 
 /** A frontmatter document from an object, in the catalogue's restricted grammar (scalars, lists of scalars, maps of
- *  scalars, lists of maps of scalars), `raw` lines appended to the frontmatter, and `body`. */
+ *  scalars, lists of maps of scalars), `raw` lines appended to the frontmatter, and `body`.
+ * @param {any} obj the front matter
+ * @param {any} [opts] `{raw, body}`
+ * @returns {string}
+ */
 export function fmText(obj, { raw = [], body = "" } = {}) {
   const sc = (v) => (v === null || v === undefined ? "null" : typeof v === "string" ? JSON.stringify(v) : String(v));
   const lines = ["---"];
@@ -352,7 +422,10 @@ export function fmText(obj, { raw = [], body = "" } = {}) {
   return [...lines, ...raw, "---", "", body].join("\n");
 }
 
-/** A catalogue-clean information bundle.md (the gate draws no finding over it alone). */
+/** A catalogue-clean information bundle.md (the gate draws no finding over it alone).
+ * @param {any} id the document
+ * @returns {string}
+ */
 export function cleanInfoMd(id) {
   return ["---", `id: ${id}`, "object_type: information", "schema: information@1", `title: "A report"`,
     "current_state: collected", "prior_state: null", `created: "2026-07-01T00:00:00Z"`, `last_updated: "2026-07-01T00:00:00Z"`,
@@ -364,7 +437,10 @@ export function cleanInfoMd(id) {
 }
 
 /** A catalogue-clean bio-case-document/6 as an object, the format op=publish authors, with its tension section empty
- *  (`checkCaseDocument` draws no finding over it). */
+ *  (`checkCaseDocument` draws no finding over it).
+ * @param {any} args `{caseId, edition, project, members}`
+ * @returns {any} the document's front matter, as an object
+ */
 export function cleanCase({ caseId, edition, project, members }) {
   return {
     format: "bio-case-document/6", case_id: caseId, case_edition: edition, case_project: project,
@@ -386,15 +462,27 @@ export function cleanCase({ caseId, edition, project, members }) {
     method: { ...METHOD }, materials: [], material_attestations: [],
   };
 }
+/**
+ * A case document's body, with its two required sections.
+ * @type {string}
+ */
 export const CASE_BODY = "# Case\n\n## What This Excludes\n\nNothing named.\n\n## What Changed in This Edition, and Why\n\nThe roster was revised.\n";
 
 /* ---------------------------------------------------------------- the Worker half's control plane */
 
+/**
+ * What a stand-in answers for a store that did not answer.
+ * @type {symbol}
+ */
 export const SILENT = Symbol("silent");
 
 /** What the control plane hands `caseRatifyOp` / `ratifyOp`: a Durable Object stub routing to this world's store half
  *  (and to stand-ins for the other modules' ops, `w.ops`), in-memory buckets, and its helpers. A stand-in answering
- *  `SILENT` is a store that did not answer. */
+ *  `SILENT` is a store that did not answer.
+ * @param {any} w the world
+ * @param {any} [opts] the credential and the stand-ins: `{session, viaSession, aiCred, cls, ...}`
+ * @returns {any} `{stub, ctx, request, captures, published, assembled, fetched}`
+ */
 export function plane(w, { session = { role: "member:alice" }, viaSession = true, aiCred = null, cls = "session",
                            viewer = V("alice") } = {}) {
   const captures = new Map(), published = new Map(), assembled = [], fetched = [];
