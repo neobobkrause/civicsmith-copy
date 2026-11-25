@@ -57,3 +57,8 @@ Shown to the owner: not yet.
 Rule now: no job whose only work is a notice from test-support's merge (pull request 1350) starts until civicsmith is on the next Process4 version. ARCH carries it out; told jobs already finished merge, and jobs with other work carry the notice with them.
 - 25 Nov 2026: "Instruction: hold the told checks from test-support's merge (pull request 1350) until civicsmith is on the next Process4 version." (given to ARCH; relayed by ARCH #16)
 Shown to the owner: not yet.
+
+## Notice-only follow-up checks
+Rule now: every notice-only follow-up check (a job whose only work is a notice) is held. ARCH carries it out.
+- 25 Nov 2026: "Instruction: Hold every notice-only follow-up check"
+Shown to the owner: not yet.
