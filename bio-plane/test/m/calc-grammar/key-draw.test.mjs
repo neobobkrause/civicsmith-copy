@@ -25,7 +25,7 @@ test("R15 the result key is SHA-256 of the canonical JSON of {recipe, inputs, me
 
 test("R16 a draw ranks every key by SHA-256 of the seed and the key and takes the first n: reproducible by any SHA-256 tool, with the frame's hash, the seed and the method", () => {
   const frame = Array.from({ length: 300 }, (_, i) => `ROW-${i}`);
-  for (const [seed, n] of [["2026-10-05 public draw", 25], ["x", 0], ["x", 300], ["ünïcode seed", 7]]) {
+  for (const [seed, n] of /** @type {Array<[string, number]>} */ ([["2026-10-05 public draw", 25], ["x", 0], ["x", 300], ["ünïcode seed", 7]])) {
     const r = draw({ frame, n, seed });
     const want = [...frame].sort((a, b) => { const x = sha(`${seed}\n${a}`); const y = sha(`${seed}\n${b}`); return x < y ? -1 : x > y ? 1 : 0; }).slice(0, n);
     assert.deepEqual(r.sample, want);
@@ -38,7 +38,7 @@ test("R16 a draw ranks every key by SHA-256 of the seed and the key and takes th
   assert.equal(draw({ frame, n: 301, seed: "x" }).refused, "DRAW_TOO_LARGE");
   assert.equal(draw({ frame, n: -1, seed: "x" }).refused, "DRAW_TOO_LARGE");
   assert.equal(draw({ frame: ["a", "b", "a"], n: 1, seed: "x" }).refused, "FRAME_INVALID");
-  assert.equal(draw({ frame: ["a", 2], n: 1, seed: "x" }).refused, "FRAME_INVALID");
+  assert.equal(draw({ frame: /** @type {*} a key that is not a string, on purpose */ (["a", 2]), n: 1, seed: "x" }).refused, "FRAME_INVALID");
   assert.equal(draw({ frame, n: 1, seed: "" }).refused, "SEED_INVALID");
   assert.throws(() => draw({ frame, n: 1 }), TypeError);
   assert.throws(() => draw({ frame: "abc", n: 1, seed: "x" }), TypeError);
@@ -69,11 +69,11 @@ test("R17 the exact hypergeometric interval: low and high are the extreme frame 
   assert.match(big.method, /hypergeometric/);
   assert.ok(big.low < 500 && big.high > 500 && big.low > 300 && big.high < 750, JSON.stringify(big));
   assert.deepEqual(interval({ frame_size: 10, sample_size: 10, successes: 4, confidence: "0.95" }), { low: 4, high: 4, method: big.method });
-  for (const bad of [{ frame_size: 0, sample_size: 0, successes: 0, confidence: "0.9" }, { frame_size: 5, sample_size: 6, successes: 1, confidence: "0.9" },
+  for (const bad of /** @type {Array<*>} counts out of range, on purpose */ ([{ frame_size: 0, sample_size: 0, successes: 0, confidence: "0.9" }, { frame_size: 5, sample_size: 6, successes: 1, confidence: "0.9" },
     { frame_size: 5, sample_size: 3, successes: 4, confidence: "0.9" }, { frame_size: 5, sample_size: 3, successes: -1, confidence: "0.9" },
     { frame_size: 5.5, sample_size: 3, successes: 1, confidence: "0.9" }, { frame_size: 5, sample_size: 3, successes: 1, confidence: "1" },
     { frame_size: 5, sample_size: 3, successes: 1, confidence: "0" }, { frame_size: 5, sample_size: 3, successes: 1, confidence: "95%" },
-    { frame_size: 5, sample_size: 3, successes: 1 }]) assert.equal(interval(bad).refused, "INTERVAL_INVALID", JSON.stringify(bad));
+    { frame_size: 5, sample_size: 3, successes: 1 }])) assert.equal(interval(bad).refused, "INTERVAL_INVALID", JSON.stringify(bad));
 });
 
 test("R23 a draw over 1,000,000 keys yields on bounded slices and answers the sample a plain draw and any SHA-256 tool give", async () => {
