@@ -155,7 +155,7 @@ test("R4 R28 declared_by and resolved_by are recorded exactly as the control pla
   const rel = e.declareRelation({ relation: "overlaps", fromEntity: m.entity_id, toEntity: p.entity_id, justification: "j", citation: "c", declaredBy: MACHINE });
   assert.equal(e.readRelation({ relationId: rel.relation_id }).relation.declared_by, MACHINE);
   read("INFO-1", sha("d"), [{ kind: "x", key: "1", label: "Person Made" }]);
-  const r = e.resolve({ captureSha: sha("d"), resolvedBy: MACHINE });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("d"), resolvedBy: MACHINE }));
   assert.equal(r.resolved[0].resolved_by, MACHINE);
   const t = e.testify({ captureSha: sha("d"), ref: "x:1", entityId: m.entity_id, basis: "I was there", resolvedBy: "member:ann" });
   assert.equal(t.resolved_by, "member:ann");
@@ -216,7 +216,7 @@ test("R8 an alias or a relation is withdrawn, never erased: NO_REASON, NO_SUCH_A
   const a = e.createEntity({ note: "a subject the test registers", kind: "office", label: "City Clerk", aliases: ["Clerk"] }).entity_id;
   const b = e.createEntity({ note: "a subject the test registers", kind: "body", label: "B" }).entity_id;
   read("INFO-1", sha("w1"), [{ kind: "doc", key: "1", label: "Clerk" }]);
-  assert.equal(e.resolve({ captureSha: sha("w1") }).resolved[0].grade, "C");
+  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("w1") })).resolved[0].grade, "C");
   assert.equal(e.withdrawAlias({ entityId: a, alias: "Clerk" }).reason, "NO_REASON");
   assert.equal(e.withdrawAlias({ entityId: a, alias: "Nope", reason: "r" }).reason, "NO_SUCH_ALIAS");
   assert.equal(e.withdrawAlias({ entityId: "ENT-2026-0404", alias: "Clerk", reason: "r" }).reason, "NO_SUCH_ALIAS");
@@ -233,7 +233,7 @@ test("R8 an alias or a relation is withdrawn, never erased: NO_REASON, NO_SUCH_A
   /* hidden */
   assert.equal(e.entitiesByAlias({ alias: "Clerk" }).count, 0);
   read("INFO-2", sha("w2"), [{ kind: "doc", key: "2", label: "Clerk" }]);
-  assert.equal(e.resolve({ captureSha: sha("w2") }).resolved_count, 0, "matches nothing new");
+  assert.equal(/** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("w2") })).resolved_count, 0, "matches nothing new");
   assert.equal(e.namingDocuments({ entityId: a, viewer: MACHINE }).names_used, 1, "the lookup walks live names only");
   /* still seen */
   const al = e.readEntity({ entityId: a }).entity.aliases.find((x) => x.alias === "Clerk");
@@ -264,7 +264,7 @@ test("R26 a declared relation carries no grade and is never traversed to resolve
   const p = e.createEntity({ note: "a subject the test registers", kind: "body", label: "Proxy Body" }).entity_id;
   e.declareRelation({ relation: "proxy_for", fromEntity: p, toEntity: a, justification: "j", citation: "c" });
   read("INFO-1", sha("r26"), [{ kind: "x", key: "1", label: "Proxy Body" }]);
-  const r = e.resolve({ captureSha: sha("r26") });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (e.resolve({ captureSha: sha("r26") }));
   assert.deepEqual(r.resolved.map((m) => m.entity_id), [p]);
   assert.equal(e.concerns({ entityId: a, viewer: MACHINE }).count, 0);
   assert.equal(e.strongestByCapture(a).size, 0);

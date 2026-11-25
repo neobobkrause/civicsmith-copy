@@ -37,7 +37,7 @@ test("R58 every resolution says how its grade was reached: the identifier tier `
   const office = w.e.createEntity({ note: NOTE, kind: "office", label: "Harbour Office" }).entity_id;
   w.read("INFO-1", sha("mb"), [byId("bar 12345"), { kind: "ord", key: "26-1", label: "n" }, { kind: "ord", key: "26-2", label: "n" },
                               { kind: "doc", key: "9", label: "Harbour Office" }, { kind: "doc", key: "10", label: "unrelated" }]);
-  const r = w.e.resolve({ captureSha: sha("mb"), resolvedBy: MACHINE });
+  const r = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("mb"), resolvedBy: MACHINE }));
   const got = Object.fromEntries(r.resolved.map((m) => [m.entity_id, [m.grade, m.matched_by]]));
   assert.deepEqual(got, { [w.pat]: ["A", "identifier"], [ord]: ["A", "reference"], [fund]: ["B", "reference_key"], [office]: ["C", "label"] });
   const t = w.e.testify({ captureSha: sha("mb"), ref: "doc:10", entityId: office, basis: "I know", resolvedBy: VIEWER });
@@ -54,10 +54,10 @@ test("R58 a stronger grade raises the resolution in place and its matched_by bec
   const w = people();
   const ent = w.e.createEntity({ note: NOTE, kind: "office", label: "Port Office" }).entity_id;
   w.read("INFO-1", sha("mbr"), [{ kind: "po", key: "1", label: "Port Office" }]);
-  const c = w.e.resolve({ captureSha: sha("mbr") }).resolved[0];
+  const c = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("mbr") })).resolved[0];
   assert.deepEqual([c.grade, c.matched_by], ["C", "label"]);
   w.e.addAlias({ entityId: ent, alias: "po:1" });
-  const a = w.e.resolve({ captureSha: sha("mbr") }).resolved[0];
+  const a = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("mbr") })).resolved[0];
   assert.deepEqual([a.grade, a.raised, a.matched_by], ["A", true, "reference"]);
   const t = w.e.testify({ captureSha: sha("mbr"), ref: "po:1", entityId: ent, basis: "b" });
   assert.deepEqual([t.grade, t.kept, t.matched_by], ["A", true, "reference"], "testimony after an A keeps the match");
@@ -70,7 +70,7 @@ test("R58 a stronger grade raises the resolution in place and its matched_by bec
   /* testimony, then a name raises it to C and takes `label` */
   w.read("INFO-3", sha("mbd"), [{ kind: "po", key: "9", label: "Port Office" }]);
   w.e.testify({ captureSha: sha("mbd"), ref: "po:9", entityId: ent, basis: "b" });
-  const up = w.e.resolve({ captureSha: sha("mbd") }).resolved[0];
+  const up = /** @type {any} resolve's answer, read by the fields R11 states */ (w.e.resolve({ captureSha: sha("mbd") })).resolved[0];
   assert.deepEqual([up.grade, up.raised_from, up.matched_by], ["C", "D", "label"]);
 });
 
