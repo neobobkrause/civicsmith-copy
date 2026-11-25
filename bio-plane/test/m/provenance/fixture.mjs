@@ -157,3 +157,17 @@ export function provDoc(c, extra = {}) {
 }
 
 export const V = (id) => `member:${id}`;
+
+/* The text of a live file record-core holds inline (its R13). A file not held, or held as a blob, has no text here: reading one
+   fails the test by name, never as a later property read of nothing. */
+export const inlineText = (f) => {
+  if (f && typeof f === "object" && "text" in f) return f.text;
+  throw new Error(`the file is not held inline: ${JSON.stringify(f)}`);
+};
+
+/* The live paths of a bundle record-core holds (its `livePaths`). A bundle not held has none to read: it fails the test by name,
+   never as an empty list a loop would pass over. */
+export const pathsOf = (paths) => {
+  if (Array.isArray(paths)) return paths;
+  throw new Error("the bundle is not held");
+};

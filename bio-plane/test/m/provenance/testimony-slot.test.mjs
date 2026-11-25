@@ -33,7 +33,7 @@ test("R52: a registration is refused through membership's listenerRefusal, the o
   for (const [m, spec] of [["extraction", { project: fn }], ["content", { check: fn, project: fn }]]) {
     const r = w.prov.onTestimony(m, spec);
     assert.deepEqual(r, listenerRefusal(held, m, fn));
-    assert.deepEqual([r.ok, r.reason, r.code, r.module], [false, "LISTENER_DECLARED", "LISTENER_DECLARED", m]);
+    assert.deepEqual([r?.ok, r?.reason, r?.code, r?.module], [false, "LISTENER_DECLARED", "LISTENER_DECLARED", m]);
   }
   /* Malformed: no module name; no registration object; neither function; a check or projection that is not one. */
   const malformed = [["", { check: fn }], [null, { project: fn }], ["capture", null], ["capture", "check"], ["capture", {}],
@@ -42,7 +42,7 @@ test("R52: a registration is refused through membership's listenerRefusal, the o
   for (const [m, spec] of malformed) {
     const r = w.prov.onTestimony(m, spec);
     assert.deepEqual(r, listenerRefusal(held, m, null), JSON.stringify([m, spec]));
-    assert.deepEqual([r.ok, r.reason, r.code], [false, "LISTENER_MALFORMED", "LISTENER_MALFORMED"]);
+    assert.deepEqual([r?.ok, r?.reason, r?.code], [false, "LISTENER_MALFORMED", "LISTENER_MALFORMED"]);
   }
   /* None of the refused registered: `capture` may still register once. */
   assert.deepEqual(w.prov.onTestimony("capture", { check: fn }), { ok: true, module: "capture" });

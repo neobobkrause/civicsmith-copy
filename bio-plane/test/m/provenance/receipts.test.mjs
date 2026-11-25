@@ -120,11 +120,11 @@ test("R47: a registration is refused through membership's listenerRefusal, the o
   held.push({ module: "observation-log" });
   const again = w.prov.onReceipt("observation-log", () => null);
   assert.deepEqual(again, listenerRefusal(held, "observation-log", fn));
-  assert.deepEqual([again.ok, again.reason, again.code, again.module], [false, "LISTENER_DECLARED", "LISTENER_DECLARED", "observation-log"]);
+  assert.deepEqual([again?.ok, again?.reason, again?.code, again?.module], [false, "LISTENER_DECLARED", "LISTENER_DECLARED", "observation-log"]);
   for (const [m, f] of [["", fn], [null, fn], ["capture", null], ["capture", "not a function"]]) {
     const r = w.prov.onReceipt(m, f);
     assert.deepEqual(r, listenerRefusal(held, m, f));
-    assert.deepEqual([r.ok, r.reason, r.code], [false, "LISTENER_MALFORMED", "LISTENER_MALFORMED"]);
+    assert.deepEqual([r?.ok, r?.reason, r?.code], [false, "LISTENER_MALFORMED", "LISTENER_MALFORMED"]);
   }
   /* A refused registration registers nothing: the receipt names the one listener. */
   const r = w.prov.recordReceipt({ addressNorm: "e.org/a", captureSha: sha("a"), retrieved: T(1) });
