@@ -134,7 +134,7 @@ test("R37 .odt digests content.xml with text:list ids relabelled in document ord
   for (const d of [d1, ds]) {
     assert.ok(d.basis.includes(`odf-evidentiary v${ODF_EVIDENTIARY_VERSION}`));
     assert.match(d.basis, /the ZIP envelope, meta\.xml, settings\.xml, styles\.xml, thumbnails and embedded font faces are discounted/);
-    assert.ok(d.basis.includes(ODF_EVIDENTIARY_MEASURED[d.flavour]));
+    assert.ok(d.basis.includes(ODF_EVIDENTIARY_MEASURED[/** @type {"odt"|"ods"} */ (d.flavour)]));
   }
   // not valid UTF-8: refused, for either flavour, never decoded lossily
   for (const f of ["odt", "ods"]) {

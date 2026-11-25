@@ -51,3 +51,8 @@ Shown to the owner: not yet.
 Rule now: the refactoring follows the direction in the "Civicsmith layers" report: each part's promises are proven by its own tests, with the 120 test files the launcher holds moved to the parts they prove; the launcher's routing moves into the front door; the parts are re-stacked, with the front door and launcher below the screens; built by the report's eight-step plan. ARCH records the lane's design decisions and opens the refactoring tranche. The halt is not lifted by this.
 - 24 Nov 2026: "Decision: I choose the direction in the "Civicsmith layers" report: each part's promises are proven by that part's own tests, with the 120 test files the launcher holds moved to the parts they prove; the launcher's routing moves into the front door; the parts are re-stacked, with the front door and launcher below the screens; and all of it is built by the report's eight-step plan." (given to the plane-scope lane; relayed by ARCH #14)
 Shown to the owner: not yet.
+
+## The checks told by test-support's merge (pull request 1350)
+Rule now: no job whose only work is a notice from test-support's merge (pull request 1350) starts until civicsmith is on the next Process4 version. ARCH carries it out; told jobs already finished merge, and jobs with other work carry the notice with them.
+- 25 Nov 2026: "Instruction: hold the told checks from test-support's merge (pull request 1350) until civicsmith is on the next Process4 version." (given to ARCH; relayed by ARCH #16)
+Shown to the owner: not yet.

@@ -1,4 +1,4 @@
-Length: 137 lines. Last section: "The screens' paths the shell draws".
+Length: 141 lines. Last section: "Test helpers other modules import".
 
 # civicsmith: ARCH's technical decisions
 
@@ -133,4 +133,9 @@ Decided: 24 Nov 2026.
 ## The screens' paths the shell draws
 Decision: interface-shell's R8, R28 and R54 take each screen's path from `docs/development/ux-substrate/screens/mock-shell.js`' `PATH` in the same checkout as the code, and no longer at the commits `3f40899950`, `a0fab7abf0`, `f90b187c7b` and `4664e8efd4`. The paths each names stay as written. Where the checkout's `PATH` and the shell differ (measured on 25 Nov: `imported` only, under R28), interface-shell's job reports it, and ARCH judges whether the code or the design page is wrong, as for any difference from the Screens pages.
 Why: none of those commits is in this repository and the required run checks out one commit, so the tests' `git show` fails in every run; the checkout's mock is the design as it stands, which the UX lane owns (the decision "The design mock the walk compares against"). Measured by interface-shell #2: against the checkout's file R8 and R54 pass.
+Decided: 25 Nov 2026.
+
+## Test helpers other modules import
+Decision: a helper under a module's `tests` that other modules' tests import (its `fixture.mjs`, `fixtures.mjs`, `world.mjs` and the like, 187 such files across about 100 modules, each listed in its module's `public`) stays a test file and is not listed under `files`, so the tool does not list it as interface and sends no notice when it changes. A user broken by a change to one is found by that user's own tests at its next job, or by a walk, as the design accepts for any missed user. The exception stands where a helper carries product values that later modules' code relies on, as agent-runner's `test/fixtures.mjs` does (decision "The remote conversation"); a job that finds another such helper reports it to ARCH.
+Why: listing every helper as interface would make the next job of each of those modules first write structured comments for its helpers and pass `check` on them, a cost of about a hundred jobs, to save a break that the user's own tests already find. Raised by office-readers #5 (PR 1370) for `bio-plane/test/m/office-readers/fixtures.mjs`.
 Decided: 25 Nov 2026.

@@ -44,6 +44,7 @@ const forgedQuery = (op, extra = {}) => `http://h/api/?${new URLSearchParams({ o
 const forgedBody = (extra = {}) => JSON.stringify({ ...Object.fromEntries([...BODY_STAMPS, "token", "secretSha", "bySecret", "by",
   "viewer", "session", "author", "proposer", "memberId", "declaredBy", "withdrawnBy", "resolvedBy", "threadedBy", "decidedBy",
   "assertedBy", "actor"].map((k) => [k, FORGED])), ...extra });
+/** @type {(op: any, c: any, o?: any) => Record<string, any>} */
 const make = (op, c, o = {}) => innerRequest({ op, url: o.url ?? forgedQuery(op), method: o.method ?? "POST", body: "body" in o ? o.body : forgedBody(),
                                                 caller: c, ...o.args });
 const Q = (r) => new URL(r.url).searchParams;

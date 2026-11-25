@@ -11,6 +11,10 @@ import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
  *  `detail` the declared size, the bound it was judged against and the sentence's key. A stream that merely cannot be
  *  read still throws a plain Error, as before. */
 export class CcittRefusal extends Error {
+  /**
+   * @param {string} code the refusal's code, `IMAGE_TOO_LARGE`
+   * @param {Object<string, *>} [detail] the declared size, the bound's name and figure, and the sentence
+   */
   constructor(code, detail = {}) {
     super(`${code}${detail.note ? `: ${detail.note}` : ""}`);
     this.code = code;
@@ -133,10 +137,31 @@ function readRun(br, table) {
 }
 
 /**
+ * @typedef {Object} CcittOptions
+ * @property {number} [K] 0 is Group 3 one-dimensional, below 0 is Group 4; above 0 (mixed mode) is refused; absent is 0
+ * @property {number} [columns] the row width in pixels; absent is 1728
+ * @property {number} [rows] the rows declared; absent or 0 is as many as the data holds
+ * @property {boolean} [byteAlign] each row starts on a byte boundary; absent is false
+ * @bound columns and rows: each at most the `image` `edge` row of READ_BOUNDS (65,535), and columns × rows at most its
+ * `pixels` row (120,000,000), judged before any row is allocated; where rows are not declared, the rows decoded are held
+ * to the same pixels bound
+ */
+/**
+ * @typedef {Object} CcittRows
+ * @property {Uint8Array} packed the decoded rows, each ceil(columns / 8) bytes, most significant bit first, a set bit white
+ * @property {number} rowsDecoded how many rows were decoded; fewer than declared where the data ended early
+ */
+/**
  * Decode CCITT G3/G4 into packed 1-bit rows where a SET bit is WHITE.
  * Returns { packed, rowsDecoded }. Throws only on a structurally impossible
  * stream; a stream that simply ends early returns fewer rows, and the caller
  * turns that into TRUNCATED_IMAGE_DATA rather than padding it with white.
+ *
+ * @param {Uint8Array} data the stream's bytes
+ * @param {CcittOptions} options
+ * @returns {CcittRows}
+ * @throws {CcittRefusal} `IMAGE_TOO_LARGE`, when the declared or decoded size passes its bound
+ * @throws {Error} when the stream cannot be read, or is mixed mode
  */
 export function ccittDecode(data, { K = 0, columns = 1728, rows = 0, byteAlign = false }) {
   const declared = rows && rows > 0;

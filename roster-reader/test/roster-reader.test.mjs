@@ -38,7 +38,7 @@ test("R1 staff_roster: the measured rosters match, CERTAIN only where a short li
     const d = staffRoster.detect(ctxOf(D[k], FIRST));
     assert.equal(d.match, true, k);
     assert.equal(d.confidence, CONFIDENCE.CERTAIN, k);
-    assert.ok(d.signals.some((s) => s.startsWith(localize("roster-reader.staff-roster.it_names_itself_a_roster", "it names itself a roster (\"{text}\")", { text: "" }).split(" (")[0])), k);
+    assert.ok((d.signals || []).some((s) => s.startsWith(localize("roster-reader.staff-roster.it_names_itself_a_roster", "it names itself a roster (\"{text}\")", { text: "" }).split(" (")[0])), k);
   }
   /* The board roster never names itself in its text: its rows alone make it LIKELY. */
   const wdb = staffRoster.detect(ctxOf(D.roster_wdb, FIRST));

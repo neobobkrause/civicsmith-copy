@@ -41,11 +41,11 @@ test("R19 slideShapeRef(slide, shape=null): {kind:'slide-shape', ref:'slide <sli
 /* ------------------------------------------------------------------ R20 */
 
 test("R20 pure: the same bytes always give the same answer, whatever the clock, and nothing reaches the network", async () => {
-  const inputs = [
+  const inputs = /** @type {any[][]} rows of an entry and what it is handed */ ([
     [docxEntry, F.docx({ core: F.core({ creator: "a" }), extra: [{ name: "word/embeddings/e.bin", data: "E" }, { name: "word/media/i.png", data: "I" }] })],
     [pptxEntry, F.pptx({ slides: [{ file: "slide1.xml", texts: ["x"], notes: "n" }] })],
     [xlsxEntry, F.xlsx({ definedNames: [{ name: "N", ref: "Sheet1!A1" }], extra: [{ name: "xl/embeddings/e.bin", data: "E" }] })],
-  ];
+  ]);
   const realNow = Date.now, realFetch = globalThis.fetch, RealDate = globalThis.Date;
   const run = async (e, b) => ({ d: e.detect(b, null), s: await e.structure(b), t: await e.text(b) });
   for (const [e, b] of inputs) {
@@ -91,7 +91,7 @@ test("R21 never throws: character references past U+10FFFF, and randomly corrupt
   assert.ok(x.undetermined.some((u) => u.reason === "char_ref_invalid"));
   let seed = 7;
   const rnd = () => (seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32;
-  const packages = [[docxEntry, F.docx({ comments: "<w:comments/>" })], [pptxEntry, F.pptx({ slides: [{ file: "slide1.xml", texts: ["a"], notes: "n" }] })], [xlsxEntry, F.xlsx({ sharedStrings: F.sst(["a"]) })]];
+  const packages = /** @type {any[][]} rows of an entry and what it is handed */ ([[docxEntry, F.docx({ comments: "<w:comments/>" })], [pptxEntry, F.pptx({ slides: [{ file: "slide1.xml", texts: ["a"], notes: "n" }] })], [xlsxEntry, F.xlsx({ sharedStrings: F.sst(["a"]) })]]);
   for (const [e, b] of packages) {
     for (let i = 0; i < 150; i++) {
       const m = b.slice();
@@ -162,7 +162,7 @@ function keysDeep(v, out = new Set()) {
 }
 
 test("R24 asserts nothing about meaning and writes nothing: no grade or judgment in any output, and the input bytes are untouched", async () => {
-  const inputs = [[docxEntry, F.docx()], [pptxEntry, F.pptx()], [xlsxEntry, F.xlsx()]];
+  const inputs = /** @type {any[][]} rows of an entry and what it is handed */ ([[docxEntry, F.docx()], [pptxEntry, F.pptx()], [xlsxEntry, F.xlsx()]]);
   for (const [e, b] of inputs) {
     const before = b.slice();
     const outs = [await e.parts(b), await e.structure(b), await e.text(b)];
@@ -176,11 +176,11 @@ test("R24 asserts nothing about meaning and writes nothing: no grade or judgment
 
 test("R25 no place is named: a document naming one jurisdiction reads exactly as the same document naming another", async () => {
   const swap = (v) => JSON.parse(JSON.stringify(v).replaceAll("Oakland", "Fairfax"));
-  const builds = [
+  const builds = /** @type {any[][]} rows of an entry and what it is handed */ ([
     [docxEntry, (n) => F.docx({ body: F.wp(F.wr(`City of ${n} council`)) })],
     [pptxEntry, (n) => F.pptx({ slides: [{ file: "slide1.xml", texts: [`${n} budget`] }] })],
     [xlsxEntry, (n) => F.xlsx({ sheets: [{ name: n, data: { rows: [{ r: 1, cells: [{ r: "A1", t: "inlineStr", is: n }] }] } }] })],
-  ];
+  ]);
   for (const [e, build] of builds) {
     const a = build("Oakland"), b = build("Fairfax");
     const [sa, sb] = [await e.structure(a), await e.structure(b)];

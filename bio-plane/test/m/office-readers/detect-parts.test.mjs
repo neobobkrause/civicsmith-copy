@@ -107,7 +107,7 @@ test("R4 pptx parts: an unreadable ppt/presentation.xml does not fail the read; 
 });
 
 test("R4 docx/pptx parts: ok:false only when the bytes are not this format or the ZIP cannot be read", async () => {
-  for (const [entry, own, others] of [[docxEntry, F.docx(), [F.pptx(), F.xlsx()]], [pptxEntry, F.pptx(), [F.docx(), F.xlsx()]]]) {
+  for (const [entry, own, others] of /** @type {any[][]} rows of an entry and what it is handed */ ([[docxEntry, F.docx(), [F.pptx(), F.xlsx()]], [pptxEntry, F.pptx(), [F.docx(), F.xlsx()]]])) {
     assert.equal((await entry.parts(own)).ok, true);
     for (const o of others) {
       const p = await entry.parts(o);

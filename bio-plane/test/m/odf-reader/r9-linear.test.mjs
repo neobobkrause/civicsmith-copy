@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { members, buildZip, contentXml } from "./pkg.mjs";
 import { cellOf, rowOf, tableOf, ods } from "./r9.mjs";
+/** @import { OdfEntry } from "../../../src/odf.mjs" */
 
 const SHAPES = {
   "an unterminated <a  (96 KB)": () => "<text:p>ok</text:p>" + "<a ".repeat(32768),
@@ -34,7 +35,9 @@ test("R52 the same shapes inside a cell and a slide", async () => {
   const junk = "<a b=\"".repeat(40000);
   const sheet = contentXml("ods", `<table:table table:name="S"><table:table-row><table:table-cell office:value-type="string"><text:p>v</text:p></table:table-cell></table:table-row></table:table>${junk}`);
   const deck = contentXml("odp", `<draw:page draw:name="p"><draw:frame><draw:text-box><text:p>s</text:p></draw:text-box></draw:frame></draw:page>${junk}`);
-  for (const [entry, xml] of [[odsEntry, sheet], [odpEntry, deck]]) {
+  /** @type {[OdfEntry, string][]} */
+  const cases = [[odsEntry, sheet], [odpEntry, deck]];
+  for (const [entry, xml] of cases) {
     const bytes = buildZip(members(entry.format, { content: xml }));
     const t = await entry.text(bytes);
     assert.equal(t.ok, true);

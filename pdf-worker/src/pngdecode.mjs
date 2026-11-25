@@ -49,6 +49,10 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs"
 import { READ_BOUNDS, boundOf, statement } from "../../bio-plane/src/read-bounds.mjs"
 
 export class PngRefusal extends Error {
+  /**
+   * @param {string} code the refusal's code: `UNSUPPORTED`, `IMAGE_TOO_LARGE`, or the codec's own codes for damaged or short data
+   * @param {Object<string, *>} [detail] why: `feature`, a key of `PNG_REFUSES`, for `UNSUPPORTED`; a `note` for damaged or short data; the size and its bound for `IMAGE_TOO_LARGE`
+   */
   constructor(code, detail = {}) {
     super(`${code}${detail.feature ? `: ${detail.feature}` : detail.note ? `: ${detail.note}` : ""}`);
     this.code = code;
@@ -61,9 +65,11 @@ const truncated = (note, extra = {}) => new PngRefusal("TRUNCATED", { note, ...e
 
 /** The old `feature` of the memory refusal, an identifier read by code. The refusal is `IMAGE_TOO_LARGE` now (R10, R12) and no
  *  longer a key of `PNG_REFUSES`; the name stays exported so `pdf-pixels`' import of it still loads until it maps the code. */
+/** @type {string} */
 export const MEMORY_FEATURE = "image-past-memory-bound";
 
-/** Every `feature` an UNSUPPORTED refusal can carry. */
+/** Every `feature` an UNSUPPORTED refusal can carry.
+ * @type {Readonly<Record<string, string>>} each feature's key, and the sentence that says it */
 export const PNG_REFUSES = Object.freeze({
   "interlaced": "the image is stored Adam7-interlaced (IHDR interlace method 1), whose seven passes are not reassembled here",
   "an unknown critical chunk": localize("image-codecs.pngdecode.a_chunk_the_decoder_must", "a chunk the decoder must understand to draw the image (its type's first letter upper-case) is not one the standard defines"),
@@ -191,10 +197,24 @@ function overWhite(c, a) {
 const SCALE = { 1: 255, 2: 85, 4: 17, 8: 1 };
 
 /**
+ * @typedef {Object} PngImage
+ * @property {number} width
+ * @property {number} height
+ * @property {number} comps 1 (grey) or 3
+ * @property {Uint8Array} samples interleaved 8-bit samples, alpha composited over white, rows top to bottom
+ * @property {{colour_type: number, bit_depth: number, transparency: *}} detail the stored image
+ */
+/**
  * Decode a PNG file. Returns a Promise of `{ width, height, comps, samples,
  * detail }`: `samples` interleaved 8-bit, `comps` 1 (grey) or 3, `detail` naming
  * the stored image (`colour_type`, `bit_depth`, `transparency`). Rejects with a
  * `PngRefusal`.
+ *
+ * @param {Uint8Array} bytes the PNG file's bytes
+ * @returns {Promise<PngImage>}
+ * @throws {PngRefusal}
+ * @bound the frame: width, height and row stride at most the `image` rows of READ_BOUNDS (`edge`, `pixels`,
+ * `row_stride`), judged from the header before any buffer is allocated
  */
 export async function decodePng(bytes) {
   const d = bytes;

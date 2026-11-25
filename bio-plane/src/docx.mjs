@@ -124,7 +124,135 @@ function toBytes(x) {
 }
 const isBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
 
+/**
+ * A paragraph reference, IC-1's `doc-para` arm (R15).
+ * @typedef {Object} DocParaRef
+ * @property {string} kind always "doc-para"
+ * @property {string} ref "¶" and the 1-based paragraph number
+ * @property {number} para the 0-based paragraph ordinal
+ * @property {number} [run] the 0-based run ordinal, only when one is targeted
+ */
+/**
+ * A table reference, the `doc-table` arm (R16).
+ * @typedef {Object} DocTableRef
+ * @property {string} kind always "doc-table"
+ * @property {string} ref "table <1-based>" and, with a cell, ", <A1>"
+ * @property {number} table the 0-based table ordinal in document order
+ * @property {string} [cell] the A1 cell over the table's own grid, only when named
+ */
+/**
+ * An entry's answer: `ok` and the fields its requirement names (R4, R7-R12, R31-R38); kept open here, the deep shape
+ * being the requirements'.
+ * @typedef {{ok: boolean} & Record<string, any>} DocxAnswer
+ */
+/**
+ * What a detect answers when it claims a file (R2, R33).
+ * @typedef {Object} Detection
+ * @property {string} format the entry's own format
+ * @property {string} confidence "likely"
+ * @property {string[]} signals what the claim rests on, in words
+ */
+/**
+ * The options of a body walk (R42, R44).
+ * @typedef {Object} DocWalkOptions
+ * @property {boolean} [paragraphText] collect each paragraph's text; absent is true
+ * @property {boolean} [tables] also run the tables walk; absent is true
+ * @property {boolean} [refs] collect the reference marks; absent is false
+ * @property {number} [retainedMax] objects the walk may retain; absent is the office table's figure
+ * @property {number} [charsMax] decoded characters the walk may hold; absent is the office table's figure
+ */
+/**
+ * What a walk has counted, and the bound it went past, if it did (R44).
+ * @typedef {Object} WalkMeter
+ * @property {number} objects paragraphs, cells and links opened so far
+ * @property {number} chars decoded characters held so far
+ * @property {Record<string, any>|null} exceeded `{why, n, bound, final:true}` once a bound is passed, else null
+ */
+/**
+ * A body walk ready to be given to a scanner (R42).
+ * @typedef {Object} DocWalk
+ * @property {Record<string, any>} handler the scanner handler (text, cdata, open, close, stopped)
+ * @property {WalkMeter} meter
+ * @property {function(): Record<string, any>} body the body walk's collections once the part is scanned
+ * @property {function(): Array<*>} tables the tables walk's tables, empty without `tables`
+ */
+/**
+ * A whole part walked at once.
+ * @typedef {Object} DocWalkReading
+ * @property {Record<string, any>} body the body walk's collections
+ * @property {Array<*>} tables the tables walk's tables
+ * @property {WalkMeter} meter
+ * @property {Record<string, any>} scanner the scanner that read the part
+ */
+/**
+ * One `<w:comment>`; each attribute null when absent (R10).
+ * @typedef {Object} DocComment
+ * @property {string|null} id
+ * @property {string|null} author
+ * @property {string|null} date
+ * @property {string|null} initials
+ * @property {string} text its `<w:t>` runs, paragraphs newline-joined
+ */
+/**
+ * The comments part read, or the refusal that states why not (R10, R21, R40).
+ * @typedef {Object} CommentsReading
+ * @property {boolean} ok
+ * @property {DocComment[]} [comments] with ok
+ * @property {string} [why] without ok: "comments_unparseable" or "char_ref_invalid"
+ * @property {boolean} [final] with "char_ref_invalid"
+ * @property {number} [scanned] bytes scanned
+ * @property {Record<string, any>} [scanner] with ok, the scanner that read the part
+ */
+/**
+ * N26's migration map (R28): old numbering against new.
+ * @typedef {Object} DocxRenumbering
+ * @property {Array<{old: *, new: *, outer: *}>} paragraphs one per `<w:p>` the old walk numbered
+ * @property {Array<{old: *, new: *, outer: *}>} runs one per `<w:r>` the old walk numbered
+ * @property {Array<{old: *, new: *}>} tables one per `<w:tbl>` the old walk numbered
+ */
+/**
+ * What the core-properties part states about the file (R31, R34).
+ * @typedef {Object} DocMetadata
+ * @property {string|null} author
+ * @property {string|null} lastModifiedBy
+ * @property {string|null} created
+ * @property {string|null} modified
+ * @property {string} source the core-properties part's name
+ * @property {string} [title] only when asked for and non-blank
+ */
+/**
+ * `coreMetadata`'s answer: the metadata or null, and the marker of an unreadable core part or null (R31).
+ * @typedef {Object} CoreMetadataReading
+ * @property {DocMetadata|null} metadata
+ * @property {{reason: string, part: string, why: *}|null} marker
+ */
+/**
+ * One item of R32's `active` list; the other fields depend on `kind`.
+ * @typedef {Object} ActiveItem
+ * @property {string} kind "vba-project", "activex", "ole-object", "embedded-file", "xl4-macrosheet", "external-target" or "unread"
+ * @property {string} part the part it was found in
+ * @property {boolean} [read] vba-project: whether the project was read
+ * @property {*} [why] vba-project or unread: why it was not read
+ * @property {*} [project] vba-project
+ * @property {*} [modules] vba-project: the module names
+ * @property {*} [autoRun] vba-project
+ * @property {*} [suspicious] vba-project
+ * @property {*} [undetermined] vba-project: the modules not read
+ * @property {*} [type] external-target: the relationship type
+ * @property {*} [target] external-target: the target
+ */
+/**
+ * The I7 registry entry for DOCX (R1, R2, R4, R7-R12, R31-R35, R38, R44).
+ * @typedef {Object} DocxEntry
+ * @property {string} format "docx"
+ * @property {(bytes: any, contentType?: any) => (Detection|null)} detect from bytes, or with no bytes from the content type
+ * @property {(bytes: any) => Promise<DocxAnswer>} parts every part structure and text need, or `{ok:false, why, signals}`
+ * @property {(partsOrBytes: any, opts?: Record<string, any>) => Promise<DocxAnswer>} structure links, counts, the evidentiary envelope, `active`
+ * @property {(partsOrBytes: any, opts?: Record<string, any>) => Promise<DocxAnswer>} text the document's text, its paragraphs, tables, parts, metadata, active, images
+ */
 
+/** The .docx package's content type, matched exactly (R2).
+ *  @type {string} */
 export const DOCX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 /* R33 (K1903): the macro-enabled flavours' package types, each read as this
@@ -145,7 +273,10 @@ const EMBEDDINGS_DIR = "word/embeddings/";
 /** `{kind:"doc-para", ref:"¶<1-based>", para:<0-based>[, run:<0-based>]}`.
  *  `run` is included only when the caller genuinely has one (IC-1: run
  *  boundaries are producer artifacts; the paragraph is what a person is
- *  shown). */
+ *  shown). (R15)
+ *  @param {number} para the 0-based paragraph ordinal
+ *  @param {number|null} [run] the 0-based run ordinal, or null for none
+ *  @returns {DocParaRef} */
 export function docParaRef(para, run = null) {
   const ref = { kind: "doc-para", ref: `¶${para + 1}`, para };
   if (run != null) ref.run = run;
@@ -163,7 +294,10 @@ export function docParaRef(para, run = null) {
  *  notation over the table's own grid (B3 = second column, third row), the
  *  one cell notation this grammar already has; it is included only when the
  *  caller genuinely names one. EXPORTED because `odf.mjs`'s `.odt` entry
- *  emits the same arm — one builder per arm, COFF-10's rule. */
+ *  emits the same arm — one builder per arm, COFF-10's rule. (R16)
+ *  @param {number} table the 0-based table ordinal
+ *  @param {string|null} [cell] an A1 cell, or null for none
+ *  @returns {DocTableRef} */
 export function docTableRef(table, cell = null) {
   const out = { kind: "doc-table", ref: `table ${table + 1}${cell != null ? `, ${cell}` : ""}`, table };
   if (cell != null) out.cell = cell;
@@ -191,7 +325,8 @@ const decodeEntities = unescape;
  *  text and tables appeared twice. Returns a per-token test: true while the
  *  token lies in a branch not read (that branch's own tags included).
  *  Exported for `pptx.mjs`' slide walk (N439), the same rule one format over:
- *  one selection, never a second copy that could drift. */
+ *  one selection, never a second copy that could drift. (N26; R28)
+ *  @returns {function(string, boolean, boolean): boolean} the per-token test: (name, closing, selfClosed) */
 export function mceSkipper() {
   const taken = [];    // per open AlternateContent: has a branch been read
   let skip = null;     // { name, depth } while inside a branch not read
@@ -414,7 +549,12 @@ const BODY_COUNTED = new Set(["p", "tc", "hyperlink"]);
 
 /** The walk the body gets (R42, R44): the body walk, and with `tables` the tables walk, fed by ONE scan. Its `handler` is
  *  what a scanner is given; `result()` the two walks' collections once the part is scanned; `meter.exceeded` the
- *  bound the walk went past, if it did (`{why:"TOO_MANY_OBJECTS"|"TOO_MANY_CHARACTERS", n, bound, final:true}`). */
+ *  bound the walk went past, if it did (`{why:"TOO_MANY_OBJECTS"|"TOO_MANY_CHARACTERS", n, bound, final:true}`).
+ *  @param {DocWalkOptions} [options]
+ *  @returns {DocWalk}
+ *  @bound the walk stops once it has opened more than `retainedMax` paragraphs, cells and links together (by default
+ *  the office table's retained-objects figure, 250,000) or holds more than `charsMax` decoded characters (by default
+ *  the office table's decoded-characters row), and `meter.exceeded` states which */
 export function createDocWalk({ paragraphText = true, tables = true, refs = false, retainedMax = OFFICE_RETAINED_MAX, charsMax = OFFICE_DECODED_CHARS_MAX } = {}) {
   const meter = { objects: 0, chars: 0, exceeded: null };
   const handler = { stopped: false };
@@ -434,7 +574,10 @@ export function createDocWalk({ paragraphText = true, tables = true, refs = fals
 }
 
 /** Walk a whole WordprocessingML part held as a string, synchronously (the shape tests and callers without a part to
- *  read use): `{body, tables, meter, scanner}`. */
+ *  read use): `{body, tables, meter, scanner}`. (R42, R44)
+ *  @param {string} xml the part's text
+ *  @param {DocWalkOptions} [opts]
+ *  @returns {DocWalkReading} */
 export function walkDocument(xml, opts) {
   const w = createDocWalk(opts);
   const scanner = new Scanner(w.handler);
@@ -484,7 +627,10 @@ function unitReader(unit, layout) {
 /** Every `<w:comment>`: id, author, date, initials (each null when absent —
  *  never invented) and the comment's own text (its `<w:t>` runs, paragraphs
  *  newline-joined). A part holding a character reference that names no character is stated unreadable (R40). Async:
- *  awaits `yieldNow` as the body walk does. */
+ *  awaits `yieldNow` as the body walk does. Never throws: anything but a string is a refusal (R10, R21, R40).
+ *  @param {*} xml the comments part's text
+ *  @param {(function(): *)|null} [yieldNow] awaited between pieces of the scan
+ *  @returns {Promise<CommentsReading>} */
 export async function parseComments(xml, yieldNow = null) {
   if (typeof xml !== "string") return { ok: false, why: "comments_unparseable" };
   const u = unitReader("comment", false);
@@ -848,7 +994,9 @@ function tablesWalk() {
  *  index of the paragraph that holds the `mc:AlternateContent` (null when
  *  none does), the narrowest place the reading still states; a dropped run's
  *  `outer` is its paragraph's new index, or that paragraph's `outer`. `outer`
- *  is null for what is kept. R28 (K747). Null when `xml` is not a string (R21). */
+ *  is null for what is kept. R28 (K747). Null when `xml` is not a string (R21).
+ *  @param {*} xml the main document part's text
+ *  @returns {DocxRenumbering|null} */
 export function docxRenumbering(xml) {
   if (typeof xml !== "string") return null;
   /* The paragraph/run numbering exactly as the body walk keeps it. */
@@ -1242,7 +1390,10 @@ async function docxText(parts, opts) {
  *  there is no readable core part. A part present but unreadable also yields
  *  its marker for `text().undetermined`; an ABSENT part yields none, because
  *  absence is normal OPC (ooxml R19). This states, never asserts an act (R24).
- *  Shared by the three OOXML entries — one builder, so they cannot drift. */
+ *  Shared by the three OOXML entries — one builder, so they cannot drift. (R31, R34)
+ *  @param {Record<string, any>|null} [parts] an entry's parts() answer
+ *  @param {boolean} [withTitle] also carry the title (docx and pptx, R34)
+ *  @returns {CoreMetadataReading} */
 export function coreMetadata(parts, withTitle = false) {
   if (parts?.core) {
     const c = parts.core;
@@ -1258,7 +1409,12 @@ export function coreMetadata(parts, withTitle = false) {
 }
 
 /** Carry `metadata` onto an ok text() result; a marker joins `undetermined`
- *  and its count. */
+ *  and its count. A result not ok is handed back as it came. (R31, R34)
+ *  @template {Record<string, any>|null|undefined} T
+ *  @param {T} out a text() result
+ *  @param {Record<string, any>|null} [parts] the parts() answer it was read from
+ *  @param {boolean} [withTitle] also carry the title (R34)
+ *  @returns {T} */
 export function withMetadata(out, parts, withTitle = false) {
   if (!out || !out.ok) return out;
   const { metadata, marker } = coreMetadata(parts, withTitle);
@@ -1282,7 +1438,12 @@ const HYPERLINK_REL_RE = /\/relationships\/hyperlink$/;
  *  the file CAN act, never that it is malicious (R24); a `.rels` part that
  *  could not be read is an `unread` item, so an empty list is a finding and
  *  never a walk that missed. Shared by the three OOXML entries — one builder,
- *  so their lists cannot drift. */
+ *  so their lists cannot drift. (R32)
+ *  @param {Uint8Array} bytes the file's bytes
+ *  @param {Record<string, any>} container ooxml's readContainer answer (`entries`)
+ *  @param {Record<string, any>} rels ooxml's walkRels answer (`byPart`, `undetermined`)
+ *  @param {string} dir the format's own directory
+ *  @returns {Promise<ActiveItem[]>} */
 export async function activeContent(bytes, container, rels, dir) {
   /* walkRels' results, by part, in its own order (a duplicated name keeps
      each of its readings in turn). */
@@ -1328,7 +1489,11 @@ export async function activeContent(bytes, container, rels, dir) {
 /** Carry R32's `active` and R33's `variant` onto an ok structure() or text()
  *  result: both are the parts read once, so the two answers carry the same
  *  list. `variant` is the macro-enabled flavour (`"docm"`), null for a plain
- *  file. */
+ *  file. A result not ok is handed back as it came. (R32, R33)
+ *  @template {Record<string, any>|null|undefined} T
+ *  @param {T} out a structure() or text() result
+ *  @param {Record<string, any>} parts the parts() answer it was read from
+ *  @returns {T} */
 export function withActive(out, parts) {
   if (!out || !out.ok) return out;
   return { ...out, variant: parts.variant ?? null, active: parts.active };
@@ -1336,7 +1501,12 @@ export function withActive(out, parts) {
 
 /** `detect(null, contentType)` for an OOXML entry: `likely` for the plain
  *  type and for each macro-enabled twin's (R2, R33), with `format` always the
- *  entry's own; else null. Exact equality, never case-folded (R2). */
+ *  entry's own; else null. Exact equality, never case-folded (R2).
+ *  @param {string} format the entry's own format
+ *  @param {string} plainType the plain package's content type
+ *  @param {Map<string, string>} twins macro-enabled content type to its flavour
+ *  @param {*} contentType the declared content type
+ *  @returns {Detection|null} */
 export function detectByContentType(format, plainType, twins, contentType) {
   if (contentType === plainType) {
     return { format, confidence: "likely", signals: [`content type "${contentType}"`] };
@@ -1353,6 +1523,10 @@ export function detectByContentType(format, plainType, twins, contentType) {
  * The I7 entry
  * ------------------------------------------------------------------ */
 
+/** The DOCX entry: detect, parts, structure and text (R1, R2, R4, R7-R12, R31-R35, R38, R44). Never throws (R21).
+ *  @type {DocxEntry}
+ *  @bound text parts whose declared uncompressed bytes pass ooxml's streamed text ceiling are not read: text() states
+ *  the guard's marker, `final: true`; a comments part over the 20 MiB text bound is stated unread */
 export const docxEntry = {
   format: "docx",
   detect(bytes, contentType) {
