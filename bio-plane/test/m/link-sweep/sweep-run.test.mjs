@@ -49,7 +49,9 @@ test("R6 R7 R10 (monitoring R29) a ratified sweep's run: the seed read, one hop 
   assert.equal(filed.length, 2);
   for (const f of filed) {
     assert.deepEqual([f.current_state, f.project], ["collected", PROJ]);
-    const reg = JSON.parse(w.record.readFile(f.bundle_id, "data/provenance.json").text);
+    const prov = w.record.readFile(f.bundle_id, "data/provenance.json");
+    assert.ok(prov && "text" in prov, "the register is held inline");
+    const reg = JSON.parse(prov && "text" in prov ? prov.text : "null");
     assert.deepEqual(reg.documents[0].origin, { kind: "sweep", matched_sweep: NAME, deeming_actor: SWEEP_ACTOR });
     const notes = w.text(f.bundle_id).split("## Provenance Notes")[1];
     const seedSha = runs(w)[0].detail.seeds[0].sha;
@@ -62,7 +64,7 @@ test("R6 R7 R10 (monitoring R29) a ratified sweep's run: the seed read, one hop 
   assert.equal(looks.length, 3);
   assert.ok(looks.every((l) => l.authority_kind === "sweep" && l.level === "document" && l.state === "PRESENT" && /^[0-9a-f]{64}$/.test(l.result_ref)));
   /* R5: the seed's capture filed in the list bundle as a monitor snapshot, by a mechanical sweep promotion */
-  assert.ok(w.record.livePaths(LIST).some((p) => p.startsWith(`snapshots/monitor-${d.seeds[0].sha.slice(0, 12)}-index.html`)));
+  assert.ok((w.record.livePaths(LIST) ?? []).some((p) => p.startsWith(`snapshots/monitor-${d.seeds[0].sha.slice(0, 12)}-index.html`)));
   assert.equal(w.manifest(LIST).at(-1).operation, "sweep");
   /* R4: not due again until its cadence passes */
   assert.equal(w.s.sweepDue(NOW_MS + DAY), null);

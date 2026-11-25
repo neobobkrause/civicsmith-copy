@@ -140,7 +140,7 @@ export function world({ evidence = true, captureRequests = undefined } = {}) {
   const w = {
     st, host, record, membership, promotion, capture, obs, gov, bkt, s, mon, clock, stages, projectStage, captureRequests: cr,
     rows: (q, ...x) => [...st.sql.exec(q, ...x)],
-    text: (id) => { const f = record.readFile(id, "bundle.md"); return f ? (typeof f === "string" ? f : f.text ?? null) : null; },
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     manifest: (id) => [...st.sql.exec(`SELECT snap_key, writer, operation, author, base FROM manifest WHERE bundle_id=? ORDER BY rowid`, id)],
     looks: () => [...st.sql.exec(`SELECT * FROM observation_log ORDER BY seq`)],
