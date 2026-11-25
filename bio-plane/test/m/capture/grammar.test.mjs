@@ -181,8 +181,8 @@ test("R89 (C-2.7): record-core's audit over the same bundles tallies exactly the
   assert.deepEqual(drop(withGrammar.tally), drop(without.tally), "every other check tallies alike");
   assert.deepEqual(drop(withGrammar.tallyDetail), drop(without.tallyDetail));
   const flagged = Object.keys(CASES).filter((id) => EXPECTED[id].length);
-  const otherErrors = new Set((without.offenders || []).map((o) => o.bundleId ?? o.id ?? o));
-  const offenders = new Set((withGrammar.offenders || []).map((o) => o.bundleId ?? o.id ?? o));
+  const otherErrors = new Set((without.offenders || []).map((o) => o.bundleId));
+  const offenders = new Set((withGrammar.offenders || []).map((o) => o.bundleId));
   for (const id of flagged) assert.ok(offenders.has(id), `${id} is an offender with the grammar`);
   assert.equal(withGrammar.withErrors, new Set([...flagged, ...otherErrors]).size);
   assert.equal(withGrammar.clean + withGrammar.withErrors, without.clean + without.withErrors);
