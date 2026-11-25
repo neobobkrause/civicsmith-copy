@@ -115,7 +115,7 @@ test("R28 no place is named in this module's behaviour, defaults or outward text
   const ra = await run(a);
   assert.deepEqual(ra.results.periods.map((p) => p.fiscal_period), ["FY2025-26"], "the test profile's fiscal year (April)");
   /* another profile's fiscal year changes the answer: it is data, never code */
-  const julyStart = (ids) => { const c = combine(ids); c.view = { ...c.view, fiscal_year: [{ body: "*", start: "09-01", named_by: "end", label: "Y{end}", status: "ruled", basis: "TEST" }] }; return c; };
+  const julyStart = (ids) => { const c = combine(ids); if (!c.view) return c; c.view = { ...c.view, fiscal_year: [{ body: "*", start: "09-01", named_by: "end", label: "Y{end}", status: "ruled", basis: "TEST" }] }; return c; };
   const b = world({ construct: false });
   b.member("bob");
   b.build({ combine: julyStart });

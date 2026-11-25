@@ -56,7 +56,7 @@ test("R49 (G182) separators follow the source's stated locale (the amount column
 test("R49 (G182) with no locale stated by the source or the team, 1.234,56 and 1 234,56 and 1,5 are read by their shape, and 1,234 and 1.234 (which the two conventions read differently) are stated undetermined, never guessed", async () => {
   const w = seeded({ construct: false });
   /* the test profile, as the team states it but for its locale */
-  w.c = w.build({ combine: (ids) => { const c = combine(ids); if (c.ok) { const { locale: _l, ...view } = c.view; return { ...c, view }; } return c; } });
+  w.c = w.build({ combine: (ids) => { const c = combine(ids); if (c.ok && c.view) { const { locale: _l, ...view } = c.view; return { ...c, view }; } return c; } });
   const r = await ingest(w, ["1.234,56", "1 234,56", "1 234,56", "1,5", "1,234", "1.234", "1,234.56", "1.234.567"]);
   assert.deepEqual(r.facts.map((f) => f.amount), ["1234.56", "1234.56", "1234.56", "1.5", "1234.56", "1234567"]);
   assert.deepEqual(Object.entries(r.notWritten).map(([i, n]) => [Number(i), n.reason]), [[4, "AMOUNT_LOCALE_UNDETERMINED"], [5, "AMOUNT_LOCALE_UNDETERMINED"]]);
