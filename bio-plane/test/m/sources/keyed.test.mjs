@@ -54,6 +54,7 @@ test("R16 refusals, in order, each with its row and a negative control, writing 
   const knock = await w.pulled({ secret: SECRET });
   const good = { captureSha: own.sha, service: "PeopleFinder", terms: "personal use", by: "bob" };
   const before = w.snapshot();
+  /** @type {any[][]} each a call's bad fields, the code it answers, why, and the field it names */
   const cases = [
     /* MACHINE_CANNOT_MARK: a machine credential, a daemon, a scheduled consumer, none, an empty stamp, a member not active */
     ...[MACHINE, "token:scheduler", "class:daemon", "daemon", "system", "session", "agent", undefined, null, "", "  ", V("dave"), V("nobody")]
