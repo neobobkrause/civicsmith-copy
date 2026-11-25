@@ -145,12 +145,6 @@ function toBytes(x) {
 const isBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
 
 
-/**
- * The plain .pptx package's MIME type, the one `detect(null, contentType)`
- * answers "likely" for (R2); the macro-enabled twins' types are this entry's
- * too (R33).
- * @type {string}
- */
 export const PPTX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.presentationml.presentation";
 /* R33 (K1903): the macro-enabled flavours' package types, read as pptx. */
@@ -171,23 +165,10 @@ const MASTER_PART_RE = /^ppt\/(slideMasters|slideLayouts)\/[^/]+\.xml$/;
  * The IC-1 element reference
  * ------------------------------------------------------------------ */
 
-/**
- * @typedef {Object} SlideShapeRef
- * @property {string} kind always "slide-shape"
- * @property {string} ref "slide <slide>", the human-readable form
- * @property {number} slide 1-based, the deck's declared order
- * @property {number} [shape] 0-based index into the slide's shape sequence;
- *   absent when only the slide is targeted
- */
-/** `{kind:"slide-shape", ref:"slide <1-based>", slide:<1-based>[, shape:<0-based>]}`
- *  (R19, IC-1).
+/** `{kind:"slide-shape", ref:"slide <1-based>", slide:<1-based>[, shape:<0-based>]}`.
  *  `slide` is 1-based and equals the number the human-readable `ref` shows
  *  (IC-1's own example: ref "slide 7", slide 7). `shape` is included only
- *  when the reference genuinely targets a shape.
- * @param {number} slide the 1-based slide number
- * @param {number|null} [shape] the 0-based shape index, or null for the slide alone
- * @returns {SlideShapeRef}
- */
+ *  when the reference genuinely targets a shape. */
 export function slideShapeRef(slide, shape = null) {
   const ref = { kind: "slide-shape", ref: `slide ${slide}`, slide };
   if (shape != null) ref.shape = shape;
@@ -584,11 +565,6 @@ function deckOf(parts) {
   return seq;
 }
 
-/**
- * @typedef {Object} PptxRenumbering
- * @property {Array<{slide: (number|null), shapes: Array<{old: number, new: (number|null)}>}>} slides
- *   one per slide part the reading walked, in deck order
- */
 /** N439's MIGRATION MAP (R29; K795 (6)) — how a stored pptx reading made
  *  before N439 (every branch of `mc:AlternateContent` walked) is numbered
  *  against one made now (one branch). For extraction's migration of stored
@@ -605,10 +581,7 @@ function deckOf(parts) {
  *  with its index now (`new`), null for a shape inside a branch not read —
  *  its content was the duplicate of the branch that is. A slide whose part
  *  was not read (unreadable, or over the size guard) held no shape index and
- *  is not listed. Null when `parts` is not an ok parts result (R21).
- * @param {*} parts `pptxEntry.parts()`'s own (awaited) result; anything else answers null
- * @returns {PptxRenumbering|null}
- */
+ *  is not listed. Null when `parts` is not an ok parts result (R21). */
 export function pptxRenumbering(parts) {
   if (!parts || parts.ok !== true || !(parts.slideXml instanceof Map) || !Array.isArray(parts.slideParts)) return null;
   const slides = [];
@@ -1081,102 +1054,6 @@ async function pptxText(parts, opts) {
  * The I7 entry
  * ------------------------------------------------------------------ */
 
-/**
- * @typedef {Object} PptxDetection
- * @property {string} format always "pptx"
- * @property {string} confidence "likely" (never "certain" from detect)
- * @property {string[]} signals what was seen, in words
- */
-/**
- * What `parts()` hands back (R4): `ok:false` with `why` and `signals` only
- * when the bytes are not a readable PPTX; otherwise the deck's files as read,
- * an unreadable part carried in `undetermined`, never a failure.
- * @typedef {Object} PptxParts
- * @property {boolean} ok
- * @property {*} [why] why the bytes are not a readable PPTX (ok:false)
- * @property {*} [signals] what discrimination saw (ok:false)
- * @property {string} [format] "pptx"
- * @property {*} [variant] the macro-enabled twin read, or null (R33)
- * @property {Uint8Array} [bytes]
- * @property {*} [container] ooxml.mjs's container reading
- * @property {*} [mainPart]
- * @property {*} [order] slide part names in declared deck order, null when unreadable (R8)
- * @property {*} [slideParts]
- * @property {*} [notesParts]
- * @property {*} [masterParts]
- * @property {*} [slideXml] Map of slide part to its XML, for parts read whole
- * @property {*} [notesXml]
- * @property {*} [masterXml]
- * @property {*} [hiddenParts] slide parts whose bytes declare show false
- * @property {*} [rels]
- * @property {*} [core] the core properties, or null
- * @property {*} [active] what in the file can act when opened (R32)
- * @property {*} [guard] the size guard's marker when over the bound, else null (R12)
- * @property {*} [piecewise] set when the deck is read one part at a time (R35)
- * @property {boolean} [stream]
- * @property {*} [undetermined] the parts that exist but cannot be read
- */
-/**
- * What `structure()` hands back (R7-R10): `ok:false` with `reason` when
- * parts failed; else the links in their partitions, their counts and the
- * evidentiary envelope, with `active` and `variant` (R32, R33).
- * @typedef {Object} PptxStructure
- * @property {boolean} ok
- * @property {string} [container] "pptx", on every answer
- * @property {*} [reason] why parts failed (ok:false)
- * @property {*} [slides] a number: the deck's slide count as read
- * @property {*} [links] an array of LinkRecords, `{partition, wrapper, target, source}` (R7)
- * @property {*} [counts] links per partition
- * @property {*} [evidentiary] the DEC-5 envelope `{container, kinds, items, undetermined, counts}` (R10)
- * @property {*} [notes] an array of strings: remarks, not speaker notes
- * @property {*} [active] (R32)
- * @property {*} [variant] (R33)
- */
-/**
- * What `text()` hands back (R11, R31, R34, R38): `ok:false` with `reason`
- * when parts failed; else the deck's text, slide units and speaker notes kept
- * apart, with `metadata`, `parts`, `active`, `variant` and `images`.
- * @typedef {Object} PptxText
- * @property {boolean} ok
- * @property {string} [container] "pptx", on every answer
- * @property {*} [reason] why parts failed (ok:false)
- * @property {*} [document] a string or null: the slides' text as presented, never the speaker notes; null when not read
- * @property {*} [slides] an array, one unit per readable slide
- * @property {*} [speakerNotes] an array, one unit per notes part, apart from slide text
- * @property {*} [parts] the units outside the body's own (R38)
- * @property {*} [deckLength] a number or null: the slides the deck declares; null when its order is unreadable
- * @property {*} [undetermined] what could not be read, stated
- * @property {*} [counts] chars, notesChars, undetermined, scanned_bytes
- * @property {*} [piecewise] set when read one part at a time (R35)
- * @property {*} [metadata] the core properties' author, dates and title (R31, R34)
- * @property {*} [active] (R32)
- * @property {*} [variant] (R33)
- * @property {*} [images] the ppt/media/ images, or null
- */
-/**
- * @typedef {Object} PptxEntry
- * @property {string} format "pptx"
- * @property {(bytes: *, contentType?: *) => (PptxDetection|null)} detect
- *   R2: by bytes (ZIP magic, a readable central directory naming both
- *   [Content_Types].xml and ppt/presentation.xml), else by exact content type
- * @property {(bytes: *) => Promise<PptxParts>} parts R4
- * @property {(partsOrBytes: *, opts?: *) => Promise<PptxStructure>} structure
- *   R7-R10; takes parts() output or raw bytes
- * @property {(partsOrBytes: *, opts?: *) => Promise<PptxText>} text
- *   R11, R31, R34, R38; takes parts() output or raw bytes
- * @bound parts.guard: set, and no slide or notes part read, when the declared
- *   uncompressed bytes of ppt/slides/* and ppt/notesSlides/* are over ooxml's
- *   streamed ceiling; over MEASURED_OOXML_TEXT_BOUND_BYTES and up to that
- *   ceiling the parts are read one at a time (R12, R35)
- * @bound text.document: null, with the guard's marker in undetermined, when
- *   parts.guard is set (R12)
- */
-/**
- * The PPTX registry entry (I7): detect, parts, structure and text for .pptx
- * and its macro-enabled twins (R2, R4, R7-R12, R31-R34, R38). Never throws
- * (R21): every failure is a returned `ok:false` or a stated undetermined.
- * @type {PptxEntry}
- */
 export const pptxEntry = {
   format: "pptx",
   detect(bytes, contentType) {

@@ -54,7 +54,7 @@ test("R42 four answers (modified, removed, unchanged, could not be told) draw fo
 });
 
 test("R42 the exported drawing is the one the screen uses; control: it never says one outcome for another", async () => {
-  const cs = { w: (k, f) => word(k, f), date: (iso) => iso };
+  const cs = { w: (k, f) => word(k, f) };
   const seen = new Set(["modified", "removed", "unchanged", undefined].map((status) => checkOutcome(cs, { status, note: "n" }, "T")));
   assert.equal(seen.size, 4, "four answers, four sentences");
 });

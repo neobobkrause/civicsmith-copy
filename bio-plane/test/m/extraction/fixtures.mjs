@@ -3,8 +3,6 @@
    extraction's own, `fixtures.test.mjs`, which checks the real answer. Each runs this module's real code over `fresh()` (its real record-core and membership
    over a real SQLite database) with a scripted evidence bucket, and the real reader (reading-pipeline's) where a read is made. */
 import { fresh, bundle, bucket, doc, sha, member, ocrAnswer, homesOver, hold, i2, noText, pageUnits, pressThenPass } from "./fixture.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const lines = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 /** A text of `n` lines (about 99 bytes each) ending in a mark, so a read of it goes on in pieces of 4,096 units. */
@@ -20,7 +18,7 @@ async function held(bytes, { ct = "text/plain", format = "undetermined", fromTex
   const d = sha(u8);
   rows.set(d, { bundleId: "INFO-1", path: "f", encoding: "binary", bytes: u8.length });
   const document = doc({ digest: d, bytes: u8.length, ct, format, fromText });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   if (whole) await evidence.put(`bio/captures/${d}`, u8);
   return { w, d, rows, evidence, document };
 }

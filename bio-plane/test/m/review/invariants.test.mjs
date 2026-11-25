@@ -156,7 +156,7 @@ test("R24, R30, R31: case_drafts, review_grants and review_comments (and T41's a
   assert.ok(before.every((n) => n > 0));
   const one = w.record.purge({ bundleId: P });
   assert.deepEqual(counts(), before, "a single-bundle purge leaves them");
-  for (const t of ["case_drafts", "review_grants", "review_comments"]) assert.equal(one.removed[t] ?? 0, 0);
+  for (const t of ["case_drafts", "review_grants", "review_comments"]) assert.equal(one.removed?.[t] ?? one.tables?.[t] ?? 0, 0);
   w.record.purge({});
   assert.deepEqual(counts(), [0, 0, 0], "the whole-store purge clears them");
   assert.ok(w.count("minted_ids") > 0, "the minted ids are never reissued");

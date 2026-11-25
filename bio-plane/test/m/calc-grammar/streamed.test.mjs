@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import * as calc from "../../../src/calc-grammar/index.mjs";
-/** @import { Figure, Refusal, Undetermined, OneOf } from "../../../src/calc-grammar/decimal.mjs" */
 import { bothWays, streamed, asObjects } from "./fixtures/stream.mjs";
 import { FIELDS, rowAt, table, RECIPES, recipeOf, resolveId } from "./fixtures/heap.mjs";
 
@@ -16,25 +15,25 @@ test("R21 relate is exported from the index: R10's relation of two figures, lowe
   assert.equal(typeof relate, "function");
   const R = (lo, hi) => ({ low: lo, high: hi, sign: lo.startsWith("-") ? "-" : "+", precision: "range" });
   const rounded = (v) => ({ ...fig(v), precision: "rounded" });
-  for (const [a, b, want] of /** @type {Array<[Figure, Figure, string]>} */ ([
+  for (const [a, b, want] of [
     [fig("1"), fig("2"), "lower"], [fig("2"), fig("1"), "higher"], [fig("2.0"), fig("2"), "equal"], [fig("-3"), fig("-3.00"), "equal"],
     [fig("-3"), fig("2"), "lower"], [fig("0"), fig("-0.01"), "higher"],
     [rounded("4200000"), fig("4300000"), "lower"], [rounded("4200000"), fig("4100000"), "higher"],
     [R("1", "3"), fig("4"), "lower"], [R("1", "3"), fig("0.5"), "higher"], [R("1", "3"), R("3.5", "9"), "lower"],
     [fig("5", { currency: "USD" }), fig("7", { currency: "USD" }), "lower"], [fig("5", { unit: "percent" }), fig("5", { unit: "percent" }), "equal"],
-  ])) assert.equal(relate(a, b), want, `${JSON.stringify(a)} ${JSON.stringify(b)}`);
-  for (const [a, b] of /** @type {Array<[Figure, Figure]>} */ ([[rounded("4200000"), fig("4210000")], [rounded("4200000"), rounded("4200000")], [{ ...fig("5"), precision: "approximate" }, fig("100")],
-    [R("1", "3"), fig("2")], [R("1", "3"), R("3", "4")], [fig("2"), rounded("2")]])) {
-    const r = /** @type {Undetermined} overlapping readings settle nothing */ (relate(a, b));
+  ]) assert.equal(relate(a, b), want, `${JSON.stringify(a)} ${JSON.stringify(b)}`);
+  for (const [a, b] of [[rounded("4200000"), fig("4210000")], [rounded("4200000"), rounded("4200000")], [{ ...fig("5"), precision: "approximate" }, fig("100")],
+    [R("1", "3"), fig("2")], [R("1", "3"), R("3", "4")], [fig("2"), rounded("2")]]) {
+    const r = relate(a, b);
     assert.equal(r.undetermined, true, JSON.stringify([a, b])); assert.ok(r.why.length > 0);
   }
-  for (const [a, b, names] of /** @type {Array<[Figure, Figure, string[]]>} */ ([[fig("1", { currency: "USD" }), fig("1", { currency: "EUR" }), ["currency USD", "currency EUR"]],
-    [fig("1", { currency: "USD" }), fig("1"), ["currency USD", "no unit or currency"]], [fig("1", { unit: "percent" }), fig("1", { unit: "FTE" }), ["unit percent", "unit FTE"]]])) {
-    const r = /** @type {Refusal} differing units are refused */ (relate(a, b));
+  for (const [a, b, names] of [[fig("1", { currency: "USD" }), fig("1", { currency: "EUR" }), ["currency USD", "currency EUR"]],
+    [fig("1", { currency: "USD" }), fig("1"), ["currency USD", "no unit or currency"]], [fig("1", { unit: "percent" }), fig("1", { unit: "FTE" }), ["unit percent", "unit FTE"]]]) {
+    const r = relate(a, b);
     assert.equal(r.refused, "UNIT_MISMATCH");
     for (const n of names) assert.ok(r.why.includes(n), r.why);
   }
-  assert.equal(/** @type {Refusal} */ (relate({ value: "1e3", sign: "+", precision: "exact" }, fig("1"))).refused, "FIGURE_INVALID");
+  assert.equal(relate({ value: "1e3", sign: "+", precision: "exact" }, fig("1")).refused, "FIGURE_INVALID");
   assert.throws(() => relate(1, fig("1")), TypeError);
   // The relation compare (R10) labels is relate's.
   const cmp = evaluate({ method: METHOD, inputs: [{ name: "a", kind: "figure" }, { name: "b", kind: "figure" }], steps: [{ op: "compare", as: "c", a: "a", b: "b" }], output: "c" },
@@ -131,7 +130,7 @@ test("R22 at scale: past a pass's read-ahead (several passes), sort, join and gr
 test("R22 a malformed streamed table is refused INPUT_INVALID, as a malformed table is; so is one that reads another table on a later pass", () => {
   const rec = { method: METHOD, inputs: [{ name: "t", kind: "table" }], steps: [{ op: "count", as: "c", from: "t" }], output: "c" };
   const f = [{ name: "a", type: "string" }, { name: "b", type: "number" }];
-  for (const [what, t] of /** @type {Array<[string, *]>} malformed streamed tables, on purpose */ ([
+  for (const [what, t] of [
     ["rows neither a list nor a function", { fields: f, rows: "a,b" }],
     ["rows answers no iterator", { fields: f, rows: () => 5 }],
     ["rows throws", { fields: f, rows: () => { throw new Error("gone"); } }],
@@ -141,7 +140,7 @@ test("R22 a malformed streamed table is refused INPUT_INVALID, as a malformed ta
     ["the iterator throws", { fields: f, rows: function* rows() { yield ["x", "1"]; throw new Error("broken stream"); } }],
     ["a field is malformed", { fields: [{ name: "a", type: "money" }], rows: () => [][Symbol.iterator]() }],
     ["a field is declared twice", { fields: [f[0], f[0]], rows: () => [][Symbol.iterator]() }],
-  ])) {
+  ]) {
     const r = evaluate(rec, { t });
     assert.equal(r.refused, "INPUT_INVALID", what); assert.ok(r.why.includes('"t"'), `${what}: ${r.why}`);
   }

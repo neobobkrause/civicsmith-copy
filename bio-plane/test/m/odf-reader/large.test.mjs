@@ -5,7 +5,6 @@ import assert from "node:assert/strict";
 import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { MEASURED_OOXML_TEXT_BOUND_BYTES } from "../../../src/ooxml.mjs";
 import { pkg } from "./pkg.mjs";
-/** @import { OdfEntry } from "../../../src/odf.mjs" */
 
 const BOUND = MEASURED_OOXML_TEXT_BOUND_BYTES;
 
@@ -19,9 +18,7 @@ function bigPackage(flavour) {
   return pkg(flavour, { body: unit.repeat(Math.ceil((BOUND + 4096) / unit.length)) });
 }
 
-/** @type {[string, OdfEntry][]} */
-const ENTRIES = [["odt", odtEntry], ["ods", odsEntry], ["odp", odpEntry]];
-for (const [flavour, entry] of ENTRIES) {
+for (const [flavour, entry] of [["odt", odtEntry], ["ods", odsEntry], ["odp", odpEntry]]) {
   test(`R48 ${flavour}: a content.xml over the bound is stated with its size, final, in text() and in structure()`, async () => {
     const bytes = bigPackage(flavour);
     const parts = await entry.parts(bytes);

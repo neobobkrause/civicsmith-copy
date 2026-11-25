@@ -33,7 +33,7 @@ test("R3 T33 spaces: account, object, vendor, proceeding and person are known sp
   assert.ok(hasError(breakT((p) => { p.spaces.person.kinds = []; }), "UNKNOWN_SECTION", "spaces.person.kinds"), "kinds are enactment's only");
   /* one form per person scheme */
   assert.deepEqual(t.spaces.person.forms.map((f) => f.form), ["minute-person", "bar-number"]);
-  assert.deepEqual(get(FIRST)?.spaces.person.forms.map((f) => f.form), ["legistar-person"]);
+  assert.deepEqual(get(FIRST).spaces.person.forms.map((f) => f.form), ["legistar-person"]);
   /* the view carries them */
   const v = combine([TEST]).view;
   for (const sp of ["account", "object", "vendor", "proceeding", "person"]) assert.ok(v.spaces[sp], sp);
@@ -41,7 +41,7 @@ test("R3 T33 spaces: account, object, vendor, proceeding and person are known sp
 
 test("R6 T33 vocabulary: a code's copy and sections; amending, meeting_markers, body_variants, roster words, headers and staff titles", () => {
   for (const key of ["amending", "meeting_markers", "body_variants", "roster_words", "roster_headers", "staff_titles"]) {
-    assert.ok(get(TEST)?.vocabulary[key].length, key);
+    assert.ok(get(TEST).vocabulary[key].length, key);
     assert.ok(!hasError(validate(get(TEST)), "UNKNOWN_VOCABULARY"), key);
     assert.ok(hasError(breakT((p) => { p.vocabulary[key][0].pattern = { re: ")" }; }), "PATTERN_INVALID", `vocabulary.${key}[0].pattern`), key);
   }
@@ -67,7 +67,7 @@ test("R6 T33 vocabulary: a code's copy and sections; amending, meeting_markers, 
   for (const bad of ["City Council", "", undefined, "1st"]) assert.ok(hasError(breakT((p) => { p.vocabulary.body_variants[0].organisation = bad; }), "VALUE_INVALID", "vocabulary.body_variants[0].organisation"));
   assert.ok(hasError(breakT((p) => { p.vocabulary.roster_words[0].organisation = "x"; }), "UNKNOWN_SECTION", "vocabulary.roster_words[0].organisation"));
   /* the first profile's Legistar markers and body variants read Legistar's own names (legistar-events §1, §5) */
-  const f = get(FIRST)?.vocabulary;
+  const f = get(FIRST).vocabulary;
   const rx = (e) => new RegExp(e.pattern.re, e.pattern.flags || "");
   const marker = (name) => f.meeting_markers.filter((e) => rx(e).test(name)).map((e) => e.marker).sort();
   assert.deepEqual(marker("*Finance and Management Committee - CANCELLED"), ["cancelled"]);
@@ -81,10 +81,10 @@ test("R6 T33 vocabulary: a code's copy and sections; amending, meeting_markers, 
   assert.equal(org("* Public Works And Transportation Committee"), "public_works_committee");
   assert.equal(org("Meeting of the Oakland City Council  - CANCELLATION"), "city_council");
   assert.equal(org("Office of the Mayor Annual Recess Agenda"), undefined);
-  assert.equal(get(FIRST)?.vocabulary.codes[0].copy, "codifier", "the OMC is served by its codifier (time-law §4)");
-  assert.ok(new RegExp(`^(?:${get(FIRST)?.vocabulary.codes[0].sections.number.re})$`).test("2.20.070"));
+  assert.equal(get(FIRST).vocabulary.codes[0].copy, "codifier", "the OMC is served by its codifier (time-law §4)");
+  assert.ok(new RegExp(`^(?:${get(FIRST).vocabulary.codes[0].sections.number.re})$`).test("2.20.070"));
   /* the printed orders doctypes measured (K1521) */
-  const codes = Object.fromEntries(get(FIRST)?.vocabulary.codes.map((c) => [c.key, c.sections]));
+  const codes = Object.fromEntries(get(FIRST).vocabulary.codes.map((c) => [c.key, c.sections]));
   assert.deepEqual(codes.omc.markers, ["letter", "numeral", "letter", "roman", "paren_numeral"]);
   assert.deepEqual([codes.charter.separators, codes.charter.markers], ["", ["paren_letter", "paren_numeral", "paren_letter", "roman"]]);
   assert.ok(new RegExp(`^(?:${codes.charter.number.re})$`).test("200"));
@@ -94,7 +94,7 @@ test("R7 T33 practice: minutes_due_days with count calendar (absent) or business
   for (const count of ["calendar", "business"]) assert.ok(breakT((p) => { p.practice.minutes_due_days.count = count; }).ok, count);
   assert.ok(breakT((p) => { delete p.practice.minutes_due_days.count; }).ok, "count is optional: calendar");
   for (const bad of ["working", "", 1]) assert.ok(hasError(breakT((p) => { p.practice.minutes_due_days.count = bad; }), "COUNT_UNKNOWN", "practice.minutes_due_days.count"));
-  assert.deepEqual(get(FIRST)?.practice.minutes_due_days, { value: 10, count: "business", closures: "city", basis: "2026-10-05 time-law" });
+  assert.deepEqual(get(FIRST).practice.minutes_due_days, { value: 10, count: "business", closures: "city", basis: "2026-10-05 time-law" });
   /* K1533: closures names one of the profile's closure lists */
   assert.ok(breakT((p) => { p.practice.minutes_due_days.closures = "court"; }).ok);
   assert.ok(breakT((p) => { delete p.practice.minutes_due_days.closures; }).ok, "absent: a business count's due is undetermined");
@@ -223,7 +223,7 @@ test("R46 weekend {days, citation, status, basis} and computation [{key, rule, c
   assert.ok(hasError(breakT((p) => { p.weekend.from = "2026"; }), "UNKNOWN_SECTION", "weekend.from"));
   assert.ok(breakT((p) => { delete p.weekend; }).ok, "absent: a business count is undetermined (civil-time R9), never assumed");
   assert.equal(combine([FIRST]).view.weekend.days.join(), "sat,sun");
-  assert.match(get(FIRST)?.weekend.citation, /12a/);
+  assert.match(get(FIRST).weekend.citation, /12a/);
   /* computation */
   assert.ok(hasError(breakT((p) => { p.computation[0].rule = "include_both"; }), "VALUE_INVALID", "computation[0].rule"));
   for (const bad of ["CCP-12", "", "1x"]) assert.ok(hasError(breakT((p) => { p.computation[0].key = bad; }), "VALUE_INVALID", "computation[0].key"));
@@ -231,7 +231,7 @@ test("R46 weekend {days, citation, status, basis} and computation [{key, rule, c
   assert.ok(hasError(breakT((p) => { delete p.computation[0].citation; }), "VALUE_INVALID", "computation[0].citation"));
   /* the Monday safe harbour is a rule of its own (applies_on, due_at; K1514), never a computation */
   assert.ok(hasError(breakT((p) => { p.computation[0].rule = "monday_prior_friday_noon"; }), "VALUE_INVALID", "computation[0].rule"));
-  assert.deepEqual(get(FIRST)?.computation.map((c) => [c.key, c.rule, c.citation]),
+  assert.deepEqual(get(FIRST).computation.map((c) => [c.key, c.rule, c.citation]),
     [["ccp_12", "exclude_first_include_last", "Cal. Code Civ. Proc. § 12; Cal. Gov. Code § 6800"]]);
 });
 
@@ -337,7 +337,7 @@ test("R52 identifier_schemes name a space, form and systems of the profile; clas
   assert.ok(hasError(breakT((p) => { p.classification_schemes[0].codes.push({ code: "100-01", label: "Again" }); }), "SCHEME_INVALID", `${C}.codes[2].code`));
   assert.ok(hasError(breakT((p) => { p.classification_schemes[0].codes[0] = { code: "1" }; }), "SCHEME_INVALID", `${C}.codes[0]`));
   /* the first profile's Legistar person scheme: its PersonId form and its system (T34's body and office schemes follow, R61) */
-  assert.deepEqual(get(FIRST)?.identifier_schemes[0], { scheme: "legistar_person_id", label: "Legistar PersonId", entity_kinds: ["person"],
+  assert.deepEqual(get(FIRST).identifier_schemes[0], { scheme: "legistar_person_id", label: "Legistar PersonId", entity_kinds: ["person"],
     space: "person", form: "legistar-person", systems: ["oakland.legistar"], basis: "2026-10-05 legistar-events" });
 });
 
@@ -349,7 +349,7 @@ test("R53 lawful_demands: kind, label, covers from home_address, phone, other, w
   assert.ok(hasError(breakT((p) => { p.lawful_demands.push({ ...p.lawful_demands[0] }); }), "DEMAND_INVALID", "lawful_demands[1].kind"));
   assert.ok(hasError(breakT((p) => { p.lawful_demands[0].kind = "Officer"; }), "DEMAND_INVALID", `${D}.kind`));
   /* K1493: Gov. Code §7928.215, an official's home address or phone, within 48 hours */
-  assert.deepEqual(get(FIRST)?.lawful_demands.map((d) => [d.citation, d.covers, d.within, d.status, d.basis]),
+  assert.deepEqual(get(FIRST).lawful_demands.map((d) => [d.citation, d.covers, d.within, d.status, d.basis]),
     [["Cal. Gov. Code § 7928.215", ["home_address", "phone"], { amount: 48, units: "hours" }, "ruled", "K1493"]]);
 });
 
@@ -373,7 +373,7 @@ test("R55 combine: T33's one-value facts withheld and reported when profiles dis
   const same = combine([TEST, other((b) => { b.weekend.basis = "TEST"; })]);
   assert.deepEqual(same.conflicts, [], JSON.stringify(same.conflicts.map((c) => c.at)));
   assert.deepEqual(same.view.weekend.bases.map((x) => x.profile), [TEST, "test-other"]);
-  assert.equal(same.view.recurrences.length, get(TEST)?.recurrences.length, "equal entries kept once");
+  assert.equal(same.view.recurrences.length, get(TEST).recurrences.length, "equal entries kept once");
   const changes = {
     weekend: (b) => { b.weekend.days = ["sat", "sun"]; },
     "computation[clear_days]": (b) => { b.computation[0].citation = "Other § 1"; },
@@ -420,7 +420,7 @@ test("R55 combine: T33's one-value facts withheld and reported when profiles dis
   const t0 = get(TEST);
   for (const sec of ["proceeding_kinds", "identifier_schemes", "classification_schemes", "recurrences"])
     assert.equal(uv[sec].length, t0[sec].length + 1, sec);
-  assert.equal(uv.vocabulary.roster_words.length, get(TEST)?.vocabulary.roster_words.length + 1);
+  assert.equal(uv.vocabulary.roster_words.length, get(TEST).vocabulary.roster_words.length + 1);
   /* a deadline written `days: n` and one written `units: days, amount: n` agree (R26) */
   const legacy = combine([TEST, other((b) => { const r = dl(b, "records_answer"); delete r.days; r.units = "days"; r.amount = 5; })]);
   assert.ok(!legacy.conflicts.some((x) => x.at.startsWith("deadlines[records_answer")));
@@ -584,7 +584,7 @@ test("R57 the OMC 48-business-hour fixture, re-derived from the code's text and 
 /* K1513, K1514, K1517: the clarifications BOB folded during the job.                              */
 
 test("R26 K1514 applies_on (the anchor's weekdays) and due_at (close_of_business or HH:MM); one value per key in combine", () => {
-  const i = get(TEST)?.deadlines.findIndex((d) => d.rule === "notice_of_sitting_friday");
+  const i = get(TEST).deadlines.findIndex((d) => d.rule === "notice_of_sitting_friday");
   const D = `deadlines[${i}]`;
   for (const on of [["mon"], ["sat", "sun"], ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]]) assert.ok(breakT((p) => { p.deadlines[i].applies_on = on; }).ok, on.join());
   for (const bad of [[], ["Mon"], ["mon", "mon"], "mon", null])
@@ -616,12 +616,12 @@ test("R6 K1513 K1517 roster words with a kind, roster headers with a role, and t
     assert.ok(breakT((p) => { p.vocabulary.budget_headers[0].column = col; }).ok, col);
   for (const bad of ["total", "", undefined]) assert.ok(hasError(breakT((p) => { p.vocabulary.budget_headers[0].column = bad; }), "VALUE_INVALID", "vocabulary.budget_headers[0].column"));
   for (const key of ["financial_report_titles", "budget_book_titles", "financial_headings", "fiscal_year_forms", "budget_headers"]) {
-    assert.ok(get(TEST)?.vocabulary[key].length && get(FIRST)?.vocabulary[key].length, key);
+    assert.ok(get(TEST).vocabulary[key].length && get(FIRST).vocabulary[key].length, key);
     assert.ok(hasError(breakT((p) => { p.vocabulary[key][0].pattern = { re: "(" }; }), "PATTERN_INVALID", `vocabulary.${key}[0].pattern`), key);
   }
-  assert.deepEqual([...new Set(get(TEST)?.vocabulary.roster_headers.map((h) => h.role))].sort(), ["as_of", "contact", "employee_id", "end", "name", "start", "title", "unit"]);
+  assert.deepEqual([...new Set(get(TEST).vocabulary.roster_headers.map((h) => h.role))].sort(), ["as_of", "contact", "employee_id", "end", "name", "start", "title", "unit"]);
   /* the first profile reads the City's own documents (K1513, K1517) */
-  const v = get(FIRST)?.vocabulary;
+  const v = get(FIRST).vocabulary;
   const rx = (e) => new RegExp(e.pattern.re, e.pattern.flags || "");
   const any = (key, line) => v[key].filter((e) => rx(e).test(line));
   assert.deepEqual(any("roster_words", "COMMITTEE MEMBER ROSTER AND ASSIGNED STAFF").map((e) => e.kind), ["roster"]);
@@ -651,12 +651,12 @@ test("R6 K1513 K1517 roster words with a kind, roster headers with a role, and t
 });
 
 test("R52 K1513 classification_schemes: forms and the project kind; the first profile's fund, org, department, program, account and project codes", () => {
-  const i = get(TEST)?.classification_schemes.findIndex((x) => x.kind === "project");
+  const i = get(TEST).classification_schemes.findIndex((x) => x.kind === "project");
   assert.ok(i >= 0, "a project scheme");
   const C = `classification_schemes[${i}]`;
   for (const [bad, at] of [[[], `${C}.forms`], [[{ re: "(" }], `${C}.forms[0]`], ["WO", `${C}.forms`]]) assert.ok(hasError(breakT((p) => { p.classification_schemes[i].forms = bad; }), "SCHEME_INVALID", at), JSON.stringify(bad));
   assert.ok(hasError(breakT((p) => { p.classification_schemes[i].forms = [{ re: "(" }]; }), "SCHEME_INVALID", `${C}.forms[0]`));
-  const f = get(FIRST)?.classification_schemes;
+  const f = get(FIRST).classification_schemes;
   assert.deepEqual(f.map((x) => x.kind), ["fund", "organisation", "organisation", "program", "account", "project"]);
   const reads = (scheme, value) => f.find((x) => x.scheme === scheme).forms.some((p) => new RegExp(p.re, p.flags || "").test(value));
   assert.ok(reads("oakland_fund", "FD_1010") && reads("oakland_fund", "1010"));

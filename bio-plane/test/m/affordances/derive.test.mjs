@@ -262,12 +262,12 @@ test("R52: escalation's stop and reopening and clockadopt are returned exactly w
   /* decorated, each keeps what it names; R11's keys otherwise unchanged */
   const d = acts.filter((a) => a.id === "clockadopt").map((a) => decorate(a, null));
   assert.deepEqual(d.map((x) => x.proposal), ["deadline@M-1", "reply@M-2"]);
-  assert.deepEqual(Object.keys(decorate(acts.find((a) => a.id === "actionhold") ?? assert.fail("actionhold is offered"), null)).includes("proposal"), false);
+  assert.deepEqual(Object.keys(decorate(acts.find((a) => a.id === "actionhold"), null)).includes("proposal"), false);
   /* controls: no proposal standing, none offered; attachment at stages 2 and 5 names no purposes */
   const none = deriveActs(make(f, {}, { action: { ...ACTION_ALL, clock: { ...ACTION_ALL.clock, proposals: [] },
     escalation: { ...ACTION_ALL.escalation, attach_purposes: null } } }));
   assert.equal(none.some((a) => a.id === "clockadopt"), false);
-  assert.equal((none.find((a) => a.id === "escalationattach") ?? assert.fail("attachment is offered")).purposes, undefined);
+  assert.equal(none.find((a) => a.id === "escalationattach").purposes, undefined);
 });
 
 test("R8 R9 R10 R51 R52: the oracle covers exactly the acts in ACTS", () => {

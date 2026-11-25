@@ -16,87 +16,6 @@
 import { zipChunks64, zipChunks64Sized } from "./make-zip.mjs";
 import { hash32, VOCAB, LATIN_VOCAB } from "./seeded.mjs";
 
-/**
- * A sheet recipe (R19, R21): the kind, the seed and the options the file header lists; any option left out takes its default.
- * @typedef {Object} SheetRecipe
- * @property {string} kind one of KINDS
- * @property {unknown} [seed] any value, written as `String(seed)`; without it the recipe is refused
- * @property {{rows?: number, cols?: number, bytes?: number}} [size] data rows (20), columns (6), exact file bytes (CSV, TSV) or package bytes
- * @property {string|{chars: number}} [header] "one" (default), "none", "title", or a header of `chars` characters
- * @property {string[]} [types] cell types by column, cycled: text, integer, decimal, percent, currency, date, formula
- * @property {string} [encoding] for CSV and TSV: utf-8 (default), utf-8-bom, utf-16le, utf-16be, utf-16le-bom, utf-16be-bom, windows-1252
- * @property {string} [eol] crlf (default), lf or cr
- * @property {string} [delimiter] the field delimiter (`,`, or a tab for TSV)
- * @property {string[]} [quoting] any of doubled, newline, tab, stray
- * @property {{leading?: boolean, middle?: boolean, last?: boolean, row?: number, column?: number}} [empties] emptied columns, and every `row`th data row
- * @property {boolean} [ragged] rows of uneven length
- * @property {{row: number, col: number, chars: number}} [long] one long cell
- * @property {boolean} [merged] the title row merged (needs header "title")
- * @property {boolean} [annotations] a note on each mark of sheet 1
- * @property {string} [strings] XLSX strings: "shared" or inline (default)
- * @property {number} [sheets] the sheet count (1; CSV and TSV only 1)
- * @property {string} [hostile] bomb, lying-directory, lying-dimension, no-r or styled-empty
- * @property {number} [bound] a size bound: a larger file's truth carries a TOO_LARGE refusal
- * @bound size.cols: a positive integer (the code refuses less), to 16,385 columns (R21)
- * @bound size.rows: to the standard's 1,048,576 rows; size.bytes: to the standard's 50 MB (R21)
- */
-
-/**
- * A cell's truth; null stands for an empty cell.
- * @typedef {Object} SheetCell
- * @property {string} type text, integer, decimal, percent, currency, date or formula
- * @property {string|number} value the cell's value (a date as `YYYY-MM-DD`)
- * @property {string} text the text the file writes
- * @property {boolean} [mark] a `<seed>-R<row>-C<col>` mark
- * @property {boolean} [stray] text with a stray quote
- * @property {number} [serial] a date's spreadsheet serial
- * @property {string} [formula] a formula cell's formula
- */
-
-/**
- * The truth of a sheet (R19, R21): what an independent reader finds in it.
- * @typedef {Object} SheetTruth
- * @property {string} kind
- * @property {SheetRecipe} recipe
- * @property {number} rows data rows
- * @property {number} cols
- * @property {number} sheets
- * @property {number} headerRows
- * @property {number} fileRows header and data rows
- * @property {string[][]} header the header rows' texts
- * @property {string} encoding
- * @property {string} eol the line end itself
- * @property {string} delimiter
- * @property {(d: number, c: number, s?: number) => (SheetCell|null)} cell the cell at data row d, column c, sheet s
- * @property {(d: number, s?: number) => string[]} row the texts of data row d as the file writes them
- * @property {(d: number) => number} rowLength
- * @property {Object[]} marks each mark as `{sheet, dataRow, row, col, text}` (row the file row)
- * @property {(d: number, s?: number) => (string|null)} rowKey a data row's first text cell
- * @property {(units: string[], s?: number) => {ok: boolean, missing: number[], repeated: number[]}} checkUnits the J-1 check of an index
- * @property {string[]} merged merged ranges
- * @property {Object[]} annotations each note as `{ref, row, col, text}`
- * @property {{row: number, col: number, chars: number}|null} pad the padding written to reach size.bytes
- * @property {string|null} hostile
- * @property {{code: string, size: number, bound: number}|null} refusal
- * @property {number|null} size
- */
-
-/**
- * A generated sheet: its bytes as a lazy stream of chunks, or collected whole, with its truth.
- * @typedef {Object} SheetFile
- * @property {string} kind
- * @property {string} ext
- * @property {string} type the media type
- * @property {number|null} size null when the recipe names no size
- * @property {SheetTruth} truth
- * @property {() => AsyncGenerator<Uint8Array>} chunks a fresh stream of the file's bytes on each call
- * @property {() => Promise<Uint8Array>} bytes the whole file
- */
-
-/**
- * The sheet kinds sheetgen writes.
- * @type {ReadonlyArray<string>}
- */
 export const KINDS = Object.freeze(["csv", "tsv", "xlsx", "ods"]);
 const TYPES = { csv: "text/csv", tsv: "text/tab-separated-values", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ods: "application/vnd.oasis.opendocument.spreadsheet" };
 const CELL_TYPES = ["text", "integer", "decimal", "percent", "currency", "date", "formula"];
@@ -104,11 +23,7 @@ const ENCODINGS = ["utf-8", "utf-8-bom", "utf-16le", "utf-16be", "utf-16le-bom",
 const EOL = { crlf: "\r\n", lf: "\n", cr: "\r" };
 const DAY0 = Date.UTC(2015, 0, 1), EXCEL_EPOCH = Date.UTC(1899, 11, 30);
 
-/**
- * The column name of 1-based column `c` (A, Z, AA, XFD, XFE).
- * @param {number} c the 1-based column
- * @returns {string}
- */
+/** The column name of 1-based column `c` (A, Z, AA, XFD, XFE). */
 export function colName(c) {
   let s = "";
   for (let n = c; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
@@ -304,9 +219,6 @@ async function* csvChunks(p, L) {
  * An RFC 4180 reading of `text` (the generator's own independent reader, sharing no code with csv-reader): records
  * split on CRLF, LF or CR outside quotes; a field opening with `"` runs to its closing quote, `""` inside it is one
  * quote; a quote inside a field that did not open with one is kept as it is. A last line end makes no empty record.
- * @param {string} text the decoded file
- * @param {string} [delimiter] the field delimiter (`,`)
- * @returns {string[][]} the records, each a list of fields
  */
 export function rfc4180(text, delimiter = ",") {
   const out = [];
@@ -547,12 +459,7 @@ function truthFrom(p, rows, extra = {}) {
 }
 
 /** The sheet of a recipe (R19, R21): `{kind, ext, type, size, truth, chunks(), bytes()}`; `size` is null for a package
- *  whose size is not named (it is known once streamed).
- * @param {SheetRecipe} recipe
- * @returns {SheetFile}
- * @throws {Error} when the recipe names an unknown kind, type, encoding or line end, lacks a seed, has no text column for
- *  the marks, combines options that do not go together, or names a size.bytes its rows cannot meet
- */
+ *  whose size is not named (it is known once streamed). */
 export function generate(recipe) {
   const p = plan(recipe);
   if (p.kind === "csv" || p.kind === "tsv") {
@@ -581,11 +488,7 @@ async function collect(it) {
 }
 
 /** The truth of a recipe without building its file (R24): for a CSV sized by bytes the row count comes from a
- *  counting pass over the rows' lengths, which holds nothing.
- * @param {SheetRecipe} recipe
- * @returns {SheetTruth}
- * @throws {Error} when the recipe is refused as by generate
- */
+ *  counting pass over the rows' lengths, which holds nothing. */
 export function truthOf(recipe) {
   const p = plan(recipe);
   if (p.kind === "csv" || p.kind === "tsv") { const L = csvLayout(p); return truthFrom(p, L.rows, { pad: L.pad, size: p.size.bytes ?? null }); }

@@ -6,17 +6,12 @@ import { word } from "./setup-words/index.mjs";
 
 /* The producing group's slug grammar ("Terms"; R2, R4): 3 to 40 of a-z, 0-9 and '-', beginning and ending with a
    letter or digit. */
-/**
- * @type {RegExp} the producing group's slug grammar
- * @bound GROUP_SLUG_RE: 3 to 40 of a-z, 0-9 and '-', beginning and ending with a letter or digit
- */
 export const GROUP_SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 
 /* The fleet's members and the binding names the plane reads each by (R17), as `[member, binding]` pairs. T33 adds the
    recompute member (`sheet-worker`, K1531) and the assistant's container member (`agent-runner`, K1601), each read for
    its own build through the binding named here like every other member. T36 adds the virus scanner (`file-scanner`,
    K2152), which the installer installs with this binding (installer R44). */
-/** @type {string[][]} the fleet's members and their binding names, as `[member, binding]` pairs */
 export const FLEET_BINDINGS = [["agent-worker", "AGENT_WORKER"], ["pdf-worker", "PDF_WORKER"], ["ocr-worker", "OCR_WORKER"],
   ["sheet-worker", "SHEET_WORKER"], ["agent-runner", "AGENT_RUNNER"], ["file-scanner", "FILE_SCANNER"]];
 
@@ -30,7 +25,6 @@ export const FLEET_BINDINGS = [["agent-worker", "AGENT_WORKER"], ["pdf-worker", 
    `hostingControlBlock(cls, {guideHref})` is the block as HTML, every word escaped, in an element whose class is the
    caller's own; with `guideHref` (a screen's address of the guide) the guide's name is a link to it, and without (the
    installer's) it is text; with `deployer: true` (the installer's last screen, K3240) the deployer's steps follow. */
-/** R47, R97, R98: the block on who controls the team's Civicsmith, each text `word(key)` of the key beside it. */
 export const HOSTING_CONTROL = Object.freeze({
   heading: word("screen.hosting.heading"),
   sentences: Object.freeze([
@@ -53,15 +47,12 @@ export const HOSTING_CONTROL = Object.freeze({
 /* R47, R97, R98 (T48; K3240): the deployer's steps for that way back in, in the developer's own words, kept apart from the
    block so no member reads them: they belong to the installer's last screen and DEPLOY.md, whose texts add them after the
    block. The block itself says it in a founder's words (its last sentence above). Its text is `word("setup-fleet.hosting_recovery_deployer")`. */
-/** @type {string} R97: the word-list key of the deployer's steps */
 export const HOSTING_RECOVERY_DEPLOYER_KEY = "setup-fleet.hosting_recovery_deployer";
-/** @type {string} R47, R98: the deployer's steps, `word(HOSTING_RECOVERY_DEPLOYER_KEY)` */
 export const HOSTING_RECOVERY_DEPLOYER = word("setup-fleet.hosting_recovery_deployer");
 
 /* R47, R97, R98 (T48; K3240): what a member who cannot sign in is told on `forgot`, in members' words (DEC-149): who can help,
    and no more. Each text is `word(key)` of the row `keys` names beside it, as HOSTING_CONTROL's are. The founder-only
    block above ("who controls your team's Civicsmith") is for the founder's path and is not drawn here. */
-/** R47, R97, R98: what `forgot` draws for every visitor, each text `word(key)` of the key beside it. */
 export const FORGOT_HELP = Object.freeze({
   heading: word("screen.forgot.help.heading"),
   sentences: Object.freeze([word("screen.forgot.help.s1"), word("screen.forgot.help.s2")]),
@@ -69,12 +60,6 @@ export const FORGOT_HELP = Object.freeze({
 });
 
 const escBlock = (x) => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-/**
- * R47: the block as HTML, every word escaped.
- * @param {string} [cls] the class of the block's element
- * @param {{guideHref?: string | null, deployer?: boolean}} [opts] a screen's address of the guide (the guide's name becomes a link), and whether the deployer's steps follow
- * @returns {string}
- */
 export function hostingControlBlock(cls = "notice", { guideHref = null, deployer = false } = {}) {
   const { sentence, name } = HOSTING_CONTROL.guide;
   const guide = typeof guideHref === "string" && guideHref

@@ -30,9 +30,7 @@ export { CASE_DOCUMENT_FORMAT, CASE_DOCUMENT_FORMAT_V7, CASE_DOCUMENT_FORMAT_V6,
 
 /* A key's English with its placeholders left as written: `word` fills each `{name}` with `{name}` itself. */
 function wordAsWritten(key) {
-  const row = WORD_ROWS.find((r) => r[0] === key);
-  if (!row) throw new Error(`publication: setup-words holds no row ${key}`);
-  const en = row[1];
+  const en = WORD_ROWS.find((r) => r[0] === key)[1];
   return word(key, Object.fromEntries([...en.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map(([, name]) => [name, `{${name}}`])));
 }
 

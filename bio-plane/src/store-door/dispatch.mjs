@@ -51,8 +51,6 @@ import { localize } from "../setup-words/index.mjs";
  *
  * COST, STATED: one indexed lookup on `project_sight` per named parameter of a stamped read, and `#sight` only for
  * an id that row calls discoverable. A viewer never sent (an internal call) is not asked. */
-/** R2: each read naming a project, with the parameters that carry a bundle id.
- *  @type {Readonly<Record<string, string[]>>} */
 export const PROJECT_NAMING_READS = Object.freeze({
   image: ["id"], file: ["id"], projection: ["id"], excludedby: ["id"], backlinks: ["target"],
   reevaluations: ["target"], inquirystrength: ["id", "ids"], earnedbasis: ["id"], partitionindependence: ["id"],
@@ -101,8 +99,6 @@ export const PROJECT_NAMING_READS = Object.freeze({
    or the same key repeated (the query): `listedIds` reads all of them, splitting on anything that cannot be in an id, so no
    spelling a route accepts leaves an id unasked. `reviewcopy`'s `drafts` are DRAFT ids, so the read stays among those naming
    no project (below), as its single key does. */
-/** R2: each batch read, with its parameters that carry a list of bundle ids.
- *  @type {Readonly<Record<string, string[]>>} */
 export const PROJECT_NAMING_LISTS = Object.freeze({ casedrafts: ["projects"], inquirystrength: ["ids"] });
 const ID_SEPARATORS = /[\s,;|[\]"']+/;
 function listedIds(value, out = []) {
@@ -110,8 +106,6 @@ function listedIds(value, out = []) {
   else if (typeof value === "string") for (const t of value.split(ID_SEPARATORS)) if (t !== "") out.push(t);
   return out;
 }
-/** R2, R3, R14: each read declared to name no project, with the reason.
- *  @type {Readonly<Record<string, string>>} */
 export const PROJECT_NAMING_READS_NOT = Object.freeze({
   content: "`id` is a content row's fixed key, hash(capture, extent, chain) — never a bundle id",
   concerns: "`id` is an ENTITY id", connections: "`id` is an ENTITY id", instance: "`id` is an ENTITY id",
@@ -203,14 +197,6 @@ export const PROJECT_NAMING_READS_NOT = Object.freeze({
 /* R2 (REC-196): the answer for a read naming a discoverable project's own id, asked by a caller at EXISTENCE: C-70.1
    through membership's `existenceAct`, before the route runs. `visibilityOf(id)` is the sight index's setting, so
    `existenceAct` is asked only of an id the index calls discoverable (the cost stated above). */
-/** R2: the existence answer for a read naming a discoverable project the stamped viewer sees only at EXISTENCE, or null
- *  when the read runs as asked.
- *  @param {() => any} membershipOf answers the record's membership (`visibilityOf`, `existenceAct`)
- *  @param {string} op the read's name
- *  @param {URL} url the request's address, its query holding the stamped `viewer` and the read's parameters
- *  @param {any} body the request's parsed body, or null
- *  @returns {any} membership's existence answer (C-70.1), or null
- */
 export function existenceRead(membershipOf, op, url, body) {
   const params = Object.hasOwn(PROJECT_NAMING_READS, op) ? PROJECT_NAMING_READS[op] : null;
   const viewer = url.searchParams.get("viewer");
@@ -253,12 +239,6 @@ export function existenceRead(membershipOf, op, url, body) {
    CORRELATION id, the one thing the caller and the log share. The caller receives the code, the canned translation
    and the id — no stack, no message (a thrown message is written for a developer and routinely carries the same
    material), no path. `ok` stays false and the status 500, so every reader of the envelope treats it as no answer. */
-/** R6: the answer for an op that threw, its stack logged under a correlation id and never answered.
- *  @param {any} e what was thrown
- *  @param {any} op the op that threw (logged, at most 200 characters)
- *  @returns {{ok: boolean, error: string, reason: string, code: string, check: any, translation: any, correlation: string}}
- *  `ok` false, `reason` and `code` STORE_INTERNAL_ERROR (C-69.4)
- */
 export function storeInternalError(e, op) {
   const correlation = crypto.randomUUID();
   const answer = internalAnswer(correlation);
@@ -316,26 +296,18 @@ function purgeHoldRefusal(store, url) {
    and `aicredentialmint`'s) reaches the owners' maps only in the internal request's body, handed on as it arrived: the
    door sets none on the URL, reads no header for it, and removes one found in the query before any map receives the URL
    (or the read log its arguments), so no owner can read one there. */
-/** R9: the header carrying a stamped session. @type {string} */
 export const SESSION_HEADER = "x-bio-session";
-/** R9: the header carrying an ask's grant. @type {string} */
 export const GRANT_HEADER = "x-bio-grant";
-/** R9: the header carrying a credential's digest. @type {string} */
 export const CREDENTIAL_SHA_HEADER = "x-bio-credential-sha";
 const headerOf = (req, name) => {
   const v = req.headers.get(name);
   return typeof v === "string" && v !== "" ? v : null;
 };
-/** R9, R11: an ask's grant, from its header only.
- *  @param {Request} req the internal request
- *  @returns {string | null} the grant, or null when the header is absent or empty
- */
 export function grantOf(req) { return headerOf(req, GRANT_HEADER); }
 /* R9: each header's value handed to its owner's map on the in-process URL object `store.routes(url, body)` receives (no
    request's address): the session as `session` (credentials' sign-out routes) and `t` (credentials' `session`), the
    grant as `grant` (answers' `rule` and `answercheck`), the digest as `sha` (credentials' `aicredentiallook`). A header
    absent leaves the parameter as the Worker sent it, so the owners' maps are unchanged. */
-/** R9: the query parameter removed before any owner's map receives the address. @type {string} */
 export const SECRET_SHA_PARAM = "secretSha";
 const HANDED = Object.freeze([[SESSION_HEADER, ["session", "t"]], [GRANT_HEADER, ["grant"]], [CREDENTIAL_SHA_HEADER, ["sha"]]]);
 function handOn(req, url) {
@@ -398,15 +370,7 @@ function adminRefusal(ctx, by) {
    `store.namespace()` (the object's own name, plane R2) and `store.purgeHeld({bundleId})` (`actions`' R60 reader, plane
    R14), each a function asked at a purge and never before, for R4. The headers' credentials (R9) are set on the URL the
    map receives, and the grant is also handed as its third argument, which this module's `askcheck` (R11) reads. */
-/** R19: the ops whose POST body is handed on as the request's own stream, unread. @type {readonly string[]} */
 export const STREAMED_BODY_OPS = Object.freeze(["captureupload", "captureuploadpart"]);
-/** R1: the record store's door.
- *  @param {Request} req the internal request; its path names the op
- *  @param {any} store the record's object: `routes(url, body, grant)`, `membership()`, and, at a purge, `namespace()` and
- *  `purgeHeld({bundleId})`; `logRead` for a read under a grant (R11)
- *  @returns {Promise<Response>} `{ok: true, result}`; a route's own Response as given (R13); 400 BAD_JSON or
- *  `unknown op: <op>` (R1); 409 PURGE_HOLD_IN_PLACE (R4); 500 STORE_INTERNAL_ERROR (R6)
- */
 export async function dispatch(req, store) {
   const url = new URL(req.url);
   const op = url.pathname.slice(1);
@@ -462,18 +426,6 @@ export async function dispatch(req, store) {
    in the body, with `by` and `viewer` stamped from the query (R10). `assistant` is resolved by the door and never read from
    the body, so it is declared nowhere. An absent or malformed `answers` is refused by name (GROUP_DRAFT_ANSWERS_MALFORMED,
    instance-setup R65), so `answers` is both accepted and required. */
-/**
- * @typedef {Object} DeclaredOp
- * @property {string[]} classes
- * @property {string[]} machineClasses
- * @property {boolean} mutating
- * @property {string[]} stamps
- * @property {string} weight
- * @property {string} description
- * @property {{accepts: string[], requires: (string | string[])[]}} fields
- */
-/** R17: the op this door serves that a screen sends and no full declaration holds.
- *  @type {Readonly<Record<string, DeclaredOp>>} */
 export const DECLARED_OPS = Object.freeze({
   groupdescriptiondraft: { classes: ["admin", "member"], machineClasses: [], mutating: false, stamps: ["viewer", "by"], weight: "read",
     description: localize("store-door.declared.groupdescriptiondraft", "draft: answers a labeled machine draft into a member's own field; writes nothing of the record; the member's words only by the member's own act of keeping it"),
@@ -489,13 +441,6 @@ export const DECLARED_OPS = Object.freeze({
    pull, a route of its own beside doorbell's `inboxpull`, which the Worker's `op=inboxpull` (and `op=inboxresolve` at
    `pulled`) addresses; R11's ask routes; and R10's three drafts. The map keeps control-plane's name for it, so plane's
    composition is unchanged. */
-/** The routes this module adds to plane's one map (R7, R8, R10, R11, R15, R16), each run when its op is asked.
- *  @param {any} ctx the record's object, as each owner's `…Of(ctx)` reads it
- *  @param {URL} url the internal request's address, its stamps on the query
- *  @param {any} body the request's parsed body, or null
- *  @param {string | null} [grant] an ask's grant (R11), absent or null for none
- *  @returns {Record<string, () => any>} each op's handler, by op name
- */
 export function controlPlaneRoutes(ctx, url, body, grant = null) {
   const q = (k) => url.searchParams.get(k);
   const b = body && typeof body === "object" && !Array.isArray(body) ? body : {};

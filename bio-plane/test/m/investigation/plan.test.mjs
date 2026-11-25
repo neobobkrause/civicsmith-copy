@@ -2,7 +2,7 @@
    has a path by hand that needs no AI. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, inlineText, ANN, BOB, CAT, DAN, OUT, AI, P1, PH, Q1, Q3 } from "./fixture.mjs";
+import { world, ANN, BOB, CAT, DAN, OUT, AI, P1, PH, Q1, Q3 } from "./fixture.mjs";
 import { INVESTIGATION_CHECKS } from "../../../src/investigation/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
@@ -51,7 +51,7 @@ test("R20: planAccept is the member's one accepting act (record-grammar R52): a 
   assert.equal(r2.ok, true, JSON.stringify(r2));
   const head = w.record.head(r2.made);
   assert.deepEqual([head.type, head.currentState], ["inquiry", "surfaced"], "a question, opened by her promotion");
-  assert.match(inlineText(w.record.readFile(r2.made, "bundle.md")), /surfaced_by: human/);
+  assert.match(w.record.readFile(r2.made, "bundle.md").text, /surfaced_by: human/);
   const r3 = w.inv.planAccept({ proposal: c, form: "own_instead", text: "Visit the clerk's office", reason: "A call will not get the file.", by: ANN });
   assert.equal(r3.ok, true);
   const shown = w.inv.planProposals({ project: P1, viewer: ANN }).proposals.find((x) => x.proposal === c);

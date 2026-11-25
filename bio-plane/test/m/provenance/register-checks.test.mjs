@@ -168,7 +168,7 @@ test("R42–R46: the arms still run at the gate and in the audit, so moving them
   w.promoteInfo("INFO-2026-0002-y", { captures: [{ path: "snapshots/y.txt", text: "bytes of y" }] });
   const pass = await w.record.auditPass({ after: "", limit: 10, visible: () => true });
   assert.equal(pass.tally["C-18.9"], 1, JSON.stringify(pass.tally));
-  assert.equal(pass.tallyDetail?.["C-18.9/chain-absent"], 1);
+  assert.equal(pass.tallyDetail["C-18.9/chain-absent"], 1);
   assert.deepEqual(Object.keys(pass.tally).filter((k) => k.startsWith("C-18.")), ["C-18.9"],
                    "the violating bundle's one finding, and nothing from the conformant register");
   /* The fixture's bundle.md also carries catalogue findings (C-2.2), so both bundles are offenders; the one that also

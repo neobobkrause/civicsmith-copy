@@ -10,13 +10,7 @@
  * themselves. `securitycount` is a store-internal route with no spec (`op-declarations` R6) and takes no grade (R25). */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { AbsenceTable, Consequence, ReasonTable, RungTable } from './t33.mjs' */
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
 const STANDARD_THROUGH = "standard-directed: keyed by a standard's version, reached from the standard; records what a "
   + "checked source shows, with who, when and why; moves no bundle";
@@ -26,7 +20,6 @@ const SECURITY_TOOLS = "setting: the group's security tools, an administrator's 
 const SECURITY_WAKES = "scheduler: the security wakes; name no member and move no bundle";
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
-/** @type {RungTable} T36's ops */
 export const T36_RUNGS = {
   /* R23 (K2092). standards R50: each refuses an absent reason STANDARD_NO_REASON; a record is withdrawn forward and kept,
      never erased */
@@ -44,7 +37,6 @@ export const T36_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T36's ops */
 export const T36_RUNG_ABSENT = {
   /* R35 (T47; N987; K3014): its one write is a verdict note naming no member, corrected forward by checking again
      (file-safety R3, R10, R13), and it asks no reason: `observational`, as deeperbatch, no longer `undetermined` */
@@ -71,7 +63,6 @@ export const T36_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
-/** @type {ReasonTable} T36's ops */
 export const T36_NON_ACTS = {
   /* R23 */
   standardinforcethrough: STANDARD_THROUGH,
@@ -125,7 +116,6 @@ export const T36_NON_ACTS = {
    opens which file, and who confirmed, is never recorded (DEC-169 (5), DEC-173 (4); file-safety R10). (R44, T49) The
    entry holds the key of the sentence that says what opening risks, `screen.open-file.warn.ends`, never its English; the
    confirmations and the not-recorded line are the screen's own keys. ---- */
-/** @type {Readonly<Object<string, Readonly<Consequence>>>} T36's acts with a consequence statement, by op; frozen */
 export const T36_CONSEQUENCE_STATEMENTS = Object.freeze({
   openwithwarning: Object.freeze({ friction: "dialog", key: "screen.open-file.warn.ends" }),
 });

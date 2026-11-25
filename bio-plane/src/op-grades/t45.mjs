@@ -21,41 +21,14 @@
  * refuses a machine itself, `MACHINE_CANNOT_CHECK_ADVOCACY`). */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const PLAN = (s) => `plan-directed: ${s}; kept in the plan's history, never published; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const SUCCESS = (s) => `success-directed: ${s}; never a consequence part; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const RULE = (s) => `rule-directed: ${s}; the group's own rule beside the profiles, never a profile's; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const WATCH = (s) => `watch-directed: ${s}; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
-/** @type {RungTable} T45's ops */
 export const T45_RUNGS = {
   /* case-check R1 (K2839): the same `publishCase` write as `publish`, refused MACHINE_CANNOT_PUBLISH, and graded as it;
      (R37, T47) `terminal` with it, a preparation held unsigned that publishes nothing until a member signs */
@@ -87,7 +60,6 @@ export const T45_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T45's ops */
 export const T45_RUNG_ABSENT = {
   /* the caller's own: a member's own standing question's end, review reminder and take-ups (R32) */
   standingendset:   { ground: "caller-owned", is: "a member changes the end date of their own standing question, answered to them alone; an ended question is never revived (answers R34)" },
@@ -118,7 +90,6 @@ export const T45_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5; R32: a read "read: …", a draft "draft: …") ---- */
-/** @type {ReasonTable} T45's ops */
 export const T45_NON_ACTS = {
   /* action-plans (R39, R40) */
   scenariosetaside: PLAN("keyed by (plan, scenario); a member sets a scenario aside with a reason, kept whole and readable"),

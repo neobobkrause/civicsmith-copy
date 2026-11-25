@@ -181,7 +181,6 @@ const EXTERNAL_PART = {
 test("R3 (4): EXTERNAL_LINKS for an external-link part, or a formula or defined name that refers to another workbook, naming how many, before the engine loads", async () => {
   const { engine, calls } = spied(realEngine());
   const m = makeMember(engine);
-  /** @type {Array<[Uint8Array, {parts: number, formulas: number, defined_names: number}]>} each workbook and the counts it names */
   const cases = [
     [small([{ r: "A1", v: 1 }], EXTERNAL_PART), { parts: 1, formulas: 0, defined_names: 0 }],
     [small([{ r: "A1", f: "[1]Other!A1", v: 1 }, { r: "A2", f: "SUM('[2]My Sheet'!B1:B3)", v: 2 }, { r: "A3", f: "A1", v: 1 }]),
@@ -232,16 +231,14 @@ test("R3 (5): ENGINE_FAILED when the engine refuses or throws while loading or e
 test("R3 (6): TIME_LIMIT when loading took longer than TIME_BUDGET_MS, so evaluation was not started", async () => {
   const { engine, calls } = spied(realEngine());
   const clock = [1000, 1000 + TIME_BUDGET_MS + 1];
-  let tick = 0;
-  const m = makeMember(engine, { now: () => clock[tick++] });
+  const m = makeMember(engine, { now: () => clock.shift() });
   const r = await recomputeVia(m, small([{ r: "A1", f: "1+1", v: 2 }]));
   refusedAs(r.body, "TIME_LIMIT");
   assert.deepEqual([r.body.elapsed_ms, r.body.budget_ms], [TIME_BUDGET_MS + 1, TIME_BUDGET_MS]);
   assert.deepEqual([calls.load, calls.evaluate], [1, 0]);
   /* exactly at the budget, evaluation runs */
   const at = [0, TIME_BUDGET_MS];
-  let atTick = 0;
-  const ok = await recomputeVia(makeMember(realEngine(), { now: () => at[atTick++] }), small([{ r: "A1", f: "1+1", v: 2 }]));
+  const ok = await recomputeVia(makeMember(realEngine(), { now: () => at.shift() }), small([{ r: "A1", f: "1+1", v: 2 }]));
   assert.equal(ok.body.ok, true);
   /* the time is read after a turn boundary, so a synchronous load is counted (workerd advances its clock only then) */
   const order = [];

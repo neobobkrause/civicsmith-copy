@@ -10,8 +10,6 @@ import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
 import * as F from "../office-readers/fixtures.mjs";
 import { extractionOps, Extraction, READING_ROW_MAX_BYTES, PRIOR_READING_COPY_MAX_BYTES, CELLS_RANGE_MAX, SCREEN_WORDS } from "../../../src/extraction/index.mjs";
 import * as pipeline from "../../../src/reading-pipeline/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const MiB = 1048576;
 const XLSX_CT = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -41,7 +39,7 @@ async function home(bytes, { ct, format, name = "t", readHooks = null, fromText 
   rows.set(d, { bundleId: "INFO-1", path: name, encoding: "binary", bytes: u8.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, u8);
   const document = doc({ digest: d, bytes: u8.length, ct, format, fromText });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d, bytes: u8 };
 }
 const readAll = async (w, d) => { let a, n = 0; do { a = await w.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {} }); } while (a.more && ++n < 200); return a; };

@@ -29,17 +29,6 @@
    =========================================================================== */
 import { word, localize } from '../setup-words/index.mjs';
 
-/**
- * @typedef {Object} CheckRow a catalogue row (DEC-49): the check id, the span whose code raises it, and the member's sentence
- * @property {string} check
- * @property {string} where
- * @property {string} translation
- * @bound check: a C-number, "C-<family>.<n>"
- * @bound where: a file under bio-plane/ and the span in it that raises the code
- * @bound translation: never empty
- */
-
-/** @type {Object<string, CheckRow>} R8, R14, R16: the doors' dispatch rows by code (C-69.1 to C-69.5, C-69.7; C-69.6 retired, held by no code) */
 export const DISPATCH_CHECKS = {
   UNKNOWN_OP: {
     check: 'C-69.1',
@@ -99,7 +88,6 @@ export const DISPATCH_CHECKS = {
 /* C-68.2–.4 — THE BOOTSTRAP CLAIM (D-278). `claim`'s three bootstrap-credential complaints, pre-authentication, met
    before anyone holds anything, and each says no more than its `error` did. Addressed to whoever installed the copy,
    the only person who can act on them. Split from `INSTALLATION_CHECKS`, which keeps C-68.1. */
-/** @type {Object<string, CheckRow>} R8: the bootstrap claim's rows by code (C-68.2 to C-68.4) */
 export const BOOTSTRAP_CHECKS = {
   BOOTSTRAP_CREDENTIAL_UNSET: {
     check: 'C-68.2',
@@ -119,7 +107,6 @@ export const BOOTSTRAP_CHECKS = {
 };
 
 /* C-66.6 — A REPLAY THE PLANE COULD NOT VERIFY (D-512). Split from `SURFACE_CHECKS`. */
-/** @type {Object<string, CheckRow>} R8: the unverified replay's row by code (C-66.6) */
 export const REPLAY_CHECKS = {
   /* D-512 (INVESTIGATIVE-SESSION.md §11 item 5, "`replay` IS THE SERVER'S WORD, NEVER THE CALLER'S", BOB #33's
      STEP (2)): `replay` exempts a promotion from every shape fence `promote` has, because a replay re-states the
@@ -175,7 +162,6 @@ export const REPLAY_CHECKS = {
    and the sentence below carries no member vocabulary. They are minted through
    the same helper, so the row's one `where` stays true.
    =========================================================================== */
-/** @type {Object<string, CheckRow>} R8: the argument complaint's row by code (C-61.1) */
 export const REQUIRED_ARGUMENT_CHECKS = {
   /* NOTHING WAS CHANGED, and the sentence says so first. A caller who cannot
      tell a refused request from a half-applied one has to go and look, and this

@@ -50,8 +50,6 @@ const T47_FAMILIES = Object.freeze([
    being one of `values`, or, with `values: null`, the field present at all. `memberset` is `{field: "role", values:
    null}`, wider than "a role to or from admin", since admission cannot read a member's present role (R62). Frozen data
    (R5). */
-/** @import { ReauthRule } from './index.mjs' */
-/** @type {Readonly<Record<string, ReauthRule>>} */
 const REAUTH_ACTS = Object.freeze({
   caseratify: null, publishat: null, publishatmove: null, ratify: null, docketpost: null,
   adminendorse: null, adminremove: null,

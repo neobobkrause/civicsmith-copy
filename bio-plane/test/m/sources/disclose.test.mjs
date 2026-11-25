@@ -60,7 +60,7 @@ test("R2 refusals in order, each with its row and a negative control: NO_SUCH_SO
     assert.equal(codeOf(r), "NO_SUCH_SOURCE", JSON.stringify(bad)); rowOf(r, "NO_SUCH_SOURCE");
   }
   /* BAD_DISCLOSURE naming each field */
-  for (const [bad, field] of /** @type {[Object<string, any>, string][]} */ ([
+  for (const [bad, field] of [
     [{ revealed: undefined }, "revealed.kind"], [{ revealed: { kind: "photo", value: "x" } }, "revealed.kind"],
     [{ revealed: { kind: "attribute", value: "x" } }, "revealed.attribute"],
     [{ revealed: { kind: "attribute", attribute: "age", value: "x" } }, "revealed.attribute"],
@@ -79,7 +79,7 @@ test("R2 refusals in order, each with its row and a negative control: NO_SUCH_SO
     [{ confirms: "SRCE-none" }, "confirms"],
     [{ revealed: { kind: "name", value: "x" }, recorded: false, sight: ["bob"] }, "revealed.value"],
     [{ revealed: { kind: "name" }, recorded: false, sight: ["bob"] }, "sight"],
-  ])) {
+  ]) {
     const r = w.s.recordDisclosure({ ...good, ...bad });
     assert.equal(codeOf(r), "BAD_DISCLOSURE", JSON.stringify(bad)); rowOf(r, "BAD_DISCLOSURE");
     assert.equal(r.field, field, JSON.stringify(bad));

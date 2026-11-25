@@ -24,34 +24,9 @@ const refusal = (reason, why, extra = {}) =>
 
 const engineMessage = (e) => String((e && e.message) || e);
 
-/** @import { Engine } from './enginecore.mjs' */
-/**
- * The limits R3 applies; the worker's are `MAX_UNZIPPED_BYTES`, `MAX_CELLS` and `TIME_BUDGET_MS` (R14).
- * @typedef {Object} MemberBounds
- * @property {number} maxUnzippedBytes
- * @property {number} maxCells
- * @property {number} timeBudgetMs
- */
-/**
- * @typedef {Object} MemberOptions
- * @property {MemberBounds} [bounds] absent is the worker's bounds (R14)
- * @property {() => number} [now] absent is `Date.now`
- * @property {() => Promise<unknown>} [turn] absent waits one turn
- */
-/**
- * The member: the Worker's `fetch`, and `recompute` over a workbook's bytes.
- * @typedef {Object} Member
- * @property {(req: Request, env: any) => Promise<Response>} fetch POST /recompute (R1-R7), GET /version (R8); any
- *   other method or path is 404 UNKNOWN (R9). Refusals of a workbook are 200 with `ok: false`
- * @property {(bytes: Uint8Array) => Promise<any>} recompute R3-R7 over one workbook's bytes: R4's answer, or R3's
- *   first refusal with `not_recomputed` and `why`; never throws for the workbook's sake
- */
 /**
  * The member over an engine (`enginecore.mjs`'s `makeEngine`, or a stand-in of the same shape).
  * `bounds` and `now`/`turn` exist so the suite can reach each refusal; the worker uses the defaults.
- * @param {Engine} engine
- * @param {MemberOptions} [options]
- * @returns {Member}
  */
 export function makeMember(engine, {
   bounds = { maxUnzippedBytes: MAX_UNZIPPED_BYTES, maxCells: MAX_CELLS, timeBudgetMs: TIME_BUDGET_MS },

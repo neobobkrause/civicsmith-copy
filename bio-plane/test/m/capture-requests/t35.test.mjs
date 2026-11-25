@@ -443,12 +443,11 @@ test("R54 DEC-149's eight rows: each member-facing string says your group's Civi
   said(w.req(bad).detail, ":712");
   /* :757 */
   const cool = w.ask({ address: "https://cool.example.org/x" }).request;
-  const isHeld = w.governor.isHeld;
   w.governor.isHeld = () => true;
   await w.cr.drain({}); w.tick();
   said(w.req(cool).detail, ":757");
   assert.match(w.req(cool).detail, /a stranger's server/, "a website's server keeps its word");
-  w.governor.isHeld = isHeld;
+  delete w.governor.isHeld;
   /* :779 */
   const sw = w.ask({ address: "https://s.example.org/sweep", sweep: "INQ-1#agendas" }).request;
   await w.cr.drain({}); w.tick();

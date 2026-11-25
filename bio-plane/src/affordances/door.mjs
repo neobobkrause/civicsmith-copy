@@ -20,7 +20,6 @@ import { ACTS, CAPTURE_ACTS, PER_ITEM_ACTS, PER_ITEM_MAX, deriveActs, decorate, 
 /* K1601 (SKILLS #12 J1 (1)): `answers`' check family, which skills' `ask` layer carries in the pack. */
 import { ANSWERS_CHECKS } from "../answers/index.mjs";
 import { ACT_HELP } from "./act-help.mjs";
-/** @import { Gate } from '../affordances.mjs' */
 
 const CATALOGUE_DETAIL = "pass target=<record id> for the acts available on that object right now; "
   + "rung is the weight ladder (vocabularies.rung_ladder, low to high, IRREVERSIBLE "
@@ -36,12 +35,6 @@ const CATALOGUE_DETAIL = "pass target=<record id> for the acts available on that
  *  publishes the product's kinds for anything that is not a kind list). With no `target`, the catalogue — the shape a
  *  surface loads once, searchfields' precedent; with one, `facts` is R13–R14's answer for it: a refusal is returned as
  *  given (stated `ok: false`), and otherwise the target's acts (R8–R10) decorated. */
-/**
- * @param {{target?: string|null, facts?: any, kinds?: any, gate?: Gate|null, screens?: any, wizard_scripts?: any,
- *   writing_help_refused?: any, profile?: any}} [arg]
- * @returns {Record<string, any>} with no target the catalogue (R17, R37, R44, R49); with one, the facts' refusal as
- *   given (`ok` false), else `{target, object_type, current_state, acts, vocabularies, capture_acts}`
- */
 export function affordancesAnswer({ target = null, facts = null, kinds, gate, screens = [], wizard_scripts = [],
                                     writing_help_refused = null, profile = null } = {}) {
   /* R67, R68: `profile` is the store's `affordancevocab` answer, handed to `vocabulariesFor` beside the kinds. */
@@ -90,14 +83,6 @@ const stamped = (q) => new URLSearchParams(Object.entries(q).filter(([, v]) => v
 /** R17 at the door: `op=affordances`. `stub` is the store this request addresses; `json`, `doAnswer`, `storeSilent` and
  *  `storeRefusal` the control plane's envelope and silence answers; `gate` its act gate; `viewer`, `identity`, `author`
  *  and `by` its stamps for this caller (R15). */
-/**
- * @param {URL} url the request; `target` on its query, or none for the catalogue
- * @param {{fetch: (url: string) => any}} stub the store this request addresses
- * @param {{json: (body: any, status: number) => any, doAnswer: (r: any) => any, storeSilent: (op: string, correlation?: any) => any,
- *   storeRefusal: (out: any) => any, gate: Gate|null, viewer: any, identity: any, author: any, by: any, storeName: any,
- *   cls: any}} door the control plane's envelope, silence answers, gate and stamps
- * @returns {Promise<any>} the envelope's response: 200 with the answer, 404 for `NO_SUCH_BUNDLE`, 400 for another refusal
- */
 export async function affordancesOp(url, stub, { json, doAnswer, storeSilent, storeRefusal, gate, viewer, identity,
                                                  author, by, storeName, cls }) {
   const target = url.searchParams.get("target");

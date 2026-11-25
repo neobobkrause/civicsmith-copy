@@ -16,7 +16,6 @@
 import { CONTRACT, TAG, feeBearing, written, element, elements, linksIn, sourceAt,
   proceedingNumber, row, reading, pageOf, assessRegister, detectAnswer } from "./common.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { CourtType } from "./common.mjs" */
 
 const KEY = "courtlistener_docket";
 const LABEL = localize("court-doctypes.courtlistener.label", "a CourtListener docket");
@@ -148,8 +147,7 @@ function parse(ctx) {
   });
 }
 
-/** @type {CourtType} the content type, registered through docprofile's seam */
-const TYPE = {
+export default {
   key: KEY, label: LABEL, version: 1,
   /* A register is a list: what matters is which rows it holds and whether each still says what it said. */
   contract: CONTRACT.MEMBERSHIP,
@@ -157,4 +155,3 @@ const TYPE = {
   assess(before, after) { return assessRegister(before, after); },
 };
 
-export default TYPE;

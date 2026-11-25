@@ -91,62 +91,10 @@ const codeOf = (r) => {
 /* The walk queue passes in answers this shape; with none passed, an item is ungrouped rather than given a home. */
 const UNGROUPED = Object.freeze({ state: "determined", ungrouped: true, reasons: [], depth_bound: null, ancestors: [] });
 
-/**
- * @typedef {Object} FeedArgs   what `queue` hands `feedItems` (R8; convention 2: from the control plane's stamps)
- * @property {string|null} [member] the member reading, absent or blank for a caller with no member
- * @property {*} [viewer] the viewer the gate reads (membership's viewer predicate)
- * @property {number|string|null} [now] the instant read at, in milliseconds; absent is the clock
- * @property {*} [identity] the caller's identity, which queue's options are already closed over (its R12)
- * @property {*} [homesOf] queue R7's walk of a set of subjects' homes, a function of their ids; anything else is none
- * @property {*} [optionsOf] queue R12's options on a set of subjects, a function of their ids; anything else is none
- */
-/**
- * @typedef {Object} FeedFailure   one feed that could not be read (R45, R50)
- * @property {string} feed the feed's id, a code
- * @property {string} reason `threw`, `refused`, `undetermined` or `partial`
- * @property {string} [read] the provider read, `<module>.<read>`, when known
- * @property {string} [code] the provider's own code, when it gave one
- */
-/**
- * @typedef {Object} ProjectBound   the projects a producer read under, and whether that bound cut (R2, R4)
- * @property {number} bound
- * @property {boolean} truncated
- */
-/**
- * @typedef {Object} FeedFacts   what queue's answer publishes beside the items (R8)
- * @property {ProjectBound} objective_gap R2's objective-gap projects
- * @property {*} unattributed the readings of a shared question no team could be read for
- * @property {ProjectBound} contradiction R4's contradiction projects
- * @property {Array<*>} dispositions the proposals feed's recorded decisions, from the same read as R2's findings
- * @property {Object<string, *>} action action-producers' own facts (its R13)
- * @property {Array<FeedFailure>} failed every feed that could not be read; empty when all answered (R45)
- * @property {Array<string>} absent every feed with no provider composed at this host (R45)
- * @property {Object<string, *>} ms what each feed read cost, in milliseconds, by feed id (R51)
- * @bound ms: whole numbers, zero or more, one for each feed read and none for an absent feed
- * @bound objective_gap and contradiction: at most 50 projects
- */
-/**
- * @typedef {Object} FeedAnswer   `feedItems`' answer (R8)
- * @property {Array<Object<string, *>>} items queue's items without `disposition` or `catalogue_id`, one for each matter (R52)
- * @property {FeedFacts} facts
- */
-/**
- * @typedef {Object} Registered   R38's door's answer: `ok`, or a programming error's `reason` and `detail`
- * @property {boolean} ok
- * @property {string} [reason] `PLACE_ARRIVALS_MALFORMED` or `PLACE_ARRIVALS_REGISTERED`
- * @property {string} [detail]
- */
-
 export class QueueProducers {
   #host; #deps;
   /* The read's two functions from queue (R8), held for one synchronous `feedItems` call and cleared after it. */
-  /** @type {Function|null} queue R7's walk, as this read was handed it */
-  #homesFn = null;
-  /** @type {Function|null} queue R12's options, as this read was handed them */
-  #optionsFn = null;
-  /**
-   * @param {{host?: *, storage?: *, deps?: Object<string, *>}} [arg0] the Durable Object, its storage, and providers to use in place of their defaults
-   */
+  #homesFn = null; #optionsFn = null;
   constructor({ host, storage, deps = {} } = {}) {
     this.#host = host;
     this.sql = storage.sql;
@@ -199,7 +147,6 @@ export class QueueProducers {
      founder is among the administrators (a second `membersOf` instance is never told, and drops her). */
   get #memberRoster() { return this.#dep("memberRoster", () => this.#membership); }
   /* R38: the read instance-setup registers at start (its R62), or null while none is. */
-  /** @type {Function|null} R38's registered read */
   #placeArrivals = null;
   /* R43: this read's clock, the group's zone and the current local day in it, held for the length of one `feedItems` call, so a
      date inside a sentence is read in the zone the group keeps (civil-time) and names its year only when it is not this one. */
@@ -433,10 +380,6 @@ export class QueueProducers {
    * shared question no team could be read for (D-266); and `dispositions`, the proposals feed's recorded decisions,
    * from the same `proposalsFeed` read the FINDINGs came from, so R2 and queue R15 cannot disagree; and `action`,
    * action-producers' own facts (its R13: each of its producers' bound and cut, and any provider that failed). */
-  /**
-   * @param {FeedArgs} [arg0]
-   * @returns {FeedAnswer}
-   */
   feedItems({ member = null, viewer = null, now = null, identity = null, homesOf = null, optionsOf = null } = {}) {
     void identity;        // queue's options are closed over it already (its R12); named here as R8 names it
     const me = typeof member === "string" && member.trim() ? member.trim() : null;
@@ -2975,10 +2918,6 @@ export class QueueProducers {
    *  `placeArrivals` read (a function, or an object offering `placeArrivals`), K31's pattern since it comes later in
    *  layer 11. A second registration is refused `PLACE_ARRIVALS_REGISTERED`, a read that is neither
    *  `PLACE_ARRIVALS_MALFORMED`: programming errors answered to the caller, never a member's refusal. */
-  /**
-   * @param {*} read `placeArrivals`, or an object offering it; anything else is refused `PLACE_ARRIVALS_MALFORMED`
-   * @returns {Registered}
-   */
   registerPlaceArrivals(read) {
     const fn = typeof read === "function" ? read
       : read && typeof read === "object" && typeof read.placeArrivals === "function" ? (a) => read.placeArrivals(a) : null;
@@ -3465,11 +3404,7 @@ export class QueueProducers {
 
 const OF = new WeakMap();
 
-/** The one producers instance for this Durable Object's storage (`ctx`, or the storage itself). It registers nothing.
- * @param {*} ctx the Durable Object's state, or its storage
- * @param {Object<string, *>} [deps] providers to use in place of their defaults
- * @returns {QueueProducers}
- */
+/** The one producers instance for this Durable Object's storage (`ctx`, or the storage itself). It registers nothing. */
 export function queueProducersOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let p = OF.get(storage);

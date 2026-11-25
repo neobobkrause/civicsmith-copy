@@ -123,7 +123,7 @@ export function world({ group = "test-group", deps = {}, create = true } = {}) {
   if (create) w.cacc = caseAccountOf(host, w.deps);
   let n = 0;
   Object.assign(w, {
-    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
     member(id, { role = "member" } = {}) {
       st.sql.exec(`INSERT INTO members (member_id, cover, handle, role, status, capabilities, created, updated)
                    VALUES (?, ?, ?, ?, 'active', '["contribute","publish"]', 't', 't')`, id, `Cover ${id}`, `h_${id}`, role);

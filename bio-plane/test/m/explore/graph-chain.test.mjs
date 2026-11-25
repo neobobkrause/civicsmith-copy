@@ -60,7 +60,7 @@ test("R21 refusals in R1's order with the centre in from's place, then BAD_RINGS
   assert.equal(x.neighbourhood({ centre: A, at: AT }).refused, "VIEWER_MISSING");
   const no = x.neighbourhood({ at: AT, viewer: V });
   assert.equal(no.refused, "NO_NODE");
-  assert.equal(no.why, nodeRefusal(undefined, "centre", true)?.why);
+  assert.equal(no.why, nodeRefusal(undefined, "centre", true).why);
   assert.equal(x.neighbourhood({ centre: "not-an-id", viewer: V, rings: 9 }).refused, "BAD_NODE");
   assert.equal(x.neighbourhood({ centre: A, viewer: V, kinds: ["nope"], rings: 9 }).refused, "NO_DATE");
   assert.equal(x.neighbourhood({ centre: A, at: { value: "2026-02-31", precision: "day", zone: ZONE }, viewer: V }).refused, "BAD_DATE");

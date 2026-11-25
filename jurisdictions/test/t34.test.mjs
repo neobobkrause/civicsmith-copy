@@ -5,21 +5,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { get as getHeld, validate, combine as combineHeld, SPACES, VOCABULARY } from "../index.mjs";
+import { get, validate, combine, SPACES, VOCABULARY } from "../index.mjs";
 import { applyForm, walkFacts } from "./helpers.mjs";
-
-/* A held profile's id always finds that profile (R1); this reads its fields. */
-const get = (/** @type {string} */ id) => {
-  const p = getHeld(id);
-  assert.ok(p, `${id} is a held profile`);
-  return p;
-};
-/* Held ids and valid profiles always combine (R12): `ok` true, with `view` and `conflicts`; this reads them. */
-const combine = (/** @type {*} */ list) => {
-  const c = combineHeld(list);
-  assert.ok(c.ok && c.view && c.conflicts, "the list combines");
-  return { ok: c.ok, view: c.view, conflicts: c.conflicts };
-};
 
 const FIRST = "oakland-alameda";
 const TEST = "test-port-ellery";

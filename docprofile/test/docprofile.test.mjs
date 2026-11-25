@@ -403,33 +403,11 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
   assert.deepEqual(codes(PA), ["pac:4.12"]);
   assert.deepEqual(codes(LK), ["lmc:9.1"]);
   assert.deepEqual(codes(EMPTY), []);
-  const dueDays = (v) => {
-    const p = practiceValue({ view: v }, "minutes_due_days");
-    if (!p) throw new Error("this view supplies minutes_due_days");
-    return p.value;
-  };
-  assert.deepEqual([dueDays(PA), dueDays(LK)], [10, 30]);
+  assert.deepEqual([practiceValue({ view: PA }, "minutes_due_days").value, practiceValue({ view: LK }, "minutes_due_days").value], [10, 30]);
   assert.equal(practiceValue({ view: EMPTY }, "minutes_due_days"), null);
   assert.equal(anyMatch(vocabPatterns({ view: PA }, "furniture"), "Town of Port Alder"), true);
   assert.equal(anyMatch(vocabPatterns({ view: LK }, "furniture"), "Town of Port Alder"), false);
   assert.deepEqual(vocabulary({ view: EMPTY }, "furniture"), []);
-  // an entry comes back as the view carries it, the column a budget header heads among its fields (jurisdictions R6)
-  const headers = { vocabulary: { budget_headers: [{ column: "fund", pattern: { re: "^Fund$" } }, null, "x"] } };
-  assert.deepEqual(vocabulary({ view: headers }, "budget_headers"), [{ column: "fund", pattern: { re: "^Fund$" } }]);
-  // and every other per-key field jurisdictions R6 and R69 state, each handed back as the view carries it, absent where the entry has none
-  const perKey = {
-    roster_headers: { role: "title", pattern: { re: "^Title$" } },
-    roster_words: { kind: "chart", pattern: { re: "org chart" } },
-    amending: { relation: "repeals", pattern: { re: "is hereby repealed" } },
-    meeting_markers: { marker: "cancelled", pattern: { re: "CANCELLED" } },
-    body_variants: { organisation: "city_council", pattern: { re: "City Council" } },
-    policy_headers: { field: "effective", pattern: { re: "^Effective Date:" } },
-    file_numbers: { system: "https://pa.legistar.com", pattern: { re: "\\d{2}-\\d{4}" } },
-  };
-  const perKeyView = { vocabulary: Object.fromEntries(Object.entries(perKey).map(([k, e]) => [k, [e, null]])) };
-  for (const [k, e] of Object.entries(perKey)) assert.deepEqual(vocabulary({ view: perKeyView }, k), [e], k);
-  const words = vocabulary({ view: { vocabulary: { roster_words: [{ pattern: { re: "roster" } }] } } }, "roster_words");
-  assert.equal(words[0].kind, undefined);
   // a reader through the helpers: Port Alder's items under its view only
   const items = (v) => keys(stubItems.parse({ text: PA_ITEMS, view: v }));
   assert.deepEqual(items(PA), ["PA-101", "PA-102", "PA-103"]);
@@ -524,8 +502,6 @@ test("R35 every no says which no and why", async () => {
   assert.match(nohash.why, /could not be compared/);
   // a stub's connection with no practice in the view says why it set no date
   const p = stubMeetings.parse({ text: calendarHtml([["7", "Harbor Commission", "3/2/2026"]]) });
-  /* one entry out of a list that holds both kinds, read for the field only a temporal one carries */
-  /** @type {*} */
   const c = stubMeetings.connections(p, p, { now: NOW, view: EMPTY }).find((x) => x.relation === "minutes_not_yet_published");
   assert.deepEqual([c.expected_by], [null]);
   assert.match(c.why, /not known/);

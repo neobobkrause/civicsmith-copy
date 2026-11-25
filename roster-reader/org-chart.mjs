@@ -30,69 +30,16 @@ import { isName, leadingName, withoutContacts, titlePatterns, titleSpans, remove
          namedAs, eachLine, selfNamingLine, isUnitLine, UNIT_WORDS, wordCount } from "./lines.mjs";
 import { asOfOf, organisationOf, assessRows } from "./staff-roster.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { ReaderCtx, Detection, StatedDate, NamedOrganisation, Assessment } from "./staff-roster.mjs" */
-
-/**
- * A unit's box as its label reads (R3).
- * @typedef {Object} ChartUnit
- * @property {string} label
- * @property {any} source
- */
-/**
- * A post's box as its label reads (R3), with the name beside it only where one line holds exactly the post and one name.
- * @typedef {Object} ChartPost
- * @property {string} label
- * @property {string} [name]
- * @property {any} source
- */
-/**
- * A reporting relation the document states in words (R3), never one read from the drawing.
- * @typedef {Object} ChartPair
- * @property {string} from
- * @property {string} to
- * @property {any} source
- */
-/**
- * `org_chart`'s reading (R3).
- * @typedef {Object} ChartReading
- * @property {ChartUnit[]} units
- * @property {ChartPost[]} posts
- * @property {ChartPair[]} reports_to
- * @property {string} pairs_why
- * @property {{units: number, posts: number, named_posts: number, reports_to: number}} counts
- * @property {StatedDate|null} as_of
- * @property {string|null} as_of_why
- * @property {NamedOrganisation|null} organisation
- * @property {string|null} organisation_why
- * @property {any} also_satisfies
- * @property {any} at
- */
-/**
- * The `org_chart` content type (R3, R4, R5), for `docprofile`'s registry.
- * @typedef {Object} ChartType
- * @property {string} key `org_chart`
- * @property {string} label
- * @property {number} version
- * @property {string} contract `docprofile`'s `CONTRACT.MEMBERSHIP`
- * @property {(ctx: ReaderCtx) => Detection} detect
- * @property {(ctx: ReaderCtx) => ChartReading} parse
- * @property {(a: {units?: ChartUnit[], posts?: ChartPost[]}, b: {units?: ChartUnit[], posts?: ChartPost[]}) => Assessment} assess compares the readings' boxes only
- * @bound detect: allocates at most 32 bytes per byte of text, and holds one line at a time
- */
 
 /* MEASURED with the first profile's proposed words: the charts carry 23 to 756 box lines (units, posts and
    holders alone), of which 4 to 218 name a unit or a post; the look-alikes past the floor are refused by
    the share. A list of names alone is not a chart, so at least CHART_MIN_LABELS lines must label a box. */
-/** @type {number} */
 export const CHART_FLOOR = 8;
-/** @type {number} */
 export const CHART_MIN_LABELS = 3;
 /* MEASURED: the charts at 0.49 to 0.84 of their lines; the highest look-alike 0.30 (the dated meeting
    schedule, whose rows name a coordinator and a beat). */
-/** @type {number} */
 export const CHART_SHARE = 0.4;
 /* MEASURED: the charts' median line is 2 to 4 words; no look-alike that reaches this rule. */
-/** @type {number} */
 export const CHART_SHORT = 5;
 
 const REPORTS = /^(.+?)\s+(?:reports|report|reporting)\s+(?:directly\s+)?to\s+(?:the\s+)?(.+?)[.;]?$/i;
@@ -103,13 +50,7 @@ const REPORTS = /^(.+?)\s+(?:reports|report|reporting)\s+(?:directly\s+)?to\s+(?
 function readBoxes(raw, ctx, keep = true) {
   const titles = titlePatterns(ctx);
   const selfPatterns = keep ? [] : rosterWordPatterns(ctx);
-  const lines = [], self = [];
-  /** @type {{label: string, offset: number}[]} builds the ChartUnit of each unit's box */
-  const units = [];
-  /** @type {{label: string, name?: string, offset: number}[]} builds the ChartPost of each post's box */
-  const posts = [];
-  /** @type {{from: string, to: string, offset: number, line: string}[]} builds the ChartPair of each relation stated in words */
-  const pairs = [];
+  const lines = [], units = [], posts = [], pairs = [], self = [];
   const unitLines = new Set(), postLines = new Set(), wordHist = new Map();
   let count = 0, named = 0;
   eachLine(raw, (x) => {
@@ -158,7 +99,6 @@ function medianOf(hist, total) {
 
 const no = (why) => ({ match: false, confidence: CONFIDENCE.NONE, why });
 
-/** @type {ChartType} */
 export default {
   key: "org_chart",
   label: "an organisation chart",
@@ -202,11 +142,6 @@ export default {
     const self = selfNamingLines(lines, rosterWordPatterns(ctx));
     const asOf = asOfOf(lines, self);
     const org = organisationOf(lines, self, ctx);
-    /** A box or pair placed where the document says: its `offset` replaced by its `source`.
-     * @template {{offset: number}} T
-     * @param {T} x
-     * @returns {Omit<T, "offset"> & {source: any}}
-     */
     const place = ({ offset, ...r }) => ({ ...r, source: locate(offset) || null });
     return {
       units: units.map(place),

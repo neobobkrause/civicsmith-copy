@@ -38,7 +38,6 @@
    (the design's last merge into `tranche/T50`, K3750) */
 import { localize } from "../setup-words/index.mjs";
 
-/** @type {string} R46: the design commit the kit and the registry are read at */
 export const MARKS_KIT_COMMIT = "0310c4953d";
 
 const SOURCES = {
@@ -51,7 +50,6 @@ const SOURCES = {
 };
 
 /* [op, weight name, source key], in the op's name order */
-/** @type {Array<[string, string, keyof typeof SOURCES]>} */
 const ROWS = [
   ["accountdrafts", "Reversible", "read"],
   ["accountreferenceremove", "Terminal", "kit"],
@@ -238,10 +236,5 @@ const ROWS = [
   ["writinghelp", "Reversible", "read"],
 ];
 
-/**
- * @type {Readonly<Object<string, string>>} R42, R46: the design's weight for each rungless act a registered screen lists, by op; frozen; it grades nothing
- * @bound each value: a weight name of the kit's `WEIGHT`: "Reversible", "Reasoned", "Signed", "Terminal" or "Irreversible"
- */
 export const MARKS = Object.freeze(Object.fromEntries(ROWS.map(([op, weight]) => [op, weight])));
-/** @type {Readonly<Object<string, string>>} R42, R46: the source of each entry of `MARKS`, by op; frozen */
 export const MARK_SOURCES = Object.freeze(Object.fromEntries(ROWS.map(([op, , source]) => [op, SOURCES[source]])));

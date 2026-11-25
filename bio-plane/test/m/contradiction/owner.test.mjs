@@ -163,9 +163,9 @@ test("R58, connection-grammar R9: the owner-conformance battery over this module
 test("R59: every table declared explicitly through declareTable — purge clear by both sides' bundles (opt-ins and responses by their project too), sight of the bundle, append-only, the rest declarePurge's defaults", () => {
   const w = seeded();
   const held = w.record.declaredTables().filter((d) => d.module === "contradiction");
-  assert.deepEqual(held.map((d) => d.name), [...CONTRADICTION_TABLES]);
+  assert.deepEqual(held.map((d) => d.name ?? d.table), [...CONTRADICTION_TABLES]);
   for (const d of held) {
-    const name = d.name;
+    const name = d.name ?? d.table;
     const keys = name === "contradiction_optins" || name === "contradiction_responses"
       ? ["a_bundle_id", "b_bundle_id", "project_id"] : ["a_bundle_id", "b_bundle_id"];
     assert.deepEqual([d.purge, d.expunge, d.export, d.sight, d.derive, d.version_chain], ["clear", "none", "admin-only", "bundle", "stored", true], name);

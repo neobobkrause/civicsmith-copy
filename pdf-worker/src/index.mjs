@@ -61,10 +61,6 @@ import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
  *
  * `mutating` is FALSE on every row (fleet rule 2: a member ASSERTS nothing).
  * `version` is a GET that reads one env var, so it could not be anything else. */
-/**
- * R35: the member's declared surface, the two routes it answers.
- * @type {{structure: {method: string, mutating: boolean}, version: {method: string, mutating: boolean}}}
- */
 export const SURFACE = {
   structure: { method: "POST", mutating: false },
   version:   { method: "GET",  mutating: false },
@@ -119,11 +115,6 @@ function overEnvelopeText(bytes, limit) {
 
 /* What tier 2 has done, as counts (R-CLOCK): documents opened by pdf.js and pages decoded. The answer never depends on it. */
 const WORK = { opens: 0, pagesDecoded: 0 };
-/**
- * What tier 2 has done since the module loaded, as counts: documents pdf.js opened and pages it decoded (R6, R9, R42).
- * A copy; the answer of a request never depends on it.
- * @returns {{opens: number, pagesDecoded: number}}
- */
 export function tier2Work() { return { ...WORK }; }
 
 /* R10 (fix round 10, cause 8): a file cut before its trailer. pdf.js throws `InvalidPDFException` on it (no trailer names
@@ -360,28 +351,7 @@ function handleVersion(env) {
   return json({ ok: true, name: "pdf-worker", version: env.VERSION || "0.0.0" });
 }
 
-/**
- * The bindings and vars the member reads.
- * @typedef {Object} PdfWorkerEnv
- * @property {*} [CAPTURES] the R2 bucket of captures, read by `.get` only (R5, R37); without a `get` function every
- *   `POST /structure` answers 503 `R2_NOT_CONFIGURED` (R1)
- * @property {string|number} [MAX_PDF_BYTES] the envelope in bytes (R8); absent, zero or not a number is the table's figure
- * @property {string} [VERSION] the build serving, answered by `GET /version` (R11)
- */
-
 export default {
-  /**
-   * The member's one door (R1 to R12, R42): `POST /structure` (or the empty path) with a JSON body
-   * `{capture_sha, store, from?, count?}` answers the I2 structure and text of the capture, or a named refusal;
-   * `GET /version` answers `{ok, name, version}`; anything else answers 404 `UNKNOWN`. Every answer is JSON.
-   * @param {Request} req
-   * @param {PdfWorkerEnv} env
-   * @returns {Promise<Response>}
-   * @bound capture_sha: 64 hex characters once lower-cased, else 400 BAD_SHA (R2)
-   * @bound store: a string, else 400 BAD_STORE (R3); exactly "bio" or "scratch", else 400 NAMESPACE_UNKNOWN (R4)
-   * @bound from, count: whole numbers, zero or more, else 400 BAD_RANGE (R42); count is clamped to the pages left
-   * @bound a file larger than MAX_PDF_BYTES (default boundOf("pdf", "worker_bytes")) is not parsed and is answered at tier 1 (R8)
-   */
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/+/, "");

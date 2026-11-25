@@ -6,7 +6,7 @@
    `measures-T33/time-law.md` §3 are `worked.test.mjs`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, MACHINE, actionMd, CP, CLK, officeCalendarProfile, present } from "./fixture.mjs";
+import { world, V, MACHINE, actionMd, CP, CLK, officeCalendarProfile } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import { get as profile, combine } from "../../../../jurisdictions/index.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
@@ -117,7 +117,7 @@ test("R1 (N311) an action with more pending clock entries than a page (500) is r
 
 test("R2 clockPropose computes from the profile's deadline through civil-time, stored apart with its trace and labelled; refusals in order; never written into clock[]", () => {
   const w = world();
-  const pe = present(profile("test-port-ellery"), "the test profile");
+  const pe = profile("test-port-ellery");
   const dl = pe.deadlines.find((d) => d.applies_to === "records_request");
   w.action(A);
   const P = (x) => w.c.clockPropose({ target: A, rule: dl.rule, proposer: MACHINE, viewer: MACHINE, ...x });
@@ -202,7 +202,7 @@ test("R2 a rule held without a primary source is no basis (UNMEASURED, K1445): a
 
 test("R2 a business-day count runs on the profile's weekend and holiday calendar through civil-time (C-2), and is undetermined, with why, where it reaches a year the calendar does not list or the profile holds no weekend; a calendar count adds days", () => {
   const d = { rule: "r", units: "days", amount: 5, count: "business", starts: "received", basis: "TEST" };
-  const view = present(combine(["test-port-ellery"]).view, "the test profile's view");
+  const view = combine(["test-port-ellery"]).view;
   const fm = (at) => ({ correspondence: [{ direction: "sent", at }] });
   const ds = ({ date, start }) => ({ date, start });   /* R10's `calendar` statement is its own test's (calendar.test.mjs) */
   /* Wednesday 2026-07-01, the profile's weekend Sunday alone: Thu 2, (Fri 3 a holiday for all offices), Sat 4, (Sun 5),
@@ -239,7 +239,7 @@ test("R2 a business-day count runs on the profile's weekend and holiday calendar
 });
 
 test("R2 the close of business is the governing office's close on the due day (C-4), and an uncertain due date is offered with both candidates, the group's own deadline taking the earliest (K1444 (i))", () => {
-  const view = present(combine(["test-port-ellery"]).view, "the test profile's view");
+  const view = combine(["test-port-ellery"]).view;
   /* registry_answer: 4 business days on the 'court' list, due at the close of business: the venue of a commitment
      claim holds no hours, so the close is undetermined and the due stays a day, saying so. */
   const reg = view.deadlines.find((x) => x.rule === "registry_answer");

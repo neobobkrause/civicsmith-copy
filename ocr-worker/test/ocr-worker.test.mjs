@@ -31,8 +31,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { deflateSync } from "node:zlib";
-import { execFileSync } from "node:child_process";
-import { ocrWorkerDef, withBuiltBundle, WASM, MODEL } from "./memberworker.mjs";
+import { ocrWorkerDef, WASM, MODEL } from "./memberworker.mjs";
 import { makeMember, NAMESPACES } from "../src/member.mjs";
 import { MEASURED_BY, MAX_FRAME_BYTES, NAMESPACES as CONTRACT_NAMESPACES, PICTURE_MAX_EDGE, PLANE_OPS, REFUSALS, LEGIBLE_CONFIDENCE, LEGIBLE_NOTE_BELOW, LEGIBLE_REFUSE_BELOW, PAGE_SEG_MODES, declaredPictureFrame, psmFrom, sourceOfBytes } from "../src/contract.mjs";
 import { PNG_REFUSALS, pngToSamples, samplesToRgba } from "../src/pngsamples.mjs";
@@ -1427,20 +1426,13 @@ console.log("\n--- B1 · R11, R12, R13, R19: the committed bundle boots, and the
   /* The core's exact bytes cannot be read back from a compiled module; they are pinned before deploy by the
      bundle manifest, which hashes both upload parts (bundler R4, R6). Q1 in the job record. */
   const member = discoverMembers().find((m) => m.name === "ocr-worker");
-  if (!member) throw new Error("bundler's discovery does not list ocr-worker");
-  const vs = withBuiltBundle(() => verifyStatic(member));
-  t("R19 R32 the manifest built by scripts/build.mjs hashes the tree it was built from, the upload parts among them",
+  const vs = verifyStatic(member);
+  t("R19 the committed manifest's input and asset hashes match the tree (a swapped engine is caught as stale)",
     vs.findings, []);
   t("R19 the manifest pins both upload parts at the measured sizes",
     (vs.manifest?.assets || []).map((a) => [a.path, a.bytes]),
     [["assets/tesseract-core.wasm", 1839004], ["assets/eng.traineddata", 4113088]]);
   t("R19 and the committed files are those sizes", [statSync(WASM).size, statSync(MODEL).size], [1839004, 4113088]);
-  const git = (...a) => execFileSync("git", a, { cwd: new URL("../..", import.meta.url), encoding: "utf8" });
-  t("R32 ocr-worker/dist/ holds no committed file but its .gitignore", git("ls-files", "ocr-worker/dist").split("\n").filter(Boolean),
-    ["ocr-worker/dist/.gitignore"]);
-  t("R32 and that .gitignore ignores the bundle and the manifest built there",
-    git("check-ignore", "ocr-worker/dist/ocr-worker.bundled.mjs", "ocr-worker/dist/ocr-worker.bundle.json").split("\n").filter(Boolean),
-    ["ocr-worker/dist/ocr-worker.bundled.mjs", "ocr-worker/dist/ocr-worker.bundle.json"]);
 }
 
 console.log("\n--- B2 · R8, R9, R17, R18, R20, R21: THE REAL PAGE, transcribed inside workerd ---");

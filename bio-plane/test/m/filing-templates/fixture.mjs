@@ -46,24 +46,11 @@ export const HARBOUR = "test-harbour";
 const EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 export const sha = (s) => createHash("sha256").update(s, "utf8").digest("hex");
 export const secret = (s) => sha(`secret:${s}`);
-/**
- * The value a test reads from a profile (a profile `get` answers, a kind it holds), or the test fails naming it: the
- * profiles these tests use are always held, and jurisdictions states that `get` answers null for one that is not.
- * @template T
- * @param {T} value
- * @param {string} what
- * @returns {NonNullable<T>}
- * @throws {Error} when value is null or undefined
- */
-export function present(value, what) {
-  if (value === null || value === undefined) throw new Error(`the test needs ${what}, and it is missing`);
-  return value;
-}
 
 /* A second made-up profile: the test profile under another id, its kinds' templates removed (so each profile template
    id is the test profile's alone) and its records request kind at Tier 1. */
 export function harbourProfile() {
-  const p = present(jurisdictions.get(TEST), TEST);
+  const p = jurisdictions.get(TEST);
   p.id = HARBOUR;
   p.name = "Harbour test profile";
   for (const k of p.action_kinds) { delete k.template; delete k.templates; if (k.kind === "records_request") { k.tier = 1; delete k.advisory; } }
@@ -187,5 +174,5 @@ export function reviewedOf(base = jurisdictions, edit = null) {
   return { ...base, get, list: () => base.list(), combine: (l) => base.combine(Array.isArray(l) ? l.map((x) => (typeof x === "string" ? get(x) || x : x)) : l) };
 }
 /** Every template the test profile carries, by id, read from jurisdictions' own declaration (its R40, R81; N1073). */
-export const PROFILE_IDS = Object.freeze(present(jurisdictions.get(TEST), TEST).action_kinds
+export const PROFILE_IDS = Object.freeze(jurisdictions.get(TEST).action_kinds
   .flatMap((k) => [k.template, ...(k.templates ?? [])]).filter(Boolean).map((t) => t.id));

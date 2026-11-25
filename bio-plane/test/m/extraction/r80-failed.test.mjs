@@ -6,8 +6,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, bucket, withEntry, i2, doc, sha, homesOver } from "./fixture.mjs";
 import { extractionOps } from "../../../src/extraction/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const pdf = (text) => ({ format: "pdf", structure: async () => ({ ok: true, text: structuredClone(text), pages: (text.pages || []).length, notes: [] }) });
 const register = (rows) => homesOver(rows);
@@ -31,7 +29,7 @@ async function promotedFailed({ bundleOpts = {}, parts = PARTS, holdFirst = null
   const made = await (entry ? withEntry(entry, () => w.x.read(document, { storeName: "bio" })) : w.x.read(document, { storeName: "bio" }));
   const files = [{ path: "data/provenance.json", text: JSON.stringify({ documents: [{ ...document, reading: made.reading,
     text_units: made.text_units || null }] }) }];
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text } : null);
   w.x.projectPromotion({ bundleId: "INFO-1", author: "member:m1", files });
   return { w, rows, evidence, bytes, d, document, made };
 }
@@ -130,7 +128,7 @@ async function storedUnread(bundleOpts = {}) {
   rows.set(d, row("INFO-80", bytes.length));
   await evidence.put(`bio/captures/${d}`, bytes);
   const stored = JSON.stringify({ documents: [doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" })] });
-  w.core.readFile = (b, p) => (b === "INFO-80" && p === "data/provenance.json" ? { text: stored, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-80" && p === "data/provenance.json" ? { text: stored } : null);
   return { w, d };
 }
 const readheld = (w, sha256, viewer) => {

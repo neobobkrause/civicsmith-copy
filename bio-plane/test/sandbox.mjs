@@ -88,10 +88,6 @@ const HOST_TMP = tmpdir();
    Deleting that second kind is the failure this whole item exists to avoid — a
    live sandbox WAS in flight during the manual cleanup that found D-186, and
    removing it would have broken a verification in progress. */
-/**
- * The absolute path of the directory this module created for the process (R4).
- * @type {string}
- */
 export const SANDBOX = mkdtempSync(join(HOST_TMP, `bio-battery-${process.pid}-`));
 
 /* os.tmpdir() consults $TMPDIR on every call and caches nothing, so this
@@ -100,10 +96,6 @@ export const SANDBOX = mkdtempSync(join(HOST_TMP, `bio-battery-${process.pid}-`)
 process.env.TMPDIR = SANDBOX;
 
 let swept = false;
-/**
- * Removes the sandbox directory at once; a later call or exit does nothing more (R5). Never throws.
- * @returns {void}
- */
 export const sweepSandbox = () => {
   if (swept) return;
   swept = true;

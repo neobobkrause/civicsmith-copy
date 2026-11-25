@@ -6,8 +6,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, bucket, withEntry, i2, doc, sha, homesOver } from "./fixture.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 /* a pdf entry that reads the bytes it is handed as one page's text, so a reading shows which bytes it was made from */
 const asText = { format: "pdf", structure: async (bytes) => ({ ok: true, text: i2([{ page: 0, text: new TextDecoder().decode(bytes) }]), pages: 1, notes: [] }) };
@@ -33,7 +31,7 @@ function held(docs) {
     files.get(bundleId).push(doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf", parts: ps.map(({ b, ...p }) => p) }));
     out.push({ d, ps, bytes, bundleId });
   }
-  w.core.readFile = (b, p) => (p === "data/provenance.json" && files.has(b) ? { text: JSON.stringify({ documents: files.get(b) }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (p === "data/provenance.json" && files.has(b) ? { text: JSON.stringify({ documents: files.get(b) }) } : null);
   return { w, evidence, out, async put() { for (const o of out) for (const p of o.ps) await evidence.put(`bio/captures/${p.sha256}`, p.b); } };
 }
 

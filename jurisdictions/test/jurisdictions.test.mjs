@@ -208,7 +208,7 @@ test("R7 practice, search_terms and records_laws", () => {
 /* list, get (R8, R9).                                                                             */
 
 test("R8 list: every profile held, sorted by id, {id, name, covers, test}; never throws", () => {
-  const l = Reflect.apply(list, null, [list, 3, null]);
+  const l = list(list, 3, null);
   assert.deepEqual(l.map((p) => p.id), [FIRST, TEST]);
   assert.deepEqual(l.map((p) => p.id), l.map((p) => p.id).slice().sort());
   for (const p of l) {
@@ -221,8 +221,8 @@ test("R8 list: every profile held, sorted by id, {id, name, covers, test}; never
 });
 
 test("R9 get: the held profile, or null for any other input; never throws", () => {
-  assert.equal(get(FIRST)?.id, FIRST);
-  assert.equal(get(TEST)?.id, TEST);
+  assert.equal(get(FIRST).id, FIRST);
+  assert.equal(get(TEST).id, TEST);
   for (const x of [undefined, null, "", "OAKLAND-ALAMEDA", " oakland-alameda", "nowhere", 1, {}, [], FIRST.split(""), { id: FIRST }, Symbol("x")])
     assert.equal(get(x), null, String(typeof x === "symbol" ? "symbol" : JSON.stringify(x)));
 });
@@ -310,7 +310,7 @@ test("R23 standard_sources: source, kind from the seven, issuer, level from R31 
   for (const bad of ["local", "district", "", 1, null]) assert.ok(hasError(breakIt((p) => { p.standard_sources[0].level = bad; }), "LEVEL_UNKNOWN", "standard_sources[0].level"), String(bad));
   assert.ok(hasError(breakIt((p) => { delete p.standard_sources[0].level; }), "LEVEL_UNKNOWN", "standard_sources[0].level"), "an ordinance has a level");
   /* (T35-1) a level where R31 requires one, else a sector (R64): never neither */
-  for (const id of [FIRST, TEST]) for (const s of get(id)?.standard_sources)
+  for (const id of [FIRST, TEST]) for (const s of get(id).standard_sources)
     assert.ok(LAW_LEVELS.includes(s.level) || (["policy", "commitment", "standard"].includes(s.kind) && !("level" in s) && s.sector), `${id} ${s.source}`);
   for (const kind of ["statute", "regulation", "ordinance", "court", "policy", "commitment", "standard"])
     assert.ok(breakIt((p) => { p.standard_sources[0].kind = kind; }).ok, kind);
@@ -407,7 +407,7 @@ test("R13 the view has the profile shape, with profiles, covers (union), test, a
   assert.equal(c.ok, true);
   const v = c.view;
   assert.deepEqual(v.profiles, [FIRST, TEST]);
-  assert.deepEqual(v.covers, [...(get(FIRST)?.covers ?? []), ...(get(TEST)?.covers ?? [])]);
+  assert.deepEqual(v.covers, [...get(FIRST).covers, ...get(TEST).covers]);
   assert.equal(v.test, true);
   assert.equal(combine([FIRST]).view.test, false);
   /* every fact carries profile beside its basis, and the view reads as a profile */
@@ -452,8 +452,8 @@ test("R14 lists are unioned in order; equal entries kept once carrying both base
   assert.equal(r.view.spaces.fund.label, "ledger fund; fund");
   /* the two held profiles share no fact, so nothing merges between them */
   const both = combine([FIRST, TEST]).view;
-  assert.equal(both.search_terms.length, get(FIRST)?.search_terms.length + get(TEST)?.search_terms.length);
-  assert.equal(both.systems.length, get(FIRST)?.systems.length + get(TEST)?.systems.length);
+  assert.equal(both.search_terms.length, get(FIRST).search_terms.length + get(TEST).search_terms.length);
+  assert.equal(both.systems.length, get(FIRST).systems.length + get(TEST).systems.length);
 });
 
 test("R15 one-value facts are kept only when every giver agrees; otherwise withheld and reported; combine never chooses", () => {
@@ -570,7 +570,7 @@ test("R18 what get and combine return is the caller's own copy", () => {
   const g = get(FIRST);
   g.spaces.enactment.kinds[0].floor.first = 1; g.systems.length = 0; g.covers.push("X"); g.id = "changed";
   const c = combine([FIRST, TEST]);
-  c.view.spaces.parcel.forms.length = 0; c.view.covers.length = 0; c.view.vocabulary.codes[0].bases.push({}); c.conflicts?.push({ at: "x", values: [], says: "" });
+  c.view.spaces.parcel.forms.length = 0; c.view.covers.length = 0; c.view.vocabulary.codes[0].bases.push({}); c.conflicts.push({});
   const l = list(); l[0].covers.push("Y"); l.pop();
   const obj = sample();
   const v = combine([obj]).view; v.search_terms[0].term = "mutated";
@@ -674,7 +674,6 @@ test("R21 the first profile holds every local fact of the snapshot's code, and m
 
 test("R22 the test profile: test true, every basis TEST, every section and vocabulary key of the first with different values, no shared host", () => {
   const t = get(TEST), f = get(FIRST);
-  if (!t || !f) throw new Error("a held profile is missing (R9)");
   assert.equal(t.test, true);
   let n = 0;
   walkFacts(t, (fact, path) => { n++; assert.equal(fact.basis, "TEST", path); });
@@ -771,7 +770,7 @@ test("R13 K44 the view's id is the combined ids joined by '+', and it has a name
   assert.equal(v.id, `${FIRST}+${TEST}`);
   assert.equal(combine([TEST, FIRST]).view.id, `${TEST}+${FIRST}`);
   assert.equal(combine([FIRST]).view.id, FIRST);
-  assert.ok(typeof v.name === "string" && v.name.includes(get(FIRST)?.name) && v.name.includes(get(TEST)?.name));
+  assert.ok(typeof v.name === "string" && v.name.includes(get(FIRST).name) && v.name.includes(get(TEST).name));
 });
 
 test("R25 K44 tier and venue are optional; absent, they are undetermined", () => {
@@ -857,7 +856,7 @@ test("R33 holidays: a four-digit year, its closure days {date, name} within it, 
   assert.ok(breakIt((p) => { p.holidays[0].days = []; }).ok, "a year with no closure day is a complete listing");
   /* the view gives each listed year's days and nothing for a year not listed: a count reaching there is undetermined */
   const v = combine([TEST]).view;
-  assert.deepEqual(v.holidays.map((h) => h.year), get(TEST)?.holidays.map((h) => h.year));
+  assert.deepEqual(v.holidays.map((h) => h.year), get(TEST).holidays.map((h) => h.year));
   assert.equal(v.holidays.find((h) => h.year === 2025), undefined);
   assert.deepEqual([...new Set(combine([FIRST]).view.holidays.filter((h) => !h.list).map((h) => h.year))], [2026],
     "the first profile's office calendars list only 2026, the year published (its closure lists are R47's)");
@@ -928,7 +927,6 @@ test("R29 K102 a kind's advisory and an office's oversight under one role and bo
 
 test("R36 the test profile supplies R31's levels, oversight, a Tier 2 advisory, evidence with a contestable grade, legal organisations and holidays; the first holds what is measured or named", () => {
   const t = get(TEST);
-  if (!t) throw new Error("the test profile is missing (R9)");
   assert.ok(t.action_kinds.some((k) => k.evidence && k.evidence.contestable && k.evidence.contestable.length
     && k.evidence.contestable.every((g) => GRADES.includes(g.grade))), "evidence with a contestable grade (R39)");
   /* every level; an entry with none carries a sector instead (R31 as amended by T35-1) */
@@ -983,7 +981,7 @@ test("R37 locale: {value, basis}, one well-formed BCP 47 tag; one value in combi
   assert.ok(hasError(breakIt((p) => { p.locale.region = "US"; }), "UNKNOWN_SECTION", "locale.region"));
   assert.ok(hasError(breakIt((p) => { delete p.locale.basis; }), "BASIS_MISSING", "locale.basis"));
   assert.ok(breakIt((p) => { delete p.locale; }).ok, "locale is optional");
-  assert.deepEqual(get(FIRST)?.locale, { value: "en-US", basis: "UNMEASURED" });
+  assert.deepEqual(get(FIRST).locale, { value: "en-US", basis: "UNMEASURED" });
   const one = combine([FIRST]).view.locale;
   assert.deepEqual([one.value, one.profile], ["en-US", FIRST]);
   const agree = combine([sample(), two((b) => { b.locale.basis = "M-2"; })]);
@@ -1021,7 +1019,7 @@ test("R38 systems[].links: {item, file} patterns over path and query; the first 
       assert.equal(now, was, `${end} ${url}`);
     }
   }
-  assert.ok(get(TEST)?.systems.some((s) => s.links), "the test profile states shapes too");
+  assert.ok(get(TEST).systems.some((s) => s.links), "the test profile states shapes too");
 });
 
 /* ============================================================================================== */
@@ -1099,7 +1097,7 @@ test("R29 R39 a kind's evidence is one value per key: withheld and reported when
   /* one profile only gives it: kept as that profile gives it */
   const one = combine([a, two((b) => { delete b.action_kinds[1].evidence; })]);
   assert.deepEqual(one.conflicts, []);
-  assert.equal(one.view?.action_kinds.find((y) => y.kind === "code_complaint").evidence.standard, a.action_kinds[1].evidence.standard);
+  assert.equal(one.view.action_kinds.find((y) => y.kind === "code_complaint").evidence.standard, a.action_kinds[1].evidence.standard);
 });
 
 /* ============================================================================================== */

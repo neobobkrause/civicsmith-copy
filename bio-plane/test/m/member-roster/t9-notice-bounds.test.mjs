@@ -35,7 +35,7 @@ test("R25 a revocation (R16) notifies every listener once, inside the act, after
   w.m.onRevoked("capture-sources", (n) => {
     heard.push(["capture-sources", n]);
     // after the act's writes: the member is revoked when the listener runs
-    seen.push([w.m.memberFacts(n.memberId)?.status, w.m.sessionRights(`member:${n.memberId}`).capabilities.length]);
+    seen.push([w.m.memberFacts(n.memberId).status, w.m.sessionRights(`member:${n.memberId}`).capabilities.length]);
   });
   w.m.onRevoked("second-module", (n) => { heard.push(["second-module", n]); });
   const r = w.m.memberSet({ memberId: "ann", status: "revoked", by: "second" });
@@ -84,7 +84,7 @@ test("R25 a listener that throws or rejects changes neither the revocation, its 
   const got = w.m.memberSet({ memberId: "ann", status: "revoked", by: "admin" });
   assert.deepEqual(got, want, "the answer is the one given with no listener");
   assert.deepEqual(heard, ["ann"]);
-  assert.deepEqual(w.m.memberFacts("ann")?.status, "revoked");
+  assert.deepEqual(w.m.memberFacts("ann").status, "revoked");
   await new Promise((r) => setTimeout(r, 10));   // a rejected promise is caught, never an unhandled rejection
 });
 

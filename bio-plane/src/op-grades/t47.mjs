@@ -19,35 +19,13 @@
  * N955 adds no op: `credentials`' `aiRunCredentialMint` is in-plane and the door's op stays `airundispatch` (R33). */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const GROUP_SETTING = (s) => `setting: ${s}; an administrator's act, a later one replacing it; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const SESSION_OWN = (s) => `session-directed: ${s}; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const RESET = (s) => `credential: ${s}; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
-/** @type {RungTable} T47's ops */
 export const T47_RUNGS = {
   /* R36. citation R14: no reason is asked (its `note` is a note's shape, BAD_NOTE, not a reason), and a published act
      (`sever`, citation R4) takes the edge back, as `cite` */
@@ -65,7 +43,6 @@ export const T47_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T47's ops */
 export const T47_RUNG_ABSENT = {
   /* R37. credentials R65, R66, R71: who may act in the session, as setpassword's subject sits beside recover */
   unlock:            { ground: "credential", is: "a member clears the lock on their own locked session with their password, counted under the sign-in window; a wrong password leaves it locked (credentials R65, R71)" },
@@ -76,7 +53,6 @@ export const T47_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5; R32: a read "read: …") ---- */
-/** @type {ReasonTable} T47's ops */
 export const T47_NON_ACTS = {
   /* R36 */
   projectlist: R("the projects of the group the viewer may see, each with its question count and stage (project-roster "

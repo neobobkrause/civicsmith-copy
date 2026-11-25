@@ -18,15 +18,9 @@ import { combine } from "../../../../jurisdictions/index.mjs";
 import { Lines } from "../../../src/lines/index.mjs";
 import { makePromotion } from "../promotion/fixtures.mjs";
 
-/** The SHA-256 of a text, lowercase hex: a capture's id in these tests.
- *  @param {any} s
- *  @returns {string} */
 export const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
-/** @type {string} the machine's stamp */
 export const MACHINE = "class:admin";
-/** @type {string} the member the fixture makes, and the author of its acts */
 export const ANN = "member:ann";
-/** @type {string} the fictional test profile's zone, the default a validity takes */
 export const HFX = "America/Halifax";
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
@@ -41,9 +35,6 @@ function cursor(rows) {
   return c;
 }
 
-/** A Durable Object storage stand-in over an in-memory node:sqlite database, with record-core's schema laid down:
- *  `sql.exec` answers a cursor, `transactionSync` nests as savepoints.
- *  @returns {{db: any, sql: {exec: (q: string, ...args: any[]) => any}, transactionSync: (fn: () => any) => any}} */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   const bare = RECORD_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
@@ -76,36 +67,7 @@ function testView() {
 }
 
 let tick = 0;
-/**
- * A fresh record with lines over it, made by the real modules lines uses, and the acts a test makes its inputs with.
- * @typedef {Object} LinesTestWorld
- * @property {any} st the storage
- * @property {any} host
- * @property {any} record
- * @property {any} membership
- * @property {any} prov
- * @property {any} content
- * @property {any} ents
- * @property {any} ev
- * @property {any} registry the connection registry lines registers into
- * @property {Lines} l
- * @property {(q: string, ...a: any[]) => any[]} rows
- * @property {(q: string, ...a: any[]) => any} one the first row, or null
- * @property {(id: string, opts?: {type?: string, project?: string}) => string} bundle
- * @property {(bundleId: string, captureSha: string, opts?: {address?: string, project?: string, refs?: any[]}) => string} held
- *   a captured document homed in the bundle, with an empty reading; answers its sha
- * @property {(id: string, participant: string) => string} project
- * @property {(kind: string, label: string) => string} ent a registered entity's id
- * @property {(entityId: string, scheme: string, id: any) => void} identify
- * @property {(value?: string|null) => string} event an event's id, attested by a dated fact of `value`, or undated
- * @property {(s: string, value: string) => string} dated a dated fact's id
- * @property {(eventId: string, value: string) => any} move moves an event's `when` by a governing attestation
- * @property {(kind: string, from: string, to: string, more?: Record<string, any>) => string} say a testimony line's id
- */
-/** A fresh record with lines over it. `profiles` sets the active jurisdiction profiles (record-core R26).
- *  @param {{profiles?: string[]|null}} [opts]
- *  @returns {LinesTestWorld}
- *  @throws {Error} when an act the fixture makes is refused, naming it */
+/* A fresh record with lines over it. `profiles` sets the active jurisdiction profiles (record-core R26). */
 export function world({ profiles = ["test-port-ellery"] } = {}) {
   const st = storage();
   const host = { storage: st };
@@ -143,8 +105,6 @@ export function world({ profiles = ["test-port-ellery"] } = {}) {
       return id;
     },
     /* A captured document homed in `bundleId`, fetched directly, with an empty reading; `refs` its references. */
-    /** @param {string} bundleId @param {string} captureSha
-     *  @param {{address?: string, project?: string, refs?: any[]}} [opts] @returns {string} */
     held(bundleId, captureSha, { address = "https://records.example/doc", project = "", refs = [] } = {}) {
       w.bundle(bundleId, { project });
       st.sql.exec(`INSERT OR REPLACE INTO register (capture_sha, bundle_id, path, encoding, bytes, registered)
@@ -176,7 +136,6 @@ export function world({ profiles = ["test-port-ellery"] } = {}) {
       if (!r.ok) throw new Error(`addIdentifier: ${r.reason} ${r.detail}`);
     },
     /* An event attested by a dated fact (`value` a day or minute) of a fresh capture, or undated by an extent. */
-    /** @param {string|null} [value] @returns {string} */
     event(value = null) {
       const s = w.held(`INFO-2026-${String(9000 + n++)}`, sha(`event capture ${n}-${Math.random()}`));
       const att = value === null ? { captureSha: s, extent: { kind: "document" } } : { datedFactId: w.dated(s, value) };
@@ -199,7 +158,7 @@ export function world({ profiles = ["test-port-ellery"] } = {}) {
     /* A member's testimony line: the shortest valid act. */
     say(kind, from, to, more = {}) {
       const r = w.l.recordLine({ kind, from, to, basis: { statement: "I was there" }, by: ANN, ...more });
-      if (!r.ok || r.line_id === undefined) throw new Error(`${kind}: ${r.reason} ${r.detail}`);
+      if (!r.ok) throw new Error(`${kind}: ${r.reason} ${r.detail}`);
       return r.line_id;
     },
   };

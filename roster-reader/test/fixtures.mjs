@@ -20,21 +20,13 @@ import fs from "node:fs";
 import { flattenText, makeLocator } from "../../docprofile/registry.mjs";
 
 const load = (f) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${f}`, import.meta.url), "utf8"));
-/**
- * A corpus of captured documents (R9): its own note, and each document by key, its text in interface I2's shape.
- * @typedef {{documents: Record<string, {text: any} & Record<string, any>>} & Record<string, any>} Corpus
- */
-/** @type {Corpus} the fifteen documents captured for this module */
 export const ROSTER_DOCS = load("roster-documents.json");
-/** @type {Corpus} the staff directory's four directories and five look-alikes */
 export const FW20 = load("fw20-staff-directory.json");
-/** @type {Corpus} FW-18's minutes, agenda, instrument and staff report */
 export const FW18 = load("fw18-doctypes.json");
 
 const fact = (profile, re, flags, extra) => ({ pattern: flags ? { re, flags } : { re }, basis: "TEST", profile, ...(extra || {}) });
 
 const F = (re, flags, extra) => fact("first-proposed", re, flags, extra);
-/** @type {Readonly<{vocabulary: Record<string, any[]>}>} the roster vocabulary proposed for the first profile */
 export const FIRST = Object.freeze({ vocabulary: {
   roster_words: [F("\\brosters?\\b", "i", { kind: "roster" }),
                  F("\\borgani[sz]ational\\s+chart\\b|\\borg\\.?\\s+chart\\b", "i", { kind: "chart" })],
@@ -47,7 +39,6 @@ export const FIRST = Object.freeze({ vocabulary: {
 } });
 
 const H = (re, flags, extra) => fact("harbor-test", re, flags, extra);
-/** @type {Readonly<{vocabulary: Record<string, any[]>}>} a made-up test profile in another vocabulary (R8) */
 export const HARBOR = Object.freeze({ vocabulary: {
   roster_words: [H("\\bregister of officers\\b", "i", { kind: "roster" }), H("\\btable of organisation\\b", "i", { kind: "chart" })],
   staff_titles: [H("Harbourmaster|Selectperson|Warden|Clerk of Works")],
@@ -55,25 +46,17 @@ export const HARBOR = Object.freeze({ vocabulary: {
                    H("^Telephone$", "i", { role: "contact" })],
 } });
 
-/** @type {Readonly<{vocabulary: Record<string, any[]>}>} a view with no vocabulary */
 export const EMPTY = Object.freeze({ vocabulary: {} });
 
 /** A reader's context for one captured document: its I2 text flattened as docprofile's `readText` does,
- *  with the locator built from its own segment map.
- * @param {{text: any}} doc
- * @param {Object} [view]
- * @returns {{text: string, view: Object|undefined, locate: (offset: number) => any}}
- */
+ *  with the locator built from its own segment map. */
 export function ctxOf(doc, view) {
   const f = flattenText(doc.text);
   return { text: f.text, view, locate: makeLocator(f.segments) };
 }
 
-/** Every document the suite reads, by a prefixed key: `r:` this module's, `d:` fw20's, `s:` fw18's.
- * @returns {Record<string, {text: any} & Record<string, any>>}
- */
+/** Every document the suite reads, by a prefixed key: `r:` this module's, `d:` fw20's, `s:` fw18's. */
 export function allDocs() {
-  /** @type {Record<string, {text: any} & Record<string, any>>} builds the documents by prefixed key */
   const out = {};
   for (const [k, v] of Object.entries(ROSTER_DOCS.documents)) out[`r:${k}`] = v;
   for (const [k, v] of Object.entries(FW20.documents)) out[`d:${k}`] = v;
@@ -81,11 +64,7 @@ export function allDocs() {
   return out;
 }
 
-/** Deep-freeze, so a test can show a function writes nothing into what it was given.
- * @template T
- * @param {T} o
- * @returns {T}
- */
+/** Deep-freeze, so a test can show a function writes nothing into what it was given. */
 export function freeze(o) {
   if (o && typeof o === "object" && !Object.isFrozen(o)) { Object.freeze(o); for (const v of Object.values(o)) freeze(v); }
   return o;

@@ -8,10 +8,7 @@ import { ROSTER_DOCS } from "./fixtures.mjs";
 const BUDGET = JSON.parse(fs.readFileSync(new URL("./fixtures/budget-pages.json", import.meta.url), "utf8"));
 
 /** The text of a budget volume, exactly `bytes` long: tables of figures, headings that read like unit names, lines of
- *  Title Case and running prose, as a 1,300-page budget has them (no roster in it).
- * @param {number} bytes
- * @returns {string}
- */
+ *  Title Case and running prose, as a 1,300-page budget has them (no roster in it). */
 export function budgetVolumeText(bytes) {
   const block = [];
   for (let n = 0; n < 40; n++) {
@@ -24,19 +21,13 @@ export function budgetVolumeText(bytes) {
   return one.repeat(Math.ceil(bytes / one.length)).slice(0, bytes);
 }
 
-/** The text of the real budget document held here (the Adopted Policy Budget's nine pages), flattened as `readText` does.
- * @returns {string}
- */
+/** The text of the real budget document held here (the Adopted Policy Budget's nine pages), flattened as `readText` does. */
 export function budgetDocumentText() {
   return flattenText(BUDGET.pages.map((p) => p.text).join("\n")).text;
 }
 
 /** A real roster's text behind `lines` lines of preface (a cover, a letter, a table of contents): the title page of a
- *  volume that holds a roster far into it.
- * @param {string} key a key of ROSTER_DOCS
- * @param {number} lines
- * @returns {string}
- */
+ *  volume that holds a roster far into it. */
 export function prefacedRoster(key, lines) {
   const preface = [];
   for (let n = 0; n < lines; n++) {

@@ -14,13 +14,8 @@ import { credentialsOf } from "../../../src/credentials/index.mjs";
 import { Capture } from "../../../src/capture/index.mjs";
 import { holdsRegister } from "../provenance/fixtures.mjs";
 
-/** @type {(b: string | Uint8Array) => string} the SHA-256 of text or bytes, lowercase hex */
 export const sha = (b) => createHash("sha256").update(typeof b === "string" ? Buffer.from(b) : Buffer.from(b)).digest("hex");
 
-/**
- * A Durable Object storage stand-in over SQLite (`sql.exec`, `transactionSync`).
- * @returns {any}
- */
 export function storage() {
   const db = new DatabaseSync(":memory:");
   let n = 0;
@@ -46,7 +41,6 @@ export function storage() {
 }
 
 /* An evidence bucket stand-in (the R2 binding's shape), recording every call. */
-/** @returns {any} the bucket, `calls` and `objects` beside its methods */
 export function bucket() {
   const held = new Map(), calls = [];
   /* a ranged read (`{range: {offset, length}}`, R2's option) answers those bytes alone, with the object's own size; none, the whole object */
@@ -63,10 +57,6 @@ export function bucket() {
 
 /* host-governor's R1–R14 as capture reaches them (`governorOf(ctx)`'s methods), each call recorded; `refuse` names
    hosts to refuse and `held` hosts cooling off. */
-/**
- * @param {{refuse?: string[], held?: string[]}} [o]
- * @returns {any}
- */
 export function governor({ refuse = [], held = [] } = {}) {
   const calls = [];
   return {
@@ -81,11 +71,6 @@ export function governor({ refuse = [], held = [] } = {}) {
 
 /* provenance's R5 and R13 as capture reaches them (`registerHolds`, `recordReceipt`). `registered` names the digests the
    register holds; `acquired` those an acquisition receipt names (a capture held in parts). */
-/**
- * @param {any} s the storage
- * @param {{registered?: string[], acquired?: string[]}} [o]
- * @returns {any}
- */
 export function provenance(s, { registered = [], acquired = [] } = {}) {
   const receipts = [];
   /* provenance's own answer to "what does the record hold" (K5044): its published fixture. The receipts this stand-in wrote are read from this store, so a
@@ -122,10 +107,6 @@ export function provenance(s, { registered = [], acquired = [] } = {}) {
 
 /* A granted RFC 3161 TimeStampResp whose token carries the digest's raw bytes, which is what `signatures`'
    `parseTimestampResponse` binds a token on (the shape attestation's own tests answer with). */
-/**
- * @param {string} digestHex
- * @returns {Uint8Array} the response's DER bytes
- */
 export function granted(digestHex) {
   const der = (tag, body) => {
     const n = body.length;
@@ -139,10 +120,6 @@ export function granted(digestHex) {
 }
 
 /* A fresh capture over a fresh store. `opts` goes to the Capture (env, governor, provenance). */
-/**
- * @param {{env?: any, evidence?: any, gov?: any, prov?: any}} [o]
- * @returns {any} `{s, capture, gov, prov, evidence}`
- */
 export function fresh({ env = {}, evidence = null, gov = null, prov = undefined } = {}) {
   const s = storage();
   const ctx = { storage: s };
@@ -158,23 +135,10 @@ export function fresh({ env = {}, evidence = null, gov = null, prov = undefined 
 }
 
 /* A receipt row (provenance's) and a register row, for the joins capture reads on the contract. */
-/**
- * @param {any} s the storage
- * @param {any} r `{address, capture, via, first, last, observations}`: `via` "direct" and `last` `first` by default
- * @returns {void}
- */
 export function receipt(s, { address, capture, via = "direct", first, last = first, observations = 1 }) {
   s.sql.exec(`INSERT INTO captured_locators (address_norm, address, capture_sha, via, first_retrieved, last_retrieved, observations)
               VALUES (?, ?, ?, ?, ?, ?, ?)`, address, address, capture, via, first, last, observations);
 }
-/**
- * A register row (provenance's) filing a capture under a bundle.
- * @param {any} s the storage
- * @param {string} captureSha
- * @param {string} bundleId
- * @param {{type?: string, project?: string|null, registered?: string}} [o]
- * @returns {void}
- */
 export function register(s, captureSha, bundleId, { type = "information", project = null, registered = "2026-01-01T00:00:00.000Z" } = {}) {
   s.sql.exec(`INSERT INTO register (capture_sha, bundle_id, path, registered) VALUES (?, ?, 'x', ?)`, captureSha, bundleId, registered);
   s.sql.exec(`INSERT OR IGNORE INTO bundles (bundle_id, object_type, group_id, title, current_state, created, last_updated, bundle_sha, row_version, project)
@@ -182,10 +146,6 @@ export function register(s, captureSha, bundleId, { type = "information", projec
 }
 
 /* A scripted network: `routes` maps a URL (or a function of it) to a Response or a thrower; every fetch is recorded. */
-/**
- * @param {Record<string, any>} routes
- * @returns {{seen: string[], restore: () => void}}
- */
 export function network(routes) {
   const seen = [];
   const orig = globalThis.fetch;
@@ -200,7 +160,6 @@ export function network(routes) {
   return { seen, restore() { globalThis.fetch = orig; } };
 }
 
-/** @type {(hex: string) => string} a 64-character digest made by padding `hex` with zeros */
 export const H = (hex) => hex.padEnd(64, "0").slice(0, 64);
 
 /* An SSHSIG signer (PROTOCOL.sshsig), for R69's signed accounts: an Ed25519 key and a detached signature over a
@@ -214,22 +173,11 @@ const cat8 = (...parts) => {
 const u32 = (n) => new Uint8Array([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
 const sstr = (v) => { const b = typeof v === "string" ? enc(v) : v; return cat8(u32(b.length), b); };
 const b64 = (bytes) => Buffer.from(bytes).toString("base64");
-/**
- * An Ed25519 key pair for SSH signatures.
- * @returns {Promise<{priv: any, raw: Uint8Array, keyB64: string}>}
- */
 export async function newKey() {
   const kp = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
   const raw = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
   return { priv: kp.privateKey, raw, keyB64: b64(cat8(sstr("ssh-ed25519"), sstr(raw))) };
 }
-/**
- * An SSHSIG signature (armoured) over `message` in `namespace`.
- * @param {{priv: any, raw: Uint8Array}} key
- * @param {string | Uint8Array} message
- * @param {string} namespace
- * @returns {Promise<string>}
- */
 export async function sshsign(key, message, namespace) {
   const h = new Uint8Array(await crypto.subtle.digest("SHA-512", typeof message === "string" ? enc(message) : message));
   const signed = cat8(enc("SSHSIG"), sstr(namespace), sstr(new Uint8Array(0)), sstr("sha512"), sstr(h));
@@ -240,13 +188,6 @@ export async function sshsign(key, message, namespace) {
 }
 /* A member in membership's table and a signer key in credentials' (`status` of each), as membership's R13/R16 and
    credentials' R6/R7 leave them. */
-/**
- * @param {any} s the storage
- * @param {string} memberId
- * @param {string} keyB64
- * @param {{keyStatus?: string, memberStatus?: string}} [o]
- * @returns {void}
- */
 export function signer(s, memberId, keyB64, { keyStatus = "active", memberStatus = "active" } = {}) {
   s.sql.exec(`INSERT OR IGNORE INTO members (member_id, cover, role, status, created, updated) VALUES (?, 'c', 'member', ?, '2026-01-01', '2026-01-01')`,
              memberId, memberStatus);

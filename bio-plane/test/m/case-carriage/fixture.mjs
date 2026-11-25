@@ -83,9 +83,7 @@ export function world(extra = {}) {
       const r = w.prov.testify({ words, observedAt: "2026-09-27", title: `Observation by ${author}`, author });
       if (!r.ok) throw new Error(`fixture testify refused: ${JSON.stringify(r).slice(0, 400)}`);
       const reg = w.row(`SELECT capture_sha, path FROM register WHERE bundle_id=?`, r.bundle_id);
-      const file = record.readFile(r.bundle_id, reg.path);
-      if (!file || !("text" in file)) throw new Error(`fixture observation not held inline: ${reg.path}`);
-      return { id: r.bundle_id, sha: reg.capture_sha, text: file.text };
+      return { id: r.bundle_id, sha: reg.capture_sha, text: record.readFile(r.bundle_id, reg.path).text };
     },
     /** case-import's registration with accepted-work, as a stand-in: `state.finding`, `state.openFlags` and (T46; R19)
      *  `state.withdrawals` decide each answer (no withdrawals: an empty history); (T47; R19) `state.flagHistory` the flags'

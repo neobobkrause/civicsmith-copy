@@ -35,29 +35,6 @@
  * ours.
  */
 
-/**
- * An RFC 3161 request (R15, R16).
- * @typedef {Object} TimestampRequest
- * @property {Uint8Array} der the DER-encoded TimeStampReq
- * @property {Uint8Array} nonce the nonce it carries
- */
-
-/**
- * Whether a timestamp response was granted and binds the digest (R17), and when not, which kind of no (R18).
- * @typedef {Object} TimestampVerdict
- * @property {boolean} ok
- * @property {number} [status] the response's status: 0 or 1 when ok; present for REJECTED, NO_TOKEN and NOT_BOUND
- * @property {Uint8Array} [token] ok: the token's raw DER bytes
- * @property {"MALFORMED"|"REJECTED"|"NO_TOKEN"|"NOT_BOUND"} [reason] present exactly when ok is false
- */
-
-/**
- * What an archive answered with, as `fetch` hands it back.
- * @typedef {Object} ArchiveAnswer
- * @property {{get: (name: string) => (string|null)}} headers
- * @property {string} [url]
- */
-
 /* ---- DER, the little of it this needs ---- */
 
 const cat = (...parts) => {
@@ -116,12 +93,6 @@ const hexToBytes = (hex) => {
  * certificate in the token, without which nobody can verify the token later
  * without separately obtaining the right certificate.
  */
-/**
- * @param {string} sha256Hex the digest
- * @param {Uint8Array} [nonceBytes] used verbatim; absent is 8 fresh random bytes
- * @returns {TimestampRequest}
- * @bound sha256Hex: 64 hex characters
- */
 export function timestampRequest(sha256Hex, nonceBytes) {
   const nonce = nonceBytes || crypto.getRandomValues(new Uint8Array(8));
   return {
@@ -160,21 +131,11 @@ function readTlv(bytes, at) {
  * than retried silently, because "a failed attempt is recorded with its reason,
  * never omitted".
  */
-/**
- * @param {Uint8Array} bytes the response's body
- * @param {string} expectDigestHex the digest the request was made over
- * @returns {TimestampVerdict} never throws
- */
 export function parseTimestampResponse(bytes, expectDigestHex) {
   try { return parseResponse(bytes, expectDigestHex); }
   catch { return { ok: false, reason: "MALFORMED" }; }
 }
 
-/**
- * @param {Uint8Array} bytes
- * @param {string} expectDigestHex
- * @returns {TimestampVerdict}
- */
 function parseResponse(bytes, expectDigestHex) {
   if (!(bytes instanceof Uint8Array)) return { ok: false, reason: "MALFORMED" };
   const outer = readTlv(bytes, 0);
@@ -215,16 +176,13 @@ function parseResponse(bytes, expectDigestHex) {
    header. Several, because a single authority is a single point of failure for
    a property the record depends on, and because the doctrine wants the attempt
    recorded either way. */
-/** @type {ReadonlyArray<string>} the authorities to ask, in order (R20) */
 export const TSA_ENDPOINTS = Object.freeze([
   "http://timestamp.digicert.com",
   "http://timestamp.sectigo.com",
   "http://rfc3161.ai.moda",
 ]);
 
-/** @type {string} the request's media type (R21) */
 export const TSA_CONTENT_TYPE = "application/timestamp-query";
-/** @type {string} the accepted response's media type (R21) */
 export const TSA_ACCEPT = "application/timestamp-reply";
 
 /* ---- the public archive, the opt-in second path ----
@@ -245,18 +203,12 @@ export const TSA_ACCEPT = "application/timestamp-reply";
  * the only variable part is a locator that has already passed
  * isPublicHttpsLocator, so this cannot be pointed anywhere else.
  */
-/** @type {string} the one URL a locator is appended to for a save request (R22) */
 export const ARCHIVE_SAVE_BASE = "https://web.archive.org/save/";
-/** @type {string} the service's name for the record (R22) */
 export const ARCHIVE_SERVICE = "web.archive.org/save (anonymous)";
 
 /** Pull an archived locator out of whatever the archive answered with: the
  *  content-location header, then the location header, then the response's own
- *  url, the first that names one. Never throws: an unreadable answer names none.
- * @param {ArchiveAnswer} res
- * @param {string} [requested] the locator asked for; not read
- * @returns {string|null} an https://web.archive.org/web/<timestamp>/… locator, or null
- */
+ *  url, the first that names one. Never throws: an unreadable answer names none. */
 export function archiveLocatorFrom(res, requested) {
   const header = (name) => {
     try { return res.headers.get(name) || ""; } catch { return ""; }

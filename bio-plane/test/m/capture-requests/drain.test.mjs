@@ -2,7 +2,7 @@
    `capture`'s in-process arm a scripted stand-in that records exactly what it was handed. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, T0, ENV, refused, renderRefusal, sha, filed, textOf } from "./fixture.mjs";
+import { world, V, T0, ENV, refused, renderRefusal, sha, filed } from "./fixture.mjs";
 import { captureRequestAttribution, CAPTURE_REQUEST_TICK_BATCH, CAPTURE_REQUEST_TTL_MS, CAPTURE_SOURCE_CHECKS,
          CAPTURE_REQUEST_CHECKS, CAPTURE_PURPOSES, CAPTURE_UA_MODES, CAPTURE_UA_MODE_ALIASES, uaModeOf, userAgentIsLegible,
          sourceReasonOf, captureRequestsOps } from "../../../src/capture-requests/index.mjs";
@@ -438,11 +438,11 @@ test("R38 a new capture is promoted at collected, never higher, as an informatio
   assert.deepEqual([b.object_type, b.current_state, b.group_id], ["information", "collected", "test-group"]);
   const m = w.rows(`SELECT * FROM manifest WHERE bundle_id=?`, bid);
   assert.deepEqual(m.map((x) => [x.kind, x.author]), [["promotion", "token:daemon"]]);
-  const prov = JSON.parse(textOf(w.record, bid, "data/provenance.json"));
+  const prov = JSON.parse(w.record.readFile(bid, "data/provenance.json").text);
   assert.deepEqual(prov.documents[0].origin, { kind: "sweep", matched_sweep: "INQ-1",
     deeming_actor: "run R-1 under member:ann/tok1, paid by instance" });
   assert.equal(prov.documents[0].capture.sha256, w.req(id).capture_sha);
-  const md = textOf(w.record, bid, "bundle.md");
+  const md = w.record.readFile(bid, "bundle.md").text;
   assert.match(md, /^current_state: collected$/m);
   assert.match(md, /^object_type: information$/m);
   assert.ok(md.includes(captureRequestAttribution(w.req(id)).statement), "the attribution is stated in the record");

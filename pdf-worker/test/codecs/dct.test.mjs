@@ -25,7 +25,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { decodeBaselineJpeg, decodeBaselineJpegRows, readJpegHeader, colourTransformOf, DctRefusal } from "../../src/dctdecode.mjs";
-/** @import { JpegOptions } from "../../src/dctdecode.mjs" */
 
 const FIX = JSON.parse(readFileSync(new URL("../fixtures/dct-variants.json", import.meta.url), "utf8"));
 const V = FIX.variants;
@@ -118,7 +117,6 @@ test("R1 the fixtures' refusals: progressive, arithmetic-coded, four components,
 /** Every refusal no fixture carries, as [label, bytes, options, code]: each made
  *  from a fixture by the one change its label names. R1 and R11 are driven over
  *  the same table. */
-/** @type {() => Array<[string, *, JpegOptions, string]>} */
 const OTHER_REFUSALS = () => [
   ["not a JPEG", Uint8Array.from([1, 2, 3, 4, 5]), {}, "NOT_A_JPEG"],
   ["not even bytes", "\xff\xd8\xff", {}, "NOT_A_JPEG"],

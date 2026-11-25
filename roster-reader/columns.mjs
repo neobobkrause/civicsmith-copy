@@ -8,32 +8,9 @@
 import { vocabulary, vocabRegex } from "../docprofile/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-/**
- * One column's role (R6): its place, its header as captured, the role the view's header words name, or none with why.
- * @typedef {Object} ColumnRole
- * @property {number} index
- * @property {any} header
- * @property {string|null} role
- * @property {string|null} why
- * @bound role: one of ROLES, or null; null always with why
- */
-/**
- * The roles of a table's columns (R6, R11). `roster` is false, with why, when no column is `name` or `employee_id`.
- * @typedef {Object} RosterColumns
- * @property {boolean} roster
- * @property {ColumnRole[]} roles
- * @property {string|null} why
- * @property {string} [skipped_why]
- */
-
-/** @type {readonly string[]} the roles a column may have, `contact` among them (R4) */
 export const ROLES = Object.freeze(["name", "title", "unit", "start", "end", "as_of", "employee_id", "contact"]);
 
-/** The roles of a header's columns. `header` is the list of the table's header cells as captured.
- * @param {any} header the header cells; anything but a list is refused with why
- * @param {Object} [view] the view whose `roster_headers` name the roles
- * @returns {RosterColumns}
- */
+/** The roles of a header's columns. `header` is the list of the table's header cells as captured. */
 export function rosterColumns(header, view) {
   if (!Array.isArray(header))
     return { roster: false, roles: [], why: localize("roster-reader.columns.no_header_was_given", "no header was given: a table's roles are named from its header cells, a list") };

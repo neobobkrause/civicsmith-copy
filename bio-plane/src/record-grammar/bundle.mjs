@@ -72,21 +72,7 @@ function f(check, severity, message, repairs, code) {
 // ---------------------------------------------------------------------------
 
 /**
- * What `checkBundle` reads (R39). Every optional field is handed to the arms unchanged, or read as stated here.
- * @typedef {Object} BundleInput
- * @property {string} folderName the folder the bundle is filed under
- * @property {Map<string, Uint8Array|string>} files bundle-relative path to its bytes or text
- * @property {(bytes: Uint8Array|string) => Promise<string>} sha256 a promise of the lowercase hex SHA-256
- * @property {number} [nowMs] absent is the clock
- * @property {number} [maxPackageAgeDays] absent is 14
- * @property {number} [maxReevalAgeDays] absent is 30
- * @property {Set<string>|string[]|null} [elidedPaths] paths held but not carried, counted present by presence checks only; absent is none
- * @property {((id: string) => boolean)|null} [resolveTarget] whether a reference target exists; absent leaves targets unresolved
- * @property {Record<string, *>|null} [releaseRegistry] the key registry; absent is null
- * @property {Record<string, *>|null} [publishedRegistry] the published findings' record; absent is null
- * @property {Record<string, *>|null} [publishedCaseRegistry] the published cases' record; absent is null
- * @property {Record<string, *>|null} [earnedRegistry] the earned grades of the basis targets; absent is null
- * @property {((bytes: Uint8Array|string) => Promise<Uint8Array>)|null} [sha512] a promise of the SHA-512 bytes; absent is null
+ * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number, maxPackageAgeDays?: number}} BundleInput
  */
 
 function asText(v) {
@@ -789,7 +775,7 @@ function grammarsOf(list) {
 /**
  * Run all applicable checks over one bundle.
  * @param {BundleInput} input
- * @param {{knownSchemas?: ReadonlyArray<string>, grammars?: ReadonlyArray<{module: string, ids: ReadonlyArray<string>, arm: Function}>|null}} [opts]
+ * @param {{knownSchemas?: string[], grammars?: {module: string, ids: string[], arm: Function}[]}} [opts]
  * @returns {Promise<{pass: boolean, findings: Finding[]}>}
  */
 export async function checkBundle(input, opts = {}) {

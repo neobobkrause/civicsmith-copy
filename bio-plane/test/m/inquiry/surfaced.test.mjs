@@ -56,7 +56,7 @@ test("R50 only a revision of a bundle whose current version is an inquiry is ask
   assert.equal(w.fm(Q).surfaced_by, "agent");
   /* a document that is not an inquiry carries no surfacing to compare */
   w.doc("INFO-2026-0001-a");
-  const info = w.text("INFO-2026-0001-a");
+  const info = w.record.readFile("INFO-2026-0001-a", "bundle.md").text;
   const r = w.promotion.promote({ bundleId: "INFO-2026-0001-a", base: w.record.head("INFO-2026-0001-a").bundleSha,
     snapKey: "info-rev", author: "member:alice", meta: { object_type: "information" },
     files: [{ path: "bundle.md", text: info.replace("---\n\n## Summary", "surfaced_by: agent\n---\n\n## Summary") },

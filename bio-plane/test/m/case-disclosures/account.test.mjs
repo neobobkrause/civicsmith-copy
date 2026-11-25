@@ -328,8 +328,7 @@ test("R30 (T46; N901): cited arrives as case-account R6 builds it, answers R33's
 test("R30 (T46; N901; K2829) control, over the real case-checker.checkAccount: an account sentence citing a held finding, its cited read as case-account R6 builds it (address finding:<id>, quote the finding's live text), passes when the finding's words hold its facts; the same sentence whose cite was not read (no holding) answers ACCOUNT_SENTENCE_UNSUPPORTED", () => {
   const w = world(); w.member("alice");                      /* the real case-checker */
   w.doc(DOC); w.finding(Q, [{ target: DOC }]);
-  const file = w.record.readFile(Q, "bundle.md");             /* record-core: InlineFile | BlobFile | null */
-  const text = file && "text" in file ? file.text : "";
+  const text = w.record.readFile(Q, "bundle.md").text;
   assert.ok(text.includes("the award followed the minutes"));
   const account = [{ ord: 1, text: 'The finding reads "the award followed the minutes".', kind: "account",
                      cites: [{ kind: "finding", ref: Q, ord: null }], began_as: "member" }];

@@ -1,7 +1,7 @@
 /* filing-templates: the reads (R14, R15, R20, R24, R25), at the module's interface. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, world, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, secret, twoProfiles, reviewedOf, attributed, PROFILE_IDS, PRO_REVIEW, present } from "./fixture.mjs";
+import { seeded, world, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, secret, twoProfiles, reviewedOf, attributed, PROFILE_IDS, PRO_REVIEW } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
@@ -106,7 +106,7 @@ test("R14 templateRead answers one version (the latest approved by default) with
 test("R15 the profile's templates are read as approved versions of origin profile, scope group, their profiles the profile they are in, with the attribution it carries; derivable and commentable, never revised, reviewed, approved or retired", () => {
   const w = seeded();
   const r = w.ft.templateRead({ template: "TPL-test-records-request", viewer: D });
-  const pt = present(present(jurisdictions.get(TEST), TEST).action_kinds.find((k) => k.kind === "records_request"), "records_request").template;
+  const pt = jurisdictions.get(TEST).action_kinds.find((k) => k.kind === "records_request").template;
   assert.deepEqual({ ...r.template }, { id: pt.id, kind: "records_request", use: "file", profiles: [TEST], name: "request under the records act",
                                         scope: "group", origin: "profile" });
   const v = r.version;
@@ -314,7 +314,7 @@ test("R26 offeredVersion takes {name, project?, version?} in place of template: 
   const same = (named, id, x = {}) => assert.deepEqual(named, w.ft.offeredVersion({ template: id, viewer: A, ...x }));
   /* the profile's templates, by their own names' handles (R15, R26: each template's own name; a single template written
      without one, by its kind's label) */
-  const pt = present(jurisdictions.get(TEST), TEST).action_kinds;
+  const pt = jurisdictions.get(TEST).action_kinds;
   for (const k of pt)
     for (const t of k.templates || [k.template]) same(by(`@${ft.templateHandle(t.name || k.label)}`), t.id);
   same(by("@request-under-the-records-act", P), "TPL-test-records-request");
@@ -377,8 +377,8 @@ test("R26 refusals in order, each writing nothing: template and name both or nei
   assert.equal(w.ft.offeredVersion({ name: "@records-request", ...P, viewer: A }).template, a.template);
   assert.deepEqual(w.snapshot(), before);
   /* ambiguity among the active profiles' templates: two profiles' templates under one label */
-  const bad = structuredClone(present(twoProfiles.get(HARBOUR), HARBOUR));
-  present(bad.action_kinds.find((k) => k.kind === "records_request"), "records_request").template = { ...structuredClone(present(jurisdictions.get(TEST), TEST).action_kinds[0].template),
+  const bad = structuredClone(twoProfiles.get(HARBOUR));
+  bad.action_kinds.find((k) => k.kind === "records_request").template = { ...structuredClone(jurisdictions.get(TEST).action_kinds[0].template),
     id: "TPL-test-harbour-records" };
   const jur = reviewedOf({ ...twoProfiles, get: (id) => (id === HARBOUR ? structuredClone(bad) : twoProfiles.get(id)) });
   const w2 = seeded({ profiles: [TEST, HARBOUR], jur });

@@ -16,8 +16,6 @@ registerDoctypes(registerDoctype);
 const noop = () => {};
 /* The refusal membership's R81 answers for the same registration, so this module mints neither code itself. */
 const r81 = (held, module, fn) => listenerRefusal(held, module, fn, { slot: "onRead" });
-/* The code a registration answers: a refusal's `code`, and none for a registration recorded. */
-const codeOf = (r) => ("code" in r ? r.code : undefined);
 
 test("R25: onRead registers once per module for the capture classes it names; a malformed registration, an empty or non-list captureClasses, is LISTENER_MALFORMED and a second by the same module LISTENER_DECLARED naming it, both as membership's listenerRefusal answers; a refused registration records nothing", async () => {
   const h = new ReadHooks();
@@ -44,17 +42,17 @@ test("R25: onRead registers once per module for the capture classes it names; a 
   for (const [m, fn, opts] of malformed) {
     const r = h.onRead(m, fn, opts);
     assert.equal(r.ok, false, `refused: ${JSON.stringify([m, typeof fn, opts])}`);
-    assert.equal(codeOf(r), "LISTENER_MALFORMED");
+    assert.equal(r.code, "LISTENER_MALFORMED");
     assert.deepEqual(r, r81([], typeof m === "string" ? m : m, null));
   }
 
   const again = h.onRead("events", () => {}, { captureClasses: ["budget"] });
   assert.equal(again.ok, false);
-  assert.equal(codeOf(again), "LISTENER_DECLARED");
+  assert.equal(again.code, "LISTENER_DECLARED");
   assert.equal(again.module, "events");
   assert.deepEqual(again, r81([{ module: "events" }], "events", noop));
   /* A second registration with malformed classes is still refused, and nothing changes. */
-  assert.equal(codeOf(h.onRead("events", noop, { captureClasses: [] })), "LISTENER_MALFORMED");
+  assert.equal(h.onRead("events", noop, { captureClasses: [] }).code, "LISTENER_MALFORMED");
 
   /* Nothing a refusal saw was recorded: only the first registration runs, for its own classes only. */
   const ran = await h.afterRead({ captureSha: "a".repeat(64), captureClass: "budget", reading: {}, committed: true });
@@ -75,7 +73,7 @@ test("R25 R26: the registry is one per storage: readHooksOf answers the same reg
   const seen = [];
   assert.equal(readHooksOf({ storage: s1 }).onRead("events", () => seen.push("s1"), { captureClasses: ["c"] }).ok, true);
   assert.equal(readHooksOf({ storage: s2 }).onRead("events", () => seen.push("s2"), { captureClasses: ["c"] }).ok, true);
-  assert.equal(codeOf(readHooksOf({ storage: s1 }).onRead("events", noop, { captureClasses: ["c"] })), "LISTENER_DECLARED");
+  assert.equal(readHooksOf({ storage: s1 }).onRead("events", noop, { captureClasses: ["c"] }).code, "LISTENER_DECLARED");
   assert.deepEqual(await readHooksOf({ storage: s2 }).afterRead({ captureSha: "x", captureClass: "c", reading: {}, committed: true }),
                    { ran: ["events"], failed: [] });
   assert.deepEqual(seen, ["s2"]);
@@ -200,7 +198,7 @@ test("R43: wants(captureClass) answers true exactly when a registered hook's cla
   assert.equal(h.wants(["minutes"]), false);
   assert.equal(h.wants(""), false);
   assert.deepEqual(calls, [], "nothing ran");
-  assert.equal(codeOf(h.onRead("lines", noop, { captureClasses: [] })), "LISTENER_MALFORMED");
+  assert.equal(h.onRead("lines", noop, { captureClasses: [] }).code, "LISTENER_MALFORMED");
   assert.equal(h.wants("generic"), false, "a refused registration holds no class");
   assert.deepEqual(await h.afterRead({ captureSha: "s", captureClass: "generic", reading: {}, committed: true }), { ran: [], failed: [] });
   assert.equal(readHooksOf({ storage: {} }).wants("minutes"), false);

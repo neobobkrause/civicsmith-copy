@@ -37,9 +37,6 @@ import { word, localize } from "../setup-words/index.mjs";
 /* R20. Longer than a reason, because a release acknowledgment is a statement of what was weighed and what was checked,
    not a label. Same forbidden characters, because it is spliced into the Session Log and must stay one line per
    field. */
-/**
- * @type {number}
- */
 export const RELEASE_ACK_MAX = 500;
 
 const rows = (sql, q, ...a) => [...sql.exec(q, ...a)];
@@ -140,10 +137,6 @@ export function release(deps,
 }
 
 /* R22, R34: each class's reason, the one sentence the release's refusal and capture's held list (its R78) both give. */
-/**
- * R22, R34: each class's reason.
- * @type {Readonly<Record<string, string>>}
- */
 export const CLASS_REASONS = Object.freeze({
   NOT_INFORMATION: localize("ratification.release.release_moves_an_information_state", "release moves an Information state, and this selection carries something else. The set is refused whole rather than narrowed."),
   ILLEGAL_TRANSITION: localize("ratification.release.only_collected_information_may_be", "only collected Information may be released. Something already verified has been released once and release is not repeatable; something retired is terminal."),
@@ -219,10 +212,9 @@ export function moveMember({ sql, promotion }, { id, when, author, to, blurb, se
   const liveMd = one(sql, `SELECT content FROM files WHERE bundle_id=? AND path='bundle.md'`, id);
   const cur = one(sql, `SELECT bundle_sha, current_state FROM bundles WHERE bundle_id=?`, id);
   if (!liveMd || liveMd.content === null) return { stop: "NO_DOCUMENT" };
-  const spliced = appendStateHistory(liveMd.content, {
+  let text = appendStateHistory(liveMd.content, {
     timestamp: when, from_state: cur.current_state, to_state: to, blurb, author });
-  if (!spliced) return { stop: "UNSPLICEABLE_STATE_HISTORY" };
-  let text = spliced;
+  if (!text) return { stop: "UNSPLICEABLE_STATE_HISTORY" };
   text = setScalar(text, "prior_state", cur.current_state);
   text = setScalar(text, "current_state", to);
   text = setScalar(text, "last_updated", `"${when}"`);

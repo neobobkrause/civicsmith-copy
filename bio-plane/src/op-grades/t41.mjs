@@ -15,63 +15,20 @@
  * `./t34.mjs`, as `assistantset` left them (R25). */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
 /* the sentence an owner declared, a code-held word the design has not taken into its list: its id is composed, as the words check judges a literal one */
-/**
- * an owner's declared description of one op, read from the word list
- * @param {string} module the owner's module name
- * @param {string} op
- * @returns {string}
- */
 const declared = (module, op) => word(`${module}.declared.${op}`);
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const STEP = (s) => `step-directed: ${s}; never evidence and writes no leg; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const PROJECT_ACCOUNT = (s) => `credential governance: ${s}; the subject is who pays for the assistant, not a bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const ACCOUNT_SETTING = (s) => `the account's configuration: ${s}; moves no document, claim or grade`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const MILESTONE = (s) => `milestone-directed: ${s}; the group's own date, never a duty or finding, never published; `
   + "moves no bundle";
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const WORKING = (s) => `project-directed: ${s}; working material, never published and never evidence; moves no bundle`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const GUIDE = (s) => `guide-directed: ${s}; a reading guide carries no conduct and loosens no rule; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
-/** @type {RungTable} T41's ops */
 export const T41_RUNGS = {
   /* reasoned: each owner refuses the act without the member's authored reason, in its own word for it */
   projectaikeepaway:   "reasoned",   // AI_KEEP_AWAY_NO_REASON (credentials R57: R51's reason rule, for a project)
@@ -107,7 +64,6 @@ export const T41_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T41's ops */
 export const T41_RUNG_ABSENT = {
   /* R29, as setpassword (R27); (T46) R34: membership R129 (DEC-197) refuses every change, so the sentence states it */
   handlechange:        { ground: "caller-owned", is: "a member's own handle, fixed at joining: the act stays declared and refuses every change HANDLE_FIXED, whoever asks, writing nothing (membership R129)" },
@@ -155,7 +111,6 @@ export const T41_RUNG_ABSENT = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
-/** @type {ReasonTable} T41's ops */
 export const T41_NON_ACTS = {
   /* R29, as R34 amends it (T46; N934; DEC-197; membership R129) */
   handlechange: "member-directed: a handle is fixed at joining; this act refuses every change, `HANDLE_FIXED`, and "

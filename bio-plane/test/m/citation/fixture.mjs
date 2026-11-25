@@ -15,20 +15,6 @@ export { V, sha, T0 };
 export const NOW = Date.parse("2026-09-28T01:02:03Z");
 export const STAMP = "2026-09-28T01:02:03Z";
 
-/* A live file `record.readFile` answers (record-core R13): null when the bundle or path is not held, which a fixture read
-   of a file it just wrote never meets, so it throws, naming both. */
-function held(record, id, path) {
-  const f = record.readFile(id, path);
-  if (!f) throw new Error(`fixture: ${id} holds no ${path}`);
-  return f;
-}
-/* An inline file's text (record-core R13); a blob where text was expected throws, naming the file. */
-function heldText(record, id, path) {
-  const f = held(record, id, path);
-  if (!("text" in f)) throw new Error(`fixture: ${id} ${path} is a blob, not inline text`);
-  return f.text;
-}
-
 export function world(opts = {}) {
   const w = retrievalWorld({ members: ["ann", "vera", "ivy"], admins: ["adm"], ...opts });
   const { host, record, membership, promotion, prov, st } = w;
@@ -81,9 +67,9 @@ export function world(opts = {}) {
     /** A revision of `id`'s `bundle.md` to `text`, every other live file carried. */
     revise(id, text) {
       const files = [{ path: "bundle.md", text }];
-      for (const path of record.livePaths(id) ?? []) if (path !== "bundle.md") {
-        const f = held(record, id, path);
-        files.push("text" in f ? { path, text: f.text } : { path, blobSha: f.blobSha, bytes: f.bytes });
+      for (const path of record.livePaths(id)) if (path !== "bundle.md") {
+        const f = record.readFile(id, path);
+        files.push(typeof f.text === "string" ? { path, text: f.text } : { path, blobSha: f.blobSha, bytes: f.bytes });
       }
       const r = promotion.promote({ bundleId: id, base: record.head(id).bundleSha, snapKey: key(), author: "member:ann", files, meta: {} });
       if (!r.ok) throw new Error(`fixture revise refused: ${JSON.stringify(r).slice(0, 400)}`);
@@ -114,8 +100,8 @@ export function world(opts = {}) {
       if (!s.ok) throw new Error(`fixture select refused: ${JSON.stringify(s)}`);
       return s.handle;
     },
-    md: (id) => heldText(record, id, "bundle.md"),
-    fm: (id) => parseFrontmatter(heldText(record, id, "bundle.md")).data,
+    md: (id) => record.readFile(id, "bundle.md").text,
+    fm: (id) => parseFrontmatter(record.readFile(id, "bundle.md").text).data,
     /** Every table's rows, for "nothing was written" and "only these tables moved". */
     snapshot() {
       const out = {};

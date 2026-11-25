@@ -1301,18 +1301,18 @@ export class Membership {
   static COURT_STATEMENT = Members.COURT_STATEMENT;
   static GROUP_KINDS = Members.GROUP_KINDS;
 
-  onRevoked(...a) { return this.members.onRevoked.apply(this.members, a); }
-  registerClaimed(...a) { return this.members.registerClaimed.apply(this.members, a); }
-  registerPasswordSetter(...a) { return this.members.registerPasswordSetter.apply(this.members, a); }
-  registerHandleGuard(...a) { return this.members.registerHandleGuard.apply(this.members, a); }
-  isAdministrator(...a) { return this.members.isAdministrator.apply(this.members, a); }
-  activeAdmins(...a) { return this.members.activeAdmins.apply(this.members, a); }
-  memberFacts(...a) { return this.members.memberFacts.apply(this.members, a); }
-  memberStatusSince(...a) { return this.members.memberStatusSince.apply(this.members, a); }
-  memberByHandle(...a) { return this.members.memberByHandle.apply(this.members, a); }
-  sessionRights(...a) { return this.members.sessionRights.apply(this.members, a); }
+  onRevoked(...a) { return this.members.onRevoked(...a); }
+  registerClaimed(...a) { return this.members.registerClaimed(...a); }
+  registerPasswordSetter(...a) { return this.members.registerPasswordSetter(...a); }
+  registerHandleGuard(...a) { return this.members.registerHandleGuard(...a); }
+  isAdministrator(...a) { return this.members.isAdministrator(...a); }
+  activeAdmins(...a) { return this.members.activeAdmins(...a); }
+  memberFacts(...a) { return this.members.memberFacts(...a); }
+  memberStatusSince(...a) { return this.members.memberStatusSince(...a); }
+  memberByHandle(...a) { return this.members.memberByHandle(...a); }
+  sessionRights(...a) { return this.members.sessionRights(...a); }
   adminResign(...a) { return this.members.adminResign(...a); }
-  adminArithmetic(...a) { return this.members.adminArithmetic.apply(this.members, a); }
+  adminArithmetic(...a) { return this.members.adminArithmetic(...a); }
   adminEndorse(...a) { return this.members.adminEndorse(...a); }
   adminRemove(...a) { return this.members.adminRemove(...a); }
   adminRemovalsOpen(...a) { return this.members.adminRemovalsOpen(...a); }
@@ -1334,7 +1334,7 @@ export class Membership {
   endorsementsOwed(...a) { return this.members.endorsementsOwed(...a); }
   handleCheck(...a) { return this.members.handleCheck(...a); }
   handleChange(...a) { return this.members.handleChange(...a); }
-  founderHandle(...a) { return this.members.founderHandle.apply(this.members, a); }
+  founderHandle(...a) { return this.members.founderHandle(...a); }
   founderHandleSet(...a) { return this.members.founderHandleSet(...a); }
   websiteKeyCreate(...a) { return this.members.websiteKeyCreate(...a); }
   websiteKeySet(...a) { return this.members.websiteKeySet(...a); }
@@ -1347,7 +1347,7 @@ export class Membership {
   joinLinkInvite(...a) { return this.members.joinLinkInvite(...a); }
   joinDoors(...a) { return this.members.joinDoors(...a); }
   courtNoticeSet(...a) { return this.members.courtNoticeSet(...a); }
-  courtNotice(...a) { return this.members.courtNotice.apply(this.members, a); }
+  courtNotice(...a) { return this.members.courtNotice(...a); }
   lookedSince(...a) { return this.members.lookedSince(...a); }
   lookedAt(...a) { return this.members.lookedAt(...a); }
   groupDescriptionSet(...a) { return this.members.groupDescriptionSet(...a); }

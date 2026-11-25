@@ -477,7 +477,7 @@ test("R6 (multifinding, REC-58): op=ratify's `case` block carries `complete` and
   assert.deepEqual([r1.body.case.complete, r2.body.case.complete], [false, true]);
 });
 
-test("R4, R9 (multifinding): a finding whose own bytes name a case — its id, edition, scope, acknowledgement and roster — is GATE_REFUSED by C-2.8 once for EVERY key it found, saying where those facts live; nothing crosses and the case is unmoved", async () => {
+test("R4, R9 (multifinding): a finding whose own bytes name a case — its id, edition, scope, acknowledgement and roster — is GATE_REFUSED by C-2.8 naming EVERY key it found, and saying where those facts live; nothing crosses and the case is unmoved", async () => {
   const { w, members, ratifyAs } = await twoFindingCase();
   const clean = w.record.readFile(FIND_A, "bundle.md").text;
   const lie = clean.replace(/^(---\n)/, ["$1" + `case_id: ${CASE}`, "case_edition: 1",
@@ -486,12 +486,10 @@ test("R4, R9 (multifinding): a finding whose own bytes name a case — its id, e
   revise(w, FIND_A, lie);
   const r = await ratifyAs(FIND_A);
   assert.deepEqual([r.status, r.body.reason], [409, "GATE_REFUSED"]);
-  /* inquiry-grammar's C-2.8 case-key arm (its R1) answers one finding for each case key the bytes carry, each naming its
-     own fact, whose words say the case's facts live in the case document (its wording is inquiry-grammar's own) */
-  const named = r.body.findings.filter((x) => x.check === "C-2.8" && /a case fact of its own/.test(x.detail));
-  assert.equal(named.length, 5, "one for each of case_id, case_edition, case_scope, bias_acknowledgement, case_findings");
-  assert.equal(new Set(named.map((x) => x.detail)).size, 5, "each finding names a different fact");
-  assert.match(named[0].detail, /case document a member reviews and ratifies/);
+  const named = r.body.findings.filter((x) => x.check === "C-2.8" && /a finding's bytes name a case/.test(x.detail));
+  assert.deepEqual(named.map((x) => /name a case \((\w+)\)/.exec(x.detail)[1]).sort(),
+    ["bias_acknowledgement", "case_edition", "case_findings", "case_id", "case_scope"]);
+  assert.match(named[0].detail, /CASE DOCUMENT a member reviews and ratifies/);
   assert.equal(w.count("published_bundles"), 0);
   assert.deepEqual(w.publication.pinnedCaseEditionsOf(FIND_A, members[0].pin).map((x) => x.case_id), [CASE],
     "the case still pins the version it froze");

@@ -4,8 +4,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, hold, bucket, member, withEntry, i2, noText, ocrAnswer, sha, doc, pressThenPass, homesOver } from "./fixture.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const pdf = (text) => ({ format: "pdf", structure: async () => ({ ok: true, text: structuredClone(text), pages: (text.pages || []).length, notes: [] }) });
 
@@ -25,7 +23,7 @@ function partsOnly() {
   /* a home is a promoted bundle: its own provenance document states the capture it holds (fix round 6, G6: a digest no stored
      document names is not read) */
   const stored = JSON.stringify({ documents: [doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" })] });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: stored, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: stored } : null);
   return { w, rows, evidence, bytes, d };
 }
 const count = (w, table, d) => w.one(`SELECT count(*) c FROM ${table} WHERE capture_sha=?`, d).c;

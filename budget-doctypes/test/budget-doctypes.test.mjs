@@ -86,7 +86,6 @@ test("R1: a budget line-item sheet is matched by header words naming a fund or o
 
 test("R1: anything else does not match, and says why", () => {
   const floorText = "Statement of Accounts\nCash 1 2\nLand 3 4";
-  /** @type {[import("../index.mjs").TablesContentType | import("../index.mjs").LinesContentType, any, string][]} */
   const cases = [
     [financialReport, ctxFor("Cash 1 2\n".repeat(20), FIRST), localize("budget-doctypes.index.not_a_pdf_a_what", "not a PDF: a {what} is read from a PDF's text", { what: "financial report" })],
     [financialReport, ctxFor(testPdf(["A letter to the council", "Cash 1 2\n".repeat(20)]), FIRST), localize("budget-doctypes.index.its_opening_does_not_name", "its opening does not name it a {what} in any words the view holds", { what: "financial report" })],
@@ -315,10 +314,8 @@ test("R7: test profile: codes by its forms, a row with no fund or org unread, a 
   assert.deepEqual(r.rows[0].project, { as_written: "WO-1234", form: String.raw`^WO-?\d{4}$`, scheme: "ellery_works" });
   /* A code no form matches, and a code of a kind the view holds no form for. */
   assert.equal(r.rows[1].fund.form, null); assert.equal(r.rows[1].fund.why, localize("budget-doctypes.lines.no_form_of_the_views", "no form of the view's {column} classification matches \"{s}\"", { column: "fund", s: r.rows[1].fund.as_written.trim() }));
-  const pj = /** @type {import("../index.mjs").BudgetCode} */ (r.rows[1].project);
-  assert.equal(pj.form, null); assert.equal(pj.why, localize("budget-doctypes.lines.no_form_of_the_views", "no form of the view's {column} classification matches \"{s}\"", { column: "project", s: pj.as_written.trim() }));
-  const dc = /** @type {import("../index.mjs").BudgetCode} */ (r.rows[0].department_code);
-  assert.equal(dc.form, null); assert.equal(dc.why, localize("budget-doctypes.lines.the_view_holds_no_form", "the view holds no form for a {column} code", { column: "department_code" }));
+  assert.equal(r.rows[1].project.form, null); assert.equal(r.rows[1].project.why, localize("budget-doctypes.lines.no_form_of_the_views", "no form of the view's {column} classification matches \"{s}\"", { column: "project", s: r.rows[1].project.as_written.trim() }));
+  assert.equal(r.rows[0].department_code.form, null); assert.equal(r.rows[0].department_code.why, localize("budget-doctypes.lines.the_view_holds_no_form", "the view holds no form for a {column} code", { column: "department_code" }));
   assert.equal(r.unread.length, 1);
   assert.equal(r.unread[0].why, localize("budget-doctypes.lines.the_row_holds_no_org_code", "the row holds no org code"));
   assert.deepEqual(r.unread[0].source, { kind: "sheet-cell", ref: "csv!A3", sheet: "csv", cell: "A3" });
@@ -377,9 +374,7 @@ test("R9: a reading in which no table was read is a failed read, never a documen
   const LATER = localize("budget-doctypes.assess.no_table_was_read_in", "no table was read in the {v1} reading: a failed read, not a document emptied", { v1: "later" });
   const EARLIER = localize("budget-doctypes.assess.no_table_was_read_in", "no table was read in the {v1} reading: a failed read, not a document emptied", { v1: "earlier" });
   const EITHER = localize("budget-doctypes.assess.no_table_was_read_in_either", "no table was read in either reading, so nothing can be compared");
-  /** @type {[[import("../index.mjs").TablesReading, import("../index.mjs").TablesReading], string][]} */
-  const pairs = [[[before, empty], LATER], [[empty, before], EARLIER], [[empty, empty], EITHER]];
-  for (const [[a, b], want] of pairs) {
+  for (const [[a, b], want] of [[[before, empty], LATER], [[empty, before], EARLIER], [[empty, empty], EITHER]]) {
     const m = financialReport.assess(a, b);
     assert.equal(m.meaningful, null); assert.deepEqual(m.events, []); assert.equal(m.why, want);
   }
@@ -425,9 +420,7 @@ test("R10: reading writes nothing: parse leaves its inputs as they were and give
 });
 
 test("R11: every figure given is as printed: each cell is a token of the line it was read from", () => {
-  /** @type {[string, import("../index.mjs").TablesContentType][]} */
-  const read = [["a24", financialReport], ["a14", financialReport], ["a19", financialReport], ["bb23", budgetBook]];
-  for (const [key, type] of read) {
+  for (const [key, type] of [["a24", financialReport], ["a14", financialReport], ["a19", financialReport], ["bb23", budgetBook]]) {
     const { supplied } = pdfFixture(key);
     const r = type.parse(ctxFor(supplied, FIRST));
     const text = supplied.document.replace(/[ \t]+/g, " ");

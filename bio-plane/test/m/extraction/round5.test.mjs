@@ -8,8 +8,6 @@ import { localize } from "../../../src/setup-words/index.mjs";
 import { fresh, bundle, bucket, withEntry, i2, doc, sha, homesOver } from "./fixture.mjs";
 import { CAPTURE_TEXT_CAPTURE_BOUND, extractionOps } from "../../../src/extraction/index.mjs";
 import { WHOLE_READ_MAX } from "../../../src/reading-pipeline/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 const MIB = 1024 * 1024;
 const register = (rows) => homesOver(rows);
@@ -34,13 +32,13 @@ async function homeOfParts({ total, n = 5, whole = false, fmt = "undetermined", 
   const parts = partsOf(total, n);
   const document = doc({ digest: d, bytes: total, ct: "application/pdf", format: fmt, parts });
   const files = [{ path: "data/provenance.json", text: JSON.stringify({ documents: [document] }) }];
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text } : null);
   if (whole) await evidence.put(`bio/captures/${d}`, bytes);
   return { w, rows, evidence, bytes, d, document, files };
 }
 const promote = (w, document, reading, units) => {
   const files = [{ path: "data/provenance.json", text: JSON.stringify({ documents: [{ ...document, reading, text_units: units || null }] }) }];
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: files[0].text } : null);
   w.x.projectPromotion({ bundleId: "INFO-1", author: "member:m1", files });
 };
 
@@ -105,7 +103,7 @@ test("R83 (E2): `readHeld` offers the index only what it keeps: a text past the 
   const line = "alpha beta gamma delta epsilon ".repeat(300);   /* about 9 KB a page */
   const pages = Array.from({ length: 600 }, (_, page) => ({ page, text: `${page} ${line}` }));   /* about 5.4 MB */
   const document = doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   /* R83 amended by R90 (fix round 6): the first tick offers the index what it keeps and says it has more; the ledger's later ticks read the rest */
   const r = await withEntry(pdfEntry(i2(pages)), () => w.x.readHeld({ sha: d }));
   assert.deepEqual([r.ok, r.read, r.more], [true, true, true]);
@@ -129,7 +127,7 @@ test("R83 (control): a text within the index's bound is offered whole: words_rea
   const d = sha(bytes);
   rows.set(d, row("INFO-1", bytes.length));
   await evidence.put(`bio/captures/${d}`, bytes);
-  w.core.readFile = () => ({ text: JSON.stringify({ documents: [doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" })] }), sha256: STUB_SHA });
+  w.core.readFile = () => ({ text: JSON.stringify({ documents: [doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" })] }) });
   const r = await withEntry(pdfEntry(i2([{ page: 0, text: "alpha beta" }, { page: 1, text: "gamma delta epsilon" }])), () => w.x.readHeld({ sha: d }));
   assert.equal(r.read, true);
   const reading = readingOf(w, d);
@@ -197,7 +195,7 @@ async function unreadHome(bundleOpts = {}) {
   rows.set(d, row("INFO-80", bytes.length));
   await evidence.put(`bio/captures/${d}`, bytes);
   const stored = JSON.stringify({ documents: [doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" })] });
-  w.core.readFile = (b, p) => (b === "INFO-80" && p === "data/provenance.json" ? { text: stored, sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-80" && p === "data/provenance.json" ? { text: stored } : null);
   return { w, d };
 }
 const viaDoor = (w, d, viewer, defer) => {

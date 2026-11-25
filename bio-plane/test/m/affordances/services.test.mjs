@@ -13,9 +13,7 @@ test("R11: needs and mode are the gate's answer for the act, rung RUNGS', rung_a
   const needs = { conclude: "contribute", cite: "contribute", attest: "attest" };
   const modes = { conclude: "session", cite: "admin-session", attest: "machine" };
   const gate = gateOf(needs, modes);
-  /** @type {{id: string, label: string, weight?: string, prompt?: string}[]} every published act, of the three tables */
-  const published = [...ACTS, ...CAPTURE_ACTS, ...PER_ITEM_ACTS];
-  for (const a of published) {
+  for (const a of [...ACTS, ...CAPTURE_ACTS, ...PER_ITEM_ACTS]) {
     const d = decorate(a, gate);
     assert.deepEqual(Object.keys(d), KEYS, a.id);
     assert.equal(d.id, a.id); assert.equal(d.label, a.label);
@@ -40,8 +38,8 @@ test("R11: with no gate, or a gate answering nothing, needs and mode are null an
 test("R11: one shape from one function — the same act decorated twice through the same gate is the same object "
    + "shape, whether it came from deriveActs or from the catalogue", () => {
   const gate = gateOf({ cite: "contribute" }, { cite: "session" });
-  const derived = deriveActs({ object_type: "inquiry", current_state: "open" }).find((a) => a.id === "cite") ?? assert.fail("cite is offered on an open inquiry");
-  assert.deepEqual(decorate(derived, gate), decorate(ACTS.find((a) => a.id === "cite") ?? assert.fail("cite is an act"), gate));
+  const derived = deriveActs({ object_type: "inquiry", current_state: "open" }).find((a) => a.id === "cite");
+  assert.deepEqual(decorate(derived, gate), decorate(ACTS.find((a) => a.id === "cite"), gate));
 });
 
 test("R11 R24: an op named only by prototype keys reads as unclassified, never as a rung", () => {

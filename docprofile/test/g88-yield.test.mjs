@@ -33,13 +33,7 @@ function wrapAll() {
     registerDoctype({ ...m, detect(ctx) { log.push(`detect:${m.key}`); return inner.call(this, ctx); } });
   }
 }
-/**
- * The sync answer and the twin's answer (with the yields logged), the walk's events kept apart.
- * @param {*} ctx
- * @param {*} [opts]
- * @returns {Promise<{sync: *, syncErr: *, syncLog: string[], twin: *, twinErr: *, twinLog: string[]}>} each answer, or nothing
- *   where that call threw, with its error beside it; `same` asserts that both threw or neither did
- */
+/** The sync answer and the twin's answer (with the yields logged), the walk's events kept apart. */
 async function both(ctx, opts = { yieldNow: countingYield }) {
   log = [];
   let sync, syncErr;
@@ -224,7 +218,7 @@ test("R39 doctypeFor stays synchronous and the twin leaves ctx unchanged", async
   const ctx = { text: pad("MARKER-A", AT + 1), kind: "x" };
   const frozen = JSON.stringify(ctx);
   const r = doctypeFor(ctx);
-  assert.equal(r instanceof Promise, false, "doctypeFor returns the answer, not a promise");
+  assert.equal(typeof r.then, "undefined", "doctypeFor returns the answer, not a promise");
   const t = doctypeForYielding(ctx, { yieldNow: countingYield });
   assert.equal(typeof t.then, "function");
   await t;

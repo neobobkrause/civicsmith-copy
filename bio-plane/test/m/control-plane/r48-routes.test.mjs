@@ -4,7 +4,6 @@
    `docket`'s own map with op-declarations R13's stamps, each a member's session's alone; and `docketpublic`, `docketfeed`,
    credential-free on the public path through public-read's door (its R21) as `publishedcase` is. Driven through
    `makeFetch(hooks)`, R45's form (`r45-routes.test.mjs`). */
-import { publicOp } from "../../../src/control-plane/routing.mjs";   /* first: the routing's load registers every owner's ops (store-assembly) before the harness reads the tables */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { storeWorld } from "../store-request/fixtures.mjs";   /* before the harness: the world registers the ops the harness reads */
@@ -12,6 +11,7 @@ import { M, O, world, call, opCalls, aik, cred, hex64, member, refused, FORGED, 
 /* (T46; N938) the hold ops are action-holds' since T45 (plane R39): its own map, spread beside actions' */
 const { actionHoldsOps } = await import("../../../src/action-holds/index.mjs");
 const { docketOps } = await import("../../../src/docket/index.mjs");
+const { publicReadDoorOp } = await import("../../../src/public-read/door.mjs");
 const D = await import("../../../src/store-door/dispatch.mjs");
 const { membershipOf } = await import("../../../src/membership/index.mjs");
 
@@ -141,10 +141,10 @@ test("R48, R28 (docket R1, R4, R18; admission R8–R10): each docket member op i
 test("R48 (public-read R21; DEC-116 item 8, DEC-100 item 2): `docketpublic` and `docketfeed` are public ops answered credential-free through plane's public hook and public-read's door, as `publishedcase` is — each asks bio's store its route with the case alone, never a credential or a stamp, the feed served as Atom; `store=scratch` is refused with nothing read (negative controls: a case the docket answers null for is 404 NOT_PUBLISHED; a silence is a silence; the door forwards nothing itself)", async () => {
   for (const op of ["docketpublic", "docketfeed"]) assert.deepEqual(OPS[op], { classes: null, mutating: false }, op);
   const handed = [];
-  /* the routing's own public hook (R139; K4990), recorded as it is asked */
-  const hooks = { async publicOp(ctx) {
-    handed.push(ctx.op);
-    return publicOp(ctx);
+  const hooks = { async publicOp({ op, url, env, stub }) {
+    handed.push(op);
+    return (await publicReadDoorOp(op, url, env, stub, { json: M.json, requiredArgument: M.requiredArgument, storeSilent: M.storeSilent,
+                                                  storeRefusal: M.storeRefusal, doAnswer: M.doAnswer })) ?? M.json({ ok: true, publicOp: op });
   } };
   const feed = '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>';
   const answer = (c) => (c.route === "docketpublic" ? new Response(JSON.stringify({ ok: true, result: { ok: true, case: c.params.case, entries: [], last_entry: null } }))

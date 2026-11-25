@@ -7,7 +7,6 @@ import { sizeGuard } from "../../../src/ooxml.mjs";
 import { linkWrapper } from "../../../src/subresources.mjs";
 import { docParaRef, docTableRef } from "../../../src/docx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
-/** @import { OdfStructure } from "../../../src/odf.mjs" */
 
 const odt = (body, o = {}) => pkg("odt", { body, ...o });
 const S = (b, o) => odtEntry.structure(odt(b, o));
@@ -120,9 +119,7 @@ test("R10 over the guard, or with no readable body: paragraphs null, no body lin
   const over = await odtEntry.structure(buildZip(withCd(members("odt", { body: RICH }), "content.xml", { usize: OVER_BOUND })));
   const noBody = await odtEntry.structure(pkg("odt", { content: "<office:document-content><office:body><office:spreadsheet/></office:body></office:document-content>" }));
   const bad = await odtEntry.structure(buildZip(withCd(members("odt", { body: RICH }), "content.xml", { crc: 7 })));
-  /** @type {[OdfStructure, RegExp][]} */
-  const cases = [[over, /size bound/], [noBody, /no <office:text>/], [bad, /unreadable/]];
-  for (const [s, re] of cases) {
+  for (const [s, re] of [[over, /size bound/], [noBody, /no <office:text>/], [bad, /unreadable/]]) {
     assert.equal(s.ok, true);
     assert.equal(s.paragraphs, null);
     assert.deepEqual(s.links, []);

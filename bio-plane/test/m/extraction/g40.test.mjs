@@ -8,8 +8,6 @@ import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
 import { sha256HexSync } from "../../../src/record-grammar/sha256.mjs";
 import { ReadHooks } from "../../../src/reading-pipeline/index.mjs";
 import { MODULE_ORDER } from "../../../src/membership/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 
 /* (G41) a reading is kept under 1 MiB, and a sheet over 512 KiB of cells holds them, so the largest reading a CSV makes is some 700 KB: "large" is 400,000 characters here */
 const BIG = 400_000;
@@ -32,7 +30,7 @@ async function home(text, { readHooks = null } = {}) {
   rows.set(d, { bundleId: "INFO-1", path: "table.csv", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/csv", format: "undetermined", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d, bytes };
 }
 

@@ -15,7 +15,7 @@ import { registerDeclaredOps } from "../../../src/op-declarations/index.mjs";
 import { boundOf } from "../../../src/read-bounds.mjs";
 import { CAPTURE_SCREEN } from "../../../src/screens-intake/capture.mjs";
 
-await registerDeclared(fileURLToPath(new URL("../../../../", import.meta.url)), "screens-intake", registerDeclaredOps);
+await registerDeclared(fileURLToPath(new URL("../../../../", import.meta.url)), registerDeclaredOps);
 
 const SRC = fileURLToPath(new URL("../../../src/plane/index.mjs", import.meta.url));
 const ADM = "adm-g126h-0123456789abcdef", PASSWORD = "the founder's long password, G126h", ORIGIN = "https://group.example";

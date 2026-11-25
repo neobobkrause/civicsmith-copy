@@ -3,8 +3,8 @@
  * is re-exported here as the same binding, so every caller of the inquiry's grammar reaches it here and R4–R9 are met
  * through them. */
 
-import { STATES, BASIS_ROLES, INQUIRY_TITLE_MAX, deriveInquiryTitle, inquiryQuestionOf, checkBundle,
-         createSha256 } from "../record-grammar/index.mjs";
+import { STATES, BASIS_ROLES, INQUIRY_TITLE_MAX, deriveInquiryTitle, inquiryQuestionOf, checkBundle }
+  from "../record-grammar/index.mjs";
 import { word } from "../setup-words/index.mjs";
 import { GROUND_LABEL_RE, checkInquiryBasis, checkLegExtentGrammar, leadLegFindings, supersedesEdgeFindings,
          divisionDisclosureFindings, checkInquiryExtension, INQUIRY_GRAMMAR_CHECKS, INQUIRY_GRAMMARS }
@@ -27,15 +27,12 @@ export const INQUIRY_ROWS = INQUIRY_GRAMMAR_CHECKS;
  *  promotion's gate does; with none named, `inquiry-grammar`'s own (`INQUIRY_GRAMMARS`), so a caller holding no record
  *  still has the inquiry judged. Answers the error findings, each `{check, severity, message, repairs?}`. Never throws:
  *  a document it cannot judge (a malformed grammar list among them) is one C-2.8 error saying so. */
-/* checkBundle's digest of a file's bytes or text, as the record writes it: lowercase hex SHA-256 of the UTF-8 bytes. */
-const digestOf = async (b) => createSha256().update(typeof b === "string" ? new TextEncoder().encode(b) : b).hex();
-
 export async function checkInquiryEntry(bundleMd, opts = {}) {
   try {
     const o = opts && typeof opts === "object" ? opts : {};
     const text = String(bundleMd ?? "");
     const id = (/^id:\s*(\S+)/m.exec(text) || [])[1] || "";
-    const r = await checkBundle({ folderName: id, files: new Map([["bundle.md", text]]), sha256: digestOf,
+    const r = await checkBundle({ folderName: id, files: new Map([["bundle.md", text]]),
                                   publishedRegistry: o.publishedRegistry ?? null,
                                   earnedRegistry: o.earnedRegistry ?? null },
                                 { grammars: o.grammars === undefined ? INQUIRY_GRAMMARS : o.grammars });

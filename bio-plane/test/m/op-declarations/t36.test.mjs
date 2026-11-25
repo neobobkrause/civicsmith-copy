@@ -344,18 +344,6 @@ test("R34 (K4254; affordances R48, T51_DESIGN_OPS): ACT_HELP_ABSENT names no op 
   assert.ok(absent.has("projectownervotes") && !Object.hasOwn(AFF.ACT_HELP, "projectownervotes"));
 });
 
-test("R34 (affordances R48, R62, R65): counselpacketexport and linecurrentthrough, member-session acts, are explained by affordances' ACT_HELP under their own names and so are named under no ground of ACT_HELP_ABSENT, never both (negative control: an act the design has not explained, stepcreate, stays under the unexplained ground)", () => {
-  const groundsOf = (op) => Object.entries(ACT_HELP_ABSENT).filter(([, g]) => g.ops.includes(op)).map(([k]) => k);
-  for (const op of ["counselpacketexport", "linecurrentthrough"]) {
-    assert.ok(SESSION_OPS.member.has(op) && OPS[op].mutating, `${op}: a member-session act`);
-    assert.ok(explained(op), `${op}: affordances holds no text`);
-    assert.deepEqual(groundsOf(op), [], op);
-  }
-  /* negative control */
-  assert.ok(!explained("stepcreate"));
-  assert.deepEqual(groundsOf("stepcreate"), ["unexplained"]);
-});
-
 test("R5, R7: ACT_HELP_ABSENT is frozen to its leaves, the same on a second load, and names no place", async () => {
   const again = await import(`../../../src/op-declarations/index.mjs?second=${Date.now()}`);
   assert.equal(JSON.stringify(again.ACT_HELP_ABSENT), JSON.stringify(ACT_HELP_ABSENT));

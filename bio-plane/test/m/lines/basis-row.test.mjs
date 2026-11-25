@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { world, sha, ANN, MACHINE } from "./fixture.mjs";
 import { SHARED_ACT_CHECKS } from "../../../src/record-grammar/index.mjs";
 import { linesOps } from "../../../src/lines/index.mjs";
-/** @import { LinesRefusal } from '../../../src/lines/index.mjs' */
 
 const ROW = SHARED_ACT_CHECKS.NO_BASIS;
 const T = { statement: "I attended the meeting where this was said" };
@@ -72,7 +71,6 @@ test("R22 negative control: the basis forms' other refusals, and every other ref
   const p = w.ent("person", "Ada Example"), o = w.ent("office", "Harbour Master"), b = w.ent("body", "Port Board");
   const s = w.held("INFO-2026-0001", sha("doc"));
   const rec = (more) => w.l.recordLine({ kind: "part_of", from: o, to: b, by: ANN, ...more });
-  /** @type {Array<[string, LinesRefusal & {check?: string, translation?: string}]>} each refusal beside the code it should carry */
   const others = [
     ["NO_STATEMENT", rec({ basis: { statement: "  " } })],
     ["NO_SHA", rec({ basis: { captureSha: "", extent: { kind: "document" } } })],

@@ -25,8 +25,6 @@ import { eventsOf } from "../../../src/events/index.mjs";
 import { Money } from "../../../src/money/index.mjs";
 import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 
-/* A file record-core holds inline answers its text; a blob, or no file, answers null. */
-const inlineText = (f) => (f && "text" in f ? f.text : null);
 const bind = (v) => (v === undefined ? null : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
 /* workerd's `sql.exec` answers a cursor, never an array: rows are read by iterating it (or its `toArray()`/`one()`),
@@ -203,8 +201,8 @@ export function world({ now = NOW, plane = null } = {}) {
     stand: { inquiry, retrieval, aiRuns, captureRequests },
     rows: (q, ...a) => st.sql.exec(q, ...a).toArray(),
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n,
-    text: (id) => inlineText(record.readFile(id, "bundle.md")),
-    fm: (id) => { const t = inlineText(record.readFile(id, "bundle.md")); return t ? parseFrontmatter(t).data : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    fm: (id) => { const t = record.readFile(id, "bundle.md")?.text; return t ? parseFrontmatter(t).data : null; },
     snapshot() {
       const out = {};
       for (const { name } of st.sql.exec(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`))

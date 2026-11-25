@@ -58,7 +58,7 @@ test("R11: the group-scope adoption's act reads 'adopting a bias set for the who
   const r = w.bias.biasAdopt({ bundleId: A, reason: WHY, author: "owner", identity: "member:owner", viewer: "member:owner" });
   assert.deepEqual(r, notAnAdmin("owner", INSTANCE_ADOPTION_ACT, { remedy: INSTANCE_ADOPTION_REMEDY, scope: "instance" }));
   assert.ok(r.detail.startsWith(INSTANCE_ADOPTION_ACT), r.detail);
-  assert.ok(typeof r.message === "string" && r.message.endsWith(INSTANCE_ADOPTION_REMEDY), r.message);
+  assert.ok(r.message.endsWith(INSTANCE_ADOPTION_REMEDY), r.message);
   for (const t of [r.detail, r.remedy, r.message]) assert.doesNotMatch(t, RETIRED);
 });
 

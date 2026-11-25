@@ -664,12 +664,10 @@ test("R22 controls: no subject, a subject that is neither a project nor a questi
 });
 
 /* ---- R3: what I saw ---- */
-/* when the member saw it: three days before the world's clock, which the page's clock starts at (store-request R18), so never a time after now */
-const seenAt = (t) => new Date(t.world.now() - 3 * 86_400_000).toISOString().replace(/\.\d{3}Z$/, "Z");
 test("R3 (K3171) the recorded testimony is named by the bundle_id provenance's testify answers", async () => {
   const t = await team();
   const p = await at(t, "/app/capture/saw");
-  fill(p, { "ci-words": "The pothole is still open.", "ci-where": "6012 Seminary Ave", "ci-when": seenAt(t) });
+  fill(p, { "ci-words": "The pothole is still open.", "ci-where": "6012 Seminary Ave", "ci-when": "2026-10-04T09:10:00Z" });
   await press(p, "testify");
   await idle(p);
   const link = main(p).querySelector('a[href*="INFO-"]');
@@ -683,9 +681,9 @@ test("R3 (K3171) the recorded testimony is named by the bundle_id provenance's t
 test("R3 testify sends the member's words with where, and when as observedAt; never a time after now", async () => {
   const t = await team();
   const p = await at(t, "/app/capture/saw");
-  fill(p, { "ci-words": "The pothole is still open.", "ci-where": "6012 Seminary Ave", "ci-when": seenAt(t) });
+  fill(p, { "ci-words": "The pothole is still open.", "ci-where": "6012 Seminary Ave", "ci-when": "2026-10-04T09:10:00Z" });
   await press(p, "testify");
-  assert.deepEqual(p.byOp("testify")[0].body, { words: `The pothole is still open.\n\n${word("screen.capture.saw.wherein", { where: "6012 Seminary Ave" })}`, observedAt: seenAt(t) });
+  assert.deepEqual(p.byOp("testify")[0].body, { words: `The pothole is still open.\n\n${word("screen.capture.saw.wherein", { where: "6012 Seminary Ave" })}`, observedAt: "2026-10-04T09:10:00Z" });
   assert.ok(main(p).querySelector('a[href*="INFO-"]') && text(p).includes(word("screen.capture.saw.done", { id: "\u0000" }).split("\u0000")[0]), "C29: the result links the document it made");
   const q = await at(t, "/app/capture/saw");
   fill(q, { "ci-words": "x", "ci-where": "y", "ci-when": "2999-01-01T00:00:00Z" });
@@ -733,7 +731,7 @@ test("R3 R10 writinghelp under the words only while reachable; asked with what t
   assert.equal(main(p).querySelector('[data-label="untested"]'), null);
   assert.equal(p.byOp("testify").length, 0, "nothing is kept by the help itself");
   /* the member's own act keeps her words */
-  fill(p, { "ci-where": "Seminary Ave", "ci-when": seenAt(t) });
+  fill(p, { "ci-where": "Seminary Ave", "ci-when": "2026-10-04T09:10:00Z" });
   await press(p, "testify");
   assert.equal(p.byOp("testify")[0].body.words, `pothole still open 60cm\n\n${word("screen.capture.saw.wherein", { where: "Seminary Ave" })}`);
   /* control: nothing typed, nothing asked */
@@ -907,7 +905,7 @@ test("R33 a page that states no title and whose address gives only a host is tit
     const p = await at(t);
     await capture(p, address);
     await p.settle();
-    const expected = word("document.untitled.web", { site: "www.example.gov", date: dayOf(t.world.now()) });
+    const expected = word("document.untitled.web", { site: "www.example.gov", date: dayOf(Date.now()) });
     assert.match(mdOf(p), new RegExp(`^title: ${JSON.stringify(expected).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "m"), address);
     assert.ok(says(p, "screen.capture.address.done", { title: expected }), address);
   }
@@ -915,9 +913,9 @@ test("R33 a page that states no title and whose address gives only a host is tit
 
 test("R33 control: a capture whose reading is null (or absent) is titled by R54's rule, its host and the day, never the address's file part; a blank title is none", async () => {
   /* a page with no title, an empty title, a blank title, and a plain text file (a reading with no title at all), each at an address with a path but no file part */
+  const UNTITLED = word("document.untitled.web", { site: "www.example.gov", date: dayOf(Date.now()) });
   for (const [body, type] of [[notice(), "text/html"], [notice(""), "text/html"], [notice("   "), "text/html"], ["The housing office posted this notice.\n", "text/plain"]]) {
     const t = await team();
-    const UNTITLED = word("document.untitled.web", { site: "www.example.gov", date: dayOf(t.world.now()) });
     serve(t.world, BARE, body, type);
     const p = await at(t);
     await capture(p, BARE);

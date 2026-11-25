@@ -6,49 +6,10 @@
 import { createSha256, sha256HexSync } from "../record-grammar/index.mjs";
 import { dec, refusal } from "./decimal.mjs";
 
-/** @import { Refusal, OneOf } from './decimal.mjs' */
-/**
- * What a draw asks for (R16).
- * @typedef {Object} DrawArgs
- * @property {string[]} frame the frozen set: a list of distinct keys
- * @property {number} n how many keys to take
- * @property {string} seed the caller's, recorded in the answer
- * @bound n: whole number, 0 to the frame's size
- * @bound frame: no key repeated
- * @bound seed: not empty
- */
-/**
- * A recorded draw (R16): reproducible from the frame, the seed and the method.
- * @typedef {Object} Draw
- * @property {string[]} sample the keys taken, lowest rank first
- * @property {string} frame_hash SHA-256 of the canonical JSON of the sorted frame
- * @property {string} seed
- * @property {string} method
- */
-/**
- * What an interval asks for (R17).
- * @typedef {Object} IntervalArgs
- * @property {number} frame_size
- * @property {number} sample_size
- * @property {number} successes
- * @property {string|number} confidence a decimal, such as "0.95"
- * @bound frame_size, sample_size, successes: whole numbers, 0 ≤ successes ≤ sample_size ≤ frame_size, sample_size at least 1
- * @bound confidence: strictly between 0 and 1
- */
-/**
- * An exact interval (R17): counts in the frame.
- * @typedef {Object} Interval
- * @property {number} low
- * @property {number} high
- * @property {string} method
- */
-
-/** @type {string} how a draw ranks and takes keys (R16) */
 export const DRAW_METHOD = "bio-draw/1: rank each key by sha256(seed + \"\\n\" + key), lowest first (ties by key), take the first n";
-/** @type {string} how the interval is computed (R17) */
 export const INTERVAL_METHOD = "bio-interval/1: exact hypergeometric, equal tails, counts in the frame";
 
-/** @type {number} R23: the most keys one stretch of `drawSliced` hashes, ranks or merges before it lets the caller's turn pass */
+/** R23: the most keys one stretch of `drawSliced` hashes, ranks or merges before it lets the caller's turn pass. */
 export const DRAW_SLICE = 4000;
 
 const utf8 = new TextEncoder();
@@ -133,14 +94,8 @@ function drawInput(frame, n, seed) {
   return null;
 }
 
-/**
- * R16: `{sample, frame_hash, seed, method}`, or a refusal: `FRAME_INVALID` for a key that is not a string or is
- * repeated, `SEED_INVALID` for an empty seed, `DRAW_TOO_LARGE` for n out of range. Throws `TypeError` for a frame
- * that is not a list, a seed that is not a string, or an n that is not a whole number.
- * @param {DrawArgs} [args] absent, it throws `TypeError`
- * @returns {OneOf<Draw, Refusal>}
- */
-export function draw({ frame, n, seed } = /** @type {DrawArgs} */ ({})) {
+/** R16: `{sample, frame_hash, seed, method}`, or a refusal. */
+export function draw({ frame, n, seed } = {}) {
   const bad = drawInput(frame, n, seed);
   if (bad) return bad;
   const steps = drawSteps(frame, n, seed);
@@ -148,12 +103,8 @@ export function draw({ frame, n, seed } = /** @type {DrawArgs} */ ({})) {
 }
 
 /** R23: `draw`'s answer, byte for byte, with `await yieldNow()` between slices of at most `DRAW_SLICE` keys, so a
- * frame of a million keys never holds the caller's turn. A `yieldNow` that is not a function is no yield.
- * @param {DrawArgs} [args] absent, it throws `TypeError`
- * @param {{yieldNow?: () => *}} [opts]
- * @returns {Promise<OneOf<Draw, Refusal>>}
- */
-export async function drawSliced({ frame, n, seed } = /** @type {DrawArgs} */ ({}), { yieldNow } = {}) {
+ * frame of a million keys never holds the caller's turn. A `yieldNow` that is not a function is no yield. */
+export async function drawSliced({ frame, n, seed } = {}, { yieldNow } = {}) {
   const bad = drawInput(frame, n, seed);
   if (bad) return bad;
   const steps = drawSteps(frame, n, seed);
@@ -199,13 +150,8 @@ function fraction(c) {
   return d.n < q ? { p: d.n, q } : null;
 }
 
-/**
- * R17: `{low, high, method}`: the counts in the frame bounding the proportion at `confidence`, or a refusal
- * `INTERVAL_INVALID` naming what is out of range.
- * @param {IntervalArgs} [args] absent, it is refused
- * @returns {OneOf<Interval, Refusal>}
- */
-export function interval({ frame_size: N, sample_size: n, successes: x, confidence } = /** @type {IntervalArgs} */ ({})) {
+/** R17: `{low, high, method}`: the counts in the frame bounding the proportion at `confidence`, or a refusal. */
+export function interval({ frame_size: N, sample_size: n, successes: x, confidence } = {}) {
   for (const [name, v] of [["frame_size", N], ["sample_size", n], ["successes", x]])
     if (!Number.isSafeInteger(v)) return refusal("INTERVAL_INVALID", `${name} must be a whole number`);
   if (!(N >= 1 && n >= 1 && n <= N && x >= 0 && x <= n))

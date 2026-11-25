@@ -2,7 +2,7 @@
    module's interface, under the test profile and copies of it handed in as `jurisdictions`. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { seeded, draft, V, TEST, HARBOUR, TEXT, twoProfiles, reviewedOf, PROFILE_IDS, PRO_REVIEW, present } from "./fixture.mjs";
+import { seeded, draft, V, TEST, HARBOUR, TEXT, twoProfiles, reviewedOf, PROFILE_IDS, PRO_REVIEW } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 
@@ -71,7 +71,7 @@ test("R15 (T45) each of the four parts, missing alone, withholds the template an
 
 test("R15 (T45; K2781 (6)) @records-request stays unresolved until a named writer and a professional review exist: with no such template it is absent; without the review it reads TEMPLATE_NOT_REVIEWED; with it, it is offered", () => {
   /* the first profile carries no template: the name finds nothing */
-  const first = present(jurisdictions.list().find((p) => !p.test), "a profile that is not the test profile").id;
+  const first = jurisdictions.list().find((p) => !p.test).id;
   const none = seeded({ profiles: [first] });
   refused(none.ft.offeredVersion({ name: "@records-request", viewer: A }), "NO_SUCH_TEMPLATE");
   /* a "Records request" template in the profile, written from sources, approved, but with no professional review */

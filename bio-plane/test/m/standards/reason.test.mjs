@@ -63,9 +63,7 @@ test("R1 a reason is admitted up to 2,000 characters, counted as characters (not
   assert.deepEqual([read.declared_by, read.declared_at], [V("bob"), r.declared_at], "with the declarer and time (R4)");
   const listed = w.s.standardsIn({ viewer: V("carol"), limit: 200 }).items.find((x) => x.id === r.id);
   assert.equal(listed.reason, words, "standardsIn carries it");
-  const file = w.record.readFile(r.id, "bundle.md");
-  assert.ok(file && "text" in file, "the bundle document is held inline");
-  const doc = file.text;
+  const doc = w.record.readFile(r.id, "bundle.md").text;
   assert.match(doc, /\n## Reason\n\nThe council adopted it in 2019,\nand the permits since cite it\.\n ## Not a heading\n/,
                "the document holds it whole in its own section, a heading-like line set in");
   /* the reason is the declarer's, and each standard keeps its own */

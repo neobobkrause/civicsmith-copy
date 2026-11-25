@@ -9,50 +9,10 @@
  * The fault injectors (restartAt, storeFailAt, killPage, ...) are the plane harness's (plane-1), not this double's. */
 
 /**
- * @typedef {Object} AlarmDoubleOptions
- * @property {number} [maxRetries] the retries a failing run gets
- * @property {boolean} [rerunAfterSuccess] re-run a completed handler once with retryCount 1
- * @bound maxRetries: whole number, 0 or more, default 6
- */
-
-/**
- * @typedef {Object} AlarmStorage
- * @property {any[][]} log every call made, as [method, ...args]
- * @property {Map<string, unknown>} kv the values kept
- * @property {(k: string) => Promise<unknown>} get
- * @property {(k: string, v: unknown) => Promise<void>} put
- * @property {(k: string) => Promise<boolean>} delete
- * @property {(opts?: {prefix?: string}) => Promise<Map<string, unknown>>} list
- * @property {() => Promise<number | null>} getAlarm
- * @property {(t: number | Date) => Promise<void>} setAlarm
- * @property {() => Promise<void>} deleteAlarm
- */
-
-/**
- * @typedef {Object} AlarmRunResult
- * @property {boolean} ok whether the last attempt succeeded
- * @property {number} retries the retries this run took
- * @property {any} error the last attempt's error (anything thrown), or null
- */
-
-/**
- * @typedef {Object} AlarmDouble
- * @property {AlarmStorage} storage the storage double
- * @property {() => Promise<number | null>} getAlarm null while a run is in flight (unless it set an alarm)
- * @property {(t: number | Date) => Promise<void>} setAlarm
- * @property {() => Promise<void>} deleteAlarm
- * @property {(fn: (ctx: {retryCount: number, isRetry: boolean}) => unknown) => Promise<AlarmRunResult>} run
- * @property {number} retries the retries of every run so far (read-only)
- */
-
-/**
  * `alarmDouble({maxRetries = 6, rerunAfterSuccess = false})` -> `{storage, getAlarm(), setAlarm(t), deleteAlarm(),
  * run(fn), retries}`. `storage` is a key-value storage double (`get`, `put`, `delete`, `list`, and the same three alarm
  * methods), each call logged in `storage.log`. `run(fn)` runs `fn({retryCount, isRetry})` as the alarm handler and
  * answers `{ok, retries, error}`; `retries` counts the retries of every run so far.
- * @param {AlarmDoubleOptions} [opts] the double's options
- * @returns {AlarmDouble}
- * @throws {Error} when maxRetries is not a whole number of 0 or more
  */
 export function alarmDouble({ maxRetries = 6, rerunAfterSuccess = false } = {}) {
   if (!Number.isInteger(maxRetries) || maxRetries < 0) throw new Error("alarmDouble: maxRetries must be a whole number");

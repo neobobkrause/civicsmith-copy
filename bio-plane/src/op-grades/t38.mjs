@@ -7,10 +7,7 @@
  * R20): `case-carriage` refuses a machine itself (`MACHINE_CANNOT_MARK_PHOTO` at the mark, C-141.1;
  * `MACHINE_CANNOT_WITHDRAW_MARK` at the withdrawal, C-141.7). No consequence statement, vocabulary or prompt is added. */
 
-/** @import { ReasonTable, RungTable } from './t33.mjs' */
-
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
-/** @type {RungTable} T38's ops */
 export const T38_RUNGS = {
   /* case-carriage R14: refused without a reason WITHDRAW_NO_REASON (C-141.10); the withdrawal is its own row beside the
      mark, never erased (its R12) */
@@ -21,7 +18,6 @@ export const T38_RUNGS = {
 };
 
 /* ---- every op's NON_ACTS reason (R5) ---- */
-/** @type {ReasonTable} T38's ops */
 export const T38_NON_ACTS = {
   obscuremarkwithdraw: "photo-directed: keyed by a photo's capture and one mark, reached from the Photos step; a member's "
     + "reasoned withdrawal of a mark, recorded beside it, never erased; moves no bundle",

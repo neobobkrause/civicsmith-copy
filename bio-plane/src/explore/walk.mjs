@@ -176,9 +176,8 @@ export function walk(ctx, w) {
   const { hubs, fanout, refusals, unread, stop } = r.s;
   let paths = found.map((hops) => describePath(registry, hops, w.sortBy));
   if (w.to !== undefined && w.to !== null) paths = paths.filter((p) => p.hops[p.hops.length - 1].from === w.to || p.hops[p.hops.length - 1].to === w.to);
-  const by = w.sortBy;
-  if (by) {
-    const stated = found.some((hops) => hops.some((h) => isObj(h.quantities) && typeof h.quantities[by] === 'number'));
+  if (w.sortBy) {
+    const stated = found.some((hops) => hops.some((h) => isObj(h.quantities) && typeof h.quantities[w.sortBy] === 'number'));
     if (!stated) return refuse('UNKNOWN_QUANTITY', localize('explore.walk.no_step_in_the_walk', 'no step in the walk states the quantity {sortBy}', { sortBy: String(w.sortBy) }));
   }
   paths = /** @type {any[]} */ (orderPaths(paths, w.sortBy ? { by: w.sortBy } : {}));

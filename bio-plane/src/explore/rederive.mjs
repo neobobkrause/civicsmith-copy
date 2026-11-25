@@ -114,10 +114,6 @@ const DERIVED_FIELDS = ['kind', 'from', 'to', 'as_of', 'method', 'id'];
  */
 function formOf(registry, h) {
   if (!isObj(h)) return null;
-  return formOfObject(registry, Object(h));
-}
-
-function formOfObject(registry, h) {
   const cls = filled(h.kind) ? registry.kindOf(h.kind)?.class ?? null : null;
   if (filled(h.method) || filled(h.as_of)) {
     return DERIVED_FIELDS.every((f) => filled(h[f])) && isRecordId(h.from) && isRecordId(h.to) ? 'derived' : null;

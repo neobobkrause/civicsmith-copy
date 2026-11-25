@@ -4782,20 +4782,20 @@
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's identity, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's identity from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     },
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's edition, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's edition from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     }
@@ -4866,20 +4866,20 @@
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's identity, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's identity from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     },
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's edition, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's edition from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     }
@@ -4950,20 +4950,20 @@
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's identity, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's identity from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     },
     {
      "check": "C-2.8",
      "severity": "error",
-     "message": "this inquiry carries the case's edition, a case fact of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
+     "message": "this inquiry carries case facts of its own: since the case document took over, the case's identity, edition, producing project, scope, roster, load-bearing partition, bias acknowledgement and bar are signed once, in the case document a member reviews and ratifies, and not in each member's front matter. An inquiry is a member of a case because the case pinned its version, and that pin is inside the bytes the case's signer signed",
      "repairable": true,
      "repairs": [
-      "remove the case's edition from this inquiry",
+      "remove the case facts from this inquiry",
       "the case states these facts once, in its own signed document"
      ]
     }

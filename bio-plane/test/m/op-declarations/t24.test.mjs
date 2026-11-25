@@ -6,8 +6,7 @@ import assert from "node:assert/strict";
 import * as O from "../../../src/op-declarations/index.mjs";
 
 const { OPS, SESSION_OPS, NEEDS, UNATTENDED_BY_DECISION, ACT_GATE, PLAN_RUN_SCOPE } = O;
-/* the module's exported lists, by name */
-const LISTS = /** @type {Array<[string, ReadonlyArray<string>]>} */ (Object.entries(O).filter(([, v]) => Array.isArray(v)));
+const LISTS = Object.entries(O).filter(([, v]) => Array.isArray(v));
 const listsHolding = (op) => LISTS.filter(([, list]) => list.includes(op)).map(([name]) => name).sort();
 const plain = (spec) => ({ ...spec, ...(Array.isArray(spec.classes) ? { classes: [...spec.classes] } : {}),
                            ...(Array.isArray(spec.machineClasses) ? { machineClasses: [...spec.machineClasses] } : {}) });
@@ -21,7 +20,7 @@ const stampsOf = (op, lists = listsHolding(op)) => [...new Set(lists.flatMap((l)
 test("R11, R2: OPS holds a spec for optionstartpreview — a read (not mutating), classes admin, member and probe, no machineClasses, optionstart's classes — naming no ai (negative control: a mutating or fenced spec is seen)", () => {
   assert.ok(Object.hasOwn(OPS, OP), "no spec");
   assert.deepEqual(plain(OPS[OP]), SPEC);
-  assert.deepEqual(OPS[OP].classes && [...OPS[OP].classes], OPS.optionstart.classes && [...OPS.optionstart.classes]);
+  assert.deepEqual([...OPS[OP].classes], [...OPS.optionstart.classes]);
   assert.equal(OPS.optionstart.mutating, true);
   assert.ok(!("machineClasses" in OPS[OP]));
   assert.ok(!JSON.stringify(OPS[OP]).includes('"ai"'));

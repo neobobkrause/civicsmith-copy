@@ -1,9 +1,9 @@
-/* provenance-register R81 (its tests stay with provenance until its own job takes them): the one helper that files a releasable bundle (`releasableBundle`), and the testimony filer that calls it.
+/* provenance R81: the one helper that files a releasable bundle (`releasableBundle`), and the testimony filer that calls it.
    `ratification`'s `release` is a higher layer, so the entry requirements it asks (its R22: a well-formed `content_hash`,
    `data/dataset.json`, a file under `snapshots/`, a chain for each document) are read here off the filed bundle itself. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, V, infoMd, provDoc, inlineText, pathsOf } from "./fixture.mjs";
+import { world, sha, V, infoMd, provDoc } from "./fixture.mjs";
 import { releasableBundle } from "../../../src/provenance/index.mjs";
 import { canonicalJson, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 
@@ -14,7 +14,7 @@ const textOf = (r, path) => r.files.find((f) => f.path === path)?.text;
 function missing(files) {
   const by = (p) => files.find((f) => f.path === p);
   const md = by("bundle.md");
-  const ch = md && parseFrontmatter(md.text).data?.content_hash; /* data is null for unreadable front matter (record-grammar R6): content_hash is then missing */
+  const ch = md && parseFrontmatter(md.text).data.content_hash;
   const out = [];
   if (!(typeof ch === "string" && /^sha256:[0-9a-f]{64}$/.test(ch))) out.push("content_hash");
   if (!by("data/dataset.json")) out.push("dataset");
@@ -37,7 +37,7 @@ test("R81: the dataset is the canonical text of one row per whole document, and 
   assert.equal(textOf(r, "data/dataset.json"), expected, "byte-equal to the canonical text");
   assert.equal(r.dataset, expected);
   assert.equal(r.contentHash, `sha256:${sha(expected)}`);
-  assert.equal(parseFrontmatter(textOf(r, "bundle.md")).data?.content_hash, r.contentHash);
+  assert.equal(parseFrontmatter(textOf(r, "bundle.md")).data.content_hash, r.contentHash);
   assert.deepEqual(r.files.map((f) => f.path), ["bundle.md", "data/provenance.json", "data/dataset.json", "snapshots/a.pdf"]);
   assert.deepEqual(missing(r.files), []);
   const hashed = r.files.find((f) => f.path === "data/dataset.json");
@@ -86,7 +86,7 @@ test("R81: a testimony is filed through the helper, with the dataset, its hash, 
   const w = world({ now: "2026-09-27T03:04:05.678Z" });
   const t = w.prov.testify({ words: "I saw it.", observedAt: "2026-09-20T18:05Z", author: V("ruth") });
   assert.equal(t.ok, true, JSON.stringify(t));
-  const files = pathsOf(w.record.livePaths(t.bundle_id)).map((path) => ({ path, text: inlineText(w.record.readFile(t.bundle_id, path)) }));
+  const files = w.record.livePaths(t.bundle_id).map((path) => ({ path, text: w.record.readFile(t.bundle_id, path).text }));
   assert.deepEqual(missing(files), []);
   const ds = JSON.parse(files.find((f) => f.path === "data/dataset.json").text);
   assert.deepEqual(ds, { documents: [{ bytes: t.bytes, locator: ds.documents[0].locator, sha256: t.capture_sha }] });

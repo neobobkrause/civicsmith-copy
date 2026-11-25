@@ -14,7 +14,6 @@ test("R18: readingProvenance digests docprofile's flattened text, credits pages 
   const chain = mergedChain([{ pages: [0], chain: layerChain({ tier: 1, container: "pdf", cap: null, measured_by: "u" }) },
                              { pages: [1], chain: [{ step: "pixels", cap: "C", measured_by: "m", calibration: null },
                                                    { step: "ocr", engine: "tess", version: "5", cap: "C", measured_by: "m", calibration: null }] }]);
-  assert.ok(Array.isArray(chain), "the two parts merge into one chain");
   const text = { document: "zero\none", pages: [{ page: 0, text: "zero" }, { page: 1, text: "one" }, { page: 2, text: "", tier: 2 }] };
   const p = await readingProvenance({ text, chain, tier: 3, container: "pdf", planeVersion: "9" });
   assert.equal(p.scheme, PROVENANCE_SCHEME);

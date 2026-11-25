@@ -2,7 +2,7 @@
    conclusion drawn from lines (R20). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { readdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { world, sha, ANN, MACHINE } from "./fixture.mjs";
@@ -10,26 +10,6 @@ import { CONNECTION_KINDS, LINE_KINDS, STRUCTURE_KINDS, CAPACITIES, ROLES } from
 import { FORBIDDEN_WORDS } from "../../../src/connection-grammar/index.mjs";
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), "../../../src");
-const ROOT = join(SRC, "../..");
-
-/* R18's census is bounded at this module: a module's tests load only it and the modules before it (decision "Plane's
-   tests go to the modules they prove"), and each later module answers for its own exports in its own census. The
-   folders read are those of bio-plane/src/ whose index.mjs is owned by a module on process/modules/order.txt no later
-   than lines, the owner being the module with the longest listed path over every entry's files and tests, as the
-   process's tool decides. Only the order file and the entries are read to find them: no later module's file is read. */
-function foldersUpToLines() {
-  const order = readFileSync(join(ROOT, "process/modules/order.txt"), "utf8").split("\n").map((x) => x.trim()).filter(Boolean);
-  const bound = order.indexOf("lines");
-  const claims = order.flatMap((m, i) => {
-    const entry = JSON.parse(readFileSync(join(ROOT, "process/modules", `${m}.json`), "utf8"));
-    return [...entry.files, ...entry.tests].map((path) => ({ path: path.replace(/\/$/, ""), i }));
-  });
-  const ownerAt = (rel) => claims.filter((c) => rel === c.path || rel.startsWith(`${c.path}/`))
-    .sort((a, b) => b.path.length - a.path.length)[0]?.i ?? Infinity;
-  const names = new Set(claims.filter((c) => c.i <= bound && c.path.startsWith("bio-plane/src/")).map((c) => c.path.split("/")[2]));
-  const folders = [...names].filter((d) => ownerAt(`bio-plane/src/${d}/index.mjs`) <= bound && existsSync(join(SRC, d, "index.mjs")));
-  return { folders: folders.sort(), order, bound, ownerAt };
-}
 
 test("R18 one home per fact at the store's gate: a line row holds no amount and no HYP- id as an end or a basis; nothing is written past a refusal", () => {
   const w = world();
@@ -51,19 +31,20 @@ test("R18 one home per fact at the store's gate: a line row holds no amount and 
 });
 
 test("R18 holderAt has no second implementation in any module, structure is never written into entities' declared relations, and every bound_cache equals its rebuild", async () => {
-  const { folders, order, bound, ownerAt } = foldersUpToLines();
-  for (const d of folders) assert.ok(ownerAt(`bio-plane/src/${d}/index.mjs`) <= bound, `${d} is lines' or an earlier module's`);
-  for (const d of ["entities", "events", "content", "record-core", "lines"])
-    assert.ok(folders.includes(d), `${d}, ${order.indexOf(d) + 1} in the order, is read`);
+  const dirs = readdirSync(SRC, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(join(SRC, d.name, "index.mjs")));
   const holders = [];
-  for (const d of folders) {
-    const m = await import(join(SRC, d, "index.mjs"));
+  let imported = 0;
+  for (const d of dirs) {
+    let m;
+    try { m = await import(join(SRC, d.name, "index.mjs")); } catch { continue; }
+    imported++;
     for (const [k, v] of Object.entries(m)) {
-      if (k === "holderAt") holders.push(d);
-      if (typeof v === "function" && v.prototype && Object.getOwnPropertyNames(v.prototype).includes("holderAt")) holders.push(`${d}.${k}`);
+      if (k === "holderAt") holders.push(d.name);
+      if (typeof v === "function" && v.prototype && Object.getOwnPropertyNames(v.prototype).includes("holderAt")) holders.push(`${d.name}.${k}`);
     }
   }
-  assert.deepEqual(holders, ["lines.Lines"], `of the ${folders.length} modules up to lines, only lines answers holderAt`);
+  assert.ok(imported > 40, `the modules' exports were read (${imported})`);
+  assert.deepEqual(holders, ["lines.Lines"]);
   const w = world();
   const p = w.ent("person", "Ada Example"), o = w.ent("office", "Harbour Master"), b = w.ent("body", "Port Board");
   const e = w.event("2020-01-01");

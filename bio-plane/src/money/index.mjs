@@ -1191,9 +1191,8 @@ export class Money {
     let sum = null;
     for (const { r } of entries) {
       const f = figureOf(r);
-      const next = sum === null ? f : add(sum, f);
-      if ("refused" in next && next.refused) return { facts, sum: null, refused: next };
-      sum = next;
+      sum = sum === null ? f : add(sum, f);
+      if (sum.refused) return { facts, sum: null, refused: sum };
     }
     return { facts, sum, says: word("money.says.summed_through_calc") };
   }

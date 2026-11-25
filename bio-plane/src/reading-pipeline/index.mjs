@@ -958,7 +958,7 @@ export async function tier4Extend(transcription, { sha, storeName, i2text, chain
   const parts = partsOfChain(chain, held);
   if (!parts) return not(word("reading-pipeline.chain_text_already"));
   const merged = mergedChain([...parts, { pages: m.filled, chain: part }]);
-  if (!Array.isArray(merged)) return not(word("reading-pipeline.provenance_refused", { detail: String(merged?.detail) }));
+  if (!Array.isArray(merged)) return not(word("reading-pipeline.provenance_refused", { detail: String(merged.detail) }));
   out.i2text = m.text; out.chain = merged; out.wiredTier = 4;
   out.filled = m.filled; out.engine = { engine, version };
   const say = [word("reading-pipeline.civicsmith_text_recognition", { filled: String(describePages(m.filled)), filled_2: String(m.filled.length === 1

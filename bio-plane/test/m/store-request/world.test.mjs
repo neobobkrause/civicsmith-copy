@@ -103,7 +103,6 @@ test("R15: the world's door makes every store request by innerRequest and by no 
   w.send = (r) => { sent.push(r); return send(r); };
   const door = doorOf(w);
   let compared = 0;
-  /** @type {[string, any, any][]} */
   const cases = [["search", { q: "x", viewer: "admin" }, null], ["list", {}, null], ["memberlist", { administer: "1" }, null], ["stats", {}, null],
     ["projectparticipants", { project: "P" }, null], ["resolve", {}, { resolvedBy: "x", entity: "E" }], ["thread", {}, { threadedBy: "x" }],
     ["biasadopt", { author: "x" }, {}], ["leadlist", { identity: "x" }, null], ["queuemute", { member: "x" }, {}], ["promote", { project: "P" },
@@ -131,33 +130,12 @@ test("R18: bootOf answers the door bound to the member and the session record in
   const w = await storeWorld();
   const ruth = await w.signIn("ruth");
   const b = bootOf(w, ruth);
-  assert.deepEqual(Object.keys(b).sort(), ["door", "now", "session"]);
+  assert.deepEqual(Object.keys(b).sort(), ["door", "session"]);
   assert.deepEqual(b.session, ruth.session);
   const who = await b.door({ url: "/api/?op=whoami", op: "whoami", query: { op: "whoami" }, headers: {}, init: {}, method: "GET" });
   assert.equal(resultOf(who).member, "ruth");
   assert.deepEqual(w.boot(ruth).session, ruth.session);
   assert.equal(bootOf(w, null).session, null);
-});
-
-test("R18: bootOf hands the world's clock as `now`, so a page started there reads the world's session as the store does", async () => {
-  const w = await storeWorld();
-  const ruth = await w.signIn("ruth");
-  const b = bootOf(w, ruth);
-  /* the world's clock, not the machine's: the session's expiry is on it */
-  assert.equal(b.now, w.now());
-  assert.equal(typeof b.now, "number");
-  assert.ok(b.session.e > b.now, "the session is live at the world's now");
-  assert.equal(bootOf(w, null).now, w.now(), "a public page's clock starts there too");
-  assert.equal(w.boot(ruth).now, w.now());
-  /* `now` is read when asked: the clock moved, the next boot starts later */
-  w.tick(60_000);
-  assert.equal(bootOf(w, ruth).now, b.now + 60_000);
-  /* bound: past the session's expiry by the world's clock, the page reads it expired and the store refuses the token alike */
-  w.tick(b.session.e - w.now() + 1);
-  const late = bootOf(w, ruth);
-  assert.ok(late.session.e < late.now, "expired by the clock the page starts at");
-  const refused = await late.door({ url: "/api/?op=whoami", op: "whoami", query: { op: "whoami" }, headers: {}, init: {}, method: "GET" });
-  assert.notEqual(resultOf(refused) && resultOf(refused).member, "ruth", "the store no longer admits the expired session");
 });
 
 test("R19: the recipes perform real acts and answer what the acts answered", async () => {

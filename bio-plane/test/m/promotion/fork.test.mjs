@@ -99,8 +99,7 @@ test("R44: the fork is a creation through promote — minted id, forming, create
   for (const t of ['Sewer "Fund", forked', "Back\\slash fund", "It's the fund", "Fund: 東京 #2", '"Quoted" fund']) {
     const g = p.forkProject({ projectId: id, title: t, by: "bob" });
     assert.equal(g.ok, true, `${t}: ${JSON.stringify(g)}`);
-    /* record-grammar R6: an unreadable front matter answers `data: null`, which fails here as no title. */
-    assert.equal(parseFrontmatter(record.readFile(g.newId, "bundle.md").text).data?.title, t);
+    assert.equal(parseFrontmatter(record.readFile(g.newId, "bundle.md").text).data.title, t);
     assert.equal(g.title, t);
   }
   /* Every rule of promote applies, its refusal returned. */

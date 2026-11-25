@@ -474,7 +474,6 @@ test("R8 one mechanical promotion changing only the permitted fields, with a Ses
   assert.deepEqual([m.writer, m.operation, m.author, m.base], ["mechanical", "monitor-tick", MONITOR_AUTHOR, sha(liveBefore)]);
   const after = w.text(id);
   const fmB = parseFrontmatter(liveBefore).data, fmA = parseFrontmatter(after).data;
-  if (!fmB || !fmA) throw new Error("bundle.md's frontmatter did not parse");
   assert.equal(fmA.monitoring.last_checked, r.body.checked);
   assert.equal(fmA.last_updated, r.body.checked);
   assert.equal(fmA.source_status, "unchanged");
@@ -567,7 +566,7 @@ test("R79 a copy the tick files carries its provenance document entry and owes a
   w.capture.registerJob = jobs.registerJob;
   w.capture.armJobs = jobs.armJobs;
   const owed = { get length() { return jobs.rows().length; } };
-  const docsOf = (id) => JSON.parse(w.inline(id, "data/provenance.json")).documents;
+  const docsOf = (id) => JSON.parse(w.record.readFile(id, "data/provenance.json").text).documents;
   const id = "INFO-2026-0090-owes";
   w.monitored(id, LOC, "v1 bytes");
   w.net.routes[LOC] = serve("v2 bytes");
@@ -618,8 +617,8 @@ test("R79 a copy the tick files carries its provenance document entry and owes a
 
 test("R80 the copy's document entry carries acquisition's first-hop provenance_chain and the capture's profile, so the register files a vouched copy and a textual copy is read as text", async () => {
   const w = world({ env: { INSTANCE_NAME: "Oakland", VERSION: "1.2.3" } });
-  const docsOf = (id) => JSON.parse(w.inline(id, "data/provenance.json")).documents;
-  const refusals = (id, docs) => registerChecks({ files: { "data/provenance.json": JSON.stringify({ ...JSON.parse(w.inline(id, "data/provenance.json")), documents: docs }) },
+  const docsOf = (id) => JSON.parse(w.record.readFile(id, "data/provenance.json").text).documents;
+  const refusals = (id, docs) => registerChecks({ files: { "data/provenance.json": JSON.stringify({ ...JSON.parse(w.record.readFile(id, "data/provenance.json").text), documents: docs }) },
     fm: { current_state: "verified" } }).filter((f) => /documents\[1\]/.test(JSON.stringify(f)) && /C-18\.9/.test(JSON.stringify(f)));
   const ev = w.record.evidenceStore();
   /* a textual copy: one hop, the monitor tick's fetch, by the first hop's one spelling; the profile is acquisition's own over the same bytes */

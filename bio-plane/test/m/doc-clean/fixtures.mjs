@@ -7,18 +7,14 @@ import { makePdf } from "../../../../pdf-worker/test/make-pdf.mjs";
 import { cleanDocument } from "../../../src/doc-clean/index.mjs";
 
 export { makeZip, makePdf };
-/** @type {(s: string) => Uint8Array} UTF-8 bytes of `s` */
 export const enc = (s) => new TextEncoder().encode(s);
-/** @type {(b: Uint8Array) => string} one character per byte */
 export const latin = (b) => Buffer.from(b).toString("latin1");
-/** @type {(b: Uint8Array, s: string) => boolean} whether `b` holds the latin1 bytes of `s` */
 export const has = (b, s) => Buffer.from(b).includes(Buffer.from(s, "latin1"));
 const cat = (...parts) => new Uint8Array(Buffer.concat(parts.map((p) => Buffer.from(p))));
 const be16 = (v) => [v >> 8, v & 255];
 const be32 = (v) => [v >>> 24, (v >> 16) & 255, (v >> 8) & 255, v & 255];
 
-/** The strings an image's or a document's metadata carries in these fixtures; none may survive in a copy.
- *  @type {string[]} */
+/** The strings an image's or a document's metadata carries in these fixtures; none may survive in a copy. */
 export const SECRETS = ["GPSSECRET", "XMPSECRET", "COMSECRET", "PNGSECRET", "AUTHORSECRET", "EDITORSECRET", "COMPANYSECRET",
   "MANAGERSECRET", "TEMPLATESECRET", "APPSECRET", "CUSTOMSECRET", "COMMENTERSECRET", "CHANGERSECRET", "SIGNERSECRET",
   "PRIVATESECRET", "JP2SECRET", "GIFSECRET", "PATHSECRET", "2019-03-04"];
@@ -33,8 +29,7 @@ function exifBody() {
 }
 
 /** An 8x8 grey baseline JPEG (one DC-only block, one-code Huffman tables), with `meta` its EXIF (GPS), XMP and
- *  comment segments; `coded` is everything that decides its pixels, for comparing a copy's with the original's.
- *  @param {{meta?: boolean}} [options] @returns {Uint8Array} */
+ *  comment segments; `coded` is everything that decides its pixels, for comparing a copy's with the original's. */
 export function jpeg({ meta = true } = {}) {
   const dqt = segment(0xdb, [0, ...new Array(64).fill(1)]);
   const sof = segment(0xc0, [8, 0, 8, 0, 8, 1, 1, 0x11, 0]);
@@ -46,7 +41,6 @@ export function jpeg({ meta = true } = {}) {
     ...segment(0xfe, [...enc("COMSECRET")])] : [];
   return new Uint8Array([0xff, 0xd8, ...app0, ...extra, ...coded]);
 }
-/** @type {(d: Uint8Array) => string} a JPEG's segments from its first DQT on: what decides its pixels */
 export const jpegCoded = (d) => latin(d).slice(latin(d).indexOf("\xff\xdb"));
 
 function chunk(type, body) {
@@ -58,24 +52,20 @@ function crc(b) {
   for (const x of b) { c ^= x; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; }
   return ~c >>> 0;
 }
-/** A 2x2 grey PNG with a tEXt chunk ("PNGSECRET") when `meta`.
- *  @param {{meta?: boolean}} [options] @returns {Uint8Array} */
+/** A 2x2 grey PNG with a tEXt chunk ("PNGSECRET") when `meta`. */
 export function png({ meta = true } = {}) {
   const ihdr = chunk("IHDR", [...be32(2), ...be32(2), 8, 0, 0, 0, 0]);
   const idat = chunk("IDAT", deflateSync(Buffer.from([0, 10, 20, 0, 30, 40])));
   const text = meta ? chunk("tEXt", enc("Author\0PNGSECRET")) : [];
   return new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...ihdr, ...text, ...idat, ...chunk("IEND", [])]);
 }
-/** @type {(d: Uint8Array) => string} a PNG's IDAT chunks: what decides its pixels */
 export const pngCoded = (d) => { const s = latin(d); return s.slice(s.indexOf("IDAT") - 4, s.indexOf("IEND") - 4); };
 
-/** A 1x1 GIF with a comment extension ("GIFSECRET").
- *  @type {() => Uint8Array} */
+/** A 1x1 GIF with a comment extension ("GIFSECRET"). */
 export const gif = () => new Uint8Array([...enc("GIF89a"), 1, 0, 1, 0, 0x80, 0, 0, 0, 0, 0, 255, 255, 255,
   0x21, 0xfe, 9, ...enc("GIFSECRET"), 0, 0x2c, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 1, 0, 0x3b]);
 
-/** A JP2 whose header box is followed by an `xml ` box ("JP2SECRET"), around a minimal one-tile J2K codestream.
- *  @returns {Uint8Array} */
+/** A JP2 whose header box is followed by an `xml ` box ("JP2SECRET"), around a minimal one-tile J2K codestream. */
 export function jp2() {
   const box = (type, body) => [...be32(8 + body.length), ...enc(type), ...body];
   const siz = segment(0x51, [0, 0, ...be32(1), ...be32(1), ...be32(0), ...be32(0), ...be32(1), ...be32(1), ...be32(0), ...be32(0), ...be16(1), 7, 1, 1]);
@@ -89,8 +79,7 @@ export function jp2() {
 }
 
 /** A minimal EMF: its header record (with `description`, UTF-16, when given) and EOF, holding `inner` (raw bytes
- *  in a comment record) when given.
- *  @param {Uint8Array} [inner] @param {string} [description] @returns {Uint8Array} */
+ *  in a comment record) when given. */
 export function emf(inner = new Uint8Array(0), description = "") {
   const pad = (inner.length + 3) & ~3;
   const rec = (type, body) => { const b = Buffer.alloc(8 + body.length); b.writeUInt32LE(type, 0); b.writeUInt32LE(8 + body.length, 4); Buffer.from(body).copy(b, 8); return b; };
@@ -106,11 +95,9 @@ export function emf(inner = new Uint8Array(0), description = "") {
   return new Uint8Array(all);
 }
 
-/** A JBIG2 segment: number, type, data (no referred-to segments, a one-byte page association).
- *  @type {(num: number, type: number, data: ArrayLike<number>) => Uint8Array} */
+/** A JBIG2 segment: number, type, data (no referred-to segments, a one-byte page association). */
 export const jbig2Segment = (num, type, data) => new Uint8Array([...be32(num), type, 0, 1, ...be32(data.length), ...data]);
-/** An extension segment holding an ASCII comment.
- *  @type {(num: number, text: string) => Uint8Array} */
+/** An extension segment holding an ASCII comment. */
 export const jbig2Comment = (num, text) => jbig2Segment(num, 62, [0x20, 0, 0, 0, ...enc(text), 0]);
 
 // ---- PDFs ----
@@ -118,9 +105,7 @@ export const jbig2Comment = (num, text) => jbig2Segment(num, 62, [0x20, 0, 0, 0,
 const content = (ops) => ({ dict: "<< >>", data: enc(ops) });
 const imageObj = (bytes, extra = "") => ({ dict: `<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode ${extra} >>`, data: bytes });
 
-/** A one-page PDF showing "Hello" and painting a JPEG with EXIF; `more` adds bodies from object 9.
- *  @param {{catalog?: string, page?: string, trailer?: string, more?: Array<string | {dict: string, data: Uint8Array}>, ops?: string}} [options]
- *  @returns {Uint8Array} */
+/** A one-page PDF showing "Hello" and painting a JPEG with EXIF; `more` replaces or adds bodies from object 8. */
 export function pdf({ catalog = "", page = "", trailer = "/Info 6 0 R", more = [], ops = "" } = {}) {
   return makePdf([
     `<< /Type /Catalog /Pages 2 0 R /Metadata 7 0 R ${catalog} >>`,
@@ -140,8 +125,7 @@ export function pdf({ catalog = "", page = "", trailer = "/Info 6 0 R", more = [
 export const encryptedRefusal = () =>
   cleanDocument(pdf({ more: ["<< /Filter /Standard /V 2 /R 3 /O <00> /U <00> /P -4 >>"], trailer: "/Encrypt 9 0 R" }));
 
-/** `base` with an incremental update appended: object 8 (the image) redefined, the old one left behind.
- *  @param {Uint8Array} base @param {Uint8Array} newImage @returns {Uint8Array} */
+/** `base` with an incremental update appended: object 8 (the image) redefined, the old one left behind. */
 export function incremental(base, newImage) {
   const s = latin(base);
   const prev = Number(/startxref\s+(\d+)/.exec(s.slice(s.lastIndexOf("startxref")))[1]);
@@ -152,8 +136,7 @@ export function incremental(base, newImage) {
   return cat(base, obj, Buffer.from(xref, "latin1"));
 }
 
-/** Objects in a compressed object stream: `bodies` (dictionaries) numbered from `first`.
- *  @param {number} first @param {string[]} bodies @returns {{dict: string, data: Uint8Array}} */
+/** Objects in a compressed object stream: `bodies` (dictionaries) numbered from `first`. */
 export function objStm(first, bodies) {
   let head = "", body = "";
   bodies.forEach((b, i) => { head += `${first + i} ${body.length} `; body += b + "\n"; });
@@ -182,9 +165,7 @@ const picture = (rid) => `<w:r><w:drawing><wp:inline><wp:extent cx="381000" cy="
 const unnamed = (xml) => xml.replace(/ w:(author|initials)="[^"]*"/g, ' w:$1=""').replace(/ w:date="[^"]*"/g, "");
 
 /** A .docx (`meta: false`, its parts carrying no metadata): two paragraphs (one with a tracked insertion and a deletion, one with a comment), a JPEG and a PNG
- *  with metadata, every metadata part R6 names, and `extra` entries appended.
- *  @param {{extra?: Array<{name: string, data: string | Uint8Array, method?: number}>, images?: boolean, meta?: boolean}} [options]
- *  @returns {Uint8Array} */
+ *  with metadata, every metadata part R6 names, and `extra` entries appended. */
 export function docx({ extra = [], images = true, meta = true } = {}) {
   const body = `${XML}<w:document ${W} ${DRAWING}><w:body><w:p><w:r><w:t xml:space="preserve">Budget item one </w:t></w:r><w:ins w:id="1" w:author="CHANGERSECRET" w:date="2019-03-04T00:00:00Z"><w:r><w:t>added</w:t></w:r></w:ins><w:del w:id="2" w:author="CHANGERSECRET" w:date="2019-03-04T00:00:00Z"><w:r><w:delText>removed</w:delText></w:r></w:del></w:p><w:p><w:commentRangeStart w:id="0"/><w:r><w:t>Second paragraph</w:t></w:r><w:commentRangeEnd w:id="0"/><w:r><w:commentReference w:id="0"/></w:r></w:p>${
     images ? `<w:p>${picture("rId2")}${picture("rId3")}</w:p>` : ""}</w:body></w:document>`;
@@ -205,8 +186,7 @@ export function docx({ extra = [], images = true, meta = true } = {}) {
   ]);
 }
 
-/** A .xlsx: one sheet with two text cells and a legacy comment by "COMMENTERSECRET", and a JPEG in xl/media.
- *  @param {{extra?: Array<{name: string, data: string | Uint8Array, method?: number}>}} [options] @returns {Uint8Array} */
+/** A .xlsx: one sheet with two text cells and a legacy comment by "COMMENTERSECRET", and a JPEG in xl/media. */
 export function xlsx({ extra = [] } = {}) {
   const X = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
   return makeZip([
@@ -225,8 +205,7 @@ export function xlsx({ extra = [] } = {}) {
   ]);
 }
 
-/** A .pptx: one slide with a title and a picture, a comment by "COMMENTERSECRET".
- *  @returns {Uint8Array} */
+/** A .pptx: one slide with a title and a picture, a comment by "COMMENTERSECRET". */
 export function pptx() {
   const P = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
   const tree = (inner) => `<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${inner}</p:spTree></p:cSld>`;
@@ -266,10 +245,7 @@ const ODF_BODY = {
 const MIME = { odt: "text", ods: "spreadsheet", odp: "presentation" };
 
 /** An ODF package of `flavour` with every R6 field in meta.xml, an annotation (and in odt a tracked change), a JPEG
- *  in Pictures/ and a PNG thumbnail, each with metadata; `extra` entries and `manifest` lines appended.
- *  @param {string} flavour `odt`, `ods` or `odp`
- *  @param {{extra?: Array<{name: string, data: string | Uint8Array, method?: number}>, manifest?: string}} [options]
- *  @returns {Uint8Array} */
+ *  in Pictures/ and a PNG thumbnail, each with metadata; `extra` entries and `manifest` lines appended. */
 export function odf(flavour, { extra = [], manifest = "" } = {}) {
   const mime = `application/vnd.oasis.opendocument.${MIME[flavour]}`;
   const files = [["/", mime], ["content.xml", "text/xml"], ["styles.xml", "text/xml"], ["meta.xml", "text/xml"], ["Pictures/image1.jpg", "image/jpeg"], ["Thumbnails/thumbnail.png", "image/png"]];
@@ -286,10 +262,7 @@ export function odf(flavour, { extra = [], manifest = "" } = {}) {
 }
 
 /** Every part of a ZIP the module wrote, read by a walk of its own: `{name, method, flags, time, date, extra, data}`
- *  (data inflated), with the archive comment's length.
- *  @param {Uint8Array} z
- *  @returns {{parts: {name: string, method: number, flags: number, time: number, date: number, extra: number, comment: number, data: Uint8Array}[], comment: number}}
- *  @throws {Error} when the ZIP has no end record at its end */
+ *  (data inflated), with the archive comment's length. */
 export function unzipCopy(z) {
   const b = Buffer.from(z);
   const e = b.length - 22;

@@ -34,93 +34,6 @@
    the ladder is still one ladder. */
 export { CONFIDENCE } from "../../site-profiles/index.mjs";
 
-/**
- * @typedef {Object} Pattern one form a jurisdiction profile wrote, as the view carries it (jurisdictions R2)
- * @property {string} re the expression's own source, used as its profile wrote it, anchors and all
- * @property {string} [flags] the profile's own flags; only `i` and `u` are honoured
- */
-/**
- * @typedef {Object} VocabEntry one entry of one vocabulary key of the view
- * @property {Pattern} [pattern] the form itself
- * @property {*} [basis] the measurement the profile says the fact rests on
- * @property {*} [profile] which profile supplied it
- * @property {string} [key] a code's own key, which prefixes a reference's key
- * @property {string} [label] a code's own label, which shows it
- * @property {string} [column] the column a budget header heads (jurisdictions R6), one of its `BUDGET_COLUMNS`
- * @property {string} [role] the role a roster header names (jurisdictions R6), one of its `ROSTER_ROLES`
- * @property {string} [kind] the kind of document a roster word self-names (jurisdictions R6), `roster` or `chart`;
- *   absent, both
- * @property {string} [relation] what an amending clause does (jurisdictions R6), one of its `AMENDING_RELATIONS`
- * @property {string} [marker] what a meeting marker says of a meeting (jurisdictions R6), one of its `MEETING_MARKERS`
- * @property {string} [organisation] the organisation a body variant names (jurisdictions R6), its key
- * @property {string} [field] the field a policy header labels (jurisdictions R69), one of its `POLICY_HEADER_FIELDS`
- * @property {string} [system] the system a file number is the record of (jurisdictions R6), a system's origin in the
- *   profile
- */
-/**
- * @typedef {Object} Tagged one compiled recogniser with the fact it came from, so a reader knows WHICH matched
- * @property {RegExp} re
- * @property {*} tag what that pattern's own entry carried: a code's `key` and `label`, or an instrument's `kind`
- */
-/**
- * @typedef {Object} TaggedMatch one match of a tagged recogniser over one string
- * @property {*} m the reader's own match, with its index and its named groups
- * @property {*} tag the matching pattern's tag
- */
-/**
- * @typedef {Object} Practice one measured local practice value, with what it rests on (jurisdictions R15)
- * @property {number} value a whole number above zero
- * @property {*} basis the measurement the profile named, or null
- * @property {string | null} count the unit the profile counts it in (`business`, `calendar`), or null where it
- *   states none
- * @bound count: null is "the profile did not say" — a reader must never count business days as calendar days
- */
-/**
- * @typedef {Object} Entity one reference a content type read in a document (R34)
- * @property {string} key stable across fetches: a position in a list is not a key, an id in a URL is
- * @property {*} kind what sort of thing it is
- * @property {*} label what to show
- * @property {Object<string, *>} facts the fields whose change might mean something, named so `assess` can say WHICH moved
- * @property {*} [source] where it was first read, in IC-1's element-reference union; carried only when the locator answered
- * @property {*[]} [occurrences] every place it was read, in reading order, the first included, each entry null where
- *   the locator could not say; carried only once a second sighting exists
- * @bound source, occurrences: only `ctx.locate(offset)` may produce an entry — a reader that composes one is
- *   inventing an address
- * @bound source: an absent position means THIS READING CANNOT SAY WHERE, never "the whole document was meant"
- */
-/**
- * @typedef {Object} Referential two documents are ABOUT each other: a claim about meaning
- * @property {string} connection `CONNECTION.REFERENTIAL`
- * @property {*} from
- * @property {*} to
- * @property {*} relation
- * @property {*} why
- */
-/**
- * @typedef {Object} Temporal one thing happened AFTER another and the sequence matters: a claim about a sequence
- * @property {string} connection `CONNECTION.TEMPORAL`
- * @property {*} from
- * @property {*} to
- * @property {*} relation
- * @property {*} at when it happened, or null
- * @property {*} expected_by the date an absence is due by, or null
- * @property {*} why
- * @bound expected_by: what turns an absence into a fact with a date on it; null where none is due
- */
-/**
- * @typedef {Referential | Temporal} Connection the two are never collapsed into one edge type (R15)
- */
-/**
- * @typedef {Object} EntityDiff which entities and which FACTS moved between two readings
- * @property {Entity[]} gone in the earlier reading and not the later
- * @property {Entity[]} appeared in the later and not the earlier
- * @property {{entity: Entity, was: Entity, moved: {fact: string, was: *, now: *}[]}[]} altered the same key, with the
- *   facts that moved
- * @property {number} before_count
- * @property {number} after_count
- * @bound altered: names WHICH facts moved, never that the entity differs; what each move means is the content type's
- */
-
 /* What WATCHING this kind of document should do, DECLARED by the content type rather
    than derived from the stack handler (CONSTRUCTS Step 0 #4). The kind is the content
    type's business now, and so is the contract that follows from it. `unmonitorable`
@@ -151,10 +64,7 @@ export const CONTRACT = { SUBSTANCE: "substance", MEMBERSHIP: "membership", UNMO
  *  matcher that cannot see one.
  *
  *  So: PHRASES are matched over this normalisation, and LINE ANCHORING is kept
- *  only where the principle is genuinely about a line (see `selfNaming`).
- * @param {*} text anything; nothing reads as an empty string
- * @returns {string} the text as one line of single-spaced words
- */
+ *  only where the principle is genuinely about a line (see `selfNaming`). */
 export function flatten(text) {
   return String(text || "").replace(/\s+/g, " ");
 }
@@ -192,18 +102,14 @@ export function flatten(text) {
  *  ONE-PAGE document of any of these kinds names itself ONCE and is
  *  indistinguishable by this test from a one-line reference. Every type here
  *  therefore keeps a path that reaches `likely` on other evidence alone, and none
- *  of them refuses a document for naming itself only once.
- * @param {*} text anything; nothing reads as an empty string
- * @param {RegExp} re the kind's own self-naming form, tested against each trimmed line
- * @returns {number} how many lines are that name and nothing else
- */
+ *  of them refuses a document for naming itself only once. */
 export function selfNaming(text, re) {
   let n = 0;
   for (const line of String(text || "").split(/\r?\n/)) if (re.test(line.trim())) n++;
   return n;
 }
 
-/** @type {number} The threshold `selfNaming` counts against: a masthead is furniture, and
+/** The threshold `selfNaming` counts against: a masthead is furniture, and
  *  furniture recurs. Three is the smallest count that cannot be one wrapped title
  *  plus one prose mention, which is exactly the pair measured in the minutes
  *  above. Named once so the four types cannot drift apart on it. */
@@ -227,11 +133,7 @@ export const FURNITURE_RECURS = 3;
  *  `alsoSatisfies(ctx, self)` returns the keys of the other registered types whose
  *  own `detect` matches this same text, so a reader's facts can carry it. It is
  *  wired by the registry, which is the only place that knows every type; a reader
- *  called directly gets an honest empty list rather than a TypeError.
- * @param {*} ctx the reader's own context; the registry wires `ctx.alsoSatisfies` onto it
- * @param {*} [selfKey] the asking type's own key, left out of the answer
- * @returns {*[]} the keys the wired function gave, and an empty list where none is wired or it threw
- */
+ *  called directly gets an honest empty list rather than a TypeError. */
 export function alsoSatisfies(ctx, selfKey) {
   const f = ctx && typeof ctx.alsoSatisfies === "function" ? ctx.alsoSatisfies : null;
   if (!f) return [];
@@ -271,12 +173,7 @@ import { combine as jurisdictionsCombine, list as jurisdictionsList } from "../.
 
 let LEGACY_VIEW = null;
 /** The view a reader uses: the caller's, or for a caller that gives none (K39), the
- *  combination of every non-test held profile, computed once.
- * @param {*} ctx the reader's own context; `ctx.view` is the combined view (`jurisdictions.combine`'s, its R13)
- * @returns {*} the view: each fact a `{pattern, basis, profile}` entry, keyed by section
- * @bound result: an absent section supplies nothing and never falls back to one place's words; no view at all is the
- *   combination of every non-test held profile (K39), and an empty view is a view
- */
+ *  combination of every non-test held profile, computed once. */
 export function readerView(ctx) {
   const v = ctx && ctx.view;
   if (v && typeof v === "object") return v;
@@ -299,13 +196,7 @@ const VOCAB_REGEX_CACHE = new Map();
 /** Compile one profile pattern `{re, flags}`, `wrap` turning its source into the
  *  expression a reader needs (anchored to a line, bounded by words) and `extra`
  *  adding reader-side flags (`g`, `m`). The profile's own flags are kept and only
- *  `i`/`u` are honoured (jurisdictions R2). Returns null when it cannot compile.
- * @param {*} p one profile pattern `{re, flags}`; anything without a non-empty `re` string gives null
- * @param {((src: string) => string) | null} [wrap] turns the pattern's source into the expression the reader needs
- * @param {string} [extra] reader-side flags to add (`g`, `m`)
- * @returns {RegExp | null} null is "it would not compile", which `validate` refuses upstream; a reader must not fail
- *   on one that slipped through
- */
+ *  `i`/`u` are honoured (jurisdictions R2). Returns null when it cannot compile. */
 export function vocabRegex(p, wrap, extra) {
   if (!p || typeof p.re !== "string" || !p.re.length) return null;
   const own = String(p.flags || "").replace(/[^iu]/g, "");
@@ -319,26 +210,14 @@ export function vocabRegex(p, wrap, extra) {
   return re;
 }
 
-/**
- * The entries of one `vocabulary` key in the view, or an empty list.
- * @param {*} ctx as `readerView` takes it
- * @param {string} key the vocabulary section's name
- * @returns {VocabEntry[]}
- */
+/** The entries of one `vocabulary` key in the view, or an empty list. */
 export function vocabulary(ctx, key) {
   const v = readerView(ctx).vocabulary;
   const list = v && typeof v === "object" ? v[key] : null;
   return Array.isArray(list) ? list.filter((e) => e && typeof e === "object") : [];
 }
 
-/**
- * The compiled patterns of one vocabulary key, each wrapped the same way.
- * @param {*} ctx as `readerView` takes it
- * @param {string} key the vocabulary section's name
- * @param {((src: string) => string) | null} [wrap] as `vocabRegex` takes it
- * @param {string} [extra] as `vocabRegex` takes it
- * @returns {RegExp[]} one for each entry that compiled; an entry that did not is left out, not thrown
- */
+/** The compiled patterns of one vocabulary key, each wrapped the same way. */
 export function vocabPatterns(ctx, key, wrap, extra) {
   const out = [];
   for (const e of vocabulary(ctx, key)) {
@@ -348,19 +227,12 @@ export function vocabPatterns(ctx, key, wrap, extra) {
   return out;
 }
 
-/* Wrappers for the positions a reader supplies: a body's name ending a line, or a
-   reference bounded by non-letters inside prose. */
-/** @type {(re: string) => string} a form that must end its line */
+/** Wrappers for the positions a reader supplies: a body's name ending a line, or a
+ *  reference bounded by non-letters inside prose. */
 export const LINE_END = (re) => `(?:${re})\\s*$`;
-/** @type {(re: string) => string} a form bounded by non-letters inside prose */
 export const IN_PROSE = (re) => `(?<![A-Za-z0-9])(${re})(?![A-Za-z0-9])`;
 
-/**
- * Does any of these compiled patterns match this string?
- * @param {RegExp[]} patterns
- * @param {string} s
- * @returns {boolean}
- */
+/** Does any of these compiled patterns match this string? */
 export function anyMatch(patterns, s) {
   for (const re of patterns) { re.lastIndex = 0; if (re.test(s)) return true; }
   return false;
@@ -368,11 +240,7 @@ export function anyMatch(patterns, s) {
 
 /** Every match of several global patterns over one string, merged in reading
  *  order, overlaps dropped (the earlier, then longer, match is kept). `tag` is
- *  carried from the pattern's own entry so a reader knows WHICH fact matched.
- * @param {Tagged[]} tagged each recogniser with its fact; one that is not global is left out
- * @param {string} s
- * @returns {TaggedMatch[]} in reading order, overlaps dropped: the earlier, then the longer, match is kept
- */
+ *  carried from the pattern's own entry so a reader knows WHICH fact matched. */
 export function allMatches(tagged, s) {
   const hits = [];
   for (const { re, tag } of tagged) {
@@ -392,10 +260,7 @@ export function allMatches(tagged, s) {
 }
 
 /** A pattern's source as a piece of a larger expression: its own `^`/`$` anchors
- *  removed, since a form written to match a whole value is embedded here in prose.
- * @param {*} re the pattern's source
- * @returns {string}
- */
+ *  removed, since a form written to match a whole value is embedded here in prose. */
 function vocabPiece(re) {
   return String(re).replace(/^\^/, "").replace(/(?<!\\)\$$/, "");
 }
@@ -405,13 +270,7 @@ function vocabPiece(re) {
  *  number in one of the space's forms, followed by any series marker the view's
  *  `enactment_markers` hold. `number` is optional when `blankNumber` is set, for a
  *  proposed instrument's own caption (`ORDINANCE NO. ____`). Each result is
- *  `{re, tag: {kind}}` with the number in the named group `num`.
- * @param {*} ctx as `readerView` takes it
- * @param {{blankNumber?: boolean}} [how] `blankNumber` makes the number optional, for a proposed instrument's own
- *   caption (`ORDINANCE NO. ____`)
- * @returns {Tagged[]} one per KIND of instrument the space names; empty where the view names no form and no blank
- *   number was asked for. The tag carries the kind and the space's own forms, which `enactmentNumber` normalises by.
- */
+ *  `{re, tag: {kind}}` with the number in the named group `num`. */
 export function enactmentPatterns(ctx, { blankNumber = false } = {}) {
   const v = readerView(ctx);
   const sp = v.spaces && v.spaces.enactment;
@@ -444,12 +303,7 @@ export function enactmentPatterns(ctx, { blankNumber = false } = {}) {
 /** An instrument's number as the space's own form normalises it (jurisdictions R3):
  *  the matched text is cleaned as the form says, matched by the form AS WRITTEN, and
  *  composed from its `normal` parts. A form never changes a digit; a text no form
- *  recognises gives null, and the reference is not read rather than read wrongly.
- * @param {*} forms the space's own forms, as a tag of `enactmentPatterns` carries them
- * @param {*} text the matched text; anything that is not a non-blank string gives null
- * @returns {string | null} null is "no form recognised it", so the reference is not read rather than read wrongly
- * @bound result: a form never changes a digit; only formatting is removed and the parts the form names composed
- */
+ *  recognises gives null, and the reference is not read rather than read wrongly. */
 export function enactmentNumber(forms, text) {
   if (typeof text !== "string" || !text.trim()) return null;
   for (const f of forms || []) {
@@ -484,10 +338,7 @@ export function enactmentNumber(forms, text) {
  *  for a citation of one of its parts: the code's name or abbreviation, then the
  *  words any code is cited by (`Section`, `Chapter`), then the part's number in
  *  the named group `sec`. The tag carries the code's own `key` and `label`, which
- *  prefix the reference's key and show it.
- * @param {*} ctx as `readerView` takes it
- * @returns {Tagged[]} one per code the view names; the tag carries the code's own `key` and `label`
- */
+ *  prefix the reference's key and show it. */
 export function codePatterns(ctx) {
   const out = [];
   for (const c of vocabulary(ctx, "codes")) {
@@ -502,11 +353,7 @@ export function codePatterns(ctx) {
 /** The view's `practice` value for `name`, or null when no profile supplies it (or
  *  profiles disagreed and it was withheld, jurisdictions R15). `count` is the unit the
  *  profile counts it in (`business`, `calendar`) when it states one, else null: a reader
- *  must never count business days as calendar days (OMC 2.20.160; K1519).
- * @param {*} ctx as `readerView` takes it
- * @param {string} name the practice's own name
- * @returns {Practice | null} null where no profile supplies it, or profiles disagreed and it was withheld
- */
+ *  must never count business days as calendar days (OMC 2.20.160; K1519). */
 export function practiceValue(ctx, name) {
   const p = readerView(ctx).practice;
   const v = p && p[name];
@@ -537,15 +384,7 @@ export function practiceValue(ctx, name) {
  *  ruling of 2026-09-14 (5.3) is that a citation naming no part means the whole
  *  document, and that is a MEMBER'S act of citation; it is not a reader's
  *  silence. Collapsing the two would let a reader's shortcoming read as a
- *  member's choice, which is the record claiming more than it holds.
- * @param {*} key written out as a string; it must be stable across fetches
- * @param {*} kind
- * @param {*} label
- * @param {*} [facts] the fields whose change might mean something; nothing reads as none
- * @param {*} [source] what `ctx.locate(offset)` answered for the offset the reference was read at; a falsy answer
- *   carries no position, since an explicit `source: null` and an absent `source` mean the same thing
- * @returns {Entity}
- */
+ *  member's choice, which is the record claiming more than it holds. */
 export function entity(key, kind, label, facts, source) {
   const e = { key: String(key), kind, label, facts: facts || {} };
   /* Carried only when the locator actually answered — an explicit `source: null`
@@ -563,12 +402,7 @@ export function entity(key, kind, label, facts, source) {
  *  is null where the locator could not say. It is carried only once a second sighting
  *  exists, so a reference read once has the shape it always had. `source` stays the first
  *  sighting's, unchanged. The same rule as `source` binds each entry: only `ctx.locate`
- *  may produce it.
- * @param {Entity} e the one entity this key already has; nothing is handed back unchanged
- * @param {*} [source] what `ctx.locate` answered for this sighting; a falsy answer is a null entry, never dropped
- * @returns {Entity} the same entity, with this sighting added to its `occurrences`
- * @bound e: `source` and the facts stay the first sighting's, unchanged
- */
+ *  may produce it. */
 export function readAgain(e, source) {
   if (!e) return e;
   if (!Array.isArray(e.occurrences)) e.occurrences = [e.source || null];
@@ -596,24 +430,10 @@ export function readAgain(e, source) {
  *  emitted as different kinds and the UI shows them apart. */
 export const CONNECTION = { REFERENTIAL: "referential", TEMPORAL: "temporal" };
 
-/**
- * @param {*} from
- * @param {*} to
- * @param {*} relation
- * @param {*} [why]
- * @returns {Referential}
- */
 export function referential(from, to, relation, why) {
   return { connection: CONNECTION.REFERENTIAL, from, to, relation, why };
 }
-/**
- * `expected_by` turns an absence into a fact with a date on it.
- * @param {*} from
- * @param {*} to
- * @param {*} relation
- * @param {{at?: *, expected_by?: *, why?: *}} [when] a missing `at` or `expected_by` is null, never invented
- * @returns {Temporal}
- */
+/** `expected_by` turns an absence into a fact with a date on it. */
 export function temporal(from, to, relation, { at, expected_by, why } = {}) {
   return { connection: CONNECTION.TEMPORAL, from, to, relation, at: at || null,
            expected_by: expected_by || null, why };
@@ -621,11 +441,7 @@ export function temporal(from, to, relation, { at, expected_by, why } = {}) {
 
 /** Diff two entity sets by key, reporting which FACTS moved rather than that the
  *  entity differs. A content type decides what each moved fact means; this only
- *  finds them.
- * @param {Entity[]} before the earlier reading's entities
- * @param {Entity[]} after the later reading's
- * @returns {EntityDiff}
- */
+ *  finds them. */
 export function diffEntities(before, after) {
   const b = new Map(before.map((e) => [e.key, e]));
   const a = new Map(after.map((e) => [e.key, e]));

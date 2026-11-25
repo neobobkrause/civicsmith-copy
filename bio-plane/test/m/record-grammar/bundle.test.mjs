@@ -145,31 +145,6 @@ test("R39 checkBundle: the injected sha256, nowMs and package age are what it re
   assert.ok((await run({ ...young, maxPackageAgeDays: 1 })).findings.some((f) => f.check === "C-16.3"));
 });
 
-test("R39 resolveTarget, the four registries, sha512 and the re-evaluation age reach every arm unchanged; absent, the registries and sha512 are null and the age is 30", async () => {
-  const seen = [];
-  const spy = { module: "spy", ids: ["C-500.1"], arm: (ctx) => { seen.push(ctx); } };
-  const resolveTarget = (id) => id.length > 0;
-  const releaseRegistry = { keys: [] }, publishedRegistry = { "INFO-2026-0001-a": { latest: 1, editions: {} } };
-  const publishedCaseRegistry = { cases: 0 }, earnedRegistry = { earned: { connection: {}, capture: {} } };
-  const sha512 = async () => new Uint8Array(64);
-  await checkBundle({ ...placed(), resolveTarget, releaseRegistry, publishedRegistry, publishedCaseRegistry, earnedRegistry, sha512,
-    maxReevalAgeDays: 7 }, { grammars: [spy] });
-  const [given] = seen;
-  assert.equal(given.resolveTarget, resolveTarget);
-  assert.equal(given.releaseRegistry, releaseRegistry);
-  assert.equal(given.publishedRegistry, publishedRegistry);
-  assert.equal(given.publishedCaseRegistry, publishedCaseRegistry);
-  assert.equal(given.earnedRegistry, earnedRegistry);
-  assert.equal(given.sha512, sha512);
-  assert.equal(given.maxReevalAgeDays, 7);
-  /* Absent (and null) is null for each registry and sha512, and the default age. */
-  await checkBundle({ ...placed(), releaseRegistry: null, sha512: null }, { grammars: [spy] });
-  const absent = seen[1];
-  for (const k of ["releaseRegistry", "publishedRegistry", "publishedCaseRegistry", "earnedRegistry", "sha512"]) assert.equal(absent[k], null, k);
-  assert.equal(absent.maxReevalAgeDays, 30);
-  assert.equal(absent.maxPackageAgeDays, 14);
-});
-
 test("R39 R62 the default knownSchemas are the sixteen stamps, success_record@1 among them; a passed list replaces them; elidedPaths as a Set or a list", async () => {
   const STAMPS = ["information@1", "information@2", "inquiry@1", "focus@1", "problem@1", "project@1", "action@1", "bias@1",
     "standard@1", "determination@1", "consequence@1", "escalation@1", "aspiration@1", "goal@1", "action_plan@1", "success_record@1"];

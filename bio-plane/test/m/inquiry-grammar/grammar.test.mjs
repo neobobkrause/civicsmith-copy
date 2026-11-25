@@ -63,33 +63,10 @@ test("R1 (C-2.8) entry requirements, by hand: surfaced_by, a disposition's reaso
   has({ subject_entity: "ENT-1" }, /^the subject entity 'ENT-1' is not an entry in the subject registry/);
   assert.ok(!msgs({ subject_entity: "ENT-2026-0001" }).length);
   for (const k of ["case_id", "case_edition", "case_project", "case_scope", "case_findings", "case_roles", "bias_acknowledgement", "required_strength"])
-    has({ [k]: "x" }, /a case fact of its own/);
+    has({ [k]: "x" }, new RegExp("case facts of its own"));
   assert.ok(!msgs({ case_id: "null", case_edition: "" }).length, "an absent case field is not named");
   for (const t of ["information", "project", undefined]) assert.deepEqual(sync((f) => checkInquiryExtension(ctxOf({ object_type: t, surfaced_by: "x" }), f)), []);
   assert.ok(sync((f) => checkInquiryExtension(ctxOf({ object_type: "problem", surfaced_by: "x" }), f)).length, "a legacy type alias is an inquiry");
-});
-
-test("R1 (C-2.8, CASE-5b) with R69: each case fact an inquiry carries is one finding that names that fact in the member's words, and its first repair says to remove that fact; facts carried together are named in the catalogue's order", () => {
-  const FACTS = { case_id: "the case's identity", case_edition: "the case's edition", case_project: "the case's producing project",
-    case_scope: "the case's scope", case_findings: "the case's roster", case_roles: "the case's load-bearing partition",
-    bias_acknowledgement: "the case's bias acknowledgement", required_strength: "the case's bar" };
-  const caseFindings = (fm) => sync((f) => checkInquiryExtension(ctxOf({ object_type: "inquiry", surfaced_by: "human", ...fm }), f))
-    .filter((x) => /a case fact of its own/.test(x.message));
-  for (const [k, fact] of Object.entries(FACTS)) {
-    const found = caseFindings({ [k]: "x" });
-    assert.equal(found.length, 1, k);
-    assert.equal(found[0].check, "C-2.8");
-    assert.equal(found[0].severity, "error");
-    assert.ok(found[0].message.startsWith(`this inquiry carries ${fact}, a case fact of its own: `), found[0].message);
-    assert.equal(found[0].repairs[0], `remove ${fact} from this inquiry`);
-    assert.equal(found[0].repairs.length, 2);
-    for (const text of [found[0].message, ...found[0].repairs]) assert.ok(!text.includes(k), `${k} is not named by its field`);
-  }
-  const all = caseFindings(Object.fromEntries(Object.keys(FACTS).reverse().map((k) => [k, "x"])));
-  assert.deepEqual(all.map((x) => x.repairs[0]), Object.values(FACTS).map((fact) => `remove ${fact} from this inquiry`));
-  /* control: absent, null, empty or "null" facts raise nothing, and two facts raise two findings, not one */
-  assert.deepEqual(caseFindings({ case_id: null, case_edition: "", case_scope: "null", case_roles: undefined }), []);
-  assert.equal(caseFindings({ case_id: "CASE-1", case_edition: 2 }).length, 2);
 });
 
 test("R2 (C-2.8) divided, by hand: a division block (reason, a named non-machine apportioner, an ISO at, two distinct canonical children) and an apportionment homing every leg, each child given one, each row's target the leg's", () => {

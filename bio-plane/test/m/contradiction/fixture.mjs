@@ -35,8 +35,6 @@ export const MACHINE = "class:admin";
 export const MEMBER = "member:m1";
 export const OUTSIDER = "member:outsider";
 export const NOW = "2026-09-28T00:00:00Z";
-/* A file record-core holds inline answers its text; a blob reference or an absent file answers null (record-core R13). */
-const inlineText = (f) => (f && "text" in f ? f.text : null);
 
 export function storage() {
   const db = new DatabaseSync(":memory:");
@@ -136,8 +134,9 @@ export function world({ gate = true, now = null, strictConclude = false } = {}) 
         if (!hasReading && (!vname || !bv.accepted.has(`${args.target}|${vname}`)))
           return concludeAct({ kind: "no_claim", target: args.target });
       }
+      const md = record.readFile(args.target, "bundle.md");
       const head = record.head(args.target);
-      let text = inlineText(record.readFile(args.target, "bundle.md")).replace(/^current_state: .*$/m, "current_state: concluded")
+      let text = md.text.replace(/^current_state: .*$/m, "current_state: concluded")
                         .replace(/^prior_state: .*$/m, `prior_state: ${head.currentState}`);
       text = text.replace(/\n---\n/, `\nconclusion: "${concl || own}"\nfalsifier: "${args.falsifier || "a record showing otherwise"}"\n---\n`);
       const r = promotion.promote({ bundleId: args.target, base: head.bundleSha, snapKey: `conclude${++n}`,
@@ -172,8 +171,8 @@ export function world({ gate = true, now = null, strictConclude = false } = {}) 
     st, host, record, membership, promotion, x, content, entities, k, c, bv, runs, gateCalls, clock, drawing, stances, events, money,
     rows: (q, ...a) => st.sql.exec(q, ...a), one: (q, ...a) => st.sql.exec(q, ...a)[0] || null,
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`)[0].n,
-    text: (id) => inlineText(record.readFile(id, "bundle.md")),
-    fm: (id) => { const t = inlineText(record.readFile(id, "bundle.md")); return t ? parseFrontmatter(t).data : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    fm: (id) => { const t = record.readFile(id, "bundle.md")?.text; return t ? parseFrontmatter(t).data : null; },
     bundle(id, { type = "information", subject = null } = {}) {
       st.sql.exec(`INSERT OR IGNORE INTO bundles (bundle_id, object_type, group_id, title, current_state, created, last_updated, bundle_sha, row_version)
                    VALUES (?, ?, 'g', ?, 'collected', '2026-01-01', '2026-01-01', 'x', 1)`, id, type, `title of ${id}`);

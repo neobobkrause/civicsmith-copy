@@ -30,9 +30,7 @@ import { WATCHING_SCREEN } from "./watching.mjs";
 const UNSUPPORTED = ["rtf", "email", "legacy_word", "legacy_excel", "legacy_powerpoint", "legacy_office", "tiff", "gif", "webp", "heic", "avif", "bmp", "jp2", "ico", "kind"]
   .map((k) => "reading-pipeline.index.unsupported_" + k);
 
-/** The keys of `setup-words` each screen reads (R26), by the screen's id: `capture`, `held`, `archive`, `open-file`, `about-knocker`,
- *  `leads`, `watching` and `inbox`. Every key is a word of the list.
- * @type {Readonly<Object<string, readonly string[]>>} */
+/* The keys each screen reads (R26). */
 export const SCREEN_KEYS = Object.freeze({
   capture: Object.freeze([
     ...UNSUPPORTED,
@@ -229,19 +227,5 @@ export const SCREEN_KEYS = Object.freeze({
   ]),
 });
 
-/**
- * A screen as the shell takes it (`interface-shell` R21), with the keys it reads (R26).
- * @typedef {Object} Screen
- * @property {string} id
- * @property {(view: any) => Object<string, any>} reads
- * @property {(cs: any, view: any) => string} render
- * @property {readonly any[]} acts
- * @property {Readonly<Object<string, Function>>} [parts]
- * @property {readonly string[]} words
- */
-/** The module's screens, in this order: `capture` (`screens-capture`'s Add screen), `held`, `archive`, `open-file`, `inbox`,
- *  `about-knocker`, `leads` and `watching`; each carries its keys as `words`. The list and each screen are frozen when the module loads;
- *  it is handed to `interface-shell`'s `interfacePage`, `interfaceScript` and `checkScreens` as the `Screen[]` they take.
- * @type {Screen[]} */
-export const SCREENS = /** @type {Screen[]} builds the frozen list */ (Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
-  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] }))));
+export const SCREENS = Object.freeze([CAPTURE_SCREEN, HELD_SCREEN, ARCHIVE_SCREEN, OPEN_FILE_SCREEN, INBOX_SCREEN, ABOUT_KNOCKER_SCREEN, LEADS_SCREEN, WATCHING_SCREEN]
+  .map((s) => Object.freeze({ ...s, words: SCREEN_KEYS[s.id] })));

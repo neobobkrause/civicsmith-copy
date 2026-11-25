@@ -657,7 +657,7 @@ export class Calculations {
       if (typeof obj.arrayBuffer === "function") {
         const bytes = new Uint8Array(await obj.arrayBuffer());
         const stated = /charset\s*=\s*"?([A-Za-z0-9._:-]+)/i.exec(String((obj.httpMetadata && obj.httpMetadata.contentType) || ""));
-        const label = stated ? stated[1] : (encodingSignature(bytes)?.encoding || "utf-8");
+        const label = stated ? stated[1] : (encodingSignature(bytes).encoding || "utf-8");
         let dec;
         try { dec = new TextDecoder(/^us-ascii$/i.test(label) ? "utf-8" : label); } catch { dec = new TextDecoder("utf-8"); }
         text = dec.decode(bytes);

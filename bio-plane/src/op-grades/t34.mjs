@@ -5,30 +5,17 @@
  * tables and applies `aliased` to its own. This file imports only `word` from `setup-words`, so the spread closes no cycle. */
 
 import { word } from "../setup-words/index.mjs";
-/** @import { Absence, AbsenceTable, ReasonTable, RungTable } from './t33.mjs' */
 
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const R = (s) => `read: ${s}; writes nothing`;
-/**
- * builds one `NON_ACTS` reason from its particular words
- * @param {string} s
- * @returns {string}
- */
 const ROSTER_DOOR = (s) => `roster governance: ${s}; the subject is who may join, not a bundle`;
 
 /* ---- the rungs (R19's backing beside each) ---- */
-/** @type {RungTable} T34's ops */
 export const T34_RUNGS = {
   /* tasks R15: a `concern` asks its reason (CHECK_NO_REASON), a `check` none — `triage`'s shape (K212) */
   checkrecord:          "reasoned",   // CHECK_NO_REASON (tasks R15)
 };
 
 /* ---- the stated absences ---- */
-/** @type {AbsenceTable} T34's ops */
 export const T34_RUNG_ABSENT = {
   /* membership R98–R105: who may join, as memberadd and knock */
   invitewithdraw:       { ground: "credential", is: "an administrator withdraws an unused invitation, the member becoming revoked (membership R98)" },
@@ -59,7 +46,6 @@ export const T34_RUNG_ABSENT = {
 };
 
 /* ---- every gated op's NON_ACTS reason (R5) ---- */
-/** @type {ReasonTable} T34's ops */
 export const T34_NON_ACTS = {
   invitewithdraw: ROSTER_DOOR("an administrator's withdrawal of an invitation"),
   websitekeycreate: ROSTER_DOOR("the website's key, an administrator's"),
@@ -92,10 +78,6 @@ export const T34_NON_ACTS = {
 /* ---- `op-declarations` R21's aliases (op-declarations R5, R21): each the op its owner serves it as. `expunge` is no
    alias since K1901: `personexpunge` is a declared op (K2054); `claimidentity` none since DEC-182 (2) (K2239): the
    same-person claim is `identityclaim` ---- */
-/**
- * @type {Readonly<Object<string, string>>} each alias, by its name, with the op it stands for; frozen
- * @bound each value: an op's name, never another alias
- */
 export const OP_ALIASES = Object.freeze({
   signerregisterown: "signerregister", signerrevokeown: "signerrevoke", declaretie: "membertie",
   withdrawtie: "membertiewithdraw", adoptversion: "versionadopt", keepversion: "versionkeep",
@@ -107,10 +89,6 @@ export const OP_ALIASES = Object.freeze({
   declare: "dutydeclare", filingrecordsent: "filingsent",
 });
 
-/**
- * The alias entries of one table: each alias whose op the table holds, with that op's very value.
- * @param {Object<string, string | Absence>} table a table by op's name: rungs, absences or reasons
- * @returns {Object<string, string | Absence>} a new table by alias's name, each value the very value of the alias's op
- */
+/** The alias entries of one table: each alias whose op the table holds, with that op's very value. */
 export const aliased = (table) =>
   Object.fromEntries(Object.entries(OP_ALIASES).filter(([, op]) => Object.hasOwn(table, op)).map(([a, op]) => [a, table[op]]));

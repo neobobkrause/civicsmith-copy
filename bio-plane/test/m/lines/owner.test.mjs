@@ -63,7 +63,6 @@ test("R14 neighbours pages by connection-grammar's bounds and answers a node ove
                    VALUES (?, 'part_of', ?, ?, ?, 'testimony', ?, ?, 'D', 'D', 'D', ?)`,
                   `LIN-2026-${String(i).padStart(16, "h")}`, `ENT-2026-${String(50000 + i)}`, hub, one.valid_json, one.basis_json, ANN, one.at);
   const h = w.l.neighbours({ node: hub, at: AT, viewer: ANN });
-  assert.ok(h.items && h.hub, "a hub is answered by its set size, with no items");
   assert.deepEqual([h.items.length, h.hub.set_size], [0, BOUNDS.hub + 1]);
   assert.equal(w.l.neighbours({ node: hub, at: AT, viewer: undefined }).refused, "VIEWER_MISSING");
 });

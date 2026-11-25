@@ -273,7 +273,7 @@ test("R9 xlsx text: each defined name or table part naming one rectangle on one 
   ]);
   assert.equal(t.rangeUnits.length + t.rangeUnitsSkipped.length, NAMES.length + 4, "every name and every reached table is accounted for once");
   // each unit has the one builder's shape (the shape usedSheetRange emits)
-  const shape = Object.keys(usedSheetRange("x", 1, 1) ?? assert.fail("a 1x1 sheet has a unit")).sort();
+  const shape = Object.keys(usedSheetRange("x", 1, 1)).sort();
   for (const u of t.rangeUnits) assert.deepEqual(Object.keys(u.unit).sort(), shape);
 });
 

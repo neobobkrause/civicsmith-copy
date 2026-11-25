@@ -7,7 +7,6 @@ import {
   STEP_KINDS, appendStep, layerChain, convertedChain, mergedChain, derivationCap, describeChain, stepCovers,
   mergeTier2Text, tier2Note, glyphCount, canonicalRange, a1ToRowCol, rangeCorners, CONTENT_EXTENT_RANGE_RE,
 } from "../../../src/textchain.mjs";
-/** @import { Chain, Refusal } from "../../../src/textchain.mjs" */
 
 const LABEL = (k) => STEP_KINDS[k].label;
 const scoped = (step, pages, extra = {}) => ({ ...step, extent: { kind: "pages", pages, ...extra } });
@@ -27,7 +26,7 @@ test("R39 (G141): the chain sentence spells a page 1-based, as a reader counts, 
   assert.equal(derivationCap([{ ...layer, cap: "C" }], { page: 0 }), "C");
   assert.equal(derivationCap([{ ...layer, cap: "C" }], { page: 1 }), null);
   /* A merged chain spells its parts' pages the same way, and its stored extents keep the 0-based numbers. */
-  const m = /** @type {Chain} */ (mergedChain([{ chain: layerChain({}), pages: [0, 1] }, { chain: appendStep(layerChain({}), { step: "ocr", engine: "e" }), pages: [2] }]));
+  const m = mergedChain([{ chain: layerChain({}), pages: [0, 1] }, { chain: appendStep(layerChain({}), { step: "ocr", engine: "e" }), pages: [2] }]);
   assert.deepEqual(m.map((s) => s.extent.pages), [[0, 1], [2], [2]]);
   assert.match(describeChain(m), /\(pages 1-2\) -> .*\(page 3\) -> .*\(page 3\)$/);
 });
@@ -161,7 +160,7 @@ test("R106 (G141): 5,000 appendStep calls inspect at most 4 times 5,000 steps in
   const whole = countingRoleReads(() => { assert.ok(Array.isArray(appendStep(byHand, { step: "layer", cap: "D" }))); });
   assert.ok(whole >= 3334, `${whole} steps inspected by the whole check`);
   /* The refusal comes at the end of a long chain exactly as at the start of one (R13). */
-  const refused = /** @type {Refusal} */ (appendStep(chain, { step: "layer", cap: "A" }));
+  const refused = appendStep(chain, { step: "layer", cap: "A" });
   assert.equal(refused.code, "TEXT_CHAIN_STRENGTHENS");
   assert.deepEqual(refused, appendStep(byHand, { step: "layer", cap: "A" }));
   assert.equal(chain.length, N);
@@ -212,14 +211,14 @@ test("R106 (G141): an append to a chain this module returned answers exactly wha
   /* A chain pushed to after it was returned is checked whole again: the bad step is not skipped over. */
   const base = layerChain({});
   base.push({ step: "nope" });
-  assert.equal(/** @type {Refusal} */ (appendStep(base, { step: "layer" })).code, "TEXT_CHAIN_STEP_UNKNOWN");
+  assert.equal(appendStep(base, { step: "layer" }).code, "TEXT_CHAIN_STEP_UNKNOWN");
 });
 
 /* ------------------------------------------------------------------ G124e */
 
 test("R93 R95 (G124e): the A1 shape holds to the last column a sheet can have (XFD, 16,384) and past it stays kept at three letters", () => {
-  assert.equal(/** @type {{col: number, row: number}} */ (a1ToRowCol("XFD1")).col, 16384);
-  assert.equal(/** @type {{col: number, row: number}} */ (a1ToRowCol("ZZZ1")).col, 18278);
+  assert.equal(a1ToRowCol("XFD1").col, 16384);
+  assert.equal(a1ToRowCol("ZZZ1").col, 18278);
   assert.deepEqual(rangeCorners("A1:XFD200"), { r0: 1, c0: 1, r1: 200, c1: 16384 });
   assert.equal(canonicalRange("a1:$XFD$200"), "A1:XFD200");
   assert.equal(canonicalRange("XFD200:A1"), "A1:XFD200");

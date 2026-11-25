@@ -115,8 +115,8 @@ test("R7 a consent covers one entry for one audience, stated as permanent; a wit
   const none = w.s.withdrawConsent({ source: a.sourceId, entry: f.entry, audience: "member", by: "bob" });
   assert.equal(none.ok, true); assert.equal(none.withdrawn, false);
   assert.equal(w.count("source_consents"), m);
-  for (const [bad, code] of /** @type {[Object<string, any>, string][]} */ ([[{ entry: "SRCE-none" }, "CONSENT_NOT_STANDING"], [{ audience: "all" }, "BAD_DISCLOSURE"],
-                             [{ by: undefined }, "NO_SUCH_SOURCE"]]))
+  for (const [bad, code] of [[{ entry: "SRCE-none" }, "CONSENT_NOT_STANDING"], [{ audience: "all" }, "BAD_DISCLOSURE"],
+                             [{ by: undefined }, "NO_SUCH_SOURCE"]])
     assert.equal(codeOf(w.s.withdrawConsent({ source: a.sourceId, entry: e.entry, audience: "group", by: "bob", ...bad })), code);
   /* every audience, lowest to highest */
   const x = w.disclose(b.sourceId);

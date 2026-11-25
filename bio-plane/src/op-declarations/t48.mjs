@@ -12,8 +12,6 @@
    `extra` merged), as it merges the earlier shares, and builds each of `T48_FAMILIES` as it builds `T45_FAMILIES`. */
 const QUERY = (key) => Object.freeze({ key, at: "query" });
 
-/** @import { FamilyShare, NewFamily } from './index.mjs' */
-/** @type {Readonly<Record<string, FamilyShare>>} */
 const T48_SHARES = Object.freeze({
   /* action-replies R10 (R64; N880): whether a reply's claim may be quoted, and in which words, a member's
      (MACHINE_CANNOT_RECORD_BEARING's posture: a session's only, `contribute`), `author` and `viewer` from the query;
@@ -55,7 +53,6 @@ const T48_SHARES = Object.freeze({
   membership: Object.freeze({ cite: "membership R143; R67; N1036", ops: Object.freeze({ lookedsince: "own" }) }),
 });
 
-/** @type {ReadonlyArray<NewFamily>} */
 const T48_FAMILIES = Object.freeze([
   /* connections R68 (R67; N1043, K3207): a passage of a held capture attached to a declared step by a member, and the
      attachment withdrawn by the member who made it: each a member's act its owner refuses a machine by name

@@ -11,7 +11,7 @@ import { onePage, image, readPng, hex, runner } from "./make-pdf.mjs";
 
 const { t, finish } = runner("imagecrop");
 const answers = [];
-const crop = async (bytes, extent) => { const r = await cropImage(bytes, extent); answers.push(r); return r; };
+const crop = async (...a) => { const r = await cropImage(...a); answers.push(r); return r; };
 const fields = (r, ...k) => k.map((x) => r[x]);
 
 const G = Uint8Array.from({ length: 6 }, (_, i) => (i * 37 + 11) & 0xff);

@@ -5,7 +5,6 @@
    word for word. No name is read from the check catalogue (T19 rule 1): the shared grammar is record-grammar's, and
    C-2.8's inquiry arm runs through the grammars registered on a record. */
 import { test } from "node:test";
-import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import * as R from "../../../src/ratification/checks.mjs";
 import * as M from "../../../src/ratification/index.mjs";
@@ -36,8 +35,7 @@ test("R14: the inquiry grammar a record runs (C-2.8's inquiry arm) asks no case-
   /* record-grammar's checkBundle with the grammars registered on a record (record-core R67), as promotion's gate runs it */
   const grammars = world().record.grammars();
   assert.ok(grammars.some((g) => g.ids.includes("C-2.8")), "negative control: the record runs a C-2.8 grammar");
-  const r = await RG.checkBundle({ folderName: M1, files: new Map([["bundle.md", text]]),
-    sha256: async (b) => createHash("sha256").update(b).digest("hex") }, { grammars });
+  const r = await RG.checkBundle({ folderName: M1, files: new Map([["bundle.md", text]]) }, { grammars });
   assert.ok(r.findings.some((x) => x.check === "C-2.8"), "negative control: C-2.8's inquiry arm was asked of these bytes");
   const caseMember = r.findings.filter((x) => x.check === "C-2.8" && /case member/.test(x.message));
   assert.deepEqual(caseMember, [], "the record's grammar does not ask it");

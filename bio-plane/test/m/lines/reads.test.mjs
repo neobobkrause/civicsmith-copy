@@ -50,7 +50,6 @@ test("R9 readLine: NO_LINE for an empty id, found false for an absent one, other
   const r = w.l.recordLine({ kind: "reports_to", from: o, to: b, role: "functional", valid: { from: "2020-01-01" },
                              basis: { captureSha: s, extent: { kind: "document" } }, by: ANN });
   const line = w.l.readLine({ lineId: r.line_id, viewer: ANN }).line;
-  assert.ok(line, "the line is answered");
   assert.deepEqual(Object.keys(line).sort(), ["asserted_by", "assertion", "at", "basis", "bounds", "capacity", "citation", "ends", "from",
                                               "kind", "line_id", "role", "title", "to", "valid", "withdrawn"].sort());
   assert.deepEqual([line.kind, line.from, line.to, line.role, line.capacity, line.title], ["reports_to", o, b, "functional", null, null]);
@@ -85,11 +84,7 @@ test("R9 readLine: NO_LINE for an empty id, found false for an absent one, other
   assert.equal(w.l.readLine({ lineId: titled, viewer: ANN }).line.title, "Harbour Master and Pilot");
   const held = w.l.linesOf({ entity: o, kinds: ["holds"], viewer: ANN }).lines;
   assert.deepEqual(held.map((x) => [x.line_id, x.title]), [[titled, "Harbour Master and Pilot"], [untitled, null]]);
-  for (const x of held) {
-    const read = w.l.readLine({ lineId: x.line_id, viewer: ANN }).line;
-    assert.ok(read, `${x.line_id} is answered by readLine`);
-    assert.deepEqual(Object.keys(x).sort(), Object.keys(read).sort());
-  }
+  for (const x of held) assert.deepEqual(Object.keys(x).sort(), Object.keys(w.l.readLine({ lineId: x.line_id, viewer: ANN }).line).sort());
 });
 
 test("R10 structureAt answers the structure lines at either end judged at the date: in held, undetermined listed apart with why (no stated bound, a band straddling the date, an unresolved event bound), out not answered; NO_DATE without a date", () => {

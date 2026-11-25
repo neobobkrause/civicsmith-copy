@@ -113,129 +113,6 @@ import { BASIS_GRADES, EARNED_CAPTURE_CEILING, isMachineIdentity, canonicalJson 
 import { word, localize } from "./setup-words/index.mjs";
 
 /* ------------------------------------------------------------------ *
- * The kinds this module accepts and hands back (structured comments).
- * Every function here is TOTAL (R83): it accepts anything, so its
- * parameters are stated as `*` and their expected shape in words.
- * ------------------------------------------------------------------ */
-
-/**
- * A refusal: what every check function answers in place of `null` (R4-R11, R40-R51).
- * @typedef {Object} Refusal
- * @property {false} ok
- * @property {string} code the condition, a key of `TEXT_CHAIN_CHECKS`
- * @property {string} check that row's catalogue id
- * @property {string} translation that row's translation
- * @property {string} detail what failed, in words
- * @bound check: C-35.1 to C-35.14
- */
-/**
- * One row of `TEXT_CHAIN_CHECKS` (the C-35 family, K634).
- * @typedef {Object} CheckRow
- * @property {string} check the catalogue id, C-35.<n>
- * @property {string} where the function and the check region that raises it
- * @property {string} translation the member-facing sentence, read from the word table
- */
-/**
- * One entry of `STEP_KINDS` (R1-R3, R91).
- * @typedef {Object} StepKind
- * @property {"derivation"|"verification"} role
- * @property {string} label a human phrase
- * @property {number|"step"|null} [tier] the kind is that extraction tier, "step" when the step names its own, null when off the ladder; a kind that declares none is unclassified (R34)
- * @property {boolean} [machine] true on a machine reading
- * @property {string[]} [names] the fields a step of this kind must carry, non-empty
- * @property {"undetermined"} [unmeasured] an unmeasured step of this kind makes the cap undetermined over what it covers
- * @property {"calibrated"|"never"} [letter] how a cap may be written on the step
- */
-/**
- * One step of a chain. `step` names a key of `STEP_KINDS`; the other fields are those its kind reads.
- * @typedef {Object} Step
- * @property {string} step
- * @property {string} [engine] what performed it (an OCR engine, a model, a converting host)
- * @property {string} [version]
- * @property {string} [format] what a conversion produced
- * @property {string} [member] who attested or typed
- * @property {string} [at] when
- * @property {string|null} [cap] the measured fidelity letter, of record-grammar's `BASIS_GRADES`
- * @property {string|null} [calibration] the calibration the cap rests on
- * @property {*} [extent] what a derivation covers: absent is the whole document, else `{kind: "pages", pages, part?}`
- * @property {*} [tier]
- */
-/**
- * A chain: a non-empty array of steps, oldest first.
- * @typedef {Step[]} Chain
- */
-/**
- * One tier a chain evidences (R33-R36).
- * @typedef {Object} TierEvidence
- * @property {number|null} tier null when a step that names its own tier did not record it
- * @property {string[]} steps the step names that contributed, in order
- * @property {"all"|"unreadable"|number[]} covers the union of their extents
- */
-/**
- * What a leg citing a target may claim on the transcription axis (R56, R57).
- * @typedef {Object} GradeCeiling
- * @property {string|null} ceiling a grade letter, or null: undetermined
- * @property {"attestation"|"derivation"} determinant
- * @property {string[]} by the members whose attestations decided it
- * @property {string} why
- */
-/**
- * A reading position in IC-1's canonical, key-ordered shape (R61-R65, R87).
- * @typedef {PdfPagePosition|DocParaPosition|SheetCellPosition|SlideShapePosition} ReadingPosition
- */
-/**
- * @typedef {Object} PdfPagePosition
- * @property {"pdf-page"} kind
- * @property {string} ref
- * @property {number} page
- * @property {number[]|null} rect
- * @property {string} [space] only beside a rect, and only when it is not user space
- * @bound ref: at most 200 characters; page: whole number, zero or more; rect: four finite numbers; space: at most 40 characters
- */
-/**
- * @typedef {Object} DocParaPosition
- * @property {"doc-para"} kind
- * @property {string} ref
- * @property {number} para
- * @property {number|null} run
- * @bound ref: at most 200 characters; para and run: whole numbers, zero or more
- */
-/**
- * @typedef {Object} SheetCellPosition
- * @property {"sheet-cell"} kind
- * @property {string} ref
- * @property {string} sheet
- * @property {string} cell
- * @bound ref and sheet: at most 200 characters; cell: at most 64 characters
- */
-/**
- * @typedef {Object} SlideShapePosition
- * @property {"slide-shape"} kind
- * @property {string} ref
- * @property {number} slide
- * @property {number} shape
- * @bound ref: at most 200 characters; slide and shape: whole numbers, zero or more
- */
-/**
- * A floored set of regions (R44-R46).
- * @typedef {Object} FlooredRegions
- * @property {Object<string, *>[]} regions each a new object; a floored one has `text: null`, `undetermined: true`, `why` and `confidence: "none"`
- * @property {number} floored
- * @property {number} undetermined
- */
-/**
- * The result of `mergeTier2Text` (R74-R78, R90, R105). `ok: false` carries `why`; `ok: true` carries `text` and `wholesale`.
- * @typedef {Object} Tier2Merge
- * @property {boolean} ok
- * @property {*} [text] the merged text, or tier 2's whole when adopted wholesale
- * @property {boolean} [wholesale]
- * @property {{tier1: (number|null)[], tier2: (number|null)[]}|null} perPageTier
- * @property {(number|null)[]} replaced the pages tier 2 produced; null for a page with no number
- * @property {(number|null)[]} kept the pages tier 1 kept; null for a page with no number
- * @property {string} [why]
- */
-
-/* ------------------------------------------------------------------ *
  * The vocabulary
  * ------------------------------------------------------------------ */
 
@@ -246,11 +123,7 @@ import { word, localize } from "./setup-words/index.mjs";
  *  A new step kind is added HERE and every rule below follows it. Nothing in
  *  this module tests a step name against a literal; `STEP_KINDS[k].role` is
  *  the question everything asks, so a step nobody classified cannot slip
- *  through as a derivation OR as a verification — it is refused as unknown.
- *
- * @type {Object<string, StepKind>}
- * @bound never mutated
- */
+ *  through as a derivation OR as a verification — it is refused as unknown. */
 export const STEP_KINDS = {
   /* The document's own text layer, decoded through the file's own /ToUnicode
      map. NOT a strong step and never was: a text layer is ITSELF an unverified
@@ -381,10 +254,7 @@ export const STEP_KINDS = {
 /** N104 (K143) — THE MACHINE READINGS: the kinds whose step is an ENGINE reading or rewriting the text
  *  (`machine: true` in `STEP_KINDS`), which a reader labelling machine-read text treats `mixed` as
  *  containing (content R14, DEC-4). Derived from the declaration, never a list of spellings, so a kind
- *  added with `machine: true` joins it without an edit here; `query-language` re-exports it.
- *
- * @type {ReadonlyArray<string>}
- */
+ *  added with `machine: true` joins it without an edit here; `query-language` re-exports it. */
 export const MACHINE_READ_KINDS = Object.freeze(
   Object.keys(STEP_KINDS).filter((k) => STEP_KINDS[k].machine === true));
 
@@ -394,10 +264,7 @@ export const MACHINE_READ_KINDS = Object.freeze(
  *  means the engine supplies none, STATED first-class rather than defaulted to
  *  a number. There is deliberately no third value: a model's self-report has
  *  no basis to name, which is the point — it is refused because it cannot say
- *  where its number came from.
- *
- * @type {{engine: 1, none: 1}}
- */
+ *  where its number came from. */
 export const CONFIDENCE_BASES = { engine: 1, none: 1 };
 
 /** The extent kinds an attestation may be scoped to, narrowest first. Internal (N416): `checkAttestation` (R51) and
@@ -495,12 +362,7 @@ function pageList(pages) {
 
 /** Does this step cover this page? An unscoped step covers every page; an
  *  unreadable extent covers none. Exported because the wire and the suite both
- *  need to ask it, and a second implementation of it would be D-164's lesson.
- *
- * @param {*} step a step
- * @param {*} page a 0-based page number
- * @returns {boolean}
- */
+ *  need to ask it, and a second implementation of it would be D-164's lesson. */
 export function stepCovers(step, page) {
   if (!step || typeof step !== "object") return false;
   const ext = extentOf(step);
@@ -532,11 +394,7 @@ export function stepCovers(step, page) {
  *                 one record exactly what they recorded before this rule existed.
  *
  *  A refusal from `checkChain` is returned as-is, so a malformed part cannot
- *  become half a chain.
- *
- * @param {*} parts `[{chain, pages}]`
- * @returns {Chain|Refusal|null}
- */
+ *  become half a chain. */
 export function mergedChain(parts) {
   if (!Array.isArray(parts) || parts.length === 0) return null;
   if (parts.length === 1) {
@@ -591,9 +449,6 @@ export function mergedChain(parts) {
  * because seven items collided on a hand-measured id in one day and every one
  * of them was right when it looked.
  * ========================================================================= */
-/**
- * @type {Object<string, CheckRow>}
- */
 export const TEXT_CHAIN_CHECKS = {
   /* RULE 1. The condition this family exists for. `text_source: "ocr"` is what
      a careful author writes and it is still a loss: the engine is gone, and an
@@ -705,11 +560,6 @@ export const TEXT_CHAIN_CHECKS = {
  * STRING LITERAL at its site, so the guard can see it.
  * ------------------------------------------------------------------ */
 
-/**
- * @param {string} key a key of `TEXT_CHAIN_CHECKS`
- * @param {string} detail
- * @returns {Refusal}
- */
 function refusal(key, detail) {
   const row = TEXT_CHAIN_CHECKS[key];
   return { ok: false, code: key, check: row.check, translation: row.translation, detail };
@@ -723,12 +573,7 @@ function rank(letter) {
   return i < 0 ? null : i;
 }
 /** The weaker of two grade letters, or null if either is unknown. Undetermined
- *  is first-class: an unknown letter does NOT silently become the other one.
- *
- * @param {*} a a grade letter
- * @param {*} b a grade letter
- * @returns {string|null}
- */
+ *  is first-class: an unknown letter does NOT silently become the other one. */
 export function weaker(a, b) {
   const ra = rank(a), rb = rank(b);
   if (ra == null || rb == null) return null;
@@ -742,11 +587,7 @@ export function weaker(a, b) {
 /** Is this a well-formed chain? An ARRAY of at least one step object, each
  *  naming a known kind. A STRING is the case rule 1 exists for and is called
  *  out by name in the refusal, because "text_source: 'ocr'" is exactly what a
- *  well-meaning caller writes.
- *
- * @param {*} chain
- * @returns {Refusal|null}
- */
+ *  well-meaning caller writes. */
 export function checkChain(chain) {
   /* DEC-49 REGION is-text-chain-shape
      Rule 1. The order matters: the collapsed case is judged BEFORE the generic
@@ -839,12 +680,7 @@ function checkedChain(chain) {
  *  means a refused append leaves nothing half-extended.
  *
  *  LINEAR OVER A CHAIN'S LIFE (R106): see `KNOWN`. A chain this module returned is not re-checked and its cap
- *  is not re-derived from every earlier step; the refusals and results are the whole check's.
- *
- * @param {*} chain
- * @param {*} step
- * @returns {Chain|Refusal}
- */
+ *  is not re-derived from every earlier step; the refusals and results are the whole check's. */
 export function appendStep(chain, step) {
   const bad = checkedChain(chain);
   if (bad) return bad;
@@ -876,11 +712,7 @@ export function appendStep(chain, step) {
 
 /** The chain a document's OWN text layer produces (FW-15's case, restated as a
  *  chain). `cap` is the measured fidelity a text layer supports and arrives
- *  from the caller for the reason in the header — it is a measurement.
- *
- * @param {*} [args] `{tier, container, cap, measured_by, calibration}`, each absent is null
- * @returns {Chain}
- */
+ *  from the caller for the reason in the header — it is a measurement. */
 export function layerChain(args) {
   /* Never throws (R83): a `null` or non-object argument is every default, not a TypeError. */
   const { tier = null, container = null, cap = null, measured_by = null, calibration = null } =
@@ -906,12 +738,7 @@ export function layerChain(args) {
  *  The chain is returned WHOLE and UNSCOPED at the head: a conversion is of the
  *  whole document, and a mixed chain's parts (D-252) keep their own extents.
  *  Neither input is mutated. A refusal is returned as-is, so a caller never
- *  holds half a chain.
- *
- * @param {*} step a `convert` step
- * @param {*} chain
- * @returns {Chain|Refusal}
- */
+ *  holds half a chain. */
 export function convertedChain(step, chain) {
   const one = checkChain([step]);
   if (one) return one;
@@ -947,11 +774,7 @@ export function convertedChain(step, chain) {
  *
  *  A MALFORMED CHAIN ANSWERS THE EMPTY SET rather than throwing, on
  *  `derivationCap`'s precedent — a reader asking what a broken chain rests on
- *  should get "nothing this record can name", which is true.
- *
- * @param {*} chain
- * @returns {string[]}
- */
+ *  should get "nothing this record can name", which is true. */
 export function calibrationsOf(chain) {
   if (checkChain(chain)) return [];
   const out = [];
@@ -1009,13 +832,7 @@ function capOf(acc) {
  *  measured cap — and null means UNDETERMINED, stated, never "fine".
  *
  *  A verification step is skipped deliberately and that is rule 2 holding: see
- *  the header. `gradeCeiling` is where an attestation is allowed to matter.
- *
- * @param {*} chain
- * @param {*} [target] `{page}`, or absent for the whole document
- * @returns {string|null}
- * @bound a letter of record-grammar's BASIS_GRADES, or null: undetermined
- */
+ *  the header. `gradeCeiling` is where an attestation is allowed to matter. */
 export function derivationCap(chain, target = null) {
   if (checkedChain(chain)) return null;
   const page = target && Number.isInteger(target.page) && target.page >= 0 ? target.page : null;
@@ -1064,11 +881,7 @@ export function derivationCap(chain, target = null) {
  *  this text a TRANSCRIPTION rather than something a publisher typed? True for
  *  a text layer too, and that is the point: `pdfstructure.mjs` decodes through
  *  the FILE'S OWN /ToUnicode map, so a text layer is somebody else's
- *  transcription that we have been reading as authored text.
- *
- * @param {*} chain
- * @returns {boolean}
- */
+ *  transcription that we have been reading as authored text. */
 export function isTranscribed(chain) {
   return !checkChain(chain) && chain.some((s) => STEP_KINDS[s.step].role === "derivation");
 }
@@ -1110,11 +923,7 @@ export function isTranscribed(chain) {
  *  and the writer can say `partial` about each rather than PRESENT about the
  *  document. A malformed chain answers the empty set on `derivationCap`'s
  *  precedent, because a reader asking what a broken chain evidences should get
- *  "nothing this record can name", which is true.
- *
- * @param {*} chain
- * @returns {{tiers: TierEvidence[], unclassified: string[]}}
- */
+ *  "nothing this record can name", which is true. */
 export function tiersEvidenced(chain) {
   if (checkChain(chain)) return { tiers: [], unclassified: [] };
   const byTier = new Map();
@@ -1170,20 +979,13 @@ function unionExtent(a, b) {
 
 /** Was a machine the last thing to touch this text? The question a projection
  *  asks to keep an OCR'd document distinguishable from a published text layer
- *  at a glance, without re-deriving the chain everywhere.
- *
- * @param {*} chain
- * @returns {string|null}
- */
+ *  at a glance, without re-deriving the chain everywhere. */
 export function terminalStep(chain) {
   return checkChain(chain) ? null : chain[chain.length - 1].step;
 }
 
 /** The word a page read in MORE THAN ONE way answers (BOB #35 09:35Z, BOB #36 11:05Z, D-723). Not a
- *  step kind — no step is `mixed` — so it lives here beside the function that answers it.
- *
- * @type {string}
- */
+ *  step kind — no step is `mixed` — so it lives here beside the function that answers it. */
 export const CHAIN_KIND_MIXED = "mixed";
 
 /** D-723 — HOW WAS THIS PAGE READ? `target` is `{page}` or a 0-based page number.
@@ -1196,12 +998,7 @@ export const CHAIN_KIND_MIXED = "mixed";
  *  parts came after and ends the walk. A verification step is not how the text was produced and is
  *  never the answer. UNDETERMINED (`null`), stated, for a malformed chain, a target with no page, a
  *  page no derivation step covers, or any step whose extent this module cannot read (R30's rule: it
- *  could be a part covering this page). `terminalStep` is unchanged and stays document-level.
- *
- * @param {*} chain
- * @param {*} target `{page}` or a 0-based page number
- * @returns {string|null}
- */
+ *  could be a part covering this page). `terminalStep` is unchanged and stays document-level. */
 export function chainKindFor(chain, target) {
   if (checkChain(chain)) return null;
   const want = Number.isInteger(target) ? target : target && target.page;
@@ -1225,11 +1022,7 @@ export function chainKindFor(chain, target) {
 
 /** A one-line human sentence for the whole chain. Composed FROM the chain, so
  *  it cannot describe a chain other than the one it was given — the drift that
- *  a hand-written summary beside a structured field always eventually has.
- *
- * @param {*} chain
- * @returns {string}
- */
+ *  a hand-written summary beside a structured field always eventually has. */
 export function describeChain(chain) {
   if (checkChain(chain)) return word("textchain.text.text_provenance_recorded");
   return chain.map((s) => {
@@ -1265,12 +1058,7 @@ export function describeChain(chain) {
  *
  *  THE FENCE IS ON `basis`, NOT ON `value`, and that is the whole design: a
  *  self-reported 0.99 and a computed 0.99 are the same bytes. Only who
- *  produced it tells them apart, so only that is checked.
- *
- * @param {*} confidence
- * @returns {Refusal|null}
- * @bound an engine confidence's value: a number, 0 to 1
- */
+ *  produced it tells them apart, so only that is checked. */
 export function checkConfidence(confidence) {
   /* DEC-49 REGION is-text-region-confidence */
   if (confidence === "none") return null;
@@ -1308,12 +1096,7 @@ export function checkConfidence(confidence) {
  *
  *  Returns { regions, floored, undetermined } — `floored` counted so a caller
  *  can state the shortfall on a reading's basis rather than implying a clean
- *  read (FW-15's partial-decode honesty rule, applied one layer up).
- *
- * @param {*} regions
- * @param {*} floor a number; anything else floors no engine value
- * @returns {FlooredRegions}
- */
+ *  read (FW-15's partial-decode honesty rule, applied one layer up). */
 export function applyConfidenceFloor(regions, floor) {
   const out = [], list = Array.isArray(regions) ? regions : [];
   let floored = 0, undetermined = 0;
@@ -1356,11 +1139,7 @@ function undeterminedRegion(region, why) {
  *  IMPORTED SHAPE, NOT A NEW ONE. I2 already carries `source` for exactly this
  *  — an element reference into a page — and D-164's lesson is that solving one
  *  problem twice produces two answers that disagree. So this validates I2's
- *  shape rather than defining a rival.
- *
- * @param {*} source
- * @returns {Refusal|null}
- */
+ *  shape rather than defining a rival. */
 export function checkAnchor(source) {
   /* DEC-49 REGION is-text-anchor */
   if (!source || typeof source !== "object")
@@ -1397,11 +1176,7 @@ export function checkAnchor(source) {
  *  (b) IT IS SCOPED TO WHAT WAS ACTUALLY CHECKED. An extent is required and
  *      must be one this module can evaluate. An attestation with no extent
  *      would be read as covering the document — the generous direction, which
- *      this project treats as the worse one.
- *
- * @param {*} att `{member, at, extent}`
- * @returns {Refusal|null}
- */
+ *      this project treats as the worse one. */
 export function checkAttestation(att) {
   const a = att && typeof att === "object" ? att : {};
   /* DEC-49 REGION is-text-attestation
@@ -1437,12 +1212,7 @@ export function checkAttestation(att) {
  *  it", and every unreadable, unparseable or unrecognised case answers FALSE —
  *  because the failure that matters is an extent nobody could evaluate quietly
  *  reading as "all of it", which is how a member's careful check of one
- *  paragraph would come to underwrite a whole scanned budget book.
- *
- * @param {*} extent
- * @param {*} target `{page, rect?, space?}`
- * @returns {boolean}
- */
+ *  paragraph would come to underwrite a whole scanned budget book. */
 export function extentCovers(extent, target) {
   if (!extent || typeof extent !== "object") return false;
   if (!target || typeof target !== "object") return false;
@@ -1476,19 +1246,12 @@ function normRect(r) {
 }
 
 /** D-670 — the coordinate space a rect is stated in, and the one every rect written before D-670 was:
- *  PDF default user space (IC-203). `content`'s extent grammar addresses only this space.
- *
- * @type {string}
- */
+ *  PDF default user space (IC-203). `content`'s extent grammar addresses only this space. */
 export const RECT_USER_SPACE = "user";
 
 /** The space of the rect on `holder` (`.space`): absent or `null` reads as `RECT_USER_SPACE`, a
  *  non-empty string is that space, and anything else is `null` — a space nobody can read, which is
- *  comparable to nothing, never read as user space.
- *
- * @param {*} holder
- * @returns {string|null}
- */
+ *  comparable to nothing, never read as user space. */
 export function rectSpace(holder) {
   const v = holder && typeof holder === "object" ? holder.space : undefined;
   if (v === undefined || v === null) return RECT_USER_SPACE;
@@ -1501,13 +1264,7 @@ const sameSpace = (a, b) => { const x = rectSpace(a); return x !== null && x ===
  *  The second half of "verification supersedes it as grade determinant, never
  *  as record": an attestation covering the target supersedes the derivation
  *  cap; nothing else does. The chain is unchanged either way — this function
- *  reads, and writes nothing.
- *
- * @param {*} chain
- * @param {*} target `{page, rect?}`
- * @param {*} [attestations]
- * @returns {GradeCeiling}
- */
+ *  reads, and writes nothing. */
 export function gradeCeiling(chain, target, attestations = []) {
   const covering = (Array.isArray(attestations) ? attestations : [])
     .filter((a) => !checkAttestation(a) && extentCovers(a.extent, target));
@@ -1541,12 +1298,7 @@ export function gradeCeiling(chain, target, attestations = []) {
  *  `EARNED_CAPTURE_CEILING`. OCR NEVER RAISES A CAPTURE GRADE: there is no
  *  argument shape here that returns something stronger than the byte
  *  provenance it was handed, which is checked by the suite rather than left to
- *  reading.
- *
- * @param {*} chain
- * @param {string|null} [byteGrade]
- * @returns {string|null}
- */
+ *  reading. */
 export function captureBound(chain, byteGrade = EARNED_CAPTURE_CEILING) {
   if (!isTranscribed(chain)) return byteGrade;
   const cap = derivationCap(chain);
@@ -1571,17 +1323,11 @@ export function captureBound(chain, byteGrade = EARNED_CAPTURE_CEILING) {
  *  plane's old `schema.mjs` (deleted in T19) stated about a nullable extent
  *  column with no writer, one level
  *  up at the vocabulary instead of at the column. When CONTENT-HTML produces
- *  it, the arm is added HERE and nowhere else.
- *
- * @type {{"pdf-page": 1, "sheet-cell": 1, "slide-shape": 1, "doc-para": 1}}
- */
+ *  it, the arm is added HERE and nowhere else. */
 export const READING_POSITION_KINDS = { "pdf-page": 1, "sheet-cell": 1, "slide-shape": 1, "doc-para": 1 };
 
 /** The arm named in IC-1 that deliberately has no producer, kept as a constant
- *  so a refusal can NAME it rather than lumping it in with a typo.
- *
- * @type {string}
- */
+ *  so a refusal can NAME it rather than lumping it in with a typo. */
 export const READING_POSITION_UNPRODUCED = "dom";
 
 const isNonEmptyString = (s) => typeof s === "string" && s.trim().length > 0;
@@ -1606,11 +1352,7 @@ const isIndex = (n) => Number.isInteger(n) && n >= 0;
  *  canonical: two readings of the same place produce byte-identical `pos`
  *  columns and compare equal without a parse. Spreading the caller's object
  *  would make the serialisation depend on the order the reader happened to
- *  write its literal in.
- *
- * @param {*} source
- * @returns {ReadingPosition|null}
- */
+ *  write its literal in. */
 export function readingSource(source) {
   if (!source || typeof source !== "object" || Array.isArray(source)) return null;
   const kind = source.kind;
@@ -1652,11 +1394,7 @@ export function readingSource(source) {
 
 /** The canonical JSON for a reading position's per-arm fields — everything but
  *  kind and ref, which the projection stores in their own columns. Null in,
- *  null out.
- *
- * @param {*} source
- * @returns {string|null}
- */
+ *  null out. */
 export function readingSourceJson(source) {
   const s = readingSource(source);
   if (!s) return null;
@@ -1672,24 +1410,14 @@ export function readingSourceJson(source) {
  *  already written (`pos_kind || ':' || pos`) and the two cannot disagree. The human form
  *  (`pos_ref`) is NOT part of it: two reads of one place are one place however it is
  *  spelled. Every unplaced read of a reference is ONE occurrence — the record cannot tell
- *  two reads it cannot place apart, and claiming it could would be inventing a distinction.
- *
- * @param {*} source
- * @returns {string}
- */
+ *  two reads it cannot place apart, and claiming it could would be inventing a distinction. */
 export function readingOccurrenceKey(source) {
   const s = readingSource(source);
   return s ? `${s.kind}:${readingSourceJson(s)}` : "";
 }
 
 /** Rebuild a reading position from the three projected columns. The inverse of
- *  the writer, kept beside it so the two cannot drift.
- *
- * @param {*} posKind
- * @param {*} pos
- * @param {*} posRef
- * @returns {ReadingPosition|null}
- */
+ *  the writer, kept beside it so the two cannot drift. */
 export function readingSourceFromColumns(posKind, pos, posRef) {
   if (!isNonEmptyString(posKind) || !isNonEmptyString(posRef) || typeof pos !== "string") return null;
   let fields;
@@ -1721,13 +1449,7 @@ export function readingSourceFromColumns(posKind, pos, posRef) {
  *  reading (rect null, which is every reading a text tier produces today) is
  *  NOT inside a region-grained extent: "somewhere on that page" is not "inside
  *  that rectangle", and answering true would let a member's careful citation of
- *  one paragraph earn from a reference read anywhere on the sheet.
- *
- * @param {*} position
- * @param {*} extentKind
- * @param {*} extent
- * @returns {boolean}
- */
+ *  one paragraph earn from a reference read anywhere on the sheet. */
 export function readingPositionInExtent(position, extentKind, extent) {
   const p = readingSource(position);
   if (!p) return false;
@@ -1821,10 +1543,7 @@ function a1Range(s) {
  *  column is kept with every arm true because `dom` joins the day a producer emits one, unlanded for one
  *  item's width. `image` is a REFERENCE rather than an arm of IC-1's text union, and is here because a row's
  *  `extent_kind` is the one vocabulary a row is addressed in; what sets it apart is `cited_as`
- *  (`contentCitedAs`).
- *
- * @type {Object<string, {landed: boolean, human: string}>}
- */
+ *  (`contentCitedAs`). */
 export const CONTENT_EXTENT_KINDS = {
   document:      { landed: true,  human: word("content.why.whole_document") },
   "pdf-page":    { landed: true,  human: "a page of a PDF" },
@@ -1838,16 +1557,10 @@ export const CONTENT_EXTENT_KINDS = {
 
 /** A CELL IN A1 NOTATION (R93), as the container emits it and as a member may paste it. `$` markers and
  *  either case are admitted and normalised away by `canonicalExtent`: `B14`, `$B$14` and `b14` are one cell.
- *  Three letters and seven digits is a SHAPE bound, not one spreadsheet's ceiling.
- *
- * @type {RegExp}
- */
+ *  Three letters and seven digits is a SHAPE bound, not one spreadsheet's ceiling. */
 export const CONTENT_EXTENT_A1_RE = /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}$/;
 
-/** A RANGE IN A1:A1 NOTATION, or one cell standing for a one-cell range (R93).
- *
- * @type {RegExp}
- */
+/** A RANGE IN A1:A1 NOTATION, or one cell standing for a one-cell range (R93). */
 export const CONTENT_EXTENT_RANGE_RE =
   /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}(:\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6})?$/;
 
@@ -1859,12 +1572,7 @@ function asString(x) {
 }
 
 /** A1 -> `{ col, row }`, both 1-BASED (R94). The column is bijective base 26 (A..Z, AA..AZ, ...), with no
- *  zero digit: getting that wrong puts AA at 26 and refuses the last column of every wide sheet.
- *
- * @param {*} cell
- * @returns {{col: number, row: number}|null}
- * @bound col and row: whole numbers, 1 or more
- */
+ *  zero digit: getting that wrong puts AA at 26 and refuses the last column of every wide sheet. */
 export function a1ToRowCol(cell) {
   const t = asString(cell).replace(/\$/g, "").toUpperCase();
   const m = /^([A-Z]{1,3})([1-9][0-9]{0,6})$/.exec(t);
@@ -1875,12 +1583,7 @@ export function a1ToRowCol(cell) {
 }
 
 /** A range's two corners, ORDERED (top-left first), 1-based, or null (R95). A range spelled bottom-right
- *  first names the same cells, so it is reordered rather than refused — `normRect`'s rule, in a grid.
- *
- * @param {*} range
- * @returns {{r0: number, c0: number, r1: number, c1: number}|null}
- * @bound r0 at most r1 and c0 at most c1, each 1 or more
- */
+ *  first names the same cells, so it is reordered rather than refused — `normRect`'s rule, in a grid. */
 export function rangeCorners(range) {
   const t = asString(range).trim();
   if (!CONTENT_EXTENT_RANGE_RE.test(t)) return null;
@@ -1899,11 +1602,7 @@ function a1Letters(n) {
 }
 
 /** The canonical spelling of a range (R95): ordered corners, no `$`, upper case, and ALWAYS two corners —
- *  `B3` and `B3:B3` are one range.
- *
- * @param {*} range
- * @returns {string|null}
- */
+ *  `B3` and `B3:B3` are one range. */
 export function canonicalRange(range) {
   const k = rangeCorners(range);
   if (!k) return null;
@@ -1913,11 +1612,7 @@ export function canonicalRange(range) {
 /** `cited_as`, THE FIELD THAT KEEPS TWO NULLS APART (R96; EXTRACTION-BREADTH §3.1). An image cited AS ITSELF
  *  is bytes, with no chain and no derivation cap, and that null is a fact about what is cited, not an
  *  undetermined transcription. The default is the kind's own meaning (`bytes` for an image, `text` for every
- *  other kind); anything stated is returned unchanged, for content's checker to refuse by name.
- *
- * @param {*} extent
- * @returns {*} the stated `cited_as` unchanged, else "bytes" or "text"
- */
+ *  other kind); anything stated is returned unchanged, for content's checker to refuse by name. */
 export function contentCitedAs(extent) {
   const e = extent && typeof extent === "object" ? extent : {};
   const v = e.cited_as;
@@ -1942,11 +1637,7 @@ const runOf = (e) => (Number.isInteger(e.run) ? { run: e.run } : {});
  *  is A1-normalised, a range is reordered and given both corners, and the human `ref` is NOT part of it.
  *  The sheet NAME is kept as the container spelled it: this module has no warrant to decide two of a
  *  workbook's names are one. `cited_as` is in the IMAGE's address only, so every older arm's address is
- *  unchanged. An extent nobody can evaluate still gets a form (the function is total); nothing mints one.
- *
- * @param {*} extent
- * @returns {string}
- */
+ *  unchanged. An extent nobody can evaluate still gets a form (the function is total); nothing mints one. */
 export function canonicalExtent(extent) {
   const e = extent && typeof extent === "object" ? extent : {};
   if (e.kind === "document") return canonicalJson({ kind: "document" });
@@ -1978,11 +1669,7 @@ export function canonicalExtent(extent) {
  *  it cannot describe another one (`describeChain`'s rule). The derived form is the producer's own `ref`
  *  for the same address (`Sheet1!B14`, `¶12`, `slide 7`); pages, paragraphs and tables are shown 1-based.
  *  `run` and `shape` are in the address and not in the sentence: two rows citing two shapes of one slide
- *  describe alike and address apart — under-describing, never over-claiming.
- *
- * @param {*} extent
- * @returns {string}
- */
+ *  describe alike and address apart — under-describing, never over-claiming. */
 export function describeExtent(extent) {
   const e = extent && typeof extent === "object" ? extent : {};
   /* A part's `ref` is its element reference, an address field and no authored sentence (R97), so it is read before the
@@ -2123,10 +1810,7 @@ export function describeExtent(extent) {
  * are extraction's: `pipeline.mjs` calls `mergeTier2Text` and `tier2Note`. */
 
 /** The rule in one sentence, so the probe, the suite and any report quote ONE
- *  spelling of it rather than three that drift.
- *
- * @type {string}
- */
+ *  spelling of it rather than three that drift. */
 export const TIER_RULE = word("textchain.tier_rule");
 
 const undeterminedChars = (page) =>
@@ -2214,9 +1898,8 @@ const isWideSpace = (c) =>
  * `tier-pagewise.probe.mjs`): a suite that shares its subject's helper has
  * stopped being able to disagree with it.
  *
- * @param {*} s
+ * @param {string} s
  * @returns {number}
- * @bound whole number, zero or more; 0 for anything not a string
  */
 export function glyphCount(s) {
   if (typeof s !== "string") return 0;
@@ -2252,8 +1935,8 @@ const decodedChars = (page) =>
  * Which tier wins ONE page. The whole rule, isolated so it can be driven
  * directly and inverted by a control without touching the merge around it.
  *
- * @param {*} p1  tier 1's page: {page, text, undetermined:[{count}]}, or absent
- * @param {*} p2  tier 2's page, same shape, or absent
+ * @param {object} p1  tier 1's page: {page, text, undetermined:[{count}]}
+ * @param {object} p2  tier 2's page, same shape
  * @returns {"tier1"|"tier2"}
  */
 export function perPageTierWinner(p1, p2) {
@@ -2276,9 +1959,6 @@ export function perPageTierWinner(p1, p2) {
  * assignment would replace, and refusing costs an unread document while
  * accepting costs an overwritten one. Only the second makes the record claim
  * more than it can support.
- * @param {*} base tier 1's text
- * @param {*} t2 tier 2's text
- * @returns {Tier2Merge}
  */
 export function mergeTier2Text(base, t2) {
   const basePages = (base && Array.isArray(base.pages)) ? base.pages : [];
@@ -2391,8 +2071,6 @@ export function mergeTier2Text(base, t2) {
  * there is nothing to say, so a document no page moved on reads as it always
  * did — three findings kept apart because collapsing them loses the one a
  * reader needs (D-252's rule, applied here).
- * @param {*} m a `mergeTier2Text` result
- * @returns {string|null}
  */
 export function tier2Note(m) {
   if (!m || !m.ok) return m && m.why ? m.why : null;

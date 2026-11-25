@@ -97,7 +97,7 @@ async function house({ real = true, bucket = sharedBucket(), worker: extra = {},
   w.record.textAtSha = (b, s) => { texts.push([b, s]); return realText(b, s); };
   const realState = w.publication.caseEditionState;
   w.publication.caseEditionState = (c, ed, g) => { stateReads.n++; return realState(c, ed, g); };
-  const act = async (fn, b, tweak = (/** @type {any} */ _p) => {}) => {
+  const act = async (fn, b, tweak = () => {}) => {
     const p = plane(w, as("iris"));
     p.ctx.env = env;                   /* the acts copy to the very bucket the sweep reads */
     if (real) {

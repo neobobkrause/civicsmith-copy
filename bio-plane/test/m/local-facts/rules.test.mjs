@@ -192,8 +192,6 @@ test("R12 groupRules: every rule with state, source, drafter, confirmer and date
 test("R12 governingView: combine's view with each confirmed, unwithdrawn group rule added, tagged profile group with a basis naming its id and day; none drafted or withdrawn; equal to combine's with none", () => {
   const { w, src, draft, confirm } = setup();
   const base = combine([TP]);
-  const baseView = base.view;
-  if (!baseView) throw new Error("the test profile combines to a view");
   assert.deepEqual(w.lf.governingView(), base, "no group rule: equal to combine's answer");
   const drafted = draft({ ...DL, rule: "only_drafted" }).rule;
   assert.deepEqual(w.lf.governingView(), base, "a drafted rule is not in it");
@@ -204,7 +202,7 @@ test("R12 governingView: combine's view with each confirmed, unwithdrawn group r
   confirm(f, { statement: QUAL });
   const gv = w.lf.governingView();
   assert.equal(gv.ok, true);
-  assert.deepEqual(gv.view.deadlines.slice(0, -1), baseView.deadlines, "the profiles' entries unchanged, the rule added last");
+  assert.deepEqual(gv.view.deadlines.slice(0, -1), base.view.deadlines, "the profiles' entries unchanged, the rule added last");
   const added = gv.view.deadlines.at(-1);
   const { effective_from: _from, ...DLP } = DL;
   assert.deepEqual(added, { ...DLP, status: "researched", basis: `2026-11-01 ${r}`, profile: GROUP_PROFILE,
@@ -212,7 +210,7 @@ test("R12 governingView: combine's view with each confirmed, unwithdrawn group r
   assert.equal(gv.view.legal_facts.at(-1).key, LF.key);
   assert.equal(gv.view.legal_facts.at(-1).profile, "group");
   assert.ok(!gv.view.deadlines.some((e) => e.rule === "only_drafted"));
-  for (const k of Object.keys(baseView)) if (k !== "deadlines" && k !== "legal_facts") assert.deepEqual(gv.view[k], baseView[k], k);
+  for (const k of Object.keys(base.view)) if (k !== "deadlines" && k !== "legal_facts") assert.deepEqual(gv.view[k], base.view[k], k);
   /* withdrawn, it leaves the view from then on */
   w.lf.ruleWithdraw({ rule: r, reason: "the bylaw was repealed", by: V("dan"), viewer: V("dan") });
   w.lf.ruleWithdraw({ rule: f, reason: "the bylaw was repealed", by: V("dan"), viewer: V("dan") });

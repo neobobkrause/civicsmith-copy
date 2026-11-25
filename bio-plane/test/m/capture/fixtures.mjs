@@ -13,10 +13,7 @@ const ENV = { INSTANCE_NAME: "inst", VERSION: "9.9.9" };
 
 /** `acquireRefusal`: the real `{status, body}` that `acquire` refuses a render with, by code. `RENDER_DEFERRED` (the day's allowance cannot be read, so the
  *  render is deferred: 429, `render.state` "deferred"), `RENDER_NO_RENDERER` (no renderer bound: 501) or `RENDER_HOST_COOLING_OFF` (the host is cooling off:
- *  429). Each is the answer of `capture.acquire({locator, render: true})`, nothing fetched.
- *  @param {{code?: string, locator?: string}} [o]
- *  @returns {Promise<{status: number, body: any}>}
- */
+ *  429). Each is the answer of `capture.acquire({locator, render: true})`, nothing fetched. */
 export async function acquireRefusal({ code = "RENDER_DEFERRED", locator = "https://r.example/page" } = {}) {
   const renderer = { fetch: async () => new Response("{}") };
   const w = code === "RENDER_NO_RENDERER" ? fresh({ evidence: bucket(), env: ENV })
@@ -27,10 +24,7 @@ export async function acquireRefusal({ code = "RENDER_DEFERRED", locator = "http
   try { return await w.c.acquire({ locator, render: true }, OPTS); } finally { n.restore(); }
 }
 
-/** `storageNotConfigured`: the real `{status, body}` of `acquire` on an instance with no evidence store: EVIDENCE_STORAGE_NOT_CONFIGURED, 503.
- *  @param {{locator?: string}} [o]
- *  @returns {Promise<{status: number, body: any}>}
- */
+/** `storageNotConfigured`: the real `{status, body}` of `acquire` on an instance with no evidence store: EVIDENCE_STORAGE_NOT_CONFIGURED, 503. */
 export async function storageNotConfigured({ locator = "https://s.example/doc" } = {}) {
   const w = fresh({ env: ENV });
   const n = network({});
@@ -39,10 +33,7 @@ export async function storageNotConfigured({ locator = "https://s.example/doc" }
 
 /** `captureArm`: a real capture over a real record, a scripted network and an evidence store. `arm.acquire(body, opts)` is capture's own `acquire` with the
  *  network of `arm.routes` (`{url: () => Response}`; set a route to script an address) and each call recorded in `arm.calls` (`{body, opts}`);
- *  `arm.registerReader(slot, module, fn)` is capture's own, each registration recorded in `arm.readers`. `arm.capture` is the instance.
- *  @param {{routes?: Record<string, any>, env?: any}} [o]
- *  @returns {any}
- */
+ *  `arm.registerReader(slot, module, fn)` is capture's own, each registration recorded in `arm.readers`. `arm.capture` is the instance. */
 export function captureArm({ routes = {}, env = {} } = {}) {
   const w = fresh({ evidence: bucket(), env: { ...ENV, ...env } });
   const calls = [], readers = [], arm = { calls, readers, routes, capture: w.c, world: w };
@@ -55,10 +46,7 @@ export function captureArm({ routes = {}, env = {} } = {}) {
   return arm;
 }
 
-/** `heldActsUnreadable`: the real answer of `heldActsOf(question)` over a store that cannot be read: `{ok: false, reason: "HELD_ACTS_UNREADABLE", acts: null}`.
- *  @param {{question?: string}} [o]
- *  @returns {any}
- */
+/** `heldActsUnreadable`: the real answer of `heldActsOf(question)` over a store that cannot be read: `{ok: false, reason: "HELD_ACTS_UNREADABLE", acts: null}`. */
 export function heldActsUnreadable({ question = "INQ-1" } = {}) {
   const w = fresh({ env: ENV });
   w.s.sql.exec(`DROP TABLE held_act_questions`);
@@ -67,10 +55,7 @@ export function heldActsUnreadable({ question = "INQ-1" } = {}) {
 
 /** `heldSetAside`: the real answer of `setAside` for documents waited on by a question: `{ok: true, act: "set_aside", ids, reason, author, at, documents:
  *  [{document, captured_for, waiting}]}`, `waiting` being `{questions: [{question, title, asker}], withheld}`. The `waiting` option is `[{question, title, asker}]`, the questions the captured-for reader (registered here) answers as
- *  waiting on each document.
- *  @param {{ids?: string[], reason?: string, author?: string, waiting?: {question: string, title: string, asker: string}[]}} [o]
- *  @returns {any}
- */
+ *  waiting on each document. */
 export function heldSetAside({ ids = ["INFO-2026-0002-budget"], reason = "Wrong year.", author = "member:mai", waiting = [{ question: "INQ-1", title: "Were the transfers authorised?", asker: "member:ana" }] } = {}) {
   const w = fresh({ env: ENV });
   w.s.sql.exec(`INSERT INTO members (member_id, cover, role, status, created, updated) VALUES ('mai', 'c', 'member', 'active', '2026-01-01', '2026-01-01')`);
@@ -97,9 +82,7 @@ function partedBucket() {
  *  `{PART_DIGEST_MISMATCH, PART_CONFLICT, PART_OUT_OF_ORDER, UPLOAD_UNKNOWN, UPLOAD_LOST}`, each the `putUploadPart` answer (`{ok: false, reason, status, ...}`):
  *  a part whose bytes are not its digest is a 400 with `expected` and `got`; another part's bytes under a held index is a 409 `PART_CONFLICT`; a part past the
  *  next is a 409 `PART_OUT_OF_ORDER`; a part of an upload aborted is `UPLOAD_UNKNOWN` (404); a part of an upload whose hashing state is gone is a 409
- *  `UPLOAD_LOST`. Parts are 1,000 bytes (the upload is begun under a ceiling of 1,000).
- *  @returns {Promise<any>}
- */
+ *  `UPLOAD_LOST`. Parts are 1,000 bytes (the upload is begun under a ceiling of 1,000). */
 export async function partRefusal() {
   const file = new Uint8Array(2500).map((_, i) => (7 + (i % 251)) & 255);
   const parts = [file.subarray(0, 1000), file.subarray(1000, 2000), file.subarray(2000)];
@@ -128,10 +111,7 @@ export async function partRefusal() {
 /** `recordReuseVerdicts`: capture's real `reusedparts` and `recordreuseverdicts` reads over seeded reused parts of one bundle, in the shape of the ops table a
  *  later module is handed (`ops.reusedparts()` answers `{bundleId, parts}`; `ops.recordreuseverdicts(url, body)` records through capture's own
  *  `recordReuseVerdicts`). `recorded()` reads back what was recorded from capture's record (`reuseVerdicts`), never a pushed copy. `parts` is
- *  `[{address, text}]`: a part reused by a capture of the bundle from a source capture, its bytes `text`.
- *  @param {{bundleId?: string, host?: string, parts?: {address: string, text: string}[]}} [o]
- *  @returns {any}
- */
+ *  `[{address, text}]`: a part reused by a capture of the bundle from a source capture, its bytes `text`. */
 export function recordReuseVerdicts({ bundleId = "INFO-1", host = "x.example", parts = [{ address: "https://x.example/a.css", text: "body{}" }, { address: "https://x.example/b.js", text: "run()" }] } = {}) {
   const w = fresh({ env: ENV });
   const source = H("5");
@@ -149,18 +129,13 @@ export function recordReuseVerdicts({ bundleId = "INFO-1", host = "x.example", p
   return { ops, capture: w.c, parts: seeded, bundleId, recorded: () => w.c.reuseVerdicts({ bundleId }).verdicts };
 }
 
-/** The bytes `uploadProvenance` brings by default: a 1 x 1 PNG (its signature and header are what the profile reads).
- *  @type {Buffer}
- */
+/** The bytes `uploadProvenance` brings by default: a 1 x 1 PNG (its signature and header are what the profile reads). */
 export const UPLOAD_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
 
 /** `uploadProvenance`: the provenance document capture's real `uploadCapture` writes for one upload, made when the test runs. A member brings `bytes` under
  *  `name` with no declared type, so the bytes decide what the file is. Answers the document: `file` (`snapshots/upload-<sha>`), `locator`, `retrieved`,
  *  `capture` (method uploaded, graded received, no `content_type`), `profile` (acquisition's profile of the bytes, its `format` and `source_content_type` the
- *  bytes' own, none declared), `source`, `origin`, `origin_statement` and `name_stated`. Defaults: `UPLOAD_PNG` named `street.png`.
- *  @param {{bytes?: Uint8Array, name?: string, statement?: string, by?: string, at?: string}} [o]
- *  @returns {Promise<any>}
- */
+ *  bytes' own, none declared), `source`, `origin`, `origin_statement` and `name_stated`. Defaults: `UPLOAD_PNG` named `street.png`. */
 export async function uploadProvenance({ bytes = UPLOAD_PNG, name = "street.png", statement = "a photo the clerk took at the counter", by = "m1", at = "2026-10-09T12:00:00Z" } = {}) {
   const w = fresh({ evidence: bucket(), env: ENV });
   const r = await w.c.uploadCapture({ bytes, statement, name, by, at });
@@ -176,10 +151,7 @@ const REATTEST_REPLAY = "https://web.archive.org/web/20260930110001id_/https://a
  *  `attest` and a scripted network. By default the capture's attestation is unacknowledged: every timestamp authority refuses and the archive's save is
  *  refused, so the answer is `{ok: true, attested: false, late_attestations: [...failed attempts, late], note}` with no `attestation`. With
  *  `acknowledged: true` the first authority grants a token bound to the digest and the archive saves and replays the same bytes, so the answer is
- *  `{ok: true, attested: true, attestation, late_attestations: [timestamp ok, co_archive ok and matching], note}`. `captureSha` is the held capture's digest.
- *  @param {{acknowledged?: boolean, by?: string}} [o]
- *  @returns {Promise<any>}
- */
+ *  `{ok: true, attested: true, attestation, late_attestations: [timestamp ok, co_archive ok and matching], note}`. `captureSha` is the held capture's digest. */
 export async function reattest({ acknowledged = false, by = "m1" } = {}) {
   const b = bucket();
   const w = fresh({ evidence: b, gov: governor(), env: { INSTANCE_NAME: "i" } });
@@ -199,10 +171,7 @@ export async function reattest({ acknowledged = false, by = "m1" } = {}) {
 
 /** `captureAccount`: the real answer of capture's `recordCaptureAccount` for a capture's actor: `{ok: true, captureSha, seq: 1, key_b64, ...}`. The capture is
  *  recorded as `by`'s, `by` holds an attesting key, and the account is signed over `captureAccountStatement(captureSha, text)` in the ratify namespace. The
- *  answer is the member's first account of that capture, and `capture` is the instance, to read `captureAccountsOf` back.
- *  @param {{text?: string, by?: string, at?: string}} [o]
- *  @returns {Promise<any>}
- */
+ *  answer is the member's first account of that capture, and `capture` is the instance, to read `captureAccountsOf` back. */
 export async function captureAccount({ text = "I saved this page from the clerk's site at 9:14, logged in as myself.", by = "m1", at = "2026-09-02T00:00:00Z" } = {}) {
   const w = fresh({ env: ENV });
   const captureSha = H("c1");

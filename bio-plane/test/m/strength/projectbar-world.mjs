@@ -7,15 +7,6 @@ import { membershipOf } from "../../../src/membership/index.mjs";
 import { promotionOf } from "../../../src/promotion/index.mjs";
 import { storage } from "./fixture.mjs";
 import { strengthOf } from "../../../src/strength/index.mjs";
-/** @import { InlineFile, BlobFile } from '../../../src/record-core/index.mjs' */
-
-/** The text of a file the record holds inline; a file not held, or held as a blob, fails the test here.
- *  @param {InlineFile | BlobFile | null} file
- *  @returns {string} */
-export function inlineText(file) {
-  if (!file || !("text" in file)) throw new Error("expected a file the record holds inline");
-  return file.text;
-}
 
 export const NOW = "2026-10-13T12:00:00.000Z";
 export const EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
@@ -79,9 +70,9 @@ export function world() {
         group: "grp-one", created: clock.now, lastUpdated: clock.now, criticality: null, at: clock.now }));
       return id;
     },
-    doc: (id) => inlineText(record.readFile(id, "bundle.md")),
+    doc: (id) => record.readFile(id, "bundle.md").text,
     /** What a refused act must leave as it was: the document, the head, the manifest and the group's default. */
-    snapshot: (id) => JSON.stringify([inlineText(record.readFile(id, "bundle.md")), record.head(id).bundleSha,
+    snapshot: (id) => JSON.stringify([record.readFile(id, "bundle.md").text, record.head(id).bundleSha,
       st.sql.exec(`SELECT COUNT(*) AS n FROM manifest`)[0].n, st.sql.exec(`SELECT * FROM group_strength_bar`)]),
   };
   for (const m of ["alice", "bob", "carol", "dave"]) w.member(m);

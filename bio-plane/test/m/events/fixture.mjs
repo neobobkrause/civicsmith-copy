@@ -56,8 +56,6 @@ export const ZONE = "America/Halifax";
    and `body` spaces (R22, `jurisdictions` R3), as test data, never in product code. Its vote values are the profile's own
    (`vocabulary.vote_values`, `jurisdictions` R58, R62); `votes` replaces them as test data, `votes: "none"` removes them
    (a profile that holds none, as the first profile today, R11). */
-/** @param {{legistar?: boolean, votes?: any}} [o]
- *  @returns {any} the view, a plain object the test may edit */
 export function testView({ legistar = false, votes = null } = {}) {
   const c = combine(["test-port-ellery"]);
   const view = structuredClone(c.view);
@@ -86,8 +84,7 @@ export function metered(w, fn) {
 const cursorOf = (rows) => cursor(rows);
 
 let clock = 0;
-/** A fresh record with the modules above and events over it.
- *  @param {{view?: any, now?: any, profiles?: boolean}} [o] `view` the jurisdiction view, or a function answering it; `now` a clock */
+/** A fresh record with the modules above and events over it. */
 export function world({ view = testView(), now = null, profiles = true } = {}) {
   const st = storage();
   const host = { storage: st };

@@ -3,7 +3,7 @@
    the test profile; instance clock 2026-09-28T12:00Z. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, CLK, present } from "./fixture.mjs";
+import { world, V, CLK } from "./fixture.mjs";
 import * as clocks from "../../../src/action-clocks/index.mjs";
 import * as actions from "../../../src/actions/index.mjs";
 import { combine } from "../../../../jurisdictions/index.mjs";
@@ -56,7 +56,7 @@ test("R24 the op clocksrunning reads the viewer from the query and answers clock
 });
 
 /* R2 (K4227; screens-investigate R59): `NO_SUCH_RULE` also answers the deadlines the profile states for the action's kind. */
-const KINDS = (kind) => present(combine(["test-port-ellery"]).view, "the test profile's view").deadlines.filter((d) => d.applies_to === kind);
+const KINDS = (kind) => combine(["test-port-ellery"]).view.deadlines.filter((d) => d.applies_to === kind);
 const propose = (w, id, rule) => w.c.clockPropose({ target: id, rule, proposer: M, viewer: M });
 
 test("R2 NO_SUCH_RULE answers deadlines: the profile's deadlines for the action's kind, each rule with its citation, and the rest of the refusal unchanged", () => {

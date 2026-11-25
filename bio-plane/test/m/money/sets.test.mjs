@@ -111,10 +111,8 @@ test("R23 onFactChanged: one registration per module, refused through membership
   const heard = [];
   assert.equal(s.m.onFactChanged("calculations", (n) => heard.push(["calculations", n])).ok, true);
   assert.equal(s.m.onFactChanged("money-checks", (n) => heard.push(["money-checks", n])).ok, true);
-  const twice = s.m.onFactChanged("calculations", () => {});
-  assert.equal("reason" in twice && twice.reason, "LISTENER_DECLARED");
-  const malformed = s.m.onFactChanged("x", "not a function");
-  assert.equal("reason" in malformed && malformed.reason, "LISTENER_MALFORMED");
+  assert.equal(s.m.onFactChanged("calculations", () => {}).reason, "LISTENER_DECLARED");
+  assert.equal(s.m.onFactChanged("x", "not a function").reason, "LISTENER_MALFORMED");
   const a = s.rec();
   assert.deepEqual(heard.map(([m, n]) => [m, n.factId, n.change]), [["money-checks", a, "added"], ["calculations", a, "added"]]);
   heard.length = 0;

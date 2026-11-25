@@ -5,8 +5,6 @@
  * `source_entries.value`, read only by the members `source_sight` lists (R5). The knocker secret is never held; only
  * the digest and pseudonym the doorbell answers (doorbell R14). */
 
-/** The tables' SQL, one statement after another, `--` lines being comments; `migrateSources` runs it.
- * @type {string} */
 export const SOURCES_SCHEMA = `
 -- R1: one row per source: one per pseudonym (knocker_digest and pseudonym set), one per knock sent without a secret
 -- (both null, first_knock naming it). Minted on first read and kept.
@@ -94,14 +92,8 @@ CREATE INDEX IF NOT EXISTS source_keyed_marks_capture ON source_keyed_marks(capt
  *  (R13) and never expunged. What names or describes a person (a source's digest, its disclosures and stored values,
  *  who may read them, the reads, the consents' evidence, the keyed marks) is never exported (K1489); the knock
  *  receipts, which hold no value (R15), go to administrators only. A table that only appends is a version chain. */
-/** One table's classes, as record-core's `declareTable` takes them (its R21).
- * @typedef {{name: string, purge: string, expunge: string, export: string, sight: string, derive: string,
- *            version_chain: boolean}} SourcesTableClass */
-/** @type {(exportClass: string, sight: string, versionChain: boolean) => Omit<SourcesTableClass, "name">} */
 const CLASSES = (exportClass, sight, versionChain) =>
   ({ purge: "exempt", expunge: "none", export: exportClass, sight, derive: "stored", version_chain: versionChain });
-/** R13, R19: each table's classes, frozen, in the order the tables are made.
- * @type {readonly Readonly<SourcesTableClass>[]} */
 export const SOURCES_TABLE_CLASSES = Object.freeze([
   { name: "sources", ...CLASSES("never", "group", false) },
   { name: "source_knocks", ...CLASSES("admin-only", "group", false) },
@@ -111,13 +103,8 @@ export const SOURCES_TABLE_CLASSES = Object.freeze([
   { name: "source_reads", ...CLASSES("never", "source", false) },
   { name: "source_keyed_marks", ...CLASSES("never", "source", true) },
 ].map((e) => Object.freeze(e)));
-/** Every table's name, frozen, in `SOURCES_TABLE_CLASSES`' order.
- * @type {readonly string[]} */
 export const SOURCES_TABLES = Object.freeze(SOURCES_TABLE_CLASSES.map((e) => e.name));
 
-/** Makes the tables that do not yet exist (each statement is `CREATE ... IF NOT EXISTS`).
- * @param {{exec: (query: string, ...args: any[]) => any}} sql the storage's SQL handle
- * @returns {void} */
 export function migrateSources(sql) {
   const bare = SOURCES_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
   for (const s of bare.split(";").map((x) => x.trim()).filter(Boolean)) sql.exec(s);

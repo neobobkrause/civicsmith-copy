@@ -121,7 +121,7 @@ const cell = (table, value) => ({ source: T(table, "A1"), value, type: "text", d
 
 test("R70 R66: N26's migration of a reading carrying cells moves each key to tables[old].new with its cells' sources, keeps each cell's `paras` as stored, drops a table N26 does not read, counts no cell as a moved reference, and keeps null and {} as stored", () => {
   const map = docxRenumbering(`<w:document><w:body>${N26_BODY}</w:body></w:document>`);
-  assert.deepEqual(map?.tables.map((t) => t.new), [0, null, 1]);
+  assert.deepEqual(map.tables.map((t) => t.new), [0, null, 1]);
   const text = { paragraphs: [], document: "", counts: { chars: 0, undetermined: 0 } };
   const base = { content_type: "doc", found: true, at: "2026-09-01T00:00:00Z", entities: [{ ref: "tbl:t", kind: "tbl", key: "t", source: T(2, "A1") }],
                  text_source: [{ step: "layer", container: "docx", tier: 1 }] };

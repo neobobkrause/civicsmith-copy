@@ -18,12 +18,7 @@ import { deflateSync } from "node:zlib";
 import { makeZip } from "./make-zip.mjs";
 import { renderLines, pageSize, pageLines as scanLines } from "./imggen.mjs";
 import { hash32, VOCAB, LATIN_VOCAB, ASCII_VOCAB } from "./seeded.mjs";
-/** @import { Recipe, GeneratedFile } from './corpus.mjs' */
 
-/**
- * The kinds this generator builds.
- * @type {readonly string[]}
- */
 export const KINDS = Object.freeze(["pdf"]);
 
 /* ---- fonts: how each writes a line, and the words it can carry ---- */
@@ -458,12 +453,7 @@ function truthFrom(recipe, pl, info = {}) {
   };
 }
 
-/**
- * The PDF of a recipe (R19, R20): `{kind, ext, type, size, truth, chunks(), bytes()}`; the truth is the one above.
- * @param {Recipe} recipe a recipe of kind "pdf" and its options
- * @returns {GeneratedFile}
- * @throws {Error} when the recipe is not of kind pdf, has no seed or a seed of other characters than letters, digits, _ . or -, names an unknown font, page kind, structure, encryption method or polyglot, has truncate outside (0, 1), or cannot reach size.bytes exactly
- */
+/** The PDF of a recipe (R19, R20): `{kind, ext, type, size, truth, chunks(), bytes()}`. */
 export function generate(recipe) {
   const L = layout(recipe);
   let size = L.parts.reduce((n, p) => n + partBytes(p), 0);
@@ -500,12 +490,7 @@ export function generate(recipe) {
   };
 }
 
-/**
- * The truth of a recipe without building its file (R24); `size` is the recipe's `size.bytes` when it names one.
- * @param {Recipe} recipe a recipe of kind "pdf" and its options
- * @returns {Object<string, any>} the truth described at the top of this file
- * @throws {Error} when generate would refuse the recipe's plan
- */
+/** The truth of a recipe without building its file (R24); `size` is the recipe's `size.bytes` when it names one. */
 export function truthOf(recipe) {
   /* which pages a cut loses depends on where their objects lie: lay the file out (in memory, nothing written) */
   if (recipe.truncate !== undefined) return generate(recipe).truth;

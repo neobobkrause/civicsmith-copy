@@ -178,10 +178,7 @@ export function world({ group = "test-group" } = {}) {
     projectQuestions: () => ({ items: [], cursor: null }),
     conclude(args) {
       const head = record.head(args.target);
-      /* record-core R13: a bundle's bundle.md is held inline; a blob or nothing here is the fixture's own fault */
-      const held = record.readFile(args.target, "bundle.md");
-      if (!held || !("text" in held)) throw new Error(`fixture conclude: ${args.target} holds no inline bundle.md`);
-      const text = held.text
+      const text = record.readFile(args.target, "bundle.md").text
         .replace(/^current_state: .*$/m, "current_state: concluded")
         .replace(/^prior_state: .*$/m, `prior_state: ${head.currentState}`)
         .replace(/\n---\n/, `\nconclusion: "${args.conclusion}"\nfalsifier: "${args.falsifier || "a record showing otherwise"}"\n---\n`);
@@ -422,7 +419,7 @@ export function world({ group = "test-group" } = {}) {
         author: V("alice"), files: [{ path: "bundle.md", text }], meta: { object_type: type } });
     },
     head: (id) => record.head(id)?.bundleSha ?? null,
-    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
+    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     /** A finding published in a ratified edition of `caseId` owned by `project`, its pin the finding's current sha, with
      *  its frozen pair `strength` (rows `{axis, grade}`), through publication's R21 and R22 as case-authoring and

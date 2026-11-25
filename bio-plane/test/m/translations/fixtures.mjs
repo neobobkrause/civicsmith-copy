@@ -8,9 +8,7 @@ import { interfaceWords } from "../../../src/translations/index.mjs";
 /** The real `registerMemberLanguageRead` and `wordsVersion` (R11, R20). `registered` is the real answer of a first
  *  registration of a read that answers `language` for every viewer (`{ok: true}`), `words_version` the real stamp of a
  *  team that has adopted nothing, and `translations` a fresh instance of the real module with no read registered yet,
- *  for a test that hands it to its user (`more` hands in the module's providers, as `boot` takes them): it answers `registerMemberLanguageRead` and `wordsVersion` as the module does.
- *  @param {{language?: string, more?: any}} [opts]
- *  @returns {{registered: any, words_version: string, translations: import("../../../src/translations/index.mjs").Translations}} */
+ *  for a test that hands it to its user (`more` hands in the module's providers, as `boot` takes them): it answers `registerMemberLanguageRead` and `wordsVersion` as the module does. */
 export function memberLanguageRead({ language = "es", more = {} } = {}) {
   const read = () => ({ ok: true, language, set_at: null });
   const first = boot({ more }).m;
@@ -22,9 +20,7 @@ export function memberLanguageRead({ language = "es", more = {} } = {}) {
  *  two readers the interface shell reads it for: `default`, a member who reads no language (the default: the shell's English,
  *  so no word is held), and `other`, a member who reads `language`, after one real adoption of an ordinary word (shown at once,
  *  R5). Made over a fresh world each call, never stored: the default answer is taken before the adoption, so the stamp moves
- *  between the two (R20).
- *  @param {{language?: string}} [opts]
- *  @returns {Promise<{default: any, other: any}>} */
+ *  between the two (R20). */
 export async function interfaceWordsAnswer({ language = "es" } = {}) {
   const c = aiAccountsWorld();
   await c.group("ruth", "sam", "tom");
@@ -44,9 +40,7 @@ export async function interfaceWordsAnswer({ language = "es" } = {}) {
  *  `to_language` asks for the words still missing in `es` by a member who holds the grant, and `to_english` asks an administrator
  *  to read the one kept protected word back into English. The platform's model turn is not built: after the first refusals and
  *  the gates the module answers `ASSISTANT_DRAFT_UNAVAILABLE` with the words the door would send, and writes nothing. Made over a
- *  fresh world each call, never stored.
- *  @param {{direction?: string}} [opts]
- *  @returns {Promise<any>} */
+ *  fresh world each call, never stored. */
 export async function translationDraftAnswer({ direction = "to_language" } = {}) {
   const c = aiAccountsWorld();
   await c.group("ruth", "sam");

@@ -84,8 +84,6 @@ test("R18 the encoding is storable: a leg written with flattenBiasApplied's keys
   const text = inquiryDoc(id, { basis: [{ target: INFO, role: "supports", ...flattenBiasApplied(list) }] });
   const parsed = parseFrontmatter(text);
   assert.deepEqual(parsed.findings, []);
-  /* record-grammar R6: front matter that does not parse answers data null; this text parses, so null fails the test */
-  if (parsed.data === null) assert.fail("the bundle's front matter parses (record-grammar R6)");
   assert.deepEqual(readBiasApplied(parsed.data.basis[0]), list, "every value round-trips, padding, digits and null-like words included");
   const sha256 = async (b) => createHash("sha256").update(Buffer.from(b)).digest("hex");
   const judgeText = async (t) => plain((await checkBundle({ folderName: id, files: new Map([["bundle.md", t]]), sha256, nowMs: NOW,
@@ -96,12 +94,10 @@ test("R18 the encoding is storable: a leg written with flattenBiasApplied's keys
      which is why R18 refuses one */
   const bare1 = inquiryDoc(id, { basis: [{ target: INFO, role: "supports", bias_1_statement: "PLACEHOLDER", bias_1_effect: "leg_excluded" }] });
   const hashed = parseFrontmatter(bare1.replace("PLACEHOLDER", "a #b"));
-  if (hashed.data === null) assert.fail("the bundle's front matter parses (record-grammar R6)");
   assert.equal(readBiasApplied(hashed.data.basis[0])[0].statement, "a");
   assert.match(judgeValue([{ statement: "a #b", effect: "leg_excluded" }])[0].message, /cannot be written in the record/);
   /* negative control: a list of objects on a leg is not front matter's: the list item holds scalars only */
   const nested = parseFrontmatter(inquiryDoc(id, { basis: [{ target: INFO, role: "supports", bias_applied: "[funder-tilt, leg_excluded]" }] }));
-  if (nested.data === null) assert.fail("the bundle's front matter parses (record-grammar R6)");
   assert.ok(!Array.isArray(nested.data.basis[0].bias_applied) || nested.data.basis[0].bias_applied.every((x) => typeof x !== "object"));
 });
 

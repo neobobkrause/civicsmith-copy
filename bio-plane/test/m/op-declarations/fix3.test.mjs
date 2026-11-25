@@ -17,7 +17,7 @@ test("R17, R19, R20 (T51 fix round 3, cause 1; MONEY #6; K4369): `moneysets`, th
   assert.ok(Object.hasOwn(NEEDS, "moneysets") && NEEDS.moneysets === null, "a read's NEEDS row is null");
   assert.ok(SESSION_OPS.member.has("moneysets") && SESSION_OPS.admin.has("moneysets"));
   assert.deepEqual([...OP_STAMPS.moneysets], ["viewer"]);
-  assert.deepEqual([...MONEY_DECLARED.moneysets.classes].sort(), OPS.moneysets.classes && [...OPS.moneysets.classes].sort());
+  assert.deepEqual([...MONEY_DECLARED.moneysets.classes].sort(), [...OPS.moneysets.classes].sort());
   assert.equal(MONEY_DECLARED.moneysets.mutating, OPS.moneysets.mutating);
   /* control: a sibling read of money in the same family has the same shape, and a write of money still needs contribute */
   assert.ok(Object.hasOwn(NEEDS, "committedagainstpaid") && NEEDS.committedagainstpaid === null);

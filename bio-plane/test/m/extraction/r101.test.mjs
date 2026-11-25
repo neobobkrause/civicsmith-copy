@@ -22,7 +22,7 @@ async function home(body) {
   rows.set(d, { bundleId: "INFO-1", path: "log.txt", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "undetermined", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   return { w, d, evidence };
 }
 const fts = (w, term) => w.rows(`SELECT rowid FROM capture_text_fts WHERE capture_text_fts MATCH ?`, term).length;
@@ -132,8 +132,6 @@ test("R109 (G165): the plane's `stampUnit` reaches the reader: it is stamped wit
    a cursor `c<n>`; asked with `skipKilled` it reads nothing at the cursor and answers the next, `counters.skipped` 1, `stated: {cursor, why}`. Everything
    else is the real read. */
 import { read as realRead } from "../../../src/reading-pipeline/index.mjs";
-/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
-const STUB_SHA = "0".repeat(64);
 const WINDOWS = 4;
 const windowed = (asked) => async (doc, o = {}) => {
   if (o.cursor === undefined) return realRead(doc, o);
@@ -157,7 +155,7 @@ test("R101 (G129c; K4904 (1); DOCS killAt): the window at the cursor the ledger 
   rows.set(d, { bundleId: "INFO-1", path: "a.docx", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "text", fromText: true });
-  w.core.readFile = (b, p) => (p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w.core.readFile = (b, p) => (p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   const first = await tick(w, d);
   assert.deepEqual([first.read, first.more], [true, true], JSON.stringify(first));
   assert.equal((await tick(w, d)).more, true, "window c1 read");
@@ -185,7 +183,7 @@ test("R109 (G165): the plane's `stampUnit` reaches the reader of a text read in 
   rows.set(d, { bundleId: "INFO-1", path: "a.docx", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "text", fromText: true });
-  w2.core.readFile = (b, p) => (p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
+  w2.core.readFile = (b, p) => (p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
   const stamp = () => {};
   assert.equal((await tick(w2, d, { stampUnit: stamp })).more, true);
   assert.equal((await tick(w2, d, { stampUnit: stamp })).more, true);

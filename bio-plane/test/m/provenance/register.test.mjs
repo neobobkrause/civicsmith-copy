@@ -2,7 +2,7 @@
    about who writes it (R35, R38, R41) and the read contract (R48). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, V, provDoc, inlineText, pathsOf } from "./fixture.mjs";
+import { world, sha, V, provDoc } from "./fixture.mjs";
 import { PROVENANCE_TABLES, REGISTER_ENTRY_CHECKS } from "../../../src/provenance/index.mjs";
 
 test("R1: one row per capture, with the module's clock, and a revision updates it without clearing what it keeps", () => {
@@ -20,7 +20,7 @@ test("R1: one row per capture, with the module's clock, and a revision updates i
   const moved = { ...a, path: "snapshots/moved.txt" };
   const r2 = w.promotion.promote({
     bundleId: "INFO-2026-0001-a", base: head.bundleSha, snapKey: "k2", author: "member:alice",
-    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0001-a", "bundle.md")) },
+    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0001-a", "bundle.md").text },
             { path: a.path, text: a.text }, { path: moved.path, text: a.text },
             { path: "data/provenance.json", text: JSON.stringify({ documents: [provDoc(a)] }) }],
     meta: { object_type: "information" },
@@ -39,7 +39,7 @@ test("R1: one row per capture, with the module's clock, and a revision updates i
 
 /* A revision of `id` re-registering its live captures as they stand, through promotion's own `promote`. */
 function revise(w, id, snapKey) {
-  const files = pathsOf(w.record.livePaths(id)).map((p) => ({ path: p, text: inlineText(w.record.readFile(id, p)) }));
+  const files = w.record.livePaths(id).map((p) => ({ path: p, text: w.record.readFile(id, p).text }));
   return w.promotion.promote({ bundleId: id, base: w.head(id).bundleSha, snapKey, author: "member:alice", files,
     meta: { object_type: "information" },
     register: w.prov.registeredFor(id).map((r) => ({ sha256: r.capture_sha, path: r.path, encoding: r.encoding, bytes: r.bytes })) });
@@ -115,7 +115,7 @@ test("R1: an authored row keeps its flag, author and observed_at through a revis
   const before = w.row(`SELECT * FROM register WHERE capture_sha=?`, t.capture_sha);
   assert.equal(before.authored, 1);
   const head = w.head(t.bundle_id);
-  const files = pathsOf(w.record.livePaths(t.bundle_id)).map((p) => ({ path: p, text: inlineText(w.record.readFile(t.bundle_id, p)) }));
+  const files = w.record.livePaths(t.bundle_id).map((p) => ({ path: p, text: w.record.readFile(t.bundle_id, p).text }));
   const r = w.promotion.promote({ bundleId: t.bundle_id, base: head.bundleSha, snapKey: "rev1", author: V("ruth"),
     files, meta: { object_type: "information" },
     register: [{ sha256: t.capture_sha, path: t.file, bytes: t.bytes }] });
@@ -170,8 +170,8 @@ test("R3: authored is the testimony path's alone; every refusal named, asked bef
   /* C-53.8: registering another bundle's authored capture (asked before C-53.13, which would also fire). */
   const s0 = snap();
   const steal = w.promotion.promote({ bundleId: "INFO-2026-0100-steal", base: null, snapKey: "s", author: V("mallory"),
-    files: [{ path: "bundle.md", text: inlineText(w.record.readFile(t.bundle_id, "bundle.md")).replace(t.bundle_id, "INFO-2026-0100-steal") },
-            { path: t.file, text: inlineText(w.record.readFile(t.bundle_id, t.file)) }],
+    files: [{ path: "bundle.md", text: w.record.readFile(t.bundle_id, "bundle.md").text.replace(t.bundle_id, "INFO-2026-0100-steal") },
+            { path: t.file, text: w.record.readFile(t.bundle_id, t.file).text }],
     meta: { object_type: "information" }, register: [{ sha256: t.capture_sha, path: t.file, bytes: t.bytes }] });
   assert.equal(steal.reason, "TESTIMONY_AUTHORED_UNEARNED");
   assert.equal(steal.check, "C-53.8");
@@ -182,7 +182,7 @@ test("R3: authored is the testimony path's alone; every refusal named, asked bef
   assert.equal(claim.reason, "TESTIMONY_AUTHORED_UNEARNED");
   /* C-53.9: dropping `authored: true`, and an unparsable register, on the authored bundle. */
   const head = w.head(t.bundle_id);
-  const live = (p) => inlineText(w.record.readFile(t.bundle_id, p));
+  const live = (p) => w.record.readFile(t.bundle_id, p).text;
   const prov = JSON.parse(live("data/provenance.json"));
   const revise = (provText) => w.promotion.promote({ bundleId: t.bundle_id, base: head.bundleSha, snapKey: `r${Math.random()}`,
     author: V("sam"), meta: { object_type: "information" },
@@ -296,7 +296,7 @@ test("R38: an authored observation stays one: its flag is never cleared and its 
   const w = world();
   const t = w.prov.testify({ words: "Exactly these words.", observedAt: "2026-09-21", author: V("ruth") });
   const head = w.head(t.bundle_id);
-  const live = (p) => inlineText(w.record.readFile(t.bundle_id, p));
+  const live = (p) => w.record.readFile(t.bundle_id, p).text;
   /* Rewriting the words is a new capture under the old document, and the authored document still names the old one:
      the revision that registers new bytes in its place and drops the claim is refused. */
   const prov = JSON.parse(live("data/provenance.json"));
@@ -370,7 +370,7 @@ test("R48 (T48): after a re-registration, a join on register.registered orders t
   const a = w.cap("a"), b = w.cap("b");
   assert.equal(w.promoteInfo("INFO-2026-0001-x", { captures: [a] }).ok, true);
   w.clock.now = "2026-09-27T02:00:00.000Z";
-  const files = pathsOf(w.record.livePaths("INFO-2026-0001-x")).map((p) => ({ path: p, text: inlineText(w.record.readFile("INFO-2026-0001-x", p)) }));
+  const files = w.record.livePaths("INFO-2026-0001-x").map((p) => ({ path: p, text: w.record.readFile("INFO-2026-0001-x", p).text }));
   const withB = w.promotion.promote({ bundleId: "INFO-2026-0001-x", base: w.head("INFO-2026-0001-x").bundleSha, snapKey: "b",
     author: "member:alice", meta: { object_type: "information" },
     files: [...files.filter((f) => f.path !== "data/provenance.json"), { path: b.path, text: b.text },
@@ -427,14 +427,14 @@ test("R48: register.bytes is the registered capture's size as the entry that reg
   /* As the entry states it, even where the file the entry names is not those bytes (a capture held in parts). */
   const p = w.cap("p", "a part");
   const r = w.promotion.promote({ bundleId: "INFO-2026-0002-p", base: null, snapKey: "p", author: "member:alice", replay: true,
-    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0001-a", "bundle.md")).replace("INFO-2026-0001-a", "INFO-2026-0002-p") },
+    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0001-a", "bundle.md").text.replace("INFO-2026-0001-a", "INFO-2026-0002-p") },
             { path: p.path, text: p.text }], meta: { object_type: "information" },
     register: [{ sha256: sha("the whole"), path: "snapshots/whole", bytes: 4096 }] });
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(w.row(`SELECT bytes FROM register WHERE capture_sha = ?`, sha("the whole")).bytes, 4096);
   /* A revision re-registering the capture carries the size its entry states. */
   const head = w.head("INFO-2026-0001-a");
-  const files = pathsOf(w.record.livePaths("INFO-2026-0001-a")).map((x) => ({ path: x, text: inlineText(w.record.readFile("INFO-2026-0001-a", x)) }));
+  const files = w.record.livePaths("INFO-2026-0001-a").map((x) => ({ path: x, text: w.record.readFile("INFO-2026-0001-a", x).text }));
   const rev = w.promotion.promote({ bundleId: "INFO-2026-0001-a", base: head.bundleSha, snapKey: "rev", author: "member:alice",
     files, meta: { object_type: "information" }, register: [{ sha256: a.sha, path: a.path, bytes: 13 }] });
   assert.equal(rev.ok, true, JSON.stringify(rev));
@@ -611,7 +611,7 @@ test("R48 (N484): register.bytes, read with plain SQL as corpus-export reads it,
   /* Every row the reader sees carries a whole number of bytes, the stated one, never a null or a recount. */
   const stated = 5_000_000_000;
   const r = w.promotion.promote({ bundleId: "INFO-2026-0003-w", base: null, snapKey: "w", author: "member:alice", replay: true,
-    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0001-a", "bundle.md")).replace("INFO-2026-0001-a", "INFO-2026-0003-w") }],
+    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0001-a", "bundle.md").text.replace("INFO-2026-0001-a", "INFO-2026-0003-w") }],
     meta: { object_type: "information" }, register: [{ sha256: sha("a large whole"), path: "snapshots/whole", bytes: stated }] });
   assert.equal(r.ok, true, JSON.stringify(r));
   const rows = read();
@@ -620,7 +620,7 @@ test("R48 (N484): register.bytes, read with plain SQL as corpus-export reads it,
   assert.equal(rows.find((x) => x.bundle_id === "INFO-2026-0003-w").bytes, stated);
   /* Negative control: an entry that states no size is refused (R50), so no row without one reaches the reader. */
   const bad = w.promotion.promote({ bundleId: "INFO-2026-0004-n", base: null, snapKey: "n", author: "member:alice", replay: true,
-    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0001-a", "bundle.md")).replace("INFO-2026-0001-a", "INFO-2026-0004-n") }],
+    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0001-a", "bundle.md").text.replace("INFO-2026-0001-a", "INFO-2026-0004-n") }],
     meta: { object_type: "information" }, register: [{ sha256: sha("unstated"), path: "snapshots/u" }] });
   assert.equal(bad.ok, false);
   assert.equal(read().length, 3);

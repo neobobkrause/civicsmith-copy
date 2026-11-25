@@ -14,32 +14,8 @@ import { readerView } from "../docprofile/registry.mjs";
 import { nameSpans, withoutContacts, titlePatterns, titleSpans, removeSpans } from "./lines.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-/**
- * A `staff_directory` reading's contact entity, as this reads it: its address `key`, and the entry's `line`.
- * @typedef {Object} ContactEntity
- * @property {string} kind `contact`; any other kind is passed over
- * @property {string} key
- * @property {{line?: string} & Record<string, any>} [facts]
- */
-/**
- * A person reference from a directory's entry (R7): keyed by its address, with a name only where exactly one
- * name-shaped span remains, graded C; otherwise no name, no grade, and why.
- * @typedef {Object} PersonRef
- * @property {string} contact_key
- * @property {string} [name]
- * @property {string|null} match_grade
- * @property {string} why
- * @bound match_grade: "C" when a name is read, null otherwise; never above C
- */
-
-/** @type {string} the grade of a name read alone (R7) */
 export const NAME_GRADE = "C";
 
-/**
- * @param {ContactEntity[]} entities anything but a list reads as none; an entity that is not a contact is passed over
- * @param {Object} [view] the view whose staff titles are removed from a line
- * @returns {PersonRef[]}
- */
 export function directoryPersonRefs(entities, view) {
   const ctx = { view: view && typeof view === "object" ? view : readerView({}) };
   const titles = titlePatterns(ctx);

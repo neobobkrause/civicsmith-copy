@@ -40,8 +40,8 @@ const bigFile = (t, address = ADDRESS) => {
   return gate;
 };
 const fetching = (p) => main(p).querySelectorAll("[data-fetching]").length;
-/* the DEC-418 row's size, about 15.2 MB, as `size.mb` draws it */
-const SIZE = word("size.mb", { n: "15.2" });
+const size = word_n("15.2");
+function word_n(n) { return ["size.mb", { n }]; }
 const pressCapture = async (p) => { fill(p, { "ci-address": ADDRESS }); await press(p, "acquire"); };
 
 test("R58 (G2) a capture answered fetch_pending is said at once (size, where it is filed), nothing is promoted, and when the session leaves the list the finished line links the document", async () => {
@@ -51,7 +51,7 @@ test("R58 (G2) a capture answered fetch_pending is said at once (size, where it 
   await pressCapture(p);
   assert.deepEqual(p.byOp("acquire").map((r) => r.body), [{ locator: ADDRESS, project: t.project }], "the project rides so the delivery can file it");
   assert.equal(fetching(p), 1, "the what-and-why line is drawn once");
-  assert.ok(says(p, "screen.capture.fetch.pending", { size: SIZE, project: "Yosemite" }), "the DEC-418 row: about 15.2 MB, and where it will be filed");
+  assert.ok(says(p, "screen.capture.fetch.pending", { size: word(size[0], size[1]), project: "Yosemite" }), "the DEC-418 row: about 15.2 MB, and where it will be filed");
   assert.equal(p.byOp("allocid").length + p.byOp("promote").length, 0, "no document is promoted from a document-less answer");
   const before = p.byOp("opencaptures").length;
   await p.clock.tick(4000);

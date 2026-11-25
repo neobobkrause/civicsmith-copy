@@ -8,11 +8,8 @@ import { fileURLToPath } from "node:url";
 import { combine } from "../../jurisdictions/index.mjs";
 import { flattenText, makeLocator } from "../../docprofile/registry.mjs";
 import { csvEntry } from "../../bio-plane/src/csv.mjs";
-/** @import { BudgetCtx } from "../index.mjs" */
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** The path of a measured fixture (R13) by its file name.
- * @type {(name: string) => string} */
 export const fixture = (name) => join(here, "fixtures", name);
 
 function view(id) {
@@ -21,17 +18,10 @@ function view(id) {
   return r.view;
 }
 
-/** The first profile's view (R12, R13).
- * @type {() => any} */
 export const firstView = () => view("oakland-alameda");
-/** The test profile's view (R12).
- * @type {() => any} */
 export const testView = () => view("test-port-ellery");
 
-/** A measured PDF fixture, as the supplied text (I2) of the pages chosen.
- * @param {string} key the fixture's name
- * @param {{tier1?: boolean, pages?: number[] | null}} [opts] `pages` one-based
- * @returns {{fixture: any, supplied: {container: string, pages: any[], undetermined: any[], images: any[], document?: string, ocr?: any[]}}} `ocr` a test may add (R6) */
+/** A measured PDF fixture, as the supplied text (I2) of the pages chosen. */
 export function pdfFixture(key, { tier1 = false, pages = null } = {}) {
   const f = JSON.parse(readFileSync(fixture(`${key}.json`), "utf8"));
   let list = tier1 ? f.tier1.pages : f.pages;
@@ -48,11 +38,7 @@ export function pdfFixture(key, { tier1 = false, pages = null } = {}) {
 }
 
 /** The context `readText` hands a content type: the flattened text, the
- *  locator over its pages, the view, and the supplied text itself.
- * @param {any} supplied
- * @param {any} view
- * @param {Record<string, any>} [extra]
- * @returns {BudgetCtx} */
+ *  locator over its pages, the view, and the supplied text itself. */
 export function ctxFor(supplied, view, extra = {}) {
   const flat = flattenText(supplied);
   return { text: flat.text, locate: makeLocator(flat.segments), view, supplied, ...extra };
@@ -60,10 +46,7 @@ export function ctxFor(supplied, view, extra = {}) {
 
 /** A CSV as `office-readers` supplies it: `csvEntry.text()`, its sheet with
  *  its typed cells (R30); `cells: false` takes them away, as a supplied text
- *  without cells would come.
- * @param {string} textOrPath a CSV's text (it holds a line break) or its path
- * @param {{cells?: boolean}} [opts]
- * @returns {Promise<Record<string, any>>} */
+ *  without cells would come. */
 export async function csvSupplied(textOrPath, { cells = true } = {}) {
   const text = textOrPath.includes("\n") ? textOrPath : readFileSync(textOrPath, "utf8");
   const r = await csvEntry.text(new TextEncoder().encode(text));

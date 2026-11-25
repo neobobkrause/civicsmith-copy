@@ -21,54 +21,7 @@ import { boundOf } from "../read-bounds.mjs";
 import { CleanRefusal } from "./refusal.mjs";
 import { localize } from "../setup-words/index.mjs";
 
-/**
- * The counters of one clean (R11): counts, not times (R-CLOCK).
- * @typedef {Object} Scan
- * @property {number} scanned the bytes of markup scanned
- * @property {number} tokens the tokens walked
- * @property {number} yields how many times the pass awaited `yieldNow`
- * @property {() => (Promise<void> | void)} yieldNow what the pass awaits every 65,536 tokens
- */
-/**
- * An element or attribute name: `[ns, local]`, `ns` a key of `NS` or `""` for an unqualified attribute.
- * @typedef {[string, string]} XmlName
- */
-/**
- * An attribute edit: the attribute `attr` (on the element `el`, or on any; whose value `when` accepts, when given)
- * set to `""`, or removed when `value` is null.
- * @typedef {Object} AttrRule
- * @property {XmlName} [el]
- * @property {XmlName} attr
- * @property {string | null} value
- * @property {(value: string) => boolean} [when]
- */
-/**
- * An element dropped when `when` accepts its attributes, by qualified name.
- * @typedef {Object} DropRule
- * @property {XmlName} el
- * @property {(attrs: Object<string, string>) => boolean} when
- */
-/**
- * R6's edits to one part; see the file's head.
- * @typedef {Object} XmlRules
- * @property {XmlName[]} [remove] elements removed, content and all
- * @property {XmlName[]} [empty] elements whose content is removed
- * @property {AttrRule[]} [attrs]
- * @property {DropRule[]} [drop]
- * @property {string[]} [removeNs] namespaces (keys of `NS`) whose every element and attribute is removed
- * @property {boolean} [authorRuns] a legacy Excel comment part: its leading author runs are removed first (`package.mjs`)
- */
-/**
- * @typedef {Object} EditOptions
- * @property {boolean} [inPlace] edit in the part's own buffer; absent is false
- * @property {string} [where] names the part in a refusal; absent is `?`
- * @property {Scan} [scan] absent is fresh counters
- */
-
-/** @type {(s: string) => string[]} */
 const OOXML = (s) => [`http://schemas.openxmlformats.org/${s}`];
-/** The namespaces the rules name, each by its key, with every URI it is known by.
- *  @type {Object<string, string[]>} */
 export const NS = {
   dc: ["http://purl.org/dc/elements/1.1/"],
   dcterms: ["http://purl.org/dc/terms/"],
@@ -97,16 +50,13 @@ const LT = 0x3c, GT = 0x3e, SLASH = 0x2f, EQ = 0x3d, Q1 = 0x22, Q2 = 0x27, LBRAC
 const isWs = (c) => c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09;
 const str = (d, a, b) => String.fromCharCode.apply(null, d.subarray(a, b));
 
-/** The longest a tag may be (R11).
- *  @type {number}
- *  @bound the `xml` `tag` row of READ_BOUNDS */
+/** The longest a tag may be (R11). */
 export const TAG_MAX = boundOf("xml", "tag");
 /** The pass yields after this many tokens (R11). */
 const YIELD_TOKENS = 1 << 16;
 
 /** The counters of one clean: bytes scanned, tokens walked, yields made; `yieldNow` is what the caller lets the pass
- *  await (default: a turn of the microtask queue).
- *  @type {(yieldNow?: () => (Promise<void> | void)) => Scan} */
+ *  await (default: a turn of the microtask queue). */
 export const newScan = (yieldNow = () => Promise.resolve()) => ({ scanned: 0, tokens: 0, yields: 0, yieldNow });
 
 const tooLong = (where) => new CleanRefusal("DOCUMENT_UNREADABLE",
@@ -149,12 +99,7 @@ const split = (qn) => { const c = qn.indexOf(":"); return c < 0 ? ["", qn] : [qn
 const key = ([ns, local]) => `${ns} ${local}`;
 
 /** Apply `rules` to an XML part's bytes; with `inPlace`, into the same buffer (the copy is never longer than what it
- *  has read, so it never overtakes it).
- *  @param {Uint8Array} bytes the part
- *  @param {XmlRules} rules
- *  @param {EditOptions} [options]
- *  @returns {Promise<Uint8Array>} the edited part, or `bytes` itself when nothing changed
- *  @throws {CleanRefusal} `DOCUMENT_UNREADABLE`, for a tag longer than TAG_MAX */
+ *  has read, so it never overtakes it). */
 export async function editXml(bytes, rules, { inPlace = false, where = "?", scan = newScan() } = {}) {
   const le = bytes[0] === 0xff && bytes[1] === 0xfe, be = bytes[0] === 0xfe && bytes[1] === 0xff;
   if (le || be) {
