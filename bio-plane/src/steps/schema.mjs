@@ -4,6 +4,7 @@
    question's reference goes with the question), and the triggers below take a question-placed step with its last
    reference, and every row a step holds with the step, so no row outlives the step it belongs to. The follows are
    their member's own (`sight: "owner"`), keyed by the question. No table names a place. */
+/** @type {string} */
 export const STEPS_SCHEMA = `
 CREATE TABLE IF NOT EXISTS steps (
   step_id       TEXT PRIMARY KEY,
@@ -194,6 +195,7 @@ UPDATE step_proposals SET step_id = NULL WHERE step_id IS NOT NULL AND step_id N
 
 /* R22: each table with how a purge reaches it. `keys` names the column that ties its rows to a bundle; `[]` is reached
    only by the whole-store purge and by the triggers above. */
+/** @type {readonly Readonly<{name: string, keys: string[]}>[]} */
 export const STEPS_TABLES = Object.freeze([
   Object.freeze({ name: "step_refs", keys: ["question_id"] }),
   Object.freeze({ name: "steps", keys: ["project_id"] }),
@@ -203,4 +205,5 @@ export const STEPS_TABLES = Object.freeze([
   Object.freeze({ name: "step_proposals", keys: ["project_id"] }),
 ]);
 /* R16, R22: a member's follows, hers alone. */
+/** @type {string} */
 export const FOLLOWS_TABLE = "question_follows";

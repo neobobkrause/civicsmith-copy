@@ -46,34 +46,69 @@ import { word, localize } from "../setup-words/index.mjs";
 
 export { STEPS_SCHEMA, STEPS_TABLES, FOLLOWS_TABLE, STEPS_CHECKS };
 
+/**
+ * @typedef {Object} StepsRefusal
+ * @property {false} ok
+ * @property {string} reason the refusal's code
+ * @property {string} code the same code
+ * @property {string} check its row's check (`STEPS_CHECKS`)
+ * @property {string} translation its row's words
+ * @property {string} detail what was refused, plainly; nothing was written
+ */
+/**
+ * @typedef {Record<string, any>} StepsAnswer
+ *   an act's or a read's answer: `{ok: true, …}` with the fields its requirement names, or a `StepsRefusal`
+ */
+
 /** The module's name: its tables' declarer, its promotion step, the holder of authority kind `step`. */
+/** @type {string} */
 export const OWNER = "steps";
+/** @type {readonly string[]} R5: a step's states. */
 export const STATES = Object.freeze(["planned", "underway", "ended", "set_aside"]);
-/** R5: the states a step is closed in, and the outcomes a member records. */
+/** @type {readonly string[]} R5: the states a step is closed in. */
 export const CLOSED = Object.freeze(["ended", "set_aside"]);
+/** @type {readonly string[]} R5: the outcomes a member records. */
 export const OUTCOMES = Object.freeze(["helped", "dead_end", "undetermined"]);
-/** R12: what sets a date. */
+/** @type {readonly string[]} R12: what sets a date. */
 export const BASES = Object.freeze(["law", "meeting", "own"]);
+/** @type {number} R12: a date within this many local days answers `nearing: true`. */
 export const NEARING_DAYS = 7;
-/** R13: the kinds of a cost. */
+/** @type {readonly string[]} R13: the kinds of a cost. */
 export const COST_KINDS = Object.freeze(["fee", "purchase"]);
-/** R9: what a step may produce. */
+/** @type {readonly string[]} R9: what a step may produce. */
 export const PRODUCT_KINDS = Object.freeze(["record", "capture", "content", "lead", "connection"]);
-export const WORK_MAX = 500, LEARNED_MAX = 2000, MESSAGE_MAX = 2000, WHY_MAX = 2000, REASON_MAX = 2000, WHAT_MAX = 500, SOURCE_MAX = 500;
-/** R4: the reads' page; R7: the duplicate search's bound, and how many rows it reads at most. */
+/** @type {number} R1: the most characters of a step's work. */
+export const WORK_MAX = 500;
+/** @type {number} R10: the most characters of a learned line. */
+export const LEARNED_MAX = 2000;
+/** @type {number} R15: the most characters of a cost message. */
+export const MESSAGE_MAX = 2000;
+/** @type {number} R24: the most characters of a proposal's why. */
+export const WHY_MAX = 2000;
+/** @type {number} R5, R24: the most characters of a reason a step or a proposal is set aside. */
+export const REASON_MAX = 2000;
+/** @type {number} R13: the most characters of a cost's what. */
+export const WHAT_MAX = 500;
+/** @type {number} R12: the most characters of a date's source. */
+export const SOURCE_MAX = 500;
+/** @type {Readonly<{default: number, max: number}>} R4: the reads' page. */
 export const READ_LIMIT = Object.freeze({ default: 200, max: 1000 });
+/** @type {number} R7: the duplicate search's bound. */
 export const LIKE_MAX = 50;
+/** @type {number} R7: how many rows the duplicate search reads at most. */
 export const LIKE_SCAN = 5000;
-/** R17: the recipients' page; and how many drawing projects one read pages through at most. */
+/** @type {Readonly<{default: number, max: number}>} R17: the recipients' page. */
 export const RECIPIENTS_LIMIT = Object.freeze({ default: 500, max: 1000 });
+/* R17: how many drawing projects one read pages through, a page at a time, at most. */
 const DRAW_PAGE = 500, DRAW_MAX = 10000;
-/** R23: how many later-found entries one `laterFound` read takes at most, oldest first. */
+/** @type {number} R23: how many later-found entries one `laterFound` read takes at most, oldest first. */
 export const LATER_FOUND_SCAN = 5000;
-/** R12 (T46): the most dated steps, and the most reminders, one `stepsDue` reads; a read reaching past it says `truncated`. */
+/** R12 (T46): the most dated steps, and the most reminders, one `stepsDue` reads; a read reaching past it says `truncated`.
+ * @type {number} */
 export const DUE_READ_MAX = 1000;
-/** R30: the most steps one `stepsWaitingOn` answers. */
+/** @type {number} R30: the most steps one `stepsWaitingOn` answers. */
 export const WAITING_ON_MAX = 200;
-/** R26: the figures registered with record-core's counts, one per acceptance form. */
+/** @type {readonly string[]} R26: the figures registered with record-core's counts, one per acceptance form. */
 export const ACCEPTANCE_COUNT_KEYS = Object.freeze(["stepsAcceptedAsProposed", "stepsAcceptedEdited", "stepsAcceptedOwnInstead"]);
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -101,7 +136,9 @@ function finding(code, detail, extra = {}) {
 }
 
 /** R7, R8: work folded for comparison: Unicode-normalised, lower-cased, every run of what is not a letter or a digit one
- *  space. Two steps' work is "the same" when these are equal. */
+ *  space. Two steps' work is "the same" when these are equal.
+ * @param {any} work the work; absent is ""
+ * @returns {string} the folded work */
 export function normaliseWork(work) {
   return String(work ?? "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
@@ -114,7 +151,7 @@ function likeness(a, b) {
   for (const w of A) if (B.has(w)) common++;
   return common / (A.size + B.size - common);
 }
-/** R7: the least likeness a step's work must have to be answered as matching. */
+/** @type {number} R7: the least likeness a step's work must have to be answered as matching. */
 export const LIKE_THRESHOLD = 0.5;
 
 /* Day arithmetic on calendar days, for R12's window. */
@@ -123,7 +160,11 @@ const dayNumber = (d) => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) -
 const instances = new WeakMap();
 const storageOf = (host) => (host && host.storage ? host.storage : host);
 
-/** K61: the one instance per host, made on the first call (`deps` read then only). */
+/** K61: the one instance per host, made on the first call (`deps` read then only).
+ * @param {any} host the Durable Object's state, or its storage
+ * @param {any} [deps] `record`, `membership`, `promotion`, `observationLog`, `legEarning`, `view` and `now`; each absent
+ *   one is made or left out as the module's header says
+ * @returns {Steps} the instance */
 export function stepsOf(host, deps = {}) {
   const storage = storageOf(host);
   let s = instances.get(storage);
@@ -147,6 +188,7 @@ export function stepsOf(host, deps = {}) {
   return s;
 }
 
+/** The steps of one store (K61): every act and read of R1 to R30, made by `stepsOf`. */
 export class Steps {
   #sql; #record; #membership; #log; #legEarning; #host; #viewFn; #now;
   #runHolder = null;                 // R1: {module, fn(by, run) → {enabled_by, principal} | null}
@@ -212,7 +254,11 @@ export class Steps {
   /* ---- registrations (R1, R9, R11) ---- */
 
   /** R1: `ai-runs` registers, once, the read of whether a machine credential holds a run: `fn(by, run)` answers
-   *  `{enabled_by, principal}` (the run's enabling label and the member viewer it acts for) or null. */
+   *  `{enabled_by, principal}` (the run's enabling label and the member viewer it acts for) or null.
+   * @param {string} module the registering module
+   * @param {(by: string, run: string) => any} fn the run's read
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   registerRunHolder(module, fn) {
     const refused = listenerRefusal(this.#runHolder ? { module: this.#runHolder.module } : null, module, fn);
     if (refused) return refused;
@@ -220,7 +266,11 @@ export class Steps {
     return { ok: true, module };
   }
   /** R29: one later module (`action-clocks`, its R16) registers, once, whether it holds a step's date as an action's
-   *  clock entry: `fn({step, byWhen, waits})` answers null or `{entry}`. One date, one reminder. */
+   *  clock entry: `fn({step, byWhen, waits})` answers null or `{entry}`. One date, one reminder.
+   * @param {string} module the registering module
+   * @param {(a: {step: string, byWhen: any, waits: any}) => any} fn the date's read
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   registerDueHolder(module, fn) {
     const refused = listenerRefusal(this.#dueHolder ? { module: this.#dueHolder.module } : null, module, fn);
     if (refused) return refused;
@@ -228,7 +278,12 @@ export class Steps {
     return { ok: true, module };
   }
   /** R11: a later module registers the read of one kind of arrival: `read(id)` answers true (arrived), false, or
-   *  anything else (undetermined). One per kind. */
+   *  anything else (undetermined). One per kind.
+   * @param {string} kind the arrival's kind
+   * @param {(id: string) => any} read the arrival's read
+   * @param {string} [module] the registering module; absent is `kind`
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   registerArrivalSource(kind, read, module = String(kind)) {
     const held = this.#arrivals.get(kind);
     const refused = listenerRefusal(held ? { module: held.module } : null, filled(kind) ? module : "", read, { kind: kind ?? null });
@@ -237,7 +292,12 @@ export class Steps {
     return { ok: true, kind };
   }
   /** R9: the owner of a record id held in its own table (not a bundle: `HYP-`, `CALC-`, …) registers, per prefix,
-   *  whether a viewer sees one: `fn(id, viewer)` true or anything else (not seen). */
+   *  whether a viewer sees one: `fn(id, viewer)` true or anything else (not seen).
+   * @param {string} prefix the record id's prefix
+   * @param {string} module the registering module
+   * @param {(id: string, viewer: any) => any} fn the sight's read
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   registerProductSight(prefix, module, fn) {
     const held = this.#productSight.get(prefix);
     const refused = listenerRefusal(held ? { module: held.module } : null, filled(prefix) ? module : "", fn, { prefix: prefix ?? null });
@@ -490,7 +550,10 @@ export class Steps {
     };
   }
 
-  /** R4: `step({step, viewer})`. */
+  /** R4: `step({step, viewer})`.
+   * @param {{step?: string|null, viewer?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   step({ step = null, viewer = null } = {}) {
     try {
       const row = this.#held(step);
@@ -516,7 +579,10 @@ export class Steps {
   }
 
   /** R4: `stepsOn({question, viewer, state?, after?, limit?})`: the work done on a question; its header answers the
-   *  question's `projects`, leg-earning R14's answer for this viewer. */
+   *  question's `projects`, leg-earning R14's answer for this viewer.
+   * @param {{question?: string|null, viewer?: string|null, state?: string|null, after?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsOn({ question = null, viewer = null, state = null, after = null, limit = undefined } = {}) {
     try {
       if (!this.#questionSeen(question, viewer))
@@ -534,7 +600,10 @@ export class Steps {
     return { undetermined: true, why: word("steps.why.projects_drawing_question") };
   }
 
-  /** R4: `stepsIn({project, viewer, ...})`: a project's own steps, to a viewer at FULL sight of it. */
+  /** R4: `stepsIn({project, viewer, ...})`: a project's own steps, to a viewer at FULL sight of it.
+   * @param {{project?: string|null, viewer?: string|null, state?: string|null, after?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsIn({ project = null, viewer = null, state = null, after = null, limit = undefined } = {}) {
     try {
       const b = filled(project) ? this.#record.bundleInfo(project) : null;
@@ -546,7 +615,10 @@ export class Steps {
     } catch { return noSuchProject(filled(project) ? project : null); }
   }
 
-  /** R4: `stepsOfGroup({viewer, ...})`: the group's own steps, to an active member. */
+  /** R4: `stepsOfGroup({viewer, ...})`: the group's own steps, to an active member.
+   * @param {{viewer?: string|null, state?: string|null, after?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsOfGroup({ viewer = null, state = null, after = null, limit = undefined } = {}) {
     try {
       const rows = this.#rows(`SELECT * FROM steps WHERE place_kind = 'group' ORDER BY step_id`);
@@ -601,7 +673,10 @@ export class Steps {
   }
 
   /** R1: `stepCreate({place, work, byWhen?, project?, by, run?})` records a step at `planned`. A machine names the run
-   *  it holds (`run`). A member is answered R7's matches beside her new step (R8). */
+   *  it holds (`run`). A member is answered R7's matches beside her new step (R8).
+   * @param {{place?: any, work?: string|null, byWhen?: any, project?: string|null, by?: string|null, run?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepCreate({ place = null, work = null, byWhen = null, project = null, by = null, run = null } = {}) {
     if (!filled(work) || chars(work.trim()) > WORK_MAX) return refuse("STEP_NO_WORK", `the work is the doer's words, 1–${WORK_MAX} characters`);
     const c = this.#creator(by, run);
@@ -679,7 +754,10 @@ export class Steps {
 
   /* ---- state and outcome (R5) ---- */
 
-  /** R5: `stepStart({step, by})`: planned to underway; an ended or set-aside step reopens, recorded. */
+  /** R5: `stepStart({step, by})`: planned to underway; an ended or set-aside step reopens, recorded.
+   * @param {{step?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepStart({ step = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepStart");
     if (g.refusal) return g.refusal;
@@ -723,7 +801,10 @@ export class Steps {
   }
 
   /** R5: `stepEnd({step, end, outcomes?, learned?, reason?, by})`: `ended` or `set_aside`. A machine ends only its own
-   *  step, `ended` with every outcome undetermined or `set_aside` with its reason, and writes no learned line. */
+   *  step, `ended` with every outcome undetermined or `set_aside` with its reason, and writes no learned line.
+   * @param {{step?: string|null, end?: string|null, outcomes?: any, learned?: string|null, reason?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepEnd({ step = null, end = null, outcomes = null, learned = null, reason = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepEnd");
     if (g.refusal) return g.refusal;
@@ -752,7 +833,10 @@ export class Steps {
     });
   }
 
-  /** R5: `stepOutcome({step, question?, outcome, by})`: a member sets or revises an outcome, kept with who and when. */
+  /** R5: `stepOutcome({step, question?, outcome, by})`: a member sets or revises an outcome, kept with who and when.
+   * @param {{step?: string|null, question?: string|null, outcome?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepOutcome({ step = null, question = null, outcome = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepOutcome", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -766,7 +850,10 @@ export class Steps {
     });
   }
 
-  /** R10: `stepLearn({step, text, by})`: the member's own words on what was learned, revisable by its writer with history. */
+  /** R10: `stepLearn({step, text, by})`: the member's own words on what was learned, revisable by its writer with history.
+   * @param {{step?: string|null, text?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepLearn({ step = null, text = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepLearn", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -781,7 +868,10 @@ export class Steps {
   /* ---- deletion (R6) ---- */
 
   /** R6: `stepDelete({step, question?, by})`: an untouched step goes outright; a shared one loses only the named
-   *  question's reference, and the last reference's removal deletes it. A deletion leaves no row. */
+   *  question's reference, and the last reference's removal deletes it. A deletion leaves no row.
+   * @param {{step?: string|null, question?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepDelete({ step = null, question = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepDelete");
     if (g.refusal) return g.refusal;
@@ -810,7 +900,10 @@ export class Steps {
   /* ---- shared steps and the duplicate search (R7, R8) ---- */
 
   /** R7: `stepsLike({work, questions?, viewer, limit?})`: the steps the viewer sees whose work matches, open and ended
-   *  alike, best first, at most 50. */
+   *  alike, best first, at most 50.
+   * @param {{work?: string|null, questions?: any, viewer?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsLike({ work = null, questions = null, viewer = null, limit = undefined } = {}) {
     const lim = limitOf(limit, { default: LIKE_MAX, max: LIKE_MAX });
     const norm = normaliseWork(work);
@@ -835,7 +928,10 @@ export class Steps {
     return { ok: true, steps, limit: lim, truncated: found.length > lim || scanned };
   }
 
-  /** R7: `stepRefer({step, question, by})`: a question's reference to an existing step on questions. */
+  /** R7: `stepRefer({step, question, by})`: a question's reference to an existing step on questions.
+   * @param {{step?: string|null, question?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepRefer({ step = null, question = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepRefer");
     if (g.refusal) return g.refusal;
@@ -907,7 +1003,10 @@ export class Steps {
     });
   }
 
-  /** R9: `stepProduct({step, record, by})`: a member ties to a step a record she may see (a chance find). */
+  /** R9: `stepProduct({step, record, by})`: a member ties to a step a record she may see (a chance find).
+   * @param {{step?: string|null, record?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepProduct({ step = null, record = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepProduct", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -919,7 +1018,10 @@ export class Steps {
   }
 
   /** R9: `recordProduct({step, record, by})`: the in-process door for `capture-requests`, `ai-runs`, `run-productions`
-   *  and `control-plane`, which have made the product themselves: its form is checked, and the step must be held. */
+   *  and `control-plane`, which have made the product themselves: its form is checked, and the step must be held.
+   * @param {{step?: string|null, record?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   recordProduct({ step = null, record = null, by = null } = {}) {
     const row = this.#held(step);
     if (!row) return Steps.#noStep(step);
@@ -928,7 +1030,10 @@ export class Steps {
     return this.#tie(row, p, filled(by) ? by : "plane");
   }
 
-  /** R9: `productsOf({step, viewer})`: the products and looks the viewer may see, the rest left out uncounted. */
+  /** R9: `productsOf({step, viewer})`: the products and looks the viewer may see, the rest left out uncounted.
+   * @param {{step?: string|null, viewer?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   productsOf({ step = null, viewer = null } = {}) {
     try {
       const row = this.#held(step);
@@ -942,7 +1047,10 @@ export class Steps {
   }
 
   /** R9: `stepsOf({record, viewer})`: the steps that produced a record, and their questions; none for a record no step
-   *  produced. */
+   *  produced.
+   * @param {{record?: string|null, viewer?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsOf({ record = null, viewer = null } = {}) {
     const p = Steps.#product(record);
     if (p.refusal) return p.refusal;
@@ -986,7 +1094,10 @@ export class Steps {
     return p;
   }
 
-  /** R11: `stepWait({step, on, by})`, `on` one of `{step}`, `{arrival: {kind, id}}`, `{date}`. */
+  /** R11: `stepWait({step, on, by})`, `on` one of `{step}`, `{arrival: {kind, id}}`, `{date}`.
+   * @param {{step?: string|null, on?: any, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepWait({ step = null, on = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepWait");
     if (g.refusal) return g.refusal;
@@ -1020,7 +1131,10 @@ export class Steps {
     });
   }
 
-  /** R11: `stepWaitRemove({wait, by})`: the wait ends, recorded with who and when. */
+  /** R11: `stepWaitRemove({wait, by})`: the wait ends, recorded with who and when.
+   * @param {{wait?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepWaitRemove({ wait = null, by = null } = {}) {
     const w = Number.isSafeInteger(Number(wait)) ? this.#one(`SELECT * FROM step_waits WHERE wait_id = ? AND removed_at IS NULL`, Number(wait)) : null;
     const g = w ? this.#gate(w.step_id, by, "stepWaitRemove") : null;
@@ -1035,7 +1149,10 @@ export class Steps {
   /** R30: `stepsWaitingOn({kind, id})`, in process for `action-clocks`: the steps with a live arrival wait (R11) on
    *  `{kind, id}`, each `{step, byWhen, state}` (`state` as R4 reads it, `waiting` included), at most
    *  `WAITING_ON_MAX` by step id, with `truncated`. It asks no viewer and is never answered to a member; it writes
-   *  nothing and never throws. */
+   *  nothing and never throws.
+   * @param {{kind?: string|null, id?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsWaitingOn({ kind = null, id = null } = {}) {
     if (!filled(kind) || !filled(id)) return { ok: true, steps: [], truncated: false };
     try {
@@ -1051,7 +1168,10 @@ export class Steps {
     } catch { return { ok: true, steps: [], truncated: false }; }
   }
 
-  /** R12: `stepByWhen({step, byWhen, by})`: a member sets (or, with null, clears) the date; she alone is told it is due. */
+  /** R12: `stepByWhen({step, byWhen, by})`: a member sets (or, with null, clears) the date; she alone is told it is due.
+   * @param {{step?: string|null, byWhen?: any, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepByWhen({ step = null, byWhen = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepByWhen", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -1065,7 +1185,10 @@ export class Steps {
     });
   }
 
-  /** R12: `stepReminder({step, at, by})`: a reminder on the day `at` (a calendar day), answered by `stepsDue` to her alone. */
+  /** R12: `stepReminder({step, at, by})`: a reminder on the day `at` (a calendar day), answered by `stepsDue` to her alone.
+   * @param {{step?: string|null, at?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepReminder({ step = null, at = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepReminder", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -1082,7 +1205,10 @@ export class Steps {
    *  date the registered holder holds draws no past-date item (the action's clock entry is the one item); her own
    *  reminders stay. T46: each read takes at most `DUE_READ_MAX` rows (her dated steps not closed, in step order; her
    *  reminders due by that day, in the order she asked them); when either holds more, the answer carries
-   *  `truncated: true` beside `due`, and otherwise no `truncated`, so a bound reached is never silent. */
+   *  `truncated: true` beside `due`, and otherwise no `truncated`, so a bound reached is never silent.
+   * @param {{viewer?: string|null, at?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepsDue({ viewer = null, at = null } = {}) {
     const member = this.#memberOf(viewer);
     const today = filled(at) ? this.#today(at) : null;
@@ -1108,7 +1234,10 @@ export class Steps {
 
   /* ---- money cost (R13–R15) ---- */
 
-  /** R13: `stepCostAdd({step, kind, amount, currency, what, by})`, appended with who and when. */
+  /** R13: `stepCostAdd({step, kind, amount, currency, what, by})`, appended with who and when.
+   * @param {{step?: string|null, kind?: string|null, amount?: string|null, currency?: string|null, what?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepCostAdd({ step = null, kind = null, amount = null, currency = null, what = null, by = null } = {}) {
     const g = this.#gate(step, by, "stepCostAdd", { memberOnly: true });
     if (g.refusal) return g.refusal;
@@ -1125,7 +1254,10 @@ export class Steps {
     });
   }
 
-  /** R13: `stepCostRemove({cost, by})`, by its writer only, recorded. */
+  /** R13: `stepCostRemove({cost, by})`, by its writer only, recorded.
+   * @param {{cost?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepCostRemove({ cost = null, by = null } = {}) {
     const c = Number.isSafeInteger(Number(cost)) ? this.#one(`SELECT * FROM step_costs WHERE cost_id = ? AND removed_at IS NULL`, Number(cost)) : null;
     const a = this.#actor(by);
@@ -1157,7 +1289,10 @@ export class Steps {
   }
 
   /** R14: `costShares({viewer, at})`: to each owner of each project sharing a costed step, the step's totals and the
-   *  sharing projects, with a key stable per step, totals and project set. */
+   *  sharing projects, with a key stable per step, totals and project set.
+   * @param {{viewer?: string|null, at?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   costShares({ viewer = null, at = null } = {}) {
     void at;
     const member = this.#memberOf(viewer);
@@ -1177,7 +1312,10 @@ export class Steps {
   }
 
   /** R15: `costMessage({step, text, by})`: an owner of a project R14 answers for the step relays her text, once, to the
-   *  owners of each other such project. */
+   *  owners of each other such project.
+   * @param {{step?: string|null, text?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   costMessage({ step = null, text = null, by = null } = {}) {
     const a = this.#actor(by);
     if (a && a.machine) return refuse("STEP_MEMBER_ONLY", "a cost message is a member's own words");
@@ -1198,7 +1336,10 @@ export class Steps {
   }
 
   /** R15: `costMessages({viewer})`: the messages relayed to her, newest first, each with its text and its writer's
-   *  handle, naming no project. */
+   *  handle, naming no project.
+   * @param {{viewer?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   costMessages({ viewer = null } = {}) {
     const member = this.#memberOf(viewer);
     if (!member) return { ok: true, messages: [] };
@@ -1210,7 +1351,10 @@ export class Steps {
 
   /* ---- following a question (R16, R17) ---- */
 
-  /** R16: `questionFollow({question, on, by})`: a member's own choice to follow a question she may see, or to stop. */
+  /** R16: `questionFollow({question, on, by})`: a member's own choice to follow a question she may see, or to stop.
+   * @param {{question?: string|null, on?: any, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   questionFollow({ question = null, on = null, by = null } = {}) {
     const a = this.#actor(by);
     if (a && a.machine) return refuse("STEP_MEMBER_ONLY", "following a question is a member's own choice");
@@ -1225,7 +1369,10 @@ export class Steps {
     });
   }
 
-  /** R16: `following({question, viewer})`: her own choice, to her alone. */
+  /** R16: `following({question, viewer})`: her own choice, to her alone.
+   * @param {{question?: string|null, viewer?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   following({ question = null, viewer = null } = {}) {
     const member = this.#memberOf(viewer);
     if (!member || !this.#questionSeen(question, viewer))
@@ -1247,7 +1394,10 @@ export class Steps {
   }
 
   /** R17: `findRecipients({question, after?, limit?})` (in-process): the joined participants of every project drawing
-   *  on the question, less those who stopped following it, plus those who chose to, each while she may see it. */
+   *  on the question, less those who stopped following it, plus those who chose to, each while she may see it.
+   * @param {{question?: string|null, after?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   findRecipients({ question = null, after = null, limit = undefined } = {}) {
     const lim = limitOf(limit, RECIPIENTS_LIMIT);
     let all = null;
@@ -1261,7 +1411,9 @@ export class Steps {
   /* ---- data found later (R23) ---- */
 
   /** R23 (observation-log R37): an earlier look made for a step, answered by a `PRESENT` at its subject and level. The
-   *  entry keeps both instants: `at`, when what arrived was logged, and `looked_at`, when the step looked (T44). */
+   *  entry keeps both instants: `at`, when what arrived was logged, and `looked_at`, when the step looked (T44).
+   * @param {{earlier?: any, observation?: any}} [args]
+   */
   lookAnswered({ earlier = null, observation = null } = {}) {
     if (!isObj(earlier) || !isObj(observation) || earlier.authority_kind !== "step") return;
     if (!this.#held(earlier.authority)) return;
@@ -1272,7 +1424,10 @@ export class Steps {
   /** R23: `laterFound({viewer, at})`, for `notice-producers`: each entry once, to each of R17's recipients of a
    *  referring question who sees both the step and what arrived, and to the member who did the step. Each entry answers
    *  `at` (what arrived) and `looked_at` (the look). Entries logged after `at` wait for a later call; at most
-   *  `LATER_FOUND_SCAN` entries are read, and `truncated` says when more are held. */
+   *  `LATER_FOUND_SCAN` entries are read, and `truncated` says when more are held.
+   * @param {{viewer?: string|null, at?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   laterFound({ viewer = null, at = null } = {}) {
     const member = this.#memberOf(viewer);
     if (!member) return { ok: true, found: [], truncated: false };
@@ -1304,7 +1459,10 @@ export class Steps {
   /* ---- a proposed step, accepted (R24, R26) ---- */
 
   /** R24: `stepPropose({place, work, why, run, by})`: a machine's or an assistant's proposed step, held apart and
-   *  labelled the system's; never a step until a member accepts it. */
+   *  labelled the system's; never a step until a member accepts it.
+   * @param {{place?: any, work?: string|null, why?: string|null, run?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepPropose({ place = null, work = null, why = null, run = null, by = null } = {}) {
     if (!isMachineIdentity(by)) return refuse("STEP_PROPOSE_NOT_A_MACHINE", "a proposal is the system's or an assistant's; a member creates a step themselves");
     const c = this.#creator(by, run);
@@ -1339,7 +1497,10 @@ export class Steps {
              ...(pr.status !== "proposed" ? { form: pr.form, step: pr.step_id, reason: pr.reason, decided_by: this.#handle(pr.decided_by), decided_at: pr.decided_at } : {}) };
   }
 
-  /** R24: `stepProposals({viewer, after?, limit?})`: the proposals the viewer sees, a set-aside one with its reason. */
+  /** R24: `stepProposals({viewer, after?, limit?})`: the proposals the viewer sees, a set-aside one with its reason.
+   * @param {{viewer?: string|null, after?: string|null, limit?: any}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepProposals({ viewer = null, after = null, limit = undefined } = {}) {
     const lim = limitOf(limit, READ_LIMIT);
     const from = Number.isSafeInteger(Number(after)) && after !== null && after !== "" ? Number(after) : 0;
@@ -1376,7 +1537,10 @@ export class Steps {
   }
 
   /** R24: `stepAccept({proposal, form, work?, project?, reason?, by})`: a member takes a proposal up as proposed, edited
-   *  with her `work`, or sets it aside (`reason`) for her own step; the record keeps which (record-grammar R52). */
+   *  with her `work`, or sets it aside (`reason`) for her own step; the record keeps which (record-grammar R52).
+   * @param {{proposal?: string|null, form?: string|null, work?: string|null, project?: string|null, reason?: string|null, by?: string|null}} [args]
+   * @returns {StepsAnswer} `{ok: true, …}`, or a refusal (`StepsRefusal`)
+   */
   stepAccept({ proposal = null, form = null, work = null, project = null, reason = null, by = null } = {}) {
     const a = this.#actor(by);
     if (a && a.machine) return refuse("STEP_MEMBER_ONLY", "accepting a proposed step is a member's act");
@@ -1402,7 +1566,9 @@ export class Steps {
     });
   }
 
-  /** R26: `acceptanceCounts()`: group-wide only, how many proposals were accepted in each form, naming no one. */
+  /** R26: `acceptanceCounts()`: group-wide only, how many proposals were accepted in each form, naming no one.
+   * @returns {{as_proposed: number, edited: number, own_instead: number}}
+   */
   acceptanceCounts() {
     const out = { as_proposed: 0, edited: 0, own_instead: 0 };
     try {
@@ -1415,12 +1581,19 @@ export class Steps {
   /* ---- registrations' answers (R18) ---- */
 
   /** R18 (observation-log R13): a row of authority kind `step` is visible when the viewer sees the step; a step not
-   *  held withholds the row. */
+   *  held withholds the row.
+   * @param {any} authority the step id the row names
+   * @param {any} viewer the control plane's stamp
+   * @returns {boolean} true when the viewer sees the step
+   */
   resolveStepAuthority(authority, viewer) {
     try { const row = this.#held(authority); return !!row && this.#seen(row, viewer); } catch { return false; }
   }
 
-  /** R18 (promotion R39): no leg's target is a step, refused inside `BASIS_REFUSED` as `STEP_NOT_A_LEG`. */
+  /** R18 (promotion R39): no leg's target is a step, refused inside `BASIS_REFUSED` as `STEP_NOT_A_LEG`.
+   * @param {any} c the promotion's context (promotion R39)
+   * @returns {StepsAnswer|null} null when no leg rests on a step, else `BASIS_REFUSED` with its findings
+   */
   check(c) {
     if (!isObj(c) || !isObj(c.docFm) || !Array.isArray(c.docFm.basis)) return null;
     const findings = [];

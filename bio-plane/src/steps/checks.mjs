@@ -9,6 +9,8 @@ import { word } from "../setup-words/index.mjs";
 
 const at = (...fns) => fns.map((f) => `src/steps/index.mjs ${f}`).join("; ");
 
+/** The module's refusal rows, keyed by code: each `{check, where, translation}`.
+ * @type {Record<string, {check: string, where: string, translation: string}>} */
 export const STEPS_CHECKS = {
   STEP_NO_WORK: { check: "C-142.1", where: at("stepCreate", "stepPropose", "stepAccept"),
     translation: word("refusal.STEP_NO_WORK") },
