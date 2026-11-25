@@ -46,15 +46,13 @@ test("R68 no write changes a table or a row: adding, replacing or deleting a cod
   for (const [name, table] of tables()) {
     const before = JSON.stringify(table);
     const [code] = Object.keys(table);
-    const writes = [
-      () => { table.FORGED_CODE = { check: "C-0.0", where: "x", translation: "x" }; },
-      () => { table[code] = { check: "C-0.0", where: "x", translation: "x" }; },
-      () => { delete table[code]; },
-      () => { table[code].translation = "forged"; },
-      () => { table[code].check = "C-0.0"; },
-      () => { delete table[code].where; },
-    ];
-    for (const w of writes) assert.throws(w, TypeError, `${name}: ${w}`);
+    /* each write is made inside its own assertion, so that it reads as the refused write it is */
+    assert.throws(() => { table.FORGED_CODE = { check: "C-0.0", where: "x", translation: "x" }; }, TypeError, `${name}: a code added`);
+    assert.throws(() => { table[code] = { check: "C-0.0", where: "x", translation: "x" }; }, TypeError, `${name}: a code replaced`);
+    assert.throws(() => { delete table[code]; }, TypeError, `${name}: a code deleted`);
+    assert.throws(() => { table[code].translation = "forged"; }, TypeError, `${name}: a translation changed`);
+    assert.throws(() => { table[code].check = "C-0.0"; }, TypeError, `${name}: a check changed`);
+    assert.throws(() => { delete table[code].where; }, TypeError, `${name}: a where deleted`);
     assert.equal(JSON.stringify(table), before, `${name} unchanged`);
   }
 });

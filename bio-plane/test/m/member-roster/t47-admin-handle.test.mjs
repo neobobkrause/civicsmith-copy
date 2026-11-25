@@ -29,7 +29,7 @@ test("R57 enrolling as admin, in any case or with spaces, is refused and writes 
   /* through the op, as the control plane routes it */
   assert.equal((await w.ops("", { invite: w.inv, handle: "admin", password: PASSWORD }).enroll()).reason, "HANDLE_TAKEN");
   assert.equal(tables(w), before, "nothing written");
-  assert.equal(w.m.memberFacts("cal").status, "invited");
+  assert.equal(w.m.memberFacts("cal")?.status, "invited");
   assert.equal(w.m.memberByHandle("admin"), null, "no member holds the handle admin");
   /* control: another handle is accepted on the same invitation */
   assert.deepEqual(await w.m.enroll({ invite: w.inv, handle: "administrator", password: PASSWORD }),
