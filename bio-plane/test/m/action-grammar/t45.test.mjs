@@ -21,7 +21,7 @@ const SHA = "a".repeat(64);
 const base = (o = {}) => ({ ...structuredClone(DOCS["clean-records-request"]), ...o });
 const sent = (o = {}) => ({ direction: "sent", at: "2026-06-01", artifact_sha: SHA, ...o });
 const recv = (o = {}) => ({ direction: "received", at: "2026-06-10", account: "they wrote back", author: "member:a", ...o });
-const TEST_VIEW = (() => { const c = J.combine(["test-port-ellery"]); assert.ok(c.ok); return c.view; })();
+const TEST_VIEW = (() => { const c = J.combine(["test-port-ellery"]); if (!c.ok || !c.view) throw new Error("the test profile does not combine"); return c.view; })();
 const freeze = (o) => { if (o && typeof o === "object") { Object.values(o).forEach(freeze); Object.freeze(o); } return o; };
 const JUNK = [undefined, null, 0, "x", [], {}, [null], { ground: 5 }, { object_type: "action", copied: 5, partners: {}, press_terms: [],
   correspondence: [null, 5, { office_status: 5, found_elsewhere: [], speaker: {} }], reply_owed: [], follows_action: "x" }];
