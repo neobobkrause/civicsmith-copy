@@ -300,7 +300,9 @@ export function scanNotes(part, sc) {
 /** A text with more replacement characters than this share of its characters is `partial` (ooxml R36). */
 export const REPLACED_RATIO_MAX = 0.005;
 
-/** A text part's bytes as text: ooxml's `decodeText` when it is there, else the local one of the same contract. */
+/** A text part's bytes as text: ooxml's `decodeText` when it is there, else the local one of the same contract.
+ *  @returns {import("./ooxml.mjs").DecodedText|import("./ooxml.mjs").Refusal} ooxml R36's answer; an encoding it throws on
+ *  is the refusal `ENCODING_UNSUPPORTED`, naming the part */
 export function decodePart(bytes, part, declared = null) {
   try {
     return OOXML.decodeText(bytes, { declared, name: part, kind: "xml" });
