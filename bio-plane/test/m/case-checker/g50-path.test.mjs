@@ -145,11 +145,19 @@ test("R19 (G50 control): a one-capture case file's files state no capture, and i
 
 test("R2 R8 R19 (G50 control, R-OLD): the verdicts recorded at the G50 base over two stored /3 case files are byte-equal now, g1's original_carried departure included", async () => {
   const golden = JSON.parse(readFileSync(new URL("./g50-old-verdicts.json", import.meta.url), "utf8"));
+  /* The checks' version is `promotion`'s stamp, which moves on its own: a verdict recorded at another stamp is compared at
+     today's, its version fields and R7's version sentence as this checker states them (a different but still valid answer). */
+  const atToday = (v) => {
+    const own = CC.CHECKER_VERSIONS.checks_version, pc = v.publication_checks;
+    return { ...v, checker: { ...v.checker, checks_version: own },
+      publication_checks: { ...pc, checker_version: own,
+        statement: pc.stated_version === own ? null : CC.CHECKS_VERSION_STATEMENT(pc.stated_version, own) } };
+  };
   for (const g of ["g1", "g2"]) {
     const parts = golden[g].parts_b64.map((b) => new Uint8Array(Buffer.from(b, "base64")));
     assert.equal(golden[g].format, "bio-case-file/3", g);
     const now = await CC.checkCaseFile({ parts });
-    assert.equal(canonicalJson(now), canonicalJson(golden[g].verdict), g);
+    assert.equal(canonicalJson(now), canonicalJson(atToday(golden[g].verdict)), g);
     assert.equal(now.format, "bio-case-file/3");
   }
   /* g1 departs for the included row's document beside the copy (the departure is judged by ref in /3), g2 does not */
