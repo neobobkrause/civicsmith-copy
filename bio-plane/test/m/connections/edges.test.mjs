@@ -1,7 +1,7 @@
 /* connections: edges between bundles (R19–R23), the `refs` read contract (R58) and the link projection (R24–R29, R32). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V, MACHINE } from "./fixture.mjs";
+import { world, V, MACHINE, heldText, heldPaths } from "./fixture.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 
 const A = "INFO-2026-0001-a", B = "INFO-2026-0002-b", C = "INFO-2026-0003-c";
@@ -230,14 +230,14 @@ test("R28: a projected links_to edge becomes a references[] entry of the source 
   const { s } = linked(w);
   const r = w.k.projectLinks({ sourceCapture: s, viewer: MACHINE, identity: V("alice") });
   assert.equal(r.promoted, true); assert.equal(r.references_written, 1);
-  const md = w.record.readFile(A, "bundle.md").text;
+  const md = heldText(w.record, A, "bundle.md");
   /* C-6.1's links_to arm: the entry is the source's on its face, with the address and a contemporaneity verdict. */
   assert.match(md, /- rel: links_to\n    target: INFO-2026-0002-b\n    status: confirmed\n    asserted_by: source\n    address: "https:\/\/example.org\/b"\n    verdict: (contemporaneous|superseded|undetermined)\n    note: "https:\/\/example.org\/b"/);
   assert.match(md, /## Session Log[\s\S]*member:alice/);
-  assert.equal(w.record.readFile(A, "snapshots/c0.txt").text, "source", "every other file carried");
+  assert.equal(heldText(w.record, A, "snapshots/c0.txt"), "source", "every other file carried");
   /* The source is promoted again, carrying its document: the edge stays. */
   const head = w.record.head(A);
-  const files = w.record.livePaths(A).map((p) => ({ path: p, text: w.record.readFile(A, p).text }));
+  const files = heldPaths(w.record, A).map((p) => ({ path: p, text: heldText(w.record, A, p) }));
   assert.equal(w.promotion.promote({ bundleId: A, base: head.bundleSha, snapKey: "again", author: "member:alice", files,
                                      meta: { object_type: "information" } }).ok, true);
   assert.deepEqual(w.rows(`SELECT target_id, kind FROM refs WHERE bundle_id=?`, A), [{ target_id: B, kind: "links_to" }]);
@@ -259,7 +259,7 @@ test("R29: when a target is promoted, the resolved links that point at it become
   w.doc(C, [later]);
   await w.settle(); await w.settle();
   assert.deepEqual(w.rows(`SELECT target_id, kind FROM refs WHERE bundle_id=?`, A), [{ target_id: C, kind: "links_to" }]);
-  assert.match(w.record.readFile(A, "bundle.md").text, /target: INFO-2026-0003-c/);
+  assert.match(heldText(w.record, A, "bundle.md"), /target: INFO-2026-0003-c/);
 });
 
 test("R32, R54: a source's own link between two held documents is an A connection, asserted by the source, apart from derived rows; undetermined timing labelled", () => {

@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash, webcrypto } from "node:crypto";
-import { world, V, MACHINE } from "./fixture.mjs";
+import { world, V, MACHINE, heldText, heldPaths } from "./fixture.mjs";
 import { CONNECTIONS_OPS, connectionsOp } from "../../../src/connections/ops.mjs";
 import { connectionsOps } from "../../../src/connections/index.mjs";
 import { checkBundle } from "../../../src/record-grammar/bundle.mjs";
@@ -198,7 +198,7 @@ test("R24, R28 (legacy-index map §4.4 move): end to end, the op projects the so
   assert.deepEqual([r.body.skipped_self, r.body.unresolved], [1, 1]);
   assert.deepEqual(w.rows(`SELECT bundle_id, target_id, kind FROM refs WHERE kind='links_to'`),
     [{ bundle_id: A, target_id: B, kind: "links_to" }]);
-  const md = w.record.readFile(A, "bundle.md").text;
+  const md = heldText(w.record, A, "bundle.md");
   assert.match(md, /member:alice/, "the log names the stamped identity");
   assert.equal(md.includes("mallory"), false, "never the query string's");
 });
@@ -281,13 +281,13 @@ test("R24, R28 (C-6.1's links_to arm; converted, subresources.test \"a links_to 
   const { s } = await linked(w);
   const r = w.k.projectLinks({ sourceCapture: s, viewer: MACHINE, identity: V("alice") });
   assert.equal(r.references_written, 1);
-  const refs = parseFrontmatter(w.record.readFile(A, "bundle.md").text).data.references;
+  const refs = parseFrontmatter(heldText(w.record, A, "bundle.md")).data?.references ?? [];
   const entry = refs.find((x) => x.rel === "links_to" && x.target === B);
   assert.ok(entry, "the edge is a references[] entry");
   assert.deepEqual({ asserted_by: entry.asserted_by, address: entry.address, verdict: entry.verdict },
     { asserted_by: "source", address: r.edges[0].address, verdict: r.edges[0].verdict },
     "R24: asserted by the source — stated on the entry, with the address the source wrote and its verdict");
-  const files = new Map(w.record.livePaths(A).map((p) => [p, w.record.readFile(A, p).text]));
+  const files = new Map(heldPaths(w.record, A).map((p) => [p, heldText(w.record, A, p)]));
   /* record-grammar's `checkBundle` (R39): the links_to arm is its structural C-6.1, which runs with no grammar
      registered; no type grammar is passed, since none of their findings is asked about here. */
   const { findings } = await checkBundle({ folderName: A, files,
