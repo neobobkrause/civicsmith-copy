@@ -239,9 +239,7 @@ test("R39 one home per fact at the store's gate: no amount, no payer or payee, n
 
 test("R6 R7 the one-site answers noSuchEvent and noSuchDatedFact (K1568, K1569): reason and code, the row's translation, the id as asked, one fixed detail; extra adds and never replaces; every act answers through them; never throws", async () => {
   const { noSuchEvent, noSuchDatedFact, EVENT_CHECKS } = await import("../../../src/events/index.mjs");
-  /** @type {Array<[(id: any, extra?: any) => Record<string, any>, string, string]>} */
-  const cases = [[noSuchEvent, "NO_SUCH_EVENT", "event_id"], [noSuchDatedFact, "NO_SUCH_DATED_FACT", "dated_fact_id"]];
-  for (const [fn, code, idKey] of cases) {
+  for (const [fn, code, idKey] of [[noSuchEvent, "NO_SUCH_EVENT", "event_id"], [noSuchDatedFact, "NO_SUCH_DATED_FACT", "dated_fact_id"]]) {
     const a = fn("X-1");
     assert.deepEqual([a.ok, a.reason, a.code, a[idKey], a.translation], [false, code, code, "X-1", EVENT_CHECKS[code].translation]);
     assert.ok(a.detail && !/oakland|alameda/i.test(a.translation + a.detail));

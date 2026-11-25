@@ -13,9 +13,7 @@ import { canonicalExtent } from "../content/index.mjs";
 import { isMachineIdentity } from "../record-grammar/index.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
-/** @type {readonly string[]} the event kinds that are uses of a power (R43, R44): discretion, waiver, assessment */
 export const USE_KINDS = Object.freeze(["discretion", "waiver", "assessment"]);
-/** @type {readonly string[]} the closed outcomes of an act of discretion or a waiver (R43) */
 export const OUTCOMES = Object.freeze(["granted", "denied", "partly_granted", "other"]);
 export const PROVISION_MAX = 200;
 export const WORDS_MAX = 300;

@@ -1,7 +1,6 @@
 /* events' tables (T33-26; `build/requirements/events.md`), created by `migrate` (index.mjs) at every boot, idempotently.
    Two objects, held apart (ladders §2 EVENTS): a DATED FACT is a document's own stated date; an EVENT is a happening
    one or more records attest. Nothing here holds an amount, an absence, a sequence or the group's own acts (R39, R41). */
-/** @type {string} the SQL that makes this module's tables and indexes (R37, R40, R47), run at every boot */
 export const EVENTS_SCHEMA = `
 -- R1-R5: A DOCUMENT'S OWN DATE. Keyed by its digest over (capture, extent, source row, kind, value), so a repeat writes
 -- nothing. bundle_id is the capture's home when it was held (the sight of the row, R40). grade is the capture's own
