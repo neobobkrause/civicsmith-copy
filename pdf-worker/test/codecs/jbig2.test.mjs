@@ -24,9 +24,15 @@ import { MqDecoder } from "../../src/mq.mjs";
 
 const FIX = JSON.parse(readFileSync(new URL("../fixtures/jbig2-variants.json", import.meta.url), "utf8"));
 const V = FIX.variants;
+/** A fixture field's bytes, or null where the fixture has none (a stream with no globals).
+ * @type {(s: string | null | undefined) => Uint8Array | null} */
 const b64 = (s) => (s == null ? null : new Uint8Array(Buffer.from(s, "base64")));
+/** A fixture field the fixture always holds, as bytes.
+ * @param {string} s
+ * @returns {Uint8Array} */
+const bytesOf = (s) => new Uint8Array(Buffer.from(s, "base64"));
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-const decode = (v) => decodeJbig2(b64(v.stream_b64), b64(v.globals_b64));
+const decode = (v) => decodeJbig2(bytesOf(v.stream_b64), b64(v.globals_b64));
 /** The complement, each row's padding bits cleared: the fixture's `pdf_samples_sha256`. */
 function pdfSamples(packed, w, h) {
   const rb = Math.ceil(w / 8), mask = w % 8 ? (0xff << (8 - (w % 8))) & 0xff : 0xff;
@@ -91,7 +97,7 @@ test("R3 the production scanner's pages, with their JBIG2Globals, decode to jbig
   for (const v of pages) {
     assert.ok(v.globals_b64, `${v.name} carries its globals`);
     assert.equal(sha(decode(v).packed), v.jbig2dec_sha256, v.name);
-    assert.throws(() => decodeJbig2(b64(v.stream_b64), null), Jbig2Refusal, `${v.name} without its globals is refused, not guessed`);
+    assert.throws(() => decodeJbig2(bytesOf(v.stream_b64), null), Jbig2Refusal, `${v.name} without its globals is refused, not guessed`);
   }
 });
 
@@ -116,7 +122,7 @@ test("R3 what it cannot decode is a Jbig2Refusal naming the feature (a key of JB
 
 test("R3 a stream cut short is refused TRUNCATED, never padded into a picture", () => {
   const page = V.find((v) => v.name === "ordinance-page-2");
-  const s = b64(page.stream_b64);
+  const s = bytesOf(page.stream_b64);
   for (const cut of [s.length >> 1, s.length - 40, 45]) {
     let e;
     try { decodeJbig2(s.subarray(0, cut), b64(page.globals_b64)); } catch (x) { e = x; }
@@ -126,7 +132,7 @@ test("R3 a stream cut short is refused TRUNCATED, never padded into a picture", 
 
 /** A fixture's stream with its page information and its first generic region declaring `h` rows, the data unchanged. */
 function declaringRows(v, h) {
-  const d = Uint8Array.from(b64(v.stream_b64));
+  const d = Uint8Array.from(bytesOf(v.stream_b64));
   const u32 = (p) => ((d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0;
   const put = (p, n) => { d[p] = n >>> 24; d[p + 1] = (n >>> 16) & 255; d[p + 2] = (n >>> 8) & 255; d[p + 3] = n & 255; };
   for (let p = 0; p < d.length;) {

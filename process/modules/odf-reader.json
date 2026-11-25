@@ -14,7 +14,6 @@
     "ooxml",
     "office-readers",
     "setup-words",
-    "runtime-limits",
-    "test-support"
+    "runtime-limits"
   ]
 }

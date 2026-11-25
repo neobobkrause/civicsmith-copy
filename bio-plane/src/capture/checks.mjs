@@ -29,6 +29,7 @@ import { localize } from "../setup-words/index.mjs";
 const at = (fn, region) => `src/capture/ops.mjs ${fn} > ${region}`;
 const inIndex = (fn, region) => `src/capture/index.mjs ${fn} > ${region}`;
 
+/** @type {Readonly<Record<string, Readonly<{check: string, where: string, translation: string}>>>} this module's refusal rows by code (R37): each its catalogue row, where it is minted and its sentence */
 export const CAPTURE_CHECKS = Object.freeze({
   EVIDENCE_NOT_HELD: Object.freeze({
     check: 'C-118.1', where: at("evidenceAbsent", "is-evidence-held"),

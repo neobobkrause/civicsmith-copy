@@ -9,6 +9,7 @@
  * Header words, and the forms of each code, are the view's (R12). */
 import { headerWords, codeForms } from "./view.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { BudgetCtx, BudgetLine, BudgetGrouping, LinesReading } from "./index.mjs" */
 
 /** How many of a sheet's first rows are searched for its header row. */
 export const HEADER_SEARCH_ROWS = 20;
@@ -78,7 +79,9 @@ export function readCode(ctx, column, written) {
                              : localize("budget-doctypes.lines.the_view_holds_no_form", "the view holds no form for a {column} code", { column: String(column) }) };
 }
 
-/** R7, R8: the budget lines of every sheet supplied. */
+/** R7, R8: the budget lines of every sheet supplied.
+ * @param {BudgetCtx} ctx
+ * @returns {LinesReading} */
 export function readLines(ctx) {
   const supplied = ctx.supplied && typeof ctx.supplied === "object" ? ctx.supplied : null;
   const sheets = supplied && Array.isArray(supplied.sheets) ? supplied.sheets : [];
@@ -159,7 +162,9 @@ export function rowKey(r) {
 
 /** R8: each department as the table states it for one period, with the org
  *  codes its rows place under it. Never carried across periods; never merged
- *  by name across periods. */
+ *  by name across periods.
+ * @param {BudgetLine[]} rows
+ * @returns {BudgetGrouping[]} */
 export function groupings(rows) {
   const by = new Map();
   for (const r of rows) {

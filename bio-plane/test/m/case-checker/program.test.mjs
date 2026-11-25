@@ -9,7 +9,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import * as CC from "../../../src/case-checker/index.mjs";
-import { buildProgram, programModule } from "../../../src/case-checker/build-program.mjs";
+import { buildProgram, programModule, programWords } from "../../../src/case-checker/build-program.mjs";
+import { WORD_ROWS } from "../../../src/setup-words/rows.mjs";
+import { runInNewContext } from "node:vm";
 import { canonicalJson } from "../../../src/record-grammar/json.mjs";
 import { unresolvableSpecifiers } from "../../../scripts/fleet-bundle.mjs";
 import * as CG from "../../../src/case-grammar/index.mjs";
@@ -27,6 +29,39 @@ test("R13: the build gives the same bytes every time, and the committed program.
   assert.ok(P.text === one.text);
   assert.equal(P.body_sha256, one.body_sha256);
   assert.equal(programModule(one), programModule(two));
+});
+
+/* The word rows a program text carries: its bundled `setup-words/rows.mjs`, evaluated apart from the rest of it. */
+const rowsCarried = (text) => {
+  const from = text.indexOf("var WORD_ROWS = ");
+  const to = text.indexOf("\n]);\n", from);
+  assert.ok(from >= 0 && to > from, "the program carries a word table");
+  return Array.from(runInNewContext(`(${text.slice(from + "var WORD_ROWS = ".length, to + 3)})`.replace(/;\)$/, ")")), (r) => [...r]);
+};
+
+test("R26: the program carries as data only the word rows its own code reads, R26's refusal keys among them, each as the table holds it", async () => {
+  const built = await buildProgram();
+  const carried = rowsCarried(built.text);
+  assert.deepEqual(carried.map((r) => r[0]), built.words);
+  for (const k of CC.STANDARDS_USE_KEYS) assert.ok(built.words.includes(k), `${k}: R26's row is carried`);
+  const table = new Map(WORD_ROWS.map((r) => [r[0], r]));
+  for (const r of carried) { const row = table.get(r[0]); assert.ok(row, `${r[0]}: a row of the table`); assert.deepEqual(r, [...row], `${r[0]}: carried as the table holds it`); }
+  /* bound: the table's order is kept, and far fewer rows than the whole table are carried */
+  const order = WORD_ROWS.map((r) => r[0]).filter((k) => built.words.includes(k));
+  assert.deepEqual(built.words, order);
+  assert.equal(built.words_total, WORD_ROWS.length);
+  assert.ok(built.words.length < WORD_ROWS.length / 4, `${built.words.length} of ${WORD_ROWS.length} rows`);
+  /* the committed program carries the same rows */
+  assert.deepEqual(rowsCarried(P.text).map((r) => r[0]), built.words);
+});
+
+test("R26 (error): a word call whose key has no literal prefix makes the build fail and name the call, never carry a program that might lack a row", async () => {
+  const probe = { metafile: { inputs: { "src/setup-words/rows.mjs": {}, "test/m/case-checker/word-unbounded.mjs": {} } } };
+  await assert.rejects(programWords(probe), (e) => /cannot be bounded/.test(e.message) && /word-unbounded\.mjs:7/.test(e.message));
+  /* control: the same read in the program's entry (R26's `says.key`) is allowed, and R26's keys are carried */
+  const entry = { metafile: { inputs: { "src/setup-words/rows.mjs": {}, "src/case-checker/main.mjs": {} } } };
+  const w = await programWords(entry);
+  for (const k of CC.STANDARDS_USE_KEYS) assert.ok(w.keys.includes(k), k);
 });
 
 test("R13: the program file carries its own SHA-256: its first line names the SHA-256 of everything after it, and the served SHA-256 is the whole file's", () => {

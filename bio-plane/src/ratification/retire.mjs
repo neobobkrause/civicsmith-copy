@@ -37,6 +37,9 @@ import { localize } from "../setup-words/index.mjs";
 
 /* R28: a retirement's reason is one line of a Session Log entry and a `state_history` blurb, bounded as an edge's
    reason is. */
+/**
+ * @type {number}
+ */
 export const EDGE_REASON_MAX = 160;
 
 const one = (sql, q, ...a) => [...sql.exec(q, ...a)][0] ?? null;

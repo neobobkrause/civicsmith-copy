@@ -20,23 +20,29 @@ const DCT = load("../fixtures/dct-variants.json"), JB = load("../fixtures/jbig2-
 const JPX = load("../fixtures/jpx-variants.json"), CC = load("fixtures/ccitt-variants.json");
 const PNG = load("fixtures/png-variants.json");
 const pngFile = (name) => new Uint8Array(readFileSync(new URL(`fixtures/pngsuite/${name}`, import.meta.url)));
+/** A fixture field's bytes, or null where the fixture has none (a stream with no globals).
+ * @type {(s: string | null | undefined) => Uint8Array | null} */
 const b64 = (s) => (s == null ? null : new Uint8Array(Buffer.from(s, "base64")));
+/** A fixture field the fixture always holds, as bytes.
+ * @param {string} s
+ * @returns {Uint8Array} */
+const bytesOf = (s) => new Uint8Array(Buffer.from(s, "base64"));
 const sha = (b) => createHash("sha256").update(b).digest("hex");
 
 /** Every fixture of every codec as [codec, name, () => answer], answer being the
  *  decode's result or the refusal it threw. */
 const CALLS = [
-  ...DCT.variants.map((v) => ["dct", v.name, () => decodeBaselineJpeg(b64(v.jpeg_b64), { rotate: v.rotate })]),
-  ...CC.variants.map((v) => ["ccitt", v.name, () => ccittDecode(b64(v.data_b64), { K: v.K, columns: v.columns, rows: v.rows, byteAlign: v.byteAlign })]),
-  ...JB.variants.map((v) => ["jbig2", v.name, () => decodeJbig2(b64(v.stream_b64), b64(v.globals_b64))]),
-  ...JPX.variants.map((v) => ["jpx", v.name, () => decodeJpx(b64(v.data_b64))]),
+  ...DCT.variants.map((v) => ["dct", v.name, () => decodeBaselineJpeg(bytesOf(v.jpeg_b64), { rotate: v.rotate })]),
+  ...CC.variants.map((v) => ["ccitt", v.name, () => ccittDecode(bytesOf(v.data_b64), { K: v.K, columns: v.columns, rows: v.rows, byteAlign: v.byteAlign })]),
+  ...JB.variants.map((v) => ["jbig2", v.name, () => decodeJbig2(bytesOf(v.stream_b64), b64(v.globals_b64))]),
+  ...JPX.variants.map((v) => ["jpx", v.name, () => decodeJpx(bytesOf(v.data_b64))]),
 ];
 const answer = (fn) => { try { return fn(); } catch (e) { return e; } };
 /** Every PNG fixture as [name, () => bytes]: the suite's files and the constructed ones.
  *  `decodePng` answers a Promise, so its answers are awaited apart from CALLS'. */
 const PNG_INPUTS = [
   ...PNG.suite.map((e) => [e.name, () => pngFile(e.name)]),
-  ...PNG.variants.map((v) => [v.name, () => b64(v.data_b64)]),
+  ...PNG.variants.map((v) => [v.name, () => bytesOf(v.data_b64)]),
 ];
 const pngAnswers = () => Promise.all(PNG_INPUTS.map(([, bytes]) => decodePng(bytes()).catch((e) => e)));
 /** An answer as a comparable value: the samples' digest and the rest, or the refusal. */
@@ -153,7 +159,7 @@ test("R8 no clock, no randomness, no I/O: every decode answers the same with the
 test("R8 no state carried between calls: the input is never changed, and a second decoder is independent of the first", () => {
   for (const [codec, name] of CALLS) {
     const v = { dct: DCT, ccitt: CC, jbig2: JB, jpx: JPX }[codec].variants.find((x) => x.name === name);
-    const bytes = b64(v.jpeg_b64 ?? v.data_b64 ?? v.stream_b64), before = sha(bytes);
+    const bytes = bytesOf(v.jpeg_b64 ?? v.data_b64 ?? v.stream_b64), before = sha(bytes);
     const globals = b64(v.globals_b64), gBefore = globals && sha(globals);
     answer(() => codec === "dct" ? decodeBaselineJpeg(bytes, { rotate: v.rotate })
       : codec === "ccitt" ? ccittDecode(bytes, { K: v.K, columns: v.columns, rows: v.rows, byteAlign: v.byteAlign })
@@ -172,7 +178,7 @@ test("R8 no state carried between calls: the input is never changed, and a secon
 /** R11's answer for a DCT fixture: its rows joined, and the rest, or its refusal. */
 const rowsAnswer = (v) => answer(() => {
   const parts = [];
-  const info = decodeBaselineJpegRows(b64(v.jpeg_b64), { onRows: (rows) => parts.push(rows.slice()) });
+  const info = decodeBaselineJpegRows(bytesOf(v.jpeg_b64), { onRows: (rows) => parts.push(rows.slice()) });
   return { ...info, samples: Buffer.concat(parts) };
 });
 const rowsAnswers = () => DCT.variants.map(rowsAnswer);
@@ -197,7 +203,7 @@ test("R8 R11 pure, the strip-wise JPEG decoder too: the same answers in any orde
   }
   assert.deepEqual(got.map(summary), first);
   for (const v of DCT.variants) {
-    const d = b64(v.jpeg_b64), before = sha(d);
+    const d = bytesOf(v.jpeg_b64), before = sha(d);
     answer(() => decodeBaselineJpegRows(d, { onRows: () => {} }));
     assert.equal(sha(d), before, `dct ${v.name}: input unchanged`);
   }

@@ -12,6 +12,20 @@
  * (R12's `reads` is handed in by the composition root) and reads no network, and takes every local word from the view it is given (R8). */
 import orgChart from "./org-chart.mjs";
 import staffRoster from "./staff-roster.mjs";
+/** @import { ReaderCtx, Detection, Assessment } from "./staff-roster.mjs" */
+
+/**
+ * A content type as `docprofile`'s registry holds it: `staff_roster` (a `RosterType`) and `org_chart` (a `ChartType`)
+ * are each one, their readings read by key.
+ * @typedef {Object} RegistryType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: ReaderCtx) => Detection} detect
+ * @property {(ctx: ReaderCtx) => Record<string, any>} parse
+ * @property {(a: Record<string, any>, b: Record<string, any>) => Assessment} assess
+ */
 
 export { rosterColumns, ROLES } from "./columns.mjs";
 export { directoryPersonRefs, NAME_GRADE } from "./directory-refs.mjs";
@@ -22,11 +36,16 @@ export { staffRoster, orgChart };
 
 /* The order is load-bearing (`docprofile` R4: the first CERTAIN match wins): the roster first, because a
    roster's rows are its own evidence, while a chart's boxes are also printed in a roster's post lines. */
+/** @type {readonly RegistryType[]} the two types, `staff_roster` first */
 export const ROSTER_TYPES = Object.freeze([staffRoster, orgChart]);
 
 const DONE = new WeakMap();
 /** Calls `register` once per type, in ROSTER_TYPES' order. Called twice with the same `register`, it
- *  registers nothing the second time. */
+ *  registers nothing the second time.
+ * @param {(type: RegistryType) => any} register `docprofile`'s registry seam
+ * @returns {string[]} the types' keys, in order
+ * @throws {TypeError} when `register` is not a function
+ */
 export function registerRosterTypes(register) {
   if (typeof register !== "function") throw new TypeError("registerRosterTypes: register must be a function");
   const done = DONE.get(register) || new Set();

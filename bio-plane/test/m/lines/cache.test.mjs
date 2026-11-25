@@ -94,5 +94,7 @@ test("R6 (K1563 (1)) linesOf(host) is the one instance per host, wired by defaul
   const r = l.recordLine({ kind: "holds", from: p, to: o, capacity: "appointed", valid: { from: { event: e.event_id, edge: "start" } },
                            basis: { statement: "sworn in that day" }, by: who });
   assert.equal(r.ok, true, JSON.stringify(r));
-  assert.match(l.readLine({ lineId: r.line_id, viewer: who }).line.valid.from.event, /^EVT-/);
+  const from = l.readLine({ lineId: r.line_id, viewer: who }).line.valid.from;
+  assert.ok(from !== null && typeof from === "object", "the from bound is read back as an event bound");
+  assert.match(from.event, /^EVT-/);
 });

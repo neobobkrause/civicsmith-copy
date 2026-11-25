@@ -42,6 +42,10 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { READ_BOUNDS, boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
 
 export class Jbig2Refusal extends Error {
+  /**
+   * @param {string} code the refusal's code: `UNSUPPORTED`, `IMAGE_TOO_LARGE`, or the codec's own codes for damaged or short data
+   * @param {Object<string, *>} [detail] why: `feature`, a key of `JBIG2_REFUSES`, for `UNSUPPORTED`; a `note` for damaged or short data; the size and its bound for `IMAGE_TOO_LARGE`
+   */
   constructor(code, detail = {}) {
     super(`${code}${detail.feature ? `: ${detail.feature}` : detail.note ? `: ${detail.note}` : ""}`);
     this.code = code;
@@ -53,7 +57,8 @@ const corrupt = (note, extra = {}) => new Jbig2Refusal("CORRUPT", { note, ...ext
 const truncated = (note, extra = {}) => new Jbig2Refusal("TRUNCATED", { note, ...extra });
 
 /** What this decoder refuses, by name — every `feature` an UNSUPPORTED refusal
- *  can carry. Exported so the suite can drive each one. */
+ *  can carry. Exported so the suite can drive each one.
+ * @type {Readonly<Record<string, string>>} each feature's key, and the sentence that says it */
 export const JBIG2_REFUSES = Object.freeze({
   "colour extension": localize("image-codecs.jbig2decode.a_region_s_colour_extension", "a region's colour-extension flag (T.88 Amendment 3) is set"),
   "12 adaptive-template pixels": "a generic region's extended template (EXTTEMPLATE) is used",
@@ -693,10 +698,24 @@ function unknownLengthGeneric(d, start, limit) {
 }
 
 /**
+ * @typedef {Object} Jbig2Image
+ * @property {number} width
+ * @property {number} height
+ * @property {Uint8Array} packed 1-bit rows, each ceil(width / 8) bytes, most significant bit first, a set bit black
+ * @property {{segments: number, global_segments: number, decoded: string[]}} detail what was decoded
+ */
+/**
  * Decode one embedded JBIG2 image: `data` the image stream, `globals` the
  * `/JBIG2Globals` stream's bytes or null. Returns
  * `{ width, height, packed, detail }` where `packed` holds 1-bit rows, MSB
  * first, SET BIT = BLACK (JBIG2's sense), and `detail` names what was decoded.
+ *
+ * @param {Uint8Array} data the image stream's bytes
+ * @param {Uint8Array | null} [globals] the `/JBIG2Globals` stream's bytes; absent or null is none
+ * @returns {Jbig2Image}
+ * @throws {Jbig2Refusal}
+ * @bound the page, each region, symbol and pattern: each edge at most the `image` `edge` row of READ_BOUNDS and its
+ * pixels at most the `pixels` row, judged from the segment's header before its bitmap is allocated
  */
 export function decodeJbig2(data, globals = null) {
   const segs = [];

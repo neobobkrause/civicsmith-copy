@@ -242,7 +242,9 @@ test("R4, R9 (casesign §4): a finding whose own bytes name a case is GATE_REFUS
   };
   const refused = await ratifyAs(w, keys, { signer: "alice", deliverer: "alice", id: Q, image: lie });
   assert.deepEqual([refused.status, refused.body.reason], [409, "GATE_REFUSED"]);
-  assert.ok(refused.body.findings.some((x) => x.check === "C-2.8" && /a finding's bytes name a case \(case_id\)/.test(x.detail)),
+  /* inquiry-grammar's C-2.8 case-key arm, in its own row's words (read by key, so its wording is its own) */
+  const caseKeyWords = word("inquiry-grammar.grammar.a_finding_s_bytes_name_p");
+  assert.ok(refused.body.findings.some((x) => x.check === "C-2.8" && x.detail === caseKeyWords),
     JSON.stringify(refused.body.findings).slice(0, 600));
   assert.equal(w.count("published_bundles"), 0, "nothing crossed");
   delete w.ops.image;

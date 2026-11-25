@@ -2649,7 +2649,9 @@ const UNATTENDED_BY_DECISION = Object.freeze({
    T51 fix round 4b (R34, plane R77; K4524): `owedwork` (plane's read of what a document still owes, admin and member) is named
    under the read ground, as a read a screen draws from, until `affordances`' `ACT_HELP` holds a text.
    T51 fix round 6 (G55; calculations): `moneyingestread`, the member's read of a background money ingest, joins the same read
-   ground, as a read a screen draws from (`moneyingest` itself stays under `unexplained`, an act). */
+   ground, as a read a screen draws from (`moneyingest` itself stays under `unexplained`, an act).
+   (R34; `affordances` R48, R62, R65; PR #1363) `affordances` holds the text of `counselpacketexport` and `linecurrentthrough`,
+   so both leave the unexplained ground: no op is both explained and named. */
 const ACT_HELP_ABSENT = Object.freeze({
   alias: Object.freeze({ ground: localize("op-declarations.index.an_alias_of_a_declared", "An alias of a declared op (R21): its op's explanation serves it."),
     ops: frozenList([
@@ -2706,7 +2708,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "bearingnote", "bindingadopt", "calibrate", "calibrationsignal", "calibrationsubject",
       "capturerequestplatformmark", "capturerequestplatformunmark", "caseapprove", "caseimportdocument",
       "checkrecord", "checktake", "claimfindstep", "claimfound", "clockstate", "coarchiveset", "comparisonpropose",
-      "contentmint", "contradictionpropose", "contradictionrecommend", "costmessage", "counselpacketexport",
+      "contentmint", "contradictionpropose", "contradictionrecommend", "costmessage",
       "courttreat", "cureunlink", "discretionrecord", "dispose", "docketdecline", "docketpressure", "dutyadopt",
       "dutymatch", "dutypropose", "dutyrevise", "dutytransition", "dutywithdraw", "editacts", "entityidentify",
       "eventattest", "eventgovern", "eventimport", "eventmerge", "eventrelationwithdraw", "eventsplit",
@@ -2715,7 +2717,7 @@ const ACT_HELP_ABSENT = Object.freeze({
       "guidepropose", "guideproposetocivicsmith", "guideretire", "guidereview", "hypothesissetaside",
       "hypothesistakeup", "importflagclear", "importunwatch", "interestcheckdefine", "interestcheckgate",
       "interestcheckswitch", "interviewkeep", "joinlinkoff", "joinlinkreplace", "joinlinkset", "keyedserviceset",
-      "keyedserviceswitch", "lawpropose", "lawwithdraw", "linecurrentthrough", "linkproject", "milestoneitemremove",
+      "keyedserviceswitch", "lawpropose", "lawwithdraw", "linkproject", "milestoneitemremove",
       "milestonereminder", "milestoneremove", "milestonerevise", "milestoneset", "moneycheckparam",
       "moneydetectordefine", "moneydetectorgate", "moneydetectorswitch", "moneyfundtype", "moneyingest",
       "moneysetpropose", "moneywithdraw", "narrativeclaim", "noteshare", "noteunshare", "optionrevise",

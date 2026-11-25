@@ -238,6 +238,11 @@ function asBytes(x) {
  * 262,144 = 2^18 sits between the literal carrying cells the 20 MiB bound
  * admits (338,250 numeric, 255,750 string), and `text()` at that many units
  * cost 183–646 ms and 78–112 MB of heap in node. */
+/**
+ * The most repeat units one content.xml read expands (R45).
+ * @type {number}
+ * @bound 262,144
+ */
 export const ODF_REPEAT_EXPANSION_MAX = boundOf("ods", "repeat_units");
 /* The characters a repeat may copy: the text bound, the same READ_BOUNDS row as `content.xml`'s own (R48). */
 const REPEAT_TEXT_BOUND_CHARS = boundOf("ods", "content_xml");
@@ -339,16 +344,22 @@ function odfRow(flavour) {
   return row;
 }
 
+/** @type {OdfRow} the .odt row */
 export const ODT_ROW = odfRow("odt");
+/** @type {OdfRow} the .ods row */
 export const ODS_ROW = odfRow("ods");
+/** @type {OdfRow} the .odp row */
 export const ODP_ROW = odfRow("odp");
 
 /** The three OpenDocument media types, from the table — these are also the
  *  content types CAP-8's Drive handler must ask Google's export endpoint for
  *  (`export?format=odt|ods|odp`) and the types the entries answer on in the
  *  registry's content-type pass. */
+/** @type {string} */
 export const ODT_CONTENT_TYPE = ODT_ROW.mimetype;
+/** @type {string} */
 export const ODS_CONTENT_TYPE = ODS_ROW.mimetype;
+/** @type {string} */
 export const ODP_CONTENT_TYPE = ODP_ROW.mimetype;
 
 /** The one part every entry reads. Taken from the row, not spelled here. */
@@ -778,6 +789,10 @@ const PARTIAL_REPLACED_RATIO = 0.005;
 
 /** R55: the package parts this module inflates for text, for a caller summing `declaredTextBytes(container, ...)`. */
 const TEXT_PARTS = new Set(["content.xml", "styles.xml", "meta.xml"]);
+/**
+ * @param {any} name a package part's name; anything not a string answers false
+ * @returns {boolean}
+ */
 export function isOdfTextPart(name) {
   try { return typeof name === "string" && TEXT_PARTS.has(normalizePartName(name)); } catch { return false; }
 }
@@ -2632,6 +2647,92 @@ odpText.owns = true;
  *  else is taken as parts()'s own output. */
 const isRawBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
 
+/**
+ * A row of ooxml's container table with `partMap:"odf"` (R31): `flavour` ("odt", "ods" or "odp"), `mimetype` (the exact
+ * media type), `conventionalMainPart` (`content.xml`) and `partMap`.
+ * @typedef {{flavour: string, partMap: string, conventionalMainPart: string} & Record<string, any>} OdfRow
+ */
+/**
+ * What `detect` answers when it claims the bytes (R1, R2): `confidence` is "certain" from bytes, "likely" from a content
+ * type alone; `format` is the entry's flavour.
+ * @typedef {Object} OdfDetection
+ * @property {string} format
+ * @property {string} confidence
+ * @property {string[]} signals
+ */
+/**
+ * What `parts` answers (R3). On success: `ok` true, `format`, `container`, `contentXml` (null under the guard or when the
+ * part could not be read), `declared` (content.xml's declared-uncompressed bytes), `guard` (the size guard's marker, or
+ * null) and `undetermined` (each part not read, with why), with the reader's own fields beside them. On failure: `ok`
+ * false, `container`, `why`, `signals`, `part` (the main part's name when the package names this flavour but lacks it,
+ * else null) and `flavourDeclared`. Either is accepted back by `structure`, `text` and `cellsIn` in place of bytes.
+ * @typedef {{ok: boolean} & Record<string, any>} OdfParts
+ */
+/**
+ * `structure()`'s answer (R6-R10, R14-R17, R21-R23, R28, R29, R47). One of `paragraphs` (.odt, a count or null), `sheets`
+ * (.ods) or `slides` (.odp, a count or null) is given; `links` and `counts` are the link partition (`anchor`, `intra`,
+ * `deferred`, `refused`); `evidentiary` holds `items` (tracked changes, comments, formulas, hidden rows, columns,
+ * sheets and slides, speaker notes, core properties) and `undetermined` (each part not read, with why); `notes` names
+ * what was not read; `active` lists every part that can act when the file is opened. A refusal, on bytes that are not
+ * this flavour or a read that failed, is `{ok:false, container, reason, part}` (R5, R38: `reason` is the parts' why, or
+ * `reader_failed:<name>`; `part` the missing main part or null), never an exception.
+ * @typedef {{ok: boolean, container: string} & Record<string, any>} OdfStructure
+ */
+/**
+ * `text()`'s answer (R11-R13, R18-R20, R24-R27, R30, R44, R46, R47, R49, R53). `document` is the text as read, or null
+ * when the body was not read; .odt adds `paragraphs` and `tables`, .ods `sheets`, `rangeUnits` and
+ * `rangeUnitsSkipped`, .odp `slides`, `speakerNotes` and `deckLength`. `parts` is every part of the document as a unit
+ * with its kind, `images` the package's `Pictures/` content-addressed (or null with `imagesWhy`), `undetermined` each
+ * thing not read with why, and `counts` the characters and what else the flavour counts. A refusal is as for
+ * `structure()`.
+ * @typedef {{ok: boolean, container: string} & Record<string, any>} OdfText
+ */
+/**
+ * What `text()` takes besides the bytes (R49): `inlineCellsMax` (.ods: bytes of JSON past which every sheet's `cells` is
+ * held, `cells: null` with `cells_held: true`) and `yieldNow` (awaited between windows when it is a function; anything
+ * else is no yield, and the answer is the same without it).
+ * @typedef {Object} OdfTextOptions
+ * @property {number} [inlineCellsMax]
+ * @property {any} [yieldNow]
+ */
+/**
+ * A request for some of an .ods sheet's typed cells (R49): `sheet` by name or 0-based index; rows and columns 1-based and
+ * inclusive, absent meaning from the first or to the last; `maxCells` stops at a row's end. Anything else in its place
+ * is answered `{ok:false, why}`, never thrown.
+ * @typedef {Object} OdsCellsQuery
+ * @property {string|number} sheet
+ * @property {number} [fromRow]
+ * @property {number} [toRow]
+ * @property {number} [fromCol]
+ * @property {number} [toCol]
+ * @property {number} [maxCells]
+ */
+/**
+ * `cellsIn`'s answer (R49): `{ok:true, cells, rows:{from, to}, next_row?}`, the cells in R46's shape and identical to the
+ * whole read's; or `{ok:false, why}` (`no_such_sheet`, `bad_range`, the parts' failure) or the guard's marker.
+ * @typedef {{ok: boolean} & Record<string, any>} OdsCellsAnswer
+ */
+/**
+ * One OpenDocument entry, the I7 FormatEntry `format-registry` registers (R1-R5). No member throws, on any argument
+ * (R4, R38).
+ * @typedef {Object} OdfEntry
+ * @property {string} format "odt", "ods" or "odp"
+ * @property {(bytes: any, contentType: any) => OdfDetection|null} detect
+ * @property {(bytes: any) => Promise<OdfParts>} parts
+ * @property {(partsOrBytes: any) => Promise<OdfStructure>} structure
+ * @property {(partsOrBytes: any, opts?: OdfTextOptions) => Promise<OdfText>} text
+ * @bound content.xml over 20,971,520 declared-uncompressed bytes (MEASURED_OOXML_TEXT_BOUND_BYTES) is not read: the
+ * answer states it with the size guard's marker and `final: true` (R48).
+ * @bound repeats expand at most 262,144 units (ODF_REPEAT_EXPANSION_MAX) and copy at most 20,971,520 characters in one
+ * content.xml read; past either the answer is as over the size guard, marked `over_repeat_bound` (R45).
+ * @bound a tag longer than 64 KiB is read as text, stated `tag_over_bound`; reading a part costs at most 4 times its bytes
+ * (R52).
+ */
+/**
+ * The .ods entry: an OdfEntry with `cellsIn` (R49).
+ * @typedef {OdfEntry & {cellsIn: (partsOrBytes: any, query: OdsCellsQuery|any) => Promise<OdsCellsAnswer>}} OdsEntry
+ */
+
 function entryFor(row, structureOf, textOf) {
   /* R38: a stated refusal, never an exception, whatever the argument. */
   const failed = (e) => ({ ok: false, container: row.flavour, reason: `reader_failed:${e?.name ?? "Error"}`, part: null });
@@ -2681,8 +2782,11 @@ function entryFor(row, structureOf, textOf) {
   };
 }
 
+/** @type {OdfEntry} the .odt entry */
 export const odtEntry = entryFor(ODT_ROW, odtStructure, odtText);
-export const odsEntry = entryFor(ODS_ROW, odsStructure, odsText);
+/** the .ods entry */
+export const odsEntry = /** @type {OdsEntry} */ (entryFor(ODS_ROW, odsStructure, odsText));
+/** @type {OdfEntry} the .odp entry */
 export const odpEntry = entryFor(ODP_ROW, odpStructure, odpText);
 
 /* ==================================================================
@@ -2745,11 +2849,14 @@ export const odpEntry = entryFor(ODP_ROW, odpStructure, odpText);
  * Widening this is one entry in `ODF_EVIDENTIARY_MEASURED` plus the
  * measurement it cites, and any normalisation that measurement licensed
  * (`ODF_EVIDENTIARY_NORMALISE`, below). */
+/** @type {number} the version `basis` names (R37) */
 export const ODF_EVIDENTIARY_VERSION = 1;
 /** The flavours this module's rows define, READ OFF the rows so the control
  *  plane can ask "is this an OpenDocument format?" without learning the names
  *  (formats-odf.test.mjs pins that index.mjs spells none of them — D-70). */
+/** @type {readonly string[]} */
 export const ODF_FORMATS = Object.freeze([ODT_ROW.flavour, ODS_ROW.flavour, ODP_ROW.flavour]);
+/** @type {Readonly<{ods: string, odt: string}>} the flavours measured stable, each with the measurement it rests on (R33) */
 export const ODF_EVIDENTIARY_MEASURED = Object.freeze({
   ods: localize("odf-reader.odf.content_xml_byte_identical_across", "content.xml byte-identical across Google exports of an unchanged document: 3/3 (the MEASUREMENTS ledger 2026-09-14 §4) and 18/18 over 3 census targets (M-123)"),
   odt: localize("odf-reader.odf.content_xml_with_text_list", "content.xml with text:list xml:id relabelled is byte-identical across two Google exports taken apart in time on every pair M-167 read (8 public government Docs; the only list-bearing difference is text:list@xml:id), after M-123 found the class on 2 census documents"),
@@ -2822,7 +2929,10 @@ const CONTINUE_RE = /(\stext:continue-list\s*=\s*)("([^"]*)"|'([^']*)')/g;
 const UTF8_STRICT = new TextDecoder("utf-8", { fatal: true });
 /** content.xml's bytes with Google's per-export list ids relabelled, or null
  *  when the bytes are not valid UTF-8. Exported so the measurement instrument
- *  digests exactly what the product digests. */
+ *  digests exactly what the product digests.
+ * @param {any} bytes content.xml's bytes
+ * @returns {Uint8Array|null}
+ */
 export function odtNormalisedContentXml(bytes) {
   let xml;
   try { xml = UTF8_STRICT.decode(bytes); } catch { return null; }
@@ -2845,12 +2955,28 @@ const ODF_EVIDENTIARY_NORMALISE = Object.freeze({
          apply: odtNormalisedContentXml },
 });
 
+/**
+ * The evidentiary digest's answer (R32-R37): `determined` true with `over` "content.xml" and `evidentiary` the hex
+ * digest, or false with `evidentiary` null; `flavour` is null when no flavour was detected with certainty; `basis` says
+ * what the digest rests on, or why none was taken.
+ * @typedef {Object} OdfEvidentiaryDigest
+ * @property {boolean} determined
+ * @property {string|null} flavour
+ * @property {string} [over]
+ * @property {string|null} evidentiary
+ * @property {string} basis
+ */
 /** The evidentiary digest of an OpenDocument package, or a stated refusal.
  *  `sha256Hex` is the caller's hasher (the plane's, so identity and this digest
  *  are named by one function). Returns
  *    { determined:true, flavour, over:"content.xml", evidentiary, basis }
  *  or { determined:false, flavour|null, evidentiary:null, basis }. Never throws
- *  on bad bytes: every failure is a sentence. */
+ *  on bad bytes: every failure is a sentence.
+ * @param {any} bytes the package's bytes
+ * @param {(bytes: Uint8Array) => (string|Promise<string>)} sha256Hex the caller's hasher
+ * @returns {Promise<OdfEvidentiaryDigest>}
+ * @bound content.xml over 20,971,520 declared-uncompressed bytes is not inflated and no digest is taken (R34).
+ */
 export async function odfEvidentiaryDigest(bytes, sha256Hex) {
   try { return await odfEvidentiaryDigestUnguarded(bytes, sha256Hex); } catch (e) {
     return { determined: false, flavour: null, evidentiary: null,

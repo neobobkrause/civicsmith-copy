@@ -28,7 +28,61 @@ import { rosterColumns } from "./columns.mjs";
 import { withoutContacts } from "./lines.mjs";
 import { word, localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * What `people`' roster source is asked (R12).
+ * @typedef {Object} RosterQuery
+ * @property {any} [organisation]
+ * @property {any} [at]
+ * @property {any} [viewer]
+ */
+/**
+ * The store's read, handed in by the composition root (R12): the held roster documents and tables of `organisation`
+ * that `viewer` may see, as a list, as `{items, view}` or `{rosters, view}`, or a refusal `{ok: false, why}`.
+ * @typedef {(q: {organisation: any, viewer: any}) => any} StoreRead
+ */
+/**
+ * One row of a held roster, as the roster states it (R12); a contact column is never read (R4).
+ * @typedef {Object} HeldRow
+ * @property {string} [name]
+ * @property {string} [title]
+ * @property {string} [unit]
+ * @property {string} [start]
+ * @property {string} [end]
+ * @property {string} [employee_id]
+ * @property {string} [as_of]
+ * @property {string} [line]
+ * @property {string} [why]
+ * @property {any} source
+ */
+/**
+ * One held roster read (R12): its own stated `as_of`, never that a row's person held the post at the date asked (R10).
+ * @typedef {Object} HeldRoster
+ * @property {any} source
+ * @property {string|null} as_of
+ * @property {HeldRow[]} rows
+ * @property {string} [as_of_text]
+ * @property {string|null} [as_of_why]
+ * @property {string|null} [organisation]
+ * @property {string} [rows_why]
+ * @property {{index: number, header: any, role: string|null}[]} [columns]
+ * @property {string} [columns_why]
+ * @property {string} [why]
+ */
+/**
+ * The roster source's answer (R12, R11).
+ * @typedef {Object} RosterAnswer
+ * @property {string} level LEVEL_READ, or LEVEL_NOT_READ when the store's read is absent or fails
+ * @property {HeldRoster[]} rosters
+ * @property {any} organisation
+ * @property {any} at
+ * @property {{source: any, why: string}[]} [unread]
+ * @property {string} [why]
+ * @bound rosters: empty always with why
+ */
+
+/** @type {string} */
 export const LEVEL_READ = localize("roster-reader.source.held_as_a_table_read", "held as a table, read by roster-reader");
+/** @type {string} */
 export const LEVEL_NOT_READ = word("people.held_as_a_table_not");
 /* The roles a row carries into the answer, in R12's order. `as_of` is a table's stated date, `contact` never read. */
 const ROW_ROLES = ["name", "title", "unit", "start", "end", "employee_id"];
@@ -36,6 +90,10 @@ const ROW_ROLES = ["name", "title", "unit", "start", "end", "employee_id"];
 const notRead = (base, why) => ({ level: LEVEL_NOT_READ, rosters: [], ...base, why });
 const msg = (e) => String((e && e.message) || e).slice(0, 200);
 
+/**
+ * @param {unknown} [reads] the store's read, a StoreRead; anything else, or none, is answered LEVEL_NOT_READ
+ * @returns {(q?: RosterQuery|null) => RosterAnswer} never throws
+ */
 export function rosterSource(reads) {
   return function source(q) {
     const { organisation = null, at = null, viewer = null } = q && typeof q === "object" ? q : {};
@@ -92,14 +150,19 @@ function readDocument(item, view) {
   if (!f.text || !f.text.trim()) return { unread: { source, why: localize("roster-reader.source.no_text_was_read_from", "no text was read from the held document, so it has no rows to read") } };
   const ctx = { text: f.text, view, locate: makeLocator(f.segments), at: item.at ?? null };
   const chart = item.type === "org_chart";
-  const p = (chart ? orgChart : staffRoster).parse(ctx);
-  const rows = chart
-    ? p.posts.filter((x) => x.name).map((x) => ({ name: x.name, title: x.label, source: x.source }))
-    : p.rows.map((r) => ({ ...r }));
+  let p, rows;
+  if (chart) {
+    const c = orgChart.parse(ctx);
+    p = c;
+    rows = c.posts.filter((x) => x.name).map((x) => ({ name: x.name, title: x.label, source: x.source }));
+  } else {
+    const r = staffRoster.parse(ctx);
+    p = r;
+    rows = r.rows.map((x) => ({ ...x }));
+  }
   const roster = { source, as_of: p.as_of ? p.as_of.date ?? null : null, rows };
   if (p.as_of) roster.as_of_text = p.as_of.text;
   else roster.as_of_why = p.as_of_why;
-  if (p.as_of && p.as_of.date == null && p.as_of.why) roster.as_of_why = p.as_of.why;
   roster.organisation = p.organisation ? p.organisation.text : null;
   if (chart) roster.rows_why = localize("roster-reader.source.an_organisation_chart_a_row", "an organisation chart: a row is a post whose holder is named on its own line; a box with no name, and any reporting line the drawing shows, are not rows");
   if (!rows.length) roster.why = chart ? localize("roster-reader.source.no_post_in_the_chart", "no post in the chart names its holder on its own line") : localize("roster-reader.source.no_line_of_the_document", "no line of the document reads as a roster row");

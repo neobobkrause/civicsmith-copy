@@ -15,7 +15,6 @@
     "docprofile",
     "office-readers",
     "pdf-reader",
-    "setup-words",
-    "test-support"
+    "setup-words"
   ]
 }

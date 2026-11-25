@@ -66,6 +66,45 @@
 
 import { boundOf } from "./read-bounds.mjs";
 
+/**
+ * Bytes as every service takes them: a Uint8Array, an ArrayBuffer, any typed-array view or an array of byte values.
+ * Anything else reads as no bytes at all, so a wrong argument is a named refusal downstream, never a throw.
+ * @typedef {Uint8Array|ArrayBuffer|ArrayBufferView|ArrayLike<number>|{}|null|undefined} Bytes
+ */
+/**
+ * A range source (R11, R27): an archive of `size` bytes read by ranges. `read` answers exactly `length` bytes from
+ * `offset`; a rejection, a short answer or a non-byte answer is `source_unreadable`, never a partial reading.
+ * @typedef {Object} RangeSource
+ * @property {number} size
+ * @property {(offset: number, length: number) => Promise<Uint8Array|ArrayBuffer|ArrayBufferView>} read
+ */
+/**
+ * One central-directory record as `readContainer` answers it (R3): its name (UTF-8 under general-purpose bit 11,
+ * else Latin-1), compression method, CRC-32, sizes and local-header offset, 64-bit values read where ZIP64 holds them.
+ * @typedef {Object} Entry
+ * @property {string} name
+ * @property {number} method
+ * @property {number} crc32
+ * @property {number} compressedSize
+ * @property {number} uncompressedSize
+ * @property {number} localHeaderOffset
+ */
+/**
+ * A container read whole (R3): every central-directory record in file order, the first entry of each name, the count.
+ * @typedef {{ok: true, entries: Entry[], byName: Map<string, Entry>, count: number} & Record<string, any>} Container
+ */
+/**
+ * A container as the services take it: `readContainer`'s answer, or anything else, which holds no member. An entry
+ * missing a field is read as it is: a size that is not a number is never under a limit.
+ * @typedef {{ok?: boolean, entries?: Partial<Entry>[], byName?: Map<string, Partial<Entry>>}|null|undefined} ContainerArg
+ */
+/**
+ * A named refusal (R25): `why` names it; a refusal on a limit (R30) carries `limit` and `final: true`, and a part's
+ * refusal carries its normalized `name`, with the figures that decided it where it has them.
+ * @typedef {{ok: false, why: string, name?: any, limit?: number, final?: boolean, declared?: number,
+ *   expected?: number, got?: number, method?: number, size?: number, detail?: string} & Record<string, any>} Refusal
+ */
+
 const UTF8 = new TextDecoder("utf-8", { fatal: false });
 const LATIN1 = new TextDecoder("latin1");
 
@@ -113,6 +152,7 @@ function findEntry(container, want) {
  * A document over this bound gets full central-directory and metadata
  * treatment but full text extraction is refused as a STATED
  * `text-undetermined`, never silently truncated. */
+/** @type {number} R6: 20,971,520, runtime-limits' `READ_BOUNDS` row for the office text bytes, through `boundOf` */
 export const MEASURED_OOXML_TEXT_BOUND_BYTES = boundOf("office", "text_bytes"); // 20,971,520 (R6)
 
 /** Sum the DECLARED UNCOMPRESSED sizes of the container's text-bearing parts
@@ -120,6 +160,12 @@ export const MEASURED_OOXML_TEXT_BOUND_BYTES = boundOf("office", "text_bytes"); 
  *  predicate over normalized part names) straight from the central directory —
  *  BEFORE any inflation, per the COFF-6 metric. Returns `{ total, parts }` so
  *  an over-bound refusal can name what it measured. */
+/**
+ * @param {ContainerArg} container
+ * @param {((name: string) => boolean)|{}|null|undefined} isTextPart whether a normalized part name is text-bearing;
+ *   anything but a function matches nothing
+ * @returns {{total: number, parts: {name: string, declared: number}[]}} R7: `{total: 0, parts: []}` on no match
+ */
 export function declaredTextBytes(container, isTextPart) {
   let total = 0;
   const parts = [];
@@ -140,6 +186,24 @@ export function declaredTextBytes(container, isTextPart) {
  *  `{ ok:true }` under the bound; over it, a stated undetermined marker
  *  carrying WHY, the sizes, the metric and the bound's name — shaped so a
  *  format entry can carry it into its I2 text output verbatim. */
+/**
+ * @typedef {Object} SizeGuardRefusal
+ * @property {false} ok
+ * @property {string} text `undetermined`
+ * @property {string} why `over_size_bound`
+ * @property {any} size the declared bytes as given
+ * @property {number} bound
+ * @property {string} boundName `MEASURED_OOXML_TEXT_BOUND_BYTES` (R8), `STREAMED_TEXT_BOUND_BYTES` (R35)
+ * @property {string} metric `declared_uncompressed_text_part_bytes`
+ * @property {boolean} [final] R35: true on the streamed ceiling
+ */
+/**
+ * @param {any} declaredBytes the summed declared uncompressed text-part bytes; a value that is not a number is never
+ *   shown to be under the bound
+ * @param {number} [bound]
+ * @returns {{ok: true} & Record<string, any>|SizeGuardRefusal} R8: `ok` true iff `declaredBytes <= bound`
+ * @bound boundName is always "MEASURED_OOXML_TEXT_BOUND_BYTES", whatever bound is passed
+ */
 export function sizeGuard(declaredBytes, bound = MEASURED_OOXML_TEXT_BOUND_BYTES) {
   /* `<=`, not `!(>)`: a size that is not a number is never shown to be under
    * the bound, so it is refused rather than waved through. */
@@ -190,6 +254,7 @@ export function sizeGuard(declaredBytes, bound = MEASURED_OOXML_TEXT_BOUND_BYTES
  * and is STATED: its size, the ceiling, and `final: true` (the document's own
  * size, not a failure that a later try could mend). It is raised by measuring
  * on the plane, not by arguing here; xlsx and csv alone would take more. */
+/** @type {number} R35: 33,554,432, the ceiling of declared text read in pieces, through `boundOf` */
 export const STREAMED_TEXT_BOUND_BYTES = boundOf("office", "streamed_text_bytes");
 /* The decoded text a piece is cut at (when a cut point exists), and the most a
  * reader will carry waiting for one: a part with no cut point in this much text
@@ -207,6 +272,17 @@ const INFLATE_WINDOW = 1 << 20;
  *  (`declared`, `bound`, `boundName`, `metric`); `guard` is `sizeGuard`'s
  *  marker for the streamed ceiling, with `final: true`. A size that is not a
  *  number is never shown to be under a bound. Never throws. */
+/**
+ * @typedef {Object} Piecewise
+ * @property {number} declared
+ * @property {number} bound
+ * @property {string} boundName `MEASURED_OOXML_TEXT_BOUND_BYTES`
+ * @property {string} metric `declared_uncompressed_text_part_bytes`
+ */
+/**
+ * @param {any} declaredBytes
+ * @returns {{read: "whole"}|{read: "pieces", piecewise: Piecewise}|{read: "none", guard: SizeGuardRefusal}} R35
+ */
 export function textPlan(declaredBytes) {
   const number = typeof declaredBytes === "number";
   if (number && declaredBytes <= MEASURED_OOXML_TEXT_BOUND_BYTES) return { read: "whole" };
@@ -225,11 +301,16 @@ export function textPlan(declaredBytes) {
 /** A cut for `readPartPieces`: the position after the last `>` in the buffer,
  *  for a reader that tokenises its own markup and carries an unfinished tag
  *  into the next piece. 0 when there is none. */
+/** @type {(buf: string) => number} R35: a cut for `readPartPieces` */
 export const cutAfterTag = (buf) => buf.lastIndexOf(">") + 1;
 
 /** A cut for `readPartPieces`: the position of the last match of `re` (a
  *  global expression for the START of an element the reader takes whole), so a
  *  piece ends between two such elements. 0 when there is none. */
+/**
+ * @param {RegExp} re a global expression for the start of an element the reader takes whole
+ * @returns {(buf: string) => number} R35: a cut for `readPartPieces`
+ */
 export function cutBefore(re) {
   return (buf) => {
     re.lastIndex = 0;
@@ -247,6 +328,11 @@ export function cutBefore(re) {
  *  always used for a text it did not read for its size, `over_size_bound`, with
  *  that size, `final: true` and the mechanism in `detail`; any other refusal is
  *  stated as it is. */
+/**
+ * @param {Record<string, any>|null|undefined} read a refusal of `readPartPieces`
+ * @returns {{why: string|undefined, detail?: string, size?: number, final?: boolean}} R35: `piece_unbounded` stated
+ *   as `over_size_bound` with `detail: "piece_unbounded"`, its size and `final: true`; any other `why` as it is
+ */
 export function pieceWhy(read) {
   if (read?.why !== "piece_unbounded") return { why: read?.why };
   return { why: "over_size_bound", detail: "piece_unbounded", size: read.size, final: true };
@@ -267,20 +353,36 @@ export function pieceWhy(read) {
  * `READ_BOUNDS` taken through `boundOf` (fix round 9, G124g; R30): this module
  * writes no ceiling as a number. A refusal on a limit is `final`: the same
  * bytes refuse again. */
+/** @type {number} R30: 10,000 entries in one archive, through `boundOf` */
 export const ARCHIVE_ENTRIES_MAX = boundOf("archive", "members");
+/** @type {number} R30: 268,435,456 declared uncompressed bytes in one archive, through `boundOf` */
 export const ARCHIVE_TOTAL_MAX = boundOf("archive", "unpacked_bytes");
+/** @type {number} R30: 268,435,456 bytes of one member or part, through `boundOf` */
 export const MEMBER_MAX = boundOf("archive", "member_bytes");
 /* The entries of an office package (G125h), the central directory and one name
  * (G133e): the reader path's counterparts of the listing's limits. */
+/** @type {number} R30: 100,000 entries of an office package, through `boundOf` */
 export const OFFICE_ENTRIES_MAX = boundOf("office", "entries");
+/** @type {number} R30: 16,777,216 bytes of central directory, through `boundOf` */
 export const ARCHIVE_DIRECTORY_MAX = boundOf("archive", "directory");
+/** @type {number} R30: 4,096 bytes of one name, through `boundOf` */
 export const ARCHIVE_NAME_MAX = boundOf("archive", "name");
 /* Above deflate's possible 1,032:1, so a larger declared ratio is malformed,
  * not merely large (Fifield, "A better zip bomb", WOOT '19). */
+/** @type {number} R30: 1,100 to 1, per entry, through `boundOf` */
 export const ARCHIVE_RATIO_MAX = boundOf("archive", "ratio");
+/** @type {number} R30: 3 levels of nesting, kept by the unpack act, through `boundOf` */
 export const ARCHIVE_DEPTH_MAX = boundOf("archive", "depth");
+/** @type {number} R30: 268,435,456 declared uncompressed bytes in one unpack tree, kept by the unpack act, through `boundOf` */
 export const ARCHIVE_TREE_TOTAL_MAX = boundOf("archive", "unpacked_bytes");
+/** @type {number} R30: 10,000 entries in one unpack tree, kept by the unpack act, through `boundOf` */
 export const ARCHIVE_TREE_ENTRIES_MAX = boundOf("archive", "members");
+/**
+ * @type {Readonly<{ARCHIVE_ENTRIES_MAX: number, ARCHIVE_TOTAL_MAX: number, MEMBER_MAX: number,
+ *   OFFICE_ENTRIES_MAX: number, ARCHIVE_DIRECTORY_MAX: number, ARCHIVE_NAME_MAX: number, ARCHIVE_RATIO_MAX: number,
+ *   ARCHIVE_DEPTH_MAX: number, ARCHIVE_TREE_TOTAL_MAX: number, ARCHIVE_TREE_ENTRIES_MAX: number}>}
+ *   R30: the limits by name, frozen
+ */
 export const ARCHIVE_LIMITS = Object.freeze({
   ARCHIVE_ENTRIES_MAX, ARCHIVE_TOTAL_MAX, MEMBER_MAX, OFFICE_ENTRIES_MAX, ARCHIVE_DIRECTORY_MAX, ARCHIVE_NAME_MAX,
   ARCHIVE_RATIO_MAX, ARCHIVE_DEPTH_MAX, ARCHIVE_TREE_TOTAL_MAX, ARCHIVE_TREE_ENTRIES_MAX,
@@ -289,6 +391,7 @@ export const ARCHIVE_LIMITS = Object.freeze({
  * `docProps/core.xml`, `mimetype`) are kilobytes in any real package; one
  * declared above this is refused before inflation (G125d: a 100 MiB `.rels`
  * passes the ratio check at about 1,000:1). */
+/** @type {number} R31: the declared bytes of a structural XML part this module decodes itself, through `boundOf` */
 export const STRUCTURAL_PART_MAX = boundOf("office", "structural_part_bytes");
 
 /* A refusal on a limit: it names the limit, carries its figure and is final. */
@@ -337,6 +440,10 @@ function crcUpdate(c, u8) {
   return c;
 }
 
+/**
+ * @param {Bytes} bytes
+ * @returns {number} R4: the ZIP-polynomial CRC-32, an unsigned 32-bit integer
+ */
 export function crc32(bytes) {
   return (crcUpdate(0xffffffff, toBytes(bytes)) ^ 0xffffffff) >>> 0;
 }
@@ -441,6 +548,10 @@ function centralValues(b, p, extra) {
  *  FIRST discriminator (I7: magic bytes first, content type second). An empty
  *  ZIP (bare EOCD) does not carry it and cannot be an OOXML package anyway,
  *  since OOXML requires parts. */
+/**
+ * @param {Bytes} bytes
+ * @returns {boolean} R1
+ */
 export function hasZipMagic(bytes) {
   const b = toBytes(bytes);
   return b.length >= 4 && u32(b, 0) === SIG_LOCAL;
@@ -448,6 +559,10 @@ export function hasZipMagic(bytes) {
 
 /* OPC part names in [Content_Types].xml overrides start with "/", ZIP entry
  * names do not. One normal form so the two always meet. */
+/**
+ * @param {any} name
+ * @returns {string} R2: every leading `/` stripped; `null` and `undefined` are `""`
+ */
 export function normalizePartName(name) {
   try { return String(name ?? "").replace(/^\/+/, ""); } catch { return ""; }
 }
@@ -569,6 +684,10 @@ function* walkContainer(size) {
  *  `zip64_record_invalid`. A count, a directory or a name over its limit
  *  (R30) is refused by that limit's name, final, before the directory is
  *  walked or the name kept. */
+/**
+ * @param {Bytes} bytes
+ * @returns {Container|Refusal} R3
+ */
 export function readContainer(bytes) {
   const b = toBytes(bytes);
   return runSync(walkContainer(b.length), b);
@@ -687,6 +806,15 @@ async function locatePart(source, container, want, structural) {
  *  A success is `{ ok:true, bytes }` and the bytes are PROVEN to be the whole
  *  member (length AND CRC-32 against the central directory) — a partial
  *  inflate can never pass as whole. */
+/**
+ * @typedef {{ok: true, bytes: Uint8Array} & Record<string, any>} PartBytes
+ */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @param {any} name the part's name, normalized (R2)
+ * @returns {Promise<PartBytes|Refusal>} R5, R31: every refusal carries the normalized `name`
+ */
 export function readPart(bytes, container, name) {
   return readPartOf(bytes, container, name, false);
 }
@@ -739,6 +867,14 @@ async function readPartOf(source, container, name, structural) {
  *  `{ ok:true, size }`. Async; never throws (`onPiece` throwing, or returning
  *  a promise that rejects, is `{ ok:false, why:"reader_failed" }`; a promise it
  *  returns is awaited before the next piece is made). */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @param {any} name the part's name, normalized (R2)
+ * @param {(buf: string) => number} cut where a piece may end in the buffer, 0 when nowhere yet
+ * @param {(piece: string) => any} onPiece given each piece in order; a promise it returns is awaited
+ * @returns {Promise<{ok: true, size: number} & Record<string, any>|Refusal>} R35
+ */
 export async function readPartPieces(bytes, container, name, cut, onPiece) {
   const want = normalizePartName(name);
   const found = await locatePart(bytes, container, want, false);
@@ -749,6 +885,7 @@ export async function readPartPieces(bytes, container, name, cut, onPiece) {
   let decoder = null;
   let head = [], headLen = 0;
   let crc = 0xffffffff, size = 0, buf = "";
+  /** @type {any} the refusal that stopped the member, set before any false is answered */
   let failure = null;
 
   /* One decoded chunk in; pieces out. Returns false to stop the member. */
@@ -1006,9 +1143,28 @@ function disagreeing(b, encoding) {
 /** The one decode of bytes to text (R36). Synchronous and pure; never throws.
  *  `{ ok:true, text, encoding, assumed, replaced, replaced_ratio, disagree }`
  *  or `{ ok:false, why:"ENCODING_UNSUPPORTED", name }`. */
+/**
+ * @typedef {Object} DecodeOptions
+ * @property {string|null} [declared] the encoding the caller knows, a header's `charset`
+ * @property {string|null} [name] the source's name, for the refusal
+ * @property {string|null} [kind] where a declaration may be found: `xml` (the prolog), `html` (a `meta`)
+ */
+/**
+ * The text decoded (R36): `encoding` the one used; `assumed` true when no declaration and no BOM decided it;
+ * `replaced` the U+FFFD the text holds and `replaced_ratio` their share of its characters; `disagree` the byte offsets
+ * of the windows whose detected encoding differs from the file's.
+ * @typedef {{ok: true, text: string, encoding: string, assumed?: boolean, replaced: number, replaced_ratio: number,
+ *   disagree: number[]} & Record<string, any>} DecodedText
+ */
+/**
+ * @param {Bytes} bytes
+ * @param {DecodeOptions|null} [options]
+ * @returns {DecodedText|Refusal} R36: `why` is `ENCODING_UNSUPPORTED`
+ */
 export function decodeText(bytes, options) {
   const o = options && typeof options === "object" ? options : {};
   const name = o.name ?? null;
+  /** @type {Refusal} builds the refusal */
   const unsupported = { ok: false, why: "ENCODING_UNSUPPORTED", name };
   try {
     const b = toBytes(bytes);
@@ -1105,12 +1261,21 @@ function xmlElementText(xml, localName) {
  * [Content_Types].xml — the OPC content-type map
  * ------------------------------------------------------------------ */
 
+/** @type {string} R9 */
 export const CONTENT_TYPES_PART = "[Content_Types].xml";
 
 /** Parse [Content_Types].xml text into
  *  `{ ok:true, defaults: Map(lowercased extension → content type),
  *              overrides: Map(normalized part name → content type) }`
  *  or `{ ok:false, why:"content_types_unparseable" }`. */
+/**
+ * @typedef {{ok: true, defaults: Map<string, string>, overrides: Map<string, string>} & Record<string, any>} ContentTypes
+ */
+/**
+ * @param {any} xml
+ * @returns {ContentTypes|Refusal} `defaults` by lowercased extension, `overrides` by normalized part name; else
+ *   `content_types_unparseable` (R37: final on a malformed reference)
+ */
 export function parseContentTypes(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?Types\b/.test(xml)) {
     return { ok: false, why: "content_types_unparseable" };
@@ -1129,6 +1294,11 @@ export function parseContentTypes(xml) {
 
 /** The content type of a part under a parsed map: Override first, Default by
  *  extension second, null when neither speaks (null, not a guess). */
+/**
+ * @param {any} name
+ * @param {{defaults: Map<string, string>, overrides: Map<string, string>}} types a parsed map
+ * @returns {string|null} the Override's type, else the Default's by extension, else null
+ */
 export function partContentType(name, types) {
   const norm = normalizePartName(name);
   const o = types.overrides.get(norm);
@@ -1164,6 +1334,18 @@ export function partContentType(name, types) {
  * defaults to. Keeping them separate is what lets a caller ask a narrower
  * question (and lets the suite prove the pre-item OOXML outcomes are
  * reproducible byte-for-byte by passing `OOXML_FLAVOURS` explicitly). */
+/**
+ * A row of a flavour table (R10): `partMap` `opc` (the default when absent) names the main part's content type,
+ * `odf` the `mimetype` member's value; `variant` a macro-enabled, template or show row's, absent on a plain row.
+ * @typedef {Object} FlavourRow
+ * @property {string} [partMap] `opc` or `odf`
+ * @property {string} flavour
+ * @property {string} [variant]
+ * @property {string} [mainContentType] an `opc` row's
+ * @property {string} [mimetype] an `odf` row's
+ * @property {string} conventionalMainPart
+ */
+/** @type {FlavourRow[]} the three OPC rows, docx, xlsx and pptx */
 export const OOXML_FLAVOURS = [
   {
     partMap: "opc",
@@ -1214,7 +1396,9 @@ export const OOXML_FLAVOURS = [
  * `META-INF/manifest.xml` and `content.xml` under any other media type is not
  * an odt/ods/odp and is said to be `undetermined`, never rounded into a
  * flavour because its part names look familiar. */
+/** @type {string} R14 */
 export const ODF_MIMETYPE_PART = "mimetype";
+/** @type {string} R14 */
 export const ODF_MANIFEST_PART = "META-INF/manifest.xml";
 
 /* MEASURED 2026-09-14: the three conforming values are 39, 46 and 47 bytes
@@ -1223,8 +1407,10 @@ export const ODF_MANIFEST_PART = "META-INF/manifest.xml";
  * cannot make us inflate and decode it to settle a 47-byte question. Over it
  * is a STATED undetermined naming the declared size, never a truncated value
  * silently compared. */
+/** @type {number} R14: 128 bytes */
 export const ODF_MIMETYPE_MAX_BYTES = 128;
 
+/** @type {FlavourRow[]} the three ODF rows, odt, ods and odp */
 export const ODF_FLAVOURS = [
   {
     partMap: "odf",
@@ -1263,6 +1449,7 @@ export const ODF_FLAVOURS = [
  *  `discriminate`. Written out row by row, never spread or mapped, so
  *  evaluating the module builds nothing (R34); the plain and ODF rows are the
  *  very objects of `OOXML_FLAVOURS` and `ODF_FLAVOURS`, as they always were. */
+/** @type {FlavourRow[]} R10 */
 export const CONTAINER_FLAVOURS = [
   OOXML_FLAVOURS[0], OOXML_FLAVOURS[1], OOXML_FLAVOURS[2],
   { partMap: "opc", flavour: "docx", variant: "docm", mainContentType: "application/vnd.ms-word.document.macroEnabled.main+xml", conventionalMainPart: "word/document.xml" },
@@ -1315,6 +1502,20 @@ export const CONTAINER_FLAVOURS = [
  *  would make the record claim LESS than the bytes support and would move a
  *  pinned COFF-2 outcome, so the existing determination stands and the suite
  *  asserts both halves: still `zip`, and never an ODF flavour.) */
+/**
+ * A flavour, a plain ZIP or an undetermined one (R11): `format` a flavour, `zip` or `undetermined`; a flavour carries
+ * `variant` (null for a plain row), `mainPart` and `confidence` `high`; an undetermined one its `why` and, where a
+ * declaration named one, `flavourDeclared`. `signals` records what was checked.
+ * @typedef {{ok: true, format: string, signals: string[], variant?: string|null, mainPart?: string,
+ *   confidence?: string, why?: string, flavourDeclared?: string} & Record<string, any>} Flavour
+ */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {any} [contentType] recorded in `signals`, never used for the determination
+ * @param {(FlavourRow|{}|null|undefined)[]|{}|null} [flavours] a row that is not an object, or a table that is not
+ *   an array, is read as no row
+ * @returns {Promise<Flavour|Refusal & {signals: string[]}>} R11, R12, R13
+ */
 export async function discriminate(bytes, contentType = null, flavours = CONTAINER_FLAVOURS) {
   const signals = [];
   if (contentType) {
@@ -1335,6 +1536,13 @@ export async function discriminate(bytes, contentType = null, flavours = CONTAIN
   }
 }
 
+/**
+ * @param {any} bytes
+ * @param {any} range
+ * @param {string[]} signals
+ * @param {any} flavours
+ * @returns {Promise<Flavour|Refusal & {signals: string[]}>} `discriminate`'s answer
+ */
 async function judge(bytes, range, signals, flavours) {
   const magic = range
     ? range.size >= 4 && u32(await range.read(0, 4), 0) === SIG_LOCAL
@@ -1393,6 +1601,7 @@ async function judge(bytes, range, signals, flavours) {
     return { ok: true, format: "undetermined", why: `content_types_unreadable:${ctBytes.why}`, signals };
   }
   const ctText = decodeText(ctBytes.bytes, { name: CONTENT_TYPES_PART, kind: "xml" });
+  /** @type {ContentTypes|Refusal} checks a ContentTypes below */
   const types = ctText.ok ? parseContentTypes(ctText.text) : { ok: false, why: "content_types_unparseable" };
   if (!types.ok) {
     signals.push(`part:${CONTENT_TYPES_PART} present but unparseable`);
@@ -1479,6 +1688,13 @@ async function judge(bytes, range, signals, flavours) {
  *  reader knows it is a deliberate gap and not an oversight.
  *  ------------------------------------------------------------------------
  */
+/**
+ * @param {any} bytes
+ * @param {Container} container
+ * @param {FlavourRow[]} rows the table's ODF rows
+ * @param {string[]} signals
+ * @returns {Promise<Flavour|null>} null, pushing nothing, when the container has no `mimetype` member
+ */
 async function discriminateOdf(bytes, container, rows, signals) {
   const mimeEntry = container.byName.get(ODF_MIMETYPE_PART)
     ?? container.entries.find((e) => normalizePartName(e.name) === ODF_MIMETYPE_PART);
@@ -1559,6 +1775,10 @@ async function discriminateOdf(bytes, container, rows, signals) {
 /** The conventional .rels part for a part name (OPC): the package root's is
  *  `_rels/.rels`; a part `word/document.xml`'s is
  *  `word/_rels/document.xml.rels`. */
+/**
+ * @param {string|null} [partName]
+ * @returns {string} R15
+ */
 export function relsPartFor(partName = null) {
   if (partName == null || partName === "") return "_rels/.rels";
   const norm = normalizePartName(partName);
@@ -1569,6 +1789,10 @@ export function relsPartFor(partName = null) {
 }
 
 /** Every `_rels/*.rels` part in the container, in central-directory order. */
+/**
+ * @param {ContainerArg} container
+ * @returns {string[]} every `_rels/*.rels` part's normalized name, in central-directory order
+ */
 export function listRelsParts(container) {
   return entriesOf(container)
     .map((e) => normalizePartName(e.name))
@@ -1581,6 +1805,20 @@ export function listRelsParts(container) {
  *  inside the package. Returns
  *  `{ ok:true, relationships:[{id,type,target,targetMode,external}], outbound:[…external rels] }`
  *  or `{ ok:false, why:"rels_unparseable" }`. */
+/**
+ * One relationship (R16): `id`, `type` and `targetMode` null when absent; `external` is `targetMode === "External"`.
+ * @typedef {Object} Relationship
+ * @property {string|null} id
+ * @property {string|null} type
+ * @property {string} target
+ * @property {string|null} targetMode
+ * @property {boolean} external
+ */
+/**
+ * @param {any} xml
+ * @returns {{ok: true, relationships: Relationship[], outbound: Relationship[]} & Record<string, any>|Refusal} R16:
+ *   else `rels_unparseable` (R37: final on a malformed reference)
+ */
 export function parseRels(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?Relationships\b/.test(xml)) {
     return { ok: false, why: "rels_unparseable" };
@@ -1602,6 +1840,12 @@ export function parseRels(xml) {
  *  attribution and keeping unreadable parts STATED in `undetermined` rather
  *  than dropped:
  *  `{ ok:true, byPart:[{part, relationships, outbound}], outbound:[{part, …rel}], undetermined:[{part, why}] }` */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @returns {Promise<{ok: true, byPart: {part: string, relationships: Relationship[], outbound: Relationship[]}[],
+ *   outbound: (Relationship & {part: string})[], undetermined: {part: string, why: string, final?: boolean}[]}>} R17
+ */
 export async function walkRels(bytes, container) {
   const byPart = [];
   const outbound = [];
@@ -1610,6 +1854,7 @@ export async function walkRels(bytes, container) {
     const read = await readPartOf(bytes, container, part, true);
     if (!read.ok) { undetermined.push({ part, why: read.why }); continue; }
     const text = decodeText(read.bytes, { name: part, kind: "xml" });
+    /** @type {ReturnType<typeof parseRels>} checks a parsed rels part below */
     const parsed = text.ok ? parseRels(text.text) : { ok: false, why: "rels_unparseable" };
     if (!parsed.ok) { undetermined.push({ part, why: parsed.why, ...(parsed.final ? { final: true } : {}) }); continue; }
     byPart.push({ part, relationships: parsed.relationships, outbound: parsed.outbound });
@@ -1623,6 +1868,7 @@ export async function walkRels(bytes, container) {
  * (DEC-5: who edited a document and when IS evidence)
  * ------------------------------------------------------------------ */
 
+/** @type {string} R18 */
 export const CORE_PROPERTIES_PART = "docProps/core.xml";
 
 /** Parse core.xml text. Fields the queue names as evidentiary: creator,
@@ -1630,6 +1876,17 @@ export const CORE_PROPERTIES_PART = "docProps/core.xml";
  *  string the file carries or null when ABSENT — absence recorded, never
  *  filled in. `revision` additionally carries `revisionNumber` when (and only
  *  when) the string is a plain integer. */
+/**
+ * The evidentiary metadata of `docProps/core.xml` (R19): each element's own text, entity-decoded, or null when absent
+ * or self-closing; `revisionNumber` the integer of an all-digit `revision`, else null.
+ * @typedef {{ok: true, creator: string|null, lastModifiedBy: string|null, revision: string|null,
+ *   revisionNumber: number|null, created: string|null, modified: string|null, title: string|null}
+ *   & Record<string, any>} CoreProperties
+ */
+/**
+ * @param {any} xml
+ * @returns {CoreProperties|Refusal} else `core_properties_unparseable` (R37: final on a malformed reference)
+ */
 export function parseCoreProperties(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?coreProperties\b/.test(xml)) {
     return { ok: false, why: "core_properties_unparseable" };
@@ -1653,6 +1910,12 @@ export function parseCoreProperties(xml) {
 /** Read and parse `docProps/core.xml` from a container. A package without one
  *  (it is optional in OPC) is `{ ok:false, why:"part_absent" }` — stated, and
  *  distinct from a package whose core.xml exists but cannot be read. */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @returns {Promise<CoreProperties|Refusal>} R19: `part_absent` when the part is missing, `readPart`'s own `why`
+ *   when it cannot be read
+ */
 export async function readCoreProperties(bytes, container) {
   const read = await readPartOf(bytes, container, CORE_PROPERTIES_PART, true);
   if (!read.ok) return { ok: false, why: read.why };
@@ -1699,6 +1962,7 @@ export async function readCoreProperties(bytes, container) {
 
 /** Extension -> MIME for the image types office containers carry. A member
  *  whose extension is not here is not enumerated as an image. */
+/** @type {Readonly<Record<string, string>>} R20: extension to MIME type, frozen */
 export const IMAGE_MIME_BY_EXT = Object.freeze({
   png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", jpe: "image/jpeg",
   gif: "image/gif", bmp: "image/bmp", tif: "image/tiff", tiff: "image/tiff",
@@ -1715,6 +1979,21 @@ async function imageSha256(u8) {
 }
 
 /** The IC-1 `image` reference for a container media part. */
+/**
+ * An image cited as itself (R20, R21): `part` the SHA-256 of its bytes, `ref` exactly `image ` and its first 12 hex.
+ * @typedef {Object} ImageRef
+ * @property {string} kind `image`
+ * @property {string} ref
+ * @property {any} part
+ * @property {string|null} mime
+ * @property {string|null} name
+ */
+/**
+ * @param {any} part the member's SHA-256, lowercase hex
+ * @param {string|null} [mime]
+ * @param {string|null} [name]
+ * @returns {ImageRef} R21
+ */
 export function imageRef(part, mime = null, name = null) {
   return { kind: "image", ref: `image ${String(part).slice(0, 12)}`, part, mime, name };
 }
@@ -1722,6 +2001,12 @@ export function imageRef(part, mime = null, name = null) {
 /** Every image member under `dir`, content-addressed, in central-directory
  *  order. Returns `{ images: [imageRef...], why: null }` or
  *  `{ images: null, why }` — never a partial list. */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @param {any} dir the media directory
+ * @returns {Promise<{images: ImageRef[], why: null}|{images: null, why: string}>} R20: never a partial list
+ */
 export async function containerImages(bytes, container, dir) {
   const want = normalizePartName(dir);
   const members = [];
@@ -1757,6 +2042,12 @@ export async function containerImages(bytes, container, dir) {
  *  A failed text() (`ok:false`) is returned untouched: no container was read,
  *  so there is no media directory to have looked in. On a successful read
  *  `images` is the exhaustive list or NULL, and a NULL carries `imagesWhy`. */
+/**
+ * @param {any} outOrPromise a reader's answer, or a promise of one
+ * @param {{ok?: boolean, bytes?: any, container?: ContainerArg}|null|undefined} parts what the reader read
+ * @param {any} dir the media directory
+ * @returns {Promise<any>} R20: the answer unchanged, or spread with `images` (`ImageRef[]`, or null with `imagesWhy`)
+ */
 export async function withContainerImages(outOrPromise, parts, dir) {
   const out = await outOrPromise;
   if (!out || !out.ok || !parts || !parts.ok || !parts.container) return out;
@@ -1845,6 +2136,40 @@ function sourceOf(source) {
 
 /** List an archive: every central-directory entry with its verdict (R27,
  *  R28). Async; never throws. */
+/**
+ * One entry of a listing (R27): the central directory's values (64-bit where ZIP64 carries them), the name as bytes
+ * (lowercase hex) and decoded, where its data starts, and its verdict (R28), `ok` for a member that may be cut.
+ * @typedef {Object} ArchiveRow
+ * @property {number} index 0-based
+ * @property {string} name_raw
+ * @property {string|null} name null when bit 11 is set and the bytes are not valid UTF-8
+ * @property {string} name_encoding `utf-8`, `utf-8-invalid` or `cp437`
+ * @property {number} name_shared the entries with the same `name_raw`, 1 when unique
+ * @property {boolean} path_unsafe
+ * @property {number} method
+ * @property {number} flags
+ * @property {number} crc32
+ * @property {number} compressed
+ * @property {number} uncompressed
+ * @property {number} local_offset
+ * @property {number} data_offset
+ * @property {string|null} dos_time `YYYY-MM-DDTHH:MM:SS`, no zone, or null when not a valid date
+ * @property {string} kind `file`, `dir` or `symlink`
+ * @property {boolean} encrypted
+ * @property {string} verdict
+ * @property {number} [limit] on a limit's verdict (`MEMBER_MAX`, `ARCHIVE_RATIO_MAX`), its figure
+ * @property {boolean} [final] true on a limit's verdict
+ */
+/**
+ * @typedef {{ok: true, entries: ArchiveRow[], count: number, declared_total: number, zip64: boolean,
+ *   verdict: string, limit?: number, final?: boolean} & Record<string, any>} ArchiveListing
+ */
+/**
+ * @param {Bytes|RangeSource} source
+ * @returns {Promise<ArchiveListing|Refusal>} R27, R28, R38: `verdict` `ok` or `ARCHIVE_TOTAL_MAX` (with `limit`
+ *   and `final`); a refusal's `entries` (`ArchiveRow[]` or null) the rows as read, null when the directory was not
+ *   walked, and `detail` on `ARCHIVE_AMBIGUOUS`
+ */
 export async function listArchive(source) {
   try {
     const src = sourceOf(source);
@@ -1858,6 +2183,10 @@ export async function listArchive(source) {
 const refusal = (why, extra = {}) => ({ ok: false, why, ...extra, entries: null });
 const ambiguous = (detail, entries) => ({ ok: false, why: "ARCHIVE_AMBIGUOUS", detail, entries });
 
+/**
+ * @param {{size: number, read: (offset: number, length: number) => Promise<Uint8Array>}} src
+ * @returns {Promise<any>} `listArchive`'s answer, whose kind `listArchive` states
+ */
 async function listFrom(src) {
   const { size } = src;
   if (size < 22) return refusal("too_short_for_zip");
@@ -2131,6 +2460,17 @@ function sha256Stream() {
  *  once when the row is refused before anything is read. A consumer that
  *  stops early leaves the rest to be read and verified, unyielded, so `done`
  *  still states whether the member was whole. */
+/**
+ * @typedef {{ok: true, sha256: string, crc32: number, size: number} & Record<string, any>} MemberCut
+ */
+/**
+ * @param {Bytes|RangeSource} source
+ * @param {any} row an `ArchiveRow`, one of the rows `listArchive` answered over the same source; anything else is
+ *   `row_invalid`, or the verdict it carries when that is not `ok`
+ * @returns {{chunks: AsyncIterable<Uint8Array>, done: Promise<MemberCut|Refusal>}} R29: a refusal carries `index`;
+ *   `done` never rejects; a refusal's `why` is the row's verdict, `row_invalid`, `MEMBER_CORRUPT` with its `detail`,
+ *   or `source_unreadable`
+ */
 export function streamMember(source, row) {
   let settle;
   const done = new Promise((resolve) => { settle = resolve; });
@@ -2291,12 +2631,14 @@ async function* cut(source, row) {
  * four names requirement R33 adds that olevba spells differently (`XMLHTTP`,
  * `WinHttpRequest`, `URLDownloadToFile`, `RegWrite`). A name is found as
  * olevba finds it: `(?i)\b<name>\b` over the source. */
+/** @type {readonly string[]} R33: olevba's auto-run names, frozen */
 export const VBA_AUTORUN_NAMES = Object.freeze([
   "AutoExec", "AutoOpen", "DocumentOpen", "AutoExit", "AutoClose", "Document_Close", "DocumentBeforeClose",
   "DocumentChange", "AutoNew", "Document_New", "NewDocument", "Document_Open", "Document_BeforeClose",
   "Auto_Open", "Workbook_Open", "Workbook_Activate", "Auto_Close", "Workbook_Close", "Workbook_BeforeClose",
   "Worksheet_Calculate",
 ]);
+/** @type {readonly string[]} R33: olevba's suspicious keywords, frozen */
 export const VBA_SUSPICIOUS_KEYWORDS = Object.freeze([
   "Environ", "Win32_Environment", "Environment", "ExpandEnvironmentStrings", "HKCU\\Environment",
   "HKEY_CURRENT_USER\\Environment", "Open", "Write", "Put", "Output", "Print #", "Binary",
@@ -2564,6 +2906,28 @@ function parseVbaDir(d) {
 /** Read an office file's VBA project for its module names, auto-run
  *  procedures and suspicious keywords, without running anything (R32).
  *  Async; never throws. */
+/**
+ * One module of a VBA project (R32): `read` false with `why` `module_stream_absent` or
+ * `module_source_undecompressable` when its source could not be read, its lists then empty.
+ * @typedef {Object} VbaModule
+ * @property {string|null} name
+ * @property {string|null} stream
+ * @property {boolean} read
+ * @property {string|null} why
+ * @property {string[]} autoRun
+ * @property {string[]} suspicious
+ */
+/**
+ * @typedef {{ok: true, part: string, project: string|null, modules: VbaModule[], autoRun: string[],
+ *   suspicious: string[], undetermined: {module: string|null, why: string}[]} & Record<string, any>} VbaProject
+ */
+/**
+ * @param {Bytes|RangeSource} bytes
+ * @param {ContainerArg} container
+ * @param {any} partName the member, an office file's `vbaProject.bin`
+ * @returns {Promise<VbaProject|Refusal & {part: string}>} R32: `readPart`'s own `why`, `cfb_invalid`, `vba_dir_absent`
+ *   or `vba_dir_unreadable`
+ */
 export async function readVbaProject(bytes, container, partName) {
   const part = normalizePartName(partName);
   try {

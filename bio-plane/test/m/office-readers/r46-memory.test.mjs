@@ -1,8 +1,9 @@
 /* office-readers R46 (fix round 9, G178; K5006): a workbook is read within its memory with room to spare. The text of a sheet and
    the document's are made once: not as one string per row beside the joined sheet and the joined document, and not while the
    unpacked parts they came from are all still held. Two parts: the answer is what it always was (the control), and the read's
-   peak, measured in a child, is a small multiple of the document it makes. The whole case at the platform's shape (150,000 rows
-   against `capFor(128)`) is plane's `g41-shape.test.mjs`, whose xlsx case carries the 85 % margin. */
+   peak, measured in a child run under the object's cap (`capFor`, runtime-limits) for the file it reads, is at most 85 % of that
+   cap and a small multiple of the document it makes. The same case read through the assembled plane's ledger is plane's
+   `g41-shape.test.mjs`. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -14,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import * as F from "./fixtures.mjs";
 import { xlsxEntry } from "../../../src/formats-xlsx.mjs";
 import { generate } from "../../sheetgen.mjs";
+import { capFor } from "../../../src/byte-ledger.mjs";
 
 const run = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -69,40 +71,31 @@ test("R46 control: a sheet that cannot be read to its end gives none of its line
   assert.ok(!t.document.includes("never") && !t.document.includes("lost"), "none of the unreadable sheet's rows is in the document");
 });
 
-test("R46 a 150,000-row workbook of 3 cells a row (the platform's shape) is read holding at most 6.5 bytes for each character of the document above its idle, while the unpacked parts are streamed and the text is made once", async (t) => {
+test("R46 a 150,000-row workbook of 3 cells a row (the platform's shape), read in a child under its cap capFor(N) for a file of N MB, peaks at most 85 % of that cap and holds at most 6.5 bytes for each character of the document above its idle, while the unpacked parts are streamed and the text is made once", async (t) => {
   const recipe = { kind: "xlsx", seed: "hx150000", size: { rows: 150_000, cols: 3 }, header: "one", types: ["text", "integer", "text"] };
   const chunks = [];
   for await (const c of generate(recipe).chunks()) chunks.push(Buffer.from(c));
   const dir = mkdtempSync(join(tmpdir(), "r46-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const file = join(dir, "table.xlsx");
-  writeFileSync(file, Buffer.concat(chunks));
-  const child = async () => JSON.parse((await run(process.execPath, ["--expose-gc", "--max-old-space-size=202", "--max-semi-space-size=2",
+  const bytes = Buffer.concat(chunks);
+  writeFileSync(file, bytes);
+  const cap = capFor(bytes.length / 1048576);
+  const child = async () => JSON.parse((await run(process.execPath, ["--expose-gc", `--max-old-space-size=${cap}`, "--max-semi-space-size=2",
     join(HERE, "r46-peak-child.mjs"), file], { maxBuffer: 1 << 26 })).stdout);
   /* the least of three: a collector that runs late shows in one run, not in all */
   const runs = [await child(), await child(), await child()];
-  const best = runs.reduce((a, b) => (b.aboveIdleMB < a.aboveIdleMB ? b : a));
-  t.diagnostic(`above idle ${runs.map((r) => r.aboveIdleMB.toFixed(1)).join(", ")} MB for a document of ${best.documentLength} characters`);
-  assert.equal(best.ok, true);
-  assert.equal(best.sheetIsDocument, true, "one sheet: its text is the document, held once");
-  assert.equal(best.lines, 150_001);
-  assert.ok(best.piecewise, "over the whole-read bound the sheet is read in pieces");
-  assert.ok(best.aboveIdleMB * 1048576 <= 6.5 * best.documentLength, `${best.aboveIdleMB.toFixed(1)} MB above idle for ${best.documentLength} characters`);
-});
-
-/* The whole case at the platform's shape is plane's `g41.probe.mjs` (the shape harness: the real plane's ledger in a child under `capFor`'s cap, the xlsx case of
-   `g41-shape.test.mjs`). It is run here as the process it is, not imported (it is plane's, a later module than this one), and its own report is read: the cap it ran
-   at and the most memory any tick held. */
-test("R46 the shape harness's 150,000-row xlsx (plane's g41 probe, run as its own process) peaks at most 85 % of its cap, the child alive", async (t) => {
-  const probe = join(HERE, "..", "plane", "shape", "g41.probe.mjs");
-  const platform = join(HERE, "..", "..", "platform-sqlite.mjs");
-  const out = (await run(process.execPath, ["--import", platform, probe, "xlsx"], { maxBuffer: 1 << 26, timeout: 1_800_000 })).stdout;
-  const cap = Number(/cap (\d+) MB, child survived/.exec(out)?.[1]);
-  const peaks = [...out.matchAll(/^ {2}(?:tick \d+:.*peak heap\+buffers|done:.*, peak) ([\d.]+) MB/gm)].map((m) => Number(m[1]));
-  t.diagnostic(`cap ${cap} MB; the ticks' peaks ${peaks.join(", ")} MB`);
-  assert.ok(cap >= 150, `the case runs at the object's cap, ${cap} MB`);
-  assert.ok(peaks.length >= 2, "the report states the ticks' peaks");
-  assert.match(out, /^ {2}PASS \(cap \d+ MB\)$/m);
-  const peak = Math.max(...peaks);
-  assert.ok(peak <= 0.85 * cap, `peak ${peak} MB is ${(100 * peak / cap).toFixed(1)} % of the cap ${cap} MB`);
+  const best = (k) => runs.reduce((a, b) => (b[k] < a[k] ? b : a));
+  t.diagnostic(`cap ${cap} MB; peak ${runs.map((r) => r.peakMB.toFixed(1)).join(", ")} MB; above idle ${runs.map((r) => r.aboveIdleMB.toFixed(1)).join(", ")} MB for a document of ${runs[0].documentLength} characters`);
+  for (const r of runs) {
+    assert.equal(r.ok, true);
+    assert.equal(r.sheetIsDocument, true, "one sheet: its text is the document, held once");
+    assert.equal(r.lines, 150_001);
+    assert.ok(r.piecewise, "over the whole-read bound the sheet is read in pieces");
+  }
+  assert.ok(cap > 0, `capFor gives a cap for a file of ${bytes.length} bytes`);
+  const peak = best("peakMB").peakMB;
+  assert.ok(peak <= 0.85 * cap, `peak ${peak.toFixed(1)} MB is ${(100 * peak / cap).toFixed(1)} % of the cap ${cap} MB`);
+  const idle = best("aboveIdleMB");
+  assert.ok(idle.aboveIdleMB * 1048576 <= 6.5 * idle.documentLength, `${idle.aboveIdleMB.toFixed(1)} MB above idle for ${idle.documentLength} characters`);
 });
