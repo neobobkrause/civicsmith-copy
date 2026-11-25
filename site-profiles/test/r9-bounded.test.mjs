@@ -158,6 +158,8 @@ test("R22 the same page in UTF-8, UTF-8 with a BOM, windows-1252 and UTF-16 has 
   const u16 = (le) => { const b = new Uint8Array(2 + html.length * 2); b[le ? 0 : 1] = 0xff; b[le ? 1 : 0] = 0xfe;
     [...html].forEach((c, i) => { const v = c.charCodeAt(0); b[2 + 2 * i + (le ? 0 : 1)] = v & 255; b[2 + 2 * i + (le ? 1 : 0)] = v >> 8; }); return b; };
   const want = await sha256(enc(html));
+  /* The kind each case is built to: the third is the ctx the case adds, `null` for a case the loop passes over. */
+  /** @type {[string, Uint8Array, *][]} */
   const cases = [
     ["utf-8", enc(html), {}],
     ["utf-8 with a BOM", new Uint8Array([0xef, 0xbb, 0xbf, ...enc(html)]), {}],

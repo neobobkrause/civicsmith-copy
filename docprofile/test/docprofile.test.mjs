@@ -403,7 +403,12 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
   assert.deepEqual(codes(PA), ["pac:4.12"]);
   assert.deepEqual(codes(LK), ["lmc:9.1"]);
   assert.deepEqual(codes(EMPTY), []);
-  assert.deepEqual([practiceValue({ view: PA }, "minutes_due_days").value, practiceValue({ view: LK }, "minutes_due_days").value], [10, 30]);
+  const dueDays = (v) => {
+    const p = practiceValue({ view: v }, "minutes_due_days");
+    if (!p) throw new Error("this view supplies minutes_due_days");
+    return p.value;
+  };
+  assert.deepEqual([dueDays(PA), dueDays(LK)], [10, 30]);
   assert.equal(practiceValue({ view: EMPTY }, "minutes_due_days"), null);
   assert.equal(anyMatch(vocabPatterns({ view: PA }, "furniture"), "Town of Port Alder"), true);
   assert.equal(anyMatch(vocabPatterns({ view: LK }, "furniture"), "Town of Port Alder"), false);
@@ -502,6 +507,8 @@ test("R35 every no says which no and why", async () => {
   assert.match(nohash.why, /could not be compared/);
   // a stub's connection with no practice in the view says why it set no date
   const p = stubMeetings.parse({ text: calendarHtml([["7", "Harbor Commission", "3/2/2026"]]) });
+  /* one entry out of a list that holds both kinds, read for the field only a temporal one carries */
+  /** @type {*} */
   const c = stubMeetings.connections(p, p, { now: NOW, view: EMPTY }).find((x) => x.relation === "minutes_not_yet_published");
   assert.deepEqual([c.expected_by], [null]);
   assert.match(c.why, /not known/);
