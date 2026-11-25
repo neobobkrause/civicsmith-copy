@@ -183,7 +183,8 @@ export function world({ now = NOW, profiles = [TEST_PROFILE], written = [], cons
     },
     rows: (q, ...a) => st.rows(q, ...a),
     count: (t) => st.rows(`SELECT COUNT(*) AS n FROM ${t}`)[0].n,
-    fm: (id) => { const t = record.readFile(id, "bundle.md")?.text; return t ? parseFrontmatter(t).data : null; },
+    fm: (id) => { const f = record.readFile(id, "bundle.md"); const t = f && "text" in f ? f.text : null;
+                 return t ? parseFrontmatter(t).data : null; },
     snapshot() {
       const out = {};
       for (const { name } of st.rows(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`))
