@@ -29,8 +29,336 @@ import { RECORD_SCHEMA } from "./schema.mjs";
 import { RECORD_CORE_CHECKS, PER_ITEM_CHECKS } from "./checks.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/** R71: this module's schema (`bundles`, `files`, `history`, `manifest`, `leases`, `seq`, `minted_ids`, `settings`,
+ *  `tombstones`, `derived_stale`, `bookkeeping_tally`), the SQL text `migrate()` runs first; re-exported from
+ *  `./schema.mjs`, owned by `record-core-tables`. */
 export { RECORD_SCHEMA };
+/** The refusal rows every refusal here answers with (`RECORD_CORE_CHECKS`, C-59.5–.9, C-102, C-132) and the set form's
+ *  rows (`PER_ITEM_CHECKS`, C-75.1–.5), each `{check, translation, where}` by code; re-exported from `./checks.mjs`,
+ *  owned by `record-core-tables`. */
 export { RECORD_CORE_CHECKS, PER_ITEM_CHECKS } from "./checks.mjs";
+
+/* ---- the kinds this module's entries accept and hand back ---- */
+
+/**
+ * A refusal under one of this module's rows (DEC-49): `reason` and `code` the same code, `check` and `translation` its
+ * row's, `detail` one fixed sentence, beside the refusal's own fields (`module`, `heldBy`, `table`, `id`, `name`, ...).
+ * @typedef {{ok: false, reason: string, code: string, check: string, translation: string, detail?: string, [field: string]: *}} Refusal
+ */
+/**
+ * A refusal a store gate's check answered (R78), given back with `ok: false` and its `code` as `reason`; or one of this
+ * module's own rows (a `Refusal`).
+ * @typedef {{ok: false, reason: string, code: string, [field: string]: *}} GateRefusal
+ */
+/**
+ * R62: no free opaque id could be drawn.
+ * @typedef {{ok: false, reason: "MINT_EXHAUSTED", code: "MINT_EXHAUSTED", check: string, translation: string, prefix: string, detail: string, [field: string]: *}} MintExhausted
+ */
+/**
+ * R39: a Durable Object's storage, as this module reads it.
+ * @typedef {Object} RecordStorage
+ * @property {*} sql the SQLite handle: `exec(query, ...bindings)` answering a cursor of rows, and `databaseSize`
+ * @property {<T>(fn: () => T) => T} transactionSync runs `fn` as one transaction, nesting as savepoints
+ */
+/**
+ * R39: what the first `recordOf` call reads.
+ * @typedef {Object} RecordOptions
+ * @property {*} [evidence] the instance's evidence bucket (R2), or null; one without a `get` function is none
+ * @property {string | (() => string)} [evidencePrefix] what every evidence key begins with, or a function answering it
+ */
+/**
+ * R13: a live file stored inline.
+ * @typedef {Object} InlineFile
+ * @property {string} text
+ * @property {string} sha256
+ */
+/**
+ * R13: a live file stored as a blob: its reference, never its bytes.
+ * @typedef {Object} BlobFile
+ * @property {string} blobSha
+ * @property {number} bytes
+ * @property {string} sha256
+ */
+/**
+ * R58: a file as `fileDigestOf` and `inlineBytesOf` read it: inline `text` when it is a string, else a blob's `blobSha`
+ * when it is a non-empty string; anything else is neither.
+ * @typedef {Object} FileContent
+ * @property {*} [text]
+ * @property {*} [blobSha]
+ */
+/**
+ * R15: a bundle's image, path to inline text or blob reference.
+ * @typedef {Object<string, string | {blobSha: string, sha256: string, bytes?: number}>} BundleImage
+ */
+/**
+ * R34
+ * @typedef {Object} BundleInfo
+ * @property {string} id
+ * @property {string} type
+ * @property {string | null} title
+ * @property {string | null} project
+ */
+/**
+ * R41
+ * @typedef {Object} BundleHead
+ * @property {string} bundleSha
+ * @property {number} rowVersion
+ * @property {string} type
+ * @property {string | null} title
+ * @property {string} currentState
+ * @property {string | null} priorState
+ * @property {string} groupId
+ */
+/**
+ * R42: a manifest entry; `seq` its write-order rank (R16).
+ * @typedef {Object} ManifestEntry
+ * @property {string} kind
+ * @property {string | null} base
+ * @property {string | null} author
+ * @property {string} created
+ * @property {Array<*>} files
+ * @property {string | null} writer
+ * @property {string | null} operation
+ * @property {number} seq
+ */
+/**
+ * R53: a manifest entry as `manifestByAuthor` lists it.
+ * @typedef {Object} AuthorEntry
+ * @property {string} snapKey
+ * @property {string} kind
+ * @property {string | null} base
+ * @property {string | null} author
+ * @property {string} created
+ * @property {string | null} writer
+ * @property {string | null} operation
+ */
+/**
+ * R35, R36: a page of bundle ids in id order; `cursor` the last id listed, null when none.
+ * @typedef {Object} IdPage
+ * @property {string[]} ids
+ * @property {string | null} cursor
+ */
+/**
+ * R35, R36, R53, R79: a bounded read's page.
+ * @typedef {Object} PageArgs
+ * @property {string | null} [after] the cursor: list after this id
+ * @property {number | string} [limit] at most this many
+ * @bound limit: clamped to 1..1000, 200 when absent or not a number
+ */
+/**
+ * R56: one table's part of the digest census.
+ * @typedef {Object} DigestCensusPart
+ * @property {number} rows
+ * @property {number} inline
+ * @property {number} blob
+ * @property {number} digest_disagrees
+ * @property {number} bytes_disagree
+ * @property {Array<{bundle_id: string, snap_key?: string, path: string, stored: string, computed: string | null, bytes_stored?: number, digest: "disagrees" | "agrees"}>} listed
+ */
+/**
+ * R56
+ * @typedef {Object} DigestCensus
+ * @property {true} ok
+ * @property {DigestCensusPart} files
+ * @property {DigestCensusPart} history
+ * @property {0} rewritten
+ * @property {string} note
+ */
+/**
+ * R57
+ * @typedef {Object} SnapKeyCensus
+ * @property {boolean} ok always true
+ * @property {number} bundles
+ * @property {number} manifest_rows
+ * @property {number} promotions
+ * @property {number} overwritten
+ * @property {number} undetermined
+ * @property {number} bundles_with_deficit
+ * @property {number} excess
+ * @property {number} orphan_manifest_bundles
+ * @property {Array<{bundle_id: string, promotions: number, manifest_rows: number, overwritten: number, undetermined: number, creation_row: boolean, unanchored: string[]}>} listed
+ * @property {number} rewritten always 0
+ * @property {string} [note]
+ */
+/**
+ * R56, R57: a census's listing bound.
+ * @typedef {Object} CensusArgs
+ * @property {number | string | null} [limit] rows (R56) or bundles (R57) listed
+ * @bound limit: an integer 0..500 (larger is 500, negative 0), 50 when absent, empty or not an integer
+ */
+/**
+ * R33: one live file a commit writes.
+ * @typedef {Object} CommitFile
+ * @property {string} path
+ * @property {string | null} [text] inline content
+ * @property {string | null} [blobSha] a blob's content address
+ * @property {number} [bytes] absent: the UTF-8 length of `text`, else 0
+ * @property {string} sha256
+ */
+/**
+ * R33, R44: a commit, as `promotion` asks it.
+ * @typedef {Object} CommitArgs
+ * @property {string} bundleId
+ * @property {string} type
+ * @property {string | null} [title]
+ * @property {string | null} [project]
+ * @property {string} snapKey
+ * @property {string} [kind] absent: "promotion"
+ * @property {string | null} [base]
+ * @property {string | null} [author]
+ * @property {string | null} [writer]
+ * @property {string | null} [operation]
+ * @property {CommitFile[]} [files]
+ * @property {string} [state]
+ * @property {string | null} [priorState]
+ * @property {string | null} [group] absent or null keeps the group held
+ * @property {string} [created]
+ * @property {string} [lastUpdated]
+ * @property {*} [criticality]
+ * @property {string} [at] the entry's time; absent: this module's clock
+ */
+/**
+ * R63, R74: the bundles a caller may not see, as SQL, or null for none.
+ * @typedef {Object} Hid
+ * @property {string} sql
+ * @property {Array<*>} args
+ */
+/**
+ * R18, R20, R59, R68: an audit page's report, beside each R68 finding's answer under its own key.
+ * @typedef {AuditFigures & Object<string, *>} AuditReport
+ */
+/**
+ * R18, R20, R59: an audit page's own figures, which no finding moves.
+ * @typedef {Object} AuditFigures
+ * @property {true} ok
+ * @property {number} checked
+ * @property {number} clean
+ * @property {number} withErrors
+ * @property {Object<string, *>} tally counts by check id
+ * @property {Object<string, *>} [tallyDetail] counts by `<check>/<code>`, absent when no code was carried
+ * @property {Array<{bundleId: string, errors: Array<{check: string, detail: string}>}>} offenders
+ * @property {number} limit
+ * @property {string | null} cursor
+ * @property {string[]} page
+ * @bound offenders: at most 20, each with at most 5 errors
+ */
+/**
+ * R21, R46, R77: one table's declaration.
+ * @typedef {Object} TableEntry
+ * @property {string} name
+ * @property {string} [purge] "clear" or "exempt"
+ * @property {string} [expunge] "tombstone" or "none"
+ * @property {string} [export] "yes", "admin-only" or "never"
+ * @property {string} [sight] "group", "bundle", "source" or "owner"
+ * @property {string} [derive] "stored" or "derived-rebuildable"
+ * @property {boolean} [version_chain]
+ * @property {string[] | null} [keys] columns keying a row to a bundle
+ * @property {string} [whole] the whole-store purge's WHERE clause
+ * @property {string[] | null} [clears] columns a bundle's purge sets to NULL
+ * @property {string[]} [key] a derived-rebuildable table's row key columns
+ * @property {string[] | null} [from] the stored tables it is rebuilt from
+ * @property {(scope: Object<string, string | number> | null) => Array<Object<string, *>>} [rebuild]
+ * @bound names: plain identifiers; every class present, from its listed values; a derived-rebuildable table names rebuild and key
+ */
+/**
+ * R21: a declaration as `declaredTables()` answers it.
+ * @typedef {Object} DeclaredTable
+ * @property {string} module
+ * @property {string} name
+ * @property {string[]} [keys]
+ * @property {string} [whole]
+ * @property {string[]} [clears]
+ * @property {string} purge
+ * @property {string} expunge
+ * @property {string} export
+ * @property {string} sight
+ * @property {string} derive
+ * @property {boolean} version_chain
+ * @property {string[]} [key]
+ * @property {string[] | null} [from]
+ */
+/**
+ * R77: a held row's key: `{column: value}` over the declared key columns, or a bare value for a one-column key.
+ * @typedef {string | number | Object<string, string | number>} RowKey
+ */
+/**
+ * R77: a comparison of a rebuild with the held rows.
+ * @typedef {{same: true, first?: undefined} | {same: false, first: {key: Object<string, *>, held: Object<string, *> | null, rebuilt: Object<string, *> | null}}} RebuildComparison
+ */
+/**
+ * R78: a table's check, answering null or undefined for a pass, or a refusal carrying a non-empty `code`.
+ * @typedef {(row: *, ctx: {op: *}) => *} StoreCheck
+ */
+/**
+ * R79: what an expunge removes and why.
+ * @typedef {Object} ExpungeArgs
+ * @property {string} [module]
+ * @property {string} [table]
+ * @property {Object<string, string | number>} [key]
+ * @property {string} [ground] "unlawful", "confidential", "court_order" or "lawful_demand"
+ * @property {string} [order] the recorded order, for court_order
+ * @property {string} [demandKind] the profile's demand kind, for lawful_demand
+ * @property {string} [by] the member expunging
+ */
+/**
+ * R79: a tombstone, holding none of the removed content.
+ * @typedef {Object} Tombstone
+ * @property {string} table
+ * @property {Object<string, *> | null} key
+ * @property {string} ground
+ * @property {string} [order]
+ * @property {string} [demandKind]
+ * @property {string} by
+ * @property {string} at
+ */
+/**
+ * R38, R87, R88: the instance's evidence store, keyed by digest.
+ * @typedef {Object} EvidenceStore
+ * @property {(digest: string) => *} head
+ * @property {(digest: string, options?: {range?: {offset: number, length: number}}) => *} get
+ * @property {(digest: string, bytes: *) => *} put
+ * @property {(digest: string, partDigests: string[]) => Promise<{ok: true, size: number, [field: string]: *} | {ok: true, already: true, [field: string]: *} | Refusal>} [putFromParts]
+ * @bound range: offset a whole number from 0, length a whole number from 1
+ */
+/**
+ * R49–R52: one item's outcome in a set, beside the item's own answer's fields.
+ * @typedef {{index: number, outcome: "applied" | "retained", asked: Object<string, string | number | boolean | null> | null, [field: string]: *}} PerItemOutcome
+ */
+/**
+ * R50, R52: a set act's answer, every item applied (`weight` "per-item", `retained` 0).
+ * @typedef {{ok: true, op: string, weight: string, count: number, applied: number, retained: number, items: PerItemOutcome[], detail: string, [field: string]: *}} PerItemApplied
+ */
+/**
+ * R50, R52: a set refused whole (`SET_NO_ITEMS`; `SET_TOO_LARGE`, with `max`) or with items retained
+ * (`SET_ITEMS_RETAINED`, with `applied`, `retained` and `items`, each a `PerItemOutcome`).
+ * @typedef {{ok: false, reason: string, code: string, check: string, translation: string, detail: string, op: string, weight: string, count: number, [field: string]: *}} PerItemRefusal
+ */
+/**
+ * R85: an op declared beside the ops map.
+ * @typedef {Object} DeclaredOp
+ * @property {string[]} classes
+ * @property {boolean} mutating
+ * @property {string} weight
+ * @property {string} needs
+ * @property {string} description
+ * @property {{accepts: string[], requires: string[]}} fields
+ */
+/**
+ * R72, R73: this module's route arms, each a function of no arguments.
+ * @typedef {Object} RecordCoreOps
+ * @property {() => {id: string, [field: string]: *} | Refusal} allocid
+ * @property {() => LeaseAnswer} lease
+ * @property {() => SnapKeyCensus} snapkeycensus
+ * @property {() => DigestCensus} digestcensus
+ * @property {() => Object<string, *>} stats
+ * @property {() => Promise<Object<string, *>>} audit `{ok, checked, clean, withErrors, tally, tallyDetail?, offenders, limit, cursor, total}` and each finding
+ * @property {() => {ok: true, scope: string, before: Object<string, *>, after: Object<string, *>, removed: Object<string, number>}} purge
+ */
+/**
+ * R10–R12: a lease taken (the bundle's current digest as `base`, null when not held), refused because another
+ * actor holds it live, or refused as anonymous.
+ * @typedef {{ok: true, actor: string, expires: string, base: string | null, [field: string]: *} | {ok: false, heldBy: string, until: string, [field: string]: *} | Refusal} LeaseAnswer
+ */
 
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const C_ID = /^C-\d+(\.\d+)?$/;             /* a catalogue check id, as `checkBundle`'s grammars name them */
@@ -60,12 +388,22 @@ const te = new TextEncoder();
    negative, zero or positive like a comparator, and NaN when either side is not an instant, so a
    `> 0` / `< 0` test is false for an unreadable stamp rather than ranking it as zero. Where a
    comparison crosses act kinds, it goes through this. */
+/** R47 (N58, K85): the instant `when` spelled in UTC as ISO 8601 at the precision named.
+ *  @param {*} precision "second" (`YYYY-MM-DDTHH:MM:SSZ`) or "millisecond" (`YYYY-MM-DDTHH:MM:SS.sssZ`)
+ *  @param {number} [when] milliseconds since the epoch; absent: now
+ *  @returns {string}
+ *  @throws {Error} when `precision` is any other value, naming it
+ *  @bound precision: exactly "second" or "millisecond" */
 export function stampInstant(precision, when = Date.now()) {
   if (precision !== "millisecond" && precision !== "second")
     throw new Error(`stampInstant: precision is "second" or "millisecond", never ${JSON.stringify(precision)}`);
   const iso = new Date(when).toISOString();
   return precision === "millisecond" ? iso : iso.replace(/\.\d+Z$/, "Z");
 }
+/** R48 (N58, K85): two instants compared as instants, in either spelling, never as strings; a comparator. Never throws.
+ *  @param {*} a
+ *  @param {*} b
+ *  @returns {number} negative, zero or positive; NaN when either side is not a non-empty readable instant string */
 export function instantOrder(a, b) {
   const x = typeof a === "string" && a ? Date.parse(a) : NaN, y = typeof b === "string" && b ? Date.parse(b) : NaN;
   return x - y;
@@ -74,7 +412,9 @@ export function instantOrder(a, b) {
 /* ---- a file's digest and size (R58): module-level functions ---- */
 
 /** R57's creation marker: the SHA-256 of the empty string, the base a creation's manifest entry records, as the
- *  check catalogue recognises it. */
+ *  check catalogue recognises it.
+ *  @type {string}
+ *  @bound 64 lowercase hex characters */
 export const EMPTY_STRING_SHA = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
 /* REC-175: THE ONE COMPUTATION of what a promoted file's digest IS, read by `promotion` before any write and by
@@ -82,6 +422,10 @@ export const EMPTY_STRING_SHA = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934
    about what a disagreement is. An inline file is hashed over `new TextEncoder().encode(text)` — the UTF-8 bytes
    of the string the `files.content` column stores, never a normalised copy (no trimming, no line-ending fold).
    A blob-backed file's digest is its content address, `blobSha`, lower-cased. Null for neither. */
+/** R58: a file's digest, the one computation of it. Never throws.
+ *  @param {FileContent | null | undefined} f
+ *  @returns {string | null} SHA-256 lowercase hex of `text`'s UTF-8 bytes as given, else `blobSha` lower-cased, else null
+ *  @bound 64 lowercase hex characters for inline text */
 export function fileDigestOf(f) {
   if (f && typeof f.text === "string") return createSha256().update(te.encode(f.text)).hex();
   if (f && typeof f.blobSha === "string" && f.blobSha) return f.blobSha.toLowerCase();
@@ -90,6 +434,10 @@ export function fileDigestOf(f) {
 /* REC-178: THE ONE MEASURE of an inline file's size — the byte length of the UTF-8 encoding of the string the
    `files.content` column stores — read by `promotion` (the stored figure and its inline bound) and by `digestCensus`
    (the held figure), so the door and the census cannot disagree about what a size is. Null for a blob-backed file. */
+/** R58: an inline file's size, the one measure of it. Never throws.
+ *  @param {FileContent | null | undefined} f
+ *  @returns {number | null} the UTF-8 byte length of `text`; null when there is no text
+ *  @bound a whole number, zero or more */
 export function inlineBytesOf(f) {
   return f && typeof f.text === "string" ? te.encode(f.text).length : null;
 }
@@ -133,7 +481,10 @@ const TAIL_LENGTH = 16;      /* measures-T33/assistant-substrate.md §5: under 1
  *  one site under one row (C-59.6). `detail` is one fixed sentence per prefix, naming the id that could not be drawn
  *  and saying nothing was written, the same for every caller; a prefix neither in R3's set, `SRC`, R76's opaque set nor
  *  `case-inputs`' `WCD` and `OUTC` (T48) is named by no object. `extra`
- *  adds the caller's own fields and never replaces these. It writes nothing and never throws. */
+ *  adds the caller's own fields and never replaces these. It writes nothing and never throws.
+ *  @param {*} prefix the prefix asked; only a string names one (any other is answered as "")
+ *  @param {Object<string, *>} [extra] the caller's own fields, which never replace the refusal's
+ *  @returns {MintExhausted} */
 export function mintExhausted(prefix, extra) {
   const asked = typeof prefix === "string" ? prefix : "";        /* only a string names a prefix */
   const what = Object.hasOwn(MINTED_ID_FOR, asked) ? `id for ${MINTED_ID_FOR[asked]}`
@@ -150,7 +501,9 @@ export function mintExhausted(prefix, extra) {
 
 /* ---- the set form of an act (R49–R52, R55, C-75): module-level ---- */
 
-/** R49: the most items one set may carry. */
+/** R49: the most items one set may carry.
+ *  @type {number}
+ *  @bound 100 */
 export const PER_ITEM_MAX = 100;
 
 /* D-126 — THE PER-ITEM WEIGHT — "each item independently succeeds or is RETAINED WITH A REASON"
@@ -183,6 +536,16 @@ export const PER_ITEM_MAX = 100;
  * (`affordances`' `PER_ITEM_ACTS`), passed by its caller: this module knows no act.
  *
  * ITEMS ARE NOT IN ONE TRANSACTION, deliberately: independence is the weight. */
+/** R49–R52 (N64, K91 (4)): the set form of an act, `one` applied to each item of `body.items` on its own. Writes nothing;
+ *  never throws.
+ *  @param {string} act the act's op name, echoed as `op`
+ *  @param {*} body the set: `items`, and the values every item shares
+ *  @param {Object<string, *> | null | undefined} stamped the server's stamps, spread over every item last
+ *  @param {*} one the single act, `(body) => answer`, called once per object item; a throw (a non-function among
+ *  them) retains the item as `SET_ITEM_FAILED`
+ *  @param {{itemKeys?: Array<string[]> | null, sharedKeys?: string[] | null}} [groups] the act's identity groups (R51)
+ *  @returns {PerItemApplied | PerItemRefusal}
+ *  @bound items: 1 to PER_ITEM_MAX (100); asked: an item's scalar fields, strings cut at 400 characters */
 export function perItem(act, body, stamped, one, { itemKeys = null, sharedKeys = null } = {}) {
   const refusal = (code, detail, extra) => {
     const row = PER_ITEM_CHECKS[code];
@@ -261,7 +624,8 @@ export function perItem(act, body, stamped, one, { itemKeys = null, sharedKeys =
 }
 
 /** R83 (T46; N904): what the strict `getSetting` answers for a setting whose value last set cannot be read, told from
- *  `null` (never set). One frozen object, compared by identity; no stored value parses to it. */
+ *  `null` (never set). One frozen object, compared by identity; no stored value parses to it.
+ *  @type {Readonly<{unreadable: true}>} */
 export const SETTING_UNREADABLE = Object.freeze({ unreadable: true });
 
 /* R84 (T47; N939): whether `value` reads back through JSON as it was set: at every depth `null`, a boolean, a string, a
@@ -303,7 +667,8 @@ function jsonText(value) {
 /** R91 (fix round 8, G115; K4811 (1)): THE BOOKKEEPING LIST, the tables a request writes whatever it asks, none of them part of
  *  the record: the sessions (`last_active`), the door window (the source and session windows), the owed-work ledger (its pending
  *  and last-run tables) the job table's per-unit attempt stamps and batch landings (K4912), and the doorbell's and the acquisition's tallies and stage timings. A row changed in one does not move
- *  `writeCount()`. The list is this module's; a module whose table belongs here is added by a requirement change. */
+ *  `writeCount()`. The list is this module's; a module whose table belongs here is added by a requirement change.
+ *  @type {ReadonlyArray<string>} */
 export const BOOKKEEPING_TABLES = Object.freeze(["sessions", "admission_door_window", "admission_session_window", "keeps_pending",
   "keeps_last", "knock_rate", "doorbell_tally", "doorbell_limit_last", "acquire_stages", "job_unit_attempts", "job_batches"]);
 /* R91: the tally of the connection's start, per storage connection (a second instance over the same storage shares it): the
@@ -317,7 +682,10 @@ let sqlOf;
 /** R39: the one RecordCore for this object's storage. `ctx` is the Durable Object state (anything with
  *  `storage.sql` and `storage.transactionSync`), or that storage itself. `opts` is read on the first call
  *  only: `evidence` — the instance's evidence bucket (R2) or null; `evidencePrefix` — what every evidence
- *  key begins with (`<store>/captures/`), or a function answering it when it is asked. */
+ *  key begins with (`<store>/captures/`), or a function answering it when it is asked.
+ *  @param {*} ctx a Durable Object state (`{storage}`) or a `RecordStorage` itself
+ *  @param {RecordOptions} [opts] read on the first call for that storage only
+ *  @returns {RecordCore} the same instance for every caller over one storage */
 export function recordOf(ctx, opts = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let rc = instances.get(storage);
@@ -330,16 +698,21 @@ export class RecordCore {
    *  WITHHOLDS FROM SOME CALLER. Their ids are minted opaque by the act that creates them and never from
    *  `allocId`'s counter, because a counted suffix tells its reader how many were minted before, hidden
    *  ones included: PROJ (a project out of sight), CASE (an unratified case), DRAFT (a draft), RVG (a
-   *  review grant), TASK (a task naming a bundle the viewer cannot see). */
+   *  review grant), TASK (a task naming a bundle the viewer cannot see).
+   *  @type {ReadonlyArray<string>} */
   static GATED_ID_PREFIXES = Object.freeze(["PROJ", "CASE", "DRAFT", "RVG", "TASK"]);
 
   /** D-432: the gated prefixes whose mint passes NO tail, so an id the counter issued for them before
    *  REC-151 (`seq`'s `<P>-<year>` scope, 0001 up to next-1) is exactly an id the opaque minter can draw;
-   *  `seedMintLedger` records that range. PROJ and TASK carry a slug the counter never recorded. */
+   *  `seedMintLedger` records that range. PROJ and TASK carry a slug the counter never recorded.
+   *  @type {ReadonlyArray<string>} */
   static UNTAILED_GATED_PREFIXES = Object.freeze(["CASE", "DRAFT", "RVG"]);
 
-  /** This module's own tables, declared to purge by it (R21), and those purge never clears (R23). */
+  /** This module's own tables, declared to purge by it (R21), and those purge never clears (R23).
+   *  @type {ReadonlyArray<string>} */
   static OWN_TABLES = Object.freeze(["files", "history", "manifest", "leases", "bundles"]);
+/** R23: this module's own tables that `purge` never clears, in either form.
+ *  @type {ReadonlyArray<string>} */
   static EXEMPT_TABLES = Object.freeze(["seq", "minted_ids", "settings", "tombstones", "derived_stale", "bookkeeping_tally"]);
 
   /** R21 (T33-19): the classes of this module's own tables, declared by it explicitly (R79's tombstones and R77's stale
@@ -378,6 +751,9 @@ export class RecordCore {
   #auditContexts = [];    // R69: {module, context}, in registration order
   #mintSeeds = [];        // R70: {module, sources}, in registration order
 
+/** R39: one instance over `storage`; callers reach it through `recordOf`, which makes one per storage.
+ *  @param {RecordStorage} storage the Durable Object's storage
+ *  @param {RecordOptions} [opts] */
   constructor(storage, { evidence = null, evidencePrefix = "bio/captures/" } = {}) {
     this.#storage = storage;
     this.#sql = storage.sql;
@@ -404,7 +780,8 @@ export class RecordCore {
   #one(q, ...a) { const r = this.#rows(q, ...a); return r.length ? r[0] : null; }
 
   /** R54: true throughout the boot at which the store had never held the record's schema, decided once, when
-   *  this instance was made; false at every later boot. `instance-setup` reads it. */
+   *  this instance was made; false at every later boot. `instance-setup` reads it.
+   *  @returns {boolean} */
   isFirstBoot() { return this.#firstBoot === true; }
 
   /* The additive columns this module's tables gained after a store was first written: nullable, so an older row simply
@@ -426,7 +803,8 @@ export class RecordCore {
    *  `DROP COLUMN` on a column already gone is an error. History keeps any frontmatter that carried it, which is correct.
    *  The type renames (problem → focus 2026-07-27, focus → inquiry REC-10) are normalised in `bundles.object_type`, the
    *  DERIVED layer, from record-grammar's own `LEGACY_TYPE_ALIASES` rather than restated, so a further name is one entry
-   *  there and no edit here; append-only history keeps whatever spelling it was written with. */
+   *  there and no edit here; append-only history keeps whatever spelling it was written with.
+   *  @returns {void} */
   migrate() {
     const addColumns = () => {
       for (const [table, column, decl] of RecordCore.#ADDITIVE_COLUMNS) {
@@ -468,7 +846,9 @@ export class RecordCore {
    *  refuses the triggers the counter falls back to `total_changes()` whole: the cache it keys then recomputes more often and
    *  is never wrong. A read changes nothing, so two answers with no write between are equal; the first reading may make the
    *  triggers, which move no row. It counts from the object's start and is 0 for a record nothing has written since. DDL moves
-   *  no row and is not counted. */
+   *  no row and is not counted.
+   *  @returns {number}
+   *  @bound a whole number, zero or more, that never falls while the object lives */
   writeCount() {
     this.#watchBookkeeping();
     const total = Number(this.#one(`SELECT total_changes() AS n`).n);
@@ -503,7 +883,10 @@ export class RecordCore {
    *  rolls back every row written inside it, in any module's tables; a refusal is then returned, a
    *  throw rethrown. A call made inside another joins it as a savepoint (a Durable Object's
    *  `transactionSync` nests so, measured in Miniflare): a nested call that throws or refuses rolls back
-   *  its own writes and ids and nothing else, and the outer call decides the rest (R32, K133). */
+   *  its own writes and ids and nothing else, and the outer call decides the rest (R32, K133).
+   *  @param {() => *} fn the work, run once
+   *  @returns {*} what `fn` returned, a refusal (`ok: false`) among them
+   *  @throws {Error} what `fn` throws, rethrown after the rollback */
   transact(fn) {
     let result, out, committed = false;
     const held = [];                  /* R66: what `afterCommit` held inside this call */
@@ -534,7 +917,10 @@ export class RecordCore {
    *  inside one, synchronously just after the outermost `transact` commits and before that call returns, in the order
    *  the calls were made; never when the transaction, or the savepoint holding it, rolls back (a throw or an `ok:false`
    *  answer). A held `fn` that throws does not undo the commit, stop the others or change what `transact` answers: a
-   *  caller that must know (reevaluation's `listeners_failed`) catches its own. A non-function is a caller's defect. */
+   *  caller that must know (reevaluation's `listeners_failed`) catches its own. A non-function is a caller's defect.
+   *  @param {() => *} fn
+   *  @returns {void}
+   *  @throws {TypeError} when `fn` is not a function */
   afterCommit(fn) {
     if (typeof fn !== "function") throw new TypeError("afterCommit: fn is not a function");
     if (this.#held.length) this.#held[this.#held.length - 1].push(fn);
@@ -550,7 +936,11 @@ export class RecordCore {
   /** R1, R2, R76 (T33-19; S0-2, B0.12): an id of `prefix` in its `ID_TABLE` form (record-grammar's R46). A sequential
    *  prefix, or one the table does not hold, is `<prefix>-<year>-N`, the scope's next number, zero-padded to four digits
    *  and never cut: there is no ceiling, so the 10,000th is `…-10000`. An opaque prefix is R76's id. The same step
-   *  inside a caller's transaction as on its own, because it joins the caller's. */
+   *  inside a caller's transaction as on its own, because it joins the caller's.
+   *  @param {string} prefix
+   *  @param {string | number} year
+   *  @returns {{id: string, [field: string]: *} | MintExhausted} the id; `MINT_EXHAUSTED` only for an opaque prefix after 64 hits in a row
+   *  @bound id: `<prefix>-<year>-N`, N at least four digits, or `<prefix>-<year>-<16 of [a-z0-9]>` for an opaque prefix */
   allocId(prefix, year) {
     return this.transact(() => (OPAQUE_PREFIXES.has(prefix) ? this.#opaqueId(prefix, year) : this.#nextSeq(prefix, year)));
   }
@@ -585,7 +975,11 @@ export class RecordCore {
   /** R3–R5, REC-151 / C-59.5: the door a CALLER allocates through. Gating is decided on the counter's
    *  SCOPE (`<prefix>-<year>`), so moving the dash into the prefix cannot reach a gated counter, and a
    *  prefix that merely begins with a gated one's letters (`PROJECTX`) keys a different scope. The
-   *  refusal echoes only what the caller sent. */
+   *  refusal echoes only what the caller sent.
+   *  @param {string | null} [prefix] absent (undefined or null) is `ALLOCID_PREFIX_REQUIRED`
+   *  @param {string | number | null} [year] absent (undefined or null) is `ALLOCID_YEAR_REQUIRED`
+   *  @returns {{id: string, [field: string]: *} | Refusal} the id as `allocId` answers it, or a refusal allocating nothing
+   *  @bound a gated scope (PROJ, CASE, DRAFT, RVG, TASK) is `ALLOCID_PREFIX_GATED` */
   allocIdOp(prefix, year) {
     /* R86 (T51; B2, K4259): an id is for a named prefix and year; a call that names neither allocates nothing. Absent
        is no value at all (a query parameter not sent), so an empty or numeric value still reaches the gate (R4). */
@@ -623,7 +1017,13 @@ export class RecordCore {
    *  BEFORE it is returned, in whatever transaction the caller holds and never one of its own, so an act
    *  that rolls back takes its id back with it. The INSERT is plain, into the ledger's primary key: were
    *  the read above it ever lost, the act fails loudly rather than handing a spent id out. Null only
-   *  when 64 draws in a row collide. The ledger is read by no route and never counted or listed. */
+   *  when 64 draws in a row collide. The ledger is read by no route and never counted or listed.
+   *  @param {string} prefix
+   *  @param {string | number} year
+   *  @param {string | null} [tail] appended after the four digits; absent: none
+   *  @param {(id: string) => *} [taken] the caller's own test of a drawn id; truthy is taken
+   *  @returns {string | null} `<prefix>-<year>-DDDD<tail>`, or null when 64 draws in a row collide
+   *  @bound DDDD: four digits, 0000 to 9999, each equally likely */
   mintOpaqueId(prefix, year, tail = "", taken = () => false) {
     const draw = () => {
       const u = new Uint16Array(1);
@@ -646,7 +1046,9 @@ export class RecordCore {
    *  non-empty string (`OPAQUE_ID_MALFORMED`); one the ledger already holds, drawn, recorded or seeded (`OPAQUE_ID_SPENT`,
    *  naming it); a call outside any `transact` (`OPAQUE_ID_NO_TRANSACTION`), where nothing could take the record back.
    *  FAIL CLOSED: an INSERT the ledger refuses, by its primary key or because it cannot be written, is answered as spent,
-   *  so a caller never uses an id the ledger has not taken. Never throws. */
+   *  so a caller never uses an id the ledger has not taken. Never throws.
+   *  @param {*} [id] the chosen id; a non-empty string
+   *  @returns {{ok: true, id: string, [field: string]: *} | Refusal} `OPAQUE_ID_MALFORMED`, `OPAQUE_ID_NO_TRANSACTION` or `OPAQUE_ID_SPENT`, recording nothing */
   recordOpaqueId(id) {
     /* DEC-49 REGION is-opaque-id-refused */
     if (typeof id !== "string" || id === "")
@@ -670,7 +1072,10 @@ export class RecordCore {
    *  a counter of any width or an opaque 16-character tail, is learned as it is held. Rows already recorded are left as they are. One statement per source and one
    *  for the counter, each doing its work inside SQLite. A live id is matched by its literal `<prefix>-`
    *  head, never a GLOB built from the prefix: workerd refuses a pattern over 50 bytes (K313), and a
-   *  prefix is the caller's, of any length and any characters. */
+   *  prefix is the caller's, of any length and any characters.
+   *  @param {Array<string[]>} [sources] each `[prefix, table, column]`
+   *  @returns {void}
+   *  @bound table and column: plain identifiers, else the source is skipped */
   seedMintLedger(sources = []) {
     const at = new Date().toISOString();
     /* R40, R70: the caller's sources, then every registered module's, each named by its table's owner. */
@@ -696,7 +1101,10 @@ export class RecordCore {
    *  their live ids as it learns its caller's, so the ledger knows every id an opaque mint site's `taken` reads without
    *  this module naming a later module's table. A second registration by the same module is `MINT_SEED_DECLARED`; no
    *  module name, or a source that is not three non-empty strings, `MINT_SEED_MALFORMED`. A refused registration
-   *  registers nothing; an accepted one writes nothing until the next seed. */
+   *  registers nothing; an accepted one writes nothing until the next seed.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} sources each `[prefix, table, column]`, three non-empty strings
+   *  @returns {{ok: true, module: string, sources: string[][], [field: string]: *} | Refusal} `MINT_SEED_MALFORMED` or `MINT_SEED_DECLARED`, registering nothing */
   registerMintSeed(module, sources) {
     const named = typeof module === "string" && module.trim() !== "";
     const wellFormed = (x) => Array.isArray(x) && x.length === 3 && x.every((v) => typeof v === "string" && v.trim() !== "");
@@ -724,7 +1132,11 @@ export class RecordCore {
   }
 
   /** D-61: a lease is NEVER anonymous. It is a courtesy lock; promotion's CAS on `base` is the
-   *  integrity mechanism, so the lease hands back the bundle's CURRENT digest as the edit base. */
+   *  integrity mechanism, so the lease hands back the bundle's CURRENT digest as the edit base.
+   *  @param {string | null} bundleId
+   *  @param {*} actor the holder's name; a non-empty string, else `ANONYMOUS_LEASE`
+   *  @param {*} ttlMs the lease's length in milliseconds; not a number is 0
+   *  @returns {LeaseAnswer} */
   acquireLease(bundleId, actor, ttlMs) {
     const anonymous = RecordCore.#anonymousLease(actor);
     if (anonymous) return anonymous;
@@ -747,7 +1159,10 @@ export class RecordCore {
   /** R61 (N219): ends `actor`'s own lease on the bundle, live or expired, so no one is refused it (R11) until a
    *  lease is taken again. A lease another actor holds, or none, is left as it is: releasing is never a way to
    *  take a lock from its holder. Never throws; a read or write that fails released nothing (its transaction
-   *  rolled back) and says so. */
+   *  rolled back) and says so.
+   *  @param {*} bundleId
+   *  @param {*} actor a non-empty string, else `ANONYMOUS_LEASE`
+   *  @returns {{ok: true, released: boolean, [field: string]: *} | Refusal} */
   releaseLease(bundleId, actor) {
     const anonymous = RecordCore.#anonymousLease(actor);
     if (anonymous) return anonymous;
@@ -765,7 +1180,10 @@ export class RecordCore {
 
   /* ---- reads (R13–R17, R34–R36) ---- */
 
-  /** R13, R14: a live file, inline text or its blob reference (never the bytes). */
+  /** R13, R14: a live file, inline text or its blob reference (never the bytes).
+   *  @param {string} bundleId
+   *  @param {string} path
+   *  @returns {InlineFile | BlobFile | null} null when the bundle or the path is not held */
   readFile(bundleId, path) {
     const r = this.#one(`SELECT content, blob_sha, bytes, sha256 FROM files WHERE bundle_id=? AND path=?`, bundleId, path);
     if (!r) return null;
@@ -777,7 +1195,10 @@ export class RecordCore {
    *  digest (compared lower-cased) and is answered only when its text hashes to `sha` by R58's one digest, so a row
    *  whose stored digest disagrees with its content (R56) never passes its text off as the pinned bytes. A blob-backed
    *  row holds no text and is passed over, never ending the search. Null when either argument is absent, nothing
-   *  matches, or the read fails; never throws. `publication` R2 and `ratification` R3 read it. */
+   *  matches, or the read fails; never throws. `publication` R2 and `ratification` R3 read it.
+   *  @param {*} bundleId a non-empty string, else null
+   *  @param {*} sha the SHA-256 (any case), a non-empty string, else null
+   *  @returns {string | null} */
   textAtSha(bundleId, sha) {
     if (typeof bundleId !== "string" || !bundleId || typeof sha !== "string" || !sha) return null;
     const want = sha.toLowerCase();
@@ -792,7 +1213,10 @@ export class RecordCore {
 
   /** R15's fixed derivation: the key goes in the FILENAME, not a directory — `bundle.md` archived under
    *  K is `_history/bundle_K.md`, `data/changes.json` is `_history/data/changes_K.json` — because the
-   *  check catalogue parses exactly this shape (C-12.2). */
+   *  check catalogue parses exactly this shape (C-12.2).
+   *  @param {string} path the live file's path
+   *  @param {string} snapKey
+   *  @returns {string} `_history/<dir><name>_<snapKey><.ext>` */
   static snapPath(path, snapKey) {
     const cut = path.lastIndexOf("/");
     const dir = cut === -1 ? "" : path.slice(0, cut + 1);
@@ -810,7 +1234,9 @@ export class RecordCore {
    *  digests); and the manifest itself. R16 (D-674, D-700, State Rules I-20): "prior" is WRITE order,
    *  never the caller-chosen snap key, whose lexical order is not a clock, so every entry carries `seq`,
    *  its rank in the order this module recorded it, read from the table's own row order. The document
-   *  keeps its entries sorted by key, the form the catalogue checks (C-12.1); a reader walks `seq`. */
+   *  keeps its entries sorted by key, the form the catalogue checks (C-12.1); a reader walks `seq`.
+   *  @param {string} bundleId
+   *  @returns {*} a `BundleImage`, or null when the bundle holds nothing */
   readImage(bundleId) {
     const img = {};
     for (const r of this.#sql.exec(`SELECT path, content, blob_sha, sha256, bytes FROM files WHERE bundle_id=?`, bundleId))
@@ -850,13 +1276,17 @@ export class RecordCore {
     return Object.keys(img).length ? img : null;
   }
 
-  /** R34 */
+  /** R34
+   *  @param {string} bundleId
+   *  @returns {*} a `BundleInfo`, or null when the bundle is not held */
   bundleInfo(bundleId) {
     const r = this.#one(`SELECT bundle_id, object_type, title, project FROM bundles WHERE bundle_id=?`, bundleId);
     return r ? { id: r.bundle_id, type: r.object_type, title: r.title ?? null, project: r.project ?? null } : null;
   }
 
-  /** R41 */
+  /** R41
+   *  @param {string} bundleId
+   *  @returns {*} a `BundleHead`, or null when the bundle is not held */
   head(bundleId) {
     const r = this.#one(`SELECT bundle_sha, row_version, object_type, title, current_state, prior_state, group_id
                            FROM bundles WHERE bundle_id=?`, bundleId);
@@ -864,7 +1294,10 @@ export class RecordCore {
                  currentState: r.current_state, priorState: r.prior_state ?? null, groupId: r.group_id } : null;
   }
 
-  /** R42; `seq` is the entry's write-order rank, as in `readImage` (R16). */
+  /** R42; `seq` is the entry's write-order rank, as in `readImage` (R16).
+   *  @param {string} bundleId
+   *  @param {string} snapKey
+   *  @returns {*} a `ManifestEntry`, or null when no entry is recorded under `snapKey` */
   manifestEntry(bundleId, snapKey) {
     const r = this.#one(`SELECT kind, base, author, created, files_json, writer, operation,
                                 (SELECT COUNT(*) FROM manifest x WHERE x.bundle_id = m.bundle_id AND x.rowid <= m.rowid) AS seq
@@ -877,7 +1310,9 @@ export class RecordCore {
              seq: Number(r.seq) };
   }
 
-  /** R43 */
+  /** R43
+   *  @param {string} bundleId
+   *  @returns {string[] | null} in path order; null when the bundle is not held */
   livePaths(bundleId) {
     if (!this.#one(`SELECT 1 AS x FROM bundles WHERE bundle_id=?`, bundleId)) return null;
     return this.#rows(`SELECT path FROM files WHERE bundle_id=? ORDER BY path`, bundleId).map((r) => r.path);
@@ -885,7 +1320,9 @@ export class RecordCore {
 
   static #bound(limit) { return Math.max(1, Math.min(1000, Math.trunc(Number(limit)) || 200)); }
 
-  /** R35 */
+  /** R35
+   *  @param {PageArgs & {project?: string | null}} [args] `project`: only that project's bundles
+   *  @returns {IdPage} */
   listBundles({ project = null, after = "", limit = 200 } = {}) {
     const cap = RecordCore.#bound(limit);
     const ids = (project == null
@@ -895,7 +1332,9 @@ export class RecordCore {
     return { ids, cursor: ids.length ? ids[ids.length - 1] : null };
   }
 
-  /** R36 */
+  /** R36
+   *  @param {PageArgs & {type?: string | null}} [args] `type`: the `object_type` listed
+   *  @returns {IdPage} */
   listByType({ type, after = "", limit = 200 } = {}) {
     const cap = RecordCore.#bound(limit);
     const ids = this.#rows(`SELECT bundle_id FROM bundles WHERE object_type = ? AND bundle_id > ? ORDER BY bundle_id LIMIT ?`,
@@ -907,7 +1346,9 @@ export class RecordCore {
    *  `authorPrefix`, as `{bundleId, latest, firstOther}`. Entries are ordered by `created` and then by write order
    *  (rowid): `created` is the caller's stated time, and two entries stamped alike are ordered by the record, never
    *  by the snap key's lexical order, which is not a clock. `firstOther` is the earliest entry whose author is
-   *  non-empty and does not begin with the prefix. What a viewer may see of the list is its caller's to decide. */
+   *  non-empty and does not begin with the prefix. What a viewer may see of the list is its caller's to decide.
+   *  @param {PageArgs & {authorPrefix?: string | null}} [args]
+   *  @returns {{bundles: Array<{bundleId: string, latest: AuthorEntry | null, firstOther: AuthorEntry | null}>, cursor: string | null}} */
   manifestByAuthor({ authorPrefix = "", after = "", limit = 200 } = {}) {
     try {
       const cap = RecordCore.#bound(limit);
@@ -939,7 +1380,9 @@ export class RecordCore {
    *  is the point: a disagreeing row is REPORTED, never rewritten — the record's history is not corrected by a read,
    *  and which of the two (bytes or digest) is wrong is not decidable from here. A row is recomputed by the one
    *  `fileDigestOf` (R58); `bytes` is judged beside it for live inline rows only, by the one `inlineBytesOf`, as a
-   *  SEPARATE figure (history holds no size). Bounded by `limit` rows listed per table; the counts are always whole. */
+   *  SEPARATE figure (history holds no size). Bounded by `limit` rows listed per table; the counts are always whole.
+   *  @param {CensusArgs} [args]
+   *  @returns {DigestCensus} */
   digestCensus({ limit } = {}) {
     const cap = censusCap(limit);
     const walk = (table) => {
@@ -977,7 +1420,9 @@ export class RecordCore {
    *  being written at all, so one promotion of such a bundle's deficit is `undetermined`, the rest `overwritten`.
    *  Which KEY collided is recorded nowhere and is not guessed; an entry whose base is none of the bundle's own
    *  entries' `bundle.md` digest (`unanchored`) is listed as the trace an overwrite leaves in the chain. Entries of
-   *  a bundle id not held are counted apart. Bounded by `limit` bundles listed; the counts are always whole. */
+   *  a bundle id not held are counted apart. Bounded by `limit` bundles listed; the counts are always whole.
+   *  @param {CensusArgs} [args]
+   *  @returns {SnapKeyCensus} */
   snapKeyCensus({ limit } = {}) {
     const cap = censusCap(limit);
     const out = { ok: true, bundles: 0, manifest_rows: 0, promotions: 0, overwritten: 0, undetermined: 0,
@@ -1032,7 +1477,10 @@ export class RecordCore {
    *  state, group, times and criticality as the caller gives them, and the entry's time is `at`, the
    *  caller's stated time (this module's clock when it states none). R37 (N287): `group_id` is the producing
    *  group as the committer gave it, KEPT when a later commit gives none (absent or null: the column holds no
-   *  null), the empty string for a bundle created naming none; `prior_state` is `priorState` as last given. */
+   *  null), the empty string for a bundle created naming none; `prior_state` is `priorState` as last given.
+   *  @param {CommitArgs} args
+   *  @returns {{bundleSha: string, rowVersion: number}} the bundle's row after the commit; `bundleSha` is `bundle.md`'s digest, else the first file's, else ""
+   *  @throws {Error} when the snap key is already used for the bundle (the append fails loudly), or the storage refuses the write */
   commit({ bundleId, type, title = null, project = null, snapKey, kind = "promotion", base = null, author = null,
            writer = null, operation = null, files = [], state, priorState, group, created, lastUpdated, criticality,
            at }) {
@@ -1081,7 +1529,11 @@ export class RecordCore {
    *  them, so `op=stats` and purge's proof read every module's figures without calling a later module. Two modules
    *  never report one key: a key already held, or named twice in one list, is `COUNTS_DECLARED` naming its holder, and
    *  so is a module's second registration; no module name, no non-empty list of names, or no function is
-   *  `COUNTS_MALFORMED`. A refused registration registers nothing. It writes nothing. */
+   *  `COUNTS_MALFORMED`. A refused registration registers nothing. It writes nothing.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} keys the figure names, a non-empty list of non-empty strings
+   *  @param {*} counts `(hid) => {key: number}`, synchronous
+   *  @returns {{ok: true, module: string, keys: string[], [field: string]: *} | Refusal} `COUNTS_MALFORMED` or `COUNTS_DECLARED`, registering nothing */
   registerCounts(module, keys, counts) {
     const refuse = (code, detail, more) => {
       const row = RECORD_CORE_CHECKS[code];
@@ -1110,7 +1562,9 @@ export class RecordCore {
   /** R63: every registered figure, in registration order, each the number its module's function gave for it, or null
    *  when that function threw or gave no finite number for it: a figure that could not be read is never zero. `hid`
    *  (`{sql, args}`, the bundles the caller may not see, or null) is passed to each function as it was given, never
-   *  read here. Each function is asked once per answer. Writes nothing; never throws. */
+   *  read here. Each function is asked once per answer. Writes nothing; never throws.
+   *  @param {Hid | null} [hid] the bundles the caller may not see, passed on unread
+   *  @returns {Object<string, number | null>} every registered key, in registration order; null when unread */
   counts(hid = null) {
     const out = [];
     for (const { keys, counts } of this.#countsBy) {
@@ -1131,7 +1585,8 @@ export class RecordCore {
   /** R74 (K861, plane R10): this module's share of the instance's figures, exported for `plane`, which registers it
    *  under this module's name through R63 (`registerCounts("record-core", RecordCore.COUNT_KEYS, (hid) => rc.ownCounts(hid))`);
    *  the module registers nothing itself. Each figure is the table's rows less those naming a bundle in `hid` by its
-   *  `bundle_id`. `refs` is `connections`' table and not this module's figure (R31; K877). */
+   *  `bundle_id`. `refs` is `connections`' table and not this module's figure (R31; K877).
+   *  @type {ReadonlyArray<string>} */
   static COUNT_KEYS = Object.freeze(["bundles", "files", "history"]);
   static #COUNTED = Object.freeze({ bundles: "bundles", files: "files", history: "history" });
 
@@ -1139,7 +1594,9 @@ export class RecordCore {
    *  here from the plane in T20 (K861) with its reading kept. `hid` is membership's `hiddenBundles` (`{sql, args}`), or null for
    *  a viewer that sees every bundle and for the direct internal call, which count whole. `COALESCE(k, '')`: a NULL key
    *  names no bundle, and `NULL NOT IN (…)` is NULL, which would drop the row. A figure whose table cannot be read is
-   *  left out, and R63 answers it null. Synchronous; writes nothing; never throws. */
+   *  left out, and R63 answers it null. Synchronous; writes nothing; never throws.
+   *  @param {Hid | null} [hid] the bundles the caller may not see; null counts whole
+   *  @returns {{bundles?: number, files?: number, history?: number}} a figure whose table cannot be read is left out */
   ownCounts(hid = null) {
     const out = {};
     for (const key of RecordCore.COUNT_KEYS) {
@@ -1168,7 +1625,10 @@ export class RecordCore {
    *  answering them through the caller's sight (`viewer` exactly as the caller sent it, `undefined` when never sent,
    *  a direct internal call that counts whole). The sight and the counting are the source's, over the tables it
    *  reads; which figures each caller is told is this module's (R64). A second source is `STATS_SOURCE_DECLARED`,
-   *  naming the holder; one without a module name or a function `STATS_SOURCE_MALFORMED`. */
+   *  naming the holder; one without a module name or a function `STATS_SOURCE_MALFORMED`.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} figures `({viewer, proof}) => {figure: value}`
+   *  @returns {{ok: true, module: string, [field: string]: *} | Refusal} `STATS_SOURCE_MALFORMED` or `STATS_SOURCE_DECLARED`, registering nothing */
   registerStatsSource(module, figures) {
     /* DEC-49 REGION is-stats-source-registration */
     if (typeof module !== "string" || !module.trim() || typeof figures !== "function")
@@ -1209,7 +1669,9 @@ export class RecordCore {
    *  caller's parameters are copied, so only `true` itself grants it: an absent or any other value is false, and a
    *  door that forgets to stamp loses `dbBytes` rather than leaking it. THE RESIDUE, STATED RATHER THAN HIDDEN: the
    *  admin class still receives a figure that moves on every write, so an operator can tell that something large was
-   *  written, never that it was a lead, and no lead is readable to it. Writes nothing; never throws. */
+   *  written, never that it was a lead, and no lead is readable to it. Writes nothing; never throws.
+   *  @param {{capacity?: *, viewer?: *}} [args] `capacity` grants `dbBytes` only when exactly `true`; `viewer` as the control plane stamped it, absent for a direct internal call
+   *  @returns {Object<string, *>} the source's figures, never `leads`, `observations`, `themes` or `themePlacements`; `dbBytes` (a number or null) only with capacity */
   stats({ capacity = false, viewer } = {}) {
     const f = this.#figures(viewer, false);
     for (const k of [...RecordCore.#PROOF_ONLY, "dbBytes"]) delete f[k];
@@ -1220,7 +1682,8 @@ export class RecordCore {
   /** R64: purge's proof of what it removed, the private form of the same figures, WHOLE (§5: *the purge proof's own
    *  count stays whole*): the whole log as `observations`, with `leads`, the themes and `dbBytes`, and no
    *  `observationsNonLead`. No route answers it: purge reads it before and after it clears. Writes nothing; never
-   *  throws. */
+   *  throws.
+   *  @returns {Object<string, *>} the source's figures whole, with `dbBytes` (a number or null) and no `observationsNonLead` */
   proofCounts() {
     const f = this.#figures(undefined, true);
     for (const k of [...RecordCore.#WIRE_ONLY, "dbBytes"]) delete f[k];
@@ -1245,7 +1708,12 @@ export class RecordCore {
    *  runs over every bundle of a page beside the catalogue, called `check(image, context)`: `image` is what
    *  `checkBundle` gets (`bundleId`/`folderName`, `files`, `elidedPaths`, `sha256`, `sha512`, R19's `resolveTarget`)
    *  and `raw`, the bundle's `readImage`; `context` is R45's for the bundle (`{}` when there is none), so a check that
-   *  left the catalogue for its module is not lost to the audit, and the bundle is judged once, whole. */
+   *  left the catalogue for its module is not lost to the audit, and the bundle is judged once, whole.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} check `(image, context) => findings` (a list, or a promise of one)
+   *  @param {symbol} [seam] this module's own token for the finding and context seams; callers leave it out
+   *  @param {string} [key] a finding's answer key (the finding seam only)
+   *  @returns {{ok: true, module: string, key?: string, [field: string]: *} | Refusal} `AUDIT_CHECK_MALFORMED` or `AUDIT_CHECK_DECLARED`, registering nothing */
   registerAuditCheck(module, check, seam = RecordCore.#CHECK_SEAM, key = undefined) {
     const finding = seam === RecordCore.#FINDING_SEAM, context = seam === RecordCore.#CONTEXT_SEAM;
     const list = finding ? this.#auditFindings : context ? this.#auditContexts : this.#auditChecks;
@@ -1271,14 +1739,21 @@ export class RecordCore {
    *  `finding(page)` under its answer key `key` (provenance's route-marker tally as `route`, membership's reserved-id
    *  finding as `membership`). `auditPass` calls each once per page, in registration order, and answers its result under
    *  its key, beside the page's own figures, which a finding never moves: a stated finding, not a conformance error. The
-   *  refusals are R59's rows. */
+   *  refusals are R59's rows.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} key the answer key, a non-empty string none of the answer's own fields or another finding holds
+   *  @param {*} finding `(page) => *`, page `{bundles: [{bundleId, type, state}], after, last}`
+   *  @returns {{ok: true, module: string, key?: string, [field: string]: *} | Refusal} R59's refusals */
   registerAuditFinding(module, key, finding) {
     return this.registerAuditCheck(module, finding, RecordCore.#FINDING_SEAM, key);
   }
 
   /** R69: a later module registers once, at start, `context(bundleId)`, answering options for that bundle's checks
    *  (inquiry's earned registry, publication's published registry); R45 merges every registration's answer, in
-   *  registration order, before the caller's own. The refusals are R59's rows. */
+   *  registration order, before the caller's own. The refusals are R59's rows.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} context `(bundleId) => {option: value}`
+   *  @returns {{ok: true, module: string, [field: string]: *} | Refusal} R59's refusals */
   registerAuditContext(module, context) {
     return this.registerAuditCheck(module, context, RecordCore.#CONTEXT_SEAM);
   }
@@ -1289,7 +1764,11 @@ export class RecordCore {
    *  may be claimed by several registrations, whose arms run there in registration order (`grammars()`). Refused,
    *  before anything is registered: a malformed entry, or ids claiming part of a slot (`GRAMMAR_MALFORMED`); a module's
    *  second registration, or an id another registration holds, unless it is an id of a slot both claim
-   *  (`GRAMMAR_DECLARED`, naming the holder). An accepted registration answers `{ok: true, module, ids}`. */
+   *  (`GRAMMAR_DECLARED`, naming the holder). An accepted registration answers `{ok: true, module, ids}`.
+   *  @param {*} module the registering module's name, a non-empty string
+   *  @param {*} [grammar] `{ids, arm}`: `ids` the check ids (`C-<n>` or `C-<n>.<m>`) `arm(ctx, findings)` raises
+   *  @returns {{ok: true, module: string, ids: string[], [field: string]: *} | Refusal} `GRAMMAR_MALFORMED` or `GRAMMAR_DECLARED`, registering nothing
+   *  @bound ids: a non-empty list of C-ids, claiming each EXTENSION_ARMS slot whole or not at all */
   registerGrammar(module, { ids, arm } = {}) {
     const named = typeof module === "string" && module.trim() !== "";
     const listed = Array.isArray(ids) && ids.length > 0 && ids.every((id) => typeof id === "string" && C_ID.test(id));
@@ -1327,7 +1806,8 @@ export class RecordCore {
    *  as one entry per slot, at its first claimant's place: `{module: <first claimant>, ids: <the slot's ids>, arm}`,
    *  whose arm runs every claimant's arm in registration order, each as `arm(ctx, findings, {slot, rest})`: `slot` is
    *  the slot's `EXTENSION_ARMS` name, and `rest()` runs the slot's later claimants at that point, once (a claimant's
-   *  sub-slot); those not run when an arm returns run after it. A fresh list each call; the entries are frozen. */
+   *  sub-slot); those not run when an arm returns run after it. A fresh list each call; the entries are frozen.
+   *  @returns {Array<{module: string, ids: ReadonlyArray<string>, arm: Function}>} frozen entries, a fresh list each call */
   grammars() { return this.#bundleGrammars(null); }
 
   /* `grammars()`' list. With `wrap`, each claimant's arm is called through `wrap(registration, run)`: the audit wraps each
@@ -1371,7 +1851,10 @@ export class RecordCore {
    *  and stops once the page is full, and no read loads the corpus's ids whole. R45: a bundle's context is every R69
    *  registration's answer, merged in registration order, then the caller's own `context(id)`. Blob-backed files are
    *  declared elided: existence assertions see them, byte checks skip them. R68: every registered finding's answer is
-   *  carried under its key, beside the page's figures, which it never moves. */
+   *  carried under its key, beside the page's figures, which it never moves.
+   *  @param {PageArgs & {visible?: ((bundleId: string) => boolean) | null, context?: ((bundleId: string) => (Object<string, *> | null | undefined)) | null}} [args] `visible` admits a bundle to the page; `context` adds options for its checks
+   *  @returns {Promise<AuditReport>}
+   *  @bound limit: clamped to 1..1000, 200 when absent or not a number; offenders at most 20 */
   async auditPass({ after = "", limit = 200, visible = null, context = null } = {}) {
     const cap = RecordCore.#bound(limit);
     const page = [];
@@ -1479,7 +1962,10 @@ export class RecordCore {
    *  the class; so is a name that is not a plain identifier, and a table declared twice or by two modules (R80, each with
    *  its row). A refused declaration declares nothing. `purge` clears every declared table whose `purge` is `clear`.
    *  R77 (N593): a derived-rebuildable table may also name `from`, the stored tables its rows are rebuilt from, kept as
-   *  given and answered by `declaredTables()`. */
+   *  given and answered by `declaredTables()`.
+   *  @param {*} module the declaring module's name
+   *  @param {string | TableEntry | Array<string | TableEntry>} [entries] one entry per table
+   *  @returns {{ok: true, [field: string]: *} | Refusal} `TABLE_NAME_INVALID`, `TABLE_CLASS_MISSING`, `TABLE_CLASS_UNKNOWN` or `TABLE_DECLARED`, declaring nothing */
   declareTable(module, entries = []) {
     return this.#declare(module, Array.isArray(entries) ? entries : [entries], false);
   }
@@ -1490,7 +1976,11 @@ export class RecordCore {
    *  when the declarations are read, as purge decides keying (the table may not exist yet at declaration). An entry is a
    *  table name or `{name, keys, whole, clears}`: keyed to a bundle by the named columns (any of them matching; none, and
    *  only the whole-store form clears it), cleared by the whole-store form only where `whole` holds, and, for `clears`
-   *  (K775), a pointer column a bundle's purge sets to NULL where it names the bundle, on rows that stay. */
+   *  (K775), a pointer column a bundle's purge sets to NULL where it names the bundle, on rows that stay.
+   *  @param {*} module the declaring module's name
+   *  @param {Array<string | Object<string, *>>} [tables] the tables purge clears: a name, or `{name, keys?, whole?, clears?}` (R46)
+   *  @param {{exempt?: string[]}} [options] `exempt`: the tables purge never clears
+   *  @returns {{ok: true, [field: string]: *} | Refusal} as `declareTable` */
   declarePurge(module, tables = [], { exempt = [] } = {}) {
     const defaults = { expunge: "none", export: "admin-only", sight: "bundle", derive: "stored", version_chain: false };
     return this.#declare(module, [...tables.map((t) => ({ ...(typeof t === "string" ? { name: t } : t), ...defaults, purge: "clear" })),
@@ -1555,7 +2045,8 @@ export class RecordCore {
   /** R21: every declaration with its classes, in declaration order (`corpus-export` reads it), a fresh list each call. A
    *  default-form entry's `sight` is `bundle` when the table is keyed to a bundle now, else `group`. R77: a
    *  derived-rebuildable entry answers `from`, the stored tables it is rebuilt from, or null when its declaration named
-   *  none (not stated, never an empty list); a stored entry answers no `from`. */
+   *  none (not stated, never an empty list); a stored entry answers no `from`.
+   *  @returns {DeclaredTable[]} */
   declaredTables() {
     return this.#order.map((d) => ({
       module: d.module, name: d.name, ...(d.keys ? { keys: [...d.keys] } : {}), ...(d.whole ? { whole: d.whole } : {}),
@@ -1570,7 +2061,9 @@ export class RecordCore {
    *  declared `clears` column to NULL where it names the bundle (K775), in the same transaction. `seq`, `minted_ids` and
    *  `settings` are exempt in both forms, on the counter's reasoning: an id once allocated or minted is
    *  never reissued, and a purge that reset them would make identifiers ambiguous across it. An
-   *  undeclared table is never touched. Evidence objects are untouched (content-addressed, immutable). */
+   *  undeclared table is never touched. Evidence objects are untouched (content-addressed, immutable).
+   *  @param {{bundleId?: string | null}} [args] absent, null or empty: the whole store
+   *  @returns {{ok: true, scope: string, removed: Object<string, *>}} `scope` "ALL" or the bundle id; `removed` names every non-exempt declared table */
   purge({ bundleId = null } = {}) {
     const one = bundleId != null && bundleId !== "";
     const isRow = (d) => d.module === "record-core" && d.name === "bundles";
@@ -1646,7 +2139,12 @@ export class RecordCore {
 
   /** R77: marks a held row of a derived-rebuildable table stale, in whatever transaction the caller holds, so
    *  `readDerived` answers it stale until a rebuild clears it. `key` names the row (R77's key columns). A table the
-   *  module did not declare derived-rebuildable, or a key that names no row's key, is the caller's defect: a TypeError. */
+   *  module did not declare derived-rebuildable, or a key that names no row's key, is the caller's defect: a TypeError.
+   *  @param {string} module the table's declarer
+   *  @param {string} table a table `module` declared derived-rebuildable
+   *  @param {RowKey} key
+   *  @returns {{ok: true}}
+   *  @throws {TypeError} when the table is not `module`'s derived-rebuildable table, or `key` names no row's key */
   markStale(module, table, key) {
     const d = this.#derived(module, table);
     const map = this.#keyMap(d, key);
@@ -1657,7 +2155,12 @@ export class RecordCore {
   }
 
   /** R77: FAIL CLOSED. A held row that is marked stale, missing, or cannot be read is `{stale: true}`, never its held
-   *  value; a fresh one is `{stale: false, row}`. Only a table the module did not declare derived-rebuildable throws. */
+   *  value; a fresh one is `{stale: false, row}`. Only a table the module did not declare derived-rebuildable throws.
+   *  @param {string} module the table's declarer
+   *  @param {string} table a table `module` declared derived-rebuildable
+   *  @param {*} key a `RowKey`; anything else reads stale
+   *  @returns {{stale: true} | {stale: false, row: Object<string, *>}}
+   *  @throws {TypeError} when the table is not `module`'s derived-rebuildable table */
   readDerived(module, table, key) {
     const d = this.#derived(module, table);
     try {
@@ -1675,7 +2178,12 @@ export class RecordCore {
 
   /** R77: THE REBUILD THAT CLEARS A MARK. In one transaction, the held rows in `scope` (null: the whole table) are
    *  replaced by `rebuild(scope)`'s, and the marks of every row it removed or wrote are cleared (with no scope, every
-   *  mark of the table). It writes only the declared table and this module's marks. */
+   *  mark of the table). It writes only the declared table and this module's marks.
+   *  @param {string} module the table's declarer
+   *  @param {string} table a table `module` declared derived-rebuildable
+   *  @param {Object<string, string | number> | null} [scope] `{column: value}`, every column matching; null the whole table
+   *  @returns {{ok: true, rows: number}} the rows written
+   *  @throws {TypeError} when the table is not `module`'s derived-rebuildable table, the scope is malformed, or `rebuild` answers no list of rows */
   rebuildDerived(module, table, scope = null) {
     const d = this.#derived(module, table);
     const sc = RecordCore.#scope(scope);
@@ -1699,7 +2207,12 @@ export class RecordCore {
    *  byte with the held rows of `scope`, both read back through SQLite (so its own typing is what is compared), walked
    *  in key order: `{same: true}`, or `{same: false, first: {key, held, rebuilt}}` at the first key whose rows differ
    *  (`held` null for a row only the rebuild holds, `rebuilt` null for one only the table holds). The scratch copy lives in a savepoint that is
-   *  always rolled back: nothing is written to the held table, or anywhere. */
+   *  always rolled back: nothing is written to the held table, or anywhere.
+   *  @param {string} module the table's declarer
+   *  @param {string} table a table `module` declared derived-rebuildable
+   *  @param {Object<string, string | number> | null} [scope] as `rebuildDerived`
+   *  @returns {RebuildComparison | undefined} always a comparison when it returns
+   *  @throws {TypeError} as `rebuildDerived` */
   rebuildAndCompare(module, table, scope = null) {
     const d = this.#derived(module, table);
     const sc = RecordCore.#scope(scope);
@@ -1751,7 +2264,11 @@ export class RecordCore {
   /** R78: a table's owner registers, once per table at start, `check(row, {op})` (or a list of them, run in order), the
    *  table's one-home and shape checks. Refused, registering nothing: a table that already has its checks
    *  (`STORE_GATE_DECLARED`, naming the holder); no module, a table this module did not declare, or no function
-   *  (`STORE_GATE_MALFORMED`). */
+   *  (`STORE_GATE_MALFORMED`).
+   *  @param {*} module the table's declarer
+   *  @param {*} table a table `module` declared
+   *  @param {*} check a `StoreCheck`, or a non-empty list of them run in order
+   *  @returns {{ok: true, module: string, table: string, [field: string]: *} | Refusal} `STORE_GATE_MALFORMED` or `STORE_GATE_DECLARED`, registering nothing */
   registerStoreGate(module, table, check) {
     const named = typeof module === "string" && module.trim() !== "";
     const d = typeof table === "string" ? this.#declared.get(table) : undefined;
@@ -1775,7 +2292,12 @@ export class RecordCore {
    *  code as `reason`), or null when every check passed (or the table has none). FAIL CLOSED: a check that throws,
    *  answers a promise, or answers anything but null, undefined or a refusal is `STORE_GATE_FAILED`, never a pass; a
    *  writer that is not the table's declarer is `STORE_GATE_MALFORMED`. A writer that gets a refusal writes nothing and
-   *  answers it. Writes nothing; never throws. */
+   *  answers it. Writes nothing; never throws.
+   *  @param {*} module the writer, the table's declarer
+   *  @param {*} table
+   *  @param {*} row the row about to be written
+   *  @param {*} op the write, as the checks read it (`insert`, `update`, ...)
+   *  @returns {*} a `GateRefusal`, the first refusal (a check's, `STORE_GATE_FAILED` or `STORE_GATE_MALFORMED`), or null when every check passed */
   storeGate(module, table, row, op) {
     const d = typeof table === "string" ? this.#declared.get(table) : undefined;
     /* DEC-49 REGION is-store-gate-registration */
@@ -1820,7 +2342,10 @@ export class RecordCore {
    *  `EXPUNGE_GROUND_UNKNOWN`; a table `module` did not declare `tombstone` (`history` and `manifest` are declared
    *  `none`, R29), `EXPUNGE_NOT_DECLARED`; a machine (`token:`) or absent `by`, `EXPUNGE_NOT_A_MEMBER`; a key that is
    *  empty, names a column the table lacks, or matches no row, `EXPUNGE_NOTHING`. Who may expunge, and the ground's
-   *  evidence, are the caller's. */
+   *  evidence, are the caller's.
+   *  Its one argument is an `ExpungeArgs` (`{module, table, key, ground, order?, demandKind?, by}`), any field of it
+   *  absent or malformed answered by the refusals above.
+   *  @returns {{ok: true, table: string, removed: number, tombstone: Tombstone, [field: string]: *} | Refusal} `EXPUNGE_GROUND_UNKNOWN`, `EXPUNGE_NOT_DECLARED`, `EXPUNGE_NOT_A_MEMBER` or `EXPUNGE_NOTHING`, removing nothing */
   expunge({ module, table, key, ground, order, demandKind, by } = {}) {
     const said = (v) => typeof v === "string" && v.trim() !== "";
     const d = typeof table === "string" ? this.#declared.get(table) : undefined;
@@ -1856,7 +2381,10 @@ export class RecordCore {
   }
 
   /** R79: the tombstones in the order recorded, after the cursor `after` (a tombstone's `seq`), at most `limit`, of one
-   *  table when `table` is given. `cursor` is the last `seq` listed. Writes nothing; never throws. */
+   *  table when `table` is given. `cursor` is the last `seq` listed. Writes nothing; never throws.
+   *  @param {{table?: string | null, after?: number | string | null, limit?: number | string}} [args] `after` a tombstone's `seq`
+   *  @returns {{tombstones: Array<Tombstone & {seq: number}>, cursor: number | null}}
+   *  @bound limit: clamped to 1..1000, 200 when absent or not a number */
   tombstones({ table = null, after = 0, limit = 200 } = {}) {
     try {
       const cap = RecordCore.#bound(limit);
@@ -1882,7 +2410,10 @@ export class RecordCore {
    *  `SETTING_UNREADABLE` when the value last set is not valid JSON (or not held as text), the value otherwise (one set
    *  as null reads null). FAIL CLOSED: a read that fails, a name that cannot be spelled or options that cannot be read
    *  never answer "unset" in the strict form; it answers `SETTING_UNREADABLE` and never throws. Without the option it
-   *  answers as R25 always has, an unreadable value reading null, so no caller that does not ask changes. */
+   *  answers as R25 always has, an unreadable value reading null, so no caller that does not ask changes.
+   *  @param {*} name
+   *  @param {*} [options] `{strict: true}` (exactly true) tells an unreadable value from an unset one
+   *  @returns {*} the value last set (as JSON reads it), null when none was set, or, strict only, `SETTING_UNREADABLE` */
   getSetting(name, options) {
     let strict = false;
     try { strict = options !== null && typeof options === "object" && options.strict === true; } catch { strict = false; }
@@ -1906,7 +2437,11 @@ export class RecordCore {
    *  is recorded. The five refusals, in this order, each answer with its row (C-102.29–.33, DEC-49) and one fixed
    *  sentence; `SETTING_NOT_JSON` and `SETTING_INVALID` keep `name`. R84 (T47; N939): a value is stored as JSON, so one
    *  that would not read back as it was set is refused `SETTING_NOT_JSON` (`roundTripsJson`), and JSON never silently
-   *  changes a setting. */
+   *  changes a setting.
+   *  @param {*} name a non-empty name
+   *  @param {*} value a value that round-trips through JSON; `jurisdiction_profiles` a list of distinct non-empty strings
+   *  @param {*} by who set it, a non-empty string
+   *  @returns {{ok: true, [field: string]: *} | Refusal} `SETTING_NAME_REQUIRED`, `SETTING_BY_REQUIRED`, `SETTING_VALUE_REQUIRED`, `SETTING_NOT_JSON` or `SETTING_INVALID`, in that order, recording nothing */
   setSetting(name, value, by) {
     const n = String(name ?? "");
     /* DEC-49 REGION is-setting-refused */
@@ -1935,7 +2470,8 @@ export class RecordCore {
    *  here (the prefix R39's `evidencePrefix` gives, then the digest). `put` hands the bucket the digest, so it verifies the bytes.
    *  R88 (fix round 4, P10 (c); K4447): `get(digest, {range: {offset, length}})` asks the bucket for those bytes alone (R2's
    *  `range` option), so a look at the head of a large object transfers the head and not the object; with no range the bucket
-   *  is asked as before and answers the whole. Null when no bucket is bound. */
+   *  is asked as before and answers the whole. Null when no bucket is bound.
+   *  @returns {*} an `EvidenceStore`, or null when no bucket is bound; `putFromParts` only for a bucket with multipart upload */
   evidenceStore() {
     const bucket = this.#evidence;
     if (!bucket) return null;
@@ -2024,7 +2560,13 @@ const PURGE_REMOVED = Object.freeze(["bundles", "files", "history", "refs", "reg
  *  arms, keyed by op name, each a function of no arguments answering what its service answers, its parameters read from
  *  `url`'s query, where the control plane stamps `viewer` and `capacity` (never from the body). Which credential reaches
  *  each op is `op-declarations`' and `control-plane`'s, never this map's. `sight` is membership's `viewerPredicate`
- *  (its R43), handed in by the composition root, since this module uses no membership (R19, R73). */
+ *  (its R43), handed in by the composition root, since this module uses no membership (R19, R73).
+ *  @param {RecordCore} record the instance the arms call
+ *  @param {{searchParams: {get(name: string): string | null, has(name: string): boolean}}} url the request's URL, whose query the arms read
+ *  @param {*} body the request's body, which no arm reads
+ *  @param {{sight?: *}} [options] `sight`, a function: `sight(viewer)` answers `{sql, args}`, the bundles that viewer sees; anything else sees nothing
+ *  @returns {RecordCoreOps}
+ *  @bound lease: five minutes (300000 ms); audit: an absent or unknown viewer sees nothing */
 export function recordCoreOps(record, url, body, { sight = null } = {}) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -2053,6 +2595,8 @@ export function recordCoreOps(record, url, body, { sight = null } = {}) {
 /* R85 (T51; B2, K4259; op-declarations R80, op-grades R49): the op this module serves that the screens send, declared by
    its owner beside the ops map: its class, weight and description are the op's existing rows', its fields what the arm
    reads (R86: both are required, and a call without one is refused naming it). */
+/** R85 (T51; K4259, K4262): the op this module serves that the screens send, `allocid`, declared beside the ops map.
+ *  @type {Readonly<{allocid: DeclaredOp}>} */
 export const DECLARED_OPS = Object.freeze({
   allocid: { classes: ["admin", "member", "probe"], mutating: true, weight: "substrate", needs: "contribute",
     description: localize("record-core.declared.allocid", "substrate: id allocation"),
