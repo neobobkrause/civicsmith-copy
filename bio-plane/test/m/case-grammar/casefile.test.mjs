@@ -162,7 +162,9 @@ test("R16 the accepted_work: and accepted_work_flags: blocks round-trip, one row
   /* pairLine and pairOf are inverse over every axis value */
   for (const c of ["A", "B", "C", "D", "unrated", "undetermined"]) for (const k of ["A", "D", "unrated", "undetermined"]) {
     const pair = { capture: c, connection: { state: ["unrated", "undetermined"].includes(k) ? k : "graded", grade: k } };
-    const read = CG.pairOf(parseFrontmatter(doc(V6, [`p: ${CG.pairLine(pair)}`])).data.p);
+    const { data } = parseFrontmatter(doc(V6, [`p: ${CG.pairLine(pair)}`]));
+    assert.ok(data, "the document has front matter");
+    const read = CG.pairOf(data.p);
     assert.deepEqual(read.capture, ["unrated", "undetermined"].includes(c) ? { state: c, grade: null } : { state: "graded", grade: c });
     assert.deepEqual(read.connection, ["unrated", "undetermined"].includes(k) ? { state: k, grade: null } : { state: "graded", grade: k });
   }
