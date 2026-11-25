@@ -9,7 +9,7 @@ import { parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 import { strengthOps, STRENGTH_BAR_CHECKS } from "../../../src/strength/index.mjs";
 import { staleBaseRefusal } from "../promotion/fixtures.mjs";
 import { word, localize } from "../../../src/setup-words/index.mjs";
-import { world, byBob, V, WHY, NOW } from "./projectbar-world.mjs";
+import { world, byBob, V, WHY, NOW, inlineText } from "./projectbar-world.mjs";
 
 test("R40: a joined member sets the project's bar: required_strength and last_updated written, one Session Log entry naming the author, the bar before and after and the reason, promoted at the project's current state; R14 and R16 read it", () => {
   const w = world();
@@ -45,7 +45,7 @@ test("R40: a joined member sets the project's bar: required_strength and last_up
   assert.ok(log.includes(localize("strength.index.changes_the_projects_standard_of_evidence_from",
     "Changes: the project's standard of evidence from {before} to {after}.", { before: "no bar", after: "capture B, connection C" })));
   assert.ok(log.includes(`Reason: ${WHY}`));
-  assert.equal(w.record.readFile(w.P, "notes/plan.md").text, "Kept as it is.\n", "the project's other files are kept");
+  assert.equal(inlineText(w.record.readFile(w.P, "notes/plan.md")), "Kept as it is.\n", "the project's other files are kept");
 
   /* Through promotion: one promotion entry authored by the member, at the project's id and current base. */
   const pkg = w.mode.packages.at(-1);
@@ -67,7 +67,7 @@ test("R40: a second act names the first bar as previous and adds its own entry (
   assert.equal(second.bar.capture, "A");
   assert.equal(second.bar.connection, null);
   assert.ok(second.bar.detail.includes(word("strength.map.bar_set_axis", { axis: "connection" })));
-  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data.required_strength, { capture: "A", connection: null });
+  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data?.required_strength, { capture: "A", connection: null });
 
   w.clock.now = "2026-10-13T14:00:00.000Z";
   const gone = w.s.projectBarSet(byBob(w, { capture: null, connection: undefined, reason: "We have no standard yet." }));
@@ -81,8 +81,8 @@ test("R40: a second act names the first bar as previous and adds its own entry (
     "{project} declares no required evidentiary strength, so nothing in this case was measured against one. An absent bar is not a bar of zero, and this case makes no claim to have cleared any standard. A project declares its bar by its own act, written into the project's document as an authored, dated, on-the-record entry.",
     { project: w.P }));
   const text = w.doc(w.P);
-  assert.deepEqual(parseFrontmatter(text).data.required_strength, { capture: null, connection: null });
-  assert.equal(parseFrontmatter(text).data.last_updated, "2026-10-13T14:00:00.000Z");
+  assert.deepEqual(parseFrontmatter(text).data?.required_strength, { capture: null, connection: null });
+  assert.equal(parseFrontmatter(text).data?.last_updated, "2026-10-13T14:00:00.000Z");
   assert.equal((text.match(/^required_strength:/gm) || []).length, 1, "one bar in the document");
   const entries = text.match(/^### Session .*$/gm);
   assert.deepEqual(entries, [`### Session ${NOW} | Set the project's bar | bob`,
@@ -259,7 +259,7 @@ test("R40: a bar a member wrote by a full revision is replaced in place, read as
   assert.equal(r.previous.connection, "C");
   const text = w.doc(P);
   assert.equal((text.match(/^required_strength:/gm) || []).length, 1);
-  assert.deepEqual(parseFrontmatter(text).data.required_strength, { capture: "A", connection: null });
+  assert.deepEqual(parseFrontmatter(text).data?.required_strength, { capture: "A", connection: null });
   assert.ok(text.includes(localize("strength.index.changes_the_projects_standard_of_evidence_from",
     "Changes: the project's standard of evidence from {before} to {after}.", { before: "capture D, connection C", after: `capture A, ${word("strength.map.bar_set_axis", { axis: "connection" })}` })));
 });
@@ -289,7 +289,7 @@ test("R40: the act never reads the group's default: with one set first, previous
   const r = w.s.projectBarSet(byBob(w, { capture: "C", connection: null }));
   assert.equal(r.previous.declared, false);
   assert.equal(r.previous.source, "none");
-  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data.required_strength, { capture: "C", connection: null });
+  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data?.required_strength, { capture: "C", connection: null });
 });
 
 test("R40: an absent or unseen project is exactly membership.noSuchProject's answer, one not a project R16's NOT_A_PROJECT, and an unjoined author exactly membership.projectAuthority's refusal", async () => {
@@ -363,7 +363,7 @@ test("R45: the bar is compared axis by axis, a null for none: a changed axis is 
   const ok = w.s.projectBarSet(byBob(w, { capture: "D", connection: "D", expected: { capture: reread.capture, connection: reread.connection } }));
   assert.equal(ok.ok, true, JSON.stringify(ok));
   assert.deepEqual(ok.previous, reread);
-  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data.required_strength, { capture: "D", connection: "D" });
+  assert.deepEqual(parseFrontmatter(w.doc(w.P)).data?.required_strength, { capture: "D", connection: "D" });
   /* An axis the writer left out is none, as the document holds it. */
   assert.equal(w.s.projectBarSet(byBob(w, { capture: "A", connection: null, expected: { capture: "D", connection: "D" } })).ok, true);
   assert.equal(w.s.projectBarSet(byBob(w, { capture: "A", connection: "A", expected: { capture: "A" } })).ok, true,
