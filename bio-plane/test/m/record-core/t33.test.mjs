@@ -693,6 +693,7 @@ test("R79: refusals, each removing nothing, in order: EXPUNGE_GROUND_UNKNOWN, EX
   const { s, rc } = expungeFixture();
   const ok = { module: "people", table: "person_facts", key: { fact_id: "PFA-1" }, ground: "unlawful", by: "member:iris" };
   const before = dump(s);
+  /** @type {Array<[Object, string]>} each case: what it changes in the good call, and the refusal's code */
   const cases = [
     [{ ground: "because" }, "EXPUNGE_GROUND_UNKNOWN"], [{ ground: undefined }, "EXPUNGE_GROUND_UNKNOWN"], [{ ground: "court_order" }, "EXPUNGE_GROUND_UNKNOWN"],
     [{ ground: "court_order", order: " " }, "EXPUNGE_GROUND_UNKNOWN"], [{ ground: "lawful_demand" }, "EXPUNGE_GROUND_UNKNOWN"],

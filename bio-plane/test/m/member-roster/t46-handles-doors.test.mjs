@@ -41,11 +41,11 @@ test("R53 handleChange refuses every call HANDLE_FIXED, whoever asks and whateve
     assert.deepEqual(w.m.handleChange({ handle, by }), first, `${JSON.stringify(by)} ${JSON.stringify(handle)}`);
   for (const a of [undefined, null, "x", 5, []]) assert.deepEqual(w.m.handleChange(a), first, String(a));
   assert.equal(snapshot(w), before, "no handle changed and no history row appended");
-  assert.equal(w.m.memberFacts("ann").handle, "ann");
+  assert.equal(w.m.memberFacts("ann")?.handle, "ann");
   /* negative control: a handle is still set where it is chosen, at joining (R16), so writing one is not what is refused */
   assert.deepEqual(await w.m.enroll({ invite: w.inv, handle: "cal-k", password: "cal-passphrase-x" }),
     { ok: true, memberId: "cal", handle: "cal-k" });
-  assert.equal(w.m.memberFacts("cal").handle, "cal-k");
+  assert.equal(w.m.memberFacts("cal")?.handle, "cal-k");
 });
 
 test("R53 op=handlechange stays declared and routed, and refuses as the service does whatever the body and the stamp say", async () => {
@@ -114,7 +114,7 @@ test("R13 T46 no handle is ever reused: a member who has left keeps their handle
   }
   assert.equal(snapshot(w).replace(/"handle_check_window",\[[^\]]*\]/, ""), before.replace(/"handle_check_window",\[[^\]]*\]/, ""),
     "a refused enrolment writes nothing");
-  assert.equal(w.m.memberFacts("cal").status, "invited");
+  assert.equal(w.m.memberFacts("cal")?.status, "invited");
   /* negative control: a handle no member held enrols */
   assert.deepEqual(await w.m.enroll({ invite: w.inv, handle: "bobby", password: "cal-passphrase-x" }),
     { ok: true, memberId: "cal", handle: "bobby" });

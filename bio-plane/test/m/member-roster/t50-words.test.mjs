@@ -13,8 +13,13 @@ import { word, hasWord, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 import { rowKey, rowWord, keyed, SENTENCE_KEYS } from "../../../src/member-roster/words.mjs";
 
 const TABLES = Object.fromEntries(Object.entries(MEMBER_ROSTER_ROWS));
-/* a key's words as the list gives them, placeholders in place */
-const raw = (key) => WORD_ROWS.find((r) => r[0] === key)[1];
+/* a key's words as the list gives them, placeholders in place; a key the list lacks fails the test that asked for it,
+   naming the key (setup-words' WORD_ROWS: a row is found or not) */
+const raw = (key) => {
+  const row = WORD_ROWS.find((r) => r[0] === key);
+  if (!row) throw new assert.AssertionError({ message: `${key} is no row of setup-words' list`, actual: key, operator: "find" });
+  return row[1];
+};
 /* DEC-345 split the list: the keys are this module's own `reads` entry (R70: "the reads list for it"); the note that says
    which existing words govern stays on `membership`'s entry, where the split left it. */
 const reads = async () => {
@@ -75,6 +80,7 @@ test("R70 every refusal row's translation is the words of its key (refusal.<CODE
 test("R70 over fixtures, what the module answers equals word(key, vars): the refusals at their sites, the notices, the remedy and the handle check's words", async () => {
   const w = await world().group("ann");
   /* a refusal at its site carries its row's words */
+  /** @type {[*, string][]} each answer and the code it must carry */
   const refused = [
     [notAnAdmin("ann", "x"), "NOT_AN_ADMIN"], [noSuchMember("nobody"), "NO_SUCH_MEMBER"],
     [listenerRefusal([], "", null), "LISTENER_MALFORMED"],
