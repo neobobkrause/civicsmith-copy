@@ -108,7 +108,7 @@ test("R64 SECTORS is K1453's eight; a sector outside it, or a policy, commitment
   assert.ok(hasError(breakT((p) => { p.standard_sources[o].sector = "company"; }), "VALUE_INVALID", `standard_sources[${o}].sector`));
   /* the view keeps each entry's sector, and one with a level reads government (the view adds nothing it was not given) */
   const v = combine([TEST]).view.standard_sources;
-  assert.deepEqual(v.map((s) => s.sector ?? (s.level ? "government" : null)), get(TEST).standard_sources.map((s) => s.sector ?? (s.level ? "government" : null)));
+  assert.deepEqual(v.map((s) => s.sector ?? (s.level ? "government" : null)), get(TEST)?.standard_sources.map((s) => s.sector ?? (s.level ? "government" : null)));
   assert.ok(v.every((s) => s.sector || s.level));
 });
 
@@ -146,7 +146,7 @@ test("R65 a malformed series is SERIES_INVALID, naming the field; a normal namin
   assert.ok(hasError(e((s) => { s.cite = { re: "\\bHSO\\s+(?<num>\\d+)" }; delete s.normal; }), "SERIES_INVALID", `${A}.cite`), "a group by another name");
   assert.ok(hasError(e((s) => { s.cite = { re: "\\bHSO\\s+(?<number>\\d+)(?:-(?<edition>\\d{4}))?" }; delete s.normal; }), "SERIES_INVALID", `${A}.cite`), "an edition on a policy");
   assert.ok(breakT((p) => { const s = src(p, "mhs"); s.cite = { re: "\\bMHS\\s+(?<number>\\d{3})" }; }).ok, "a standard's edition group is optional");
-  assert.ok(hasError(breakT((p) => { p.standard_sources.push({ ...src(p, "hso") }); }), "SERIES_INVALID", `standard_sources[${get(TEST).standard_sources.length}].series`), "a key and series key twice");
+  assert.ok(hasError(breakT((p) => { p.standard_sources.push({ ...src(p, "hso") }); }), "SERIES_INVALID", `standard_sources[${get(TEST)?.standard_sources.length}].series`), "a key and series key twice");
   assert.ok(breakT((p) => { p.standard_sources.push({ ...src(p, "hso"), key: "pilot-master" }); }).ok, "the same series key under another issuer");
   /* normal: R3's parts over cite's groups */
   for (const bad of [[{ group: 5 }], [{ group: 0 }], [{ group: "number" }], [{ group: 2, pad: true }], [], "HSO-1"])
@@ -178,7 +178,7 @@ test("R28 T35 SECTOR_UNKNOWN and SERIES_INVALID are reported for their faults; L
 test("R66 combine: standard sources unioned; a family's label, cite and normal, and an entry's level and sector, one value per key, withheld when profiles disagree", () => {
   const same = combine([TEST, other(() => {})]);
   assert.deepEqual(same.conflicts.filter((c) => c.at.startsWith("standard_sources")), []);
-  assert.equal(same.view.standard_sources.length, get(TEST).standard_sources.length, "equal entries kept once");
+  assert.equal(same.view.standard_sources.length, get(TEST)?.standard_sources.length, "equal entries kept once");
   assert.deepEqual(same.view.standard_sources.find((s) => s.series && s.series.key === "hso").bases.map((b) => b.profile), [TEST, "test-other"]);
   const changes = {
     "standard_sources[harbour-master/hso].series.label": (b) => { src(b, "hso").series.label = "Standing Order"; },
@@ -198,7 +198,7 @@ test("R66 combine: standard sources unioned; a family's label, cite and normal, 
     /* K1916 (2): a family withheld is dropped from the view whole */
     if (field.startsWith("series") || field === "cite" || field === "normal") {
       assert.equal(c.view.standard_sources.filter((s) => s.key === "harbour-master" && s.series && s.series.key === "hso").length, 0, `${where}: dropped`);
-      assert.equal(c.view.standard_sources.length, get(TEST).standard_sources.length - 1, `${where}: the other entries stand`);
+      assert.equal(c.view.standard_sources.length, get(TEST)?.standard_sources.length - 1, `${where}: the other entries stand`);
       continue;
     }
     const entries = c.view.standard_sources.filter((s) => s.source === (field === "sector" ? "Ellery Ferries Code of Conduct" : "Port Ellery Harbour Standing Orders"));
@@ -309,11 +309,11 @@ test("R69 vocabulary.policy_headers {field, pattern, basis}: a field from doctyp
   const u = combine([TEST, other((b) => { b.vocabulary.policy_headers.push({ field: "title", pattern: { re: "^Subject:" }, basis: "TEST" }); })]);
   assert.deepEqual(u.conflicts, []);
   const v = u.view.vocabulary.policy_headers;
-  assert.equal(v.length, get(TEST).vocabulary.policy_headers.length + 1);
+  assert.equal(v.length, get(TEST)?.vocabulary.policy_headers.length + 1);
   assert.deepEqual(v[0].bases.map((b) => b.profile), [TEST, "test-other"]);
   assert.equal(v.at(-1).pattern.re, "^Subject:");
   /* the first profile: every header line measured is read as its field, the lines that are not are read as none */
-  const f = get(FIRST).vocabulary.policy_headers;
+  const f = get(FIRST)?.vocabulary.policy_headers;
   const fieldsOf = (line) => new Set(f.filter((e) => rx(e.pattern).test(line)).map((e) => e.field));
   for (const [k, F] of Object.entries(FAMILIES)) for (const [field, line, hit = true] of F.headers)
     assert.equal(fieldsOf(line).has(field), hit, `${k} ${field}: ${JSON.stringify(line)}`);

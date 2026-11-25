@@ -47,7 +47,7 @@ test("R51 the first profile's forums include the county's Superior Court and the
 });
 
 test("R93 the first profile carries a records_help block read from the statute, valid, with every citation naming a section", () => {
-  const h = get(FIRST).records_help;
+  const h = get(FIRST)?.records_help;
   assert.ok(h, "records_help present");
   assert.equal(h.law, "California Public Records Act");
   assert.equal(h.days, 10); assert.equal(h.extra_days, 14);

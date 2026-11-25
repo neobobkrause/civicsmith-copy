@@ -12,10 +12,70 @@ import TEST from "./profiles/test-port-ellery.mjs";
 import { BASIS_GRADES } from "../bio-plane/src/record-grammar/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * A jurisdiction profile (R1–R7 and the sections the later requirements add): a plain, JSON-serialisable object.
+ * Every section beyond R1's identity is optional, and an absent one supplies nothing (R27). `validate` judges one.
+ * @typedef {{id: string, name: string, covers: string[], test?: boolean, [section: string]: *}} Profile
+ * @bound id: matches ^[a-z0-9][a-z0-9-]*$
+ * @bound covers: at least one name
+ * @bound test: true only for a profile whose facts are made up for tests
+ */
+/**
+ * One held profile, as `list` names it (R8).
+ * @typedef {Object} ProfileSummary
+ * @property {string} id
+ * @property {string} name
+ * @property {string[]} covers
+ * @property {boolean} test
+ */
+/**
+ * One thing `validate` found wrong (R10, R11, R28, R35).
+ * @typedef {Object} ValidationError
+ * @property {string} path the field, as `spaces.parcel.forms[0].pattern`; empty for the whole value
+ * @property {string} code one of the codes R11, R28, R35 and the later requirements name
+ * @property {string} detail what is wrong, in words
+ */
+/**
+ * What `validate` answers (R10).
+ * @typedef {Object} ValidationResult
+ * @property {boolean} ok true exactly when `errors` is empty
+ * @property {ValidationError[]} errors every error found, not only the first
+ */
+/**
+ * One fact the combined profiles disagree on, withheld from the view (R15).
+ * @typedef {Object} Conflict
+ * @property {string} at where the fact would stand in the view
+ * @property {{profile: string, value: *, basis: *, status?: string}[]} values what each profile gives; a holiday year's also its status
+ * @property {string} says the disagreement in words
+ */
+/**
+ * One reason `combine` refuses its list (R12).
+ * @typedef {Object} CombineError
+ * @property {number|null} at the place in the list; null for the list as a whole
+ * @property {string} code `NOT_A_LIST`, `UNKNOWN_PROFILE` or `INVALID_PROFILE`
+ * @property {string} detail what is wrong, in words
+ * @property {ValidationError[]} [errors] an invalid profile's errors
+ */
+/**
+ * What `combine` answers (R12–R16). With `ok` true it carries `view` and `conflicts`; with `ok` false, `errors`.
+ * The view has the profile shape, with `profiles` (the ids combined, in order), `covers` (their union) and `test`,
+ * and each fact in it carries `profile` beside its `basis` (R13).
+ * @typedef {Object} CombineResult
+ * @property {boolean} ok
+ * @property {CombinedView} [view]
+ * @property {Conflict[]} [conflicts]
+ * @property {CombineError[]} [errors]
+ */
+/**
+ * The view `combine` gives: the profile shape, with the ids combined (R13).
+ * @typedef {Profile & {profiles: string[]}} CombinedView
+ */
+
 /* ------------------------------------------------------------------------------------------------ */
 /* The profile's shape (R1–R7, R23–R26, R31–R33, R39–R44; `locale` and `systems[].links`, N77 and N96; T33's R46–R54, T34's
    R58–R60, T35's R63–R69, T37's R70, T45's R74–R87, T48's R89). */
 
+/** @type {ReadonlyArray<string>} */
 export const SECTIONS = Object.freeze(["id", "name", "covers", "test", "spaces", "systems", "mixed_hosts",
   "crosswalks", "vocabulary", "practice", "search_terms", "records_laws", "standard_sources",
   "counterparties", "action_kinds", "deadlines", "legal_organisations", "holidays", "locale", "time_zone",
@@ -33,8 +93,10 @@ export const SECTIONS = Object.freeze(["id", "name", "covers", "test", "spaces",
 /* R3: `account`, `object`, `vendor`, `proceeding` (K1452) and `person` (one form per person scheme) are T33's; `body` and
    `office` (a legislative system's body and office-record numbers, N569, N613) T34's, and `institution` (one form per
    institution scheme, N574, K1729). */
+/** @type {ReadonlyArray<string>} */
 export const SPACES = Object.freeze(["enactment", "project", "fund", "parcel", "account", "object", "vendor", "proceeding", "person",
   "body", "office", "institution"]);
+/** @type {ReadonlyArray<string>} */
 export const VOCABULARY = Object.freeze(["furniture", "bodies", "member_titles", "enactment_markers", "codes",
   "file_numbers", "report_titles", "report_sections", "recommendation_openers", "template_blanks",
   /* T33 (R6): LAW's amending clauses, Legistar's markers and body-variant map, the roster words */
@@ -49,79 +111,115 @@ export const VOCABULARY = Object.freeze(["furniture", "bodies", "member_titles",
 const DATA_VOCABULARY = Object.freeze({ vote_values: ["value", "label", "citation", "basis"],
   response_statuses: ["status", "label", "citation", "applies_to", "basis"], member_types: ["member_type", "capacity", "organisation", "basis"] });
 /* R60: the capacity a MemberType maps to. */
+/** @type {ReadonlyArray<string>} */
 export const MEMBER_CAPACITIES = Object.freeze(["elected", "appointed"]);
 /* R31: the one vocabulary of a law's level, for records laws, standard sources and an action's governing
    laws. An office's level (R24) is not a law's level and keeps its own. */
+/** @type {ReadonlyArray<string>} */
 export const LAW_LEVELS = Object.freeze(["federal", "state", "county", "city"]);
 /* R88 (T47; amends R24, R28): the one vocabulary of an office's level, which validate reads (outside it, LEVEL_UNKNOWN)
    and a caller offering an office's level imports (setup-page R5). Not a law's level (R31). */
+/** @type {ReadonlyArray<string>} */
 export const COUNTERPARTY_LEVELS = Object.freeze(["state", "county", "city", "district"]);
 /* R23: `SOURCE_KINDS` stays the six `standards` reads (its R1, R12); the seven, with T35's `standard`, are
    `STANDARD_SOURCE_KINDS`, which validate accepts and `standards` adopts in its own job (K1902 (1)). */
+/** @type {ReadonlyArray<string>} */
 export const SOURCE_KINDS = Object.freeze(["statute", "regulation", "ordinance", "court", "policy", "commitment"]);
+/** @type {ReadonlyArray<string>} */
 export const STANDARD_SOURCE_KINDS = Object.freeze([...SOURCE_KINDS, "standard"]);
 /* R31 (T35-1): the kinds that always carry a law level; the others carry one only for a government issuer at one. */
 const LEVELLED_KINDS = ["statute", "regulation", "ordinance", "court"];
 /* R64: the one list of an issuer's sectors (K1453's closed list); `entities` reads it from here (K1902 (2)). */
+/** @type {ReadonlyArray<string>} */
 export const SECTORS = Object.freeze(["government", "company", "nonprofit", "association", "political", "religious", "education", "other"]);
 /* R69: the fields a policy header label names (doctypes R26). */
+/** @type {ReadonlyArray<string>} */
 export const POLICY_HEADER_FIELDS = Object.freeze(["type", "number", "title", "effective", "supersedes", "reference", "coordinator",
   "review_due", "revision_cycle"]);
+/** @type {ReadonlyArray<string>} */
 export const VENUE_HOW = Object.freeze(["portal", "mail", "email", "in_person", "court"]);
+/** @type {ReadonlyArray<string>} */
 export const COUNTS = Object.freeze(["calendar", "business"]);
 /* R26: the event a period runs from; `entered`, `served` and `hearing` are COURTS'. `received` is the counterparty's
    receipt of the group's request, counted from the group's own `sent` entry (§7 item 1). */
+/** @type {ReadonlyArray<string>} */
 export const STARTS = Object.freeze(["received", "filed", "act", "known", "entered", "served", "hearing", "third_party"]);
 /* R75 (T45): whose duty a deadline is; absent, undetermined. `third_party` (STARTS) names its `starter`, a counterparty. */
+/** @type {ReadonlyArray<string>} */
 export const OWED_BY = Object.freeze(["body", "group"]);
 /* R79 (T45): the moments a legal fact is shown at, frozen (a new trigger is a requirement change). Detecting one is the
    consumer's. */
+/** @type {ReadonlyArray<string>} */
 export const LEGAL_FACT_TRIGGERS = Object.freeze(["paid_attendee", "recording", "threat_letter", "pending_measure_or_candidate",
   "serial_meeting"]);
 /* R82, R87 (e) (T45): the facts a kind's venue may state, frozen; `delivery_point` is the venue's address or channel for
    delivery, never an addressee (v0.2 rule 7). */
+/** @type {ReadonlyArray<string>} */
 export const VENUE_FACTS = Object.freeze(["how_to_submit", "anonymity", "publishes", "public_listing", "speaker_limit",
   "comment_cutoff", "page_limit", "interpreter_lead", "delivery_point"]);
 /* R86 (T45): what a profile's phrasing adds to Civicsmith's own lists (`action-grammar`'s); a profile only adds. */
+/** @type {ReadonlyArray<string>} */
 export const PHRASING_KINDS = Object.freeze(["assertion", "position", "own_benefit_ask"]);
 /* R87 (a) (T45): the shapes an action kind may declare, frozen (a new shape is a requirement change). */
+/** @type {ReadonlyArray<string>} */
 export const KIND_SHAPES = Object.freeze(["recognition"]);
+/** @type {ReadonlyArray<string>} */
 export const UNITS = Object.freeze(["days", "hours", "business_hours", "months", "years"]);
+/** @type {ReadonlyArray<string>} */
 export const DIRECTIONS = Object.freeze(["forward", "backward"]);
 /* R46: how a day period is computed (CCP §12, Gov. Code §6800). */
+/** @type {ReadonlyArray<string>} */
 export const COMPUTATION_RULES = Object.freeze(["exclude_first_include_last"]);
 /* R48: the receipt conventions a sourced local rule may state (K1504 (3)). */
+/** @type {ReadonlyArray<string>} */
 export const RECEIPT_RULES = Object.freeze(["next_business_day"]);
 /* R6 (T33): a code's served copy (K1446), its subsection markers, an amending clause's relation, a meeting marker. */
+/** @type {ReadonlyArray<string>} */
 export const CODE_COPIES = Object.freeze(["official", "codifier", "undetermined"]);
+/** @type {ReadonlyArray<string>} */
 export const SECTION_MARKERS = Object.freeze(["letter", "numeral", "paren_letter", "paren_numeral", "roman"]);
+/** @type {ReadonlyArray<string>} */
 export const AMENDING_RELATIONS = Object.freeze(["amends", "adds", "repeals", "renumbers", "recodifies"]);
+/** @type {ReadonlyArray<string>} */
 export const MEETING_MARKERS = Object.freeze(["cancelled", "special", "concurrent"]);
 /* R6 (K1513, K1517): what a roster word names, the role a roster header plays, the column a budget header heads. */
+/** @type {ReadonlyArray<string>} */
 export const ROSTER_KINDS = Object.freeze(["roster", "chart"]);
+/** @type {ReadonlyArray<string>} */
 export const ROSTER_ROLES = Object.freeze(["name", "title", "unit", "start", "end", "as_of", "employee_id", "contact"]);
+/** @type {ReadonlyArray<string>} */
 export const BUDGET_COLUMNS = Object.freeze(["fund", "org", "department", "department_code", "program", "project", "account",
   "amount", "period", "phase"]);
 /* R49: a fiscal year's name, and the placeholders its label template may use. */
+/** @type {ReadonlyArray<string>} */
 export const FISCAL_NAMED_BY = Object.freeze(["start", "end"]);
 const FISCAL_PLACEHOLDERS = ["{start}", "{end}", "{start2}", "{end2}"];
 /* R51, R52, R53 */
+/** @type {ReadonlyArray<string>} */
 export const FORUM_KINDS = Object.freeze(["court", "commission", "grand_jury", "auditor", "other"]);
+/** @type {ReadonlyArray<string>} */
 export const CLASSIFICATION_KINDS = Object.freeze(["fund", "organisation", "account", "object", "program", "project", "function"]);
+/** @type {ReadonlyArray<string>} */
 export const DEMAND_COVERS = Object.freeze(["home_address", "phone", "other"]);
 /* R54: `civil-time`'s RFC 5545 subset (its R20). */
+/** @type {ReadonlyArray<string>} */
 export const RRULE_PARTS = Object.freeze(["FREQ", "INTERVAL", "BYDAY", "BYMONTHDAY", "BYSETPOS", "UNTIL"]);
 const RRULE_FREQS = ["WEEKLY", "MONTHLY", "YEARLY"];
 /* R70: what an official local name names (DEC-157 (6)). */
+/** @type {ReadonlyArray<string>} */
 export const LOCAL_NAME_KINDS = Object.freeze(["office", "law", "program", "place"]);
+/** @type {ReadonlyArray<number>} */
 export const TIERS = Object.freeze([1, 2, 3]);
+/** @type {ReadonlyArray<string>} */
 export const CONTACT_HOW = Object.freeze(["web", "email", "phone", "mail"]);
 /* R89 (T48): the kinds of place outside Civicsmith a member is sent to, frozen (a new kind is a requirement change), and how
    a pointer is reached: R32's means, and a street address, for a pointer only. */
+/** @type {ReadonlyArray<string>} */
 export const POINTER_KINDS = Object.freeze(["legalaid", "selfhelp", "service", "agency", "representative", "tipline"]);
 const POINTER_HOW = Object.freeze([...CONTACT_HOW, "address"]);
 const POINTER_NAME_MAX = 200, POINTER_DOES_MAX = 500;
 /* R93 (T50): the ten sentences of the records-request help each cite their own section; `citations` holds one for each. */
+/** @type {ReadonlyArray<string>} */
 export const RECORDS_HELP_CITATIONS = Object.freeze(["answer", "extend", "assist", "segregate", "refuse_in_writing", "electronic",
   "cost", "cost_electronic", "inspect_photograph", "purpose"]);
 /* R39: a venue's evidence standard is named in at most this many characters; the grades it admits are
@@ -132,15 +230,21 @@ const VENUE_FACT_MAX = 500;
 const TEMPLATE_NAME_MAX = 120;
 const PHRASE_MIN = 2, PHRASE_MAX = 100;
 /* R40: a profile template's attribution, every field required; its use is filing-templates' (K921). */
+/** @type {ReadonlyArray<string>} */
 export const TEMPLATE_FIELDS = Object.freeze(["id", "version", "use", "text", "notes", "authored_by", "contributors",
   "reviews", "approved_by", "approved_at", "basis"]);
+/** @type {ReadonlyArray<string>} */
 export const TEMPLATE_USES = Object.freeze(["file", "brief"]);
+/** @type {ReadonlyArray<string>} */
 export const REVIEW_KINDS = Object.freeze(["member", "professional"]);
+/** @type {ReadonlyArray<string>} */
 export const REVIEW_OUTCOMES = Object.freeze(["no_concerns", "concerns", "changes_requested"]);
 const REVIEW_REQUIRED = ["reviewer", "kind", "scope", "outcome", "at"];
 /* R42: an office's weekly hours; a day not listed is closed. */
+/** @type {ReadonlyArray<string>} */
 export const WEEKDAYS = Object.freeze(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]);
 /* R44: what a calendar fact (a holiday entry, hours, the time zone) rests on: a measurement or a ruling. */
+/** @type {ReadonlyArray<string>} */
 export const FACT_STATUSES = Object.freeze(["researched", "ruled"]);
 
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -205,7 +309,9 @@ function minutes(v) {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 /** One well-formed BCP 47 language tag (R37, N77): the one reading `validate` gives `locale.value`, exported for its
- *  callers (instance-setup R64; N700). `Intl` reads no clock, store or network. Never throws. */
+ *  callers (instance-setup R64; N700). `Intl` reads no clock, store or network. Never throws.
+ * @param {*} [v] any value
+ * @returns {boolean} true exactly when `v` is a string that is one well-formed BCP 47 tag */
 export function isLocale(v) {
   try {
     if (!isStr(v) || /\s|,/.test(v)) return false;
@@ -215,7 +321,10 @@ export function isLocale(v) {
 /** A locale's canonical form, so `es-mx` and `es-MX` name one language (R72's key). */
 const localeKey = (v) => { try { return Intl.getCanonicalLocales(v)[0]; } catch { return String(v); } };
 
-/** Whether `b` is a basis a profile may carry. `TEST` only in a test profile (R2). */
+/** Whether `b` is a basis a profile may carry. `TEST` only in a test profile (R2).
+ * @param {*} b any value
+ * @param {boolean} [test] whether the profile is a test profile; absent is false
+ * @returns {boolean} */
 export function basisValid(b, test = false) {
   if (typeof b !== "string") return false;
   if (b === "UNMEASURED") return true;
@@ -273,7 +382,9 @@ function applyForm(form, raw, prefixes = []) {
 /* validate (R10, R11, R28, R35).                                                                   */
 
 /** Judge a profile against R1–R7, R23–R26, R31–R33, R37–R44 and the later tranches' additions (R46–R90). `{ok, errors}`,
- *  every error found. Never throws. */
+ *  every error found. Never throws.
+ * @param {*} profile any value; one that is not an object is `NOT_A_PROFILE`
+ * @returns {ValidationResult} */
 export function validate(profile) {
   const errors = [];
   try { validateInto(profile, errors); }
@@ -1603,13 +1714,17 @@ const deepFreeze = (o) => { if (o && typeof o === "object") { Object.values(o).f
 const clone = (o) => (o === undefined ? undefined : JSON.parse(JSON.stringify(o)));
 const HELD = new Map([FIRST, TEST].map((p) => [p.id, deepFreeze(clone(p))]));
 
-/** Every profile held, sorted by id: `[{id, name, covers, test}]`. Never throws. */
+/** Every profile held, sorted by id: `[{id, name, covers, test}]`. Never throws.
+ * @returns {ProfileSummary[]}
+ * @bound sorted by id */
 export function list() {
   return [...HELD.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((p) => ({ id: p.id, name: p.name, covers: p.covers.slice(), test: p.test === true }));
 }
 
-/** The held profile with that id, as the caller's own copy, or null. Never throws. */
+/** The held profile with that id, as the caller's own copy, or null. Never throws.
+ * @param {*} [id] any value; only a held profile's id finds one
+ * @returns {Profile|null} */
 export function get(id) {
   if (typeof id !== "string" || !HELD.has(id)) return null;
   return copy(HELD.get(id));
@@ -1666,6 +1781,8 @@ const COMBINED_MAX = 64;
 /**
  * Combine the active profiles, in order. `list` holds ids of held profiles or profile objects.
  * `{ok: true, view, conflicts}` or `{ok: false, errors}`. Never throws.
+ * @param {*} listIn the active profiles, in order: held ids or profile objects; anything else is `NOT_A_LIST`
+ * @returns {CombineResult}
  */
 export function combine(listIn) {
   /* A list of held ids is a pure function of frozen data (K5288): its answer is merged once and each caller gets
@@ -1683,6 +1800,9 @@ export function combine(listIn) {
 /**
  * The team's governing time zone (R98, K5292): `teamZone` when it is an R41 value; else the `time_zone` of the view
  * `combine(profileIds)` gives; else `null`. The one site every module that needs the zone asks. Never throws.
+ * @param {*} profileIds the active profiles' ids
+ * @param {*} [teamZone] the team's own zone, if it set one
+ * @returns {string|null} an IANA time-zone name or `UTC`, or null
  */
 export function governingZone(profileIds, teamZone) {
   try {
