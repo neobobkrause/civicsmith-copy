@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import { word } from "../../../src/setup-words/index.mjs";
 import assert from "node:assert/strict";
-import { seeded, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, twoProfiles } from "./fixture.mjs";
+import { seeded, draft, approved, V, MACHINE, TEST, HARBOUR, TEXT, sha, twoProfiles, present } from "./fixture.mjs";
 import * as ft from "../../../src/filing-templates/index.mjs";
 import * as jurisdictions from "../../../../jurisdictions/index.mjs";
 
@@ -35,7 +35,7 @@ test("R1 the template's own refusals, in order, each with a negative control: ki
   const ku = refused(make(w, { kind: "parking_appeal" }), "TEMPLATE_KIND_UNKNOWN");
   assert.equal(ku.profile, TEST, "naming the profile");
   /* a kind present in one named profile and absent from the other is refused, naming the other */
-  const p2 = twoProfiles.get(HARBOUR);
+  const p2 = present(twoProfiles.get(HARBOUR), HARBOUR);
   assert.ok(p2.action_kinds.some((k) => k.kind === "bylaw_complaint"));
   for (const use of ["filing", "", null, "FILE"]) refused(make(w, { use }), "TEMPLATE_USE_REFUSED");
   refused(make(w, { profiles: ["nowhere"] }), "TEMPLATE_PROFILE_UNKNOWN");
