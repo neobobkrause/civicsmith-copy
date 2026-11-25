@@ -139,7 +139,7 @@ The verified-to-retired transition of many Information documents at once, over a
 - `people` (T34-85): `tiesConcerning` (its R20; R41). A new `modules.json` edge; `people` is earlier (layer 5).
 - `case-grammar` (K1816): `peopleOf`, `memberTiesOf` (its R21; R41's `ties`), the signed document's `people:` and `member_ties:` blocks.
 - `money` (K1816): `readFact` (a cited money fact's payer and payee; R41's `ties`), as `case-disclosures` R27 reads them. A new `modules.json` edge; `money` is earlier.
-- `local-facts` (T50, K3642): the governing value of the `time_zone` path (its R2; R44, first). A new `modules.json` edge.
+- `local-facts` (T50, K3642): not used directly. R44's governing `time_zone` value reaches this module through `retrieval` R69; no `modules.json` edge (removed by ratification #1, PR 1348).
 - `jurisdictions` (T34-85): `combine`, for the profiles' `time_zone` when no local value governs (R44). A new `modules.json` edge.
 - `actions` registers R45's reader; this module does not use it.
 - (T41; D60) `review` registers R50's approval reader (its R32); this module does not use it (no `modules.json` edge, §3.6's list).
