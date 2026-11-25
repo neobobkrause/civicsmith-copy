@@ -372,9 +372,9 @@ test("R30 (T46; DEC-194 (4), (5); N913; K2241) the five scripts DEC-194 (5) wrot
     assert.deepEqual([e.origin, e.scope, e.required, first.version, e.author, first.approved], ["civicsmith", "group", false, 1, "civicsmith", T46], n);
     assert.ok([e, ...(e.earlier || [])].every((v) => !v.steps.some((t) => t.draft)), `${n}: no step places a draft`);
   }
-  const preparing = [...ADDED_T46, word("wizard.WIZ-a8c349d7d71b6bb0.name")].flatMap((n) => by(n).steps.filter((t) => t.act === "communicationprepare").map((t) => [n, t]));
-  assert.deepEqual(preparing.map(([n]) => n), ["Comment for the group", word("wizard.WIZ-bd7bde2c61b6badb.name"), word("wizard.WIZ-d0cdcee9437b213b.name"), word("wizard.WIZ-a8c349d7d71b6bb0.name")]);
-  for (const [n, t] of preparing) {
+  const preparing = [...ADDED_T46, word("wizard.WIZ-a8c349d7d71b6bb0.name")].flatMap((n) => by(n).steps.filter((t) => t.act === "communicationprepare").map((t) => ({ n, t })));
+  assert.deepEqual(preparing.map(({ n }) => n), ["Comment for the group", word("wizard.WIZ-bd7bde2c61b6badb.name"), word("wizard.WIZ-d0cdcee9437b213b.name"), word("wizard.WIZ-a8c349d7d71b6bb0.name")]);
+  for (const { n, t } of preparing) {
     assert.match(t.what, /[Ss]tart from your (group's|team's) (\w+ )*template/, n);
     assert.equal(t.draft, undefined, `${n}: no {template} draft`);
   }
