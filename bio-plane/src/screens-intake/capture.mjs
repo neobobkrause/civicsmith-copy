@@ -2,6 +2,43 @@
  * `/app/capture/saw` (the subject names the tab; none is the address tab). Every function is self-contained (interface-shell
  * R21 (1)): it refers only to its parameters, the kit `cs` and the language's own globals. */
 
+/**
+ * The part of the page's kit (`interface-shell`'s `cs`) that this module's exported drawings read.
+ * @typedef {Object} WordKit
+ * @property {(key: string, fills?: any) => string} w a word by key, filled; the key itself when the table holds none
+ * @property {(iso: string) => string} date a whole-second UTC instant written as a date
+ */
+/**
+ * A held row as `heldcaptures` answers it, as far as `heldTitle` reads it.
+ * @typedef {Object} HeldRow
+ * @property {string} [title] the row's own name
+ * @property {{address?: string, retrieved?: string}} [source] the address it was captured from and when
+ */
+/**
+ * What a check of a watched address answered (`monitor`, `monitoring` R10).
+ * @typedef {Object} CheckAnswer
+ * @property {string} [status] `modified`, `removed` or `unchanged`; anything else is not known
+ * @property {string} [note] the plane's note when the status names none
+ */
+/**
+ * A capture's supporting files not kept, sorted by why (R67). A kind with no reason is absent.
+ * @typedef {Object} SupportingWhy
+ * @property {{n: number, cap: number}} [cap] the cap was reached: how many, and the cap
+ * @property {{n: number}} [toolarge] too large, or the budget was spent
+ * @property {{n: number}} [unavailable] any other reason
+ * @bound n: whole number, 1 or more
+ */
+/**
+ * A screen as the shell takes it (`interface-shell` R21): its id, its reads, its drawing, the self-contained functions it carries
+ * in `parts`, and its acts.
+ * @typedef {Object} CaptureScreen
+ * @property {string} id
+ * @property {(view: any) => Object<string, any>} reads
+ * @property {(cs: any, view: any) => string} render
+ * @property {Readonly<Object<string, Function>>} parts
+ * @property {readonly Readonly<Object<string, any>>[]} acts
+ */
+
 /* R1–R3: nothing is read before an act, but on the address tab (R29, R31, R38): the member's open captures (`opencaptures`,
  * for "Unfinished"), the held and vouched documents (the title of the one that holds a capture's primary, and of the copy an
  * address is already held as, R40) and, when Add is opened
@@ -83,6 +120,12 @@ function notMemberWords(cs, f) {
 /* G75 (fix round 7): a held row's name where it stored none: the chain a delivery names a document by (R54), from what the row gives: its own
  * title; else its host and the day it was captured (`document.untitled.web`, the day of its source's `retrieved`); with neither, `screen.held.untitled`.
  * Plain text, at most 200 characters; never "Untitled capture" for a row whose host and day are known. */
+/**
+ * @param {WordKit} cs
+ * @param {HeldRow} r
+ * @returns {string}
+ * @bound plain text, at most 200 characters
+ */
 function heldTitle(cs, r) {
   const plain = (t) => String(t).replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
   const own = r && typeof r.title === "string" ? r.title.replace(/\s+/g, " ").trim() : "";
@@ -987,6 +1030,12 @@ function doneMonitor(view, answer, cs) {
  * it names none, its `note` (`monitoring` R10): four different sentences, never "Checked just now" for every outcome. The one
  * drawing of it: `screens-inquiry` imports `checkOutcome` for the document page and draws nothing of its own. Answers the
  * sentence's HTML. */
+/**
+ * @param {WordKit} cs
+ * @param {CheckAnswer} answer
+ * @param {string} title the document's title, as data
+ * @returns {string} the sentence's HTML
+ */
 function checkOutcome(cs, answer, title) {
   const a = answer && typeof answer === "object" ? answer : {};
   const st = a.status === "modified" || a.status === "removed" || a.status === "unchanged" ? a.status : "unknown";
@@ -996,6 +1045,10 @@ function checkOutcome(cs, answer, title) {
 /* R67 (fix round 9; K4969): the one classification of a capture's `supporting.reasons`, for every screen that states why supporting files were not kept
    (the Add screen's line, screens-inquiry's Document page): by code, `CAP_REACHED` with a `limit` the cap, `TOO_LARGE` and `BUDGET_EXHAUSTED` too large, any other
    code unavailable; a reason's `count` summed (else 1); a non-object skipped. A kind with no reason is absent. */
+/**
+ * @param {any} reasons a capture's `supporting.reasons`: a list of `{reason or code, count?, limit?}`; anything else is no reason
+ * @returns {SupportingWhy}
+ */
 function supportingReasons(reasons) {
   const why = {};
   for (const r of Array.isArray(reasons) ? reasons : []) {
@@ -1400,6 +1453,8 @@ const CRED_REFUSALS = Object.freeze({
 });
 
 
+/** The Add screen (R1–R3).
+ * @type {Readonly<CaptureScreen>} */
 export const CAPTURE_SCREEN = Object.freeze({
   id: "capture",
   reads: captureReads,
