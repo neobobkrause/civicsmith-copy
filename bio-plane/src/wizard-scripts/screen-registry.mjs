@@ -2,9 +2,12 @@
  * K1565): every screen with its id, name and purpose, its declared and function acts as ops in the file's order, and
  * its owed acts apart, each with the number of acts before it. Do not edit: run build-data.mjs. */
 import { deepFreeze } from "./data.mjs";
+/** @import { Screen, SourceFile } from './data.mjs' */
 
+/** @type {Readonly<SourceFile>} */
 export const SCREEN_REGISTRY_SOURCE = deepFreeze({"commit":"b1adf4236d","path":"docs/development/ux-substrate/screens/registry.json","sha256":"a250e2e0446397e126f9283ba2cf294cf0d9b8aa71aba345f032700d99998d85"});
 
+/** @type {readonly Readonly<Screen>[]} */
 export const SCREEN_REGISTRY = deepFreeze([
   {"id":"site","name":"civicsmith.org","purpose":"Civicsmith's own website, one site of three pages joined by one menu (Bob's D6, K3060; DEC-206; rewritten for its readers, DEC-223): the front page, for someone who has never heard of Civicsmith (what it is, how a team uses it in five steps, what a team gets, what it does not do, a published case, members sent to their own team's address); \"Start a team\", for a member who has decided (whether it fits, what is needed, who holds the Cloudflare account, what happens step by step, what it costs, then \"Create your team\" opens the installer); \"Teams at work\", the teams that chose to be listed (DEC-132).","acts":[],"owed":[]},
   {"id":"install","name":"Create your Civicsmith team","purpose":"The founder's link and the installer, in order: what Civicsmith is and what is needed, the short name and places, Cloudflare's permission, the progress and any stop, an account that already holds a Civicsmith and its three ways forward (DEC-282, K3471), the checks and the one-time password, the hand-over to setup (DEC-201).","acts":["bootstrap"],"owed":[{"op":"installcheck","dec":"DEC-415","at":1},{"op":"installregion","dec":"K4746","at":1},{"op":"installaddress","dec":"K4937","at":1},{"op":"installupdate","dec":"K3471","at":1},{"op":"installalongside","dec":"K3471","at":1},{"op":"installremove","dec":"K3471","at":1},{"op":"installremoveconfirm","dec":"K3471","at":1}]},
