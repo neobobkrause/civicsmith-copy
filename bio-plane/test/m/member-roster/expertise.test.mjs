@@ -88,7 +88,8 @@ test("R72 expertiseHolders(label): the active members whose latest entry is decl
     [["ann", "declared"], ["bob", "confirmed"], ["cal", "declared"]]);
   /* a member with no handle yet is listed with a null handle only if active: set one up directly */
   w.sql.exec(`UPDATE members SET handle=NULL WHERE member_id='ann'`);
-  assert.equal(w.m.expertiseHolders("CPA")[0].handle, null);
+  const held = w.m.expertiseHolders("CPA");
+  assert.equal(Array.isArray(held) && held[0].handle, null);
   /* it asks no sight and writes nothing */
   const after = snapshot(w);
   w.m.expertiseHolders("CPA");
@@ -97,8 +98,9 @@ test("R72 expertiseHolders(label): the active members whose latest entry is decl
   /* controls: a label nobody holds is []; an empty one is refused EXPERTISE_NO_LABEL, row C-96.13, writing nothing */
   assert.deepEqual(w.m.expertiseHolders("Architect"), []);
   for (const label of [undefined, null, "", "  \n ", "\t\t"]) {
-    const r = w.m.expertiseHolders(label);
-    assert.deepEqual([r.ok, r.reason, r.code, r.check, r.translation],
+    const answer = w.m.expertiseHolders(label);
+    const r = Array.isArray(answer) ? null : answer;
+    assert.deepEqual([r?.ok, r?.reason, r?.code, r?.check, r?.translation],
       [false, "EXPERTISE_NO_LABEL", "EXPERTISE_NO_LABEL", "C-96.13", MEMBERSHIP_CHECKS.EXPERTISE_NO_LABEL.translation]);
   }
   assert.equal(snapshot(w), after);

@@ -75,6 +75,7 @@ test("R70 every refusal row's translation is the words of its key (refusal.<CODE
 test("R70 over fixtures, what the module answers equals word(key, vars): the refusals at their sites, the notices, the remedy and the handle check's words", async () => {
   const w = await world().group("ann");
   /* a refusal at its site carries its row's words */
+  /** @type {[*, string][]} each answer and the code it must carry */
   const refused = [
     [notAnAdmin("ann", "x"), "NOT_AN_ADMIN"], [noSuchMember("nobody"), "NO_SUCH_MEMBER"],
     [listenerRefusal([], "", null), "LISTENER_MALFORMED"],

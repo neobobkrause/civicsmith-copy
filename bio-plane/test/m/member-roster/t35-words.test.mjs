@@ -29,15 +29,15 @@ const clean = (r, label) => {
 
 test("R65 R70 the sweep's rows C-102.11 and C-102.12 read refusal.LISTENER_MALFORMED and refusal.LISTENER_DECLARED by key", () => {
   const malformed = listenerRefusal([], "", null);
-  assert.equal(malformed.check, "C-102.11");
-  assert.equal(malformed.translation, word("refusal.LISTENER_MALFORMED"));
+  assert.equal(malformed?.check, "C-102.11");
+  assert.equal(malformed?.translation, word("refusal.LISTENER_MALFORMED"));
   const declared = listenerRefusal([{ module: "credentials" }], "credentials", () => {});
-  assert.equal(declared.check, "C-102.12");
-  assert.equal(declared.translation, word("refusal.LISTENER_DECLARED"));
+  assert.equal(declared?.check, "C-102.12");
+  assert.equal(declared?.translation, word("refusal.LISTENER_DECLARED"));
   /* the same rows answer this module's own registrations (R79, R94, R95) */
   const w = world();
-  assert.equal(w.m.registerClaimed("other", () => true).translation, declared.translation);
-  assert.equal(w.m.onRevoked("x", null).translation, malformed.translation);
+  assert.equal(w.m.registerClaimed("other", () => true).translation, declared?.translation);
+  assert.equal(w.m.onRevoked("x", null).translation, malformed?.translation);
 });
 
 test("R65 R70 the sweep's rows C-55.1 and index.mjs:2323: the reserved id `admin` reads refusal.MEMBER_ID_RESERVED by key", async () => {
@@ -96,16 +96,17 @@ test("R65 every row this module holds translates without calling the group's Civ
   assert.deepEqual(Object.keys(TABLES).sort(), ["CUSTODIAL_CHECKS", "MEMBERSHIP_CHECKS", "MEMBER_ID_CHECKS"]);
   assert.equal(n, 36, `every row read (${n})`);
   /* the rows the sweep moved read their keys (R151) */
-  for (const [code, row] of [["LISTENER_MALFORMED", MEMBERSHIP_CHECKS.LISTENER_MALFORMED],
+  for (const [code, row] of /** @type {[string, *][]} each code and its row */ ([["LISTENER_MALFORMED", MEMBERSHIP_CHECKS.LISTENER_MALFORMED],
                              ["LISTENER_DECLARED", MEMBERSHIP_CHECKS.LISTENER_DECLARED],
                              ["MEMBER_ID_RESERVED", MEMBER_ID_CHECKS.MEMBER_ID_RESERVED],
-                             ["NO_HOLDERS", CUSTODIAL_CHECKS.NO_HOLDERS]])
+                             ["NO_HOLDERS", CUSTODIAL_CHECKS.NO_HOLDERS]]))
     assert.equal(row.translation, raw(`refusal.${code}`), row.check);
 });
 
 test("R65 every refusal and answer a battery of this module's acts gives (detail, message, remedy, translation, the statement) is held to the rule", async () => {
   const w = await world().group("ann", "bob", "cal");
   w.m.courtNoticeSet({ choice: "tell", by: "admin" });
+  /** @type {[string, *][]} each act's label and its answer, of whatever kind the act answers */
   const answers = [
     ["listenerRefusal malformed", listenerRefusal(null, "", 1)],
     ["listenerRefusal declared", listenerRefusal({ module: "a" }, "b", () => {})],
