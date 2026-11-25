@@ -60,8 +60,10 @@ import { SCREENS as WIZARDS_SCREENS, GUIDE as WIZARD_GUIDE } from "../screens-wi
 import { SCREENS as INVESTIGATE_SCREENS } from "../screens-investigate/index.mjs";
 import { SCREENS as PUBLISH_SCREENS } from "../screens-publish/index.mjs";
 import { SCREENS as ACTION_SCREENS } from "../screens-action/index.mjs";
-const APP_SCREENS = Object.freeze([...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INTAKE_SCREENS, ...DAILY_SCREENS, ...INQUIRY_SCREENS,
-  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS]);
+/* R75, R81: the nine screen modules' SCREENS, one list for the isolate. A plain list, as `interface-shell` states it takes (`Screen[]`); never
+   changed after this line, and the same object at every request, so the shell composes its script once (its R1, R126). */
+const APP_SCREENS = [...ENTRY_SCREENS, ...SETTINGS_SCREENS, ...INTAKE_SCREENS, ...DAILY_SCREENS, ...INQUIRY_SCREENS,
+  ...WIZARDS_SCREENS, ...INVESTIGATE_SCREENS, ...PUBLISH_SCREENS, ...ACTION_SCREENS];
 const APP_OPTIONS = Object.freeze({ guide: WIZARD_GUIDE });
 /* (T47; K3167) a member's own Claude sign-in, its disconnection, the revocation's sign-out, a refused held token and the
    test instance's trace are signin-door's (its R1–R5, were this module's R65, R78, R85–R87): the door routes to them. */
