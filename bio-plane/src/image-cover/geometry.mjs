@@ -10,11 +10,13 @@
 import { localize } from "../setup-words/index.mjs";
 import { boundOf } from "../read-bounds.mjs";
 
-/** The largest photo covered or stripped, in bytes; a larger one is refused before a byte of it is read (R3, R4). */
+/** The largest photo covered or stripped, in bytes; a larger one is refused before a byte of it is read (R3, R4).
+ *  @type {number} read from READ_BOUNDS image cover_bytes */
 export const COVER_MAX_BYTES = boundOf("image", "cover_bytes");
 
 /** The most pixels a photo may declare; more is refused from its header, before anything is decoded (R3): a small
- *  file can declare a huge image, and the cover's time grows with the pixels. */
+ *  file can declare a huge image, and the cover's time grows with the pixels.
+ *  @type {number} read from READ_BOUNDS image pixels */
 export const COVER_MAX_PIXELS = boundOf("image", "pixels");
 
 /** The widest PNG row, in bytes, and the most chunks (PNG), markers (JPEG) or boxes (JP2) an image may hold; a
