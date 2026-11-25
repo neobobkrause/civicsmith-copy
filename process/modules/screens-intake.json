@@ -21,7 +21,6 @@
     "capture",
     "test-support",
     "acquisition",
-    "runtime-limits",
     "store-request",
     "extraction",
     "pdf-reader",
