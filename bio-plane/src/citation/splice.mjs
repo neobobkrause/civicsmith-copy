@@ -14,6 +14,11 @@
  *  applied. */
 import { localize } from "../setup-words/index.mjs"
 
+/**
+ * @param {string} text the citing document's `bundle.md`
+ * @param {Map<string, {status: string, note: string}>} changes target to its new status and note
+ * @returns {string|null}
+ */
 export function spliceEdgeStatus(text, changes) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -68,6 +73,11 @@ export function spliceEdgeStatus(text, changes) {
  *  reachable: an inline empty `references: []`, a populated block, and no references key at all; any other inline
  *  scalar is refused (null). An entry is `{rel, target, status, note, extent_capture?}`; `extent_capture` is the capture
  *  a case's edge was pinned to (REC-219 / D-579(a)). */
+/**
+ * @param {string} text
+ * @param {{rel: *, target: *, status: *, note?: *, extent_capture?: *}[]} additions
+ * @returns {string|null}
+ */
 export function spliceReferences(text, additions) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -106,6 +116,10 @@ export function spliceReferences(text, additions) {
  *  a number and an array; a string is ALWAYS quoted, so a sheet named `12` is never read back as an integer. The values
  *  are fenced at the act (no quote, backslash, newline or comment mark), so the quoting cannot be broken from outside.
  *  A leg that names no part contributes nothing, which is what keeps a cite naming no part byte-identical. */
+/**
+ * @param {Object<string, *>} l a composed leg
+ * @returns {string[]}
+ */
 export function legExtentLines(l) {
   const keys = Object.keys(l).filter((k) => k.startsWith("extent_") || k === "content_id");
   if (!keys.length) return [];
@@ -127,6 +141,11 @@ export function legExtentLines(l) {
  *  carries it, which is the whole reason an undetermined leg is honest in the bytes: absent grade, axis and source is
  *  what the leg grammar reads as undetermined-and-stated (R8, DEC-18), while `grade: null` would be a member asserting
  *  a null; an empty note is omitted for the same reason. Nothing here rewrites or removes a leg already carried. */
+/**
+ * @param {string} text
+ * @param {Object<string, *>[]} legs each `{target, role, target_edition?, grade?, grade_axis?, grade_source?, note?, ground?}` and its part's fields
+ * @returns {string|null}
+ */
 export function spliceBasis(text, legs) {
   if (!legs.length) return text;
   const lines = text.split("\n");
@@ -171,6 +190,11 @@ export function spliceBasis(text, legs) {
  *  `spliceEdgeStatus` finds a reference's, by the `target:` line, and dropped whole; a block left empty becomes
  *  `basis: []`. Answers `{text, editions}` (the `target_edition` of each leg removed, in order, null for a leg naming
  *  none), or null when the block is not in a shape this grammar can edit in place or holds no leg on `target`. */
+/**
+ * @param {string} text
+ * @param {string} target
+ * @returns {{text: string, editions: (number|null)[]}|null}
+ */
 export function removeBasisLegs(text, target) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -211,6 +235,13 @@ export function removeBasisLegs(text, target) {
  *  written after its `role:` line, as `spliceBasis` orders them. `target` is the target the caller read the leg by, checked
  *  against the entry so a document that moved under the caller is not written. Answers the new text, or null when the block
  *  is not in a shape this grammar can edit in place, holds no `n`th entry, or that entry is not on `target`. */
+/**
+ * @param {string} text
+ * @param {number} n the leg's order in the block, from 0
+ * @param {string} target
+ * @param {*} grade the letter, written with axis and source `capture`
+ * @returns {string|null}
+ */
 export function setLegGrade(text, n, target, grade) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -249,6 +280,11 @@ export function setLegGrade(text, n, target, grade) {
  *  its `role:` line. `target` is checked against the entry, as `setLegGrade` checks it, so a document that moved under the
  *  caller is not written. Answers the new text, or null when the block is not in a shape this grammar can edit in place,
  *  holds no such entry, or an entry is not on its target. */
+/**
+ * @param {string} text
+ * @param {Map<number, {target: string, status?: string, role?: string}>} changes
+ * @returns {string|null}
+ */
 export function setLegStatus(text, changes) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -297,6 +333,12 @@ export function setLegStatus(text, changes) {
  *  or the document. Answers `{text, from}`, `from` mapping each target to the roles its legs held before (in order), or null
  *  when the block is not in a shape this grammar can edit in place, or a named target's leg has no `role:` line to
  *  rewrite. A leg already on `role` is rewritten to itself (the bytes are the same). */
+/**
+ * @param {string} text
+ * @param {Set<string>} targets
+ * @param {string} role
+ * @returns {{text: string, from: Map<string, string[]>}|null}
+ */
 export function setBasisRole(text, targets, role) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -334,6 +376,12 @@ export function setBasisRole(text, targets, role) {
 
 /** Set a top-level frontmatter scalar that is already there (copied from the retired legacy store, K57); the text unchanged when the
  *  key is absent. Used for `last_updated`, which every citing document carries. */
+/**
+ * @param {string} text
+ * @param {string} key
+ * @param {*} value
+ * @returns {string}
+ */
 export function setScalar(text, key, value) {
   const lines = text.split("\n");
   const end = lines.indexOf("---", 1);
@@ -345,6 +393,11 @@ export function setScalar(text, key, value) {
 
 /** R3, R4: append one Session Log entry at the end of the `## Session Log` section (opening the section when the
  *  document has none), as both acts wrote it inline in the retired legacy store (a copy, K57). */
+/**
+ * @param {string} text
+ * @param {string} entry
+ * @returns {string}
+ */
 export function appendSessionLog(text, entry) {
   const at = text.indexOf("## Session Log");
   if (at < 0) return localize("citation.splice.text_session_log_entry", "{text}\n## Session Log\n\n{entry}", { text: String(text), entry: String(entry) });

@@ -9,6 +9,15 @@
    one object, split by the first job to move; retrieval's C-33.20 and C-33.32 went the same way). */
 import { word, localize } from '../setup-words/index.mjs';
 
+/**
+ * One refusal's catalogue row (DEC-49), read at the site that refuses.
+ * @typedef {Object} CheckRow
+ * @property {string} check the row's number, `C-33.<n>` or `C-45.<n>`
+ * @property {string} where the function and the DEC-49 region that refuses, as `src/citation/index.mjs <function> > <region>`
+ * @property {string} translation the member's sentence, read from setup-words' list by key
+ */
+
+/** @type {Object<string, CheckRow>} R1, R4, R5: `cite`'s act-shape rows, C-33.15-C-33.19, C-33.39 and the later C-33 rows */
 export const CITE_CHECKS = {
   BAD_NOTE: {
     check: 'C-33.15',
@@ -76,6 +85,7 @@ export const CITE_CHECKS = {
    is not here: it is refused through `inquiry.checkLegExtentGrammar`, which the act routes its composed leg through,
    and comes back under `BASIS_REFUSED`, the write's own name for that verdict (one function answering twice should not
    answer under two names). */
+/** @type {Object<string, CheckRow>} R1: the part's rows, C-45.7-C-45.10 and the found-match rows */
 export const CITE_EXTENT_CHECKS = {
   UNKNOWN_EXTENT_FIELD: {
     check: 'C-45.7',
@@ -119,6 +129,7 @@ export const CITE_EXTENT_CHECKS = {
 /* R16 (T51; K4189; UC-082) — resting a question on another team's accepted finding. The three rows are the next free
    ones of the C-33 family (C-33.55 to C-33.57), awaiting the stamp; `citeImported` and `withdrawImported` mint them in
    the regions is-cite-imported-member and is-cite-imported-shape. */
+/** @type {Object<string, CheckRow>} R16, R17 */
 export const CITE_IMPORTED_CHECKS = {
   MACHINE_CANNOT_CITE_IMPORTED: {
     check: 'C-33.55',
@@ -140,6 +151,7 @@ export const CITE_IMPORTED_CHECKS = {
 /* R24 (T51 fix round 10; DEC-439 to DEC-441; K5303) — a member's capture-axis grade on a cited document leg. The five rows
    are the next free ones of the C-33 family (C-33.60 to C-33.64), awaiting the stamp; `legGrade` mints them in the regions
    is-leggrade-member, is-leggrade-leg and is-leggrade-ceiling. */
+/** @type {Object<string, CheckRow>} R24 */
 export const CITE_LEG_GRADE_CHECKS = {
   MACHINE_CANNOT_GRADE_LEG: {
     check: 'C-33.60',

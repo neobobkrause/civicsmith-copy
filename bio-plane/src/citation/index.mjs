@@ -64,29 +64,181 @@ export { CITE_CHECKS, CITE_EXTENT_CHECKS, CITE_IMPORTED_CHECKS, CITE_LEG_GRADE_C
 export { spliceEdgeStatus, spliceReferences, spliceBasis, removeBasisLegs, setBasisRole, setLegGrade, legExtentLines } from "./splice.mjs";
 export { RECORDED_LIMIT_DEFAULT, RECORDED_LIMIT_MAX } from "./recorded.mjs";
 
+/* ------------------------------------------------------------------ *
+ * The kinds this module accepts and hands back (structured comments).
+ * Every act here reads its fields from the address or the body as
+ * sent, and refuses what it cannot take rather than throwing, so each
+ * field is stated as anything (`*`) and its expected shape in words.
+ * ------------------------------------------------------------------ */
+
+/**
+ * What `Citation` is built from (K61): the modules it uses, through their factories on the same host unless a test
+ * passes its own.
+ * @typedef {Object} CitationDeps
+ * @property {*} [record] `record-core`'s instance (`head`, `listByType`, `readImage`, the bundle read)
+ * @property {*} [membership] `membership`'s instance (sight, `projectAuthority`)
+ * @property {*} [promotion] `promotion`'s instance (`promote`)
+ * @property {*} [content] `content`'s instance (`captureFor`, `contentRow`)
+ * @property {*} [retrieval] `retrieval`'s instance (`selectionResolve`, `registerRecordedBy`)
+ * @property {*} [provenance] `{homeOf}` (provenance R4); null leaves a found match unplaceable
+ * @property {*} [inquiry] `{earned, checkLegExtentGrammar, BASIS_ROLES, restingOn}` (`inquiryServices`); one lacking any of the first three refuses citing onto a question `INQUIRY_UNAVAILABLE`
+ * @property {*} [acceptedWork] `{acceptedFinding, openFlagsOn}` (accepted-work R2), for `citeImported`'s `origin`
+ * @property {*} [storage] the Durable Object's storage; its `sql` reads record-core's `bundles` contract for R13
+ * @property {*} [now] the clock, a function answering milliseconds since the epoch; the wall clock when not a function
+ */
+/**
+ * `cite`'s fields (R1-R3, R20-R22). `project` names the citing object, a case or a question. What is cited comes from
+ * exactly one of `handle` (a selection, with an optional part in `extent`) and `found` (one match of `findIn`).
+ * @typedef {Object} CiteArgs
+ * @property {*} [project] the citing object's id
+ * @property {*} [handle] a selection's handle (retrieval R19)
+ * @property {*} [found] one match as `retrieval.findIn` answers it, an object or one JSON string: its `document`, `capture_sha` and `extent` are read
+ * @property {*} [question] optional: the question the match was looked for for, an inquiry the viewer may see
+ * @property {*} [viewer] the control plane's stamp
+ * @property {*} [owner] the selection's owner stamp
+ * @property {*} [note] written on each new leg or edge
+ * @property {*} [author] who acts, the control plane's stamp
+ * @property {*} [role] on a question, the leg's role (`supports` or `cuts_against`); refused on a case
+ * @property {*} [extent] the part, a bag of `extent_*` fields and `content_id` (`EXTENT_PARAMS`)
+ * @property {*} [identity] the actor's identity stamp
+ * @property {*} [ground] on a question, the label of a group the question declares, written on each new leg
+ * @bound note: at most 200 characters, with no quote, backslash or newline
+ * @bound extent: each value at most 200 characters, with no quote, backslash, newline or `#`; only the fields of `EXTENT_PARAMS`
+ */
+/**
+ * `sever`'s and `reinstate`'s fields (R4, R15, R23, R25).
+ * @typedef {Object} EdgeArgs
+ * @property {*} [project] the citing object's id, a case or a question
+ * @property {*} [handle] a selection's handle (retrieval R20)
+ * @property {*} [viewer]
+ * @property {*} [owner]
+ * @property {*} [reason] the member's reason, appended to the edge's note
+ * @property {*} [author]
+ * @property {*} [identity]
+ * @property {*} [role] `reinstate` only: a new role for the one leg reinstated (R23)
+ * @property {*} [extent] on a question, the passage by its part, as `cite` names it (R25)
+ * @bound reason: 1 to 160 characters, with no quote, backslash or newline
+ * @bound note: an edge's note holds at most 480 characters of reasons, the oldest dropped first
+ */
+/**
+ * `drawQuestion`'s fields (R14).
+ * @typedef {Object} DrawArgs
+ * @property {*} [project] the case's id
+ * @property {*} [inquiry] the question drawn in
+ * @property {*} [note]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [identity]
+ * @bound note: at most 200 characters, with no quote, backslash or newline
+ */
+/**
+ * `legGrade`'s fields (R24).
+ * @typedef {Object} LegGradeArgs
+ * @property {*} [project] the question's id
+ * @property {*} [target] the document the leg rests on
+ * @property {*} [grade] a letter of record-grammar's `BASIS_GRADES`
+ * @property {*} [reason]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [identity]
+ * @property {*} [extent] the leg's part, as `cite` names it
+ * @bound grade: one letter, A to D, no stronger than the ceiling `leg-earning` answers for the leg
+ * @bound reason: 1 to 160 characters, with no quote, backslash or newline
+ */
+/**
+ * `citeImported`'s fields (R16).
+ * @typedef {Object} CiteImportedArgs
+ * @property {*} [inquiry] the question's id
+ * @property {*} [import] the import holding the other team's case
+ * @property {*} [finding] the finding in it
+ * @property {*} [edition] the edition the leg rests on
+ * @property {*} [role] `supports` or `cuts_against`
+ * @property {*} [note]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [identity]
+ * @bound edition: a whole number, 1 or more, spelled as a number or as digits
+ * @bound note: at most 200 characters, with no quote, backslash or newline
+ */
+/**
+ * `withdrawImported`'s fields (R17).
+ * @typedef {Object} WithdrawImportedArgs
+ * @property {*} [inquiry]
+ * @property {*} [import]
+ * @property {*} [finding]
+ * @property {*} [reason]
+ * @property {*} [author]
+ * @property {*} [viewer]
+ * @property {*} [identity]
+ * @bound reason: 1 to 160 characters, with no quote, backslash or newline
+ */
+/**
+ * `recordedBy`'s fields (R13; events R49).
+ * @typedef {Object} RecordedArgs
+ * @property {*} [captureSha] the captured document's sha256, 64 hex
+ * @property {*} [extent] optional: a part in `content`'s extent grammar, one of `CONTENT_EXTENT_KINDS`
+ * @property {*} [limit] how many items at most
+ * @property {*} [viewer] the member reading; required
+ * @bound limit: clamped to 1 to 500, 100 when absent or not a number
+ */
+/**
+ * What every act answers: `{ok: true, ...}` with the receipt its requirement names, or a refusal
+ * `{ok: false, reason, ...}` whose code, where it has a catalogue row, carries the row's `check` and `translation`.
+ * @typedef {Object<string, *>} CitationAnswer
+ */
+/**
+ * The services of `inquiry` this module builds against (inquiry R13, R5, R4, R12).
+ * @typedef {Object} InquiryServices
+ * @property {Function} earned `(subject, targets, contentIds)`: the earned registry that fills a leg's grade
+ * @property {Function} checkLegExtentGrammar the one leg-part grammar
+ * @property {*} BASIS_ROLES the role vocabulary
+ * @property {Function} restingOn `(targetId)`: the legs resting on a target, read back from inquiry's projection
+ */
+/**
+ * One op this module declares beside its ops map (R18, R19; op-declarations R80).
+ * @typedef {Object} CitationDeclaredOp
+ * @property {string[]} classes
+ * @property {string[]} [machineClasses]
+ * @property {boolean} mutating
+ * @property {string[]} [stamps]
+ * @property {string} needs
+ * @property {string} weight
+ * @property {string} [refusal] the code an absent reason is refused with
+ * @property {string} description
+ * @property {{accepts: string[], requires: (string|string[])[]}} fields a nested list in `requires` is "one of these"
+ */
+
 /** R1: citing writes one frontmatter entry per cited record into a single `bundle.md`, so the edges one citing object
  *  can carry are bounded by the inline bound (1 MiB), not by a selection's size. MEASURED at 83 bytes per edge for the
  *  reference block at a 25-character bundle id (2026-07-25, test/cite-scale.mjs); used only to tell a member roughly
- *  how many would fit, never to decide the refusal, which is made on the real encoded length. */
+ *  how many would fit, never to decide the refusal, which is made on the real encoded length.
+ *  @type {number} */
 export const CITE_EDGE_BYTES = 83;
 /** R1 (REC-219 / D-579(a)): the `    extent_capture: <64 hex>` line a pinned case edge adds, 85 bytes by construction
- *  (20 + 64 + the newline), not measured, because it is fixed width. */
+ *  (20 + 64 + the newline), not measured, because it is fixed width.
+ *  @type {number} */
 export const CITE_PIN_BYTES = 85;
-/** R3, R4: how many ids a Session Log entry names before it summarises, bounded as the audit bounds its offenders. */
+/** R3, R4: how many ids a Session Log entry names before it summarises, bounded as the audit bounds its offenders.
+ *  @type {number} */
 export const CITE_LOG_SAMPLE = 20;
-/** R1: a note's ceiling (C-33.15). */
+/** R1: a note's ceiling (C-33.15).
+ *  @type {number} */
 export const NOTE_MAX = 200;
-/** R1: an extent value's ceiling (C-45.10). */
+/** R1: an extent value's ceiling (C-45.10).
+ *  @type {number} */
 export const EXTENT_VALUE_MAX = 200;
-/** R4: a severance's or reinstatement's reason, at most this long (a copy: `inquiry` holds its own, K57). */
+/** R4: a severance's or reinstatement's reason, at most this long (a copy: `inquiry` holds its own, K57).
+ *  @type {number} */
 export const EDGE_REASON_MAX = 160;
-/** R4: an edge's note, the reasons appended to it, at most this long, the oldest dropped first. */
+/** R4: an edge's note, the reasons appended to it, at most this long, the oldest dropped first.
+ *  @type {number} */
 export const EDGE_NOTE_MAX = 480;
 
 /* R1 (REC-97 / IC-90): the act's part vocabulary, and the TYPE each wire scalar must take to survive a round trip
    through the restricted frontmatter grammar. `int` and `nums` are coerced ONLY when the spelling permits it; a value
    that does not parse is passed through UNCHANGED so the leg grammar's own sentence refuses it rather than a worse one
    written here. FW-19 / IC-125 added the two newer arms and the image reference. */
+/** @type {Readonly<Object<string, "text"|"int"|"nums">>} */
 export const EXTENT_PARAMS = Object.freeze({
   extent_kind: "text",  extent_ref: "text",
   extent_page: "int",   extent_rect: "nums",
@@ -109,7 +261,12 @@ function partKey(o) {
 /* R1 (T35; N698, DEC-164 (4)): a found match's extent (`content`'s extent grammar, retrieval R73) as the part bag a
    cited extent arrives in: each field `f` as `extent_f`, so the found part meets exactly the refusals a named part
    meets, and a field no part carries (`extent_space`, a nested note) is refused by name (C-45.7), never dropped. */
+/**
+ * @param {Object<string, *>} extent a found match's extent
+ * @returns {Object<string, string>} each field `f` as `extent_f`, a list as `[a, b]`, an object as JSON; absent fields left out
+ */
 export function foundExtentBag(extent) {
+  /** @type {Object<string, string>} builds the bag */
   const bag = {};
   for (const [k, v] of Object.entries(extent)) {
     if (v === undefined || v === null) continue;
@@ -139,6 +296,7 @@ export class Citation {
      row (R6). */
   #recorded = new Map();
 
+  /** @param {CitationDeps} [deps] */
   constructor({ record, membership, promotion, content, retrieval, provenance = null, inquiry = null, acceptedWork = null, storage = null, now } = {}) {
     this.record = record;
     this.acceptedWork = acceptedWork;
@@ -161,7 +319,9 @@ export class Citation {
    *  another door and this one claims nothing about it). `source_status` is not read: a removed or modified source
    *  stays citable, `retired` is the other axis. NEVER viewer-gated: whether a viewer can see the target decides only
    *  a refusal's WORDING, never citability. Asked by `cite` (R1), `reinstate` (R4), and the later modules that offer
-   *  or suggest a citation, so an offer and a refusal cannot answer differently. Never throws. */
+   *  or suggest a citation, so an offer and a refusal cannot answer differently. Never throws.
+   *  @param {*} id a bundle id
+   *  @returns {boolean} */
   retiredNotCitable(id) {
     try {
       if (typeof id !== "string" || !id) return false;
@@ -173,7 +333,9 @@ export class Citation {
   /* ---- R13 ---- */
 
   /** R13 (T36; N715, DEC-164 (4)): who cited an extent of `captureSha`, in `events` R49's shape, over the legs and `cites`
-   *  edges the citing objects' current bytes hold, each naming who first wrote it. Writes nothing; never throws. */
+   *  edges the citing objects' current bytes hold, each naming who first wrote it. Writes nothing; never throws.
+   *  @param {RecordedArgs} [args]
+   *  @returns {CitationAnswer} `{ok: true, module: "citation", capture_sha, items, truncated}`, or a refusal `{ok: false, refused, code, reason, why}` */
   recordedBy(args = {}) { return recordedBy(this, this.#recorded, args); }
 
   /* ---- the citing object, R1 and R4's shared opening ---- */
@@ -484,11 +646,17 @@ export class Citation {
              ...(rl !== null ? { role: rl, roleMoved } : {}) };
   }
 
+  /** R4, R15, R25: a case's `cites` edge, or a question's own leg, moves to `severed` with the member's reason.
+   *  @param {EdgeArgs} [args]
+   *  @returns {CitationAnswer} */
   sever({ project, handle, viewer = null, owner = null, reason = "", author = null, identity = null, extent = null } = {}) {
     return this.#edgeTransition({ project, handle, viewer, owner, reason, author, identity, extent,
       from: ["confirmed", "proposed"], to: "severed", verb: "Severed", resultKey: "severed" });
   }
 
+  /** R4, R15, R23, R25: a severed edge or leg moves back to `confirmed` with the member's reason, optionally on a new role.
+   *  @param {EdgeArgs} [args]
+   *  @returns {CitationAnswer} */
   reinstate({ project, handle, viewer = null, owner = null, reason = "", author = null, identity = null, role = null, extent = null } = {}) {
     return this.#edgeTransition({ project, handle, viewer, owner, reason, author, identity, role, extent,
       from: ["severed"], to: "confirmed", verb: "Reinstated", resultKey: "reinstated" });
@@ -516,7 +684,9 @@ export class Citation {
    *     the leg lands THROUGH THE DOCUMENT; a second rule here would be a second answer waiting to disagree.
    *   - IT DOES NOT VALIDATE A LEG beyond routing its part through `inquiry.checkLegExtentGrammar`, the same function
    *     that judges it again at the write.
-   *   - IT ASKS ONE THING ABOUT A TARGET'S STATE, ON BOTH ARMS: whether the group RETIRED it (R5). */
+   *   - IT ASKS ONE THING ABOUT A TARGET'S STATE, ON BOTH ARMS: whether the group RETIRED it (R5).
+   *  @param {CiteArgs} [args]
+   *  @returns {CitationAnswer} */
   cite({ project = null, handle = null, found = null, question = null, viewer = null, owner = null,
          note = "", author = null, role = null, extent = null, identity = null, ground = null } = {}) {
     /* T35 (N698, DEC-164 (4), (5)): WHAT IS CITED, from ONE source, asked before anything else. A selection (`handle`,
@@ -958,7 +1128,9 @@ export class Citation {
    *  `GRADE_OVER_CEILING` naming the ceiling, so no leg is given a grade the record did not earn (R8). The write
    *  judges the revised document again as it judges every leg (`inquiry` R11). A leg of a kind the record derives, or on
    *  another team's finding, is not the member's to grade; a leg already graded on another axis keeps that grade (a leg
-   *  carries one). A grade is the member's act, so a machine is refused as it is for R16. */
+   *  carries one). A grade is the member's act, so a machine is refused as it is for R16.
+   *  @param {LegGradeArgs} [args]
+   *  @returns {CitationAnswer} */
   legGrade({ project = null, target = null, grade = null, reason = "", author = null, viewer = null, identity = null,
              extent = null } = {}) {
     /* DEC-49 REGION is-leggrade-member */
@@ -1061,7 +1233,9 @@ export class Citation {
    *  the caller: the case gains a `confirmed` `cites` edge to the question, spliced into the case's held document and
    *  promoted, the edge and the answer exactly those `cite` writes for a one-member selection naming the question, at
    *  `report` weight (R7). So the case draws on the question (`leg-earning`'s `projectsDrawingOn`) without a member
-   *  revising the whole document. Every refusal is one `cite` already answers, with its code and row; it mints none. */
+   *  revising the whole document. Every refusal is one `cite` already answers, with its code and row; it mints none.
+   *  @param {DrawArgs} [args]
+   *  @returns {CitationAnswer} */
   drawQuestion({ project = null, inquiry = null, note = "", author = null, viewer = null, identity = null } = {}) {
     /* No selection is resolved, so no `owner` is read: the act names its one member itself. */
     const obj = this.#citingObject(project, viewer);
@@ -1178,7 +1352,9 @@ export class Citation {
    *  the question's `basis[]`, `target`, `target_edition`, `role` and `note`, nothing else. No grade is written: the leg
    *  is read as the edition publishes it, never stronger (`strength` R33), and the target is not in `references[]`
    *  (`inquiry-grammar` R11). Whether the edition is accepted is not asked here: the write asks it (`accepted-work` R3,
-   *  R4), and its refusal comes back unchanged inside `BASIS_REFUSED`. */
+   *  R4), and its refusal comes back unchanged inside `BASIS_REFUSED`.
+   *  @param {CiteImportedArgs} [args]
+   *  @returns {CitationAnswer} */
   citeImported({ inquiry = null, import: importId = null, finding = null, edition = null, role = null, note = "",
                  author = null, viewer = null, identity = null } = {}) {
     const machine = this.#importedMemberRefusal(author, inquiry);
@@ -1254,7 +1430,9 @@ export class Citation {
 
   /** R17 (T51; K4189; R15): TAKING THAT LEG BACK. `sever` cannot (an imported leg is not in `references[]`), so this
    *  removes the leg from the live `basis[]` with a Session Log entry; the earlier bytes stay in history and each frozen
-   *  version keeps its copy (`basis-versions` R29). */
+   *  version keeps its copy (`basis-versions` R29).
+   *  @param {WithdrawImportedArgs} [args]
+   *  @returns {CitationAnswer} */
   withdrawImported({ inquiry = null, import: importId = null, finding = null, reason = "", author = null, viewer = null,
                      identity = null } = {}) {
     const machine = this.#importedMemberRefusal(author, inquiry);
@@ -1307,11 +1485,22 @@ const instances = new WeakMap();
 
 /* inquiry's services this module builds against (inquiry R13, R5, R4, and R12's leg projection read back for R13,
    `restingOn`; K2132), from its instance and its exports. */
+/**
+ * @param {*} k `inquiry`'s instance (`inquiryOf`)
+ * @returns {InquiryServices}
+ */
 export function inquiryServices(k) {
   return { earned: (subject, targets, contentIds) => k.earned(subject, targets, contentIds), checkLegExtentGrammar, BASIS_ROLES,
            restingOn: (targetId) => k.restingOn(targetId) };
 }
 
+/**
+ * The one instance per host (K61), made on the first call with `deps` and returned to every later caller; registers R13's
+ * read with `retrieval` once.
+ * @param {*} host the Durable Object's `ctx`
+ * @param {CitationDeps} [deps]
+ * @returns {Citation}
+ */
 export function citationOf(host, deps) {
   let c = instances.get(host);
   if (!c) {
@@ -1343,6 +1532,13 @@ function foundParam(raw) {
   try { return JSON.parse(raw); } catch { return raw; }
 }
 
+/**
+ * The ops this module answers (plane R5), each a function of no arguments.
+ * @param {*} c the `Citation`, or a stand-in answering the same acts
+ * @param {URL} url the request's address, carrying the door's stamps and, for a caller not yet moved, the fields
+ * @param {*} [body] the POST body, read first where it carries a field (R20)
+ * @returns {Object<string, () => CitationAnswer>} `cite`, `sever`, `reinstate`, `drawquestion`, `leggrade`, `citeimported`, `withdrawimported`
+ */
 export function citationOps(c, url, body) {
   const q = (key) => url.searchParams.get(key);
   /* C31, R20 (K4308): `cite` WRITES, so it takes its fields from the POST body; where the body does not carry one, the
@@ -1401,6 +1597,7 @@ export function citationOps(c, url, body) {
    (`op-declarations`, `op-grades`; the two new ops' are K4189's table); the fields are what each arm reads from the address.
    The stamps (`viewer`, `owner`, `author`, `identity`) are the door's. A part of a document travels as `extent_*` fields and
    `content_id` (EXTENT_PARAMS); `cite` refuses any other `extent_*` by name (C-45.7). */
+/** @type {Readonly<Object<string, CitationDeclaredOp>>} */
 export const DECLARED_OPS = Object.freeze({
   cite: { classes: ["admin", "member", "probe"], mutating: true, needs: "contribute", weight: "reversible",
     description: localize("citation.declared.cite", "cites material or a question into a case's references or a question's basis, and sever takes it back"),

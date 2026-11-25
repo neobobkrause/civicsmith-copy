@@ -23,8 +23,10 @@ import { parseFrontmatter } from "../record-grammar/frontmatter.mjs";
 import { canonicalExtent, extentRelation, citationExtent, CONTENT_EXTENT_KINDS } from "../content/index.mjs";
 import { localize } from "../setup-words/index.mjs";
 
-/** R13 (events R49): `limit` is clamped to 1–500, 100 by default. */
+/** R13 (events R49): `limit` is clamped to 1–500, 100 by default.
+ *  @type {number} */
 export const RECORDED_LIMIT_DEFAULT = 100;
+/** @type {number} */
 export const RECORDED_LIMIT_MAX = 500;
 /** The page by which citing objects are listed (record-core R36's bound). */
 const LIST_PAGE = 200;

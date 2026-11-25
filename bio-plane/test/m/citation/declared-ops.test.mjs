@@ -117,5 +117,5 @@ test("R18, R19: the declaration is whole: each op names its class, weight and de
 });
 
 test("R18: both imported ops declare the stamps the door sets from the session, `author` and `viewer`, so a joined member's act names a member (K5131)", () => {
-  for (const op of ["leggrade", "citeimported", "withdrawimported"]) assert.deepEqual([...DECLARED_OPS[op].stamps].sort(), ["author", "viewer"], op);
+  for (const op of ["leggrade", "citeimported", "withdrawimported"]) assert.deepEqual([...(DECLARED_OPS[op].stamps ?? [])].sort(), ["author", "viewer"], op);
 });
