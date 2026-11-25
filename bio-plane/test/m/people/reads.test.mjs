@@ -6,6 +6,8 @@ import { READ_LIST_MAX, peopleOf } from "../../../src/people/index.mjs";
 import { BOUNDS } from "../../../src/connection-grammar/index.mjs";
 import { validAt } from "../../../src/civil-time/index.mjs";
 import { hasWord, word } from "../../../src/setup-words/index.mjs";
+/** The reason of a listener refusal, or null when the registration was taken. */
+const refusalOf = (r) => ("reason" in r ? r.reason : null);
 
 /* civil-time's own reason for a validity open at the end, at a date: what personAt passes on or fills a key with (R40) */
 const openEnd = (from, at) => validAt({ valid: { from, to: null, precision: "day", zone: "UTC" }, basis: null }, { value: at, precision: "day", zone: "UTC" }).why;
@@ -200,10 +202,10 @@ test("R18 staffingAt answers, for an organisation and its parts at a date, the p
 test("R19 registerRosterSource takes one source per module, refused through membership's listenerRefusal (LISTENER_MALFORMED, LISTENER_DECLARED); sources are asked in the modules' total order; a source that throws is named as failed and the read still answers", () => {
   const w = world();
   const org = w.entity("body", "Board");
-  assert.equal(w.p.registerRosterSource("", () => 1).reason, "LISTENER_MALFORMED");
-  assert.equal(w.p.registerRosterSource("plane", "no").reason, "LISTENER_MALFORMED");
+  assert.equal(refusalOf(w.p.registerRosterSource("", () => 1)), "LISTENER_MALFORMED");
+  assert.equal(refusalOf(w.p.registerRosterSource("plane", "no")), "LISTENER_MALFORMED");
   assert.equal(w.p.registerRosterSource("plane", () => ({ rows: [] })).ok, true);
-  assert.equal(w.p.registerRosterSource("plane", () => ({})).reason, "LISTENER_DECLARED");
+  assert.equal(refusalOf(w.p.registerRosterSource("plane", () => ({}))), "LISTENER_DECLARED");
   w.p.registerRosterSource("calculations", () => { throw new Error("sheet unreadable"); });
   const r = w.p.staffingAt({ organisation: org, at: "2020-01-01", viewer: ANN });
   assert.equal(r.ok, true);

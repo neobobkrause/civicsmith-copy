@@ -195,7 +195,7 @@ test("R6 the cluster is a derived cache rebuilt in each claim's and withdrawal's
   assert.ok(w.record.declaredTables().some((d) => d.name === "identity_cluster" && d.derive === "derived-rebuildable"));
   /* a cache that differs from its rebuild */
   w.st.sql.exec(`UPDATE identity_cluster SET component=? WHERE entity_id=?`, x, z);
-  assert.equal(w.record.rebuildAndCompare("people", "identity_cluster").same, false);
+  assert.equal(w.record.rebuildAndCompare("people", "identity_cluster")?.same, false);
   const d = w.p.identityOf({ entityId: z, viewer: ANN });
   assert.equal(d.state, "undetermined");
   assert.deepEqual(d.why, { key: "people.identity_cluster_cache_differs", vars: {} }, "R40");

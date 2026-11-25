@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { world, ANN, OUT, BOSS, MACHINE, PRESET_PERSONS } from "./fixture.mjs";
 import { SHIPPED_CHECKS, GATE_RATE_MAX, HINT_MARK, peopleOps } from "../../../src/people/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+/** The reason of a listener refusal, or null when the registration was taken. */
+const refusalOf = (r) => ("reason" in r ? r.reason : null);
 
 const span = (from, to) => ({ from, to });
 const RD = { from: { line: "holds", sector: "government" }, to: { line: "holds" }, join: { lines: ["oversees", "contracts_with"] }, order: { after: true, within_days: 730 }, hops: 0 };
@@ -126,9 +128,9 @@ test("R25 a result whose derivation rests on any row the viewer may not see is w
   const w = world();
   door(w, { fenced: true });
   const told = [];
-  assert.equal(w.p.onCheckResult("", () => 1).reason, "LISTENER_MALFORMED");
+  assert.equal(refusalOf(w.p.onCheckResult("", () => 1)), "LISTENER_MALFORMED");
   assert.equal(w.p.onCheckResult("notice-producers", (e) => told.push(e.result.result_id)).ok, true);
-  assert.equal(w.p.onCheckResult("notice-producers", () => 1).reason, "LISTENER_DECLARED");
+  assert.equal(refusalOf(w.p.onCheckResult("notice-producers", () => 1)), "LISTENER_DECLARED");
   w.p.evaluateChecks({ budgetMs: 10000 });
   assert.equal(told.length, 0, "gated: nobody is told");
   const rd = shipped(w);
@@ -151,10 +153,10 @@ test("R25 a result whose derivation rests on any row the viewer may not see is w
 test("R35 onChecksChanged takes one registration per module (membership's listenerRefusal); after a check is defined, given a new version, or switched on or off in a project, fn({check, project}) is called once, after the act's transaction; a throwing fn never undoes the act; the notice writes nothing", () => {
   const w = world();
   const heard = [];
-  assert.equal(w.p.onChecksChanged("", () => 1).reason, "LISTENER_MALFORMED");
-  assert.equal(w.p.onChecksChanged("scheduler", "no").reason, "LISTENER_MALFORMED");
+  assert.equal(refusalOf(w.p.onChecksChanged("", () => 1)), "LISTENER_MALFORMED");
+  assert.equal(refusalOf(w.p.onChecksChanged("scheduler", "no")), "LISTENER_MALFORMED");
   assert.equal(w.p.onChecksChanged("scheduler", (n) => heard.push(n)).ok, true);
-  assert.equal(w.p.onChecksChanged("scheduler", () => 1).reason, "LISTENER_DECLARED");
+  assert.equal(refusalOf(w.p.onChecksChanged("scheduler", () => 1)), "LISTENER_DECLARED");
   const proj = w.project();
   const one = w.p.defineCheck({ name: "mine", condition: RD, denominator: "d", by: ANN });
   const inner = w.p.defineCheck({ name: "inner", condition: RD, denominator: "d", project: proj, by: ANN });
