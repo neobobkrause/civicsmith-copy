@@ -15,7 +15,7 @@ import { ROWS_NOW } from "./t45-rows.mjs";
 const S = suite(AG);
 const codes = (list) => list.map((x) => x.code);
 const audit = (fm, o = {}) => pushed((f) => AG.checkActionExtension({ fm, nowMs: NOW, zone: ZONE, ...o }, f));
-const TEST_VIEW = (() => { const c = J.combine(["test-port-ellery"]); assert.ok(c.ok); return c.view; })();
+const TEST_VIEW = (() => { const c = J.combine(["test-port-ellery"]); if (!c.ok || !c.view) throw new Error("the test profile does not combine"); return c.view; })();
 
 /* R13 (T41-46a): the one value changed since the move: CORRESPONDENCE_OUTCOMES gained `none_exists`, appended. */
 const VALUES_NOW = (() => {
