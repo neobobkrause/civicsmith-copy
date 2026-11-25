@@ -313,8 +313,9 @@ function findingWords(content) {
     const statement = sectionOf(text, CONCLUSION_HEADING) ?? (laid(text) || !text.trim() ? null : text);
     return { text, statement, falsifier: sectionOf(text, FALSIFIER_HEADING), concluded: statement !== null };
   }
+  const data = parsed.data;
   const body = withoutLog(String(parsed.body ?? "").replace(/^(?:\r?\n)+/, ""));
-  const own = (k) => (typeof parsed.data[k] === "string" && parsed.data[k].trim() ? parsed.data[k].trim() : null);
+  const own = (k) => (typeof data[k] === "string" && data[k].trim() ? data[k].trim() : null);
   const statement = own("conclusion") ?? own("statement") ?? sectionOf(body, CONCLUSION_HEADING)
                     ?? (laid(body) || !body.trim() ? null : body);
   return { text: body, statement, falsifier: own("falsifier") ?? sectionOf(body, FALSIFIER_HEADING),
