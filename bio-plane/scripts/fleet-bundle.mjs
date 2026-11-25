@@ -116,15 +116,32 @@ import { parse as acornParse, tokenizer as acornTokenizer, tokTypes as acornType
 import { readGitProvenance, reportProvenance, repoPath } from "./provenance.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
 
+/**
+ * The repository's root: two directories above this file.
+ * @type {string}
+ */
 export const REPO_ROOT = resolve(join(dirname(fileURLToPath(import.meta.url)), "..", ".."));
 
 /* The recipe every member shares. A member's `fleet-member.json` may override
    `entry`, `outfile`, `manifest` and `external`; it may NOT override `format` or
    `platform`, because those two are what make the output a Worker module and a
    member that needed a different answer would not be a fleet member. */
+/**
+ * @type {Readonly<{format: string, platform: string}>}
+ * @bound format "esm" and platform "neutral"; a member may not override either
+ */
 export const RECIPE = Object.freeze({ format: "esm", platform: "neutral" });
+/**
+ * The externals a member's bundle leaves unbundled when its `bundle` block names none.
+ * @type {ReadonlyArray<string>}
+ */
 export const DEFAULT_EXTERNAL = Object.freeze(["cloudflare:workers", "node:*"]);
 
+/**
+ * The SHA-256 of `buf`, as lower-case hex.
+ * @param {*} buf bytes or a string
+ * @returns {string}
+ */
 export const sha256 = (buf) => createHash("sha256").update(buf).digest("hex");
 
 /* The remedy every staleness finding names (N31): the one command that rebuilds
@@ -158,24 +175,65 @@ const REBUILD = "Run `node bio-plane/scripts/bundles.mjs` from the repository ro
    the one top-level `image`; `max_instances` and `bind` not stated on a class are read from the member's top level
    (the marker stating them once for every class), and are never defaulted. A `containers` list whose every entry has
    an `image` block is that member's "image block" for R24. */
+/**
+ * @typedef {Object} BundleBlock a member's `bundle` block: what its bundle is built from and written to, member-relative
+ * @property {string} entry the entry point
+ * @property {string} outfile the artifact
+ * @property {string} manifest the committed manifest
+ * @property {string[]} [external] the externals; DEFAULT_EXTERNAL when absent
+ * @property {*} [assets] the upload parts beside the bundle (read through assetsOf)
+ * @property {*} [ascii] the pure-ASCII recipe's override, honoured only when a boolean (R2)
+ */
+/**
+ * @typedef {Object} Member a member descriptor: a discovered fleet member, or the plane's descriptor
+ * @property {string} dir its directory, relative to the repository root
+ * @property {string} name its name (the marker's `name`, else the directory)
+ * @property {string} abs its directory's absolute path
+ * @property {string|null} entry its entry point, member-relative
+ * @property {BundleBlock|null} bundle its `bundle` block, or null for a member with none
+ * @property {string} [kind] "worker" unless the marker states another (a discovered member only)
+ * @property {*} [image] a container member's top-level `image` block, else null (a discovered member only)
+ * @property {Array<{class_name: *, image: *}>} [containers] each class's name and image, for a marker with a `containers` list
+ * @property {*} [marker] the parsed `fleet-member.json` (a discovered member only)
+ * @property {boolean} [wholeWordTable] true for the plane, whose bundle carries the whole word table (R38)
+ */
 const isBlock = (x) => !!x && typeof x === "object" && !Array.isArray(x);
 const classList = (meta) =>
   (Array.isArray(meta.containers) && meta.containers.length && meta.containers.every((c) => isBlock(c) && isBlock(c.image))
     ? meta.containers : null);
 
 /** R24 read off a marker itself (what `deploy-fleet.mjs` holds): `kind: "container"` and an image block, the top-level
- *  one or a `containers` list whose every entry has one. */
+ *  one or a `containers` list whose every entry has one.
+ * @param {*} meta a parsed marker
+ * @returns {boolean}
+ */
 export const markerIsContainer = (meta) => isBlock(meta) && meta.kind === "container" && (isBlock(meta.image) || !!classList(meta));
 
+/**
+ * R24: is this member a container member (`kind: "container"` and an image block or a non-empty `containers` list)?
+ * @param {Member} member
+ * @returns {boolean}
+ */
 export function isContainer(member) {
   return !!member && member.kind === "container"
     && (isBlock(member.image) || (Array.isArray(member.containers) && member.containers.length > 0));
 }
 
 /** Does the bundle guard (R6, R7, R21, R22) cover this member? Every member but a
- *  container member with no Worker bundle (R24). */
+ *  container member with no Worker bundle (R24).
+ * @param {Member} member
+ * @returns {boolean}
+ */
 export const isGuarded = (member) => !isContainer(member) || !!member.bundle;
 
+/**
+ * R1, R24: every directory under the repository root holding a `fleet-member.json`, as a member descriptor.
+ * @param {string} [repoRoot] REPO_ROOT when absent
+ * @returns {Member[]}
+ * @throws {Error} when a marker is not valid JSON ("fleet member marker <path> is not valid JSON"); a marker that
+ *   cannot be read for any reason but its absence throws the reading error
+ * @bound order: by name, then directory, in code-point order
+ */
 export function discoverMembers(repoRoot = REPO_ROOT) {
   const out = [];
   for (const dir of readdirSync(repoRoot).filter((d) => !d.startsWith("."))) {
@@ -234,6 +292,11 @@ export function discoverMembers(repoRoot = REPO_ROOT) {
  * the same file `wrangler.jsonc`'s `main` names, so the bundle and a wrangler
  * deploy start from one module (T20, K846). */
 const PLANE_ENTRY = "src/plane/index.mjs";
+/**
+ * The plane's own descriptor (FL-10): not a fleet member, built and guarded by the same functions.
+ * @param {string} [repoRoot] REPO_ROOT when absent
+ * @returns {Member}
+ */
 export function planeMember(repoRoot = REPO_ROOT) {
   return {
     dir: "bio-plane",
@@ -263,9 +326,18 @@ const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const REPOSITORY = /^[a-z0-9.-]+(:[0-9]+)?\/[a-z0-9._/-]+$/;
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+/**
+ * @typedef {Object} ImageReference an image named by digest, or the first field that does not name it
+ * @property {string} [reference] `<repository>@sha256:<64 hex>`
+ * @property {string} [missing] the field that does not say it: "image", "image.repository" or "image.digest"
+ */
 /** `<repository>@sha256:<64 hex>` from a container member's `image` block, or
  *  `{missing}` naming the first field that does not say it. Shared by the release
- *  (R25) and the deploy (R26), so the two cannot name the image differently. */
+ *  (R25) and the deploy (R26), so the two cannot name the image differently.
+ * @param {*} image the `image` block
+ * @returns {ImageReference}
+ * @bound exactly one of reference and missing is set
+ */
 export function imageReference(image) {
   if (!image || typeof image !== "object") return { missing: "image" };
   if (typeof image.repository !== "string" || !REPOSITORY.test(image.repository) || image.repository.includes("@"))
@@ -288,8 +360,24 @@ const packageOfPath = (key) => {
 };
 const byNameVersion = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : a.version < b.version ? -1 : a.version > b.version ? 1 : 0);
 
+/**
+ * @typedef {Object} Package one installed package
+ * @property {string} name
+ * @property {string} version
+ */
+/**
+ * @typedef {Object} Packages an image's packages, or why they cannot be read
+ * @property {string} [ecosystem] the OSV ecosystem ("npm" for a lockfile's, as classPackages states it)
+ * @property {Package[]} [packages] sorted by name, then version
+ * @property {string} [unread] the file, package or digest that cannot be read
+ */
 /** `{packages: [{name, version}]}` sorted by name then version, or `{unread}` naming the file, or the package
- *  with no version. Never throws. */
+ *  with no version. Never throws.
+ * @param {string} lockPath the lockfile
+ * @param {string} [label] how a finding names the file; lockPath when absent
+ * @returns {Packages}
+ * @bound packages: the non-dev `node_modules/` entries only; either packages or unread, never both
+ */
 export function npmProductionPackages(lockPath, label = lockPath) {
   let lock;
   try { lock = JSON.parse(readFileSync(lockPath, "utf8")); }
@@ -308,7 +396,10 @@ export function npmProductionPackages(lockPath, label = lockPath) {
 }
 
 /** R27: a container member's image packages, from its own `package-lock.json` (the file its image's `npm ci
- *  --omit=dev` installs from). */
+ *  --omit=dev` installs from).
+ * @param {Member} member
+ * @returns {Packages}
+ */
 export const containerPackages = (member) =>
   npmProductionPackages(join(member.abs, "package-lock.json"), `${member.dir}/package-lock.json`);
 
@@ -328,7 +419,13 @@ export const containerPackages = (member) =>
 const STATEMENT_ECOSYSTEM = /^[A-Za-z][A-Za-z0-9.+:_ -]*$/;
 
 /** `{ecosystem, packages: [{name, version}]}` sorted by name then version, or `{unread}` naming the file, the package
- *  or the digest. Never throws. */
+ *  or the digest. Never throws.
+ * @param {string} path the package statement
+ * @param {string} label how a finding names the file
+ * @param {string|null} [baseDigest] the base digest the marker pins
+ * @returns {Packages}
+ * @bound unread unless the statement's `base.digest` equals baseDigest
+ */
 export function statementPackages(path, label, baseDigest) {
   let st;
   try { st = JSON.parse(readFileSync(path, "utf8")); }
@@ -352,10 +449,27 @@ export function statementPackages(path, label, baseDigest) {
   return { ecosystem: st.ecosystem, packages: packages.sort(byNameVersion) };
 }
 
+/**
+ * @typedef {Object} ContainerClass one container class as the marker states it, copied, never defaulted
+ * @property {*} class_name
+ * @property {*} image its `image` block
+ * @property {*} max_instances the class's own, else the member's top level
+ * @property {*} bind the class's own, else the member's top level
+ * @property {*} [instance_type] its size, where the member's `wrangler.jsonc` states one (R33)
+ */
+/**
+ * @typedef {Object} ContainerClasses a container member's classes
+ * @property {ContainerClass[]} classes
+ * @property {boolean} multi true only for more than one class
+ * @property {string|null} [conflict] names a marker that states both a top-level image and a `containers` list
+ */
 /** A container member's classes, each as the part describes it: one entry per class, `{class_name, image,
  *  max_instances, bind}` with `max_instances` and `bind` taken from the class, else from the member's top level.
  *  One class (the top-level `image` form, or a `containers` list of one) or several. `multi` is true only for more
- *  than one. `conflict` names a marker that states both forms. */
+ *  than one. `conflict` names a marker that states both forms.
+ * @param {Member} member
+ * @returns {ContainerClasses}
+ */
 export function containerClasses(member) {
   const meta = (member && member.marker) || {};
   const list = classList(meta);
@@ -370,7 +484,12 @@ export function containerClasses(member) {
 }
 
 /** R27: one class's image packages, `{ecosystem, packages}` or `{unread}`: its package statement where the class names
- *  one, else the member's npm lockfile. */
+ *  one, else the member's npm lockfile.
+ * @param {Member} member
+ * @param {ContainerClass} cls
+ * @returns {Packages}
+ * @bound image.packages: a member-relative path (no leading "/", no "..")
+ */
 export function classPackages(member, cls) {
   const img = isBlock(cls && cls.image) ? cls.image : {};
   if (img.packages === undefined) {
@@ -383,10 +502,18 @@ export function classPackages(member, cls) {
   return statementPackages(join(member.abs, img.packages), `${member.dir}/${img.packages}`, base);
 }
 
+/**
+ * @typedef {Object} InstanceTypes each class's size by class name, or why the configuration cannot be read
+ * @property {Map<string, *>} [types]
+ * @property {string} [unread]
+ */
 /** R33: each class's `instance_type` as the member's own `wrangler.jsonc` `containers` block states it (a size name, or
  *  the platform's custom size block), keyed by `class_name`: `{types: Map}`, or `{unread}` naming the file when it does
  *  not parse. A member with no configuration, or a class the block does not list or lists with no `instance_type`, has
- *  none to carry: the field is left out and the platform's default applies, never a guessed size. */
+ *  none to carry: the field is left out and the platform's default applies, never a guessed size.
+ * @param {Member} member
+ * @returns {InstanceTypes}
+ */
 export function containerInstanceTypes(member) {
   const types = new Map();
   let text;
@@ -429,10 +556,32 @@ function classDescriptor(cls, memberNames, packages) {
   return { descriptor, bytes: Buffer.from(JSON.stringify(descriptor, null, 2) + "\n") };
 }
 
+/**
+ * @typedef {Object} ContainerDescriptor the `Container` part's content for one class (R25)
+ * @property {*} class_name
+ * @property {*} image `<repository>@sha256:<64 hex>`
+ * @property {string} scheduling_policy always "default"
+ * @property {*} max_instances
+ * @property {*} [instance_type] where the configuration states one (R33)
+ * @property {Array<{member: *, binding: *}>} bind
+ * @property {Package[]} [packages] R27's list, where given
+ */
+/**
+ * @typedef {Object} DescriptorResult one class's `container.json` part, or the fields the marker does not state
+ * @property {ContainerDescriptor} [descriptor]
+ * @property {Uint8Array} [bytes] the descriptor as written: JSON, two-space indent, a final newline
+ * @property {string[]} [missing]
+ */
 /** The `container.json` part for a one-class container member (its top-level marker): `{descriptor, bytes}`, or
  *  `{missing: [field, …]}` naming every field the marker does not state in the form the part needs. `memberNames`
  *  are the fleet's members, which `bind` must name. `packages`, where given, is R27's list, written as the part's
- *  last field; the others are unchanged by it. */
+ *  last field; the others are unchanged by it.
+ * @param {Member} member
+ * @param {string[]} [memberNames] the fleet's members; none when absent
+ * @param {{packages?: Package[]|null}} [options]
+ * @returns {DescriptorResult}
+ * @bound max_instances: an integer of at least 1; bind: non-empty, each naming one of memberNames
+ */
 export function containerDescriptor(member, memberNames = [], { packages = null } = {}) {
   const meta = (member && member.marker) || {};
   const d = classDescriptor({ class_name: meta.class_name, image: meta.image, max_instances: meta.max_instances, bind: meta.bind },
@@ -441,11 +590,31 @@ export function containerDescriptor(member, memberNames = [], { packages = null 
   return d;
 }
 
+/**
+ * @typedef {Object} ContainerPart one `Container` part of a release
+ * @property {string} path "container.json", or "container/<class_name>.json" when there are several classes
+ * @property {*} class_name
+ * @property {*} descriptor the class's ContainerDescriptor
+ * @property {*} bytes the descriptor as written
+ */
+/**
+ * @typedef {Object} ContainerParts a container member's parts, or its first refusal
+ * @property {ContainerPart[]} [parts]
+ * @property {string[]} [missing] (R25)
+ * @property {string} [class] the class missing them, when there are several (or a repeated class name)
+ * @property {string} [unread] (R27)
+ */
 /** R25, R27: every `Container` part a container member carries, one per class: `{parts: [{path, class_name,
  *  descriptor, bytes}]}`. One class is `container.json`, as before; with several, each class is
  *  `container/<class_name>.json`. Refusals, in the order the release checks them: `{missing: [field, …], class?}`
  *  (R25, the class named when there are several), then `{unread}` (R27). Each class's packages are `classPackages`';
- *  `packages: false` leaves them out. */
+ *  `packages: false` leaves them out.
+ * @param {Member} member
+ * @param {string[]} [memberNames] the fleet's members; none when absent
+ * @param {{packages?: boolean}} [options]
+ * @returns {ContainerParts}
+ * @bound class_name: distinct across the member's classes
+ */
 export function containerParts(member, memberNames = [], { packages = true } = {}) {
   const found = containerClasses(member);
   const { multi, conflict } = found;
@@ -489,6 +658,10 @@ export function containerParts(member, memberNames = [], { packages = true } = {
  * a copied directory moves the hash. The Dockerfile's base image digest is a line of the Dockerfile, so a base moved
  * moves the hash too. A `COPY --from=` copies from another stage and names no context file; a wildcard, a URL or a
  * path outside the context cannot be hashed and is unread, never skipped. */
+/**
+ * The `image` block's field recording the SHA-256 of what the image is built from.
+ * @type {string}
+ */
 export const SOURCE_FIELD = "source_sha256";
 const HEX64 = /^[0-9a-f]{64}$/;
 
@@ -535,7 +708,17 @@ const buildOf = (member, className) => {
   return isBlock(entry && entry.build) ? entry.build : (isBlock(meta.build) ? meta.build : {});
 };
 
-/** R36, R37: `{sha256}` of the files one class's image is built from, or `{unread}` saying which cannot be read. */
+/**
+ * @typedef {Object} SourceHash the hash of what one class's image is built from, or why it cannot be read
+ * @property {string} [sha256]
+ * @property {string} [unread]
+ */
+/** R36, R37: `{sha256}` of the files one class's image is built from, or `{unread}` saying which cannot be read.
+ * @param {Member} member
+ * @param {string} className
+ * @returns {SourceHash}
+ * @bound build.dockerfile and every path it copies: inside the member directory, no wildcard, no address
+ */
 export function containerSourceHash(member, className) {
   const dockerfileRel = buildOf(member, className).dockerfile;
   const label = `${member.dir}/fleet-member.json`;
@@ -564,9 +747,18 @@ export function containerSourceHash(member, className) {
   return { sha256: h.digest("hex") };
 }
 
+/**
+ * @typedef {Object} ImageState one class's image against the files now in the tree (R37)
+ * @property {string} class_name "(unnamed)" for a class with no name
+ * @property {"current"|"stale"|"unrecorded"|"unread"} state
+ * @property {string|null} why null only when current
+ */
 /** R37: every class of a container member against what its image was built from: `[{class_name, state, why}]`, `state`
  *  `current`, `stale` (the files differ from what the recorded digest was built from), `unrecorded` (the marker
- *  records nothing it was built from) or `unread` (the files cannot be hashed). Makes no request and writes nothing. */
+ *  records nothing it was built from) or `unread` (the files cannot be hashed). Makes no request and writes nothing.
+ * @param {Member} member
+ * @returns {ImageState[]}
+ */
 export function containerImageStates(member) {
   const { classes } = containerClasses(member);
   return classes.map((cls) => {
@@ -582,16 +774,31 @@ export function containerImageStates(member) {
   });
 }
 
-/** R37: the findings, each `{class_name, text}`, for the classes whose image is not provably built from the files now. */
+/** R37: the findings, each `{class_name, text}`, for the classes whose image is not provably built from the files now.
+ * @param {Member} member
+ * @returns {Array<{class_name: string, text: string}>}
+ */
 export function containerImageFindings(member) {
   return containerImageStates(member).filter((s) => s.state !== "current").map((s) => ({ class_name: s.class_name,
     text: `${member.name}: the image of its class ${s.class_name} is not provably built from the code now in the tree — ${s.why}.` }));
 }
 
+/**
+ * @typedef {Object} DigestRecord the files a recorded digest was written to, or the refusal
+ * @property {string[]} [files] member-relative paths written
+ * @property {string} [refused] CONTAINER_DIGEST_INVALID or CONTAINER_UNDESCRIBED
+ * @property {string} [message]
+ */
 /** R36: record the digest the build produced for one class, in both files that name it, in one step: the marker's image
  *  block (`digest`, and `source_sha256` of the files now) and the image the member's `wrangler.jsonc` container block
  *  names (its repository kept, its digest replaced). Returns `{files: [member-relative paths written]}` or
- *  `{refused: CODE, message}`, having written nothing. */
+ *  `{refused: CODE, message}`, having written nothing.
+ * @param {Member} member
+ * @param {string} className
+ * @param {*} digest
+ * @returns {DigestRecord}
+ * @bound write: the marker and `wrangler.jsonc` are written only when files is returned; a refusal writes nothing
+ */
 export function recordContainerDigest(member, className, digest) {
   const refuse = (refused, message) => ({ refused, message });
   if (typeof digest !== "string" || !DIGEST.test(digest))
@@ -637,7 +844,15 @@ export function recordContainerDigest(member, className, digest) {
  * [{tag, classes}]}`, copied the same way: the bindings with no `script_name` (another script's object is not the
  * member's to bind) and its migrations in order, each `new_sqlite_classes` under its tag. The installer reads them from
  * the signed release rather than from a table of its own. */
+/**
+ * The `Worker` part's path in a release.
+ * @type {string}
+ */
 export const WORKER_PART_PATH = "worker.json";
+/**
+ * Each bucket name a member's configuration may bind, by its role.
+ * @type {Readonly<Object<string, string>>}
+ */
 export const BUCKET_ROLES = Object.freeze({ "bio-captures": "captures", "bio-published": "published" });
 
 /** A member's own Durable Objects from its parsed config (K4094): `{bindings, migrations}`, or null when it owns none.
@@ -671,10 +886,25 @@ function ownDurableObjects(c, missing) {
   return bindings.length || migrations.length ? { bindings, migrations } : null;
 }
 
+/**
+ * @typedef {Object} WorkerDescriptor the `Worker` part's content
+ * @property {Array<{binding: *, bucket: *}>} r2_buckets each bucket by its role
+ * @property {*[]} crons
+ * @property {{bindings: Array<{name: *, class_name: *}>, migrations: Array<{tag: *, classes: *[]}>}} [durable_objects] only for a member that owns one (K4094)
+ */
+/**
+ * @typedef {Object} WorkerPartResult a member's `Worker` part, null when it needs none, or what it cannot state
+ * @property {{descriptor: WorkerDescriptor, bytes: Uint8Array}|null} [part]
+ * @property {string[]} [missing]
+ */
 /** A member's `Worker` part from its parsed `wrangler.jsonc`: `{part: null}` when it binds no bucket, states no cron
  *  and owns no Durable Object; `{part: {descriptor, bytes}}`; or `{missing: [what, …]}` naming each binding whose bucket
  *  has no role (by its binding name), each list that is not one (`r2_buckets`, `triggers.crons`) and each Durable Object
- *  or migration the part cannot state. Never throws. */
+ *  or migration the part cannot state. Never throws.
+ * @param {*} cfg the parsed `wrangler.jsonc`
+ * @returns {WorkerPartResult}
+ * @bound bucket: only a bucket named in BUCKET_ROLES
+ */
 export function workerPart(cfg) {
   const c = isBlock(cfg) ? cfg : {};
   const missing = [];
@@ -706,19 +936,39 @@ export function workerPart(cfg) {
  * the build's own metafile (never from the source, where a class can exist and not be exported). */
 
 /** The names a built bundle exports (`default` included), from the build's metafile: the output that is the member's
- *  artifact, else the build's only output. */
+ *  artifact, else the build's only output.
+ * @param {Member} member
+ * @param {Built} built
+ * @returns {Set<string>}
+ */
 export function bundleExports(member, built) {
   const outputs = (built && built.metafile && built.metafile.outputs) || {};
   const out = outputs[member.bundle.outfile] || Object.values(outputs)[0];
   return new Set(out && Array.isArray(out.exports) ? out.exports : []);
 }
 
+/**
+ * @typedef {Object} ReleaseUnit the plane or a member of a release, as R39 checks it
+ * @property {string} name
+ * @property {*} config its parsed `wrangler.jsonc`, or null for none
+ * @property {Iterable<string>} exports the names its bundle exports
+ */
+/**
+ * @typedef {Object} BindingFinding a binding that names something the release does not export (R39)
+ * @property {string} member
+ * @property {*} binding
+ * @property {*} name the class or service
+ * @property {string} text the finding, for a person
+ */
 /** R39: the bindings of a release that name something the release does not export. `units` is the plane and every member
  *  the release carries, each `{name, config, exports}`: its parsed `wrangler.jsonc` (null: none) and the names its
  *  bundle exports. Returns one finding per binding, `{member, binding, name, text}`: `name` is the class or service,
  *  `text` says it for a person. A service names the plane or a member; a Durable Object binding with a `script_name`
  *  names a member exporting its class, one without names its own bundle's; a container class and each class a migration
- *  creates, renames to or transfers are its own bundle's. Never throws. */
+ *  creates, renames to or transfers are its own bundle's. Never throws.
+ * @param {ReleaseUnit[]} units
+ * @returns {BindingFinding[]}
+ */
 export function bindingFindings(units) {
   const list = Array.isArray(units) ? units : [];
   const byName = new Map(list.map((u) => [u.name, u]));
@@ -758,7 +1008,11 @@ export function bindingFindings(units) {
 
 /** R39 over a set of members (the plane's descriptor included): builds each without writing, reads its configuration
  *  and returns `{findings, unchecked}`; a member that cannot be built here is named in `unchecked` with why, never
- *  left out silently. */
+ *  left out silently.
+ * @param {Member[]} members
+ * @returns {Promise<{findings: BindingFinding[], unchecked: Array<{name: string, reason: string}>}>}
+ * @bound write: builds without writing
+ */
 export async function releaseBindingFindings(members) {
   const units = [], unchecked = [];
   for (const m of members) {
@@ -772,7 +1026,11 @@ export async function releaseBindingFindings(members) {
   return { findings: bindingFindings(units), unchecked };
 }
 
-/** The three repository-relative paths a guarded member stands on. */
+/** The three repository-relative paths a guarded member stands on.
+ * @param {Member} member
+ * @param {string} [repoRoot] REPO_ROOT when absent
+ * @returns {{marker: string, artifact: string|null, manifest: string|null}}
+ */
 export function memberPaths(member, repoRoot = REPO_ROOT) {
   const rel = (p) => repoPath(repoRoot, join(member.abs, p));
   return {
@@ -788,7 +1046,11 @@ export function memberPaths(member, repoRoot = REPO_ROOT) {
  *  phantom is permanently too high and a ratchet that cannot pass is one that
  *  gets switched off. Never called by the build scripts: a build does not need
  *  git, and a build step that failed without it would be a new dependency
- *  nobody asked for. */
+ *  nobody asked for.
+ * @param {Member[]} members
+ * @param {{repoRoot?: string, log?: function(string): void}} [options]
+ * @returns {*} provenance.mjs's classification of the members' markers, artifacts and manifests
+ */
 export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = console.log } = {}) {
   const prov = readGitProvenance(repoRoot);
   const items = [];
@@ -819,13 +1081,29 @@ export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = console.l
  * Which builds: a fleet member and the plane. The standalone case checker (`case-checker/build-program.mjs`, DEC-112) is the
  * open, auditable program a person reads, so its descriptor, which is neither, keeps its form; `bundle.ascii` (a boolean)
  * overrides the rule either way. The options are recorded in the manifest's `recipe.ascii` and `verifyStatic` checks them. */
+/**
+ * @typedef {Object} AsciiRecipe the pure-ASCII recipe's options, as the manifest's `recipe.ascii` records them
+ * @property {string} charset
+ * @property {string} legalComments
+ * @property {boolean} minifyWhitespace
+ * @property {string} templateLiterals
+ */
+/**
+ * @type {Readonly<AsciiRecipe>}
+ */
 export const ASCII_RECIPE = Object.freeze({ charset: "ascii", legalComments: "eof", minifyWhitespace: true, templateLiterals: "lowered" });
 
-/** The esbuild options the recipe adds (for a caller that builds with its own esbuild call: pair them with `asciiOutput`). */
+/** The esbuild options the recipe adds (for a caller that builds with its own esbuild call: pair them with `asciiOutput`).
+ * @returns {{charset: string, legalComments: string, minifyWhitespace: boolean, supported: Object<string, boolean>}}
+ */
 export const asciiOptions = () => ({ charset: ASCII_RECIPE.charset, legalComments: ASCII_RECIPE.legalComments,
   minifyWhitespace: ASCII_RECIPE.minifyWhitespace, supported: { "template-literal": false } });
 
-/** Does this member's bundle get the pure-ASCII recipe? */
+/** Does this member's bundle get the pure-ASCII recipe?
+ * @param {Member} member
+ * @returns {boolean}
+ * @bound a boolean `bundle.ascii` decides; else true for a fleet member or the plane only
+ */
 export const asciiOf = (member) =>
   member && member.bundle && typeof member.bundle.ascii === "boolean" ? member.bundle.ascii : !!(member && (member.marker || member.wholeWordTable));
 
@@ -842,7 +1120,12 @@ function escapeChars(text, braced) {
 }
 
 /** R2: the bytes with every character above 0x7F escaped as above; the same bytes when there is none. Throws
- *  `REFUSED [NON_ASCII_REMAINS]` naming the line and the token when a character is anywhere else. */
+ *  `REFUSED [NON_ASCII_REMAINS]` naming the line and the token when a character is anywhere else.
+ * @param {Uint8Array} bytes
+ * @returns {Uint8Array}
+ * @throws {Error} REFUSED [NON_ASCII_REMAINS] when a non-ASCII character is outside every string, regex and comment
+ * @bound bytes: no byte over 0x7F
+ */
 export function asciiOutput(bytes) {
   let any = false;
   for (let i = 0; i < bytes.length; i++) if (bytes[i] > 0x7f) { any = true; break; }
@@ -874,7 +1157,11 @@ export function asciiOutput(bytes) {
 }
 
 /** The esbuild options for one member. Exported so the build step and the gate
- *  cannot disagree about the recipe — there is one expression of it. */
+ *  cannot disagree about the recipe — there is one expression of it.
+ * @param {Member} member
+ * @returns {Object<string, *>}
+ * @bound absWorkingDir: the member's directory; preserveSymlinks on
+ */
 export function optionsFor(member) {
   const b = member.bundle;
   return {
@@ -897,7 +1184,11 @@ const isVendored = (p) => p.split("/").includes("node_modules");
  *  Absent for every member that is a one-part upload, which is both of the
  *  members that existed before `ocr-worker`. Read through one function so the
  *  build step, the manifest and the gate cannot disagree about what an asset is
- *  — the same rule the recipe itself follows. */
+ *  — the same rule the recipe itself follows.
+ * @param {Member} member
+ * @returns {string[]}
+ * @bound non-empty strings only
+ */
 export function assetsOf(member) {
   const a = member && member.bundle ? member.bundle.assets : null;
   return Array.isArray(a) ? a.filter((p) => typeof p === "string" && p) : [];
@@ -998,9 +1289,21 @@ function keyShapes(node) {
   return null;
 }
 
+/**
+ * @typedef {Object} WordKeys what one source asks of the word table (R38)
+ * @property {Set<string>} exact keys named whole
+ * @property {Set<string>} prefixes literal prefixes keys are built from
+ * @property {string[]} sites `where:line: why` for each read that cannot be bounded
+ */
 /** R38: what one source text asks of the word table: `{exact, prefixes, sites}` (sets of keys and of literal prefixes,
  *  and a `where:line: why` for each call whose key has no literal prefix, each use of `word` other than as a callee,
- *  and each read of the whole table). `index` is true for setup-words' own index, the one input that holds `WORD_ROWS`. */
+ *  and each read of the whole table). `index` is true for setup-words' own index, the one input that holds `WORD_ROWS`.
+ * @param {string} source
+ * @param {string} where how a site names the file
+ * @param {{index?: boolean}} [options]
+ * @returns {WordKeys}
+ * @throws {Error} when the source parses as neither a module nor a script ("<where> cannot be parsed to find the word rows it reads")
+ */
 export function wordKeysOf(source, where, { index = false } = {}) {
   const options = { ecmaVersion: "latest", locations: true, allowHashBang: true, allowReturnOutsideFunction: true };
   let ast;
@@ -1065,11 +1368,23 @@ const wordRowsPlugin = (contents) => ({
   setup(b) { b.onLoad({ filter: WORD_ROWS_PATH }, () => ({ contents, loader: "js" })); },
 });
 
+/**
+ * @typedef {Object} KeptWords the word rows a member's bundle carries (R38)
+ * @property {number|"all"} rows the kept rows' count, or "all" when some site could read any row
+ * @property {number} total the table's size
+ * @property {string|null} text the module standing for the table in the bundle; null for "all"
+ * @property {string|null} sha256 the kept rows' SHA-256; null for "all"
+ * @property {string[]} [sites] for "all": each site by file and line
+ */
 /** R38: the word rows a member keeps, or null when its inputs do not reach the table (or it is the plane, which
  *  carries the whole table). `probe` is a build of the member with the table stubbed out. Returns `{rows, total,
  *  text, sha256}`: the kept rows' count, the table's size, the module that stands for the table in the bundle and the
  *  SHA-256 of the kept rows; or, when some site could read any row (K3958), `{rows: "all", total, sites, text: null}`
- *  and the table is left whole. */
+ *  and the table is left whole.
+ * @param {Member} member
+ * @param {*} probe esbuild's result of the probe build
+ * @returns {Promise<KeptWords|null>}
+ */
 export async function keptWordRows(member, probe) {
   const paths = Object.keys(probe.metafile.inputs);
   const rowsInput = paths.find(isWordRows);
@@ -1096,12 +1411,39 @@ export async function keptWordRows(member, probe) {
   return { rows: kept.length, total: table.WORD_ROWS.length, text, sha256: sha256(JSON.stringify(kept)) };
 }
 
+/**
+ * @typedef {Object} WordsRecord the fields a manifest spreads in for the word rows (R38)
+ * @property {"all"|{rows: number, sha256: string|null}} [words]
+ * @property {string[]} [wordSites] with words "all"
+ */
 /** R38: the manifest's account of the word rows a build carries, as the fields to spread into it: `{words: {rows,
  *  sha256}}` for a trimmed table, `{words: "all", wordSites}` for the whole table kept for the sites named, `{}` for a
- *  member whose inputs do not reach the table or the plane. */
+ *  member whose inputs do not reach the table or the plane.
+ * @param {KeptWords|null} w
+ * @returns {WordsRecord}
+ */
 export const wordsManifest = (w) => !w ? {} : w.rows === "all" ? { words: "all", wordSites: w.sites } : { words: { rows: w.rows, sha256: w.sha256 } };
 
-/** Build one member. `write: false` (the default) NEVER touches the tree. */
+/**
+ * @typedef {Object} BuildInput one input of a build, as esbuild names it (member-relative)
+ * @property {string} path
+ * @property {number} bytes
+ */
+/**
+ * @typedef {Object} Built the result of buildMember
+ * @property {Uint8Array} bytes the artifact
+ * @property {string} sha256 the artifact's
+ * @property {BuildInput[]} inputs sorted by path
+ * @property {*} metafile esbuild's metafile
+ * @property {KeptWords|null} words the word rows kept, or null
+ */
+/** Build one member. `write: false` (the default) NEVER touches the tree.
+ * @param {Member} member
+ * @param {{write?: boolean, mutateEntry?: string|null}} [options]
+ * @returns {Promise<Built>}
+ * @throws {Error} when esbuild fails; REFUSED [NON_ASCII_REMAINS] from asciiOutput; when an input cannot be parsed for its word rows
+ * @bound write: the artifact is written only when true
+ */
 export async function buildMember(member, { write = false, mutateEntry = null } = {}) {
   /* Silent: a failure arrives as the thrown error, never as stray stderr. */
   const opts = { ...optionsFor(member), write: false, logLevel: "silent" };   /* esbuild never writes: R2's pass runs on the bytes first */
@@ -1143,7 +1485,48 @@ export async function buildMember(member, { write = false, mutateEntry = null } 
   return { bytes, sha256: sha256(bytes), inputs, metafile: res.metafile, words };
 }
 
-/** The committed manifest, computed from a build. */
+/**
+ * @typedef {Object} InputHash one recorded input
+ * @property {string} path
+ * @property {number} bytes
+ * @property {string|null} sha256 null when the file cannot be read
+ */
+/**
+ * @typedef {Object} AssetHash one recorded upload part (CPDF-10)
+ * @property {string} path
+ * @property {number|null} bytes null when the file is absent
+ * @property {string|null} sha256 null when the file is absent
+ */
+/**
+ * @typedef {Object} ManifestRecipe the recipe a manifest records
+ * @property {string} entry
+ * @property {string} format
+ * @property {string} platform
+ * @property {string[]} external
+ * @property {string} absWorkingDir always "<member directory>"
+ * @property {string} esbuild the esbuild version
+ * @property {AsciiRecipe|false} ascii R2's options, or false for an opt-out
+ */
+/**
+ * @typedef {Object} Manifest a member's bundle manifest (R4)
+ * @property {string} _comment
+ * @property {string} member
+ * @property {string} artifact
+ * @property {string} sha256 the artifact's
+ * @property {number} bytes the artifact's length
+ * @property {ManifestRecipe} recipe
+ * @property {InputHash[]} inputs the first-party inputs
+ * @property {InputHash[]} vendoredInputs the inputs under node_modules
+ * @property {AssetHash[]} [assets] only for a member that declares assets
+ * @property {"all"|{rows: number, sha256: string|null}} [words] only for a member whose inputs reach the word table
+ * @property {string[]} [wordSites] with words "all"
+ * @property {{path: string, sha256: string}|null} lock the member's package-lock.json, or null for none
+ */
+/** The committed manifest, computed from a build.
+ * @param {Member} member
+ * @param {Built} built
+ * @returns {Manifest}
+ */
 export function manifestFrom(member, built) {
   const hashOf = (rel) => {
     try { return sha256(readFileSync(join(member.abs, rel))); } catch { return null; }
@@ -1212,7 +1595,11 @@ export function manifestFrom(member, built) {
   };
 }
 
-/** Write the artifact and its manifest. The ONLY writing path in this module. */
+/** Write the artifact and its manifest. The ONLY writing path in this module.
+ * @param {Member} member
+ * @returns {Promise<{built: Built, manifest: Manifest}>}
+ * @throws {Error} as buildMember's
+ */
 export async function writeMember(member) {
   mkdirSync(join(member.abs, dirname(member.bundle.outfile)), { recursive: true });
   const built = await buildMember(member, { write: true });
@@ -1241,6 +1628,12 @@ export async function writeMember(member) {
 const isAllowed = (allowed, specifier) =>
   allowed.some((a) => (a.endsWith("*") ? specifier.startsWith(a.slice(0, -1)) : specifier === a));
 
+/**
+ * R8: every static `import`/`export … from` specifier in `text` that is not one of `allowed`.
+ * @param {string} text a built artifact
+ * @param {ReadonlyArray<string>} [allowed] DEFAULT_EXTERNAL when absent; a trailing `*` is a prefix
+ * @returns {string[]} distinct, sorted
+ */
 export function unresolvableSpecifiers(text, allowed = DEFAULT_EXTERNAL) {
   const ok = (s) => isAllowed(allowed, s);
   const found = new Set();
@@ -1258,7 +1651,18 @@ export function unresolvableSpecifiers(text, allowed = DEFAULT_EXTERNAL) {
    pass — and every finding NAMES THE MEMBER, because the item's own acceptance
    says the gate must fail naming the member. */
 
-/** The dependency-free half. Runs on any checkout, with no install at all. */
+/**
+ * @typedef {Object} StaticResult the dependency-free check's result (R6)
+ * @property {string[]} findings each naming the member; empty is a pass
+ * @property {*} manifest the committed manifest as parsed, or null
+ * @property {Uint8Array|null} committed the committed artifact, or null
+ * @property {boolean} [guarded] false only for a member the guard does not cover (R24)
+ */
+/** The dependency-free half. Runs on any checkout, with no install at all.
+ * @param {Member} member
+ * @returns {StaticResult}
+ * @bound write: never writes (R10)
+ */
 export function verifyStatic(member) {
   const findings = [];
   const add = (what) => findings.push(`${member.name}: ${what}`);
@@ -1424,7 +1828,11 @@ export function verifyStatic(member) {
 
 /** Is the fresh-build arm runnable here? A member with no vendored inputs is
  *  always runnable; one with them needs those bytes present. Named rather than
- *  guessed, so a SKIP says exactly what is absent and what to do. */
+ *  guessed, so a SKIP says exactly what is absent and what to do.
+ * @param {Member} member
+ * @param {*} manifest the committed manifest
+ * @returns {{runnable: boolean, reason: string|null}}
+ */
 export function freshBuildRunnable(member, manifest) {
   const missing = (manifest.vendoredInputs || [])
     .filter((i) => { try { readFileSync(join(member.abs, i.path)); return false; } catch { return true; } })
@@ -1435,13 +1843,26 @@ export function freshBuildRunnable(member, manifest) {
     : { runnable: true, reason: null };
 }
 
+/**
+ * @typedef {Object} FreshResult the fresh-build check's result (R7)
+ * @property {boolean} checked false when it could not check
+ * @property {string[]|null} findings null when not checked
+ * @property {Built|null} built null when not checked
+ * @property {string} [reason] why it was not checked
+ * @property {boolean} [guarded] false only for a member the guard does not cover (R24)
+ */
 /** The full half: a fresh build of the SOURCE, byte-compared with the artifact
  *  that was read from disk BEFORE this ran. Never writes.
  *
  *  Returns `{ checked: true, findings, built }`, or, where the member's committed
  *  manifest names vendored inputs that are not installed here or the source
  *  does not build here, `{ checked: false, reason, findings: null, built: null }`: it could not check,
- *  and there is no empty list of findings a caller could read as fresh. */
+ *  and there is no empty list of findings a caller could read as fresh.
+ * @param {Member} member
+ * @param {Uint8Array} committed the artifact read before this ran
+ * @returns {Promise<FreshResult>}
+ * @bound write: never writes (R10); findings is a list only when checked
+ */
 export async function verifyFresh(member, committed) {
   /* R24: nothing to rebuild, and that is neither stale nor fresh. */
   if (!isGuarded(member))
@@ -1512,13 +1933,30 @@ export async function verifyFresh(member, committed) {
  * The hooks that do this are registered for the one import and removed after it, and reach only the artifact's own
  * imports. Node's and workerd's V8 differ in flags and machines differ in speed, so the figure is a measurement to
  * watch and warn on, never a failure. */
+/**
+ * @type {number}
+ */
 export const MIB = 1024 * 1024;
+/**
+ * @typedef {Object} Budget R31's budgets
+ * @property {number} sizeWarn bytes past which an artifact warns
+ * @property {number} sizeFail bytes past which an artifact fails
+ * @property {number} startWarnMs milliseconds past which a global scope warns
+ */
+/**
+ * @type {Readonly<Budget>}
+ */
 export const BUDGET = Object.freeze({ sizeWarn: 32 * MIB, sizeFail: 48 * MIB, startWarnMs: 500 });
 
 const mib = (n) => `${(n / MIB).toFixed(1)} MiB`;
 
 /** R31, size: `{bytes, verdict, finding, warning}` for an artifact of `bytes`: `fail` past `sizeFail` (a finding),
- *  `warn` past `sizeWarn` (a warning), else `ok`. "Past" is strictly greater. */
+ *  `warn` past `sizeWarn` (a warning), else `ok`. "Past" is strictly greater.
+ * @param {Member} member
+ * @param {number} bytes
+ * @param {Budget} [budget] BUDGET when absent
+ * @returns {{bytes: number, verdict: "ok"|"warn"|"fail", finding: string|null, warning: string|null}}
+ */
 export function sizeVerdict(member, bytes, budget = BUDGET) {
   const at = `${member.name}: its built artifact ${member.bundle ? member.bundle.outfile : ""} is ${bytes} B (${mib(bytes)})`;
   if (bytes > budget.sizeFail)
@@ -1530,7 +1968,12 @@ export function sizeVerdict(member, bytes, budget = BUDGET) {
   return { bytes, verdict: "ok", finding: null, warning: null };
 }
 
-/** R31, start-up: `{ms, verdict, warning}`: `warn` past `startWarnMs`, else `ok`. Never a failure (see above). */
+/** R31, start-up: `{ms, verdict, warning}`: `warn` past `startWarnMs`, else `ok`. Never a failure (see above).
+ * @param {Member} member
+ * @param {number} ms
+ * @param {Budget} [budget] BUDGET when absent
+ * @returns {{ms: number, verdict: "ok"|"warn", warning: string|null}}
+ */
 export function startVerdict(member, ms, budget = BUDGET) {
   if (ms > budget.startWarnMs)
     return { ms, verdict: "warn",
@@ -1557,7 +2000,11 @@ let freshImport = 0;
 
 /** R31: the time to evaluate a member's built artifact's global scope, by a fresh import in this process.
  *  `{measured: true, ms}`, or `{measured: false, reason}` when the artifact cannot be read or its import throws (the
- *  reason names it). `artifact` overrides the path (member-relative); nothing is written. */
+ *  reason names it). `artifact` overrides the path (member-relative); nothing is written.
+ * @param {Member} member
+ * @param {{artifact?: string|null}} [options] the artifact defaults to the member's `bundle.outfile`
+ * @returns {Promise<{measured: true, ms: number}|{measured: false, reason: string}>}
+ */
 export async function measureStart(member, { artifact = member.bundle && member.bundle.outfile } = {}) {
   const { registerHooks } = await import("node:module");
   const abs = join(member.abs, artifact);
@@ -1616,7 +2063,11 @@ export async function measureStart(member, { artifact = member.bundle && member.
 }
 
 /** R31, the whole check for one member: its size and its start-up time against `budget`. `findings` are failures;
- *  `warnings` are printed, never failed; `line` is the one line the gate prints for the member. */
+ *  `warnings` are printed, never failed; `line` is the one line the gate prints for the member.
+ * @param {Member} member
+ * @param {Budget} [budget] BUDGET when absent
+ * @returns {Promise<{name: string, bytes: number|null, size: "ok"|"warn"|"fail"|null, ms: number|null, start: "ok"|"warn"|null, findings: string[], warnings: string[], line: string}>}
+ */
 export async function budgetReport(member, budget = BUDGET) {
   const findings = [], warnings = [];
   let bytes = null;
