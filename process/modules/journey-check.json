@@ -45,7 +45,8 @@
     "bio-plane/test/m/test-support/corpus.test.mjs",
     "bio-plane/test/system/row-census.mjs",
     "bio-plane/test/system/row-census.test.mjs",
-    "budget-doctypes/test/fixtures/build.mjs"
+    "budget-doctypes/test/fixtures/build.mjs",
+    "doctypes/test/capture-policies.mjs"
   ],
   "public": [],
   "uses": [
