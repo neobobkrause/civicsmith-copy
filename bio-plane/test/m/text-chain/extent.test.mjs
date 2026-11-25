@@ -52,8 +52,8 @@ test("R94: a1ToRowCol answers 1-based {col,row}, the column bijective base 26, $
   for (const [cell, [col, row]] of Object.entries(want)) assert.deepEqual(a1ToRowCol(cell), { col, row }, cell);
   /* Every column of one and two letters, against an independent count. */
   let n = 0;
-  for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(a1ToRowCol(`${b}1`).col, ++n);
-  for (const a of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(a1ToRowCol(`${a}${b}1`).col, ++n);
+  for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(/** @type {{col: number, row: number}} */ (a1ToRowCol(`${b}1`)).col, ++n);
+  for (const a of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(/** @type {{col: number, row: number}} */ (a1ToRowCol(`${a}${b}1`)).col, ++n);
   for (const x of [...JUNK, "A0", "A01", "AAAA1", "1A", "A1:B2", " A1", "A 1"]) assert.equal(a1ToRowCol(x), null, label(x));
 });
 
