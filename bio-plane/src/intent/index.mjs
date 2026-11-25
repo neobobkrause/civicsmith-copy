@@ -43,7 +43,7 @@ import { retrievalOf } from "../retrieval/index.mjs";
 import { captureRequestsOf } from "../capture-requests/index.mjs";
 import { moneyOf, kinds as moneyKinds, phases as moneyPhases, LIST_LIMIT_MAX as MONEY_LIST_MAX } from "../money/index.mjs";
 import { add } from "../calc-grammar/index.mjs";
-import { dec, cmpD, readingOf } from "../calc-grammar/decimal.mjs";
+import { dec, cmpD, readingOf, isRefusal } from "../calc-grammar/decimal.mjs";
 import { INTENT_CHECKS, refusal } from "./checks.mjs";
 import { INTENT_TABLES, migrateIntent } from "./schema.mjs";
 import { registerProjectGrammar } from "./grammar.mjs";
@@ -611,21 +611,22 @@ export class Intent {
     if (!sum || sum.ok !== true)
       return open(word("intent.facts_summed", { sum: String(sum ? sum.reason : "no answer"), sum_2: String(sum && sum.detail ? `: ${sum.detail}` : "") }),
                   { facts: shown, ...(sum && sum.reason ? { code: sum.reason } : {}) });
-    let total = null;
-    for (const f of read.facts) {
-      const fig = figureOfFact(f);
-      total = total === null ? fig : add(total, fig);
-      if (total && total.refused) return open(word("intent.facts_amounts_add", { refused: String(total.refused), why: String(total.why) }), { facts: shown });
+    let total = figureOfFact(read.facts[0]);
+    for (const f of read.facts.slice(1)) {
+      const sumOf = add(total, figureOfFact(f));
+      if (isRefusal(sumOf)) return open(word("intent.facts_amounts_add", { refused: String(sumOf.refused), why: String(sumOf.why) }), { facts: shown });
+      total = sumOf;
     }
     const out = { ...base, total, facts: shown };
     if (total.currency !== a.currency)
       return open(word("intent.facts_filter_names", { currency: String(total.currency), currency_2: String(a.currency) }),
                   { total, facts: shown });
-    if (total.approximate || total.precision === "approximate")
-      return open(word("intent.total_approximate_approximate"), { total, facts: shown });
     const r = readingOf(total);
-    const below = a.min != null ? [cmpD(r.hi, dec(a.min)) < 0, cmpD(r.lo, dec(a.min)) >= 0] : [false, true];
-    const above = a.max != null ? [cmpD(r.lo, dec(a.max)) > 0, cmpD(r.hi, dec(a.max)) <= 0] : [false, true];
+    if (r.approximate)
+      return open(word("intent.total_approximate_approximate"), { total, facts: shown });
+    const min = a.min != null ? dec(a.min) : null, max = a.max != null ? dec(a.max) : null;
+    const below = min ? [cmpD(r.hi, min) < 0, cmpD(r.lo, min) >= 0] : [false, true];
+    const above = max ? [cmpD(r.lo, max) > 0, cmpD(r.hi, max) <= 0] : [false, true];
     if (below[0] || above[0]) return { ...out, passes: false };
     if (below[1] && above[1]) return { ...out, passes: true };
     return open(word("intent.total_reading_rounded"), { total, facts: shown });
@@ -1655,7 +1656,8 @@ export function amountShape(v) {
     out[k] = b;
   }
   if (out.min === undefined && out.max === undefined) return no("the amount filter states a min, a max or both");
-  if (out.min !== undefined && out.max !== undefined && cmpD(dec(out.min), dec(out.max)) > 0)
+  const lo = out.min !== undefined ? dec(out.min) : null, hi = out.max !== undefined ? dec(out.max) : null;
+  if (lo && hi && cmpD(lo, hi) > 0)
     return no("the amount filter's min is above its max");
   out.currency = v.currency.trim();
   for (const [k, closed] of [["kinds", moneyKinds()], ["phases", moneyPhases()]]) {
