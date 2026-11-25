@@ -17,7 +17,7 @@ async function debtWorld(env = {}) {
   w.membership.projectInvite({ projectId: P, handle: "alice", by: "ruth" });
   w.membership.projectJoin({ projectId: P, by: "alice" });
   w.set(A, [S("s1")], "adopted");
-  w.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
+  w.bias.biasAdopt({ bundleId: A, ...ADMIN });
   w.lens = () => w.bias.biasManifest({ scope: "project", scopeId: P, viewer: "member:ruth" }).statements_sha;
   w.move = (text) => w.promote(A, FM(A, { statements: [S("s1", { text })], current_state: "adopted", prior_state: "proposed" }));
   return w;
@@ -101,7 +101,7 @@ test("R33: a debt settled by a member's act or a re-run stays settled while its 
   await d.group();
   d.bias.registerWorkProducts("x", source(Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`K-${String(i).padStart(3, "0")}`, run(null, { lens: null })]))));
   d.set(A, [S("s1")], "adopted");
-  d.bias.biasAdopt({ reason: WHY, bundleId: A, ...ADMIN });
+  d.bias.biasAdopt({ bundleId: A, ...ADMIN });
   const s5 = await d.bias.biasDebtSweep(NOW);
   assert.deepEqual([s5.read, s5.batch, s5.complete], [50, 50, false]);
 });
@@ -208,7 +208,7 @@ test("R38: told of a close that re-made another, the debt is discharged only whe
   w.bias.registerWorkProducts("ai-run", source(wps));
   assert.equal(await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-1", at: "t" }), null, "no link to follow");
   wps["RUN-2"] = run(then, { rerunOf: "RUN-1" });
-  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-2" })).outcome, "no_open_debt");
+  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-2" }))?.outcome, "no_open_debt");
   w.move("Moved.");
   await w.bias.biasDebtSweep(NOW);
   const now = w.lens();
@@ -216,7 +216,7 @@ test("R38: told of a close that re-made another, the debt is discharged only whe
     outcome: "other_lens", lens_ran_under: then, lens_in_force: now,
     stated: "this work was made under a lens other than the one now in force, so it discharges nothing (BOB #32: a re-run under any other lens discharges nothing)" });
   wps["RUN-3"] = run(now, { rerunOf: "RUN-1", ranUnder: null });
-  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-3" })).outcome, "lens_undetermined");
+  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-3" }))?.outcome, "lens_undetermined");
   assert.equal(w.count("bias_debt_settlements"), 0);
   wps["RUN-4"] = run(now, { rerunOf: "RUN-1" });
   const ok = await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-4", at: "2026-07-12T00:00:00Z" });
@@ -230,7 +230,7 @@ test("R38: told of a close that re-made another, the debt is discharged only whe
   w.sql.exec(`DELETE FROM bias_adoptions`);
   wps["RUN-5"] = run(now, { rerunOf: "RUN-1" });
   w.sql.exec(`UPDATE bias_debts SET cleared_at=NULL, settled_kind=NULL`);
-  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-5" })).outcome, "lens_undetermined");
+  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-5" }))?.outcome, "lens_undetermined");
 });
 
 test("R39: a sweep is idempotent by the work product's key — a second sweep over unchanged lenses raises, restates and settles nothing", async () => {
@@ -415,7 +415,7 @@ test("R44: settled answers the debts settled at or after since that the gate adm
   assert.equal(w.bias.biasDebtResolve({ run: "RUN-1", reason: "The change does not bear on this finding.", actor: "alice",
                                         viewer: "member:alice", at: "2026-07-11T00:00:00Z" }).ok, true);
   wps["RUN-5"] = run(now, { rerunOf: "RUN-2", lens: null });
-  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-5", at: "2026-07-12T00:00:00.700Z" })).discharged, true);
+  assert.equal((await w.bias.biasDebtRerun({ kind: "ai-run", key: "RUN-5", at: "2026-07-12T00:00:00.700Z" }))?.discharged, true);
   w.move(S("s1").text);
   const back = await w.bias.biasDebtSweep(NOW + 5000);
   assert.deepEqual(back.cleared, ["RUN-3", "RUN-4"]);
