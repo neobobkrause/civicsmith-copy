@@ -6,8 +6,85 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/**
+ * A figure (R1, R4): an exact decimal with its sign, unit, currency and precision. A point figure carries `value`;
+ * a range carries `low` and `high` in its place. `figureFault` says why a value is not one.
+ * @typedef {Object} Figure
+ * @property {string} [value] a point figure's magnitude
+ * @property {string} [low] a range's lower bound
+ * @property {string} [high] a range's upper bound
+ * @property {string} sign
+ * @property {string} [unit] `percent`, a span's unit, or the caller's
+ * @property {string} [currency] a three-letter code
+ * @property {string} precision
+ * @property {string} [as_read] the source's characters, unchanged, on a figure `parseFigure` read
+ * @property {boolean} [approximate] on a range whose source was qualified
+ * @bound sign: "+" or "-"
+ * @bound precision: one of exact, rounded, approximate, range; a range carries low and high and no value
+ * @bound value: digits with at most one "." and no sign or exponent
+ * @bound low, high: signed decimals of the same form, low not above high
+ * @bound unit, currency: absent, or a non-empty string
+ */
+/**
+ * A refusal by name (R20): the kind of no, and why.
+ * @typedef {Object} Refusal
+ * @property {string} refused the refusal's code
+ * @property {string} why
+ */
+/**
+ * An undetermined answer (R4, R20): never zero, never a guess.
+ * @typedef {Object} Undetermined
+ * @property {true} undetermined
+ * @property {string} why
+ */
+/**
+ * The fields of `F` that `K` lacks, as absent.
+ * @template F, K
+ * @typedef {{[P in Exclude<keyof F, keyof K>]?: undefined}} Absent
+ */
+/**
+ * An answer of one of two kinds, each carrying the other's fields as absent: a reader tells them apart by reading
+ * a field (`refused`, `undetermined`, `value`), as callers do.
+ * @template A, B
+ * @typedef {(A & Absent<B, A>) | (B & Absent<A, B>)} OneOf
+ */
+/**
+ * An answer of one of three kinds, each carrying the others' fields as absent.
+ * @template A, B, C
+ * @typedef {(A & Absent<B & C, A>) | (B & Absent<A & C, B>) | (C & Absent<A & B, C>)} OneOf3
+ */
+/**
+ * An exact decimal held inside the module: the whole number `n` scaled by 10^-s.
+ * @typedef {Object} Dec
+ * @property {bigint} n
+ * @property {number} s the decimal places
+ * @bound s: whole number, zero or more
+ */
+/**
+ * A figure read as the interval it may stand for.
+ * @typedef {Object} Reading
+ * @property {Dec} lo
+ * @property {Dec} hi
+ * @property {string} precision as the figure's
+ * @property {boolean} approximate
+ * @property {string} [unit]
+ * @property {string} [currency]
+ * @property {Dec} [value] the stated value, for a figure that is not a range
+ */
+/**
+ * How `divide` and `round` round (R4).
+ * @typedef {Object} Rounding
+ * @property {number} places
+ * @property {string} mode
+ * @bound places: whole number, 0 to 64
+ * @bound mode: one of half_even, half_up, down, up
+ */
+
+/** @type {ReadonlyArray<string>} the rounding modes R4 names */
 export const MODES = Object.freeze(["half_even", "half_up", "down", "up"]);
+/** @type {ReadonlyArray<string>} a figure's precisions (R2) */
 export const PRECISIONS = Object.freeze(["exact", "rounded", "approximate", "range"]);
+/** @type {number} the most decimal places `divide` and `round` give */
 export const MAX_PLACES = 64;
 
 const UNSIGNED = /^\d+(?:\.\d+)?$/;
@@ -15,12 +92,37 @@ const SIGNED = /^-?\d+(?:\.\d+)?$/;
 const TEN = 10n;
 const pow10 = (k) => TEN ** BigInt(k);
 
+/**
+ * A refusal by name.
+ * @param {string} code
+ * @param {string} why
+ * @returns {Refusal}
+ */
 export const refusal = (code, why) => ({ refused: code, why });
+/**
+ * An undetermined answer.
+ * @param {string} why
+ * @returns {Undetermined}
+ */
 export const undetermined = (why) => ({ undetermined: true, why });
+/**
+ * Whether a value is a refusal: an object whose `refused` is a string.
+ * @param {*} x
+ * @returns {x is Refusal}
+ */
 export const isRefusal = (x) => x != null && typeof x === "object" && typeof x.refused === "string";
+/**
+ * Whether a value is undetermined: an object whose `undetermined` is `true`.
+ * @param {*} x
+ * @returns {x is Undetermined}
+ */
 export const isUndetermined = (x) => x != null && typeof x === "object" && x.undetermined === true;
 
-/** A signed decimal string to `{n, s}`; `null` when it is not one. */
+/**
+ * A signed decimal string to `{n, s}`; `null` when it is not one.
+ * @param {*} str
+ * @returns {Dec|null}
+ */
 export function dec(str) {
   if (typeof str !== "string" || !SIGNED.test(str)) return null;
   const neg = str[0] === "-";
@@ -30,7 +132,11 @@ export function dec(str) {
   return { n: neg ? -n : n, s: f.length };
 }
 
-/** `{n, s}` to its signed decimal string, with `s` places. */
+/**
+ * `{n, s}` to its signed decimal string, with `s` places.
+ * @param {Dec} d
+ * @returns {string}
+ */
 export function decStr({ n, s }) {
   const neg = n < 0n;
   let digits = (neg ? -n : n).toString();
@@ -41,21 +147,68 @@ export function decStr({ n, s }) {
   return neg ? `-${digits}` : digits;
 }
 
+/**
+ * @param {Dec} a
+ * @param {Dec} b
+ * @returns {[bigint, bigint, number]}
+ */
 const align = (a, b) => {
   const s = Math.max(a.s, b.s);
   return [a.n * pow10(s - a.s), b.n * pow10(s - b.s), s];
 };
+/**
+ * Exact a + b.
+ * @param {Dec} a
+ * @param {Dec} b
+ * @returns {Dec}
+ */
 export const addD = (a, b) => { const [x, y, s] = align(a, b); return { n: x + y, s }; };
+/**
+ * Exact a − b.
+ * @param {Dec} a
+ * @param {Dec} b
+ * @returns {Dec}
+ */
 export const subD = (a, b) => { const [x, y, s] = align(a, b); return { n: x - y, s }; };
+/**
+ * Exact a × b.
+ * @param {Dec} a
+ * @param {Dec} b
+ * @returns {Dec}
+ */
 export const mulD = (a, b) => ({ n: a.n * b.n, s: a.s + b.s });
+/**
+ * Exact −a.
+ * @param {Dec} a
+ * @returns {Dec}
+ */
 export const negD = (a) => ({ n: -a.n, s: a.s });
+/**
+ * -1, 0 or 1 as a is below, equal to or above b.
+ * @param {Dec} a
+ * @param {Dec} b
+ * @returns {number}
+ */
 export const cmpD = (a, b) => { const [x, y] = align(a, b); return x < y ? -1 : x > y ? 1 : 0; };
+/**
+ * Whether a is zero.
+ * @param {Dec} a
+ * @returns {boolean}
+ */
 export const isZeroD = (a) => a.n === 0n;
+/** @type {(...xs: Dec[]) => Dec} */
 const minD = (...xs) => xs.reduce((m, x) => (cmpD(x, m) < 0 ? x : m));
+/** @type {(...xs: Dec[]) => Dec} */
 const maxD = (...xs) => xs.reduce((m, x) => (cmpD(x, m) > 0 ? x : m));
 
 /* The integer quotient of p / q (q > 0 after normalising) under a mode; also `floor` and `ceiling`, used only to
    keep a range's bounds outside every reading (R5). Answers `[quotient, exact]`. */
+/**
+ * @param {bigint} p
+ * @param {bigint} q
+ * @param {string} mode
+ * @returns {[bigint, boolean]}
+ */
 function divInt(p, q, mode) {
   if (q < 0n) { p = -p; q = -q; }
   let quo = p / q; // truncates toward zero
@@ -76,7 +229,16 @@ function divInt(p, q, mode) {
   return [quo, false];
 }
 
-/** a / b to `places` decimal places under `mode`: `[{n, s}, exact]`. `b` must not be zero. */
+/**
+ * a / b to `places` decimal places under `mode`: `[{n, s}, exact]`.
+ * @param {Dec} a
+ * @param {Dec} b
+ * @param {number} places
+ * @param {string} mode
+ * @returns {[Dec, boolean]}
+ * @bound b: not zero
+ * @bound mode: one of half_even, half_up, down, up, floor, ceiling
+ */
 export function divD(a, b, places, mode) {
   const p = a.n * pow10(places + b.s);
   const q = b.n * pow10(a.s);
@@ -84,7 +246,14 @@ export function divD(a, b, places, mode) {
   return [{ n: quo, s: places }, exact];
 }
 
-/** a rounded to `places` under `mode`: `[{n, s}, exact]`. */
+/**
+ * a rounded to `places` under `mode`: `[{n, s}, exact]`.
+ * @param {Dec} a
+ * @param {number} places
+ * @param {string} mode
+ * @returns {[Dec, boolean]}
+ * @bound mode: one of half_even, half_up, down, up, floor, ceiling
+ */
 export function roundD(a, places, mode) {
   if (a.s <= places) return [{ n: a.n * pow10(places - a.s), s: places }, true];
   const [quo, exact] = divInt(a.n, pow10(a.s - places), mode);
@@ -93,7 +262,11 @@ export function roundD(a, places, mode) {
 
 // ---- figures ----
 
-/** Why a value is not a figure, or `null` when it is one. */
+/**
+ * Why a value is not a figure, or `null` when it is one.
+ * @param {*} f
+ * @returns {string|null}
+ */
 export function figureFault(f) {
   if (f === null || typeof f !== "object" || Array.isArray(f)) return "a figure is an object";
   if (!PRECISIONS.includes(f.precision)) return `precision must be one of ${PRECISIONS.join(", ")}`;
@@ -104,7 +277,7 @@ export function figureFault(f) {
   if (f.precision === "range") {
     if (typeof f.low !== "string" || !SIGNED.test(f.low) || typeof f.high !== "string" || !SIGNED.test(f.high))
       return "a range carries low and high as exact decimals";
-    if (cmpD(dec(f.low), dec(f.high)) > 0) return "a range's low is above its high";
+    if (cmpD(/** @type {Dec} */ (dec(f.low)), /** @type {Dec} */ (dec(f.high))) > 0) return "a range's low is above its high";
     return null;
   }
   if (typeof f.value !== "string" || !UNSIGNED.test(f.value))
@@ -115,6 +288,10 @@ export function figureFault(f) {
 /* A rounded figure's printed unit: its last decimal place, or for a whole number the power of ten its trailing zeros
    show (4200000 from "4.2 million" is 10^5). It can only overstate the unit, which makes a comparison more often
    undetermined, never wrongly settled. */
+/**
+ * @param {Dec} d
+ * @returns {Dec}
+ */
 function roundedHalfUnit(d) {
   if (d.s > 0) return { n: 5n, s: d.s + 1 };
   let k = 0;
@@ -123,26 +300,35 @@ function roundedHalfUnit(d) {
   return { n: 5n * pow10(k), s: 1 };
 }
 
-/** A figure to `{lo, hi, precision, approximate, unit, currency, value?}`; `value` is the stated value when not a range. */
+/**
+ * A figure to `{lo, hi, precision, approximate, unit, currency, value?}`; `value` is the stated value when not a range.
+ * @param {Figure} f a figure `figureFault` passes
+ * @returns {Reading}
+ */
 export function readFigure(f) {
   const base = { precision: f.precision, approximate: f.precision === "approximate" || f.approximate === true,
     unit: f.unit, currency: f.currency };
-  if (f.precision === "range") return { ...base, lo: dec(f.low), hi: dec(f.high) };
-  const v0 = dec(f.value);
+  if (f.precision === "range") return { ...base, lo: /** @type {Dec} */ (dec(f.low)), hi: /** @type {Dec} */ (dec(f.high)) };
+  const v0 = /** @type {Dec} */ (dec(f.value));
   const v = f.sign === "-" ? negD(v0) : v0;
   return { ...base, lo: v, hi: v, value: v };
 }
 
-/** The interval a figure may stand for, for comparison: a rounded figure widens by half its unit. */
+/**
+ * The interval a figure may stand for, for comparison: a rounded figure widens by half its unit.
+ * @param {Figure} f a figure `figureFault` passes
+ * @returns {Reading}
+ */
 export function readingOf(f) {
   const r = readFigure(f);
   if (f.precision === "rounded") {
-    const h = roundedHalfUnit(r.value);
-    return { ...r, lo: subD(r.value, h), hi: addD(r.value, h) };
+    const h = roundedHalfUnit(/** @type {Dec} */ (r.value));
+    return { ...r, lo: subD(/** @type {Dec} */ (r.value), h), hi: addD(/** @type {Dec} */ (r.value), h) };
   }
   return r;
 }
 
+/** @type {(rs: Reading[]) => string} */
 const combinePrecision = (rs) => {
   if (rs.some((r) => r.precision === "range")) return "range";
   if (rs.some((r) => r.precision === "approximate")) return "approximate";
@@ -150,9 +336,14 @@ const combinePrecision = (rs) => {
   return "exact";
 };
 
-/** Write an interval back as a figure. */
+/**
+ * Write an interval back as a figure: a range when its bounds differ or its precision is `range`.
+ * @param {{lo: Dec, hi: Dec, precision: string, approximate?: boolean, unit?: string, currency?: string}} r
+ * @returns {Figure}
+ */
 export function makeFigure({ lo, hi, precision, approximate, unit, currency }) {
-  const out = {};
+  /** @type {Figure} builds a Figure, field by field below */
+  const out = /** @type {Figure} */ ({});
   if (precision === "range" || cmpD(lo, hi) !== 0) {
     out.low = decStr(lo); out.high = decStr(hi);
     out.sign = lo.n < 0n ? "-" : "+";
@@ -168,12 +359,21 @@ export function makeFigure({ lo, hi, precision, approximate, unit, currency }) {
   return out;
 }
 
+/** @type {(r: {unit?: string, currency?: string}) => string} */
 const describe = (r) => [r.currency && `currency ${r.currency}`, r.unit && `unit ${r.unit}`].filter(Boolean).join(", ")
   || "no unit or currency";
+/** @type {(r: {unit?: string, currency?: string}) => boolean} */
 const dimensioned = (r) => r.unit !== undefined || r.currency !== undefined;
+/** @type {(a: {unit?: string, currency?: string}, b: {unit?: string, currency?: string}) => boolean} */
 const sameDims = (a, b) => a.unit === b.unit && a.currency === b.currency;
+/** @type {(a: {unit?: string, currency?: string}, b: {unit?: string, currency?: string}) => Refusal} */
 const mismatch = (a, b) => refusal("UNIT_MISMATCH", `the operands differ: ${describe(a)} against ${describe(b)}`);
 
+/**
+ * Each operand read, or the first one's refusal; throws `TypeError` for a non-object.
+ * @param {Array<*>} list
+ * @returns {Reading[]|Refusal}
+ */
 function operands(list) {
   const rs = [];
   for (const f of list) {
@@ -185,6 +385,12 @@ function operands(list) {
   return rs;
 }
 
+/**
+ * @param {object} a
+ * @param {object} b
+ * @param {number} sign 1 to add, -1 to subtract
+ * @returns {OneOf<Figure, Refusal>}
+ */
 function additive(a, b, sign) {
   const rs = operands([a, b]);
   if (isRefusal(rs)) return rs;
@@ -196,12 +402,28 @@ function additive(a, b, sign) {
     unit: x.unit, currency: x.currency });
 }
 
-/** R4: exact sum of two figures of one unit and currency. */
+/**
+ * R4: exact sum of two figures of one unit and currency. A figure that is not one is refused `FIGURE_INVALID`;
+ * differing units or currencies `UNIT_MISMATCH` (R5). Throws `TypeError` for an operand that is not an object.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {object} b a figure, likewise
+ * @returns {OneOf<Figure, Refusal>}
+ */
 export const add = (a, b) => additive(a, b, 1);
-/** R4: exact difference a − b. */
+/**
+ * R4: exact difference a − b, refused as `add` is.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {object} b a figure, likewise
+ * @returns {OneOf<Figure, Refusal>}
+ */
 export const subtract = (a, b) => additive(a, b, -1);
 
-/** R4: exact product; at most one operand may carry a unit or currency, which the product keeps. */
+/**
+ * R4: exact product; at most one operand may carry a unit or currency, which the product keeps, else `UNIT_MISMATCH`.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {object} b a figure, likewise
+ * @returns {OneOf<Figure, Refusal>}
+ */
 export function multiply(a, b) {
   const rs = operands([a, b]);
   if (isRefusal(rs)) return rs;
@@ -213,6 +435,11 @@ export function multiply(a, b) {
     approximate: rs.some((r) => r.approximate), unit: d.unit, currency: d.currency });
 }
 
+/**
+ * The rounding stated, or `ROUNDING_UNSTATED` naming what is missing or wrong.
+ * @param {*} opts
+ * @returns {Rounding|Refusal}
+ */
 function rounding(opts) {
   if (opts === undefined || opts === null) return refusal("ROUNDING_UNSTATED", "no places and mode were stated");
   if (typeof opts !== "object") throw new TypeError("rounding options must be an object");
@@ -225,10 +452,18 @@ function rounding(opts) {
   return { places, mode };
 }
 
+/** @type {(precision: string, exact: boolean) => string} */
 const afterRounding = (precision, exact) => (exact || precision !== "exact" ? precision : "rounded");
 
-/** R4: a / b to the stated places under the stated mode. Division by zero is undetermined. A range's bounds are
- *  rounded outward, so the result still bounds every reading (R5). */
+/**
+ * R4: a / b to the stated places under the stated mode. Division by zero, or by a range that holds zero, is
+ * undetermined. A range's bounds are rounded outward, so the result still bounds every reading (R5). A divisor
+ * with a unit or currency the dividend lacks is `UNIT_MISMATCH`; a missing or wrong rounding `ROUNDING_UNSTATED`.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {object} b a figure, likewise
+ * @param {Partial<Rounding>} [opts] what is missing or wrong is refused `ROUNDING_UNSTATED`
+ * @returns {OneOf3<Figure, Refusal, Undetermined>}
+ */
 export function divide(a, b, opts) {
   const rs = operands([a, b]);
   if (isRefusal(rs)) return rs;
@@ -251,7 +486,12 @@ export function divide(a, b, opts) {
   return makeFigure({ lo: q, hi: q, precision: afterRounding(precision, exact), approximate, ...keep });
 }
 
-/** R4: a figure rounded to the stated places under the stated mode. */
+/**
+ * R4: a figure rounded to the stated places under the stated mode; a range's bounds are rounded outward.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {Partial<Rounding>} [opts] what is missing or wrong is refused `ROUNDING_UNSTATED`
+ * @returns {OneOf<Figure, Refusal>}
+ */
 export function round(a, opts) {
   const rs = operands([a]);
   if (isRefusal(rs)) return rs;
@@ -267,14 +507,19 @@ export function round(a, opts) {
 
 /** R10's relation of two figures: `lower`, `equal`, `higher` or `{undetermined, why}`; a refusal on a unit mismatch.
  *  Equal only for two exact figures of one value; a rounded figure stands for half a unit either side; an approximate
- *  one settles nothing. */
+ *  one settles nothing. Throws `TypeError` for an operand that is not an object.
+ * @param {object} a a figure; any other object is refused `FIGURE_INVALID`
+ * @param {object} b a figure, likewise
+ * @returns {string|Undetermined|Refusal}
+ * @bound relation: one of lower, equal, higher
+ */
 export function relate(a, b) {
   for (const f of [a, b]) {
     if (f === null || typeof f !== "object") throw new TypeError("an operand must be a figure object");
     const why = figureFault(f);
     if (why) return refusal("FIGURE_INVALID", why);
   }
-  const x = readingOf(a); const y = readingOf(b);
+  const x = readingOf(/** @type {Figure} */ (a)); const y = readingOf(/** @type {Figure} */ (b));
   if (!sameDims(x, y)) return mismatch(x, y);
   if (x.approximate || y.approximate) return undetermined(word("calc-grammar.approximate_figure_settle"));
   if (cmpD(x.hi, y.lo) < 0) return "lower";
@@ -283,5 +528,9 @@ export function relate(a, b) {
   return undetermined(word("calc-grammar.figures_readings_overlap"));
 }
 
-/** The stated value of a non-range figure, as a decimal, for ordering (R12); `null` for a range. */
-export const statedValue = (f) => (f.precision === "range" ? null : readFigure(f).value);
+/**
+ * The stated value of a non-range figure, as a decimal, for ordering (R12); `null` for a range.
+ * @param {Figure} f a figure `figureFault` passes
+ * @returns {Dec|null}
+ */
+export const statedValue = (f) => (f.precision === "range" ? null : /** @type {Dec} */ (readFigure(f).value));

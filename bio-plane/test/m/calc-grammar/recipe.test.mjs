@@ -287,7 +287,7 @@ test("R20 undetermined never reads as zero: a total with an undetermined amount 
   assert.equal(run([{ op: "sum", as: "s", from: "t", field: "v" }], { t: kinded }).result.undetermined, true);
   const rec = recipe([{ op: "count", as: "c", from: "t" }], "c", [{ name: "t", kind: "table" }]);
   assert.equal(evaluate(rec, {}).refused, "INPUT_UNBOUND");
-  assert.equal(evaluate(rec, { t: { rows: [] } }).refused, "INPUT_INVALID");
+  assert.equal(evaluate(rec, { t: /** @type {*} a table with no fields, on purpose */ ({ rows: [] }) }).refused, "INPUT_INVALID");
   assert.equal(evaluate(rec, { t: { fields: [{ name: "a", type: "money" }], rows: [] } }).refused, "INPUT_INVALID");
   assert.throws(() => evaluate(rec, null), TypeError);
   assert.throws(() => evaluate(rec, {}, { resolveId: "x" }), TypeError);
