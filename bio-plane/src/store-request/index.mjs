@@ -67,7 +67,6 @@ export const BODY_ACTOR = Object.freeze({
   lawpropose: "proposer", standardforcepropose: "proposer" });
 const BODY_ACTOR_KEYS = Object.freeze([...new Set(Object.values(BODY_ACTOR))]);
 
-/** R2: the ops whose store route has another name. */
 /** R25: an op graded as `publish`, read from the declarations: `publish`'s spec and capability, `author` declared. */
 const gradedAsPublish = (op) => op !== undefined && NEEDS[op] === "publish" && (OP_STAMPS[op] || []).includes("author")
   && sameSpec(OPS[op], OPS.publish);
@@ -78,6 +77,7 @@ export const TRANSLATION_ACTS = Object.freeze(["translationdraft", "translationg
   "translationrevert", "translationmark"]);
 /** R7: the member-roster acts that ask `membership` whether `by` is an administrator, which reads the bare member id. */
 export const ADMIN_ASKING_OPS = Object.freeze(["adminremovalsopen", "expertisewithdraw"]);
+/** R2: the ops whose store route has another name, op → route. */
 export const DO_PATH = Object.freeze({ inbox: "inboxlist", publish: "publishcase", inboxpull: "inboxpullfile" });
 /** R5: the internal headers a stamped session and an ask's grant travel in (`store-door` R9). */
 export const SESSION_HEADER = "x-bio-session";
@@ -114,8 +114,12 @@ const VIEWER_OPS = new Set(["search", "meaningrows", "select", "selection", "sel
 /** R6: every op stamped with its caller's sight, as one list (for tests and for `control-plane`'s census). */
 export const VIEWER_STAMPED_OPS = Object.freeze([...VIEWER_OPS]);
 
-/* R11 (D-526): what a promotion is, derived once from the bytes the caller sent: the document's own `object_type` through
-   record-grammar's `normalizeType`, the envelope's only where the document states none, as `promote` derives it. */
+/**
+ * R11 (D-526): what a promotion is, derived once from the bytes the caller sent: the document's own `object_type` through
+ * record-grammar's `normalizeType`, the envelope's only where the document states none, as `promote` derives it.
+ * @param {{files?: any, meta?: any}} b a promotion's body, a JSON object
+ * @returns {string|undefined} the normalised type; undefined when neither the document nor the envelope states one
+ */
 export function promotedTypeOf(b) {
   const md = Array.isArray(b.files) ? b.files.find((f) => f && f.path === "bundle.md") : null;
   const fm = md && typeof md.text === "string" ? parseFrontmatter(md.text).data : null;
@@ -127,9 +131,59 @@ export function promotedTypeOf(b) {
 const isObject = (b) => !!b && typeof b === "object" && !Array.isArray(b);
 const parsed = (text) => { try { return JSON.parse(text); } catch { return undefined; } };
 
-/** R1: the store's request `{url, body, headers}` made from a page's, or `{refusal}` for a project creation the capability
- *  gate refuses (R11). Synchronous; never throws; the same answer for the same arguments. */
-export function innerRequest(args = {}) {
+/**
+ * R1: the caller `admission.admit` admitted, as `innerRequest` reads it. Every field may be absent: a caller that is not
+ * admitted (a public op's) carries no expression.
+ * @typedef {Object} StoreCaller
+ * @property {string|null} [cls] the caller's class (`admin`, `member`, `ai`, a binding class)
+ * @property {boolean} [viaSession] true for a member's session
+ * @property {string|null} [member] a session's member id
+ * @property {string|null} [viewer] a session's viewer (`admin` for the founder, else `member:<id>`)
+ * @property {string|null} [identity] a session's identity (`member:<id>`)
+ * @property {Object<string, any>} [rights] a session's rights (`administer` among them)
+ * @property {any} [caps] a session's capabilities (a set or a list)
+ * @property {{tokenId: string, principal: string, grant?: string} & Record<string, any>|null} [aiCred] an `ai` caller's credential
+ * @property {string} [storeName] the store's namespace; absent is `bio`
+ * @property {string|null} [token] the presented session token
+ */
+/**
+ * R1: what the door hands `innerRequest`: the op, the page's request and what the door computed from headers, the store
+ * or the clock (R1, R8, R11, R23).
+ * @typedef {Object} StoreRequestArgs
+ * @property {string} op the op's name after alias resolution
+ * @property {URL|string} url the page's request address
+ * @property {string} [method] absent is GET
+ * @property {any} [body] the body as the door read it: text, the bytes or stream of an upload, or absent
+ * @property {StoreCaller|null} [caller]
+ * @property {string|null} [source] the keyed digest of the connecting address
+ * @property {string|null} [country]
+ * @property {string|null} [userAgent]
+ * @property {string|null} [origin] the scheme and host of the request's own address
+ * @property {number|null} [length] the whole-number `Content-Length`
+ * @property {boolean} [resolving] the door re-routed a knock resolved to `pulled` as `inboxpull`
+ * @property {{asserted?: any, proven?: any}|null} [replay] the door's verdict on a promotion's asserted replay
+ * @property {boolean} [deferred] a `readheld` capture's reading will not fit the bound
+ * @property {string|null} [secretSha] the SHA-256 of the secret presented or issued (R23)
+ * @property {boolean} [bySecret] the caller presented a secret (R23)
+ * @property {{writes?: any, confinedTo?: any, secretSha?: string}|null} [mint] `aicredentialmint`'s judged declaration (R23)
+ */
+/**
+ * R1: the store's request: its in-process address `http://x/<route>`, the body to pass (absent when none was sent) and
+ * the internal headers of R5 (`x-bio-session`, `x-bio-grant`, each only when it has a value); or, in its place,
+ * `refusal`, the answer `{status, body}` the door gives as given (R11's capability gate on a project creation).
+ * @typedef {Object} StoreRequest
+ * @property {string} [url]
+ * @property {any} [body]
+ * @property {Object} [headers] header name → value
+ * @property {{status: number, body: any}} [refusal]
+ */
+/**
+ * R1: the store's request `{url, body, headers}` made from a page's, or `{refusal}` for a project creation the capability
+ * gate refuses (R11). Synchronous; never throws; the same answer for the same arguments.
+ * @param {StoreRequestArgs} [args]
+ * @returns {StoreRequest}
+ */
+export function innerRequest(args = /** @type {StoreRequestArgs} */ ({})) {
   try { return make(args); }
   catch (e) { return { refusal: { status: 500, body: { ok: false, reason: "STORE_REQUEST_FAILED", op: args && args.op } } }; }
 }
