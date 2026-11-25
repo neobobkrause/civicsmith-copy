@@ -70,7 +70,7 @@ test("R8 the list: the guides the viewer may see, Civicsmith's first, filtered b
 test("R9 the tables are declared through record-core.declareTable, sight the group's, and purged with the store", () => {
   const w = world();
   const decl = w.record.declaredTables().filter((d) => d.module === "reading-guides");
-  assert.deepEqual(decl.map((d) => d.name ?? d.table).sort(), [...READING_GUIDES_TABLES].sort());
+  assert.deepEqual(decl.map((d) => d.name).sort(), [...READING_GUIDES_TABLES].sort());
   for (const e of READING_GUIDES_TABLE_CLASSES) {
     assert.equal(e.sight, "group", e.name);
     assert.equal(e.purge, "clear", e.name);
