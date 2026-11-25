@@ -13,16 +13,8 @@ import { hasWord, word } from "../setup-words/index.mjs";
    `null` while the design lane has not given a code its word (reported, never inline English). */
 const said = (code) => (hasWord(`refusal.${code}`) ? word(`refusal.${code}`) : null);
 
-/**
- * @typedef {Object} CheckRow one refusal row (DEC-49)
- * @property {string} check its check id, such as `C-147.1`
- * @property {string} where the region in this module's `index.mjs` that mints it
- * @property {string | null} translation the member's words, `refusal.<CODE>` read by key; null while the list lacks it
- */
-
 const at = (fn, region) => `src/project-roster/index.mjs ${fn} > ${region}`;
 
-/** @type {Readonly<Object<string, Readonly<CheckRow>>>} C-56.5, C-33.28 and C-70.4, keyed by code */
 export const PROJECT_ROSTER_CHECKS = Object.freeze({
   /* R3 (N335): an owner is a JOINED participant with the owner flag, so a target not joined is its own condition. */
   TARGET_NOT_JOINED: Object.freeze({
@@ -49,7 +41,6 @@ export const PROJECT_ROSTER_CHECKS = Object.freeze({
  * Every refusal here is said only where it discloses nothing: a request to a project the caller cannot see is
  * `noSuchProject` byte for byte and never a C-95 code, and a withdrawal with no open request is ONE answer whatever the
  * id names. */
-/** @type {Readonly<Object<string, Readonly<CheckRow>>>} the C-95 family (R10–R14), keyed by code */
 export const PROJECT_JOIN_REQUEST_CHECKS = Object.freeze({
   PROJECT_REQUEST_NEEDS_A_MEMBER: Object.freeze({
     check: 'C-95.1', where: at("#noRequester", "is-join-request-member"),
@@ -93,7 +84,6 @@ export const PROJECT_JOIN_REQUEST_CHECKS = Object.freeze({
  * family, C-147 (J1's reading; the census's highest was C-146). `PROJECT_SCOPE_OWN` is said at two sites, the guard and
  * the rescue; its row names the guard, where it is minted, and the rescue relays it. T46 (R25): each row's translation
  * is `refusal.<CODE>`, read by key through setup-words (`said`); codes, numbers and `where`s unmoved. */
-/** @type {Readonly<Object<string, Readonly<CheckRow>>>} the C-147 family (R21, R22, R24, R31), keyed by code */
 export const PROJECT_SCOPE_CHECKS = Object.freeze({
   PROJECT_SCOPE_UNKNOWN: Object.freeze({
     check: 'C-147.1', where: at("projectScopeSet", "is-project-scope-set"),
