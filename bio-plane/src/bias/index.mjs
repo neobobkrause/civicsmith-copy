@@ -50,6 +50,269 @@ export { BIAS_SCHEMA, BIAS_TABLES, BIAS_ADDITIVE_COLUMNS } from "./schema.mjs";
 import { BIAS_SCHEMA, BIAS_ADDITIVE_COLUMNS } from "./schema.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 
+/**
+ * @typedef {Object} BiasRefusalFields a refusal by one of this module's own C-26 rows (DEC-49)
+ * @property {false} ok
+ * @property {string} reason the row's code
+ * @property {string} code the same code
+ * @property {string} check the row's check id, such as `C-26.9`
+ * @property {string} translation the row's member-facing words
+ * @property {string} detail one sentence saying why
+ */
+/** @typedef {BiasRefusalFields & Object<string, *>} BiasRefusal a refusal; the fields it names beside the row's (`findings`, `limit`, `length`, `run`, `settled`) are read by its code */
+/** @typedef {{ok: false, reason: string} & Object<string, *>} OtherRefusal a refusal another module answers for an act of this one (membership's existence and authority refusals, `NOT_AN_ADMIN`, `LISTENER_MALFORMED`, `LISTENER_DECLARED`) */
+/**
+ * @typedef {Object} BiasDeps what `biasOf` reaches on its first call for a storage; each absent one is the module's own instance over `ctx`
+ * @property {*} [record] record-core
+ * @property {*} [membership] membership
+ * @property {*} [promotion] promotion
+ * @property {*} [entities] the subject registry (`has(entityId)`); null is none, and R25 then answers undetermined
+ * @property {Object<string, *>} [env] the instance bindings `BIAS_DEBT_DELAY_MS` (R41) and `BIAS_DEBT_BATCH` (R33)
+ */
+/**
+ * @typedef {Object} AdoptArgs
+ * @property {*} [bundleId] the bias set adopted
+ * @property {*} [scope] `"project"` for a project's lens; anything else is the group's (`instance`)
+ * @property {*} [scopeId] the project id, for a project scope
+ * @property {*} [reason] the adopter's own words on why this lens is adopted
+ * @property {*} [author] the control plane's stamp of the member adopting
+ * @property {*} [at] the instant to record; absent is now
+ * @property {*} [identity] the control plane's identity stamp
+ * @property {*} [viewer] the control plane's viewer stamp
+ * @bound reason: a string, trimmed, 1 to 2,000 characters
+ */
+/**
+ * @typedef {Object} AdoptionPin the revision an adoption pins, and its policy source from that revision's front matter
+ * @property {*} bundle_sha the bundle's head revision when adopted
+ * @property {string | null} source_url
+ * @property {string | null} retrieved
+ * @property {string | null} source_sha256 lower-cased
+ */
+/**
+ * @typedef {Object} AdoptionFields an adoption kept (R12)
+ * @property {true} ok
+ * @property {true} adopted
+ * @property {string} bundleId
+ * @property {"instance" | "project"} scope
+ * @property {string} scope_id the project id, `""` for the group
+ * @property {string} author
+ * @property {string} at
+ * @property {string} reason
+ * @property {AdoptionPin} pinned
+ * @property {boolean} in_force the pinned revision stands at `adopted`
+ * @property {boolean} pins_proposed the pinned revision stands at `proposed`
+ * @property {string} note
+ */
+/** @typedef {AdoptionFields & Object<string, *>} Adoption */
+/**
+ * @typedef {Object} ManifestArgs
+ * @property {*} [scope] `"project"` for a project's lens; anything else is the group's (`instance`)
+ * @property {*} [scopeId] the project id, for a project scope
+ * @property {*} [viewer]
+ * @property {*} [limit] the page's size
+ * @property {*} [offset] where the page starts
+ * @bound limit: 1 to 2,000, 200 when absent or not a number; offset: 0 or more
+ */
+/**
+ * @typedef {Object} LensStatement one statement of the effective set (R16)
+ * @property {string} statement_id
+ * @property {string} bundle_id
+ * @property {string} scope `instance` (a group statement) or `project`
+ * @property {string} kind
+ * @property {string} subject
+ * @property {string} text
+ * @property {string} justification
+ * @property {Array<*>} citations
+ * @property {boolean} locked
+ * @property {string | null} nullifies
+ */
+/**
+ * @typedef {Object} Manifest the effective set in force for a scope (R13–R18, R24, R25)
+ * @property {boolean} ok always true
+ * @property {"instance" | "project"} scope
+ * @property {string} scope_id
+ * @property {boolean | null} in_force true with a lens in force; false with none, or a project the viewer may not see; null when a pin's bytes cannot be read
+ * @property {Array<Object<string, *>>} bundles each adoption in force: `bundle_id`, `revision`, `scope`, `adopted_by`, `adopted_at`, `source_url`, `retrieved`, `source_sha256`
+ * @property {string | null} statements_sha SHA-256 over the whole effective set, null with no lens in force
+ * @property {string} [statements_sha_covers]
+ * @property {Array<Object<string, *>>} [pins_proposed] adoptions whose pinned revision is not at `adopted`: `bundle_id`, `revision`, `scope`, `pinned_state`, `adopted_by`, `adopted_at`; absent when none
+ * @property {string} [pins_proposed_stated]
+ * @property {Array<Object<string, *>>} [unresolved_pins] pins whose bytes cannot be read: `bundle_id`, `revision`, `scope`
+ * @property {Array<LensStatement>} statements the page
+ * @property {Array<Object<string, *>>} residue each adoption's `## What This Does Not Enforce`: `bundle_id`, `scope`, `text`, `stated`
+ * @property {Array<Object<string, *>>} lock_violations project nullifications of a locked group statement: `project_bundle`, `statement_id`, `nullifies`, `instance_bundle`, `detail`
+ * @property {Array<Object<string, *>>} [interactions] R24's: `statement_id`, `bundle_id`, `subject`, `justification`, `instance`
+ * @property {string} [interactions_stated]
+ * @property {Array<Object<string, *>> | null} [unregistered_subjects] R25's: `statement_id`, `bundle_id`, `scope`, `subject`; null when undetermined
+ * @property {string} [unregistered_subjects_stated]
+ * @property {string} [stated] said with no lens in force, or undetermined
+ * @property {number} count
+ * @property {number} total
+ * @property {number} limit
+ * @property {number} offset
+ * @property {boolean} truncated
+ */
+/**
+ * @typedef {Object} InForceArgs
+ * @property {*} [statement] the statement id
+ * @property {*} [scope] `"instance"`, `{type: "instance"}` or `{type: "project", id}`
+ * @property {*} [viewer]
+ */
+/**
+ * @typedef {Object} InForce whether one statement is in the lens in force for a scope (R49)
+ * @property {boolean} ok always true
+ * @property {string | null} statement
+ * @property {{type: string, id: string}} scope
+ * @property {boolean | null} in_force null when the lens cannot be computed
+ * @property {string | null} kind
+ * @property {string | null} text
+ * @property {string | null} bundle_id
+ * @property {"group" | "project" | null} level
+ * @property {boolean | null} locked
+ * @property {string | null} statements_sha R17's hash of the lens checked
+ * @property {string} stated
+ */
+/**
+ * @typedef {Object} InhaleArgs
+ * @property {*} [policy] the outside policy's text
+ * @property {*} [source] where it came from, echoed in the pin
+ * @property {*} [retrieved] when, echoed in the pin
+ * @property {*} [adopt] any truthy value is refused (C-26.8)
+ * @property {*} [limit] each list's size
+ * @bound policy: at most 500 sentences of more than 12 characters are read; limit: 1 to 1,000, 200 when absent or not a number
+ */
+/**
+ * @typedef {Object} InhaleProposalFields a reading of an outside policy, proposed and never installed (R19–R21)
+ * @property {true} ok
+ * @property {false} installed
+ * @property {false} adopted
+ * @property {0} writes
+ * @property {string} proposes what a member does next
+ * @property {Array<Object<string, *>>} bars threshold sentences: `text`, `construct` (`required_strength`), `detail`
+ * @property {number} bars_count
+ * @property {Array<Object<string, *>>} statements proposed statements: `id`, `kind` (`scrutiny` or `inference`), `subject`, `text`, `justification`, `citations`, `proposed: true`, `authored: false`
+ * @property {number} statements_count
+ * @property {Array<Object<string, *>>} residue the sentences not mechanised: `text`, `why`, `check`
+ * @property {number} residue_count
+ * @property {Object<string, *>} coverage `sentences_read`, `sentences_total`, `input_truncated`, `input_limit`, `mechanised`, `not_mechanised`, `note`
+ * @property {{source_url: string | null, retrieved: string | null}} pin
+ * @property {number} limit
+ * @property {boolean} truncated
+ */
+/** @typedef {InhaleProposalFields & Object<string, *>} InhaleProposal */
+/**
+ * @typedef {Object} DescriptionDraft the group's self-description offered as a declared bias's opening text (R48)
+ * @property {boolean} ok always true
+ * @property {Object<string, *> | null} description `kinds`, `otherKind`, `focus`, `purpose`, `by`, `at`; null when none is offered
+ * @property {boolean} offered
+ * @property {boolean} proposed
+ * @property {boolean} authored always false
+ * @property {Array<*>} statements always empty: no statement is proposed
+ * @property {boolean} installed always false
+ * @property {boolean} adopted always false
+ * @property {number} writes always 0
+ * @property {string} [label]
+ * @property {string} [offers]
+ * @property {string} stated
+ */
+/**
+ * @typedef {Object} SweepResult one tick of the debt sweep (R33, R39)
+ * @property {number} read
+ * @property {string[]} raised
+ * @property {string[]} restated
+ * @property {string[]} cleared
+ * @property {string[]} held
+ * @property {string[]} undetermined
+ * @property {number} unchanged
+ * @property {boolean} complete the whole set has been compared since the lens last moved
+ * @property {number} batch
+ */
+/**
+ * @typedef {Object} Settlement one appended settlement of a debt (R37)
+ * @property {*} run
+ * @property {*} kind `lens_returned`, `rerun` or `resolved`
+ * @property {*} at
+ * @property {*} actor
+ * @property {*} reason
+ * @property {*} by_run
+ * @property {*} lens_then
+ * @property {*} lens_now
+ */
+/**
+ * @typedef {Object} DebtResolveArgs
+ * @property {*} [run] the work product
+ * @property {*} [reason] the member's stated ground
+ * @property {*} [actor] the member resolving, stamped by the control plane
+ * @property {*} [viewer]
+ * @property {*} [at] an instant `YYYY-MM-DDTHH:MM:SSZ`; anything else is now
+ * @bound reason: a string, trimmed, 1 to 4,000 characters
+ */
+/**
+ * @typedef {Object} DebtView a work product's debt and its settlements, or its absence (R36)
+ * @property {boolean} ok always true
+ * @property {string | null} run
+ * @property {boolean} found false for no debt or one the viewer may not see, answered alike
+ * @property {string} [note]
+ * @property {boolean} [open]
+ * @property {{type: *, id: *}} [context]
+ * @property {*} [raised]
+ * @property {*} [observed]
+ * @property {*} [moved_basis]
+ * @property {*} [lens_then]
+ * @property {*} [lens_now]
+ * @property {Object<string, *>} [settled] `{settled: false}`, or `{settled: true, at, kind, kind_state, stated?}`
+ * @property {Array<Object<string, *>>} [settlements] in order: `seq`, `kind`, `at`, `actor`, `reason`, `by_run`, `lens_then`, `lens_now`
+ * @property {number} [limit]
+ * @property {boolean} [truncated]
+ * @property {string} [stated]
+ * @bound settlements: at most 50
+ */
+/**
+ * @typedef {Object} DebtPage the debts `uncleared` or `settled` answers (R43, R44)
+ * @property {Array<Object<string, *>>} debts newest first, ties by run
+ * @property {number} limit
+ * @property {boolean} truncated measured by reading one more
+ * @property {string | null} [since] `settled`'s: the first whole second at or after the instant asked
+ * @property {boolean} [undetermined] the read failed and none is answered
+ * @property {string} [stated]
+ * @bound limit: 1 to 1,000, 200 when absent or not a number
+ */
+/**
+ * @typedef {Object} BiasHandle the one bias instance over a storage, as `biasOf` answers it; each member is stated where the class defines it
+ * @property {Bias["migrate"]} migrate
+ * @property {Bias["promotionCheck"]} promotionCheck
+ * @property {Bias["promotionProjection"]} promotionProjection
+ * @property {Bias["lensFingerprint"]} lensFingerprint
+ * @property {Bias["onLensChange"]} onLensChange
+ * @property {Bias["noticesDelivered"]} noticesDelivered
+ * @property {Bias["committed"]} committed
+ * @property {Bias["biasAdopt"]} biasAdopt
+ * @property {Bias["biasManifest"]} biasManifest
+ * @property {Bias["statementInForce"]} statementInForce
+ * @property {Bias["biasInhale"]} biasInhale
+ * @property {Bias["descriptionDraft"]} descriptionDraft
+ * @property {Bias["registerWorkProducts"]} registerWorkProducts
+ * @property {Bias["biasDebtDue"]} biasDebtDue
+ * @property {Bias["biasDebtWake"]} biasDebtWake
+ * @property {Bias["biasDebtSweep"]} biasDebtSweep
+ * @property {Bias["biasDebtResolve"]} biasDebtResolve
+ * @property {Bias["biasDebt"]} biasDebt
+ * @property {Bias["counts"]} counts
+ * @property {Bias["uncleared"]} uncleared
+ * @property {Bias["settled"]} settled
+ * @property {Bias["biasDebtRerun"]} biasDebtRerun
+ */
+/**
+ * @typedef {Object} RerunOutcome what a re-run did to the debt of the work it re-made (R38)
+ * @property {string} re_ran the work product re-made
+ * @property {boolean} discharged
+ * @property {string} [outcome] `no_open_debt`, `lens_undetermined` or `other_lens` when nothing is discharged
+ * @property {*} [lens_ran_under]
+ * @property {*} [lens_in_force]
+ * @property {Settlement} [settled]
+ * @property {string} [stated]
+ */
+
 /* R11 (N327, DEC-83): the instance-scope adoption's fixed act, and its next step, for `membership.notAnAdmin`. Its
    words say "the whole group", never "the instance" (DEC-149); the scope value stays `instance`. */
 export const INSTANCE_ADOPTION_ACT = localize("bias.index.adopting_bias_set_whole_team", "adopting a bias set for the whole team");
@@ -157,6 +420,7 @@ class Bias {
   #rows(q, ...a) { return [...this.#sql.exec(q, ...a)]; }
   #one(q, ...a) { const r = this.#rows(q, ...a); return r.length ? r[0] : null; }
 
+  /** @param {string} code @param {string} detail @param {Object<string, *>} [extra] @returns {BiasRefusal} */
   #refuse(code, detail, extra = {}) {
     const row = BIAS_CHECKS[code];
     return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...extra };
@@ -184,7 +448,8 @@ class Bias {
    *  older store lacks are added first (`BIAS_ADDITIVE_COLUMNS`, where the table exists), then every table and index
    *  of this module's own schema text is created where absent. A column added here is never filled for a row already
    *  held: a debt settled before `settled_kind` was kept reads its kind as undetermined (R36). Idempotent: a second
-   *  call changes nothing. Answers the columns it added, `[table, column]`. */
+   *  call changes nothing. Answers the columns it added, `[table, column]`.
+   *  @returns {{ok: true, added: string[][]}} */
   migrate() {
     const cols = (t) => this.#rows(`PRAGMA table_info(${t})`).map((r) => r.name);
     const added = [];
@@ -205,7 +470,9 @@ class Bias {
   /** R9 (PL-12 / D-84, REC-176): A MALFORMED BIAS SET NEVER LANDS. Refused before any write, by the set's own
    *  checks (R1–R7) and not by a second reading of them; a replay is not judged, so the record's own history stays
    *  holdable verbatim. The document's type is asked as well as the envelope's (D-526), so a bias document under
-   *  another envelope meets the refusal as it would correctly labelled. */
+   *  another envelope meets the refusal as it would correctly labelled.
+   *  @param {*} c promotion's step context: `promotedType`, `meta`, `files` (`[{path, text}]`), `replay`, `pkg`
+   *  @returns {BiasRefusal | null} `BIAS_REFUSED` with `findings` (`{check, detail, code, translation}`), or null to let it pass */
   promotionCheck(c) {
     if (!c || c.replay || (c.pkg && c.pkg.replay)) return null;
     const envelopeType = c.meta && typeof c.meta === "object" ? normalizeType(c.meta.object_type) : null;
@@ -225,7 +492,9 @@ class Bias {
    *  delete for every type, so a document that changes type leaves no projection standing, the insert only for
    *  `bias` — and a promotion to `adopted` RE-PINS every adoption of the bundle, instance and project alike, to the
    *  revision minted (REC-187), its source fields copied from the same bytes. The adopter and instant are the
-   *  adoption's authored act and are not rewritten. */
+   *  adoption's authored act and are not rewritten.
+   *  @param {*} c promotion's step context: `bundleId`, `promotedType`, `promotedState`, `bundleSha`, `files`
+   *  @returns {null} */
   promotionProjection(c) {
     const bundleId = c && c.bundleId;
     if (!bundleId) return null;
@@ -248,7 +517,8 @@ class Bias {
   /* ---------------------------------------------------------------- R22, R23: the lens's inputs and its notice */
 
   /** R22: every input any lens is computed from — the number of adoptions and, for the first 1,000, each one's scope,
-   *  project id, bundle, the bundle's head sha and its state. A TRIGGER, never a comparison of lenses. Synchronous. */
+   *  project id, bundle, the bundle's head sha and its state. A TRIGGER, never a comparison of lenses. Synchronous.
+   *  @returns {string} */
   lensFingerprint() {
     const n = this.#one(`SELECT count(*) AS n FROM bias_adoptions`).n;
     const rows = this.#rows(`SELECT scope_type AS t, scope_id AS s, bundle_id AS b FROM bias_adoptions
@@ -260,7 +530,10 @@ class Bias {
   }
 
   /** R23: a later module's notice that a lens may have moved, once per successful adoption and per promotion that
-   *  moves a bias set's head, after the write. A second registration by one module is refused. */
+   *  moves a bias set's head, after the write. A second registration by one module is refused.
+   *  @param {*} module the registering module's name
+   *  @param {*} fn the listener, called with no arguments
+   *  @returns {({ok: true, module: string} & Object<string, *>) | OtherRefusal} `LISTENER_MALFORMED` or `LISTENER_DECLARED` (membership R81), registering nothing */
   onLensChange(module, fn) {
     /* N202: the refusals are membership's one site (its R81). */
     const refused = listenerRefusal(this.#lensListeners, module, fn);
@@ -283,10 +556,14 @@ class Bias {
   }
 
   /** Settles when every lens notice sent so far has been delivered (the op awaits it, so an adoption's arm lands
-   *  inside the request that made it). */
+   *  inside the request that made it).
+   *  @returns {Promise<void>} */
   noticesDelivered() { return this.#notices; }
 
-  /* promotion R45: after a promotion has committed. A bias set's promotion, or one of a bundle an adoption names. */
+  /** promotion R45: after a promotion has committed. A bias set's promotion, or one of a bundle an adoption names,
+   *  sends the lens notice (R23).
+   *  @param {{bundleId?: *, type?: *}} [n] promotion's notice
+   *  @returns {Promise<void> | null} the notices' delivery, or null when none is sent */
   committed({ bundleId, type } = {}) {
     if (type === "bias" || (bundleId && this.#one(`SELECT 1 AS x FROM bias_adoptions WHERE bundle_id=? LIMIT 1`, bundleId)))
       return this.#notify();
@@ -300,7 +577,10 @@ class Bias {
    *  name (C-26.9). The state machine carries the other half: a set reaches `adopted` only through `proposed`, by a
    *  member-authored promotion, and the manifest requires BOTH this row AND its pinned revision at `adopted` before
    *  it reports a lens in force. A project's lens is its owners' act (REC-134, DEC-72 clause 5); the instance's is
-   *  its administrators' (K102: "Admins define instance bias"). */
+   *  its administrators' (K102: "Admins define instance bias").
+   *  @param {AdoptArgs} [args]
+   *  @returns {Adoption | BiasRefusal | OtherRefusal} refused, in order: C-26.9, C-26.10, a project's existence and
+   *    `owner` authority or the group's `NOT_AN_ADMIN`, C-26.21 */
   biasAdopt({ bundleId = null, scope = "instance", scopeId = "", reason = null, author = null, at = null,
               identity = null, viewer = null } = {}) {
     const who = typeof author === "string" ? author.trim() : "";
@@ -502,7 +782,9 @@ class Bias {
    *  statements at pinned revisions, minus project nullifications of unlocked statements, plus project replacements
    *  and additions. The hash is over the WHOLE set, never the page (R17). A nullification of a LOCKED statement is
    *  refused its effect and reported. Absence is stated: "no manifest was in force", never an empty lens.
-   *  SYNCHRONOUS, so a transaction may call it (the case document's stamp, REC-126's review copy). */
+   *  SYNCHRONOUS, so a transaction may call it (the case document's stamp, REC-126's review copy).
+   *  @param {ManifestArgs} [args]
+   *  @returns {Manifest} */
   biasManifest({ scope = "instance", scopeId = "", viewer = null, limit = null, offset = 0 } = {}) {
     const st = String(scope) === "project" ? "project" : "instance";
     const sid = st === "project" ? String(scopeId || "").trim() : "";
@@ -587,7 +869,9 @@ class Bias {
    *  DEC-149), whether it is locked, and R17's hash of the lens it was found in, so a caller can record which lens it
    *  checked against. Not in force — no such id, no lens in force, or a project the viewer may not see, answered
    *  identically (R13) — `in_force: false`; an adoption whose pinned bytes cannot be read (R14), `in_force: null`.
-   *  SYNCHRONOUS, so a transaction may call it; writes nothing; never throws. */
+   *  SYNCHRONOUS, so a transaction may call it; writes nothing; never throws.
+   *  @param {InForceArgs} [args]
+   *  @returns {InForce} */
   statementInForce({ statement = null, scope = "instance", viewer = null } = {}) {
     const isProject = isObj(scope) ? scope.type === "project" : scope === "project";
     const sid = isProject && isObj(scope) && typeof scope.id === "string" ? scope.id.trim() : "";
@@ -619,7 +903,9 @@ class Bias {
 
   /** op=biasinhale — READING AN OUTSIDE POLICY. It proposes; it never installs (DEC-54 (a)–(c)). THERE IS NO WRITE IN
    *  THIS METHOD — no SQL, no transaction, no promotion. It never proposes kind=pattern: a reader of somebody else's
-   *  policy holds no evidence in THIS record. The malformedness rule binds the machine exactly as a member (R31). */
+   *  policy holds no evidence in THIS record. The malformedness rule binds the machine exactly as a member (R31).
+   *  @param {InhaleArgs} [args]
+   *  @returns {InhaleProposal | BiasRefusal} `BIAS_INHALE_CANNOT_ADOPT` (C-26.8) for any truthy `adopt` */
   biasInhale({ policy = "", source = null, retrieved = null, adopt = false, limit = null } = {}) {
     if (adopt)
       return this.#refuse("BIAS_INHALE_CANNOT_ADOPT",
@@ -715,7 +1001,9 @@ class Bias {
    *  justification (R2–R7 are the member's to write) and moves nothing along R8's machine or R11's adoption. It
    *  writes nothing, installs and adopts nothing, never changes a lens in force, and never throws. A viewer who is
    *  not an active member is answered exactly as if no description were held, so the answer says nothing about
-   *  whether one exists. */
+   *  whether one exists.
+   *  @param {{viewer?: *}} [args]
+   *  @returns {DescriptionDraft} */
   descriptionDraft({ viewer = null } = {}) {
     const none = {
       ok: true, description: null, offered: false, proposed: false, authored: false, statements: [],
@@ -750,7 +1038,10 @@ class Bias {
   /** R33: a later module's work products, by kind. `source` is `{list(after, limit) → keys in ascending order
    *  (synchronous), read(key) → Promise<null | {context: {type, id}, principal, lens: {basis, statements_sha} | null,
    *  ranUnder, rerunOf}>, visible(key, viewer) → Promise<boolean>}`: `lens` is the lens recorded when the work began
-   *  (null when it was not recorded), `ranUnder` the lens it ran under, `rerunOf` the work product it re-makes. */
+   *  (null when it was not recorded), `ranUnder` the lens it ran under, `rerunOf` the work product it re-makes.
+   *  @param {*} kind the work products' kind, a non-empty string
+   *  @param {*} source `{list, read, visible}`, each a function; anything else is refused
+   *  @returns {({ok: true, kind: string} | {ok: false, reason: string, detail: string, kind?: string}) & Object<string, *>} `WORK_PRODUCTS_MALFORMED` or `WORK_PRODUCTS_DECLARED`, registering nothing */
   registerWorkProducts(kind, source) {
     if (typeof kind !== "string" || !kind || !source || typeof source.list !== "function"
         || typeof source.read !== "function" || typeof source.visible !== "function")
@@ -783,12 +1074,17 @@ class Bias {
     return st.fingerprint !== this.lensFingerprint();
   }
 
-  /** R41: `now` while the sweep is pending, else null. Synchronous; writes nothing; never throws. */
+  /** R41: `now` while the sweep is pending, else null. Synchronous; writes nothing; never throws.
+   *  @param {number} now ms since the epoch
+   *  @returns {number | null} */
   biasDebtDue(now) {
     try { return this.#pending() ? now : null; } catch { return null; }
   }
 
-  /** R41: `now` plus the sweep delay while the sweep is pending, else null. Synchronous; writes nothing; never throws. */
+  /** R41: `now` plus the sweep delay while the sweep is pending, else null. Synchronous; writes nothing; never throws.
+   *  @param {number} now ms since the epoch
+   *  @returns {number | null}
+   *  @bound the delay: 1,000 ms, or the binding `BIAS_DEBT_DELAY_MS` when it reads as a number of 0 or more */
   biasDebtWake(now) {
     try { return this.#pending() ? Number(now) + this.#delayMs() : null; } catch { return null; }
   }
@@ -846,7 +1142,11 @@ class Bias {
    *  `rank` (N224) is the scheduler's (its R10, `rank(items, now)` answering the items reordered): the batch is read,
    *  each work product offered as `{kind: "bundle", id: its context id, waitingSince: when it was registered}`, and
    *  compared in the rank's order. Without it, or when it fails, the order is the cursor's. The cursor, the batch
-   *  size and what each comparison raises or settles do not depend on the order. */
+   *  size and what each comparison raises or settles do not depend on the order.
+   *  @param {number} nowMs ms since the epoch
+   *  @param {Function | null} [rank] `(items, now)`, answering the items reordered
+   *  @returns {Promise<SweepResult>}
+   *  @bound batch: 50, or the binding `BIAS_DEBT_BATCH` when it reads as a whole number of 1 or more, at most 500 */
   async biasDebtSweep(nowMs, rank = null) {
     const at = stampInstant("second", Number(nowMs));
     const cap = this.#batch();
@@ -971,8 +1271,11 @@ class Bias {
 
   /** R35 — op=biasdebtresolve: A MEMBER'S RESOLVE, WITH A REQUIRED STATED REASON (BOB #32's third act). The four
    *  conditions about the ACT are asked before the record is read, so a caller who may not see the work learns
-   *  nothing from the order of the answers; a debt this viewer may not see answers exactly as one never raised. */
+   *  nothing from the order of the answers; a debt this viewer may not see answers exactly as one never raised.
+   *  @param {DebtResolveArgs} [args]
+   *  @returns {({ok: true, run: string, settled: Settlement} & Object<string, *>) | BiasRefusal} C-26.13 to C-26.19, in that order */
   biasDebtResolve({ run = null, reason = null, actor = null, viewer = null, at = null } = {}) {
+    /** @type {(code: string, detail: string, extra?: Object<string, *>) => BiasRefusal} */
     const refusal = (code, detail, extra = {}) => {
       const row = BIAS_CHECKS[code];
       return { ok: false, reason: code, code, check: row.check, translation: row.translation, detail, ...extra };
@@ -1020,7 +1323,9 @@ class Bias {
   }
 
   /** R36 — op=biasdebt: one work product's debt and every settlement on it, in order, at most 50, the bound
-   *  published. A debt the viewer may not see answers byte-identically to one never raised. */
+   *  published. A debt the viewer may not see answers byte-identically to one never raised.
+   *  @param {{run?: *, viewer?: *, limit?: *}} [args]
+   *  @returns {DebtView} */
   biasDebt({ run = null, viewer = null, limit = null } = {}) {
     const id = String(run ?? "").trim();
     const absent = { ok: true, run: id || null, found: false,
@@ -1049,7 +1354,9 @@ class Bias {
 
   /** R42: the bias statements and the adoptions held. `hid` (`{sql, args}`, the bundles the caller may not see, as
    *  run-productions' `counts`) leaves out a row naming such a bundle: a statement by its bundle, an adoption by its
-   *  bundle or its project. Synchronous; writes nothing; never throws (a count that cannot be read answers null). */
+   *  bundle or its project. Synchronous; writes nothing; never throws (a count that cannot be read answers null).
+   *  @param {*} [hid] `{sql, args}`; anything else leaves nothing out
+   *  @returns {{biasStatements: number | null, biasAdoptions: number | null}} */
   counts(hid = null) {
     const h = isObj(hid) && typeof hid.sql === "string" && Array.isArray(hid.args) ? hid : null;
     const c = (t, ...keys) => {
@@ -1066,7 +1373,9 @@ class Bias {
   /** R43: the debts not yet cleared whose context `gate` admits (`gate` membership's predicate, `viewerPredicate`'s
    *  answer over the alias `b`; a machine scope admits every debt, the founder's what R43 admits it to (D54); a
    *  malformed gate admits none), newest raised first, ties by run, at most `limit` (1–1,000, default 200), `truncated` measured by reading one more.
-   *  Writes nothing; never throws (a read that fails answers none, and says so). */
+   *  Writes nothing; never throws (a read that fails answers none, and says so).
+   *  @param {{gate?: *, limit?: *}} [args] `gate` is `{sql, args}` (with `scope`), as `viewerPredicate` answers
+   *  @returns {DebtPage} each debt: `run`, `context_type`, `context_id`, `moved_basis`, `lens_then`, `lens_now`, `observed`, `raised`, `recipients` */
   uncleared({ gate = null, limit = null } = {}) {
     const n = Math.floor(Number(limit));
     const cap = Number.isFinite(n) && n >= 1 ? Math.min(n, BIAS_DEBT_UNCLEARED_MAX) : BIAS_DEBT_UNCLEARED_DEFAULT;
@@ -1097,7 +1406,9 @@ class Bias {
    *  last, and it is read only when its kind is the one the debt records (R37: `#settle` writes both from one act).
    *  `since` is an instant (ms since the epoch, or a readable instant string), compared as an instant: settlements are
    *  stamped to the whole second, so it is read as the first whole second at or after it. Writes nothing; never
-   *  throws (a read that fails answers none, and says so). */
+   *  throws (a read that fails answers none, and says so).
+   *  @param {{gate?: *, since?: *, limit?: *}} [args]
+   *  @returns {DebtPage} each debt: `run`, `context_type`, `context_id`, `settled_kind`, `settled_at`, `actor`, `reason` */
   settled({ gate = null, since = null, limit = null } = {}) {
     const n = Math.floor(Number(limit));
     const cap = Number.isFinite(n) && n >= 1 ? Math.min(n, BIAS_DEBT_SETTLED_MAX) : BIAS_DEBT_SETTLED_DEFAULT;
@@ -1139,7 +1450,9 @@ class Bias {
 
   /** R38 — told of a work product's close. When it re-made another (`rerunOf`), the debt of the one re-made is
    *  discharged only when the lens the new one ran under equals the lens now in force; two absences are not
-   *  agreement. Answers null when there is no link to follow, else the outcome, which the caller carries. */
+   *  agreement. Answers null when there is no link to follow, else the outcome, which the caller carries.
+   *  @param {{kind?: *, key?: *, at?: *}} [args] the registered kind (absent is the first), the new work product's key, and when
+   *  @returns {Promise<RerunOutcome | null>} */
   async biasDebtRerun({ kind = null, key = null, at = null } = {}) {
     const src = this.#sources.find((s) => s.kind === kind) || (kind == null ? this.#sources[0] : null);
     if (!src || key == null) return null;
@@ -1183,6 +1496,7 @@ class Bias {
    form gave them, so purge clears exactly what it cleared before. */
 const declared = (name, cls) => Object.freeze({ name, purge: "clear", expunge: "none", export: "admin-only",
                                                 derive: "stored", version_chain: false, ...cls });
+/** @type {ReadonlyArray<Object<string, *>>} the five tables, as record-core's `declareTable` takes them (R30, R47) */
 export const BIAS_TABLE_DECLARATIONS = Object.freeze([
   declared("bias_statements", { keys: ["bundle_id"], sight: "bundle" }),
   declared("bias_adoptions", { keys: ["bundle_id", "scope_id"], sight: "bundle" }),
@@ -1196,7 +1510,10 @@ const OF = new WeakMap();
 /** K61: the one bias instance for this Durable Object's storage (`ctx`, or the storage itself). On first reaching
  *  it, its tables are declared to record-core (R30, R47), its figures registered with record-core's counts (R46,
  *  record-core R63), its step and post-commit notice registered with promotion (R8–R10, R23), and its checks with
- *  record-core's audit (R1–R7, record-core R59). A record with no `registerCounts` (a test's stand-in) is not asked. */
+ *  record-core's audit (R1–R7, record-core R59). A record with no `registerCounts` (a test's stand-in) is not asked.
+ *  @param {*} ctx the Durable Object's context, or its storage (`{sql}`)
+ *  @param {BiasDeps} [deps] read on the first call for that storage only
+ *  @returns {BiasHandle} the same instance for every caller over one storage */
 export function biasOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let b = OF.get(storage);
@@ -1223,6 +1540,10 @@ export function biasOf(ctx, deps = {}) {
    words, not a stamp: read from the body, else the query. The policy arrives in the BODY: a policy in a query
    string would be cut by the first proxy with an opinion about URL length, and a cut policy silently produces a
    smaller residue. `actor` rides in the body, stamped there by the control plane. */
+/** @param {BiasHandle} b the instance @param {URL} url the request's address @param {*} body the parsed body
+ *  @returns {{biasmanifest: () => Manifest, biasadopt: () => Promise<Adoption | BiasRefusal | OtherRefusal>,
+ *    biasinhale: () => InhaleProposal | BiasRefusal,
+ *    biasdebtresolve: () => ({ok: true, run: string, settled: Settlement} & Object<string, *>) | BiasRefusal, biasdebt: () => DebtView}} */
 export function biasOps(b, url, body) {
   const q = (k) => url.searchParams.get(k);
   return {
