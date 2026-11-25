@@ -26,23 +26,112 @@ import { LINE_KINDS, STRUCTURE_KINDS, PEOPLE_KINDS, PROCEEDING_KINDS, CAPACITIES
          CONNECTION_KINDS, connectionKind, lineKindOf, PARTY_ROLES, OCDS_PARTY_ROLES } from "./vocab.mjs";
 import { word, localize } from "../setup-words/index.mjs";
 import { reason, asReason, reasonText } from "./reasons.mjs";
+/** @import { LineReason } from './reasons.mjs' */
+
+/**
+ * One side of a line's validity (R3): a date-time value at the validity's precision, an event bound `{event, edge}`
+ * (`edge` start or end of the event's `when`), or null, "not stated", never "always" or "current". Read back, an event
+ * bound carries `at`, the edge as the bound cache holds it, when the cache holds one and is not stale.
+ * @typedef {null | string | {event: string, edge: string, at?: any}} LineBound
+ */
+/**
+ * A line's validity (R3): its two bounds, the precision (day, minute, second or edtf) and the zone they are read in.
+ * @typedef {Object} LineValidity
+ * @property {LineBound} from
+ * @property {LineBound} to
+ * @property {string} precision
+ * @property {string} zone
+ */
+/**
+ * A line as every read answers it (R9): every field, the basis with its citation, both grade axes apart, the bounds as
+ * given and as cached, its withdrawal, and on an open-ended `holds` line its current-through statements (R21).
+ * @typedef {Object} LineView
+ * @property {string} line_id `LIN-<year>-<tail>`
+ * @property {string} kind
+ * @property {string} from the entity at the line's `from` end
+ * @property {string} to the entity at its `to` end
+ * @property {string|null} role
+ * @property {string|null} capacity `holds` only
+ * @property {string|null} title `holds` only, exactly as the basis words it; null is "not stated"
+ * @property {{from?: LineBound, to?: LineBound, precision?: string, zone?: string, undetermined?: boolean,
+ *   why?: LineReason}} valid the validity it is judged by; in its place `undetermined` with why,
+ *   `lines.why.cache_stale`, when the bound cache differs from its rebuild (R7)
+ * @property {{given: LineValidity, cached: {from: string|null, to: string|null, from_precision: string|null,
+ *   to_precision: string|null, zone: string|null}|null, label?: string}} bounds `label` R5's, a register row's only
+ * @property {LineBasisView} basis
+ * @property {string} citation
+ * @property {string} [recorded] R5: "as recorded by <system> on <instant>", a register row's only
+ * @property {string} [recorded_at]
+ * @property {string} asserted_by
+ * @property {string} assertion the basis's grade, A to D
+ * @property {{from: string, to: string}} ends each end's resolution grade, A to D, apart from the assertion
+ * @property {string} at the instant it was recorded
+ * @property {{by: string, at: string, reason: string}|null} withdrawn
+ * @property {(LineCurrentThrough & {superseded: LineCurrentThrough[]})|null} [current_through] an open-ended `holds`
+ *   line only: the latest statement the viewer may see, with the earlier ones it superseded, or null for none (R21)
+ */
+/**
+ * A basis as a read answers it: its `form`, passage, rule or testimony, with the basis's own fields as recorded
+ * (`captureSha` and `extent`; `rule`, `source`, `ids`, `system`, `recorded_at`, `row`; `statement` and `project`).
+ * @typedef {{form: string} & Record<string, any>} LineBasisView
+ */
+/**
+ * R21: one current-through statement as a read answers it.
+ * @typedef {Object} LineCurrentThrough
+ * @property {string} day YYYY-MM-DD
+ * @property {LineBasisView} basis
+ * @property {string} citation
+ * @property {string} by
+ * @property {string} at
+ */
+/**
+ * What an act or a read of this module answers in place of its answer when it refuses: `ok` false, the code as `reason`
+ * and as `code`, and plain words in `detail`. These fields are absent from an answer. A refusal made by `entities`
+ * (`NO_ENTITY`, `NO_SUCH_ENTITY`, `NOT_A_PROCEEDING`) is in that module's shape.
+ * @typedef {Object} LinesRefusal
+ * @property {boolean} ok
+ * @property {string} [reason]
+ * @property {string} [code]
+ * @property {string} [detail]
+ * @property {string[]} [kinds] `UNKNOWN_LINE_KIND`: the closed list
+ */
+/**
+ * R14: `neighbours`' answer in `connection-grammar`'s shape: `items` the connections, each `{id, from, to, kind, owner,
+ * valid, evidence, grade: {assertion, ends}, derived, role?, current_through?, undetermined?: {why}}`; `next` the page
+ * after, when there is one; `hub` in place of items when the node's set passes the hub bound; `refused` and `why` when
+ * the read names no viewer, or `ownerNeighbours` cannot tell which instance answers.
+ * @typedef {Object} NeighboursAnswer
+ * @property {Record<string, any>[]} [items]
+ * @property {{after: string, size: number}} [next]
+ * @property {{set_size: number, why: string, why_key: LineReason}} [hub]
+ * @property {string} [refused] `VIEWER_MISSING` or `OWNER_HOST_AMBIGUOUS`
+ * @property {string} [why]
+ */
 
 export { reasonText, LINE_KINDS, STRUCTURE_KINDS, PEOPLE_KINDS, PROCEEDING_KINDS, CAPACITIES, ROLES, PARTY_ROLES, OCDS_PARTY_ROLES,
          CONNECTION_KINDS, LINES_SCHEMA, LINES_TABLES };
 
 /* R9: `linesOf`'s bound. */
+/** @type {number} R9: the lines `linesOf` answers when no limit is given */
 export const LINES_LIMIT_DEFAULT = 100;
+/** @type {number} R9: the most lines one `linesOf` answers */
 export const LINES_LIMIT_MAX = 500;
 /* R10, R13: a structure or party read is bounded at the connection fan-out, `truncated` measured by reading one past. */
+/** @type {number} R10, R13: the most lines a structure, holder or party read judges, `connection-grammar`'s fan-out */
 export const STRUCTURE_LIMIT = BOUNDS.fanout;
 /* R8: a withdrawal's reason, at most. */
+/** @type {number} R8: a withdrawal's reason is kept to this many characters */
 export const REASON_MAX = 2000;
 /* R1: a testimony's statement, at most. */
+/** @type {number} R1: a testimony's statement is kept to this many characters */
 export const STATEMENT_MAX = 4000;
 /* R4: a profile entry backs a line with no capture behind it: graded one rank below a fetched capture (reading J1 (4)). */
+/** @type {string} R4: the assertion grade of a line backed by a profile entry */
 export const PROFILE_ASSERTION_GRADE = "C";
 /* Testimony, and an end a member linked that the cited capture does not resolve, are graded D. */
+/** @type {string} the grade of testimony, and of an end the cited capture does not resolve */
 export const TESTIMONY_GRADE = "D";
+/** @type {string} the viewer this module reads its providers as: the machine, which sees every row */
 export const MACHINE_VIEWER = "class:admin";
 const GRADES = ["A", "B", "C", "D"];
 const PRECISIONS = ["day", "minute", "second", "edtf"];
@@ -63,11 +152,15 @@ const parse = (s) => { try { return JSON.parse(s); } catch { return null; } };
 
 /* ---- the vocabularies (R15) ---- */
 
-/** R15: the closed kind list, frozen. */
+/** R15: the closed kind list, frozen.
+ *  @returns {readonly string[]} */
 export const kinds = () => LINE_KINDS;
-/** R15: the closed capacity list (`holds` only), frozen. */
+/** R15: the closed capacity list (`holds` only), frozen.
+ *  @returns {readonly string[]} */
 export const capacities = () => CAPACITIES;
-/** R15: the closed role list of a kind, frozen; an empty list for a kind that takes none, null for no kind. */
+/** R15: the closed role list of a kind, frozen; an empty list for a kind that takes none, null for no kind.
+ *  @param {any} kind
+ *  @returns {readonly string[]|null} */
 export const roles = (kind) => (LINE_KINDS.includes(kind) ? ROLES[kind] ?? Object.freeze([]) : null);
 
 const instances = new WeakMap();
@@ -76,7 +169,9 @@ const live = new Set();
 const storageOf = (host) => (host && host.storage ? host.storage : host);
 
 /** R14, K1563 (1): the `neighbours` the owner registers at load. The registry passes `host` through unchanged: with a
- *  host, that host's instance answers; without one, the isolate's one instance; otherwise `OWNER_HOST_AMBIGUOUS`. */
+ *  host, that host's instance answers; without one, the isolate's one instance; otherwise `OWNER_HOST_AMBIGUOUS`.
+ *  @param {any} args `neighbours`' arguments, with `host` beside them
+ *  @returns {NeighboursAnswer} */
 export function ownerNeighbours(args) {
   const a = isObj(args) ? args : {};
   const { host, ...rest } = a;
@@ -94,7 +189,10 @@ defaultRegistry.registerOwner({ owner: OWNER, kinds: [...CONNECTION_KINDS], neig
 /** K61, K1563 (1): one instance per storage, `linesOf(host)`. `opts` is read on the first call only: `record`,
  *  `provenance`, `content`, `entities` and `events` (each its module's instance for `ctx` when not given: the services
  *  lines reads its passages, ends and event bounds through), `registry` (a connection registry other than the default,
- *  for a test) and `now` (a clock). */
+ *  for a test) and `now` (a clock).
+ *  @param {any} ctx the Durable Object's `ctx`, or its storage
+ *  @param {{record?: any, provenance?: any, content?: any, entities?: any, events?: any, registry?: any, now?: any}} [opts]
+ *  @returns {Lines} */
 export function linesOf(ctx, opts = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let l = instances.get(storage);
@@ -110,10 +208,14 @@ export function linesOf(ctx, opts = {}) {
   return l;
 }
 
+/** The lines service over one storage (R1 to R21). Every act and read answers; none throws on its input. */
 export class Lines {
   #sql; #record; #provenance; #content; #entities; #events; #registry; #now;
   #migrated = false;
 
+  /** @param {any} storage the store, with `sql.exec`
+   *  @param {{record?: any, provenance?: any, content?: any, entities?: any, events?: any, registry?: any, now?: any}} [deps]
+   *    the services lines reads through (`record` required), a connection registry other than the default, and a clock */
   constructor(storage, { record, provenance = null, content = null, entities = null, events = null,
                          registry = defaultRegistry, now = null } = {}) {
     this.#sql = storage.sql;
@@ -135,7 +237,9 @@ export class Lines {
 
   /** The tables, their declaration (R19), the store gate (R18), the one `onWhenChanged` registration (R6) and the one
    *  connection-owner registration into a registry other than the default (R14), at every boot, idempotent. A refusal of any registration is a defect of the
-   *  wiring and throws. */
+   *  wiring and throws.
+   *  @returns {{ok: boolean, already?: boolean}}
+   *  @throws {Error} when a registration is refused */
   migrate() {
     const bare = LINES_SCHEMA.split("\n").map((l) => l.replace(/--.*$/, "")).join("\n");
     for (const st of bare.split(";")) { const t = st.trim(); if (t) this.#sql.exec(t); }
@@ -158,7 +262,8 @@ export class Lines {
   }
 
   /** R19 (plan T33, Rules (6)): every table declared explicitly. The registry of lines is group-wide and cleared by
-   *  the whole-store purge only; a line follows its source's sight; `line_bound_cache` is derived and rebuildable. */
+   *  the whole-store purge only; a line follows its source's sight; `line_bound_cache` is derived and rebuildable.
+   *  @returns {any} what `record-core`'s `declareTable` answers */
   declareTables() {
     const base = { purge: "clear", expunge: "none", version_chain: false, keys: [] };
     return this.#record.declareTable(OWNER, [
@@ -171,7 +276,9 @@ export class Lines {
   }
 
   /** R18: the one-home checks every write to `lines` passes inside its transaction: no amount, no total, no
-   *  hypothesis id as an end or in the basis. Answers a refusal `{code}` or null. */
+   *  hypothesis id as an end or in the basis. Answers a refusal `{code}` or null.
+   *  @param {any} row
+   *  @returns {{code: string, detail: string}|null} `LINE_ROW_MALFORMED`, `LINE_HOLDS_NO_AMOUNT` or `LINE_NO_HYPOTHESIS` */
   static gateCheck(row) {
     if (!isObj(row)) return { code: "LINE_ROW_MALFORMED", detail: localize("lines.index.a_line_row_is_an", "a line row is an object") };
     const money = Object.keys(row).find((k) => /amount|currency|total|sum/i.test(k));
@@ -347,6 +454,7 @@ export class Lines {
   /* R10's rule: `in`, `out` or `{undetermined: why}` at `at`. A stale cache is undetermined, "cache stale" (R7). A day
      string is read as that day in the line's own zone. R21: an open-ended `holds` line is `in` at a date no later than
      the current-through day the viewer may see, and stays `undetermined` after it (never `out`). */
+  /** @returns {{state: "in", current_through?: string} | {state: "out"} | {state: "undetermined", why: LineReason}} */
   #judge(line, at, viewer) {
     const cache = this.#cacheOf(line);
     if (cache.stale) return { state: "undetermined", why: reason("lines.why.cache_stale") };
@@ -379,7 +487,10 @@ export class Lines {
   }
 
   /** R21: a member's, or a source's own, "current as of" statement on an open-ended `holds` line, with its citation
-   *  and day. The machine records one only from a system rule (R4). A later one supersedes; the earlier is kept. */
+   *  and day. The machine records one only from a system rule (R4). A later one supersedes; the earlier is kept.
+   *  @param {{lineId?: any, day?: any, basis?: any, by?: any}} [args] `day` a calendar day, YYYY-MM-DD; `basis` as
+   *    `recordLine`'s; `by` the act's stamped author
+   *  @returns {LinesRefusal & {line_id?: string, day?: string, at?: string}} */
   recordCurrentThrough({ lineId, day, basis, by } = {}) {
     const line = filled(lineId) ? this.#one(`SELECT * FROM lines WHERE line_id = ?`, lineId) : null;
     if (!line) return refuse("NO_SUCH_LINE", localize("lines.index.no_line_with_that_id", "no line with that id is held"), { line_id: lineId ?? null });
@@ -480,6 +591,19 @@ export class Lines {
 
   /* ---- recordLine (R1–R5) ---- */
 
+  /** R1 to R5: records one line, in one transaction with its bound cache, or refuses (R1's order).
+   *  @param {{kind?: any, from?: any, to?: any, role?: any, capacity?: any, title?: any, valid?: any, basis?: any, by?: any}} [args]
+   *    `kind` one of `LINE_KINDS`; `from` and `to` registered entities; `role`, `capacity` and `title` as the kind
+   *    takes them; `valid` `{from, to, precision, zone}`, each bound a value, `{value}` or `{event, edge}`, precision
+   *    absent is day, zone absent is the active profiles'; `basis` a passage `{captureSha, extent}`, a system rule
+   *    `{rule, source, ids?, system?, recorded_at?, row?}` or testimony `{statement, project?}`; `by` the stamped author
+   *  @returns {LinesRefusal & {line_id?: string, kind?: string, from?: string, to?: string, assertion?: string,
+   *    ends?: {from: string, to: string}, at?: string, check?: string, translation?: string, entity_id?: string,
+   *    end?: string, from_kind?: string|null, to_kind?: string|null, roles?: string[], capacities?: string[],
+   *    side?: string, event?: string|null, extent_refusal?: string|null}} the line's id and grades; refused, what the
+   *    refusal names: on `NO_BASIS`, `check` and `translation`, record-grammar's shared row C-33.40 (R22); on
+   *    `NO_SUCH_ENTITY`, the `entity_id` and the `end`
+   *  @bound basis.statement: trimmed and kept to 4000 characters */
   recordLine({ kind, from, to, role, capacity, title, valid, basis, by } = {}) {
     const k = typeof kind === "string" ? kind.trim() : "";
     if (!LINE_KINDS.includes(k))
@@ -567,6 +691,10 @@ export class Lines {
 
   /* ---- withdrawLine, readLine, linesOf (R8, R9) ---- */
 
+  /** R8: withdraws a line, which stays, shown withdrawn; a repeat answers `already: true` and writes nothing.
+   *  @param {{lineId?: any, reason?: any, by?: any}} [args]
+   *  @returns {LinesRefusal & {already?: boolean, line_id?: string, withdrawn?: {by: string, at: string, reason: string}}}
+   *  @bound reason: trimmed and kept to 2000 characters */
   withdrawLine({ lineId, reason, by } = {}) {
     if (!filled(reason)) return refuse("NO_REASON", localize("lines.index.a_withdrawal_says_why_in", "a withdrawal says why, in the member's own words"));
     const line = filled(lineId) ? this.#one(`SELECT line_id, withdrawn FROM lines WHERE line_id = ?`, lineId) : null;
@@ -617,6 +745,9 @@ export class Lines {
     return word("events.text.member_testimony");
   }
 
+  /** R9: one line, if the viewer may see it.
+   *  @param {{lineId?: any, viewer?: any}} [args]
+   *  @returns {LinesRefusal & {found?: boolean, line_id?: string, line?: LineView}} */
   readLine({ lineId, viewer } = {}) {
     if (!filled(lineId)) return refuse("NO_LINE", localize("lines.index.a_line_is_read_by", "a line is read by its id (LIN-...)"));
     const line = this.#visible(lineId, viewer);
@@ -624,6 +755,12 @@ export class Lines {
     return { ok: true, found: true, line: this.#view(line, viewer) };
   }
 
+  /** R9: the lines at the given end of an entity that the viewer may see, oldest first, withdrawn ones among them.
+   *  @param {{entity?: any, kinds?: any, direction?: any, limit?: any, viewer?: any}} [args] `kinds` a list or a
+   *    comma-separated text of line kinds, absent every kind; `direction` from, to or both (absent)
+   *  @returns {LinesRefusal & {entity?: string, direction?: string, count?: number, limit?: number, truncated?: boolean,
+   *    lines?: LineView[]}}
+   *  @bound limit: whole number 1 to 500, a larger one is 500; absent or anything else is 100 */
   linesOf({ entity, kinds: ks, direction = "both", limit, viewer } = {}) {
     if (!filled(entity)) return noEntity(localize("lines.index.lines_are_read_for_one", "lines are read for one registered entity, named by its id"));
     const kk = Lines.#kindList(ks, LINE_KINDS);
@@ -660,6 +797,12 @@ export class Lines {
 
   /* ---- structureAt (R10) ---- */
 
+  /** R10: the structure lines at either end of the entity, each judged at `at`: held, or undetermined with why.
+   *  @param {{entity?: any, at?: any, kinds?: any, viewer?: any}} [args] `at` a day, an instant or a date-time
+   *    `{value, precision, zone}`; `kinds` structure kinds, absent all
+   *  @returns {LinesRefusal & {entity?: string, at?: any, held?: LineView[], undetermined?: {line: LineView, why: LineReason}[],
+   *    truncated?: boolean}}
+   *  @bound at most 1000 live lines are judged; `truncated` says more were held */
   structureAt({ entity, at, kinds: ks, viewer } = {}) {
     if (!filled(entity)) return noEntity(localize("lines.index.the_structure_is_read_around", "the structure is read around one registered entity, named by its id"));
     const bad = Lines.#atRefusal(at);
@@ -678,6 +821,13 @@ export class Lines {
 
   /* ---- holderAt (R11, R12): the one home ---- */
 
+  /** R11, R12, R21: who holds an office at `at`, the one home of this read; never the most recent line by default.
+   *  @param {{office?: any, at?: any, viewer?: any}} [args]
+   *  @returns {LinesRefusal & {office?: string, at?: any, holder?: string|null, line?: LineView, capacity?: string|null,
+   *    basis?: LineBasisView, assertion?: string, ends?: {from: string, to: string}, undetermined?: boolean, why?: LineReason,
+   *    lines?: {line_id: string, state: string, why?: LineReason}[]}} `holder` a person entity, or null with
+   *    `undetermined` and why
+   *  @bound at most 1000 live holds lines are judged; more held answers undetermined */
   holderAt({ office, at, viewer } = {}) {
     if (!filled(office)) return noEntity(localize("lines.index.a_holder_is_asked_of", "a holder is asked of one office, named by its entity id"));
     if (!this.#entities.has(office)) return noSuchEntity(office);
@@ -716,6 +866,11 @@ export class Lines {
     return null;
   }
 
+  /** R13, R23: the parties to a proceeding with their roles, as of `at` when given.
+   *  @param {{proceeding?: any, at?: any, viewer?: any}} [args]
+   *  @returns {LinesRefusal & {proceeding?: string, at?: any, parties?: {party: string, role: string|null, line: LineView}[],
+   *    undetermined?: {party: string, role: string|null, line: LineView, why: LineReason}[], truncated?: boolean}}
+   *  @bound at most 1000 live party lines are read; `truncated` says more were held */
   partiesOf({ proceeding, at, viewer } = {}) {
     const bad = this.#proceeding(proceeding, localize("lines.index.the_parties_are_asked_of", "the parties are asked of one proceeding, named by its entity id"),
                               localize("lines.index.the_parties_are_asked_of_kind", "the parties are asked of an entity of kind proceeding"));
@@ -733,6 +888,11 @@ export class Lines {
     return { ok: true, proceeding, at, parties, undetermined, truncated };
   }
 
+  /** R13: a proceeding's appeal, consolidation, remand and arises-from lines in both directions, one hop.
+   *  @param {{proceeding?: any, viewer?: any}} [args]
+   *  @returns {LinesRefusal & {proceeding?: string, truncated?: boolean,
+   *    links?: {kind: string, direction: string, other: string, line: LineView}[]}} `direction` out or in
+   *  @bound at most 1000 live lines are read; `truncated` says more were held */
   proceedingLinks({ proceeding, viewer } = {}) {
     const bad = this.#proceeding(proceeding, localize("lines.index.a_proceedings_links_are_asked", "a proceeding's links are asked of one proceeding, named by its entity id"),
                               localize("lines.index.a_proceedings_links_are_asked_kind", "a proceeding's links are asked of an entity of kind proceeding"));
@@ -757,6 +917,13 @@ export class Lines {
              ...(r.role ? { role: r.role } : {}) };
   }
 
+  /** R14, R21, R24: the node's live lines valid at `at`, as connections in `connection-grammar`'s shape, both grade
+   *  axes kept, undetermined ones marked with a reason.
+   *  @param {{node?: any, kinds?: any, at?: any, page?: any, viewer?: any, scope?: any}} [args] `kinds` connection kinds,
+   *    absent all of this owner's; `page` `{after, size}`; `scope` changes nothing here
+   *  @returns {NeighboursAnswer}
+   *  @bound page.size: whole number 1 to 1000, a larger one is 1000; absent or anything else is 1000
+   *  @bound a node with more lines of the kinds asked than connection-grammar's hub bound is answered by its set size, no items */
   neighbours({ node, kinds: ks, at, page, viewer, scope } = {}) {
     void scope; /* no hunch kind is this owner's: scope changes nothing here (connection-grammar R8) */
     if (viewer === undefined || viewer === null || viewer === "")
@@ -809,8 +976,11 @@ export class Lines {
 
   /* ---- the vocabularies (R15) ---- */
 
+  /** R15 @returns {readonly string[]} */
   kinds() { return kinds(); }
+  /** R15 @returns {readonly string[]} */
   capacities() { return capacities(); }
+  /** R15 @param {any} kind @returns {readonly string[]|null} */
   roles(kind) { return roles(kind); }
 }
 
@@ -818,7 +988,12 @@ export class Lines {
 
 /** R16: this module's route arms, keyed by op name, each a function of no arguments answering what its service
  *  answers: a read's parameters from `url`'s query (the control plane's `viewer` stamp among them), an act's arguments
- *  from the body, whose `by` is the control plane's stamp. One append site per act. */
+ *  from the body, whose `by` is the control plane's stamp. One append site per act.
+ *  @param {Lines} lines
+ *  @param {URL} url the request's address, whose query the reads take
+ *  @param {any} [body] an act's arguments
+ *  @returns {{linerecord: () => any, linewithdraw: () => any, linecurrentthrough: () => any, line: () => any,
+ *    linesof: () => any, structureat: () => any, holderat: () => any, partiesof: () => any, proceedinglinks: () => any}} */
 export function linesOps(lines, url, body) {
   const q = (k) => url.searchParams.get(k);
   const list = (k) => (q(k) ? q(k).split(",").map((s) => s.trim()).filter(Boolean) : undefined);
@@ -838,6 +1013,8 @@ export function linesOps(lines, url, body) {
 
 /* R25 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/** @type {Readonly<Record<string, {classes: string[], mutating: boolean, weight: string, description: string,
+ *    fields: {accepts: string[], requires: string[]}}>>} */
 export const DECLARED_OPS = Object.freeze({
   recordline: { classes: ["admin","member","probe"], mutating: true, weight: "reversible", description: localize("lines.declared.recordline", "line-directed: keyed by a new LIN- id between two entities; writes lines' rows and moves no bundle"),
     fields: { accepts: ["kind","from","to","role","capacity","title","valid","basis"], requires: ["kind","from","to","basis"] } },
