@@ -13,6 +13,7 @@
   ],
   "public": [
     "bio-plane/src/control-plane/index.mjs",
+    "bio-plane/src/control-plane/routing.mjs",
     "bio-plane/test/m/control-plane/r8-kit.mjs",
     "bio-plane/test/m/control-plane/wrap-entry.mjs"
   ],
