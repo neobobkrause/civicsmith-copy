@@ -72,7 +72,7 @@ test("R5 a carried removal revokes, tells R25's listeners in the act (credential
   assert.deepEqual(w.creds.revoked, [], "a vote that does not carry tells nobody");
   /* the listener reads the member's status inside the act: it is already revoked when it is told */
   let seen = null;
-  w.m.onRevoked("capture-sources", ({ memberId }) => { seen = w.m.memberFacts(memberId).status; });
+  w.m.onRevoked("capture-sources", ({ memberId }) => { seen = w.m.memberFacts(memberId)?.status; });
   const r = w.m.adminRemove({ memberId: "third", by: "second", reason: "two" });
   assert.deepEqual([r.ok, r.removed, r.reasons], [true, true, ["one", "two"]]);
   /* R8 (T47-82, P8): both halves named, rotating the root of trust and reviewing hosting access */

@@ -8,19 +8,32 @@ import { word } from "../setup-words/index.mjs";
 
 /* The key's English with each named placeholder left in place, for a screen to fill (R50's `words`, a row's
    `translation` where the answer carries the value). */
+/**
+ * @param {string} key a key the word list holds
+ * @param {string[]} [names] the placeholders to leave in place
+ * @returns {string}
+ * @throws {Error} as `setup-words`' `word`: UNKNOWN_WORD for a key the list lacks, WORD_VAR_MISSING for a placeholder not named
+ */
 export const keyed = (key, names = []) => word(key, Object.fromEntries(names.map((n) => [n, `{${n}}`])));
 
 /* The rows whose key is not `refusal.<CODE>`, and the placeholders a row's English leaves for the screen. */
 const ROW_KEYS = Object.freeze({ HANDLE_CHECK_PAUSED: "handle.refused.paused" });
 const ROW_PLACEHOLDERS = Object.freeze({ CONSENSUS_REQUIRED: ["awaiting"], HANDLE_CHECK_PAUSED: ["minutes"] });
 
+/** @param {string} code a refusal's code @returns {string} its row's key: `refusal.<CODE>` unless `ROW_KEYS` names another */
 export const rowKey = (code) => ROW_KEYS[code] ?? `refusal.${code}`;
 
 /* A refusal row's `translation`: its key's words. */
+/**
+ * @param {string} code a refusal's code
+ * @returns {string}
+ * @throws {Error} UNKNOWN_WORD when the list lacks the row's key
+ */
 export const rowWord = (code) => keyed(rowKey(code), ROW_PLACEHOLDERS[code] ?? []);
 
 /* Every key this module reads, other than the rows' own (`rowKey`): R50's three, the sentence R18's remedy, the
    hosting and door notices, R43's statement and the audit's finding. */
+/** @type {readonly string[]} */
 export const SENTENCE_KEYS = Object.freeze([
   "handle.free", "handle.taken", "handle.characters", "handle.refused.paused",
   "membership.handle_check_stated", "membership.door_warning", "membership.also_do", "court.statement",

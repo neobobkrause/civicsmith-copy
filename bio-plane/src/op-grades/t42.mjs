@@ -9,7 +9,10 @@
  * begin `capture-directed:`, which R5 reserves for `affordances`' `CAPTURE_ACTS`. No consequence statement, vocabulary or
  * prompt is added. (`transcribe` is content R23's typing, graded `reasoned` in `./index.mjs`; K2613.) */
 
+/** @import { AbsenceTable, ReasonTable } from './t33.mjs' */
+
 /* ---- the stated absence ---- */
+/** @type {AbsenceTable} T42's ops */
 export const T42_RUNG_ABSENT = {
   /* on R3's rule, as captureupload (R30): it writes a reading that a later re-read or an attestation corrects forward,
      asks no reason, and no published act takes it back */
@@ -17,6 +20,7 @@ export const T42_RUNG_ABSENT = {
 };
 
 /* ---- its NON_ACTS reason (R5) ---- */
+/** @type {ReasonTable} T42's ops */
 export const T42_NON_ACTS = {
   pagetranscribe: "reading-directed: keyed by a capture; at a member's act, the AI reads the pages Civicsmith could not, "
     + "on the account that pays and within its limits; the text is labeled the AI's reading and undetermined; moves no "

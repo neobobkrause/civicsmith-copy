@@ -15,6 +15,7 @@
 import { CONTRACT, TAG, written, element, elements, linksIn, sourceAt,
   proceedingNumber, row, reading, assessRegister, detectAnswer } from "./common.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { CourtType } from "./common.mjs" */
 
 const KEY = "cpuc_proceeding";
 const LABEL = localize("court-doctypes.cpuc.label", "a CPUC proceeding card or documents report");
@@ -143,9 +144,12 @@ function parse(ctx) {
   });
 }
 
-export default {
+/** @type {CourtType} the content type, registered through docprofile's seam */
+const TYPE = {
   key: KEY, label: LABEL, version: 1,
   contract: CONTRACT.MEMBERSHIP,
   detect, parse,
   assess(before, after) { return assessRegister(before, after); },
 };
+
+export default TYPE;

@@ -71,6 +71,68 @@ import { identify } from "../site-profiles/index.mjs";
 import { doctypeFor } from "./doctypes/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { segmentsOver, classifiedWhy } from "./classify-view.mjs";
+/** @import { Segment, ClassifiedOver } from "./classify-view.mjs" */
+
+/**
+ * @typedef {Object} PdfPageSource IC-1's `pdf-page` arm: which page of a PDF a reference was read on
+ * @property {"pdf-page"} kind
+ * @property {string} ref the 1-based human form IC-1 requires ("p.7" for page index 6)
+ * @property {number} page the producer's own 0-based page index
+ * @property {null} rect Tier-1 text is a flat per-page string with no geometry, so there is no rectangle to state
+ */
+/**
+ * @typedef {Object} DocParaSource IC-1's `doc-para` arm: which paragraph of an office container a reference was read in
+ * @property {"doc-para"} kind
+ * @property {string} ref the producer's own `ref` whenever it gave one, else the documented form composed here
+ * @property {number} para the producer's own paragraph index, or the item's place where it named none
+ * @property {null} run no run is itemised in the I2 text shape
+ */
+/**
+ * @typedef {PdfPageSource | DocParaSource} Source where in the container a stretch of the flat text came from (R34).
+ *   `sheet-cell` and `slide-shape` have no per-part text in the I2 text shape, so a reading over an xlsx or a pptx
+ *   honestly produces no segments and every position answers null.
+ */
+/**
+ * @typedef {Object} SizeRefusal a producer's refusal of a text for its size, with the two numbers it stated (R18)
+ * @property {number} size the text's size in bytes
+ * @property {number} bound the limit in bytes
+ */
+/**
+ * @typedef {Object} Flat the one string the recognisers read, and what was known about it (R21–R24)
+ * @property {string} text the flat text; a bare string is itself
+ * @property {string | null} source which shape supplied the text — `string`, `document`, `pages` or `paragraphs` — and null for none
+ * @property {number} chars the decoded glyphs of `text`, counted as `glyphs` counts them
+ * @property {number} undetermined the producer's own stated count when it gave one, else summed from its markers
+ * @property {string[]} reasons each distinct cause a marker named, by its `reason` or its `why`
+ * @property {SizeRefusal | null} size_refusal the size refusal among the markers, where one said so
+ * @property {Segment[]} segments the position map, empty where none could be earned
+ * @property {string | null} position_why why the map is empty, when it is; null when it is not
+ * @bound undetermined: never invented from the text alone — no markers and no count is zero
+ * @bound position_why: a string exactly when `segments` is empty, so an absence always says whose it is
+ */
+/**
+ * @typedef {Object} Reading what the recognisers said about text from anywhere, or why nothing was read (R18–R20, R37–R41)
+ * @property {boolean} determined false where no honest reading may be produced: no text was supplied, or the decoded
+ *   text is mostly undetermined
+ * @property {boolean} partial true when any part is undetermined but not so much that it refused
+ * @property {number} chars the decoded glyphs
+ * @property {number} undetermined
+ * @property {string[]} reasons each distinct cause a producer's marker named
+ * @property {string} why what was read and over what, or which refusal this is: no text, undecodable text, or a size
+ *   refusal stated with the text's size and the limit
+ * @property {string | null} [text_from] which shape supplied the text
+ * @property {number} [position_parts] the map's size: a floor on what a reader could have said about position
+ * @property {string | null} [position_why] the producer-side reason when there is no position; null when there is
+ * @property {*} [stack] `identify`'s whole answer, advisory over extracted text and never a verdict about the document
+ * @property {*} [doctype] `doctypeFor`'s whole answer
+ * @property {*} [parsed] the content type's reader's own answer, or null
+ * @property {string | null} [parse_error] why there is no `parsed`; null where there is one
+ * @property {ClassifiedOver} [classified_over] answered only where the type was judged from a view
+ * @bound determined: false carries only `partial`, `chars`, `undetermined`, `reasons` and `why`; every field from
+ *   `text_from` on is answered only when it is true
+ * @bound why: ends with the sentence stating the view whenever `classified_over` is answered
+ * @bound classified_over: absent at or under `CLASSIFY_WHOLE_MAX_CHARS`; the stack and every `parse` read the whole text
+ */
 
 /* The classification view moved to `classify-view.mjs` so the registry's walk bounds every caller (R40); the names stay here. */
 export {
@@ -101,8 +163,12 @@ export {
    the extractor cannot support is the invented-structure this project forbids.
    The PAGE is in the bytes the producer emitted. The RECTANGLE is not. */
 
-/** IC-1's `pdf-page` arm for a 0-based page index. `ref` is the 1-based human
- *  form IC-1 requires ("p.7" for page index 6). */
+/**
+ * IC-1's `pdf-page` arm for a 0-based page index. `ref` is the 1-based human
+ * form IC-1 requires ("p.7" for page index 6).
+ * @param {number} page
+ * @returns {PdfPageSource}
+ */
 function pdfPageSource(page) {
   return { kind: "pdf-page", ref: `p.${page + 1}`, page, rect: null };
 }
@@ -110,7 +176,11 @@ function pdfPageSource(page) {
 /** IC-1's `doc-para` arm. The human form is the PRODUCER'S OWN `ref` whenever it
  *  gave one — IC-1's rule is that the human form is produced by the container
  *  that knows it, so re-deriving it here would be the drift that rule prevents.
- *  Only when the producer emitted none is the documented form composed. */
+ *  Only when the producer emitted none is the documented form composed.
+ * @param {number} para
+ * @param {*} [ref] the producer's own human form; anything that is not a non-empty string composes the documented one
+ * @returns {DocParaSource}
+ */
 function docParaSource(para, ref) {
   return { kind: "doc-para", ref: typeof ref === "string" && ref ? ref : `¶${para + 1}`,
            para, run: null };
@@ -121,7 +191,12 @@ function docParaSource(para, ref) {
  *  filter is what makes this worth doing rather than computing offsets by
  *  arithmetic: an empty page contributes NO separator, so an index computed
  *  from the page number rather than from the join would be silently wrong for
- *  every document with a blank page in it. */
+ *  every document with a blank page in it.
+ * @param {ArrayLike<*>} items
+ * @param {(item: *) => string} textOf
+ * @param {(item: *, i: number) => *} sourceOf
+ * @returns {{text: string, segments: Segment[]}}
+ */
 function joinItemised(items, textOf, sourceOf) {
   const segments = [];
   let text = "";
@@ -143,6 +218,12 @@ function joinItemised(items, textOf, sourceOf) {
    that builds no copy; a surrogate pair counts once. */
 const isSpace = (c) => c === 0x20 || (c >= 0x9 && c <= 0xd) || c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a)
   || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+/**
+ * The decoded characters of a text (R18): its glyphs.
+ * @param {string} text
+ * @returns {number}
+ * @bound result: white space, U+FFFD and NUL are not counted; a surrogate pair counts once
+ */
 export function glyphs(text) {
   const len = text.length;
   let n = 0;
@@ -160,6 +241,10 @@ export function glyphs(text) {
 /* The size refusals among a producer's markers (G141; PLANE #56 J53): a marker saying `why: "over_size_bound"` (ooxml's
    `sizeGuard`, as the marker itself or inside its `guard`) states the file's size and the limit, and it is a size refusal,
    never an undecodable region. */
+/**
+ * @param {*[]} markers the producer's own undetermined markers
+ * @returns {SizeRefusal | null}
+ */
 function sizeRefusal(markers) {
   for (const m of markers) {
     if (!m || typeof m !== "object" || m.why !== "over_size_bound") continue;
@@ -178,7 +263,13 @@ const mib = (b) => (b / MIB).toFixed(2);
  *  FW-17 adds `segments` (the map above) and `position_why` (why the map is
  *  empty, when it is). Both are ADDITIVE: every existing field is unchanged and
  *  a caller reading only `{text, source, chars, undetermined, reasons}` sees
- *  exactly what it saw before. */
+ *  exactly what it saw before.
+ * @param {*} supplied a bare string, or I2's text field as a producer emits it (`document`, `pages[]`,
+ *   `paragraphs[]`, `undetermined[]`, `counts`); anything else flattens to no text
+ * @returns {Flat}
+ * @bound result: never throws; `document` is preferred, and a map is laid over it only where the itemised
+ *   form's own join is that string byte for byte
+ */
 export function flattenText(supplied) {
   if (typeof supplied === "string")
     return { text: supplied, source: "string", chars: glyphs(supplied), undetermined: 0, reasons: [], size_refusal: null,
@@ -257,7 +348,11 @@ export function flattenText(supplied) {
  *  A READER MAY ONLY EMIT WHAT THIS GIVES IT, and that is the structural form of
  *  never-invent: the reader knows where in the TEXT it read something and only
  *  the producer knows what part of the CONTAINER that text was. Exported for the
- *  suite. */
+ *  suite.
+ * @param {*} segments the position map; anything that is not an array reads as an empty map
+ * @returns {(offset: *) => *} the total locator: the containing segment's own `source`, or null
+ * @bound result: TOTAL — a non-number, a negative number, an offset inside no segment and an empty map all answer null
+ */
 export function makeLocator(segments) {
   const segs = Array.isArray(segments) ? segments : [];
   return function locate(offset) {
@@ -290,7 +385,15 @@ export function makeLocator(segments) {
  *     when the recognisers ran — `parsed` is the doctype reader's own return
  *     (entities[] + document facts) or null with `parse_error` stating why,
  *     `stack`/`doctype` are identify()'s and doctypeFor()'s full results so the
- *     caller can record WHO read the text and how sure it was. */
+ *     caller can record WHO read the text and how sure it was.
+ * @param {*} supplied a bare string or I2's text field, as `flattenText` takes it
+ * @param {*} [ctx] whatever the caller knows: the locator, the headers, the content type, `at`, and `view` for the
+ *   doctype pass
+ * @returns {Reading}
+ * @bound result: never throws; a content type's `parse` throwing is caught and stated as `parse_error`
+ * @bound result: a profile verdict gates watching and never reading (R41) — the same text is read, classified and
+ *   parsed whatever stack was recognised
+ */
 export function readText(supplied, ctx = {}) {
   const flat = flattenText(supplied);
   const named = flat.reasons.length ? `: ${flat.reasons.join(", ")}` : "";

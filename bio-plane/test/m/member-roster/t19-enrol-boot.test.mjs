@@ -33,7 +33,7 @@ test("R32 R13 enroll sets the password through the registered setter, inside its
     "membership holds no credential table");
   assert.deepEqual(w.rows(`SELECT * FROM members WHERE member_id='ann'`).map((r) => Object.values(r).includes("ann-passphrase-x")),
     [false], "and no password in its own rows");
-  assert.equal(w.m.memberFacts("ann").status, "active");
+  assert.equal(w.m.memberFacts("ann")?.status, "active");
 });
 
 test("R32 a setter that throws or answers ok:false is ENROL_NOT_RECORDED, C-96.18: nothing written, the invitation still live", async () => {
@@ -71,11 +71,11 @@ test("R32 with no setter registered, enroll is ENROL_NOT_RECORDED before any wri
 test("R32 R13 every refusal enroll answers before the write calls no setter", async () => {
   const { w, invite, calls } = await invited();
   await w.enrol("bob");
-  for (const [args, reason] of [[{ invite: "f".repeat(32), handle: "ann", password: "long-enough-pw" }, "NO_SUCH_INVITATION"],
+  for (const [args, reason] of /** @type {[Object, string][]} each call and the refusal it must answer */ ([[{ invite: "f".repeat(32), handle: "ann", password: "long-enough-pw" }, "NO_SUCH_INVITATION"],
                                 [{ invite, handle: "", password: "long-enough-pw" }, "NO_HANDLE"],
                                 [{ invite, handle: "Ann!", password: "long-enough-pw" }, "BAD_HANDLE"],
                                 [{ invite, handle: "bob", password: "long-enough-pw" }, "HANDLE_TAKEN"],
-                                [{ invite, handle: "ann", password: "short" }, "PASSWORD_TOO_SHORT"]]) {
+                                [{ invite, handle: "ann", password: "short" }, "PASSWORD_TOO_SHORT"]])) {
     const before = calls.length;
     assert.equal((await w.m.enroll(args)).reason, reason);
     assert.equal(calls.length, before, `${reason}: no setter call`);

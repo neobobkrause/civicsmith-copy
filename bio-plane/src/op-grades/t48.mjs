@@ -19,10 +19,17 @@
  * (credentials) declares it `read`. R42's `MARKS` is in ./marks.mjs. */
 
 import { localize } from "../setup-words/index.mjs";
+/** @import { AbsenceTable, ReasonTable, RefusalTable, RungTable } from './t33.mjs' */
 
+/**
+ * builds one `NON_ACTS` reason from its particular words
+ * @param {string} s
+ * @returns {string}
+ */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
+/** @type {RungTable} T48's ops */
 export const T48_RUNGS = {
   /* R38. action-replies R10: a later record takes it back (`quotable: true` withdraws the declaration), and it asks no
      reason (its `words` are the reply's own, a quote's shape, not the member's account) */
@@ -45,6 +52,7 @@ export const T48_RUNGS = {
 };
 
 /* ---- the stated absences ---- */
+/** @type {AbsenceTable} T48's ops */
 export const T48_RUNG_ABSENT = {
   /* R39 (N1042; K3149), amending R2 (K4247): `groupdescriptiondraft` was here until store-door declared it a read, and a
      read carries no ground, so it has no absence: its NON_ACTS sentence is its owner's word (R51). `securitymap` was here
@@ -55,6 +63,7 @@ export const T48_RUNG_ABSENT = {
 };
 
 /* ---- the refusals of a machine by name (R5; `affordances` R20) ---- */
+/** @type {RefusalTable} T48's ops */
 export const T48_MACHINE_REFUSALS = {
   actionreplyquoting: "MACHINE_CANNOT_RECORD_QUOTING", // action-replies R10, as actionreplybearing
   /* `planask` has none (K3297): its subject is a plan, so it is a NON_ACTS row, as T45 left the plan acts; action-plans R51
@@ -62,6 +71,7 @@ export const T48_MACHINE_REFUSALS = {
 };
 
 /* ---- every op's NON_ACTS reason (R5; R32: a read "read: …" and a draft "draft: …") ---- */
+/** @type {ReasonTable} T48's ops */
 export const T48_NON_ACTS = {
   /* R38 */
   proceedingdates: R("the dates of one proceeding the author may see, in two lanes never interleaved: what the record "
