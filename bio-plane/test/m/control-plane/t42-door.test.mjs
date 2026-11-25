@@ -1,14 +1,14 @@
 /* control-plane R74 (T42; N832, K2611, K2635, K2656): `op=pagetranscribe`, admitted only for a member's session and
-   stamped from it, none of its stamps taken from the caller, answered by the gated hook `plane` composes, whose arm is
-   `extraction`'s exported `pageTranscribeOp`. Driven through `makeFetch(hooks)` with a hook that answers it as plane
-   does (`pageTranscribeOp` handed the ctx's own stamps, door.mjs's expressions), so the store's request shows what the
-   door handed on. Negative controls throughout (K874). */
+   stamped from it, none of its stamps taken from the caller, answered by the routing's gated hook (`gatedOp`, R139), whose
+   arm is `extraction`'s exported `pageTranscribeOp`. Driven through `makeFetch(hooks)` with this module's own routing
+   (`routing.mjs`), never a copy of it (K4990), so the store's request shows what the door handed on. Negative controls
+   throughout (K874). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { M, O, world, call, opCalls, aik, cred, hex64, member, refused, FORGED } from "./harness.mjs";
-import { pageTranscribeOp, EXTRACTION_OPS } from "../../../src/extraction/ops.mjs";
+import { EXTRACTION_OPS } from "../../../src/extraction/ops.mjs";
 import { reextractRow } from "../../../src/extraction/checks.mjs";
-import { MACHINE_AUTHOR_PREFIX, MACHINE_CLASS_PREFIX } from "../../../src/record-grammar/actors.mjs";
+import { gatedOp } from "../../../src/control-plane/routing.mjs";
 
 const OP = "pagetranscribe";
 const SHA = "c".repeat(64);
@@ -17,8 +17,8 @@ const FORGED_FIELDS = { viewer: FORGED, author: FORGED, by: FORGED, identity: FO
                         caps: "contribute,publish,administer" };
 /* (`store` is no stamp: it names the namespace the caller addresses, admission R4, and the store's `store` follows it.) */
 
-/* plane's gated hook for this op, as its R36 composes it: the ctx's stamps by door.mjs's expressions, handed to
-   `pageTranscribeOp`; every other op declines, so the forward runs. `seen` records each ctx. */
+/* The routing's gated hook for this op, the real one (R139); every other op declines, so the door's forward runs.
+   `seen` records each ctx the door hands the hook. */
 function hooks({ decline = false } = {}) {
   const seen = [];
   return {
@@ -27,20 +27,14 @@ function hooks({ decline = false } = {}) {
     async gatedOp(ctx) {
       seen.push(ctx);
       if (decline || ctx.op !== OP) return undefined;
-      const { url, env, cls, viaSession, sessMember, sessViewer, sessCaps, storeName } = ctx;
-      const viewer = viaSession ? sessViewer : `${MACHINE_CLASS_PREFIX}${cls}`;
-      const author = viaSession ? sessMember : `${MACHINE_AUTHOR_PREFIX}${cls}`;
-      return pageTranscribeOp(url, env, env.STORE.get(env.STORE.idFromName(storeName)), {
-        json: M.json, storeSilent: M.storeSilent, storeRefusal: M.storeRefusal, doAnswer: M.doAnswer,
-        storageAbsent: M.storageAbsent, requiredArgument: M.requiredArgument,
-        cls, session: viaSession, caps: sessCaps, viewer, author, storeName });
+      return gatedOp(ctx);
     },
   };
 }
 const withStorage = (w) => { w.env.CAPTURES = { get: async () => null }; return w; };
 const routeCalls = (env) => opCalls(env).filter((c) => c.route === OP);
 
-test("R74: op=pagetranscribe has the spec op-declarations R47 declares — a member's session only, mutating, `contribute`, stamped `by` and `viewer` — and `extraction` keeps it out of `EXTRACTION_OPS` (K2635), so the door reaches it only through plane's gated hook (negative control: `pdfstructure` is listed there)", () => {
+test("R74: op=pagetranscribe has the spec op-declarations R47 declares — a member's session only, mutating, `contribute`, stamped `by` and `viewer` — and `extraction` keeps it out of `EXTRACTION_OPS` (K2635), so the door reaches it only through the routing's gated hook (negative control: `pdfstructure` is listed there)", () => {
   const spec = O.OPS[OP];
   assert.ok(spec, "op-declarations R47's spec");
   assert.deepEqual([spec.classes, spec.machineClasses, spec.mutating], [["admin", "member"], [], true]);
@@ -51,7 +45,7 @@ test("R74: op=pagetranscribe has the spec op-declarations R47 declares — a mem
   assert.equal(EXTRACTION_OPS.includes("pdfstructure"), true);
 });
 
-test("R74, R17, R29: a member's session and the founder's reach plane's gated hook with the door's stamps — class, a session asked, its capabilities, viewer and author — and the store is asked `pagetranscribe` with those and with `sha256` and `project` from the address, every stamp the caller sent in the address or the body lost (negative control: the same request unforged gives the same store query)", async () => {
+test("R74, R17, R29: a member's session and the founder's reach the routing's gated hook with the door's stamps — class, a session asked, its capabilities, viewer and author — and the store is asked `pagetranscribe` with those and with `sha256` and `project` from the address, every stamp the caller sent in the address or the body lost (negative control: the same request unforged gives the same store query)", async () => {
   const w = withStorage(world());
   const cases = [[w.S.ann, "member:ann", "ann"], [w.S.founder, "admin", "admin"]];
   for (const [token, viewer, author] of cases) {
@@ -71,7 +65,9 @@ test("R74, R17, R29: a member's session and the founder's reach plane's gated ho
                         inner.params.session, inner.params.cls, inner.params.caps.split(",").sort(), inner.params.store],
                        ["bio", SHA, "PROJ-1", viewer, author, "1", ctx.cls, ["contribute", "create_projects", "publish"], "bio"]);
       assert.equal(JSON.stringify(inner).includes(FORGED), false, "no forged stamp reaches the store");
-      queries.push(inner.params);
+      assert.match(inner.params.trace, /^[0-9a-f-]{36}$/, "the door's own trace (R93), fresh per request");
+      const { trace, ...rest } = inner.params;
+      queries.push(rest);
     }
     assert.deepEqual(queries[1], queries[0], "forging changes nothing");
   }
@@ -126,7 +122,7 @@ test("R74: the door holds no arm's behaviour — the owner's refusals and answer
   }
 });
 
-test("R74, R29: should plane's hook decline, the forward asks the store's `pagetranscribe` with the door's class, session flag, capabilities, viewer, author and namespace, never the caller's (negative control: `sha256` and `project` from the address do cross)", async () => {
+test("R74, R29: should the gated hook decline, the forward asks the store's `pagetranscribe` with the door's class, session flag, capabilities, viewer, author and namespace, never the caller's (negative control: `sha256` and `project` from the address do cross)", async () => {
   const w = withStorage(world());
   for (const [token, cls, viewer, author] of [[w.S.ann, "member", "member:ann", "ann"], [w.S.founder, "admin", "admin", "admin"]]) {
     w.env.calls.length = 0;
