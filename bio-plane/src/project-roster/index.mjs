@@ -620,7 +620,7 @@ export class ProjectRoster {
     try { ids = this.core && typeof this.core.getSetting === "function" ? this.core.getSetting("jurisdiction_profiles") : null; }
     catch { ids = null; }
     const c = combine(Array.isArray(ids) ? ids : []);
-    const kinds = c && c.ok && Array.isArray(c.view.action_kinds) ? c.view.action_kinds : [];
+    const kinds = c && c.ok && c.view && Array.isArray(c.view.action_kinds) ? c.view.action_kinds : [];
     return new Set(kinds.map((k) => k && k.kind).filter((k) => typeof k === "string"));
   }
 
