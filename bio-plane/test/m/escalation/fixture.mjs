@@ -337,6 +337,7 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
     },
     /** A member's testimony line (lines' shortest valid act); `structure` worlds only. */
     say(kind, from, to, valid = { from: "2020-01-01", to: "2030-12-31" }) {
+      if (!lines) throw new Error("fixture say: lines are held only in a `structure` world");
       const r = lines.recordLine({ kind, from, to, valid, basis: { statement: "the charter says so" }, by: V("alice") });
       if (!r.ok) throw new Error(`fixture line refused: ${r.reason} ${r.detail}`);
       return r.line_id;
