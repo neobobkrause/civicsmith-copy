@@ -877,8 +877,8 @@ test("R22 pure: no store, no network, no clock; identical inputs give identical 
   }
   assert.deepEqual(touched, []);
   assert.deepEqual(second, first);
-  assert.equal(first[0].d.format, "docx"); assert.equal(first[0].images.images.length, 1);
-  assert.deepEqual(first[0].vba.autoRun, ["AutoOpen"]);
+  assert.equal(first[0].d.format, "docx"); assert.equal(first[0].images.images?.length, 1);
+  assert.deepEqual(first[0].vba?.autoRun, ["AutoOpen"]);
   assert.equal(first[0].list.count, 7);
   assert.ok(first[0].cuts.every((x) => x.done.ok));
   // a range source's read is the caller's: given the same bytes, the same answer
