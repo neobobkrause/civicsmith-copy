@@ -1001,12 +1001,12 @@ export class Connections {
     /* C-6.1's links_to arm: the entry is the SOURCE's on its face (`asserted_by: source`), carries the address the
        source wrote and a contemporaneity verdict, `undetermined` its resting state and stated rather than omitted. */
     const quoted = (v) => cut(String(v || "").replace(/["\\\n\r]/g, ""), 400);
-    let text = spliceReferences(md.text, add.map((e) => ({
+    const spliced = spliceReferences(md.text, add.map((e) => ({
       rel: "links_to", target: e.to, status: "confirmed", asserted_by: "source", address: quoted(e.address),
       verdict: LINK_VERDICTS.includes(e.verdict) ? e.verdict : "undetermined", note: quoted(e.address) })));
-    if (!text) return { ok: false, reason: "UNSPLICEABLE_REFERENCES",
-                        detail: localize("connections.index.references_block_shape", "the source document's references block is not in a shape this act can extend in place") };
-    text = setScalar(text, "last_updated", `"${when}"`);
+    if (!spliced) return { ok: false, reason: "UNSPLICEABLE_REFERENCES",
+                           detail: localize("connections.index.references_block_shape", "the source document's references block is not in a shape this act can extend in place") };
+    let text = setScalar(spliced, "last_updated", `"${when}"`);
     const by = typeof identity === "string" && identity.trim() ? identity.trim() : "system";
     const entry = localize("connections.index.session_when_projected_length_link", "### Session {when} | Projected {length} link{v1} | {by}\nTrigger: op=linkproject\nChanges: links_to edges added to {map}, each the source's own link, resolved to a held document; asserted by the source, never by the team.\n", { when: String(when), length: String(add.length), v1: String(add.length === 1 ? "" : "s"), by: String(by), map: String(add.map((e) => e.to).join(", ")) });
     const logAt = text.indexOf("## Session Log");
@@ -1355,11 +1355,6 @@ export function refsReplacedOf(c, kind) {
 
 /* R28: append whole reference entries to the frontmatter's `references` block, touching nothing else (the store's
    `#spliceReferences` discipline: no key, an inline `[]`, or a block; any other inline value is not ours). */
-/**
- * @param {string} text
- * @param {Object[]} additions
- * @returns {string | null} null when the frontmatter or its references block is not in a shape this can extend
- */
 function spliceReferences(text, additions) {
   const lines = text.split("\n");
   if (lines[0] !== "---") return null;
@@ -1383,12 +1378,6 @@ function spliceReferences(text, additions) {
 }
 
 /* A top-level scalar in the frontmatter, set or added before the closing fence. */
-/**
- * @param {string} text
- * @param {string} key
- * @param {string} value
- * @returns {string} the text unchanged when it has no frontmatter
- */
 function setScalar(text, key, value) {
   const lines = text.split("\n");
   const end = lines.indexOf("---", 1);
