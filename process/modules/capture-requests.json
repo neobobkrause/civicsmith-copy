@@ -16,7 +16,6 @@
     "record-core",
     "promotion",
     "membership",
-    "runtime-limits",
     "host-governor",
     "capture-sources",
     "capture",

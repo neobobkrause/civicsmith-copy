@@ -3,7 +3,7 @@
    (its R12; K1099); here a stand-in answers as that check does, from a table of sweeps the test writes, and records each ask. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, V } from "./fixture.mjs";
+import { world, V, textOf } from "./fixture.mjs";
 import { localize } from "../../../src/setup-words/index.mjs";
 import { CAPTURE_REQUEST_CHECKS, captureRequestAttribution, captureRequestsOps } from "../../../src/capture-requests/index.mjs";
 
@@ -72,10 +72,10 @@ test("R45 a request naming a ratified, unheld sweep whose scope holds its addres
   assert.deepEqual([r.state, r.code, r.detail], ["captured", null, captureRequestAttribution(r).statement]);
   const c = d.captured[0];
   assert.equal(c.promoted.ok, true, JSON.stringify(c.promoted));
-  const prov = JSON.parse(w.record.readFile(c.promoted.bundle_id, "data/provenance.json").text);
+  const prov = JSON.parse(textOf(w.record, c.promoted.bundle_id, "data/provenance.json"));
   assert.deepEqual(prov.documents[0].origin, { kind: "sweep", matched_sweep: "INQ-1#agendas", deeming_actor: DEEMING });
-  assert.match(w.record.readFile(c.promoted.bundle_id, "bundle.md").text, /filed under the sweep INQ-1#agendas/);
-  assert.match(w.record.readFile(c.promoted.bundle_id, "bundle.md").text, /^current_state: collected$/m);
+  assert.match(textOf(w.record, c.promoted.bundle_id, "bundle.md"), /filed under the sweep INQ-1#agendas/);
+  assert.match(textOf(w.record, c.promoted.bundle_id, "bundle.md"), /^current_state: collected$/m);
   /* every read answers the sweep the request named */
   assert.equal(w.cr.captureRequests({ viewer: V("ann") }).requests[0].sweep, "INQ-1#agendas");
   assert.equal(w.cr.requestById({ request: a.request, viewer: V("ann") }).sweep, "INQ-1#agendas");

@@ -110,6 +110,12 @@ export function filed(loc, opts, { bytes = `bytes of ${loc}`, existed = false, e
     attestation_attempts: [], ...extra } } };
 }
 
+/** The inline text of a live file of a bundle (record-core R13); a missing or blob-held file throws. */
+export function textOf(record, bundleId, path) {
+  const f = record.readFile(bundleId, path);
+  if (!f || !("text" in f)) throw new Error(`${path} of ${bundleId} is not held inline`);
+  return f.text;
+}
 export const refused = (status) => ({ status: 502, body: { ok: false, reason: "SOURCE_REFUSED", status } });
 /* A render capture refuses with, by code, each the real answer of `capture.acquire({locator, render: true})`: capture's published `acquireRefusal` for the three
    it gives (RENDER_DEFERRED, RENDER_NO_RENDERER, RENDER_HOST_COOLING_OFF), and for the others the same published arm (`captureArm`) driven to the refusal:

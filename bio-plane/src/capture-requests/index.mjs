@@ -637,7 +637,7 @@ export class CaptureRequests {
   /** op=capturerequestdrain, and the scheduler's `capture-request-drain` consumer, which passes its rank (R12, N224:
    *  scheduler R10, `rank(items, now)` answering the items reordered). */
   async drain({ limit = null, actor = "consumer", now = null, rank = null } = {}) {
-    const nowMs = Number.isFinite(now) ? now : this.#nowMs();
+    const nowMs = typeof now === "number" && Number.isFinite(now) ? now : this.#nowMs();
     const at = stampInstant("second", nowMs);
     if (!this.configured())
       return { configured: false, actor, at, drained: 0, captured: [], refused: [], held: [], expired: [], remaining: 0,
@@ -1230,7 +1230,7 @@ export class CaptureRequests {
    *  yet told to it (`captured`, `refused` and `expired` with `run_woken_at` null), each bounded by 25 and saying when
    *  it was cut. A run's wait is bounded by its requests' own expiry. */
   waits({ run, now = null } = {}) {
-    const iso = stampInstant("second", Number.isFinite(now) ? now : this.#nowMs());
+    const iso = stampInstant("second", typeof now === "number" && Number.isFinite(now) ? now : this.#nowMs());
     const n = CAPTURE_REQUEST_WAIT_BATCH;
     const out = this.#rows(
       `SELECT * FROM capture_requests WHERE run = ? AND state IN ('requested','draining') AND expires > ?
