@@ -3,7 +3,7 @@
    `data/dataset.json`, a file under `snapshots/`, a chain for each document) are read here off the filed bundle itself. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, V, infoMd, provDoc } from "./fixture.mjs";
+import { world, sha, V, infoMd, provDoc, inlineText, pathsOf } from "./fixture.mjs";
 import { releasableBundle } from "../../../src/provenance/index.mjs";
 import { canonicalJson, parseFrontmatter } from "../../../src/record-grammar/index.mjs";
 
@@ -86,7 +86,7 @@ test("R81: a testimony is filed through the helper, with the dataset, its hash, 
   const w = world({ now: "2026-09-27T03:04:05.678Z" });
   const t = w.prov.testify({ words: "I saw it.", observedAt: "2026-09-20T18:05Z", author: V("ruth") });
   assert.equal(t.ok, true, JSON.stringify(t));
-  const files = w.record.livePaths(t.bundle_id).map((path) => ({ path, text: w.record.readFile(t.bundle_id, path).text }));
+  const files = pathsOf(w.record.livePaths(t.bundle_id)).map((path) => ({ path, text: inlineText(w.record.readFile(t.bundle_id, path)) }));
   assert.deepEqual(missing(files), []);
   const ds = JSON.parse(files.find((f) => f.path === "data/dataset.json").text);
   assert.deepEqual(ds, { documents: [{ bytes: t.bytes, locator: ds.documents[0].locator, sha256: t.capture_sha }] });

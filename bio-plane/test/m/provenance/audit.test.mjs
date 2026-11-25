@@ -2,7 +2,7 @@
    undetermined stated, never rounded (R37). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, sha, provDoc, evidence } from "./fixture.mjs";
+import { world, sha, provDoc, evidence, inlineText } from "./fixture.mjs";
 import { partsHeld, PART_VERIFY_READ_MAX, registerAuditReport } from "../../../src/provenance/index.mjs";
 
 const MiB = 1024 * 1024;
@@ -42,7 +42,7 @@ test("R6: partsNamed reads the parts the holding bundle's register names, or say
   const head = w2.head("INFO-2026-0002-u");
   const revise = (text, k) => w2.promotion.promote({ bundleId: "INFO-2026-0002-u", base: w2.head("INFO-2026-0002-u").bundleSha,
     snapKey: k, author: "member:alice", meta: { object_type: "information" }, replay: true,
-    files: [{ path: "bundle.md", text: w2.record.readFile("INFO-2026-0002-u", "bundle.md").text }, { path: a.path, text: a.text },
+    files: [{ path: "bundle.md", text: inlineText(w2.record.readFile("INFO-2026-0002-u", "bundle.md")) }, { path: a.path, text: a.text },
             { path: "data/provenance.json", text }] });
   assert.ok(head);
   assert.equal(revise("{nope", "k1").ok, true);
@@ -99,8 +99,8 @@ test("R8: registerAudit classifies every row and probes each unresolved one in t
   const hv = w.head("INFO-2026-0002-h");
   const r = w.promotion.promote({ bundleId: "INFO-2026-0002-h", base: hv.bundleSha, snapKey: "h2", author: "member:alice",
     meta: { object_type: "information" }, replay: true,
-    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0002-h", "bundle.md").text },
-            { path: h.path, text: "new bytes" }, { path: "data/provenance.json", text: w.record.readFile("INFO-2026-0002-h", "data/provenance.json").text }] });
+    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0002-h", "bundle.md")) },
+            { path: h.path, text: "new bytes" }, { path: "data/provenance.json", text: inlineText(w.record.readFile("INFO-2026-0002-h", "data/provenance.json")) }] });
   assert.equal(r.ok, true, JSON.stringify(r));
   /* superseded: the register row names a path that now holds other bytes, and no history row has these */
   w.st.sql.exec(`INSERT INTO register (capture_sha,bundle_id,path,encoding,bytes,registered) VALUES (?,?,?,?,?,?)`,
@@ -179,9 +179,9 @@ test("R10: homeCensus lists displaced homes read-only, bounded, with first holde
   const hb = w.head("INFO-2026-0002-b");
   w.promotion.promote({ bundleId: "INFO-2026-0002-b", base: hb.bundleSha, snapKey: "b2", author: "member:alice",
     meta: { object_type: "information" }, replay: true,
-    files: [{ path: "bundle.md", text: w.record.readFile("INFO-2026-0002-b", "bundle.md").text }, { path: b.path, text: b.text },
+    files: [{ path: "bundle.md", text: inlineText(w.record.readFile("INFO-2026-0002-b", "bundle.md")) }, { path: b.path, text: b.text },
             { path: "snapshots/copy.txt", text: a.text },
-            { path: "data/provenance.json", text: w.record.readFile("INFO-2026-0002-b", "data/provenance.json").text }] });
+            { path: "data/provenance.json", text: inlineText(w.record.readFile("INFO-2026-0002-b", "data/provenance.json")) }] });
   /* A register row whose home is gone is counted, never listed. */
   w.st.sql.exec(`INSERT INTO register (capture_sha,bundle_id,path,encoding,bytes,registered) VALUES (?,?,?,?,?,?)`,
                 sha("gone"), "INFO-2026-0999-gone", "snapshots/g", "utf8", 4, "x");

@@ -6,7 +6,7 @@
    member after a decision, so the stale `undetermined` went unseen. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { world, provDoc, infoMd, sha, V } from "./fixture.mjs";
+import { world, provDoc, infoMd, sha, V, inlineText } from "./fixture.mjs";
 import { PROVENANCE_ACT_CHECKS } from "../../../src/provenance/index.mjs";
 import { provenanceOps } from "../../../src/provenance/ops.mjs";
 
@@ -42,7 +42,7 @@ test("R80, R66: with no decision the read states the register's acquisition-time
 
 test("R80, R66: after a decision the read states the standing state, issuer and dated basis, never the acquisition-time undetermined", () => {
   const { w, a } = held();
-  const stale = JSON.parse(w.record.readFile(B, "data/provenance.json").text).documents[0];
+  const stale = JSON.parse(inlineText(w.record.readFile(B, "data/provenance.json"))).documents[0];
   assert.equal(stale.authority_state, "undetermined", "the bundle's own entry stays as acquired");
   assert.equal(decide(w, a).ok, true);
   const doc = onlyDoc(read(w, { bundleId: B }));
