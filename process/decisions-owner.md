@@ -60,7 +60,8 @@ Rule now: no job whose only work is a notice from test-support's merge (pull req
 Shown to the owner: not yet.
 
 ## Notice-only follow-up checks
-Rule now: the hold is lifted; notice-only follow-up checks start again in module order at the slot number. ARCH carries it out.
+Rule now: notice-only follow-up checks are held until civicsmith has moved to the latest Process4 version. ARCH carries it out.
 - 25 Nov 2026: "Instruction: Hold every notice-only follow-up check"
 - 25 Nov 2026: "Instruction: lift the hold on notice-only checks" (given to ARCH; relayed by ARCH #18)
+- 25 Nov 2026: "Instruction: hold notice-only checks until civicsmith has moved to the latest Process4 version"
 Shown to the owner: not yet.
