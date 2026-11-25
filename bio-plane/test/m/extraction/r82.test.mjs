@@ -7,6 +7,8 @@ import { wp, wr, wtbl, box, docx, bucket as _b } from "./fixture.mjs";
 import { textUnitsFor, layerChainFor, readingProvenance } from "../../../src/reading-pipeline/index.mjs";
 import { glyphCount } from "../../../src/textchain.mjs";
 import { memberRefusal } from "../../../../ocr-worker/test/fixtures.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 /* the real OCR member declining a page whose pixels it cannot read, a final decline (its published fixture, K5044) */
 const PIXELS_UNREADABLE = await memberRefusal("PIXELS_UNREADABLE");
@@ -26,7 +28,7 @@ async function held({ env = {} } = {}) {
   const d = await hold(evidence, bytes);
   rows.set(d, row("INFO-1", bytes.length));
   const document = doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" });
-  w.core.readFile = (bundleId, path) => (bundleId === "INFO-1" && path === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (bundleId, path) => (bundleId === "INFO-1" && path === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, rows, evidence, bytes, d };
 }
 

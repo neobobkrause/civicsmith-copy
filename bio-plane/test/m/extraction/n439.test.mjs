@@ -68,7 +68,7 @@ async function seeded({ slides = SLIDES, reading = null, evidence = bucket(), or
 test("R68 R29: renumbering's map over the stored parts moves the shapes after a branch not read, and a deck with no mc:AlternateContent moves nothing", async () => {
   const map = pptxRenumbering(await pptxEntry.parts(pptx(SLIDES)));
   assert.equal(pptxRenumberingMoves(map), true);
-  assert.deepEqual(map.slides.map((s) => [s.slide, s.shapes.map((x) => x.new)]), [[1, [0, 1, null, null, 2]], [2, [0]]]);
+  assert.deepEqual(map?.slides.map((s) => [s.slide, s.shapes.map((x) => x.new)]), [[1, [0, 1, null, null, 2]], [2, [0]]]);
   assert.equal(pptxRenumberingMoves(pptxRenumbering(await pptxEntry.parts(pptx([psp("a") + psp("b"), psp("c")])))), false);
   assert.equal(pptxRenumberingMoves(null), false);
   assert.equal(pptxRenumberingMoves({ slides: [] }), false);

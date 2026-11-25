@@ -73,7 +73,7 @@ test("R66 R28: renumbering's map over the stored document.xml moves paragraphs, 
   const xml = (b) => `<w:document><w:body>${b}</w:body></w:document>`;
   const map = docxRenumbering(xml(BODY));
   assert.equal(renumberingMoves(map), true);
-  assert.deepEqual(map.paragraphs.map((p) => p.new), [0, 1, null, 2, 3, 4, null, 5]);
+  assert.deepEqual(map?.paragraphs.map((p) => p.new), [0, 1, null, 2, 3, 4, null, 5]);
   assert.equal(renumberingMoves(docxRenumbering(xml(wp(wr("a")) + wtbl("b")))), false);
   assert.equal(renumberingMoves(null), false);
 });

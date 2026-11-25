@@ -7,6 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, bucket, doc, sha, docx, wp, wr, i2, withEntry, homesOver } from "./fixture.mjs";
 import { extractionOps } from "../../../src/extraction/index.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const register = (rows) => homesOver(rows);
 const LINES = 120000;
@@ -22,7 +24,7 @@ async function home(text, { project = null } = {}) {
   rows.set(d, { bundleId: "INFO-1", path: "log.txt", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct: "text/plain", format: "undetermined", fromText: true });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, d, bytes };
 }
 const fts = (w, term) => w.rows(`SELECT rowid FROM capture_text_fts WHERE capture_text_fts MATCH ?`, term).length;
@@ -86,7 +88,7 @@ async function homeOf(bytes, { ct, format, fromText = false }) {
   rows.set(d, { bundleId: "INFO-1", path: "a.bin", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, bytes);
   const document = doc({ digest: d, bytes: bytes.length, ct, format, fromText });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, d };
 }
 const toEnd = async (w, d, run = (f) => f()) => {
