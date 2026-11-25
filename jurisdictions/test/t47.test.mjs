@@ -54,7 +54,7 @@ test("R88 validate reads COUNTERPARTY_LEVELS: a counterparty level is accepted e
   for (const level of new Set([...COUNTERPARTY_LEVELS, ...LAW_LEVELS]))
     assert.equal(withLevel(TEST, level).ok, COUNTERPARTY_LEVELS.includes(level), level);
   /* every held office's level is one of them */
-  for (const id of [FIRST, TEST]) for (const c of get(id).counterparties)
+  for (const id of [FIRST, TEST]) for (const c of get(id)?.counterparties)
     assert.ok(COUNTERPARTY_LEVELS.includes(c.level), `${id} ${c.role}`);
 });
 

@@ -306,6 +306,7 @@ test("R83 no field of R74–R82 names a state or assumes one state's law; the mo
 
 test("R84 the test profile supplies R74–R82 (and R86, R87), with values differing from the first profile's, every basis TEST", () => {
   const t = get(TEST), f = get(FIRST);
+  if (!t || !f) throw new Error("a held profile is missing (R9)");
   assert.ok(t.counterparties.some((c) => c.time_zone) && t.action_kinds.some((k) => k.venue && k.venue.time_zone), "R74");
   assert.ok(t.deadlines.some((d) => d.owed_by === "group" && d.consequence), "R75: owed by the group, with a consequence");
   assert.ok(t.deadlines.some((d) => d.owed_by === "body"), "R75: owed by a body");
@@ -346,6 +347,7 @@ test("R84 the test profile supplies R74–R82 (and R86, R87), with values differ
 
 test("R85 the first profile holds each sourced action fact, with its citation, or leaves it absent; never UNMEASURED", () => {
   const f = get(FIRST);
+  if (!f) throw new Error("the first profile is missing (R9)");
   assert.deepEqual(validate(f), { ok: true, errors: [] });
   /* each fact of the measurement, where it is, with the citation its source supports */
   for (const x of FACTS) {
@@ -432,7 +434,7 @@ test("R86 phrasings: locale (isLocale), kind of PHRASING_KINDS, phrase of 2–10
   /* unioned: order kept, an equal one kept once with both bases, a new one added */
   const u = combine([TEST, other((b) => { b.phrasings.push({ locale: "fr", kind: "position", phrase: "la ville devrait", basis: "TEST" }); })]);
   assert.deepEqual(u.conflicts.filter((c) => c.at.startsWith("phrasings")), []);
-  assert.deepEqual(u.view.phrasings.map((x) => [x.phrase, x.bases.length]), [...get(TEST).phrasings.map((x) => [x.phrase, 2]), ["la ville devrait", 1]]);
+  assert.deepEqual(u.view.phrasings.map((x) => [x.phrase, x.bases.length]), [...get(TEST)?.phrasings.map((x) => [x.phrase, 2]), ["la ville devrait", 1]]);
   assert.equal(combine([FIRST]).view.phrasings, undefined, "the first profile holds none");
 });
 

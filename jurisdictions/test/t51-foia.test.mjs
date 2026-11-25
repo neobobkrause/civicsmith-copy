@@ -7,7 +7,7 @@ import { RETRIEVED, FOIA_SOURCE, FOIA_QUOTES } from "./fixtures/foia-text.mjs";
 
 const FIRST = "oakland-alameda";
 const M = `${RETRIEVED} foia-text`;
-const foia = () => get(FIRST).records_laws.find((l) => l.level === "federal" && l.citation === "5 U.S.C. § 552");
+const foia = () => get(FIRST)?.records_laws.find((l) => l.level === "federal" && l.citation === "5 U.S.C. § 552");
 const hasError = (r, code, path) => r.errors.some((e) => e.code === code && (path == null || e.path === path));
 /** The subsections a citation names: "5 U.S.C. § 552(a)(3)(A), (E)" names (a)(3)(A) and, the last group replaced, (a)(3)(E). */
 const subsections = (c) => {
