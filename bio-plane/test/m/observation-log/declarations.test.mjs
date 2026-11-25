@@ -91,7 +91,7 @@ test("R35 a declaration record-core refuses is a defect of the wiring: the facto
   const record = recordOf(h1, { evidence: null, evidencePrefix: "bio/captures/" }); record.migrate();
   const membership = membershipOf(h1, { record }); membership.migrate();
   /* a table of this module's already declared by another: record-core answers TABLE_DECLARED */
-  assert.equal(record.declareTable("someone-else", [{ name: "leads", ...OBSERVATION_LOG_TABLES[2], keys: [] }]).ok, true);
+  assert.equal(record.declareTable("someone-else", [{ ...OBSERVATION_LOG_TABLES[2], name: "leads", keys: [] }]).ok, true);
   assert.throws(() => observationLogOf(h1, { record, membership, provenance: null, extraction: null }),
     /refused its table declaration: TABLE_DECLARED \(leads\)/);
   assert.throws(() => observationLogOf(h1, { record, membership, provenance: null, extraction: null }), /TABLE_DECLARED/,
