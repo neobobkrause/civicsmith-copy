@@ -24,12 +24,103 @@ import {
 } from "../docprofile/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * Where an address is read (R1, R14): a Legistar Web API address of an endpoint this reader reads.
+ * @typedef {Object} Address
+ * @property {string} client the client named in the address, decoded, never matched against a held list
+ * @property {string} endpoint the endpoint's name, lower case, one of `ENDPOINTS`' names
+ * @property {number|null} record the trailing id of a one-record address (`events/9016`), else null
+ * @property {string|null} query the address's query as written, without `?`; null when it has none
+ */
+/**
+ * Why something is not read: a sentence people read, and nothing else.
+ * @typedef {Object} Why
+ * @property {string} why
+ */
+/**
+ * Where a list stands among its pages (R11).
+ * @typedef {Object} Page
+ * @property {number} skip the rows skipped before this page, from the address's `$skip`; 0 when absent
+ * @property {number} top the page's size: the address's `$top` when 1 to 999, else 1,000
+ * @property {boolean} may_continue true exactly when the page holds `top` rows or more
+ * @property {string|null} [next] on a parse's page: the next page's address when `may_continue`, else null
+ * @bound top: whole number, 1 to 1000
+ * @bound skip: whole number, zero or more
+ */
+/**
+ * One row read from a capture (R2–R10): what the source states, nothing inferred (R15).
+ * @typedef {Object} Row
+ * @property {string} kind `body`, `person`, `seat`, `event`, `event_item`, `vote` or `matter`
+ * @property {string} key `legistar:<kind>:<the row's id>`
+ * @property {*} label the row's name as given (a body's or event's body name, a person's name, an item's title, a matter's file), else null
+ * @property {Object<string, *>} ids the source's own identifiers, as given
+ * @property {Object<string, *>} facts the endpoint's closed list of facts (R4–R10)
+ * @property {number} source the row's index in the capture
+ * @property {string} assertion always `system`
+ * @property {string} basis always `BASIS`
+ * @property {string[]} [markers] a body's markers found in its name (R4)
+ * @property {boolean|null} [end_planned] a seat's: its end is after the capture's own day; null when that day was not given (R6)
+ * @property {string} [end_planned_why] a seat's, when `end_planned` is null: why it cannot be said
+ * @property {Object<string, string>} [labels] an event's: each last-published time's label (R8)
+ * @property {Array<*>} [same_name_as] a person's: the `PersonId`s of the others whose name folds to the same (R5)
+ * @bound ids, facts: no field is a contact field (R3)
+ */
+/**
+ * What `parse` answers (R2).
+ * @typedef {Object} Reading
+ * @property {string} endpoint
+ * @property {string} client
+ * @property {Row[]} rows one row per object, in the capture's order
+ * @property {Page|null} page null at a one-record address
+ * @property {{client: string, endpoint: string, record: number|null, count: number, at: string|null, assertion: string, basis: string}} facts
+ */
+/**
+ * What `detect` answers (R1).
+ * @typedef {Object} Detection
+ * @property {boolean} match
+ * @property {string} confidence `certain` on a match, else `none`
+ * @property {string[]} signals what was seen; none when there is no match
+ * @property {string} [why] when there is no match: why
+ */
+/**
+ * What `assess` answers (R12). With either reading empty, or the two of different lists, nothing is claimed:
+ * `meaningful`, `significance` and `confirmed` are null and `events` is empty.
+ * @typedef {Object} Assessment
+ * @property {boolean|null} meaningful
+ * @property {*} significance the worst significance among `events`, as `site-profiles` grades it
+ * @property {Array<*>} events `site-profiles`' events, worst first
+ * @property {{entries: number, intact: number}|null} confirmed the rows found unchanged, when any
+ * @property {string} why
+ */
+/**
+ * What `readPages` answers (R11).
+ * @typedef {Object} Joined
+ * @property {string|null} endpoint the first page's
+ * @property {string|null} client the first page's
+ * @property {Row[]} rows each key once, the first reading kept
+ * @property {Array<{key: string, kept: *, other: *, why: string}>} conflicts a key read twice with different facts
+ * @property {Array<{endpoint: *, client: *, why: string}>} refused a page of another endpoint or client
+ * @property {number} pages the pages joined
+ * @property {boolean} complete a page given was short, so no further page exists
+ * @property {string} [why] when not complete: why
+ */
+
+/** The content type's key, under which `jurisdictions` keys its Legistar vocabulary. */
 export const KEY = "legistar_api";
+/** Every row's basis (K1443). */
 export const BASIS = "as recorded by Legistar";
+/** The Legistar Web API's page size (R11). */
 export const PAGE_SIZE = 1000;
+/**
+ * The label each last-published time carries (R8).
+ * @type {string}
+ */
 export const PUBLISHED_LABEL = localize("legistar-reader.index.last_publication_an_upper_bound", "last publication, an upper bound");
 
-/* The endpoints read, each with the id field every row of it carries and the row kind it gives. */
+/**
+ * The endpoints read, each with the id field every row of it carries and the row kind it gives (R1, R2).
+ * @type {Object<string, {id: string, kind: string}>}
+ */
 export const ENDPOINTS = {
   bodies:        { id: "BodyId",         kind: "body" },
   persons:       { id: "PersonId",       kind: "person" },
@@ -44,12 +135,21 @@ export const ENDPOINTS = {
    another name that names an e-mail, phone, fax, street or web address is refused by CONTACT_NAME.
    Neither is consulted to decide what to READ (that is each endpoint's closed list below); they
    are the second guard, so a future field added to a list by mistake is still dropped. */
+/**
+ * The contact fields K1485 names (R3).
+ * @type {ReadonlyArray<string>}
+ */
 export const CONTACT_FIELDS = Object.freeze([
   "PersonEmail", "PersonEmail2", "PersonPhone", "PersonPhone2", "PersonFax", "PersonAddress1",
   "PersonAddress2", "PersonCity1", "PersonCity2", "PersonState1", "PersonState2", "PersonZip1",
   "PersonZip2", "PersonWWW", "OfficeRecordEmail",
 ]);
 const CONTACT_NAME = /e-?mail|phone|fax|address|street|city\d|state\d|zip|www|website/i;
+/**
+ * R3: true when `name` is one of `CONTACT_FIELDS`, or names an e-mail, phone, fax, street or web address.
+ * @param {*} name a field's name; any other value is read as `String` writes it
+ * @returns {boolean}
+ */
 export function isContactField(name) {
   return CONTACT_FIELDS.includes(name) || CONTACT_NAME.test(String(name));
 }
@@ -62,7 +162,11 @@ const ADDRESS = /^(?:https?:\/\/)?webapi\.legistar\.com\/v1\/([^/?#]+)\/([^?#]*?
 
 /** What a locator names: `{client, endpoint, record, query}` for a Legistar Web API address of an
  *  endpoint this module reads, `record` the trailing id of a one-record address (`events/9016`),
- *  else `{why}`. The client is read from the address, never matched against a held list (R14). */
+ *  else `{why}`. The client is read from the address, never matched against a held list (R14).
+ * @param {*} locator any value; only a string can be an address
+ * @returns {Address|Why}
+ * @throws {URIError} when the client part of an address is not valid percent-encoding
+ */
 export function readAddress(locator) {
   if (typeof locator !== "string" || !locator)
     return { why: "no address was given, so whether this is a Legistar Web API capture cannot be said" };
@@ -109,7 +213,12 @@ function textOf(ctx) {
 
 /* The last bytes decoded, kept so `detect` and `parse` of one capture decode it once. Pure: the
    answer depends only on the text. */
+/** @type {{text: string|null, value: *}} */
 let LAST = { text: null, value: null };
+/**
+ * @param {string} text
+ * @returns {{json: *} | Why}
+ */
 function decode(text) {
   if (LAST.text === text) return LAST.value;
   let value;
@@ -121,14 +230,17 @@ function decode(text) {
 
 /** Read a capture into its endpoint and its objects, or say why it is not one: the address must
  *  name an endpoint (R1), the bytes must parse as a JSON array of objects each carrying that
- *  endpoint's id field, or, at a one-record address, as one such object. */
+ *  endpoint's id field, or, at a one-record address, as one such object.
+ * @param {*} ctx
+ * @returns {(Address & {objects: Array<*>}) | Why}
+ */
 function capture(ctx) {
   const addr = readAddress(ctx?.locator);
-  if (addr.why) return addr;
+  if ("why" in addr) return addr;
   const text = textOf(ctx);
   if (text === null) return { why: localize("legistar-reader.index.no_text_was_supplied_with", "no text was supplied with the address, so there is nothing to read") };
   const d = decode(text);
-  if (d.why) return d;
+  if ("why" in d) return d;
   const { id } = ENDPOINTS[addr.endpoint];
   let objects;
   if (Array.isArray(d.json)) objects = d.json;
@@ -174,7 +286,12 @@ function variants(ctx) {
 /** A body's name read against the view: the markers it carries, its base name (the name with the
  *  marked words, and the separators left beside them, removed), its status and kind of meeting, and
  *  the organisation the body-variant map names for it. With no marker or map in the view, the name
- *  is its own base and nothing is marked (a view without the fact means no local recognition). */
+ *  is its own base and nothing is marked (a view without the fact means no local recognition) (R4).
+ * @param {*} name a body's name; anything but a string reads as no name
+ * @param {*} ctx what holds the reader view, as `docprofile`'s `vocabulary` reads it
+ * @returns {{base: string, markers: string[], status: string|null, meeting_kind: string|null, organisation: string|null}}
+ * @bound status: `cancelled` or null; meeting_kind: `special`, `concurrent` or null
+ */
 export function readBodyName(name, ctx) {
   const words = typeof name === "string" ? name : "";
   const found = new Set();
@@ -208,14 +325,22 @@ export function readBodyName(name, ctx) {
 const given = (v) => (v === undefined ? null : v);
 const DAY = /^(\d{4}-\d{2}-\d{2})(?:T00:00:00(?:\.0+)?)?$/;
 /** A date as the source gives it: its day when it is a midnight timestamp (`2024-01-09T00:00:00`), else
- *  the value as written; never shifted to a zone. */
+ *  the value as written; never shifted to a zone. `undefined` reads as null; any other value that is not a string is
+ *  handed back as given.
+ * @param {*} v
+ * @returns {*}
+ */
 export function dayOf(v) {
   if (typeof v !== "string") return given(v);
   const m = DAY.exec(v.trim());
   return m ? m[1] : v;
 }
 const STAMP = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(Z|[+-]00:?00)?$/;
-/** A `…UTC` field as the UTC instant its name says it is, though its value carries no `Z` (R8). */
+/** A `…UTC` field as the UTC instant its name says it is, though its value carries no `Z` (R8): a timestamp with no
+ *  zone, or a zero offset, gives `<its date and time>Z`; another non-empty string is handed back as written.
+ * @param {*} v
+ * @returns {string|null} null for anything but a non-empty string
+ */
 export function utcOf(v) {
   if (typeof v !== "string" || !v.trim()) return null;
   const m = STAMP.exec(v.trim());
@@ -329,10 +454,15 @@ function pageOf(addr, count) {
 
 /** The address of the page after this one: the same address, every other part of its query kept as
  *  written, `$skip` advanced by the page's size (1,000 unless the address asks fewer). `page` is
- *  the parse's own; given and showing a short page, there is no next page and the answer is null. */
+ *  the parse's own; given and showing a short page, there is no next page and the answer is null (R11).
+ * @param {*} locator a list's address; anything else, or a one-record address, gives null
+ * @param {*} [page] a parse's `page`; when it lacks a whole `skip` and `top`, the address's own are read
+ * @returns {string|null}
+ * @throws {URIError} as `readAddress`
+ */
 export function nextPage(locator, page) {
   const addr = readAddress(locator);
-  if (addr.why || addr.record !== null) return null;
+  if ("why" in addr || addr.record !== null) return null;
   if (page && typeof page === "object" && page.may_continue === false) return null;
   const p = page && typeof page === "object" && Number.isInteger(page.skip) && Number.isInteger(page.top)
     ? page : pageOf(addr, Infinity);
@@ -361,7 +491,10 @@ function splitQuery(s) {
 
 /** Join the pages of ONE endpoint of one client by row key. A key read twice with the same facts is
  *  one row; with different facts it is reported in `conflicts` and the first reading kept, never
- *  silently overwritten. Pages of another endpoint or client are refused, each named in `refused`. */
+ *  silently overwritten. Pages of another endpoint or client are refused, each named in `refused` (R11).
+ * @param {*} parses `parse`'s readings, in page order; an entry with no `rows` list is passed over
+ * @returns {Joined}
+ */
 export function readPages(parses) {
   const list = Array.isArray(parses) ? parses.filter((p) => p && Array.isArray(p.rows)) : [];
   if (!list.length) return { endpoint: null, client: null, rows: [], conflicts: [], refused: [], pages: 0,
@@ -393,10 +526,14 @@ export function readPages(parses) {
  * The content type.
  * ------------------------------------------------------------------------- */
 
-/** Read a capture into rows (R2–R10). Throws only when the capture is not one `detect` matches. */
+/** Read a capture into rows (R2–R10). Throws only when the capture is not one `detect` matches.
+ * @param {*} ctx the capture: its `locator`, its `text` or else its `bytes` (UTF-8), its own time `at`, and the reader view
+ * @returns {Reading}
+ * @throws {Error} when `detect` would not match, with its why
+ */
 export function parse(ctx) {
   const c = capture(ctx);
-  if (c.why) throw new Error(`legistar-reader: ${c.why}`);
+  if ("why" in c) throw new Error(`legistar-reader: ${c.why}`);
   const spec = ENDPOINTS[c.endpoint];
   const read = READERS[c.endpoint];
   const at = typeof ctx?.at === "string" ? ctx.at : null;
@@ -434,10 +571,13 @@ function sameNames(rows) {
   }
 }
 
-/** Is this a Legistar Web API capture of an endpoint this reader reads? (R1) */
+/** Is this a Legistar Web API capture of an endpoint this reader reads? (R1)
+ * @param {*} ctx the capture, as `parse` takes it
+ * @returns {Detection}
+ */
 export function detect(ctx) {
   const c = capture(ctx);
-  if (c.why) return { match: false, confidence: CONFIDENCE.NONE, signals: [], why: c.why };
+  if ("why" in c) return { match: false, confidence: CONFIDENCE.NONE, signals: [], why: c.why };
   return { match: true, confidence: CONFIDENCE.CERTAIN,
            signals: [localize("legistar-reader.index.a_legistar_web_api_address", "a Legistar Web API address of {client}/{endpoint}", { client: String(c.client), endpoint: String(c.endpoint) }),
                      `${c.objects.length} ${c.endpoint} row${c.objects.length === 1 ? "" : "s"}, each carrying ${ENDPOINTS[c.endpoint].id}`] };
@@ -446,7 +586,11 @@ export function detect(ctx) {
 const OUTCOME = { vote: ["value"], event_item: ["passed"] };
 const NAMES = { body: ["name"], person: ["name"] };
 
-/** Compare two readings of one address by row key (R12). */
+/** Compare two readings of one address by row key (R12).
+ * @param {*} before `parse`'s earlier reading
+ * @param {*} after `parse`'s later reading
+ * @returns {Assessment}
+ */
 export function assess(before, after) {
   const a = before && Array.isArray(before.rows) ? before.rows : null;
   const b = after && Array.isArray(after.rows) ? after.rows : null;
@@ -508,6 +652,10 @@ export function assess(before, after) {
   };
 }
 
+/**
+ * The content type (R1): `{key, label, version, contract, detect, parse, assess}`, registered through `docprofile`'s seam.
+ * @type {Readonly<{key: string, label: string, version: number, contract: string, detect: typeof detect, parse: typeof parse, assess: typeof assess}>}
+ */
 export const legistar = Object.freeze({
   key: KEY, label: localize("legistar-reader.index.legistar_web_api_capture", "Legistar Web API capture"), version: 1, contract: CONTRACT.MEMBERSHIP,
   detect, parse, assess,
@@ -515,7 +663,11 @@ export const legistar = Object.freeze({
 
 /* Registering twice on one registry registers nothing the second time (as doctypes R2). */
 const REGISTERED = new WeakSet();
-/** Register this content type through `docprofile`'s registry seam (R1; as `doctypes` does). */
+/** Register this content type through `docprofile`'s registry seam (R1; as `doctypes` does).
+ * @param {*} register `docprofile`'s `register`; once per registry, a second call registers nothing
+ * @returns {void}
+ * @throws {TypeError} when `register` is not a function
+ */
 export function registerLegistar(register) {
   if (typeof register !== "function") throw new TypeError("legistar-reader: registerLegistar needs docprofile's register");
   if (REGISTERED.has(register)) return;

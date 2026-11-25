@@ -138,8 +138,16 @@ function scan(text) {
 const SINGLE = /\bclass="[^"]*\bsingle(?:-post)?\b/i;
 const late = new WeakMap();
 
-/** Whether any `class` attribute of `ctx.text` names a single post: asked only when the address and the
- *  page's own type did not decide (`wordpress.kind`), so it is a pass of its own, counted and kept. */
+/**
+ * Whether any `class` attribute of `ctx.text` names a single post: asked only when the address and the
+ * page's own type did not decide (`wordpress.kind`), so it is a pass of its own, counted and kept.
+ *
+ * Never throws; text that is no string reads as empty.
+ *
+ * @param {*} ctx one fetch's context, with `text` the decoded bytes and, where the caller counts the work, `work`
+ * @returns {boolean}
+ * @bound one pass over the text it is given, counted once into `ctx.work.chars` and kept for that same text (R20)
+ */
 export function hasSingleClass(ctx) {
   const text = typeof ctx.text === "string" ? ctx.text : "";
   const hit = late.get(ctx);
@@ -150,7 +158,16 @@ export function hasSingleClass(ctx) {
   return value;
 }
 
-/** The facts about `ctx.text`, computed once per ctx and added to `ctx.work.chars`. */
+/**
+ * The facts about `ctx.text`, computed once per ctx and added to `ctx.work.chars`: the tags walked, the anchors and
+ * paragraphs counted, the body's bounds, the markers met, and the text's own and its body's length.
+ *
+ * Never throws; text that is no string reads as empty.
+ *
+ * @param {*} ctx one fetch's context, with `text` the decoded bytes and, where the caller counts the work, `work`
+ * @bound every character is examined a fixed number of times, so the count is at most 4 times the text, whatever its shape (R20)
+ * @bound nothing here copies the text: a tag is a view of it and no longer than it (R20)
+ */
 export function factsOf(ctx) {
   const text = typeof ctx.text === "string" ? ctx.text : "";
   const hit = memo.get(ctx);

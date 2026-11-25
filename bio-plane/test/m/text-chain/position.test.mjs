@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import {
   readingSource, readingSourceJson, readingOccurrenceKey, readingSourceFromColumns, readingPositionInExtent, glyphCount,
 } from "../../../src/textchain.mjs";
+/** @import { PdfPagePosition, ReadingPosition, SheetCellPosition } from "../../../src/textchain.mjs" */
 
 const pdf = (x = {}) => ({ kind: "pdf-page", ref: "p. 1", page: 0, ...x });
 const para = (x = {}) => ({ kind: "doc-para", ref: "¶1", para: 0, ...x });
@@ -16,11 +17,11 @@ test("R61: null unless a plain object of kind pdf-page|sheet-cell|slide-shape|do
   for (const s of [null, undefined, "pdf-page", 3, [], [pdf()], { ...pdf(), kind: "dom" }, { ...pdf(), kind: "image" },
     { ...pdf(), kind: "" }, { ...pdf(), kind: undefined }, { ...pdf(), ref: "" }, { ...pdf(), ref: "  " }, { ...pdf(), ref: 5 }, { ...pdf(), ref: undefined }])
     assert.equal(readingSource(s), null, JSON.stringify(s));
-  for (const v of VALID) assert.equal(readingSource(v).kind, v.kind);
+  for (const v of VALID) assert.equal(/** @type {ReadingPosition} */ (readingSource(v)).kind, v.kind);
   const long = "x".repeat(300);
-  for (const v of VALID) assert.equal(readingSource({ ...v, ref: long }).ref, long.slice(0, 200));
+  for (const v of VALID) assert.equal(/** @type {ReadingPosition} */ (readingSource({ ...v, ref: long })).ref, long.slice(0, 200));
   /* The result is key-ordered and rebuilt: extra caller fields are not carried. */
-  assert.deepEqual(Object.keys(readingSource({ zz: 1, ...pdf(), extra: 2 })), ["kind", "ref", "page", "rect"]);
+  assert.deepEqual(Object.keys(/** @type {ReadingPosition} */ (readingSource({ zz: 1, ...pdf(), extra: 2 }))), ["kind", "ref", "page", "rect"]);
 });
 
 test("R62: pdf-page needs a non-negative integer page; a valid rect carries, else null", () => {
@@ -28,7 +29,7 @@ test("R62: pdf-page needs a non-negative integer page; a valid rect carries, els
   assert.deepEqual(readingSource(pdf({ page: 3 })), { kind: "pdf-page", ref: "p. 1", page: 3, rect: null });
   assert.deepEqual(readingSource(pdf({ rect: [1, 2, 3, 4] })), { kind: "pdf-page", ref: "p. 1", page: 0, rect: [1, 2, 3, 4] });
   for (const rect of [[1, 2, 3], [1, 2, 3, NaN], [1, 2, 3, "4"], "1 2 3 4", [1, 2, 3, 4, 5], [1, 2, 3, Infinity]])
-    assert.equal(readingSource(pdf({ rect })).rect, null);
+    assert.equal(/** @type {PdfPagePosition} */ (readingSource(pdf({ rect }))).rect, null);
 });
 
 test("R63: doc-para needs a non-negative integer para; a valid run carries, else null", () => {
@@ -40,7 +41,7 @@ test("R63: doc-para needs a non-negative integer para; a valid run carries, else
 test("R64: sheet-cell needs non-empty string sheet and cell, truncated to 200/64", () => {
   for (const x of [{ sheet: "" }, { sheet: undefined }, { sheet: 3 }, { cell: "" }, { cell: "  " }, { cell: 5 }]) assert.equal(readingSource(cell(x)), null);
   assert.deepEqual(readingSource(cell()), { kind: "sheet-cell", ref: "S!B3", sheet: "S", cell: "B3" });
-  const r = readingSource(cell({ sheet: "s".repeat(250), cell: "c".repeat(80) }));
+  const r = /** @type {SheetCellPosition} */ (readingSource(cell({ sheet: "s".repeat(250), cell: "c".repeat(80) })));
   assert.equal(r.sheet.length, 200);
   assert.equal(r.cell.length, 64);
 });
@@ -72,6 +73,7 @@ test("R68: readingSourceFromColumns inverts the three stored columns, null for a
     const s = readingSource(v);
     assert.deepEqual(readingSourceFromColumns(s.kind, readingSourceJson(s), s.ref), s);
   }
+  /** @type {Array<[*, *, *]>} the three stored columns, each malformed */
   const cases = [["", "{}", "r"], ["pdf-page", "{\"page\":0}", ""], [null, "{}", "r"], ["pdf-page", "{\"page\":0}", 3],
     ["pdf-page", "{bad json", "r"], ["pdf-page", "null", "r"], ["pdf-page", "3", "r"], ["pdf-page", { page: 0 }, "r"],
     ["pdf-page", "{\"page\":-1}", "r"], ["dom", "{}", "r"]];

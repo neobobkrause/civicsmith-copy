@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as tc from "../../../src/textchain.mjs";
+/** @import { Refusal } from "../../../src/textchain.mjs" */
 
 const { TEXT_CHAIN_CHECKS } = tc;
 
@@ -15,10 +16,12 @@ const GOOD = [
   { page: 1, rect: [0, 0, 1, 1] }, { kind: "pdf-page", ref: "r", page: 0, rect: [0, 0, 5, 5] },
   { document: "a", pages: [{ page: 0, text: "a", undetermined: [{ count: 1 }] }] }, { basis: "engine", value: 0.5 },
 ];
-const SERVICES = Object.entries(tc).filter(([, v]) => typeof v === "function");
+/** @type {Array<[string, (...args: *[]) => *]>} every exported function, by name */
+const SERVICES = /** @type {*} */ (Object.entries(tc).filter(([, v]) => typeof v === "function"));
 const inputs = [...JUNK, ...GOOD];
 
 /* Every service over every pair of inputs, plus a third drawn from the same set. */
+/** @returns {Generator<[string, (...args: *[]) => *, *[]]>} */
 function* calls() {
   for (const [name, fn] of SERVICES)
     for (const a of inputs) for (const b of inputs) yield [name, fn, [a, b, GOOD[0]]];
@@ -74,9 +77,9 @@ test("R85: rule 2 is computed from the chain, never taken from a caller's claim"
   const chain = [{ step: "ocr", engine: "e", cap: "C" }];
   /* A caller-supplied claim anywhere on the chain or the step changes nothing. */
   const claims = { derivation_cap: "A", chainCap: "A", strengthens: false, allow: true, verified: true };
-  const r = tc.appendStep(Object.assign([...chain], claims), { step: "ai", engine: "m", cap: "A", ...claims });
+  const r = /** @type {Refusal} */ (tc.appendStep(Object.assign([...chain], claims), { step: "ai", engine: "m", cap: "A", ...claims }));
   assert.equal(r.code, "TEXT_CHAIN_STRENGTHENS");
-  const c = tc.convertedChain({ step: "convert", engine: "h", format: "odt", cap: "D", calibration: "k", ...claims }, [{ step: "layer", cap: "B", ...claims }]);
+  const c = /** @type {Refusal} */ (tc.convertedChain({ step: "convert", engine: "h", format: "odt", cap: "D", calibration: "k", ...claims }, [{ step: "layer", cap: "B", ...claims }]));
   assert.equal(c.code, "TEXT_CHAIN_STRENGTHENS");
   /* The cap is the chain's weakest link, whatever a step says of itself beyond its own cap. */
   assert.equal(tc.derivationCap([{ step: "ocr", engine: "e", cap: "C" }, { step: "ai", engine: "m", cap: "D", chain_cap: "A" }]), "D");

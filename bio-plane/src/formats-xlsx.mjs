@@ -322,9 +322,10 @@ export function a1Corner(s) {
   return { col, row: parseInt(m[2], 10) };
 }
 
+/** @import { SheetRangeRef } from './csv-reader/index.mjs' */
 /**
  * @typedef {Object} RangeUnitAnswer
- * @property {Object} [unit] the rectangle's `sheet-range` reference, from csv-reader's builder
+ * @property {SheetRangeRef} [unit] the rectangle's `sheet-range` reference, from csv-reader's builder
  * @property {string} [why] `not_a_range_reference`, `no_such_sheet` or `outside_grid`
  */
 /** A rectangle on a named sheet -> {unit} or {why} (R27). `a`/`b` are corners as
