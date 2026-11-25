@@ -294,6 +294,7 @@ export function checkContentExtent(extent, ctx = {}) {
     return refusal("CONTENT_EXTENT_NO_PRODUCER",
       localize('content.extent-core.dom_names_a_region', 'extent kind \'dom\' names a region of an HTML document. Nothing produces a dom address yet (CONTENT-HTML), so a row minted against one would be an address into a grammar no producer writes and no reader can evaluate'));
   /* `doc-part` (R1, R58; G167) is text-chain's canonical arm and not one of its eight kinds; its shape is judged below */
+  /** @type {{landed: boolean, human?: string} | undefined} a kind's row as text-chain states it; doc-part's has no human form */
   const row = e.kind === 'doc-part' ? { landed: true } : CONTENT_EXTENT_KINDS[e.kind];
   if (!row)
     return refusal("CONTENT_EXTENT_UNREADABLE",

@@ -4,6 +4,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { world, V, MIXED, LAYER } from "./fixture.mjs";
 import { CONTENT_TABLES, contentIdFor, CONTENT_MINT_STATES, mintLabel } from "../../../src/content/index.mjs";
+/* a held file's inline text, as record-core R13 answers it; a blob or no file fails the test */
+const inlineText = (f) => { if (!f || typeof f.text !== "string") throw new Error("the file is not held inline"); return f.text; };
 
 const DOC = "INFO-2026-0001-a";
 
@@ -15,9 +17,9 @@ test("R11: an authored capture held wins, one not held answers null; otherwise t
   w.doc("INFO-2026-0002-b", [b]);
   /* a second capture registered LATER under the first bundle: the first-held one still answers */
   const r2 = w.promotion.promote({ bundleId: DOC, base: w.record.head(DOC).bundleSha, snapKey: "k2", author: "member:alice",
-    files: [{ path: "bundle.md", text: w.record.readFile(DOC, "bundle.md").text }, { path: a.path, text: a.text },
+    files: [{ path: "bundle.md", text: inlineText(w.record.readFile(DOC, "bundle.md")) }, { path: a.path, text: a.text },
             { path: "snapshots/c.txt", text: "bytes of c" },
-            { path: "data/provenance.json", text: w.record.readFile(DOC, "data/provenance.json").text }],
+            { path: "data/provenance.json", text: inlineText(w.record.readFile(DOC, "data/provenance.json")) }],
     meta: { object_type: "information" },
     register: [{ sha256: w.cap("c").sha, path: "snapshots/c.txt", bytes: Buffer.byteLength("bytes of c") }] });
   assert.equal(r2.ok, true, JSON.stringify(r2));
