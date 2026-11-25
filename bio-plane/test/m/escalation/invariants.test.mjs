@@ -2,7 +2,7 @@
    sight and purge and no place named (R20), a record object of its own type (R21). */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { list, get } from "../../../../jurisdictions/index.mjs";
+import { list } from "../../../../jurisdictions/index.mjs";
 import { BUNDLE_ID_RE } from "../../../src/record-grammar/ids.mjs";
 import { STATES } from "../../../src/record-grammar/document.mjs";
 import { recordOf, RECORD_SCHEMA } from "../../../src/record-core/index.mjs";
@@ -216,7 +216,7 @@ test("R20 every read and act answers an escalation in a project the viewer may n
   for (const t of [...tables, "escalation_declines_to_open"]) assert.equal(w.count(t), 0, t);
   /* no place named: every sentence the module answers, with no profile and with the test profile, names none of the
      places any held profile covers */
-  const places = list().flatMap((p) => [...(get(p.id).covers || []), p.name]).filter(Boolean);
+  const places = list().flatMap((p) => [...p.covers, p.name]).filter(Boolean);
   const x = stage4();
   x.record.setSetting("jurisdiction_profiles", [], "test");
   x.esc.escalationEvaluate({ id: x.E, response: { action: x.N, ord: x.R }, reading: "denied", reason: "No.", author: V("bob"), viewer: V("bob") });

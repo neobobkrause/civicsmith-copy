@@ -89,6 +89,9 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
   for (const t of bare.split(";")) if (t.trim()) st.db.exec(t);
   const clock = { now };
   const record = recordOf(host, { evidence: null, evidencePrefix: "bio/captures/" });
+  /* An action's bundle.md as record-core R13 holds it: inline text, or null when the bundle, the path or inline text is
+     not held (a blob carries no text). */
+  const bundleText = (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; };
   record.migrate();
   const membership = membershipOf(host, { record });
   membership.migrate();
@@ -169,7 +172,7 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
       if (h.type !== "action") return noSuchAction(id);
       const hidden = actionHidden.has(id) && viewer !== null && viewer !== undefined && viewer !== V("alice");
       if (hidden) return noSuchAction(id);
-      const fm = parseFrontmatter(record.readFile(id, "bundle.md").text).data || {};
+      const fm = parseFrontmatter(bundleText(id) ?? "").data || {};
       const legs = (Array.isArray(fm.action_basis) ? fm.action_basis : []).map((l) => ({ target: l.target, kind: l.kind }));
       return { ok: true, id, current_state: fm.current_state ?? null, kind: fm.action_kind ?? null,
                resolution: fm.resolution ?? null, ...(confidential.has(id) ? { confidential: true } : {}),
@@ -189,7 +192,7 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
       });
       const cap = Math.min(limit, actions.pageSize ?? 200);
       const items = all.slice(0, cap).map((id) => {
-        const fm = parseFrontmatter(record.readFile(id, "bundle.md").text).data || {};
+        const fm = parseFrontmatter(bundleText(id) ?? "").data || {};
         return { id, state: fm.current_state ?? null, kind: fm.action_kind ?? null,
                  counterparty: fm.counterparty?.role ?? null, counterparty_state: fm.counterparty?.state ?? null };
       });
@@ -267,7 +270,7 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
     /** A member's revision of an action's document: its legs replaced (actions R8 (d)), everything else kept. */
     revise(id, { restsOn = [], replyOwed } = {}) {
       const h = record.head(id);
-      let text = record.readFile(id, "bundle.md").text;
+      let text = bundleText(id) ?? "";
       const legs = restsOn.length ? ["action_basis:", ...restsOn.flatMap((t) => [`  - target: ${t}`, "    kind: rests_on"])].join("\n") : "action_basis: []";
       text = text.replace(/action_basis:(?: \[\])?(?:\n  - target: .*\n    kind: rests_on)*/, legs);
       if (replyOwed !== undefined) text = text.replace(/\n---\n\n## Action/, `\nreply_owed: ${replyOwed}\n---\n\n## Action`);
@@ -278,8 +281,8 @@ export function world({ now = NOW, profiles = ["test-port-ellery"], omit = [], s
         group: "test-group", created: clock.now, lastUpdated: clock.now, criticality: null, at: clock.now }));
     },
     count: (t) => st.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n,
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
-    fm: (id) => { const t = record.readFile(id, "bundle.md")?.text; return t ? parseFrontmatter(t).data : null; },
+    text: (id) => bundleText(id),
+    fm: (id) => { const t = bundleText(id); return t ? parseFrontmatter(t).data : null; },
     snapshot() {
       const out = {};
       for (const { name } of st.sql.exec(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`))
