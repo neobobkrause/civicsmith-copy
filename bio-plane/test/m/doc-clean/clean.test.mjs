@@ -97,6 +97,7 @@ test("R2 a PDF copy: its JPEG carries no EXIF, XMP or comment, its coded data un
   const img = read.objects.find((o) => o.value.t === "stream" && o.value.dict.Subtype?.v === "Image");
   assert.equal(img.value.dict.Metadata, undefined);
   const bytes = doc.streamRawBytes(img.value);
+  assert.ok(bytes, "the copy's image stream is read");
   assert.equal(jpegCoded(bytes), jpegCoded(jpeg()));
   assert.ok(!text(bytes).includes("Exif") && !text(bytes).includes("http://ns.adobe.com/xap"));
 });
@@ -147,7 +148,7 @@ test("R2 a JPEG 2000 image's xml box is stripped, in a PDF (JPXDecode) and in a 
 test("R2 a package copy is the same parts in the same order, only image and metadata parts changed, every part at the fixed time with no extra field and no comment", async () => {
   for (const original of [docx({ extra: [{ name: "word/media/image3.gif", data: gif() }] }), xlsx(), pptx(), odf("odt"), odf("ods"), odf("odp")]) {
     const r = await cleanDocument(original);
-    assert.equal(r.ok, true, r.detail);
+    assert.ok(r.ok && r.clean === false, r.detail);
     const before = partsOf(original), after = unzipCopy(r.bytes);
     assert.equal(after.comment, 0);
     assert.deepEqual(after.parts.map((p) => p.name), before.map((p) => p.name).filter((n) => n !== "docProps/custom.xml"));
@@ -203,6 +204,7 @@ test("R3 IMAGE_NOT_CLEANABLE: TIFF, HEIC, AVIF and JPEG XL images; EMF and WMF h
   const ftyp = (brand) => new Uint8Array([0, 0, 0, 24, ...enc("ftyp"), ...enc(brand), 0, 0, 0, 0, ...enc("mif1"), ...enc(brand), 0, 0, 0, 8, ...enc("meta")]);
   const bmp = (v5cs) => { const b = Buffer.alloc(14 + 124 + 4); b.write("BM", 0, "latin1"); b.writeUInt32LE(b.length, 2); b.writeUInt32LE(138, 10); b.writeUInt32LE(124, 14); b.writeInt32LE(1, 18); b.writeInt32LE(1, 22); b.writeUInt16LE(1, 26); b.writeUInt16LE(24, 28); b.write(v5cs, 14 + 56, "latin1"); return new Uint8Array(b); };
   const wmf = (inner) => new Uint8Array([1, 0, 9, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...inner, 3, 0, 0, 0, 0, 0]);
+  /** @type {[string, Uint8Array, RegExp][]} each part's name, its bytes, and what the refusal names */
   const cases = [
     ["word/media/a.tif", new Uint8Array([0x49, 0x49, 0x2a, 0, 8, 0, 0, 0, 0, 0]), /a TIFF/],
     ["word/media/a.heic", ftyp("heic"), /HEIC or AVIF/], ["word/media/a.avif", ftyp("avif"), /HEIC or AVIF/],
@@ -366,6 +368,7 @@ test("R6 the edits find each namespace by the prefix the part declares, in eithe
 });
 
 test("R3 EMBEDDED_MEDIA: a video or audio part (MP4, QuickTime, WAV, MP3, Ogg, WebM), a PDF RichMedia, 3D, screen or sound object, each named", async () => {
+  /** @type {[string, Uint8Array][]} each part's name and its bytes */
   const media = [["ppt/media/media1.mp4", new Uint8Array([0, 0, 0, 24, ...enc("ftypisom"), 0, 0, 2, 0, ...enc("isommp41"), 0, 0, 0, 8, ...enc("free")])],
     ["ppt/media/media2.mov", new Uint8Array([0, 0, 0, 20, ...enc("ftypqt  "), 0, 0, 2, 0, ...enc("qt  ")])],
     ["ppt/media/media3.wav", new Uint8Array([...enc("RIFF"), 36, 0, 0, 0, ...enc("WAVEfmt ")])], ["ppt/media/media4.mp3", new Uint8Array([...enc("ID3"), 4, 0, 0, 0, 0, 0, 0])],
