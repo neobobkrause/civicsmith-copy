@@ -252,7 +252,7 @@ export function world({ caseMembers = new Set(), group = "test-group", earnedOve
       return promotion.promote({ bundleId: id, base: head ? head.bundleSha : null, snapKey: `k${++n}`,
         author: "member:alice", files: [{ path: "bundle.md", text }], meta: { object_type: "inquiry" } });
     },
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    text: (id) => { const f = record.readFile(id, "bundle.md"); return f && "text" in f ? f.text : null; },
     fm: (id) => { const t = w.text(id); return t ? parseFrontmatter(t).data : null; },
     project(title, owner, cites = []) {
       const res = promotion.promote({ base: null, snapKey: `k${++n}`, author: `member:${owner}`, ownerMemberId: owner,
