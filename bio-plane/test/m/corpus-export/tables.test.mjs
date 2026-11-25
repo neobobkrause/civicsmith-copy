@@ -82,7 +82,7 @@ test("R7 the export carries every declared table under its owner with its classe
   assert.ok(seen.yes && seen.admin && seen.never && seen.rule, JSON.stringify(seen));
   /* members' ties are never carried (K1490): people declares them `never` (N594, K1791), so the tie is held here and
      named with its owner and class, and no part of it travels, nor can its page be fetched */
-  assert.equal(declared.find((d) => d.name === "member_ties").export, "never", "people's declaration (N594)");
+  assert.equal(declared.find((d) => d.name === "member_ties")?.export, "never", "people's declaration (N594)");
   assert.equal(w.rows(`SELECT * FROM member_ties`).length, 1);
   assert.deepEqual((({ owner, table, carried, rows }) => ({ owner, table, carried, rows }))(x.tables.find((t) => t.table === "member_ties")),
                    { owner: "people", table: "member_ties", carried: "named", rows: null });
