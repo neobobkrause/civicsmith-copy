@@ -7,23 +7,46 @@ import { stripMetadata } from "../image-cover/index.mjs";
 import { editXml } from "./xml.mjs";
 import { CleanRefusal } from "./refusal.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+/** @import { Scan } from './xml.mjs' */
+
+/**
+ * The counts of embedded images a copy changed (R2 stripped them) and left as they were.
+ * @typedef {Object} ImageCounts
+ * @property {number} stripped
+ * @property {number} unchanged
+ */
+/**
+ * What the PDF and the package cleaners answer: nothing to remove, or the copy and its image counts.
+ * @typedef {{clean: true} | {clean: false, bytes: Uint8Array, images: ImageCounts}} Cleaned
+ */
+/**
+ * One image's bytes after `cleanImage`: stripped (`changed`) or the same bytes.
+ * @typedef {Object} ImageOut
+ * @property {Uint8Array} bytes
+ * @property {boolean} changed
+ */
 
 export { CleanRefusal };
 
+/** @type {(d: Uint8Array, o: number, ...b: number[]) => boolean} whether `d` holds the bytes `b` at `o` */
 const at = (d, o, ...b) => d.length >= o + b.length && b.every((x, i) => d[o + i] === x);
-/** The bytes `d[o, o + n)` as a string of one character per byte. */
+/** The bytes `d[o, o + n)` as a string of one character per byte.
+ *  @param {Uint8Array} d @param {number} [o] @param {number} [n] @returns {string} */
 export function latin1(d, o = 0, n = d.length - o) {
   let s = "";
   for (let i = o, end = Math.min(d.length, o + n); i < end; i += 0x8000) s += String.fromCharCode.apply(null, d.subarray(i, Math.min(end, i + 0x8000)));
   return s;
 }
 const ascii = latin1;
+/** @type {(d: Uint8Array, o: number) => number} */
 const u32le = (d, o) => (d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24)) >>> 0;
 
 /** The ISO-BMFF brands of HEIF and AVIF files. */
 const HEIF_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "mif1", "msf1", "avif", "avis", "mif2"]);
 
-/** The image format of `d`, from its leading bytes, or `null`. */
+/** The image format of `d`, from its leading bytes, or `null`: `jpeg`, `png`, `gif`, `webp`, `jp2`, `j2k`, `tiff`,
+ *  `jxl`, `heif`, `bmp`, `emf`, `wmf`, `svm`, `gzip` or `svg`.
+ *  @param {Uint8Array} d @returns {string | null} */
 export function imageKind(d) {
   if (at(d, 0, 0xff, 0xd8, 0xff)) return "jpeg";
   if (at(d, 0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "png";
@@ -47,7 +70,8 @@ export function imageKind(d) {
   return null;
 }
 
-/** What kind of video or audio `d` is, from its leading bytes, or `null` (R3 `EMBEDDED_MEDIA`, K2351). */
+/** What kind of video or audio `d` is, from its leading bytes, or `null` (R3 `EMBEDDED_MEDIA`, K2351).
+ *  @param {Uint8Array} d @returns {string | null} words naming the kind, for a refusal's detail */
 export function mediaKind(d) {
   if (d.length >= 12 && ascii(d, 4, 4) === "ftyp" && !imageKind(d)) return word("doc-clean.text.video_audio_file");
   if (d.length >= 12 && ascii(d, 0, 4) === "RIFF" && ["AVI ", "WAVE", "RMID", "CDXA"].includes(ascii(d, 8, 4))) return `a ${ascii(d, 8, 4).trim()} file`;
@@ -62,14 +86,16 @@ export function mediaKind(d) {
 }
 
 /** The local name of an XML document's first element (after a BOM, the declaration, comments, processing
- *  instructions and a doctype), lower-cased, read from at most its first 4 KB; `null` when it does not start as XML. */
+ *  instructions and a doctype), lower-cased, read from at most its first 4 KB; `null` when it does not start as XML.
+ *  @param {Uint8Array} d @returns {string | null} */
 export function rootElement(d) {
   const s = ascii(d, d[0] === 0xef && d[1] === 0xbb && d[2] === 0xbf ? 3 : 0, Math.min(d.length, 4096));
   const m = /^\s*(?:(?:<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>[]*(?:\[[\s\S]*?\])?\s*>)\s*)*<([A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/.exec(s);
   return m ? m[2].toLowerCase() : null;
 }
 
-/** Whether `d` holds a whole JPEG or PNG inside it (a metafile's embedded bitmap). */
+/** Whether `d` holds a whole JPEG or PNG inside it (a metafile's embedded bitmap): which, or `null`.
+ *  @param {Uint8Array} d @returns {string | null} */
 function holdsRaster(d) {
   for (let i = 0; i + 8 <= d.length; i++) {
     if (d[i] === 0xff && d[i + 1] === 0xd8 && d[i + 2] === 0xff) return "a JPEG";
@@ -87,7 +113,8 @@ const NAMES = {
   svm: localize("doc-clean.images.name_svm", "an SVM"),
 };
 
-/** Gunzip `d` whole, capped at `max` bytes out; `null` when it cannot be read or runs over. */
+/** Gunzip `d` whole, capped at `max` bytes out; `null` when it cannot be read or runs over.
+ *  @param {Uint8Array} d @param {number} max @returns {Promise<Uint8Array | null>} */
 async function gunzip(d, max) {
   try {
     const reader = new Blob([d]).stream().pipeThrough(new DecompressionStream("gzip")).getReader();
@@ -109,7 +136,8 @@ async function gunzip(d, max) {
   }
 }
 
-/** Gzip `d` afresh (no name, comment or time in its header). */
+/** Gzip `d` afresh (no name, comment or time in its header).
+ *  @param {Uint8Array} d @returns {Promise<Uint8Array>} */
 async function gzip(d) {
   const reader = new Blob([d]).stream().pipeThrough(new CompressionStream("gzip")).getReader();
   const parts = [];
@@ -124,7 +152,8 @@ async function gzip(d) {
 }
 
 /** An EMF with its header's description string (the producing application and the picture's name) emptied: its
- *  characters zeroed and its length and offset set to 0 (R6, K2351). */
+ *  characters zeroed and its length and offset set to 0 (R6, K2351).
+ *  @param {Uint8Array} d @returns {ImageOut} */
 function emfWithoutDescription(d) {
   const n = u32le(d, 60), off = u32le(d, 64);
   if (d.length < 68 || u32le(d, 4) < 88 || (n === 0 && off === 0)) return { bytes: d, changed: false };
@@ -138,7 +167,11 @@ function emfWithoutDescription(d) {
 const SVG_RULES = { removeNs: ["editor"] };
 
 /** A JBIG2 segment stream (as a PDF embeds it, without a file header) with its comment extension segments
- *  dropped, every other segment copied as it is (R6, K2351). Throws a refusal when its segments cannot be walked. */
+ *  dropped, every other segment copied as it is (R6, K2351). Throws a refusal when its segments cannot be walked.
+ *  @param {Uint8Array} d the segments
+ *  @param {string} where names the stream in a refusal's detail
+ *  @returns {ImageOut}
+ *  @throws {CleanRefusal} `IMAGE_NOT_CLEANABLE`, when the segments cannot be walked */
 export function jbig2WithoutComments(d, where) {
   const keep = [];
   let o = 0, changed = false;
@@ -171,7 +204,8 @@ export function jbig2WithoutComments(d, where) {
 }
 
 /** A gzip member's header rewritten to carry no name, comment, extra field or time; the deflate data and trailer
- *  unchanged. `null` when the header cannot be walked. */
+ *  unchanged. `null` when the header cannot be walked.
+ *  @param {Uint8Array} d @returns {Uint8Array | null} */
 function bareGzip(d) {
   const flg = d[3];
   let o = 10;
@@ -186,13 +220,22 @@ function bareGzip(d) {
   return out;
 }
 
-/** Strip, keep or refuse one image (R2, R3). `kind` is `imageKind(bytes)`, never `null`. */
+/** Strip, keep or refuse one image (R2, R3). `kind` is `imageKind(bytes)`, never `null`.
+ *  @param {Uint8Array} bytes the image
+ *  @param {string} kind `imageKind(bytes)`
+ *  @param {string} where names the image in a refusal's detail (a part or an object)
+ *  @param {number} maxInflated the most a compressed (gzip) image may inflate to
+ *  @param {Scan} [scan] the counters an SVG's edit adds to
+ *  @returns {Promise<ImageOut>}
+ *  @throws {CleanRefusal} `IMAGE_NOT_CLEANABLE`, `EMBEDDED_MEDIA`, or an `image-cover` strip refusal under its own code */
 export async function cleanImage(bytes, kind, where, maxInflated, scan) {
   switch (kind) {
     case "jpeg": case "png": case "gif": case "webp": case "jp2": case "j2k": {
       const r = stripMetadata(bytes);
-      if (!r || !r.ok) throw new CleanRefusal(r?.code ?? "IMAGE_NOT_CLEANABLE", `${where}: ${r?.detail ?? localize("doc-clean.images.the_image_could_not_be_stripped", "the image could not be stripped")}`);
-      return { bytes: r.bytes, changed: r.changed };
+      if (!r || !r.ok || !(r.bytes instanceof Uint8Array)) throw new CleanRefusal(r?.code ?? "IMAGE_NOT_CLEANABLE", `${where}: ${r?.detail ?? localize("doc-clean.images.the_image_could_not_be_stripped", "the image could not be stripped")}`);
+      /** @type {ImageOut} checks a StripAnswer that is `ok`: its bytes, and `changed` false exactly when nothing was removed */
+      const out = { bytes: r.bytes, changed: r.changed === true };
+      return out;
     }
     case "tiff": case "heif": case "jxl":
       throw new CleanRefusal("IMAGE_NOT_CLEANABLE", localize("doc-clean.images.where_v1_image_whose_metadata", "{where}: {v1} image, whose metadata this module cannot strip", { where: String(where), v1: String(NAMES[kind]) }));

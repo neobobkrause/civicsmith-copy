@@ -36,7 +36,7 @@ function bigJpeg(size, seed) {
 }
 
 function bigPdf() {
-  const bodies = ["<< /Type /Catalog /Pages 2 0 R >>", null, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+  const bodies = ["<< /Type /Catalog /Pages 2 0 R >>", "", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
   const kids = [], images = [];
   for (let i = 0; i < 8; i++) { images.push(bodies.length + 1); bodies.push({ dict: "<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode >>", data: bigJpeg(Math.round(1.9 * MB), i + 1) }); }
   for (let p = 0; p < 400; p++) {

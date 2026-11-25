@@ -13,15 +13,68 @@ import { cleanPackage, tooManyEntries, CLEAN_MAX_PART_BYTES, CLEAN_MAX_ENTRIES }
 import { newScan } from "./xml.mjs";
 import { boundOf } from "../read-bounds.mjs";
 import { localize } from "../setup-words/index.mjs";
+/** @import { Scan } from './xml.mjs' */
+/** @import { ImageCounts, Cleaned } from './images.mjs' */
 
 export { CLEAN_MAX_PART_BYTES, CLEAN_MAX_ENTRIES };
 
 /** The largest document cleaned, in bytes; a larger one is refused before a byte of it is read (R3, R4). Quoted from
- *  `READ_BOUNDS` (R12). */
+ *  `READ_BOUNDS` (R12).
+ *  @type {number}
+ *  @bound the `document` `clean_bytes` row of READ_BOUNDS, its alpha column: 16,777,216 (16 MiB) today */
 export const CLEAN_MAX_BYTES = boundOf("document", "clean_bytes");
 
+/**
+ * The refusal codes of this module's own (R3). `image-cover`'s strip refusals are relayed under their own codes.
+ * @typedef {"ENCRYPTED" | "EMBEDDED_FILE" | "IMAGE_NOT_CLEANABLE" | "HTML_EMBEDS_IMAGE" | "EMBEDDED_MEDIA" | "ARCHIVE" | "NOT_A_CLEANABLE_FORMAT" | "DOCUMENT_TOO_LARGE" | "DOCUMENT_UNREADABLE" | "TOO_MANY_ENTRIES"} CleanCode
+ */
+/**
+ * The original carries nothing R2 or R6 removes and may travel whole (R1, R6).
+ * @typedef {Object} CleanWhole
+ * @property {true} ok
+ * @property {true} clean
+ * @property {string} format the format judged from the bytes alone (R1): `pdf`, `docx`, `xlsx`, `pptx` (a
+ *   macro-enabled twin named by its plain twin), `odt`, `ods`, `odp`, `html` or `text`
+ * @property {undefined} [bytes] absent
+ * @property {undefined} [images] absent
+ * @property {undefined} [code] absent
+ * @property {undefined} [detail] absent
+ */
+/**
+ * A copy carrying no image metadata (R2) and none of the document's own (R6), whole (R8).
+ * @typedef {Object} CleanCopy
+ * @property {true} ok
+ * @property {false} clean
+ * @property {Uint8Array} bytes the copy
+ * @property {string} format the format judged from the bytes alone (R1): `pdf`, `docx`, `xlsx`, `pptx`, `odt`, `ods` or `odp`
+ * @property {ImageCounts} images the embedded images R2 changed and left as they were
+ * @property {undefined} [code] absent
+ * @property {undefined} [detail] absent
+ */
+/**
+ * A refusal by name, nothing answered but the refusal (R3).
+ * @typedef {Object} CleanRefused
+ * @property {false} ok
+ * @property {string} code a `CleanCode`, or an `image-cover` strip refusal's own code (`IMAGE_TOO_LARGE` among them)
+ * @property {string} detail names the object, part or image at fault; never a place (R9)
+ * @property {undefined} [clean] absent
+ * @property {undefined} [bytes] absent
+ * @property {undefined} [format] absent
+ * @property {undefined} [images] absent
+ */
+/**
+ * What `cleanDocument` answers.
+ * @typedef {CleanWhole | CleanCopy | CleanRefused} CleanAnswer
+ */
+/**
+ * @typedef {Object} CleanOptions
+ * @property {() => (Promise<void> | void)} [yieldNow] awaited at least every 65,536 tokens of markup scanned (R11);
+ *   absent is a turn of the microtask queue
+ * @property {Scan} [scan] the scan's counters, filled as the clean goes; absent is fresh ones made with `yieldNow`
+ */
 /** Every refusal code of this module's own, with what it means (R3); `image-cover`'s strip refusals are relayed
- *  under their own codes. */
+ *  under their own codes.
+ *  @type {Readonly<Record<CleanCode, string>>} */
 export const CLEAN_REFUSALS = Object.freeze({
   ENCRYPTED: localize("doc-clean.index.the_document_is_encrypted", "the document is encrypted"),
   EMBEDDED_FILE: localize("doc-clean.index.the_document_carries_an_embedded", "the document carries an embedded file: a PDF attachment, an office file's embedding or macro project, or an ODF embedded object"),
@@ -40,14 +93,23 @@ const FAMILY = { docx: "ooxml", xlsx: "ooxml", pptx: "ooxml", odt: "odf", ods: "
 /** Clean one document (R1–R12). Never throws. `options.yieldNow` is awaited at least every 65,536 tokens of markup
  *  scanned (R11; default: a turn of the microtask queue); `options.scan`, when given, is filled with the counts of the
  *  scan (`scanned` bytes, `tokens`, `yields`), so a caller can see that the work was bounded by count, not by time
- *  (R-CLOCK). Nothing is kept between calls (R7). */
+ *  (R-CLOCK). Nothing is kept between calls (R7).
+ *  @param {*} bytes the document: a `Uint8Array` or an `ArrayBuffer`; anything else is refused `NOT_A_CLEANABLE_FORMAT`
+ *  @param {CleanOptions} [options]
+ *  @returns {Promise<CleanAnswer>}
+ *  @bound bytes: at most CLEAN_MAX_BYTES, judged before a byte is read (`DOCUMENT_TOO_LARGE`); a package of at most
+ *  CLEAN_MAX_ENTRIES entries, each part at most CLEAN_MAX_PART_BYTES and within the archive table's ratio; a tag at most
+ *  the `xml` `tag` row of READ_BOUNDS */
 export async function cleanDocument(bytes, { yieldNow, scan = newScan(yieldNow) } = {}) {
   try {
     const d = bytes instanceof Uint8Array ? bytes : bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : null;
     if (!d) throw new CleanRefusal("NOT_A_CLEANABLE_FORMAT", localize("doc-clean.index.the_document_s_bytes_are_not", "the document's bytes are not a byte array"));
     if (d.length > CLEAN_MAX_BYTES)
       throw new CleanRefusal("DOCUMENT_TOO_LARGE", localize("doc-clean.index.the_document_is_length_bytes", "the document is {length} bytes, over the {CLEAN_MAX_BYTES} this module reads", { length: String(d.length), CLEAN_MAX_BYTES: String(CLEAN_MAX_BYTES) }));
-    let format, done;
+    /** @type {string} */
+    let format;
+    /** @type {Cleaned} */
+    let done;
     if (latin1(d, 0, Math.min(d.length, 1024)).includes("%PDF-")) {
       format = "pdf";
       done = await cleanPdf(d, CLEAN_MAX_PART_BYTES);
@@ -66,7 +128,10 @@ export async function cleanDocument(bytes, { yieldNow, scan = newScan(yieldNow) 
 }
 
 /** The package flavour of a ZIP (`docx`, `xlsx`, `pptx` for their macro-enabled twins too, `odt`, `ods`, `odp`), or
- *  a refusal. */
+ *  a refusal.
+ *  @param {Uint8Array} d
+ *  @returns {Promise<string>}
+ *  @throws {CleanRefusal} */
 async function packageFormat(d) {
   const r = await discriminate(d);
   if (!r.ok && r.why === "OFFICE_ENTRIES_MAX") throw tooManyEntries(d);
@@ -80,6 +145,7 @@ async function packageFormat(d) {
 /** `html` or `text` for bytes that decode as text (UTF-8, UTF-16 by its byte-order mark, or single-byte text with
  *  no control byte but tab, line feed, form feed and carriage return), or a refusal. HTML is any text with an
  *  HTML tag, judged whatever the text's encoding, and is refused when it embeds an image. */
+/** @param {Uint8Array} d @returns {string} @throws {CleanRefusal} */
 function textFormat(d) {
   if (d.length >= 8 && d[0] === 0xd0 && d[1] === 0xcf && d[2] === 0x11 && d[3] === 0xe0 && d[4] === 0xa1 && d[5] === 0xb1 && d[6] === 0x1a && d[7] === 0xe1) {
     if (latin1(d).includes("E\0n\0c\0r\0y\0p\0t\0e\0d\0P\0a\0c\0k\0a\0g\0e\0"))
@@ -101,6 +167,9 @@ function textFormat(d) {
   return "html";
 }
 
+/** The bytes as text: UTF-16 by its byte-order mark, else UTF-8, else one character per byte; `null` when UTF-16
+ *  does not decode.
+ *  @param {Uint8Array} d @returns {string | null} */
 function decodeText(d) {
   const tryDecode = (enc, from) => { try { return new TextDecoder(enc, { fatal: true }).decode(d.subarray(from)); } catch { return null; } };
   if (d[0] === 0xff && d[1] === 0xfe) return tryDecode("utf-16le", 2);
