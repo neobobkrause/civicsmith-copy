@@ -147,7 +147,11 @@ export function world({ caseMembers = new Set(), group = "test-group", caseFact 
       return promotion.promote({ bundleId: id, base: b, snapKey: `k${++n}`, author: "member:alice",
         files: [{ path: "bundle.md", text }], meta: { object_type: "inquiry" }, ...(extra || {}) });
     },
-    text: (id) => record.readFile(id, "bundle.md")?.text ?? null,
+    // `id`'s bundle.md text; null when it is not held or is held as a blob (record-core R13).
+    text: (id) => {
+      const f = record.readFile(id, "bundle.md");
+      return f && "text" in f ? f.text : null;
+    },
     project(title, owner, cites = []) {
       const r = promotion.promote({ base: null, snapKey: `k${++n}`, author: `member:${owner}`, ownerMemberId: owner,
         files: [{ path: "bundle.md", text: projMd(title, cites) }], meta: { object_type: "project" } });
