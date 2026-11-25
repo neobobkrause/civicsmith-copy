@@ -29,22 +29,77 @@ import { TRANSLATIONS_CHECKS } from "./checks.mjs";
 import { TRANSLATION_TABLES, TRANSLATION_TABLE_DECLARATIONS, TRANSLATIONS_SCHEMA } from "./schema.mjs";
 export { TRANSLATION_TABLES, TRANSLATION_TABLE_DECLARATIONS, TRANSLATIONS_SCHEMA };
 
+/**
+ * R2: one word of the interface's word list, as `interfaceWords()` answers it.
+ * @typedef {Object} InterfaceWord
+ * @property {string} key the word's permanent key
+ * @property {string} en its English
+ * @property {string|null} note the word's meaning note
+ * @property {string|null} means its sibling `.means` or `.does` entry
+ * @property {boolean} protected a protected word waits for a second check (DEC-179 (4))
+ * @bound the list and each word frozen; keys distinct; in setup-words' order
+ */
+/**
+ * R12: the providers a test or the plane hands in; each absent one is the module's own factory on the same `ctx`.
+ * @typedef {Object} TranslationsDeps
+ * @property {any} [record] record-core's instance (`getSetting`, `declareTable`)
+ * @property {any} [membership] membership's instance (`isAdministrator`, `memberFacts`)
+ * @property {any} [aiAccounts] ai-accounts' instance (`aiKeptAway`)
+ * @property {any} [jurisdictions] `{combine}` as jurisdictions exports it
+ * @property {() => any} [now] the instant, in milliseconds since the epoch
+ */
+/**
+ * An answer of an op or in-process read: `{ok: true, ...}`, or a refusal `{ok: false, reason, code, check, translation,
+ * detail, ...}` in one of this module's rows (`TRANSLATIONS_CHECKS`), membership's (`NOT_AN_ADMIN`, `NO_SUCH_MEMBER`),
+ * ai-accounts' (`AI_KEPT_AWAY`), wizard-scripts' (`ASSISTANT_DRAFT_UNAVAILABLE`) or `STORE_DID_NOT_ANSWER`.
+ * @typedef {Record<string, any>} TranslationAnswer
+ */
+/**
+ * R11: the later module's read of the language a member chose for the screens (`instance-setup` R64).
+ * @typedef {(asked: {viewer: any}) => any} MemberLanguageRead answers `{ok, language, set_at}`
+ */
+
 /* =====================================================================
  * R2 (DEC-179; K2200 (4); N807): THE INTERFACE'S WORD LIST, setup-words' `WORD_ROWS` in its order, each exported as a
  * frozen `{key, en, note, means, protected}`; this module holds no copy of the list.
  * ===================================================================== */
 /* Built once, at the first call, never at import (fix round 7 G84, K4753: the plane's top level is budgeted). */
 let wordList = null;
+/**
+ * R2: setup-words' `WORD_ROWS` in its order, each row as a frozen `InterfaceWord`; built at the first call, the same array
+ * on every later call. Never throws.
+ * @returns {readonly InterfaceWord[]}
+ */
 export const interfaceWords = () => (wordList ??= Object.freeze(WORD_ROWS.map(([key, en, note, means, prot]) =>
   Object.freeze({ key, en, note, means, protected: prot }))));
+/**
+ * R2: setup-words' `WORDS_COMMIT`, the word list's version.
+ * @type {string}
+ */
 export const INTERFACE_WORDS_COMMIT = WORDS_COMMIT;
 let byKey = null;
 const wordByKey = () => (byKey ??= new Map(interfaceWords().map((w) => [w.key, w])));
 /* R1 (K2201): at most this many words a draft; R4: a kept word's bounds; R7: a mark's note. */
+/**
+ * R1 (K2201): the most words one draft asks for.
+ * @type {number}
+ */
 export const TRANSLATION_DRAFT_MAX = 100;
+/**
+ * R4: the most characters a kept or drafted translation holds.
+ * @type {number}
+ */
 export const TRANSLATION_TEXT_MAX = 2000;
+/**
+ * R7: the most characters a mark's note holds.
+ * @type {number}
+ */
 export const TRANSLATION_NOTE_MAX = 500;
 /* R1, R4: the assistant's stamp on what it drafts (record-grammar R50 reads it as machine work). */
+/**
+ * R1, R4: the assistant's stamp on what it drafts.
+ * @type {string}
+ */
 export const TRANSLATION_DRAFTER = "class:ai";
 /* A text's placeholders, `{name}`, as a sorted list, so two texts carry the same ones exactly when the lists are equal. */
 const placeholdersOf = (t) => [...String(t).matchAll(/\{([^{}\s]+)\}/g)].map((m) => m[1]).sort();
@@ -86,9 +141,14 @@ const projectAccount = (what) => draftUnavailable(localize("translations.index.a
 /* =====================================================================
  * THE MODULE ON ONE DURABLE OBJECT'S STORAGE (K61, R12): `translationsOf(ctx, deps)`.
  * ===================================================================== */
+/** R12: the module on one Durable Object's storage; made once for a storage by `translationsOf`. */
 export class Translations {
   #ctx; #deps; #sql; #declared = false; #memberLanguageRead = null;
 
+  /**
+   * @param {any} ctx the Durable Object's state, or its storage; its `sql` is used
+   * @param {TranslationsDeps} [deps]
+   */
   constructor(ctx, deps = {}) {
     this.#ctx = ctx;
     this.#deps = deps || {};
@@ -114,7 +174,9 @@ export class Translations {
   /* ---- creation (R12) ---- */
 
   /** R12: this module's tables, idempotent (`CREATE TABLE IF NOT EXISTS`, the DDL `instance-setup` creates today, so a
-   *  running store keeps its rows with no data move), declared to record-core as R9 says. */
+   *  running store keeps its rows with no data move), declared to record-core as R9 says.
+   *  @returns {void}
+   *  @throws {Error} when record-core refuses the tables' declaration, naming the table */
   migrate() {
     const bare = TRANSLATIONS_SCHEMA.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
     for (const stmt of bare.split(";").map((x) => x.trim()).filter(Boolean)) this.#sql.exec(stmt);
@@ -139,7 +201,9 @@ export class Translations {
   /** R11: the later module that holds the language a member chose for the screens (`instance-setup` R64) registers,
    *  once at its start, `read({viewer})`, answering `{ok, language, set_at}` as its `memberLanguage` does. A `read` that
    *  is not a function is refused `PROVIDER_MALFORMED`, a second registration `PROVIDER_DECLARED`, each registering
-   *  nothing (`public-read` R34's pattern). */
+   *  nothing (`public-read` R34's pattern).
+   *  @param {any} read a `MemberLanguageRead`
+   *  @returns {{ok: boolean, reason?: string, detail?: string}} `{ok: true}`, or `PROVIDER_MALFORMED` / `PROVIDER_DECLARED` */
   registerMemberLanguageRead(read) {
     if (typeof read !== "function")
       return { ok: false, reason: "PROVIDER_MALFORMED",
@@ -243,7 +307,9 @@ export class Translations {
   }
 
   /** R3: whether `member` is a granted speaker of `language`: an administrator, or a member holding a live grant
-   *  (granted, not revoked since, and the member active). In-process, for R1 and R4–R8. Never throws. */
+   *  (granted, not revoked since, and the member active). In-process, for R1 and R4–R8. Never throws.
+   *  @param {{member?: any, language?: any}} [asked]
+   *  @returns {boolean} */
   translationGranted({ member = null, language = null } = {}) {
     try {
       const who = typeof member === "string" ? member.trim() : "";
@@ -273,7 +339,10 @@ export class Translations {
 
   /** R3, op=translationgrant: an administrator grants a named active member the right to translate the interface into
    *  `language`, or revokes it (`revoke: true`). A second grant of a live grant, or a second revocation, answers
-   *  `existed: true` with the first. Append-only. */
+   *  `existed: true` with the first. Append-only.
+   *  @param {{member?: any, language?: any, revoke?: any, by?: any}} [asked] `by` the control plane's stamp
+   *  @returns {TranslationAnswer} `{ok: true, existed, member, language, act, by, at, granted}`, or the first refusal:
+   *   `MACHINE_CANNOT_TRANSLATE`, `NOT_AN_ADMIN`, `LANGUAGE_MALFORMED`, `NO_SUCH_MEMBER` */
   translationGrant({ member = null, language = null, revoke = false, by = null } = {}) {
     const machine = this.#translationActor(by);
     if (machine) return machine;
@@ -443,7 +512,10 @@ export class Translations {
 
   /** R1 (K2238), in-process: null, or R1's first refusal (the direction, the tag, a machine, `TRANSLATION_NOT_GRANTED`
    *  or `NOT_AN_ADMIN`, the word, the keys, not missing or not awaiting, nothing left to draft), each code minted here
-   *  alone (K231). store-door's route asks it before its own gate (its R10). Writes nothing; never throws. */
+   *  alone (K231). store-door's route asks it before its own gate (its R10). Writes nothing; never throws.
+   *  @param {{language?: any, direction?: any, keys?: any, key?: any, by?: any}} [asked]
+   *  @returns {TranslationAnswer|null}
+   *  @bound keys: 1 to 100 different keys, or none */
   translationDraftRefusal({ language = null, direction = undefined, keys = undefined, key = null, by = null } = {}) {
     try {
       const req = this.#draftRequest({ language, direction, keys, key, by });
@@ -461,7 +533,11 @@ export class Translations {
    *  kept word's `{key, en, text, protected}` (`to_english`). Writes nothing: the door hands the answered draft to
    *  `translationdraftrecord`. `assistant` is the door's `{on, account}`; a draft carries no project (T40), so a
    *  project's account handed in answers ASSISTANT_DRAFT_UNAVAILABLE with no words, nothing to draft on. The door's
-   *  NO_ACCOUNT (credentials', K2577), AI_USE_SWITCHED_OFF and AI_LIMIT_REACHED are answered there, never minted here. */
+   *  NO_ACCOUNT (credentials', K2577), AI_USE_SWITCHED_OFF and AI_LIMIT_REACHED are answered there, never minted here.
+   *  @param {{language?: any, direction?: any, keys?: any, key?: any, assistant?: any, by?: any}} [asked]
+   *  @returns {TranslationAnswer} a refusal; past every refusal `ASSISTANT_DRAFT_UNAVAILABLE` with `direction`, `language`
+   *   and `words` (and `offered_official`, or `key`)
+   *  @bound keys: 1 to 100 different keys, or none for the first 100 missing */
   translationDraft({ language = null, direction = undefined, keys = undefined, key = null, assistant = null, by = null } = {}) {
     const req = this.#draftRequest({ language, direction, keys, key, by });
     if (req.refused) return req.refused;
@@ -480,7 +556,11 @@ export class Translations {
    *  again, so a hand-back that no longer stands records nothing. `to_language`: each asked word answered is stored as
    *  a draft labeled machine work (record-grammar R50), with who asked and when, unless its placeholders differ from
    *  its English's or it is no one-line text within bounds (named in `not_drafted`). `to_english`: the reading's fact is
-   *  recorded (K2216: key, language, the SHA-256 of the kept text read, the administrator, the instant), no text. */
+   *  recorded (K2216: key, language, the SHA-256 of the kept text read, the administrator, the instant), no text.
+   *  @param {{language?: any, direction?: any, keys?: any, key?: any, words?: any, draft?: any, not_drafted?: any, by?: any}} [asked]
+   *  @returns {Promise<TranslationAnswer>} `{ok: true, language, drafted, not_drafted, offered_official, note}`
+   *   (`to_language`), `{ok: true, key, language, english, label, note}` (`to_english`), or a refusal
+   *  @bound a drafted text: one line of 1 to 2,000 characters, with its English's placeholders */
   async translationDraftRecord({ language = null, direction = undefined, keys = undefined, key = null, words = null,
                                  draft = null, not_drafted = null, by = null } = {}) {
     const asked = direction === "to_language" && (keys === undefined || keys === null) && Array.isArray(words)
@@ -529,7 +609,12 @@ export class Translations {
              note: say("setup.note.drafts_labeled_machine") };
   }
 
-  /** R4, op=translationadopt: a granted speaker keeps a word's translation, typed or from a stored draft. */
+  /** R4, op=translationadopt: a granted speaker keeps a word's translation, typed or from a stored draft.
+   *  @param {{language?: any, key?: any, text?: any, draft?: any, by?: any}} [asked]
+   *  @returns {TranslationAnswer} `{ok: true, language, key, state, replaced, at, note}`, `state` `shown` or `awaiting`, or
+   *   the first refusal: `MACHINE_CANNOT_TRANSLATE`, `LANGUAGE_MALFORMED`, `TRANSLATION_NOT_GRANTED`, `NO_SUCH_WORD`,
+   *   `NO_SUCH_DRAFT`, `TRANSLATION_TEXT_REFUSED`
+   *  @bound text: one line of 1 to 2,000 characters, with its English's placeholders */
   translationAdopt({ language = null, key = null, text = undefined, draft = null, by = null } = {}) {
     const machine = this.#translationActor(by);
     if (machine) return machine;
@@ -570,7 +655,11 @@ export class Translations {
 
   /** R5, op=translationconfirm: an awaiting protected word confirmed, then shown: by a granted speaker who did not keep
    *  it, or by an administrator holding a reading of its current text back into English (K2216). An administrator who
-   *  holds a grant of the language and did not keep the word is a second granted speaker and needs no reading. */
+   *  holds a grant of the language and did not keep the word is a second granted speaker and needs no reading.
+   *  @param {{language?: any, key?: any, by?: any}} [asked]
+   *  @returns {Promise<TranslationAnswer>} `{ok: true, language, key, state: "shown", confirmed_by, at, read_back?}`, or the
+   *   first refusal: `MACHINE_CANNOT_TRANSLATE`, `LANGUAGE_MALFORMED`, `TRANSLATION_NOT_GRANTED`, `NO_SUCH_WORD`,
+   *   `TRANSLATION_NOT_AWAITING`, `TRANSLATION_CONFIRM_SELF`, `TRANSLATION_NOT_READ_BACK` */
   async translationConfirm({ language = null, key = null, by = null } = {}) {
     const machine = this.#translationActor(by);
     if (machine) return machine;
@@ -609,7 +698,10 @@ export class Translations {
   }
 
   /** R6, op=translationrevert: an administrator undoes the word's latest act in one act: its latest adoption (back to
-   *  what it replaced), or its latest undo (back to the adoption that undo moved from). Appended; nothing changes. */
+   *  what it replaced), or its latest undo (back to the adoption that undo moved from). Appended; nothing changes.
+   *  @param {{language?: any, key?: any, by?: any}} [asked]
+   *  @returns {TranslationAnswer} `{ok: true, language, key, undid, state, text, at}`, or the first refusal:
+   *   `MACHINE_CANNOT_TRANSLATE`, `NOT_AN_ADMIN`, `LANGUAGE_MALFORMED`, `NO_SUCH_WORD`, `TRANSLATION_NOTHING_TO_UNDO` */
   translationRevert({ language = null, key = null, by = null } = {}) {
     const machine = this.#translationActor(by);
     if (machine) return machine;
@@ -637,7 +729,12 @@ export class Translations {
   }
 
   /** R7, op=translationmark: any active member marks a shown translation "this translation looks wrong". Open until
-   *  the word's next adoption or undo; a member's second open mark on the word answers `existed: true`. */
+   *  the word's next adoption or undo; a member's second open mark on the word answers `existed: true`.
+   *  @param {{language?: any, key?: any, note?: any, by?: any}} [asked]
+   *  @returns {TranslationAnswer} `{ok: true, existed, language, key, note, at, note_for_you?}`, or the first refusal:
+   *   `MACHINE_CANNOT_TRANSLATE`, `LANGUAGE_MALFORMED`, `NO_SUCH_WORD`, `TRANSLATION_NOT_SHOWN`,
+   *   `TRANSLATION_NOTE_REFUSED`, `NO_SUCH_MEMBER`
+   *  @bound note: at most 500 characters, or none */
   translationMark({ language = null, key = null, note = null, by = null } = {}) {
     const machine = this.#translationActor(by);
     if (machine) return machine;
@@ -670,7 +767,10 @@ export class Translations {
 
   /** R8, op=translations: the workspace for a granted speaker of `language`: every word in the list's order with its
    *  state, its shown or awaiting text, `english_changed`, its drafts, its acts newest first and its open marks; and
-   *  the active profiles' local names, offered first and never a word to translate. Writes nothing; never throws. */
+   *  the active profiles' local names, offered first and never a word to translate. Writes nothing; never throws.
+   *  @param {{language?: any, viewer?: any}} [asked] `viewer` the control plane's stamp
+   *  @returns {TranslationAnswer} `{ok: true, language, words_commit, counts, local_names, words}`, or a refusal
+   *   (`MACHINE_CANNOT_TRANSLATE`, `LANGUAGE_MALFORMED`, `TRANSLATION_NOT_GRANTED`, `STORE_DID_NOT_ANSWER`) */
   translations({ language = null, viewer = null } = {}) {
     try {
       const machine = this.#translationActor(viewer);
@@ -714,7 +814,11 @@ export class Translations {
    *  R11). With no `language` named, only the words the team shows in the viewer's language (`fallback: false`), so with
    *  none held the answer holds no word; with a `language` named (the settings screen's translation read), every word, the
    *  team's shown translation where one is held and the English otherwise (`fallback: true`), never blank, `en` beside it.
-   *  An awaiting word is the English. Writes nothing; never throws. */
+   *  An awaiting word is the English. Writes nothing; never throws.
+   *  @param {{language?: any, viewer?: any}} [asked]
+   *  @returns {TranslationAnswer} `{ok: true, language, words_version, words}`, each word `{key, text, en, fallback}`; or
+   *   `LANGUAGE_MALFORMED` for a named tag it does not accept
+   *  @bound with no language named and none held, no word */
   interfaceWords({ language = undefined, viewer = null } = {}) {
     const named = language !== undefined && language !== null && language !== "";
     try {
@@ -746,7 +850,8 @@ export class Translations {
 
   /** R20, in-process: `words_version`, a short string that names no member and no word and changes whenever a translation
    *  of the team is adopted, confirmed or undone (the three tables are append-only, so the highest row number of each
-   *  only grows); otherwise the same across requests and isolates, being read from the storage alone. Never throws. */
+   *  only grows); otherwise the same across requests and isolates, being read from the storage alone. Never throws.
+   *  @returns {string} */
   wordsVersion() {
     try {
       const top = (t) => this.#one(`SELECT COALESCE(MAX(seq), 0) AS n FROM ${t}`).n;
@@ -762,7 +867,10 @@ export class Translations {
   /** R10, in-process: `{ok: true, language, source}`, `language` the tag named when `jurisdictions.isLocale` accepts it
    *  (`source: "named"`; else `LANGUAGE_MALFORMED`, R1's rule), without one the member's own language (`source:
    *  "member"`), and with none set `LANGUAGE_NOT_SET`. Tags are answered in their canonical form. Writes nothing; never
-   *  throws. */
+   *  throws.
+   *  @param {{member?: any, language?: any}} [asked]
+   *  @returns {TranslationAnswer} `{ok: true, language, source}`, `source` `named` or `member`; or `LANGUAGE_MALFORMED`,
+   *   `LANGUAGE_NOT_SET`, `STORE_DID_NOT_ANSWER` */
   readingLanguage({ member = null, language = undefined } = {}) {
     try {
       if (language !== undefined && language !== null && language !== "") {
@@ -789,7 +897,11 @@ const INSTANCES = new WeakMap();
 
 /** The one instance of this module for a Durable Object's storage (K61, R12). `deps` is read on the first call only. At
  *  its creation it creates its seven tables and declares them to record-core (`migrate`); a refused declaration throws,
- *  naming the table, before the caller gets an instance. */
+ *  naming the table, before the caller gets an instance.
+ *  @param {any} ctx the Durable Object's state, or its storage
+ *  @param {TranslationsDeps} [deps]
+ *  @returns {Translations}
+ *  @throws {Error} when record-core refuses the tables' declaration */
 export function translationsOf(ctx, deps = {}) {
   const storage = ctx && ctx.storage ? ctx.storage : ctx;
   let m = INSTANCES.get(storage);
@@ -803,7 +915,11 @@ export function translationsOf(ctx, deps = {}) {
 
 /** This module's Durable Object routes (R12; the `membershipOps` pattern). The stamps (`by`, `viewer`) are the control
  *  plane's, read from the query AFTER the body is spread, so a body naming its own is overwritten (R14). The map joins
- *  `control-plane`'s one route map; `translationdraftrecord` is store-internal (no spec). */
+ *  `control-plane`'s one route map; `translationdraftrecord` is store-internal (no spec).
+ *  @param {any} m this module's instance (`translationsOf`)
+ *  @param {URL} url the store request's address; its query carries `by`, `viewer` and `language`
+ *  @param {any} body the request's parsed body, or null
+ *  @returns {Record<string, () => any>} op name → the call, exactly the nine routes */
 export function translationsOps(m, url, body) {
   const q = (k) => url.searchParams.get(k);
   return {
@@ -821,6 +937,11 @@ export function translationsOps(m, url, body) {
 
 /* R18 (T51; K4168; op-declarations R80, op-grades R49): the ops this module serves that the screens send, declared by their owner beside
    the ops map: each row's class, weight and description are the op's existing rows', its fields are what the arm reads. */
+/**
+ * R18, R21: op name → its declaration `{classes, machineClasses, mutating, weight, description, fields: {accepts,
+ * requires}}` (and `stamps`, `needs` for `interfacewords`), as op-declarations R80 reads it.
+ * @bound frozen; exactly translationdraft, translationgrant, translationadopt, translationconfirm, translationrevert and interfacewords
+ */
 export const DECLARED_OPS = Object.freeze({
   /* R18 (K5195): the assistant's draft door, which the screens' translations page sends. Writes labelled drafts (to_language) or
      the fact of a reading (to_english) through the door's record route; `by` is the door's stamp, `assistant` is the door's own. */
