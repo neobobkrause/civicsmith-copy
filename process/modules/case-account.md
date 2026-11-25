@@ -98,7 +98,6 @@ Terms are `case-authoring`'s and `publication`'s. An **account** is a list of se
 - `project-roster` (T45; N861, N892): `projectScope` (its R23), for R13 and R14. A `modules.json` edge (112 → 35).
 - `case-checker` (T45; N861): `checkAccount` (its R24), for R13. A `modules.json` edge (112 → 109).
 - `membership` (T45): `sight` (its R44), `isJoinedParticipant` (its R54) and `noSuchProject`, for R13.
-- `test-support`: the tests' fixtures.
 - Its users: `case-authoring` calls R4–R7 from `publishCase` and `publishPreflight` (its R63, R67, R68, R69), imports `reviewCommentBodyLines`, and creates this module at its own creation; `review` registers R7's reader (its R33; T42-23a); `control-plane` reaches R1 and R3 through `of.caseAccount()` (T42-29); `plane` builds it before `caseAuthoringOf` (T42-30); `op-declarations` names it as the two ops' owner (T42-26).
 - (T45; K2829) `basis-versions` (layer 6, earlier): `noProjectConclusionOf` (its R23), the claim of each finding R13 reads, asked only where `author` sees the finding.
 

@@ -34,7 +34,9 @@ Free Law Project's reporters-db and courts-db as versioned data: every reporter 
 
 ### Uses
 
-None. The build reads the two packages' files from a local directory; nothing at run time reads the network or a store.
+- `setup-words`: `localize` (`translate.mjs`; the words rule: a sentence people read is read by key; K3930).
+
+The build reads the two packages' files from a local directory; nothing at run time reads the network or a store.
 
 ### Invariants
 

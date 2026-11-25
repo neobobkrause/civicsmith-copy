@@ -112,7 +112,6 @@ Stated per service above. `verifySshsig`, `verifyReleaseNotice`, `parseTimestamp
 - `record-grammar`: the id grammar (`ID_TABLE`, `idPattern`; its R46, R47) for R38 and R40 (T33-7; a new edge, P4 holding: `record-grammar` is first in layer 1); `canonicalJson` (its R12) for R47 (T48).
 
 Otherwise every export is built from Web platform primitives (`crypto.subtle`, `atob`/`btoa`, `TextEncoder`/`TextDecoder`) and literal data. The release signer (R33–R36) alone uses Node's `node:crypto`, which is why it never ships in the plane or the installer.
-- `setup-words`: `word`, `localize` (the words rule: a sentence people read is read by key; K3930, K3943, K3949).
 
 ### Invariants
 

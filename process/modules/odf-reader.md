@@ -109,7 +109,6 @@ evidentiary, basis} | {determined:false, flavour, evidentiary:null, basis}>`**
 ### Uses
 
 - `runtime-limits`: `boundOf` and `statement` (its R29-R31), for R45's and R48's figures, with no numeric literal for a ceiling kept here (K4835 (1)).
-- `test-support`: `sheetgen`, `docgen`, `zipChunks64` and their truth (its R19, R21-R24), for the tests at the platform's shape (K4835 (6)).
 - `ooxml`: `decodeText` (its R36) for R54 and `streamMember` for the identity of a member, and `hasZipMagic`, `readContainer`, `readPart`, `normalizePartName`, `crc32`,
   `discriminate`, `sizeGuard` (and its `MEASURED_OOXML_TEXT_BOUND_BYTES` default),
   `declaredTextBytes`, `CONTAINER_FLAVOURS` (filtered to `partMap:"odf"` rows),

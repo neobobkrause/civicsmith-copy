@@ -55,10 +55,9 @@ Terms. A **plan**, its matters (subjects), options, scenarios, phases and checkp
 ### Uses
 
 - `action-plans` (L9, earlier): `planRead`, `noSuchPlan`, `planMark`, `registerCloseSnapshot`, the offers (its R6, R22, R43, R44, R41).
-- `actions`: `actionRead`, `actionsFor`, `registerResponseListener` (its R95; R3, R10).
+- `actions`: `actionRead`, `actionsFor`, `registerResponseListener` (its R95; R3, R10); the action's own clock entries, which `action-clocks` writes (R3, R7).
 - `action-holds`: `projectHolds`, `holdsDue` (its R7, R3; R7).
 - `action-replies`: `aroseFrom`, `arisenFrom` (its R2; R10).
-- `action-clocks`: `overdueClocks`, `ourDeadlines` (its R3, R18; R3, R7).
 - `escalation`: `escalationsFor`, `escalationRead` (its R22, R2; R2, R3).
 - `filings`: `filingsFor` (its R13; R2's `documented`, `fix_offered`).
 - `conformance`: `curesOf` (its R37; R2).
