@@ -3,6 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fresh, bundle, hold, bucket, withEntry, i2, doc, homesOver } from "./fixture.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const pdf = (text) => ({ format: "pdf", structure: async () => ({ ok: true, text: structuredClone(text), pages: (text.pages || []).length, notes: [] }) });
 const register = (rows) => homesOver(rows);
@@ -15,7 +17,7 @@ async function held(pages) {
   const d = await hold(evidence, bytes);
   rows.set(d, { bundleId: "INFO-1", path: "a.pdf", encoding: "binary", bytes: bytes.length, registered: "t", authored: false });
   const document = doc({ digest: d, bytes: bytes.length, ct: "application/pdf", format: "pdf" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, d, text: i2(Array.from({ length: pages }, (_, p) => ({ page: p, text: `unit ${p} budget appropriation words` }))) };
 }
 

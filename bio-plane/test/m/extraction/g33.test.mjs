@@ -8,6 +8,8 @@ import assert from "node:assert/strict";
 import { localize } from "../../../src/setup-words/index.mjs";
 import { WHOLE_READ_MAX } from "../../../src/reading-pipeline/index.mjs";
 import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const register = (rows, parts = null) => homesOver(rows, parts);
 const row = (bundleId, bytes = 20) => ({ bundleId, path: "a.pdf", encoding: "binary", bytes, registered: "t", authored: false });
@@ -34,7 +36,7 @@ function walker({ n = 5, total = 41_502_904, bundleId = "INFO-1", host = null } 
   const document = doc({ digest: d, bytes: total, ct: "application/pdf", format: "undetermined", parts });
   const text = JSON.stringify({ documents: [document] });
   w.s.sql.exec(`INSERT INTO files (bundle_id, path, content, blob_sha, bytes, sha256) VALUES (?,?,?,?,?,?)`, bundleId, "data/provenance.json", text, null, 1, "x");
-  w.core.readFile = (b, p) => (b === bundleId && p === "data/provenance.json" ? { text } : null);
+  w.core.readFile = (b, p) => (b === bundleId && p === "data/provenance.json" ? { text, sha256: STUB_SHA } : null);
   return { w, rows, d, parts, document, bundleId };
 }
 const oldPress = (w, bundleId, part, reading = stub()) => w.x.writeReading({ bundleId, captureSha: part, reading, composed: true });
@@ -96,7 +98,7 @@ test("R92 (control): only a failed reading keyed to a part is superseded: not a 
   const alsoDoc = parts[2].sha256;
   const second = doc({ digest: alsoDoc, bytes: 10, ct: "application/pdf", format: "undetermined" });
   w.core.readFile = (b, p) => (b === bundleId && p === "data/provenance.json"
-    ? { text: JSON.stringify({ documents: [{ ...walkerDoc(parts, d), }, second] }) } : null);
+    ? { text: JSON.stringify({ documents: [{ ...walkerDoc(parts, d), }, second] }), sha256: STUB_SHA } : null);
   oldPress(w, bundleId, alsoDoc);
   /* a failed reading against the digest of a part, in a bundle that does not hold that document */
   bundle(w.s, "INFO-2");

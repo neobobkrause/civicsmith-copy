@@ -9,6 +9,8 @@ import assert from "node:assert/strict";
 import { fresh, bundle, bucket, doc, sha, homesOver } from "./fixture.mjs";
 import * as F from "../office-readers/fixtures.mjs";
 import { getFormat, detectFormat } from "../../../src/formats.mjs";
+/** A provenance document stub is an InlineFile (record-core R13); its file digest is never read here. */
+const STUB_SHA = "0".repeat(64);
 
 const XLSX_CT = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const register = (rows) => homesOver(rows);
@@ -36,13 +38,13 @@ async function home(bytes, { ct, name = "t" } = {}) {
   rows.set(d, { bundleId: "INFO-1", path: name, encoding: "binary", bytes: u8.length, registered: "t", authored: false });
   await evidence.put(`bio/captures/${d}`, u8);
   const document = doc({ digest: d, bytes: u8.length, ct, format: "undetermined", fromText: typeof bytes === "string" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
   return { w, d, bytes: u8 };
 }
 /* the document as the bundle states it, served again with a declared type that names no format, so detection over the held head has nothing to go by */
 const serveAs = (w, d, bytes, ct) => {
   const document = doc({ digest: d, bytes: bytes.length, ct, format: "undetermined" });
-  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }) } : null);
+  w.core.readFile = (b, p) => (b === "INFO-1" && p === "data/provenance.json" ? { text: JSON.stringify({ documents: [document] }), sha256: STUB_SHA } : null);
 };
 const readAll = async (w, d) => { let a, n = 0; do { a = await w.x.readHeld({ sha: d, kind: "reading", storeName: "bio", env: {} }); } while (a.more && ++n < 200); return a; };
 const readingOf = (w, d) => JSON.parse(w.one(`SELECT reading FROM readings WHERE capture_sha=?`, d).reading);
