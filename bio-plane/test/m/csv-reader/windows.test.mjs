@@ -11,6 +11,7 @@ import { enc } from "./fixtures.mjs";
 import { prng } from "./large.mjs";
 import { generate } from "../../sheetgen.mjs";
 /** @import { TextResult, TextDone, TextSheet, TypedCell, CellsResult, CellsDone, PartsResult, CsvParts, StructureResult, StructureDone, TextOptions, CellsQuery } from "../../../src/csv-reader/index.mjs" */
+/** @import { SheetHeader } from "../../sheetgen.mjs" */
 
 const MIB = 1024 * 1024;
 
@@ -450,7 +451,7 @@ test("R18 cellsIn from an access point equals the whole read for rows around eve
 
 test("R7 a 3,000-row five-column CSV with a title block and ragged rows reads with comma, five columns and its last mark in column A (cause 20); ragged alone and title alone read as before", async () => {
   const seed = "rw9-B-5c";
-  /** @param {{header: string, ragged?: boolean}} recipe @returns {Promise<TextDone>} */
+  /** @param {{header: SheetHeader, ragged?: boolean}} recipe @returns {Promise<TextDone>} */
   const read = async (recipe) => done(await csvEntry.text(await generate({ kind: "csv", seed, size: { rows: 3000, cols: 5 }, ...recipe }).bytes()));
   const both = await read({ header: "title", ragged: true });
   assert.equal(both.dialect.delimiter, "comma", "every row ragged, a title block above: the delimiter is still the comma");
