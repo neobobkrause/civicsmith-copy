@@ -2,7 +2,7 @@
  * interface file, which re-exports `validate`. */
 import { BASIS_GRADES } from "../bio-plane/src/record-grammar/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-import { SECTIONS, SPACES, VOCABULARY, DATA_VOCABULARY, MEMBER_CAPACITIES, LAW_LEVELS, COUNTERPARTY_LEVELS, SOURCE_KINDS, STANDARD_SOURCE_KINDS, LEVELLED_KINDS, SECTORS, POLICY_HEADER_FIELDS, VENUE_HOW, COUNTS, STARTS, OWED_BY, LEGAL_FACT_TRIGGERS, VENUE_FACTS, PHRASING_KINDS, KIND_SHAPES, UNITS, DIRECTIONS, COMPUTATION_RULES, RECEIPT_RULES, CODE_COPIES, SECTION_MARKERS, AMENDING_RELATIONS, MEETING_MARKERS, ROSTER_KINDS, ROSTER_ROLES, BUDGET_COLUMNS, FISCAL_NAMED_BY, FISCAL_PLACEHOLDERS, FORUM_KINDS, CLASSIFICATION_KINDS, DEMAND_COVERS, RRULE_PARTS, RRULE_FREQS, LOCAL_NAME_KINDS, TIERS, CONTACT_HOW, POINTER_KINDS, POINTER_HOW, POINTER_NAME_MAX, RECORDS_HELP_CITATIONS, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, TEMPLATE_FIELDS, TEMPLATE_USES, REVIEW_KINDS, REVIEW_OUTCOMES, REVIEW_REQUIRED, WEEKDAYS, FACT_STATUSES, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isList, listOr, isStr, oneOf, oneOfNumbers, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, isLocale, localeKey, basisValid, compile, groupCount, groupNames, applyForm, memberTypeKey, officeKey, listKey, officesKey, POINTER_DOES_MAX, PHRASE_MAX } from "./shared.mjs";
+import { SECTIONS, SPACES, VOCABULARY, DATA_VOCABULARY, MEMBER_CAPACITIES, LAW_LEVELS, COUNTERPARTY_LEVELS, SOURCE_KINDS, STANDARD_SOURCE_KINDS, LEVELLED_KINDS, SECTORS, POLICY_HEADER_FIELDS, VENUE_HOW, COUNTS, STARTS, OWED_BY, LEGAL_FACT_TRIGGERS, VENUE_FACTS, PHRASING_KINDS, KIND_SHAPES, UNITS, DIRECTIONS, COMPUTATION_RULES, RECEIPT_RULES, CODE_COPIES, SECTION_MARKERS, AMENDING_RELATIONS, MEETING_MARKERS, ROSTER_KINDS, ROSTER_ROLES, BUDGET_COLUMNS, FISCAL_NAMED_BY, FISCAL_PLACEHOLDERS, FORUM_KINDS, CLASSIFICATION_KINDS, DEMAND_COVERS, RRULE_PARTS, RRULE_FREQS, LOCAL_NAME_KINDS, TIERS, CONTACT_HOW, POINTER_KINDS, POINTER_HOW, POINTER_NAME_MAX, RECORDS_HELP_CITATIONS, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, TEMPLATE_FIELDS, TEMPLATE_USES, REVIEW_KINDS, REVIEW_OUTCOMES, REVIEW_REQUIRED, WEEKDAYS, FACT_STATUSES, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isList, listOr, isStr, oneOf, oneOfNumbers, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, isLocale, localeKey, basisValid, compile, groupCount, groupNames, applyForm, thrownWords, keyOf, memberTypeKey, officeKey, listKey, officesKey, POINTER_DOES_MAX, PHRASE_MAX } from "./shared.mjs";
 
 /* ------------------------------------------------------------------------------------------------ */
 /* validate (R10, R11, R28, R35).                                                                   */
@@ -15,10 +15,6 @@ const isKindKey = (v) => typeof v === "string" && KIND_RE.test(v);
  *  @param {Value} v
  *  @returns {boolean} */
 const isText = (v) => typeof v === "string";
-/** `v` written as a template literal writes it (`${v}`): a symbol throws, as it did in the template.
- *  @param {unknown} v
- *  @returns {string} */
-const asTemplate = (v) => `${v}`;
 /** An identifier scheme and the entity kinds it identifies, as a map entry.
  *  @param {Value} scheme
  *  @param {Entries} kinds
@@ -27,18 +23,35 @@ const schemeEntry = (scheme, kinds) => [scheme, kinds];
 
 /** @import { Value, Fields, Entries } from "./shared.mjs" */
 
+/** Report each list in a profile that has a gap: an index below its length that holds no entry (`[a, , b]`). A profile
+ *  is JSON data (R1), which has no such list; read in order, a gap would be skipped by every check and come back as
+ *  `null` in a copy. Each object and list is read once.
+ *  @param {Value} v
+ *  @param {string} path
+ *  @param {(path: string, code: string, detail: string) => number} err
+ *  @param {Set<object>} [seen]
+ *  @returns {void} */
+function gaps(v, path, err, seen = new Set([])) {
+  if (isList(v)) {
+    if (seen.has(v)) return;
+    seen.add(v);
+    for (let i = 0; i < v.length; i++) {
+      if (!(i in v)) err(`${path}[${i}]`, "VALUE_INVALID", "a list has no gaps: this entry is missing");
+      else gaps(v[i], `${path}[${i}]`, err, seen);
+    }
+  } else if (isObj(v)) {
+    if (seen.has(v)) return;
+    seen.add(v);
+    for (const k of Object.keys(v)) gaps(v[k], path ? `${path}.${k}` : k, err, seen);
+  }
+}
+
 /** One fault `validate` finds: where in the profile (a path like `systems[0].origin`, "" for the whole), its code, and
  *  what is wrong, in words.
  *  @typedef {{ path: string, code: string, detail: string }} ProfileError */
 /** What `validate` hands back: whether the profile is whole, and every fault found, in the order found.
  *  @typedef {{ ok: boolean, errors: ProfileError[] }} Validation */
 
-/** Whether a thrown value is an object or a function, whose `message` field the NOT_A_PROFILE detail reads (as
- *  `e && e.message || e` did). A profile from a caller may throw any value from a getter, so the thrown value is not
- *  only the language's own errors.
- *  @param {unknown} v
- *  @returns {v is Fields} */
-const hasFields = (v) => v !== null && (typeof v === "object" || typeof v === "function");
 
 /** Judge a profile against R1–R7, R23–R26, R31–R33, R37–R44 and the later tranches' additions (R46–R90). `{ok, errors}`,
  *  every error found. Never throws.
@@ -52,7 +65,7 @@ export function validate(profile) {
     if (!p) errors.push({ path: "", code: "NOT_A_PROFILE", detail: "a profile is a plain object" });
     else validateInto(p, errors);
   }
-  catch (e) { const t = hasFields(e) ? e : null; errors.push({ path: "", code: "NOT_A_PROFILE", detail: `unreadable: ${String(t ? t.message || t : e)}` }); }
+  catch (e) { errors.push({ path: "", code: "NOT_A_PROFILE", detail: `unreadable: ${thrownWords(e)}` }); }
   return { ok: errors.length === 0, errors };
 }
 
@@ -69,6 +82,7 @@ function validateInto(p, errors) {
    *  @returns {number} */
   const err = (path, code, detail) => errors.push({ path, code, detail });
   const test = p.test === true;
+  gaps(p, "", err);
 
   for (const k of Object.keys(p)) if (!oneOf(SECTIONS, k)) err(k, "UNKNOWN_SECTION", localize("jurisdictions.index.k_is_not_a_section", "'{k}' is not a section of a profile", { k: String(k) }));
   if (typeof p.id !== "string" || !ID_RE.test(p.id)) err("id", "ID_INVALID", "id matches ^[a-z0-9][a-z0-9-]*$");
@@ -273,10 +287,10 @@ function validateInto(p, errors) {
     basis(at, m);
   });
 
-  /* spaces: each space's judged forms by name. A plain object, read by any value as a key (as `spaceForms[x.space]` was):
-     a key the language converts to a string, so `String(k)` reads the same member. */
-  /** @type {{ [space: string]: Map<Value, Fields> }} */
-  const spaceForms = {};
+  /* spaces: each space's judged forms by name. A map, so a space named like a member every object has (`toString`,
+     `constructor`) is a space the profile lacks, never that member. */
+  /** @type {Map<Value, Map<Value, Fields>>} */
+  const spaceForms = new Map([]);
   if (own(p, "spaces")) {
     if (!isObj(p.spaces)) err("spaces", "VALUE_INVALID", "spaces is an object keyed by space");
     else for (const [name, s] of Object.entries(p.spaces)) {
@@ -289,7 +303,7 @@ function validateInto(p, errors) {
       const names = new Set();
       /** @type {Map<Value, Fields>} */
       const formsOf = new Map([]);
-      spaceForms[name] = formsOf;
+      spaceForms.set(name, formsOf);
       list(`${at}.forms`, s.forms).forEach((f, i) => {
         const fa = `${at}.forms[${i}]`;
         if (!entry(fa, f)) return;
@@ -343,7 +357,7 @@ function validateInto(p, errors) {
     if (!own(x, "source") || x.source === "" || x.source == null) err(`${at}.source`, "CROSSWALK_UNSOURCED", "a crosswalk names the content hash of its capture");
     else if (typeof x.source !== "string" || !HEX64.test(x.source)) err(`${at}.source`, "VALUE_INVALID", "source is 64 hexadecimal characters");
     /** @type {Map<Value, Fields>} */
-    const known = spaceForms[String(x.space)] || new Map([]);
+    const known = spaceForms.get(x.space) || new Map([]);
     const forms = isList(x.forms) && x.forms.length === 2 ? x.forms : null;
     if (!forms) err(`${at}.forms`, "VALUE_INVALID", "forms is [a, b]");
     else forms.forEach((f, j) => { if (!known.has(f)) err(`${at}.forms[${j}]`, "CROSSWALK_FORM_UNKNOWN", localize("jurisdictions.index.the_space_has_no_form", "the space has no form '{String}'", { String: String(String(f)) })); });
@@ -628,7 +642,7 @@ function validateInto(p, errors) {
         if (!isStr(sr.label)) err(`${sa}.label`, "SERIES_INVALID", "series.label is how the family's documents name it, non-empty");
         if (!own(s, "key")) err(sa, "SERIES_INVALID", "an entry with a series carries its issuer's key");
         else if (typeof s.key === "string" && typeof sr.key === "string") {
-          const k = `${s.key}\u0000${sr.key}`;
+          const k = keyOf(s.key, sr.key);
           if (families.has(k)) err(sa, "SERIES_INVALID", localize("jurisdictions.index.the_family_key_key_2", "the family {key}/{key_2} is given twice", { key: String(s.key), key_2: String(sr.key) }));
           families.add(k);
         }
@@ -697,7 +711,7 @@ function validateInto(p, errors) {
     str(`${at}.role`, c.role, "role"); str(`${at}.body`, c.body, "body");
     if (isStr(c.role)) roles.add(c.role);
     if (isStr(c.body)) bodies.add(c.body);
-    if (isStr(c.role) && isStr(c.body)) offices.add(`${String(c.role)}\u0000${String(c.body)}`);
+    if (isStr(c.role) && isStr(c.body)) offices.add(keyOf(c.role, c.body));
     if (own(c, "hours")) hours(`${at}.hours`, c.hours);
     if (!oneOf(COUNTERPARTY_LEVELS, c.level)) err(`${at}.level`, "LEVEL_UNKNOWN", localize("jurisdictions.index.level_is_one_of_counterparty", "level is one of {COUNTERPARTY_LEVELS}", { COUNTERPARTY_LEVELS: String(COUNTERPARTY_LEVELS.join(", ")) }));
     if (typeof c.elected !== "boolean") err(`${at}.elected`, "VALUE_INVALID", "elected is true or false");
@@ -912,7 +926,7 @@ function validateInto(p, errors) {
     /* R75 (T45): a third party's act starts the count: the counterparty, by role and body, whose act it is */
     if (d.starts === "third_party") {
       const st = d.starter;
-      if (!isObj(st) || Object.keys(st).some((k) => k !== "role" && k !== "body") || !offices.has(`${asTemplate(st.role)}\u0000${asTemplate(st.body)}`))
+      if (!isObj(st) || Object.keys(st).some((k) => k !== "role" && k !== "body") || !isStr(st.role) || !isStr(st.body) || !offices.has(keyOf(st.role, st.body)))
         err(`${at}.starter`, "ANCHOR_UNKNOWN", "a third_party start names its starter, {role, body} of a counterparty of this profile");
     } else if (own(d, "starter")) err(`${at}.starter`, "VALUE_INVALID", "a starter is given only with starts: third_party");
     /* R75: whose duty it is, and the law's stated consequence, quoted; R87 (c): a deadline the group meets in its own defence */
@@ -1034,9 +1048,9 @@ function validateInto(p, errors) {
           key = officesKey(h.offices);
         }
       }
-      key = `${listKey(h)}\u0003${key}`;
+      key = keyOf(h.year, listKey(h), key);
       if (!isYear(h.year)) err(`${at}.year`, "HOLIDAY_INVALID", "year is a four-digit year");
-      else if (years.has(`${String(h.year)}\u0000${key}`)) err(`${at}.year`, "HOLIDAY_INVALID",
+      else if (years.has(key)) err(`${at}.year`, "HOLIDAY_INVALID",
         own(h, "list")
           ? (own(h, "offices")
             ? localize("jurisdictions.index.year_listed_twice_for_list_and_the_same_offices", "{year} is listed twice for the list {list} and the same offices", { year: String(h.year), list: String(h.list) })
@@ -1044,7 +1058,7 @@ function validateInto(p, errors) {
           : own(h, "offices")
             ? localize("jurisdictions.index.year_listed_twice_for_the_same_offices", "{year} is listed twice for the same offices", { year: String(h.year) })
             : localize("jurisdictions.index.year_listed_twice_for_all_offices", "{year} is listed twice for all offices", { year: String(h.year) }));
-      else years.add(`${String(h.year)}\u0000${key}`);
+      else years.add(key);
       /** @type {Set<Value>} */
       const dates = new Set();
       list(`${at}.days`, h.days).forEach((d, j) => {
@@ -1093,7 +1107,7 @@ function validateInto(p, errors) {
       if (!oneOf(STANDARD_SOURCE_KINDS, r.kind)) err(`${at}.kind`, "RANK_INVALID", localize("jurisdictions.index.kind_is_one_of_standard_2", "kind is one of {STANDARD_SOURCE_KINDS}", { STANDARD_SOURCE_KINDS: String(STANDARD_SOURCE_KINDS.join(", ")) }));
       if (!oneOf(LAW_LEVELS, r.level)) err(`${at}.level`, "RANK_INVALID", localize("jurisdictions.index.level_is_one_of_law_3", "level is one of {LAW_LEVELS}", { LAW_LEVELS: String(LAW_LEVELS.join(", ")) }));
       if (!isPosInt(r.rank)) err(`${at}.rank`, "RANK_INVALID", "rank is a positive integer, 1 the highest");
-      const k = `${asTemplate(r.kind)}\u0000${asTemplate(r.level)}`;
+      const k = keyOf(r.kind, r.level);
       if (seen.has(k)) err(at, "RANK_INVALID", localize("jurisdictions.index.kind_at_level_is_ranked", "{kind} at {level} is ranked twice", { kind: String(r.kind), level: String(r.level) }));
       seen.add(k);
       basis(at, r);
@@ -1169,7 +1183,7 @@ function validateInto(p, errors) {
       str(`${at}.label`, x.label, "label");
       if (!isList(x.entity_kinds) || !x.entity_kinds.length || !x.entity_kinds.every((k) => typeof k === "string" && KIND_RE.test(k)))
         err(`${at}.entity_kinds`, "SCHEME_INVALID", "entity_kinds is a non-empty list of entity kinds");
-      const formsOfSpace = spaceForms[String(x.space)];
+      const formsOfSpace = spaceForms.get(x.space);
       if (!formsOfSpace) err(`${at}.space`, "SCHEME_INVALID", localize("jurisdictions.index.this_profile_has_no_space", "this profile has no space '{String}'", { String: String(String(x.space)) }));
       else if (own(x, "form") && !formsOfSpace.has(x.form)) err(`${at}.form`, "SCHEME_INVALID", localize("jurisdictions.index.the_space_space_has_no", "the space {space} has no form '{String}'", { space: String(x.space), String: String(String(x.form)) }));
       if (own(x, "systems")) {
@@ -1404,7 +1418,7 @@ function validateInto(p, errors) {
       str(`${at}.label`, f.label, "label");
       if (!oneOf(FORUM_KINDS, f.forum_kind)) err(`${at}.forum_kind`, "VALUE_INVALID", localize("jurisdictions.index.forum_kind_is_one_of_2", "forum_kind is one of {FORUM_KINDS}", { FORUM_KINDS: String(FORUM_KINDS.join(", ")) }));
       if (isStr(f.label)) {
-        const k = `${asTemplate(f.forum_kind)}\u0000${asTemplate(f.label)}`;
+        const k = keyOf(f.forum_kind, f.label);
         if (seen.has(k)) err(`${at}.label`, "VALUE_INVALID", localize("jurisdictions.index.the_forum_label_is_given", "the forum '{label}' is given twice", { label: String(f.label) }));
         seen.add(k);
       }
@@ -1430,7 +1444,7 @@ function validateInto(p, errors) {
       str(`${at}.name`, n.name, "name");
       if (!oneOf(LOCAL_NAME_KINDS, n.kind)) err(`${at}.kind`, "KIND_INVALID", localize("jurisdictions.index.kind_is_one_of_local", "kind is one of {LOCAL_NAME_KINDS}", { LOCAL_NAME_KINDS: String(LOCAL_NAME_KINDS.join(", ")) }));
       else if (isStr(n.name)) {
-        const k = `${String(n.name)}\u0000${String(n.kind)}`;
+        const k = keyOf(n.name, n.kind);
         if (seen.has(k)) err(`${at}.name`, "VALUE_INVALID", localize("jurisdictions.index.the_kind_name_is_given", "the {kind} '{name}' is given twice", { kind: String(n.kind), name: String(n.name) }));
         seen.add(k);
       }
