@@ -5,6 +5,20 @@
  * the module under test; olevba reads what it writes (the suite checks that
  * where oletools is installed). Deterministic: no clock, no randomness. */
 
+/**
+ * A module of a project, as the writer takes it.
+ * @typedef {Object} VbaModuleSpec
+ * @property {string} name
+ * @property {string | Uint8Array} [source]
+ * @property {string | null} [stream] null writes no stream and no stream records
+ * @property {Uint8Array} [cache] the performance cache before the compressed source
+ * @property {boolean} [document]
+ * @property {boolean} [unicodeName] false writes no MODULENAMEUNICODE record
+ * @property {number | null} [offset] null writes no MODULEOFFSET record
+ */
+/** @typedef {{ [name: string]: Uint8Array | CfbTree | undefined }} CfbTree a Uint8Array is a stream, an object a storage */
+/** @typedef {{ bytes: Uint8Array, fatOffset: number, dirSector: number, entries: string[] }} CfbFile */
+
 const ENDOFCHAIN = 0xfffffffe, FREESECT = 0xffffffff, FATSECT = 0xfffffffd, NOSTREAM = 0xffffffff;
 
 class Out {
@@ -28,6 +42,11 @@ const pad = (b, unit) => { const out = new Uint8Array(Math.ceil(b.length / unit)
  *  chunk is compressed with the longest match the copy token's split allows;
  *  a full chunk that would not shrink is written raw (flag 0), as Office does.
  *  `literalOnly` writes no copy token at all. */
+/**
+ * @param {Uint8Array} data
+ * @param {{ literalOnly?: boolean }} [o]
+ * @returns {Uint8Array}
+ */
 export function ovbaCompress(data, { literalOnly = false } = {}) {
   const out = new Out().u8(0x01);
   for (let start = 0; start < data.length; start += 4096) {
@@ -73,6 +92,10 @@ export function ovbaCompress(data, { literalOnly = false } = {}) {
 /** An MS-CFB file holding `tree` (an object: a Uint8Array is a stream, an
  *  object a storage). Answers the bytes and where the FAT and directory lie,
  *  so a test can break a chain. */
+/**
+ * @param {CfbTree} tree
+ * @returns {CfbFile}
+ */
 export function makeCfb(tree) {
   const entries = [{ name: "Root Entry", type: 5, children: [] }];
   const add = (obj, parent) => {
@@ -158,6 +181,10 @@ const u32le = (v) => { const b = new Uint8Array(4); new DataView(b.buffer).setUi
 
 /** The decompressed `dir` stream (MS-OVBA §2.3.4.2) for a project and its
  *  modules, every record a real project carries, a reference included. */
+/**
+ * @param {{ project?: string | undefined, codePage?: number | undefined, modules?: VbaModuleSpec[] }} o
+ * @returns {Uint8Array}
+ */
 export function vbaDir({ project = "VBAProject", codePage = 1252, modules = [] }) {
   const d = new Out();
   rec(d, 0x0001, u32le(1)); // SYSKIND: Win32
@@ -196,6 +223,10 @@ export function vbaDir({ project = "VBAProject", codePage = 1252, modules = [] }
  *  document?}]`; `cache` is the performance cache before the compressed
  *  source (its length is the module's offset). `dir` replaces the compressed
  *  dir stream; `streams` replaces or adds VBA-storage streams by name. */
+/**
+ * @param {{ project?: string, codePage?: number, modules?: VbaModuleSpec[], dir?: Uint8Array, streams?: Record<string, Uint8Array | undefined>, extra?: CfbTree }} [o]
+ * @returns {CfbFile}
+ */
 export function makeVbaProject({ project, codePage, modules = [], dir, streams = {}, extra = {} } = {}) {
   const vba = {
     _VBA_PROJECT: Uint8Array.of(0xcc, 0x61, 0xff, 0xff, 0x00, 0x00, 0x00),
