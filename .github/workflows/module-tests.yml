@@ -3,8 +3,8 @@
 # Tests run once, in the session that owns the work (`p4 test`), which writes the test record
 # on the pull request (<!-- process4-test-record -->). This run runs no test, no product code,
 # and installs none of the product's dependencies: with the read-only token it reads the job
-# block and the test record, and passes where the scope is nothing or the record stands for the
-# head commit (`run verdict`).
+# block, the job's record and the test record, and passes where the scope is nothing or the
+# record stands for the head commit (`run verdict`).
 # The tool is fetched at the commit the BASE branch's process.json names, so a pull request
 # cannot move the version that judges it.
 name: module-tests
@@ -53,12 +53,14 @@ jobs:
           git clone -q "$REPO" "$RUNNER_TEMP/process4"
           git -C "$RUNNER_TEMP/process4" checkout -q "$COMMIT"
           (cd "$RUNNER_TEMP/process4/tool" && npm ci --no-audit --no-fund --loglevel=error)
-      # A job's pull request carries its job block, the comment beginning <!-- process4-job -->
-      # (build text 5, section 5), and any pull request that ran its tests carries its test record,
-      # the comment beginning <!-- process4-test-record -->. Both are read with the read-only token,
-      # through gh's REST interface; the first of each is taken. Where one cannot be read, its file
-      # is left empty: no job block, or no record.
-      - name: the job block and the test record
+      # A job's pull request carries its job block, the comment beginning <!-- process4-job -->,
+      # written by ARCH's session, and the job's record, the comment beginning
+      # <!-- process4-job-record -->, written by the job's (build text 5, section 5); any pull
+      # request that ran its tests carries its test record, the comment beginning
+      # <!-- process4-test-record -->. Each is read with the read-only token, through gh's REST
+      # interface; the first of each is taken. Where one cannot be read, its file is left empty:
+      # no job block, no job's record, or no record.
+      - name: the job block, the job's record and the test record
         if: steps.pin.outputs.none != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,7 +76,11 @@ jobs:
             fi
           }
           : > "$RUNNER_TEMP/job-block.txt"
-          case "$HEAD_REF" in job/*) read_mark process4-job "$RUNNER_TEMP/job-block.txt" ;; esac
+          : > "$RUNNER_TEMP/job-record.txt"
+          case "$HEAD_REF" in job/*)
+            read_mark process4-job "$RUNNER_TEMP/job-block.txt"
+            read_mark process4-job-record "$RUNNER_TEMP/job-record.txt" ;;
+          esac
           read_mark process4-test-record "$RUNNER_TEMP/test-record.txt"
       - name: the verdict
         if: steps.pin.outputs.none != 'true'
@@ -86,4 +92,4 @@ jobs:
           DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           unset GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN ACTIONS_ID_TOKEN_REQUEST_TOKEN
-          node "$RUNNER_TEMP/process4/tool/p4.mjs" run verdict --base "$BASE" --base-ref "$BASE_REF" --branch "$HEAD_REF" --draft "$DRAFT" --head "$HEAD_SHA" --job-block "$RUNNER_TEMP/job-block.txt" --test-record "$RUNNER_TEMP/test-record.txt"
+          node "$RUNNER_TEMP/process4/tool/p4.mjs" run verdict --base "$BASE" --base-ref "$BASE_REF" --branch "$HEAD_REF" --draft "$DRAFT" --head "$HEAD_SHA" --job-block "$RUNNER_TEMP/job-block.txt" --job-record "$RUNNER_TEMP/job-record.txt" --test-record "$RUNNER_TEMP/test-record.txt"
