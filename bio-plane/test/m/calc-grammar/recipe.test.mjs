@@ -470,6 +470,16 @@ test("R20 a ratio that is itself undetermined, read by a later step, makes that 
   }
 });
 
+test("R7 R20 a date row civil-time cannot order is set aside, its why the sentence a person reads, never a reason object", () => {
+  /** @type {TableIn} */
+  const dates = { fields: [{ name: "d", type: "date" }], rows: [{ d: "2024" }, { d: "2024-01-15" }, { d: "2024-03-01" }] };
+  const r = run([{ op: "select", as: "s", from: "t", where: [{ field: "d", test: "lt", value: "2024-02-01" }] }], { t: dates });
+  assert.deepEqual(rowsOf(resultOf(r)), [{ d: "2024-01-15" }]);
+  const aside = traceLine(r, 0).undetermined;
+  assert.deepEqual(aside.map((u) => u.row), [0]);
+  for (const u of aside) { assert.equal(typeof u.why, "string"); assert.match(u.why, /2024.*overlap/); }
+});
+
 test("R20 calc-grammar.recipe.field_shape: a table field of an unknown type is refused INPUT_INVALID, its why naming every type; calc-grammar.composed_quantity: a composed sort field says so by key", () => {
   const rec = recipe([{ op: "count", as: "c", from: "t" }], "c", [{ name: "t", kind: "table" }]);
   const shape = evaluate(rec, { t: { fields: [{ name: "a", type: "money" }], rows: [] } });
