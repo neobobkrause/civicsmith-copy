@@ -6,13 +6,14 @@
 
 /** Portable base64 decode (no Buffer, no atob): verifies legacy .b64 files
  *  in Node, the browser, and the Apps Script embed alike. */
+/** @param {unknown} s @returns {Uint8Array} */
 export function b64ToBytes(s) {
   const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const clean = String(s).replace(/[\s=]+/g, '');
   const out = new Uint8Array(Math.floor(clean.length * 3 / 4));
   let o = 0, buf = 0, bits = 0;
   for (let i = 0; i < clean.length; i++) {
-    const v = A.indexOf(clean[i]);
+    const v = A.indexOf(clean.charAt(i));
     if (v === -1) throw new Error('invalid base64 at position ' + i);
     buf = (buf << 6) | v; bits += 6;
     if (bits >= 8) { bits -= 8; out[o++] = (buf >> bits) & 0xff; }
@@ -33,11 +34,15 @@ const K = new Int32Array([
 ]);
 
 /* A byte array-like: an object whose `length` is a non-negative safe integer, and never a string, boxed or not. */
+/** @param {Uint8Array | ArrayLike<number>} c @returns {boolean} */
 const isByteArrayLike = (c) => c !== null && typeof c === 'object' && !(c instanceof String)
   && Number.isSafeInteger(c.length) && c.length >= 0;
 
 /* The one compression function and padding (R25): a core over eight words, a 64-byte buffer and a length, which both
    streams below wrap. `init` is a state `snapshot` wrote, already validated, or absent for a new digest. */
+/** The running state a snapshot writes down: the eight words, the length, and the bytes held back (hex).
+ * @typedef {{h: number[], t: number, b: string}} Snapshot */
+/** @param {Snapshot | null} [init] */
 function core(init) {
   const h = new Int32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
   const buf = new Uint8Array(64);
@@ -52,48 +57,50 @@ function core(init) {
     total = init.t;
   }
 
+  /** @param {Uint8Array} bytes @param {number} off */
   function compress(bytes, off) {
     for (let i = 0; i < 16; i++) {
-      w[i] = (bytes[off] << 24) | (bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3];
+      w[i] = ((bytes[off] ?? 0) << 24) | ((bytes[off + 1] ?? 0) << 16) | ((bytes[off + 2] ?? 0) << 8) | (bytes[off + 3] ?? 0);
       off += 4;
     }
     for (let i = 16; i < 64; i++) {
-      const x = w[i - 15], y = w[i - 2];
+      const x = w[i - 15] ?? 0, y = w[i - 2] ?? 0;
       const s0 = ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
       const s1 = ((y >>> 17) | (y << 15)) ^ ((y >>> 19) | (y << 13)) ^ (y >>> 10);
-      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      w[i] = ((w[i - 16] ?? 0) + s0 + (w[i - 7] ?? 0) + s1) | 0;
     }
-    let a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f2 = h[5], g = h[6], hh = h[7];
+    let a = h[0] ?? 0, b = h[1] ?? 0, c = h[2] ?? 0, d = h[3] ?? 0, e = h[4] ?? 0, f2 = h[5] ?? 0, g = h[6] ?? 0, hh = h[7] ?? 0;
     for (let i = 0; i < 64; i++) {
       const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
       const ch = (e & f2) ^ (~e & g);
-      const t1 = (hh + S1 + ch + K[i] + w[i]) | 0;
+      const t1 = (hh + S1 + ch + (K[i] ?? 0) + (w[i] ?? 0)) | 0;
       const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
       const maj = (a & b) ^ (a & c) ^ (b & c);
       const t2 = (S0 + maj) | 0;
       hh = g; g = f2; f2 = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
     }
-    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
-    h[4] = (h[4] + e) | 0; h[5] = (h[5] + f2) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+    h[0] = ((h[0] ?? 0) + a) | 0; h[1] = ((h[1] ?? 0) + b) | 0; h[2] = ((h[2] ?? 0) + c) | 0; h[3] = ((h[3] ?? 0) + d) | 0;
+    h[4] = ((h[4] ?? 0) + e) | 0; h[5] = ((h[5] ?? 0) + f2) | 0; h[6] = ((h[6] ?? 0) + g) | 0; h[7] = ((h[7] ?? 0) + hh) | 0;
   }
 
   return {
-    /** Feed a Uint8Array. */
+    /** Feed a Uint8Array. @param {Uint8Array} c */
     feed(c) {
       let i = 0;
       const n = c.length;
       total += n;
       if (bufLen > 0) {                                          // top up a partial block
-        while (bufLen < 64 && i < n) buf[bufLen++] = c[i++];
+        while (bufLen < 64 && i < n) buf[bufLen++] = c[i++] ?? 0;
         if (bufLen === 64) { compress(buf, 0); bufLen = 0; }
       }
       while (n - i >= 64) { compress(c, i); i += 64; }           // full blocks, no copy
-      while (i < n) buf[bufLen++] = c[i++];                      // tail into the buffer
+      while (i < n) buf[bufLen++] = c[i++] ?? 0;                      // tail into the buffer
     },
     /** The state so far: the eight words, the length, and the bytes held back for the next block (hex). */
+    /** @returns {Snapshot} */
     state() {
       let b = '';
-      for (let i = 0; i < bufLen; i++) b += (buf[i] < 16 ? '0' : '') + buf[i].toString(16);
+      for (let i = 0; i < bufLen; i++) { const v = buf[i] ?? 0; b += (v < 16 ? '0' : '') + v.toString(16); }
       return { h: Array.from(h, (v) => v >>> 0), t: total, b };
     },
     get length() { return total; },
@@ -110,13 +117,15 @@ function core(init) {
       buf[62] = (bitLo >>> 8) & 0xff; buf[63] = bitLo & 0xff;
       compress(buf, 0);
       let out = '';
-      for (let i = 0; i < 8; i++) out += ('00000000' + (h[i] >>> 0).toString(16)).slice(-8);
+      for (let i = 0; i < 8; i++) out += ('00000000' + ((h[i] ?? 0) >>> 0).toString(16)).slice(-8);
       return out;
     }
   };
 }
 
 /* update()'s input (R20): a Uint8Array as it is, or a byte array-like copied (signed bytes coerce mod 256). */
+/* What a stream's `update` takes (R20): bytes, or a byte array-like whose values are taken mod 256. */
+/** @param {Uint8Array | ArrayLike<number>} chunk @returns {Uint8Array} */
 function toBytes(chunk) {
   if (chunk instanceof Uint8Array) return chunk;
   if (!isByteArrayLike(chunk)) throw new TypeError('sha256 update takes a Uint8Array or a byte array-like, not ' + (chunk === null ? 'null' : typeof chunk));
@@ -136,12 +145,13 @@ function toBytes(chunk) {
  *  like a digest of the input. The module's tests (digests.test.mjs, R20–R22)
  *  cross-validate it against WebCrypto over many sizes and chunk boundary
  *  offsets: a wrong hash here would silently corrupt every gate verdict, so
- *  those tests are load-bearing, not decorative. */
+ *  those tests are load-bearing, not decorative.
+ * @returns {Sha256} */
 export function createSha256() {
   const c = core();
   let finalized = false;
   return {
-    /** Feed a chunk of bytes. Chainable. */
+    /** Feed a chunk of bytes. Chainable. @param {Uint8Array | ArrayLike<number>} chunk @returns {Sha256} */
     update(chunk) {
       if (finalized) throw new Error('sha256 stream already finalized');
       c.feed(toBytes(chunk));
@@ -156,23 +166,46 @@ export function createSha256() {
   };
 }
 
+/** A SHA-256 stream (R20). @typedef {{update: (chunk: Uint8Array | ArrayLike<number>) => Sha256, hex: () => string}} Sha256 */
+/** A stream that can be written down and taken up again (R64).
+ * @typedef {{update: (chunk: Uint8Array | ArrayLike<number>) => ResumableSha256, snapshot: () => string, readonly length: number, hex: () => string}} ResumableSha256 */
+/** An object read member by member. @typedef {{readonly [key: string]: unknown}} Members */
+/** @param {unknown} v @returns {v is Members} */
+const isMembers = (v) => v !== null && typeof v === 'object';
+/** A list read item by item. @typedef {readonly unknown[]} List */
+/** @param {unknown} v @returns {v is List} */
+const isList = (v) => Array.isArray(v);
+
 const HEX = /^[0-9a-f]*$/;
 
 /* A snapshot's content, or null when `state` is not one `snapshot()` wrote. */
+/** @param {string} state @returns {Snapshot | null} */
 function parseSnapshot(state) {
-  let s;
-  try { s = JSON.parse(state); } catch { return null; }
-  const ok = s !== null && typeof s === 'object' && Array.isArray(s.h) && s.h.length === 8
-    && s.h.every((v) => Number.isInteger(v) && v >= 0 && v <= 0xffffffff)
-    && Number.isSafeInteger(s.t) && s.t >= 0 && typeof s.b === 'string' && HEX.test(s.b)
-    && s.b.length % 2 === 0 && s.b.length / 2 === s.t % 64;
-  return ok ? s : null;
+  /** @type {unknown} */
+  let parsed;
+  try { parsed = JSON.parse(state); } catch { return null; }
+  const s = parsed;
+  if (!isMembers(s)) return null;
+  const h = s.h, t = s.t, b = s.b;
+  if (!isList(h) || h.length !== 8) return null;
+  /** @type {number[]} */
+  const words = [];
+  for (const v of h) {
+    if (typeof v !== 'number' || !Number.isInteger(v) || v < 0 || v > 0xffffffff) return null;
+    words.push(v);
+  }
+  const ok = typeof t === 'number' && Number.isSafeInteger(t) && t >= 0 && typeof b === 'string' && HEX.test(b)
+    && b.length % 2 === 0 && b.length / 2 === t % 64;
+  return ok ? { h: words, t, b } : null;
 }
 
 /** R64: a stream as `createSha256`'s whose running state can be written down (`snapshot()`, a short string) and
  *  taken up again (`createResumableSha256(snapshot)`), so a file hashed in parts across objects that leave memory
- *  between them gives the digest of the whole. A state that is not a string `snapshot()` wrote is a TypeError. */
+ *  between them gives the digest of the whole. A state that is not a string `snapshot()` wrote is a TypeError.
+ * @param {string | null} [state]
+ * @returns {ResumableSha256} */
 export function createResumableSha256(state) {
+  /** @type {Snapshot | null} */
   let init = null;
   if (state !== undefined && state !== null) {
     init = typeof state === 'string' ? parseSnapshot(state) : null;
@@ -181,6 +214,7 @@ export function createResumableSha256(state) {
   const c = core(init);
   let finalized = false;
   return {
+    /** @param {Uint8Array | ArrayLike<number>} chunk @returns {ResumableSha256} */
     update(chunk) {
       if (finalized) throw new Error('sha256 stream already finalized');
       c.feed(toBytes(chunk));
@@ -235,7 +269,8 @@ export function createResumableSha256(state) {
 
 const utf8 = new TextEncoder();
 
-/** Synchronous SHA-256 over a UTF-8 string, lowercase hex. */
+/** Synchronous SHA-256 over a UTF-8 string, lowercase hex.
+ * @param {unknown} str @returns {string} */
 export function sha256HexSync(str) {
   return createSha256().update(utf8.encode(String(str))).hex();
 }

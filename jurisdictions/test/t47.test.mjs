@@ -3,20 +3,26 @@
  * Every refusal is shown beside a well-formed control. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { get, validate, COUNTERPARTY_LEVELS, LAW_LEVELS } from "../index.mjs";
+import { validate, COUNTERPARTY_LEVELS, LAW_LEVELS } from "../index.mjs";
+import { isList } from "../shared.mjs";
+import { held, loose, at, must } from "./helpers.mjs";
+/** @import { Validation } from "../index.mjs" */
 
 const FIRST = "oakland-alameda";
 const TEST = "test-port-ellery";
+/** @param {Validation} r @param {string} code @param {string} [path] @returns {boolean} */
 const hasError = (r, code, path) => r.errors.some((e) => e.code === code && (path == null || e.path === path));
 /* a held profile with its first counterparty's level changed (or removed, for undefined) */
+/** @param {string} id @param {object | string | number | boolean | null | undefined} level @param {number} [i] @returns {Validation} */
 const withLevel = (id, level, i = 0) => {
-  const p = get(id);
-  if (level === undefined) delete p.counterparties[i].level; else p.counterparties[i].level = level;
+  const p = loose(held(id));
+  const c = at(p, `counterparties[${i}]`);
+  if (level === undefined) delete c.level; else c.level = level;
   return validate(p);
 };
 
 test("R88 COUNTERPARTY_LEVELS is exported: state, county, city, district, in that order, frozen", async () => {
-  assert.ok(Array.isArray(COUNTERPARTY_LEVELS));
+  assert.ok(isList(COUNTERPARTY_LEVELS));
   assert.deepEqual([...COUNTERPARTY_LEVELS], ["state", "county", "city", "district"]);
   assert.ok(Object.isFrozen(COUNTERPARTY_LEVELS));
   /* frozen: no caller can change the one vocabulary (a module is strict code, so each attempt throws) */
@@ -32,17 +38,19 @@ test("R88 COUNTERPARTY_LEVELS is exported: state, county, city, district, in tha
 
 test("R88 validate reads COUNTERPARTY_LEVELS: a counterparty level is accepted exactly when it is one of them, else LEVEL_UNKNOWN", () => {
   for (const id of [FIRST, TEST]) {
-    const p = get(id);
-    assert.ok(p.counterparties.length, `${id} holds counterparties`);
+    const counterparties = must(held(id).counterparties, `${id} counterparties`);
+    assert.ok(counterparties.length, `${id} holds counterparties`);
     /* controls: every level of the list, on every counterparty of the profile, is accepted */
     for (const level of COUNTERPARTY_LEVELS)
-      p.counterparties.forEach((c, i) => {
+      counterparties.forEach((c, i) => {
         const r = withLevel(id, level, i);
         assert.deepEqual(r, { ok: true, errors: [] }, `${id} counterparties[${i}] ${level}`);
       });
     /* refusals: anything outside the list, the law levels it lacks and D-149's local among them, and an absent level */
-    for (const level of ["federal", "local", "regional", "national", "municipal", "State", "CITY", " city", "city ", "",
-      "state,county", null, 0, 1, true, ["city"], { level: "city" }, undefined]) {
+    /** @type {(object | string | number | boolean | null | undefined)[]} */
+    const wrong = ["federal", "local", "regional", "national", "municipal", "State", "CITY", " city", "city ", "",
+      "state,county", null, 0, 1, true, ["city"], { level: "city" }, undefined];
+    for (const level of wrong) {
       const r = withLevel(id, level);
       assert.equal(r.ok, false, `${id} ${JSON.stringify(level)}`);
       assert.ok(hasError(r, "LEVEL_UNKNOWN", "counterparties[0].level"), `${id} ${JSON.stringify(level)}`);
@@ -54,7 +62,7 @@ test("R88 validate reads COUNTERPARTY_LEVELS: a counterparty level is accepted e
   for (const level of new Set([...COUNTERPARTY_LEVELS, ...LAW_LEVELS]))
     assert.equal(withLevel(TEST, level).ok, COUNTERPARTY_LEVELS.includes(level), level);
   /* every held office's level is one of them */
-  for (const id of [FIRST, TEST]) for (const c of get(id).counterparties)
+  for (const id of [FIRST, TEST]) for (const c of must(held(id).counterparties, `${id} counterparties`))
     assert.ok(COUNTERPARTY_LEVELS.includes(c.level), `${id} ${c.role}`);
 });
 
@@ -63,7 +71,8 @@ test("R88 an office's level is not a law's level (R31): district is no law level
   assert.ok(!LAW_LEVELS.includes("district") && COUNTERPARTY_LEVELS.includes("district"));
   assert.ok(LAW_LEVELS.includes("federal") && !COUNTERPARTY_LEVELS.includes("federal"));
   /* a law's level is judged by R31's list, never this one */
-  const law = (level) => { const p = get(TEST); p.records_laws[0].level = level; return validate(p); };
+  /** @param {string} level @returns {Validation} */
+  const law = (level) => { const p = loose(held(TEST)); at(p, "records_laws[0]").level = level; return validate(p); };
   assert.ok(hasError(law("district"), "LEVEL_UNKNOWN", "records_laws[0].level"), "district is no law level");
   assert.ok(law("federal").ok, "control: federal is a law level");
   assert.ok(hasError(withLevel(TEST, "federal"), "LEVEL_UNKNOWN", "counterparties[0].level"), "federal is no office level");
