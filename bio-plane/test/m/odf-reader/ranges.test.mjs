@@ -6,11 +6,17 @@ import { odsEntry } from "../../../src/odf.mjs";
 import { sheetRangeRef } from "../../../src/formats-xlsx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
 
+/** @param {string} text */
 const cell = (text) => `<table:table-cell office:value-type="string"><text:p>${text}</text:p></table:table-cell>`;
+/** @param {string} name @param {string} [inner] */
 const table = (name, inner = "") => `<table:table table:name="${name}"><table:table-row>${cell("x")}</table:table-row>${inner}</table:table>`;
+/** @param {string} name @param {string | null} addr */
 const nr = (name, addr) => `<table:named-range table:name="${name}" table:base-cell-address="$Data.$A$1"${addr == null ? "" : ` table:cell-range-address="${addr}"`}/>`;
+/** @param {string} name @param {string} expr */
 const ne = (name, expr) => `<table:named-expression table:name="${name}" table:base-cell-address="$Data.$A$1" table:expression="${expr}"/>`;
+/** @param {string} name @param {string} addr */
 const dr = (name, addr) => `<table:database-range table:name="${name}" table:target-range-address="${addr}"/>`;
+/** @param {string} body */
 const T = (body) => odsEntry.text(pkg("ods", { body }));
 
 /* ------------------------------------------------------------------ R44 */
@@ -30,6 +36,8 @@ test("R44 named ranges and database ranges naming one rectangle on one sheet are
     `<table:database-ranges>${dr("Db", "Data.A1:Data.B3")}${dr("DbQuoted", "'My ''Q'' Sheet'.A1:.A5")}</table:database-ranges>`,
   ].join("");
   const t = await T(body);
+  assert.ok(t.ok);
+  /** @param {string} source @param {string} name @param {string | null} scope @param {string} sheet @param {string} range */
   const u = (source, name, scope, sheet, range) => ({ source, name, scope, hidden: false, unit: sheetRangeRef(sheet, range) });
   assert.deepEqual(t.rangeUnits, [
     u("named-range", "Local", "Data", "Data", "A1:C3"),
@@ -48,6 +56,7 @@ test("R44 named ranges and database ranges naming one rectangle on one sheet are
 });
 
 test("R44 every other name is skipped with its reason and its reference verbatim, each accounted for once", async () => {
+  /** @type {[string, string | null, string][]} */
   const cases = [
     ["Empty", "", "empty_reference"],
     ["Missing", null, "empty_reference"],
@@ -66,6 +75,7 @@ test("R44 every other name is skipped with its reason and its reference verbatim
     + `<table:named-expressions>${cases.map(([n, a]) => nr(n, a)).join("")}</table:named-expressions>`
     + `<table:database-ranges>${dr("DbGone", "Nope.A1:Nope.B2")}${dr("DbBroken", "#REF!")}</table:database-ranges>`;
   const t = await T(body);
+  assert.ok(t.ok);
   assert.deepEqual(t.rangeUnits, []);
   assert.deepEqual(t.rangeUnitsSkipped, [
     ...cases.map(([name, ref, why]) => ({ source: "named-range", name, ref, why })),
@@ -76,6 +86,7 @@ test("R44 every other name is skipped with its reason and its reference verbatim
 
 test("R44 a document naming nothing carries two empty lists; one whose content.xml was not read carries null for both", async () => {
   const none = await T(table("Data"));
+  assert.ok(none.ok);
   assert.deepEqual([none.rangeUnits, none.rangeUnitsSkipped], [[], []]);
   const body = table("Data") + `<table:named-expressions>${nr("Block", "$Data.$A$1:.$B$4")}</table:named-expressions>`;
   const over = await odsEntry.text(buildZip(withCd(members("ods", { body }), "content.xml", { usize: OVER_BOUND })));
@@ -86,6 +97,7 @@ test("R44 a document naming nothing carries two empty lists; one whose content.x
     pkg("ods", { content: "<office:document-content><office:body><office:text/></office:body></office:document-content>" }),
   ]) {
     const t = await odsEntry.text(bytes);
+    assert.ok(t.ok);
     assert.deepEqual([t.rangeUnits, t.rangeUnitsSkipped], [null, null]);
   }
 });

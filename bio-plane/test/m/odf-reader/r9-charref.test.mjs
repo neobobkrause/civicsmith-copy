@@ -6,7 +6,10 @@ import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { members, buildZip, contentXml, metaXml, manifestXml } from "./pkg.mjs";
 import { cellOf, rowOf, tableOf } from "./r9.mjs";
 
+/** @typedef {import("./pkg.mjs").PackageOptions} PackageOptions */
+
 const BAD = ["&#x110000;", "&#99999999999;", "&#xD800;", "&#0;", "&#12ab;", "&#xDFFF;", "&#;", "&#x;"];
+/** @param {string} inner */
 const odtBody = (inner) => `<text:p>before</text:p><text:p>${inner}</text:p>`;
 
 for (const ref of BAD) {
@@ -29,35 +32,45 @@ for (const ref of BAD) {
 
 test("R51 a bad reference in meta.xml, the manifest or styles.xml states that part and reads the rest", async () => {
   const good = tableOf("T", rowOf(cellOf("fine")));
-  for (const [name, patch] of [
+  /** @type {[string, PackageOptions][]} */
+  const patches = [
     ["meta.xml", { meta: metaXml({ "dc:title": "t &#xD800; t" }) }],
     ["META-INF/manifest.xml", { manifest: manifestXml(["Object 1/content.xml"], "ods").replace("</manifest:manifest>", "<!-- &#x110000; --></manifest:manifest>") }],
-  ]) {
+  ];
+  for (const [name, patch] of patches) {
     const bytes = buildZip(members("ods", { body: good, ...patch }));
     const s = await odsEntry.structure(bytes);
     assert.equal(s.ok, true);
     assert.deepEqual(s.evidentiary.undetermined.find((u) => u.part === name), { part: name, why: "char_ref_invalid", final: true }, name);
     const t = await odsEntry.text(bytes);
-    assert.equal(t.sheets[0].text, "fine", name);
+    assert.ok(t.ok);
+    assert.equal(t.sheets[0]?.text, "fine", name);
   }
   const styled = buildZip(members("ods", { body: good, extra: [{ name: "styles.xml", data: `<?xml version="1.0"?><office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"><x>&#0;</x></office:document-styles>` }] }));
   const st = await odsEntry.structure(styled);
+  assert.ok(st.ok);
   assert.deepEqual(st.active.find((a) => a.part === "styles.xml"), { kind: "unread", part: "styles.xml", why: "char_ref_invalid" });
-  assert.equal((await odsEntry.text(styled)).sheets[0].text, "fine");
+  const ts = await odsEntry.text(styled);
+  assert.ok(ts.ok);
+  assert.equal(ts.sheets[0]?.text, "fine");
 });
 
 test("R51 valid references are read: decimal, hexadecimal, a supplementary plane character", async () => {
   const bytes = buildZip(members("odt", { body: odtBody("&#65;&#x42;&#x1F600;&#x10FFFF;&#9;") }));
   const t = await odtEntry.text(bytes);
-  assert.equal(t.paragraphs[1].text, "AB\u{1F600}\u{10FFFF}\t");
+  assert.ok(t.ok);
+  assert.equal(t.paragraphs[1]?.text, "AB\u{1F600}\u{10FFFF}\t");
 });
 
 test("R51 a hostile reference in every position of every entry never throws", async () => {
   for (const entry of [odtEntry, odsEntry, odpEntry]) {
     for (const ref of BAD) {
       const flavour = entry.format;
+      assert.ok(flavour === "odt" || flavour === "ods" || flavour === "odp");
       const bytes = buildZip(members(flavour, { content: contentXml(flavour, "").replace("office:version", `office:foo="${ref}" office:version`), meta: metaXml({ "dc:title": ref }) }));
-      for (const op of ["structure", "text"]) { const r = await entry[op](bytes); assert.equal(typeof r.ok, "boolean"); }
+      /** @type {("structure" | "text")[]} */
+      const ops = ["structure", "text"];
+      for (const op of ops) { const r = await entry[op](bytes); assert.equal(typeof r.ok, "boolean"); }
     }
   }
 });
