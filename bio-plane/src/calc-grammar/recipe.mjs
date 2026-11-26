@@ -508,11 +508,12 @@ function fieldOf(table, name, step, role) {
   return f;
 }
 
-/* An input or an earlier step's answer, as a value: a ratio's quotient, or the value itself. */
+/* An input or an earlier step's answer, as a value: a ratio's quotient, or the value itself. A ratio that is itself
+   undetermined is read as that undetermined value, so the step reading it answers undetermined (R20). */
 /** @param {Out | InputEntry | undefined} x @returns {Data} */
 function valueOf(x) {
   if (x === undefined) throw new TypeError("a step reads a name defined before it");
-  if (x.kind === "ratio") { const r = x.value; return isUndetermined(r) ? undefined : r.value; }
+  if (x.kind === "ratio") { const r = x.value; return isUndetermined(r) ? r : r.value; }
   return x.value;
 }
 
