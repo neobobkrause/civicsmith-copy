@@ -117,19 +117,21 @@ import { relative } from "node:path";
  * @returns {GitProvenance}
  */
 export function readGitProvenance(repoRoot) {
-  /** @type {(r: NodeSpawnResult) => string | null} */
-  const answer = (r) => (r.error || r.status !== 0 || typeof r.stdout !== "string") ? null : r.stdout;
+  /** @type {(error: Error | undefined, status: number | null, stdout: unknown) => string | null} */
+  const answer = (error, status, stdout) => (error || status !== 0 || typeof stdout !== "string") ? null : stdout;
   /** @type {(out: string | null) => Set<string> | null} */
   const setOf = (out) => out === null ? null : new Set(out.split("\0").filter(Boolean));
-  return {
-    repoRoot,
-    inHead: setOf(answer(spawnSync("git", ["ls-tree", "-r", "--name-only", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
-    inIndex: setOf(answer(spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
-    /* Tracked paths whose working content differs from HEAD, staged or not,
-       deleted included; spelled like `ls-tree`'s answer. */
-    changed: setOf(answer(spawnSync("git", ["diff", "--relative", "--name-only", "--no-renames", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
-    headSha: (answer(spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 })) || "").trim(),
-  };
+  const tree = spawnSync("git", ["ls-tree", "-r", "--name-only", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 });
+  const inHead = setOf(answer(tree.error, tree.status, tree.stdout));
+  const index = spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 });
+  const inIndex = setOf(answer(index.error, index.status, index.stdout));
+  /* Tracked paths whose working content differs from HEAD, staged or not,
+     deleted included; spelled like `ls-tree`'s answer. */
+  const diff = spawnSync("git", ["diff", "--relative", "--name-only", "--no-renames", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 });
+  const changed = setOf(answer(diff.error, diff.status, diff.stdout));
+  const head = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 });
+  const headSha = (answer(head.error, head.status, head.stdout) || "").trim();
+  return { repoRoot, inHead, inIndex, changed, headSha };
 }
 
 /* Repo-relative, POSIX-shaped, which is the spelling `ls-tree` answers in. */
