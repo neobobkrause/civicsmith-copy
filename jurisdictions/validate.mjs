@@ -7,6 +7,24 @@ import { SECTIONS, SPACES, VOCABULARY, DATA_VOCABULARY, MEMBER_CAPACITIES, LAW_L
 /* ------------------------------------------------------------------------------------------------ */
 /* validate (R10, R11, R28, R35).                                                                   */
 
+/** Whether `v` is a key matching ^[a-z][a-z0-9_]*$.
+ *  @param {Value} v
+ *  @returns {boolean} */
+const isKindKey = (v) => typeof v === "string" && KIND_RE.test(v);
+/** Whether `v` is a string.
+ *  @param {Value} v
+ *  @returns {boolean} */
+const isText = (v) => typeof v === "string";
+/** `v` written as a template literal writes it (`${v}`): a symbol throws, as it did in the template.
+ *  @param {unknown} v
+ *  @returns {string} */
+const asTemplate = (v) => `${v}`;
+/** An identifier scheme and the entity kinds it identifies, as a map entry.
+ *  @param {Value} scheme
+ *  @param {Entries} kinds
+ *  @returns {[Value, Entries]} */
+const schemeEntry = (scheme, kinds) => [scheme, kinds];
+
 /** @import { Value, Fields, Entries } from "./shared.mjs" */
 
 /** One fault `validate` finds: where in the profile (a path like `systems[0].origin`, "" for the whole), its code, and
@@ -104,7 +122,7 @@ function validateInto(p, errors) {
     if (!isList(h.weekly)) err(`${path}.weekly`, "HOURS_INVALID", "weekly is a list of {day, open, close}");
     else {
       /** @type {Map<string, { o: number, c: number, at: string }[]>} */
-      const spans = new Map();
+      const spans = new Map([]);
       h.weekly.forEach((s, i) => {
         const at = `${path}.weekly[${i}]`;
         if (!isObj(s)) { err(at, "HOURS_INVALID", "a span is {day, open, close}"); return; }
@@ -207,7 +225,7 @@ function validateInto(p, errors) {
    *  @param {string} path
    *  @param {Value} v
    *  @returns {Entries} */
-  const list = (path, v) => { if (!isList(v)) { err(path, "VALUE_INVALID", "a list"); return []; } return v; };
+  const list = (path, v) => { if (!isList(v)) err(path, "VALUE_INVALID", "a list"); return listOr(v); };
   /** Whether `e` is an object; a fault when not.
    *  @param {string} path
    *  @param {unknown} e
@@ -215,8 +233,10 @@ function validateInto(p, errors) {
   const entry = (path, e) => { if (!isObj(e)) { err(path, "VALUE_INVALID", "an entry is an object"); return false; } return true; };
 
   /* systems first: floors and file numbers name their origins. */
+  /** @type {Set<Value>} */
   const origins = new Set();
-  const noPathHosts = new Map();
+  /** @type {Map<string, string>} */
+  const noPathHosts = new Map([]);
   if (own(p, "systems")) list("systems", p.systems).forEach((s, i) => {
     const at = `systems[${i}]`;
     if (!entry(at, s)) return;
@@ -224,7 +244,7 @@ function validateInto(p, errors) {
     str(`${at}.origin`, s.origin, "origin");
     if (isStr(s.origin)) origins.add(s.origin);
     str(`${at}.name`, s.name, "name");
-    if (!isList(s.hosts) || !s.hosts.length || !s.hosts.every((h) => isStr(h) && h === h.toLowerCase()))
+    if (!isList(s.hosts) || !s.hosts.length || !s.hosts.every((h) => isStr(h) && typeof h === "string" && h === h.toLowerCase()))
       err(`${at}.hosts`, "VALUE_INVALID", "hosts is a non-empty list of lower-case host names");
     if (own(s, "path")) pattern(`${at}.path`, s.path);
     else if (isList(s.hosts)) for (const h of s.hosts) if (typeof h === "string") noPathHosts.set(h, at);
@@ -246,14 +266,16 @@ function validateInto(p, errors) {
     const at = `mixed_hosts[${i}]`;
     if (!entry(at, m)) return;
     fields(at, m, ["host", "why", "basis"]);
-    if (!isStr(m.host) || m.host !== m.host.toLowerCase()) err(`${at}.host`, "VALUE_INVALID", "a lower-case host name");
+    if (!isStr(m.host) || typeof m.host !== "string" || m.host !== m.host.toLowerCase()) err(`${at}.host`, "VALUE_INVALID", "a lower-case host name");
     str(`${at}.why`, m.why, "why");
     if (typeof m.host === "string" && noPathHosts.has(m.host))
       err(`${at}.host`, "HOST_CONFLICT", localize("jurisdictions.index.host_is_mixed_and_also", "{host} is mixed and also in {get}, which has no path", { host: String(m.host), get: String(noPathHosts.get(m.host)) }));
     basis(at, m);
   });
 
-  /* spaces */
+  /* spaces: each space's judged forms by name. A plain object, read by any value as a key (as `spaceForms[x.space]` was):
+     a key the language converts to a string, so `String(k)` reads the same member. */
+  /** @type {{ [space: string]: Map<Value, Fields> }} */
   const spaceForms = {};
   if (own(p, "spaces")) {
     if (!isObj(p.spaces)) err("spaces", "VALUE_INVALID", "spaces is an object keyed by space");
@@ -263,8 +285,11 @@ function validateInto(p, errors) {
       if (!entry(at, s)) continue;
       fields(at, s, name === "enactment" ? ["label", "forms", "kinds"] : ["label", "forms"]);
       str(`${at}.label`, s.label, "label");
+      /** @type {Set<Value>} */
       const names = new Set();
-      spaceForms[name] = new Map();
+      /** @type {Map<Value, Fields>} */
+      const formsOf = new Map([]);
+      spaceForms[name] = formsOf;
       list(`${at}.forms`, s.forms).forEach((f, i) => {
         const fa = `${at}.forms[${i}]`;
         if (!entry(fa, f)) return;
@@ -287,7 +312,7 @@ function validateInto(p, errors) {
           if (bad) { normalOk = false; err(`${fa}.clean`, "NORMAL_INVALID", "clean is {strip?: [pattern], spaces?: remove|collapse, upper?: true}"); }
         }
         basis(fa, f);
-        if (isStr(f.form) && re && normalOk) spaceForms[name].set(f.form, f);
+        if (isStr(f.form) && re && normalOk) formsOf.set(f.form, f);
       });
       if (name === "enactment" && own(s, "kinds")) list(`${at}.kinds`, s.kinds).forEach((k, i) => {
         const ka = `${at}.kinds[${i}]`;
@@ -317,12 +342,13 @@ function validateInto(p, errors) {
     if (!oneOf(SPACES, x.space)) err(`${at}.space`, "UNKNOWN_SPACE", localize("jurisdictions.index.string_is_not_a_space", "'{String}' is not a space", { String: String(String(x.space)) }));
     if (!own(x, "source") || x.source === "" || x.source == null) err(`${at}.source`, "CROSSWALK_UNSOURCED", "a crosswalk names the content hash of its capture");
     else if (typeof x.source !== "string" || !HEX64.test(x.source)) err(`${at}.source`, "VALUE_INVALID", "source is 64 hexadecimal characters");
-    const known = spaceForms[x.space] || new Map();
+    /** @type {Map<Value, Fields>} */
+    const known = spaceForms[String(x.space)] || new Map([]);
     const forms = isList(x.forms) && x.forms.length === 2 ? x.forms : null;
     if (!forms) err(`${at}.forms`, "VALUE_INVALID", "forms is [a, b]");
     else forms.forEach((f, j) => { if (!known.has(f)) err(`${at}.forms[${j}]`, "CROSSWALK_FORM_UNKNOWN", localize("jurisdictions.index.the_space_has_no_form", "the space has no form '{String}'", { String: String(String(f)) })); });
     list(`${at}.pairs`, x.pairs).forEach((pair, j) => {
-      if (!isList(pair) || pair.length !== 2 || !pair.every((v) => typeof v === "string")) {
+      if (!isList(pair) || pair.length !== 2 || !pair.every(isText)) {
         err(`${at}.pairs[${j}]`, "VALUE_INVALID", "a pair is [value in form a, value in form b]"); return;
       }
       if (!forms) return;
@@ -335,25 +361,33 @@ function validateInto(p, errors) {
   });
 
   /* R59, R60: the organisation keys the body-variant map names */
+  /** @type {Set<Value>} */
   const variantOrgs = new Set(own(p, "vocabulary") && isObj(p.vocabulary) && isList(p.vocabulary.body_variants)
-    ? p.vocabulary.body_variants.filter(isObj).map((v) => v.organisation).filter((o) => typeof o === "string" && KIND_RE.test(o)) : []);
+    ? p.vocabulary.body_variants.filter(isObj).map((v) => v.organisation).filter(isKindKey) : []);
+  /** @param {Value} o
+   *  @returns {boolean} */
   const variantOrg = (o) => typeof o === "string" && variantOrgs.has(o);
   /* The profile's action kinds, read first: a response status (R77), a legal fact (R79) and a procedure guide (R80) name
      them. */
+  /** @type {Set<Value>} */
   const profileKinds = new Set(own(p, "action_kinds") && isList(p.action_kinds)
-    ? p.action_kinds.filter((k) => isObj(k) && typeof k.kind === "string" && KIND_RE.test(k.kind)).map((k) => k.kind) : []);
+    ? p.action_kinds.flatMap((k) => (isObj(k) && typeof k.kind === "string" && KIND_RE.test(k.kind) ? [k.kind] : [])) : []);
   if (own(p, "vocabulary")) {
     if (!isObj(p.vocabulary)) err("vocabulary", "VALUE_INVALID", "vocabulary is an object keyed by vocabulary key");
     else for (const [key, entries] of Object.entries(p.vocabulary)) {
       const at = `vocabulary.${key}`;
       if (!oneOf(VOCABULARY, key)) { err(at, "UNKNOWN_VOCABULARY", localize("jurisdictions.index.key_is_not_one_of", "'{key}' is not one of {VOCABULARY}", { key: String(key), VOCABULARY: String(VOCABULARY.join(", ")) })); continue; }
+      /** @type {Set<Value>} */
       const once = new Set(); /* R58, R60: a value, status or member type once in the profile */
       list(at, entries).forEach((e, i) => {
         const ea = `${at}[${i}]`;
         if (!entry(ea, e)) return;
-        if (own(DATA_VOCABULARY, key)) {
-          fields(ea, e, DATA_VOCABULARY[key]);
-          const name = DATA_VOCABULARY[key][0];
+        /* DATA_VOCABULARY's own keys are these three */
+        const dataFields = key === "vote_values" ? DATA_VOCABULARY.vote_values : key === "response_statuses"
+          ? DATA_VOCABULARY.response_statuses : key === "member_types" ? DATA_VOCABULARY.member_types : null;
+        if (dataFields) {
+          fields(ea, e, dataFields);
+          const name = dataFields[0] ?? ""; /* each list names its key field first */
           const v = e[name];
           /* R60 (K1729): a MemberType once per body-variant organisation, and once for all bodies */
           const k = key === "member_types" ? memberTypeKey(e) : v;
@@ -451,7 +485,9 @@ function validateInto(p, errors) {
     str(`${at}.term`, t.term, "term");
     basis(at, t);
   });
+  /** @type {Set<Value>} */
   const lawNames = new Set();
+  /** @type {{ at: string, rule: Value }[]} */
   const lawResponses = [];
   if (own(p, "records_laws")) list("records_laws", p.records_laws).forEach((l, i) => {
     const at = `records_laws[${i}]`;
@@ -462,6 +498,7 @@ function validateInto(p, errors) {
     /* R76 (T45): the stages the law has, in its order, each a product stage name with the law's own term; a stage the
        law lacks is absent. Whether action-grammar knows a stage is that module's check. */
     if (own(l, "stages")) {
+      /** @type {Set<Value>} */
       const seen = new Set();
       if (!isList(l.stages) || !l.stages.length) err(`${at}.stages`, "VALUE_INVALID", "stages is a non-empty ordered list of {stage, label, citation}");
       else l.stages.forEach((st, j) => {
@@ -501,7 +538,10 @@ function validateInto(p, errors) {
       basis("locale", l);
     }
   }
-  /* R41; R74 (T45): a time zone, the profile's or an office's own. */
+  /** R41; R74 (T45): a time zone, the profile's or an office's own.
+   *  @param {string} path
+   *  @param {Value} z
+   *  @returns {void} */
   const zone = (path, z) => {
     if (!isObj(z)) { err(path, "VALUE_INVALID", "time_zone is {value, status, basis}"); return; }
     fields(path, z, ["value", "status", "basis"]);
@@ -509,13 +549,17 @@ function validateInto(p, errors) {
     statusBasis(path, z);
   };
   if (own(p, "time_zone")) zone("time_zone", p.time_zone);
-  /* R82: an amount in R26's units */
+  /** R82: an amount in R26's units.
+   *  @param {string} path
+   *  @param {Value} a
+   *  @returns {void} */
   const amountOf = (path, a) => {
     if (!isObj(a) || Object.keys(a).some((k) => k !== "amount" && k !== "units") || !isPosInt(a.amount) || !oneOf(UNITS, a.units))
       err(path, "VALUE_INVALID", localize("jurisdictions.index.amount_is_amount_and_units", "an amount is {amount, units}, a positive integer of one of {units_list}", { units_list: UNITS.join(", ") }));
   };
 
   /* R46: how a day period is computed; R47: the named closure lists. Read first: rules name them. */
+  /** @type {Set<Value>} */
   const computationKeys = new Set();
   if (own(p, "computation")) list("computation", p.computation).forEach((c, i) => {
     const at = `computation[${i}]`;
@@ -528,8 +572,9 @@ function validateInto(p, errors) {
     str(`${at}.citation`, c.citation, "citation");
     statusBasis(at, c);
   });
+  /** @type {Set<Value>} */
   const closureLists = new Set(own(p, "holidays") && isList(p.holidays)
-    ? p.holidays.filter((h) => isObj(h) && typeof h.list === "string" && KIND_RE.test(h.list)).map((h) => h.list) : []);
+    ? p.holidays.flatMap((h) => (isObj(h) && typeof h.list === "string" && KIND_RE.test(h.list) ? [h.list] : [])) : []);
   if (own(p, "weekend")) {
     const w = p.weekend;
     if (!isObj(w)) err("weekend", "WEEKEND_INVALID", "weekend is {days, citation, status, basis}");
@@ -544,8 +589,10 @@ function validateInto(p, errors) {
   }
 
   /* The action sections (R23–R26, R28, R31–R33, R35, R39–R44). */
+  /** @type {Set<Value>} */
   const codeKeys = new Set(own(p, "vocabulary") && isObj(p.vocabulary) && isList(p.vocabulary.codes)
     ? p.vocabulary.codes.filter(isObj).map((c) => c.key) : []);
+  /** @type {Set<Value>} */
   const families = new Set(); /* R63: a key and series.key once in the profile */
   if (own(p, "standard_sources")) list("standard_sources", p.standard_sources).forEach((s, i) => {
     const at = `standard_sources[${i}]`;
@@ -599,18 +646,27 @@ function validateInto(p, errors) {
     }
     basis(at, s);
   });
+  /** @type {Set<Value>} */
   const roles = new Set();
+  /** @type {Set<Value>} */
   const bodies = new Set();
+  /** @type {Set<Value>} */
   const offices = new Set(); /* R75: a counterparty's role and body, a third party that starts a count */
   /* R59: the schemes an office's, a body's or its organisation's identifier may be in (R52's, read here: a scheme is
      judged where it is given). */
+  /** @type {Map<Value, Entries>} */
   const schemeKinds = new Map(own(p, "identifier_schemes") && isList(p.identifier_schemes)
-    ? p.identifier_schemes.filter((x) => isObj(x) && isStr(x.scheme) && isList(x.entity_kinds)).map((x) => [x.scheme, x.entity_kinds]) : []);
+    ? p.identifier_schemes.flatMap((x) => (isObj(x) && isStr(x.scheme) && isList(x.entity_kinds) ? [schemeEntry(x.scheme, x.entity_kinds)] : [])) : []);
+  /** @param {string} path
+   *  @param {Value} x
+   *  @param {Value} kind
+   *  @returns {void} */
   const identifier = (path, x, kind) => {
     if (!isObj(x)) { err(path, "SCHEME_INVALID", "an identifier is {scheme, id}"); return; }
     fields(path, x, ["scheme", "id"]);
-    if (!schemeKinds.has(x.scheme)) err(`${path}.scheme`, "SCHEME_INVALID", localize("jurisdictions.index.no_identifier_scheme_of_this", "no identifier scheme of this profile is '{String}'", { String: String(String(x.scheme)) }));
-    else if (!schemeKinds.get(x.scheme).includes(kind)) err(`${path}.scheme`, "SCHEME_INVALID", localize("jurisdictions.index.the_scheme_scheme_identifies_no", "the scheme {scheme} identifies no {kind}", { scheme: String(x.scheme), kind: String(kind) }));
+    const entityKinds = schemeKinds.get(x.scheme); /* each held value is a list */
+    if (!entityKinds) err(`${path}.scheme`, "SCHEME_INVALID", localize("jurisdictions.index.no_identifier_scheme_of_this", "no identifier scheme of this profile is '{String}'", { String: String(String(x.scheme)) }));
+    else if (!entityKinds.includes(kind)) err(`${path}.scheme`, "SCHEME_INVALID", localize("jurisdictions.index.the_scheme_scheme_identifies_no", "the scheme {scheme} identifies no {kind}", { scheme: String(x.scheme), kind: String(kind) }));
     if (!isStr(x.id)) err(`${path}.id`, "SCHEME_INVALID", "id is a non-empty string");
   };
   if (own(p, "counterparties")) list("counterparties", p.counterparties).forEach((c, i) => {
@@ -641,25 +697,37 @@ function validateInto(p, errors) {
     str(`${at}.role`, c.role, "role"); str(`${at}.body`, c.body, "body");
     if (isStr(c.role)) roles.add(c.role);
     if (isStr(c.body)) bodies.add(c.body);
-    if (isStr(c.role) && isStr(c.body)) offices.add(`${c.role}\u0000${c.body}`);
+    if (isStr(c.role) && isStr(c.body)) offices.add(`${String(c.role)}\u0000${String(c.body)}`);
     if (own(c, "hours")) hours(`${at}.hours`, c.hours);
     if (!oneOf(COUNTERPARTY_LEVELS, c.level)) err(`${at}.level`, "LEVEL_UNKNOWN", localize("jurisdictions.index.level_is_one_of_counterparty", "level is one of {COUNTERPARTY_LEVELS}", { COUNTERPARTY_LEVELS: String(COUNTERPARTY_LEVELS.join(", ")) }));
     if (typeof c.elected !== "boolean") err(`${at}.elected`, "VALUE_INVALID", "elected is true or false");
     if (own(c, "oversight") && typeof c.oversight !== "boolean") err(`${at}.oversight`, "VALUE_INVALID", "oversight is true or false");
     basis(at, c);
   });
+  /** @type {Set<Value>} */
   const kinds = new Set();
+  /** @type {Set<Value>} */
   const tier23 = new Set(); /* R78: the kinds a legal organisation may evaluate */
+  /** @type {Set<Value>} */
   const venueKinds = new Set();
+  /** @type {Set<Value>} */
   const templateIds = new Set();
   /* R40, R81, R87 (b): one template, attributed; in a kind's `templates` it also carries its purpose (judged by the
      caller), its name and the public sources it was written from. */
+  /** @param {string} ta
+   *  @param {Value} t
+   *  @param {Fields} k
+   *  @param {boolean} inList
+   *  @returns {void} */
   const templateOf = (ta, t, k, inList) => {
     if (!isObj(t)) err(ta, "TEMPLATE_UNATTRIBUTED", localize("jurisdictions.index.a_template_is_fields_never_bare", "a template is {{fields}}, never bare text", { fields: TEMPLATE_FIELDS.join(", ") }));
     else {
       fields(ta, t, [...TEMPLATE_FIELDS, "name", "sources", ...(inList ? ["purpose"] : [])]);
       for (const f of TEMPLATE_FIELDS)
         if (!own(t, f) || t[f] === undefined || t[f] === null) err(`${ta}.${f}`, "TEMPLATE_UNATTRIBUTED", localize("jurisdictions.index.the_templates_f_is_missing", "the template's {f} is missing", { f: String(f) }));
+      /** @param {string} f
+       *  @param {string} why
+       *  @returns {void} */
       const bad = (f, why) => { if (own(t, f) && t[f] !== undefined && t[f] !== null) err(`${ta}.${f}`, "VALUE_INVALID", why); };
       if (!(typeof t.id === "string" && TEMPLATE_ID_RE.test(t.id))) bad("id", "id matches ^TPL-[a-z0-9][a-z0-9-]*$");
       else if (templateIds.has(t.id)) err(`${ta}.id`, "VALUE_INVALID", localize("jurisdictions.index.id_is_given_twice_in", "'{id}' is given twice in the profile", { id: String(t.id) }));
@@ -670,7 +738,7 @@ function validateInto(p, errors) {
       if (typeof t.notes !== "string") bad("notes", "notes are text, possibly empty");
       if (!isStr(t.authored_by)) bad("authored_by", "authored_by is a non-empty name");
       if (!isStr(t.approved_by)) bad("approved_by", "approved_by is a non-empty name");
-      else if (isStr(t.authored_by) && t.approved_by.trim() === t.authored_by.trim())
+      else if (isStr(t.authored_by) && String(t.approved_by).trim() === String(t.authored_by).trim())
         err(`${ta}.approved_by`, "VALUE_INVALID", "the approver is not the template's author");
       if (!isList(t.contributors) || !t.contributors.every(isStr)) bad("contributors", "contributors is a list of names");
       if (!isDate(t.approved_at)) bad("approved_at", "approved_at is a real YYYY-MM-DD");
@@ -681,6 +749,10 @@ function validateInto(p, errors) {
         fields(ra, r, [...REVIEW_REQUIRED, "organisation", "credential"]);
         for (const f of REVIEW_REQUIRED)
           if (!own(r, f) || r[f] === undefined || r[f] === null) err(`${ra}.${f}`, "TEMPLATE_UNATTRIBUTED", localize("jurisdictions.index.the_reviews_f_is_missing", "the review's {f} is missing", { f: String(f) }));
+        /** @param {string} f
+         *  @param {boolean} ok
+         *  @param {string} why
+         *  @returns {void} */
         const rbad = (f, ok, why) => { if (own(r, f) && r[f] !== undefined && r[f] !== null && !ok) err(`${ra}.${f}`, "VALUE_INVALID", why); };
         rbad("reviewer", isStr(r.reviewer), "the reviewer is a non-empty name");
         rbad("kind", oneOf(REVIEW_KINDS, r.kind), `kind is ${REVIEW_KINDS.join(" or ")}`);
@@ -698,7 +770,7 @@ function validateInto(p, errors) {
       if (t.use === "file" && k.tier === 3) err(ta, "TEMPLATE_TIER3", "a Tier 3 kind has no use: file template; a brief may serve it");
     }
     if (isObj(t) && (inList || own(t, "name"))) {
-      if (!isStr(t.name) || t.name.length > TEMPLATE_NAME_MAX || /[\r\n]/.test(t.name))
+      if (!isStr(t.name) || typeof t.name !== "string" || t.name.length > TEMPLATE_NAME_MAX || /[\r\n]/.test(t.name))
         err(`${ta}.name`, "VALUE_INVALID", localize("jurisdictions.index.name_is_a_title_of", "name is a title of at most {TEMPLATE_NAME_MAX} characters on one line", { TEMPLATE_NAME_MAX: String(TEMPLATE_NAME_MAX) }));
     }
     if (isObj(t) && (inList || own(t, "sources"))) {
@@ -732,6 +804,7 @@ function validateInto(p, errors) {
         if (own(v, "time_zone")) zone(`${at}.venue.time_zone`, v.time_zone); /* R74 */
         /* R82 (T45): the venue's sourced facts, each named once */
         if (own(v, "facts")) {
+          /** @type {Set<Value>} */
           const named = new Set();
           list(`${at}.venue.facts`, v.facts).forEach((f, j) => {
             const fa = `${at}.venue.facts[${j}]`;
@@ -740,7 +813,7 @@ function validateInto(p, errors) {
             if (!oneOf(VENUE_FACTS, f.fact)) err(`${fa}.fact`, "VALUE_INVALID", localize("jurisdictions.index.fact_is_one_of_venue", "fact is one of {VENUE_FACTS}", { VENUE_FACTS: String(VENUE_FACTS.join(", ")) }));
             else if (named.has(f.fact)) err(`${fa}.fact`, "VALUE_INVALID", localize("jurisdictions.index.fact_is_given_twice_for", "{fact} is given twice for this venue", { fact: String(f.fact) }));
             else named.add(f.fact);
-            if (!isStr(f.value) || f.value.length > VENUE_FACT_MAX) err(`${fa}.value`, "VALUE_INVALID", localize("jurisdictions.index.value_is_text_of_at", "value is text of at most {VENUE_FACT_MAX} characters", { VENUE_FACT_MAX: String(VENUE_FACT_MAX) }));
+            if (!isStr(f.value) || typeof f.value !== "string" || f.value.length > VENUE_FACT_MAX) err(`${fa}.value`, "VALUE_INVALID", localize("jurisdictions.index.value_is_text_of_at", "value is text of at most {VENUE_FACT_MAX} characters", { VENUE_FACT_MAX: String(VENUE_FACT_MAX) }));
             if (own(f, "amount")) amountOf(`${fa}.amount`, f.amount);
             str(`${fa}.citation`, f.citation, "citation");
             statusBasis(fa, f);
@@ -760,6 +833,7 @@ function validateInto(p, errors) {
       if (own(k, "template")) err(`${at}.templates`, "VALUE_INVALID", "a kind gives its single template or its templates, not both");
       if (!isList(k.templates) || !k.templates.length) err(`${at}.templates`, "VALUE_INVALID", "templates is a non-empty list of templates");
       else {
+        /** @type {Set<Value>} */
         const purposes = new Set();
         k.templates.forEach((t, j) => {
           const ta = `${at}.templates[${j}]`;
@@ -786,8 +860,11 @@ function validateInto(p, errors) {
         fields(ea, ev, ["standard", "accepts", "contestable", "basis"]);
         if (!own(ev, "standard") || ev.standard === undefined || ev.standard === null || ev.standard === "")
           err(`${ea}.standard`, "EVIDENCE_NO_STANDARD", "evidence names the venue's standard in words");
-        else if (!isStr(ev.standard) || ev.standard.length > EVIDENCE_STANDARD_MAX)
+        else if (!isStr(ev.standard) || typeof ev.standard !== "string" || ev.standard.length > EVIDENCE_STANDARD_MAX)
           err(`${ea}.standard`, "VALUE_INVALID", localize("jurisdictions.index.the_standard_is_text_of", "the standard is text of at most {EVIDENCE_STANDARD_MAX} characters", { EVIDENCE_STANDARD_MAX: String(EVIDENCE_STANDARD_MAX) }));
+        /** @param {string} path
+         *  @param {Entries} v
+         *  @returns {void} */
         const grades = (path, v) => v.forEach((g, j) => {
           const ga = `${path}[${j}]`;
           if (!isObj(g)) { err(ga, "VALUE_INVALID", "an admitted grade is {grade, coattested?}"); return; }
@@ -835,7 +912,7 @@ function validateInto(p, errors) {
     /* R75 (T45): a third party's act starts the count: the counterparty, by role and body, whose act it is */
     if (d.starts === "third_party") {
       const st = d.starter;
-      if (!isObj(st) || Object.keys(st).some((k) => k !== "role" && k !== "body") || !offices.has(`${st.role}\u0000${st.body}`))
+      if (!isObj(st) || Object.keys(st).some((k) => k !== "role" && k !== "body") || !offices.has(`${asTemplate(st.role)}\u0000${asTemplate(st.body)}`))
         err(`${at}.starter`, "ANCHOR_UNKNOWN", "a third_party start names its starter, {role, body} of a counterparty of this profile");
     } else if (own(d, "starter")) err(`${at}.starter`, "VALUE_INVALID", "a starter is given only with starts: third_party");
     /* R75: whose duty it is, and the law's stated consequence, quoted; R87 (c): a deadline the group meets in its own defence */
@@ -924,6 +1001,7 @@ function validateInto(p, errors) {
 
   /* R33, R43: a year once for all offices and once for each distinct `offices` list. */
   if (own(p, "holidays")) {
+    /** @type {Set<Value>} */
     const years = new Set();
     list("holidays", p.holidays).forEach((h, i) => {
       const at = `holidays[${i}]`;
@@ -941,6 +1019,7 @@ function validateInto(p, errors) {
           key = `\u0002${i}`; /* no list to key by: judged on its own */
         }
         else {
+          /** @type {Set<Value>} */
           const seenOffices = new Set();
           h.offices.forEach((o, j) => {
             const oa = `${at}.offices[${j}]`;
@@ -957,7 +1036,7 @@ function validateInto(p, errors) {
       }
       key = `${listKey(h)}\u0003${key}`;
       if (!isYear(h.year)) err(`${at}.year`, "HOLIDAY_INVALID", "year is a four-digit year");
-      else if (years.has(`${h.year}\u0000${key}`)) err(`${at}.year`, "HOLIDAY_INVALID",
+      else if (years.has(`${String(h.year)}\u0000${key}`)) err(`${at}.year`, "HOLIDAY_INVALID",
         own(h, "list")
           ? (own(h, "offices")
             ? localize("jurisdictions.index.year_listed_twice_for_list_and_the_same_offices", "{year} is listed twice for the list {list} and the same offices", { year: String(h.year), list: String(h.list) })
@@ -965,14 +1044,15 @@ function validateInto(p, errors) {
           : own(h, "offices")
             ? localize("jurisdictions.index.year_listed_twice_for_the_same_offices", "{year} is listed twice for the same offices", { year: String(h.year) })
             : localize("jurisdictions.index.year_listed_twice_for_all_offices", "{year} is listed twice for all offices", { year: String(h.year) }));
-      else years.add(`${h.year}\u0000${key}`);
+      else years.add(`${String(h.year)}\u0000${key}`);
+      /** @type {Set<Value>} */
       const dates = new Set();
       list(`${at}.days`, h.days).forEach((d, j) => {
         const da = `${at}.days[${j}]`;
         if (!entry(da, d)) return;
         fields(da, d, ["date", "name"]);
         if (!isDate(d.date)) err(`${da}.date`, "HOLIDAY_INVALID", "a date is a real YYYY-MM-DD");
-        else if (isYear(h.year) && Number(d.date.slice(0, 4)) !== h.year) err(`${da}.date`, "HOLIDAY_INVALID", `${d.date} is outside ${h.year}`);
+        else if (isYear(h.year) && Number(String(d.date).slice(0, 4)) !== h.year) err(`${da}.date`, "HOLIDAY_INVALID", `${String(d.date)} is outside ${String(h.year)}`);
         else if (dates.has(d.date)) err(`${da}.date`, "HOLIDAY_INVALID", localize("jurisdictions.index.date_is_given_twice", "{date} is given twice", { date: String(d.date) }));
         else dates.add(d.date);
         str(`${da}.name`, d.name, "name");
@@ -983,6 +1063,7 @@ function validateInto(p, errors) {
 
   /* R49: a fiscal year per body that keeps one. */
   if (own(p, "fiscal_year")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("fiscal_year", p.fiscal_year).forEach((f, i) => {
       const at = `fiscal_year[${i}]`;
@@ -993,8 +1074,9 @@ function validateInto(p, errors) {
       else seen.add(f.body);
       if (!isMonthDay(f.start)) err(`${at}.start`, "FISCAL_YEAR_INVALID", "start is the first day, MM-DD");
       if (!oneOf(FISCAL_NAMED_BY, f.named_by)) err(`${at}.named_by`, "FISCAL_YEAR_INVALID", `named_by is ${FISCAL_NAMED_BY.join(" or ")}`);
-      if (!isStr(f.label) || !FISCAL_PLACEHOLDERS.some((x) => f.label.includes(x))
-          || (f.label.match(/\{[^}]*\}/g) || []).some((x) => !oneOf(FISCAL_PLACEHOLDERS, x)))
+      const label = isStr(f.label) && typeof f.label === "string" ? f.label : null;
+      if (label === null || !FISCAL_PLACEHOLDERS.some((x) => label.includes(x))
+          || (label.match(/\{[^}]*\}/g) || []).some((x) => !oneOf(FISCAL_PLACEHOLDERS, x)))
         err(`${at}.label`, "FISCAL_YEAR_INVALID", localize("jurisdictions.index.label_is_a_template_using", "label is a template using {FISCAL_PLACEHOLDERS}", { FISCAL_PLACEHOLDERS: String(FISCAL_PLACEHOLDERS.join(", ")) }));
       statusBasis(at, f);
     });
@@ -1002,6 +1084,7 @@ function validateInto(p, errors) {
 
   /* R50: the rank of a source kind at a law level, and the instrument key's first segment. */
   if (own(p, "law_ranks")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("law_ranks", p.law_ranks).forEach((r, i) => {
       const at = `law_ranks[${i}]`;
@@ -1010,7 +1093,7 @@ function validateInto(p, errors) {
       if (!oneOf(STANDARD_SOURCE_KINDS, r.kind)) err(`${at}.kind`, "RANK_INVALID", localize("jurisdictions.index.kind_is_one_of_standard_2", "kind is one of {STANDARD_SOURCE_KINDS}", { STANDARD_SOURCE_KINDS: String(STANDARD_SOURCE_KINDS.join(", ")) }));
       if (!oneOf(LAW_LEVELS, r.level)) err(`${at}.level`, "RANK_INVALID", localize("jurisdictions.index.level_is_one_of_law_3", "level is one of {LAW_LEVELS}", { LAW_LEVELS: String(LAW_LEVELS.join(", ")) }));
       if (!isPosInt(r.rank)) err(`${at}.rank`, "RANK_INVALID", "rank is a positive integer, 1 the highest");
-      const k = `${r.kind}\u0000${r.level}`;
+      const k = `${asTemplate(r.kind)}\u0000${asTemplate(r.level)}`;
       if (seen.has(k)) err(at, "RANK_INVALID", localize("jurisdictions.index.kind_at_level_is_ranked", "{kind} at {level} is ranked twice", { kind: String(r.kind), level: String(r.level) }));
       seen.add(k);
       basis(at, r);
@@ -1028,6 +1111,7 @@ function validateInto(p, errors) {
   }
 
   /* R51: the kinds of proceeding the forums hold, and each kind's ordered stages. */
+  /** @type {Set<Value>} */
   const proceedingKinds = new Set();
   if (own(p, "proceeding_kinds")) list("proceeding_kinds", p.proceeding_kinds).forEach((k, i) => {
     const at = `proceeding_kinds[${i}]`;
@@ -1041,6 +1125,7 @@ function validateInto(p, errors) {
     basis(at, k);
   });
   if (own(p, "proceeding_flows")) {
+    /** @type {Set<Value>} */
     const flowed = new Set();
     list("proceeding_flows", p.proceeding_flows).forEach((f, i) => {
       const at = `proceeding_flows[${i}]`;
@@ -1051,6 +1136,7 @@ function validateInto(p, errors) {
       else flowed.add(f.kind);
       if (!isList(f.stages) || !f.stages.length) err(`${at}.stages`, "FLOW_INVALID", "stages is a non-empty ordered list of {stage, label, reached_by}");
       else {
+        /** @type {Set<Value>} */
         const stages = new Set();
         f.stages.forEach((st, j) => {
           const sa = `${at}.stages[${j}]`;
@@ -1071,6 +1157,7 @@ function validateInto(p, errors) {
 
   /* R52: the schemes a registry identifier is in, and the codes a budget or ledger classifies by. */
   if (own(p, "identifier_schemes")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("identifier_schemes", p.identifier_schemes).forEach((x, i) => {
       const at = `identifier_schemes[${i}]`;
@@ -1082,8 +1169,9 @@ function validateInto(p, errors) {
       str(`${at}.label`, x.label, "label");
       if (!isList(x.entity_kinds) || !x.entity_kinds.length || !x.entity_kinds.every((k) => typeof k === "string" && KIND_RE.test(k)))
         err(`${at}.entity_kinds`, "SCHEME_INVALID", "entity_kinds is a non-empty list of entity kinds");
-      if (!spaceForms[x.space]) err(`${at}.space`, "SCHEME_INVALID", localize("jurisdictions.index.this_profile_has_no_space", "this profile has no space '{String}'", { String: String(String(x.space)) }));
-      else if (own(x, "form") && !spaceForms[x.space].has(x.form)) err(`${at}.form`, "SCHEME_INVALID", localize("jurisdictions.index.the_space_space_has_no", "the space {space} has no form '{String}'", { space: String(x.space), String: String(String(x.form)) }));
+      const formsOfSpace = spaceForms[String(x.space)];
+      if (!formsOfSpace) err(`${at}.space`, "SCHEME_INVALID", localize("jurisdictions.index.this_profile_has_no_space", "this profile has no space '{String}'", { String: String(String(x.space)) }));
+      else if (own(x, "form") && !formsOfSpace.has(x.form)) err(`${at}.form`, "SCHEME_INVALID", localize("jurisdictions.index.the_space_space_has_no", "the space {space} has no form '{String}'", { space: String(x.space), String: String(String(x.form)) }));
       if (own(x, "systems")) {
         if (!isList(x.systems)) err(`${at}.systems`, "SCHEME_INVALID", "systems is a list of origins");
         else x.systems.forEach((o, j) => { if (!origins.has(o)) err(`${at}.systems[${j}]`, "SCHEME_INVALID", localize("jurisdictions.index.no_system_of_this_profile_3", "no system of this profile has origin '{String}'", { String: String(String(o)) })); });
@@ -1092,6 +1180,7 @@ function validateInto(p, errors) {
     });
   }
   if (own(p, "classification_schemes")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("classification_schemes", p.classification_schemes).forEach((x, i) => {
       const at = `classification_schemes[${i}]`;
@@ -1109,6 +1198,7 @@ function validateInto(p, errors) {
       if (own(x, "codes")) {
         if (!isList(x.codes)) err(`${at}.codes`, "SCHEME_INVALID", "codes is a list of {code, label}");
         else {
+          /** @type {Set<Value>} */
           const cs = new Set();
           x.codes.forEach((c, j) => {
             const ca = `${at}.codes[${j}]`;
@@ -1125,6 +1215,7 @@ function validateInto(p, errors) {
 
   /* R53: the lawful demands to remove a personal fact (K1493). */
   if (own(p, "lawful_demands")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("lawful_demands", p.lawful_demands).forEach((d, i) => {
       const at = `lawful_demands[${i}]`;
@@ -1160,6 +1251,7 @@ function validateInto(p, errors) {
   /* R79 (T45): the legal facts shown, with their citations, at the moment they matter; detecting a trigger is the
      consumer's. */
   if (own(p, "legal_facts")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("legal_facts", p.legal_facts).forEach((f, i) => {
       const at = `legal_facts[${i}]`;
@@ -1187,6 +1279,7 @@ function validateInto(p, errors) {
   /* R80 (T45): one sourced procedure guide per kind, its items in the profile's order and never ranked; R87 (d): an item
      may name the correspondence outcomes after which its route applies. */
   if (own(p, "procedure_guides")) {
+    /** @type {Set<Value>} */
     const guided = new Set();
     list("procedure_guides", p.procedure_guides).forEach((g, i) => {
       const at = `procedure_guides[${i}]`;
@@ -1231,9 +1324,9 @@ function validateInto(p, errors) {
     if (!entry(at, x)) return;
     fields(at, x, ["kind", "name", "does", "contacts", "hours", "languages", "source", "status", "basis"]);
     if (!oneOf(POINTER_KINDS, x.kind)) err(`${at}.kind`, "KIND_INVALID", localize("jurisdictions.index.kind_is_one_of_pointer", "kind is one of {POINTER_KINDS}", { POINTER_KINDS: String(POINTER_KINDS.join(", ")) }));
-    if (!isStr(x.name) || x.name.length > POINTER_NAME_MAX || /[\r\n]/.test(x.name))
+    if (!isStr(x.name) || typeof x.name !== "string" || x.name.length > POINTER_NAME_MAX || /[\r\n]/.test(x.name))
       err(`${at}.name`, "VALUE_INVALID", localize("jurisdictions.index.name_is_the_bodys_own", "name is the body's own name, 1 to {POINTER_NAME_MAX} characters on one line", { POINTER_NAME_MAX: String(POINTER_NAME_MAX) }));
-    if (!isStr(x.does) || x.does.length > POINTER_DOES_MAX)
+    if (!isStr(x.does) || typeof x.does !== "string" || x.does.length > POINTER_DOES_MAX)
       err(`${at}.does`, "VALUE_INVALID", localize("jurisdictions.index.does_says_what_the_body", "does says what the body does and for whom, 1 to {POINTER_DOES_MAX} characters", { POINTER_DOES_MAX: String(POINTER_DOES_MAX) }));
     if (!isList(x.contacts) || !x.contacts.length) err(`${at}.contacts`, "CONTACT_INVALID", "contacts is a non-empty list of {how, value}");
     else x.contacts.forEach((c, j) => {
@@ -1253,7 +1346,7 @@ function validateInto(p, errors) {
     else str(`${at}.source`, x.source, "source");
     if (x.status !== "researched") err(`${at}.status`, "BASIS_INVALID", "a pointer's status is researched: it is read on the body's own page");
     if (basis(at, x) && !(test && x.basis === "TEST")
-        && !basisParts(x.basis).every((b) => { const m = DATED_REF.exec(b); return !!m && isDate(m[1]); }))
+        && typeof x.basis === "string" && !basisParts(x.basis).every((b) => { const m = DATED_REF.exec(b); return !!m && isDate(m[1]); }))
       err(`${at}.basis`, "BASIS_INVALID", "a pointer rests on the day its page was read, a dated entry YYYY-MM-DD");
   });
 
@@ -1295,13 +1388,14 @@ function validateInto(p, errors) {
         for (const f of RECORDS_HELP_CITATIONS) str(`${at}.citations.${f}`, h.citations[f], "the citation");
       }
       if (h.status !== "researched") err(`${at}.status`, "BASIS_INVALID", "records_help is researched: it is read from the statute's own text");
-      if (basis(at, h) && !(test && h.basis === "TEST") && !basisParts(h.basis).every((b) => { const m = DATED_REF.exec(b); return !!m && isDate(m[1]); }))
+      if (basis(at, h) && !(test && h.basis === "TEST") && typeof h.basis === "string" && !basisParts(h.basis).every((b) => { const m = DATED_REF.exec(b); return !!m && isDate(m[1]); }))
         err(`${at}.basis`, "BASIS_INVALID", "records_help rests on the day the text was read, a dated entry YYYY-MM-DD");
     }
   }
 
   /* R94 (T50): the courts and other forums of the place, each once. `ids` are its identifiers in a scheme of the profile. */
   if (own(p, "forums")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("forums", p.forums).forEach((f, i) => {
       const at = `forums[${i}]`;
@@ -1310,7 +1404,7 @@ function validateInto(p, errors) {
       str(`${at}.label`, f.label, "label");
       if (!oneOf(FORUM_KINDS, f.forum_kind)) err(`${at}.forum_kind`, "VALUE_INVALID", localize("jurisdictions.index.forum_kind_is_one_of_2", "forum_kind is one of {FORUM_KINDS}", { FORUM_KINDS: String(FORUM_KINDS.join(", ")) }));
       if (isStr(f.label)) {
-        const k = `${f.forum_kind}\u0000${f.label}`;
+        const k = `${asTemplate(f.forum_kind)}\u0000${asTemplate(f.label)}`;
         if (seen.has(k)) err(`${at}.label`, "VALUE_INVALID", localize("jurisdictions.index.the_forum_label_is_given", "the forum '{label}' is given twice", { label: String(f.label) }));
         seen.add(k);
       }
@@ -1327,6 +1421,7 @@ function validateInto(p, errors) {
      that publication. One name of one kind once in the profile, and one explanation and one translation per
      language under it (R72's keys). */
   if (own(p, "local_names")) {
+    /** @type {Set<Value>} */
     const seen = new Set();
     list("local_names", p.local_names).forEach((n, i) => {
       const at = `local_names[${i}]`;
@@ -1335,12 +1430,15 @@ function validateInto(p, errors) {
       str(`${at}.name`, n.name, "name");
       if (!oneOf(LOCAL_NAME_KINDS, n.kind)) err(`${at}.kind`, "KIND_INVALID", localize("jurisdictions.index.kind_is_one_of_local", "kind is one of {LOCAL_NAME_KINDS}", { LOCAL_NAME_KINDS: String(LOCAL_NAME_KINDS.join(", ")) }));
       else if (isStr(n.name)) {
-        const k = `${n.name}\u0000${n.kind}`;
+        const k = `${String(n.name)}\u0000${String(n.kind)}`;
         if (seen.has(k)) err(`${at}.name`, "VALUE_INVALID", localize("jurisdictions.index.the_kind_name_is_given", "the {kind} '{name}' is given twice", { kind: String(n.kind), name: String(n.name) }));
         seen.add(k);
       }
-      for (const [f, extra] of [["explanations", []], ["translations", ["source"]]]) {
+      /** @type {[string, string[]][]} */
+      const texts = [["explanations", []], ["translations", ["source"]]];
+      for (const [f, extra] of texts) {
         if (!own(n, f)) continue;
+        /** @type {Set<Value>} */
         const locales = new Set();
         list(`${at}.${f}`, n[f]).forEach((x, j) => {
           const xa = `${at}.${f}[${j}]`;
@@ -1355,7 +1453,7 @@ function validateInto(p, errors) {
               err(`${xa}.source`, "SOURCE_MISSING", "an official translation names the publication it is read from, by address or citation");
             else str(`${xa}.source`, x.source, "source");
             /* R70: a translation rests on a measurement of its publication (R73: none invented) */
-            if (basis(xa, x) && !(test && x.basis === "TEST") && !basisParts(x.basis).every((b) => MEASUREMENT_REF.test(b)))
+            if (basis(xa, x) && !(test && x.basis === "TEST") && typeof x.basis === "string" && !basisParts(x.basis).every((b) => MEASUREMENT_REF.test(b)))
               err(`${xa}.basis`, "BASIS_INVALID", "an official translation rests on a measurement of its publication (M-<n> or a dated entry)");
           } else basis(xa, x);
         });
@@ -1365,24 +1463,33 @@ function validateInto(p, errors) {
   }
 }
 
-/* Why an RRULE is outside civil-time's subset (its R20), or null. `EXDATE` is a property of its own, not a part. */
 const BYDAY_RE = /^(?:[+-]?(?:[1-9]|[1-4]\d|5[0-3]))?(?:MO|TU|WE|TH|FR|SA|SU)$/;
+/** Why an RRULE is outside civil-time's subset (its R20), or null. `EXDATE` is a property of its own, not a part.
+ *  @param {Value} v
+ *  @returns {string | null} */
 function rruleFault(v) {
   if (typeof v !== "string" || !v.trim()) return "rrule is a non-empty RFC 5545 rule";
-  const parts = new Map();
+  /** @type {Map<string, string>} */
+  const parts = new Map([]);
   for (const kv of v.replace(/^RRULE:/, "").split(";")) {
     const m = /^([A-Z]+)=(.+)$/.exec(kv);
     if (!m) return `'${kv}' is not NAME=value`;
-    if (!oneOf(RRULE_PARTS, m[1])) return localize("jurisdictions.index.v1_is_outside_civil_times", "{v1} is outside civil-time's subset ({RRULE_PARTS})", { v1: String(m[1]), RRULE_PARTS: String(RRULE_PARTS.join(", ")) });
-    if (parts.has(m[1])) return localize("jurisdictions.index.v1_is_given_twice", "{v1} is given twice", { v1: String(m[1]) });
-    parts.set(m[1], m[2]);
+    const name = m[1] ?? "", value = m[2] ?? ""; /* both groups take part in every match */
+    if (!oneOf(RRULE_PARTS, name)) return localize("jurisdictions.index.v1_is_outside_civil_times", "{v1} is outside civil-time's subset ({RRULE_PARTS})", { v1: String(name), RRULE_PARTS: String(RRULE_PARTS.join(", ")) });
+    if (parts.has(name)) return localize("jurisdictions.index.v1_is_given_twice", "{v1} is given twice", { v1: String(name) });
+    parts.set(name, value);
   }
   if (!oneOf(RRULE_FREQS, parts.get("FREQ"))) return localize("jurisdictions.index.freq_is_one_of_rrule", "FREQ is one of {RRULE_FREQS}", { RRULE_FREQS: String(RRULE_FREQS.join(", ")) });
+  /** @param {string} x
+   *  @param {number} lo
+   *  @param {number} hi
+   *  @returns {boolean} */
   const ints = (x, lo, hi) => x.split(",").every((n) => /^[+-]?\d+$/.test(n) && Math.abs(Number(n)) >= lo && Math.abs(Number(n)) <= hi);
-  if (parts.has("INTERVAL") && !/^[1-9]\d*$/.test(parts.get("INTERVAL"))) return "INTERVAL is a positive integer";
-  if (parts.has("BYDAY") && !parts.get("BYDAY").split(",").every((d) => BYDAY_RE.test(d))) return "BYDAY lists days, each with an optional ordinal";
-  if (parts.has("BYMONTHDAY") && !ints(parts.get("BYMONTHDAY"), 1, 31)) return "BYMONTHDAY lists days of the month";
-  if (parts.has("BYSETPOS") && !ints(parts.get("BYSETPOS"), 1, 366)) return "BYSETPOS lists positions";
-  if (parts.has("UNTIL") && !/^\d{8}(?:T\d{6}Z?)?$/.test(parts.get("UNTIL"))) return "UNTIL is a date or date-time";
+  /* each `get` below follows its `has` */
+  if (parts.has("INTERVAL") && !/^[1-9]\d*$/.test(parts.get("INTERVAL") ?? "")) return "INTERVAL is a positive integer";
+  if (parts.has("BYDAY") && !(parts.get("BYDAY") ?? "").split(",").every((d) => BYDAY_RE.test(d))) return "BYDAY lists days, each with an optional ordinal";
+  if (parts.has("BYMONTHDAY") && !ints(parts.get("BYMONTHDAY") ?? "", 1, 31)) return "BYMONTHDAY lists days of the month";
+  if (parts.has("BYSETPOS") && !ints(parts.get("BYSETPOS") ?? "", 1, 366)) return "BYSETPOS lists positions";
+  if (parts.has("UNTIL") && !/^\d{8}(?:T\d{6}Z?)?$/.test(parts.get("UNTIL") ?? "")) return "UNTIL is a date or date-time";
   return null;
 }
