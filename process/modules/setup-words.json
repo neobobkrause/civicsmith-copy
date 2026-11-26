@@ -2,7 +2,14 @@
   "name": "setup-words",
   "files": [
     "bio-plane/src/setup-words/",
-    "docs/development/ux-substrate/screens/words.json"
+    "docs/development/ux-substrate/screens/words.json",
+    "docs/",
+    "build/",
+    "requirements/",
+    "README.md",
+    ".gitignore",
+    ".env.example",
+    ".worktreeinclude"
   ],
   "tests": [
     "bio-plane/test/m/setup-words/"

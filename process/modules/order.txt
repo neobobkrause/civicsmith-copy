@@ -1,4 +1,3 @@
-documents
 setup-words
 record-grammar
 jurisdiction-profiles
