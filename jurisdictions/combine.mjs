@@ -63,11 +63,14 @@ function deepFreeze(o) {
 }
 /** @type {Map<string, Profile>} */
 const HELD = emptyMap();
+/* Each held profile is read as its text, a copy of it, and is a Profile because `validate` finds no fault in it. Every
+   held profile passes `validate` (R19), as the tests prove, so none is left out. */
 for (const p of [FIRST, TEST]) {
-  /** @type {Profile} */
-  const held = clone(p);
+  const text = JSON.parse(JSON.stringify(p));
+  const held = isProfile(text) ? text : null;
+  if (!held) continue;
   deepFreeze(held);
-  HELD.set(p.id, held);
+  HELD.set(held.id, held);
 }
 
 /** Every profile held, sorted by id: `[{id, name, covers, test}]`. Never throws.
@@ -203,7 +206,7 @@ function emptySet() {
 /** Whether `v` is a profile: `validate` finds no fault in it (R10).
  *  @param {unknown} v
  *  @returns {v is Profile} */
-const isProfile = (v) => validate(v).ok;
+function isProfile(v) { return validate(v).ok; }
 /** Whether a thrown value is an object or a function, whose `message` the unreadable detail reads (as
  *  `e && e.message || e` did). A profile from a caller may throw any value from a getter.
  *  @param {unknown} v
