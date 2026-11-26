@@ -1,6 +1,6 @@
 {
   "module": "odf-reader",
-  "written": {"commit":"d39db7cb2769a9dc3cc26d1596c0fce4c34d3c4b","tool":"594844272fb76f6f11bfb346260227f216b959a5"},
+  "written": {"commit":"f152724db1eb69fa1e34cb114fdac3fa15aafd7a","tool":"594844272fb76f6f11bfb346260227f216b959a5"},
   "providers": ["setup-words","runtime-limits","subresources","ooxml","csv-reader","office-readers"],
   "uses": [
     {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/odf.mjs","side":"code","line":1212,"in":"detectOdfUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":1757,"in":"intraNotes"},{"file":"bio-plane/src/odf.mjs","side":"code","line":1759,"in":"intraNotes"},{"file":"bio-plane/src/odf.mjs","side":"code","line":1790,"in":"bodyNotRead"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3837,"in":"odfEvidentiaryDigest"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3859,"in":"odfEvidentiaryDigestUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3861,"in":"odfEvidentiaryDigestUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3864,"in":"odfEvidentiaryDigestUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3866,"in":"odfEvidentiaryDigestUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3877,"in":"odfEvidentiaryDigestUnguarded"},{"file":"bio-plane/src/odf.mjs","side":"code","line":3884,"in":"odfEvidentiaryDigestUnguarded"}]},
@@ -117,7 +117,6 @@
     {"rule":"R14","file":"bio-plane/src/odf.mjs","side":"code","line":544,"mayRefer":[],"waitsOn":"this module","tests":[]},
     {"rule":"R14","file":"bio-plane/src/odf.mjs","side":"code","line":555,"mayRefer":[],"waitsOn":"this module","tests":[]},
     {"rule":"S3","file":"bio-plane/src/odf.mjs","side":"code","line":648,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/odf.mjs","side":"code","line":926,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/odf.mjs","side":"code","line":989,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/odf.mjs","side":"code","line":990,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/odf.mjs","side":"code","line":991,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
@@ -318,7 +317,6 @@
     {"rule":"R6","file":"bio-plane/test/m/odf-reader/odp.test.mjs","side":"test","line":156,"mayRefer":["*"],"waitsOn":"this module","tests":["R27 text() over the guard, or with no readable body: document null, lists empty, the guard marker or main_part_unreadable"]},
     {"rule":"R6","file":"bio-plane/test/m/odf-reader/odp.test.mjs","side":"test","line":156,"mayRefer":["*"],"waitsOn":"this module","tests":["R27 text() over the guard, or with no readable body: document null, lists empty, the guard marker or main_part_unreadable"]},
     {"rule":"R6","file":"bio-plane/test/m/odf-reader/odp.test.mjs","side":"test","line":156,"mayRefer":["*"],"waitsOn":"this module","tests":["R27 text() over the guard, or with no readable body: document null, lists empty, the guard marker or main_part_unreadable"]},
-    {"rule":"R1","file":"bio-plane/test/m/odf-reader/odt.test.mjs","side":"test","line":75,"mayRefer":["*"],"waitsOn":"this module","tests":["R7 links: every <text:a xlink:href> in the body, located to its doc-para, partitioned as linkWrapper partitions it"]},
     {"rule":"R3","file":"bio-plane/test/m/odf-reader/odt.test.mjs","side":"test","line":102,"mayRefer":[],"waitsOn":"this module, or the provider: its class or guard","tests":["R8 tracked changes: one item per changed region, with author, date, source, and the superseded or inserted wording"]},
     {"rule":"R19","file":"bio-plane/test/m/odf-reader/odt.test.mjs","side":"test","line":111,"mayRefer":[],"waitsOn":"this module: a const copy before narrowing","tests":["R8 tracked changes: one item per changed region, with author, date, source, and the superseded or inserted wording"]},
     {"rule":"R3","file":"bio-plane/test/m/odf-reader/odt.test.mjs","side":"test","line":130,"mayRefer":[],"waitsOn":"this module, or the provider: its class or guard","tests":["R9 comments: one item per <office:annotation>, located to its paragraph, its text kept out of the host paragraph"]},
