@@ -14,6 +14,7 @@ Rule now: civicsmith moves to the latest Process4 version.
 - 25 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the sixth move; typed within code marks)
 - 25 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the seventh move; typed within code marks)
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the eighth move; typed within code marks)
+- 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the ninth move, after the first eight conversions stopped for his review)
 Shown to the owner: not yet.
 
 ## Slots
