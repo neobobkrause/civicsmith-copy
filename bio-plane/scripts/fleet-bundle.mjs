@@ -115,6 +115,8 @@ import { parse as acornParse, tokenizer as acornTokenizer, tokTypes as acornType
    statement of the rule. */
 import { readGitProvenance, reportProvenance, repoPath } from "./provenance.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
+/** @import { Metafile } from "esbuild" */
+/** @import { Classified, DiscoveredItem } from "./provenance.mjs" */
 
 /** @typedef {unknown[]} List a list, as read from a file */
 /** @typedef {{ [key: string]: unknown }} Block an object, as read from a file */
@@ -170,6 +172,31 @@ import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
  */
 /** @typedef {{ missing?: string[], descriptor?: ContainerDescriptor, bytes?: Buffer }} DescriptorRead a descriptor and its bytes, or the fields it lacks */
 /** @typedef {{ path: string, class_name: unknown, descriptor: ContainerDescriptor | undefined, bytes: Buffer | undefined }} ContainerPart */
+/** @typedef {{ class_name: string, state: string, why: string | null }} ImageState */
+/** @typedef {{ name: string, class_name: string }} ObjectBinding a Durable Object binding a member owns */
+/** @typedef {{ tag: string, classes: string[] }} Migration */
+/** @typedef {{ bindings: ObjectBinding[], migrations: Migration[] }} DurableObjects */
+/** @typedef {{ binding: string, bucket: string }} BucketBinding an R2 binding, its bucket named by role */
+/** @typedef {{ r2_buckets: BucketBinding[], crons: string[], durable_objects?: DurableObjects }} WorkerDescriptor the `Worker` part */
+/** @typedef {{ files?: string[], refused?: string, message?: string }} DigestRecorded the files written, or the refusal */
+/** @typedef {{ name: string, config: unknown, exports?: Iterable<string> | null }} BindingUnit the plane or a member a release carries: its parsed `wrangler.jsonc` and its bundle's exports */
+/** @typedef {{ member: string, binding: unknown, name: unknown, text: string }} BindingFinding */
+/**
+ * @typedef {Object} WordsKept the word rows a member's bundle carries (R38)
+ * @property {number | "all"} rows how many are kept; `all` where a site could read any row
+ * @property {number} total the table's size
+ * @property {string | null} text the module that stands for the table in the bundle
+ * @property {string | null} sha256 the kept rows' SHA-256
+ * @property {string[]} [sites] each site that could read any row, `file:line`
+ */
+/**
+ * @typedef {Object} Built one build of a member
+ * @property {Buffer} bytes the artifact
+ * @property {string} sha256
+ * @property {Array<{ path: string, bytes: number }>} inputs as esbuild names them, in path order
+ * @property {Metafile} metafile
+ * @property {WordsKept | null} words
+ */
 /** @typedef {{ packages?: Package[] | undefined, ecosystem?: string, unread?: string }} PackagesRead a list of packages, or why it is unread */
 
 /** Is it a list?
@@ -188,6 +215,37 @@ function codeOf(e) { return e instanceof Error && "code" in e ? e.code : undefin
  * @param {unknown} e
  * @returns {string | undefined} */
 function messageOf(e) { return e instanceof Error ? e.message : undefined; }
+/** The first line of a text.
+ * @param {string} text
+ * @returns {string} */
+function firstLine(text) { return text.split("\n")[0] ?? ""; }
+/** The list's entries, when every one is a non-empty string; else null.
+ * @param {List} list
+ * @returns {string[] | null} */
+function nonEmptyStrings(list) {
+  /** @type {string[]} */
+  const out = [];
+  for (const x of list) { if (typeof x !== "string" || !x) return null; out.push(x); }
+  return out;
+}
+/** The list's entries, when every one is a string with more than spaces; else null.
+ * @param {List} list
+ * @returns {string[] | null} */
+function nonBlankStrings(list) {
+  /** @type {string[]} */
+  const out = [];
+  for (const x of list) { if (typeof x !== "string" || !x.trim()) return null; out.push(x); }
+  return out;
+}
+/** A member's `bundle` block; a member with none fails as reading its field would.
+ * @param {Member} member
+ * @param {string} field the field the caller reads first
+ * @returns {Bundle} */
+function bundleOf(member, field) {
+  const b = member.bundle;
+  if (!b) throw new TypeError(`Cannot read properties of ${b === null ? "null" : "undefined"} (reading '${field}')`);
+  return b;
+}
 
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -709,33 +767,43 @@ export function containerParts(member, memberNames = [], { packages = true } = {
 export const SOURCE_FIELD = "source_sha256";
 const HEX64 = /^[0-9a-f]{64}$/;
 
+/** @type {(dockerfile: string) => { sources?: string[], unread?: string }} */
 const copiedSources = (dockerfile) => {
+  /** @type {string[]} */
   const out = [];
   const logical = dockerfile.replace(/\\\r?\n/g, " ").split(/\r?\n/);
   for (const line of logical) {
     const m = /^\s*(?:COPY|ADD)\s+(.*)$/i.exec(line);
     if (!m) continue;
-    let rest = m[1].trim(), fromStage = false;
+    let rest = (m[1] ?? "").trim(), fromStage = false;
     while (rest.startsWith("--")) {
       const flag = /^(--\S+)\s*(.*)$/.exec(rest);
       if (!flag) break;
-      if (/^--from=/i.test(flag[1])) fromStage = true;
-      rest = flag[2];
+      if (/^--from=/i.test(flag[1] ?? "")) fromStage = true;
+      rest = flag[2] ?? "";
     }
     if (fromStage) continue;
-    let args;
-    if (rest.startsWith("[")) { try { args = JSON.parse(rest); } catch { return { unread: `a COPY or ADD line it cannot read: ${line.trim()}` }; } }
-    else args = rest.split(/\s+/).filter(Boolean);
-    if (!Array.isArray(args) || args.length < 2 || !args.every((a) => typeof a === "string"))
-      return { unread: `a COPY or ADD line it cannot read: ${line.trim()}` };
-    out.push(...args.slice(0, -1));
+    /** @type {unknown} */
+    let read;
+    if (rest.startsWith("[")) { try { read = JSON.parse(rest); } catch { return { unread: `a COPY or ADD line it cannot read: ${line.trim()}` }; } }
+    else read = rest.split(/\s+/).filter(Boolean);
+    const args = read;
+    if (!isList(args) || args.length < 2) return { unread: `a COPY or ADD line it cannot read: ${line.trim()}` };
+    /** @type {string[]} */
+    const named = [];
+    for (const a of args) {
+      if (typeof a !== "string") return { unread: `a COPY or ADD line it cannot read: ${line.trim()}` };
+      named.push(a);
+    }
+    out.push(...named.slice(0, -1));
   }
   return { sources: out };
 };
 
+/** @type {(abs: string, rel: string, acc: string[]) => boolean} */
 const filesUnder = (abs, rel, acc) => {
-  let entries;
-  try { entries = readdirSync(abs, { withFileTypes: true }); } catch { return false; }
+  const entries = (() => { try { return readdirSync(abs, { withFileTypes: true }); } catch { return null; } })();
+  if (!entries) return false;
   for (const e of entries) {
     const r = `${rel}/${e.name}`;
     if (e.isDirectory()) { if (!filesUnder(join(abs, e.name), r, acc)) return false; }
@@ -745,61 +813,89 @@ const filesUnder = (abs, rel, acc) => {
 };
 
 /** The class's `build` block: its own where the marker states several classes, else the member's. */
+/** @type {(member: Member | null | undefined, className: string) => Block} */
 const buildOf = (member, className) => {
+  /** @type {Marker} */
   const meta = (member && member.marker) || {};
-  const list = classList(meta);
+  const list = classList(meta.containers);
   const entry = list ? list.find((c) => c.class_name === className) : null;
-  return isBlock(entry && entry.build) ? entry.build : (isBlock(meta.build) ? meta.build : {});
+  const entryBuild = entry ? entry.build : undefined, metaBuild = meta.build;
+  if (isBlock(entryBuild)) return entryBuild;
+  if (isBlock(metaBuild)) return metaBuild;
+  return {};
 };
 
 /** R36, R37: `{sha256}` of the files one class's image is built from, or `{unread}` saying which cannot be read. */
+/**
+ * @param {Member} member
+ * @param {string} className
+ * @returns {{ sha256?: string, unread?: string }}
+ */
 export function containerSourceHash(member, className) {
   const dockerfileRel = buildOf(member, className).dockerfile;
   const label = `${member.dir}/fleet-member.json`;
   if (typeof dockerfileRel !== "string" || !dockerfileRel || dockerfileRel.startsWith("/") || dockerfileRel.split("/").includes(".."))
     return { unread: `${label} names no member-relative \`build.dockerfile\` for ${className}` };
+  /** @type {string} */
   let text;
   try { text = readFileSync(join(member.abs, dockerfileRel), "utf8"); }
   catch { return { unread: `${member.dir}/${dockerfileRel} cannot be read` }; }
   const copied = copiedSources(text);
-  if (copied.unread) return { unread: `${member.dir}/${dockerfileRel} has ${copied.unread}` };
+  const copiedUnread = copied.unread, sources = copied.sources;
+  if (copiedUnread || !sources) return { unread: `${member.dir}/${dockerfileRel} has ${copiedUnread}` };
   const files = new Set([dockerfileRel.replace(/^\.\//, "")]);
-  for (const src of copied.sources) {
+  for (const src of sources) {
     const rel = src.replace(/^\.\//, "").replace(/\/+$/, "") || ".";
     if (/[*?[\]]/.test(rel) || /^[a-z]+:\/\//i.test(rel) || rel.startsWith("/") || rel.split("/").includes(".."))
       return { unread: `${member.dir}/${dockerfileRel} copies ${src}, which is a wildcard, an address or a path outside the build context` };
-    let st;
-    try { st = statSync(join(member.abs, rel)); } catch { return { unread: `${member.dir}/${dockerfileRel} copies ${src}, which is not in the tree` }; }
+    const st = (() => { try { return statSync(join(member.abs, rel)); } catch { return null; } })();
+    if (!st) return { unread: `${member.dir}/${dockerfileRel} copies ${src}, which is not in the tree` };
     if (st.isDirectory()) {
+      /** @type {string[]} */
       const acc = [];
       if (!filesUnder(join(member.abs, rel), rel === "." ? "" : rel, acc)) return { unread: `${member.dir}/${rel} cannot be read` };
       for (const f of acc) files.add(f.replace(/^\//, ""));
     } else files.add(rel);
   }
-  const h = createHash("sha256");
-  for (const f of [...files].sort()) h.update(`${f}\0${sha256(readFileSync(join(member.abs, f)))}\n`);
-  return { sha256: h.digest("hex") };
+  let listed = "";
+  for (const f of [...files].sort()) listed += `${f}\0${sha256(readFileSync(join(member.abs, f)))}\n`;
+  return { sha256: sha256(listed) };
 }
 
 /** R37: every class of a container member against what its image was built from: `[{class_name, state, why}]`, `state`
  *  `current`, `stale` (the files differ from what the recorded digest was built from), `unrecorded` (the marker
  *  records nothing it was built from) or `unread` (the files cannot be hashed). Makes no request and writes nothing. */
+/**
+ * @param {Member} member
+ * @returns {ImageState[]}
+ */
 export function containerImageStates(member) {
   const { classes } = containerClasses(member);
   return classes.map((cls) => {
-    const name = typeof cls.class_name === "string" && cls.class_name ? cls.class_name : "(unnamed)";
+    const className = cls.class_name, image = cls.image;
+    const name = typeof className === "string" && className ? className : "(unnamed)";
     const now = containerSourceHash(member, name);
-    if (now.unread) return { class_name: name, state: "unread", why: now.unread };
-    const recorded = isBlock(cls.image) ? cls.image[SOURCE_FIELD] : undefined;
-    if (typeof recorded !== "string" || !HEX64.test(recorded))
-      return { class_name: name, state: "unrecorded", why: `its image block records no \`${SOURCE_FIELD}\`, so what the digest was built from is unknown` };
-    if (recorded !== now.sha256)
-      return { class_name: name, state: "stale", why: `its image files are now ${now.sha256.slice(0, 16)}…, the digest was built from ${recorded.slice(0, 16)}…` };
-    return { class_name: name, state: "current", why: null };
+    const nowUnread = now.unread, nowSha = now.sha256;
+    /** @type {ImageState} */
+    let state;
+    if (nowUnread || nowSha === undefined) state = { class_name: name, state: "unread", why: String(nowUnread) };
+    else {
+      const recorded = isBlock(image) ? image[SOURCE_FIELD] : undefined;
+      if (typeof recorded !== "string" || !HEX64.test(recorded))
+        state = { class_name: name, state: "unrecorded", why: `its image block records no \`${SOURCE_FIELD}\`, so what the digest was built from is unknown` };
+      else if (recorded !== nowSha)
+        state = { class_name: name, state: "stale", why: `its image files are now ${nowSha.slice(0, 16)}…, the digest was built from ${recorded.slice(0, 16)}…` };
+      else state = { class_name: name, state: "current", why: null };
+    }
+    return state;
   });
 }
 
 /** R37: the findings, each `{class_name, text}`, for the classes whose image is not provably built from the files now. */
+/**
+ * @param {Member} member
+ * @returns {Array<{ class_name: string, text: string }>}
+ */
 export function containerImageFindings(member) {
   return containerImageStates(member).filter((s) => s.state !== "current").map((s) => ({ class_name: s.class_name,
     text: `${member.name}: the image of its class ${s.class_name} is not provably built from the code now in the tree — ${s.why}.` }));
@@ -809,35 +905,53 @@ export function containerImageFindings(member) {
  *  block (`digest`, and `source_sha256` of the files now) and the image the member's `wrangler.jsonc` container block
  *  names (its repository kept, its digest replaced). Returns `{files: [member-relative paths written]}` or
  *  `{refused: CODE, message}`, having written nothing. */
+/**
+ * @param {Member} member
+ * @param {string} className
+ * @param {unknown} digest
+ * @returns {DigestRecorded}
+ */
 export function recordContainerDigest(member, className, digest) {
+  /** @type {(refused: string, message: string) => DigestRecorded} */
   const refuse = (refused, message) => ({ refused, message });
   if (typeof digest !== "string" || !DIGEST.test(digest))
     return refuse("CONTAINER_DIGEST_INVALID", `${JSON.stringify(digest)} is not an image digest, sha256:<64 hex>`);
   if (!isContainer(member)) return refuse("CONTAINER_UNDESCRIBED", `${member.name} is not a container member`);
-  const meta = JSON.parse(JSON.stringify(member.marker));
-  const list = classList(meta);
+  const meta = /** @type {Marker} a copy of the member's marker */ (JSON.parse(JSON.stringify(member.marker)));
+  const list = classList(meta.containers);
   const entry = list ? list.find((c) => c.class_name === className) : (meta.class_name === className ? meta : null);
-  if (!entry || !isBlock(entry.image)) return refuse("CONTAINER_UNDESCRIBED", `${member.name} states no container class ${className}`);
+  const entryImage = entry ? entry.image : undefined;
+  if (!entry || !isBlock(entryImage)) return refuse("CONTAINER_UNDESCRIBED", `${member.name} states no container class ${className}`);
   const src = containerSourceHash(member, className);
-  if (src.unread) return refuse("CONTAINER_UNDESCRIBED", `${member.name}'s class ${className}: ${src.unread}`);
+  const srcUnread = src.unread;
+  if (srcUnread) return refuse("CONTAINER_UNDESCRIBED", `${member.name}'s class ${className}: ${srcUnread}`);
   const wranglerPath = join(member.abs, "wrangler.jsonc");
-  let wtext, cfg;
-  try { wtext = readFileSync(wranglerPath, "utf8"); cfg = parseJsonc(wtext, `${member.dir}/wrangler.jsonc`); }
-  catch (e) { return refuse("CONTAINER_UNDESCRIBED", `${member.dir}/wrangler.jsonc cannot be read: ${String(e.message).split("\n")[0]}`); }
-  const block = (isBlock(cfg) && Array.isArray(cfg.containers) ? cfg.containers : []).find((c) => isBlock(c) && c.class_name === className);
-  const named = block && typeof block.image === "string" ? /^(.+)@(sha256:[0-9a-f]{64})$/.exec(block.image) : null;
-  if (!named) return refuse("CONTAINER_UNDESCRIBED", `${member.dir}/wrangler.jsonc names no \`<repository>@sha256:<64 hex>\` image for the container of ${className}`);
-  if (wtext.split(block.image).length !== 2)
-    return refuse("CONTAINER_UNDESCRIBED", `${member.dir}/wrangler.jsonc names the image ${block.image} more than once, so which is ${className}'s is not clear`);
+  /** @type {string} */
+  let wtext;
+  /** @type {unknown} */
+  let read;
+  try { wtext = readFileSync(wranglerPath, "utf8"); read = parseJsonc(wtext, `${member.dir}/wrangler.jsonc`); }
+  catch (e) { return refuse("CONTAINER_UNDESCRIBED", `${member.dir}/wrangler.jsonc cannot be read: ${firstLine(String(messageOf(e)))}`); }
+  const cfg = read;
+  const containers = isBlock(cfg) ? cfg.containers : undefined;
+  const block = (isList(containers) ? containers : []).find((c) => isBlock(c) && c.class_name === className);
+  const blockImage = isBlock(block) ? block.image : undefined;
+  const unnamed = `${member.dir}/wrangler.jsonc names no \`<repository>@sha256:<64 hex>\` image for the container of ${className}`;
+  if (typeof blockImage !== "string") return refuse("CONTAINER_UNDESCRIBED", unnamed);
+  const named = /^(.+)@(sha256:[0-9a-f]{64})$/.exec(blockImage);
+  if (!named) return refuse("CONTAINER_UNDESCRIBED", unnamed);
+  if (wtext.split(blockImage).length !== 2)
+    return refuse("CONTAINER_UNDESCRIBED", `${member.dir}/wrangler.jsonc names the image ${blockImage} more than once, so which is ${className}'s is not clear`);
+  /** @type {Block} */
   const image = {};
-  for (const [k, v] of Object.entries(entry.image)) {
+  for (const [k, v] of Object.entries(entryImage)) {
     if (k === SOURCE_FIELD) continue;
     image[k] = k === "digest" ? digest : v;
     if (k === "digest") image[SOURCE_FIELD] = src.sha256;
   }
   entry.image = image;
   writeFileSync(join(member.abs, "fleet-member.json"), JSON.stringify(meta, null, 2) + "\n");
-  writeFileSync(wranglerPath, wtext.replace(block.image, `${named[1]}@${digest}`));
+  writeFileSync(wranglerPath, wtext.replace(blockImage, `${named[1]}@${digest}`));
   return { files: [`${member.dir}/fleet-member.json`, `${member.dir}/wrangler.jsonc`] };
 }
 
@@ -855,35 +969,48 @@ export function recordContainerDigest(member, className, digest) {
  * member's to bind) and its migrations in order, each `new_sqlite_classes` under its tag. The installer reads them from
  * the signed release rather than from a table of its own. */
 export const WORKER_PART_PATH = "worker.json";
+/** @type {Readonly<{ [bucket: string]: string }>} */
 export const BUCKET_ROLES = Object.freeze({ "bio-captures": "captures", "bio-published": "published" });
 
 /** A member's own Durable Objects from its parsed config (K4094): `{bindings, migrations}`, or null when it owns none.
  *  Names each binding without a name or class and each migration that is not `{tag, new_sqlite_classes}` (the forms
  *  the installer reads) into `missing`. */
+/**
+ * @param {Block} c
+ * @param {string[]} missing
+ * @returns {DurableObjects | null}
+ */
 function ownDurableObjects(c, missing) {
-  const dob = c.durable_objects === undefined ? {} : c.durable_objects;
-  const list = isBlock(dob) && dob.bindings !== undefined ? dob.bindings : [];
-  if (!isBlock(dob) || !Array.isArray(list)) missing.push("durable_objects.bindings");
+  const declared = c.durable_objects;
+  const dob = declared === undefined ? {} : declared;
+  const dobBindings = isBlock(dob) ? dob.bindings : undefined;
+  const list = isBlock(dob) && dobBindings !== undefined ? dobBindings : [];
+  if (!isBlock(dob) || !isList(list)) missing.push("durable_objects.bindings");
+  /** @type {ObjectBinding[]} */
   const bindings = [];
-  for (const b of Array.isArray(list) ? list : []) {
+  for (const b of isList(list) ? list : []) {
     if (isBlock(b) && b.script_name !== undefined) continue;
-    if (!isBlock(b) || typeof b.name !== "string" || !b.name || typeof b.class_name !== "string" || !b.class_name) {
+    const name = isBlock(b) ? b.name : undefined, className = isBlock(b) ? b.class_name : undefined;
+    if (!isBlock(b) || typeof name !== "string" || !name || typeof className !== "string" || !className) {
       missing.push("durable_objects.bindings");
       continue;
     }
-    bindings.push({ name: b.name, class_name: b.class_name });
+    bindings.push({ name, class_name: className });
   }
-  const migs = c.migrations === undefined ? [] : c.migrations;
-  if (!Array.isArray(migs)) missing.push("migrations");
+  const declaredMigrations = c.migrations;
+  const migs = declaredMigrations === undefined ? [] : declaredMigrations;
+  if (!isList(migs)) missing.push("migrations");
+  /** @type {Migration[]} */
   const migrations = [];
-  for (const m of Array.isArray(migs) ? migs : []) {
-    const classes = isBlock(m) ? m.new_sqlite_classes : undefined;
-    if (!isBlock(m) || Object.keys(m).some((k) => k !== "tag" && k !== "new_sqlite_classes") || typeof m.tag !== "string" || !/^v[0-9]+$/.test(m.tag)
-        || !Array.isArray(classes) || !classes.every((x) => typeof x === "string" && x)) {
+  for (const m of isList(migs) ? migs : []) {
+    const classes = isBlock(m) ? m.new_sqlite_classes : undefined, tag = isBlock(m) ? m.tag : undefined;
+    const names = isList(classes) ? nonEmptyStrings(classes) : null;
+    if (!isBlock(m) || Object.keys(m).some((k) => k !== "tag" && k !== "new_sqlite_classes") || typeof tag !== "string" || !/^v[0-9]+$/.test(tag)
+        || !names) {
       missing.push("migrations");
       continue;
     }
-    migrations.push({ tag: m.tag, classes: [...classes] });
+    migrations.push({ tag, classes: names });
   }
   return bindings.length || migrations.length ? { bindings, migrations } : null;
 }
@@ -892,26 +1019,40 @@ function ownDurableObjects(c, missing) {
  *  and owns no Durable Object; `{part: {descriptor, bytes}}`; or `{missing: [what, …]}` naming each binding whose bucket
  *  has no role (by its binding name), each list that is not one (`r2_buckets`, `triggers.crons`) and each Durable Object
  *  or migration the part cannot state. Never throws. */
+/**
+ * @param {unknown} cfg
+ * @returns {{ part?: { descriptor: WorkerDescriptor, bytes: Buffer } | null, missing?: string[] }}
+ */
 export function workerPart(cfg) {
+  /** @type {Block} */
   const c = isBlock(cfg) ? cfg : {};
+  /** @type {string[]} */
   const missing = [];
-  const r2 = c.r2_buckets === undefined ? [] : c.r2_buckets;
-  if (!Array.isArray(r2)) missing.push("r2_buckets");
+  const declaredBuckets = c.r2_buckets;
+  const r2 = declaredBuckets === undefined ? [] : declaredBuckets;
+  if (!isList(r2)) missing.push("r2_buckets");
+  /** @type {BucketBinding[]} */
   const buckets = [];
-  for (const b of Array.isArray(r2) ? r2 : []) {
-    const binding = isBlock(b) && typeof b.binding === "string" && b.binding ? b.binding : null;
-    const role = binding && typeof b.bucket_name === "string" && Object.hasOwn(BUCKET_ROLES, b.bucket_name) ? BUCKET_ROLES[b.bucket_name] : null;
-    if (!role) { missing.push(binding || "(an R2 bucket binding with no name)"); continue; }
+  for (const b of isList(r2) ? r2 : []) {
+    const named = isBlock(b) ? b.binding : undefined, bucketName = isBlock(b) ? b.bucket_name : undefined;
+    const binding = typeof named === "string" && named ? named : null;
+    const role = binding && typeof bucketName === "string" && Object.hasOwn(BUCKET_ROLES, bucketName) ? BUCKET_ROLES[bucketName] : null;
+    if (!role || !binding) { missing.push(binding || "(an R2 bucket binding with no name)"); continue; }
     buckets.push({ binding, bucket: role });
   }
-  const triggers = c.triggers === undefined ? {} : c.triggers;
-  const crons = isBlock(triggers) && triggers.crons !== undefined ? triggers.crons : (isBlock(triggers) ? [] : null);
-  if (!Array.isArray(crons) || !crons.every((x) => typeof x === "string" && x.trim()))
-    missing.push("triggers.crons");
+  const declaredTriggers = c.triggers;
+  const triggers = declaredTriggers === undefined ? {} : declaredTriggers;
+  const declaredCrons = isBlock(triggers) ? triggers.crons : undefined;
+  const crons = isBlock(triggers) && declaredCrons !== undefined ? declaredCrons : (isBlock(triggers) ? [] : null);
+  const cronList = isList(crons) ? nonBlankStrings(crons) : null;
+  if (!cronList) missing.push("triggers.crons");
   const objects = ownDurableObjects(c, missing);
-  if (missing.length) return { missing };
-  if (!buckets.length && !crons.length && !objects) return { part: null };
-  const descriptor = { r2_buckets: buckets, crons: [...crons], ...(objects ? { durable_objects: objects } : {}) };
+  if (missing.length || !cronList) return { missing };
+  if (!buckets.length && !cronList.length && !objects) return { part: null };
+  /** @type {WorkerDescriptor} */
+  let descriptor;
+  if (objects) descriptor = { r2_buckets: buckets, crons: [...cronList], durable_objects: objects };
+  else descriptor = { r2_buckets: buckets, crons: [...cronList] };
   return { part: { descriptor, bytes: Buffer.from(JSON.stringify(descriptor, null, 2) + "\n") } };
 }
 
@@ -924,10 +1065,17 @@ export function workerPart(cfg) {
 
 /** The names a built bundle exports (`default` included), from the build's metafile: the output that is the member's
  *  artifact, else the build's only output. */
+/**
+ * @param {Member} member
+ * @param {Built | null | undefined} built
+ * @returns {Set<string>}
+ */
 export function bundleExports(member, built) {
-  const outputs = (built && built.metafile && built.metafile.outputs) || {};
-  const out = outputs[member.bundle.outfile] || Object.values(outputs)[0];
-  return new Set(out && Array.isArray(out.exports) ? out.exports : []);
+  const metafile = built && built.metafile;
+  const outputs = (metafile && metafile.outputs) || {};
+  const out = outputs[bundleOf(member, "outfile").outfile] || Object.values(outputs)[0];
+  const exported = out ? out.exports : undefined;
+  return new Set(Array.isArray(exported) ? exported : []);
 }
 
 /** R39: the bindings of a release that name something the release does not export. `units` is the plane and every member
@@ -936,30 +1084,45 @@ export function bundleExports(member, built) {
  *  `text` says it for a person. A service names the plane or a member; a Durable Object binding with a `script_name`
  *  names a member exporting its class, one without names its own bundle's; a container class and each class a migration
  *  creates, renames to or transfers are its own bundle's. Never throws. */
+/**
+ * @param {readonly BindingUnit[] | null | undefined} units
+ * @returns {BindingFinding[]}
+ */
 export function bindingFindings(units) {
   const list = Array.isArray(units) ? units : [];
-  const byName = new Map(list.map((u) => [u.name, u]));
-  const names = (x) => (Array.isArray(x) ? x : []);
+  /** @type {Map<unknown, BindingUnit>} */
+  const byName = new Map([]);
+  for (const u of list) byName.set(u.name, u);
+  /** @type {(x: unknown) => List} */
+  const names = (x) => (isList(x) ? x : []);
+  /** @type {BindingFinding[]} */
   const out = [];
   for (const u of list) {
-    const c = isBlock(u.config) ? u.config : {};
+    const config = u.config;
+    /** @type {Block} */
+    const c = isBlock(config) ? config : {};
     const mine = new Set(u.exports);
-    const found = (binding, name, text) => out.push({ member: u.name, binding, name, text: `${u.name}: ${text}` });
+    /** @type {(binding: unknown, name: unknown, text: string) => void} */
+    const found = (binding, name, text) => { out.push({ member: u.name, binding, name, text: `${u.name}: ${text}` }); };
     for (const s of names(c.services)) {
       if (!isBlock(s) || byName.has(s.service)) continue;
       found(s.binding, s.service, `service binding ${s.binding} names ${s.service}, which is neither the plane nor a member of this release`);
     }
-    const dob = isBlock(c.durable_objects) ? c.durable_objects : {};
+    const declared = c.durable_objects;
+    /** @type {Block} */
+    const dob = isBlock(declared) ? declared : {};
     for (const b of names(dob.bindings)) {
       if (!isBlock(b)) continue;
-      const host = b.script_name === undefined || b.script_name === u.name ? u : byName.get(b.script_name);
-      if (!host) found(b.name, b.class_name, `Durable Object binding ${b.name} names class ${b.class_name} of the script ${b.script_name}, which is not a member of this release`);
-      else if (!new Set(host.exports).has(b.class_name))
-        found(b.name, b.class_name, `Durable Object binding ${b.name} names class ${b.class_name}, which the bundle of ${host.name} does not export`);
+      const scriptName = b.script_name, className = b.class_name;
+      const host = scriptName === undefined || scriptName === u.name ? u : byName.get(scriptName);
+      if (!host) found(b.name, className, `Durable Object binding ${b.name} names class ${className} of the script ${scriptName}, which is not a member of this release`);
+      else if (!(typeof className === "string" && new Set(host.exports).has(className)))
+        found(b.name, className, `Durable Object binding ${b.name} names class ${className}, which the bundle of ${host.name} does not export`);
     }
     for (const k of names(c.containers)) {
-      if (isBlock(k) && !mine.has(k.class_name))
-        found(k.class_name, k.class_name, `container class ${k.class_name} is not exported by its bundle`);
+      const className = isBlock(k) ? k.class_name : undefined;
+      if (isBlock(k) && !(typeof className === "string" && mine.has(className)))
+        found(className, className, `container class ${className} is not exported by its bundle`);
     }
     for (const m of names(c.migrations)) {
       if (!isBlock(m)) continue;
@@ -976,26 +1139,43 @@ export function bindingFindings(units) {
 /** R39 over a set of members (the plane's descriptor included): builds each without writing, reads its configuration
  *  and returns `{findings, unchecked}`; a member that cannot be built here is named in `unchecked` with why, never
  *  left out silently. */
+/**
+ * @param {readonly Member[]} members
+ * @returns {Promise<{ findings: BindingFinding[], unchecked: Array<{ name: string, reason: string }> }>}
+ */
 export async function releaseBindingFindings(members) {
-  const units = [], unchecked = [];
+  /** @type {BindingUnit[]} */
+  const units = [];
+  /** @type {Array<{ name: string, reason: string }>} */
+  const unchecked = [];
   for (const m of members) {
-    let built, config = null;
+    /** @type {Built} */
+    let built;
+    /** @type {unknown} */
+    let config = null;
     try { built = await buildMember(m, { write: false }); }
-    catch (e) { unchecked.push({ name: m.name, reason: `a fresh build failed here: ${String(e.message).split("\n")[0]}` }); continue; }
+    catch (e) { unchecked.push({ name: m.name, reason: `a fresh build failed here: ${firstLine(String(messageOf(e)))}` }); continue; }
     try { config = parseJsonc(readFileSync(join(m.abs, "wrangler.jsonc"), "utf8"), `${m.name}/wrangler.jsonc`); }
-    catch (e) { if (e.code !== "ENOENT") { unchecked.push({ name: m.name, reason: String(e.message).split("\n")[0] }); continue; } }
+    catch (e) { if (codeOf(e) !== "ENOENT") { unchecked.push({ name: m.name, reason: firstLine(String(messageOf(e))) }); continue; } }
     units.push({ name: m.name, config, exports: bundleExports(m, built) });
   }
   return { findings: bindingFindings(units), unchecked };
 }
 
 /** The three repository-relative paths a guarded member stands on. */
+/**
+ * @param {Member} member
+ * @param {string} [repoRoot]
+ * @returns {{ marker: string, artifact: string | null, manifest: string | null }}
+ */
 export function memberPaths(member, repoRoot = REPO_ROOT) {
+  /** @type {(p: string) => string} */
   const rel = (p) => repoPath(repoRoot, join(member.abs, p));
+  const bundle = member.bundle;
   return {
     marker: rel("fleet-member.json"),
-    artifact: member.bundle ? rel(member.bundle.outfile) : null,
-    manifest: member.bundle ? rel(member.bundle.manifest) : null,
+    artifact: bundle ? rel(bundle.outfile) : null,
+    manifest: bundle ? rel(bundle.manifest) : null,
   };
 }
 
@@ -1006,14 +1186,21 @@ export function memberPaths(member, repoRoot = REPO_ROOT) {
  *  gets switched off. Never called by the build scripts: a build does not need
  *  git, and a build step that failed without it would be a new dependency
  *  nobody asked for. */
-export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = console.log } = {}) {
+/**
+ * @param {readonly Member[]} members
+ * @param {{ repoRoot?: string, log?: (line: string) => void }} [opts]
+ * @returns {Classified}
+ */
+export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = (line) => { console.log(line); } } = {}) {
   const prov = readGitProvenance(repoRoot);
+  /** @type {DiscoveredItem[]} */
   const items = [];
   for (const m of members) {
     const p = memberPaths(m, repoRoot);
+    const artifact = p.artifact, manifest = p.manifest;
     items.push({ path: p.marker, what: `${m.name}'s fleet manifest`, counted: "enrolled the member" });
-    if (p.artifact) items.push({ path: p.artifact, what: `${m.name}'s committed artifact`, counted: "guarded as one asset" });
-    if (p.manifest) items.push({ path: p.manifest, what: `${m.name}'s bundle manifest`, counted: "the hashes every arm reads" });
+    if (artifact) items.push({ path: artifact, what: `${m.name}'s committed artifact`, counted: "guarded as one asset" });
+    if (manifest) items.push({ path: manifest, what: `${m.name}'s bundle manifest`, counted: "the hashes every arm reads" });
   }
   return reportProvenance({ prov, items, instrument: "the fleet bundle guard",
     corpus: `${members.length} fleet member(s)`, log });
