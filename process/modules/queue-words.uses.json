@@ -1,6 +1,6 @@
 {
   "module": "queue-words",
-  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"be4f38b89ca98f407d7eb3dfc861b7c7eb00653b","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words","civil-time"],
   "uses": [
     {"provider":"setup-words","item":"WordVars","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":13,"in":"say"}]},
@@ -8,7 +8,8 @@
     {"provider":"setup-words","item":"hasWord","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":6,"in":"(top level)"}]},
     {"provider":"setup-words","item":"word","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":13,"in":"say"}]},
     {"provider":"setup-words","item":"word","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":6,"in":"(top level)"}]},
-    {"provider":"civil-time","item":"bio-plane/src/civil-time/values.mjs:(unnamed)","itemKind":"not in the interface","type":"receive","route":"direct","standard":false,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":56,"in":"localDayOf"},{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"in":"instantText"}]},
+    {"provider":"civil-time","item":"bio-plane/src/civil-time/kinds.mjs:(unnamed)","itemKind":"not in the interface","type":"receive","route":"direct","standard":false,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":56,"in":"localDayOf"},{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"in":"instantText"}]},
+    {"provider":"civil-time","item":"bio-plane/src/civil-time/kinds.mjs:Refusal","itemKind":"not in the interface","type":"receive","route":"direct","standard":false,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":56,"in":"localDayOf"},{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"in":"instantText"}]},
     {"provider":"civil-time","item":"isCalendarDate","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":51,"in":"localDayOf"},{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":78,"in":"instantText"},{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":87,"in":"setText"}]},
     {"provider":"civil-time","item":"isCalendarDate","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":7,"in":"(top level)"}]},
     {"provider":"civil-time","item":"localClock","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"in":"instantText"}]},
@@ -44,6 +45,7 @@
     {"rule":"R1","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":50,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R14","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":53,"mayRefer":["*"],"waitsOn":"ARCH: a boundary module for it","tests":[]},
     {"rule":"S5","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":56,"mayRefer":["civil-time"],"waitsOn":"civil-time: the item in its interface files","tests":[]},
+    {"rule":"S5","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":56,"mayRefer":["civil-time"],"waitsOn":"civil-time: the item in its interface files","tests":[]},
     {"rule":"S4","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":62,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":62,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":62,"mayRefer":[],"waitsOn":"this module: stated kinds","tests":[]},
@@ -61,6 +63,7 @@
     {"rule":"R1","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":78,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R14","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"mayRefer":["*"],"waitsOn":"ARCH: a boundary module for it","tests":[]},
+    {"rule":"S5","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"mayRefer":["civil-time"],"waitsOn":"civil-time: the item in its interface files","tests":[]},
     {"rule":"S5","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":79,"mayRefer":["civil-time"],"waitsOn":"civil-time: the item in its interface files","tests":[]},
     {"rule":"R1","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":80,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S4","file":"bio-plane/src/queue-producers/words.mjs","side":"code","line":80,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
