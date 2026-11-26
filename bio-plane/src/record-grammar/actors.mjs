@@ -68,6 +68,7 @@ export const MACHINE_STAMP_PREFIXES = [MACHINE_AUTHOR_PREFIX, MACHINE_CLASS_PREF
 
 /* The one fold both predicates read: stringified, trimmed, lower-cased. A value that cannot be stringified (an object
    with no prototype, or a throwing `toString`) folds to '' and so is absent, never a throw (R15). */
+/** @param {unknown} who @returns {string} */
 function fold(who) {
   try { return String(who ?? '').trim().toLowerCase(); } catch { return ''; }
 }
@@ -75,14 +76,18 @@ function fold(who) {
 /** Did the CONTROL PLANE mint this identity? Case-folded deliberately: at the
  *  store the value is server-stamped and the fold changes nothing, while at the
  *  gate the value is hand-written by a caller and `Token:member` is the same
- *  claim as `token:member`. */
+ *  claim as `token:member`.
+ * @param {unknown} who
+ * @returns {boolean} */
 export function isMachineStamp(who) {
   const s = fold(who);
   return s !== '' && MACHINE_STAMP_PREFIXES.some((p) => s.startsWith(p));
 }
 
 /** Is this identity a machine rather than a named person? The whole question,
- *  in one place. Returns FALSE for an absent identity — see the block above. */
+ *  in one place. Returns FALSE for an absent identity — see the block above.
+ * @param {unknown} who
+ * @returns {boolean} */
 export function isMachineIdentity(who) {
   const s = fold(who);
   if (s === '') return false;

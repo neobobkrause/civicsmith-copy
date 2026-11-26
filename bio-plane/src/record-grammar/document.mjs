@@ -17,10 +17,13 @@ import { word } from '../setup-words/index.mjs';
  * `problem` pointing at the SAME array as `focus` so the two cannot drift,
  * and vocabFor below judges a document by its DECLARED spelling first with
  * the NORMALIZED type as the fallback. */
+/* `problem` is the same array as `focus` (`===`), and the last key, as it has always been (R32). */
+const FOCUS_HEADINGS = ['## Statement', '## Why It Matters', '## Open Questions', '## Session Log', '## Review Notes'];
+/** @type {{information: string[], inquiry: string[], focus: string[], project: string[], action: string[], bias: string[], problem: string[]}} */
 export const HEADINGS = {
   information: ['## Summary', '## Provenance Notes', '## Session Log', '## Review Notes'],
   inquiry: ['## Question', word('conformance.rests'), '## Conclusion', word('conformance.falsify'), '## Session Log', '## Review Notes'],
-  focus: ['## Statement', '## Why It Matters', '## Open Questions', '## Session Log', '## Review Notes'],
+  focus: FOCUS_HEADINGS,
   project: ['## Thesis Summary', '## Open Questions', '## Ruled Out', '## Session Log', '## Review Notes'],
   action: ['## Plan', '## Status', '## Correspondence', '## Session Log', '## Review Notes'],
   /* PL-12 / D-84 — THE BIAS BUNDLE'S HEADING SET, and the third heading is the
@@ -47,10 +50,11 @@ export const HEADINGS = {
      REQUIRED IN EVERY STATE rather than only in `adopted`, and C-26.7 refuses
      it EMPTY on an adopted bundle, because a heading nobody filled is the
      checkbox C-21.1 exists to refuse arriving one layer down. */
-  bias: ['## Statements', '## Adoption', '## What This Does Not Enforce', '## Session Log', '## Review Notes']
+  bias: ['## Statements', '## Adoption', '## What This Does Not Enforce', '## Session Log', '## Review Notes'],
+  problem: FOCUS_HEADINGS
 };
 /* One legacy vocabulary, two spellings: same object, so no drift. */
-HEADINGS.problem = HEADINGS.focus;
+
 
 /* REC-14: headings that are CANONICAL for a type but required only in a
  * particular STATE. `## What This Excludes` is the completeness assertion's
@@ -77,10 +81,17 @@ HEADINGS.problem = HEADINGS.focus;
  * relation the bytes themselves carry. Keying it on the state word would have
  * silently stopped requiring the heading the moment the word left the machine,
  * which is a gate that disappears rather than a gate that was lifted. */
+/** A heading owed only in some documents: in a case member's (`whenCaseMember`), or in the `states` named.
+ * @typedef {{heading: string, whenCaseMember?: boolean, states?: string[]}} ConditionalHeading */
+/* `focus` and `problem` are the same empty array (`===`), after `inquiry`, as they have always been (R33). */
+/** @type {ConditionalHeading[]} */
+const NO_CONDITIONAL = [];
+/** @type {{inquiry: ConditionalHeading[], focus: ConditionalHeading[], problem: ConditionalHeading[]}} */
 export const HEADINGS_WHEN = {
-  inquiry: [{ heading: '## What This Excludes', whenCaseMember: true }]
+  inquiry: [{ heading: '## What This Excludes', whenCaseMember: true }],
+  focus: NO_CONDITIONAL,
+  problem: NO_CONDITIONAL
 };
-HEADINGS_WHEN.problem = HEADINGS_WHEN.focus = [];
 
 /* CORRECTED BY MK-2 (IC-142), never exempted, AND IT IS THE MOST DANGEROUS LINE
    IN THAT ITEM — found by its own control arm, not by reading. This read
@@ -97,10 +108,17 @@ HEADINGS_WHEN.problem = HEADINGS_WHEN.focus = [];
    anything but capture and connection once each and testimony at most once. It
    FAILS CLOSED: a malformed frozen block is dragged into the ceremony and
    refused there, rather than let out of it. */
+/** An object read member by member. @typedef {{readonly [key: string]: unknown}} Members */
+/** @param {unknown} v @returns {v is Members} */
+const isMembers = (v) => v !== null && typeof v === 'object';
+/** A list read item by item. @typedef {readonly unknown[]} List */
+/** @param {unknown} v @returns {v is List} */
+const isList = (v) => Array.isArray(v);
+/** @param {{readonly [key: string]: unknown} | null | undefined} fm @returns {boolean} */
 export const isCaseMemberBytes = (fm) => {
   const s = fm?.published_strength;
-  return Array.isArray(s) && s.length >= 2
-    && s.every((a) => a && typeof a === 'object' && typeof a.axis === 'string');
+  return isList(s) && s.length >= 2
+    && s.every((a) => isMembers(a) && typeof a.axis === 'string');
 };
 
 /* THE type-keyed vocabulary lookup (REC-10, normalisation site 1 of 4).
@@ -114,9 +132,21 @@ export const isCaseMemberBytes = (fm) => {
  * than raw table[ot]: the second rename left them un-normalized and
  * patched with duplicate keys, and DATA-MODEL.md §2.7 measured what that
  * costs a third name. */
-export const vocabFor = (table, t) => table[t] !== undefined ? table[t] : table[normalizeType(t)];
+/* A type's name is a key as the language makes one of it: absent is "undefined", null is "null". */
+/** @template V @param {Readonly<Record<string, V>>} table @param {string | null | undefined} t @returns {V | undefined} */
+export const vocabFor = (table, t) => table[String(t)] !== undefined ? table[String(t)] : table[String(normalizeType(t))];
 
 /** Legal states and transition edges per type (spec Section 4; edge set is catalog-versioned). */
+/* The LEGACY focus machine (below), named once so `focus` and `problem` hold the same object. */
+const FOCUS_STATES = {
+  legal: ['surfaced', 'elevated', 'deferred', 'dismissed'],
+  edges: {
+    surfaced: ['elevated', 'deferred', 'dismissed'],
+    deferred: ['surfaced', 'elevated', 'dismissed'],
+    dismissed: ['surfaced', 'elevated', 'deferred'],
+    elevated: []
+  }
+};
 export const STATES = {
   information: {
     legal: ['collected', 'verified', 'retired'],
@@ -280,15 +310,7 @@ export const STATES = {
      legacy focus/problem document validates against the vocabulary it was
      authored under — see the HEADINGS note. Nothing produces these states
      anymore; op=dispose runs on the inquiry machine above. */
-  focus: {
-    legal: ['surfaced', 'elevated', 'deferred', 'dismissed'],
-    edges: {
-      surfaced: ['elevated', 'deferred', 'dismissed'],
-      deferred: ['surfaced', 'elevated', 'dismissed'],
-      dismissed: ['surfaced', 'elevated', 'deferred'],
-      elevated: []
-    }
-  },
+  focus: FOCUS_STATES,
   /* K904 (form (b); N456, T21): A PROJECT'S STAGE IS COMPUTED, NOT WRITTEN. `project-stage` derives it at the read,
      so the machine writes only whether the project is open or closed: `forming` (legal[0]) and `closed`, each to the
      other. `investigating` and `matured` were the hand-written ladder; bytes that carry them stay valid (`legacy`),
@@ -419,11 +441,11 @@ export const STATES = {
   success_record: {
     legal: ['recorded'],
     edges: { recorded: [] }
-  }
+  },
+  /* One machine, two spellings: the legacy alias points at the SAME object, so
+     the tables cannot drift apart. The last key, as it has always been. */
+  problem: FOCUS_STATES
 };
-/* One machine, two spellings: the legacy alias points at the SAME object, so
-   the tables cannot drift apart. */
-STATES.problem = STATES.focus;
 
 /* Exported for REC-22: the public read path renders `## Conclusion`,
    `## What Would Falsify This` and `## What This Excludes` out of the published
@@ -432,6 +454,7 @@ STATES.problem = STATES.focus;
    disagreement about what the group published.
    T46-1 (R36, P8): only a string is a body. An array or a `String` object answered `indexOf` and `slice` too, so one
    was sliced as if it were text instead of refused; it is a `TypeError` now, as every other non-string already was. */
+/** @param {string} body @param {string} heading @returns {string | null} */
 export function sectionText(body, heading) {
   if (typeof body !== 'string') throw new TypeError('sectionText: body must be a string');
   const idx = body.indexOf(heading);

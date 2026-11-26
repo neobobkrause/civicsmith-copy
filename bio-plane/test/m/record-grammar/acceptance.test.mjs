@@ -36,7 +36,8 @@ test("R52 ACCEPT_MUST_REAUTHOR is the one spelling of the code an act's owner re
 test("R52 acceptanceRecord: the one shape {proposal, form, by, at, kind}, frozen, for every form and any kind; extra keys dropped", () => {
   for (const form of ACCEPTANCE_FORMS)
     for (const kind of ["step", "hypothesis", "passage", "connection", "question", "find", "account"]) {
-      const r = acceptanceRecord({ ...OK, form, kind, extra: 1, viewer: "x" });
+      const input = { ...OK, form, kind, extra: 1, viewer: "x" };
+      const r = acceptanceRecord(input);
       assert.deepEqual(r, { ...OK, form, kind });
       assert.deepEqual(Object.keys(r), ["proposal", "form", "by", "at", "kind"]);
       assert.ok(Object.isFrozen(r));
@@ -48,8 +49,9 @@ test("R52 acceptanceRecord: the one shape {proposal, form, by, at, kind}, frozen
 });
 
 test("R52 acceptanceRecord refuses, naming the field, anything that is not an acceptance (negative controls)", () => {
+  /** @param {{[key: string]: unknown}} over @param {string} field */
   const refused = (over, field) =>
-    assert.throws(() => acceptanceRecord({ ...OK, ...over }), (e) => e instanceof TypeError && e.message.includes(field),
+    assert.throws(() => acceptanceRecord({ ...OK, ...over }), (/** @type {unknown} */ e) => e instanceof TypeError && e.message.includes(field),
       `${field} ${JSON.stringify(over)}`);
   for (const proposal of [undefined, null, "", "  ", 1, {}, ["p"]]) refused({ proposal }, "proposal");
   for (const form of [undefined, null, "", "As_Proposed", "accepted", "rejected", "own", "constructor", "toString", 0, ["edited"]])

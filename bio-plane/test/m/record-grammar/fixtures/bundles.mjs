@@ -5,16 +5,49 @@
    C-6.3's `workproduct_state` arm and its findings went, the project stub re-keyed to C-2.9, C-13.2's and C-16.1's
    messages say "record", and the project machine's fixtures (R35) were added. */
 import { createSha256 } from "../../../../src/record-grammar/index.mjs";
+/** @import { BundleInput, BundleContext, Finding, Grammar } from "../../../../src/record-grammar/bundle.mjs" */
 
-export const NOW = Date.parse("2026-06-01T00:00:00Z");
+/** A fixture: a bundle as `checkBundle` takes it, and the schemas a narrowed one knows (its `opts.knownSchemas`, R39).
+ * @typedef {BundleInput & {knownSchemas?: string[]}} Fixture */
+/** What a fixture sets beside its files.
+ * @typedef {{folderName?: string, nowMs?: number | undefined, maxPackageAgeDays?: number | undefined, maxReevalAgeDays?: number | undefined, elidedPaths?: Set<string> | string[] | undefined, resolveTarget?: ((id: string) => boolean) | undefined, releaseRegistry?: object | null | undefined, publishedRegistry?: object | null | undefined, publishedCaseRegistry?: object | null | undefined, earnedRegistry?: object | null | undefined, sha512?: ((bytes: Uint8Array) => Promise<Uint8Array>) | null | undefined, knownSchemas?: string[]}} More */
+/** A plain value the fixtures write (R8). @typedef {string | number | boolean | null} Plain */
+/** A one-level map or a flat object element (R7). @typedef {{[key: string]: Plain}} PlainMap */
+/** A fixture's front matter, field by field (R7): a plain value, a map, or a list of plain values and flat objects.
+ * @typedef {{[key: string]: Plain | PlainMap | (Plain | PlainMap)[]}} Fields */
+/** Files by path. @typedef {{[path: string]: string}} Files */
+
+/* Fields and files merged in order, a later part's value replacing an earlier one's in its place, as a spread does. */
+/** @param {...Fields} parts @returns {Fields} */
+const fields = (...parts) => {
+  /** @type {Fields} */
+  const out = {};
+  for (const part of parts) for (const [k, v] of Object.entries(part)) out[k] = v;
+  return out;
+};
+/** @param {...Files} parts @returns {Files} */
+const filesMerged = (...parts) => {
+  /** @type {Files} */
+  const out = {};
+  for (const part of parts) for (const [k, v] of Object.entries(part)) out[k] = v;
+  return out;
+};
+
+/** 2026-06-01T00:00:00Z, the fixtures' clock. */
+export const NOW = 1780272000000;
+/** @param {string} s @returns {Uint8Array} */
 const utf8 = (s) => new TextEncoder().encode(s);
+/** @param {Uint8Array | string} v @returns {Promise<string>} */
 export const sha256 = async (v) => createSha256().update(typeof v === "string" ? utf8(v) : v).hex();
+/** @param {string} s @returns {string} */
 const hex = (s) => createSha256().update(utf8(s)).hex();
 
 /* The type arms, claimed by grammars that each leave one marker finding, so their places in the order are seen. C-2.7's
    grammar leaves none: its place is capture's grammar's to keep or lose (job record, J2), not the structural arms'.
    Re-keyed at T21 (N456, K904): the project slot is C-2.9 alone, so its stub claims and marks C-2.9. */
+/** @param {string} check @returns {(ctx: BundleContext, findings: Finding[]) => void} */
 const marker = (check) => (ctx, findings) => { findings.push({ check, severity: "info", message: `${check} arm ran` }); };
+/** @type {Grammar[]} */
 export const STUBS = [
   { module: "stub-information", ids: ["C-2.7"], arm: () => {} },
   { module: "stub-info2", ids: ["C-18.6", "C-18.7"], arm: marker("C-18.6") },
@@ -22,11 +55,13 @@ export const STUBS = [
   { module: "stub-project", ids: ["C-2.9"], arm: marker("C-2.9") },
 ];
 
-const CORE = (o) => ({
+/** @param {Fields} o @returns {Fields} */
+const CORE = (o) => fields({
   id: "INFO-2026-0001-a", object_type: "information", schema: "information@1", title: "T", current_state: "collected",
   prior_state: "null", created: "2026-01-01T00:00:00Z", last_updated: "2026-01-01T00:00:00Z", produced_by: { mode: "manual",
   capability_tier: "t1" }, group: "g", references: [], state_history: [], annotations_open: 0, reeval_pending: "false",
-  visuals: [], ...o });
+  visuals: [] }, o);
+/** @type {{[type: string]: string[]}} */
 const HEAD = {
   information: ["## Summary", "## Provenance Notes", "## Session Log", "## Review Notes"],
   inquiry: ["## Question", "## What It Rests On", "## Conclusion", "## What Would Falsify This", "## Session Log", "## Review Notes"],
@@ -37,7 +72,9 @@ const HEAD = {
 };
 
 /* The restricted grammar, written: scalars, one-level maps, arrays of scalars or of flat objects. */
+/** @param {Fields} fm @returns {string} */
 function yamlOf(fm) {
+  /** @param {Plain} v @returns {string} */
   const sc = (v) => (v === null ? "null" : typeof v === "string" && (v === "" || /[:#]/.test(v)) ? JSON.stringify(v) : String(v));
   const out = ["---"];
   for (const [k, v] of Object.entries(fm)) {
@@ -55,33 +92,59 @@ function yamlOf(fm) {
   out.push("---");
   return out.join("\n");
 }
+/** @param {string[]} heads @param {{[heading: string]: string}} [extra] @returns {string} */
 const bodyOf = (heads, extra = {}) => heads.map((h) => `${h}\n${extra[h] || ""}`).join("\n");
-const md = (fm, heads, extra) => `${yamlOf(fm)}\n${bodyOf(heads || HEAD[fm.object_type] || HEAD.information, extra)}`;
-const bundle = (folderName, files, more = {}) => ({ folderName, files: new Map(Object.entries(files)), sha256, nowMs: NOW, ...more });
-const info = (o = {}, files = {}, more = {}) => bundle(o.id || "INFO-2026-0001-a", { "bundle.md": md(CORE(o)), ...files }, more);
-const typed = (prefix, type, o = {}, files = {}, more = {}) => {
-  const id = o.id || `${prefix}-2026-0001-a`;
-  return bundle(id, { "bundle.md": md(CORE({ id, object_type: type, schema: `${type}@1`, ...o })), ...files }, more);
+/** @param {Fields} fm @param {string[] | null} [heads] @param {{[heading: string]: string}} [extra] @returns {string} */
+const md = (fm, heads, extra) => `${yamlOf(fm)}\n${bodyOf(heads || HEAD[String(fm.object_type)] || HEAD.information || [], extra)}`;
+/** @param {Files} files @returns {Map<string, Uint8Array | string>} */
+const filesOf = (files) => {
+  /** @type {[string, Uint8Array | string][]} */
+  const entries = Object.entries(files);
+  return new Map(entries);
 };
+/** @param {string} folderName @param {Files} files @param {More} [more] @returns {Fixture} */
+const bundle = (folderName, files, more = {}) => ({ folderName, files: filesOf(files), sha256, nowMs: NOW, ...more });
+/** @param {Fields} [o] @param {Files} [files] @param {More} [more] @returns {Fixture} */
+const info = (o = {}, files = {}, more = {}) => bundle(String(o.id || "INFO-2026-0001-a"), filesMerged({ "bundle.md": md(CORE(o)) }, files), more);
+/** @param {string} prefix @param {string} type @param {Fields} [o] @param {Files} [files] @param {More} [more] @returns {Fixture} */
+const typed = (prefix, type, o = {}, files = {}, more = {}) => {
+  const id = String(o.id || `${prefix}-2026-0001-a`);
+  return bundle(id, filesMerged({ "bundle.md": md(CORE(fields({ id, object_type: type, schema: `${type}@1` }, o))) }, files), more);
+};
+/** @param {string} ts @param {string} author @param {string} state @returns {string} */
 const ann = (ts, author, state) => JSON.stringify({ id: `INFO-2026-0001-a.ann-${ts}-${author}`, state });
+/** @type {(Plain | PlainMap)[]} */
 const TRIGGERS = [{ text: "t", description: "d" }];
+/** @param {Fields} [o] @param {Files} [files] @param {More} [more] @returns {Fixture} */
 const inquiry = (o = {}, files = {}, more = {}) =>
-  typed("INQ", "inquiry", { current_state: "open", surfaced_by: "human", recheck_triggers: TRIGGERS, ...o }, files, more);
+  typed("INQ", "inquiry", fields({ current_state: "open", surfaced_by: "human", recheck_triggers: TRIGGERS }, o), files, more);
+/** @type {{[heading: string]: string}} */
 const SESSION = { "## Session Log": "### Session 2026-01-02 x\n" };
-const ref = (o) => ({ rel: "cites", target: "INFO-2026-0002-b", status: "confirmed", ...o });
+/** @param {PlainMap} o @returns {PlainMap} */
+const ref = (o) => {
+  /** @type {PlainMap} */
+  const out = { rel: "cites", target: "INFO-2026-0002-b", status: "confirmed" };
+  for (const [k, v] of Object.entries(o)) out[k] = v;
+  return out;
+};
 
 /* A pending package whose manifest lists `files` (name -> bytes) against `base`. */
+/** @param {{[name: string]: string}} files @param {{base?: string, created?: string, sha?: string, man?: {[key: string]: string | undefined}}} [o] @returns {Files} */
 function pkg(files, o = {}) {
   const man = { target: "INFO-2026-0001-a", base: o.base ?? "0".repeat(64), created: o.created ?? "2026-05-30T00:00:00Z",
     author: "a", skill_version: "1", files: Object.entries(files).map(([name, b]) => ({ name, sha256: o.sha ?? hex(b) })) };
+  /** @type {Files} */
   const out = { "PENDING_PROMOTION.json": JSON.stringify({ ...man, ...(o.man || {}) }) };
   for (const [name, b] of Object.entries(files)) out[`${name}.pending`] = b;
   return out;
 }
+/** @param {{[key: string]: string | string[]}[]} entries @returns {string} */
 const histMan = (entries) => JSON.stringify({ entries });
 
+/** Every fixture by its name. @returns {{[name: string]: Fixture}} */
 export function fixtures() {
   const live = md(CORE({}));
+  /** @type {{[name: string]: Fixture}} */
   const F = {
     "clean information": info(),
     "clean project": typed("PROJ", "project", { current_state: "forming" }),
@@ -117,7 +180,7 @@ export function fixtures() {
     "C-3.1 case member carries it": bundle("INQ-2026-0001-a", { "bundle.md": md(CORE({ id: "INQ-2026-0001-a", object_type: "inquiry",
       schema: "inquiry@1", current_state: "open", surfaced_by: "human", recheck_triggers: TRIGGERS,
       published_strength: [{ axis: "capture" }, { axis: "connection" }, { axis: "testimony" }] }),
-      [...HEAD.inquiry, "## What This Excludes"]) }),
+      [...(HEAD.inquiry ?? []), "## What This Excludes"]) }),
     "C-3.1 not a case member: one axis": inquiry({ published_strength: [{ axis: "capture" }] }),
     "C-4.1 illegal state": info({ current_state: "published" }),
     "C-4.1 inquiry legacy state is readable": inquiry({ current_state: "published" }),
@@ -136,8 +199,8 @@ export function fixtures() {
       "LEASE-carol.json": "{" }),
     "C-16.4 orphaned pending": info({}, { "data/x.json.pending": "{}" }),
     "C-16.1 manifest does not parse": info({}, { "PENDING_PROMOTION.json": "{" }),
-    "C-16 package checks": info({}, { ...pkg({ "data/a.json": "{}", "data/b.json": "[]" }, { man: { target: "INFO-2026-0003-c", skill_version: undefined } }),
-      "data/b.json.pending": "[1]", "data/c.json.pending": "{}" }),
+    "C-16 package checks": info({}, filesMerged(pkg({ "data/a.json": "{}", "data/b.json": "[]" }, { man: { target: "INFO-2026-0003-c", skill_version: undefined } }),
+      { "data/b.json.pending": "[1]", "data/c.json.pending": "{}" })),
     "C-16 manifest entry malformed, file missing": info({}, { "PENDING_PROMOTION.json": JSON.stringify({ target: "INFO-2026-0001-a", base: "x",
       created: "2026-05-30T00:00:00Z", author: "a", skill_version: "1", files: [{ name: "data/a.json" }, { name: "data/z.json", sha256: "0" }] }) }),
     "C-16.3 old package": info({}, pkg({ "data/a.json": "{}" }, { created: "2026-01-01T00:00:00Z" })),
