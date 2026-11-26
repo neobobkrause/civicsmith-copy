@@ -70,3 +70,8 @@ Shown to the owner: not yet.
 Rule now: tranche t2, the refactoring tranche, is dropped, so that civicsmith returns to a clean state. The refactoring restarts from its plan once the provider/user fix is in and confirmed as correct. ARCH carries it out.
 - 25 Nov 2026: "1. Decision: drop tranche t2, the refactoring tranche, so that civicsmith returns to a clean state. The refactoring restarts from its plan once the provider/user fix is in and confirmed as correct."
 Shown to the owner: not yet.
+
+## Converting the first eight modules
+Rule now: once civicsmith is using the latest Process4 version, ARCH opens a tranche to convert the first 8 modules in order, writing the facility list first; then work stops for the owner's review.
+- 26 Nov 2026: "Instruction: once civicsmith is using the latest process4 version, open a tranche to convert the first 8 modules in order, writing the facility list first; then stop for my review" (typed within code marks)
+Shown to the owner: not yet.
