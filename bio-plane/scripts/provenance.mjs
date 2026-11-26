@@ -88,52 +88,95 @@
 import { spawnSync } from "node:child_process";
 import { relative } from "node:path";
 
+/**
+ * @typedef {Object} GitProvenance what git answered about a repository; `null` where git could not answer
+ * @property {string} repoRoot
+ * @property {Set<string> | null} inHead the paths in the commit at HEAD
+ * @property {Set<string> | null} inIndex the paths in the index
+ * @property {Set<string> | null} changed the tracked paths whose content differs from HEAD
+ * @property {string} headSha HEAD's short commit id, empty where git could not say
+ */
+/** @typedef {{ path: string, what: string, counted: string | number }} DiscoveredItem one item a walk counted, its path repo-relative */
+/** @typedef {DiscoveredItem & { state: string, content: string | null }} ClassifiedItem an item with its state and content */
+/**
+ * @typedef {Object} Classified
+ * @property {boolean} verified whether git could answer about HEAD
+ * @property {string} headSha
+ * @property {number} accounted how many items the walk counted
+ * @property {ClassifiedItem[]} rows
+ * @property {ClassifiedItem[]} off the items not in the commit
+ * @property {ClassifiedItem[]} changed the items changed since the commit
+ * @property {string[]} inCommit the paths in the commit
+ */
+/** @typedef {{ label: string, contaminated: number, reproducible: number, source?: string }} ProvenanceTotal */
+
 /* The three questions, asked once. `null` from any of them means git could not
    answer, which is a THIRD state and never folded into "no". */
+/**
+ * @param {string} repoRoot
+ * @returns {GitProvenance}
+ */
 export function readGitProvenance(repoRoot) {
-  const git = (args) => {
-    const r = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8", timeout: 30_000,
-      maxBuffer: 128 * 1024 * 1024 });
-    return (r.error || r.status !== 0 || typeof r.stdout !== "string") ? null : r.stdout;
-  };
+  /** @type {(r: NodeSpawnResult) => string | null} */
+  const answer = (r) => (r.error || r.status !== 0 || typeof r.stdout !== "string") ? null : r.stdout;
+  /** @type {(out: string | null) => Set<string> | null} */
   const setOf = (out) => out === null ? null : new Set(out.split("\0").filter(Boolean));
   return {
     repoRoot,
-    inHead: setOf(git(["ls-tree", "-r", "--name-only", "-z", "HEAD"])),
-    inIndex: setOf(git(["ls-files", "-z"])),
+    inHead: setOf(answer(spawnSync("git", ["ls-tree", "-r", "--name-only", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
+    inIndex: setOf(answer(spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
     /* Tracked paths whose working content differs from HEAD, staged or not,
        deleted included; spelled like `ls-tree`'s answer. */
-    changed: setOf(git(["diff", "--relative", "--name-only", "--no-renames", "-z", "HEAD"])),
-    headSha: (git(["rev-parse", "--short", "HEAD"]) || "").trim(),
+    changed: setOf(answer(spawnSync("git", ["diff", "--relative", "--name-only", "--no-renames", "-z", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 }))),
+    headSha: (answer(spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot, encoding: "utf8", timeout: 30_000, maxBuffer: 128 * 1024 * 1024 })) || "").trim(),
   };
 }
 
 /* Repo-relative, POSIX-shaped, which is the spelling `ls-tree` answers in. */
+/** @type {(repoRoot: string, abs: string) => string} */
 export const repoPath = (repoRoot, abs) => relative(repoRoot, abs).split("\\").join("/");
 
 /* RULE 2 lives here: three states, not two. */
+/**
+ * @param {GitProvenance} prov
+ * @param {string} path
+ * @returns {string} "UNVERIFIED", "in the commit", "index unreadable", "staged, not yet committed" or "UNTRACKED"
+ */
 export function stateOf(prov, path) {
-  if (prov.inHead === null) return "UNVERIFIED";
-  if (prov.inHead.has(path)) return "in the commit";
-  if (prov.inIndex === null) return "index unreadable";
-  return prov.inIndex.has(path) ? "staged, not yet committed" : "UNTRACKED";
+  const inHead = prov.inHead, inIndex = prov.inIndex;
+  if (inHead === null) return "UNVERIFIED";
+  if (inHead.has(path)) return "in the commit";
+  if (inIndex === null) return "index unreadable";
+  return inIndex.has(path) ? "staged, not yet committed" : "UNTRACKED";
 }
 
 /* The modification question, for a path in the commit: is its content now the
    committed content? `null` for a path not in the commit; "UNVERIFIED" when git
    could not say (rule 4). */
+/**
+ * @param {GitProvenance} prov
+ * @param {string} path
+ * @returns {string | null} "UNVERIFIED", "changed" or "unchanged"; null for a path not in the commit
+ */
 export function contentStateOf(prov, path) {
-  if (prov.inHead === null || !prov.changed) return "UNVERIFIED";
-  if (!prov.inHead.has(path)) return null;
-  return prov.changed.has(path) ? "changed" : "unchanged";
+  const inHead = prov.inHead, changed = prov.changed;
+  if (inHead === null || !changed) return "UNVERIFIED";
+  if (!inHead.has(path)) return null;
+  return changed.has(path) ? "changed" : "unchanged";
 }
 
 /* `items` is what a walk ACTUALLY COUNTED: [{ path, what, counted }], `path`
    repo-relative. Returns the classification and, deliberately, the size of the
    corpus it was handed — a caller that prints `accounted` prints its own reach,
    and a walk that narrowed to nothing cannot hide behind a clean report. */
+/**
+ * @param {GitProvenance} prov
+ * @param {DiscoveredItem[]} items
+ * @returns {Classified}
+ */
 export function classifyDiscovered(prov, items) {
   const verified = prov.inHead !== null;
+  /** @type {ClassifiedItem[]} */
   const rows = items.map((it) => ({ ...it, state: stateOf(prov, it.path), content: contentStateOf(prov, it.path) }));
   return {
     verified,
@@ -152,7 +195,12 @@ export function classifyDiscovered(prov, items) {
    suites for a corpus walk. Printing
    them here rather than at each site keeps the SENTENCE that explains them in
    one place, which is the same argument as the module itself. */
-export function reportProvenance({ prov, items, instrument, corpus = "", totals = [], log = console.log }) {
+/**
+ * @param {{ prov: GitProvenance, items: DiscoveredItem[], instrument: string, corpus?: string, totals?: ProvenanceTotal[],
+ *   log?: (line: string) => void }} args
+ * @returns {Classified}
+ */
+export function reportProvenance({ prov, items, instrument, corpus = "", totals = [], log = (line) => { console.log(line); } }) {
   const c = classifyDiscovered(prov, items);
   if (!c.verified) {
     log(`provenance: UNVERIFIED over all ${c.accounted} discovered item(s) — git could not`
