@@ -439,7 +439,7 @@ import { boundOf } from "../read-bounds.mjs";
  * The I7 registry entry (R1 to R5, R7, R18).
  * @typedef {Object} CsvEntry
  * @property {"csv"} format
- * @property {(bytes: BytesInput, contentType: string | null | undefined) => Detection | null} detect
+ * @property {(bytes: BytesInput, contentType: unknown) => Detection | null} detect
  * @property {(bytes: BytesInput, opts?: ReadOptions) => Promise<PartsResult>} parts
  * @property {(bytes: BytesInput, opts?: ReadOptions) => Dialect | null} dialect
  * @property {(partsOrBytes: PartsOrBytes, opts?: ReadOptions) => Promise<StructureResult>} structure
