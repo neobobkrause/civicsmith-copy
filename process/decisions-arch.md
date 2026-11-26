@@ -1,4 +1,4 @@
-Length: 141 lines. Last section: "Test helpers other modules import".
+Length: 146 lines. Last section: "The facility list".
 
 # civicsmith: ARCH's technical decisions
 
@@ -139,3 +139,8 @@ Decided: 25 Nov 2026.
 Decision: a helper under a module's `tests` that other modules' tests import (its `fixture.mjs`, `fixtures.mjs`, `world.mjs` and the like, 187 such files across about 100 modules, each listed in its module's `public`) stays a test file and is not listed under `files`, so the tool does not list it as interface and sends no notice when it changes. A user broken by a change to one is found by that user's own tests at its next job, or by a walk, as the design accepts for any missed user. The exception stands where a helper carries product values that later modules' code relies on, as agent-runner's `test/fixtures.mjs` does (decision "The remote conversation"); a job that finds another such helper reports it to ARCH.
 Why: listing every helper as interface would make the next job of each of those modules first write structured comments for its helpers and pass `check` on them, a cost of about a hundred jobs, to save a break that the user's own tests already find. Raised by office-readers #5 (PR 1370) for `bio-plane/test/m/office-readers/fixtures.mjs`.
 Decided: 25 Nov 2026.
+
+## The facility list
+Decision: `process/modules/facilities.json` pins Node 26.10.0 (the version every workflow and the process config use) and workerd at compatibility date 2026-07-01 (every `wrangler.jsonc`; the runtime installed is 1.20260722.1). `civil-time` is the one boundary module for now: reading the clock and the time-zone data is its purpose. The list names no package facility yet. The first eight modules, the ones tranche t3 converts, use Node's facilities only, so the list is exact for them. The later modules use eleven packages (miniflare, undici, esbuild, unpdf, pdfjs-dist, playwright, playwright-core, @cloudflare/containers, @modelcontextprotocol/sdk and Cloudflare's `cloudflare:` modules). Their entries wait on a fault in the tool, reported to PROCESS: the tool names a package facility by the full path of its declaration file on the machine that reads it, so no entry written here could match on another machine. Until then each such use stays listed as a place, as the standard lists any unclassified facility. Other boundary modules are named as conversions reach the modules that reach out.
+Why: the owner asked for the facility list before the first eight conversions (26 Nov 2026). A list written with names that match only on this machine would mislead every later module's conversion.
+Decided: 26 Nov 2026.
