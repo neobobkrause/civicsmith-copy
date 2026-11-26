@@ -256,7 +256,7 @@ const MAX_CRONS = 3;         /* the platform's limit per Worker */
  * @throws {Error} `REFUSED [INVALID_CRONS]`
  */
 export function deriveCrons(cfg) {
-  const t = cfg ? cfg.triggers : undefined;
+  const t = cfg ? cfg.triggers : cfg;
   if (t === undefined || t === null) return [];
   /** @type {(why: string) => Error} */
   const bad = (why) => new Error(`REFUSED [INVALID_CRONS]: wrangler.jsonc's triggers.crons ${why}.`);
