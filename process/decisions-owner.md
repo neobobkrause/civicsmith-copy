@@ -13,6 +13,7 @@ Rule now: civicsmith moves to the latest Process4 version.
 - 24 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the fifth move, onto the tranche scope list, his choice D at PROCESS)
 - 25 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the sixth move; typed within code marks)
 - 25 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the seventh move; typed within code marks)
+- 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the eighth move; typed within code marks)
 Shown to the owner: not yet.
 
 ## Slots
