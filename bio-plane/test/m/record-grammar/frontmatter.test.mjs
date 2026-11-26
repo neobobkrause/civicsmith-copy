@@ -4,17 +4,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { localize } from "../../../src/setup-words/index.mjs";
 import { parseFrontmatter, CORE_FIELDS, FORBIDDEN_ALIASES } from "../../../src/record-grammar/index.mjs";
+/** @import { Frontmatter, Finding } from "../../../src/record-grammar/frontmatter.mjs" */
 
+/** @param {...string} fm @returns {string} */
 const doc = (...fm) => ["---", ...fm, "---", "body line 1", "body line 2"].join("\n");
-const only = (r) => { assert.deepEqual(r.findings, []); return r.data; };
-/** Every finding has exactly the R11 shape. */
+/** The data of a parse with no finding. @param {{data: Frontmatter | null, findings: Finding[]}} r @returns {Frontmatter} */
+const only = (r) => { assert.deepEqual(r.findings, []); const data = r.data; assert.ok(data); return data; };
+/** Every finding has exactly the R11 shape. @param {Finding[]} findings @returns {Finding[]} */
 function shaped(findings) {
   for (const x of findings) {
     const keys = Object.keys(x).sort();
+    const repairs = x.repairs;
     if ("repairs" in x) {
       assert.deepEqual(keys, ["check", "message", "repairable", "repairs", "severity"]);
       assert.equal(x.repairable, true);
-      assert.ok(Array.isArray(x.repairs) && x.repairs.length && x.repairs.every((s) => typeof s === "string"));
+      assert.ok(Array.isArray(repairs) && repairs.length > 0 && repairs.every((r) => typeof r === "string"));
     } else assert.deepEqual(keys, ["check", "message", "severity"]);
     assert.equal(typeof x.message, "string");
   }
@@ -69,13 +73,17 @@ test("R7 the grammar: top-level keys, map blocks, array blocks of scalars and of
   assert.deepEqual(only(parseFrontmatter(doc("a:", "  - k:"))), { a: ["k:"] });
   /* A key literally named after an Object.prototype member is an own key like any other. */
   const p = only(parseFrontmatter(doc("__proto__: x", "constructor:", "  toString: y")));
-  assert.equal(Object.getOwnPropertyDescriptor(p, "__proto__").value, "x");
-  assert.equal(Object.getPrototypeOf(p), Object.prototype);
+  assert.ok(Object.hasOwn(p, "__proto__"));
+  assert.equal(p["__proto__"], "x");
+  assert.equal(Reflect.getPrototypeOf(p), Object.prototype);
   assert.deepEqual(Object.keys(p), ["__proto__", "constructor"]);
-  assert.equal(Object.getOwnPropertyDescriptor(p.constructor, "toString").value, "y");
+  const ctor = Object.entries(p).find(([k]) => k === "constructor")?.[1];
+  assert.ok(ctor !== null && typeof ctor === "object" && !Array.isArray(ctor) && Object.hasOwn(ctor, "toString"));
+  assert.equal(Object.entries(ctor).find(([k]) => k === "toString")?.[1], "y");
 });
 
 test("R8 scalars: blank, null, ~, booleans, quotes, inline arrays, integers, floats, strings; comments", () => {
+  /** @type {[string, unknown][]} */
   const cases = [
     ["", ""], ["   ", ""], ["null", null], ["~", null], ["true", true], ["false", false], ["True", "True"], ["NULL", "NULL"],
     ['"a b"', "a b"], ["'a b'", "a b"], ['"a\\nb"', "a\\nb"], ['"it\'s"', "it's"], ['""', ""], ["''", ""], ['"', '"'], ["'", "'"],
@@ -112,12 +120,12 @@ test("R9 every line outside the grammar is a C-2.1 error naming its line, and pa
     ["C-2.1", "error", "3"], ["C-2.1", "error", "4"], ["C-2.1", "error", "6"], ["C-2.1", "error", "9"],
     ["C-2.1", "error", "10"], ["C-2.1", "error", "11"]]);
   assert.deepEqual(r.data, { a: 2, b: ["deep"], c: { k: "v" }, d: "ok" });
-  assert.equal(r.findings[0].message, localize("record-grammar.frontmatter.duplicate_top_level_key_key", "duplicate top-level key '{key}' at line {v1}", { key: "a", v1: "3" }));
-  assert.equal(r.findings[1].message, localize("record-grammar.frontmatter.array_item_outside_any_block", "array item outside any block at line {v1}", { v1: "4" }));
-  assert.equal(r.findings[2].message, localize("record-grammar.frontmatter.array_item_indented_indent_expected", "array item indented {indent} (expected 2) at line {v1}", { indent: "4", v1: "6" }));
-  assert.equal(r.findings[3].message, localize("record-grammar.frontmatter.array_item_inside_a_map", "array item inside a map block '{topKey}' at line {v1}", { topKey: "c", v1: "9" }));
-  assert.equal(r.findings[4].message, localize("record-grammar.frontmatter.key_key_indented_indent_does", "key '{key}' indented {indent} does not fit the restricted grammar at line {v1}", { key: "odd", indent: "6", v1: "10" }));
-  assert.equal(r.findings[5].message, localize("record-grammar.frontmatter.line_v1_does_not_fit", "line {v1} does not fit the restricted grammar: {line}", { v1: "11", line: "not a line" }));
+  assert.equal(r.findings[0]?.message, localize("record-grammar.frontmatter.duplicate_top_level_key_key", "duplicate top-level key '{key}' at line {v1}", { key: "a", v1: "3" }));
+  assert.equal(r.findings[1]?.message, localize("record-grammar.frontmatter.array_item_outside_any_block", "array item outside any block at line {v1}", { v1: "4" }));
+  assert.equal(r.findings[2]?.message, localize("record-grammar.frontmatter.array_item_indented_indent_expected", "array item indented {indent} (expected 2) at line {v1}", { indent: "4", v1: "6" }));
+  assert.equal(r.findings[3]?.message, localize("record-grammar.frontmatter.array_item_inside_a_map", "array item inside a map block '{topKey}' at line {v1}", { topKey: "c", v1: "9" }));
+  assert.equal(r.findings[4]?.message, localize("record-grammar.frontmatter.key_key_indented_indent_does", "key '{key}' indented {indent} does not fit the restricted grammar at line {v1}", { key: "odd", indent: "6", v1: "10" }));
+  assert.equal(r.findings[5]?.message, localize("record-grammar.frontmatter.line_v1_does_not_fit", "line {v1} does not fit the restricted grammar: {line}", { v1: "11", line: "not a line" }));
   /* An object element's key at the wrong indent, and a key under a scalar element, are unfit keys too. */
   const s = parseFrontmatter(doc("x:", "  - k: v", "   j: 1", "y:", "  - plain", "    j: 2"));
   assert.deepEqual(s.findings.map((x) => x.check), ["C-2.1", "C-2.1"]);

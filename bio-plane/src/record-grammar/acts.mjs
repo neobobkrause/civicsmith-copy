@@ -10,6 +10,9 @@
 
 import { word } from '../setup-words/index.mjs';
 
+/** A shared act row: its check number, the sites that raise it, and the sentence a member reads.
+ * @typedef {{check: string, where: string, translation: string}} ActRow */
+/** @type {Readonly<{NO_BASIS: ActRow, NO_CITATION: ActRow, ACCEPT_MUST_REAUTHOR: ActRow}>} */
 export const SHARED_ACT_CHECKS = Object.freeze({
   /* ---------------------------------------------------------------------------
      D-484, 2026-09-24 — THE FIRST TWO ROWS THIS FAMILY'S OWN HEADER SAID IT
