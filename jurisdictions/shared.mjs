@@ -350,10 +350,43 @@ function applyForm(form, raw, prefixes = []) {
 }
 
 
+/** The words of a value something threw, for an "unreadable" detail: its `message`, else the value as text (as
+ *  `e && e.message || e` did). A value whose `message` getter or conversion to text itself throws is named by its
+ *  kind, so finding the words never throws (R10, R12).
+ *  @param {unknown} e
+ *  @returns {string} */
+function thrownWords(e) {
+  try {
+    const t = hasFields(e) ? e : null;
+    return String(t ? t.message || t : e);
+  } catch { return `a thrown ${typeof e}`; }
+}
+/** Whether a thrown value is an object or a function, whose `message` field `thrownWords` reads. A profile from a
+ *  caller may throw any value from a getter, so the thrown value is not only the language's own errors.
+ *  @param {unknown} v
+ *  @returns {v is Fields} */
+const hasFields = (v) => v !== null && (typeof v === "object" || typeof v === "function");
+
+/** One part of a key: a string by its text, a number, boolean, bigint, null or undefined by its kind and text, and any
+ *  other value (an object, a function, a symbol) by its kind alone, so reading it never throws.
+ *  @param {Value} v
+ *  @returns {string} */
+function keyPart(v) {
+  if (typeof v === "string") return `s:${v}`;
+  if (typeof v === "number" || typeof v === "boolean" || typeof v === "bigint" || v === null || v === undefined) return `${v === null ? "null" : typeof v}:${String(v)}`;
+  return typeof v;
+}
+/** A key for a tuple of values read from a profile or a caller (R14, R15: what an entry is keyed by). Two tuples get one
+ *  key exactly when their parts are pairwise the same string, or of one kind with the same text; no part, whatever
+ *  characters it holds, can run into the next, and making the key never throws.
+ *  @param {...Value} parts
+ *  @returns {string} */
+const keyOf = (...parts) => parts.map((v) => { const t = keyPart(v); return `${t.length}:${t}`; }).join("");
+
 /** R60: a MemberType entry's key, its type and the body it is for ("" for all bodies).
  *  @param {unknown} e
  *  @returns {string} */
-const memberTypeKey = (e) => { const o = isObj(e) ? e : null; return `${o ? String(o.member_type) : ""}\u0000${o && typeof o.organisation === "string" ? o.organisation : ""}`; };
+const memberTypeKey = (e) => { const o = isObj(e) ? e : null; return keyOf(o ? o.member_type : "", o && typeof o.organisation === "string" ? o.organisation : ""); };
 
 /** An office a holiday entry names, as a key: a counterparty role or a kind's venue (R43).
  *  @param {unknown} o
@@ -363,15 +396,23 @@ function officeKey(o) {
   const x = isObj(o) ? o : null;
   const v = x ? x.venue : undefined;
   if (typeof v === "string") return `venue:${v}`;
-  return `?:${JSON.stringify(o)}`;
+  return `?:${o === null ? "null" : typeof o}`;
 }
 /** The closure list a holiday entry belongs to ("" for the office calendar, R47).
  *  @param {unknown} h
  *  @returns {string} */
 const listKey = (h) => { const x = isObj(h) ? h : null; const l = x ? x.list : undefined; return typeof l === "string" ? l : ""; };
+/** The offices of an `offices` list as keys, each once, in no order (R43).
+ *  @param {Entries} offices
+ *  @returns {string[]} */
+const officeKeys = (offices) => [...new Set(offices.map(officeKey))].sort();
 /** The key of an `offices` list: its offices, in no order ("" for every office).
  *  @param {unknown} offices
  *  @returns {string} */
-const officesKey = (offices) => { const xs = isList(offices) ? offices : null; return xs ? [...new Set(xs.map(officeKey))].sort().join("\u0001") : ""; };
+const officesKey = (offices) => { const xs = isList(offices) ? offices : null; return xs ? keyOf(...officeKeys(xs)) : ""; };
+/** An `offices` list in words, for a conflict's place: its offices' keys, in no order, joined by commas (R43).
+ *  @param {unknown} offices
+ *  @returns {string} */
+const officesWords = (offices) => { const xs = isList(offices) ? offices : null; return xs ? officeKeys(xs).join(",") : ""; };
 
-export { DATA_VOCABULARY, LEVELLED_KINDS, FISCAL_PLACEHOLDERS, RRULE_FREQS, POINTER_HOW, POINTER_NAME_MAX, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, REVIEW_REQUIRED, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isList, listOr, isStr, oneOf, oneOfNumbers, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, localeKey, compile, groupCount, groupNames, applyForm, memberTypeKey, officeKey, listKey, officesKey, POINTER_DOES_MAX, PHRASE_MAX };
+export { DATA_VOCABULARY, LEVELLED_KINDS, FISCAL_PLACEHOLDERS, RRULE_FREQS, POINTER_HOW, POINTER_NAME_MAX, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, REVIEW_REQUIRED, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isList, listOr, isStr, oneOf, oneOfNumbers, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, localeKey, compile, groupCount, groupNames, applyForm, thrownWords, keyOf, memberTypeKey, officeKey, listKey, officesKey, officesWords, POINTER_DOES_MAX, PHRASE_MAX };
