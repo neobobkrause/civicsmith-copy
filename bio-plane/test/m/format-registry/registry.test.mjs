@@ -54,8 +54,9 @@ function restoreBuiltInOrder() {
 /** A detect spy: logs every call as [name, bytes, contentType] and answers `answer(bytes, ct)`.
  * @param {string} name
  * @param {Call[]} log
- * @param {(bytes: Uint8Array | null, ct: string | null) => FormatDetection | null} [answer]
- * @returns {FormatEntry} */
+ * @param {(bytes: Uint8Array | null, ct: string | null) => unknown} [answer] what the spy answers: an entry's answer, or a
+ *   value no entry should answer, for the tests of how the registry treats one (R10, R11, R13)
+ * @returns {{ format: string, detect: (bytes: Uint8Array | null, ct: string | null) => unknown }} */
 function spy(name, log, answer = () => null) {
   return { format: name, detect(bytes, ct) { log.push([name, bytes, ct]); return answer(bytes, ct); } };
 }

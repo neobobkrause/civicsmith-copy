@@ -72,16 +72,16 @@ import { localize } from "./setup-words/index.mjs";
  * @property {string[]} signals
  */
 /**
- * One of an entry's optional readers (`parts`, `structure`, `text`, `dialect`): the entry's own module says what it
- * takes beyond the bytes or the parts and what it answers; this registry never calls one.
- * @typedef {(input: Uint8Array | object, opts?: object) => object | null | Promise<object | null>} EntryReader
+ * One of an entry's optional readers (`parts`, `structure`, `text`): the entry's own module says what it takes and what
+ * it answers; this registry never calls one and holds any function (R3).
+ * @typedef {(input: unknown, opts?: unknown) => unknown} EntryReader
  */
 /**
  * A format entry (I7): its key, its detector, and its readers, each a function or null. An entry may carry members of
  * its own beside these (a decoding entry's `dialect`); the registry hands the entry back as it was registered.
  * @typedef {{
  *   readonly format: string,
- *   readonly detect: (bytes: Uint8Array | null, contentType: string | null) => FormatDetection | null,
+ *   readonly detect: (bytes: unknown, contentType: unknown) => FormatDetection | null,
  *   readonly parts?: EntryReader | null | undefined,
  *   readonly structure?: EntryReader | null | undefined,
  *   readonly text?: EntryReader | null | undefined
@@ -100,9 +100,16 @@ import { localize } from "./setup-words/index.mjs";
 const REGISTRY = new Map([]);
 
 /**
+ * An object or a function: a value whose members can be read.
+ * @param {unknown} v
+ * @returns {v is Fields}
+ */
+const isObjectLike = (v) => (typeof v === "object" && v !== null) || typeof v === "function";
+
+/**
  * @param {string} format
  * @param {string} slot
- * @param {EntryReader | null | undefined} reader
+ * @param {unknown} reader
  * @returns {void}
  */
 function checkSlot(format, slot, reader) {
@@ -111,20 +118,30 @@ function checkSlot(format, slot, reader) {
 }
 
 /**
- * R1 to R5: stores `entry` under its format and hands it back unchanged.
- * @param {FormatEntry} entry
- * @returns {FormatEntry}
- * @throws {Error} when the entry names no format, has no detect, has a reader that is not a function or null, or
- *   names a format already registered
+ * R1 to R3: `entry` names its format, has a detect, and each reader is a function or null.
+ * @param {unknown} entry
+ * @returns {asserts entry is FormatEntry}
+ * @throws {Error} as registerFormat's
  */
-export function registerFormat(entry) {
-  if (!entry || typeof entry.format !== "string" || !entry.format)
+function assertEntry(entry) {
+  if (!isObjectLike(entry) || typeof entry.format !== "string" || !entry.format)
     throw new Error("a format entry must name its format");
   if (typeof entry.detect !== "function")
     throw new Error(`format "${entry.format}": detect(bytes, contentType) is required`);
   checkSlot(entry.format, "parts", entry.parts);
   checkSlot(entry.format, "structure", entry.structure);
   checkSlot(entry.format, "text", entry.text);
+}
+
+/**
+ * R1 to R5: stores `entry` under its format and hands it back unchanged. Any value is accepted and judged.
+ * @param {unknown} entry
+ * @returns {FormatEntry}
+ * @throws {Error} when the entry names no format, has no detect, has a reader that is not a function or null, or
+ *   names a format already registered
+ */
+export function registerFormat(entry) {
+  assertEntry(entry);
   if (REGISTRY.has(entry.format))
     throw new Error(`format "${entry.format}" is already registered; unregister it first`);
   REGISTRY.set(entry.format, entry);
@@ -136,23 +153,24 @@ export function registerFormat(entry) {
    record holds no registry state to corrupt. Returns the removed entry so a
    test can restore exactly what it took out. */
 /**
- * R6: removes and hands back the entry under `format`, or null when none is held.
- * @param {string} format
+ * R6: removes and hands back the entry under `format`, or null when none is held. Any key is accepted.
+ * @param {unknown} format
  * @returns {FormatEntry | null}
  */
 export function unregisterFormat(format) {
+  if (typeof format !== "string") return null;
   const entry = REGISTRY.get(format) || null;
   REGISTRY.delete(format);
   return entry;
 }
 
 /**
- * R7: the entry under `format`, exactly as registered, or null.
- * @param {string} format
+ * R7: the entry under `format`, exactly as registered, or null. Any key is accepted.
+ * @param {unknown} format
  * @returns {FormatEntry | null}
  */
 export function getFormat(format) {
-  return REGISTRY.get(format) || null;
+  return typeof format === "string" ? REGISTRY.get(format) || null : null;
 }
 
 /**
@@ -303,7 +321,7 @@ function detectBytes(b, ct, nm) {
  * R9 to R13, R31, R32: which format `bytes` are. Bytes count only as a non-empty Uint8Array, a content type and a name
  * only as a non-empty string; anything else counts as not given. A range source in place of the bytes makes the answer
  * a Promise.
- * @param {unknown} bytes
+ * @param {unknown} [bytes]
  * @param {unknown} [contentType]
  * @param {unknown} [name]
  * @returns {FormatDetection | Promise<FormatDetection>}
@@ -374,7 +392,7 @@ function pictureEntry(format, signature, contentType, refusal) {
     parts: null,
     /* One page, page 0, unread: the shape pdf-reader's Tier-1 text gives a
        page with no text layer (its R14), fresh on every call. */
-    structure: async (/** @type {Uint8Array | object} */ bytes) => {
+    structure: async (/** @type {unknown} */ bytes) => {
       if (!signed(bytes)) {
         /** @type {PictureReading} builds a PictureReading */
         const refused = { ok: false, container: format, reason: refusal };
@@ -392,6 +410,15 @@ function pictureEntry(format, signature, contentType, refusal) {
   };
 }
 
+/**
+ * A built-in entry, written where it is registered.
+ * @param {FormatEntry} entry
+ * @returns {FormatEntry}
+ */
+function builtIn(entry) {
+  return entry;
+}
+
 registerFormat(pictureEntry("jpeg", [0xff, 0xd8, 0xff], "image/jpeg", "NOT_A_JPEG"));
 registerFormat(pictureEntry("png", [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], "image/png", "NOT_A_PNG"));
 
@@ -406,6 +433,17 @@ const HTML_CONTENT_TYPES = ["text/html", "application/xhtml+xml"];
    ooxml's one `decodeText` (G131g; its R36): UTF-8 or UTF-16 by BOM, else the
    legacy charset. Leading comments and an XML declaration are skipped; one
    that does not end inside the KiB leaves the root unseen, so the answer is no. */
+/**
+ * Truthy `bytes` as the entries read them: a Uint8Array, or the TypeError reading its `subarray` gives.
+ * @param {unknown} bytes
+ * @returns {Uint8Array}
+ * @throws {TypeError} when `bytes` is not a Uint8Array
+ */
+function wholeBytes(bytes) {
+  if (bytes instanceof Uint8Array) return bytes;
+  throw new TypeError("bytes.subarray is not a function");
+}
+
 const HTML_HEAD_BYTES = 1024;
 /**
  * @param {Uint8Array} bytes
@@ -430,7 +468,7 @@ function startsAsHtml(bytes) {
   return /^<!doctype html(?=[\s>]|$)/.test(t) || /^<html(?=[\s>/]|$)/.test(t);
 }
 
-registerFormat({
+registerFormat(builtIn({
   format: "html",
   detect(bytes, contentType) {
     if (bytes) {
@@ -438,12 +476,12 @@ registerFormat({
          with a doctype or an <html> tag, after a BOM, white space and any
          comments or XML declaration. A note, an e-mail or a code sample that
          merely MENTIONS `<html>` is text and is read as text. */
-      return startsAsHtml(bytes)
+      return startsAsHtml(wholeBytes(bytes))
         ? { format: "html", confidence: "certain",
             signals: [localize("format-registry.formats.magic_doctype_root_tag", "magic: doctype/root tag in the first 1024 bytes")] }
         : null;
     }
-    if (contentType && HTML_CONTENT_TYPES.includes(contentType))
+    if (typeof contentType === "string" && contentType && HTML_CONTENT_TYPES.includes(contentType))
       return { format: "html", confidence: "likely",
                signals: [`content type "${contentType}"`] };
     return null;
@@ -455,9 +493,9 @@ registerFormat({
   parts: null,
   structure: null,
   text: null,
-});
+}));
 
-registerFormat({
+registerFormat(builtIn({
   format: "pdf",
   detect(bytes, contentType) {
     if (bytes) {
@@ -467,7 +505,7 @@ registerFormat({
       /* Not a file that begins with the ZIP local-file magic (K4900; R20): a ZIP archive whose first
          member is a PDF stored uncompressed carries `%PDF-` inside that window and is the ZIP of
          R28 (or the office or ODF kind its entries make it), never a PDF. */
-      if (!ooxml.hasZipMagic(bytes) && LATIN1.decode(bytes.subarray(0, 1024)).includes("%PDF-"))
+      if (!ooxml.hasZipMagic(bytes) && LATIN1.decode(wholeBytes(bytes).subarray(0, 1024)).includes("%PDF-"))
         return { format: "pdf", confidence: "certain",
                  signals: ["magic: %PDF- header in the first 1024 bytes"] };
       return null;
@@ -488,7 +526,7 @@ registerFormat({
      object — pdfstructure.mjs's do-not-fork rule), so a second entry point
      would be a fork of exactly the kind that rule exists to prevent. */
   text: null,
-});
+}));
 
 /* docx.mjs IS the DOCX entry (COFF-4): detect's confidence ladder, the parts
    walk over ooxml.mjs, I2 structure through the ONE linkWrapper with
@@ -563,7 +601,7 @@ registerFormat(csvEntry);
    this entry. */
 const ZIP_CONTENT_TYPES = ["application/zip", "application/x-zip-compressed"];
 
-registerFormat({
+registerFormat(builtIn({
   format: "zip",
   detect(bytes, contentType) {
     if (bytes) {
@@ -579,7 +617,7 @@ registerFormat({
                          `part: ${opcMap} absent`, `part: ${odfMime} absent`,
                          `entries: ${container.count}`] };
     }
-    if (contentType && ZIP_CONTENT_TYPES.includes(contentType))
+    if (typeof contentType === "string" && contentType && ZIP_CONTENT_TYPES.includes(contentType))
       return { format: "zip", confidence: "likely",
                signals: [`content type "${contentType}"`] };
     return null;
@@ -587,7 +625,7 @@ registerFormat({
   parts: (bytes) => ooxml.listArchive(bytes),
   structure: null,
   text: null,
-});
+}));
 
 /* REC-218 — THE DIALECT AS THE RECORD KEEPS IT (BOB #33, 2026-09-24 21:55Z,
    option (b)): a `reading.dialect` key of its OWN, `{delimiter, encoding}`,

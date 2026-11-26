@@ -172,7 +172,7 @@ test("R28: zip parts(bytes) is ooxml.listArchive(bytes)'s own result, unchanged;
     assert.deepEqual(await zip.parts(range(bytes)), await ooxml.listArchive(range(bytes)), `${label} as a range source`);
   }
   const listed = await zip.parts(PLAIN);
-  assert.ok(listed && "ok" in listed);
+  assert.deepEqual(listed, await ooxml.listArchive(PLAIN));
   assert.equal(listed.ok, true);
   assert.deepEqual(listed.entries.map((e) => e.name), ["minutes/2026-01.txt", "minutes/", "budget.csv"]);
   // and it is what the registry's detect→parts path reaches
