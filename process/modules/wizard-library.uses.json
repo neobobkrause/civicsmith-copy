@@ -1,6 +1,6 @@
 {
   "module": "wizard-library",
-  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"f3edeb2259e4fd97b936f8dcde322814501e5618","tool":"72c177e0704c4047bd0128f7bc6c5e46703ab4f3"},
   "providers": ["setup-words","record-grammar"],
   "uses": [
     {"provider":"setup-words","item":"word","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":65,"in":"(top level)"}]},
@@ -80,8 +80,6 @@
     {"rule":"R4","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":16,"mayRefer":[],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":29,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R4","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":29,"mayRefer":[],"waitsOn":"this module","tests":[]},
-    {"rule":"R14","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":[]},
-    {"rule":"R14","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":[]},
     {"rule":"S4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":[],"waitsOn":"this module: stated kinds","tests":[]},
@@ -242,7 +240,6 @@
     {"package":"node","facility":"console"},
     {"package":"node","facility":"console.error"},
     {"package":"node","facility":"console.log"},
-    {"package":"node","facility":"declared"},
     {"package":"node","facility":"Error"},
     {"package":"node","facility":"ImportMeta.url"},
     {"package":"node","facility":"JSON"},
@@ -270,7 +267,6 @@
     {"package":"node","facility":"ReadonlyArray.includes"},
     {"package":"node","facility":"ReadonlyArray.map"},
     {"package":"node","facility":"RegExp.exec"},
-    {"package":"node","facility":"screens"},
     {"package":"node","facility":"Set"},
     {"package":"node","facility":"Set.has"},
     {"package":"node","facility":"String"},

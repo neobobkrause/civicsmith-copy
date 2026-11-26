@@ -1,6 +1,6 @@
 {
   "module": "op-capabilities",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"f3edeb2259e4fd97b936f8dcde322814501e5618","tool":"72c177e0704c4047bd0128f7bc6c5e46703ab4f3"},
   "providers": [],
   "uses": [],
   "outside": [
@@ -40,7 +40,7 @@
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":38,"mayRefer":["*"],"waitsOn":"ARCH: a boundary module for it","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":38,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":39,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
-    {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":39,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
+    {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":39,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":39,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"S8","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":39,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":40,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
@@ -50,10 +50,8 @@
     {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R12","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["civil-time"],"waitsOn":"civil-time: an accessor for the setting","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
-    {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
-    {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":44,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
-    {"rule":"S1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":44,"mayRefer":[],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
+    {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":43,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R1","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":47,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
     {"rule":"R14","file":"bio-plane/test/m/op-capabilities/frozen.test.mjs","side":"test","line":47,"mayRefer":["*"],"waitsOn":"this module","tests":["R2: importing it and calling needsRows touches no network, clock, randomness, timer or environment"]},
