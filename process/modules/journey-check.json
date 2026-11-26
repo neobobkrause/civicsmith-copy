@@ -5,6 +5,7 @@
     "build/tools/",
     "build/plan/",
     "docs/development/transition/render/render-requirements.mjs",
+    "docs/development/ux-substrate/screens/build_words.mjs",
     "docs/development/ux-substrate/screens/check_walk.mjs",
     "docs/development/ux-substrate/screens/check_words_drawn.mjs",
     "docs/development/ux-substrate/screens/mock-acts.js",
@@ -15,8 +16,7 @@
     "docs/development/ux-substrate/screens/mock-shell.js",
     "docs/development/ux-substrate/screens/words-modules.dump.mjs",
     "docs/development/ux-substrate/screens/words-reads-mod-5.src.mjs",
-    "docs/development/ux-substrate/screens/words-reads.src.mjs",
-    "docs/development/ux-substrate/screens/words-reads.json"
+    "docs/development/ux-substrate/screens/words-reads.src.mjs"
   ],
   "tests": [
     "bio-plane/test/m/journey-check/",
