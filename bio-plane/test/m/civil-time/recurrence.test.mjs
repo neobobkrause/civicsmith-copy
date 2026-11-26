@@ -4,14 +4,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { expandRecurrence, fiscalPeriod, reasonText } from "../../../src/civil-time/index.mjs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
-import { firstView, testView, day, minute } from "./helpers.mjs";
+import { firstView, testView, day, minute, zoneOf, need, refusal, open, coded, answered } from "./helpers.mjs";
+/** @import { Expansion, FiscalPeriod } from "../../../src/civil-time/recurrence.mjs" */
+/** @import { When, Conflict } from "../../../src/civil-time/kinds.mjs" */
 
-const LA = firstView().time_zone.value, HFX = testView().time_zone.value;
-const ex = (rrule, dtstart, zone, from, to) => {
-  const r = expandRecurrence({ rrule, dtstart, zone, from, to });
-  assert.ok(Array.isArray(r.instances), JSON.stringify(r));
-  return r;
-};
+const LA = zoneOf(firstView()), HFX = zoneOf(testView());
+/** @type {(rrule: string, dtstart: When, zone: string, from: When, to: When) => Expansion} */
+const ex = (rrule, dtstart, zone, from, to) => answered(expandRecurrence({ rrule, dtstart, zone, from, to }));
+/** @type {(r: Expansion) => string[]} */
 const values = (r) => r.instances.map((i) => i.value);
 
 test("R20 WEEKLY with INTERVAL and BYDAY, wall time kept across daylight-saving changes in both profiles' zones", () => {
@@ -51,10 +51,10 @@ test("R20 MONTHLY with ordinal BYDAY, BYMONTHDAY (negative too) and BYSETPOS; YE
 
 test("R20 the test profile's stated meeting schedules (its recurrences) expand in its zone", () => {
   const t = testView();
-  const sb = t.recurrences.find((r) => r.body === "Port Ellery Selectboard");
-  assert.deepEqual(values(ex(sb.rrule, sb.dtstart, t.time_zone.value, "2026-10-01", "2026-12-31")), ["2026-10-13T19:00", "2026-11-10T19:00", "2026-12-08T19:00"]);
-  const hd = t.recurrences.find((r) => r.body === "Port Ellery Harbour District");
-  const r = ex(hd.rrule, hd.dtstart, t.time_zone.value, "2026-12-01", "2027-03-01");
+  const sb = need((t.recurrences || []).find((r) => r.body === "Port Ellery Selectboard"), "the Selectboard's schedule");
+  assert.deepEqual(values(ex(sb.rrule, sb.dtstart, zoneOf(t), "2026-10-01", "2026-12-31")), ["2026-10-13T19:00", "2026-11-10T19:00", "2026-12-08T19:00"]);
+  const hd = need((t.recurrences || []).find((r) => r.body === "Port Ellery Harbour District"), "the Harbour District's schedule");
+  const r = ex(hd.rrule, hd.dtstart, zoneOf(t), "2026-12-01", "2027-03-01");
   /* fortnightly from Thu 01-08; its UNTIL (2026-12-31) ends it before 2027 */
   assert.deepEqual(values(r), ["2026-12-10T10:00", "2026-12-24T10:00"]);
 });
@@ -72,8 +72,9 @@ test("R20 EXDATE and UNTIL; at most 24 months after from or 500 instances, which
   const long = ex("FREQ=MONTHLY;BYMONTHDAY=1", "2020-01-01T09:00", LA, "2026-10-01", "2035-01-01");
   assert.equal(long.truncated, true);
   assert.equal(long.instances.length, 24);
-  assert.equal(long.instances[0].value, "2026-10-01T09:00");
-  assert.equal(long.instances.at(-1).value, "2028-09-01T09:00");
+  const first = need(long.instances[0], "the first instance"), last = need(long.instances.at(-1), "the last instance");
+  assert.equal(first.value, "2026-10-01T09:00");
+  assert.equal(last.value, "2028-09-01T09:00");
   /* 500 instances */
   const daily = ex("FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU", "2026-01-01T09:00", HFX, "2026-01-01", "2027-12-31");
   assert.equal(daily.instances.length, 500);
@@ -84,17 +85,19 @@ test("R20 EXDATE and UNTIL; at most 24 months after from or 500 instances, which
 });
 
 test("R20 any other part is refused RRULE_UNSUPPORTED, naming it; a malformed rule DATE_INVALID; an unknown zone ZONE_INVALID", () => {
-  for (const [rule, part] of [["FREQ=DAILY", "FREQ=DAILY"], ["FREQ=HOURLY", "FREQ=HOURLY"], ["FREQ=WEEKLY;COUNT=5", "COUNT"], ["FREQ=YEARLY;BYMONTH=3", "BYMONTH"],
+  /** @type {[string, string][]} */
+  const outside = [["FREQ=DAILY", "FREQ=DAILY"], ["FREQ=HOURLY", "FREQ=HOURLY"], ["FREQ=WEEKLY;COUNT=5", "COUNT"], ["FREQ=YEARLY;BYMONTH=3", "BYMONTH"],
     ["FREQ=WEEKLY;BYHOUR=9", "BYHOUR"], ["FREQ=WEEKLY;WKST=SU", "WKST"], ["FREQ=MONTHLY;BYYEARDAY=1", "BYYEARDAY"], ["FREQ=MONTHLY;BYWEEKNO=1", "BYWEEKNO"],
-    ["FREQ=WEEKLY;BYMINUTE=0", "BYMINUTE"], ["FREQ=WEEKLY;BYSECOND=0", "BYSECOND"], ["FREQ=WEEKLY;RDATE=20261001", "RDATE"]]) {
-    const r = expandRecurrence({ rrule: rule, dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: "2026-12-31" });
+    ["FREQ=WEEKLY;BYMINUTE=0", "BYMINUTE"], ["FREQ=WEEKLY;BYSECOND=0", "BYSECOND"], ["FREQ=WEEKLY;RDATE=20261001", "RDATE"]];
+  for (const [rule, part] of outside) {
+    const r = refusal(expandRecurrence({ rrule: rule, dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: "2026-12-31" }));
     assert.equal(r.refused, "RRULE_UNSUPPORTED", rule);
     assert.match(r.why, new RegExp(part), rule);
   }
   for (const rule of ["", "BYDAY=TU", "FREQ=WEEKLY;INTERVAL=0", "FREQ=WEEKLY;BYDAY=XX", "FREQ=WEEKLY;BYDAY=1TU", "FREQ=MONTHLY;BYMONTHDAY=0", "FREQ=WEEKLY;UNTIL=2026",
     "FREQ=WEEKLY;FREQ=WEEKLY", "FREQ=WEEKLY;BYSETPOS=0", "FREQ"])
-    assert.equal(expandRecurrence({ rrule: rule, dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: "2026-12-31" }).refused, "DATE_INVALID", rule);
-  assert.equal(expandRecurrence({ rrule: "FREQ=WEEKLY", dtstart: "2026-10-06T18:00", zone: "Moon/Base", from: "2026-10-01", to: "2026-12-31" }).refused, "ZONE_INVALID");
+    assert.equal(refusal(expandRecurrence({ rrule: rule, dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: "2026-12-31" })).refused, "DATE_INVALID", rule);
+  assert.equal(refusal(expandRecurrence({ rrule: "FREQ=WEEKLY", dtstart: "2026-10-06T18:00", zone: "Moon/Base", from: "2026-10-01", to: "2026-12-31" })).refused, "ZONE_INVALID");
   assert.throws(() => expandRecurrence({ rrule: "FREQ=WEEKLY", zone: LA, from: "2026-10-01", to: "2026-12-31" }), TypeError);
 });
 
@@ -103,7 +106,7 @@ test("R21 fiscalPeriod: the fiscal year holding a date under the body's fiscal_y
   /* a profile holding no fiscal_year: undetermined, never a guessed year (the first profile keeps Oakland's since
      jurisdictions R49, so the fact is removed here) */
   delete v.fiscal_year;
-  const none1 = fiscalPeriod({ date: day("2026-10-05", LA), body: "Oakland City Council", view: v });
+  const none1 = coded(fiscalPeriod({ date: day("2026-10-05", LA), body: "Oakland City Council", view: v }));
   assert.equal(none1.undetermined, true);
   assert.deepEqual(none1.why, { key: "civil-time.missing.fiscal_year_absent", vars: { body: "Oakland City Council" } });
   /* the test profile: every body from April, named by its start; the Harbour District from October, named by its end */
@@ -114,36 +117,46 @@ test("R21 fiscalPeriod: the fiscal year holding a date under the body's fiscal_y
   assert.deepEqual(fiscalPeriod({ date: day("2026-10-05", HFX), body: HD, view: t }), { label: "HD2027", start: "2026-10-01", end: "2027-09-30" });
   assert.deepEqual(fiscalPeriod({ date: day("2026-09-30", HFX), body: HD, view: t }), { label: "HD2026", start: "2025-10-01", end: "2026-09-30" });
   /* the local day governs: 2026-04-01T02:00Z is still 03-31 in Halifax */
-  assert.equal(fiscalPeriod({ date: { value: "2026-04-01T02:00:00", precision: "second", zone: HFX }, body: SB, view: t }).label, "FY2026-27");
-  assert.equal(fiscalPeriod({ date: { value: "2026-04-01T02:00:00", precision: "second", zone: "UTC" }, body: SB, view: t }).label, "FY2026-27");
-  assert.equal(fiscalPeriod({ date: minute("2026-03-31T22:00", HFX), body: SB, view: t }).label, "FY2025-26");
+  assert.equal(answered(fiscalPeriod({ date: { value: "2026-04-01T02:00:00", precision: "second", zone: HFX }, body: SB, view: t })).label, "FY2026-27");
+  assert.equal(answered(fiscalPeriod({ date: { value: "2026-04-01T02:00:00", precision: "second", zone: "UTC" }, body: SB, view: t })).label, "FY2026-27");
+  assert.equal(answered(fiscalPeriod({ date: minute("2026-03-31T22:00", HFX), body: SB, view: t })).label, "FY2025-26");
   /* EDTF across two fiscal years */
-  const two = fiscalPeriod({ date: { value: "2026", precision: "edtf", zone: HFX }, body: SB, view: t });
+  const two = open(fiscalPeriod({ date: { value: "2026", precision: "edtf", zone: HFX }, body: SB, view: t }));
   assert.equal(two.undetermined, true);
-  assert.deepEqual(two.candidates.map((c) => c.label), ["FY2025-26", "FY2026-27"]);
-  assert.equal(fiscalPeriod({ date: { value: "2026-08", precision: "edtf", zone: HFX }, body: SB, view: t }).label, "FY2026-27");
+  /** @type {string[]} */
+  const labels = [];
+  for (const c of two.candidates || []) labels.push(typeof c === "string" ? c : c.label);
+  assert.deepEqual(labels, ["FY2025-26", "FY2026-27"]);
+  assert.equal(answered(fiscalPeriod({ date: { value: "2026-08", precision: "edtf", zone: HFX }, body: SB, view: t })).label, "FY2026-27");
   /* withheld as a conflict */
-  const c = testView(); delete c.fiscal_year; c.conflicts = [{ at: "fiscal_year", values: [], says: "disagree" }];
-  assert.deepEqual(fiscalPeriod({ date: day("2026-10-05", HFX), body: SB, view: c }).why, { key: "civil-time.missing.fiscal_year_withheld", vars: { body: SB, at: "fiscal_year" } });
+  const withheld = { at: "fiscal_year", values: [], says: "disagree" };
+  /** @type {Conflict[]} */
+  const conflicts = [withheld];
+  const c = testView(); delete c.fiscal_year; c.conflicts = conflicts;
+  assert.deepEqual(coded(fiscalPeriod({ date: day("2026-10-05", HFX), body: SB, view: c })).why, { key: "civil-time.missing.fiscal_year_withheld", vars: { body: SB, at: "fiscal_year" } });
   assert.throws(() => fiscalPeriod({ date: day("2026-10-05", LA), view: v }), TypeError);
 });
 
 test("R30 R20 R21 the reasons of expandRecurrence and fiscalPeriod are {key, vars}: an open window, an open date, a band across two fiscal years, a fiscal fact of the wrong form", () => {
   const t = testView();
-  const open = expandRecurrence({ rrule: "FREQ=WEEKLY", dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: { value: "2026-12-01/..", precision: "edtf", zone: LA } });
-  assert.equal(open.undetermined, true);
-  assert.deepEqual(open.why, { key: "civil-time.window_open_end", vars: {} });
-  const openDate = fiscalPeriod({ date: { value: "2026/..", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t });
-  assert.deepEqual(openDate.why, { key: "civil-time.date_open_unknown", vars: {} });
-  const two = fiscalPeriod({ date: { value: "2026", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t });
-  assert.deepEqual(two.why, { key: "civil-time.spans_two_fiscal", vars: { value: "2026", label: "FY2025-26", label_2: "FY2026-27" } });
+  const window = open(expandRecurrence({ rrule: "FREQ=WEEKLY", dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: { value: "2026-12-01/..", precision: "edtf", zone: LA } }));
+  assert.equal(window.undetermined, true);
+  const whyWindow = window.why;
+  assert.deepEqual(whyWindow, { key: "civil-time.window_open_end", vars: {} });
+  const openDate = open(fiscalPeriod({ date: { value: "2026/..", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t }));
+  const whyOpenDate = openDate.why;
+  assert.deepEqual(whyOpenDate, { key: "civil-time.date_open_unknown", vars: {} });
+  const across = open(fiscalPeriod({ date: { value: "2026", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t }));
+  const whyAcross = across.why;
+  assert.deepEqual(whyAcross, { key: "civil-time.spans_two_fiscal", vars: { value: "2026", label: "FY2025-26", label_2: "FY2026-27" } });
   const bad = testView(); bad.fiscal_year = [{ body: "Odd Body", start: "13-40", named_by: "start" }];
-  const form = fiscalPeriod({ date: day("2026-10-05", HFX), body: "Odd Body", view: bad });
+  const form = coded(fiscalPeriod({ date: day("2026-10-05", HFX), body: "Odd Body", view: bad }));
   assert.equal(form.code, "FACT_INVALID");
-  assert.deepEqual(form.why, { key: "civil-time.recurrence.fiscal_year_form", vars: { body: "Odd Body" } });
-  for (const a of [open, openDate, two, form]) {
-    for (const v of Object.values(a.why.vars)) assert.equal(typeof v, "string");
-    assert.ok(reasonText(a.why).length > 5, a.why.key);
-    if (hasWord(a.why.key)) assert.equal(word(a.why.key, a.why.vars), reasonText(a.why));
+  const whyForm = form.why;
+  assert.deepEqual(whyForm, { key: "civil-time.recurrence.fiscal_year_form", vars: { body: "Odd Body" } });
+  for (const why of [whyWindow, whyOpenDate, whyAcross, whyForm]) {
+    for (const v of Object.values(why.vars)) assert.equal(typeof v, "string");
+    assert.ok(reasonText(why).length > 5, why.key);
+    if (hasWord(why.key)) assert.equal(word(why.key, why.vars), reasonText(why));
   }
 });
