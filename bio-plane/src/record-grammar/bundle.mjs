@@ -79,7 +79,7 @@ function f(check, severity, message, repairs, code) {
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number, maxPackageAgeDays?: number, maxReevalAgeDays?: number, elidedPaths?: Set<string> | string[], resolveTarget?: (id: string) => boolean, releaseRegistry?: object | null, publishedRegistry?: object | null, publishedCaseRegistry?: object | null, earnedRegistry?: object | null, sha512?: ((bytes: Uint8Array) => Promise<Uint8Array>) | null}} BundleInput
+ * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number | undefined, maxPackageAgeDays?: number | undefined, maxReevalAgeDays?: number | undefined, elidedPaths?: Set<string> | string[] | undefined, resolveTarget?: ((id: string) => boolean) | undefined, releaseRegistry?: object | null | undefined, publishedRegistry?: object | null | undefined, publishedCaseRegistry?: object | null | undefined, earnedRegistry?: object | null | undefined, sha512?: ((bytes: Uint8Array) => Promise<Uint8Array>) | null | undefined}} BundleInput
  */
 /** What every arm reads, a registered grammar's among them (R39): the input as handed in, the parsed front matter and the
  *  body, and the defaults filled in.
@@ -133,7 +133,7 @@ function hasFile_(ctx, path) {
    id padded with white space disagrees. A non-string or absent id is not this arm's: C-1.2 refuses it. `checkIdentity`
    below and the write door (promotion R38) both run this function, so the gate and the door cannot judge one id two
    ways (one code, one site: K231). */
-/** @param {Frontmatter | null | undefined} fm @param {unknown} folderName @returns {boolean} */
+/** @param {{readonly [key: string]: unknown} | null | undefined} fm @param {unknown} folderName @returns {boolean} */
 export function idDisagrees(fm, folderName) {
   const id = fm?.id;
   return typeof id === 'string' && id !== folderName;
@@ -921,7 +921,7 @@ function grammarsOf(list) {
 /**
  * Run all applicable checks over one bundle.
  * @param {BundleInput} input
- * @param {{knownSchemas?: string[], grammars?: Grammar[] | null}} [opts]
+ * @param {{knownSchemas?: string[] | undefined, grammars?: Grammar[] | null | undefined}} [opts]
  * @returns {Promise<{pass: boolean, findings: Finding[]}>}
  */
 export async function checkBundle(input, opts = {}) {

@@ -4,7 +4,6 @@
    catalogue at T19 with their comments. */
 
 import { normalizeType } from './types.mjs';
-/** @import { Frontmatter } from './frontmatter.mjs' */
 import { word } from '../setup-words/index.mjs';
 
 /** Literal heading constants per type (spec Section 4).
@@ -109,11 +108,17 @@ export const HEADINGS_WHEN = {
    anything but capture and connection once each and testimony at most once. It
    FAILS CLOSED: a malformed frozen block is dragged into the ceremony and
    refused there, rather than let out of it. */
-/** @param {Frontmatter | null | undefined} fm @returns {boolean} */
+/** An object read member by member. @typedef {{readonly [key: string]: unknown}} Members */
+/** @param {unknown} v @returns {v is Members} */
+const isMembers = (v) => v !== null && typeof v === 'object';
+/** A list read item by item. @typedef {readonly unknown[]} List */
+/** @param {unknown} v @returns {v is List} */
+const isList = (v) => Array.isArray(v);
+/** @param {{readonly [key: string]: unknown} | null | undefined} fm @returns {boolean} */
 export const isCaseMemberBytes = (fm) => {
   const s = fm?.published_strength;
-  return Array.isArray(s) && s.length >= 2
-    && s.every((a) => a !== null && typeof a === 'object' && !Array.isArray(a) && typeof a.axis === 'string');
+  return isList(s) && s.length >= 2
+    && s.every((a) => isMembers(a) && typeof a.axis === 'string');
 };
 
 /* THE type-keyed vocabulary lookup (REC-10, normalisation site 1 of 4).

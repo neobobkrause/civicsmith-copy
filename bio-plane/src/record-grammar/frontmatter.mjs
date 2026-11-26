@@ -13,8 +13,8 @@
  * @typedef {{[key: string]: Scalar}} ScalarMap */
 /** A top-level key's value (R7): a scalar, a map block, or an array block of scalars and objects.
  * @typedef {string | number | boolean | null | Array<Scalar | ScalarMap> | ScalarMap} FieldValue */
-/** The front matter's data, top-level key by key.
- * @typedef {{[key: string]: FieldValue}} Frontmatter */
+/** The front matter's data, top-level key by key: each a FieldValue, written out so a list is a list.
+ * @typedef {{[key: string]: string | number | boolean | null | Array<Scalar | ScalarMap> | ScalarMap}} Frontmatter */
 
 /** Universal core fields (spec 3.1). */
 import { localize } from '../setup-words/index.mjs';
