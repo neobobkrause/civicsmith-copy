@@ -9,21 +9,69 @@
  * The fault injectors (restartAt, storeFailAt, killPage, ...) are the plane harness's (plane-1), not this double's. */
 
 /**
+ * @typedef {Object} AlarmDoubleOptions
+ * @property {number} [maxRetries] the retries after a handler throws; absent is 6
+ * @property {boolean} [rerunAfterSuccess] whether a completed handler is run once more (retryCount 1); absent is false
+ */
+/**
+ * One storage call, as logged: its name, and its key, list prefix or alarm time where it has one.
+ * @typedef {[string] | [string, string | number]} StorageCall
+ */
+/**
+ * What the alarm handler is given.
+ * @typedef {Object} AlarmInfo
+ * @property {number} retryCount
+ * @property {boolean} isRetry
+ */
+/** @typedef {(info: AlarmInfo) => unknown} AlarmHandler the handler; it may answer a promise */
+/**
+ * @typedef {Object} AlarmRun
+ * @property {boolean} ok whether the last attempt completed
+ * @property {number} retries the retries this run took
+ * @property {unknown} error what the last attempt threw, or null
+ */
+/**
+ * @typedef {Object} AlarmStorage
+ * @property {StorageCall[]} log every call, in order
+ * @property {Map<string, unknown>} kv the stored values
+ * @property {(k: string) => Promise<unknown>} get a copy of the value, or undefined
+ * @property {(k: string, v: unknown) => Promise<void>} put
+ * @property {(k: string) => Promise<boolean>} delete
+ * @property {(options?: {prefix?: string}) => Promise<Map<string, unknown>>} list copies, in key order
+ * @property {() => Promise<number | null>} getAlarm
+ * @property {(t: number | Date) => Promise<void>} setAlarm
+ * @property {() => Promise<void>} deleteAlarm
+ */
+/**
+ * @typedef {Object} AlarmDouble
+ * @property {AlarmStorage} storage
+ * @property {() => Promise<number | null>} getAlarm
+ * @property {(t: number | Date) => Promise<void>} setAlarm
+ * @property {() => Promise<void>} deleteAlarm
+ * @property {(fn: AlarmHandler) => Promise<AlarmRun>} run
+ * @property {number} retries
+ */
+/**
  * `alarmDouble({maxRetries = 6, rerunAfterSuccess = false})` -> `{storage, getAlarm(), setAlarm(t), deleteAlarm(),
  * run(fn), retries}`. `storage` is a key-value storage double (`get`, `put`, `delete`, `list`, and the same three alarm
  * methods), each call logged in `storage.log`. `run(fn)` runs `fn({retryCount, isRetry})` as the alarm handler and
  * answers `{ok, retries, error}`; `retries` counts the retries of every run so far.
+ * @param {AlarmDoubleOptions} [options]
+ * @returns {AlarmDouble}
  */
 export function alarmDouble({ maxRetries = 6, rerunAfterSuccess = false } = {}) {
   if (!Number.isInteger(maxRetries) || maxRetries < 0) throw new Error("alarmDouble: maxRetries must be a whole number");
-  const kv = new Map();
+  /** @type {Map<string, unknown>} */
+  const kv = new Map([]);
+  /** @type {StorageCall[]} */
   const log = [];
+  /** @type {number | null} */
   let alarm = null;
   let running = false, setInRun = false;
   let retries = 0;
 
   const getAlarm = async () => { log.push(["getAlarm"]); return running && !setInRun ? null : alarm; };
-  const setAlarm = async (t) => {
+  const setAlarm = async (/** @type {number | Date} */ t) => {
     if (typeof t !== "number" && !(t instanceof Date)) throw new Error("alarmDouble: setAlarm takes a time in ms or a Date");
     log.push(["setAlarm", +t]);
     alarm = +t;
@@ -31,6 +79,7 @@ export function alarmDouble({ maxRetries = 6, rerunAfterSuccess = false } = {}) 
   };
   const deleteAlarm = async () => { log.push(["deleteAlarm"]); alarm = null; if (running) setInRun = true; };
 
+  /** @type {AlarmStorage} */
   const storage = {
     log, kv,
     async get(k) { log.push(["get", k]); return kv.has(k) ? structuredClone(kv.get(k)) : undefined; },
@@ -40,14 +89,25 @@ export function alarmDouble({ maxRetries = 6, rerunAfterSuccess = false } = {}) 
     getAlarm, setAlarm, deleteAlarm,
   };
 
+  /**
+   * @param {AlarmHandler} fn
+   * @param {number} retryCount
+   * @returns {Promise<unknown>} null, or what the handler threw
+   */
   async function attempt(fn, retryCount) {
     running = true; setInRun = false;
     try { await fn({ retryCount, isRetry: retryCount > 0 }); return null; } catch (e) { return e; } finally { running = false; setInRun = false; }
   }
 
+  /**
+   * @param {AlarmHandler} fn
+   * @returns {Promise<AlarmRun>}
+   */
   async function run(fn) {
     if (typeof fn !== "function") throw new Error("alarmDouble: run takes the handler function");
-    let mine = 0, error = null;
+    let mine = 0;
+    /** @type {unknown} */
+    let error = null;
     for (let k = 0; ; k++) {
       error = await attempt(fn, k);
       if (!error) break;

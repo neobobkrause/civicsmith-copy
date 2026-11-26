@@ -88,16 +88,22 @@
  * part of why nobody caught it for as long as nobody did.
  */
 
+/** @type {string[]} */
 const applied = [];
 
 /* Idempotent: importing this module twice, or importing it and `sandbox.mjs`
    (which imports it), must not double-apply or throw. */
 let done = false;
 
+/**
+ * Makes stdout and stderr blocking, once per process.
+ * @returns {{streams: string[], already: boolean}} the streams it changed (all calls so far), and whether an earlier
+ *   call had already done it
+ */
 export const synchronousStdio = () => {
   if (done) return { streams: applied.slice(), already: true };
   done = true;
-  for (const [name, s] of [["stdout", process.stdout], ["stderr", process.stderr]]) {
+  for (const { name, s } of [{ name: "stdout", s: process.stdout }, { name: "stderr", s: process.stderr }]) {
     /* A stream with no `_handle` is not a pipe we can change — a file-backed
        stdio is ALREADY synchronous on POSIX, and a destroyed or absent stream
        has nothing to set. Both are fine and neither is an error. */
