@@ -16,14 +16,147 @@
 import { zipChunks64, zipChunks64Sized } from "./make-zip.mjs";
 import { hash32, VOCAB, LATIN_VOCAB } from "./seeded.mjs";
 
+/** @typedef {"csv"|"tsv"|"xlsx"|"ods"} SheetKind */
+/** @typedef {"text"|"integer"|"decimal"|"percent"|"currency"|"date"|"formula"} CellType */
+/** @typedef {"utf-8"|"utf-8-bom"|"utf-16le"|"utf-16be"|"utf-16le-bom"|"utf-16be-bom"|"windows-1252"} SheetEncoding */
+/** @typedef {"crlf"|"lf"|"cr"} EolName */
+/** @typedef {"one"|"none"|"title"|{chars: number}} SheetHeader */
+/** @typedef {"doubled"|"newline"|"tab"|"stray"} QuotingMark */
+/** @typedef {"bomb"|"lying-directory"|"lying-dimension"|"no-r"|"styled-empty"} Hostile */
+/**
+ * @typedef {Object} SheetSize
+ * @property {number} [rows] data rows; absent is 20 (or, with `bytes` on a CSV, as many as fit)
+ * @property {number} [cols] absent is 6
+ * @property {number} [bytes] the file's exact size
+ */
+/**
+ * @typedef {Object} SheetEmpties
+ * @property {boolean} [leading] the first column is empty
+ * @property {boolean} [middle] the middle column is empty
+ * @property {boolean} [last] the last column is empty
+ * @property {number} [row] every n-th data row is empty
+ * @property {number} [column] this column is empty
+ */
+/**
+ * @typedef {Object} LongCell
+ * @property {number} row
+ * @property {number} col
+ * @property {number} chars
+ */
+/**
+ * @typedef {Object} SheetRecipe
+ * @property {SheetKind} kind
+ * @property {string|number} [seed]
+ * @property {SheetSize} [size]
+ * @property {SheetHeader} [header]
+ * @property {CellType[]} [types] by column, cycled
+ * @property {SheetEncoding} [encoding]
+ * @property {EolName} [eol]
+ * @property {string} [delimiter]
+ * @property {QuotingMark[]} [quoting]
+ * @property {SheetEmpties} [empties]
+ * @property {boolean} [ragged]
+ * @property {LongCell} [long]
+ * @property {boolean} [merged]
+ * @property {boolean} [annotations]
+ * @property {"shared"|"inline"} [strings]
+ * @property {number} [sheets]
+ * @property {Hostile} [hostile]
+ * @property {number} [bound]
+ */
+/**
+ * @typedef {Object} Cell a cell's truth
+ * @property {CellType} type
+ * @property {string|number} value
+ * @property {string} text
+ * @property {true} [mark] the cell holds a mark
+ * @property {boolean} [stray] a text with a stray quote
+ * @property {number} [serial] a date's spreadsheet serial
+ * @property {string} [formula]
+ */
+/**
+ * @typedef {Object} Pad the padding that makes a CSV exactly its size
+ * @property {number} row
+ * @property {number} col
+ * @property {number} chars
+ */
+/**
+ * @typedef {Object} Mark
+ * @property {number} sheet
+ * @property {number} dataRow
+ * @property {number} row
+ * @property {number} col
+ * @property {string|null} text
+ */
+/**
+ * @typedef {Object} Annotation
+ * @property {string} ref
+ * @property {number} row
+ * @property {number} col
+ * @property {string} text
+ */
+/**
+ * @typedef {Object} Refusal
+ * @property {string} code
+ * @property {number|null|undefined} size
+ * @property {number} bound
+ */
+/**
+ * @typedef {Object} UnitsCheck
+ * @property {boolean} ok
+ * @property {number[]} missing
+ * @property {number[]} repeated
+ */
+/**
+ * @typedef {Object} SheetTruth
+ * @property {SheetKind} kind
+ * @property {SheetRecipe} recipe
+ * @property {number} rows
+ * @property {number} cols
+ * @property {number} sheets
+ * @property {number} headerRows
+ * @property {number} fileRows
+ * @property {string[][]} header
+ * @property {SheetEncoding} encoding
+ * @property {string} eol
+ * @property {string} delimiter
+ * @property {(d: number, c: number, s?: number) => Cell|null} cell
+ * @property {(d: number, s?: number) => string[]} row
+ * @property {(d: number) => number} rowLength
+ * @property {Mark[]} marks
+ * @property {(d: number, s?: number) => string|null} rowKey
+ * @property {(units: string[], s?: number) => UnitsCheck} checkUnits
+ * @property {string[]} merged
+ * @property {Annotation[]} annotations
+ * @property {Pad|null} pad
+ * @property {Hostile|null} hostile
+ * @property {Refusal|null|0|undefined} refusal
+ * @property {number|null} size
+ */
+/**
+ * @typedef {Object} SheetFile
+ * @property {SheetKind} kind
+ * @property {SheetKind} ext
+ * @property {string} type
+ * @property {number|null} size
+ * @property {SheetTruth} truth
+ * @property {() => AsyncIterable<Uint8Array, void, undefined>} chunks
+ * @property {() => Promise<Uint8Array>} bytes
+ */
+
+/** @type {readonly SheetKind[]} */
 export const KINDS = Object.freeze(["csv", "tsv", "xlsx", "ods"]);
-const TYPES = { csv: "text/csv", tsv: "text/tab-separated-values", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ods: "application/vnd.oasis.opendocument.spreadsheet" };
+const TYPES ={ csv: "text/csv", tsv: "text/tab-separated-values", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ods: "application/vnd.oasis.opendocument.spreadsheet" };
 const CELL_TYPES = ["text", "integer", "decimal", "percent", "currency", "date", "formula"];
 const ENCODINGS = ["utf-8", "utf-8-bom", "utf-16le", "utf-16be", "utf-16le-bom", "utf-16be-bom", "windows-1252"];
 const EOL = { crlf: "\r\n", lf: "\n", cr: "\r" };
 const DAY0 = Date.UTC(2015, 0, 1), EXCEL_EPOCH = Date.UTC(1899, 11, 30);
 
-/** The column name of 1-based column `c` (A, Z, AA, XFD, XFE). */
+/**
+ * The column name of 1-based column `c` (A, Z, AA, XFD, XFE).
+ * @param {number} c
+ * @returns {string}
+ */
 export function colName(c) {
   let s = "";
   for (let n = c; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
@@ -32,10 +165,40 @@ export function colName(c) {
 
 /* ---- the plan and the cells ---- */
 
+/**
+ * @typedef {Object} Plan a recipe checked, with its defaults
+ * @property {SheetKind} kind
+ * @property {string} seed
+ * @property {SheetSize} size
+ * @property {number} cols
+ * @property {CellType[]} types
+ * @property {SheetEncoding} encoding
+ * @property {string} eol
+ * @property {SheetHeader} header
+ * @property {number} headerRows
+ * @property {SheetEmpties} empties
+ * @property {Set<number|false|undefined>} emptyCols
+ * @property {number} markCol
+ * @property {readonly string[]} vocab
+ * @property {string} delimiter
+ * @property {Set<QuotingMark>} quoting
+ * @property {number} sheets
+ * @property {Hostile|null} hostile
+ * @property {SheetRecipe} recipe
+ */
+
+/**
+ * @param {SheetRecipe} recipe
+ * @returns {Plan}
+ */
 function plan(recipe) {
   if (!KINDS.includes(recipe.kind)) throw new Error(`sheetgen: kind must be one of ${KINDS.join(", ")}`);
-  if (recipe.seed === undefined) throw new Error("sheetgen: recipe.seed is missing");
-  const seed = String(recipe.seed), size = recipe.size ?? {}, cols = size.cols ?? 6;
+  const seedIn = recipe.seed;
+  if (seedIn === undefined) throw new Error("sheetgen: recipe.seed is missing");
+  const seed = String(seedIn);
+  /** @type {SheetSize} */
+  const size = recipe.size ?? {};
+  const cols = size.cols ?? 6;
   if (!Number.isInteger(cols) || cols < 1) throw new Error("sheetgen: size.cols must be a positive integer");
   const types = recipe.types ?? ["text", "integer", "decimal", "text", "date", "currency", "percent"];
   for (const t of types) if (!CELL_TYPES.includes(t)) throw new Error(`sheetgen: types has ${t}`);
@@ -46,6 +209,7 @@ function plan(recipe) {
   if (!eol) throw new Error("sheetgen: eol must be crlf, lf or cr");
   const header = recipe.header ?? "one";
   const headerRows = header === "none" ? 0 : header === "title" ? 3 : 1;
+  /** @type {SheetEmpties} */
   const empties = recipe.empties ?? {};
   const emptyCols = new Set([empties.leading && 1, empties.middle && Math.ceil(cols / 2), empties.last && cols, empties.column].filter(Boolean));
   let markCol = 0;
@@ -53,19 +217,30 @@ function plan(recipe) {
   if (!markCol) throw new Error("sheetgen: the marks need a text column that is not emptied");
   if (recipe.merged && header !== "title") throw new Error("sheetgen: merged needs header title (the title row is merged)");
   const xlsxOnly = ["no-r", "styled-empty", "lying-dimension"];
-  if (recipe.hostile && xlsxOnly.includes(recipe.hostile) && recipe.kind !== "xlsx") throw new Error(`sheetgen: hostile ${recipe.hostile} is for xlsx`);
+  const hostile = recipe.hostile;
+  if (hostile && xlsxOnly.includes(hostile) && recipe.kind !== "xlsx") throw new Error(`sheetgen: hostile ${hostile} is for xlsx`);
   const vocab = encoding === "windows-1252" ? LATIN_VOCAB : VOCAB;
   return {
     kind: recipe.kind, seed, size, cols, types, encoding, eol, header, headerRows, empties, emptyCols, markCol, vocab,
     delimiter: recipe.delimiter ?? (recipe.kind === "tsv" ? "\t" : ","), quoting: new Set(recipe.quoting ?? []),
-    sheets: recipe.sheets ?? 1, hostile: recipe.hostile ?? null, recipe,
+    sheets: recipe.sheets ?? 1, hostile: hostile ?? null, recipe,
   };
 }
 
+/** @param {number} cents @returns {string} */
 const money = (cents) => `$${String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+$)/g, ",")}.${String(cents % 100).padStart(2, "0")}`;
+/** @param {number} days @returns {string} */
 const isoDay = (days) => new Date(DAY0 + days * 86400000).toISOString().slice(0, 10);
 
-/** The cell at data row `d`, column `c`, sheet `s` of a plan with `rows` data rows: `{type, value, text}` or null (empty). */
+/**
+ * The cell at data row `d`, column `c`, sheet `s` of a plan with `rows` data rows: `{type, value, text}` or null (empty).
+ * @param {Plan} p
+ * @param {number} rows
+ * @param {number} d
+ * @param {number} c
+ * @param {number} [s]
+ * @returns {Cell|null}
+ */
 function cellOf(p, rows, d, c, s = 1) {
   if (c > rowLength(p, rows, d)) return null;
   const mark = markAt(p, rows, d, c, s);
@@ -78,6 +253,7 @@ function cellOf(p, rows, d, c, s = 1) {
   const L = p.recipe.long;
   if (L && L.row === d && L.col === c) {
     const w = p.vocab[h % p.vocab.length];
+    if (w === undefined) throw new Error("sheetgen: the vocabulary is empty");
     const text = w.repeat(Math.ceil(L.chars / w.length)).slice(0, L.chars);
     return { type: "text", value: text, text };
   }
@@ -103,34 +279,62 @@ function cellOf(p, rows, d, c, s = 1) {
 }
 
 /* the three mark rows of a sheet of `rows` rows; asked for every cell, so the last answer is kept */
+/** @type {{rows: number, list: number[]}} */
 let lastMarks = { rows: -1, list: [] };
+/** @param {number} rows @returns {number[]} */
 function markRows(rows) {
   if (lastMarks.rows !== rows) lastMarks = { rows, list: [...new Set([1, Math.ceil(rows / 2), rows])] };
   return lastMarks.list;
 }
+/**
+ * @param {Plan} p
+ * @param {number} rows
+ * @param {number} d
+ * @param {number} c
+ * @param {number} s
+ * @returns {string|null}
+ */
 function markAt(p, rows, d, c, s) {
   if (c !== p.markCol || !markRows(rows).includes(d)) return null;
   return `${p.seed}${s > 1 ? `-S${s}` : ""}-R${p.headerRows + d}-C${c}`;
 }
-const isEmptyRow = (p, rows, d) => !!p.empties.row && d % p.empties.row === 0 && !markRows(rows).includes(d);
+/** @param {Plan} p @param {number} rows @param {number} d @returns {boolean} */
+const isEmptyRow = (p, rows, d) => {
+  const every = p.empties.row;
+  return !!every && d % every === 0 && !markRows(rows).includes(d);
+};
+/** @param {Plan} p @param {number} rows @param {number} d @returns {number} */
 function rowLength(p, rows, d) {
   if (!p.recipe.ragged || markRows(rows).includes(d)) return p.cols;
   return Math.max(p.markCol, p.cols - (hash32(p.seed, "ragged", d) % 3));
 }
 
-/** The header rows' cells (file rows 1..headerRows), as text. */
+/**
+ * The header rows' cells (file rows 1..headerRows), as text.
+ * @param {Plan} p
+ * @returns {string[][]}
+ */
 function headerOf(p) {
-  if (p.header === "none") return [];
+  const header = p.header;
+  if (header === "none") return [];
   const names = Array.from({ length: p.cols }, (_, i) => {
     const name = `${p.vocab[hash32(p.seed, "h", i + 1) % p.vocab.length]}_${i + 1}`;
-    return typeof p.header === "object" && p.header.chars ? name.padEnd(p.header.chars, "_").slice(0, Math.max(p.header.chars, 1)) : name;
+    return typeof header === "object" && header.chars ? name.padEnd(header.chars, "_").slice(0, Math.max(header.chars, 1)) : name;
   });
-  if (p.header === "title") return [[`${p.seed}-title`], [], names];
+  if (header === "title") return [[`${p.seed}-title`], [], names];
   return [names];
 }
 
 /* ---- CSV and TSV ---- */
 
+/**
+ * @typedef {Object} Encoder
+ * @property {Uint8Array} bom
+ * @property {(s: string) => Uint8Array} enc
+ * @property {(s: string) => number} len
+ * @property {number} unit
+ */
+/** @param {SheetEncoding} encoding @returns {Encoder} */
 function encoderOf(encoding) {
   const utf8 = new TextEncoder();
   if (encoding.startsWith("utf-8")) return { bom: encoding === "utf-8-bom" ? Uint8Array.of(0xef, 0xbb, 0xbf) : new Uint8Array(0), enc: (s) => utf8.encode(s), len: (s) => Buffer.byteLength(s), unit: 1 };
@@ -147,15 +351,26 @@ function encoderOf(encoding) {
   };
 }
 
+/** @param {Plan} p @param {string} text @param {boolean} [stray] @returns {string} */
 const field = (p, text, stray) => {
   if (stray || !(text.includes(p.delimiter) || text.includes('"') || text.includes("\n") || text.includes("\r"))) return text;
   return `"${text.replaceAll('"', '""')}"`;
 };
 
-/** The text of one record (without its line end): header row `-k` (k from 1) or data row `d`. */
+/**
+ * The text of one record (without its line end): header row `-k` (k from 1) or data row `d`.
+ * @param {Plan} p
+ * @param {number} rows
+ * @param {string[][]} headers
+ * @param {number} d
+ * @param {Pad|null} [pad]
+ * @returns {string}
+ */
 function recordText(p, rows, headers, d, pad = null) {
   if (d <= 0) return (headers[-d - 1] ?? []).map((t) => field(p, t)).join(p.delimiter);
-  const n = rowLength(p, rows, d), parts = [];
+  const n = rowLength(p, rows, d);
+  /** @type {string[]} */
+  const parts = [];
   for (let c = 1; c <= n; c++) {
     const cell = cellOf(p, rows, d, c);
     let text = cell ? cell.text : "";
@@ -165,23 +380,39 @@ function recordText(p, rows, headers, d, pad = null) {
   return parts.join(p.delimiter);
 }
 
-/** The data row count and the padding that make a CSV exactly `size.bytes` (or the recipe's rows, unpadded). */
+/**
+ * @typedef {Object} CsvLayout
+ * @property {number} rows
+ * @property {Pad|null} pad
+ * @property {string[][]} headers
+ * @property {Encoder} E
+ */
+/**
+ * The data row count and the padding that make a CSV exactly `size.bytes` (or the recipe's rows, unpadded).
+ * @param {Plan} p
+ * @returns {CsvLayout}
+ */
 function csvLayout(p) {
   const headers = headerOf(p), E = encoderOf(p.encoding), eolBytes = E.enc(p.eol).length;
   const fixed = E.bom.length + headers.reduce((n, _, k) => n + E.len(recordText(p, 0, headers, -(k + 1))) + eolBytes, 0);
   const target = p.size.bytes;
   if (target === undefined) return { rows: p.size.rows ?? 20, pad: null, headers, E };
   if (p.cols < 2) throw new Error("sheetgen: size.bytes needs two columns or more (the padding goes in the last one)");
+  /** @param {number} rows @param {number} d @returns {number} */
   const rowBytes = (rows, d) => E.len(recordText(p, rows, headers, d)) + eolBytes;
+  /** @param {number} rows @param {number} prefix @returns {number} */
   const total = (rows, prefix) => {
     /* the rows' natural bytes, with the three mark rows as they stand for this row count */
     let t = fixed + prefix;
     for (const d of markRows(rows)) t += rowBytes(rows, d) - rowBytes(Infinity, d);
     return t;
   };
-  let rows, prefix = 0;
-  if (p.size.rows !== undefined) {
-    rows = p.size.rows;
+  /** @type {number} */
+  let rows;
+  let prefix = 0;
+  const sizeRows = p.size.rows;
+  if (sizeRows !== undefined) {
+    rows = sizeRows;
     for (let d = 1; d <= rows; d++) prefix += rowBytes(Infinity, d);
   } else {
     let best = 0, bestPrefix = 0;
@@ -200,8 +431,10 @@ function csvLayout(p) {
   return { rows, pad: left ? { row: rows, col: rowLength(p, rows, rows), chars: left / E.unit } : null, headers, E };
 }
 
+/** @param {Plan} p @param {CsvLayout} L @returns {AsyncGenerator<Uint8Array, void, undefined>} */
 async function* csvChunks(p, L) {
   const { rows, pad, headers, E } = L;
+  /** @type {string[]} */
   let batch = [];
   let n = 0;
   if (E.bom.length) yield E.bom;
@@ -220,9 +453,17 @@ async function* csvChunks(p, L) {
  * split on CRLF, LF or CR outside quotes; a field opening with `"` runs to its closing quote, `""` inside it is one
  * quote; a quote inside a field that did not open with one is kept as it is. A last line end makes no empty record.
  */
+/**
+ * @param {string} text
+ * @param {string} [delimiter]
+ * @returns {string[][]}
+ */
 export function rfc4180(text, delimiter = ",") {
+  /** @type {string[][]} */
   const out = [];
-  let rec = [], f = "", i = 0, quoted = false, started = false;
+  /** @type {string[]} */
+  let rec = [];
+  let f = "", i = 0, quoted = false, started = false;
   const endField = () => { rec.push(f); f = ""; quoted = false; started = false; };
   const endRecord = () => { endField(); out.push(rec); rec = []; };
   while (i < text.length) {
@@ -242,14 +483,44 @@ export function rfc4180(text, delimiter = ",") {
 
 /* ---- XLSX ---- */
 
+/** @param {string} s @returns {string} */
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "");
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 const NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main", NS_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+/** @type {{text?: number, integer?: number, decimal: number, percent: number, currency: number, date: number, formula?: number}} */
 const STYLE = { decimal: 2, percent: 3, currency: 4, date: 5 };
 
+/** @typedef {{uncompressedSize: number}} CentralLie what a member's central record states in place of the truth */
+/**
+ * @typedef {Object} DataPart a member written whole
+ * @property {string} name
+ * @property {string} data
+ * @property {undefined} [chunks]
+ * @property {number} [method]
+ * @property {boolean} [zip64]
+ * @property {CentralLie} [central]
+ */
+/**
+ * @typedef {Object} TextPart a member streamed as text
+ * @property {string} name
+ * @property {() => AsyncIterable<string, void, undefined>} chunks
+ * @property {undefined} [data]
+ * @property {CentralLie} [central]
+ */
+/**
+ * @typedef {Object} BytesPart a member streamed as bytes
+ * @property {string} name
+ * @property {() => AsyncIterable<Uint8Array, void, undefined>} chunks
+ * @property {undefined} [data]
+ * @property {CentralLie} [central]
+ */
+
+/** @param {Plan} p @param {number} rows @returns {(DataPart|TextPart)[]} */
 function xlsxParts(p, rows) {
   const headers = headerOf(p), shared = p.recipe.strings === "shared";
+  /** @param {number} s @returns {string} */
   const sheetName = (s) => `Sheet${s}`;
+  /** @type {(DataPart|TextPart)[]} */
   const files = [];
   const ct = ['<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>',
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
@@ -266,7 +537,8 @@ function xlsxParts(p, rows) {
   files.push({ name: "xl/_rels/workbook.xml.rels", data: `${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${wbRels.join("")}</Relationships>` });
   files.push({ name: "xl/styles.xml", data: `${XML}<styleSheet xmlns="${NS_MAIN}"><numFmts count="2"><numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="yyyy\\-mm\\-dd"/></numFmts><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="1" borderId="0" xfId="0" applyFill="1"/><xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs></styleSheet>` });
 
-  /* every text of the workbook in order (header, then cells by sheet, row and column): the shared-string order */
+  /** every text of the workbook in order (header, then cells by sheet, row and column): the shared-string order
+   * @returns {Generator<string, void, undefined>} */
   function* texts() {
     for (let s = 1; s <= p.sheets; s++) {
       for (const h of headers) for (const t of h) yield t;
@@ -286,6 +558,7 @@ function xlsxParts(p, rows) {
   }
   /* a sheet's first shared-string index: the texts of every sheet before it. Computed, never carried over from a
      previous pass, so the archive is the same bytes each time it is streamed (zipChunks64Sized counts it first). */
+  /** @param {number} s @returns {number} */
   const startOf = (s) => {
     let n = 0;
     for (let k = 1; k < s; k++) {
@@ -296,9 +569,11 @@ function xlsxParts(p, rows) {
   };
   let sstIndex = 0;
   const noR = p.hostile === "no-r", styled = p.hostile === "styled-empty";
+  /** @param {string} ref @param {string} t @returns {string} */
   const textCell = (ref, t) => (shared ? `<c${ref} t="s"><v>${sstIndex++}</v></c>` : `<c${ref} t="inlineStr"><is><t xml:space="preserve">${esc(t)}</t></is></c>`);
   const lastCol = colName(p.cols), lastRow = p.headerRows + rows;
   for (let s = 1; s <= p.sheets; s++) {
+    /** @type {string[]} */
     const comments = [];
     files.push({
       name: `xl/worksheets/sheet${s}.xml`,
@@ -307,6 +582,7 @@ function xlsxParts(p, rows) {
         const dim = p.hostile === "lying-dimension" ? "A1:XFD1048576" : `A1:${lastCol}${Math.max(lastRow, 1)}`;
         yield `${XML}<worksheet xmlns="${NS_MAIN}" xmlns:r="${NS_R}"><dimension ref="${dim}"/><sheetData>`;
         let batch = "";
+        /** @param {number} c @param {number} r @returns {string} */
         const ref = (c, r) => (noR ? "" : ` r="${colName(c)}${r}"`);
         headers.forEach((h, k) => {
           const r = k + 1;
@@ -318,10 +594,11 @@ function xlsxParts(p, rows) {
           for (let c = 1; c <= p.cols; c++) {
             const cell = cellOf(p, rows, d, c, s);
             if (!cell) { if (styled || noR) row += `<c${ref(c, r)}${styled ? ' s="3"' : ""}/>`; continue; }
-            if (cell.type === "text") row += textCell(ref(c, r), cell.text);
-            else if (cell.type === "formula") row += `<c${ref(c, r)}><f>${cell.formula}</f><v>${cell.value}</v></c>`;
-            else if (cell.type === "date") row += `<c${ref(c, r)} s="${STYLE.date}"><v>${cell.serial}</v></c>`;
-            else row += `<c${ref(c, r)}${STYLE[cell.type] ? ` s="${STYLE[cell.type]}"` : ""}><v>${cell.value}</v></c>`;
+            const type = cell.type;
+            if (type === "text") row += textCell(ref(c, r), cell.text);
+            else if (type === "formula") row += `<c${ref(c, r)}><f>${cell.formula}</f><v>${cell.value}</v></c>`;
+            else if (type === "date") row += `<c${ref(c, r)} s="${STYLE.date}"><v>${cell.serial}</v></c>`;
+            else row += `<c${ref(c, r)}${STYLE[type] ? ` s="${STYLE[type]}"` : ""}><v>${cell.value}</v></c>`;
             if (cell.mark && p.recipe.annotations && s === 1) comments.push(`${colName(c)}${r}`);
           }
           batch += `${row}</row>`;
@@ -342,7 +619,12 @@ function xlsxParts(p, rows) {
   return files;
 }
 
-/** The annotations: one on each mark of sheet 1, `<mark>-note`. */
+/**
+ * The annotations: one on each mark of sheet 1, `<mark>-note`.
+ * @param {Plan} p
+ * @param {number} rows
+ * @returns {Annotation[]}
+ */
 function annotationsOf(p, rows) {
   if (!p.recipe.annotations) return [];
   return markRows(rows).map((d) => { const r = p.headerRows + d, mark = markAt(p, rows, d, p.markCol, 1); return { ref: `${colName(p.markCol)}${r}`, row: r, col: p.markCol, text: `${mark}-note` }; });
@@ -354,15 +636,19 @@ const ODS_NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" 
 /* An annotation's frame and text styles: LibreOffice (24.2) fails to load an annotation that names none. */
 const ODS_STYLES = '<office:automatic-styles><style:style style:name="gr1" style:family="graphic"><style:graphic-properties draw:fill="solid" fo:background-color="#ffffcc"/></style:style><style:style style:name="P1" style:family="paragraph"><style:paragraph-properties/></style:style></office:automatic-styles>';
 
+/** @param {Plan} p @param {number} rows @returns {(DataPart|TextPart)[]} */
 function odsParts(p, rows) {
   const headers = headerOf(p);
   const notes = new Map(annotationsOf(p, rows).map((a) => [a.ref, a.text]));
+  /** @param {string} t @param {string} [extra] @param {string} [note] @returns {string} */
   const textCell = (t, extra = "", note = "") => `<table:table-cell office:value-type="string"${extra}>${note ? `<office:annotation draw:style-name="gr1" draw:text-style-name="P1" svg:width="30mm" svg:height="10mm" svg:x="10mm" svg:y="10mm"><dc:creator>bio</dc:creator><dc:date>2026-01-01T00:00:00</dc:date><text:p>${esc(note)}</text:p></office:annotation>` : ""}${t.split("\n").map((l) => `<text:p>${esc(l).replace(/\t/g, "<text:tab/>")}</text:p>`).join("")}</table:table-cell>`;
+  /** @param {Cell} cell @returns {string} */
   const valueCell = (cell) => {
-    if (cell.type === "date") return `<table:table-cell office:value-type="date" office:date-value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
-    if (cell.type === "percent") return `<table:table-cell office:value-type="percentage" office:value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
-    if (cell.type === "currency") return `<table:table-cell office:value-type="currency" office:currency="USD" office:value="${cell.value}"><text:p>${esc(cell.text)}</text:p></table:table-cell>`;
-    if (cell.type === "formula") return `<table:table-cell table:formula="of:=ROW()*2" office:value-type="float" office:value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
+    const type = cell.type;
+    if (type === "date") return `<table:table-cell office:value-type="date" office:date-value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
+    if (type === "percent") return `<table:table-cell office:value-type="percentage" office:value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
+    if (type === "currency") return `<table:table-cell office:value-type="currency" office:currency="USD" office:value="${cell.value}"><text:p>${esc(cell.text)}</text:p></table:table-cell>`;
+    if (type === "formula") return `<table:table-cell table:formula="of:=ROW()*2" office:value-type="float" office:value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
     return `<table:table-cell office:value-type="float" office:value="${cell.value}"><text:p>${cell.text}</text:p></table:table-cell>`;
   };
   return [
@@ -376,7 +662,8 @@ function odsParts(p, rows) {
         for (let s = 1; s <= p.sheets; s++) {
           let batch = `<table:table table:name="Sheet${s}"><table:table-column table:number-columns-repeated="${p.cols}"/>`;
           headers.forEach((h, k) => {
-            if (k === 0 && p.header === "title" && p.recipe.merged) batch += `<table:table-row>${textCell(h[0], ` table:number-columns-spanned="${p.cols}"`)}${"<table:covered-table-cell/>".repeat(p.cols - 1)}</table:table-row>`;
+            const title = h[0]; /* the title row is `[<seed>-title]`, so it is always there when it is merged */
+            if (k === 0 && p.header === "title" && p.recipe.merged && title !== undefined) batch += `<table:table-row>${textCell(title, ` table:number-columns-spanned="${p.cols}"`)}${"<table:covered-table-cell/>".repeat(p.cols - 1)}</table:table-row>`;
             else batch += `<table:table-row>${h.length ? h.map((t) => textCell(t)).join("") : "<table:table-cell/>"}</table:table-row>`;
           });
           for (let d = 1; d <= rows; d++) {
@@ -402,23 +689,52 @@ function odsParts(p, rows) {
 
 /* ---- the file ---- */
 
-/** The ZIP entries of an XLSX or ODS with `rows` data rows, the hostile directory applied. */
+/**
+ * The ZIP entries of an XLSX or ODS with `rows` data rows, the hostile directory applied.
+ * @param {Plan} p
+ * @param {number} rows
+ * @returns {(DataPart|TextPart)[]}
+ */
 function packageEntries(p, rows) {
   const entries = p.kind === "xlsx" ? xlsxParts(p, rows) : odsParts(p, rows);
   if (p.hostile === "lying-directory") {
     const sheet = entries.find((e) => e.name === "xl/worksheets/sheet1.xml" || e.name === "content.xml");
+    /* an XLSX of no sheets has none: the same TypeError as setting a member of undefined */
+    if (sheet === undefined) throw new TypeError("Cannot set properties of undefined (setting 'central')");
     sheet.central = { uncompressedSize: 1 };
   }
   return entries;
 }
 
+/** @param {(DataPart|TextPart)[]} entries @returns {(DataPart|BytesPart)[]} */
 const encodeChunks = (entries) => entries.map((e) => (e.chunks ? { ...e, chunks: async function* () { const t = new TextEncoder(); for await (const c of e.chunks()) yield t.encode(c); } } : e));
 
 
+/**
+ * The refusal a recipe's `bound` states for a file of `size` bytes.
+ * @param {number|undefined} bound
+ * @param {number|null|undefined} size
+ * @returns {Refusal|null|0|undefined}
+ */
+const refusalOf = (bound, size) => (bound && Number(size) > bound ? { code: "TOO_LARGE", size, bound } : null);
+
+/**
+ * @typedef {Object} TruthExtra
+ * @property {Pad|null} [pad]
+ * @property {number|null} [size]
+ */
+/**
+ * @param {Plan} p
+ * @param {number} rows
+ * @param {TruthExtra} [extra]
+ * @returns {SheetTruth}
+ */
 function truthFrom(p, rows, extra = {}) {
-  const headers = headerOf(p);
+  const headers = headerOf(p), pad = extra.pad;
+  /** @type {Mark[]} */
   const marks = [];
   for (let s = 1; s <= p.sheets; s++) for (const d of markRows(rows)) marks.push({ sheet: s, dataRow: d, row: p.headerRows + d, col: p.markCol, text: markAt(p, rows, d, p.markCol, s) });
+  /** @param {number} d @param {number} [s] @returns {string|null} */
   const rowKey = (d, s = 1) => {
     for (let c = 1; c <= p.cols; c++) { const cell = cellOf(p, rows, d, c, s); if (cell?.type === "text") return cell.text; }
     return null;
@@ -431,7 +747,7 @@ function truthFrom(p, rows, extra = {}) {
     /** the texts of data row d as the file writes them (a CSV record; the padding in its last cell) */
     row: (d, s = 1) => Array.from({ length: rowLength(p, rows, d) }, (_, i) => {
       const c = cellOf(p, rows, d, i + 1, s);
-      return (c ? c.text : "") + (extra.pad && extra.pad.row === d && extra.pad.col === i + 1 ? "x".repeat(extra.pad.chars) : "");
+      return (c ? c.text : "") + (pad && pad.row === d && pad.col === i + 1 ? "x".repeat(pad.chars) : "");
     }),
     rowLength: (d) => rowLength(p, rows, d),
     marks, rowKey,
@@ -440,7 +756,10 @@ function truthFrom(p, rows, extra = {}) {
      * unit, judged by its key (its first text cell, which carries `r<row>c<col>` or a mark). Answers `{ok, missing, repeated}`.
      */
     checkUnits(units, s = 1) {
-      const missing = [], repeated = [];
+      /** @type {number[]} */
+      const missing = [];
+      /** @type {number[]} */
+      const repeated = [];
       for (let d = 1; d <= rows; d++) {
         const key = rowKey(d, s);
         if (key === null) continue;
@@ -453,31 +772,37 @@ function truthFrom(p, rows, extra = {}) {
     merged: p.recipe.merged ? [`A1:${colName(p.cols)}1`] : [],
     annotations: annotationsOf(p, rows),
     pad: extra.pad ?? null, hostile: p.hostile,
-    refusal: p.recipe.bound && extra.size > p.recipe.bound ? { code: "TOO_LARGE", size: extra.size, bound: p.recipe.bound } : null,
+    refusal: refusalOf(p.recipe.bound, extra.size),
     size: extra.size ?? null,
   };
 }
 
-/** The sheet of a recipe (R19, R21): `{kind, ext, type, size, truth, chunks(), bytes()}`; `size` is null for a package
- *  whose size is not named (it is known once streamed). */
+/**
+ * The sheet of a recipe (R19, R21): `{kind, ext, type, size, truth, chunks(), bytes()}`; `size` is null for a package
+ * whose size is not named (it is known once streamed).
+ * @param {SheetRecipe} recipe
+ * @returns {SheetFile}
+ */
 export function generate(recipe) {
-  const p = plan(recipe);
-  if (p.kind === "csv" || p.kind === "tsv") {
+  const p = plan(recipe), kind = p.kind;
+  if (kind === "csv" || kind === "tsv") {
     if (p.sheets !== 1) throw new Error("sheetgen: a csv or tsv has one sheet");
     const L = csvLayout(p);
     const size = p.size.bytes ?? null;
     const truth = truthFrom(p, L.rows, { pad: L.pad, size });
     const chunks = () => csvChunks(p, L);
-    return { kind: p.kind, ext: p.kind, type: TYPES[p.kind], size, truth, chunks, bytes: () => collect(chunks()) };
+    return { kind, ext: kind, type: TYPES[kind], size, truth, chunks, bytes: () => collect(chunks()) };
   }
   const rows = p.size.rows ?? 20;
   const size = p.size.bytes ?? null;
   const truth = truthFrom(p, rows, { size });
-  const chunks = () => (size === null ? zipChunks64(encodeChunks(packageEntries(p, rows))) : zipChunks64Sized(encodeChunks(packageEntries(p, rows)), size, { member: p.kind === "ods" }));
-  return { kind: p.kind, ext: p.kind, type: TYPES[p.kind], size, truth, chunks, bytes: () => collect(chunks()) };
+  const chunks = () => (size === null ? zipChunks64(encodeChunks(packageEntries(p, rows))) : zipChunks64Sized(encodeChunks(packageEntries(p, rows)), size, { member: kind === "ods" }));
+  return { kind, ext: kind, type: TYPES[kind], size, truth, chunks, bytes: () => collect(chunks()) };
 }
 
+/** @param {AsyncIterable<Uint8Array, void, undefined>} it @returns {Promise<Uint8Array>} */
 async function collect(it) {
+  /** @type {Uint8Array[]} */
   const parts = [];
   let n = 0;
   for await (const c of it) { parts.push(c); n += c.length; }
@@ -487,10 +812,14 @@ async function collect(it) {
   return out;
 }
 
-/** The truth of a recipe without building its file (R24): for a CSV sized by bytes the row count comes from a
- *  counting pass over the rows' lengths, which holds nothing. */
+/**
+ * The truth of a recipe without building its file (R24): for a CSV sized by bytes the row count comes from a
+ * counting pass over the rows' lengths, which holds nothing.
+ * @param {SheetRecipe} recipe
+ * @returns {SheetTruth}
+ */
 export function truthOf(recipe) {
-  const p = plan(recipe);
-  if (p.kind === "csv" || p.kind === "tsv") { const L = csvLayout(p); return truthFrom(p, L.rows, { pad: L.pad, size: p.size.bytes ?? null }); }
+  const p = plan(recipe), kind = p.kind;
+  if (kind === "csv" || kind === "tsv") { const L = csvLayout(p); return truthFrom(p, L.rows, { pad: L.pad, size: p.size.bytes ?? null }); }
   return truthFrom(p, p.size.rows ?? 20, { size: p.size.bytes ?? null });
 }
