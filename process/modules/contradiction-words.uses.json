@@ -1,6 +1,6 @@
 {
   "module": "contradiction-words",
-  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"f3edeb2259e4fd97b936f8dcde322814501e5618","tool":"72c177e0704c4047bd0128f7bc6c5e46703ab4f3"},
   "providers": ["setup-words"],
   "uses": [
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/contradiction/checks.mjs","side":"code","line":244,"in":"(top level)"},{"file":"bio-plane/src/contradiction/checks.mjs","side":"code","line":255,"in":"(top level)"},{"file":"bio-plane/src/contradiction/checks.mjs","side":"code","line":260,"in":"(top level)"},{"file":"bio-plane/src/contradiction/checks.mjs","side":"code","line":265,"in":"(top level)"}]},

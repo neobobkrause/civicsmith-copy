@@ -1,6 +1,6 @@
 {
   "module": "filing-texts",
-  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"f3edeb2259e4fd97b936f8dcde322814501e5618","tool":"72c177e0704c4047bd0128f7bc6c5e46703ab4f3"},
   "providers": ["setup-words"],
   "uses": [
     {"provider":"setup-words","item":"WordVars","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/filings/words.mjs","side":"code","line":13,"in":"word"}]},
@@ -68,7 +68,6 @@
     {"rule":"R1","file":"bio-plane/src/filings/outward.mjs","side":"code","line":89,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/filings/outward.mjs","side":"code","line":90,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/filings/outward.mjs","side":"code","line":92,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R14","file":"bio-plane/src/filings/outward.mjs","side":"code","line":99,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":[]},
     {"rule":"S4","file":"bio-plane/src/filings/outward.mjs","side":"code","line":99,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/filings/outward.mjs","side":"code","line":99,"mayRefer":[],"waitsOn":"this module: stated kinds","tests":[]},
     {"rule":"R1","file":"bio-plane/src/filings/outward.mjs","side":"code","line":100,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
@@ -144,7 +143,6 @@
     {"package":"node","facility":"RegExp.test"},
     {"package":"node","facility":"Set"},
     {"package":"node","facility":"Set.add"},
-    {"package":"node","facility":"source"},
     {"package":"node","facility":"String"},
     {"package":"node","facility":"String.includes"},
     {"package":"node","facility":"String.length"},

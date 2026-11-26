@@ -1,6 +1,6 @@
 {
   "module": "civil-time",
-  "written": {"commit":"be4f38b89ca98f407d7eb3dfc861b7c7eb00653b","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"f3edeb2259e4fd97b936f8dcde322814501e5618","tool":"72c177e0704c4047bd0128f7bc6c5e46703ab4f3"},
   "providers": ["setup-words","record-grammar","jurisdictions"],
   "uses": [
     {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/civil-time/calendar.mjs","side":"code","line":55,"in":"officeWords"},{"file":"bio-plane/src/civil-time/calendar.mjs","side":"code","line":105,"in":"calendar"},{"file":"bio-plane/src/civil-time/calendar.mjs","side":"code","line":205,"in":"calendarStated"},{"file":"bio-plane/src/civil-time/calendar.mjs","side":"code","line":207,"in":"calendarStated"},{"file":"bio-plane/src/civil-time/calendar.mjs","side":"code","line":208,"in":"calendarStated"},{"file":"bio-plane/src/civil-time/recurrence.mjs","side":"code","line":256,"in":"expandRecurrence"},{"file":"bio-plane/src/civil-time/rules.mjs","side":"code","line":340,"in":"dueDay"},{"file":"bio-plane/test/m/civil-time/rules.test.mjs","side":"test","line":326,"test":"R16 R25 DEC-149: a disputed or unreadable entry, and a correction counted on, are named in your group's Civicsmith"},{"file":"bio-plane/test/m/civil-time/rules.test.mjs","side":"test","line":364,"test":"R16 undetermined with why: an uncovered year, a withheld fact, a disputed or absent entry, an UNMEASURED basis, an undetermined anchor, a rule form not counted"}]},
@@ -66,7 +66,7 @@
     {"rule":"S4","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":44,"mayRefer":[],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
     {"rule":"S8","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":44,"mayRefer":["*"],"waitsOn":"this module","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
     {"rule":"R1","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"this module","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
-    {"rule":"R14","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
+    {"rule":"R14","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"this module","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
     {"rule":"S4","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
     {"rule":"S8","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":45,"mayRefer":["*"],"waitsOn":"this module","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
     {"rule":"R14","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":52,"mayRefer":["*"],"waitsOn":"this module","tests":["R26 pure: with every clock made to throw (Date.now, a Date with no argument, Temporal.Now), every service answers, and answers the same each time"]},
@@ -79,7 +79,9 @@
     {"rule":"S5","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":85,"mayRefer":["jurisdictions"],"waitsOn":"jurisdictions: the item in its interface files","tests":["R27, R28 with no active profile every service that needs a local fact is undetermined, never a default; absence is never an open day, a closed day or a zero"]},
     {"rule":"S5","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":85,"mayRefer":["jurisdictions"],"waitsOn":"jurisdictions: the item in its interface files","tests":["R27, R28 with no active profile every service that needs a local fact is undetermined, never a default; absence is never an open day, a closed day or a zero"]},
     {"rule":"S5","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":85,"mayRefer":["jurisdictions"],"waitsOn":"jurisdictions: the item in its interface files","tests":["R27, R28 with no active profile every service that needs a local fact is undetermined, never a default; absence is never an open day, a closed day or a zero"]},
-    {"rule":"S5","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":85,"mayRefer":["jurisdictions"],"waitsOn":"jurisdictions: the item in its interface files","tests":["R27, R28 with no active profile every service that needs a local fact is undetermined, never a default; absence is never an open day, a closed day or a zero"]}
+    {"rule":"S5","file":"bio-plane/test/m/civil-time/invariants.test.mjs","side":"test","line":85,"mayRefer":["jurisdictions"],"waitsOn":"jurisdictions: the item in its interface files","tests":["R27, R28 with no active profile every service that needs a local fact is undetermined, never a default; absence is never an open day, a closed day or a zero"]},
+    {"rule":"R19","file":"bio-plane/test/m/civil-time/rules.test.mjs","side":"test","line":76,"mayRefer":[],"waitsOn":"this module: a const copy before narrowing","tests":["R25 traces: the rule and citation, the anchor, each skipped day with why, roll, extension, cutoff, each entry's status, and the runtime's tz and ICU versions"]},
+    {"rule":"R19","file":"bio-plane/test/m/civil-time/rules.test.mjs","side":"test","line":76,"mayRefer":[],"waitsOn":"this module: a const copy before narrowing","tests":["R25 traces: the rule and citation, the anchor, each skipped day with why, roll, extension, cutoff, each entry's status, and the runtime's tz and ICU versions"]}
   ],
   "orderFaults": [],
   "copies": [],
@@ -137,6 +139,9 @@
     {"package":"node","facility":"NodeAssert.notEqual"},
     {"package":"node","facility":"NodeAssert.ok"},
     {"package":"node","facility":"NodeAssert.throws"},
+    {"package":"node","facility":"NodeProcess.versions"},
+    {"package":"node","facility":"NodeProcessVersions.icu"},
+    {"package":"node","facility":"NodeProcessVersions.tz"},
     {"package":"node","facility":"Number"},
     {"package":"node","facility":"NumberConstructor.isInteger"},
     {"package":"node","facility":"NumberConstructor.isSafeInteger"},
