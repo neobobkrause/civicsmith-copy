@@ -7,11 +7,17 @@ import assert from "node:assert/strict";
 import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { buildZip, members, withCd, contentXml, OVER_BOUND } from "./pkg.mjs";
 
+/** @typedef {import("./pkg.mjs").Flavour} Flavour */
+/** @typedef {import("../../../src/odf.mjs").ActiveItem} ActiveItem */
+/** @typedef {typeof odtEntry | typeof odsEntry | typeof odpEntry} Entry */
+
 const ENTRIES = { odt: odtEntry, ods: odsEntry, odp: odpEntry };
+/** @type {Flavour[]} */
 const FLAVOURS = ["odt", "ods", "odp"];
 const SCRIPT_NS = 'xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0"';
 
-/** Both projections carry the one list: assert they agree, and return it. */
+/** Both projections carry the one list: assert they agree, and return it.
+ *  @param {Entry} entry @param {Uint8Array} bytes @returns {Promise<ActiveItem[]>} */
 async function activeOf(entry, bytes) {
   const s = await entry.structure(bytes);
   const t = await entry.text(bytes);
@@ -21,12 +27,15 @@ async function activeOf(entry, bytes) {
   return s.active;
 }
 
+/** @param {string} event @param {string} [href] */
 const listener = (event, href = "vnd.sun.star.script:Standard.Module1.Main?language=Basic&amp;location=document") =>
   `<script:event-listener script:language="ooo:script" script:event-name="${event}" xlink:href="${href}"/>`;
-/** content.xml with the script namespace declared and `scripts` ahead of the body. */
+/** content.xml with the script namespace declared and `scripts` ahead of the body.
+ *  @param {Flavour} flavour @param {string} scripts @param {string} [body] */
 const scripted = (flavour, scripts, body = "") => contentXml(flavour, body)
   .replace("<office:document-content ", `<office:document-content ${SCRIPT_NS} `)
   .replace("<office:font-face-decls>", `<office:scripts><office:event-listeners>${scripts}</office:event-listeners></office:scripts><office:font-face-decls>`);
+/** @param {string} inner */
 const stylesXml = (inner) => `<?xml version="1.0" encoding="UTF-8"?><office:document-styles xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" ${SCRIPT_NS} xmlns:xlink="http://www.w3.org/1999/xlink"><office:styles>${inner}</office:styles></office:document-styles>`;
 
 test("R47 a file with nothing that can act answers active: [] on every entry, structure() and text() alike", async () => {
@@ -64,7 +73,7 @@ test("R47 Basic libraries, event listeners and embedded objects, one item per fi
     // the central directory lists styles.xml first after the mimetype, the body later: the list follows the directory
     const names = list.map((m) => m.name);
     const first = ["mimetype", "styles.xml", "Basic/Standard/Module1.xml"];
-    const cdOrder = [...first.map((n) => names.indexOf(n)), ...names.map((_, i) => i).filter((i) => !first.includes(names[i]))];
+    const cdOrder = [...first.map((n) => names.indexOf(n)), ...names.flatMap((n, i) => (first.includes(n) ? [] : [i]))];
     const active = await activeOf(ENTRIES[f], buildZip(list, { cdOrder }));
     assert.deepEqual(active, [
       { kind: "odf-basic", part: "styles.xml", event: "dom:mouseover" },
@@ -101,6 +110,7 @@ test("R47 an event listener is matched by the script namespace under any prefix;
 });
 
 test("R47 a presentation:event-listener is a launch item only when its action is execute, under any prefix bound to the namespace, in content.xml or styles.xml", async () => {
+  /** @param {string} prefix @param {string} action @param {string} [event] */
   const pl = (prefix, action, event = "dom:click") => `<${prefix}:event-listener script:event-name="${event}" ${prefix}:action="${action}" xlink:href="file:///bin/sh"/>`;
   const content = contentXml("odp", `<draw:page><draw:frame><office:event-listeners>`
     + pl("presentation", "execute") + pl("presentation", "next-page") + pl("presentation", "show")
@@ -179,14 +189,19 @@ test("R47 structure() and text() given parts()' own output carry the same list a
       const fromBytes = await activeOf(e, bytes);
       const p = await e.parts(bytes);
       assert.equal(p.ok, true);
-      assert.deepEqual((await e.structure(p)).active, fromBytes);
-      assert.deepEqual((await e.text(p)).active, fromBytes);
+      const ps = await e.structure(p);
+      assert.ok(ps.ok);
+      assert.deepEqual(ps.active, fromBytes);
+      const pt = await e.text(p);
+      assert.ok(pt.ok);
+      assert.deepEqual(pt.active, fromBytes);
     }
   }
 });
 
 test("R47 read, never run: no listener target is fetched or resolved, and the list survives the repeat bound", async () => {
   const saved = globalThis.fetch;
+  /** @type {unknown[][]} */
   const calls = [];
   globalThis.fetch = (...a) => { calls.push(a); throw new Error("network"); };
   try {
@@ -194,7 +209,8 @@ test("R47 read, never run: no listener target is fetched or resolved, and the li
     const content = scripted("ods", listener("dom:load", "https://example.org/payload"), body);
     const bytes = buildZip(members("ods", { content, extra: [{ name: "Basic/Standard/Module1.xml", data: "Sub Main\nEnd Sub" }] }));
     const t = await odsEntry.text(bytes);
-    assert.equal(t.undetermined[0].why, "over_repeat_bound", "the projection stopped at R45's bound");
+    assert.ok(t.ok);
+    assert.equal(t.undetermined[0]?.why, "over_repeat_bound", "the projection stopped at R45's bound");
     assert.deepEqual(await activeOf(odsEntry, bytes), [
       { kind: "odf-basic", part: "content.xml", event: "dom:load" },
       { kind: "odf-basic", part: "Basic/Standard/Module1.xml" },

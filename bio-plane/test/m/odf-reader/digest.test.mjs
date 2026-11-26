@@ -6,7 +6,12 @@ import { odfEvidentiaryDigest, odtNormalisedContentXml, ODF_EVIDENTIARY_VERSION,
 import { localize } from "../../../src/setup-words/index.mjs";
 import { buildZip, members, pkg, withCd, contentXml, sha256, sha256Hex, enc, TYPES, OVER_BOUND } from "./pkg.mjs";
 
+/** @typedef {import("./pkg.mjs").Flavour} Flavour */
+/** @typedef {import("../../../src/odf.mjs").EvidentiaryDigest} EvidentiaryDigest */
+
+/** @param {unknown} bytes */
 const D = (bytes) => odfEvidentiaryDigest(bytes, sha256Hex);
+/** @param {EvidentiaryDigest} d @param {string | null} flavour */
 const refused = (d, flavour) => {
   assert.equal(d.determined, false);
   assert.equal(d.flavour, flavour);
@@ -48,11 +53,13 @@ test("R33 a flavour with no measured-stable entry (.odp) is refused, naming that
 /* ------------------------------------------------------------------ R34 */
 
 test("R34 refused when content.xml is over the bound (not inflated) or cannot be read whole", async () => {
-  for (const f of ["odt", "ods"]) {
+  for (const f of /** @type {Flavour[]} */ (["odt", "ods"])) {
     const over = await D(buildZip(withCd(members(f), "content.xml", { usize: OVER_BOUND })));
     refused(over, f);
     assert.match(over.basis, /over the declared-uncompressed text bound \(over_size_bound\)/);
-    for (const [cd, why] of [[{ crc: 1 }, "crc_mismatch"], [{ usize: 5 }, "size_mismatch"], [{ lhOffset: 1 }, "local_header_invalid"]]) {
+    /** @type {[{ crc?: number, usize?: number, lhOffset?: number }, string][]} */
+    const cases = [[{ crc: 1 }, "crc_mismatch"], [{ usize: 5 }, "size_mismatch"], [{ lhOffset: 1 }, "local_header_invalid"]];
+    for (const [cd, why] of cases) {
       const d = await D(buildZip(withCd(members(f), "content.xml", cd)));
       refused(d, f);
       assert.match(d.basis, new RegExp(`content\\.xml could not be read whole \\(${why}\\)`));
@@ -66,7 +73,7 @@ test("R35 refused when content.xml references, by any href in any namespace, a m
   const extra = ["Pictures/1.png", "Pictures/2.png", "Object 1/content.xml", "Object 1/styles.xml", "media/v.mp4"].map((name) => ({ name, data: name }));
   const body = `<text:p><draw:frame><draw:image xlink:href="Pictures/1.png"/></draw:frame><draw:frame><draw:object xlink:href="./Object 1"/></draw:frame>`
     + `<draw:frame><draw:plugin foo:href="Pictures/2.png"/></draw:frame><draw:frame><draw:plugin href="media/v.mp4"/></draw:frame></text:p>`;
-  for (const f of ["odt", "ods"]) {
+  for (const f of /** @type {Flavour[]} */ (["odt", "ods"])) {
     const d = await D(pkg(f, { body, extra }));
     refused(d, f);
     assert.match(d.basis, /content\.xml references 5 package member\(s\)/);
@@ -86,7 +93,7 @@ test("R36 an href on a font-face-uri element (any prefix) is not a referenced me
   const fonts = `<style:font-face style:name="A"><svg:font-face-src><svg:font-face-uri xlink:href="Fonts/font1.ttf"/></svg:font-face-src></style:font-face>`
     + `<style:font-face style:name="B"><x:font-face-src><x:font-face-uri y:href="./Fonts/font2.ttf"/></x:font-face-src></style:font-face>`;
   const extra = [{ name: "Fonts/font1.ttf", data: "f1" }, { name: "Fonts/font2.ttf", data: "f2" }, { name: "Pictures/1.png", data: "p" }, { name: "Object 1/content.xml", data: "o" }];
-  for (const f of ["odt", "ods"]) {
+  for (const f of /** @type {Flavour[]} */ (["odt", "ods"])) {
     const d = await D(pkg(f, { fonts, extra, body: "<text:p>t</text:p>" }));
     assert.equal(d.determined, true, d.basis);
     assert.match(d.basis, /embedded font faces are discounted/);
@@ -101,12 +108,15 @@ test("R36 an href on a font-face-uri element (any prefix) is not a referenced me
 /* ------------------------------------------------------------------ R37 */
 
 test("R37 .odt digests content.xml with text:list ids relabelled in document order; .ods digests content.xml unchanged", async () => {
+  /** @param {string} a @param {string} b @param {string} cont */
   const listed = (a, b, cont) => contentXml("odt", `<text:list xml:id="${a}"><text:list-item><text:p>one</text:p></text:list-item></text:list>`
     + `<text:list xml:id='${b}' text:continue-list="${cont}"><text:list-item><text:p>two</text:p></text:list-item></text:list>`);
   const x1 = listed("list888038964", "list1", "list888038964");
   const x2 = listed("list3685929024", "list2", "list3685929024");
   const relabelled = listed("L1", "L2", "L1").replace(`xml:id='L2'`, `xml:id="L2"`);
-  assert.equal(new TextDecoder().decode(odtNormalisedContentXml(enc(x1))), relabelled);
+  const normalised = odtNormalisedContentXml(enc(x1));
+  assert.ok(normalised);
+  assert.equal(new TextDecoder().decode(normalised), relabelled);
   const d1 = await D(pkg("odt", { content: x1 }));
   const d2 = await D(pkg("odt", { content: x2 }));
   assert.equal(d1.determined, true);
@@ -118,7 +128,9 @@ test("R37 .odt digests content.xml with text:list ids relabelled in document ord
   const d3 = await D(pkg("odt", { content: listed("list9", "list10", "list10") }));
   assert.notEqual(d3.evidentiary, d1.evidentiary);
   // a continue-list naming no list is left verbatim
-  assert.match(new TextDecoder().decode(odtNormalisedContentXml(enc(listed("a", "b", "zzz")))), /text:continue-list="zzz"/);
+  const unnamed = odtNormalisedContentXml(enc(listed("a", "b", "zzz")));
+  assert.ok(unnamed);
+  assert.match(new TextDecoder().decode(unnamed), /text:continue-list="zzz"/);
   // the envelope around content.xml does not move it: member order, meta.xml, styles.xml
   const moved = await D(buildZip([...members("odt", { content: x1 }), { name: "meta.xml", data: "<m/>" }, { name: "styles.xml", data: "<s/>" }]));
   assert.equal(moved.evidentiary, d1.evidentiary);
@@ -134,10 +146,12 @@ test("R37 .odt digests content.xml with text:list ids relabelled in document ord
   for (const d of [d1, ds]) {
     assert.ok(d.basis.includes(`odf-evidentiary v${ODF_EVIDENTIARY_VERSION}`));
     assert.match(d.basis, /the ZIP envelope, meta\.xml, settings\.xml, styles\.xml, thumbnails and embedded font faces are discounted/);
-    assert.ok(d.basis.includes(ODF_EVIDENTIARY_MEASURED[d.flavour]));
+    const flavour = d.flavour;
+    assert.ok(flavour === "odt" || flavour === "ods");
+    assert.ok(d.basis.includes(ODF_EVIDENTIARY_MEASURED[flavour]));
   }
   // not valid UTF-8: refused, for either flavour, never decoded lossily
-  for (const f of ["odt", "ods"]) {
+  for (const f of /** @type {Flavour[]} */ (["odt", "ods"])) {
     const bad = new Uint8Array([...enc(contentXml(f, "<text:p>")), 0xff, 0xfe, ...enc("</text:p>")]);
     const r = await D(buildZip(members(f, { content: bad })));
     refused(r, f);
