@@ -8,13 +8,29 @@ import { linkWrapper } from "../../../src/subresources.mjs";
 import { slideShapeRef } from "../../../src/pptx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
 
+/** @typedef {import("../../../src/odf.mjs").OdpStructure} OdpStructure */
+/** @typedef {import("../../../src/odf.mjs").OdpText} OdpText */
+/** @typedef {import("../../../src/odf.mjs").ActiveItem} ActiveItem */
+/** @typedef {import("../../../src/odf.mjs").ImagesPart} ImagesPart */
+/** @typedef {import("../../../src/odf.mjs").ProjectionFailure} ProjectionFailure */
+/** @typedef {import("../../../src/odf.mjs").TextUndetermined} TextUndetermined */
+
+/** @param {string} body @param {string} [styles] */
 const odp = (body, styles = "") => pkg("odp", { body, styles });
-const S = (b, st) => odpEntry.structure(odp(b, st));
-const T = (b, st) => odpEntry.text(odp(b, st));
+/* Every test that calls S or T reads the answer's slides, links, text or items, so relies on the read succeeding:
+   the helpers state that (assert.ok(x.ok)) before handing the answer back. */
+/** @param {string} b @param {string} [st] */
+const S = async (b, st) => { const s = await odpEntry.structure(odp(b, st)); assert.ok(s.ok); return s; };
+/** @param {string} b @param {string} [st] */
+const T = async (b, st) => { const t = await odpEntry.text(odp(b, st)); assert.ok(t.ok); return t; };
+/** @param {OdpStructure} s @param {string} kind */
 const items = (s, kind) => s.evidentiary.items.filter((i) => i.kind === kind);
 
+/** @param {...string} ps */
 const box = (...ps) => `<draw:frame><draw:text-box>${ps.map((p) => `<text:p>${p}</text:p>`).join("")}</draw:text-box></draw:frame>`;
+/** @param {...string} ps */
 const notes = (...ps) => `<presentation:notes><draw:page-thumbnail/>${box(...ps)}</presentation:notes>`;
+/** @param {string} inner @param {string} [attrs] */
 const page = (inner, attrs = "") => `<draw:page${attrs ? " " + attrs : ""}>${inner}</draw:page>`;
 const STYLES = `<style:style style:name="dpHidden" style:family="drawing-page"><style:drawing-page-properties presentation:visibility="hidden"/></style:style>
   <style:style style:name="dpShown" style:family="drawing-page"><style:drawing-page-properties presentation:visibility="visible"/></style:style>`;
@@ -37,8 +53,12 @@ const DECK = [
 test("R21 slides counts the <draw:page> elements, or is null when the body was not read", async () => {
   assert.equal((await S(DECK, STYLES)).slides, 5);
   assert.equal((await S("")).slides, 0);
-  assert.equal((await odpEntry.structure(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { usize: OVER_BOUND })))).slides, null);
-  assert.equal((await odpEntry.structure(pkg("odp", { content: "<office:document-content/>" }))).slides, null);
+  const overS = await odpEntry.structure(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { usize: OVER_BOUND })));
+  assert.ok(overS.ok);
+  assert.equal(overS.slides, null);
+  const noBodyS = await odpEntry.structure(pkg("odp", { content: "<office:document-content/>" }));
+  assert.ok(noBodyS.ok);
+  assert.equal(noBodyS.slides, null);
 });
 
 /* ------------------------------------------------------------------ R22 */
@@ -53,7 +73,7 @@ test("R22 speaker-notes per page with non-empty notes, hidden-slide per hidden p
     { kind: "hidden-slide", slide: 2, part: "content.xml", source: slideShapeRef(2) },
     { kind: "hidden-slide", slide: 3, part: "content.xml", source: slideShapeRef(3) },
   ]);
-  assert.ok(s.links.every((l) => l.target.url !== "https://notes.example"));
+  assert.ok(s.links.every((l) => { const t = l.target; return ("url" in t ? t.url : undefined) !== "https://notes.example"; }));
   const t = await T(DECK, STYLES);
   assert.ok(t.slides.every((x) => !x.text.includes("note")));
 });
@@ -74,7 +94,7 @@ test("R23 links: every href in a page's own shapes, once, at slideShapeRef(slide
   // a draw:a wrapping a group belongs to the group; one inside a shape wrapping nothing, to that shape; one wrapping nothing at page level, to the page
   const wraps = await S(page(`<draw:a xlink:href="#g"><draw:g><draw:rect/></draw:g></draw:a>`
     + `<draw:frame><draw:a xlink:href="#inside"></draw:a></draw:frame><draw:a xlink:href="#pageLevel"></draw:a>`));
-  assert.deepEqual(wraps.links.map((l) => [l.target.fragment, l.source]), [
+  assert.deepEqual(wraps.links.map((l) => { const t = l.target; return ["fragment" in t ? t.fragment : undefined, l.source]; }), [
     ["#g", slideShapeRef(1, 0)], ["#inside", slideShapeRef(1, 2)], ["#pageLevel", slideShapeRef(1)],
   ]);
   // two pages: numbering restarts per slide
@@ -115,17 +135,24 @@ test("R26 deckLength equals the slide count once the body is read, and is null o
   assert.equal(t.deckLength, 5);
   assert.equal(t.deckLength, t.slides.length);
   assert.equal((await T("")).deckLength, 0);
-  assert.equal((await odpEntry.text(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { usize: OVER_BOUND })))).deckLength, null);
-  assert.equal((await odpEntry.text(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { crc: 5 })))).deckLength, null);
+  const overT = await odpEntry.text(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { usize: OVER_BOUND })));
+  assert.ok(overT.ok);
+  assert.equal(overT.deckLength, null);
+  const crcT = await odpEntry.text(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { crc: 5 })));
+  assert.ok(crcT.ok);
+  assert.equal(crcT.deckLength, null);
 });
 
 /* ------------------------------------------------------------------ R27 */
 
 test("R27 text() over the guard, or with no readable body: document null, lists empty, the guard marker or main_part_unreadable", async () => {
   const over = await odpEntry.text(buildZip(withCd(members("odp", { body: DECK }), "content.xml", { usize: OVER_BOUND })));
+  /** @param {TextUndetermined[]} undetermined @param {ActiveItem[]} [active] */
   const want = (undetermined, active = []) => ({ ok: true, container: "odp", document: null, slides: [], speakerNotes: [], parts: null, deckLength: null,
     undetermined, counts: { chars: 0, notesChars: 0, undetermined: 1, scanned_bytes: undefined }, active });
-  const strip = ({ images, imagesWhy, ...r }) => ({ ...r, counts: { ...r.counts, scanned_bytes: undefined } });
+  /* each answer stripped is compared with want()'s ok: true, so relies on the read succeeding */
+  /** @param {(OdpText & { active: ActiveItem[] } & ImagesPart) | ProjectionFailure} a */
+  const strip = (a) => { assert.ok(a.ok); const { images, imagesWhy, ...r } = a; return { ...r, counts: { ...r.counts, scanned_bytes: undefined } }; };
   assert.deepEqual(strip(over), want([{ ...sizeGuard(OVER_BOUND), final: true }], [{ kind: "unread", part: "content.xml", why: "over_size_bound" }]));
   assert.deepEqual(strip(await odpEntry.text(buildZip(withCd(members("odp"), "content.xml", { crc: 5 })))),
     want([{ reason: "main_part_unreadable", part: "content.xml", why: "crc_mismatch" }], [{ kind: "unread", part: "content.xml", why: "crc_mismatch" }]));
