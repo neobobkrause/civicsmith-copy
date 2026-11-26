@@ -10,6 +10,7 @@
 /* The rows a stream pass reads ahead when a view asks for rows out of order: a pass reads the source once and keeps
    at most this many of its rows. */
 import { word, localize } from "../setup-words/index.mjs";
+import { isObject } from "./decimal.mjs";
 
 /* A row is an object keyed by field name, or an array of cells in `fields` order: written out as
    `{ [key: string]: Data } | Data[]` wherever it stands. */
@@ -121,33 +122,52 @@ function asCells(row) {
   return row;
 }
 
+/** An iterator over a caller's rows, as a pass reads it. @typedef {{ next: () => IteratorResult<Data, Data>, return?: () => Data }} RowIterator */
+/** A value that holds its own iterator. @typedef {{ [Symbol.iterator]: () => Data }} RowIterable */
+/** A streamed row's cells. @typedef {Data[]} Cells */
+
+/** Whether a value answers `next`, as an iterator does.
+ *  @param {unknown} x @returns {x is RowIterator} */
+export const isRowIterator = (x) => isObject(x) && typeof x.next === "function";
+/** Whether a value holds its own iterator.
+ *  @param {unknown} x @returns {x is RowIterable} */
+export const isRowIterable = (x) => (typeof x === "object" || typeof x === "function") && x !== null
+  && Symbol.iterator in x && typeof x[Symbol.iterator] === "function";
+/** @param {unknown} x @returns {x is Cells} */
+const isCells = (x) => Array.isArray(x);
+
+/* What a pass meets on a value that answers no `next`: the language's own error for `it.next()`. */
+/** @type {RowIterator} */
+const NO_NEXT = { next: () => { throw new TypeError("it.next is not a function"); } };
+
 /** The iterator a caller's rows answer, or `null` when they answer none.
- *  @param {RowSource} x @returns {Iterator<Data[], Data, undefined> | null} */
+ *  @param {unknown} x @returns {RowIterator | null} */
 export function iteratorOf(x) {
-  if (x === null || typeof x !== "object") return null;
-  if ("next" in x && typeof x.next === "function") return x;
-  if (Symbol.iterator in x && typeof x[Symbol.iterator] === "function") return x[Symbol.iterator]();
+  if (isRowIterator(x)) return x;
+  if (typeof x === "string") return x[Symbol.iterator]();
+  if (isRowIterable(x)) {
+    const got = x[Symbol.iterator]();
+    if (isRowIterator(got)) return got;
+    return got ? NO_NEXT : null;
+  }
   return null;
 }
 
-/** The message of an error a caller's code raised.
+/** The message of an error a caller's code raised, read as the language reads `e.message`.
  *  @param {unknown} e @returns {string} */
-export const messageOf = (e) => String(e instanceof Error ? e.message : undefined);
-
-/* What a caller's rows raised when first asked for. */
-class Thrown {
-  /** @type {unknown} */
-  e;
-  /** @param {unknown} e */
-  constructor(e) { this.e = e; }
-}
+export const messageOf = (e) => {
+  if (e === null || e === undefined) throw new TypeError(`Cannot read properties of ${e} (reading 'message')`);
+  return String(isObject(e) ? e.message : undefined);
+};
 
 /** Why a streamed table cannot be read, or `{size}`: one pass over it, checking every row's shape.
  *  @param {StreamedTable} input @param {string} name @returns {{ why: string } | { size: number }} */
 export function streamFault(input, name) {
-  const it = (() => { try { return iteratorOf(input.rows()); } catch (e) { return new Thrown(e); } })();
-  if (it instanceof Thrown) return { why: word("calc-grammar.why.input_rows_read", { name: String(name), message: messageOf(it.e) }) };
-  if (!it) return { why: word("calc-grammar.why.input_streamed_table", { name: String(name) }) };
+  // What the rows answer, or what they raise: an error is reported, anything else is read as their iterator.
+  const got = (() => { try { return iteratorOf(input.rows()); } catch (e) { return e; } })();
+  if (got instanceof Error) return { why: word("calc-grammar.why.input_rows_read", { name: String(name), message: messageOf(got) }) };
+  if (!got) return { why: word("calc-grammar.why.input_streamed_table", { name: String(name) }) };
+  const it = isRowIterator(got) ? got : NO_NEXT;
   const width = input.fields.length;
   let size = 0;
   try {
@@ -155,7 +175,7 @@ export function streamFault(input, name) {
       const s = it.next();
       if (s.done) break;
       const value = s.value;
-      if (!Array.isArray(value) || value.length !== width)
+      if (!isCells(value) || value.length !== width)
         return { why: word("calc-grammar.why.input_row_array", { name: String(name), size: String(size), width: String(width) }) };
       size += 1;
     }
@@ -171,14 +191,14 @@ export function streamTable(fields, input, size, name) {
   const bad = (why) => stop("INPUT_INVALID", localize("calc-grammar.tables.the_input_name_why", "the input \"{name}\": {why}", { name: String(name), why: String(why) }), null);
   /** @param {unknown} e @returns {never} */
   const unread = (e) => bad(`its rows could not be read again: ${messageOf(e)}`);
-  /** @returns {Iterator<Data[], Data, undefined>} */
+  /** @returns {RowIterator} */
   const again = () => {
-    /** @type {Iterator<Data[], Data, undefined> | null} */
+    /** @type {RowIterator | null} */
     let found = null;
     try { found = iteratorOf(input.rows()); } catch (e) { unread(e); }
     return found ?? bad("its rows answered no iterator on a later pass");
   };
-  /** @param {Iterator<Data[], Data, undefined>} it @returns {IteratorResult<Data[], Data>} */
+  /** @param {RowIterator} it @returns {IteratorResult<Data, Data>} */
   const step = (it) => { try { return it.next(); } catch (e) { return unread(e); } };
   /** @returns {Generator<{ [key: string]: Data } | Data[], void, undefined>} */
   function* scan() {
@@ -189,7 +209,7 @@ export function streamTable(fields, input, size, name) {
         const s = step(it);
         if (s.done) break;
         const value = s.value;
-        if (!Array.isArray(value) || value.length !== width) bad(`row ${n} is not an array of its ${width} cells in fields order`);
+        if (!isCells(value) || value.length !== width) bad(`row ${n} is not an array of its ${width} cells in fields order`);
         n += 1;
         yield value;
       }

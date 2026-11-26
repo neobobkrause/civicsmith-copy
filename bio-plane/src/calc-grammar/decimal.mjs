@@ -65,6 +65,17 @@ import { word } from "../setup-words/index.mjs";
  * @property {Dec} [value]
  */
 /**
+ * A figure read as `readFigure` reads it: a part that is not an exact decimal is `null`.
+ * @typedef {Object} LooseReading
+ * @property {Dec | null} lo
+ * @property {Dec | null} hi
+ * @property {Precision} precision
+ * @property {boolean} approximate
+ * @property {string | undefined} unit
+ * @property {string | undefined} currency
+ * @property {Dec | null} [value]
+ */
+/**
  * What `makeFigure` writes back as a figure.
  * @typedef {Object} FigureParts
  * @property {Dec} lo
@@ -236,9 +247,9 @@ function roundedHalfUnit(d) {
   return { n: 5n * pow10(k), s: 1 };
 }
 
-/** A figure to `{lo, hi, precision, approximate, unit, currency, value?}`; `value` is the stated value when not a range.
- *  @param {Figure} f @returns {Reading} */
-export function readFigure(f) {
+/* A figure `figureFault` has accepted, read as an interval with its precision. */
+/** @param {Figure} f @returns {Reading} */
+function readValid(f) {
   const precision = f.precision;
   const approximate = precision === "approximate" || f.approximate === true;
   if (precision === "range") return { precision, approximate, unit: f.unit, currency: f.currency, lo: decOf(f.low), hi: decOf(f.high) };
@@ -247,15 +258,48 @@ export function readFigure(f) {
   return { precision, approximate, unit: f.unit, currency: f.currency, lo: v, hi: v, value: v };
 }
 
-/** The interval a figure may stand for, for comparison: a rounded figure widens by half its unit.
- *  @param {Figure} f @returns {Reading} */
-export function readingOf(f) {
-  const r = readFigure(f);
+/* The interval an accepted figure may stand for: a rounded figure widens by half its unit. */
+/** @param {Figure} f @returns {Reading} */
+function readingValid(f) {
+  const r = readValid(f);
   const v = r.value;
   if (f.precision === "rounded" && v !== undefined) {
     const h = roundedHalfUnit(v);
     return { precision: r.precision, approximate: r.approximate, unit: r.unit, currency: r.currency, lo: subD(v, h),
       hi: addD(v, h), value: v };
+  }
+  return r;
+}
+
+/* A decimal read from a figure, where the reading goes on to use it: the language's own error when there is none. */
+/** @param {Dec | null} d @param {string} member @returns {Dec} */
+function used(d, member) {
+  if (d === null) throw new TypeError(`Cannot read properties of null (reading '${member}')`);
+  return d;
+}
+
+/** A figure to `{lo, hi, precision, approximate, unit, currency, value?}`; `value` is the stated value when not a range.
+ *  A part that is not an exact decimal reads as `null`.
+ *  @param {Figure} f @returns {LooseReading} */
+export function readFigure(f) {
+  const precision = f.precision;
+  const approximate = precision === "approximate" || f.approximate === true;
+  if (precision === "range") return { precision, approximate, unit: f.unit, currency: f.currency, lo: dec(f.low), hi: dec(f.high) };
+  const v0 = dec(f.value);
+  const v = f.sign === "-" ? negD(used(v0, "n")) : v0;
+  return { precision, approximate, unit: f.unit, currency: f.currency, lo: v, hi: v, value: v };
+}
+
+/** The interval a figure may stand for, for comparison: a rounded figure widens by half its unit.
+ *  @param {Figure} f @returns {LooseReading} */
+export function readingOf(f) {
+  const r = readFigure(f);
+  const v = r.value;
+  if (f.precision === "rounded" && v !== undefined) {
+    const d = used(v, "s");
+    const h = roundedHalfUnit(d);
+    return { precision: r.precision, approximate: r.approximate, unit: r.unit, currency: r.currency, lo: subD(d, h),
+      hi: addD(d, h), value: d };
   }
   return r;
 }
@@ -308,7 +352,7 @@ function figureOf(f) {
 /** @param {Data} f @returns {Reading | Refusal} */
 function operand(f) {
   const g = figureOf(f);
-  return "refusal" in g ? g.refusal : readFigure(g.figure);
+  return "refusal" in g ? g.refusal : readValid(g.figure);
 }
 
 /** @param {Data} a @param {Data} b @param {number} sign @returns {Figure | Refusal} */
@@ -419,7 +463,7 @@ export function relate(a, b) {
   if ("refusal" in fa) return fa.refusal;
   const fb = figureOf(b);
   if ("refusal" in fb) return fb.refusal;
-  const x = readingOf(fa.figure); const y = readingOf(fb.figure);
+  const x = readingValid(fa.figure); const y = readingValid(fb.figure);
   if (!sameDims(x, y)) return mismatch(x, y);
   if (x.approximate || y.approximate) return undetermined(word("calc-grammar.approximate_figure_settle"));
   if (cmpD(x.hi, y.lo) < 0) return "lower";
