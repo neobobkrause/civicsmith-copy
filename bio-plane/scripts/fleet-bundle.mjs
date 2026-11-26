@@ -116,7 +116,80 @@ import { parse as acornParse, tokenizer as acornTokenizer, tokTypes as acornType
 import { readGitProvenance, reportProvenance, repoPath } from "./provenance.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
 
-export const REPO_ROOT = resolve(join(dirname(fileURLToPath(import.meta.url)), "..", ".."));
+/** @typedef {unknown[]} List a list, as read from a file */
+/** @typedef {{ [key: string]: unknown }} Block an object, as read from a file */
+/**
+ * @typedef {Object} Bundle a member's `bundle` block; its paths are member-relative
+ * @property {string} entry
+ * @property {string} outfile the artifact
+ * @property {string} manifest
+ * @property {readonly string[]} [external] the specifiers left unbundled; absent is `DEFAULT_EXTERNAL`
+ * @property {boolean} [ascii] whether the pure-ASCII recipe applies (R2); absent is the rule
+ * @property {unknown} [assets] the upload parts beside the bundle
+ */
+/**
+ * @typedef {Object} Marker a member's `fleet-member.json`, as its member writes it
+ * @property {string} [name]
+ * @property {string} [entry]
+ * @property {Bundle} [bundle]
+ * @property {unknown} [kind]
+ * @property {unknown} [image]
+ * @property {unknown} [containers]
+ * @property {unknown} [class_name]
+ * @property {unknown} [max_instances]
+ * @property {unknown} [bind]
+ * @property {unknown} [build]
+ */
+/** @typedef {Block & { image: Block }} ClassEntry one entry of a marker's `containers` list */
+/** @typedef {{ class_name: unknown, image: Block }} ListedClass a class as `discoverMembers` lists it */
+/**
+ * @typedef {Object} Member a fleet member as `discoverMembers` lists it, the plane's descriptor, or another made the same way
+ * @property {string} dir
+ * @property {string} name
+ * @property {string} abs the member's folder
+ * @property {string | null} [entry]
+ * @property {Bundle | null} [bundle]
+ * @property {string} [kind] `worker` or `container`
+ * @property {Block | null} [image]
+ * @property {ListedClass[]} [containers]
+ * @property {Marker} [marker] its `fleet-member.json`; a member `discoverMembers` found carries one
+ * @property {boolean} [wholeWordTable] whether its bundle keeps the whole word table (the plane)
+ */
+/** @typedef {{ name: string, version: string }} Package */
+/** @typedef {{ class_name: unknown, image: unknown, max_instances: unknown, bind: unknown, instance_type?: unknown }} ContainerClass one class of a container member, as its marker states it */
+/** @typedef {{ member: string, binding: string }} Bind */
+/**
+ * @typedef {Object} ContainerDescriptor a class's `Container` part
+ * @property {string} class_name
+ * @property {string} image `<repository>@sha256:<64 hex>`
+ * @property {string} scheduling_policy
+ * @property {number} max_instances
+ * @property {unknown} [instance_type]
+ * @property {Bind[]} bind
+ * @property {Package[]} [packages]
+ */
+/** @typedef {{ missing?: string[], descriptor?: ContainerDescriptor, bytes?: Buffer }} DescriptorRead a descriptor and its bytes, or the fields it lacks */
+/** @typedef {{ path: string, class_name: unknown, descriptor: ContainerDescriptor | undefined, bytes: Buffer | undefined }} ContainerPart */
+/** @typedef {{ packages?: Package[] | undefined, ecosystem?: string, unread?: string }} PackagesRead a list of packages, or why it is unread */
+
+/** Is it a list?
+ * @param {unknown} x
+ * @returns {x is List} */
+function isList(x) { return Array.isArray(x); }
+/** Is it an object, a list included?
+ * @param {unknown} x
+ * @returns {x is Block} */
+function isObject(x) { return typeof x === "object" && x !== null; }
+/** The `code` a Node error carries.
+ * @param {unknown} e
+ * @returns {unknown} */
+function codeOf(e) { return e instanceof Error && "code" in e ? e.code : undefined; }
+/** An error's message.
+ * @param {unknown} e
+ * @returns {string | undefined} */
+function messageOf(e) { return e instanceof Error ? e.message : undefined; }
+
+export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /* The recipe every member shares. A member's `fleet-member.json` may override
    `entry`, `outfile`, `manifest` and `external`; it may NOT override `format` or
@@ -125,6 +198,7 @@ export const REPO_ROOT = resolve(join(dirname(fileURLToPath(import.meta.url)), "
 export const RECIPE = Object.freeze({ format: "esm", platform: "neutral" });
 export const DEFAULT_EXTERNAL = Object.freeze(["cloudflare:workers", "node:*"]);
 
+/** @type {(buf: string | Uint8Array) => string} */
 export const sha256 = (buf) => createHash("sha256").update(buf).digest("hex");
 
 /* The remedy every staleness finding names (N31): the one command that rebuilds
@@ -158,57 +232,86 @@ const REBUILD = "Run `node bio-plane/scripts/bundles.mjs` from the repository ro
    the one top-level `image`; `max_instances` and `bind` not stated on a class are read from the member's top level
    (the marker stating them once for every class), and are never defaulted. A `containers` list whose every entry has
    an `image` block is that member's "image block" for R24. */
-const isBlock = (x) => !!x && typeof x === "object" && !Array.isArray(x);
-const classList = (meta) =>
-  (Array.isArray(meta.containers) && meta.containers.length && meta.containers.every((c) => isBlock(c) && isBlock(c.image))
-    ? meta.containers : null);
+/** Is it an object that is not a list?
+ * @param {unknown} x
+ * @returns {x is Block} */
+function isBlock(x) { return !!x && typeof x === "object" && !Array.isArray(x); }
+/** Is it a `containers` entry with an image block?
+ * @param {unknown} c
+ * @returns {c is ClassEntry} */
+function isClassEntry(c) { return isBlock(c) && isBlock(c.image); }
+/** A marker's `containers` list, where every entry has an image block.
+ * @param {unknown} list
+ * @returns {ClassEntry[] | null} */
+function classList(list) {
+  return isList(list) && list.length && list.every(isClassEntry) ? list : null;
+}
 
 /** R24 read off a marker itself (what `deploy-fleet.mjs` holds): `kind: "container"` and an image block, the top-level
  *  one or a `containers` list whose every entry has one. */
-export const markerIsContainer = (meta) => isBlock(meta) && meta.kind === "container" && (isBlock(meta.image) || !!classList(meta));
+/** @type {(meta: unknown) => boolean} */
+export const markerIsContainer = (meta) => isBlock(meta) && meta.kind === "container" && (isBlock(meta.image) || !!classList(meta.containers));
 
+/**
+ * @param {Member | null | undefined} member
+ * @returns {boolean}
+ */
 export function isContainer(member) {
-  return !!member && member.kind === "container"
-    && (isBlock(member.image) || (Array.isArray(member.containers) && member.containers.length > 0));
+  if (!member) return false;
+  const image = member.image, containers = member.containers;
+  return member.kind === "container" && (isBlock(image) || (Array.isArray(containers) && containers.length > 0));
 }
 
 /** Does the bundle guard (R6, R7, R21, R22) cover this member? Every member but a
  *  container member with no Worker bundle (R24). */
+/** @type {(member: Member) => boolean} */
 export const isGuarded = (member) => !isContainer(member) || !!member.bundle;
 
+/**
+ * @param {string} [repoRoot]
+ * @returns {Member[]}
+ */
 export function discoverMembers(repoRoot = REPO_ROOT) {
+  /** @type {Member[]} */
   const out = [];
   for (const dir of readdirSync(repoRoot).filter((d) => !d.startsWith("."))) {
     const marker = join(repoRoot, dir, "fleet-member.json");
+    /** @type {string} */
     let text;
     try { text = readFileSync(marker, "utf8"); }
     catch (e) {
-      if (e.code === "ENOENT" || e.code === "ENOTDIR") continue;   /* not a member */
+      const code = codeOf(e);
+      if (code === "ENOENT" || code === "ENOTDIR") continue;   /* not a member */
       throw e;
     }
     /* A marker that does not parse is an error, never a member that silently
        stops being guarded. */
+    /** @type {Marker} */
     let meta;
-    try { meta = JSON.parse(text); }
-    catch (e) { throw new Error(`fleet member marker ${marker} is not valid JSON: ${e.message}`); }
-    const container = meta.kind === "container";
-    const image = container && isBlock(meta.image) ? meta.image : null;
-    const classes = container ? classList(meta) : null;
-    out.push({
+    try { meta = /** @type {Marker} the member's marker, read whole */ (JSON.parse(text)); }
+    catch (e) { throw new Error(`fleet member marker ${marker} is not valid JSON: ${messageOf(e)}`); }
+    const kind = meta.kind, metaImage = meta.image, bundle = meta.bundle;
+    const container = kind === "container";
+    const image = container && isBlock(metaImage) ? metaImage : null;
+    const classes = container ? classList(meta.containers) : null;
+    /** @type {Member} */
+    const found = {
       dir,
       name: meta.name || dir,
       abs: join(repoRoot, dir),
-      entry: meta.entry || (meta.bundle && meta.bundle.entry) || null,
-      bundle: meta.bundle || null,
-      kind: typeof meta.kind === "string" && meta.kind ? meta.kind : "worker",
+      entry: meta.entry || (bundle && bundle.entry) || null,
+      bundle: bundle || null,
+      kind: typeof kind === "string" && kind ? kind : "worker",
       image,
-      /* R24: a member with several classes is listed with each class's name and image. */
-      ...(classes ? { containers: classes.map((c) => ({ class_name: c.class_name ?? null, image: c.image })) } : {}),
-      marker: meta,
-    });
+    };
+    /* R24: a member with several classes is listed with each class's name and image. */
+    if (classes) found.containers = classes.map((c) => ({ class_name: c.class_name ?? null, image: c.image }));
+    found.marker = meta;
+    out.push(found);
   }
   /* Code-point order, then the directory: the same list on every machine and
      locale, whatever order the file system walks in. */
+  /** @type {(a: string, b: string) => number} */
   const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
   return out.sort((a, b) => cmp(a.name, b.name) || cmp(a.dir, b.dir));
 }
@@ -234,6 +337,10 @@ export function discoverMembers(repoRoot = REPO_ROOT) {
  * the same file `wrangler.jsonc`'s `main` names, so the bundle and a wrangler
  * deploy start from one module (T20, K846). */
 const PLANE_ENTRY = "src/plane/index.mjs";
+/**
+ * @param {string} [repoRoot]
+ * @returns {Member}
+ */
 export function planeMember(repoRoot = REPO_ROOT) {
   return {
     dir: "bio-plane",
@@ -266,12 +373,18 @@ const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 /** `<repository>@sha256:<64 hex>` from a container member's `image` block, or
  *  `{missing}` naming the first field that does not say it. Shared by the release
  *  (R25) and the deploy (R26), so the two cannot name the image differently. */
+/**
+ * @param {unknown} image
+ * @returns {{ reference?: string, missing?: string }}
+ */
 export function imageReference(image) {
-  if (!image || typeof image !== "object") return { missing: "image" };
-  if (typeof image.repository !== "string" || !REPOSITORY.test(image.repository) || image.repository.includes("@"))
+  if (!isObject(image)) return { missing: "image" };
+  const repository = image.repository;
+  if (typeof repository !== "string" || !REPOSITORY.test(repository) || repository.includes("@"))
     return { missing: "image.repository" };
-  if (typeof image.digest !== "string" || !DIGEST.test(image.digest)) return { missing: "image.digest" };
-  return { reference: `${image.repository}@${image.digest}` };
+  const digest = image.digest;
+  if (typeof digest !== "string" || !DIGEST.test(digest)) return { missing: "image.digest" };
+  return { reference: `${repository}@${digest}` };
 }
 
 /* ---- THE NPM PACKAGES A LOCKFILE INSTALLS (bundler R27, R28 (a); F20, F21) ----
@@ -282,33 +395,48 @@ export function imageReference(image) {
  * second entry). The name is the entry's own `name` where npm records one (an
  * alias), else the path's last package segment. A lockfile that is not npm 7+'s
  * shape (no `packages` map) is unread, never an empty list. */
+/** @type {(key: string) => string} */
 const packageOfPath = (key) => {
-  const seg = key.split("node_modules/").pop().split("/");
-  return seg[0].startsWith("@") ? `${seg[0]}/${seg[1]}` : seg[0];
+  const parts = key.split("node_modules/");
+  const seg = (parts[parts.length - 1] ?? "").split("/");
+  const first = seg[0] ?? "", second = seg[1];
+  return first.startsWith("@") ? `${first}/${second}` : first;
 };
+/** @type {(a: Package, b: Package) => number} */
 const byNameVersion = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : a.version < b.version ? -1 : a.version > b.version ? 1 : 0);
 
 /** `{packages: [{name, version}]}` sorted by name then version, or `{unread}` naming the file, or the package
  *  with no version. Never throws. */
+/**
+ * @param {string} lockPath
+ * @param {string} [label]
+ * @returns {PackagesRead}
+ */
 export function npmProductionPackages(lockPath, label = lockPath) {
+  /** @type {unknown} */
   let lock;
   try { lock = JSON.parse(readFileSync(lockPath, "utf8")); }
-  catch (e) { return { unread: `${label} ${e.code === "ENOENT" ? "is missing" : "does not parse"}` }; }
-  if (!lock || typeof lock.packages !== "object" || lock.packages === null || Array.isArray(lock.packages))
+  catch (e) { return { unread: `${label} ${codeOf(e) === "ENOENT" ? "is missing" : "does not parse"}` }; }
+  const parsed = lock;
+  const map = isObject(parsed) ? parsed.packages : undefined;
+  if (!isObject(map) || isList(map))
     return { unread: `${label} does not parse: it has no \`packages\` map (npm 7 or later writes one)` };
+  /** @type {Package[]} */
   const packages = [];
-  for (const [key, entry] of Object.entries(lock.packages)) {
-    if (!key.includes("node_modules/") || !entry || typeof entry !== "object" || entry.dev === true) continue;
-    const name = typeof entry.name === "string" && entry.name ? entry.name : packageOfPath(key);
-    if (typeof entry.version !== "string" || !entry.version)
+  for (const [key, entry] of Object.entries(map)) {
+    if (!key.includes("node_modules/") || !isObject(entry) || entry.dev === true) continue;
+    const named = entry.name, version = entry.version;
+    const name = typeof named === "string" && named ? named : packageOfPath(key);
+    if (typeof version !== "string" || !version)
       return { unread: `${label} names the installed package ${name} (${key}) without a version` };
-    packages.push({ name, version: entry.version });
+    packages.push({ name, version });
   }
   return { packages: packages.sort(byNameVersion) };
 }
 
 /** R27: a container member's image packages, from its own `package-lock.json` (the file its image's `npm ci
  *  --omit=dev` installs from). */
+/** @type {(member: Member) => PackagesRead} */
 export const containerPackages = (member) =>
   npmProductionPackages(join(member.abs, "package-lock.json"), `${member.dir}/package-lock.json`);
 
@@ -329,36 +457,53 @@ const STATEMENT_ECOSYSTEM = /^[A-Za-z][A-Za-z0-9.+:_ -]*$/;
 
 /** `{ecosystem, packages: [{name, version}]}` sorted by name then version, or `{unread}` naming the file, the package
  *  or the digest. Never throws. */
+/**
+ * @param {string} path
+ * @param {string} label
+ * @param {string | null | undefined} baseDigest
+ * @returns {PackagesRead}
+ */
 export function statementPackages(path, label, baseDigest) {
-  let st;
-  try { st = JSON.parse(readFileSync(path, "utf8")); }
-  catch (e) { return { unread: `${label} ${e.code === "ENOENT" ? "is missing" : "does not parse"}` }; }
+  /** @type {unknown} */
+  let read;
+  try { read = JSON.parse(readFileSync(path, "utf8")); }
+  catch (e) { return { unread: `${label} ${codeOf(e) === "ENOENT" ? "is missing" : "does not parse"}` }; }
+  const st = read;
   if (!isBlock(st)) return { unread: `${label} does not parse: it is not a JSON object` };
-  if (typeof st.ecosystem !== "string" || !STATEMENT_ECOSYSTEM.test(st.ecosystem))
+  const ecosystem = st.ecosystem, list = st.packages, stBase = st.base;
+  if (typeof ecosystem !== "string" || !STATEMENT_ECOSYSTEM.test(ecosystem))
     return { unread: `${label} does not parse: it names no ecosystem` };
-  if (!Array.isArray(st.packages)) return { unread: `${label} does not parse: it has no \`packages\` list` };
-  const digest = isBlock(st.base) ? st.base.digest : undefined;
+  if (!isList(list)) return { unread: `${label} does not parse: it has no \`packages\` list` };
+  const digest = isBlock(stBase) ? stBase.digest : undefined;
   if (typeof digest !== "string" || !DIGEST.test(digest))
     return { unread: `${label} names no base image digest (\`base.digest\`, sha256:<64 hex>)` };
   if (digest !== baseDigest)
     return { unread: `${label} was taken against the base ${digest}, not the base the marker pins (${baseDigest ?? "none"})` };
+  /** @type {Package[]} */
   const packages = [];
-  for (const p of st.packages) {
-    const name = isBlock(p) && typeof p.name === "string" && p.name ? p.name : null;
+  for (const p of list) {
+    const pname = isBlock(p) ? p.name : undefined;
+    const name = typeof pname === "string" && pname ? pname : null;
     if (!name) return { unread: `${label} names a package with no name: ${JSON.stringify(p)}` };
-    if (typeof p.version !== "string" || !p.version) return { unread: `${label} names the package ${name} without a version` };
-    packages.push({ name, version: p.version });
+    const version = isBlock(p) ? p.version : undefined;
+    if (typeof version !== "string" || !version) return { unread: `${label} names the package ${name} without a version` };
+    packages.push({ name, version });
   }
-  return { ecosystem: st.ecosystem, packages: packages.sort(byNameVersion) };
+  return { ecosystem, packages: packages.sort(byNameVersion) };
 }
 
 /** A container member's classes, each as the part describes it: one entry per class, `{class_name, image,
  *  max_instances, bind}` with `max_instances` and `bind` taken from the class, else from the member's top level.
  *  One class (the top-level `image` form, or a `containers` list of one) or several. `multi` is true only for more
  *  than one. `conflict` names a marker that states both forms. */
+/**
+ * @param {Member | null | undefined} member
+ * @returns {{ classes: ContainerClass[], multi: boolean, conflict?: string | null }}
+ */
 export function containerClasses(member) {
+  /** @type {Marker} */
   const meta = (member && member.marker) || {};
-  const list = classList(meta);
+  const list = classList(meta.containers);
   if (!list) return { classes: [{ class_name: meta.class_name, image: meta.image, max_instances: meta.max_instances, bind: meta.bind }], multi: false };
   const conflict = isBlock(meta.image) ? "image (a top-level image beside a `containers` list)" : null;
   return {
@@ -371,61 +516,110 @@ export function containerClasses(member) {
 
 /** R27: one class's image packages, `{ecosystem, packages}` or `{unread}`: its package statement where the class names
  *  one, else the member's npm lockfile. */
+/**
+ * @param {Member} member
+ * @param {ContainerClass | null | undefined} cls
+ * @returns {PackagesRead}
+ */
 export function classPackages(member, cls) {
-  const img = isBlock(cls && cls.image) ? cls.image : {};
-  if (img.packages === undefined) {
+  const clsImage = cls && cls.image;
+  /** @type {Block} */
+  const img = isBlock(clsImage) ? clsImage : {};
+  const named = img.packages;
+  if (named === undefined) {
     const r = containerPackages(member);
-    return r.unread ? r : { ecosystem: "npm", packages: r.packages };
+    if (r.unread) return r;
+    return { ecosystem: "npm", packages: r.packages };
   }
-  if (typeof img.packages !== "string" || !img.packages || img.packages.startsWith("/") || img.packages.split("/").includes(".."))
-    return { unread: `${member.dir}/fleet-member.json names no package statement for ${cls.class_name} as a member-relative path` };
-  const base = isBlock(img.base) && typeof img.base.digest === "string" ? img.base.digest : null;
-  return statementPackages(join(member.abs, img.packages), `${member.dir}/${img.packages}`, base);
+  if (typeof named !== "string" || !named || named.startsWith("/") || named.split("/").includes(".."))
+    return { unread: `${member.dir}/fleet-member.json names no package statement for ${cls ? cls.class_name : undefined} as a member-relative path` };
+  const imgBase = img.base;
+  const baseDigest = isBlock(imgBase) ? imgBase.digest : undefined;
+  const base = typeof baseDigest === "string" ? baseDigest : null;
+  return statementPackages(join(member.abs, named), `${member.dir}/${named}`, base);
 }
 
 /** R33: each class's `instance_type` as the member's own `wrangler.jsonc` `containers` block states it (a size name, or
  *  the platform's custom size block), keyed by `class_name`: `{types: Map}`, or `{unread}` naming the file when it does
  *  not parse. A member with no configuration, or a class the block does not list or lists with no `instance_type`, has
  *  none to carry: the field is left out and the platform's default applies, never a guessed size. */
+/**
+ * @param {Member} member
+ * @returns {{ types?: Map<string, unknown>, unread?: string }}
+ */
 export function containerInstanceTypes(member) {
-  const types = new Map();
+  /** @type {Map<string, unknown>} */
+  const types = new Map([]);
+  /** @type {string} */
   let text;
   try { text = readFileSync(join(member.abs, "wrangler.jsonc"), "utf8"); }
-  catch (e) { return e.code === "ENOENT" ? { types } : { unread: `${member.dir}/wrangler.jsonc cannot be read` }; }
-  let cfg;
-  try { cfg = parseJsonc(text, `${member.dir}/wrangler.jsonc`); } catch (e) { return { unread: `${member.dir}/wrangler.jsonc does not parse` }; }
-  for (const c of isBlock(cfg) && Array.isArray(cfg.containers) ? cfg.containers : [])
-    if (isBlock(c) && typeof c.class_name === "string" && c.instance_type !== undefined) types.set(c.class_name, c.instance_type);
+  catch (e) {
+    if (codeOf(e) === "ENOENT") return { types };
+    return { unread: `${member.dir}/wrangler.jsonc cannot be read` };
+  }
+  /** @type {unknown} */
+  let read;
+  try { read = parseJsonc(text, `${member.dir}/wrangler.jsonc`); } catch { return { unread: `${member.dir}/wrangler.jsonc does not parse` }; }
+  const cfg = read;
+  const list = isBlock(cfg) ? cfg.containers : undefined;
+  for (const c of isList(list) ? list : []) {
+    if (!isBlock(c)) continue;
+    const className = c.class_name, size = c.instance_type;
+    if (typeof className === "string" && size !== undefined) types.set(className, size);
+  }
   return { types };
 }
 
+/** @type {(t: unknown) => boolean} */
 const validInstanceType = (t) => (typeof t === "string" && t.trim() !== "") || (isBlock(t) && Object.keys(t).length > 0);
 
 /** One class's descriptor, or the fields it lacks. `cls.instance_type`, where the configuration states one (R33), is
  *  written after `max_instances`. */
+/**
+ * @param {ContainerClass} cls
+ * @param {readonly string[]} memberNames
+ * @param {Package[] | null | undefined} packages
+ * @returns {DescriptorRead}
+ */
 function classDescriptor(cls, memberNames, packages) {
+  /** @type {string[]} */
   const missing = [];
-  const img = imageReference(cls.image);
-  if (img.missing) missing.push(img.missing);
-  const policy = cls.image && cls.image.schedulingPolicy;
+  const image = cls.image;
+  const img = imageReference(image);
+  const imgMissing = img.missing, reference = img.reference;
+  if (imgMissing) missing.push(imgMissing);
+  const policy = !image ? image : isObject(image) ? image.schedulingPolicy : undefined;
   if (policy !== undefined && policy !== "default") missing.push("image.schedulingPolicy");
-  if (typeof cls.class_name !== "string" || !IDENTIFIER.test(cls.class_name)) missing.push("class_name");
-  if (!Number.isInteger(cls.max_instances) || cls.max_instances < 1) missing.push("max_instances");
-  const bindOk = Array.isArray(cls.bind) && cls.bind.length > 0 && cls.bind.every((b) =>
-    b && typeof b === "object" && typeof b.member === "string" && memberNames.includes(b.member)
-    && typeof b.binding === "string" && IDENTIFIER.test(b.binding));
-  if (!bindOk) missing.push("bind");
-  if (cls.instance_type !== undefined && !validInstanceType(cls.instance_type)) missing.push("instance_type");
-  if (missing.length) return { missing };
-  const descriptor = {
-    class_name: cls.class_name,
-    image: img.reference,
-    scheduling_policy: "default",
-    max_instances: cls.max_instances,
-    ...(cls.instance_type !== undefined ? { instance_type: cls.instance_type } : {}),
-    bind: cls.bind.map((b) => ({ member: b.member, binding: b.binding })),
-    ...(packages ? { packages: packages.map((p) => ({ name: p.name, version: p.version })) } : {}),
-  };
+  const className = cls.class_name;
+  if (typeof className !== "string" || !IDENTIFIER.test(className)) missing.push("class_name");
+  const max = cls.max_instances;
+  if (typeof max !== "number" || !Number.isInteger(max) || max < 1) missing.push("max_instances");
+  /** A `bind` entry naming a member of the fleet and a binding.
+   * @param {unknown} b
+   * @returns {b is Bind} */
+  function isBind(b) {
+    if (!isObject(b)) return false;
+    const member = b.member, binding = b.binding;
+    return typeof member === "string" && memberNames.includes(member) && typeof binding === "string" && IDENTIFIER.test(binding);
+  }
+  const bind = cls.bind;
+  const binds = isList(bind) && bind.length > 0 && bind.every(isBind) ? bind : null;
+  if (!binds) missing.push("bind");
+  const size = cls.instance_type;
+  if (size !== undefined && !validInstanceType(size)) missing.push("instance_type");
+  if (missing.length || !binds || typeof className !== "string" || typeof max !== "number" || reference === undefined) return { missing };
+  const bound = binds.map((b) => ({ member: b.member, binding: b.binding }));
+  const listed = packages ? packages.map((p) => ({ name: p.name, version: p.version })) : null;
+  /* The fields in the part's order: `instance_type` after `max_instances`, `packages` last. */
+  /** @type {ContainerDescriptor} */
+  let descriptor;
+  if (size !== undefined && listed)
+    descriptor = { class_name: className, image: reference, scheduling_policy: "default", max_instances: max, instance_type: size, bind: bound, packages: listed };
+  else if (size !== undefined)
+    descriptor = { class_name: className, image: reference, scheduling_policy: "default", max_instances: max, instance_type: size, bind: bound };
+  else if (listed)
+    descriptor = { class_name: className, image: reference, scheduling_policy: "default", max_instances: max, bind: bound, packages: listed };
+  else descriptor = { class_name: className, image: reference, scheduling_policy: "default", max_instances: max, bind: bound };
   return { descriptor, bytes: Buffer.from(JSON.stringify(descriptor, null, 2) + "\n") };
 }
 
@@ -433,7 +627,14 @@ function classDescriptor(cls, memberNames, packages) {
  *  `{missing: [field, …]}` naming every field the marker does not state in the form the part needs. `memberNames`
  *  are the fleet's members, which `bind` must name. `packages`, where given, is R27's list, written as the part's
  *  last field; the others are unchanged by it. */
+/**
+ * @param {Member | null | undefined} member
+ * @param {readonly string[]} [memberNames]
+ * @param {{ packages?: Package[] | null }} [opts]
+ * @returns {DescriptorRead}
+ */
 export function containerDescriptor(member, memberNames = [], { packages = null } = {}) {
+  /** @type {Marker} */
   const meta = (member && member.marker) || {};
   const d = classDescriptor({ class_name: meta.class_name, image: meta.image, max_instances: meta.max_instances, bind: meta.bind },
     memberNames, packages);
@@ -446,6 +647,12 @@ export function containerDescriptor(member, memberNames = [], { packages = null 
  *  `container/<class_name>.json`. Refusals, in the order the release checks them: `{missing: [field, …], class?}`
  *  (R25, the class named when there are several), then `{unread}` (R27). Each class's packages are `classPackages`';
  *  `packages: false` leaves them out. */
+/**
+ * @param {Member | null | undefined} member
+ * @param {readonly string[]} [memberNames]
+ * @param {{ packages?: boolean }} [opts]
+ * @returns {{ parts?: ContainerPart[], missing?: string[], class?: string, unread?: string }}
+ */
 export function containerParts(member, memberNames = [], { packages = true } = {}) {
   const found = containerClasses(member);
   const { multi, conflict } = found;
@@ -454,21 +661,31 @@ export function containerParts(member, memberNames = [], { packages = true } = {
   /* R33: each class's own size from the member's configuration. A configuration that does not parse is unread, named
      as a field the descriptor needs, never a size left out in silence. */
   const sizes = containerInstanceTypes(member);
-  if (sizes.unread) return { missing: [`instance_type (${sizes.unread})`] };
-  const classes = found.classes.map((c) => (sizes.types.has(c.class_name) ? { ...c, instance_type: sizes.types.get(c.class_name) } : c));
+  const sizesUnread = sizes.unread, types = sizes.types;
+  if (sizesUnread || !types) return { missing: [`instance_type (${sizesUnread})`] };
+  const classes = found.classes.map((c) => {
+    const className = c.class_name;
+    return typeof className === "string" && types.has(className) ? { ...c, instance_type: types.get(className) } : c;
+  });
+  /** @type {Set<unknown>} */
   const seen = new Set();
   for (const cls of classes) {
     const d = classDescriptor(cls, memberNames, null);
-    if (d.missing) return multi ? { missing: d.missing, class: typeof cls.class_name === "string" && cls.class_name ? cls.class_name : "(unnamed)" } : { missing: d.missing };
-    if (seen.has(cls.class_name)) return { missing: ["class_name"], class: cls.class_name };
-    seen.add(cls.class_name);
+    const dMissing = d.missing, className = cls.class_name;
+    if (dMissing && multi) return { missing: dMissing, class: typeof className === "string" && className ? className : "(unnamed)" };
+    if (dMissing) return { missing: dMissing };
+    if (seen.has(className)) return { missing: ["class_name"], class: String(className) };
+    seen.add(className);
   }
+  /** @type {ContainerPart[]} */
   const parts = [];
   for (const cls of classes) {
+    /** @type {Package[] | null | undefined} */
     let pk = null;
     if (packages) {
       const r = classPackages(member, cls);
-      if (r.unread) return { unread: r.unread };
+      const rUnread = r.unread;
+      if (rUnread) return { unread: rUnread };
       pk = r.packages;
     }
     const d = classDescriptor(cls, memberNames, pk);
