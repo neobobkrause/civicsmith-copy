@@ -8,7 +8,6 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { translate, Untranslatable } from "./translate.mjs";
-import PINNED from "./pins.json" with { type: "json" };
 /** @import { Source, Reporter, Edition, Court, CourtDate, SourceCounts, SourceFile, Wheel } from "./index.mjs" */
 
 /**
@@ -94,16 +93,21 @@ import PINNED from "./pins.json" with { type: "json" };
 /** @typedef {{why: string, absent: boolean}} PackageMissing why a package's files could not be read */
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-/** @type {Pins} */
-const PINS = PINNED;
-/** @param {string} name */
-const pinDir = (name) => {
-  const pin = PINS.packages.find((p) => p.package === name);
+const PINS_FILE = join(HERE, "pins.json");
+/* pins.json, this module's own record of the pinned packages. */
+/** @returns {Pins} */
+const readPins = () => /** @type {Pins} decodes this module's pins.json */ (JSON.parse(readFileSync(PINS_FILE, "utf8")));
+/* The folder under vendor/ that holds a package's pinned files. */
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+const vendorDir = (name) => {
+  const pin = readPins().packages.find((p) => p.package === name);
   if (!pin) throw new TypeError(`pins.json names no ${name}`);
-  return pin.dir;
+  return join(HERE, "vendor", pin.dir);
 };
 export const DATA_FILE = join(HERE, "court-data.mjs");
-const DEFAULTS = { reportersDir: join(HERE, "vendor", pinDir("reporters-db")), courtsDir: join(HERE, "vendor", pinDir("courts-db")) };
 const FLAGS = { reporters: "u", courts: "iu" };
 
 /* ---- Python's string.Template and str helpers, as the packages' loaders use them ---- */
@@ -409,7 +413,7 @@ export const DATA = "${literal}";
  * @param {BuildOptions} [options]
  * @returns {Built}
  */
-export function buildCourtCitations({ reportersDir = DEFAULTS.reportersDir, courtsDir = DEFAULTS.courtsDir, out = DATA_FILE, write = true, pins = PINS } = {}) {
+export function buildCourtCitations({ reportersDir = vendorDir("reporters-db"), courtsDir = vendorDir("courts-db"), out = DATA_FILE, write = true, pins = readPins() } = {}) {
   const rp = readPackage(pins, "reporters-db", reportersDir), cp = readPackage(pins, "courts-db", courtsDir);
   if ("why" in rp) return { ok: false, file: null, untranslated: [], why: rp.why, absent: rp.absent };
   if ("why" in cp) return { ok: false, file: null, untranslated: [], why: cp.why, absent: cp.absent };
