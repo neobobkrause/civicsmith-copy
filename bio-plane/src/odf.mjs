@@ -385,13 +385,13 @@ import { word, localize } from "./setup-words/index.mjs";
 /**
  * @typedef {Object} TextOptions what text() accepts beside its parts (R49)
  * @property {number} [inlineCellsMax] bytes of the cells' JSON a whole read lists; past it every sheet's cells are held
- * @property {() => unknown} [yieldNow] awaited between windows
+ * @property {unknown} [yieldNow] awaited between windows when it is a function; anything else is no yield
  */
 /**
  * @typedef {Object} ReadCtx one projection's read: its meter and the caller's options
  * @property {Meter} meter
  * @property {TextOptions | undefined} opts
- * @property {(() => unknown) | undefined} yieldNow
+ * @property {unknown} yieldNow
  */
 /**
  * @typedef {Object} TextUnit one part of a document that is not a body paragraph, with its kind (R53)
@@ -528,8 +528,9 @@ const windowDue = (m = meter) => m != null && m.tokens - m.last >= WINDOW_TOKENS
 /** @param {ReadCtx} ctx */
 async function letPass(ctx) {
   ctx.meter.last = ctx.meter.tokens;
-  if (typeof ctx.yieldNow !== "function") return;
-  try { await ctx.yieldNow(); } catch { /* a yield that fails is no yield */ }
+  const yieldNow = ctx.yieldNow;
+  if (typeof yieldNow !== "function") return;
+  try { await yieldNow.call(ctx); } catch { /* a yield that fails is no yield */ }
 }
 
 /** Run a generator of windows to its end under the read's meter, awaiting the pass between its yields.
@@ -3094,16 +3095,24 @@ function sheetAsked(sheets, asked) {
   return loose.length === 1 ? loose[0] ?? null : null;
 }
 
+/** An object handed where parts() or bytes are expected is taken as parts()'s own output (the entries' contract, R5);
+ *  a value that is no object reads as no parts.
+ * @param {unknown} x
+ * @returns {x is PartsResult}
+ */
+const asPartsGiven = (x) => x !== null && (typeof x === "object" || typeof x === "function");
+
 /**
  * @param {OdfRow} row
- * @param {PartsOrBytes | null | undefined} partsOrBytes
+ * @param {unknown} partsOrBytes parts()'s output or raw bytes; anything else reads as no parts (R38)
  * @param {CellsQuery | null | undefined} query
  * @returns {Promise<CellsInAnswer>}
  */
 async function odsCellsIn(row, partsOrBytes, query) {
   try {
-    const parts = partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? await odfParts(row, partsOrBytes) : partsOrBytes;
-    if (!parts || typeof parts !== "object" || !parts.ok) return { ok: false, why: parts?.why ?? "PARTS_ABSENT" };
+    const parts = partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? await odfParts(row, partsOrBytes)
+      : asPartsGiven(partsOrBytes) ? partsOrBytes : null;
+    if (!parts || !parts.ok) return { ok: false, why: parts?.why ?? "PARTS_ABSENT" };
     if (parts.format !== row.flavour) return { ok: false, why: `not_${row.flavour}:${parts.format}` };
     const guard = parts.guard;
     if (guard) return { ...guard };
@@ -3549,10 +3558,10 @@ odpText.owns = true;
  * @property {string} format
  * @property {(bytes: unknown, contentType?: unknown) => Detected | null} detect
  * @property {(bytes: unknown) => Promise<PartsResult>} parts
- * @property {(partsOrBytes: PartsOrBytes | null | undefined) => Promise<(S & { active: ActiveItem[] }) | ProjectionFailure>} structure
- * @property {(partsOrBytes: PartsOrBytes | null | undefined, opts?: TextOptions) => Promise<(X & { active: ActiveItem[] } & ImagesPart) | ProjectionFailure>} text
+ * @property {(partsOrBytes: unknown) => Promise<(S & { active: ActiveItem[] }) | ProjectionFailure>} structure
+ * @property {(partsOrBytes: unknown, opts?: TextOptions) => Promise<(X & { active: ActiveItem[] } & ImagesPart) | ProjectionFailure>} text
  */
-/** @typedef {(partsOrBytes: PartsOrBytes | null | undefined, query?: CellsQuery | null) => Promise<CellsInAnswer>} CellsIn (R49) */
+/** @typedef {(partsOrBytes: unknown, query?: CellsQuery | null) => Promise<CellsInAnswer>} CellsIn (R49) */
 /**
  * @template {{ ok: true }} S
  * @template {{ ok: true }} X
@@ -3566,8 +3575,9 @@ function entryFor(row, structureOf, textOf) {
   /** @param {unknown} e @returns {ProjectionFailure} */
   const failed = (e) => ({ ok: false, container: row.flavour, reason: `reader_failed:${errorName(e)}`, part: null });
   /* Raw bytes in any form `asBytes` accepts are read through parts(); anything else is taken as parts()'s own output. */
-  /** @param {PartsOrBytes | null | undefined} partsOrBytes @returns {Promise<PartsResult | null | undefined>} */
-  const partsOf = async (partsOrBytes) => (partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? odfParts(row, partsOrBytes) : partsOrBytes);
+  /** @param {unknown} partsOrBytes @returns {Promise<PartsResult | null>} */
+  const partsOf = async (partsOrBytes) => (partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? odfParts(row, partsOrBytes)
+    : asPartsGiven(partsOrBytes) ? partsOrBytes : null);
   /* R45: each projection is one content.xml read, on its own meter. The read
      that would cross the bound stops, and the projection answers as it does
      over the size guard, content.xml not read and the repeat marker stated;
