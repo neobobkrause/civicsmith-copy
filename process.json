@@ -1,5 +1,5 @@
 {
-  "process": { "repository": "https://github.com/neobobkrause/process4", "version": "4.0.0", "commit": "db9d6e5ff26de74f003ca0c48b16879b11c8ba74" },
+  "process": { "repository": "https://github.com/neobobkrause/process4", "version": "4.0.0", "commit": "594844272fb76f6f11bfb346260227f216b959a5" },
   "tranche_branch": "p4-tranche",
   "node": "26.10.0",
   "lock_files": [
