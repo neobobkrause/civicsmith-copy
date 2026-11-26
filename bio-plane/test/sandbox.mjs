@@ -96,6 +96,10 @@ export const SANDBOX = mkdtempSync(join(HOST_TMP, `bio-battery-${process.pid}-`)
 process.env.TMPDIR = SANDBOX;
 
 let swept = false;
+/**
+ * Removes the sandbox, synchronously, once per process; a later call does nothing.
+ * @returns {void}
+ */
 export const sweepSandbox = () => {
   if (swept) return;
   swept = true;
@@ -129,7 +133,7 @@ export const sweepSandbox = () => {
          unremovable to a process that is not root (root's override hides
          this). The tree is ours, so it is made writable and the next pass
          retries; any other refusal goes to the next pass as before. */
-      if (e?.code === "EACCES") makeWritable(target);
+      if ((typeof e === "object" || typeof e === "function") && e !== null && "code" in e && e.code === "EACCES") makeWritable(target);
     }
   }
 };
@@ -138,11 +142,14 @@ export const sweepSandbox = () => {
    children so a directory with no access at all can then be listed. lstat, so
    a link is never followed: nothing outside the tree changes mode (R9). Files
    are left alone; removing one needs only its directory writable. */
+/** @param {string} dir */
 const makeWritable = (dir) => {
+  /** @type {{isDirectory(): boolean, mode: number}} */
   let st;
   try { st = lstatSync(dir); } catch { return; }
   if (!st.isDirectory()) return;
   try { chmodSync(dir, (st.mode & 0o7777) | 0o700); } catch { /* not ours to change; the next pass tries regardless */ }
+  /** @type {string[]} */
   let names = [];
   try { names = readdirSync(dir); } catch { return; }
   for (const n of names) makeWritable(join(dir, n));
@@ -154,6 +161,8 @@ process.on("exit", sweepSandbox);
    is listening for the signal itself, so these are not redundant with the line
    above. Miniflare installs its own SIGINT/SIGTERM handlers, but only while an
    instance is undisposed, and half the suites here outlive their instances. */
-for (const [sig, code] of [["SIGINT", 130], ["SIGTERM", 143], ["SIGHUP", 129]]) {
+/** @type {[string, number][]} */
+const SIGNALS = [["SIGINT", 130], ["SIGTERM", 143], ["SIGHUP", 129]];
+for (const [sig, code] of SIGNALS) {
   process.on(sig, () => { sweepSandbox(); process.exit(code); });
 }

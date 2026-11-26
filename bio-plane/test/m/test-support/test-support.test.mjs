@@ -27,32 +27,43 @@ const MARK = "@@RESULT@@";
 /** A fresh, empty host directory for one child to use as its $TMPDIR. */
 const host = () => mkdtempSync(join(tmpdir(), "host-"));
 
-/** The environment a child is handed: this process's, plus `extra`, without
+/** The environment a child is handed: this process's, plus `extra`, then `more`, without
  *  NODE_EXTRA_CA_CERTS. Node reads that file at start and warns on stderr when it
  *  cannot, which a uid that is not root does for the proxy's CA bundle; a child's
- *  silence is then the warning's, not the module's. */
-const childEnv = (extra) => {
-  const env = { ...process.env, ...extra };
+ *  silence is then the warning's, not the module's.
+ * @param {{[name: string]: string | undefined}} extra
+ * @param {{[name: string]: string | undefined}} [more]
+ */
+const childEnv = (extra, more = {}) => {
+  const env = { ...process.env, ...extra, ...more };
   delete env.NODE_EXTRA_CA_CERTS;
   return env;
 };
 
 /** Runs `body` (module code) in a child with $TMPDIR = `hostDir`. `body` may
- *  call `report(obj)` to send one JSON result line on stdout. */
+ *  call `report(obj)` to send one JSON result line on stdout.
+ * @param {string} body
+ * @param {{hostDir?: string, stdio?: unknown, env?: {[name: string]: string | undefined}, cwd?: string}} [options]
+ */
 function child(body, { hostDir, stdio, env = {}, cwd } = {}) {
   const code = `const report = (o) => process.stdout.write(${JSON.stringify(MARK)} + JSON.stringify(o) + "\\n");\n${body}`;
-  const r = spawnSync(process.execPath, ["--input-type=module", "-e", code], {
-    env: childEnv({ TMPDIR: hostDir, ...env }), encoding: "utf8", stdio, cwd,
-    maxBuffer: 64 * 1024 * 1024, timeout: 60_000,
-  });
+  const args = ["--input-type=module", "-e", code];
+  const childEnvironment = childEnv({ TMPDIR: hostDir }, env);
+  const r = cwd === undefined
+    ? spawnSync(process.execPath, args, { env: childEnvironment, encoding: "utf8", stdio, maxBuffer: 64 * 1024 * 1024, timeout: 60_000 })
+    : spawnSync(process.execPath, args, { env: childEnvironment, encoding: "utf8", stdio, cwd, maxBuffer: 64 * 1024 * 1024, timeout: 60_000 });
   const line = (r.stdout ?? "").split("\n").find((l) => l.startsWith(MARK));
   return { ...r, result: line ? JSON.parse(line.slice(MARK.length)) : undefined };
 }
 
-/** Every path under `dir`, relative, with each file's content: a full snapshot. */
+/** Every path under `dir`, relative, with each file's content: a full snapshot.
+ * @param {string} dir
+ * @returns {{[path: string]: string}}
+ */
 function snapshot(dir) {
+  /** @type {{[path: string]: string}} */
   const out = {};
-  const walk = (d) => {
+  const walk = (/** @type {string} */ d) => {
     for (const e of readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const p = join(d, e.name);
       const k = relative(dir, p);
@@ -82,17 +93,28 @@ const FILL = `
 
 /* The ways a process can end that run exit handlers (R2), each as the code
    that ends the child after the sandbox has been filled. */
-const ENDINGS = {
-  "a normal end": ``,
-  "process.exit()": `process.exit();`,
-  "process.exit(0)": `process.exit(0);`,
-  "process.exit(7)": `process.exit(7);`,
-  "process.exitCode then a normal end": `process.exitCode = 5;`,
-  "an uncaught error": `throw new Error("boom");`,
-  "an uncaught error in a later tick": `setTimeout(() => { throw new Error("late"); }, 5);`,
-  "an unhandled rejection": `Promise.reject(new Error("rejected"));`,
-  "process.exit() from a timer": `setTimeout(() => process.exit(0), 5);`,
-};
+/** @type {[string, string][]} each as [name, code] */
+const ENDINGS = [
+  ["a normal end", ``],
+  ["process.exit()", `process.exit();`],
+  ["process.exit(0)", `process.exit(0);`],
+  ["process.exit(7)", `process.exit(7);`],
+  ["process.exitCode then a normal end", `process.exitCode = 5;`],
+  ["an uncaught error", `throw new Error("boom");`],
+  ["an uncaught error in a later tick", `setTimeout(() => { throw new Error("late"); }, 5);`],
+  ["an unhandled rejection", `Promise.reject(new Error("rejected"));`],
+  ["process.exit() from a timer", `setTimeout(() => process.exit(0), 5);`],
+];
+
+/** The code of the ending ENDINGS names `name`.
+ * @param {string} name
+ * @returns {string}
+ */
+function endingNamed(name) {
+  const found = ENDINGS.find(([n]) => n === name);
+  if (found === undefined) throw new Error(`no ending named ${name}`);
+  return found[1];
+}
 
 /* ------------------------------------------------------------------ R1 */
 
@@ -113,7 +135,7 @@ test("R1 importing creates one directory under the host temp directory, named wi
     report({ SANDBOX, pid: process.pid, first, later, entries, isDir, made });
   `, { hostDir: H });
   assert.equal(r.status, 0, r.stderr);
-  const { SANDBOX, pid, first, later, entries, isDir, made } = r.result;
+  const { SANDBOX, pid, first, later, entries, isDir, made } = /** @type {{SANDBOX: string, pid: number, first: {env: string, os: string}, later: {env: string, os: string}, entries: string[], isDir: boolean, made: string}} what this test's child reports */ (r.result);
   assert.equal(dirname(SANDBOX), H, "created directly under the host temp directory");
   assert.equal(entries.length, 1, `exactly one directory created, saw ${entries}`);
   assert.equal(entries[0], basename(SANDBOX));
@@ -138,26 +160,39 @@ test("R1 a process started with a nested $TMPDIR nests its directory there rathe
     report({ SANDBOX });
   `, { hostDir: nested });
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(dirname(r.result.SANDBOX), nested);
+  assert.equal(dirname(/** @type {{SANDBOX: string}} what this test's child reports */ (r.result).SANDBOX), nested);
 });
 
 /* ------------------------------------------------------------------ R2 */
 
-for (const [name, ending] of Object.entries(ENDINGS)) {
-  test(`R2 the directory and everything in it are removed when the process ends by ${name}`, () => {
-    const H = host();
-    const r = child(`
+/** R2's case for one ending: the child fills its sandbox, reports, and ends by `ending`.
+ * @param {string} ending
+ * @returns {() => void}
+ */
+const removedAtEnd = (ending) => () => {
+  const H = host();
+  const r = child(`
       const { SANDBOX } = await import(${JSON.stringify(SANDBOX_URL)});
       ${FILL}
       report({ SANDBOX });
       ${ending}
     `, { hostDir: H });
-    assert.ok(r.result, `child reported (status ${r.status}): ${r.stderr}`);
-    assert.equal(existsSync(r.result.SANDBOX), false, "the sandbox is gone");
-    assert.deepEqual(readdirSync(H), [], "nothing is left under the host temp directory");
-    assert.equal(r.signal, null);
-  });
-}
+  const result = /** @type {{SANDBOX: string} | undefined} what this test's child reports */ (r.result);
+  assert.ok(result, `child reported (status ${r.status}): ${r.stderr}`);
+  assert.equal(existsSync(result.SANDBOX), false, "the sandbox is gone");
+  assert.deepEqual(readdirSync(H), [], "nothing is left under the host temp directory");
+  assert.equal(r.signal, null);
+};
+
+test("R2 the directory and everything in it are removed when the process ends by a normal end", removedAtEnd(endingNamed("a normal end")));
+test("R2 the directory and everything in it are removed when the process ends by process.exit()", removedAtEnd(endingNamed("process.exit()")));
+test("R2 the directory and everything in it are removed when the process ends by process.exit(0)", removedAtEnd(endingNamed("process.exit(0)")));
+test("R2 the directory and everything in it are removed when the process ends by process.exit(7)", removedAtEnd(endingNamed("process.exit(7)")));
+test("R2 the directory and everything in it are removed when the process ends by process.exitCode then a normal end", removedAtEnd(endingNamed("process.exitCode then a normal end")));
+test("R2 the directory and everything in it are removed when the process ends by an uncaught error", removedAtEnd(endingNamed("an uncaught error")));
+test("R2 the directory and everything in it are removed when the process ends by an uncaught error in a later tick", removedAtEnd(endingNamed("an uncaught error in a later tick")));
+test("R2 the directory and everything in it are removed when the process ends by an unhandled rejection", removedAtEnd(endingNamed("an unhandled rejection")));
+test("R2 the directory and everything in it are removed when the process ends by process.exit() from a timer", removedAtEnd(endingNamed("process.exit() from a timer")));
 
 test("R2 the removal completes before the process ends even while an unawaited asynchronous removal races it (the miniflare dispose() shape), over 40 endings", () => {
   for (let i = 0; i < 40; i++) {
@@ -189,7 +224,7 @@ test("R2 the removal is synchronous: an exit listener registered after the impor
   const H = host();
   /* The parent does not wait for any flush: it inspects the host directory in
      the 'exit' event, the first moment it knows the child has ended. */
-  const out = await new Promise((resolve, reject) => {
+  const out = await new Promise((/** @type {(value: {code: number | null, left: string[]}) => void} */ resolve, reject) => {
     const p = spawn(process.execPath, ["--input-type=module", "-e", `
       const { SANDBOX } = await import(${JSON.stringify(SANDBOX_URL)});
       const { writeFileSync, mkdirSync } = await import("node:fs");
@@ -198,7 +233,7 @@ test("R2 the removal is synchronous: an exit listener registered after the impor
       process.exit(0);
     `], { env: { ...process.env, TMPDIR: H }, stdio: "ignore" });
     p.on("error", reject);
-    p.on("exit", (code) => resolve({ code, left: readdirSync(H) }));
+    p.on("exit", (/** @type {number | null} */ code) => resolve({ code, left: readdirSync(H) }));
   });
   assert.equal(out.code, 0);
   assert.deepEqual(out.left, []);
@@ -244,13 +279,14 @@ const DROP = (() => {
   try {
     chownSync(dir, NOBODY, NOBODY);
   } catch (e) {
-    return { ok: false, reason: `this root cannot change a directory's owner (${e.code})` };
+    return { ok: false, reason: `this root cannot change a directory's owner (${e instanceof Error && "code" in e ? e.code : undefined})` };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
   const r = spawnSync("setpriv", [`--reuid=${NOBODY}`, `--regid=${NOBODY}`, "--clear-groups",
     process.execPath, "-e", "process.stdout.write(String(process.getuid()))"], { encoding: "utf8", timeout: 60_000 });
-  if (r.error) return { ok: false, reason: `setpriv cannot be run (${r.error.code})` };
+  const error = r.error;
+  if (error) return { ok: false, reason: `setpriv cannot be run (${"code" in error ? error.code : undefined})` };
   if (r.status !== 0 || r.stdout !== String(NOBODY)) {
     return { ok: false, reason: `this root cannot drop to uid ${NOBODY}: ${(r.stderr || "").trim() || `exit ${r.status}`}` };
   }
@@ -263,15 +299,19 @@ const DROP = (() => {
  *  host directory, so it is started IN the host directory (spawn changes
  *  directory before `setpriv` drops privileges) and given
  *  $TMPDIR=/proc/self/cwd, which reaches that directory without walking its
- *  ancestors. */
+ *  ancestors.
+ * @param {string} body
+ * @param {string} hostDir
+ */
 function childNotRoot(body, hostDir) {
   const code = `const report = (o) => process.stdout.write(${JSON.stringify(MARK)} + JSON.stringify(o) + "\\n");\n${body}`;
-  const node = [process.execPath, "--input-type=module", "-e", code];
+  const nodeArgs = ["--input-type=module", "-e", code];
   const asRoot = process.getuid() === 0;
   if (asRoot) chownSync(hostDir, NOBODY, NOBODY);
-  const [cmd, ...args] = asRoot
-    ? ["setpriv", `--reuid=${NOBODY}`, `--regid=${NOBODY}`, "--clear-groups", ...node]
-    : node;
+  const cmd = asRoot ? "setpriv" : process.execPath;
+  const args = asRoot
+    ? [`--reuid=${NOBODY}`, `--regid=${NOBODY}`, "--clear-groups", process.execPath, ...nodeArgs]
+    : nodeArgs;
   const r = spawnSync(cmd, args, {
     env: { ...process.env, TMPDIR: asRoot ? "/proc/self/cwd" : hostDir }, cwd: hostDir, encoding: "utf8",
     timeout: 60_000,
@@ -283,7 +323,7 @@ function childNotRoot(body, hostDir) {
 
 test("R2 a tree a test left read-only is removed, also when the process does not run as root, by every ending", (t) => {
   if (!DROP.ok) return t.skip(`the non-root case cannot run here: ${DROP.reason}`);
-  for (const [name, ending] of Object.entries(ENDINGS)) {
+  for (const [name, ending] of ENDINGS) {
     const H = host();
     const r = childNotRoot(`
       const { SANDBOX } = await import(${JSON.stringify(SANDBOX_URL)});
@@ -291,16 +331,17 @@ test("R2 a tree a test left read-only is removed, also when the process does not
       report({ uid: process.getuid(), refused });
       ${ending}
     `, H);
-    assert.ok(r.result, `${name}: child reported (status ${r.status}): ${r.stderr}`);
-    assert.notEqual(r.result.uid, 0, `${name}: the child is not root`);
-    assert.equal(r.result.refused, "EACCES", `${name}: a plain removal of the tree is refused`);
+    const result = /** @type {{uid: number, refused: string | null} | undefined} what this test's child reports */ (r.result);
+    assert.ok(result, `${name}: child reported (status ${r.status}): ${r.stderr}`);
+    assert.notEqual(result.uid, 0, `${name}: the child is not root`);
+    assert.equal(result.refused, "EACCES", `${name}: a plain removal of the tree is refused`);
     assert.deepEqual(readdirSync(H), [], `${name}: nothing is left under the host temp directory`);
     assert.equal(r.signal, null, name);
   }
 });
 
 test("R2 a removal refused with EACCES makes that part of the tree writable and is retried (EACCES injected at the interface, every ending)", () => {
-  for (const [name, ending] of Object.entries(ENDINGS)) {
+  for (const [name, ending] of ENDINGS) {
     const H = host();
     const out = join(host(), "result.json");
     /* The child replaces fs.rmSync, as the module sees it, with one that
@@ -334,7 +375,7 @@ test("R2 a removal refused with EACCES makes that part of the tree writable and 
       ${ending}
     `, { hostDir: H });
     assert.ok(r.result, `${name}: child reported (status ${r.status}): ${r.stderr}`);
-    const got = JSON.parse(readFileSync(out, "utf8"));
+    const got = /** @type {{refusals: number, gone: boolean}} what this test's child wrote */ (JSON.parse(readFileSync(out, "utf8")));
     assert.ok(got.refusals >= 1, `${name}: the sweep met EACCES`);
     assert.equal(got.gone, true, `${name}: and still removed the sandbox before the process ended`);
     assert.deepEqual(readdirSync(H), [], `${name}: nothing is left under the host temp directory`);
@@ -359,8 +400,9 @@ test("R3 importing more than once in one process (static, dynamic, via stdio fir
   `, { hostDir: H });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stderr, "", "nothing thrown or warned");
-  assert.equal(new Set(r.result.all).size, 1, "every import sees the same directory");
-  assert.equal(r.result.entries.length, 1, "one directory created");
+  const result = /** @type {{all: string[], entries: string[]}} what this test's child reports */ (r.result);
+  assert.equal(new Set(result.all).size, 1, "every import sees the same directory");
+  assert.equal(result.entries.length, 1, "one directory created");
   assert.deepEqual(readdirSync(H), [], "and removed");
 });
 
@@ -396,12 +438,12 @@ test("R4 SANDBOX is the absolute path of the directory R1 created", () => {
     report({ SANDBOX, type: typeof SANDBOX, entries: readdirSync(${JSON.stringify(H)}), isDir: statSync(SANDBOX).isDirectory(), real: realpathSync(SANDBOX) });
   `, { hostDir: H });
   assert.equal(r.status, 0, r.stderr);
-  const { SANDBOX, type, entries, isDir } = r.result;
+  const { SANDBOX, type, entries, isDir } = /** @type {{SANDBOX: string, type: string, entries: string[], isDir: boolean}} what this test's child reports */ (r.result);
   assert.equal(type, "string");
   assert.ok(isAbsolute(SANDBOX));
   assert.ok(isDir);
   assert.deepEqual(entries, [basename(SANDBOX)], "it names the one directory created");
-  assert.equal(join(H, entries[0]), SANDBOX);
+  assert.equal(join(H, entries[0] ?? ""), SANDBOX);
   /* In this very process too. */
   assert.ok(isAbsolute(OWN_SANDBOX) && statSync(OWN_SANDBOX).isDirectory());
   assert.equal(relative(OWN_SANDBOX, tmpdir()).startsWith(".."), false);
@@ -410,7 +452,7 @@ test("R4 SANDBOX is the absolute path of the directory R1 created", () => {
 /* ------------------------------------------------------------------ R5 */
 
 test("R5 sweepSandbox() removes the directory at once, never throws when repeated, and a later exit by every path does not fail because it is gone", () => {
-  for (const [name, ending] of Object.entries(ENDINGS)) {
+  for (const [name, ending] of ENDINGS) {
     const H = host();
     const r = child(`
       const { SANDBOX, sweepSandbox } = await import(${JSON.stringify(SANDBOX_URL)});
@@ -424,13 +466,14 @@ test("R5 sweepSandbox() removes the directory at once, never throws when repeate
       report({ ret: ret === undefined ? "undefined" : ret, goneAtOnce, left, threw });
       ${ending}
     `, { hostDir: H });
-    assert.ok(r.result, `${name}: child reported: ${r.stderr}`);
-    assert.equal(r.result.ret, "undefined", `${name}: returns nothing`);
-    assert.equal(r.result.goneAtOnce, true, `${name}: gone at once`);
-    assert.deepEqual(r.result.left, [], `${name}: nothing left in the host directory at once`);
-    assert.equal(r.result.threw, null, `${name}: a repeat never throws`);
-    const expected = { "process.exit(7)": 7, "process.exitCode then a normal end": 5 }[name]
-      ?? (/uncaught|unhandled/.test(name) ? 1 : 0);
+    const result = /** @type {{ret: string, goneAtOnce: boolean, left: string[], threw: string | null} | undefined} what this test's child reports */ (r.result);
+    assert.ok(result, `${name}: child reported: ${r.stderr}`);
+    assert.equal(result.ret, "undefined", `${name}: returns nothing`);
+    assert.equal(result.goneAtOnce, true, `${name}: gone at once`);
+    assert.deepEqual(result.left, [], `${name}: nothing left in the host directory at once`);
+    assert.equal(result.threw, null, `${name}: a repeat never throws`);
+    const expected = name === "process.exit(7)" ? 7 : name === "process.exitCode then a normal end" ? 5
+      : (/uncaught|unhandled/.test(name) ? 1 : 0);
     assert.equal(r.status, expected, `${name}: the exit status is the ending's own, not a failure of the sweep: ${r.stderr}`);
     assert.doesNotMatch(r.stderr, /ENOENT|sweep/i, `${name}: the later exit reports no error about the sweep`);
     assert.deepEqual(readdirSync(H), []);
@@ -453,8 +496,9 @@ test("R5 sweepSandbox() never throws when the directory was already removed from
       process.exit(0);
     `, { hostDir: H });
     assert.equal(r.status, 0, r.stderr);
-    assert.equal(r.result.threw, null);
-    assert.equal(r.result.gone, true);
+    const result = /** @type {{threw: string | null, gone: boolean}} what this test's child reports */ (r.result);
+    assert.equal(result.threw, null);
+    assert.equal(result.gone, true);
     assert.deepEqual(readdirSync(H), []);
   }
 });
@@ -462,7 +506,12 @@ test("R5 sweepSandbox() never throws when the directory was already removed from
 /* ------------------------------------------------------------------ R6 */
 
 /** A child that imports `url`, floods stdout and stderr with `total` bytes each
- *  in `chunk`-byte writes, prints a tally last, and calls process.exit(0). */
+ *  in `chunk`-byte writes, prints a tally last, and calls process.exit(0).
+ * @param {string} url
+ * @param {number} total
+ * @param {number} chunk
+ * @returns {string}
+ */
 const FLOOD = (url, total, chunk) => `
   const m = await import(${JSON.stringify(url)});
   const s = (await import(${JSON.stringify(STDIO_URL)})).synchronousStdio();
@@ -474,22 +523,27 @@ const FLOOD = (url, total, chunk) => `
 `;
 
 test("R6 synchronousStdio() makes stdout and stderr synchronous through a pipe: every byte written before process.exit() reaches the reader, the last line included, and streams names both", async () => {
-  for (const [total, chunk] of [[2_000_000, 1024], [2_000_000, 65_580], [4_000_000, 4096]]) {
+  /** @type {[number, number][]} each as [total, chunk] */
+  const floods = [[2_000_000, 1024], [2_000_000, 65_580], [4_000_000, 4096]];
+  for (const [total, chunk] of floods) {
     const H = host();
-    const got = await new Promise((resolve, reject) => {
+    const got = await new Promise((/** @type {(value: {code: number | null, out: string, err: string}) => void} */ resolve, reject) => {
       const p = spawn(process.execPath, ["--input-type=module", "-e", FLOOD(STDIO_URL, total, chunk)],
         { env: childEnv({ TMPDIR: H }), stdio: ["ignore", "pipe", "pipe"] });
-      const out = [], err = [];
+      /** @type {Buffer[]} */
+      const out = [];
+      /** @type {Buffer[]} */
+      const err = [];
       /* A slow reader: pause between chunks so the child's writes outrun it. */
-      p.stdout.on("data", (b) => { out.push(b); p.stdout.pause(); setTimeout(() => p.stdout.resume(), 1); });
-      p.stderr.on("data", (b) => err.push(b));
+      p.stdout.on("data", (/** @type {Buffer} */ b) => { out.push(b); p.stdout.pause(); setTimeout(() => p.stdout.resume(), 1); });
+      p.stderr.on("data", (/** @type {Buffer} */ b) => err.push(b));
       p.on("error", reject);
-      p.on("close", (code) => resolve({ code, out: Buffer.concat(out).toString(), err: Buffer.concat(err).toString() }));
+      p.on("close", (/** @type {number | null} */ code) => resolve({ code, out: Buffer.concat(out).toString(), err: Buffer.concat(err).toString() }));
     });
     assert.equal(got.code, 0);
     const n = Math.ceil(total / chunk) * chunk;
     const lines = got.out.split("\n");
-    const tally = lines.at(-2);
+    const tally = lines.at(-2) ?? "";
     assert.ok(tally.startsWith("TALLY "), `the final line arrived (${total}/${chunk})`);
     assert.equal(got.out.length, n + tally.length + 1, "every byte arrived");
     const s = JSON.parse(tally.slice(6));
@@ -512,16 +566,17 @@ test("R7 a second call changes nothing and returns already:true with the same st
     report({ calls: calls.slice(1), after });
   `, { hostDir: H, stdio: ["ignore", "pipe", "pipe"] });
   assert.equal(r.status, 0, r.stderr);
-  for (const c of r.result.calls) assert.deepEqual(c, { streams: ["stdout", "stderr"], already: true });
-  assert.deepEqual(r.result.after, { streams: ["stdout", "stderr"], already: true }, "a caller mutating a result changes nothing");
+  const result = /** @type {{calls: unknown[], after: unknown}} what this test's child reports */ (r.result);
+  for (const c of result.calls) assert.deepEqual(c, { streams: ["stdout", "stderr"], already: true });
+  assert.deepEqual(result.after, { streams: ["stdout", "stderr"], already: true }, "a caller mutating a result changes nothing");
 });
 
 test("R7 a stream that is a file, or absent, is left as it is and is no error; streams names only the streams changed", () => {
   const H = host();
   const cases = [
-    { name: "stdout to a file, stderr a pipe", stdio: (f) => ["ignore", f, "pipe"], want: ["stderr"] },
-    { name: "stderr to a file, stdout a pipe", stdio: (f) => ["ignore", "pipe", f], want: ["stdout"] },
-    { name: "both to a file", stdio: (f) => ["ignore", f, f], want: [] },
+    { name: "stdout to a file, stderr a pipe", stdio: (/** @type {number} */ f) => ["ignore", f, "pipe"], want: ["stderr"] },
+    { name: "stderr to a file, stdout a pipe", stdio: (/** @type {number} */ f) => ["ignore", "pipe", f], want: ["stdout"] },
+    { name: "both to a file", stdio: (/** @type {number} */ f) => ["ignore", f, f], want: [] },
     { name: "both ignored", stdio: () => ["ignore", "ignore", "ignore"], want: null },
   ];
   for (const c of cases) {
@@ -539,12 +594,12 @@ test("R7 a stream that is a file, or absent, is left as it is and is no error; s
     `], { env: { ...process.env, TMPDIR: H }, stdio: c.stdio(fd), encoding: "utf8" });
     closeSync(fd);
     assert.equal(r.status, 0, `${c.name}: ${r.stderr}`);
-    const got = JSON.parse(readFileSync(resultFile, "utf8"));
+    const got = /** @type {{threw: string | null, a: unknown, b: {already: boolean, streams: string[]}}} what this test's child wrote */ (JSON.parse(readFileSync(resultFile, "utf8")));
     assert.equal(got.threw, null, c.name);
     assert.deepEqual(got.a, got.b, `${c.name}: the second call returns the same`);
     assert.equal(got.b.already, true);
     if (c.want) assert.deepEqual(got.b.streams, c.want, c.name);
-    else assert.ok(got.b.streams.every((s) => s === "stdout" || s === "stderr"), c.name);
+    else assert.ok(got.b.streams.every((s) => ["stdout", "stderr"].includes(s)), c.name);
     const text = readFileSync(file, "utf8");
     if (c.want && !c.want.includes("stdout")) assert.match(text, /to stdout/, `${c.name}: the file stream still works`);
     if (c.want && !c.want.includes("stderr")) assert.match(text, /to stderr/, `${c.name}: the file stream still works`);
@@ -563,17 +618,18 @@ test("R8 importing the sandbox module also applies R6: through a pipe, a flood w
     process.stdout.write("TALLY " + JSON.stringify(s) + "\\n");
     process.exit(0);
   `;
-  const got = await new Promise((resolve, reject) => {
+  const got = await new Promise((/** @type {(value: {code: number | null, out: string}) => void} */ resolve, reject) => {
     const p = spawn(process.execPath, ["--input-type=module", "-e", body],
       { env: { ...process.env, TMPDIR: H }, stdio: ["ignore", "pipe", "pipe"] });
+    /** @type {Buffer[]} */
     const out = [];
-    p.stdout.on("data", (b) => { out.push(b); p.stdout.pause(); setTimeout(() => p.stdout.resume(), 1); });
+    p.stdout.on("data", (/** @type {Buffer} */ b) => { out.push(b); p.stdout.pause(); setTimeout(() => p.stdout.resume(), 1); });
     p.stderr.resume();
     p.on("error", reject);
-    p.on("close", (code) => resolve({ code, out: Buffer.concat(out).toString() }));
+    p.on("close", (/** @type {number | null} */ code) => resolve({ code, out: Buffer.concat(out).toString() }));
   });
   assert.equal(got.code, 0);
-  const tally = got.out.split("\n").at(-2);
+  const tally = got.out.split("\n").at(-2) ?? "";
   assert.ok(tally.startsWith("TALLY "));
   assert.deepEqual(JSON.parse(tally.slice(6)), { streams: ["stdout", "stderr"], already: true },
     "the sandbox import had already applied it to both streams");
@@ -583,8 +639,9 @@ test("R8 importing the sandbox module also applies R6: through a pipe, a flood w
 /* ------------------------------------------------------------------ R9 */
 
 test("R9 nothing outside the sandbox directory is created or removed, by the import, a sweep, or any ending", () => {
-  const endings = { ...ENDINGS, "sweepSandbox() then process.exit(0)": `sweepSandbox(); process.exit(0);` };
-  for (const [name, ending] of Object.entries(endings)) {
+  /** @type {[string, string][]} */
+  const endings = [...ENDINGS, ["sweepSandbox() then process.exit(0)", `sweepSandbox(); process.exit(0);`]];
+  for (const [name, ending] of endings) {
     /* The host holds neighbours an over-eager removal would take: another
        process's sandbox (a live pid's and a dead one's), lookalike names, and
        ordinary files. Its parent holds more. */
@@ -607,13 +664,14 @@ test("R9 nothing outside the sandbox directory is created or removed, by the imp
       report({ SANDBOX, during: readdirSync(${JSON.stringify(H)}).sort(), cwd: readdirSync(".") });
       ${ending}
     `, { hostDir: H, cwd });
-    assert.ok(r.result, `${name}: ${r.stderr}`);
-    const s = basename(r.result.SANDBOX);
-    assert.deepEqual(r.result.during.filter((e) => e !== s), Object.keys(before)
+    const result = /** @type {{SANDBOX: string, during: string[], cwd: string[]} | undefined} what this test's child reports */ (r.result);
+    assert.ok(result, `${name}: ${r.stderr}`);
+    const s = basename(result.SANDBOX);
+    assert.deepEqual(result.during.filter((e) => e !== s), Object.keys(before)
       .filter((k) => k.startsWith("tmp/") && k.split("/").length === 2).map((k) => k.slice(4)).sort(),
       `${name}: during the process only the sandbox was added to the host`);
     assert.deepEqual(snapshot(P), before, `${name}: afterwards everything outside the sandbox is exactly as it was`);
-    assert.deepEqual(r.result.cwd, [], `${name}: nothing created in the working directory`);
+    assert.deepEqual(result.cwd, [], `${name}: nothing created in the working directory`);
   }
 });
 
