@@ -6,9 +6,11 @@ import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { MEASURED_OOXML_TEXT_BOUND_BYTES } from "../../../src/ooxml.mjs";
 import { pkg } from "./pkg.mjs";
 
+/** @typedef {import("./pkg.mjs").Flavour} Flavour */
+
 const BOUND = MEASURED_OOXML_TEXT_BOUND_BYTES;
 
-/** A real package whose content.xml body is `kind` markup repeated to just over the bound. */
+/** A real package whose content.xml body is `kind` markup repeated to just over the bound. @param {Flavour} flavour */
 function bigPackage(flavour) {
   const unit = {
     odt: "<text:p>a paragraph of the body, repeated</text:p>",
@@ -18,7 +20,7 @@ function bigPackage(flavour) {
   return pkg(flavour, { body: unit.repeat(Math.ceil((BOUND + 4096) / unit.length)) });
 }
 
-for (const [flavour, entry] of [["odt", odtEntry], ["ods", odsEntry], ["odp", odpEntry]]) {
+for (const [flavour, entry] of /** @type {[Flavour, typeof odtEntry | typeof odsEntry | typeof odpEntry][]} */ ([["odt", odtEntry], ["ods", odsEntry], ["odp", odpEntry]])) {
   test(`R48 ${flavour}: a content.xml over the bound is stated with its size, final, in text() and in structure()`, async () => {
     const bytes = bigPackage(flavour);
     const parts = await entry.parts(bytes);
