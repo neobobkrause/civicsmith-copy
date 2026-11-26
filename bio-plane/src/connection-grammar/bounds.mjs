@@ -2,9 +2,11 @@
 /* connection-grammar: the bounds of every walk (R10) and the shape a walk answers when it stops at one (R15). No bound
    measures how connected a node is (R17): each limits work, never ranks. */
 
-/** The hub bound of every kind not named in `hub_by_kind` (R10). */
 import { word } from '../setup-words/index.mjs';
+import { isObj } from './raw.mjs';
+/** @import { Refusal } from './shape.mjs' */
 
+/** The hub bound of every kind not named in `hub_by_kind` (R10). */
 const HUB = 1000;
 
 /**
@@ -12,7 +14,11 @@ const HUB = 1000;
  * term is about 3,400 votes at the desk figure); every kind not named here is `hub`'s. A protective limit (K1881).
  * Frozen, with no prototype, so `hub_by_kind[kind] ?? hub` reads a named kind's bound and nothing inherited.
  */
-const HUB_BY_KIND = Object.freeze(Object.assign(Object.create(null), { event_voted: 4000 }));
+const HUB_BY_KIND_HELD = Object.freeze({ __proto__: null, event_voted: 4000 });
+/** @type {Readonly<{event_voted: number}>} */
+const HUB_BY_KIND = HUB_BY_KIND_HELD;
+/** @type {ReadonlyMap<string, number>} */
+const HUB_OF_KIND = new Map([['event_voted', HUB_BY_KIND.event_voted]]);
 
 /** The walk bounds (K1470; legistar-events §6). `time_budget_ms` is a default every walk may lower. */
 export const BOUNDS = Object.freeze({
@@ -29,12 +35,14 @@ export const BOUNDS = Object.freeze({
  * The hub bound of one kind: its own in `hub_by_kind`, else `hub` (R6, R10). A node whose set of that kind exceeds it
  * is a hub, answered by its set size with no items.
  * @param {unknown} kind
+ * @returns {number}
  */
-export const hubBoundOf = (kind) => (typeof kind === 'string' && HUB_BY_KIND[kind] !== undefined ? HUB_BY_KIND[kind] : HUB);
+export const hubBoundOf = (kind) => (typeof kind === 'string' ? HUB_OF_KIND.get(kind) ?? HUB : HUB);
 
 /**
  * The depth a walk runs to: 8 when none is asked, the asked depth from 1 to 10, else a refusal saying why (R10, R18).
  * @param {unknown} [requested]
+ * @returns {number | Refusal}
  */
 export function depthOf(requested) {
   if (requested === undefined || requested === null) return BOUNDS.depth_default;
@@ -47,6 +55,7 @@ export function depthOf(requested) {
   return requested;
 }
 
+/** @type {Readonly<{depth: string, nodes: string, fanout: string, hub: string, time: string}>} */
 const WHY = Object.freeze({
   depth: word('connection-grammar.walk_reached_depth'),
   nodes: word('connection-grammar.walk_visited_bound', { nodes: String(BOUNDS.nodes) }),
@@ -55,21 +64,29 @@ const WHY = Object.freeze({
   time: word('connection-grammar.walk_used_time'),
 });
 
-/** The bounds a walk can stop at (R15). */
-export const EXHAUSTION_REASONS = Object.freeze(Object.keys(WHY));
+/** The bounds a walk can stop at (R15). @type {readonly string[]} */
+export const EXHAUSTION_REASONS = Object.freeze(['depth', 'nodes', 'fanout', 'hub', 'time']);
+/** @type {ReadonlyMap<string, string>} */
+const WHY_OF = new Map([['depth', WHY.depth], ['nodes', WHY.nodes], ['fanout', WHY.fanout], ['hub', WHY.hub], ['time', WHY.time]]);
 
 /**
  * What a walk that stopped at a bound answers: truncated and undetermined, never a partial path shown as complete
  * (R15, K1442, K1470).
  * @param {{visited?: unknown, reason?: unknown}} [arg]
+ * @returns {{refused: string, truncated?: undefined, undetermined?: undefined, visited?: undefined, why: string}
+ *   | {refused?: undefined, truncated: boolean, undetermined: boolean, visited: number, why: string}}
  */
 export function exhausted(arg) {
-  const { visited, reason } = arg && typeof arg === 'object' ? arg : /** @type {any} */ ({});
-  if (typeof reason !== 'string' || !Object.hasOwn(WHY, reason)) {
+  /** @type {unknown} */
+  const given = arg;
+  const visited = isObj(given) ? given.visited : undefined;
+  const reason = isObj(given) ? given.reason : undefined;
+  const why = typeof reason === 'string' ? WHY_OF.get(reason) : undefined;
+  if (why === undefined) {
     return { refused: 'REASON_UNKNOWN', why: word('connection-grammar.why.walk_stops_none', { exhaustion_reasons: String(EXHAUSTION_REASONS.join(', ')), reason: String(String(reason).slice(0, 40)) }) };
   }
   if (typeof visited !== 'number' || !Number.isInteger(visited) || visited < 0) {
     return { refused: 'VISITED_INVALID', why: word('connection-grammar.why.visited_count_nodes') };
   }
-  return { truncated: true, undetermined: true, why: WHY[/** @type {keyof typeof WHY} */ (reason)], visited };
+  return { truncated: true, undetermined: true, why, visited };
 }
