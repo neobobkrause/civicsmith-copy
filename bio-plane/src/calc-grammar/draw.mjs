@@ -11,7 +11,7 @@ import { dec, refusal } from "./decimal.mjs";
 /**
  * A draw's arguments (R16): the frozen frame of distinct keys, how many to draw, and the caller's seed.
  * @typedef {Object} DrawArgs
- * @property {string[]} [frame]
+ * @property {Data[]} [frame]
  * @property {number} [n]
  * @property {string} [seed]
  * @bound n: whole number, 0 to the frame's size; frame: no key repeated
@@ -30,6 +30,16 @@ import { dec, refusal } from "./decimal.mjs";
  * @typedef {Object} SliceOptions
  * @property {YieldNow | Data} [yieldNow]
  */
+/** A frame whose every key is a string. @typedef {string[]} Keys */
+/** A frame as handed in: a list of keys of any kind. @typedef {Data[]} Frame */
+/** @param {Data} k @returns {boolean} */
+const isText = (k) => typeof k === "string";
+/** @param {unknown} x @returns {x is Frame} */
+const isFrame = (x) => Array.isArray(x);
+/** @param {unknown} x @returns {x is Keys} */
+const isKeys = (x) => isFrame(x) && allText(x);
+/** @param {Frame} frame @returns {boolean} */
+const allText = (frame) => frame.every(isText);
 /** @param {unknown} x @returns {x is YieldNow} */
 const isYieldNow = (x) => typeof x === "function";
 /**
@@ -161,7 +171,7 @@ function drawInput({ frame, n, seed }) {
   if (!Array.isArray(frame)) throw new TypeError("draw's frame is a list of keys");
   if (typeof seed !== "string") throw new TypeError("draw's seed is a string the caller records");
   if (typeof n !== "number" || !Number.isSafeInteger(n)) throw new TypeError("draw's n is a whole number");
-  if (!frame.every((k) => typeof k === "string")) return refusal("FRAME_INVALID", "every key of the frame is a string");
+  if (!isKeys(frame)) return refusal("FRAME_INVALID", "every key of the frame is a string");
   return drawSteps(frame, n, seed);
 }
 
