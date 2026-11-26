@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import * as CC from "../../../src/case-checker/index.mjs";
 import * as CG from "../../../src/case-grammar/index.mjs";
 import { canonicalJson } from "../../../src/record-grammar/json.mjs";
+import { CATALOG_VERSION } from "../../../src/gate.mjs";
 import { caseFile, gradingFacts, extracted, sha, A, B, C, MINUTES, MINUTES_SHA, OBSCURED_LABEL } from "./fixture.mjs";
 import { buildG50, baseMaterials, u8 } from "./g50-build.mjs";
 
@@ -143,13 +144,23 @@ test("R19 (G50 control): a one-capture case file's files state no capture, and i
   assert.deepEqual(results(await CC.checkCaseFile({ parts: cf.parts })), ALL);
 });
 
-test("R2 R8 R19 (G50 control, R-OLD): the verdicts recorded at the G50 base over two stored /3 case files are byte-equal now, g1's original_carried departure included", async () => {
+/* The verdicts were recorded at the catalogue version of their day; the checker's own catalogue version is `promotion`'s
+   (`CATALOG_VERSION`, R7), read from its owner, so a later catalogue moves only the two version fields and R7's statement that
+   the checks ran at this checker's version and not at the one the case states. */
+const atThisCatalogue = (verdict) => {
+  const pc = verdict.publication_checks;
+  return { ...verdict, checker: { ...verdict.checker, checks_version: CATALOG_VERSION },
+    publication_checks: { ...pc, checker_version: CATALOG_VERSION,
+      statement: pc.stated_version === CATALOG_VERSION ? pc.statement : CC.CHECKS_VERSION_STATEMENT(pc.stated_version, CATALOG_VERSION) } };
+};
+
+test("R2 R7 R8 R19 (G50 control, R-OLD): the verdicts recorded at the G50 base over two stored /3 case files are byte-equal now, at this checker's catalogue version, g1's original_carried departure included", async () => {
   const golden = JSON.parse(readFileSync(new URL("./g50-old-verdicts.json", import.meta.url), "utf8"));
   for (const g of ["g1", "g2"]) {
     const parts = golden[g].parts_b64.map((b) => new Uint8Array(Buffer.from(b, "base64")));
     assert.equal(golden[g].format, "bio-case-file/3", g);
     const now = await CC.checkCaseFile({ parts });
-    assert.equal(canonicalJson(now), canonicalJson(golden[g].verdict), g);
+    assert.equal(canonicalJson(now), canonicalJson(atThisCatalogue(golden[g].verdict)), g);
     assert.equal(now.format, "bio-case-file/3");
   }
   /* g1 departs for the included row's document beside the copy (the departure is judged by ref in /3), g2 does not */

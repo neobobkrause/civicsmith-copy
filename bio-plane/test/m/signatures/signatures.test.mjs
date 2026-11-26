@@ -20,6 +20,8 @@ import vm from "node:vm";
 import * as sshsig from "../../../src/sshsig.mjs";
 import * as tsa from "../../../src/tsa.mjs";
 import { ID_TABLE, idPattern } from "../../../src/record-grammar/index.mjs";
+/** record-grammar's pattern for a sequential prefix, which every prefix of its table has (asserted, not assumed) */
+const patternOf = (p) => { const re = idPattern(p); assert.ok(re, p); return re; };
 
 const {
   NS_RELEASE, NS_RATIFY, NS_FLEET, NS_NOTICE, NS_RELEASE_NOTICE, verifySshsig, ratifyStatement, caseRatifyStatement, fleetStatement,
@@ -496,7 +498,7 @@ test("R38 R40 the id's counter is record-grammar's sequential form: every id is 
     for (const core of ID_CORES) for (const tail of ID_TAILS) {
       const id = `${prefix}-${core}${tail}`;
       /* Judged by record-grammar: the core under a sequential prefix of its table, the prefix capitals, the slug ours. */
-      const want = SEQ_PREFIXES.some((p) => idPattern(p).test(`${p}-${core}`)) && /^[A-Z]+$/.test(prefix) && slugOk(tail);
+      const want = SEQ_PREFIXES.some((p) => patternOf(p).test(`${p}-${core}`)) && /^[A-Z]+$/.test(prefix) && slugOk(tail);
       assert.equal(statementAccepts(noticeStatement, id), want, `notice ${id}`);
       assert.equal(statementAccepts(docketStatement, id), want, `docket ${id}`);
       assert.equal(sshsig.OPAQUE_ID_RE.test(id), want, `pattern ${id}`);
@@ -521,7 +523,7 @@ test("R38 R40 the id's counter is record-grammar's sequential form: every id is 
 test("R38 R40 the exported pattern is record-grammar's sequential core under any capitals, with the optional slug", () => {
   /* At the interface: the exported pattern is record-grammar's sequential core under any capitals, with the slug. */
   const p = SEQ_PREFIXES[0];
-  const core = idPattern(p).source;
+  const core = patternOf(p).source;
   assert.equal(sshsig.OPAQUE_ID_RE.source, `^[A-Z]+${core.slice(1 + p.length, -1)}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?$`);
   assert.equal(sshsig.OPAQUE_ID_RE.flags, "");
 });
