@@ -6,8 +6,25 @@
  * new room without touching the old one. A hint is where the hosting platform runs the room, never a
  * jurisdiction (R25). Pure over `env`; nothing at load beyond the frozen list. */
 
+/** @typedef {{ readonly [binding: string]: unknown }} Bindings the Worker's bindings, as the caller holds them */
+/**
+ * @template Id, Stub
+ * @typedef {Object} Rooms the record-object namespace bound as STORE
+ * @property {(name: string) => Id} idFromName
+ * @property {(id: Id, options?: { locationHint: string }) => Stub} get
+ */
+/**
+ * @template Id, Stub
+ * @typedef {{ readonly STORE: Rooms<Id, Stub>, readonly [binding: string]: unknown }} RoomEnv
+ */
+
+/** @type {readonly string[]} */
 export const STORE_HINTS = Object.freeze(["wnam", "enam", "sam", "weur", "eeur", "apac", "apac-ne", "apac-se", "oc", "afr", "me"]);
 
+/**
+ * @param {Bindings | null | undefined} env
+ * @returns {string | null} one of STORE_HINTS, or null
+ */
 export const storeHint = (env) => {
   const v = env?.STORE_LOCATION;
   return typeof v === "string" && STORE_HINTS.includes(v) ? v : null;
@@ -15,6 +32,10 @@ export const storeHint = (env) => {
 
 /* The grammar is /^[1-9][0-9]*$/ (K4754): "02", "2.0" and " 2" are not a second room. 1 is the room as it
    always was; a number past a safe integer is no generation. */
+/**
+ * @param {Bindings | null | undefined} env
+ * @returns {number} a whole number, 1 or more
+ */
 export const storeGeneration = (env) => {
   const v = env?.STORE_GENERATION;
   if (typeof v !== "string" || !/^[1-9][0-9]*$/.test(v)) return 1;
@@ -23,13 +44,26 @@ export const storeGeneration = (env) => {
 };
 
 /* The suffix is on the object's name only; the logical names (`bio`, `scratch`, a `store=` value, an R2 prefix) stay. */
+/** @param {Bindings} env @param {string} name @returns {string} */
 const roomName = (env, name) => {
   const g = storeGeneration(env);
   return g === 1 ? name : `${name}~g${g}`;
 };
 
+/**
+ * @template Id, Stub
+ * @param {RoomEnv<Id, Stub>} env
+ * @param {string} name the logical name, `bio` or `scratch`
+ * @returns {Id}
+ */
 export const storeId = (env, name) => env.STORE.idFromName(roomName(env, name));
 
+/**
+ * @template Id, Stub
+ * @param {RoomEnv<Id, Stub>} env
+ * @param {string} name the logical name, `bio` or `scratch`
+ * @returns {Stub}
+ */
 export const storeStub = (env, name) => {
   const id = storeId(env, name);
   const hint = storeHint(env);

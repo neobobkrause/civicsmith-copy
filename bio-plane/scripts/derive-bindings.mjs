@@ -28,10 +28,55 @@
  * defect that left biosmoke7 with zero service bindings for a month.
  */
 
+/* The binding that carries the organisation `ai` credential. Written out, not imported: the release tooling's tests run
+   these scripts from a copy of `scripts/` alone, where `src/` is not present. */
+const copyOf_runtime_limits_INSTANCE_AI_BINDING = "INSTANCE_AI_TOKEN";
+
+/**
+ * @typedef {"kv_namespaces" | "d1_databases" | "queues" | "analytics_engine_datasets" | "ai" | "vectorize" | "hyperdrive"
+ *   | "dispatch_namespaces" | "mtls_certificates" | "send_email" | "wasm_modules" | "data_blobs" | "text_blobs"} BindingKey
+ *   a binding class the derivation does not carry
+ */
+/**
+ * @typedef {Object} WranglerConfig the parsed `wrangler.jsonc` the derivations read; a part absent is not declared
+ * @property {{ [name: string]: unknown }} [vars] each written as text
+ * @property {Array<{ binding: string, bucket_name: string }>} [r2_buckets]
+ * @property {Array<{ binding: string, service: string }>} [services]
+ * @property {{ binding?: unknown } | null} [browser]
+ * @property {{ subrequests?: number, cpu_ms?: number }} [limits]
+ * @property {{ crons?: ConfigPart } | null} [triggers]
+ * @property {{ enabled?: unknown } | null} [observability]
+ * @property {ConfigPart} [kv_namespaces]
+ * @property {ConfigPart} [d1_databases]
+ * @property {ConfigPart} [queues]
+ * @property {ConfigPart} [analytics_engine_datasets]
+ * @property {ConfigPart} [ai]
+ * @property {ConfigPart} [vectorize]
+ * @property {ConfigPart} [hyperdrive]
+ * @property {ConfigPart} [dispatch_namespaces]
+ * @property {ConfigPart} [mtls_certificates]
+ * @property {ConfigPart} [send_email]
+ * @property {ConfigPart} [wasm_modules]
+ * @property {ConfigPart} [data_blobs]
+ * @property {ConfigPart} [text_blobs]
+ */
+/**
+ * @typedef {Object} Binding one binding of the upload metadata
+ * @property {string} type `plain_text`, `secret_text`, `r2_bucket`, `service` or `browser`
+ * @property {string} name the binding's name
+ * @property {string} [text] a `plain_text` or `secret_text` value
+ * @property {string} [bucket_name] an `r2_bucket`'s bucket
+ * @property {string} [service] a `service`'s target
+ */
+/** @typedef {string | number | boolean | null | unknown[] | { [key: string]: unknown }} ConfigPart a value the config states */
+/** @typedef {{ verdict: string, why: string }} ReadBack a read-back's answer and why */
+/** @typedef {{ subrequests: number, cpu_ms?: number }} Limits the `limits` the upload metadata carries */
+
 const CARRIED = new Set(["vars", "r2_buckets", "services", "durable_objects", "browser"]);
 /* Binding-declaring wrangler keys this derivation would MISCARRY if present.
    Listed explicitly so a new class in the config fails the deploy loudly in
    the same turn it appears, instead of deploying a plane quietly missing it. */
+/** @type {BindingKey[]} */
 const KNOWN_BINDING_KEYS = [
   "kv_namespaces", "d1_databases", "queues", "analytics_engine_datasets",
   "ai", "vectorize", "hyperdrive", "dispatch_namespaces",
@@ -49,12 +94,20 @@ const KNOWN_BINDING_KEYS = [
  * generated here: a member mints it on the instance, so a deploy only carries
  * the value the operator's environment holds.
  */
+/**
+ * @param {WranglerConfig} cfg
+ * @param {{ slug?: string, version?: string, instanceClaudeToken?: string, instanceAiToken?: string }} [args]
+ * @returns {Binding[]}
+ * @throws {Error} `REFUSED [NO_SLUG]`, `[NO_VERSION]`, `[UNKNOWN_BINDING_CLASS]`, `[BROWSER_BINDING_UNNAMED]` or `[PHANTOM_TARGET]`
+ */
 export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
   if (!slug) throw new Error("REFUSED [NO_SLUG]: the binding derivation needs the instance slug — a default would be the hardcoded name D-292 exists to forbid.");
   if (!version) throw new Error("REFUSED [NO_VERSION]: the binding derivation needs the version the rollout gate will wait for.");
 
-  const present = KNOWN_BINDING_KEYS.filter((k) =>
-    cfg[k] !== undefined && (Array.isArray(cfg[k]) ? cfg[k].length > 0 : true));
+  const present = KNOWN_BINDING_KEYS.filter((k) => {
+    const v = cfg[k];
+    return v !== undefined && (Array.isArray(v) ? v.length > 0 : true);
+  });
   if (present.length) {
     throw new Error(
       `REFUSED [UNKNOWN_BINDING_CLASS]: wrangler.jsonc declares ${present.join(", ")}, `
@@ -63,6 +116,7 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
       + "change that adds it to the config.");
   }
 
+  /** @type {Binding[]} */
   const bindings = [
     { type: "plain_text", name: "VERSION", text: String(version) },
     /* D-102: the instance name IS the worker name; bound from the slug because
@@ -84,13 +138,15 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
   /* DIST-11 (IC-252's owed act): the Browser Rendering binding D-64's render arm looks for (`render.mjs` `rendererFor`).
      A config that declares `browser` must NAME its binding; one that does not declare it derives none, and the plane
      answers `renderer: "none"` exactly as before. */
-  if (cfg.browser !== undefined) {
-    if (!cfg.browser || typeof cfg.browser.binding !== "string" || !cfg.browser.binding)
+  const browser = cfg.browser;
+  if (browser !== undefined) {
+    const named = browser ? browser.binding : undefined;
+    if (!browser || typeof named !== "string" || !named)
       throw new Error("REFUSED [BROWSER_BINDING_UNNAMED]: wrangler.jsonc declares `browser` without a `binding` name.");
-    bindings.push({ type: "browser", name: cfg.browser.binding });
+    bindings.push({ type: "browser", name: named });
   }
   if (instanceAiToken) {
-    bindings.push({ type: "secret_text", name: "INSTANCE_AI_TOKEN", text: instanceAiToken });
+    bindings.push({ type: "secret_text", name: copyOf_runtime_limits_INSTANCE_AI_BINDING, text: instanceAiToken });
   }
 
   /* The phantom must not survive derivation in any position. */
@@ -107,6 +163,11 @@ export function deriveBindings(cfg, { slug, version, instanceAiToken } = {}) {
  *  The instance's own slug is excluded — the PUT that carries the binding is
  *  the PUT that creates/updates that very worker (the installer's noSelf
  *  lesson: the self-reference is the one target that cannot pre-exist). */
+/**
+ * @param {Binding[]} bindings
+ * @param {string} slug
+ * @returns {Array<string | undefined>}
+ */
 export function serviceTargets(bindings, slug) {
   return bindings.filter((b) => b.type === "service" && b.service !== slug)
                  .map((b) => b.service);
@@ -129,10 +190,15 @@ const KNOWN_LIMIT_KEYS = new Set(["subrequests", "cpu_ms"]);
 
 /** The `limits` object deploy.mjs sends in the upload metadata (wrangler's own
  *  upload uses the same field, `limits: { cpu_ms, subrequests }`). */
+/**
+ * @param {WranglerConfig | null | undefined} cfg
+ * @returns {Limits}
+ * @throws {Error} `REFUSED [NO_SUBREQUEST_LIMIT]` or `[UNKNOWN_LIMIT_KEY]`
+ */
 export function deriveLimits(cfg) {
-  const lim = cfg && cfg.limits;
-  const n = lim && lim.subrequests;
-  if (!Number.isInteger(n) || n <= 0) {
+  const lim = cfg ? cfg.limits : undefined;
+  const n = lim ? lim.subrequests : undefined;
+  if (!lim || n === undefined || !Number.isInteger(n) || n <= 0) {
     throw new Error(
       "REFUSED [NO_SUBREQUEST_LIMIT]: wrangler.jsonc sets no explicit positive integer "
       + "`limits.subrequests`, so the deployed plane's ceiling would be whatever Cloudflare's "
@@ -144,8 +210,10 @@ export function deriveLimits(cfg) {
       `REFUSED [UNKNOWN_LIMIT_KEY]: wrangler.jsonc's limits declares ${unknown.join(", ")}, `
       + "which this derivation does not carry. Teach deriveLimits the key in the same change.");
   }
+  /** @type {Limits} */
   const out = { subrequests: n };
-  if (lim.cpu_ms !== undefined) out.cpu_ms = lim.cpu_ms;
+  const cpu = lim.cpu_ms;
+  if (cpu !== undefined) out.cpu_ms = cpu;
   return out;
 }
 
@@ -153,11 +221,17 @@ export function deriveLimits(cfg) {
  *  answers and no fourth: MATCH, MISMATCH (a value that is not ours — the deploy
  *  must not report success), or UNDETERMINED (the settings did not state the
  *  field, or could not be read — never read as a match). */
+/**
+ * @param {{ limits?: { subrequests?: unknown } | null } | null | undefined} settings the script's settings as read
+ * @param {{ subrequests: number }} want
+ * @returns {ReadBack}
+ */
 export function limitsReadBack(settings, want) {
   if (!settings || typeof settings !== "object") {
     return { verdict: "UNDETERMINED", why: "the script settings could not be read" };
   }
-  const got = settings.limits && settings.limits.subrequests;
+  const held = settings.limits;
+  const got = held ? held.subrequests : held;
   if (got === undefined || got === null) {
     return { verdict: "UNDETERMINED", why: "the script settings state no limits.subrequests" };
   }
@@ -176,25 +250,42 @@ const CRON_FIELDS = 5;       /* minute hour day-of-month month day-of-week */
 const MAX_CRONS = 3;         /* the platform's limit per Worker */
 
 /** The cron strings deploy.mjs sets, as the config states them; none declared is the empty list (the script is set to none). */
+/**
+ * @param {WranglerConfig | null | undefined} cfg
+ * @returns {string[]}
+ * @throws {Error} `REFUSED [INVALID_CRONS]`
+ */
 export function deriveCrons(cfg) {
-  const t = cfg && cfg.triggers;
+  const t = cfg ? cfg.triggers : cfg;
   if (t === undefined || t === null) return [];
+  /** @type {(why: string) => Error} */
   const bad = (why) => new Error(`REFUSED [INVALID_CRONS]: wrangler.jsonc's triggers.crons ${why}.`);
   if (typeof t !== "object" || Array.isArray(t)) throw bad("is not under a `triggers` object");
-  if (t.crons === undefined) return [];
-  if (!Array.isArray(t.crons)) throw bad("is not a list of cron strings");
-  for (const c of t.crons)
+  const crons = t.crons;
+  if (crons === undefined) return [];
+  if (!Array.isArray(crons)) throw bad("is not a list of cron strings");
+  /** @type {string[]} */
+  const out = [];
+  for (const c of crons) {
     if (typeof c !== "string" || c.trim().split(/\s+/).length !== CRON_FIELDS || c !== c.trim())
       throw bad(`holds ${JSON.stringify(c)}, which is not a cron of ${CRON_FIELDS} fields`);
-  if (new Set(t.crons).size !== t.crons.length) throw bad("names the same cron twice");
-  if (t.crons.length > MAX_CRONS) throw bad(`holds ${t.crons.length}; a Worker can have ${MAX_CRONS}`);
-  return [...t.crons];
+    out.push(c);
+  }
+  if (new Set(out).size !== out.length) throw bad("names the same cron twice");
+  if (out.length > MAX_CRONS) throw bad(`holds ${out.length}; a Worker can have ${MAX_CRONS}`);
+  return out;
 }
 
 /** The schedules read back against the crons sent. MATCH only when the script holds exactly those, as a set; anything
  *  else is a MISMATCH saying what it holds. `held` is the list of cron strings read, or null when it could not be. */
+/**
+ * @param {string[] | null} held
+ * @param {string[]} want
+ * @returns {ReadBack}
+ */
 export function schedulesReadBack(held, want) {
   if (!Array.isArray(held)) return { verdict: "UNREADABLE", why: "the script's schedules could not be read" };
+  /** @type {(l: string[]) => string} */
   const show = (l) => (l.length ? l.join(" | ") : "none");
   const same = held.length === want.length && want.every((c) => held.includes(c));
   return same
@@ -215,8 +306,13 @@ export function schedulesReadBack(held, want) {
 const KNOWN_OBSERVABILITY_KEYS = new Set(["enabled"]);
 
 /** The `observability` object deploy.mjs sends in the upload metadata: `{ enabled: true }`. */
+/**
+ * @param {WranglerConfig | null | undefined} cfg
+ * @returns {{ enabled: true }}
+ * @throws {Error} `REFUSED [NO_OBSERVABILITY]` or `[UNKNOWN_OBSERVABILITY_KEY]`
+ */
 export function deriveObservability(cfg) {
-  const o = cfg && cfg.observability;
+  const o = cfg ? cfg.observability : undefined;
   if (!o || typeof o !== "object" || Array.isArray(o) || o.enabled !== true) {
     throw new Error(
       "REFUSED [NO_OBSERVABILITY]: wrangler.jsonc does not state `observability: { enabled: true }`, and a script upload that "
@@ -234,12 +330,18 @@ export function deriveObservability(cfg) {
 /** Read the deployed script's settings back against what was sent. Three honest answers: MATCH (the settings report Workers
  *  Logs enabled), MISMATCH (they report it off, or state none: the platform reports an off script without the key), or
  *  UNREADABLE (the settings could not be read: never read as a match). Only `enabled` was sent, so only it is compared. */
+/**
+ * @param {{ observability?: { enabled?: unknown } | null } | null | undefined} settings the script's settings as read
+ * @param {{ enabled: boolean }} want
+ * @returns {ReadBack}
+ */
 export function observabilityReadBack(settings, want) {
   if (!settings || typeof settings !== "object") return { verdict: "UNREADABLE", why: "the script settings could not be read" };
   const got = settings.observability;
   if (!got || typeof got !== "object") return { verdict: "MISMATCH", why: "the script settings state no observability, which is how the platform reports Workers Logs off" };
-  if (got.enabled !== want.enabled) return { verdict: "MISMATCH", why: `settings say observability.enabled ${JSON.stringify(got.enabled ?? null)}, the config sent ${want.enabled}` };
-  return { verdict: "MATCH", why: `observability.enabled ${got.enabled} read back` };
+  const enabled = got.enabled;
+  if (enabled !== want.enabled) return { verdict: "MISMATCH", why: `settings say observability.enabled ${JSON.stringify(enabled ?? null)}, the config sent ${want.enabled}` };
+  return { verdict: "MATCH", why: `observability.enabled ${enabled} read back` };
 }
 
 /* ---- G83 (K4752): WHERE THE TEAM'S ROOM RUNS is chosen at a deploy ----
@@ -253,8 +355,17 @@ export const STORE_GENERATION_PATTERN = /^[1-9][0-9]*$/;
 
 /** `{ bindings, remove }` for the flags: `bindings` the plain_text bindings to send, `remove` the names a held binding of
  *  which must NOT be kept. A value that is not valid is refused by name before anything is uploaded. */
+/**
+ * @param {{ location?: unknown, generation?: unknown }} [flags]
+ * @param {readonly string[]} [hints]
+ * @returns {{ bindings: Binding[], remove: string[] }}
+ * @throws {Error} `REFUSED [BAD_STORE_LOCATION]` or `[BAD_STORE_GENERATION]`
+ */
 export function deriveStorePlace({ location, generation } = {}, hints = []) {
-  const bindings = [], remove = [];
+  /** @type {Binding[]} */
+  const bindings = [];
+  /** @type {string[]} */
+  const remove = [];
   if (location !== undefined) {
     if (typeof location !== "string" || !hints.includes(location))
       throw new Error(`REFUSED [BAD_STORE_LOCATION]: ${JSON.stringify(location ?? null)} is not one of Cloudflare's location hints (${hints.join(", ")}).`);

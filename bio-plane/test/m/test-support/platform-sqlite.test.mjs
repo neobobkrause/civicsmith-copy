@@ -14,6 +14,7 @@ const PRELOAD = fileURLToPath(new URL("../../platform-sqlite.mjs", import.meta.u
 const FIXTURE_DIR = join(SANDBOX, "platform-sqlite-fixtures");
 mkdirSync(FIXTURE_DIR, { recursive: true });
 
+/** @param {{[name: string]: string}} [extra] */
 const childEnv = (extra = {}) => {
   const env = { ...process.env };
   delete env.NODE_EXTRA_CA_CERTS;
@@ -22,7 +23,12 @@ const childEnv = (extra = {}) => {
   return { ...env, ...extra };
 };
 
-/** Writes `body` (the fixture test's source) and runs it under `node --test`, with `argv` before it. */
+/** Writes `body` (the fixture test's source) and runs it under `node --test`, with `argv` before it.
+ * @param {string} name
+ * @param {string} body
+ * @param {{argv?: string[], env?: {[name: string]: string}}} [options]
+ * @returns {{status: number | null, out: string}}
+ */
 const runFixture = (name, body, { argv = ["--import", PRELOAD], env = {} } = {}) => {
   const file = join(FIXTURE_DIR, `${name}.fixture.test.mjs`);
   writeFileSync(file, body);
@@ -90,19 +96,24 @@ test("kinds", () => {
 test("R18 the refusal has the shape node's own SQLITE_TOOBIG has", () => {
   const real = new DatabaseSync(":memory:", { limits: { length: 1000 } });
   real.exec("create table t(a)");
+  /** @type {unknown} */
   let own;
   try { real.prepare("insert into t values (?)").run("x".repeat(2000)); } catch (e) { own = e; }
-  assert.ok(own, "node refuses a bind over its own length limit");
+  const caught = own;
+  assert.ok(caught, "node refuses a bind over its own length limit");
   const r = runFixture("shape", HEAD + `
 test("shape", () => {
   let e; try { fresh().prepare("insert into t(a) values (?)").run("x".repeat(2_252_800)); } catch (x) { e = x; }
   console.log("@@SHAPE@@" + JSON.stringify({ name: e.name, message: e.message, own: Object.getOwnPropertyNames(e).filter((k) => k !== "stack").sort(), code: e.code, errcode: e.errcode, errstr: e.errstr, isError: e instanceof Error }));
 });`);
   assert.equal(r.status, 0, r.out);
-  const got = JSON.parse(r.out.match(/@@SHAPE@@(.*)/)[1]);
+  const got = JSON.parse(r.out.match(/@@SHAPE@@(.*)/)?.[1] ?? "");
+  const ownError = caught instanceof Error ? caught : undefined;
   assert.deepEqual(got, {
-    name: own.name, message: own.message, own: Object.getOwnPropertyNames(own).filter((k) => k !== "stack").sort(),
-    code: own.code, errcode: own.errcode, errstr: own.errstr, isError: true,
+    name: ownError?.name, message: ownError?.message, own: Object.getOwnPropertyNames(caught).filter((k) => k !== "stack").sort(),
+    code: ownError && "code" in ownError ? ownError.code : undefined,
+    errcode: ownError && "errcode" in ownError ? ownError.errcode : undefined,
+    errstr: ownError && "errstr" in ownError ? ownError.errstr : undefined, isError: true,
   });
 });
 
