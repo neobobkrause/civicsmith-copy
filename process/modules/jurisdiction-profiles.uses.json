@@ -1,0 +1,25 @@
+{
+  "module": "jurisdiction-profiles",
+  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "providers": [],
+  "uses": [],
+  "outside": [
+    {"rule":"S4","file":"jurisdictions/profiles/test-port-ellery.mjs","side":"code","line":25,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
+    {"rule":"S4","file":"jurisdictions/profiles/test-port-ellery.mjs","side":"code","line":25,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
+    {"rule":"S4","file":"jurisdictions/profiles/test-port-ellery.mjs","side":"code","line":25,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
+    {"rule":"S4","file":"jurisdictions/profiles/test-port-ellery.mjs","side":"code","line":25,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
+    {"rule":"R1","file":"jurisdictions/profiles/test-port-ellery.mjs","side":"code","line":27,"mayRefer":["*"],"waitsOn":"this module","tests":[]}
+  ],
+  "orderFaults": [],
+  "copies": [],
+  "packages": [
+    {"package":"node","facility":"Array.join"},
+    {"package":"node","facility":"Array.map"},
+    {"package":"node","facility":"String"},
+    {"package":"node","facility":"String.repeat"},
+    {"package":"node","facility":"String.replace"},
+    {"package":"node","facility":"String.split"},
+    {"package":"node","facility":"StringConstructor.raw"}
+  ],
+  "takesIn": []
+}

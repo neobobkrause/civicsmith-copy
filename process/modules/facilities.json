@@ -1,0 +1,5 @@
+{
+  "versions": { "node": "26.10.0", "workerd": "2026-07-01" },
+  "boundary": ["civil-time"],
+  "facilities": []
+}
