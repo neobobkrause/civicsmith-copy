@@ -25,10 +25,14 @@ const wrongCores = (row) => {
 
 const reg = createRegistry();
 reg.registerOwner({ owner: "sample", kinds: KINDS, neighbours: () => ({ items: [] }) });
-/** Whether checkConnection reads `v` as a record id at both ends (R1, R21: the same test). */
+/**
+ * Whether checkConnection reads `v` as a record id at both ends (R1, R21: the same test).
+ * @param {string} v
+ * @returns {boolean}
+ */
 const endsAccepted = (v) => {
   const res = reg.checkConnection(tie("c-1", v, v));
-  return res.ok || !res.errors.some((e) => e.field === "from" || e.field === "to");
+  return res.ok || !(res.errors ?? []).some((e) => e.field === "from" || e.field === "to");
 };
 
 test("R21 isRecordId is true for every ID_TABLE prefix's id core in its form, a legacy form included, alone or followed by a slug", () => {
@@ -69,15 +73,17 @@ test("R21 isRecordId is false for a core outside its prefix's form, an empty or 
 test("R21 isRecordId is false for a non-string and never throws, whatever it is given", () => {
   const hostile = { toString() { throw new Error("boom"); }, [Symbol.toPrimitive]() { throw new Error("boom"); } };
   for (const v of [undefined, null, 0, 1, NaN, true, 10n, Symbol("ENT-2026-0001"), [], ["ENT-2026-0001"], {}, { id: "ENT-2026-0001" },
-    new String("ENT-2026-0001"), () => "ENT-2026-0001", hostile, Object.create(null)]) {
+    new String("ENT-2026-0001"), () => "ENT-2026-0001", hostile, { __proto__: null }]) {
     assert.equal(isRecordId(v), false, typeof v);
   }
 });
 
 test("R21 R1 checkConnection reads `from` and `to` by isRecordId: it accepts exactly the ends isRecordId accepts", () => {
+  /** @type {string[]} */
   const vs = [NODE];
   for (const row of ID_TABLE) {
     const core = cores(row)[0];
+    assert.ok(core, row.prefix);
     vs.push(core, `${core}-a-slug`, `${core}-`, `${core}-A`, ...wrongCores(row).slice(0, 3));
   }
   vs.push("XYZ-2026-0001", "nobody", "");
