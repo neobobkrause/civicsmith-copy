@@ -62,19 +62,69 @@ import * as csv from "./csv.mjs";
 import * as ooxml from "./ooxml.mjs";
 import { localize } from "./setup-words/index.mjs";
 
+/**
+ * What an entry's `detect` answers, and what `detectFormat` hands back: the format's key, how sure the answer is
+ * (`certain` from a signature, `likely` from a declared type, `none` for `undetermined`), and why. An entry may attach
+ * keys of its own; `detectFormat` hands the entry's answer back verbatim (R10, R11).
+ * @typedef {Object} FormatDetection
+ * @property {string} format
+ * @property {string} confidence
+ * @property {string[]} signals
+ */
+/**
+ * One of an entry's optional readers (`parts`, `structure`, `text`, `dialect`): the entry's own module says what it
+ * takes beyond the bytes or the parts and what it answers; this registry never calls one.
+ * @typedef {(input: Uint8Array | object, opts?: object) => object | null | Promise<object | null>} EntryReader
+ */
+/**
+ * A format entry (I7): its key, its detector, and its readers, each a function or null. An entry may carry members of
+ * its own beside these (a decoding entry's `dialect`); the registry hands the entry back as it was registered.
+ * @typedef {{
+ *   readonly format: string,
+ *   readonly detect: (bytes: Uint8Array | null, contentType: string | null) => FormatDetection | null,
+ *   readonly parts?: EntryReader | null | undefined,
+ *   readonly structure?: EntryReader | null | undefined,
+ *   readonly text?: EntryReader | null | undefined
+ * }} FormatEntry
+ */
+/**
+ * A source read by range in place of whole bytes (R32).
+ * @typedef {Object} RangeSource
+ * @property {number} size
+ * @property {(offset: number, length: number) => Promise<Uint8Array>} readRange
+ */
+
 /* Registration order is dispatch order within a pass: the first entry whose
    detect() answers wins that pass. Kept insertion-ordered by Map. */
-const REGISTRY = new Map();
+/** @type {Map<string, FormatEntry>} */
+const REGISTRY = new Map([]);
 
+/**
+ * @param {string} format
+ * @param {string} slot
+ * @param {EntryReader | null | undefined} reader
+ * @returns {void}
+ */
+function checkSlot(format, slot, reader) {
+  if (reader != null && typeof reader !== "function")
+    throw new Error(`format "${format}": ${slot} must be a function or null`);
+}
+
+/**
+ * R1 to R5: stores `entry` under its format and hands it back unchanged.
+ * @param {FormatEntry} entry
+ * @returns {FormatEntry}
+ * @throws {Error} when the entry names no format, has no detect, has a reader that is not a function or null, or
+ *   names a format already registered
+ */
 export function registerFormat(entry) {
   if (!entry || typeof entry.format !== "string" || !entry.format)
     throw new Error("a format entry must name its format");
   if (typeof entry.detect !== "function")
     throw new Error(`format "${entry.format}": detect(bytes, contentType) is required`);
-  for (const slot of ["parts", "structure", "text"]) {
-    if (entry[slot] != null && typeof entry[slot] !== "function")
-      throw new Error(`format "${entry.format}": ${slot} must be a function or null`);
-  }
+  checkSlot(entry.format, "parts", entry.parts);
+  checkSlot(entry.format, "structure", entry.structure);
+  checkSlot(entry.format, "text", entry.text);
   if (REGISTRY.has(entry.format))
     throw new Error(`format "${entry.format}" is already registered; unregister it first`);
   REGISTRY.set(entry.format, entry);
@@ -85,16 +135,30 @@ export function registerFormat(entry) {
    half of the negative control). It touches only in-memory dispatch; the
    record holds no registry state to corrupt. Returns the removed entry so a
    test can restore exactly what it took out. */
+/**
+ * R6: removes and hands back the entry under `format`, or null when none is held.
+ * @param {string} format
+ * @returns {FormatEntry | null}
+ */
 export function unregisterFormat(format) {
   const entry = REGISTRY.get(format) || null;
   REGISTRY.delete(format);
   return entry;
 }
 
+/**
+ * R7: the entry under `format`, exactly as registered, or null.
+ * @param {string} format
+ * @returns {FormatEntry | null}
+ */
 export function getFormat(format) {
   return REGISTRY.get(format) || null;
 }
 
+/**
+ * R8: every registered format, in registration order.
+ * @returns {string[]}
+ */
 export function listFormats() {
   return [...REGISTRY.keys()];
 }
@@ -130,6 +194,11 @@ const HEAD_MAX = 1 << 20;
 const ODF_FORMATS = new Set(["odt", "ods", "odp"]);
 const CONTAINER_FORMATS = new Set(["docx", "xlsx", "pptx", "odt", "ods", "odp", "zip"]);
 
+/**
+ * @param {Uint8Array | null} b
+ * @param {string | null} ct
+ * @returns {FormatDetection}
+ */
 function undetermined(b, ct) {
   return {
     format: "undetermined",
@@ -143,6 +212,12 @@ function undetermined(b, ct) {
 
 /* Passes 2 and 3 and the stated undetermined, once pass 1 has missed. `b` is the
    bytes (or, for a range source, its head) or null. */
+/**
+ * @param {Uint8Array | null} b
+ * @param {string | null} ct
+ * @param {string | null} nm
+ * @returns {FormatDetection}
+ */
 function afterBytes(b, ct, nm) {
   if (ct) {
     for (const entry of REGISTRY.values()) {
@@ -157,29 +232,39 @@ function afterBytes(b, ct, nm) {
   return undetermined(b, ct);
 }
 
+/**
+ * @param {unknown} x
+ * @returns {x is RangeSource}
+ */
 function isRangeSource(x) {
   try {
-    return !!x && typeof x === "object" && !(x instanceof Uint8Array) && typeof x.readRange === "function"
+    return isFields(x) && !(x instanceof Uint8Array) && typeof x.readRange === "function"
       && Number.isFinite(x.size);
   } catch { return false; }
 }
 
+/**
+ * @param {RangeSource} src
+ * @param {string | null} ct
+ * @param {string | null} nm
+ * @returns {Promise<FormatDetection>}
+ */
 async function detectRange(src, ct, nm) {
   const size = src.size;
   if (size <= 0) return afterBytes(null, ct, nm);
   const got = await src.readRange(0, Math.min(size, HEAD_MAX));
   const head = got instanceof Uint8Array && got.length ? got : null;
   if (!head) return afterBytes(null, ct, nm);
-  if (size <= HEAD_MAX) return detectFormat(head, ct, nm);
+  if (size <= HEAD_MAX) return detectBytes(head, ct, nm);
   let container = null;
   for (const entry of REGISTRY.values()) {
     let r;
     if (CONTAINER_FORMATS.has(entry.format)) {
-      container ??= await ooxml.discriminate({ size, read: (o, n) => src.readRange(o, n) }, null);
+      container ??= await ooxml.discriminate({ size, read: (/** @type {number} */ o, /** @type {number} */ n) => src.readRange(o, n) }, null);
       r = container && container.ok === true && container.format === entry.format
         ? { format: entry.format, confidence: ODF_FORMATS.has(entry.format) ? "certain" : "likely",
             signals: [localize("format-registry.formats.container_judged_from_end", "judged from the end record and the central directory of {size} bytes", { size: String(size) }),
-                      ...(Array.isArray(container.signals) ? container.signals.filter((x) => typeof x === "string") : [])] }
+                      ...signalsOf(container)] }
         : null;
     } else r = entry.detect(head, null);
     if (r && r.format) return r;
@@ -187,15 +272,24 @@ async function detectRange(src, ct, nm) {
   return afterBytes(head, ct, nm);
 }
 
-export function detectFormat(bytes, contentType, name) {
-  if (isRangeSource(bytes)) {
-    const ct = typeof contentType === "string" && contentType ? contentType : null;
-    const nm = typeof name === "string" && name ? name : null;
-    return detectRange(bytes, ct, nm);
-  }
-  const b = bytes instanceof Uint8Array && bytes.length ? bytes : null;
-  const ct = typeof contentType === "string" && contentType ? contentType : null;
-  const nm = typeof name === "string" && name ? name : null;
+/**
+ * The text signals of ooxml's answer, in order.
+ * @param {{ readonly signals?: unknown }} judged
+ * @returns {string[]}
+ */
+function signalsOf(judged) {
+  const signals = judged.signals;
+  return isList(signals) ? kept(signals, (x) => typeof x === "string" ? x : null) : [];
+}
+
+/**
+ * Pass 1 over whole bytes, then passes 2 and 3.
+ * @param {Uint8Array | null} b
+ * @param {string | null} ct
+ * @param {string | null} nm
+ * @returns {FormatDetection}
+ */
+function detectBytes(b, ct, nm) {
   if (b) {
     for (const entry of REGISTRY.values()) {
       const r = entry.detect(b, null);
@@ -203,6 +297,22 @@ export function detectFormat(bytes, contentType, name) {
     }
   }
   return afterBytes(b, ct, nm);
+}
+
+/**
+ * R9 to R13, R31, R32: which format `bytes` are. Bytes count only as a non-empty Uint8Array, a content type and a name
+ * only as a non-empty string; anything else counts as not given. A range source in place of the bytes makes the answer
+ * a Promise.
+ * @param {unknown} bytes
+ * @param {unknown} [contentType]
+ * @param {unknown} [name]
+ * @returns {FormatDetection | Promise<FormatDetection>}
+ */
+export function detectFormat(bytes, contentType, name) {
+  const ct = typeof contentType === "string" && contentType ? contentType : null;
+  const nm = typeof name === "string" && name ? name : null;
+  if (isRangeSource(bytes)) return detectRange(bytes, ct, nm);
+  return detectBytes(bytes instanceof Uint8Array && bytes.length ? bytes : null, ct, nm);
 }
 
 /* ------------------------------------------------------------------ *
@@ -224,7 +334,28 @@ export function detectFormat(bytes, contentType, name) {
    those two entries would otherwise find in them. No other entry's signature
    can begin with either of theirs. HEIC and TIFF are not registered (N853b §2
    (a)): they stay `undetermined`. */
+/**
+ * @typedef {Object} PictureMark
+ * @property {number} page
+ * @property {string} reason
+ * @property {null} font
+ * @property {string} codes
+ * @property {number} count
+ */
+/**
+ * What a picture entry's `structure` answers (R29): one page with no text layer, or the refusal.
+ * @typedef {{ ok: true, pages: number, text: { document: string, pages: { page: number, text: string, undetermined: PictureMark[] }[],
+ *   undetermined: PictureMark[], counts: { chars: number, undetermined: number } } } | { ok: false, container: string, reason: string }} PictureReading
+ */
+/**
+ * @param {string} format
+ * @param {number[]} signature
+ * @param {string} contentType
+ * @param {string} refusal
+ * @returns {FormatEntry}
+ */
 function pictureEntry(format, signature, contentType, refusal) {
+  /** @type {(bytes: unknown) => boolean} */
   const signed = (bytes) => bytes instanceof Uint8Array && bytes.length >= signature.length
     && signature.every((b, i) => bytes[i] === b);
   const hex = signature.map((b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" ");
@@ -243,12 +374,19 @@ function pictureEntry(format, signature, contentType, refusal) {
     parts: null,
     /* One page, page 0, unread: the shape pdf-reader's Tier-1 text gives a
        page with no text layer (its R14), fresh on every call. */
-    structure: async (bytes) => {
-      if (!signed(bytes)) return { ok: false, container: format, reason: refusal };
+    structure: async (/** @type {Uint8Array | object} */ bytes) => {
+      if (!signed(bytes)) {
+        /** @type {PictureReading} builds a PictureReading */
+        const refused = { ok: false, container: format, reason: refusal };
+        return refused;
+      }
+      /** @type {PictureMark} */
       const m = { page: 0, reason: "no_text_layer", font: null, codes: "", count: 0 };
-      return { ok: true, pages: 1,
+      /** @type {PictureReading} builds a PictureReading */
+      const read = { ok: true, pages: 1,
                text: { document: "", pages: [{ page: 0, text: "", undetermined: [m] }],
                        undetermined: [m], counts: { chars: 0, undetermined: 1 } } };
+      return read;
     },
     text: null,
   };
@@ -269,9 +407,13 @@ const HTML_CONTENT_TYPES = ["text/html", "application/xhtml+xml"];
    legacy charset. Leading comments and an XML declaration are skipped; one
    that does not end inside the KiB leaves the root unseen, so the answer is no. */
 const HTML_HEAD_BYTES = 1024;
+/**
+ * @param {Uint8Array} bytes
+ * @returns {boolean}
+ */
 function startsAsHtml(bytes) {
   const d = ooxml.decodeText(bytes.subarray(0, HTML_HEAD_BYTES), { kind: "html" });
-  if (!d || d.ok !== true || typeof d.text !== "string") return false;
+  if (!d || d.ok !== true || !("text" in d) || typeof d.text !== "string") return false;
   let t = d.text.toLowerCase();
   for (;;) {
     t = t.replace(/^[\s\uFEFF]+/, "");
@@ -431,7 +573,7 @@ registerFormat({
       const { CONTENT_TYPES_PART: opcMap, ODF_MIMETYPE_PART: odfMime } = ooxml;
       if (container.byName.has(opcMap)) return null;
       if (container.byName.has(odfMime)
-        || container.entries.some((e) => ooxml.normalizePartName(e.name) === odfMime)) return null;
+        || container.entries.some((/** @type {{ readonly name: unknown }} */ e) => ooxml.normalizePartName(e.name) === odfMime)) return null;
       return { format: "zip", confidence: "likely",
                signals: ["magic: PK\\x03\\x04 with a readable central directory",
                          `part: ${opcMap} absent`, `part: ${odfMime} absent`,
@@ -469,6 +611,54 @@ registerFormat({
    the key is then PRESENT AND NULL on the reading (an entry answered and this
    record cannot state what), which is a different fact from ABSENT (no entry
    with a decoding choice ever read this document). */
+/**
+ * @typedef {{ readonly [field: string]: unknown }} Fields an emitted object, its members not yet checked
+ * @typedef {ReadonlyArray<unknown>} Unchecked an emitted list, its items not yet checked
+ */
+/**
+ * @param {unknown} v
+ * @returns {v is Fields}
+ */
+const isFields = (v) => typeof v === "object" && v !== null;
+/**
+ * @param {unknown} v
+ * @returns {v is Unchecked}
+ */
+const isList = (v) => Array.isArray(v);
+/**
+ * The items of `list` that `keep` takes, in order, read as `Array.prototype.filter` reads them (holes skipped).
+ * @template T
+ * @param {Unchecked} list
+ * @param {(item: unknown) => T | null} keep
+ * @returns {T[]}
+ */
+function kept(list, keep) {
+  /** @type {T[]} */
+  const out = [];
+  const n = list.length;
+  for (let i = 0; i < n; i++) {
+    if (!(i in list)) continue;
+    const t = keep(list[i]);
+    if (t !== null) out.push(t);
+  }
+  return out;
+}
+/**
+ * The dialect an entry emitted, projected by named keys (R14 to R16).
+ * @typedef {Object} ReadingDialect
+ * @property {string | null} delimiter
+ * @property {string | null} encoding
+ * @property {{ delimiter: string | null, encoding: string | null }} confidence
+ * @property {{ delimiter: string[], encoding: string[] }} signals
+ * @property {string[]} undetermined
+ * @property {boolean | null} assumed
+ * @property {number[]} disagree
+ */
+/**
+ * R14 to R16: the named keys of what an entry emitted as its dialect, or null when it emitted no object. Never throws.
+ * @param {unknown} emitted
+ * @returns {ReadingDialect | null}
+ */
 export function readingDialect(emitted) {
   /* NEVER THROWS (R16), even on an object whose key read throws (a getter, a
      revoked Proxy): a key that cannot be read is a key that holds no value of
@@ -476,21 +666,27 @@ export function readingDialect(emitted) {
   try {
     if (!emitted || typeof emitted !== "object" || Array.isArray(emitted)) return null;
   } catch { return null; }
-  const get = (k) => { try { return emitted[k]; } catch { return undefined; } };
+  const fields = emitted;
+  if (!isFields(fields)) return null;
+  /** @param {string} k @returns {unknown} */
+  const get = (k) => { try { return fields[k]; } catch { return undefined; } };
+  /** @param {string} k @returns {string | null} */
   const str = (k) => { const v = get(k); return typeof v === "string" && v ? v : null; };
+  /** @param {string} k @returns {string[]} */
   const strs = (k) => {
     try {
       const v = get(k);
-      return Array.isArray(v) ? Array.prototype.filter.call(v, (s) => typeof s === "string") : [];
+      return isList(v) ? kept(v, (s) => typeof s === "string" ? s : null) : [];
     } catch { return []; }
   };
   /* G131c, G131g: whether the encoding was assumed (a boolean or null) and the offsets of
      the windows whose encoding or delimiter differ from the file's (finite numbers only). */
   const assumed = get("assumed");
+  /** @returns {number[]} */
   const nums = () => {
     try {
       const v = get("disagree");
-      return Array.isArray(v) ? Array.prototype.filter.call(v, (n) => typeof n === "number" && Number.isFinite(n)) : [];
+      return isList(v) ? kept(v, (n) => typeof n === "number" && Number.isFinite(n) ? n : null) : [];
     } catch { return []; }
   };
   return {
