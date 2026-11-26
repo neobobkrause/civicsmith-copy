@@ -14,15 +14,211 @@
 import * as OOXML from "./ooxml.mjs";
 import { boundOf } from "./read-bounds.mjs";
 
-/** A tag longer than this is not a tag (R42): its bytes are text and the part states `tag_over_bound`. */
+/**
+ * What a scanner calls, in document order. `open` takes the local name, the raw attribute text (not decoded) and
+ * whether the tag closed itself; `text` and `cdata` take character data (`text` raw, not decoded). A handler whose
+ * `stopped` reads true ends the scan; the scanner sets `scanner` on it, so a handler may ask where it is.
+ * @typedef {{
+ *   text: (chars: string) => void,
+ *   cdata: (chars: string) => void,
+ *   open: (local: string, rawAttrs: string, selfClosed: boolean) => void,
+ *   close: (local: string) => void,
+ *   readonly stopped?: boolean,
+ *   scanner?: Scanner,
+ * }} ScanHandler
+ */
+/**
+ * Attributes by local name, and by qualified name where it differs, entity-decoded.
+ * @typedef {{[name: string]: string}} Attrs
+ */
+/**
+ * A scanner's counts.
+ * @typedef {Object} ScanStats
+ * @property {number} scanned bytes examined
+ * @property {number} tokens
+ * @property {number} overBound tags over TAG_MAX
+ * @property {number} unterminated tags, comments or sections never closed
+ */
+/**
+ * One element `collectElements` found.
+ * @typedef {Object} CollectedElement
+ * @property {string} name its local name
+ * @property {Attrs} attrs
+ * @property {string} text the character data inside it, CDATA included, entities decoded
+ */
+/**
+ * What `collectElements` answers.
+ * @typedef {Object} Collected
+ * @property {CollectedElement[]} elements in document order
+ * @property {boolean} badRef a numeric character reference names no scalar value
+ * @property {ScanStats} stats
+ */
+/**
+ * A statement a scanner's counts owe `undetermined` for one part (R42).
+ * @typedef {Object} ScanNote
+ * @property {string} part
+ * @property {"tag_over_bound" | "tag_unterminated"} why
+ * @property {number} n
+ */
+/**
+ * A part whose text holds more than 0.5 % replacement characters (R41), for `undetermined`.
+ * @typedef {Object} PartialNote
+ * @property {string} part
+ * @property {"partial"} why
+ * @property {number} replaced
+ */
+/**
+ * A part that could not be read or scanned: the refusal as ooxml states it, or `char_ref_invalid` (R40).
+ * @typedef {Object} PartFailure
+ * @property {false} ok
+ * @property {string} why
+ * @property {number} [size]
+ * @property {boolean} [final]
+ * @property {string} [name]
+ * @property {string} [detail]
+ */
+/**
+ * A part read whole and decoded.
+ * @typedef {Object} TextRead
+ * @property {true} ok
+ * @property {string} text
+ * @property {PartialNote} [partial]
+ */
+/** @typedef {TextRead | PartFailure} TextReadResult */
+/**
+ * A part read whole and kept as its bytes and the encoding they decode by.
+ * @typedef {Object} TextBytesRead
+ * @property {true} ok
+ * @property {Uint8Array} data
+ * @property {string} encoding
+ * @property {PartialNote} [partial]
+ */
+/** @typedef {TextBytesRead | PartFailure} TextBytesReadResult */
+/**
+ * A part scanned to its end, or as far as a handler let it run (`scanner.stopped`).
+ * @typedef {Object} PartScanned
+ * @property {true} ok
+ * @property {Scanner} scanner
+ * @property {PartialNote} [partial]
+ */
+/** @typedef {PartScanned | PartFailure} PartScanResult */
+/** @typedef {() => unknown} YieldNow lets the caller's turn pass; may answer a promise */
+/**
+ * How `scanPart` reads a part: `"whole"` (read whole, decoded, fed in windows) or `"pieces"` (read in pieces by ooxml).
+ * `cut` says where a piece may end; `onPiece` is told each piece and may answer a promise the next piece waits for.
+ * @typedef {Object} ScanPartOptions
+ * @property {"whole" | "pieces"} [mode]
+ * @property {(buf: string) => number} [cut]
+ * @property {YieldNow | null | undefined} [yieldNow]
+ * @property {((piece: string) => unknown) | null | undefined} [onPiece]
+ */
+/**
+ * The per-part test for a branch a walk does not read: true for an element to skip.
+ * @typedef {(local: string, closing: boolean, selfClosed: boolean) => boolean} Skipped
+ */
+/**
+ * @typedef {Object} CountOptions
+ * @property {() => Skipped} skipper makes the per-part test
+ * @property {number} max
+ * @property {number} [startAt] the count carried in
+ */
+/**
+ * The handler `countObjects` runs: a scan handler that stops itself.
+ * @typedef {{
+ *   text: () => void,
+ *   cdata: () => void,
+ *   open: (local: string, rawAttrs: string, selfClosed: boolean) => void,
+ *   close: (local: string) => void,
+ *   stopped: boolean,
+ *   scanner?: Scanner,
+ * }} CountingHandler
+ */
+/**
+ * The retained-objects bound passed (R44).
+ * @typedef {Object} ObjectsExceeded
+ * @property {"TOO_MANY_OBJECTS"} why
+ * @property {number} n
+ * @property {number} bound
+ * @property {true} final
+ */
+/**
+ * What `countObjects` answers.
+ * @typedef {Object} ObjectCount
+ * @property {number} n
+ * @property {ObjectsExceeded | null} exceeded
+ * @property {number} scanned bytes examined
+ */
+/**
+ * A place in a text sink, to take back to.
+ * @typedef {Object} SinkMark
+ * @property {number} n bytes
+ * @property {number} chars UTF-16 units
+ */
+/**
+ * Text made a piece at a time (`textSink`): `chars` the UTF-16 units added so far; `text` makes the text, once, and the
+ * sink is spent after.
+ * @typedef {{
+ *   readonly chars: number,
+ *   add: (s: string) => void,
+ *   newline: () => void,
+ *   mark: () => SinkMark,
+ *   reset: (m: SinkMark) => void,
+ *   text: () => string,
+ * }} TextSink
+ */
+/**
+ * An embedded member's identity, or why it has none.
+ * @typedef {{ok: true, sha256: string, size: number} | {ok: false, why: string, detail?: string, limit?: number}} MemberIdentity
+ */
+/**
+ * An element reference as a reader writes it (R15-R19): `ref` its text, `run` or `shape` where it names one.
+ * @typedef {Object} ElementRef
+ * @property {string} kind
+ * @property {string} ref
+ * @property {number} [run]
+ * @property {number} [shape]
+ */
+/**
+ * A unit of text before it is addressed: `ref` an id written as a string, an element reference, or none.
+ * @template {ElementRef} A
+ * @typedef {Object} TextUnit
+ * @property {string} kind
+ * @property {string | A | null} ref
+ * @property {string} part
+ * @property {string} text
+ * @property {A} [anchor]
+ * @property {number[]} [paras]
+ * @property {number[]} [shapes]
+ * @property {boolean} [hidden]
+ */
+/**
+ * A unit of text addressed (R38): `ref` a non-empty string that addresses it alone within its part; the element
+ * reference it came from, where it had one, kept as `anchor`.
+ * @template {ElementRef} A
+ * @typedef {Object} AddressedUnit
+ * @property {string} kind
+ * @property {string} ref
+ * @property {string} part
+ * @property {string} text
+ * @property {A} [anchor]
+ * @property {number[]} [paras]
+ * @property {number[]} [shapes]
+ * @property {boolean} [hidden]
+ */
+
+/** A tag longer than this is not a tag (R42): its bytes are text and the part states `tag_over_bound`.
+ *  @type {number} */
 export const TAG_MAX = boundOf("xml", "tag");
 /* The window a part is fed in; two windows hold far fewer than 65,536 tokens, so a yield between windows is never
    more than that many tokens apart (R42). */
 const WINDOW = 65536;
 const YIELD_TOKENS = 32768;
 
+/** @param {number} c @returns {boolean} */
 const isWs = (c) => c === 32 || c === 9 || c === 10 || c === 13;
+/** @param {number} c @returns {boolean} */
 const isNameStart = (c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95 || c === 58;
+/** @param {string} name */
 const localOf = (name) => { const i = name.lastIndexOf(":"); return i < 0 ? name : name.slice(i + 1); };
 
 /* ------------------------------------------------------------------ *
@@ -33,31 +229,42 @@ const REF_RE = /&#([^;&<\s]*);/g;
 const NUM_RE = /^(?:[xX]([0-9A-Fa-f]{1,8})|([0-9]{1,9}))$/;
 
 /** The scalar value a numeric reference's text names, or null when it names none (above U+10FFFF, a surrogate, U+0000,
- *  digits that do not parse). `body` is what lies between `&#` and `;`. */
+ *  digits that do not parse). `body` is what lies between `&#` and `;`.
+ *  @param {string} body
+ *  @returns {number | null} */
 function scalarOf(body) {
   const m = NUM_RE.exec(body);
   if (!m) return null;
-  const cp = m[1] != null ? parseInt(m[1], 16) : parseInt(m[2], 10);
+  const hex = m[1], dec = m[2];
+  const cp = hex != null ? parseInt(hex, 16) : dec != null ? parseInt(dec, 10) : NaN;
   if (!(cp > 0) || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) return null;
   return cp;
 }
 
-/** True when `s` holds a numeric character reference that names no scalar value. */
+/** True when `s` holds a numeric character reference that names no scalar value.
+ *  @param {string} s
+ *  @returns {boolean} */
 export function hasBadRef(s) {
   if (s.indexOf("&#") < 0) return false;
   REF_RE.lastIndex = 0;
-  let m;
-  while ((m = REF_RE.exec(s)) !== null) if (scalarOf(m[1]) == null) return true;
+  for (;;) {
+    const m = REF_RE.exec(s);
+    if (m === null) break;
+    if (scalarOf(m[1] ?? "") == null) return true;
+  }
   return false;
 }
 
+/** @type {{[name: string]: string}} */
 const NAMED = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 const ENT_RE = /&(#[xX][0-9A-Fa-f]+|#[0-9]+|[a-zA-Z]+);/g;
 /** Entities and character references decoded; a reference that names no character stays as written (the scanner has
- *  already made its part unreadable, R40). */
+ *  already made its part unreadable, R40).
+ *  @param {string} s
+ *  @returns {string} */
 export function unescape(s) {
   if (s.indexOf("&") < 0) return s;
-  return s.replace(ENT_RE, (m, e) => {
+  return s.replace(ENT_RE, /** @param {string} m @param {string} e */ (m, e) => {
     if (e[0] === "#") {
       const cp = scalarOf(e.slice(1));
       return cp == null ? m : String.fromCodePoint(cp);
@@ -66,8 +273,11 @@ export function unescape(s) {
   });
 }
 
-/** Attributes by LOCAL name, entity-decoded; one pass, quoted or bare values. */
+/** Attributes by LOCAL name, entity-decoded; one pass, quoted or bare values.
+ *  @param {string | null | undefined} raw
+ *  @returns {Attrs} */
 export function parseAttrs(raw) {
+  /** @type {Attrs} */
   const out = {};
   if (!raw) return out;
   const n = raw.length;
@@ -82,10 +292,11 @@ export function parseAttrs(raw) {
     if (raw.charCodeAt(i) !== 61) continue;
     i++;
     while (i < n && isWs(raw.charCodeAt(i))) i++;
+    /** @type {string} */
     let val;
     const q = raw.charCodeAt(i);
     if (q === 34 || q === 39) {
-      const e = raw.indexOf(raw[i], i + 1);
+      const e = raw.indexOf(raw.charAt(i), i + 1);
       if (e < 0) { val = raw.slice(i + 1); i = n; } else { val = raw.slice(i + 1, e); i = e + 1; }
     } else {
       s = i;
@@ -110,25 +321,44 @@ export function parseAttrs(raw) {
  *  carried into the next. Counts: `scanned` (bytes examined), `tokens`, `overBound` (tags over TAG_MAX), `unterminated`
  *  (a tag, comment or section never closed), `badRef` (a numeric reference naming no scalar value). */
 export class Scanner {
+  /** @param {ScanHandler} h */
   constructor(h) {
+    /** @type {ScanHandler} the handler */
     this.h = h;
     if (h && typeof h === "object") h.scanner = this; // a handler may ask where it is (`scanner.at`)
+    /** @type {string} what the last piece left unfinished */
     this.carry = "";
+    /** @type {number} bytes examined */
     this.scanned = 0;
+    /** @type {number} */
     this.tokens = 0;
+    /** @type {number} tags over TAG_MAX */
     this.overBound = 0;
+    /** @type {number} tags, comments or sections never closed */
     this.unterminated = 0;
+    /** @type {boolean} a numeric reference names no scalar value */
     this.badRef = false;
+    /** @type {boolean} */
     this._stopped = false;
+    /** @type {number} the token count at the last yield */
     this.yielded = 0;
+    /** @type {number} */
     this.carryAt = 0; // the absolute offset of the first character of `carry`
+    /** @type {number} */
     this.at = 0;      // the absolute offset of the start of the tag being handed to the handler
   }
 
   /* a handler (or its owner) may end the scan early: set `stopped` on either */
+  /** @returns {boolean} */
   get stopped() { return this._stopped || this.h.stopped === true; }
+  /** @param {boolean} v */
   set stopped(v) { this._stopped = v; }
 
+  /* the same read as `stopped`, made afresh at each call */
+  /** @returns {boolean} */
+  #halted() { return this.stopped; }
+
+  /** @param {string} s */
   #text(s) {
     if (!s) return;
     this.tokens++;
@@ -137,26 +367,32 @@ export class Scanner {
     this.h.text(s);
   }
 
+  /** @param {string} chunk @param {boolean} [final] @returns {void} */
   push(chunk, final = false) {
-    if (this.stopped) return;
+    if (this.#halted()) return;
     const xml = this.carry ? this.carry + chunk : chunk;
     this.carry = "";
     const n = xml.length;
     const abs0 = this.carryAt;
     let i = 0;
-    while (i < n && !this.stopped) {
+    while (i < n && !this.#halted()) {
       const lt = xml.indexOf("<", i);
       if (lt < 0) {
         if (final) { this.#text(xml.slice(i)); i = n; }
         break;
       }
       if (lt > i) this.#text(xml.slice(i, lt));
-      if (this.stopped) return;
+      if (this.#halted()) return;
       i = lt;
       if (!final && n - lt < 10) break; // too little to classify: carried
       const c1 = lt + 1 < n ? xml.charCodeAt(lt + 1) : -1;
       if (c1 === 33) { // <!
-        let end, openLen, kind;
+        /** @type {number} */
+        let end;
+        /** @type {number} */
+        let openLen;
+        /** @type {"comment" | "cdata" | "decl"} */
+        let kind;
         if (xml.startsWith("<!--", lt)) { kind = "comment"; openLen = 4; end = xml.indexOf("-->", lt + 4); }
         else if (xml.startsWith("<![CDATA[", lt)) { kind = "cdata"; openLen = 9; end = xml.indexOf("]]>", lt + 9); }
         else { kind = "decl"; openLen = 2; end = xml.indexOf(">", lt + 2); }
@@ -229,19 +465,25 @@ export class Scanner {
       if (closing) this.h.close(local);
       else this.h.open(local, attrs, self);
     }
-    if (!final && !this.stopped && i < n) this.carry = xml.slice(i);
+    if (!final && !this.#halted() && i < n) this.carry = xml.slice(i);
     this.carryAt = abs0 + (this.carry ? i : n);
   }
 }
 
-/** Let the caller's turn pass; a `yieldNow` that is not a function is no yield, one that fails is no yield. */
+/** Let the caller's turn pass; a `yieldNow` that is not a function is no yield, one that fails is no yield.
+ *  @param {YieldNow | null | undefined} yieldNow
+ *  @returns {Promise<void>} */
 export async function letPass(yieldNow) {
   if (typeof yieldNow !== "function") return;
   try { await yieldNow(); } catch { /* a yield that fails is no yield */ }
 }
 
 /** Feed a part held whole through `scanner` in windows, awaiting `yieldNow` between windows once 32,768 tokens have
- *  passed since the last (never more than 65,536 apart, R42). */
+ *  passed since the last (never more than 65,536 apart, R42).
+ *  @param {Scanner} scanner
+ *  @param {string} xml
+ *  @param {YieldNow | null | undefined} [yieldNow]
+ *  @returns {Promise<void>} */
 export async function scanWhole(scanner, xml, yieldNow) {
   for (let at = 0; at < xml.length && !scanner.stopped; at += WINDOW) {
     scanner.push(xml.slice(at, at + WINDOW), false);
@@ -253,7 +495,10 @@ export async function scanWhole(scanner, xml, yieldNow) {
   scanner.push("", true);
 }
 
-/** Synchronously, for a small part or a caller that cannot wait. */
+/** Synchronously, for a small part or a caller that cannot wait.
+ *  @param {Scanner} scanner
+ *  @param {string} xml
+ *  @returns {void} */
 export function scanSync(scanner, xml) {
   scanner.push(xml, true);
 }
@@ -263,30 +508,41 @@ export function scanSync(scanner, xml) {
  * ------------------------------------------------------------------ */
 
 /** Every element whose local name is in `names`, in document order: `{name, attrs, text}`, `text` being the character
- *  data (CDATA included, entities decoded) inside it; a name is not nested in itself. One pass. */
+ *  data (CDATA included, entities decoded) inside it; a name is not nested in itself. One pass.
+ *  @param {string} xml
+ *  @param {Set<string> | readonly string[]} names
+ *  @returns {Collected} */
 export function collectElements(xml, names) {
+  /** @type {CollectedElement[]} */
   const out = [];
+  /** @type {CollectedElement | null} */
   let cur = null;
   const set = names instanceof Set ? names : new Set(names);
   const sc = new Scanner({
-    text(s) { if (cur) cur.text += unescape(s); },
-    cdata(s) { if (cur) cur.text += s; },
+    text(s) { const c = cur; if (c) c.text += unescape(s); },
+    cdata(s) { const c = cur; if (c) c.text += s; },
     open(name, raw, self) {
       if (cur || !set.has(name)) return;
+      /** @type {CollectedElement} */
       const e = { name, attrs: parseAttrs(raw), text: "" };
       out.push(e);
       if (!self) cur = e;
     },
-    close(name) { if (cur && cur.name === name) cur = null; },
+    close(name) { const c = cur; if (c && c.name === name) cur = null; },
   });
   scanSync(sc, xml);
   return { elements: out, badRef: sc.badRef, stats: stats(sc) };
 }
 
+/** @param {Scanner} sc @returns {ScanStats} */
 export const stats = (sc) => ({ scanned: sc.scanned, tokens: sc.tokens, overBound: sc.overBound, unterminated: sc.unterminated });
 
-/** The statements a scanner's counts owe `undetermined` for one part (R42). */
+/** The statements a scanner's counts owe `undetermined` for one part (R42).
+ *  @param {string} part
+ *  @param {Scanner} sc
+ *  @returns {ScanNote[]} */
 export function scanNotes(part, sc) {
+  /** @type {ScanNote[]} */
   const out = [];
   if (sc.overBound) out.push({ part, why: "tag_over_bound", n: sc.overBound });
   if (sc.unterminated) out.push({ part, why: "tag_unterminated", n: sc.unterminated });
@@ -297,10 +553,14 @@ export function scanNotes(part, sc) {
  * The one decode (R41)
  * ------------------------------------------------------------------ */
 
-/** A text with more replacement characters than this share of its characters is `partial` (ooxml R36). */
+/** A text with more replacement characters than this share of its characters is `partial` (ooxml R36).
+ *  @type {number} */
 export const REPLACED_RATIO_MAX = 0.005;
 
-/** A text part's bytes as text: ooxml's `decodeText` when it is there, else the local one of the same contract. */
+/** A text part's bytes as text: ooxml's `decodeText` when it is there, else the local one of the same contract.
+ *  @param {Uint8Array} bytes
+ *  @param {string} part
+ *  @param {string | null} [declared] */
 export function decodePart(bytes, part, declared = null) {
   try {
     return OOXML.decodeText(bytes, { declared, name: part, kind: "xml" });
@@ -311,12 +571,17 @@ export function decodePart(bytes, part, declared = null) {
 
 /** Read one part whole and decode it: `{ok:true, text, partial?}` or `{ok:false, why, ...}` (a part the cap refuses, a
  *  read that failed, an encoding this function cannot decode). `partial` is `{part, why:"partial", replaced}` when the
- *  text holds more than 0.5 % replacement characters (R41). */
+ *  text holds more than 0.5 % replacement characters (R41).
+ *  @param {unknown} bytes the source, as ooxml reads it
+ *  @param {unknown} container the container, as ooxml lists it
+ *  @param {string} name
+ *  @returns {Promise<TextReadResult>} */
 export async function readText(bytes, container, name) {
   const r = await OOXML.readPart(bytes, container, name);
   if (!r.ok) return { ok: false, why: r.why, ...(r.size != null ? { size: r.size } : {}), ...(r.final ? { final: true } : {}) };
   const d = decodePart(r.bytes, name);
   if (!d.ok) return { ok: false, why: d.why, name: d.name ?? name, final: true };
+  /** @type {TextRead} */
   const out = { ok: true, text: d.text };
   if (d.replaced > 0 && d.replaced_ratio > REPLACED_RATIO_MAX) out.partial = { part: name, why: "partial", replaced: d.replaced };
   return out;
@@ -324,25 +589,37 @@ export async function readText(bytes, container, name) {
 
 /** A copy of `s` that keeps nothing else alive. A slice of 13 characters or more is a view into the string it was cut from,
  *  so a paragraph's text held by the answer would hold the whole window (and, for a part read whole, the part) it came out
- *  of for as long as the answer lives (R44's margin); a short one is copied by the engine already. */
+ *  of for as long as the answer lives (R44's margin); a short one is copied by the engine already.
+ *  @param {string} s
+ *  @returns {string} */
 export const owned = (s) => (s.length < 13 ? s : (" " + s).slice(1));
 
 /** R44 (fix round 10, cause 11a): the same read as `readText`, but the part is kept as its bytes and its encoding, not as a
  *  string: a large part decoded whole is a string of up to two bytes a character beside the answer it makes. The decode is
  *  made once here, whole, as `readText` makes it, for its encoding and its share of replaced characters (R41) and let go;
- *  `scanBytes` decodes it again a window at a time with that same encoding, which gives the same text. */
+ *  `scanBytes` decodes it again a window at a time with that same encoding, which gives the same text.
+ *  @param {unknown} bytes the source, as ooxml reads it
+ *  @param {unknown} container the container, as ooxml lists it
+ *  @param {string} name
+ *  @returns {Promise<TextBytesReadResult>} */
 export async function readTextBytes(bytes, container, name) {
   const r = await OOXML.readPart(bytes, container, name);
   if (!r.ok) return { ok: false, why: r.why, ...(r.size != null ? { size: r.size } : {}), ...(r.final ? { final: true } : {}) };
   const d = decodePart(r.bytes, name);
   if (!d.ok) return { ok: false, why: d.why, name: d.name ?? name, final: true };
+  /** @type {TextBytesRead} */
   const out = { ok: true, data: r.bytes, encoding: d.encoding };
   if (d.replaced > 0 && d.replaced_ratio > REPLACED_RATIO_MAX) out.partial = { part: name, why: "partial", replaced: d.replaced };
   return out;
 }
 
 /** Feed a part kept as bytes through `scanner`, decoding a window of it at a time (`readTextBytes`), awaiting `yieldNow` as
- *  `scanWhole` does. */
+ *  `scanWhole` does.
+ *  @param {Scanner} scanner
+ *  @param {Uint8Array} data
+ *  @param {string} encoding
+ *  @param {YieldNow | null | undefined} [yieldNow]
+ *  @returns {Promise<void>} */
 export async function scanBytes(scanner, data, encoding, yieldNow) {
   const decoder = new TextDecoder(encoding, { fatal: false });
   for (let at = 0; at < data.length && !scanner.stopped; at += WINDOW) {
@@ -363,12 +640,19 @@ export async function scanBytes(scanner, data, encoding, yieldNow) {
 /** Read a part and run `handler` over it. `mode` is `"whole"` (read whole, decoded, fed in windows) or `"pieces"` (read in
  *  pieces by ooxml, a part over the whole-read bound). Answers `{ok:true, scanner, partial?}` or `{ok:false, why, ...}`;
  *  a part holding a character reference that names no scalar value answers `{ok:false, why:"char_ref_invalid",
- *  final:true}` (R40), and one a handler stopped answers `ok:true` with `scanner.stopped` set. */
+ *  final:true}` (R40), and one a handler stopped answers `ok:true` with `scanner.stopped` set.
+ *  @param {unknown} bytes the source, as ooxml reads it
+ *  @param {unknown} container the container, as ooxml lists it
+ *  @param {string} name
+ *  @param {ScanHandler} handler
+ *  @param {ScanPartOptions} [options]
+ *  @returns {Promise<PartScanResult>} */
 export async function scanPart(bytes, container, name, handler, { mode = "whole", cut = OOXML.cutAfterTag, yieldNow = null, onPiece = null } = {}) {
   const scanner = new Scanner(handler);
+  /** @type {PartialNote | null} */
   let partial = null;
   if (mode === "pieces") {
-    const read = await OOXML.readPartPieces(bytes, container, name, cut, (piece) => {
+    const read = await OOXML.readPartPieces(bytes, container, name, cut, /** @param {string} piece */ (piece) => {
       /* G178 (R46): a piece is fed in windows, so what a window carries over is joined to a window and never to the whole piece (a copy of it) */
       for (let at = 0; at < piece.length && !scanner.stopped; at += WINDOW) scanner.push(piece.slice(at, at + WINDOW), false);
       /* `onPiece` may answer a promise (work it started on the piece): the next piece is not read before it settles */
@@ -388,11 +672,14 @@ export async function scanPart(bytes, container, name, handler, { mode = "whole"
     await scanWhole(scanner, r.text, yieldNow);
   }
   if (scanner.badRef) return { ok: false, why: "char_ref_invalid", final: true };
-  return { ok: true, scanner, ...(partial ? { partial } : {}) };
+  const p = partial;
+  return { ok: true, scanner, ...(p ? { partial: p } : {}) };
 }
 
 /** The least bytes of a part that can hold more than `max` retained objects: the shortest object is an empty `<p/>`, 4 bytes
- *  (a prefix only lengthens it), so a part under `4 * max` is never counted before it is read. */
+ *  (a prefix only lengthens it), so a part under `4 * max` is never counted before it is read.
+ *  @param {number} max
+ *  @returns {number} */
 export const precountFloor = (max) => 4 * max;
 
 /** R44 (fix round 10, cause 11a): the objects a walk would retain, counted BEFORE the part is held whole. `parts` are
@@ -401,23 +688,34 @@ export const precountFloor = (max) => 4 * max;
  *  (`mceSkipper`, so the same elements are counted as are retained). The count carries across the parts. Answers
  *  `{n, exceeded}`: `exceeded` is `{why:"TOO_MANY_OBJECTS", n, bound, final:true}` at the first object past `max` (the
  *  scan stops, the rest of the part is let go piece by piece), else null; `scanned` the bytes examined. A part this
- *  cannot read adds nothing: the walk states its own failure. */
+ *  cannot read adds nothing: the walk states its own failure.
+ *  @param {unknown} bytes the source, as ooxml reads it
+ *  @param {unknown} container the container, as ooxml lists it
+ *  @param {readonly string[]} parts
+ *  @param {ReadonlySet<string>} counted
+ *  @param {CountOptions} options
+ *  @returns {Promise<ObjectCount>} */
 export async function countObjects(bytes, container, parts, counted, { skipper, max, startAt = 0 }) {
-  let n = startAt, scanned = 0, exceeded = null;
+  let n = startAt, scanned = 0;
+  /* set by the handler below; the declared kind, not `null`, is what the loop reads */
+  let exceeded = /** @type {ObjectsExceeded | null} */ (null);
   for (const name of parts) {
     if (exceeded) break;
     const skipped = skipper();
+    /** @type {CountingHandler} */
     const handler = {
       stopped: false,
       text() {}, cdata() {},
+      /** @param {string} local */
       close(local) { skipped(local, true, false); },
+      /** @param {string} local @param {string} raw @param {boolean} selfClosed */
       open(local, raw, selfClosed) {
         if (skipped(local, false, selfClosed)) return;
         if (counted.has(local) && ++n > max && !exceeded) { exceeded = { why: "TOO_MANY_OBJECTS", n, bound: max, final: true }; handler.stopped = true; }
       },
     };
     const r = await scanPart(bytes, container, name, handler, { mode: "pieces" });
-    scanned += r.scanner?.scanned ?? 0;
+    scanned += r.ok ? r.scanner.scanned : 0;
   }
   return { n, exceeded, scanned };
 }
@@ -428,29 +726,43 @@ export async function countObjects(bytes, container, parts, counted, { skipper, 
  *  (every text is decoded from bytes or made of whole references), so the bytes are the text. */
 const SINK_ENC = new TextEncoder();
 const SINK_DEC = new TextDecoder("utf-8", { ignoreBOM: true });
+/** @param {number} [expected] @returns {TextSink} */
 export function textSink(expected = 0) {
   /* `expected`: about how many bytes the text will take; a buffer that starts near it is grown once, not many times */
-  let buf = new Uint8Array(Math.min(Math.max(Math.floor(expected) || 0, 1 << 16), 8 << 20)), n = 0, chars = 0;
+  /** @type {Uint8Array | null} */
+  let buf = new Uint8Array(Math.min(Math.max(Math.floor(expected) || 0, 1 << 16), 8 << 20));
+  let n = 0, chars = 0;
+  /* the buffer, which a spent sink no longer has: read on one it fails as reading a member of null fails */
+  /** @param {string} member @returns {Uint8Array} */
+  const live = (member) => {
+    const b = buf;
+    if (b === null) throw new TypeError(`Cannot read properties of null (reading '${member}')`);
+    return b;
+  };
+  /** @param {number} need */
   const room = (need) => {
-    if (n + need <= buf.length) return;
-    let size = buf.length;
+    if (n + need <= live("length").length) return;
+    let size = live("length").length;
     while (size < n + need) size *= 2;
     const next = new Uint8Array(size);
-    next.set(buf.subarray(0, n));
+    next.set(live("subarray").subarray(0, n));
     buf = next;
   };
   return {
     get chars() { return chars; },
-    add(s) { if (!s.length) return; room(s.length * 3); n += SINK_ENC.encodeInto(s, buf.subarray(n)).written; chars += s.length; },
-    newline() { room(1); buf[n++] = 10; chars++; },
+    /** @param {string} s */
+    add(s) { if (!s.length) return; room(s.length * 3); n += SINK_ENC.encodeInto(s, live("subarray").subarray(n)).written; chars += s.length; },
+    newline() { room(1); live("length")[n++] = 10; chars++; },
     mark() { return { n, chars }; },
+    /** @param {SinkMark} m */
     reset(m) { n = m.n; chars = m.chars; },
-    text() { const t = SINK_DEC.decode(buf.subarray(0, n)); buf = null; return t; },
+    text() { const t = SINK_DEC.decode(live("subarray").subarray(0, n)); buf = null; return t; },
   };
 }
 
 /** The UTF-8 bytes of a value's JSON. */
 const ENC = new TextEncoder();
+/** @param {unknown} v @returns {number} */
 export function jsonBytes(v) {
   const j = JSON.stringify(v);
   return /[^\x00-\x7f]/.test(j) ? ENC.encode(j).length : j.length;
@@ -464,9 +776,14 @@ export function jsonBytes(v) {
  *  and never held whole: the most held for one is a read window and an inflate chunk. A member over `MEMBER_MAX` or
  *  `ARCHIVE_RATIO_MAX`, or any other that ooxml's listing refuses, is refused before inflation and answers its limit's
  *  name. `Map(name -> {ok:true, sha256, size} | {ok:false, why, limit?})`; a listing that cannot be made answers every
- *  name with its reason. Never throws. */
+ *  name with its reason. Never throws.
+ *  @param {unknown} bytes the source, as ooxml reads it
+ *  @param {readonly string[]} names
+ *  @returns {Promise<Map<string, MemberIdentity>>} */
 export async function memberIdentities(bytes, names) {
-  const out = new Map();
+  /** @type {[string, MemberIdentity][]} */
+  const none = [];
+  const out = new Map(none);
   if (!names.length) return out;
   const listing = await OOXML.listArchive(bytes);
   if (!listing.ok || !Array.isArray(listing.entries)) {
@@ -499,20 +816,30 @@ export async function memberIdentities(bytes, names) {
  *  within its `part`: an id the caller already wrote as a string stays; an anchor's element reference (R15-R19) is
  *  written as its `ref` text with its run or shape where it has one, and kept beside as `anchor`; a unit with no anchor
  *  is addressed by its part. Where two units of one part still share a string, the later ones take ` #<k>` (k from 2),
- *  in the units' own order. These strings are addresses, never sentences. */
+ *  in the units' own order. These strings are addresses, never sentences.
+ *  @template {ElementRef} A
+ *  @param {readonly TextUnit<A>[]} units
+ *  @returns {AddressedUnit<A>[]} */
 export function addressParts(units) {
-  const seen = new Map();
+  /** @type {[string, number][]} */
+  const none = [];
+  const seen = new Map(none);
   return units.map((u) => {
-    const a = u.ref != null && typeof u.ref === "object" ? u.ref : null;
-    let ref = typeof u.ref === "string" && u.ref !== "" ? u.ref : a ? String(a.ref ?? "") : "";
-    if (a && Number.isInteger(a.run)) ref += ` run ${a.run + 1}`;
-    else if (a && Number.isInteger(a.shape)) ref += ` shape ${a.shape + 1}`;
+    const given = u.ref;
+    const a = given != null && typeof given === "object" ? given : null;
+    let ref = typeof given === "string" && given !== "" ? given : a ? String(a.ref ?? "") : "";
+    const run = a ? a.run : undefined, shape = a ? a.shape : undefined;
+    if (a && typeof run === "number" && Number.isInteger(run)) ref += ` run ${run + 1}`;
+    else if (a && typeof shape === "number" && Number.isInteger(shape)) ref += ` shape ${shape + 1}`;
     if (ref === "") ref = u.part;
     const key = `${u.part}\u0000${ref}`;
     const n = (seen.get(key) ?? 0) + 1;
     seen.set(key, n);
     const out = n === 1 ? ref : `${ref} #${n}`;
     const { ref: _drop, ...rest } = u;
-    return { ...rest, ref: out, ...(a ? { anchor: a } : {}) };
+    /** @type {AddressedUnit<A>} */
+    const addressed = { ...rest, ref: out };
+    if (a) addressed.anchor = a;
+    return addressed;
   });
 }
