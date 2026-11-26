@@ -260,23 +260,23 @@ export function declaredTextBytes(container, isTextPart) {
  * @property {false} ok
  * @property {"undetermined"} text
  * @property {"over_size_bound"} why
- * @property {number} size
- * @property {number} bound
+ * @property {unknown} size the size the caller gave, as given
+ * @property {unknown} bound the bound the caller gave, as given
  * @property {string} boundName
  * @property {"declared_uncompressed_text_part_bytes"} metric
  * @property {true} [final]
  */
 /** @typedef {{ ok: true } | SizeRefusal} SizeVerdict */
 /**
- * @param {number} declaredBytes the summed declared uncompressed text-part bytes
- * @param {number} [bound]
+ * @param {unknown} declaredBytes the summed declared uncompressed text-part bytes; a value that is not a number is never under the bound
+ * @param {unknown} [bound]
  * @returns {SizeVerdict}
  */
 export function sizeGuard(declaredBytes, bound = MEASURED_OOXML_TEXT_BOUND_BYTES) {
   /* `<=`, not `!(>)`: a size that is not a number is never shown to be under
    * the bound, so it is refused rather than waved through. */
   let under = false;
-  try { under = declaredBytes <= bound; } catch { /* not comparable: not under */ }
+  try { under = /** @type {number} compared as given */ (declaredBytes) <= /** @type {number} */ (bound); } catch { /* not comparable: not under */ }
   if (under) return { ok: true };
   return {
     ok: false,
@@ -351,7 +351,7 @@ const INFLATE_WINDOW = 1 << 20;
  * @property {false} ok
  * @property {"undetermined"} text
  * @property {"over_size_bound"} why
- * @property {number} size
+ * @property {unknown} size the size the caller gave, as given
  * @property {number} bound
  * @property {"STREAMED_TEXT_BOUND_BYTES"} boundName
  * @property {"declared_uncompressed_text_part_bytes"} metric
@@ -359,7 +359,7 @@ const INFLATE_WINDOW = 1 << 20;
  */
 /** @typedef {{ read: "whole" } | { read: "pieces", piecewise: Piecewise } | { read: "none", guard: TextRefusal }} TextPlan */
 /**
- * @param {number} declaredBytes
+ * @param {unknown} declaredBytes a value that is not a number is never under a bound
  * @returns {TextPlan}
  */
 export function textPlan(declaredBytes) {

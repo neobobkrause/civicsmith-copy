@@ -15,13 +15,13 @@ import { makeVbaProject } from "./cfb.mjs";
 
 const MODULE_URL = new URL("../../../src/ooxml.mjs", import.meta.url).href;
 /** @typedef {import("../../../src/ooxml.mjs").Flavour} Flavour */
+/** @typedef {typeof import("../../../src/ooxml.mjs")} Ooxml the module's namespace */
 /** @typedef {{ readonly [name: string]: number }} Arities */
 /** @typedef {{ readonly [name: string]: number | string }} Constants */
 /** @typedef {{ length: number, first: string, last: string, hash: string }} VbaPin */
 /** @typedef {{ readonly [name: string]: VbaPin }} VbaPins */
 /** @typedef {{ readonly [name: string]: unknown }} ByName */
-/** @typedef {{ ok: unknown, modules?: unknown, autoRun?: unknown, suspicious?: unknown }} VbaPickable */
-/** @typedef {{ modules: unknown, autoRun: unknown, suspicious: unknown }} VbaPicked */
+/** @typedef {import("../../../src/ooxml.mjs").VbaProject} VbaProject */
 /** @typedef {"Uint8Array" | "Uint16Array" | "Uint32Array" | "Int32Array" | "Float64Array" | "RegExp"} WatchedConstructor */
 /** @typedef {"map" | "filter" | "find" | "flatMap" | "forEach" | "reduce" | typeof Symbol.iterator} WatchedMethod */
 
@@ -59,7 +59,6 @@ async function watching(run) {
   /** @type {WatchedConstructor[]} */
   const constructors = ["Uint8Array", "Uint16Array", "Uint32Array", "Int32Array", "Float64Array", "RegExp"];
   for (const name of constructors) {
-    /** @type {Function} */
     const Real = globalThis[name];
     swap(globalThis, name, new Proxy(Real, {
       construct(t, /** @type {unknown[]} */ a, nt) { seen.push(`new ${name}`); return Reflect.construct(t, a, nt === globalThis[name] ? t : nt); },
@@ -69,14 +68,12 @@ async function watching(run) {
   /** @type {WatchedMethod[]} */
   const methods = ["map", "filter", "find", "flatMap", "forEach", "reduce", Symbol.iterator];
   for (const key of methods) {
-    /** @type {Function} */
     const real = Array.prototype[key];
     const label = `Array.prototype.${String(key)}`;
-    swap(Array.prototype, key, /** @this {unknown} @param {...unknown} a */ function (...a) { seen.push(label); return real.apply(this, a); });
+    swap(Array.prototype, key, /** @this {unknown} @param {...unknown} a */ function (...a) { seen.push(label); return Reflect.apply(real, this, a); });
   }
-  /** @type {Function} */
   const realFrom = Array.from;
-  swap(Array, "from", /** @this {unknown} @param {...unknown} a */ function (...a) { seen.push("Array.from"); return realFrom.apply(this, a); });
+  swap(Array, "from", /** @this {unknown} @param {...unknown} a */ function (...a) { seen.push("Array.from"); return Reflect.apply(realFrom, this, a); });
   // restored with an index loop: a for-of or a destructuring here would itself be counted
   const restore = () => { for (let i = saved.length - 1; i >= 0; i--) Object.defineProperty(saved[i][0], saved[i][1], saved[i][2]); };
   /** @type {T} */
@@ -92,11 +89,11 @@ async function watching(run) {
 let freshNo = 0;
 /* A fresh evaluation of the module: its namespace and the milliseconds the
  * import took (load, parse, link and global scope, as bundler R31 times it). */
-/** @returns {Promise<{ ns: typeof M, ms: number }>} */
+/** @returns {Promise<{ ns: Ooxml, ms: number }>} */
 async function freshImport() {
   const url = `${MODULE_URL}?r34-fresh=${process.pid}-${++freshNo}`;
   const t0 = performance.now();
-  /** @type {typeof M} */
+  /** @type {Ooxml} */
   const ns = await import(url);
   return { ns, ms: performance.now() - t0 };
 }
@@ -189,7 +186,7 @@ const T47_VBA = {
 };
 
 /**
- * @param {typeof M} ns
+ * @param {Ooxml} ns
  * @returns {void}
  */
 function assertT47Exports(ns) {
@@ -298,6 +295,7 @@ test("R34 the module's own SHA-256 is right on its first digest and every later 
     const rows = (await ns.listArchive(z)).entries;
     assert.ok(rows);
     const row = rows[0];
+    assert.ok(row);
     // a range source, so the cut hashes as the bytes pass (no host DigestStream in Node: the module's own SHA-256)
     const { chunks, done } = ns.streamMember({ size: z.length, read: async (/** @type {number} */ o, /** @type {number} */ k) => z.slice(o, o + k) }, row);
     for await (const c of chunks) void c;
@@ -320,15 +318,18 @@ test("R34 the VBA name tables are compiled on the first project read, matched ri
     autoRun: ["AutoOpen", "Workbook_Open"], suspicious: ["Shell", "WScript.Shell", "CreateObject", "Chr"],
   };
   const { ns } = await freshImport();
-  /** @type {(r: VbaPickable) => VbaPicked} */
+  /** @param {VbaProject} r */
   const pick = (r) => ({ modules: r.modules, autoRun: r.autoRun, suspicious: r.suspicious });
   const first = await ns.readVbaProject(z, ns.readContainer(z), "word/vbaProject.bin");
+  assert.ok(first.ok);
   assert.deepEqual(pick(first), want);
   // the same answer as the module evaluated once, used long since
   assert.deepEqual(first, await M.readVbaProject(z, M.readContainer(z), "word/vbaProject.bin"));
   for (let round = 0; round < 3; round++) {
     const later = await watching(() => ns.readVbaProject(z, ns.readContainer(z), "word/vbaProject.bin"));
-    assert.deepEqual(pick(later.value), want);
+    const read = later.value;
+    assert.ok(read.ok);
+    assert.deepEqual(pick(read), want);
     assert.ok(!later.seen.includes("new RegExp"), later.seen.filter((s) => s.includes("RegExp")).join(", "));
   }
 });

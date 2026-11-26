@@ -15,6 +15,7 @@ const BOUND = MEASURED_OOXML_TEXT_BOUND_BYTES;
 const CEIL = STREAMED_TEXT_BOUND_BYTES;
 
 /** @typedef {import("../../../src/ooxml.mjs").PiecesRead} PiecesRead */
+/** @typedef {import("../../../src/ooxml.mjs").PartRefusal} PartRefusal */
 /** @typedef {import("./zip.mjs").ZipMember} ZipMember */
 
 /* node:zlib's raw deflate (no description here), kept to this one line. */
@@ -178,9 +179,11 @@ test("R35 readPartPieces: bytes the caller passes as an ArrayBuffer or a view re
 });
 
 test("R35 pieceWhy: a member with no place to end a piece is over_size_bound with its size and final; any other refusal as it is", () => {
+  /** @type {PartRefusal} */
   const unbounded = { ok: false, why: "piece_unbounded", name: "p.xml", size: 99, final: true };
   assert.deepEqual(pieceWhy(unbounded),
     { why: "over_size_bound", detail: "piece_unbounded", size: 99, final: true });
+  /** @type {PartRefusal} */
   const crc = { ok: false, why: "crc_mismatch", name: "p.xml" };
   assert.deepEqual(pieceWhy(crc), { why: "crc_mismatch" });
   assert.deepEqual(pieceWhy(undefined), { why: undefined });
@@ -200,7 +203,7 @@ test("R35 readPartPieces awaits the promise onPiece returns before it makes the 
   };
   const r = await readPartPieces(bytes, container, "p.xml", cutAfterTag, handler);
   assert.equal(r.ok, true);
-  assert.ok(events.filter((e) => e === "piece").length >= 4, events.join());
+  assert.ok(events.filter(/** @returns {boolean} */ (e) => e === "piece").length >= 4, events.join());
   // never two pieces without the handler's own yield between them
   for (let i = 0; i < events.length; i += 2) assert.deepEqual(events.slice(i, i + 2), ["piece", "yielded"]);
   // a timer that fires while the handler waits runs between two pieces

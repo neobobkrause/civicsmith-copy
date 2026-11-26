@@ -192,7 +192,7 @@ test("R31 a member declared over its compressed size times ARCHIVE_RATIO_MAX is 
   const inflated = [];
   /** @type {new (f: string) => object} */
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { /** @param {string} f */ constructor(f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { inflated.push(f); super(f); } };
   try {
     const kernel = deflate(enc("x"));
     // declared one over the ratio's reach; at the reach exactly the member is read (and then judged by its size)
@@ -237,7 +237,7 @@ test("R31 the XML parts the module decodes itself are refused above STRUCTURAL_P
   const inflated = [];
   /** @type {new (f: string) => object} */
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { /** @param {string} f */ constructor(f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { inflated.push(f); super(f); } };
   try {
     const over = STRUCTURAL_PART_MAX + 1;
     /** @type {(name: string) => object} */
@@ -358,7 +358,7 @@ test("R11 a file of any size is judged from its end record, its central director
 test("R11 a range source that cannot be read answers source_unreadable and never throws", async () => {
   const z = buildZip(opc("docx"));
   assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: () => true }).source)), { ok: false, why: "source_unreadable" });
-  assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: (o) => o === 0 }).source)), { ok: false, why: "source_unreadable" });
+  assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: /** @returns {boolean} */ (o) => o === 0 }).source)), { ok: false, why: "source_unreadable" });
   for (const size of [-1, 1.5, NaN, "9", undefined]) {
     assert.deepEqual(withoutSignals(await discriminate({ size, read: async () => z })), { ok: false, why: "source_unreadable" });
   }
@@ -616,14 +616,18 @@ test("R36 every part the module decodes to text goes through decodeText: a UTF-1
   const c = readContainer(z);
   assert.equal((await discriminate(z)).format, "docx");
   assert.equal((await walkRels(z, c)).outbound.length, 1);
-  assert.equal((await readCoreProperties(z, c)).creator, "Zoë");
+  const zCore = await readCoreProperties(z, c);
+  assert.ok(zCore.ok);
+  assert.equal(zCore.creator, "Zoë");
   // the same parts in Latin-1 under their prolog
   const legacy = buildZip([
     { name: "docProps/core.xml", data: latin1("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><cp:coreProperties xmlns:cp=\"x\" xmlns:dc=\"y\"><dc:creator>Zo\xeb</dc:creator></cp:coreProperties>") },
     { name: "_rels/.rels", data: latin1("<?xml version=\"1.0\" encoding=\"Shift_JIS\"?><Relationships/>") },
   ]);
   const lc = readContainer(legacy);
-  assert.equal((await readCoreProperties(legacy, lc)).creator, "Zoë");
+  const legacyCore = await readCoreProperties(legacy, lc);
+  assert.ok(legacyCore.ok);
+  assert.equal(legacyCore.creator, "Zoë");
   // a declaration it cannot decode is the part's own unparseable refusal
   assert.deepEqual((await walkRels(legacy, lc)).undetermined, [{ part: "_rels/.rels", why: "rels_unparseable" }]);
   // an ODF mimetype in UTF-16 is the media type it spells
@@ -716,7 +720,7 @@ function entriesOf(count, size) {
   return Array.from({ length: count }, (_, i) => ({ name: `member-${i}.bin`, data: Uint8Array.from({ length: size }, () => Math.floor(r() * 256)), method: 0 }));
 }
 /** @type {(n: number, seed: number) => number[]} */
-const shuffled = (n, seed) => { const r = prng(seed); const order = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } return order; };
+const shuffled = (n, seed) => { const r = prng(seed); const order = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const a = order[i], b = order[j]; assert.ok(a !== undefined && b !== undefined); order[i] = b; order[j] = a; } return order; };
 
 test("R38 a shuffled central directory is listed with at most twice the part reads of the same archive in physical order, and the same rows", async () => {
   const members = entriesOf(2000, 2048);
@@ -743,7 +747,9 @@ test("R38 a shuffled central directory is listed with at most twice the part rea
   const byName = (list) => {
     const rows = list.entries;
     assert.ok(rows);
-    return Object.fromEntries(rows.map(({ index, ...row }) => [row.name, row]));
+    /** @type {(r: import("../../../src/ooxml.mjs").ArchiveRow) => [string, object]} */
+    const keyed = ({ index, ...row }) => [String(row.name), row];
+    return Object.fromEntries(rows.map(keyed));
   };
   assert.deepEqual(byName(listB), byName(listA));
 });

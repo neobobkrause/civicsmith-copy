@@ -735,7 +735,8 @@ test("R29 the streamed SHA-256 is the host's own where it has DigestStream, and 
       super({
         /** @param {Uint8Array} c */
         write(c) { h.update(c); },
-        close() { finish(new Uint8Array(h.digest()).buffer); } });
+        close() { finish(new Uint8Array(h.digest()).buffer); },
+      });
       used.push(alg);
       this.digest = digest;
     }
