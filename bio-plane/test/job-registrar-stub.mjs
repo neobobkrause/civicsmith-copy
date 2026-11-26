@@ -16,29 +16,125 @@ export const SESSION_KEYED = Object.freeze(["fetch", "subresources"]);
 const SHA = /^[0-9a-f]{64}$/;
 
 /**
+ * Plain data, as a row's JSON columns carry it.
+ * @typedef {string | number | boolean | null | JobValueList | JobValueRecord} JobValue
+ */
+/** @typedef {JobValue[]} JobValueList */
+/** @typedef {{[key: string]: JobValue}} JobValueRecord */
+/**
+ * A registration the contract takes: `sha` (64 lower-case hex digits) for a kind keyed by digest, `session` for one
+ * keyed by capture session (SESSION_KEYED).
+ * @typedef {Object} JobEntry
+ * @property {string} kind one of JOB_KINDS
+ * @property {string} [sha]
+ * @property {string} [session]
+ * @property {JobValue} [cursor]
+ * @property {number} [owed]
+ * @property {string} [carrier]
+ * @property {JobValue} [parts]
+ * @property {JobValue} [detail]
+ * @property {JobValue} [verdict]
+ * @property {string} [priority] "raised" is "Read it"; any other value is none
+ */
+/**
+ * A job row as the stub keeps it.
+ * @typedef {Object} JobRow
+ * @property {string} kind
+ * @property {string | null | undefined} sha null for a kind keyed by capture session
+ * @property {string | null} session
+ * @property {string} state
+ * @property {JobValue} verdict
+ * @property {JobValue} cursor
+ * @property {number} owed
+ * @property {JobValue} parts
+ * @property {JobValue} detail
+ * @property {string | null} carrier
+ * @property {"raised" | null} priority
+ * @property {number} written
+ * @property {number} skipped
+ * @property {number} failed
+ * @property {{[reason: string]: number}} failed_why
+ * @property {number | null} last_progress_at
+ * @property {number | null} rate_per_s
+ * @property {string | null} reader_version
+ */
+/**
+ * A reader's progress write, as `bump` stands in for it.
+ * @typedef {Object} JobProgress
+ * @property {string} [state]
+ * @property {number} [written]
+ * @property {number} [skipped]
+ * @property {number} [failed]
+ * @property {{[reason: string]: number}} [failed_why]
+ * @property {number | null} [last_progress_at]
+ * @property {number | null} [rate_per_s]
+ * @property {string | null} [reader_version]
+ */
+/**
+ * @typedef {{ok: true, existed: boolean, state: string} | {ok: false, reason: string}} JobAnswer
+ */
+/**
+ * @typedef {Object} JobRegistrarStub
+ * @property {(e: unknown) => JobAnswer} registerJob synchronous; never throws
+ * @property {<T>(fn: () => T) => T} transact
+ * @property {() => Promise<void>} armJobs
+ * @property {() => JobRow[]} rows copies, in the order first written
+ * @property {() => boolean} armed
+ * @property {(key: string, kind: string, fields: JobProgress) => void} bump
+ */
+
+/**
  * `jobRegistrarStub()` -> `{registerJob, armJobs, rows(), armed(), transact(fn), bump(key, kind, fields)}`. `rows()`
  * lists the committed rows in the order first written; `bump` stands in for a reader's progress write (counters and
  * state), so a test can show a re-registration keeps them.
+ * @returns {JobRegistrarStub}
  */
 export function jobRegistrarStub() {
-  let table = new Map();
+  /** @type {Map<string, JobRow>} */
+  let table = new Map([]);
   let changed = false, armedSince = false;
-  const keyOf = (e) => `${SESSION_KEYED.includes(e.kind) ? e.session : e.sha}\u0000${e.kind}`;
+  const keyOf = (/** @type {JobEntry} */ e) => `${SESSION_KEYED.includes(e.kind) ? e.session : e.sha}\u0000${e.kind}`;
 
+  /**
+   * @param {unknown} e
+   * @returns {string | null} the reason it is refused, or null for an entry the contract takes
+   */
   function check(e) {
     if (e === null || typeof e !== "object") return "JOB_ENTRY_INVALID";
-    if (!JOB_KINDS.includes(e.kind)) return "JOB_KIND_UNKNOWN";
-    if (SESSION_KEYED.includes(e.kind)) return typeof e.session === "string" && e.session ? null : "JOB_SESSION_MISSING";
-    return typeof e.sha === "string" && SHA.test(e.sha) ? null : "JOB_SHA_INVALID";
+    /** @type {{kind?: unknown, session?: unknown, sha?: unknown}} every object has these, perhaps undefined */
+    const o = e;
+    const kind = o.kind;
+    if (typeof kind !== "string" || !JOB_KINDS.includes(kind)) return "JOB_KIND_UNKNOWN";
+    if (SESSION_KEYED.includes(kind)) {
+      const session = o.session;
+      return typeof session === "string" && session ? null : "JOB_SESSION_MISSING";
+    }
+    const sha = o.sha;
+    return typeof sha === "string" && SHA.test(sha) ? null : "JOB_SHA_INVALID";
   }
 
+  /**
+   * @param {unknown} e
+   * @param {string | null} reason what check(e) answered
+   * @returns {e is JobEntry}
+   */
+  const isEntry = (e, reason) => reason === null;
+
+  /**
+   * @param {unknown} e
+   * @returns {JobAnswer}
+   */
   function registerJob(e) {
     try {
       const reason = check(e);
-      if (reason) return { ok: false, reason };
+      if (!isEntry(e, reason)) return { ok: false, reason: reason ?? "JOB_ENTRY_INVALID" };
       const key = keyOf(e), row = table.get(key);
       if (row) {
-        for (const f of ["cursor", "owed", "detail", "parts"]) if (e[f] !== undefined) row[f] = structuredClone(e[f]);
+        const { cursor, owed, detail, parts } = e;
+        if (cursor !== undefined) row.cursor = structuredClone(cursor);
+        if (owed !== undefined) row.owed = structuredClone(owed);
+        if (detail !== undefined) row.detail = structuredClone(detail);
+        if (parts !== undefined) row.parts = structuredClone(parts);
         if (e.priority === "raised") row.priority = "raised";
         row.state = "queued";
         changed = true; armedSince = false;
@@ -57,7 +153,12 @@ export function jobRegistrarStub() {
     }
   }
 
-  /** Runs `fn` as one transaction: when it throws, every row it wrote or changed is as it was, and the error goes on. */
+  /**
+   * Runs `fn` as one transaction: when it throws, every row it wrote or changed is as it was, and the error goes on.
+   * @template T
+   * @param {() => T} fn
+   * @returns {T}
+   */
   function transact(fn) {
     const before = new Map([...table].map(([k, v]) => [k, structuredClone(v)]));
     const beforeArmed = armedSince;

@@ -6,7 +6,11 @@ import { createHash } from "node:crypto";
 
 /* ---- the seeded draw ---- */
 
-/** A 32-bit hash of any number of parts (strings or numbers): FNV-1a over their text, then a final mix. */
+/**
+ * A 32-bit hash of any number of parts (strings or numbers): FNV-1a over their text, then a final mix.
+ * @param {...(string | number)} parts
+ * @returns {number} a whole number from 0 to 2^32 - 1
+ */
 export function hash32(...parts) {
   let h = 0x811c9dc5;
   for (const p of parts) {
@@ -18,7 +22,16 @@ export function hash32(...parts) {
   return h >>> 0;
 }
 
-/** A seeded generator of numbers in [0, 1) (mulberry32 over the seed's hash): no clock, no unseeded randomness. */
+/**
+ * A seeded draw: each call answers the next number in [0, 1); `int(n)` the next whole number from 0 to n - 1;
+ * `pick(list)` the next entry of the list.
+ * @typedef {(() => number) & {int: (n: number) => number, pick: <T>(list: readonly T[]) => T | undefined}} Rng
+ */
+/**
+ * A seeded generator of numbers in [0, 1) (mulberry32 over the seed's hash): no clock, no unseeded randomness.
+ * @param {...(string | number)} seed
+ * @returns {Rng}
+ */
 export function rng(...seed) {
   let a = hash32(...seed);
   const next = () => {
@@ -28,12 +41,22 @@ export function rng(...seed) {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  next.int = (n) => Math.floor(next() * n);
+  next.int = (/** @type {number} */ n) => Math.floor(next() * n);
+  /**
+   * @template T
+   * @param {readonly T[]} list
+   * @returns {T | undefined}
+   */
   next.pick = (list) => list[Math.floor(next() * list.length)];
   return next;
 }
 
-/** A position-addressed draw: the same (seed, ...at) gives the same number in [0, 1), with no sequence to replay. */
+/**
+ * A position-addressed draw: the same (seed, ...at) gives the same number in [0, 1), with no sequence to replay.
+ * @param {string | number} seed
+ * @param {...(string | number)} at
+ * @returns {number}
+ */
 export const drawAt = (seed, ...at) => hash32(seed, ...at) / 4294967296;
 
 /* ---- the vocabulary (the units' words) ----
@@ -46,10 +69,26 @@ export const LATIN_VOCAB = Object.freeze(["café", "naïve", "straße", "señor"
 /** Words of plain ASCII letters, for the bitmap font of pictures and scans. */
 export const ASCII_VOCAB = Object.freeze(["budget", "council", "motion", "ordinance", "ledger", "agenda", "minutes", "permit", "zoning", "audit", "parcel", "levy"]);
 
-/** The canonical text of a recipe: keys sorted at every depth, so equal recipes have one key. */
+/**
+ * Whether a part of a recipe is an object (not null) whose members are read by name.
+ * @param {unknown} v
+ * @returns {v is {[key: string]: unknown}}
+ */
+const isRecord = (v) => !!v && typeof v === "object";
+
+/**
+ * The canonical text of a recipe: keys sorted at every depth, so equal recipes have one key.
+ * @param {unknown} v a recipe: plain data, as JSON carries it; a member that is undefined is left out
+ * @returns {string} what JSON.stringify answers for a value it has text for
+ */
 export function canonical(v) {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
-  if (v && typeof v === "object") return `{${Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
+  if (isRecord(v)) return `{${Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(",")}}`;
   return JSON.stringify(v);
 }
+/**
+ * The key of a recipe: the first 24 hex digits of the SHA-256 of its canonical text.
+ * @param {unknown} recipe
+ * @returns {string}
+ */
 export const recipeKey = (recipe) => createHash("sha256").update(canonical(recipe)).digest("hex").slice(0, 24);

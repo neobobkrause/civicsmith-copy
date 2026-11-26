@@ -31,6 +31,16 @@ export const PLATFORM_VALUE_LIMIT = 2_098_176;
 
 const MARK = Symbol.for("bio.platformSqlite");
 
+/** @typedef {(...args: unknown[]) => unknown} Method a statement's or a tag store's method, as the wrapper calls it */
+/** @typedef {Method & {[MARK]?: true}} MarkedMethod a method, marked once it is the wrapper's */
+/** @typedef {"run" | "all" | "get" | "iterate"} MethodName the methods that bind values */
+/** @typedef {{run: MarkedMethod, all: MarkedMethod, get: MarkedMethod, iterate: MarkedMethod}} Methods */
+/** @typedef {((...args: unknown[]) => Methods) & {[MARK]?: true}} MarkedCreate `createTagStore`, marked once wrapped */
+
+/**
+ * @param {unknown} v
+ * @returns {number} the bytes a bound value takes: a string's UTF-8 bytes, a binary value's bytes, else 0
+ */
 const bytesOf = (v) => {
   if (typeof v === "string") return Buffer.byteLength(v, "utf8");
   if (ArrayBuffer.isView(v) || v instanceof ArrayBuffer) return v.byteLength;
@@ -38,6 +48,7 @@ const bytesOf = (v) => {
 };
 
 const tooBig = () => {
+  /** @type {Error & {code?: string, errcode?: number, errstr?: string}} */
   const e = new Error("string or blob too big");
   e.code = "ERR_SQLITE_ERROR";
   e.errcode = 18;
@@ -47,9 +58,9 @@ const tooBig = () => {
 
 /* `args` are a statement's bind arguments: values, or an object of named values
    first (a plain object, not a typed array). */
-const judge = (args) => {
+const judge = (/** @type {unknown[]} */ args) => {
   let sum = 0;
-  const one = (v) => {
+  const one = (/** @type {unknown} */ v) => {
     const n = bytesOf(v);
     if (n > PLATFORM_VALUE_LIMIT) throw tooBig();
     sum += n;
@@ -62,11 +73,17 @@ const judge = (args) => {
   if (sum > PLATFORM_VALUE_LIMIT) throw tooBig();
 };
 
+/**
+ * @param {Methods} proto
+ * @param {MethodName[]} names
+ */
 const wrap = (proto, names) => {
   for (const name of names) {
     const real = proto[name];
     if (typeof real !== "function" || real[MARK]) continue;
-    const wrapped = { [name](...args) { judge(args); return real.apply(this, args); } }[name];
+    /** @type {MarkedMethod | undefined} */
+    const wrapped = { [name](/** @type {unknown[]} */ ...args) { judge(args); return real.apply(this, args); } }[name];
+    if (wrapped === undefined) continue; // never: the object has the member it is read by
     wrapped[MARK] = true;
     proto[name] = wrapped;
   }
@@ -78,11 +95,17 @@ if (typeof probe.createTagStore === "function" && !DatabaseSync.prototype.create
   /* The tag store binds its template's values. Each store has its own prototype object in node 26, so the methods are
      wrapped on the store createTagStore returns. */
   const realCreate = DatabaseSync.prototype.createTagStore;
-  const create = { createTagStore(...args) {
+  /** @type {MarkedCreate} */
+  const create = { createTagStore(/** @type {unknown[]} */ ...args) {
+    /** @type {Methods} */
     const store = realCreate.apply(this, args);
-    for (const name of ["run", "all", "get", "iterate"]) {
+    /** @type {MethodName[]} */
+    const names = ["run", "all", "get", "iterate"];
+    for (const name of names) {
       const real = store[name];
-      store[name] = { [name](strings, ...values) { judge(values); return real.call(this, strings, ...values); } }[name];
+      const wrapped = { [name](/** @type {unknown} */ strings, /** @type {unknown[]} */ ...values) { judge(values); return real.call(this, strings, ...values); } }[name];
+      if (wrapped === undefined) continue; // never: the object has the member it is read by
+      store[name] = wrapped;
     }
     return store;
   } }.createTagStore;
