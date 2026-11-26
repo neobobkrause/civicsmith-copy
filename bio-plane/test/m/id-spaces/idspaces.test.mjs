@@ -738,7 +738,6 @@ test("R27 recogniseCitations finds every volume-reporter-page citation the repor
 });
 
 test("R27 with no reporters passed, every spelling court-citations holds is recognised from its data, as the reporter it names", () => {
-  /** court-citations' own VARIANTS, read as the data it is. @type {{ [spelling: string]: { reporter: string }[] }} */
   const held = CC.VARIANTS;
   const spellings = Object.keys(held);
   assert.equal(spellings.length > 2369, true, "every variant and every standard abbreviation");
