@@ -5,9 +5,13 @@
  * jurisdictions, so every service is shown answering from the view alone (R24).
  * Views are made by `jurisdictions.combine` itself (its R12–R16), which validates each profile first. */
 import { combine } from "../../../../jurisdictions/index.mjs";
+/** @import { Pattern, FormRule, ViewSpace, ViewSpaces, ViewStandardSource, StandardSourceFacts } from "../../../../jurisdictions/index.mjs" */
+/** @import { IdView } from "../../../src/idspaces.mjs" */
 
 const T = "TEST";
-const P = (re, flags) => (flags ? { re, flags } : { re });
+/** @param {string} re @param {string} [flags] @returns {Pattern} */
+const P = (re, flags) => { if (flags) return { re, flags }; return { re }; };
+/** @param {string} w @returns {Pattern} */
 const kindPrefix = (w) => P(`${w}\\s+(?:no\\.?\\s*|number\\s+)?`, "i");
 
 export const HARBOR = {
@@ -97,11 +101,17 @@ export const UNMEASURED = {
 
 /* The view as a service takes it: the combined view with its conflicts. */
 export { combine };
+/** @param {...unknown} profiles @returns {IdView} */
 export function viewOf(...profiles) {
   const c = combine(profiles);
   if (!c.ok) throw new Error(`a test profile fails jurisdictions.combine: ${JSON.stringify(c.errors)}`);
   return { ...c.view, conflicts: c.conflicts };
 }
+
+/* A space in the view's own shape: each form tagged as `combine` tags it, with its giver and basis. */
+/** @param {string} label @param {(FormRule & { basis: string })[]} forms @param {string} [profile] @returns {ViewSpace} */
+export const space = (label, forms, profile = "test-harbor") =>
+  ({ label, forms: forms.map((f) => ({ ...f, profile, bases: [{ profile, basis: f.basis }] })) });
 
 /* The eight spaces T33 and T34 added (R1): the money record's identifiers, a proceeding's number, the person
  * schemes (one form per scheme), a body's and an office record's numbers, and the
@@ -109,48 +119,37 @@ export function viewOf(...profiles) {
  * combined view, in the view's own shape, because `combine` learns `body`, `office` and `institution` only with the
  * jurisdictions job that merges in this tranche (its R3, T34-2); `withNewSpaces` is equivalent to combining a
  * profile that holds them. */
+/** @type {ViewSpaces} */
 export const NEW_SPACES = {
-  account: { label: "general ledger account", forms: [{ form: "acct-5", pattern: P("(\\d{5})"), normal: [{ group: 1 }], clean: { strip: [P("acct\\.?", "i")], spaces: "remove" }, basis: T }] },
-  object: { label: "object code", forms: [{ form: "obj-4", pattern: P("([A-Z]?\\d{4})"), normal: [{ group: 1 }], clean: { spaces: "remove", upper: true }, basis: T }] },
-  vendor: { label: "supplier number", forms: [{ form: "V-######", pattern: P("V-?(\\d{1,6})"), normal: ["V-", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T }] },
-  proceeding: {
-    label: "case number",
-    forms: [
-      { form: "court-case", pattern: P("([A-Z]{2})(\\d{2})-?(\\d{6})"), normal: [{ group: 1 }, { group: 2 }, "-", { group: 3 }], clean: { spaces: "remove", upper: true }, basis: T },
-      { form: "commission-docket", pattern: P("([A-Z])\\.?(\\d{2})-(\\d{2})-(\\d{3})"), normal: [{ group: 1 }, ".", { group: 2 }, "-", { group: 3 }, "-", { group: 4 }], clean: { spaces: "remove", upper: true }, basis: T },
-    ],
-  },
-  person: {
-    label: "person scheme identifier",
-    forms: [
-      { form: "roster-person", pattern: P("PID(\\d{1,6})"), normal: ["PID", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T },
-      { form: "filer", pattern: P("FILER(\\d{7})"), normal: ["FILER", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
-      { form: "licence", pattern: P("LIC([A-Z]\\d{6})"), normal: ["LIC", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
-      { form: "bar", pattern: P("SBN(\\d{1,6})"), normal: ["SBN", { group: 1, unpad: true }], clean: { strip: [P("bar\\s*no\\.?", "i")], spaces: "remove", upper: true }, basis: T },
-    ],
-  },
-  body: {
-    label: "legislative body id",
-    forms: [{ form: "body-id", pattern: P("(\\d{1,6})"), normal: [{ group: 1, unpad: true }], clean: { strip: [P("body\\s*(?:id)?\\s*", "i")], spaces: "remove" }, basis: T }],
-  },
-  office: {
-    label: "office record id",
-    forms: [{ form: "office-record", pattern: P("(\\d{1,7})"), normal: [{ group: 1, unpad: true }], clean: { strip: [P("office\\s*record\\s*(?:id)?\\s*", "i")], spaces: "remove" }, basis: T }],
-  },
-  institution: {
-    label: "institution scheme identifier",
-    forms: [
-      { form: "board-reg", pattern: P("BRD(\\d{1,5})"), normal: ["BRD", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T },
-      { form: "school-code", pattern: P("SCH-?([A-Z]{2}\\d{4})"), normal: ["SCH-", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
-    ],
-  },
+  account: space("general ledger account", [{ form: "acct-5", pattern: P("(\\d{5})"), normal: [{ group: 1 }], clean: { strip: [P("acct\\.?", "i")], spaces: "remove" }, basis: T }]),
+  object: space("object code", [{ form: "obj-4", pattern: P("([A-Z]?\\d{4})"), normal: [{ group: 1 }], clean: { spaces: "remove", upper: true }, basis: T }]),
+  vendor: space("supplier number", [{ form: "V-######", pattern: P("V-?(\\d{1,6})"), normal: ["V-", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T }]),
+  proceeding: space("case number", [
+    { form: "court-case", pattern: P("([A-Z]{2})(\\d{2})-?(\\d{6})"), normal: [{ group: 1 }, { group: 2 }, "-", { group: 3 }], clean: { spaces: "remove", upper: true }, basis: T },
+    { form: "commission-docket", pattern: P("([A-Z])\\.?(\\d{2})-(\\d{2})-(\\d{3})"), normal: [{ group: 1 }, ".", { group: 2 }, "-", { group: 3 }, "-", { group: 4 }], clean: { spaces: "remove", upper: true }, basis: T },
+  ]),
+  person: space("person scheme identifier", [
+    { form: "roster-person", pattern: P("PID(\\d{1,6})"), normal: ["PID", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T },
+    { form: "filer", pattern: P("FILER(\\d{7})"), normal: ["FILER", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
+    { form: "licence", pattern: P("LIC([A-Z]\\d{6})"), normal: ["LIC", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
+    { form: "bar", pattern: P("SBN(\\d{1,6})"), normal: ["SBN", { group: 1, unpad: true }], clean: { strip: [P("bar\\s*no\\.?", "i")], spaces: "remove", upper: true }, basis: T },
+  ]),
+  body: space("legislative body id", [{ form: "body-id", pattern: P("(\\d{1,6})"), normal: [{ group: 1, unpad: true }], clean: { strip: [P("body\\s*(?:id)?\\s*", "i")], spaces: "remove" }, basis: T }]),
+  office: space("office record id", [{ form: "office-record", pattern: P("(\\d{1,7})"), normal: [{ group: 1, unpad: true }], clean: { strip: [P("office\\s*record\\s*(?:id)?\\s*", "i")], spaces: "remove" }, basis: T }]),
+  institution: space("institution scheme identifier", [
+    { form: "board-reg", pattern: P("BRD(\\d{1,5})"), normal: ["BRD", { group: 1, unpad: true }], clean: { spaces: "remove", upper: true }, basis: T },
+    { form: "school-code", pattern: P("SCH-?([A-Z]{2}\\d{4})"), normal: ["SCH-", { group: 1 }], clean: { spaces: "remove", upper: true }, basis: T },
+  ]),
 };
+/** @param {IdView} view @param {ViewSpaces} [spaces] @returns {IdView} */
 export function withNewSpaces(view, spaces = NEW_SPACES) {
   return { ...view, spaces: { ...(view.spaces || {}), ...spaces } };
 }
 
 /* Reporter data in court-citations' shape (its R1): a few made-up reporters for the recogniser's tests
  * (R27), passed as `reporters`. Real data is court-citations' own; the module holds no reporter in code. */
+/** @typedef {{ key: string, start: null, end: null }} Edition */
+/** @type {{ REPORTERS: { key: string, name: string, cite_type: string, editions: Edition[], variations: { [spelling: string]: string } }[] }} */
 export const REPORTERS = {
   REPORTERS: [
     { key: "Rep.", name: "Test Reporter", cite_type: "state", editions: [{ key: "Rep.", start: null, end: null }, { key: "Rep. 2d", start: null, end: null }],
@@ -168,24 +167,27 @@ export const REPORTERS = {
  * view's own shape (with `profile` and `bases`), because `combine` learns `series` only with the jurisdictions job
  * that merges in this tranche (its R63–R66, T35-1); `withSeries` is equivalent to combining a profile that
  * holds them. */
-const src = (o, profile = "test-harbor") => ({ ...o, basis: T, profile, bases: [{ profile, basis: T }] });
+/** @param {StandardSourceFacts} o @param {string} [profile] @returns {ViewStandardSource} */
+const src = (o, profile = "test-harbor") => ({ ...o, profile, bases: [{ profile, basis: T }] });
+/** @type {ViewStandardSource[]} */
 export const SERIES = [
   src({ source: "Harbor administrative instructions", kind: "policy", issuer: "Harbor City Administrator", level: "city", key: "harbor",
         series: { key: "ai", label: "Harbor directive" },
-        cite: P("\\bA\\.?I\\.?\\s+(?<number>\\d{1,2}\\.\\d{1,3})(?:\\s*§\\s*(?<portion>\\d+(?:\\.\\d+)*))?") }),
+        cite: P("\\bA\\.?I\\.?\\s+(?<number>\\d{1,2}\\.\\d{1,3})(?:\\s*§\\s*(?<portion>\\d+(?:\\.\\d+)*))?"), basis: T }),
   src({ source: "Harbor police general orders", kind: "policy", issuer: "Harbor Police Department", level: "city", key: "harbor-pd",
         series: { key: "dgo", label: "Departmental General Order" },
-        cite: P("\\bDGO\\s+(?<number>[A-Z]-\\d{1,2}(?:\\.\\d+)?)", "i"), normal: [{ group: "number", upper: true }] }),
+        cite: P("\\bDGO\\s+(?<number>[A-Z]-\\d{1,2}(?:\\.\\d+)?)", "i"), normal: [{ group: 1, upper: true }], basis: T }),
   src({ source: "Harbor police special orders", kind: "policy", issuer: "Harbor Police Department", level: "city", key: "harbor-pd",
-        series: { key: "so", label: "Special Order" }, cite: P("\\bS\\.?O\\.?\\s+(?<number>\\d{4})") }),
+        series: { key: "so", label: "Special Order" }, cite: P("\\bS\\.?O\\.?\\s+(?<number>\\d{4})"), basis: T }),
   src({ source: "Harbor school board policies", kind: "policy", issuer: "Harbor Unified School District Board", sector: "government", key: "harbor-usd",
-        series: { key: "bp", label: "Board Policy" }, cite: P("\\bBP\\s+(?<number>\\d{4})"), normal: ["BP ", { group: "number", unpad: true }] }),
+        series: { key: "bp", label: "Board Policy" }, cite: P("\\bBP\\s+(?<number>\\d{4})"), normal: ["BP ", { group: 1, unpad: true }], basis: T }),
   src({ source: "Tidewater Corp code of conduct", kind: "policy", issuer: "Tidewater Corp", sector: "company", key: "tidewater",
-        series: { key: "coc", label: "Code of Conduct rule" }, cite: P("\\bCOC[- ](?<number>\\d{1,3})") }),
+        series: { key: "coc", label: "Code of Conduct rule" }, cite: P("\\bCOC[- ](?<number>\\d{1,3})"), basis: T }),
   src({ source: "Test Standards Association standards", kind: "standard", issuer: "Test Standards Association", sector: "association", key: "tsa",
         series: { key: "std", label: "TSA standard" },
-        cite: P("\\bTSA\\s+(?<number>\\d{3,4})(?:(?:,\\s*|-)(?<edition>\\d{4})(?:\\s+edition)?)?") }),
+        cite: P("\\bTSA\\s+(?<number>\\d{3,4})(?:(?:,\\s*|-)(?<edition>\\d{4})(?:\\s+edition)?)?"), basis: T }),
 ];
+/** @param {IdView} view @param {readonly ViewStandardSource[]} [sources] @returns {IdView} */
 export function withSeries(view, sources = SERIES) {
   return { ...view, standard_sources: [...(view.standard_sources || []), ...sources] };
 }
