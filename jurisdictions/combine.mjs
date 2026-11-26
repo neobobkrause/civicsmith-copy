@@ -3,7 +3,7 @@
 import FIRST from "./profiles/oakland-alameda.mjs";
 import TEST from "./profiles/test-port-ellery.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-import { isObj, isList, listOr, own, isTimeZone, localeKey, memberTypeKey, listKey, officesKey } from "./shared.mjs";
+import { isObj, isList, listOr, own, isTimeZone, localeKey, thrownWords, keyOf, memberTypeKey, listKey, officesKey, officesWords } from "./shared.mjs";
 import { validate } from "./validate.mjs";
 
 /** @import { Value, Fields } from "./shared.mjs" */
@@ -207,11 +207,6 @@ function emptySet() {
  *  @param {unknown} v
  *  @returns {v is Profile} */
 function isProfile(v) { return validate(v).ok; }
-/** Whether a thrown value is an object or a function, whose `message` the unreadable detail reads (as
- *  `e && e.message || e` did). A profile from a caller may throw any value from a getter.
- *  @param {unknown} v
- *  @returns {v is Fields} */
-const thrown = (v) => v !== null && (typeof v === "object" || typeof v === "function");
 
 /* The answers to lists of held ids, by the ids joined; at most COMBINED_MAX lists are held. */
 /** @type {Map<string, Combined>} */
@@ -229,18 +224,22 @@ export function combine(listIn) {
      its own copy of it (R18). Profile objects and ids not held are merged every time. */
   try {
     const items = isList(listIn) ? listIn : null;
-    const key = items && items.every((x) => typeof x === "string" && HELD.has(x)) ? items.join("\u0001") : null;
+    const key = items && items.every((x) => typeof x === "string" && HELD.has(x)) ? keyOf(...items) : null;
     const cached = key !== null ? COMBINED.get(key) : undefined;
     if (cached !== undefined) return copy(cached);
     /** @type {CombineResult} */
     const r = items ? combineInner(items)
       : { ok: false, errors: [{ at: null, code: "NOT_A_LIST", detail: "combine takes a list of profile ids or profiles" }] };
-    if (key !== null && r.ok) { if (COMBINED.size >= COMBINED_MAX) COMBINED.clear(); COMBINED.set(key, copy(r)); }
-    return r;
+    if (key === null || !r.ok) return r;
+    /* the first answer is a copy of the one held, as every later one is, so no answer differs from another by a
+       member that holds undefined */
+    const kept = copy(r);
+    if (COMBINED.size >= COMBINED_MAX) COMBINED.clear();
+    COMBINED.set(key, kept);
+    return copy(kept);
   }
   catch (e) {
-    const t = thrown(e) ? e : null;
-    return { ok: false, errors: [{ at: null, code: "INVALID_PROFILE", detail: `unreadable: ${String(t ? t.message || t : e)}` }] };
+    return { ok: false, errors: [{ at: null, code: "INVALID_PROFILE", detail: `unreadable: ${thrownWords(e)}` }] };
   }
 }
 
@@ -424,13 +423,18 @@ function merge(profiles) {
     const pathKey = (s) => { const path = s.path; return path ? canon(path) : ""; };
     /** @type {Map<string, Group<Tagged<System>>>} */
     const byHostPath = emptyMap();
-    for (const slot of systems) { const s = slot.e; for (const h of s.hosts) pushTo(byHostPath, `${h}\u0000${pathKey(s)}`, s); }
+    /** @type {Map<string, string>} */
+    const hostOf = emptyMap(); /* each key's host */
+    for (const slot of systems) {
+      const s = slot.e;
+      for (const h of s.hosts) { const k = keyOf(h, pathKey(s)); pushTo(byHostPath, k, s); hostOf.set(k, h); }
+    }
     /** @type {Set<string>} */
     const withheld = emptySet(); /* `${host}\0${pathKey}` */
     for (const [k, ss] of byHostPath) {
       const origins = [...new Set(ss.map((s) => s.origin))];
       if (origins.length < 2) continue;
-      const [host] = k.split("\u0000");
+      const host = hostOf.get(k) ?? "";
       withheld.add(k);
       const path0 = head(ss).path;
       conflict(`systems[host=${host}${path0 ? ` path=${path0.re}` : ""}]`,
@@ -441,7 +445,7 @@ function merge(profiles) {
     const mixedWithheld = emptySet();
     for (const slot of mixed) {
       const m = slot.e;
-      const k = `${m.host}\u0000`;
+      const k = keyOf(m.host, "");
       /* validate refuses this inside one profile (HOST_CONFLICT), so here it is always two profiles. */
       const others = (byHostPath.get(k) || []).filter((s) => !s.path);
       if (!others.length) continue;
@@ -453,7 +457,7 @@ function merge(profiles) {
         localize("jurisdictions.index.one_active_profile_says_host", "one active profile says {host} serves many offices' publications and another names a system for it, so an address there names no system", { host: String(m.host) }));
     }
     if (has("systems")) view.systems = strip(systems)
-      .map((s) => ({ ...s, hosts: s.hosts.filter((h) => !withheld.has(`${h}\u0000${pathKey(s)}`)) }))
+      .map((s) => ({ ...s, hosts: s.hosts.filter((h) => !withheld.has(keyOf(h, pathKey(s)))) }))
       .filter((s) => s.hosts.length);
     if (has("mixed_hosts")) view.mixed_hosts = strip(mixed).filter((m) => !mixedWithheld.has(m.host));
   }
@@ -659,34 +663,51 @@ function merge(profiles) {
     /** @type {{ profile: string, e: StandardSourceFacts, dropped: boolean }[]} */
     const given = profiles.flatMap((p) => (p.standard_sources || []).map((e) => ({ profile: p.id, e: clone(e), dropped: false })));
     /** @typedef {[string, (e: StandardSourceFacts) => ConflictFact, (e: StandardSourceFacts) => void]} SourceFact */
-    /** @type {[(e: StandardSourceFacts) => string | null, SourceFact[], string, string][]} */
+    /** @type {[(e: StandardSourceFacts) => string[] | null, SourceFact[], string, string][]} */
     const ONE = [
-      [(e) => { const sr = e.series; return sr ? `${e.key}\u0000${sr.key}` : null; }, [
+      [(e) => { const sr = e.series, key = e.key; return sr && key !== undefined ? [key, sr.key] : null; }, [
         ["series.label", (e) => { const sr = e.series; const label = sr ? sr.label : undefined; return label === undefined ? null : label; },
           (e) => { const sr = e.series; if (sr) delete sr.label; }],
         ["cite", (e) => e.cite ?? null, (e) => { delete e.cite; }],
         ["normal", (e) => e.normal ?? null, (e) => { delete e.normal; }]],
         FAMILY, localize("jurisdictions.index.family_dropped_from_view", "the family is dropped from the view: a citation of it is recognised by no profile until they agree")],
-      [(e) => `${e.source}\u0000${e.issuer}`, [
+      [(e) => [e.source, e.issuer], [
         ["level", (e) => e.level ?? null, (e) => { delete e.level; }],
         /* an entry with a level reads sector government when it gives none (R64) */
         ["sector", (e) => e.sector ?? (own(e, "level") ? "government" : null), (e) => { delete e.sector; }]],
         "a standard source", localize("jurisdictions.index.who_issues_undetermined", "who issues it is undetermined")],
     ];
-    for (const [keyOf, facts, what, says] of ONE) {
+    for (const [partsOf, facts, what, says] of ONE) {
       /** @type {Map<string, Group<{ profile: string, e: StandardSourceFacts, dropped: boolean }>>} */
       const groups = emptyMap();
-      for (const g of given) { const k = keyOf(g.e); if (k === null) continue; pushTo(groups, k, g); }
+      /** @type {Map<string, string[]>} */
+      const partsBy = emptyMap(); /* each key's parts, for the conflict's place and words */
+      for (const g of given) {
+        const parts = partsOf(g.e);
+        if (parts === null) continue;
+        const k = keyOf(...parts);
+        pushTo(groups, k, g);
+        partsBy.set(k, parts);
+      }
       for (const [k, gs] of groups) {
         if (new Set(gs.map((g) => g.profile)).size < 2) continue;
-        for (const [f, read, drop] of facts) {
-          const vals = gs.map((g) => ({ profile: g.profile, value: read(g.e), basis: g.e.basis }));
+        const parts = partsBy.get(k) ?? [];
+        /* every fact is read before any is withheld: a sector reads government from the level the entry gives (R64),
+           whether or not that level is then withheld */
+        const read = facts.map(([f, readFact, drop]) => ({ f, drop, vals: gs.map((g) => ({ profile: g.profile, value: readFact(g.e), basis: g.e.basis })) }));
+        /** @type {Set<string>} */
+        const withheld = emptySet();
+        for (const { f, drop, vals } of read) {
           if (agree(vals)) continue;
-          conflict(`standard_sources[${k.replace("\u0000", "/")}].${f}`, vals,
-            localize("jurisdictions.index.the_active_profiles_give_what", "the active profiles give {what} ({replace}) different {v1}, so it is withheld: {says}", { what: String(what), replace: String(k.replace("\u0000", ", ")), v1: String(f === "series.label" ? "labels" : `${f}s`), says: String(says) }));
+          withheld.add(f);
+          conflict(`standard_sources[${parts.join("/")}].${f}`, vals,
+            localize("jurisdictions.index.the_active_profiles_give_what", "the active profiles give {what} ({replace}) different {v1}, so it is withheld: {says}", { what: String(what), replace: String(parts.join(", ")), v1: String(f === "series.label" ? "labels" : `${f}s`), says: String(says) }));
           for (const g of gs) drop(g.e);
           if (what === FAMILY) for (const g of gs) g.dropped = true;
         }
+        /* a level withheld leaves its entry no level to read government from, so the sector every giver agreed on is
+           written (R64, R66) */
+        if (withheld.has("level") && !withheld.has("sector")) for (const g of gs) if (!own(g.e, "sector")) g.e.sector = "government";
       }
     }
     /** @type {Slot<StandardSourceFacts>[]} */
@@ -713,12 +734,15 @@ function merge(profiles) {
     const withinOf = emptyMap();
     /** @type {Map<string, Group<Given<string>>>} */
     const organisationOf = emptyMap();
+    /** @type {Map<string, [string, string]>} */
+    const officeOf = emptyMap(); /* each key's role and body */
     for (const p of profiles) for (const c of p.counterparties || []) {
       /** @type {CounterpartyFacts} */
       const rest = { ...c, oversight: undefined, hours: undefined, time_zone: undefined, ids: undefined, within: undefined, organisation: undefined };
       delete rest.oversight; delete rest.hours; delete rest.time_zone; delete rest.ids; delete rest.within; delete rest.organisation;
       union(v, [rest], p.id);
-      const k = `${c.role}\u0000${c.body}`;
+      const k = keyOf(c.role, c.body);
+      officeOf.set(k, [c.role, c.body]);
       const { oversight, hours, time_zone, ids, within, organisation } = c;
       if (own(c, "oversight") && oversight !== undefined) pushTo(marks, k, { profile: p.id, value: oversight, basis: c.basis });
       if (own(c, "hours") && hours) pushTo(hoursOf, k, { profile: p.id, value: hours, basis: hours.basis });
@@ -730,22 +754,26 @@ function merge(profiles) {
     /** @param {string} k
      *  @param {(c: Tagged<CounterpartyFacts>) => void} fn
      *  @returns {void} */
-    const each = (k, fn) => { const [role, body] = k.split("\u0000"); for (const s of v) if (s.e.role === role && s.e.body === body) fn(s.e); };
+    const each = (k, fn) => { for (const s of v) if (keyOf(s.e.role, s.e.body) === k) fn(s.e); };
+    /** The role and body a key names.
+     *  @param {string} k
+     *  @returns {[string, string]} */
+    const officeAt = (k) => officeOf.get(k) ?? ["", ""];
     for (const [k, given] of marks) {
       if (agree(given)) { each(k, (c) => { c.oversight = head(given).value; }); continue; }
-      const [role, body] = k.split("\u0000");
+      const [role, body] = officeAt(k);
       conflict(`counterparties[${role}/${body}].oversight`, given,
         localize("jurisdictions.index.the_active_profiles_disagree_on", "the active profiles disagree on whether {role} ({body}) is an oversight or audit body, so it is undetermined", { role: String(role), body: String(body) }));
     }
     for (const [k, given] of hoursOf) {
       if (agree(given)) { each(k, (c) => { c.hours = keep(given); }); continue; }
-      const [role, body] = k.split("\u0000");
+      const [role, body] = officeAt(k);
       conflict(`counterparties[${role}/${body}].hours`, given,
         localize("jurisdictions.index.the_active_profiles_give_different_2", "the active profiles give different hours for {role} ({body}), so its hours are undetermined", { role: String(role), body: String(body) }));
     }
     for (const [k, given] of zones) {
       if (agree(given)) { each(k, (c) => { c.time_zone = keep(given); }); continue; }
-      const [role, body] = k.split("\u0000");
+      const [role, body] = officeAt(k);
       conflict(`counterparties[${role}/${body}].time_zone`, given,
         localize("jurisdictions.index.the_active_profiles_give_different_3", "the active profiles give different time zones for {role} ({body}), so its local day is undetermined", { role: String(role), body: String(body) }));
     }
@@ -756,7 +784,7 @@ function merge(profiles) {
      *  @param {ConflictValue[]} given
      *  @returns {void} */
     const namedConflict = (f, k, given) => {
-      const [role, body] = k.split("\u0000");
+      const [role, body] = officeAt(k);
       conflict(`counterparties[${role}/${body}].${f}`, given,
         localize("jurisdictions.index.the_active_profiles_give_different_4", "the active profiles give different {v1} for {role} ({body}), so none is given: it is undetermined", { v1: String(NAMED[f]), role: String(role), body: String(body) }));
     };
@@ -901,7 +929,7 @@ function merge(profiles) {
   if (has("deadlines")) {
     /** @type {Map<string, Group<{ profile: string, d: Deadline }>>} */
     const byRule = emptyMap();
-    for (const p of profiles) for (const d of p.deadlines || []) pushTo(byRule, `${d.rule}\u0000${d.applies_to}`, { profile: p.id, d: normalDeadline(d) });
+    for (const p of profiles) for (const d of p.deadlines || []) pushTo(byRule, keyOf(d.rule, d.applies_to), { profile: p.id, d: normalDeadline(d) });
     /** @type {ViewDeadline[]} */
     const deadlines = [];
     view.deadlines = deadlines;
@@ -965,7 +993,7 @@ function merge(profiles) {
      *  @returns {number} */
     const byDate = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     for (const p of profiles) for (const h of p.holidays || []) {
-      const k = `${h.year}\u0000${listKey(h)}\u0000${officesKey(h.offices)}`;
+      const k = keyOf(h.year, listKey(h), officesKey(h.offices));
       pushTo(byKey, k, { profile: p.id, year: h.year, named: h.list, offices: h.offices, value: h.days.slice().sort(byDate), status: h.status, citation: h.citation, basis: h.basis });
     }
     /** @type {ViewHoliday[]} */
@@ -976,7 +1004,7 @@ function merge(profiles) {
       const { year, offices, named } = g0;
       if (!agree(given.map((g) => ({ value: { days: g.value, status: g.status, citation: g.citation } })))) {
         const whose = offices ? ` for ${offices.map((o) => (typeof o === "string" ? o : `${o.venue}'s venue`)).join(", ")}` : "";
-        conflict(`holidays[${year}${named ? ` list=${named}` : ""}${offices ? ` offices=${officesKey(offices).replace(/\u0001/g, ",")}` : ""}]`,
+        conflict(`holidays[${year}${named ? ` list=${named}` : ""}${offices ? ` offices=${officesWords(offices)}` : ""}]`,
           given.map((g) => ({ profile: g.profile, value: g.value, status: g.status, basis: g.basis })),
           localize("jurisdictions.index.the_active_profiles_list_different", "the active profiles list different closure days for {year}{whose}, so the year is withheld there: a business-day count reaching into it is undetermined", { year: String(year), whose: String(whose) }));
         continue;
@@ -1009,30 +1037,40 @@ function merge(profiles) {
   /** @template {Computation | FiscalYear | LawRank | ProceedingFlow | LawfulDemand | LegalFact | ProcedureGuide} T
    *  @param {string} sec
    *  @param {(p: Profile) => T[] | undefined} read
-   *  @param {(e: T) => string} keyOf
+   *  @param {(e: T) => string[]} partsOf
    *  @param {string} what
    *  @param {(xs: Tagged<T>[]) => void} put
    *  @returns {void} */
-  const perKey = (sec, read, keyOf, what, put) => {
+  const perKey = (sec, read, partsOf, what, put) => {
     if (!has(sec)) return;
     /** @type {Map<string, Group<Given<T>>>} */
     const byKey = emptyMap();
-    for (const p of profiles) for (const e of read(p) || []) pushTo(byKey, keyOf(e), { profile: p.id, value: e, basis: e.basis });
+    /** @type {Map<string, string[]>} */
+    const partsBy = emptyMap(); /* each key's parts, for the conflict's place and words */
+    for (const p of profiles) for (const e of read(p) || []) {
+      const parts = partsOf(e);
+      const k = keyOf(...parts);
+      pushTo(byKey, k, { profile: p.id, value: e, basis: e.basis });
+      partsBy.set(k, parts);
+    }
     /** @type {Tagged<T>[]} */
     const kept = [];
     put(kept);
     for (const [k, given] of byKey) {
       if (agree(given)) kept.push(keep(given));
-      else conflict(`${sec}[${k.replace(/\u0000/g, "/")}]`, given, localize("jurisdictions.index.the_active_profiles_give_different_8", "the active profiles give different {what} for {replace}, so it is withheld: it is undetermined", { what: String(what), replace: String(k.replace(/\u0000/g, " at ")) }));
+      else {
+        const parts = partsBy.get(k) ?? [];
+        conflict(`${sec}[${parts.join("/")}]`, given, localize("jurisdictions.index.the_active_profiles_give_different_8", "the active profiles give different {what} for {replace}, so it is withheld: it is undetermined", { what: String(what), replace: String(parts.join(" at ")) }));
+      }
     }
   };
-  perKey("computation", (p) => p.computation, (e) => e.key, "computations", (xs) => { view.computation = xs; });
-  perKey("fiscal_year", (p) => p.fiscal_year, (e) => e.body, "fiscal years", (xs) => { view.fiscal_year = xs; });
-  perKey("law_ranks", (p) => p.law_ranks, (e) => `${e.kind}\u0000${e.level}`, "ranks", (xs) => { view.law_ranks = xs; });
-  perKey("proceeding_flows", (p) => p.proceeding_flows, (e) => e.kind, "proceeding flows", (xs) => { view.proceeding_flows = xs; });
-  perKey("lawful_demands", (p) => p.lawful_demands, (e) => e.kind, "lawful demands", (xs) => { view.lawful_demands = xs; });
-  perKey("legal_facts", (p) => p.legal_facts, (e) => e.key, "legal facts", (xs) => { view.legal_facts = xs; });
-  perKey("procedure_guides", (p) => p.procedure_guides, (e) => e.kind, "procedure guides", (xs) => { view.procedure_guides = xs; });
+  perKey("computation", (p) => p.computation, (e) => [e.key], "computations", (xs) => { view.computation = xs; });
+  perKey("fiscal_year", (p) => p.fiscal_year, (e) => [e.body], "fiscal years", (xs) => { view.fiscal_year = xs; });
+  perKey("law_ranks", (p) => p.law_ranks, (e) => [e.kind, e.level], "ranks", (xs) => { view.law_ranks = xs; });
+  perKey("proceeding_flows", (p) => p.proceeding_flows, (e) => [e.kind], "proceeding flows", (xs) => { view.proceeding_flows = xs; });
+  perKey("lawful_demands", (p) => p.lawful_demands, (e) => [e.kind], "lawful demands", (xs) => { view.lawful_demands = xs; });
+  perKey("legal_facts", (p) => p.legal_facts, (e) => [e.key], "legal facts", (xs) => { view.legal_facts = xs; });
+  perKey("procedure_guides", (p) => p.procedure_guides, (e) => [e.kind], "procedure guides", (xs) => { view.procedure_guides = xs; });
   if (has("proceeding_kinds")) view.proceeding_kinds = unionAll((p) => p.proceeding_kinds);
   if (has("identifier_schemes")) view.identifier_schemes = unionAll((p) => p.identifier_schemes);
   if (has("classification_schemes")) view.classification_schemes = unionAll((p) => p.classification_schemes);
@@ -1045,7 +1083,7 @@ function merge(profiles) {
   if (has("local_names")) {
     /** @type {Map<string, Group<{ profile: string, n: LocalName }>>} */
     const byName = emptyMap();
-    for (const p of profiles) for (const n of p.local_names || []) pushTo(byName, `${n.name}\u0000${n.kind}`, { profile: p.id, n });
+    for (const p of profiles) for (const n of p.local_names || []) pushTo(byName, keyOf(n.name, n.kind), { profile: p.id, n });
     /** @type {ViewLocalName[]} */
     const names = [];
     view.local_names = names;

@@ -454,6 +454,32 @@ test("R20 undetermined never reads as zero: a total with an undetermined amount 
   assert.throws(() => evaluate(rec, {}, { resolveId: "x" }), TypeError);
 });
 
+test("R20 a ratio that is itself undetermined, read by a later step, makes that step undetermined, never a throw or a zero", () => {
+  /* q0's zero denominator makes q1, which reads it, an undetermined ratio; each step of each kind that reads q1 answers
+     undetermined of its own kind, naming why. */
+  const head = [{ op: "ratio", as: "q0", numerator: "x", denominator: "y" }, { op: "ratio", as: "q1", numerator: "q0", denominator: "x" }];
+  /** @type {Step[]} */
+  const readers = [{ op: "difference", as: "d", a: "q1", b: "x" }, { op: "difference", as: "d", a: "x", b: "q1" },
+    { op: "ratio", as: "q2", numerator: "q1", denominator: "x" }, { op: "ratio", as: "q2", numerator: "x", denominator: "q1" },
+    { op: "compare", as: "c", a: "q1", b: "x" }, { op: "round", as: "r", of: "q1", places: 2, mode: "half_even" }];
+  for (const st of readers) {
+    const r = run([...head, st], { x: fig("2"), y: fig("0") });
+    const u = asUndetermined(resultOf(r));
+    assert.equal(u.undetermined, true, JSON.stringify(st)); assert.match(u.why, /division by zero/, JSON.stringify(st));
+    assert.ok(isUndetermined(traceLine(r, 1).output), "q1 is an undetermined ratio");
+  }
+});
+
+test("R7 R20 a date row civil-time cannot order is set aside, its why the sentence a person reads, never a reason object", () => {
+  /** @type {TableIn} */
+  const dates = { fields: [{ name: "d", type: "date" }], rows: [{ d: "2024" }, { d: "2024-01-15" }, { d: "2024-03-01" }] };
+  const r = run([{ op: "select", as: "s", from: "t", where: [{ field: "d", test: "lt", value: "2024-02-01" }] }], { t: dates });
+  assert.deepEqual(rowsOf(resultOf(r)), [{ d: "2024-01-15" }]);
+  const aside = traceLine(r, 0).undetermined;
+  assert.deepEqual(aside.map((u) => u.row), [0]);
+  for (const u of aside) { assert.equal(typeof u.why, "string"); assert.match(u.why, /2024.*overlap/); }
+});
+
 test("R20 calc-grammar.recipe.field_shape: a table field of an unknown type is refused INPUT_INVALID, its why naming every type; calc-grammar.composed_quantity: a composed sort field says so by key", () => {
   const rec = recipe([{ op: "count", as: "c", from: "t" }], "c", [{ name: "t", kind: "table" }]);
   const shape = evaluate(rec, { t: { fields: [{ name: "a", type: "money" }], rows: [] } });

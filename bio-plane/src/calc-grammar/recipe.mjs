@@ -14,6 +14,7 @@ import { Refused, stop, objectTable, heldTable, streamFault, streamTable, filter
 import { word, localize } from "../setup-words/index.mjs";
 
 /** @import { Dec, Figure, Mode, Refusal, Undetermined, Relation } from "./decimal.mjs" */
+/** @import { Reason } from "../setup-words/index.mjs" */
 /** @import { Data, Members, Field, FieldType, Held, StreamedTable, TableAnswer, RowSource } from "./tables.mjs" */
 
 /** @typedef {"select" | "count" | "sum" | "difference" | "ratio" | "share" | "group" | "span" | "compare" | "round" | "join" | "sort"} Op */
@@ -438,6 +439,11 @@ function readLiteral(field, lit) {
 const sameDateTime = (a, b) => isObject(a) && isObject(b) && a.value === b.value && a.precision === b.precision
   && a.zone === b.zone;
 
+/* civil-time's why, as the sentence a person reads: a reason (a row of the word list and its fills) in its words, a
+   detail string as it is, and `fallback`'s words where it gives none. */
+/** @param {Reason | string | undefined} why @param {string} fallback @returns {string} */
+const civilWhy = (why, fallback) => (typeof why === "string" ? why || word(fallback) : why ? word(why.key, why.vars) : word(fallback));
+
 /** -1, 0, 1, or `{undetermined, why}` (or a refusal) for two read values of one field type.
  *  @param {FieldType} type @param {Value} a @param {Value} b @returns {number | Undetermined | Refusal} */
 function order(type, a, b) {
@@ -452,7 +458,7 @@ function order(type, a, b) {
     try { r = compareTimes(a, b); } catch (e) { return undetermined(word("calc-grammar.civil_time_compare", { message: messageOf(e) })); }
     if (r === "before") return -1;
     if (r === "after") return 1;
-    return undetermined(r && r.why ? r.why : word("calc-grammar.civil_time_answered"));
+    return undetermined(civilWhy(r.why, "calc-grammar.civil_time_answered"));
   }
   return a === b ? 0 : NaN; // a string or a boolean is equal or not, never ordered (R7 refuses an order test on one)
 }
@@ -508,11 +514,12 @@ function fieldOf(table, name, step, role) {
   return f;
 }
 
-/* An input or an earlier step's answer, as a value: a ratio's quotient, or the value itself. */
+/* An input or an earlier step's answer, as a value: a ratio's quotient, or the value itself. A ratio that is itself
+   undetermined is read as that undetermined value, so the step reading it answers undetermined (R20). */
 /** @param {Out | InputEntry | undefined} x @returns {Data} */
 function valueOf(x) {
   if (x === undefined) throw new TypeError("a step reads a name defined before it");
-  if (x.kind === "ratio") { const r = x.value; return isUndetermined(r) ? undefined : r.value; }
+  if (x.kind === "ratio") { const r = x.value; return isUndetermined(r) ? r : r.value; }
   return x.value;
 }
 
@@ -829,7 +836,8 @@ function span(st, env, opts) {
     if (office) options.office = office;
     let r;
     try { r = spanTimes(a.v, b.v, options); } catch (e) { r = undetermined(word("calc-grammar.civil_time_count", { message: messageOf(e) })); }
-    if (!r || !Number.isSafeInteger(r.min) || !Number.isSafeInteger(r.max)) return { why: (r && r.why) || word("calc-grammar.why.civil_time_gave") };
+    if (!("min" in r)) return { why: civilWhy(r.why, "calc-grammar.why.civil_time_gave") };
+    if (!Number.isSafeInteger(r.min) || !Number.isSafeInteger(r.max)) return { why: word("calc-grammar.why.civil_time_gave") };
     /** @type {Figure} */
     let cell;
     if (r.min === r.max) cell = { value: String(Math.abs(r.min)), sign: r.min < 0 ? "-" : "+", precision: "exact", unit: st.unit };
