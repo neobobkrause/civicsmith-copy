@@ -14,6 +14,26 @@
 
 import { word } from "./setup-words/index.mjs";
 
+/** @typedef {{ readonly [binding: string]: unknown }} Bindings the Worker's bindings, as the caller holds them */
+/**
+ * @typedef {Object} InstanceStatus
+ * @property {"instance"} level
+ * @property {boolean} configured
+ * @property {string} reason
+ * @property {string | null} detail null exactly when configured
+ */
+/**
+ * @typedef {Object} AiCredential
+ * @property {string | null} token the live value, or null
+ * @property {string | null} reason null exactly when token is a live value
+ */
+/**
+ * @typedef {Object} UnattendedCredential
+ * @property {boolean} bound
+ * @property {() => Promise<string | null>} token
+ */
+
+/** @type {Set<string>} SHA-256 hex of every token value ever published here */
 export const PUBLISHED_TOKEN_HASHES = new Set([
   // dist/SECRETS.txt of the 0.2.0 test deployment
   // ADMIN_TOKEN
@@ -24,7 +44,12 @@ export const PUBLISHED_TOKEN_HASHES = new Set([
   "5910ebbfe7816d9d5e2451012f9db8ac92aaa3f65a8f50da3f7255ab8bdb26ad",
 ]);
 
+/**
+ * @param {string} v
+ * @returns {Promise<string>} 64 lowercase hex characters
+ */
 export const sha256hex = async (v) => {
+  /** @type {ArrayBuffer} */
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 };
@@ -33,6 +58,10 @@ export const sha256hex = async (v) => {
    been published in the repository. Empty and published both mean "not set",
    so an instance that boots with a leaked or blank credential refuses every
    request on that credential rather than running open. */
+/**
+ * @param {unknown} v
+ * @returns {Promise<boolean>}
+ */
 export async function liveToken(v) {
   if (typeof v !== "string" || v.length === 0) return false;
   return !PUBLISHED_TOKEN_HASHES.has(await sha256hex(v));
@@ -70,6 +99,8 @@ const NO_INSTANCE_ACCOUNT_DETAIL = word("tokens.group_civicsmith_binds");
  * The instance level's STATUS: always not configured, `CASCADE_UNSET`, with a detail saying where an account comes
  * from instead (a member's own, or the group's API key, both in `credentials`; K1755). `env` is accepted for the callers' sake and never read (K1502). An honest absence is STATED
  * (CLAUDE.md) — never an empty success.
+ * @param {unknown} _env
+ * @returns {Promise<InstanceStatus>}
  */
 export async function instanceClaudeStatus(_env) {
   return { level: "instance", configured: false, reason: CASCADE_UNSET, detail: NO_INSTANCE_ACCOUNT_DETAIL };
@@ -78,6 +109,8 @@ export async function instanceClaudeStatus(_env) {
 /**
  * The instance level's TOKEN: always `null`. Computed from `instanceClaudeStatus`'s own answer, so the two can
  * never disagree, and no Claude credential is ever read from the copy's bindings.
+ * @param {unknown} env
+ * @returns {Promise<string | null>} always null
  */
 export async function instanceClaudeToken(env) {
   // The status is the one answer and it is never `configured`, so there is no value to return, ever.
@@ -111,7 +144,9 @@ export const INSTANCE_AI_UNSET = "NO_INSTANCE_AI_CREDENTIAL";
 export const INSTANCE_AI_PUBLISHED = "INSTANCE_AI_CREDENTIAL_REVOKED_BY_PUBLICATION";
 
 /** `{ token, reason }`: the live value and `reason: null`, or `token: null` and the stated reason. The caller spends
- *  `token` and publishes only `reason` — the two come from ONE test, so they cannot disagree. */
+ *  `token` and publishes only `reason` — the two come from ONE test, so they cannot disagree.
+ *  @param {Bindings | null | undefined} env
+ *  @returns {Promise<AiCredential>} */
 export async function instanceAiCredential(env) {
   const v = env?.[INSTANCE_AI_BINDING];
   if (typeof v !== "string" || v.length === 0) return { token: null, reason: INSTANCE_AI_UNSET };
@@ -129,11 +164,15 @@ export async function instanceAiCredential(env) {
  * then `ADMIN_TOKEN`, a published value treated as NOT SET like every token here. The returned object holds no
  * value, only a way to ask for one, so it may be logged or passed around without leaking a credential.
  */
+/** @param {Bindings | null | undefined} env @param {string} k @returns {boolean} */
 const presentIn = (env, k) => { try { return !!(env && env[k]); } catch { return false; } };
+/** @param {Bindings | null | undefined} env @param {string} k @returns {unknown} */
 const readOf = (env, k) => { try { return env ? env[k] : undefined; } catch { return undefined; } };
 
 /** `{ bound, token }`: `bound` is true when `DAEMON_TOKEN` or `ADMIN_TOKEN` is present on `env`; `token()` resolves to
- *  the first of the two that is a live token, or `null`. Never throws; `token()` never rejects. */
+ *  the first of the two that is a live token, or `null`. Never throws; `token()` never rejects.
+ *  @param {Bindings | null | undefined} env
+ *  @returns {Readonly<UnattendedCredential>} */
 export function unattendedCredential(env) {
   const bound = presentIn(env, "DAEMON_TOKEN") || presentIn(env, "ADMIN_TOKEN");
   return Object.freeze({
@@ -141,7 +180,7 @@ export function unattendedCredential(env) {
     async token() {
       for (const k of ["DAEMON_TOKEN", "ADMIN_TOKEN"]) {
         const v = readOf(env, k);
-        if (await liveToken(v)) return v;
+        if (typeof v === "string" && await liveToken(v)) return v;
       }
       return null;
     },
