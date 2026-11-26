@@ -1,10 +1,11 @@
 {
   "module": "court-citations",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words"],
   "uses": [
+    {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"court-citations/translate.mjs","side":"code","line":97,"in":"translate"},{"file":"court-citations/translate.mjs","side":"code","line":124,"in":"translate"}]},
+    {"provider":"setup-words","item":"WordVars","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"court-citations/translate.mjs","side":"code","line":97,"in":"translate"},{"file":"court-citations/translate.mjs","side":"code","line":124,"in":"translate"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"court-citations/translate.mjs","side":"code","line":97,"in":"translate"},{"file":"court-citations/translate.mjs","side":"code","line":124,"in":"translate"}]},
-    {"provider":"setup-words","item":"localize","itemKind":"function","type":"conversion","route":"direct","standard":true,"where":[{"file":"court-citations/translate.mjs","side":"code","line":97,"in":"translate"},{"file":"court-citations/translate.mjs","side":"code","line":124,"in":"translate"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"court-citations/translate.mjs","side":"code","line":7,"in":"(top level)"}]}
   ],
   "outside": [
@@ -820,7 +821,6 @@
     {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":95,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":95,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":96,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":97,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S4","file":"court-citations/translate.mjs","side":"code","line":97,"mayRefer":["setup-words"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":100,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"court-citations/translate.mjs","side":"code","line":101,"mayRefer":["*"],"waitsOn":"this module","tests":[]},

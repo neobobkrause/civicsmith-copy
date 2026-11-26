@@ -1,10 +1,11 @@
 {
   "module": "scheduler",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words","jurisdictions","civil-time","test-support","doc-clean","record-core","promotion","provenance","acquisition","capture","file-safety","calibration","extraction","entities","connections","progressions","money-checks","duties","people","bias","retrieval","calculations","inquiry","ai-runs","capture-requests","question-explorer","answers","intent","reevaluation","case-carriage","publication","publish-schedule","network-notices","monitoring","following","link-sweep"],
   "uses": [
+    {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":512,"in":"Scheduler.register"}]},
+    {"provider":"setup-words","item":"WordVars","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":512,"in":"Scheduler.register"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":512,"in":"Scheduler.register"},{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":883,"in":"Scheduler.hand"}]},
-    {"provider":"setup-words","item":"localize","itemKind":"function","type":"conversion","route":"direct","standard":true,"where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":512,"in":"Scheduler.register"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":92,"in":"(top level)"}]},
     {"provider":"jurisdictions","item":"governingZone","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":195,"in":"viewZone"}]},
     {"provider":"jurisdictions","item":"governingZone","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/scheduler/index.mjs","side":"code","line":91,"in":"(top level)"}]},
@@ -998,7 +999,6 @@
     {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":881,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":882,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":882,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":883,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":884,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":885,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S4","file":"bio-plane/src/scheduler/index.mjs","side":"code","line":891,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
