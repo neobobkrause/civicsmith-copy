@@ -4,10 +4,35 @@
 
 const MiB = 1048576;
 
-const deepFreeze = (o) => { for (const v of Object.values(o)) if (v && typeof v === "object") deepFreeze(v); return Object.freeze(o); };
+/**
+ * @typedef {{ readonly value: number, readonly source: string }} Figure
+ * @bound value: a whole number above zero
+ * @bound source: a ruling, K<n> or K<n> (<m>), until the measured row is recorded; then PLATFORM.md P-M<n>
+ */
+/**
+ * @typedef {Object} PlatformFigures
+ * @property {Figure} isolate_memory_bytes
+ * @property {Figure} idle_bytes
+ * @property {Figure} cpu_ms
+ * @property {Figure} LAND_BATCH_BYTES
+ * @property {Figure} request_body_max
+ */
+/**
+ * @typedef {Object} ByteLedger
+ * @property {(n: number, tag: string) => void} hold adds n bytes under tag
+ * @property {(n: number, tag: string) => void} release takes n bytes off tag, never below zero
+ * @property {() => number} peak the largest held() reached
+ * @property {() => number} held the bytes held now, over all tags
+ * @bound hold.n: a non-negative safe integer, else a TypeError
+ * @bound release.n: a non-negative safe integer, else a TypeError
+ */
+
+/** @param {Readonly<PlatformFigures>} o @returns {Readonly<PlatformFigures>} */
+const deepFreeze = (o) => { for (const v of Object.values(o)) Object.freeze(v); Object.freeze(o); return o; };
 
 /* `source` is the ruling the value rests on until BOB records the measured row in PLATFORM.md; the same commit then
    changes `value` and sets `source` to `PLATFORM.md P-M<n>`. No entry changes its value without a source naming a row. */
+/** @type {Readonly<PlatformFigures>} */
 export const PLATFORM_FIGURES = deepFreeze({
   isolate_memory_bytes: { value: 268435456, source: "K4838" },
   idle_bytes: { value: 52428800, source: "K4616" },
@@ -16,14 +41,19 @@ export const PLATFORM_FIGURES = deepFreeze({
   request_body_max: { value: 104857600, source: "K4838" },
 });
 
+/** @param {unknown} n @returns {number} */
 const count = (n) => {
-  if (!Number.isSafeInteger(n) || n < 0) throw new TypeError(`a byte count is a non-negative integer, not ${String(n)}`);
+  if (typeof n !== "number" || !Number.isSafeInteger(n) || n < 0) throw new TypeError(`a byte count is a non-negative integer, not ${String(n)}`);
   return n;
 };
 
 /* Counts the bytes of the backing stores (buffers, ranges, decoded copies) a reader holds, by tag. */
+/**
+ * @returns {ByteLedger}
+ * @throws {TypeError} from hold and release, when n is not a non-negative safe integer
+ */
 export const byteLedger = () => {
-  const tags = new Map();
+  const tags = new Map(/** @type {[string, number][]} */ ([]));
   let now = 0, peak = 0;
   return {
     hold(n, tag) {
@@ -45,6 +75,11 @@ export const byteLedger = () => {
 
 /* The old-space cap, in whole megabytes, of a capped child holding `N` MB of backing bytes: the isolate's memory less the
    platform's idle figure less N. The one formula for a PDF run and a sheet run. */
+/**
+ * @param {number} N the backing bytes the child holds, in MB
+ * @returns {number} whole megabytes, zero or more
+ * @throws {TypeError} when N is not a finite non-negative number
+ */
 export const capFor = (N) => {
   if (typeof N !== "number" || !Number.isFinite(N) || N < 0) throw new TypeError(`capFor takes a non-negative number of MB, not ${String(N)}`);
   const { isolate_memory_bytes, idle_bytes } = PLATFORM_FIGURES;

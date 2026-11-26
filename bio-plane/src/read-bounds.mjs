@@ -11,28 +11,50 @@
 
 const KiB = 1024, MiB = 1048576, GiB = 1073741824, MB50 = 52428800, MB100 = 104857600;
 
+/**
+ * @typedef {{ readonly standard: number, readonly alpha: number, readonly protective: number, readonly key: string }} BoundRow
+ * @bound standard, alpha, protective: whole numbers above zero; alpha is never above standard
+ * @bound key: the localize key of the member sentence that states a refusal on the row
+ */
+/** @typedef {{ readonly [name: string]: BoundRow }} KindBounds one kind's rows, by name */
+/** @typedef {{ readonly [kind: string]: KindBounds }} BoundTable the rows, by kind and name */
+/**
+ * @typedef {Object} BoundStatement
+ * @property {number} size the size the caller measured
+ * @property {number} bound the active figure it was judged against
+ * @property {string} key the row's key
+ */
+
 /* the light kinds take the standard in Stage 1 (K4834) */
+/** @type {readonly string[]} */
 const LIGHT_KINDS = Object.freeze(["text", "csv", "tsv", "json", "xml"]);
 
+/** @param {number} standard @param {number} alpha @param {number} protective @param {string} key @returns {BoundRow} */
 const row = (standard, alpha, protective, key) => ({ standard, alpha, protective, key });
 /* a byte row of a heavy kind: the standard is K4628 per kind (K4845): documents 100 MB, spreadsheets and images 50 MB; where the alpha is above it, the alpha */
+/** @param {number} alpha @param {string} key @param {number} perKind @returns {BoundRow} */
 const bytes = (alpha, key, perKind) => row(Math.max(alpha, perKind), alpha, Math.max(alpha, perKind), key);
 /* a count or size with one figure for all three columns */
+/** @param {number} n @param {string} key @returns {BoundRow} */
 const same = (n, key) => row(n, n, n, key);
+/** @param {string} kind @param {string} name @returns {string} */
 const k = (kind, name) => `limit.${kind}.${name}`;
 
-const light = (kind, alphaBytes) => ({
-  bytes: row(MB50, alphaBytes, MB50, k(kind, "bytes")),
-  rows: row(1048576, 1048576, 1048576, k(kind, "rows")),
-});
+/** @param {string} kind @param {number} alphaBytes @returns {BoundRow} */
+const lightBytes = (kind, alphaBytes) => row(MB50, alphaBytes, MB50, k(kind, "bytes"));
+/** @param {string} kind @returns {BoundRow} */
+const lightRows = (kind) => row(1048576, 1048576, 1048576, k(kind, "rows"));
+/** @param {string} kind @param {number} alphaBytes @returns {KindBounds} */
+const light = (kind, alphaBytes) => ({ bytes: lightBytes(kind, alphaBytes), rows: lightRows(kind) });
 
+/** @type {BoundTable} */
 const TABLE = {
   /* request_bytes: the most of a stored text, office or HTML document (any kind but a PDF) a member's request reads inline; above it the reading is deferred to the ledger, never refused (K4916) */
-  text: { ...light("text", 24 * MiB), request_bytes: same(3 * MiB, k("text", "request_bytes")) },
+  text: { bytes: lightBytes("text", 24 * MiB), rows: lightRows("text"), request_bytes: same(3 * MiB, k("text", "request_bytes")) },
   csv: light("csv", 17 * MiB),
   tsv: light("tsv", 24 * MiB),
   json: light("json", 24 * MiB),
-  xml: { ...light("xml", 24 * MiB), tag: same(64 * KiB, k("xml", "tag")) },
+  xml: { bytes: lightBytes("xml", 24 * MiB), rows: lightRows("xml"), tag: same(64 * KiB, k("xml", "tag")) },
   archive: {
     uploaded_bytes: row(524288000, 256 * MiB, 524288000, k("archive", "uploaded_bytes")),
     unpacked_bytes: row(2 * GiB, 256 * MiB, 2 * GiB, k("archive", "unpacked_bytes")),
@@ -168,24 +190,49 @@ const TABLE = {
   },
 };
 
-const deepFreeze = (o) => { for (const v of Object.values(o)) if (v && typeof v === "object") deepFreeze(v); return Object.freeze(o); };
+/** @param {BoundTable} t @returns {BoundTable} */
+const deepFreeze = (t) => {
+  for (const names of Object.values(t)) { for (const r of Object.values(names)) Object.freeze(r); Object.freeze(names); }
+  Object.freeze(t);
+  return t;
+};
 
+/** @type {BoundTable} */
 export const READ_BOUNDS = deepFreeze(TABLE);
 
+/** @param {string} kind @param {string} name @returns {BoundRow} */
 const rowOf = (kind, name) => {
-  const r = Object.hasOwn(READ_BOUNDS, kind) && Object.hasOwn(READ_BOUNDS[kind], name) ? READ_BOUNDS[kind][name] : null;
+  const names = Object.hasOwn(READ_BOUNDS, kind) ? READ_BOUNDS[kind] : undefined;
+  const r = names && Object.hasOwn(names, name) ? names[name] : null;
   if (!r) throw new Error(`READ_BOUNDS has no row for kind ${String(kind)}, name ${String(name)}`);
   return r;
 };
 
 /* the ACTIVE figure: the alpha, except the light kinds, which take the standard (K4834) */
+/**
+ * @param {string} kind
+ * @param {string} name
+ * @returns {number}
+ * @throws {Error} naming the kind and the name, when no such row exists
+ */
 export const boundOf = (kind, name) => {
   const r = rowOf(kind, name);
   return LIGHT_KINDS.includes(kind) ? r.standard : r.alpha;
 };
 
 /* the size the caller measured, the figure it was judged against and the member sentence's key */
+/**
+ * @param {string} kind
+ * @param {string} name
+ * @param {number} size
+ * @returns {BoundStatement}
+ * @throws {Error} naming the kind and the name, when no such row exists
+ */
 export const statement = (kind, name, size) => ({ size, bound: boundOf(kind, name), key: rowOf(kind, name).key });
 
 /* the row that is a document's whole-read ceiling by its kind (K4965): pdf, csv and text each their own `bytes`, any other kind or none the whole-load row `pdf.bytes` */
+/**
+ * @param {unknown} [kind] a document's kind
+ * @returns {[string, string]} the row's kind and name
+ */
 export const wholeReadRow = (kind) => (kind === "csv" || kind === "text" ? [kind, "bytes"] : ["pdf", "bytes"]);
