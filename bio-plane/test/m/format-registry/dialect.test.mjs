@@ -4,6 +4,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readingDialect } from "../../../src/formats.mjs";
 import { csvEntry } from "../../../src/csv.mjs";
+/** @import { ReadingDialect } from "../../../src/formats.mjs" */
+
+/** @param {ReadingDialect | null} d @returns {ReadingDialect} */
+const got = (d) => { if (!d) throw new Error("readingDialect answered null"); return d; };
 
 const EMPTY = { delimiter: null, encoding: null, confidence: { delimiter: null, encoding: null },
   signals: { delimiter: [], encoding: [] }, undetermined: [], assumed: null, disagree: [] };
@@ -36,16 +40,16 @@ test("R15: a projection of the named keys only, each string key a non-empty stri
     const e = { delimiterSignals: bad, encodingSignals: bad, undetermined: bad };
     assert.deepEqual(readingDialect(e), EMPTY);
   }
-  assert.deepEqual(readingDialect({ undetermined: [1, 2, null] }).undetermined, []);
-  assert.deepEqual(readingDialect({ undetermined: ["", "x"] }).undetermined, ["", "x"], "list elements are filtered by type only");
+  assert.deepEqual(got(readingDialect({ undetermined: [1, 2, null] })).undetermined, []);
+  assert.deepEqual(got(readingDialect({ undetermined: ["", "x"] })).undetermined, ["", "x"], "list elements are filtered by type only");
   // a null half stays null: nothing is guessed to fill it
-  const und = readingDialect({ delimiter: ",", encoding: null, delimiterConfidence: "certain", encodingConfidence: null,
-    undetermined: ["encoding_undetermined"] });
+  const und = got(readingDialect({ delimiter: ",", encoding: null, delimiterConfidence: "certain", encodingConfidence: null,
+    undetermined: ["encoding_undetermined"] }));
   assert.equal(und.encoding, null);
   assert.equal(und.confidence.encoding, null);
   assert.deepEqual(und.undetermined, ["encoding_undetermined"]);
   // inherited keys are read like own keys (the projection reads named keys of the object)
-  assert.equal(readingDialect(Object.create({ delimiter: "\t" })).delimiter, "\t");
+  assert.equal(got(readingDialect(Object.create({ delimiter: "\t" }))).delimiter, "\t");
   // the real csv entry's own dialect projects without loss of any named key
   const d = csvEntry.dialect(new TextEncoder().encode("a;b;c\n1;2;3\n4;5;6\n"));
   assert.deepEqual(readingDialect(d), {
@@ -55,26 +59,26 @@ test("R15: a projection of the named keys only, each string key a non-empty stri
     assumed: typeof d.assumed === "boolean" ? d.assumed : null,
     disagree: Array.isArray(d.disagree) ? d.disagree.filter((n) => Number.isFinite(n)) : [],
   });
-  assert.equal(readingDialect(d).delimiter, "semicolon");
+  assert.equal(got(readingDialect(d)).delimiter, "semicolon");
 });
 
 test("R15: assumed is the emitted boolean else null, and disagree is the emitted finite numbers else [] (G131c, G131g)", () => {
-  assert.equal(readingDialect({ assumed: true }).assumed, true);
-  assert.equal(readingDialect({ assumed: false }).assumed, false);
-  for (const bad of ["true", 1, 0, null, undefined, {}, [], new Boolean(true)]) assert.equal(readingDialect({ assumed: bad }).assumed, null, String(bad));
+  assert.equal(got(readingDialect({ assumed: true })).assumed, true);
+  assert.equal(got(readingDialect({ assumed: false })).assumed, false);
+  for (const bad of ["true", 1, 0, null, undefined, {}, [], new Boolean(true)]) assert.equal(got(readingDialect({ assumed: bad })).assumed, null, String(bad));
   const offsets = [0, 1048576, 2.5, -3, NaN, Infinity, "7", null, undefined, {}, [4]];
-  const r = readingDialect({ disagree: offsets });
+  const r = got(readingDialect({ disagree: offsets }));
   assert.deepEqual(r.disagree, [0, 1048576, 2.5, -3]);
   assert.notEqual(r.disagree, offsets, "a new filtered array, never the entry's own");
-  for (const bad of ["12", 5, null, undefined, {}, { length: 1, 0: 1 }, new Set([1]), true]) assert.deepEqual(readingDialect({ disagree: bad }).disagree, [], String(bad));
+  for (const bad of ["12", 5, null, undefined, {}, { length: 1, 0: 1 }, new Set([1]), true]) assert.deepEqual(got(readingDialect({ disagree: bad })).disagree, [], String(bad));
   const hostile = { get assumed() { throw new Error("x"); }, get disagree() { throw new Error("y"); } };
   assert.deepEqual(readingDialect(hostile), EMPTY);
   const arr = [1, 2]; arr.filter = () => { throw new Error("trap"); };
-  assert.deepEqual(readingDialect({ disagree: arr }).disagree, [1, 2]);
+  assert.deepEqual(got(readingDialect({ disagree: arr })).disagree, [1, 2]);
 });
 
 test("R16: never throws, and any key it does not name is dropped", () => {
-  const withExtra = readingDialect({ delimiter: ",", encoding: "us-ascii", later: "not projected", container_extent: {}, dialect: {} });
+  const withExtra = got(readingDialect({ delimiter: ",", encoding: "us-ascii", later: "not projected", container_extent: {}, dialect: {} }));
   assert.deepEqual(Object.keys(withExtra), ["delimiter", "encoding", "confidence", "signals", "undetermined", "assumed", "disagree"]);
   assert.deepEqual(Object.keys(withExtra.confidence), ["delimiter", "encoding"]);
   assert.deepEqual(Object.keys(withExtra.signals), ["delimiter", "encoding"]);
@@ -94,9 +98,9 @@ test("R16: never throws, and any key it does not name is dropped", () => {
   assert.deepEqual(readingDialect(hostileProxy), EMPTY);
   const arr = ["a", 1, "b"];
   arr.filter = trap;
-  assert.deepEqual(readingDialect({ undetermined: arr }).undetermined, ["a", "b"]);
-  const hostileArray = new Proxy(["a"], { get(t, k) { if (k === "length") throw new Error("len"); return t[k]; } });
-  assert.deepEqual(readingDialect({ encodingSignals: hostileArray }).signals.encoding, []);
-  assert.deepEqual(readingDialect(Object.freeze({ delimiter: "," })).delimiter, ",");
+  assert.deepEqual(got(readingDialect({ undetermined: arr })).undetermined, ["a", "b"]);
+  const hostileArray = new Proxy(["a"], { get(t, k) { if (k === "length") throw new Error("len"); return Reflect.get(t, k); } });
+  assert.deepEqual(got(readingDialect({ encodingSignals: hostileArray })).signals.encoding, []);
+  assert.deepEqual(got(readingDialect(Object.freeze({ delimiter: "," }))).delimiter, ",");
   assert.deepEqual(readingDialect(Object.create(null)), EMPTY);
 });
