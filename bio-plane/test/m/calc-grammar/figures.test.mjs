@@ -103,6 +103,9 @@ test("R1 refuses two signs, an unclosed parenthesis and an unknown scale word, e
   }
   for (const t of ["(5", "5)", "$(5", "(1,234 million"]) assert.match(asRefusal(parseFigure(t)).why, /parenthesis/, t);
   for (const t of ["5 zillion", "5 lakh", "3 dozen"]) assert.match(asRefusal(parseFigure(t)).why, /not a scale word/, t);
+  /* A name every object inherits is no scale word, in any case. */
+  for (const t of ["5 constructor", "5 Constructor", "5 CONSTRUCTOR", "5 toString", "5 valueOf", "5 hasOwnProperty", "$5 constructor"])
+    assert.match(asRefusal(parseFigure(t)).why, /not a scale word/, t);
   for (const t of ["", "  ", "abc", "1,23", "12,3456", "1.2.3", "1e6", "$", "5 $ €", "$5 USD", "5% USD", "Infinity", "NaN"]) {
     const r = parseFigure(t);
     assert.equal(refusedOf(r), "FIGURE_INVALID", t); assert.ok(asRefusal(r).why.length > 0, t);
