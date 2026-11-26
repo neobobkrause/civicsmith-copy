@@ -8,16 +8,18 @@ import * as F from "./fixtures.mjs";
 
 /** @type {unknown[]} */
 const ODD = [undefined, null, 0, -1, 1.5, NaN, "", "PK\x03\x04", {}, [], true, new ArrayBuffer(3), new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0])];
-/* R13 says the entry and the builders take a value of any kind without throwing, which their stated types leave out: these
-   hand a value of any kind on as the kind its slot states, as a caller the checker does not see may. */
-/** @param {unknown} v @returns {BytesInput} */
+/* R13 says the entry and the builders take a value of any kind without throwing. `detect` and `usedSheetRange`'s counts
+   state that; the slots below still state a narrower kind (see each), so these hand a value of any kind on as the kind
+   its slot states, as a caller the checker does not see may. */
+/** `parts` and `dialect` read bytes through `new Uint8Array(x)`, which no check of a value of any kind reproduces.
+ *  @param {unknown} v @returns {BytesInput} */
 const asBytes = (v) => /** @type {BytesInput} */ (v);
-/** @param {unknown} v @returns {PartsOrBytes} */
+/** `structure` and `text` take an object with a true `ok` as parts' answer, and fail on one that is not.
+ *  @param {unknown} v @returns {PartsOrBytes} */
 const asPartsOrBytes = (v) => /** @type {PartsOrBytes} */ (v);
-/** @param {unknown} v @returns {string} */
+/** The builders write the sheet's name into the reference, which a symbol or an object with no text form fails.
+ *  @param {unknown} v @returns {string} */
 const asText = (v) => /** @type {string} */ (v);
-/** @param {unknown} v @returns {number} */
-const asCount = (v) => /** @type {number} */ (v);
 
 /** A body's dialect; no dialect fails the test there.
  *  @param {BytesInput} b @returns {Dialect} */
@@ -59,8 +61,8 @@ test("R11 usedSheetRange(name, rows, cols): A1 to the used corner in bijective c
   /** @type {unknown[]} */
   const bads = [0, -1, 1.5, NaN, null, undefined, "3", Infinity];
   for (const bad of bads) {
-    assert.equal(usedSheetRange("S", asCount(bad), 3), null, String(bad));
-    assert.equal(usedSheetRange("S", 3, asCount(bad)), null, String(bad));
+    assert.equal(usedSheetRange("S", bad, 3), null, String(bad));
+    assert.equal(usedSheetRange("S", 3, bad), null, String(bad));
   }
 });
 
@@ -86,12 +88,12 @@ test("R13 never throws: odd arguments to every slot of the entry, and to the bui
   for (const x of ODD) {
     /** @type {unknown[]} */
     const types = [null, "text/csv", 5, {}];
-    for (const y of types) assert.doesNotThrow(() => csvEntry.detect(asBytes(x), asText(y)), "csv.detect");
+    for (const y of types) assert.doesNotThrow(() => csvEntry.detect(x, y), "csv.detect");
     await assert.doesNotReject(async () => csvEntry.parts(asBytes(x)), "csv.parts");
     await assert.doesNotReject(async () => csvEntry.structure(asPartsOrBytes(x)), "csv.structure");
     await assert.doesNotReject(async () => csvEntry.text(asPartsOrBytes(x)), "csv.text");
     assert.doesNotThrow(() => csvEntry.dialect(asBytes(x)));
-    assert.doesNotThrow(() => { sheetCellRef(asText(x), asText(x)); usedSheetRange(asText(x), asCount(x), asCount(x)); sheetRangeRef(asText(x), asText(x)); });
+    assert.doesNotThrow(() => { sheetCellRef(asText(x), asText(x)); usedSheetRange(asText(x), x, x); sheetRangeRef(asText(x), asText(x)); });
   }
 });
 

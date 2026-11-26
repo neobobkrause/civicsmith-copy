@@ -439,7 +439,7 @@ import { boundOf } from "../read-bounds.mjs";
  * The I7 registry entry (R1 to R5, R7, R18).
  * @typedef {Object} CsvEntry
  * @property {"csv"} format
- * @property {(bytes: BytesInput, contentType: unknown) => Detection | null} detect
+ * @property {(bytes: unknown, contentType: unknown) => Detection | null} detect
  * @property {(bytes: BytesInput, opts?: ReadOptions) => Promise<PartsResult>} parts
  * @property {(bytes: BytesInput, opts?: ReadOptions) => Dialect | null} dialect
  * @property {(partsOrBytes: PartsOrBytes, opts?: ReadOptions) => Promise<StructureResult>} structure
@@ -506,8 +506,8 @@ export function columnLetters(n) {
  *  unit of a million blank rows is not what anybody means by the sheet. The
  *  bound a citation is REFUSED against stays the grid (`rows`/`cols`).
  * @param {string} name
- * @param {number | null | undefined} usedRows
- * @param {number | null | undefined} usedCols
+ * @param {unknown} usedRows
+ * @param {unknown} usedCols
  * @returns {SheetRangeRef | null}
  */
 export function usedSheetRange(name, usedRows, usedCols) {
@@ -1892,9 +1892,9 @@ function looksTabular(h, s) {
 /** True exactly when `type` names a CSV, TSV or plain or opaque type, `name` ends in `.csv`, `.tsv`, `.tab` or `.txt`, and
  *  `head` (the first bytes of the file, up to 1 MiB) is delimited text: no binary signature, no NUL in an 8-bit head, an
  *  encoding R7 reads and one consistent delimiter. Never throws.
- *  @param {string} name
- *  @param {string} type
- *  @param {BytesView | null | undefined} head
+ *  @param {unknown} name
+ *  @param {unknown} type
+ *  @param {unknown} head
  *  @returns {boolean} */
 export function isDelimitedText(name, type, head) {
   try {

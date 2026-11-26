@@ -5,17 +5,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { isDelimitedText } from "../../../src/csv-reader/index.mjs";
 import { enc } from "./fixtures.mjs";
-/** @import { BytesView } from "../../../src/csv-reader/index.mjs" */
 
 const CSV = enc("id,name,amount\n1,Ann,10\n2,Bo,20\n3,Cy,30\n4,Di,40\n5,Ed,50\n");
 const TSV = enc("id\tname\tamount\n1\tAnn\t10\n2\tBo\t20\n3\tCy\t30\n4\tDi\t40\n5\tEd\t50\n");
 /** UTF-16LE bytes of a string, with a BOM. @param {string} s @returns {Uint8Array} */
 const u16le = (s) => { const out = [0xff, 0xfe]; for (const c of s) { const n = c.charCodeAt(0); out.push(n & 255, n >> 8); } return new Uint8Array(out); };
-/** isDelimitedText given arguments of any kind, as a caller the checker does not see may give them: R21 says it is false for
- *  the wrong kinds, which its stated types (text, text, bytes) leave out, so each is handed on as the kind it states.
- *  @param {unknown} name @param {unknown} type @param {unknown} head @returns {boolean} */
-const judgeAnyKind = (name, type, head) =>
-  isDelimitedText(/** @type {string} */ (name), /** @type {string} */ (type), /** @type {BytesView | null | undefined} */ (head));
 const TYPES = ["text/csv", "application/csv", "text/comma-separated-values", "text/tab-separated-values", "text/plain", "application/vnd.ms-excel", "application/octet-stream"];
 
 test("R21 true for every named type and extension when the head is delimited text (C23, C24, C32, C33)", () => {
@@ -82,7 +76,7 @@ test("R21 never throws and is false for an empty head or arguments of the wrong 
     [null, "text/csv", CSV], [42, "text/csv", CSV], [{}, "text/csv", CSV], ["x.csv", null, CSV], ["x.csv", 42, CSV], ["x.csv", undefined, CSV], [undefined, undefined, undefined],
   ];
   for (const [name, type, head] of calls) {
-    assert.equal(judgeAnyKind(name, type, head), false, JSON.stringify([name, type]));
+    assert.equal(isDelimitedText(name, type, head), false, JSON.stringify([name, type]));
   }
   /* a host whose TextDecoder cannot be made: the runner's mock replaces it for this test alone */
   t.mock.property(globalThis, "TextDecoder", class { constructor() { throw new Error("none"); } });
