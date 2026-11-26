@@ -1,0 +1,96 @@
+<title>Civicsmith UX Lane</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column, a status strip at the top, then plain sections a person reads in order. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --fg: #1d2420; --muted: #5a645e;
+  --rule: #d9ded9; --accent: #2f6b55; --accent-soft: #e3efe9; --wait: #8a5a12; --wait-soft: #f6ecd9;
+  --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --body: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141815; --surface: #1c211e; --fg: #e4e9e5; --muted: #9aa59f;
+  --rule: #2e3631; --accent: #7cc3a5; --accent-soft: #1f3129; --wait: #e2b66a; --wait-soft: #33281a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141815; --surface: #1c211e; --fg: #e4e9e5; --muted: #9aa59f;
+  --rule: #2e3631; --accent: #7cc3a5; --accent-soft: #1f3129; --wait: #e2b66a; --wait-soft: #33281a; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 44rem; margin: 0 auto; padding-block: 2.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 2.25rem; }
+header { display: grid; gap: .5rem; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 2.1rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 1.35rem; margin: 0 0 .75rem; text-wrap: balance; }
+h3 { font-size: 1rem; margin: 0; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); }
+.status { background: var(--accent-soft); border-radius: 8px; padding: 1rem 1.15rem; display: grid; gap: .35rem; }
+.status strong { color: var(--accent); }
+section { display: grid; gap: .9rem; }
+.item { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.15rem; display: grid; gap: .45rem; }
+.pill { justify-self: start; font-size: .75rem; font-weight: 600; letter-spacing: .03em; padding: .1rem .55rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.pill.wait { background: var(--wait-soft); color: var(--wait); }
+ul.plain { margin: 0; padding-left: 1.1rem; display: grid; gap: .55rem; }
+.small { font-size: .88rem; color: var(--muted); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { border-top: 1px solid var(--rule); padding-top: 1rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Civicsmith · the screens and the journeys</span>
+    <h1>Civicsmith UX Lane</h1>
+    <p class="lede">This page is where the UX lane keeps its design work for you: what Civicsmith's screens and journeys say, the questions it has put to you, and what it has decided. It is kept by the lane's current session, civicsmith ux lane #5.</p>
+  </header>
+
+  <div class="status" role="status">
+    <p><strong>Nothing waits for you here.</strong></p>
+    <p>The lane brings you a question only after a worker has searched Civicsmith's founding documents and your rulings for the answer, as you instructed on 26 November 2026.</p>
+  </div>
+
+  <section>
+    <h2>Your two earlier questions</h2>
+    <div class="item">
+      <span class="pill">Answered by your own ruling</span>
+      <h3>Publishing a case while some passages it cites have no grade</h3>
+      <p id="q1-answer">Your ruling of 2 August 2026 answers it. A passage with no grade adds nothing to a conclusion and is named on the case. It does not hold back a conclusion that has graded passages. A conclusion where no passage is graded has no rating, and the signing check against the strength the team requires stops it. The lane adds no rule and nothing new is built.</p>
+      <p class="small" id="q1-source">Where it is written: your ruling, recorded in Civicsmith's book of decisions, and the case-making design it amends. A worker searched the whole canon again on 26 November 2026 on your instruction.</p>
+    </div>
+    <div class="item">
+      <span class="pill">Answered by your own ruling</span>
+      <h3>Citing a page a member typed in</h3>
+      <p>Your ruling of 14 September 2026 answers it. A typed page can be cited at once, but it says it is unchecked and adds nothing until a second member, not the one who typed it, compares it with the original and says so. Then it can count for at most the second-best strength, and never more than the copy it was typed from. It is always shown as a member's own typing, never as the original.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the lane has decided</h2>
+    <p class="lede">Where your rulings and the founding documents are silent, the lane decides. These are its decisions so far, in plain words.</p>
+    <ul class="plain">
+      <li>Signing out takes a member back to the team's page, where signing in starts.</li>
+      <li>When a member opens a question, they may say who it is about. If that is a private person, they are warned and decide.</li>
+      <li>Money is counted in each government's own fiscal year. Where the year is not known, the screen says why that view is missing.</li>
+      <li>A file handed in by an unnamed person always shows its source as that unnamed person, identified by the receipt they were given. Only a recorded name is kept from members who may not see it.</li>
+      <li>Photographs get the same safe view as documents: Civicsmith redraws them, and their hidden data (such as where a photo was taken) stays only in the record's own copy.</li>
+      <li>New signing keys appear in a member's daily list as one item. The box to keep a key on the device starts unticked, with your approved warning about shared computers.</li>
+      <li>A picker shows this project's documents first, with a choice to show documents from the member's other projects, each labelled.</li>
+      <li>A document shows how faithfully the team obtained its copy. The grade a member gives belongs to the passage they cite, never to the document.</li>
+      <li>What the assistant costs is shown only to those who pay for it. A member who reaches a limit is told whose limit it is, never a cost.</li>
+      <li>Each kind of refusal has one wording, used on every screen.</li>
+      <li>A published case explains how to read its two strengths in a short card, since its readers have no help page to reach.</li>
+      <li>A member never sees a machine reference where a name or a number would do.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The walks' documents</h2>
+    <p>The lane keeps the pages the walks are measured against: eleven pages for groups of screens and thirty-five journeys, each a page of its own, with an index. They are in Civicsmith's repository, in the lane's folder, under <span class="small">process/lanes/ux/walks/</span>.</p>
+  </section>
+
+  <footer class="small">
+    <p>This page replaces the lane's earlier page, which was made under the previous Claude account and cannot be opened from this one. Updated 26 November 2026.</p>
+  </footer>
+</div>
