@@ -1,6 +1,6 @@
 {
   "module": "act-help",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words","membership"],
   "uses": [
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":160,"in":"(top level)"},{"file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":161,"in":"(top level)"},{"file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":162,"in":"(top level)"},{"file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":163,"in":"(top level)"}]},
@@ -13,10 +13,6 @@
   "outside": [
     {"rule":"S4","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":153,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":153,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":160,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":161,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":162,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":163,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":168,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":226,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R15","file":"bio-plane/src/affordances/act-help.mjs","side":"code","line":277,"mayRefer":["*"],"waitsOn":"this module","tests":[]},

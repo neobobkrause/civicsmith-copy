@@ -1,6 +1,6 @@
 {
   "module": "screens-people",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words"],
   "uses": [
     {"provider":"setup-words","item":"WORD_ROWS","itemKind":"value","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/src/screens-investigate/whywords.mjs","side":"code","line":4,"in":"(top level)"}]},
@@ -1384,7 +1384,6 @@
     {"rule":"R1","file":"bio-plane/src/screens-investigate/person.mjs","side":"code","line":492,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/screens-investigate/person.mjs","side":"code","line":493,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/screens-investigate/person.mjs","side":"code","line":494,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/screens-investigate/person.mjs","side":"code","line":542,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R4","file":"bio-plane/src/screens-investigate/rereads.mjs","side":"code","line":7,"mayRefer":[],"waitsOn":"this module: a stated kind for what it hands out","tests":[]},
     {"rule":"S4","file":"bio-plane/src/screens-investigate/rereads.mjs","side":"code","line":7,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S4","file":"bio-plane/src/screens-investigate/rereads.mjs","side":"code","line":7,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},

@@ -1,6 +1,6 @@
 {
   "module": "wizard-library",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words","record-grammar"],
   "uses": [
     {"provider":"setup-words","item":"word","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":65,"in":"(top level)"}]},
@@ -80,8 +80,6 @@
     {"rule":"R4","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":16,"mayRefer":[],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":29,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R4","file":"bio-plane/src/wizard-scripts/civicsmith-library.mjs","side":"code","line":29,"mayRefer":[],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":65,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":65,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R14","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":[]},
     {"rule":"R14","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":[]},
     {"rule":"S4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":76,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
@@ -124,7 +122,6 @@
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":116,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":116,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":117,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":118,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":118,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":133,"mayRefer":[],"waitsOn":"this module: a stated kind for what it hands out","tests":[]},
     {"rule":"S4","file":"bio-plane/src/wizard-scripts/data.mjs","side":"code","line":133,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},

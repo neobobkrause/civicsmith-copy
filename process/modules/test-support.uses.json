@@ -1,16 +1,17 @@
 {
   "module": "test-support",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words"],
   "uses": [
+    {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/test/make-zip.mjs","side":"code","line":199,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":232,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":242,"in":"makeZip"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":23,"in":"makePdf"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":27,"in":"makePdf"}]},
+    {"provider":"setup-words","item":"WordVars","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"bio-plane/test/make-zip.mjs","side":"code","line":199,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":232,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":242,"in":"makeZip"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":23,"in":"makePdf"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":27,"in":"makePdf"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/test/make-zip.mjs","side":"code","line":199,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":232,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":242,"in":"makeZip"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":23,"in":"makePdf"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":27,"in":"makePdf"}]},
-    {"provider":"setup-words","item":"localize","itemKind":"function","type":"conversion","route":"direct","standard":true,"where":[{"file":"bio-plane/test/make-zip.mjs","side":"code","line":199,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":232,"in":"makeZip"},{"file":"bio-plane/test/make-zip.mjs","side":"code","line":242,"in":"makeZip"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":23,"in":"makePdf"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":27,"in":"makePdf"}]},
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"import","route":"direct","standard":true,"where":[{"file":"bio-plane/test/make-zip.mjs","side":"code","line":12,"in":"(top level)"},{"file":"pdf-worker/test/make-pdf.mjs","side":"code","line":6,"in":"(top level)"}]}
   ],
   "outside": [
     {"rule":"R14","file":".github/scripts/module-tests.mjs","side":"code","line":5,"mayRefer":["*"],"waitsOn":"ARCH: a boundary module for it","tests":[]},
     {"rule":"R21","file":".github/scripts/module-tests.mjs","side":"code","line":5,"mayRefer":[],"waitsOn":"this module","tests":[]},
-    {"rule":"S5","file":".github/scripts/module-tests.mjs","side":"code","line":5,"mayRefer":["documents"],"waitsOn":"this module: a path anchored to its own folder","tests":[]},
+    {"rule":"S5","file":".github/scripts/module-tests.mjs","side":"code","line":5,"mayRefer":["setup-words"],"waitsOn":"this module: a path anchored to its own folder","tests":[]},
     {"rule":"R1","file":".github/scripts/module-tests.mjs","side":"code","line":6,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":".github/scripts/module-tests.mjs","side":"code","line":6,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R2","file":".github/scripts/module-tests.mjs","side":"code","line":6,"mayRefer":["*"],"waitsOn":"the owner of the data: its reader","tests":[]},
@@ -2757,7 +2758,6 @@
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":196,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":197,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":198,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":199,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":200,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":202,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/test/make-zip.mjs","side":"code","line":203,"mayRefer":["*"],"waitsOn":"this module","tests":[]},

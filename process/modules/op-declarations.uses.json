@@ -1,6 +1,6 @@
 {
   "module": "op-declarations",
-  "written": {"commit":"9e48bc75f1955eafd5c7cff98c424f71fd0f35af","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
+  "written": {"commit":"7eb5c54d1c58f1a61dd4429b60ce3573e264e4a9","tool":"1216397f41d8febd37d6ec7a4ecf7bf1d986d5bf"},
   "providers": ["setup-words","membership","project-roster","ai-accounts","credentials","provenance","capture","money","inquiry","hypotheses","ai-use","ai-runs","run-productions","reading-guides","action-records","actions","action-plans","act-help","affordances","op-capabilities"],
   "uses": [
     {"provider":"setup-words","item":"localize","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2538,"in":"build"},{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2544,"in":"build"},{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2551,"in":"build"},{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2553,"in":"build"},{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2654,"in":"build"},{"file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2702,"in":"build"}]},
@@ -483,15 +483,9 @@
     {"rule":"S4","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2502,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2503,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S4","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2503,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2538,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2544,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2551,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2553,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2654,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2655,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2661,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2700,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
-    {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2702,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2703,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2742,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R1","file":"bio-plane/src/op-declarations/index.mjs","side":"code","line":2770,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
