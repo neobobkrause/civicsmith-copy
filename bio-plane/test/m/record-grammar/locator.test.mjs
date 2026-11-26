@@ -34,7 +34,7 @@ test("R19 an upper-case scheme is https, and a localhost. or .local host is neve
 
 test("R19 a non-string is false, and nothing throws", () => {
   for (const v of [undefined, null, 1, true, {}, [], ["https://example.org"], new URL("https://example.org"),
-    { toString() { return "https://example.org"; } }, Symbol("s"), Object.create(null), 10n])
+    { toString() { return "https://example.org"; } }, Symbol("s"), { __proto__: null }, 10n])
     assert.equal(isPublicHttpsLocator(v), false, typeof v);
   for (let i = 0; i < 300; i++) {
     const s = "https://" + Array.from({ length: i % 40 }, (_, j) => "a.:@[]/?#%\u0000é"[(i * 7 + j * 13) % 13]).join("");

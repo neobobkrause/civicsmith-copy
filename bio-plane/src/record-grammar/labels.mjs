@@ -9,6 +9,7 @@ import { word } from '../setup-words/index.mjs';
 
 /* A value stringified and trimmed; one that cannot be stringified (a throwing `toString`, an object with no prototype)
    is blank, never a throw (R37, R38). */
+/** @param {unknown} v @returns {string} */
 function text(v) {
   try { return String(v ?? '').trim(); } catch { return ''; }
 }
@@ -44,6 +45,10 @@ function text(v) {
  * control plane today; it is kept because the reading is a property of the
  * VALUE, and a reader handed a row from anywhere must land somewhere honest.
  * ===================================================================== */
+/** The three sentences of one proposal subject, keyed by state (R38).
+ * @typedef {{machine_proposed: string, member_proposed: string, unstated: string}} ProposalSentences */
+/** A proposal's state (R38). @typedef {'machine_proposed' | 'member_proposed' | 'unstated'} ProposalState */
+/** @type {ProposalSentences} */
 export const LAW_PROPOSAL_STATES = {
   machine_proposed: word('record-grammar.proposal.governing_laws.machine_proposed'),
   member_proposed: word('record-grammar.proposal.governing_laws.member_proposed'),
@@ -53,7 +58,9 @@ export const LAW_PROPOSAL_STATES = {
 /** Read a proposal's `proposed_by` as ONE of the three states above. Blank is
  *  answered first — "nobody said" and "a machine said" are different findings —
  *  and everything the machine predicate does not claim is a name, i.e. a member.
- *  `isMachineIdentity` is REC-46's one predicate and is not re-spelled here. */
+ *  `isMachineIdentity` is REC-46's one predicate and is not re-spelled here.
+ * @param {unknown} proposedBy
+ * @returns {ProposalState} */
 export function lawProposalState(proposedBy) {
   const s = text(proposedBy);
   if (s.length === 0) return 'unstated';
@@ -74,6 +81,7 @@ export function lawProposalState(proposedBy) {
  * TABLE, keyed by what was proposed: `governing_laws` is REC-195's table above, the same object, so its words
  * cannot drift from it; each other subject says, in each state, what the proposal is not. A subject the table does
  * not hold is a caller's defect and throws, rather than answering a sentence written for something else. */
+/** @type {Readonly<{governing_laws: ProposalSentences, standard: Readonly<ProposalSentences>, comparison: Readonly<ProposalSentences>, filing_draft: Readonly<ProposalSentences>, theory: Readonly<ProposalSentences>, plan_option: Readonly<ProposalSentences>, communication: Readonly<ProposalSentences>, template: Readonly<ProposalSentences>, edition_statement: Readonly<ProposalSentences>, escalation_reason: Readonly<ProposalSentences>, wizard: Readonly<ProposalSentences>, law_relation: Readonly<ProposalSentences>, translation: Readonly<ProposalSentences>, case_account: Readonly<ProposalSentences>, account_check: Readonly<ProposalSentences>, bearing: Readonly<ProposalSentences>, status_report: Readonly<ProposalSentences>}>} */
 export const PROPOSAL_STATES = Object.freeze({
   governing_laws: LAW_PROPOSAL_STATES,
   standard: Object.freeze({
@@ -191,14 +199,21 @@ export const PROPOSAL_STATES = Object.freeze({
   }),
 });
 
+/** The tables by subject, for a lookup by a subject's name. */
+/** @type {Readonly<Record<string, Readonly<ProposalSentences>>>} */
+const BY_SUBJECT = PROPOSAL_STATES;
+
 /** The whole label block a reader is shown beside a proposal: who, which state,
  *  whether it is machine work, and the published sentence. ONE composer, so the
  *  store's read and any later surface cannot compose two answers to one
  *  question (REC-46's eleven-copies finding, arriving at a label). `subject` is
- *  one of `PROPOSAL_STATES`' keys (K171 (2)). */
+ *  one of `PROPOSAL_STATES`' keys (K171 (2)).
+ * @param {string | null | undefined} proposedBy
+ * @param {unknown} subject
+ * @returns {{by: string | null, state: ProposalState, machine_work: boolean, says: string}} */
 export function proposalLabel(proposedBy, subject) {
   const table = typeof subject === 'string' && Object.prototype.hasOwnProperty.call(PROPOSAL_STATES, subject)
-    ? PROPOSAL_STATES[subject] : null;
+    ? BY_SUBJECT[subject] : null;
   if (!table)
     throw new RangeError(`proposalLabel: '${String(subject).slice(0, 40)}' is not a proposal subject; `
       + `one of ${Object.keys(PROPOSAL_STATES).join(', ')}`);
@@ -269,6 +284,7 @@ export const CONTENT_MINTED_BY_PLANE = 'plane';
  *  belong to anybody. The keys are now verbs of THIS act, which is what a
  *  published vocabulary's keys should have been anyway, and `machine_marked`
  *  reads beside `machine_stamped` one vocabulary over. */
+/** @type {{member_marked: string, plane_minted: string, machine_marked: string, unstated: string}} */
 export const CONTENT_MINT_STATES = {
   member_marked: word('record-grammar.mint.member_marked'),
   plane_minted: word('record-grammar.mint.plane_minted'),
@@ -285,7 +301,9 @@ export const CONTENT_MINT_STATES = {
  *  never be swallowed into `machine` by a later addition to the machine
  *  prefixes — and the module's tests pin `isMachineIdentity(CONTENT_MINTED_BY_PLANE)
  *  === false` besides (R37), so a collision fails loudly instead of hiding behind
- *  this ordering. Everything left is a name, which is a member. */
+ *  this ordering. Everything left is a name, which is a member.
+ * @param {unknown} mintedBy
+ * @returns {'unstated' | 'plane_minted' | 'machine_marked' | 'member_marked'} */
 export function contentMintState(mintedBy) {
   const s = text(mintedBy);
   /*  Spelled `s.length === 0` because a control in the old battery once anchored on the `s === ''` spelling elsewhere

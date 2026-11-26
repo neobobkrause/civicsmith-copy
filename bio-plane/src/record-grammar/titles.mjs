@@ -14,6 +14,9 @@
    source text, evaluated alone, gives the same answers, so a client that
    embeds it cannot drift from the store (R30). */
 export const INQUIRY_TITLE_MAX = 120;
+/** R30.
+ * @param {unknown} question
+ * @returns {string | null} */
 export const deriveInquiryTitle = (question) => {
   const line = String(question == null ? '' : question)
     .split('\n').map((s) => s.trim()).find((s) => s !== '') || '';
@@ -31,7 +34,10 @@ export const deriveInquiryTitle = (question) => {
    T46-1 (R31, P8): the heading line may end in spaces or tabs and nothing else, then its line break (`\n` or `\r\n`).
    It took any white space but a newline, so `## Question` followed by a form feed, a vertical tab or a no-break space was
    read as the heading. */
+/** R31.
+ * @param {unknown} markdown
+ * @returns {string} */
 export const inquiryQuestionOf = (markdown) => {
   const m = /\n## Question[ \t]*\r?\n([\s\S]*?)(?=\n## |$)/.exec('\n' + String(markdown == null ? '' : markdown));
-  return m ? m[1] : '';
+  return m ? (m[1] ?? '') : '';
 };

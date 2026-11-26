@@ -34,6 +34,9 @@
      how many were minted before; a tail tells nothing.
    The census of what was minted or validated at T33's opening is in this module's T33 job record. `MTI CHK MSR HYP DUT
    CALC STQ` were reserved at T33 (P8), so no later tranche needs a record-grammar job to admit them. */
+/** One prefix's row: the module that mints it, its form, and (`legacy`) an earlier form still read as valid.
+ * @typedef {{readonly prefix: string, readonly owner: string, readonly form: string, readonly legacy?: string}} IdRow */
+/** @param {string} prefix @param {string} owner @param {string} [form] @param {string} [legacy] @returns {IdRow} */
 const row = (prefix, owner, form = 'sequential', legacy) =>
   Object.freeze(legacy ? { prefix, owner, form, legacy } : { prefix, owner, form });
 export const ID_TABLE = Object.freeze([
@@ -89,12 +92,14 @@ export const ID_TABLE = Object.freeze([
 ]);
 
 const YEAR = '\\d{4}';
+/** @type {Readonly<Record<string, string>>} */
 const CORE = { sequential: '\\d{4,}', opaque: '[a-z0-9]{16}' };
 const ROW = new Map(ID_TABLE.map((e) => [e.prefix, e]));
 /* A row with `legacy` reads a core of either form (R47, K1728): the current form first, in one non-capturing group, so a
    caller composing a slug after the core (or the core into a larger alternation) keeps its own groups' numbering. */
-const coreOf = (prefix) => {
-  const { form, legacy } = ROW.get(prefix);
+/** @param {IdRow} r @returns {string} */
+const coreOf = (r) => {
+  const { prefix, form, legacy } = r;
   return `${prefix}-${YEAR}-${legacy ? `(?:${CORE[form]}|${CORE[legacy]})` : CORE[form]}`;
 };
 
@@ -102,25 +107,40 @@ const coreOf = (prefix) => {
  *  earlier form too), a new `RegExp` on every call (so no caller's `lastIndex` reaches another's), or `null` for a prefix
  *  the table does not hold. Its source is `^<core>$`, so a validator whose ids carry a slug composes it after the core
  *  (`source.slice(1, -1)`), keeping its own slug rule. A check that an id is freshly minted reads the row's `form`, not
- *  this pattern. */
+ *  this pattern.
+ * @param {unknown} prefix
+ * @returns {RegExp | null} */
 export function idPattern(prefix) {
-  return typeof prefix === 'string' && ROW.has(prefix) ? new RegExp(`^${coreOf(prefix)}$`) : null;
+  const r = typeof prefix === 'string' ? ROW.get(prefix) : undefined;
+  return r ? new RegExp(`^${coreOf(r)}$`) : null;
 }
 
-const HYP_RE = idPattern('HYP');
-/** R48: is `v` a hypothesis id? The one test every store-side refusal of a hypothesis reads (K1467, K1487). */
+/* The pattern of a prefix this table holds, which every name below is. */
+/** @param {string} prefix @returns {RegExp} */
+const heldPattern = (prefix) => {
+  const re = idPattern(prefix);
+  if (re === null) throw new RangeError(`ID_TABLE holds no ${prefix}`);
+  return re;
+};
+
+const HYP_RE = heldPattern('HYP');
+/** R48: is `v` a hypothesis id? The one test every store-side refusal of a hypothesis reads (K1467, K1487).
+ * @param {unknown} v @returns {boolean} */
 export const isHypothesisId = (v) => typeof v === 'string' && HYP_RE.test(v);
 
-const STP_RE = idPattern('STP');
-/** R51: is `v` a step id? (`steps`, D32.) */
+const STP_RE = heldPattern('STP');
+/** R51: is `v` a step id? (`steps`, D32.)
+ * @param {unknown} v @returns {boolean} */
 export const isStepId = (v) => typeof v === 'string' && STP_RE.test(v);
 
-const GUD_RE = idPattern('GUD');
-/** R53: is `v` a reading guide id? (`reading-guides`, D8.) */
+const GUD_RE = heldPattern('GUD');
+/** R53: is `v` a reading guide id? (`reading-guides`, D8.)
+ * @param {unknown} v @returns {boolean} */
 export const isGuideId = (v) => typeof v === 'string' && GUD_RE.test(v);
 
-const SUC_RE = idPattern('SUC');
-/** R59: is `v` a success record id? (`consequences`, N911.) */
+const SUC_RE = heldPattern('SUC');
+/** R59: is `v` a success record id? (`consequences`, N911.)
+ * @param {unknown} v @returns {boolean} */
 export const isSuccessRecordId = (v) => typeof v === 'string' && SUC_RE.test(v);
 
 /** Every bundle id prefix, in the order the patterns spell them (R1): the sequential prefixes `ID_TABLE` gives the
@@ -130,7 +150,7 @@ export const ID_PREFIXES = Object.freeze(['INFO', 'PROB', 'FOCUS', 'INQ', 'PROJ'
 
 /* R1: each prefix's core from `idPattern`, then the bundle's slug. */
 const SLUG = '[a-z0-9]+(-[a-z0-9]+)*';
-const BUNDLE = `(${ID_PREFIXES.map((p) => idPattern(p).source.slice(1, -1)).join('|')})-${SLUG}`;
+const BUNDLE = `(${ID_PREFIXES.map((p) => heldPattern(p).source.slice(1, -1)).join('|')})-${SLUG}`;
 
 export const BUNDLE_ID_RE = new RegExp(`^${BUNDLE}$`);
 export const ANN_ID_RE = new RegExp(`^${BUNDLE}\\.ann-\\d{8}T\\d{6}Z-${SLUG}$`);
