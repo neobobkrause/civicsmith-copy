@@ -37,6 +37,7 @@
 
 /* ---- DER, the little of it this needs ---- */
 
+/** @param {...Uint8Array} parts @returns {Uint8Array} */
 const cat = (...parts) => {
   let n = 0; for (const p of parts) n += p.length;
   const out = new Uint8Array(n); let i = 0;
@@ -44,33 +45,43 @@ const cat = (...parts) => {
   return out;
 };
 
-/** DER length: short form under 128, else long form with a byte count prefix. */
+/** DER length: short form under 128, else long form with a byte count prefix.
+ *  @param {number} n @returns {Uint8Array} */
 function derLen(n) {
   if (n < 0x80) return new Uint8Array([n]);
+  /** @type {number[]} */
   const bytes = [];
   for (let v = n; v > 0; v = Math.floor(v / 256)) bytes.unshift(v % 256);
   return new Uint8Array([0x80 | bytes.length, ...bytes]);
 }
+/** @param {number} tag @param {Uint8Array} body @returns {Uint8Array} */
 const tlv = (tag, body) => cat(new Uint8Array([tag]), derLen(body.length), body);
 
+/** @param {...Uint8Array} items @returns {Uint8Array} */
 const derSequence = (...items) => tlv(0x30, cat(...items));
+/** @param {Uint8Array} bytes @returns {Uint8Array} */
 const derOctetString = (bytes) => tlv(0x04, bytes);
+/** @returns {Uint8Array} */
 const derNull = () => new Uint8Array([0x05, 0x00]);
+/** @param {boolean} v @returns {Uint8Array} */
 const derBoolean = (v) => new Uint8Array([0x01, 0x01, v ? 0xff : 0x00]);
 
 /** DER INTEGER: two's complement, minimal, with a leading zero where the high
- *  bit would otherwise make a positive value look negative. */
+ *  bit would otherwise make a positive value look negative.
+ *  @param {Uint8Array} bytes @returns {Uint8Array} */
 function derInteger(bytes) {
   let i = 0;
-  while (i < bytes.length - 1 && bytes[i] === 0 && (bytes[i + 1] & 0x80) === 0) i++;
+  while (i < bytes.length - 1 && bytes[i] === 0 && ((bytes[i + 1] ?? 0) & 0x80) === 0) i++;
   const trimmed = bytes.slice(i);
-  return tlv(0x02, (trimmed[0] & 0x80) ? cat(new Uint8Array([0]), trimmed) : trimmed);
+  return tlv(0x02, ((trimmed[0] ?? 0) & 0x80) ? cat(new Uint8Array([0]), trimmed) : trimmed);
 }
+/** @param {number} n @returns {Uint8Array} */
 const derIntegerSmall = (n) => derInteger(new Uint8Array([n]));
 
 /* id-sha256, 2.16.840.1.101.3.4.2.1, encoded once rather than derived. */
 const OID_SHA256 = new Uint8Array([0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01]);
 
+/** @param {string} hex @returns {Uint8Array} */
 const hexToBytes = (hex) => {
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
@@ -92,6 +103,16 @@ const hexToBytes = (hex) => {
  * substituted answer is detectable. certReq asks the authority to include its
  * certificate in the token, without which nobody can verify the token later
  * without separately obtaining the right certificate.
+ *
+ * @typedef {Object} TimestampRequest
+ * @property {Uint8Array} der the DER TimeStampReq
+ * @property {Uint8Array} nonce
+ */
+/**
+ * @param {string} sha256Hex
+ * @param {Uint8Array} [nonceBytes] absent is 8 fresh random bytes
+ * @returns {TimestampRequest}
+ * @bound sha256Hex: 64 hex characters
  */
 export function timestampRequest(sha256Hex, nonceBytes) {
   const nonce = nonceBytes || crypto.getRandomValues(new Uint8Array(8));
@@ -107,16 +128,24 @@ export function timestampRequest(sha256Hex, nonceBytes) {
 
 /* ---- reading the response ---- */
 
-/** Minimal TLV reader. Returns {tag, header, length, value, end}. */
+/**
+ * @typedef {Object} Tlv
+ * @property {number} tag
+ * @property {Uint8Array} value
+ * @property {number} end
+ * @property {number} headerEnd
+ */
+/** Minimal TLV reader. Returns {tag, header, length, value, end}.
+ *  @param {Uint8Array} bytes @param {number} at @returns {Tlv | null} */
 function readTlv(bytes, at) {
   if (at + 2 > bytes.length) return null;
-  const tag = bytes[at];
-  let i = at + 1, length = bytes[i++];
+  const tag = bytes[at] ?? 0;
+  let i = at + 1, length = bytes[i++] ?? 0;
   if (length & 0x80) {
     const count = length & 0x7f;
     if (count === 0 || i + count > bytes.length) return null;
     length = 0;
-    for (let k = 0; k < count; k++) length = length * 256 + bytes[i++];
+    for (let k = 0; k < count; k++) length = length * 256 + (bytes[i++] ?? 0);
   }
   if (i + length > bytes.length) return null;
   return { tag, value: bytes.subarray(i, i + length), end: i + length, headerEnd: i };
@@ -131,11 +160,35 @@ function readTlv(bytes, at) {
  * than retried silently, because "a failed attempt is recorded with its reason,
  * never omitted".
  */
+/**
+ * @typedef {{ ok: true, status: number, token: Uint8Array }
+ *   | { ok: false, reason: "MALFORMED" }
+ *   | { ok: false, reason: "REJECTED", status: number }
+ *   | { ok: false, reason: "NO_TOKEN", status: number }
+ *   | { ok: false, reason: "NOT_BOUND", status: number }} TimestampAnswer
+ */
+/**
+ * @param {unknown} bytes
+ * @param {unknown} expectDigestHex
+ * @returns {TimestampAnswer}
+ */
 export function parseTimestampResponse(bytes, expectDigestHex) {
   try { return parseResponse(bytes, expectDigestHex); }
   catch { return { ok: false, reason: "MALFORMED" }; }
 }
 
+/** Whether `needle`'s bytes appear, in order and together, anywhere in `hay`.
+ *  @param {Uint8Array} hay @param {Uint8Array} needle @returns {boolean} */
+function holds(hay, needle) {
+  for (let i = 0; i + needle.length <= hay.length; i++) {
+    let k = 0;
+    while (k < needle.length && hay[i + k] === needle[k]) k++;
+    if (k === needle.length) return true;
+  }
+  return false;
+}
+
+/** @param {unknown} bytes @param {unknown} expectDigestHex @returns {TimestampAnswer} */
 function parseResponse(bytes, expectDigestHex) {
   if (!(bytes instanceof Uint8Array)) return { ok: false, reason: "MALFORMED" };
   const outer = readTlv(bytes, 0);
@@ -162,13 +215,7 @@ function parseResponse(bytes, expectDigestHex) {
      that is missing or not hex binds nothing, so it is never "found". */
   if (typeof expectDigestHex !== "string" || !/^(?:[0-9a-fA-F]{2})+$/.test(expectDigestHex))
     return { ok: false, reason: "NOT_BOUND", status };
-  const want = hexToBytes(expectDigestHex);
-  let found = false;
-  outer: for (let i = 0; i + want.length <= tokenBytes.length; i++) {
-    for (let k = 0; k < want.length; k++) if (tokenBytes[i + k] !== want[k]) continue outer;
-    found = true; break;
-  }
-  if (!found) return { ok: false, reason: "NOT_BOUND", status };
+  if (!holds(tokenBytes, hexToBytes(expectDigestHex))) return { ok: false, reason: "NOT_BOUND", status };
   return { ok: true, status, token: tokenBytes };
 }
 
@@ -176,6 +223,7 @@ function parseResponse(bytes, expectDigestHex) {
    header. Several, because a single authority is a single point of failure for
    a property the record depends on, and because the doctrine wants the attempt
    recorded either way. */
+/** @type {readonly string[]} */
 export const TSA_ENDPOINTS = Object.freeze([
   "http://timestamp.digicert.com",
   "http://timestamp.sectigo.com",
@@ -203,18 +251,44 @@ export const TSA_ACCEPT = "application/timestamp-reply";
  * the only variable part is a locator that has already passed
  * isPublicHttpsLocator, so this cannot be pointed anywhere else.
  */
+/**
+ * An archive's answer as a caller hands it in: a fetched Response, or anything else.
+ * @typedef {{ readonly headers?: unknown, readonly url?: unknown }} ArchiveAnswer
+ */
+/**
+ * What `headers` must offer to be read.
+ * @typedef {{ get(name: string): unknown }} HeaderReader
+ */
+/** @param {unknown} v @returns {v is ArchiveAnswer} */
+const isAnswer = (v) => (typeof v === "object" || typeof v === "function") && v !== null;
+/** @param {unknown} v @returns {v is HeaderReader} */
+const isHeaderReader = (v) => (typeof v === "object" || typeof v === "function") && v !== null
+  && "get" in v && typeof v.get === "function";
+/** Reading headers that offer no `get` fails, as calling a missing method does. @returns {never} */
+const missingReader = () => { throw new TypeError("the answer's headers cannot be read"); };
+
 export const ARCHIVE_SAVE_BASE = "https://web.archive.org/save/";
 export const ARCHIVE_SERVICE = "web.archive.org/save (anonymous)";
 
 /** Pull an archived locator out of whatever the archive answered with: the
  *  content-location header, then the location header, then the response's own
- *  url, the first that names one. Never throws: an unreadable answer names none. */
+ *  url, the first that names one. Never throws: an unreadable answer names none.
+ *  @param {unknown} res the archive's answer, as fetched
+ *  @param {unknown} [requested]
+ *  @returns {string | null} */
 export function archiveLocatorFrom(res, requested) {
+  /** @param {string} name @returns {unknown} */
   const header = (name) => {
-    try { return res.headers.get(name) || ""; } catch { return ""; }
+    try {
+      const headers = isAnswer(res) ? res.headers : undefined;
+      return (isHeaderReader(headers) ? headers.get(name) : missingReader()) || "";
+    } catch { return ""; }
   };
   let url = "";
-  try { url = typeof res.url === "string" ? res.url : ""; } catch {}
+  try {
+    const u = isAnswer(res) ? res.url : undefined;
+    url = typeof u === "string" ? u : "";
+  } catch {}
   for (const loc of [header("content-location"), header("location"), url]) {
     if (typeof loc !== "string") continue;
     if (/^\/web\/\d+/.test(loc)) return "https://web.archive.org" + loc;

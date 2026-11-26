@@ -17,18 +17,29 @@ import { join } from "node:path";
 import * as signer from "../../../scripts/sign-sshsig.mjs";
 import { verifySshsig, NS_RELEASE, NS_RATIFY, NS_FLEET, fleetStatement } from "../../../src/sshsig.mjs";
 
+/** @import { SshsigYes, SshsigNo } from "../../../src/sshsig.mjs" */
+
 const { signSshsig, seedFromEnvelope, signerPublicLine, keyFromSeed, publicFromKey } = signer;
 
 const te = new TextEncoder();
+const td = new TextDecoder();
+/** @param {string} s @returns {Uint8Array} */
 const enc = (s) => te.encode(s);
+/** @param {Uint8Array} bytes @returns {string} */
 const b64 = (bytes) => Buffer.from(bytes).toString("base64");
+/** The big-endian uint32 at `at`. @param {Uint8Array} b @param {number} at @returns {number} */
+const u32at = (b, at) => new DataView(b.buffer, b.byteOffset + at, 4).getUint32(0);
+/** The reason of a no, or "" for a yes. @param {SshsigYes | SshsigNo<string>} r @returns {string} */
+const reasonOf = (r) => (r.ok ? "" : r.reason);
 const HAVE_SSH_KEYGEN = !spawnSync("ssh-keygen", ["-Q"]).error;
 const NO_SSH_KEYGEN = HAVE_SSH_KEYGEN ? false : "ssh-keygen is not on PATH";
 
 const DIR = mkdtempSync(join(tmpdir(), "m-signatures-signer-"));
 process.on("exit", () => rmSync(DIR, { recursive: true, force: true }));
 
+/** @param {Uint8Array} seed @param {string} [label] @returns {string} */
 const envelope = (seed, label = "bio-release") => `BIOKEY-RAW1.${label}.${b64(seed)}`;
+/** @param {number} k @returns {Uint8Array} */
 const seedOf = (k) => new Uint8Array(32).map((_, i) => (i * k + 7) % 256);
 const SEED = seedOf(31);
 const ENV = envelope(SEED);
@@ -41,32 +52,46 @@ const RFC8032 = {
 
 /* ---- an independent reader of the SSHSIG blob, from PROTOCOL.sshsig ---- */
 
+/**
+ * @typedef {Object} BlobPart
+ * @property {string} t
+ * @property {Uint8Array} v
+ */
+/**
+ * @param {string} armored
+ * @returns {{ magic: string, version: number, pub: BlobPart, pubBlob: Uint8Array, namespace: string,
+ *   reserved: Uint8Array, hashAlg: string, sig: BlobPart }}
+ */
 function readBlob(armored) {
   const m = /^-----BEGIN SSH SIGNATURE-----\n([\s\S]*)\n-----END SSH SIGNATURE-----\n$/.exec(armored);
   assert.ok(m, "armor");
-  const lines = m[1].split("\n");
+  const lines = (m[1] ?? "").split("\n");
   for (const [i, l] of lines.entries()) {
     assert.match(l, /^[A-Za-z0-9+/=]+$/);
     if (i < lines.length - 1) assert.equal(l.length, 70, "wrapped at 70 columns");
     else assert.ok(l.length > 0 && l.length <= 70, "last line");
   }
+  /** @type {Uint8Array} */
   const blob = Buffer.from(lines.join(""), "base64");
   assert.equal(b64(blob), lines.join(""), "canonical base64");
   let o = 0;
+  /** @param {number} n @returns {Uint8Array} */
   const bytes = (n) => { assert.ok(o + n <= blob.length, "truncated"); const v = blob.subarray(o, o + n); o += n; return v; };
-  const u32 = () => bytes(4).readUInt32BE(0);
+  const u32 = () => u32at(bytes(4), 0);
   const str = () => bytes(u32());
-  const magic = bytes(6).toString();
+  const magic = td.decode(bytes(6));
   const version = u32();
-  const pub = str(), namespace = str().toString(), reserved = str(), hashAlg = str().toString(), sig = str();
+  const pub = str(), namespace = td.decode(str()), reserved = str(), hashAlg = td.decode(str()), sig = str();
   assert.equal(o, blob.length, "no trailing bytes");
-  const sub = (b) => { let p = 0; const s = () => { const n = b.readUInt32BE(p); const v = b.subarray(p + 4, p + 4 + n); p += 4 + n; return v; };
-    const t = s().toString(), v = s(); assert.equal(p, b.length); return { t, v }; };
+  /** @param {Uint8Array} b @returns {BlobPart} */
+  const sub = (b) => { let p = 0; const s = () => { const n = u32at(b, p); const v = b.subarray(p + 4, p + 4 + n); p += 4 + n; return v; };
+    const t = td.decode(s()), v = s(); assert.equal(p, b.length); return { t, v }; };
   return { magic, version, pub: sub(pub), pubBlob: pub, namespace, reserved, hashAlg, sig: sub(sig) };
 }
 
 /* ---- stock OpenSSH ---- */
 
+/** @param {string} pubLine @param {string} namespace @param {string} sig @param {Uint8Array} message @returns {boolean} */
 function keygenVerifies(pubLine, namespace, sig, message) {
   const d = mkdtempSync(join(DIR, "kv-"));
   writeFileSync(join(d, "allowed"), `signer@test ${pubLine.split(/\s+/).slice(0, 2).join(" ")}\n`);
@@ -79,18 +104,20 @@ function keygenVerifies(pubLine, namespace, sig, message) {
 }
 
 /* A fresh ssh-keygen key, with its seed read out of the openssh-key-v1 file. */
+/** @returns {{ dir: string, file: string, seed: Uint8Array, pubLine: string }} */
 function keygenKey() {
   const d = mkdtempSync(join(DIR, "kg-"));
   execFileSync("ssh-keygen", ["-t", "ed25519", "-N", "", "-C", "fresh", "-f", join(d, "k"), "-q"]);
   const pem = readFileSync(join(d, "k"), "utf8");
+  /** @type {Uint8Array} */
   const raw = Buffer.from(pem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, ""), "base64");
   let o = 15; /* "openssh-key-v1\0" */
-  const str = () => { const n = raw.readUInt32BE(o); const v = raw.subarray(o + 4, o + 4 + n); o += 4 + n; return v; };
-  assert.equal(str().toString(), "none"); str(); str();           /* cipher, kdf, kdf options */
-  assert.equal(raw.readUInt32BE(o), 1); o += 4; str();            /* one key; its public blob */
+  const str = () => { const n = u32at(raw, o); const v = raw.subarray(o + 4, o + 4 + n); o += 4 + n; return v; };
+  assert.equal(td.decode(str()), "none"); str(); str();           /* cipher, kdf, kdf options */
+  assert.equal(u32at(raw, o), 1); o += 4; str();                  /* one key; its public blob */
   const priv = str(); let p = 8;                                  /* check ints */
-  const pstr = () => { const n = priv.readUInt32BE(p); const v = priv.subarray(p + 4, p + 4 + n); p += 4 + n; return v; };
-  assert.equal(pstr().toString(), "ssh-ed25519");
+  const pstr = () => { const n = u32at(priv, p); const v = priv.subarray(p + 4, p + 4 + n); p += 4 + n; return v; };
+  assert.equal(td.decode(pstr()), "ssh-ed25519");
   const pub = pstr(), sk = pstr();
   assert.equal(sk.length, 64);
   assert.deepEqual(sk.subarray(32), pub);
@@ -98,6 +125,7 @@ function keygenKey() {
     pubLine: readFileSync(join(d, "k.pub"), "utf8").trim() };
 }
 
+/** @param {string} file @param {string} namespace @param {Uint8Array} message @returns {string} */
 function keygenSign(file, namespace, message) {
   const m = join(mkdtempSync(join(DIR, "ks-")), "m");
   writeFileSync(m, message);
@@ -137,11 +165,11 @@ test("R33 verifySshsig accepts it for that namespace and key, and for no other n
     const sig = signSshsig(ENV, msg, ns);
     assert.deepEqual(await verifySshsig(sig, msg, ns, [pub]), { ok: true, keyB64: pub.split(" ")[1], namespace: ns });
     for (const other of NAMESPACES.filter((n) => n !== ns)) {
-      assert.equal((await verifySshsig(sig, msg, other, [pub])).reason, "NAMESPACE");
+      assert.equal(reasonOf(await verifySshsig(sig, msg, other, [pub])), "NAMESPACE");
     }
-    assert.equal((await verifySshsig(sig, msg, ns, [otherPub])).reason, "UNKNOWN_KEY");
+    assert.equal(reasonOf(await verifySshsig(sig, msg, ns, [otherPub])), "UNKNOWN_KEY");
     const changed = msg.length ? Uint8Array.from(msg, (x, i) => (i === msg.length - 1 ? x ^ 1 : x)) : enc("x");
-    assert.equal((await verifySshsig(sig, changed, ns, [pub])).reason, "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifySshsig(sig, changed, ns, [pub])), "BAD_SIGNATURE");
   }
 });
 
@@ -195,7 +223,9 @@ test("R33 with an ssh-keygen key's seed, it emits byte for byte what ssh-keygen 
 /* ===================================================================== R34 */
 
 test("R34 seedFromEnvelope accepts the BIOKEY-RAW1 envelope a release key is held in, surrounding whitespace ignored, and returns label and seed", () => {
-  for (const [label, seed] of [["bio-release", SEED], ["bio-ratify", seedOf(9)], ["", seedOf(1)], ["any label", RFC8032.seed]]) {
+  /** @type {Array<[string, Uint8Array]>} */
+  const cases = [["bio-release", SEED], ["bio-ratify", seedOf(9)], ["", seedOf(1)], ["any label", RFC8032.seed]];
+  for (const [label, seed] of cases) {
     const env = envelope(seed, label);
     for (const text of [env, `  ${env}`, `${env}\n`, `\t\n${env} \r\n`]) {
       const r = seedFromEnvelope(text);
@@ -221,16 +251,18 @@ test("R34 any other shape is refused by name, a seed of another length by its le
     `BIOKEY-RAW1.bio-release.${b64(SEED).replace("=", "")}`, `BIOKEY-RAW1.bio-release.${b64(SEED)}!`,
     `BIOKEY-RAW1.bio-release.${b64(SEED).replace(/[+/]/g, "-")}${/[+/]/.test(b64(SEED)) ? "" : "-"}`,
     `BIOKEY-RAW1.bio-release.%%%%${b64(SEED)}`, `prefix BIOKEY-RAW1.bio-release.${b64(SEED)}`];
+  /** @type {Array<[number, number | null]>} */
   const lengths = [[0, null], [1, 1], [16, 16], [31, 31], [33, 33], [64, 64]];
+  /** @type {Array<(e: unknown) => unknown>} */
   const calls = [(e) => seedFromEnvelope(e), (e) => signSshsig(e, enc("m"), NS_RELEASE), (e) => signerPublicLine(e)];
   for (const call of calls) {
     for (const s of shapes) {
-      assert.throws(() => call(s), (e) => e instanceof Error && e.message === SHAPE, String(s));
+      assert.throws(() => call(s), (/** @type {unknown} */ e) => e instanceof Error && e.message === SHAPE, String(s));
     }
     for (const [n, said] of lengths) {
       const env = `BIOKEY-RAW1.bio-release.${b64(new Uint8Array(n).fill(5))}`;
       const want = said === null ? SHAPE : `release seed is ${said} bytes, expected 32`;
-      assert.throws(() => call(env), (e) => e instanceof Error && e.message === want, `${n} bytes`);
+      assert.throws(() => call(env), (/** @type {unknown} */ e) => e instanceof Error && e.message === want, `${n} bytes`);
     }
   }
 });
@@ -271,7 +303,7 @@ test("R35 keyFromSeed gives the seed's Ed25519 private key, and publicFromKey it
   assert.deepEqual(Buffer.from(pub), RFC8032.pub);
   assert.equal(createPublicKey(key).export({ format: "jwk" }).x, Buffer.from(RFC8032.pub).toString("base64url"));
   for (const seed of [SEED, seedOf(77)]) {
-    const raw = Buffer.from(signerPublicLine(envelope(seed)).split(" ")[1], "base64").subarray(-32);
+    const raw = Buffer.from(signerPublicLine(envelope(seed)).split(" ")[1] ?? "", "base64").subarray(-32);
     assert.deepEqual(Buffer.from(publicFromKey(keyFromSeed(seed))), raw);
   }
 });
@@ -287,7 +319,7 @@ test("R36 the signature and the public line carry no form of the seed or private
       ...NAMESPACES.map((ns) => signSshsig(env, enc("m\n"), ns))];
     for (const out of outputs) {
       for (const f of forms) assert.ok(!out.includes(f), "a textual form of the seed");
-      const bytes = out.startsWith("ssh-ed25519") ? Buffer.from(out.split(" ")[1], "base64")
+      const bytes = out.startsWith("ssh-ed25519") ? Buffer.from(out.split(" ")[1] ?? "", "base64")
         : Buffer.from(out.replace(/-----[^-]+-----/g, "").replace(/\s+/g, ""), "base64");
       assert.equal(bytes.indexOf(Buffer.from(seed)), -1, "the seed's bytes");
       assert.equal(bytes.indexOf(Buffer.from(seed).subarray(0, 8)), -1, "a run of the seed's bytes");
@@ -295,6 +327,7 @@ test("R36 the signature and the public line carry no form of the seed or private
     /* Errors name the shape or the length, never the bytes. */
     for (const bad of [`${env}!`, `BIOKEY-RAW1.l.${b64(Buffer.concat([Buffer.from(seed), Buffer.from([1])]))}`]) {
       try { signSshsig(bad, enc("m"), NS_RELEASE); assert.fail("did not throw"); } catch (e) {
+        assert.ok(e instanceof Error);
         for (const f of forms) assert.ok(!e.message.includes(f) && !String(e.stack).includes(f));
       }
     }
@@ -321,7 +354,7 @@ test("R36 signing and the public line print nothing and write no file", () => {
     writeSync(3, JSON.stringify({ said, n: out.length }));
   `;
   const r = spawnSync(process.execPath, ["--input-type=module", "-e", child],
-    { cwd: work, env: { ...process.env, HOME: work, TMPDIR: work }, stdio: ["ignore", "pipe", "pipe", "pipe"], encoding: "utf8" });
+    { cwd: work, env: { HOME: work, TMPDIR: work }, stdio: ["ignore", "pipe", "pipe", "pipe"], encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout, "");
   assert.equal(r.stderr, "");
