@@ -23,6 +23,10 @@ const SCALES = Object.freeze({ thousand: 3, thousands: 3, k: 3, million: 6, mill
   billion: 9, billions: 9, bn: 9, b: 9, trillion: 12, trillions: 12, tn: 12 });
 /** @type {Readonly<{ [sign: string]: string }>} */
 const SIGNS = Object.freeze({ $: "USD", "€": "EUR", "£": "GBP", "¥": "JPY" });
+/* A scale word's power of ten, read from the table's own words only, never from what every object inherits
+ * ("constructor" is no scale word). */
+/** @param {string} word @returns {number | undefined} */
+const scaleOf = (word) => { const w = word.toLowerCase(); return Object.hasOwn(SCALES, w) ? SCALES[w] : undefined; };
 const QUALIFIER = /^(?:(?:about|approximately|approx\.|nearly|over)\s+|~\s*)/i;
 const FIGURE = /^(-|\()?\s*(?:([$€£¥])|([A-Z]{3})\s)?\s*(-|\()?\s*(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?|\.\d+)\s*([A-Za-z]+)?\s*(%)?\s*(?:([$€£¥])|([A-Z]{3}))?\s*(\))?$/;
 const CODE = /^[A-Z]{3}$/;
@@ -41,13 +45,13 @@ function single(t) {
   if ((lead === "(" || minus === "(") !== (close === ")"))
     return invalid(localize("calc-grammar.opening_parenthesis_closed", "an opening parenthesis is not closed, or the reverse"));
   if (lead && minus) return invalid(localize("calc-grammar.figure_carries_two", "the figure carries two signs"));
-  const asCode = word0 !== undefined && word0 !== "" && CODE.test(word0) && !(word0.toLowerCase() in SCALES) && !codeAfter0 && !pct;
+  const asCode = word0 !== undefined && word0 !== "" && CODE.test(word0) && scaleOf(word0) === undefined && !codeAfter0 && !pct;
   const word = asCode ? undefined : word0;
   const codeAfter = asCode ? word0 : codeAfter0;
   let exp = 0;
   if (word) {
-    const scale = SCALES[word.toLowerCase()];
-    if (!(word.toLowerCase() in SCALES) || scale === undefined) return invalid(localize("calc-grammar.scale_word_module", "\"{word}\" is not a scale word this module reads", { word: String(word) }));
+    const scale = scaleOf(word);
+    if (scale === undefined) return invalid(localize("calc-grammar.scale_word_module", "\"{word}\" is not a scale word this module reads", { word: String(word) }));
     exp = scale;
   }
   const marks = [signBefore && SIGNS[signBefore], codeBefore, signAfter && SIGNS[signAfter], codeAfter].filter(Boolean);
