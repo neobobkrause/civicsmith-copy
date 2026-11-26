@@ -8923,28 +8923,28 @@
       "en": "each field states its name and its type, the type one of {types}",
       "module": "calc-grammar",
       "file": "bio-plane/src/calc-grammar/recipe.mjs",
-      "line": 170
+      "line": 346
     },
     {
       "id": "calc-grammar.recipe.the_input_name_why",
       "en": "the input \"{name}\": {why}",
       "module": "calc-grammar",
       "file": "bio-plane/src/calc-grammar/recipe.mjs",
-      "line": 658
+      "line": 1088
     },
     {
       "id": "calc-grammar.recipe.why_its_groups_sum_is",
       "en": "{why}; its group's sum is undetermined",
       "module": "calc-grammar",
       "file": "bio-plane/src/calc-grammar/recipe.mjs",
-      "line": 475
+      "line": 797
     },
     {
       "id": "calc-grammar.tables.the_input_name_why",
       "en": "the input \"{name}\": {why}",
       "module": "calc-grammar",
       "file": "bio-plane/src/calc-grammar/tables.mjs",
-      "line": 65
+      "line": 191
     },
     {
       "id": "calculations.application.a_recipe_of_application_runs",
@@ -16343,434 +16343,434 @@
       "en": "the closure list '{list}' for {year}{offices} cannot be read in your team's Civicsmith",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 39
+      "line": 45
     },
     {
       "id": "civil-time.calendar.list_cannot_read_why",
       "en": "the closure list '{list}' for {year}{offices} cannot be read in your team's Civicsmith: {why}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 41
+      "line": 47
     },
     {
       "id": "civil-time.calendar.list_disputed",
       "en": "the closure list '{list}' for {year}{offices} is disputed in your team's Civicsmith",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 37
+      "line": 43
     },
     {
       "id": "civil-time.calendar.list_year_withheld",
       "en": "the closure list '{list}' for {year} is withheld: the active profiles disagree on it",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 31
+      "line": 37
     },
     {
       "id": "civil-time.calendar.no_source_stated",
       "en": "no source stated",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/calendar.mjs",
-      "line": 119
+      "line": 205
     },
     {
       "id": "civil-time.calendar.office_cannot_read",
       "en": "the office calendar for {year}{offices} cannot be read in your team's Civicsmith",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 40
+      "line": 46
     },
     {
       "id": "civil-time.calendar.office_cannot_read_why",
       "en": "the office calendar for {year}{offices} cannot be read in your team's Civicsmith: {why}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 42
+      "line": 48
     },
     {
       "id": "civil-time.calendar.office_disputed",
       "en": "the office calendar for {year}{offices} is disputed in your team's Civicsmith",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 38
+      "line": 44
     },
     {
       "id": "civil-time.calendar.office_year_withheld",
       "en": "the office calendar for {year} is withheld: the active profiles disagree on it",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 32
+      "line": 38
     },
     {
       "id": "civil-time.calendar.uncovered_list",
       "en": "the count reaches {year}, a year the closure list '{list}' does not cover for every office",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 33
+      "line": 39
     },
     {
       "id": "civil-time.calendar.uncovered_list_office",
       "en": "the count reaches {year}, a year the closure list '{list}' does not cover for {office}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 34
+      "line": 40
     },
     {
       "id": "civil-time.calendar.uncovered_office",
       "en": "the count reaches {year}, a year the office calendar does not cover for every office",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 35
+      "line": 41
     },
     {
       "id": "civil-time.calendar.uncovered_office_office",
       "en": "the count reaches {year}, a year the office calendar does not cover for {office}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 36
+      "line": 42
     },
     {
       "id": "civil-time.missing.closure_list_absent",
       "en": "the closure list '{list}', which the rule names, is not held by the jurisdiction view",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 30
+      "line": 36
     },
     {
       "id": "civil-time.missing.closure_list_withheld",
       "en": "the closure list '{list}', which the rule names, is withheld: the active profiles disagree on it ({at})",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 29
+      "line": 35
     },
     {
       "id": "civil-time.missing.computation_absent",
       "en": "the computation '{computation}' the rule names is not held by the jurisdiction view",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 26
+      "line": 32
     },
     {
       "id": "civil-time.missing.computation_withheld",
       "en": "the computation '{computation}' the rule names is withheld: the active profiles disagree on it ({at})",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 25
+      "line": 31
     },
     {
       "id": "civil-time.missing.fiscal_year_absent",
       "en": "a fiscal year for {body} is not held by the jurisdiction view",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 28
+      "line": 34
     },
     {
       "id": "civil-time.missing.fiscal_year_withheld",
       "en": "a fiscal year for {body} is withheld: the active profiles disagree on it ({at})",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 27
+      "line": 33
     },
     {
       "id": "civil-time.missing.weekend_absent",
       "en": "the weekend is not held by the jurisdiction view",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 22
+      "line": 28
     },
     {
       "id": "civil-time.missing.weekend_counting_absent",
       "en": "the weekend is not held by the jurisdiction view; a business count or a roll needs it (the weekend is never assumed)",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 24
+      "line": 30
     },
     {
       "id": "civil-time.missing.weekend_counting_withheld",
       "en": "the weekend is withheld: the active profiles disagree on it ({at}); a business count or a roll needs it (the weekend is never assumed)",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 23
+      "line": 29
     },
     {
       "id": "civil-time.missing.weekend_withheld",
       "en": "the weekend is withheld: the active profiles disagree on it ({at})",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 21
+      "line": 27
     },
     {
       "id": "civil-time.recurrence.fiscal_year_form",
       "en": "the fiscal year held for {body} does not give a start day (MM-DD) and a named_by (start or end)",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 20
+      "line": 26
     },
     {
       "id": "civil-time.rules.anchor_hours_precision",
       "en": "an hours rule counts from the anchor's time, and {value} is held at {precision} precision",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 59
+      "line": 65
     },
     {
       "id": "civil-time.rules.anchor_open_end",
       "en": "the anchor {value} has an open or unknown end",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 58
+      "line": 64
     },
     {
       "id": "civil-time.rules.anchor_undetermined",
       "en": "the anchor is undetermined: {why}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 60
+      "line": 66
     },
     {
       "id": "civil-time.rules.anchor_undetermined_unsaid",
       "en": "the anchor is undetermined: no why given",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 61
+      "line": 67
     },
     {
       "id": "civil-time.rules.daytext_has_no_such_day",
       "en": "{dayText} has no such day {v1}: both readings are kept (K1504 (4))",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/rules.mjs",
-      "line": 209
+      "line": 340
     },
     {
       "id": "civil-time.rules.due_open_end",
       "en": "the due {value} has an open end",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 66
+      "line": 72
     },
     {
       "id": "civil-time.rules.due_undetermined",
       "en": "the due date is undetermined: {why}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 64
+      "line": 70
     },
     {
       "id": "civil-time.rules.due_undetermined_unsaid",
       "en": "the due date is undetermined: no why given",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 65
+      "line": 71
     },
     {
       "id": "civil-time.rules.invalid_amount",
       "en": "the rule's amount is not a positive whole number",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 44
+      "line": 50
     },
     {
       "id": "civil-time.rules.invalid_applies_on",
       "en": "the rule's applies_on is not a list of day names",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 52
+      "line": 58
     },
     {
       "id": "civil-time.rules.invalid_closures",
       "en": "the rule's closures is not a list's name",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 50
+      "line": 56
     },
     {
       "id": "civil-time.rules.invalid_computation",
       "en": "the rule's computation names '{rule}', a computation this module does not count",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 56
+      "line": 62
     },
     {
       "id": "civil-time.rules.invalid_count",
       "en": "the rule's count '{count}' is neither calendar nor business",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 47
+      "line": 53
     },
     {
       "id": "civil-time.rules.invalid_count_unstated",
       "en": "the rule's count is not stated (calendar or business)",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 46
+      "line": 52
     },
     {
       "id": "civil-time.rules.invalid_count_with_units",
       "en": "the rule's count is given with units '{units}'",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 48
+      "line": 54
     },
     {
       "id": "civil-time.rules.invalid_direction",
       "en": "the rule's direction '{direction}' is neither forward nor backward",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 45
+      "line": 51
     },
     {
       "id": "civil-time.rules.invalid_due_at",
       "en": "the rule's due_at is neither close_of_business nor HH:MM",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 51
+      "line": 57
     },
     {
       "id": "civil-time.rules.invalid_extension_count",
       "en": "the rule's extension count '{count}' is neither calendar nor business",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 54
+      "line": 60
     },
     {
       "id": "civil-time.rules.invalid_extension_days",
       "en": "the rule's extension has no positive whole number of days",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 53
+      "line": 59
     },
     {
       "id": "civil-time.rules.invalid_receipt",
       "en": "the rule's venue receipt '{rule}' is not a receipt rule this module counts",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 55
+      "line": 61
     },
     {
       "id": "civil-time.rules.invalid_roll",
       "en": "the rule's roll is not true or false",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 49
+      "line": 55
     },
     {
       "id": "civil-time.rules.invalid_units",
       "en": "the rule's units '{units}' is not one of {allowed}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 43
+      "line": 49
     },
     {
       "id": "civil-time.rules.not_applicable_day",
       "en": "the rule applies only to an event on {days}, and the anchor is a {weekday}",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 62
+      "line": 68
     },
     {
       "id": "civil-time.rules.not_applicable_span",
       "en": "the rule applies only to an event on {days}, and the anchor is not a single day",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 63
+      "line": 69
     },
     {
       "id": "civil-time.rules.possibly_overdue_day",
       "en": "possibly overdue: undetermined, because the due date is uncertain between {value} and {value_2} and {day} in {zone} lies after the first and not after the second (K1444 (i))",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 67
+      "line": 73
     },
     {
       "id": "civil-time.rules.possibly_overdue_instant",
       "en": "possibly overdue: undetermined, because the due date is uncertain between {value} and {value_2} and {instant} lies after the first and not after the second (K1444 (i))",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 68
+      "line": 74
     },
     {
       "id": "civil-time.rules.span_needs_view",
       "en": "a span in business days needs the jurisdiction view",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 70
+      "line": 76
     },
     {
       "id": "civil-time.rules.span_open_end",
       "en": "{value} has an open or unknown end",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 69
+      "line": 75
     },
     {
       "id": "civil-time.rules.unmeasured",
       "en": "the rule's basis is UNMEASURED: no measurement or ruling sources it (K1445)",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 57
+      "line": 63
     },
     {
       "id": "civil-time.values.end_open",
       "en": "{value} has an open end, so which comes first is not settled",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 73
+      "line": 79
     },
     {
       "id": "civil-time.values.end_unknown",
       "en": "{value} has an unknown end, so which comes first is not settled",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 74
+      "line": 80
     },
     {
       "id": "civil-time.values.event_unresolved",
       "en": "the bounding event {event} ({edge}) is not resolved",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 78
+      "line": 84
     },
     {
       "id": "civil-time.values.event_unresolved_edgeless",
       "en": "the bounding event {event} is not resolved",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 79
+      "line": 85
     },
     {
       "id": "civil-time.values.overlap",
       "en": "{value} ({precision} precision, {zone}) and {value_2} ({precision_2} precision, {zone_2}) overlap, so the precision held does not say which came first",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 75
+      "line": 81
     },
     {
       "id": "civil-time.values.overlaps_end",
       "en": "{value} overlaps the end {bound} at the precision held",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 77
+      "line": 83
     },
     {
       "id": "civil-time.values.overlaps_start",
       "en": "{value} overlaps the start {bound} at the precision held",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 76
+      "line": 82
     },
     {
       "id": "civil-time.values.start_open",
       "en": "{value} has an open start, so which comes first is not settled",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 71
+      "line": 77
     },
     {
       "id": "civil-time.values.start_unknown",
       "en": "{value} has an unknown start, so which comes first is not settled",
       "module": "civil-time",
       "file": "bio-plane/src/civil-time/reasons.mjs",
-      "line": 72
+      "line": 78
     },
     {
       "id": "conformance.checks.a_cure_is_already_recorded",
@@ -16896,217 +16896,217 @@
       "en": "a hunch is returned with scope {sc}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 162
+      "line": 235
     },
     {
       "id": "connection-grammar.conformance.asking_k_alone_does_not",
       "en": "asking {k} alone does not give exactly the {k_2} items of the whole set",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 151
+      "line": 224
     },
     {
       "id": "connection-grammar.conformance.fenced_fenced_is_not_returned",
       "en": "{fenced} (fenced) is not returned to the viewer who may see it",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 137
+      "line": 210
     },
     {
       "id": "connection-grammar.conformance.fenced_fenced_is_returned_to",
       "en": "{fenced} (fenced) is returned to the viewer who may not see it",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 141
+      "line": 214
     },
     {
       "id": "connection-grammar.conformance.hunch_hunch_is_not_returned",
       "en": "{hunch} (hunch) is not returned within its inquiry",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 159
+      "line": 232
     },
     {
       "id": "connection-grammar.conformance.in_in_at_the_date",
       "en": "{in} (in at the date) is not returned unmarked",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 124
+      "line": 196
     },
     {
       "id": "connection-grammar.conformance.node_is_a_hub_shown",
       "en": "{node} is a hub shown as items: {why}; a hub is named, never shown",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 113
+      "line": 183
     },
     {
       "id": "connection-grammar.conformance.out_out_at_the_date",
       "en": "{out} (out at the date) is returned, or the fixture names none",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 125
+      "line": 197
     },
     {
       "id": "connection-grammar.conformance.owner_declares_it_holds_no",
       "en": "{owner} declares it holds no fenced item, yet the other viewer's pages are not the complete set",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 134
+      "line": 207
     },
     {
       "id": "connection-grammar.conformance.owner_declares_its_kinds_undated",
       "en": "{owner} declares its kinds undated, yet {id} states a valid bound",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 122
+      "line": 194
     },
     {
       "id": "connection-grammar.conformance.paging_did_not_end_within",
       "en": "paging did not end within {PAGE_LIMIT} pages",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 97
+      "line": 167
     },
     {
       "id": "connection-grammar.conformance.refused_refused_for_viewer_string",
       "en": "refused {refused} for viewer {String}: {why}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 87
+      "line": 155
     },
     {
       "id": "connection-grammar.conformance.the_pages_joined_length_items",
       "en": "the pages joined ({length} items) are not the complete set the fixture expects ({length_2})",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 117
+      "line": 187
     },
     {
       "id": "connection-grammar.conformance.undetermined_undetermined_at_the_date",
       "en": "{undetermined} (undetermined at the date) is not returned marked undetermined",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/conformance.mjs",
-      "line": 126
+      "line": 198
     },
     {
       "id": "connection-grammar.reads.a_hubs_set_of_one",
       "en": "a hub's set of one kind exceeds that kind's bound, here at least {bound}; {set_size} does not",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 55
+      "line": 142
     },
     {
       "id": "connection-grammar.reads.a_page_holds_at_most",
       "en": "a page holds at most {fanout} items; this one holds {length}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 45
+      "line": 129
     },
     {
       "id": "connection-grammar.reads.hub_with_items",
       "en": "a hub is answered with no items, never a partial set shown as whole",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 56
+      "line": 143
     },
     {
       "id": "connection-grammar.reads.name_does_not_have_the",
       "en": "{name} does not have the node at either end",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 71
+      "line": 162
     },
     {
       "id": "connection-grammar.reads.name_is_a_hunch_returned",
       "en": "{name} is a hunch returned outside the working inquiry that holds it",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 80
+      "line": 171
     },
     {
       "id": "connection-grammar.reads.name_is_answered_twice_on",
       "en": "{name} is answered twice on one page",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 67
+      "line": 157
     },
     {
       "id": "connection-grammar.reads.name_is_in_at_the",
       "en": "{name} is in at the date asked, yet marked undetermined",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 76
+      "line": 167
     },
     {
       "id": "connection-grammar.reads.name_is_not_of_owner",
       "en": "{name} is not of {owner}'s own kinds",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 69
+      "line": 160
     },
     {
       "id": "connection-grammar.reads.name_is_of_kind_kind",
       "en": "{name} is of kind {kind}, which was not asked",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 70
+      "line": 161
     },
     {
       "id": "connection-grammar.reads.name_is_out_at_the",
       "en": "{name} is out at the date asked, so it is not returned",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 75
+      "line": 166
     },
     {
       "id": "connection-grammar.reads.name_is_undetermined_at_the",
       "en": "{name} is undetermined at the date asked and is not marked undetermined: {why}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 77
+      "line": 168
     },
     {
       "id": "connection-grammar.reads.reason_not_filled",
       "en": "{name} is marked undetermined, but its reason is not a key with the vars the word list fills, nor a localize id",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 78
+      "line": 169
     },
     {
       "id": "connection-grammar.reads.unread_shape",
       "en": "unread is a list of entries, each with a non-empty what and a non-empty why",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/reads.mjs",
-      "line": 42
+      "line": 126
     },
     {
       "id": "connection-grammar.registry.owner_s_answer_breaks_the",
       "en": "{owner}'s answer breaks the neighbours contract: {check}: {why}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/registry.mjs",
-      "line": 92
+      "line": 147
     },
     {
       "id": "connection-grammar.registry.viewer_missing",
       "en": "a read names the member reading; an absent viewer is neither an administrator nor the public",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/registry.mjs",
-      "line": 79
+      "line": 129
     },
     {
       "id": "connection-grammar.shape.grade_shape",
       "en": "grade is not {shape} in the letters {letters}",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/shape.mjs",
-      "line": 122
+      "line": 302
     },
     {
       "id": "connection-grammar.shape.label_declared",
       "en": "declared, not evidenced",
       "module": "connection-grammar",
       "file": "bio-plane/src/connection-grammar/shape.mjs",
-      "line": 10
+      "line": 134
     },
     {
       "id": "connections.checks.a_membership_is_taken_back",
@@ -34283,1107 +34283,1107 @@
       "id": "jurisdictions.index.a_different_profile_with_id",
       "en": "a different profile with id '{id}' was given earlier",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1716
+      "file": "jurisdictions/combine.mjs",
+      "line": 291
     },
     {
       "id": "jurisdictions.index.a_source_has_a_citation",
       "en": "a source has one field, citation, which is non-empty",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 903
+      "file": "jurisdictions/validate.mjs",
+      "line": 780
     },
     {
       "id": "jurisdictions.index.a_template_is_fields_never_bare",
       "en": "a template is {{fields}}, never bare text",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 853
+      "file": "jurisdictions/validate.mjs",
+      "line": 723
     },
     {
       "id": "jurisdictions.index.a_v1_entry_carries_a",
       "en": "a {v1} entry carries a level, one of {LAW_LEVELS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 759
+      "file": "jurisdictions/validate.mjs",
+      "line": 611
     },
     {
       "id": "jurisdictions.index.amount_is_amount_and_units",
       "en": "an amount is {amount, units}, a positive integer of one of {units_list}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 710
+      "file": "jurisdictions/validate.mjs",
+      "line": 558
     },
     {
       "id": "jurisdictions.index.an_entry_with_no_level",
       "en": "an entry with no level names its issuer's sector, one of {SECTORS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 765
+      "file": "jurisdictions/validate.mjs",
+      "line": 617
     },
     {
       "id": "jurisdictions.index.applies_on_is_a_non",
       "en": "applies_on is a non-empty list of {WEEKDAYS}, each once",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1083
+      "file": "jurisdictions/validate.mjs",
+      "line": 965
     },
     {
       "id": "jurisdictions.index.body_keeps_one_fiscal_year",
       "en": "{body} keeps one fiscal year",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1187
+      "file": "jurisdictions/validate.mjs",
+      "line": 1073
     },
     {
       "id": "jurisdictions.index.code_is_given_twice",
       "en": "{code} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1312
+      "file": "jurisdictions/validate.mjs",
+      "line": 1207
     },
     {
       "id": "jurisdictions.index.column_is_one_of_budget",
       "en": "column is one of {BUDGET_COLUMNS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 612
+      "file": "jurisdictions/validate.mjs",
+      "line": 451
     },
     {
       "id": "jurisdictions.index.copy_is_one_of_code",
       "en": "copy is one of {CODE_COPIES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 575
+      "file": "jurisdictions/validate.mjs",
+      "line": 414
     },
     {
       "id": "jurisdictions.index.covers_is_a_non_empty",
       "en": "covers is a non-empty list from {DEMAND_COVERS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1333
+      "file": "jurisdictions/validate.mjs",
+      "line": 1229
     },
     {
       "id": "jurisdictions.index.date_is_given_twice",
       "en": "{date} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1171
+      "file": "jurisdictions/validate.mjs",
+      "line": 1056
     },
     {
       "id": "jurisdictions.index.day_is_one_of_weekdays",
       "en": "day is one of {WEEKDAYS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 336
+      "file": "jurisdictions/validate.mjs",
+      "line": 131
     },
     {
       "id": "jurisdictions.index.days_is_a_non_empty",
       "en": "days is a non-empty list of {WEEKDAYS}, each once",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 734
+      "file": "jurisdictions/validate.mjs",
+      "line": 584
     },
     {
       "id": "jurisdictions.index.does_says_what_the_body",
       "en": "does says what the body does and for whom, 1 to {POINTER_DOES_MAX} characters",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1432
+      "file": "jurisdictions/validate.mjs",
+      "line": 1330
     },
     {
       "id": "jurisdictions.index.fact_is_given_twice_for",
       "en": "{fact} is given twice for this venue",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 936
+      "file": "jurisdictions/validate.mjs",
+      "line": 814
     },
     {
       "id": "jurisdictions.index.fact_is_one_of_venue",
       "en": "fact is one of {VENUE_FACTS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 935
+      "file": "jurisdictions/validate.mjs",
+      "line": 813
     },
     {
       "id": "jurisdictions.index.family_dropped_from_view",
       "en": "the family is dropped from the view: a citation of it is recognised by no profile until they agree",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1942
+      "file": "jurisdictions/combine.mjs",
+      "line": 669
     },
     {
       "id": "jurisdictions.index.field_is_one_of_policy",
       "en": "field is one of {POLICY_HEADER_FIELDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 609
+      "file": "jurisdictions/validate.mjs",
+      "line": 448
     },
     {
       "id": "jurisdictions.index.form_is_named_twice_in",
       "en": "'{form}' is named twice in {name}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 469
+      "file": "jurisdictions/validate.mjs",
+      "line": 299
     },
     {
       "id": "jurisdictions.index.forum_kind_is_one_of",
       "en": "forum_kind is one of {FORUM_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1235
+      "file": "jurisdictions/validate.mjs",
+      "line": 1124
     },
     {
       "id": "jurisdictions.index.forum_kind_is_one_of_2",
       "en": "forum_kind is one of {FORUM_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1506
+      "file": "jurisdictions/validate.mjs",
+      "line": 1405
     },
     {
       "id": "jurisdictions.index.freq_is_one_of_rrule",
       "en": "FREQ is one of {RRULE_FREQS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1575
+      "file": "jurisdictions/validate.mjs",
+      "line": 1482
     },
     {
       "id": "jurisdictions.index.grade_is_one_of_basis",
       "en": "grade is one of {BASIS_GRADES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 990
+      "file": "jurisdictions/validate.mjs",
+      "line": 872
     },
     {
       "id": "jurisdictions.index.host_is_mixed_and_also",
       "en": "{host} is mixed and also in {get}, which has no path",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 447
+      "file": "jurisdictions/validate.mjs",
+      "line": 272
     },
     {
       "id": "jurisdictions.index.how_is_one_of_contact",
       "en": "how is one of {CONTACT_HOW}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1114
+      "file": "jurisdictions/validate.mjs",
+      "line": 996
     },
     {
       "id": "jurisdictions.index.how_is_one_of_pointer",
       "en": "how is one of {POINTER_HOW}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1438
+      "file": "jurisdictions/validate.mjs",
+      "line": 1336
     },
     {
       "id": "jurisdictions.index.how_is_one_of_venue",
       "en": "how is one of {VENUE_HOW}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 925
+      "file": "jurisdictions/validate.mjs",
+      "line": 802
     },
     {
       "id": "jurisdictions.index.id_is_given_twice_in",
       "en": "'{id}' is given twice in the profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 860
+      "file": "jurisdictions/validate.mjs",
+      "line": 733
     },
     {
       "id": "jurisdictions.index.instrument_key_conflict",
       "en": "the active profiles give different instrument-key segments, so no key is composed",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2164
+      "file": "jurisdictions/combine.mjs",
+      "line": 1005
     },
     {
       "id": "jurisdictions.index.k_is_not_a_field",
       "en": "'{k}' is not a field here",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 406
+      "file": "jurisdictions/validate.mjs",
+      "line": 217
     },
     {
       "id": "jurisdictions.index.k_is_not_a_section",
       "en": "'{k}' is not a section of a profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 289
+      "file": "jurisdictions/validate.mjs",
+      "line": 73
     },
     {
       "id": "jurisdictions.index.key_is_given_twice",
       "en": "'{key}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 720
+      "file": "jurisdictions/validate.mjs",
+      "line": 569
     },
     {
       "id": "jurisdictions.index.key_is_given_twice_2",
       "en": "'{key}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1364
+      "file": "jurisdictions/validate.mjs",
+      "line": 1261
     },
     {
       "id": "jurisdictions.index.key_is_not_one_of",
       "en": "'{key}' is not one of {VOCABULARY}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 544
+      "file": "jurisdictions/validate.mjs",
+      "line": 379
     },
     {
       "id": "jurisdictions.index.kind_at_level_is_ranked",
       "en": "{kind} at {level} is ranked twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1209
+      "file": "jurisdictions/validate.mjs",
+      "line": 1097
     },
     {
       "id": "jurisdictions.index.kind_has_one_flow",
       "en": "{kind} has one flow",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1245
+      "file": "jurisdictions/validate.mjs",
+      "line": 1135
     },
     {
       "id": "jurisdictions.index.kind_has_one_guide",
       "en": "{kind} has one guide",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1391
+      "file": "jurisdictions/validate.mjs",
+      "line": 1289
     },
     {
       "id": "jurisdictions.index.kind_is_given_twice",
       "en": "'{kind}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 912
+      "file": "jurisdictions/validate.mjs",
+      "line": 789
     },
     {
       "id": "jurisdictions.index.kind_is_given_twice_2",
       "en": "'{kind}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1232
+      "file": "jurisdictions/validate.mjs",
+      "line": 1121
     },
     {
       "id": "jurisdictions.index.kind_is_given_twice_3",
       "en": "'{kind}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1329
+      "file": "jurisdictions/validate.mjs",
+      "line": 1225
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_classification",
       "en": "kind is one of {CLASSIFICATION_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1303
+      "file": "jurisdictions/validate.mjs",
+      "line": 1197
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_local",
       "en": "kind is one of {LOCAL_NAME_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1531
+      "file": "jurisdictions/validate.mjs",
+      "line": 1431
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_phrasing",
       "en": "kind is one of {PHRASING_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1416
+      "file": "jurisdictions/validate.mjs",
+      "line": 1314
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_pointer",
       "en": "kind is one of {POINTER_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1428
+      "file": "jurisdictions/validate.mjs",
+      "line": 1326
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_standard",
       "en": "kind is one of {STANDARD_SOURCE_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 752
+      "file": "jurisdictions/validate.mjs",
+      "line": 604
     },
     {
       "id": "jurisdictions.index.kind_is_one_of_standard_2",
       "en": "kind is one of {STANDARD_SOURCE_KINDS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1205
+      "file": "jurisdictions/validate.mjs",
+      "line": 1093
     },
     {
       "id": "jurisdictions.index.kind_is_roster_kinds_absent",
       "en": "kind is {ROSTER_KINDS} (absent: both)",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 602
+      "file": "jurisdictions/validate.mjs",
+      "line": 441
     },
     {
       "id": "jurisdictions.index.label_is_a_template_using",
       "en": "label is a template using {FISCAL_PLACEHOLDERS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1193
+      "file": "jurisdictions/validate.mjs",
+      "line": 1080
     },
     {
       "id": "jurisdictions.index.level_is_one_of_counterparty",
       "en": "level is one of {COUNTERPARTY_LEVELS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 841
+      "file": "jurisdictions/validate.mjs",
+      "line": 702
     },
     {
       "id": "jurisdictions.index.level_is_one_of_law",
       "en": "level is one of {LAW_LEVELS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 655
+      "file": "jurisdictions/validate.mjs",
+      "line": 496
     },
     {
       "id": "jurisdictions.index.level_is_one_of_law_2",
       "en": "level is one of {LAW_LEVELS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 760
+      "file": "jurisdictions/validate.mjs",
+      "line": 612
     },
     {
       "id": "jurisdictions.index.level_is_one_of_law_3",
       "en": "level is one of {LAW_LEVELS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1206
+      "file": "jurisdictions/validate.mjs",
+      "line": 1094
     },
     {
       "id": "jurisdictions.index.local_day_undetermined",
       "en": "its local day is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2048
+      "file": "jurisdictions/combine.mjs",
+      "line": 830
     },
     {
       "id": "jurisdictions.index.locale_conflict",
       "en": "the active profiles name different locales, so none is given: a render asks for its fallback",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1868
+      "file": "jurisdictions/combine.mjs",
+      "line": 558
     },
     {
       "id": "jurisdictions.index.marker_is_one_of_meeting",
       "en": "marker is one of {MEETING_MARKERS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 595
+      "file": "jurisdictions/validate.mjs",
+      "line": 434
     },
     {
       "id": "jurisdictions.index.markers_is_the_order_of",
       "en": "markers is the order of subsection markers, from {SECTION_MARKERS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 587
+      "file": "jurisdictions/validate.mjs",
+      "line": 426
     },
     {
       "id": "jurisdictions.index.minutes_due_conflict",
       "en": "the active profiles give different periods after which absent minutes raise a question, so none is given",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1859
+      "file": "jurisdictions/combine.mjs",
+      "line": 547
     },
     {
       "id": "jurisdictions.index.name_is_a_title_of",
       "en": "name is a title of at most {TEMPLATE_NAME_MAX} characters on one line",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 897
+      "file": "jurisdictions/validate.mjs",
+      "line": 774
     },
     {
       "id": "jurisdictions.index.name_is_not_one_of",
       "en": "'{name}' is not one of {SPACES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 457
+      "file": "jurisdictions/validate.mjs",
+      "line": 284
     },
     {
       "id": "jurisdictions.index.name_is_the_bodys_own",
       "en": "name is the body's own name, 1 to {POINTER_NAME_MAX} characters on one line",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1430
+      "file": "jurisdictions/validate.mjs",
+      "line": 1328
     },
     {
       "id": "jurisdictions.index.named_body_variants",
       "en": "body-variant keys",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2006
+      "file": "jurisdictions/combine.mjs",
+      "line": 752
     },
     {
       "id": "jurisdictions.index.named_identifiers",
       "en": "identifiers",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2006
+      "file": "jurisdictions/combine.mjs",
+      "line": 752
     },
     {
       "id": "jurisdictions.index.named_within",
       "en": "organisations it is part of",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2006
+      "file": "jurisdictions/combine.mjs",
+      "line": 752
     },
     {
       "id": "jurisdictions.index.no_computation_entry_of_this",
       "en": "no computation entry of this profile has key '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1051
+      "file": "jurisdictions/validate.mjs",
+      "line": 933
     },
     {
       "id": "jurisdictions.index.no_counterparty_of_this_profile",
       "en": "no counterparty of this profile has role '{o}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1143
+      "file": "jurisdictions/validate.mjs",
+      "line": 1027
     },
     {
       "id": "jurisdictions.index.no_holidays_entry_of_this",
       "en": "no holidays entry of this profile is in a list named '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 634
+      "file": "jurisdictions/validate.mjs",
+      "line": 473
     },
     {
       "id": "jurisdictions.index.no_holidays_entry_of_this_2",
       "en": "no holidays entry of this profile is in a list named '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1049
+      "file": "jurisdictions/validate.mjs",
+      "line": 931
     },
     {
       "id": "jurisdictions.index.no_holidays_entry_of_this_3",
       "en": "no holidays entry of this profile is in a list named '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1076
+      "file": "jurisdictions/validate.mjs",
+      "line": 958
     },
     {
       "id": "jurisdictions.index.no_identifier_scheme_of_this",
       "en": "no identifier scheme of this profile is '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 807
+      "file": "jurisdictions/validate.mjs",
+      "line": 668
     },
     {
       "id": "jurisdictions.index.no_kind_of_this_profile",
       "en": "no kind of this profile with a venue is '{venue}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1145
+      "file": "jurisdictions/validate.mjs",
+      "line": 1029
     },
     {
       "id": "jurisdictions.index.no_profile_item_is_held",
       "en": "no profile '{item}' is held",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1706
+      "file": "jurisdictions/combine.mjs",
+      "line": 280
     },
     {
       "id": "jurisdictions.index.no_records_laws_or_standard",
       "en": "no records_laws or standard_sources entry is named '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 917
+      "file": "jurisdictions/validate.mjs",
+      "line": 794
     },
     {
       "id": "jurisdictions.index.no_system_of_this_profile",
       "en": "no system of this profile has origin '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 499
+      "file": "jurisdictions/validate.mjs",
+      "line": 329
     },
     {
       "id": "jurisdictions.index.no_system_of_this_profile_2",
       "en": "no system of this profile has origin '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 615
+      "file": "jurisdictions/validate.mjs",
+      "line": 454
     },
     {
       "id": "jurisdictions.index.no_system_of_this_profile_3",
       "en": "no system of this profile has origin '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1284
+      "file": "jurisdictions/validate.mjs",
+      "line": 1177
     },
     {
       "id": "jurisdictions.index.no_vocabulary_codes_entry_has",
       "en": "no vocabulary.codes entry has key '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 768
+      "file": "jurisdictions/validate.mjs",
+      "line": 620
     },
     {
       "id": "jurisdictions.index.one_active_profile_says_host",
       "en": "one active profile says {host} serves many offices' publications and another names a system for it, so an address there names no system",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1817
+      "file": "jurisdictions/combine.mjs",
+      "line": 453
     },
     {
       "id": "jurisdictions.index.organisation_is_a_key_the",
       "en": "organisation is a key the body-variant map names, not '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 563
+      "file": "jurisdictions/validate.mjs",
+      "line": 402
     },
     {
       "id": "jurisdictions.index.outcome_is_one_of_review",
       "en": "outcome is one of {REVIEW_OUTCOMES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 883
+      "file": "jurisdictions/validate.mjs",
+      "line": 760
     },
     {
       "id": "jurisdictions.index.phrase_is_phrase_min_phrase",
       "en": "phrase is {PHRASE_MIN}–{PHRASE_MAX} characters on one line",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1418
+      "file": "jurisdictions/validate.mjs",
+      "line": 1316
     },
     {
       "id": "jurisdictions.index.receipt_on_closed_day",
       "en": "receipt on a closed day stays the actual day only where no profile states otherwise; here it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2047
+      "file": "jurisdictions/combine.mjs",
+      "line": 829
     },
     {
       "id": "jurisdictions.index.records_help_conflict",
       "en": "the active profiles give different records-request help, so none is given: the page has no figure to show",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1886
+      "file": "jurisdictions/combine.mjs",
+      "line": 577
     },
     {
       "id": "jurisdictions.index.relation_is_one_of_amending",
       "en": "relation is one of {AMENDING_RELATIONS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 592
+      "file": "jurisdictions/validate.mjs",
+      "line": 431
     },
     {
       "id": "jurisdictions.index.response_is_the_rule_of_a_deadline",
       "en": "response is the rule of a deadline",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 683
+      "file": "jurisdictions/validate.mjs",
+      "line": 525
     },
     {
       "id": "jurisdictions.index.response_names_no_records_deadline",
       "en": "response '{rule}' is no rule of a deadline that applies to records_request",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1092
+      "file": "jurisdictions/validate.mjs",
+      "line": 974
     },
     {
       "id": "jurisdictions.index.role_is_one_of_roster",
       "en": "role is one of {ROSTER_ROLES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 605
+      "file": "jurisdictions/validate.mjs",
+      "line": 444
     },
     {
       "id": "jurisdictions.index.rule_is_one_of_computation",
       "en": "rule is one of {COMPUTATION_RULES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 722
+      "file": "jurisdictions/validate.mjs",
+      "line": 571
     },
     {
       "id": "jurisdictions.index.rule_is_one_of_receipt",
       "en": "rule is one of {RECEIPT_RULES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 381
+      "file": "jurisdictions/validate.mjs",
+      "line": 179
     },
     {
       "id": "jurisdictions.index.scheme_is_given_twice",
       "en": "{scheme} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1275
+      "file": "jurisdictions/validate.mjs",
+      "line": 1167
     },
     {
       "id": "jurisdictions.index.scheme_is_given_twice_2",
       "en": "{scheme} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1300
+      "file": "jurisdictions/validate.mjs",
+      "line": 1194
     },
     {
       "id": "jurisdictions.index.sector_is_one_of_sectors",
       "en": "sector is one of {SECTORS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 763
+      "file": "jurisdictions/validate.mjs",
+      "line": 615
     },
     {
       "id": "jurisdictions.index.shape_is_one_of_kind",
       "en": "shape is one of {KIND_SHAPES}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 970
+      "file": "jurisdictions/validate.mjs",
+      "line": 849
     },
     {
       "id": "jurisdictions.index.sources_lists_one_public_source",
       "en": "sources lists at least one public source, each with a citation",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 900
+      "file": "jurisdictions/validate.mjs",
+      "line": 777
     },
     {
       "id": "jurisdictions.index.starts_is_one_of_starts",
       "en": "starts is one of {STARTS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1029
+      "file": "jurisdictions/validate.mjs",
+      "line": 911
     },
     {
       "id": "jurisdictions.index.status_is_fact_statuses_naming",
       "en": "status is {FACT_STATUSES}, naming what the fact rests on",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 314
+      "file": "jurisdictions/validate.mjs",
+      "line": 104
     },
     {
       "id": "jurisdictions.index.string_is_neither_claim_nor",
       "en": "'{String}' is neither claim nor a kind of this profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1015
+      "file": "jurisdictions/validate.mjs",
+      "line": 897
     },
     {
       "id": "jurisdictions.index.string_is_no_kind_of",
       "en": "'{String}' is no kind of this profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 567
+      "file": "jurisdictions/validate.mjs",
+      "line": 406
     },
     {
       "id": "jurisdictions.index.string_is_no_kind_of_2",
       "en": "'{String}' is no kind of proceeding_kinds",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1244
+      "file": "jurisdictions/validate.mjs",
+      "line": 1134
     },
     {
       "id": "jurisdictions.index.string_is_no_kind_of_3",
       "en": "'{String}' is no kind of this profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1376
+      "file": "jurisdictions/validate.mjs",
+      "line": 1273
     },
     {
       "id": "jurisdictions.index.string_is_no_kind_of_4",
       "en": "'{String}' is no kind of this profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1390
+      "file": "jurisdictions/validate.mjs",
+      "line": 1288
     },
     {
       "id": "jurisdictions.index.string_is_not_a_space",
       "en": "'{String}' is not a space",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 512
+      "file": "jurisdictions/validate.mjs",
+      "line": 342
     },
     {
       "id": "jurisdictions.index.string_is_not_a_tier",
       "en": "'{String}' is not a Tier 2 or 3 kind of this profile",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1105
+      "file": "jurisdictions/validate.mjs",
+      "line": 987
     },
     {
       "id": "jurisdictions.index.string_names_no_measurement_or",
       "en": "'{String}' names no measurement or ruling",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 303
+      "file": "jurisdictions/validate.mjs",
+      "line": 90
     },
     {
       "id": "jurisdictions.index.the_active_profiles_define_the",
       "en": "the active profiles define the {space} form '{form}' differently, so it is withheld: a value in it is recognised by no profile until they agree",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1755
+      "file": "jurisdictions/combine.mjs",
+      "line": 379
     },
     {
       "id": "jurisdictions.index.the_active_profiles_disagree_on",
       "en": "the active profiles disagree on whether {role} ({body}) is an oversight or audit body, so it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1992
+      "file": "jurisdictions/combine.mjs",
+      "line": 738
     },
     {
       "id": "jurisdictions.index.the_active_profiles_disagree_on_2",
       "en": "the active profiles disagree on the {f} of {rule} for {applies_to}, so it is withheld: the deadline is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2115
+      "file": "jurisdictions/combine.mjs",
+      "line": 927
     },
     {
       "id": "jurisdictions.index.the_active_profiles_explain_name",
       "en": "the active profiles explain {name} differently in {l}, so no explanation is given there",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2211
+      "file": "jurisdictions/combine.mjs",
+      "line": 1074
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different",
       "en": "the active profiles give different coverage floors for {kind}, so no floor is given: whether a number is inside the record's reach is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1771
+      "file": "jurisdictions/combine.mjs",
+      "line": 400
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_2",
       "en": "the active profiles give different hours for {role} ({body}), so its hours are undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1998
+      "file": "jurisdictions/combine.mjs",
+      "line": 744
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_3",
       "en": "the active profiles give different time zones for {role} ({body}), so its local day is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2004
+      "file": "jurisdictions/combine.mjs",
+      "line": 750
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_4",
       "en": "the active profiles give different {v1} for {role} ({body}), so none is given: it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2011
+      "file": "jurisdictions/combine.mjs",
+      "line": 761
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_5",
       "en": "the active profiles give different {v1} for {kind}, so none is given{v2}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2042
+      "file": "jurisdictions/combine.mjs",
+      "line": 811
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_6",
       "en": "the active profiles give different {v1} for {kind}'s venue, so {v2}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2054
+      "file": "jurisdictions/combine.mjs",
+      "line": 847
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_7",
       "en": "the active profiles give different {purpose} templates for {kind}, so none is given",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2088
+      "file": "jurisdictions/combine.mjs",
+      "line": 891
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_8",
       "en": "the active profiles give different {what} for {replace}, so it is withheld: it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2177
+      "file": "jurisdictions/combine.mjs",
+      "line": 1026
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_different_9",
       "en": "the active profiles give different official translations of {name} in {l}, so none is given: the name is shown as it is",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2210
+      "file": "jurisdictions/combine.mjs",
+      "line": 1073
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_name",
       "en": "the active profiles give {name} different stages, so which stages it has is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1920
+      "file": "jurisdictions/combine.mjs",
+      "line": 629
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_name_different_windows",
       "en": "the active profiles give {name} different first-request windows, so which one it has is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1921
+      "file": "jurisdictions/combine.mjs",
+      "line": 645
     },
     {
       "id": "jurisdictions.index.the_active_profiles_give_what",
       "en": "the active profiles give {what} ({replace}) different {v1}, so it is withheld: {says}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1958
+      "file": "jurisdictions/combine.mjs",
+      "line": 686
     },
     {
       "id": "jurisdictions.index.the_active_profiles_list_different",
       "en": "the active profiles list different closure days for {year}{whose}, so the year is withheld there: a business-day count reaching into it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2146
+      "file": "jurisdictions/combine.mjs",
+      "line": 981
     },
     {
       "id": "jurisdictions.index.the_active_profiles_map_the",
       "en": "the active profiles map the MemberType '{t}'{v1} to different capacities, so it maps to none there: a seat's capacity is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1840
+      "file": "jurisdictions/combine.mjs",
+      "line": 518
     },
     {
       "id": "jurisdictions.index.the_active_profiles_say_differently",
       "en": "the active profiles say differently who may request under {name}, so it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1922
+      "file": "jurisdictions/combine.mjs",
+      "line": 637
     },
     {
       "id": "jurisdictions.index.the_active_profiles_say_host",
       "en": "the active profiles say {host} publishes different systems' material ({origins}), so an address there names no system",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1804
+      "file": "jurisdictions/combine.mjs",
+      "line": 438
     },
     {
       "id": "jurisdictions.index.the_active_profiles_state_kind",
       "en": "the active profiles state {kind}'s venue's {fact} differently, so it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2071
+      "file": "jurisdictions/combine.mjs",
+      "line": 869
     },
     {
       "id": "jurisdictions.index.the_body_variant_map_names",
       "en": "the body-variant map names no organisation '{organisation}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 834
+      "file": "jurisdictions/validate.mjs",
+      "line": 695
     },
     {
       "id": "jurisdictions.index.the_family_key_key_2",
       "en": "the family {key}/{key_2} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 780
+      "file": "jurisdictions/validate.mjs",
+      "line": 632
     },
     {
       "id": "jurisdictions.index.the_forum_label_is_given",
       "en": "the forum '{label}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1509
+      "file": "jurisdictions/validate.mjs",
+      "line": 1408
     },
     {
       "id": "jurisdictions.index.the_kind_name_is_given",
       "en": "the {kind} '{name}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1534
+      "file": "jurisdictions/validate.mjs",
+      "line": 1434
     },
     {
       "id": "jurisdictions.index.the_purpose_purpose_is_given",
       "en": "the purpose {purpose} is given twice in {String}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 964
+      "file": "jurisdictions/validate.mjs",
+      "line": 843
     },
     {
       "id": "jurisdictions.index.the_reviews_f_is_missing",
       "en": "the review's {f} is missing",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 878
+      "file": "jurisdictions/validate.mjs",
+      "line": 751
     },
     {
       "id": "jurisdictions.index.the_scheme_scheme_identifies_no",
       "en": "the scheme {scheme} identifies no {kind}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 808
+      "file": "jurisdictions/validate.mjs",
+      "line": 669
     },
     {
       "id": "jurisdictions.index.the_space_has_no_form",
       "en": "the space has no form '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 518
+      "file": "jurisdictions/validate.mjs",
+      "line": 349
     },
     {
       "id": "jurisdictions.index.the_space_space_has_no",
       "en": "the space {space} has no form '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1281
+      "file": "jurisdictions/validate.mjs",
+      "line": 1174
     },
     {
       "id": "jurisdictions.index.the_stage_stage_is_given",
       "en": "the stage {stage} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 667
+      "file": "jurisdictions/validate.mjs",
+      "line": 509
     },
     {
       "id": "jurisdictions.index.the_stage_stage_is_given_2",
       "en": "the stage {stage} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1255
+      "file": "jurisdictions/validate.mjs",
+      "line": 1146
     },
     {
       "id": "jurisdictions.index.the_standard_is_text_of",
       "en": "the standard is text of at most {EVIDENCE_STANDARD_MAX} characters",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 985
+      "file": "jurisdictions/validate.mjs",
+      "line": 864
     },
     {
       "id": "jurisdictions.index.the_templates_f_is_missing",
       "en": "the template's {f} is missing",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 857
+      "file": "jurisdictions/validate.mjs",
+      "line": 727
     },
     {
       "id": "jurisdictions.index.this_profile_has_no_space",
       "en": "this profile has no space '{String}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1280
+      "file": "jurisdictions/validate.mjs",
+      "line": 1173
     },
     {
       "id": "jurisdictions.index.time_zone_conflict",
       "en": "the active profiles name different time zones, so none is given: a time of day there is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1875
+      "file": "jurisdictions/combine.mjs",
+      "line": 565
     },
     {
       "id": "jurisdictions.index.trigger_is_one_of_legal",
       "en": "trigger is one of {LEGAL_FACT_TRIGGERS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1366
+      "file": "jurisdictions/validate.mjs",
+      "line": 1263
     },
     {
       "id": "jurisdictions.index.units_is_one_of_units",
       "en": "units is one of {UNITS}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1020
+      "file": "jurisdictions/validate.mjs",
+      "line": 902
     },
     {
       "id": "jurisdictions.index.v1_in_locale_is_given",
       "en": "{v1} in {locale} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1545
+      "file": "jurisdictions/validate.mjs",
+      "line": 1448
     },
     {
       "id": "jurisdictions.index.v1_is_given_twice",
       "en": "{v1} is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1572
+      "file": "jurisdictions/validate.mjs",
+      "line": 1479
     },
     {
       "id": "jurisdictions.index.v1_is_outside_civil_times",
       "en": "{v1} is outside civil-time's subset ({RRULE_PARTS})",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1571
+      "file": "jurisdictions/validate.mjs",
+      "line": 1478
     },
     {
       "id": "jurisdictions.index.v_is_given_twice",
       "en": "'{v}' is given twice",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 558
+      "file": "jurisdictions/validate.mjs",
+      "line": 397
     },
     {
       "id": "jurisdictions.index.v_is_given_twice_v1",
       "en": "'{v}' is given twice {v1}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 558
+      "file": "jurisdictions/validate.mjs",
+      "line": 397
     },
     {
       "id": "jurisdictions.index.v_is_not_a_value",
       "en": "'{v}' is not a value in form '{v1}'",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 526
+      "file": "jurisdictions/validate.mjs",
+      "line": 357
     },
     {
       "id": "jurisdictions.index.value_is_text_of_at",
       "en": "value is text of at most {VENUE_FACT_MAX} characters",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 938
+      "file": "jurisdictions/validate.mjs",
+      "line": 816
     },
     {
       "id": "jurisdictions.index.weekend_conflict",
       "en": "the active profiles name different weekends, so none is given: a business-day count or a roll is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 2163
+      "file": "jurisdictions/combine.mjs",
+      "line": 1000
     },
     {
       "id": "jurisdictions.index.what_is_a_non_empty",
       "en": "{what} is a non-empty string",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 408
+      "file": "jurisdictions/validate.mjs",
+      "line": 223
     },
     {
       "id": "jurisdictions.index.who_issues_undetermined",
       "en": "who issues it is undetermined",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1947
+      "file": "jurisdictions/combine.mjs",
+      "line": 674
     },
     {
       "id": "jurisdictions.index.within_is_amount_and_units",
       "en": "within is {amount, units}, units one of {units_list}",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1336
+      "file": "jurisdictions/validate.mjs",
+      "line": 1232
     },
     {
       "id": "jurisdictions.index.year_listed_twice_for_all_offices",
       "en": "{year} is listed twice for all offices",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1162
+      "file": "jurisdictions/validate.mjs",
+      "line": 1046
     },
     {
       "id": "jurisdictions.index.year_listed_twice_for_list_and_all_offices",
       "en": "{year} is listed twice for the list {list} and all offices",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1159
+      "file": "jurisdictions/validate.mjs",
+      "line": 1043
     },
     {
       "id": "jurisdictions.index.year_listed_twice_for_list_and_the_same_offices",
       "en": "{year} is listed twice for the list {list} and the same offices",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1158
+      "file": "jurisdictions/validate.mjs",
+      "line": 1042
     },
     {
       "id": "jurisdictions.index.year_listed_twice_for_the_same_offices",
       "en": "{year} is listed twice for the same offices",
       "module": "jurisdictions",
-      "file": "jurisdictions/index.mjs",
-      "line": 1161
+      "file": "jurisdictions/validate.mjs",
+      "line": 1045
     },
     {
       "id": "law-relations.index.no_effective_detail",
@@ -45589,714 +45589,714 @@
       "en": "adjust the later record timestamp suffix by one second, logged",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 146
+      "line": 189
     },
     {
       "id": "record-grammar.bundle.annotation_file_name_does_not",
       "en": "annotation file '{name}' does not match its id (expected '{expectedFile}')",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 143
+      "line": 186
     },
     {
       "id": "record-grammar.bundle.annotation_file_name_is_not",
       "en": "annotation file '{name}' is not a .json record",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 129
+      "line": 170
     },
     {
       "id": "record-grammar.bundle.annotation_id_rid_does_not",
       "en": "annotation id '{rid}' does not match the v1.1 timestamp-author grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 135
+      "line": 178
     },
     {
       "id": "record-grammar.bundle.annotation_record_name_does_not",
       "en": "annotation record '{name}' does not parse",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 132
+      "line": 175
     },
     {
       "id": "record-grammar.bundle.annotation_rid_does_not_belong",
       "en": "annotation '{rid}' does not belong to parent '{folderName}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 139
+      "line": 182
     },
     {
       "id": "record-grammar.bundle.annotations_open_is_annotations_open",
       "en": "annotations_open is {annotations_open} but {pending} annotation record(s) are pending",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 157
+      "line": 202
     },
     {
       "id": "record-grammar.bundle.append_the_missing_session_log_entry",
       "en": "append the missing Session Log entry naming the gap",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 287
+      "line": 384
     },
     {
       "id": "record-grammar.bundle.apply_disjoint_if_file_sets_prove",
       "en": "apply-disjoint if file sets prove disjoint (requires history manifests)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 533
     },
     {
       "id": "record-grammar.bundle.complete_consumption_archive_manifest_delete_consumed",
       "en": "complete consumption: archive manifest, delete consumed files (idempotent)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 366
+      "line": 472
     },
     {
       "id": "record-grammar.bundle.complete_consumption_or_discard_with_reason",
       "en": "complete consumption or discard with reason",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 400
+      "line": 513
     },
     {
       "id": "record-grammar.bundle.current_state_cur_is_not",
       "en": "current_state '{cur}' is not legal for {ot} (legal: {legal})",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 258
+      "line": 350
     },
     {
       "id": "record-grammar.bundle.data_changes_json_records_were_mutated",
       "en": "data/changes.json records were mutated or removed (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 507
+      "line": 628
     },
     {
       "id": "record-grammar.bundle.delete_the_stale_claim_or_presence",
       "en": "delete the stale claim or presence marker",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 358
+      "line": 464
     },
     {
       "id": "record-grammar.bundle.discard_the_package_never_promote",
       "en": "discard the package (never promote)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 395
+      "line": 508
     },
     {
       "id": "record-grammar.bundle.discard_the_package_with_a_finding",
       "en": "discard the package with a finding to the producing author",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 503
     },
     {
       "id": "record-grammar.bundle.discard_with_reason_if_superseded_preserving",
       "en": "discard with reason if superseded, preserving the manifest as a record",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 406
+      "line": 520
     },
     {
       "id": "record-grammar.bundle.duplicate_annotation_id_rid",
       "en": "duplicate annotation id '{rid}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 146
+      "line": 189
     },
     {
       "id": "record-grammar.bundle.duplicate_manifest_key_key",
       "en": "duplicate manifest key '{key}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 605
+      "line": 740
     },
     {
       "id": "record-grammar.bundle.escaped_markdown_character_v1_in",
       "en": "escaped markdown character '{v1}' in {path}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 302
+      "line": 400
     },
     {
       "id": "record-grammar.bundle.filename_path_violates_the_naming",
       "en": "filename '{path}' violates the naming rule",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 297
+      "line": 395
     },
     {
       "id": "record-grammar.bundle.folder_name_foldername_does_not",
       "en": "folder name '{folderName}' does not equal frontmatter id '{id}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 121
+      "line": 161
     },
     {
       "id": "record-grammar.bundle.forbidden_alias_alias_present_canonical",
       "en": "forbidden alias '{alias}' present (canonical name is '{canonical}')",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 182
+      "line": 268
     },
     {
       "id": "record-grammar.bundle.frontmatter_id_id_does_not",
       "en": "frontmatter id '{id}' does not match the canonical ID grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 118
+      "line": 158
     },
     {
       "id": "record-grammar.bundle.heading_h_is_not_in",
       "en": "heading '{h}' is not in the canonical set for {ot}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 237
+      "line": 326
     },
     {
       "id": "record-grammar.bundle.history_file_p_maps_to",
       "en": "history file '{p}' maps to no manifest entry",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 684
+      "line": 822
     },
     {
       "id": "record-grammar.bundle.id_prefix_prefix_implies_wanttype",
       "en": "id prefix '{prefix}' implies '{wantType}' but object_type is '{ot}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 190
+      "line": 276
     },
     {
       "id": "record-grammar.bundle.insert_canonical_heading_h_with",
       "en": "insert canonical heading '{h}' with empty body",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 225
+      "line": 314
     },
     {
       "id": "record-grammar.bundle.insert_canonical_heading_heading_with",
       "en": "insert canonical heading '{heading}' with the assertion in it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 234
+      "line": 323
     },
     {
       "id": "record-grammar.bundle.key_i_was_modified_retroactively",
       "en": "{key}[{i}] was modified retroactively (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 483
+      "line": 603
     },
     {
       "id": "record-grammar.bundle.key_shrank_from_length_to",
       "en": "{key} shrank from {length} to {length_2} entries vs. the latest snapshot",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 479
+      "line": 599
     },
     {
       "id": "record-grammar.bundle.key_v1_is_not_iso",
       "en": "{key} '{v1}' is not ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 202
+      "line": 289
     },
     {
       "id": "record-grammar.bundle.last_updated_last_updated_precedes",
       "en": "last_updated '{last_updated}' precedes created '{created}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 274
+      "line": 370
     },
     {
       "id": "record-grammar.bundle.last_updated_precedes_the_newest",
       "en": "last_updated precedes the newest state_history timestamp '{newest}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 280
+      "line": 377
     },
     {
       "id": "record-grammar.bundle.live_last_updated_last_updated",
       "en": "live last_updated '{last_updated}' precedes an earlier history entry '{newestPrior}': the live bundle.md is older than a version already superseded",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 715
+      "line": 854
     },
     {
       "id": "record-grammar.bundle.manifest_created_created_is_not",
       "en": "manifest created '{created}' is not ISO 8601 UTC",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 409
+      "line": 523
     },
     {
       "id": "record-grammar.bundle.manifest_files_entry_stringify_lacks",
       "en": "manifest files entry {stringify} lacks name+sha256",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 384
+      "line": 497
     },
     {
       "id": "record-grammar.bundle.manifest_keys_out_of_order",
       "en": "manifest keys out of order at '{key}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 606
+      "line": 741
     },
     {
       "id": "record-grammar.bundle.manifest_target_target_does_not",
       "en": "manifest target '{target}' does not match record '{folderName}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 378
+      "line": 488
     },
     {
       "id": "record-grammar.bundle.map_to_the_nearest_vocabulary_value",
       "en": "map to the nearest vocabulary value",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 519
+      "line": 644
     },
     {
       "id": "record-grammar.bundle.object_type_ot_is_not",
       "en": "object_type '{ot}' is not a known type",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 186
+      "line": 272
     },
     {
       "id": "record-grammar.bundle.orphaned_pending_file_p_with",
       "en": "orphaned pending file '{p}' with no manifest",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 366
+      "line": 472
     },
     {
       "id": "record-grammar.bundle.package_file_name_pending_listed",
       "en": "package file '{name}.pending' listed in manifest is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 503
     },
     {
       "id": "record-grammar.bundle.path_does_not_parse_as",
       "en": "{path} does not parse as JSON",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 306
+      "line": 404
     },
     {
       "id": "record-grammar.bundle.pending_file_p_is_not",
       "en": "pending file '{p}' is not listed in the manifest",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 400
+      "line": 513
     },
     {
       "id": "record-grammar.bundle.pending_package_base_matches_live_bundle",
       "en": "pending package base matches live bundle.md: fast-forward eligible",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 416
+      "line": 531
     },
     {
       "id": "record-grammar.bundle.pending_package_base_string_does",
       "en": "pending package base {String}… does not match live bundle.md {liveHash}…: divergence",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 533
     },
     {
       "id": "record-grammar.bundle.pending_package_is_floor_days",
       "en": "pending package is {floor} days old (policy {maxPackageAgeDays})",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 406
+      "line": 520
     },
     {
       "id": "record-grammar.bundle.preserved_refusal_payload_p_has",
       "en": "preserved refusal payload '{p}' has no refusal record at '{sibling}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 675
+      "line": 813
     },
     {
       "id": "record-grammar.bundle.promotion_record_for_key_is",
       "en": "promotion record for '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 615
+      "line": 750
     },
     {
       "id": "record-grammar.bundle.re_produce_the_package_from_the",
       "en": "re-produce the package from the originating session outputs",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 390
+      "line": 503
     },
     {
       "id": "record-grammar.bundle.rebase_via_a_reconciliation_session",
       "en": "rebase via a reconciliation session",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 418
+      "line": 533
     },
     {
       "id": "record-grammar.bundle.rebuild_manifest_entry_from_surviving_files",
       "en": "rebuild manifest entry from surviving files",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 591
+      "line": 719
     },
     {
       "id": "record-grammar.bundle.record_a_history_loss_finding_and",
       "en": "record a history-loss finding and re-snapshot current state",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 615
+      "line": 750
     },
     {
       "id": "record-grammar.bundle.record_a_tamper_finding_if_history",
       "en": "record a tamper finding if history lacks the original",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 491
+      "line": 611
     },
     {
       "id": "record-grammar.bundle.record_has_been_updated_but_carries",
       "en": "record has been updated but carries no Session Log entry",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 287
+      "line": 384
     },
     {
       "id": "record-grammar.bundle.references_i_is_not_an",
       "en": "references[{i}] is not an object",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 518
+      "line": 641
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is",
       "en": "references[{i}].rel '{rel}' is not in the closed vocabulary",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 519
+      "line": 644
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is_2",
       "en": "references[{i}].rel '{rel}' is source-asserted and must carry asserted_by: 'source', so it is never read as a member's claim",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 527
+      "line": 652
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_is_3",
       "en": "references[{i}].rel '{rel}' is a member's relation and cannot be asserted_by 'source'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 533
+      "line": 658
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_must",
       "en": "references[{i}].rel '{rel}' must carry the address the source wrote, as a comment string beside the canonical target",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 529
+      "line": 654
     },
     {
       "id": "record-grammar.bundle.references_i_rel_rel_must_2",
       "en": "references[{i}].rel '{rel}' must carry a contemporaneity verdict of contemporaneous, superseded or undetermined; undetermined is the resting state and must be stated rather than omitted",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 531
+      "line": 656
     },
     {
       "id": "record-grammar.bundle.references_i_status_status_is",
       "en": "references[{i}].status '{status}' is not one of: {EDGE_STATUS}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 535
+      "line": 660
     },
     {
       "id": "record-grammar.bundle.references_i_target_string_looks",
       "en": "references[{i}].target '{String}' looks like a substrate locator; targets are canonical IDs only",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 538
+      "line": 663
     },
     {
       "id": "record-grammar.bundle.references_i_target_t_does",
       "en": "references[{i}].target '{t}' does not match the canonical ID grammar",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 540
+      "line": 665
     },
     {
       "id": "record-grammar.bundle.references_i_target_t_does_2",
       "en": "references[{i}].target '{t}' does not resolve in the store",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 543
+      "line": 668
     },
     {
       "id": "record-grammar.bundle.refusal_record_p_does_not",
       "en": "refusal record '{p}' does not parse or names no outcome",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 666
+      "line": 804
     },
     {
       "id": "record-grammar.bundle.remove_the_orphaned_preserved_payload",
       "en": "remove the orphaned preserved payload",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 676
+      "line": 814
     },
     {
       "id": "record-grammar.bundle.remove_the_unexplained_refusal_artifacts",
       "en": "remove the unexplained refusal artifacts",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 667
+      "line": 805
     },
     {
       "id": "record-grammar.bundle.rename_alias_to_canonical",
       "en": "rename '{alias}' to '{canonical}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 182
+      "line": 268
     },
     {
       "id": "record-grammar.bundle.rename_file_and_update_references",
       "en": "rename file and update references",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 297
+      "line": 395
     },
     {
       "id": "record-grammar.bundle.rename_to_the_canonical_heading_preserving",
       "en": "rename to the canonical heading, preserving body",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 237
+      "line": 326
     },
     {
       "id": "record-grammar.bundle.required_core_field_key_is",
       "en": "required core field '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 179
+      "line": 265
     },
     {
       "id": "record-grammar.bundle.required_heading_h_is_missing",
       "en": "required heading '{h}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 225
+      "line": 314
     },
     {
       "id": "record-grammar.bundle.required_heading_heading_is_missing",
       "en": "required heading '{heading}' is missing: a member of a published case carries it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 234
+      "line": 323
     },
     {
       "id": "record-grammar.bundle.restore_folder_name_from_frontmatter_id",
       "en": "restore folder name from frontmatter id",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 122
+      "line": 162
     },
     {
       "id": "record-grammar.bundle.restore_frontmatter_id_from_folder_name",
       "en": "restore frontmatter id from folder name if history confirms it",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 122
+      "line": 162
     },
     {
       "id": "record-grammar.bundle.restore_the_newer_bundle_md_from",
       "en": "restore the newer bundle.md from history",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 716
+      "line": 855
     },
     {
       "id": "record-grammar.bundle.restore_the_refusal_record_from_history",
       "en": "restore the refusal record from history",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 667
+      "line": 805
     },
     {
       "id": "record-grammar.bundle.review_notes_content_from_the",
       "en": "Review Notes content from the prior version is missing or altered (verbatim-immutable)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 491
+      "line": 611
     },
     {
       "id": "record-grammar.bundle.schema_stamp_form",
       "en": "schema stamp '{schema}' is not of the form <type>@<n>",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 194
+      "line": 280
     },
     {
       "id": "record-grammar.bundle.schema_stamp_schema_does_not",
       "en": "schema stamp '{schema}' does not match object_type '{ot}'",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 196
+      "line": 282
     },
     {
       "id": "record-grammar.bundle.schema_version_schema_is_not",
       "en": "schema version '{schema}' is not known to this check catalog",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 197
+      "line": 283
     },
     {
       "id": "record-grammar.bundle.session_log_entry_header_from",
       "en": "Session Log entry '{header}' from the prior version is missing (append-only surface)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 496
+      "line": 616
     },
     {
       "id": "record-grammar.bundle.sever_the_edge_with_a_reason",
       "en": "sever the edge with a reason note",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 543
+      "line": 668
     },
     {
       "id": "record-grammar.bundle.snapshot_snappath_recorded_in_manifest",
       "en": "snapshot '{snapPath}' recorded in manifest entry '{key}' is missing",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 630
+      "line": 765
     },
     {
       "id": "record-grammar.bundle.stale_advisory_artifact_p_crashed",
       "en": "stale advisory artifact '{p}' (crashed or ended actor)",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 358
+      "line": 464
     },
     {
       "id": "record-grammar.bundle.state_history_i_is_not",
       "en": "state_history[{i}] is not an object",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 263
+      "line": 356
     },
     {
       "id": "record-grammar.bundle.state_history_i_timestamp_timestamp",
       "en": "state_history[{i}].timestamp '{timestamp}' is not ISO 8601 UTC",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 265
+      "line": 359
     },
     {
       "id": "record-grammar.bundle.svg_svg_on_disk_is",
       "en": "svg '{svg}' on disk is absent from the visuals array",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 320
+      "line": 420
     },
     {
       "id": "record-grammar.bundle.visuals_entry_file_has_no",
       "en": "visuals entry '{file}' has no file on disk",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 316
+      "line": 416
     },
     {
       "id": "record-grammar.bundle.visuals_entry_stringify_lacks_file",
       "en": "visuals entry {stringify} lacks file+description",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/bundle.mjs",
-      "line": 313
+      "line": 412
     },
     {
       "id": "record-grammar.frontmatter.array_item_indented_indent_expected",
       "en": "array item indented {indent} (expected 2) at line {v1}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 134
+      "line": 181
     },
     {
       "id": "record-grammar.frontmatter.array_item_inside_a_map",
       "en": "array item inside a map block '{topKey}' at line {v1}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 136
+      "line": 184
     },
     {
       "id": "record-grammar.frontmatter.array_item_outside_any_block",
       "en": "array item outside any block at line {v1}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 131
+      "line": 178
     },
     {
       "id": "record-grammar.frontmatter.bundle_md_does_not_begin_with",
       "en": "bundle.md does not begin with a --- frontmatter fence",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 89
+      "line": 128
     },
     {
       "id": "record-grammar.frontmatter.duplicate_top_level_key_key",
       "en": "duplicate top-level key '{key}' at line {v1}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 120
+      "line": 165
     },
     {
       "id": "record-grammar.frontmatter.frontmatter_fence_is_never_closed",
       "en": "frontmatter fence is never closed",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 95
+      "line": 134
     },
     {
       "id": "record-grammar.frontmatter.key_key_indented_indent_does",
       "en": "key '{key}' indented {indent} does not fit the restricted grammar at line {v1}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 165
+      "line": 217
     },
     {
       "id": "record-grammar.frontmatter.line_v1_does_not_fit",
       "en": "line {v1} does not fit the restricted grammar: {line}",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 169
+      "line": 221
     },
     {
       "id": "record-grammar.frontmatter.re_indent_key_to_column",
       "en": "re-indent '{key}' to column 0",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 162
+      "line": 214
     },
     {
       "id": "record-grammar.frontmatter.top_level_key_key_is",
       "en": "top-level key '{key}' is buried by stray indentation at line {v1} and will not register",
       "module": "record-grammar",
       "file": "bio-plane/src/record-grammar/frontmatter.mjs",
-      "line": 161
+      "line": 213
     },
     {
       "id": "reevaluation.checks.only_a_named_member_can",
