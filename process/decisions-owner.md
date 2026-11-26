@@ -36,6 +36,11 @@ Rule now: DEC-18 (2 Aug 2026) stands, as the UX lane reads the owner's 23 Nov wo
 - 23 Nov 2026: "Decision: my answer on whether my choice of option A does not replaces my 2 August ruling" (given to the UX lane; relayed by ARCH #7)
 Shown to the owner: not yet.
 
+## Lanes and the canon
+Rule now: lanes use a worker to search the canon for the answer on ungraded passages, and always search the canon for the answers they need before bringing questions to the owner. ARCH passes it to the lanes.
+- 26 Nov 2026: "Instruction: lanes use a worker to search the canon for the answer on ungraded passages, and always searches the canon for the answers it needs before bringing questions to me."
+Shown to the owner: not yet.
+
 ## A lane for the plane module's scope
 Rule now: a lane is opened for the plane module's scope, for the owner to understand it and fix it. ARCH opens it.
 - 23 Nov 2026: "Decision: open a lane for the plane module's scope, so I can understand it and fix it"
