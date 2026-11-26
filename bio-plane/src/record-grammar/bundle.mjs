@@ -444,6 +444,7 @@ async function checkQueueAndBase(ctx, findings) {
     const lm = gm ? null : /^LEASE-[A-Za-z0-9][A-Za-z0-9-]{0,63}\.json$/.exec(p);
     const m = (gm || lm) ? null : /^(PROMOTING|PRESENCE)-.+\.json$/.exec(p);
     if (!gm && !lm && !m) continue;
+    /** @type {boolean} */
     let stale;
     if (lm) {
       /** @type {number | null} */

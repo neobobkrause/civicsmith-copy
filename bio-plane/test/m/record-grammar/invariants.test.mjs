@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Worker } from "node:worker_threads";
+import { battery } from "./fixtures/battery.mjs";
 import * as RG from "../../../src/record-grammar/index.mjs";
 import * as IDS from "../../../src/record-grammar/ids.mjs";
 import * as TYPES from "../../../src/record-grammar/types.mjs";
@@ -19,57 +20,31 @@ import * as ACTS from "../../../src/record-grammar/acts.mjs";
 import * as BUNDLE from "../../../src/record-grammar/bundle.mjs";
 import * as ACCEPTANCE from "../../../src/record-grammar/acceptance.mjs";
 
-const MODULE = new URL("../../../src/record-grammar/index.mjs", import.meta.url).href;
-
-/* One battery over every function the module provides, its answers as one JSON string. */
-const BATTERY = `async (RG) => {
-  const out = [];
-  const fm = "---\\nid: INFO-2026-0001-a\\nlist:\\n  - k: v\\n    j: 1\\n  status: x\\n  - bad\\n---\\nbody";
-  out.push(RG.parseFrontmatter(fm), RG.parseFrontmatter("no fence"));
-  out.push(RG.canonicalJson({ b: [1, { d: undefined, c: 2 }], a: "x" }));
-  for (const w of ["token:x", "Alice", "daemon", "", null]) out.push(RG.isMachineStamp(w), RG.isMachineIdentity(w));
-  for (const t of ["problem", "constructor", "information"]) out.push(RG.normalizeType(t));
-  for (const u of ["https://example.org", "https://localhost."]) out.push(RG.isPublicHttpsLocator(u));
-  out.push(RG.sha256HexSync("abc"), RG.createSha256().update(new Uint8Array(200).fill(7)).hex());
-  out.push(Array.from(RG.b64ToBytes("AQID")));
-  out.push(RG.BUNDLE_ID_RE.test("PLN-2026-0001-a"), RG.ANN_ID_RE.source, RG.UNREACHABLE_CAPTURE_GRADE);
-  out.push(RG.ID_TABLE, String(RG.idPattern("EVT")), RG.isHypothesisId("HYP-2026-10000"));
-  out.push(RG.isStepId("STP-2026-a1b2c3d4e5f6g7h8"), RG.isGuideId("GUD-2026-0001"), RG.ACCEPTANCE_FORMS, RG.ACCEPT_MUST_REAUTHOR);
-  out.push(RG.isSuccessRecordId("SUC-2026-0001"), RG.STATES.escalation, RG.STATES.action_plan, RG.STATES.success_record);
-  out.push(RG.acceptanceRecord({ proposal: "p", form: "edited", by: "alice", at: "2026-10-09T00:00:00Z", kind: "step" }));
-  out.push(RG.idDisagrees({ id: "INFO-2026-0001-a" }, "INFO-2026-0001-a"), RG.idDisagrees({ id: " INFO-2026-0001-a" }, "INFO-2026-0001-a"));
-  out.push(RG.deriveInquiryTitle("  a   question\\nmore"), RG.inquiryQuestionOf("x\\n## Question\\nq\\n## B"), RG.vocabFor(RG.STATES, "problem"));
-  out.push(RG.sectionText("## A\\na\\n## B", "## A"), RG.isCaseMemberBytes({ published_strength: [{ axis: "a" }, { axis: "b" }] }));
-  for (const w of ["token:x", "alice", "", "plane"]) out.push(RG.proposalLabel(w, "standard"), RG.proposalLabel(w, "bearing"), RG.contentMintState(w));
-  const sha = async (v) => RG.createSha256().update(typeof v === "string" ? new TextEncoder().encode(v) : v).hex();
-  const files = new Map([["bundle.md", "---\\nid: INFO-2026-0001-a\\nobject_type: information\\n---\\n## Summary\\n## Odd"],
-    ["PROMOTING-x.json", "{}"], ["PENDING_PROMOTION.json", JSON.stringify({ created: "2026-01-01T00:00:00Z" })]]);
-  out.push(await RG.checkBundle({ folderName: "INFO-2026-0001-a", files, sha256: sha, nowMs: 1780000000000 }));
-  return JSON.stringify(out);
-}`;
-const battery = (0, eval)(BATTERY);
-
-test("R24 pure: the same answers every time, with the clock, randomness and the network taken away, and in a Worker", async () => {
-  const first = await battery(RG);
-  assert.equal(await battery(RG), first);
-  const saved = { now: Date.now, random: Math.random, fetch: globalThis.fetch, DateC: globalThis.Date };
+test("R24 pure: the same answers every time, with the clock, randomness and the network taken away, and in a Worker", async (t) => {
+  const first = await battery();
+  assert.equal(await battery(), first);
   const boom = () => { throw new Error("record-grammar reached for the clock, randomness or the network"); };
-  try {
-    Date.now = boom; Math.random = boom; globalThis.fetch = boom;
-    globalThis.Date = new Proxy(saved.DateC, { construct: boom, apply: boom });
-    assert.equal(await battery(RG), first);
-  } finally {
-    Date.now = saved.now; Math.random = saved.random; globalThis.fetch = saved.fetch; globalThis.Date = saved.DateC;
-  }
+  t.mock.method(Date, "now", boom);
+  t.mock.method(Math, "random", boom);
+  t.mock.method(globalThis, "fetch", boom);
+  t.mock.method(globalThis, "Date", boom);
+  assert.equal(await battery(), first);
+  t.mock.restoreAll();
+  /** @type {unknown} */
   const inWorker = await new Promise((resolve, reject) => {
-    const w = new Worker(`import(${JSON.stringify(MODULE)}).then(async (RG) => {
-        const { parentPort } = await import("node:worker_threads");
-        parentPort.postMessage(await (${BATTERY})(RG)); });`, { eval: true, type: "module" });
-    w.once("message", (m) => { resolve(m); w.terminate(); });
-    w.once("error", reject);
+    const w = new Worker(new URL("./fixtures/battery-worker.mjs", import.meta.url));
+    w.on("message", (/** @type {unknown} */ m) => { resolve(m); void w.terminate(); });
+    w.on("error", reject);
   });
   assert.equal(inWorker, first);
 });
+
+/** A list read item by item. @typedef {readonly unknown[]} List */
+/** @param {unknown} v @returns {v is List} */
+const isList = (v) => Array.isArray(v);
+/** An object read member by member. @typedef {{readonly [key: string]: unknown}} Members */
+/** @param {unknown} v @returns {v is Members} */
+const isMembers = (v) => v !== null && typeof v === "object";
 
 const MOVED = ["BUNDLE_ID_RE", "ANN_ID_RE", "FILENAME_RE", "ISO_TS_RE", "OBJECT_TYPES", "LEGACY_TYPE_ALIASES",
   "normalizeType", "CORE_FIELDS", "FORBIDDEN_ALIASES", "parseFrontmatter", "canonicalJson", "NON_MEMBER_AUTHORS",
@@ -101,18 +76,22 @@ test("one binding per name: the module's entry answers each provided name with t
 });
 
 test("R27 no place is named in anything the module provides", () => {
+  /** @type {string[]} */
   const strings = [];
+  /** @param {unknown} v */
   const walk = (v) => {
     if (typeof v === "string") strings.push(v);
     else if (v instanceof RegExp) strings.push(v.source);
-    else if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === "object") { for (const [k, x] of Object.entries(v)) { strings.push(k); walk(x); } }
+    else if (isList(v)) v.forEach(walk);
+    else if (isMembers(v)) { for (const [k, x] of Object.entries(v)) { strings.push(k); walk(x); } }
   };
   Object.values(RG).forEach(walk);
   const r = RG.parseFrontmatter("---\n  status: x\na: 1\na: 2\n- z\n?\n---");
   for (const x of r.findings) strings.push(x.message, ...(x.repairs || []));
-  for (const bad of [undefined, "x", {}]) { try { RG.createSha256().update(bad); } catch (e) { strings.push(e.message); } }
-  try { RG.b64ToBytes("*"); } catch (e) { strings.push(e.message); }
+  /** @param {unknown} e */
+  const message = (e) => { if (e instanceof Error) strings.push(e.message); return true; };
+  for (const bad of [undefined, "x", {}]) assert.throws(() => RG.createSha256().update(bad), message);
+  assert.throws(() => RG.b64ToBytes("*"), message);
   assert.ok(strings.length > 100);
   const PLACES = /oakland|alameda|california|berkeley|san francisco|county|city of/i;
   for (const s of strings) assert.ok(!PLACES.test(s), s);
