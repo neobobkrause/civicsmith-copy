@@ -80,8 +80,9 @@ Rule now: once civicsmith is using the latest Process4 version, ARCH opens a tra
 Shown to the owner: not yet.
 
 ## Stopping for an account switch
-Rule now: all civicsmith work stays stopped for an account switch. The stop record names the account being switched from. It is lifted only on the owner's word to the coordinator.
+Rule now: the stop for the account switch is lifted; the stop record is cleared.
 - 26 Nov 2026: "Instruction: stop all civicsmith work for an account switch"
 - 26 Nov 2026: "Instruction: lift the stop"
 - 26 Nov 2026: "Instruction: continue the halt" (typed moments later, interrupting the lift)
+- 26 Nov 2026: "Instruction: lift the stop" (typed in the new Claude account, after the switch)
 Shown to the owner: not yet.
