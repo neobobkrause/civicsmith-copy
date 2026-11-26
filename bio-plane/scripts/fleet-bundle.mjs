@@ -115,7 +115,7 @@ import { parse as acornParse, tokenizer as acornTokenizer, tokTypes as acornType
    statement of the rule. */
 import { readGitProvenance, reportProvenance, repoPath } from "./provenance.mjs";
 import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
-/** @import { Metafile } from "esbuild" */
+/** @import { BuildResult, Metafile, Plugin } from "esbuild" */
 /** @import { Classified, DiscoveredItem } from "./provenance.mjs" */
 
 /** @typedef {unknown[]} List a list, as read from a file */
@@ -197,6 +197,60 @@ import { parseJsonc } from "./jsonc.mjs";   /* R11: the module's one reader */
  * @property {Metafile} metafile
  * @property {WordsKept | null} words
  */
+/** @typedef {{ charset: "ascii", legalComments: "eof", minifyWhitespace: boolean, supported: { "template-literal": boolean } }} AsciiOptions */
+/**
+ * @typedef {Object} PlainRecipe the esbuild options of a member's build
+ * @property {string} absWorkingDir
+ * @property {boolean} preserveSymlinks
+ * @property {string[]} entryPoints
+ * @property {string} outfile
+ * @property {boolean} bundle
+ * @property {"esm"} format
+ * @property {"neutral"} platform
+ * @property {string[]} external
+ * @property {true} metafile
+ */
+/** @typedef {PlainRecipe & AsciiOptions} AsciiRecipe the options with the pure-ASCII recipe's (R2) */
+/** @typedef {{ charset: string, legalComments: string, minifyWhitespace: boolean, templateLiterals: string }} AsciiRecord the pure-ASCII recipe as a manifest records it */
+/**
+ * @typedef {Object} ManifestRecipe
+ * @property {string} entry
+ * @property {string} format
+ * @property {string} platform
+ * @property {string[]} external
+ * @property {string} absWorkingDir
+ * @property {string} esbuild
+ * @property {AsciiRecord | false} ascii
+ */
+/** @typedef {{ path: string, bytes: number, sha256: string | null }} InputRecord */
+/** @typedef {{ path: string, bytes: number | null, sha256: string | null }} AssetRecord */
+/** @typedef {"all" | { rows: number, sha256: string | null }} WordsRecord */
+/** @typedef {{ words?: WordsRecord, wordSites?: string[] | undefined }} WordsManifest */
+/**
+ * @typedef {Object} Manifest a member's bundle manifest
+ * @property {string} _comment
+ * @property {string} member
+ * @property {string} artifact
+ * @property {string} sha256
+ * @property {number} bytes
+ * @property {ManifestRecipe} recipe
+ * @property {InputRecord[]} inputs
+ * @property {InputRecord[]} vendoredInputs
+ * @property {AssetRecord[]} [assets]
+ * @property {WordsRecord} [words]
+ * @property {string[] | undefined} [wordSites]
+ * @property {{ path: string, sha256: string } | null} [lock]
+ */
+/** @typedef {{ findings: string[], manifest: Manifest | null, committed: Buffer | null, guarded?: boolean }} StaticVerdict */
+/** @typedef {{ checked: boolean, guarded?: boolean, findings: string[] | null, built: Built | null, reason?: string }} FreshVerdict */
+/** @typedef {{ sizeWarn: number, sizeFail: number, startWarnMs: number }} Budget */
+/** @typedef {{ measured: true, ms: number } | { measured: false, reason: string }} StartMeasured */
+/** @typedef {{ type: { label: string }, start: number, end: number }} Token one token as the tokenizer gives it */
+/** @typedef {{ getToken: () => Token }} TokenStream */
+/** @typedef {{ parentURL?: string | undefined }} HookContext */
+/** @typedef {{ type: string, [field: string]: unknown }} AstNode a node of the parser's tree */
+/** @typedef {{ text: string, whole: boolean }} KeyShape what a key starts with; `whole`: the text is the entire key */
+/** @typedef {{ exact: Set<string>, prefixes: Set<string>, sites: string[] }} WordKeys */
 /** @typedef {{ packages?: Package[] | undefined, ecosystem?: string, unread?: string }} PackagesRead a list of packages, or why it is unread */
 
 /** Is it a list?
@@ -215,6 +269,14 @@ function codeOf(e) { return e instanceof Error && "code" in e ? e.code : undefin
  * @param {unknown} e
  * @returns {string | undefined} */
 function messageOf(e) { return e instanceof Error ? e.message : undefined; }
+/** Is it a node of the parser's tree?
+ * @param {unknown} x
+ * @returns {x is AstNode} */
+function isNode(x) { return isObject(x) && typeof x.type === "string"; }
+/** A field that holds a list, else none.
+ * @param {unknown} x
+ * @returns {List} */
+function listOf(x) { return isList(x) ? x : []; }
 /** The first line of a text.
  * @param {string} text
  * @returns {string} */
@@ -1225,21 +1287,39 @@ export function fleetProvenance(members, { repoRoot = REPO_ROOT, log = (line) =>
  * overrides the rule either way. The options are recorded in the manifest's `recipe.ascii` and `verifyStatic` checks them. */
 export const ASCII_RECIPE = Object.freeze({ charset: "ascii", legalComments: "eof", minifyWhitespace: true, templateLiterals: "lowered" });
 
+/** The recipe as a manifest records it: `ASCII_RECIPE`'s fields, in its order.
+ * @returns {AsciiRecord} */
+function asciiRecord() {
+  return { charset: ASCII_RECIPE.charset, legalComments: ASCII_RECIPE.legalComments, minifyWhitespace: ASCII_RECIPE.minifyWhitespace,
+    templateLiterals: ASCII_RECIPE.templateLiterals };
+}
+
 /** The esbuild options the recipe adds (for a caller that builds with its own esbuild call: pair them with `asciiOutput`). */
+/** @type {() => AsciiOptions} */
 export const asciiOptions = () => ({ charset: ASCII_RECIPE.charset, legalComments: ASCII_RECIPE.legalComments,
   minifyWhitespace: ASCII_RECIPE.minifyWhitespace, supported: { "template-literal": false } });
 
 /** Does this member's bundle get the pure-ASCII recipe? */
-export const asciiOf = (member) =>
-  member && member.bundle && typeof member.bundle.ascii === "boolean" ? member.bundle.ascii : !!(member && (member.marker || member.wholeWordTable));
+/** @type {(member: Member | null | undefined) => boolean} */
+export const asciiOf = (member) => {
+  const bundle = member ? member.bundle : undefined;
+  const ascii = bundle ? bundle.ascii : undefined;
+  return typeof ascii === "boolean" ? ascii : !!(member && (member.marker || member.wholeWordTable));
+};
 
 const NON_ASCII = /[^\x00-\x7f]/gu;
 const HAS_NON_ASCII = /[^\x00-\x7f]/;
+/** @type {(c: number) => string} */
 const hex4 = (c) => `\\u${c.toString(16).padStart(4, "0")}`;
 /** The ASCII spelling of `text`'s characters: surrogate pairs as two `\uXXXX`, or as one `\u{X}` when `braced`. */
+/**
+ * @param {string} text
+ * @param {boolean} braced
+ * @returns {string}
+ */
 function escapeChars(text, braced) {
   return text.replace(NON_ASCII, (ch) => {
-    const cp = ch.codePointAt(0);
+    const cp = ch.codePointAt(0) ?? 0;
     if (cp > 0xffff) return braced ? `\\u{${cp.toString(16)}}` : hex4(0xd800 + ((cp - 0x10000) >> 10)) + hex4(0xdc00 + ((cp - 0x10000) & 0x3ff));
     return hex4(cp);
   });
@@ -1247,24 +1327,37 @@ function escapeChars(text, braced) {
 
 /** R2: the bytes with every character above 0x7F escaped as above; the same bytes when there is none. Throws
  *  `REFUSED [NON_ASCII_REMAINS]` naming the line and the token when a character is anywhere else. */
+/**
+ * @template {Uint8Array} T
+ * @param {T} bytes
+ * @returns {T | Buffer}
+ * @throws {Error} `REFUSED [NON_ASCII_REMAINS]`
+ */
 export function asciiOutput(bytes) {
   let any = false;
-  for (let i = 0; i < bytes.length; i++) if (bytes[i] > 0x7f) { any = true; break; }
+  for (let i = 0; i < bytes.length; i++) if ((bytes[i] ?? 0) > 0x7f) { any = true; break; }
   if (!any) return bytes;
   const text = Buffer.from(bytes).toString("utf8");
+  /** @type {(pos: number) => string} */
   const where = (pos) => `line ${text.slice(0, pos).split("\n").length}`;
+  /** @type {(pos: number, what: string) => never} */
   const refuse = (pos, what) => { throw new Error(`REFUSED [NON_ASCII_REMAINS]: a character above U+007F is in ${what} at ${where(pos)}, which the ASCII pass will not edit (bundler R2)`); };
+  /** @type {Array<[number, number, string]>} */
   const edits = [];
+  /** @type {(block: boolean, t: string, start: number, end: number) => void} */
   const comment = (_block, _t, start, end) => {
     const raw = text.slice(start, end);
     if (HAS_NON_ASCII.test(raw)) edits.push([start, end, escapeChars(raw, false)]);
   };
-  for (const tok of acornTokenizer(text, { ecmaVersion: "latest", sourceType: "module", allowHashBang: true, onComment: comment })) {
+  /* Each token to the end of the text, as the tokenizer's own iterator gives them. */
+  const tokens = /** @type {TokenStream} the tokenizer, which gives each token to the end of the text */ (/** @type {unknown} */ (
+    acornTokenizer(text, { ecmaVersion: "latest", sourceType: "module", allowHashBang: true, onComment: comment })));
+  for (let tok = tokens.getToken(); tok.type !== acornTypes.eof; tok = tokens.getToken()) {
     const raw = text.slice(tok.start, tok.end);
     if (!HAS_NON_ASCII.test(raw)) continue;
     if (tok.type === acornTypes.string) edits.push([tok.start, tok.end, escapeChars(raw, false)]);
     else if (tok.type === acornTypes.regexp) {
-      const flags = tok.value && tok.value.flags ? tok.value.flags : "";
+      const flags = raw.slice(raw.lastIndexOf("/") + 1);   /* a regex token's flags follow its closing slash */
       edits.push([tok.start, tok.end, escapeChars(raw, /[uv]/.test(flags))]);
     } else refuse(tok.start, tok.type === acornTypes.template ? "the raw text of a template literal" : `a ${tok.type.label} token`);
   }
@@ -1279,9 +1372,14 @@ export function asciiOutput(bytes) {
 
 /** The esbuild options for one member. Exported so the build step and the gate
  *  cannot disagree about the recipe — there is one expression of it. */
+/**
+ * @param {Member} member
+ * @returns {PlainRecipe | AsciiRecipe}
+ */
 export function optionsFor(member) {
-  const b = member.bundle;
-  return {
+  const b = bundleOf(member, "entry");
+  /** @type {PlainRecipe} */
+  const plain = {
     absWorkingDir: member.abs,          /* PINNED — see the header. */
     preserveSymlinks: true,             /* the install LAYOUT never reaches the bytes — see the header. */
     entryPoints: [b.entry],
@@ -1291,10 +1389,12 @@ export function optionsFor(member) {
     platform: RECIPE.platform,
     external: [...(b.external || DEFAULT_EXTERNAL)],
     metafile: true,
-    ...(asciiOf(member) ? asciiOptions() : {}),
   };
+  if (asciiOf(member)) return { ...plain, ...asciiOptions() };
+  return plain;
 }
 
+/** @type {(p: string) => boolean} */
 const isVendored = (p) => p.split("/").includes("node_modules");
 
 /** The UPLOAD PARTS a member declares beside its bundle, member-relative.
@@ -1302,9 +1402,18 @@ const isVendored = (p) => p.split("/").includes("node_modules");
  *  members that existed before `ocr-worker`. Read through one function so the
  *  build step, the manifest and the gate cannot disagree about what an asset is
  *  — the same rule the recipe itself follows. */
+/**
+ * @param {Member | null | undefined} member
+ * @returns {string[]}
+ */
 export function assetsOf(member) {
-  const a = member && member.bundle ? member.bundle.assets : null;
-  return Array.isArray(a) ? a.filter((p) => typeof p === "string" && p) : [];
+  const bundle = member ? member.bundle : null;
+  const a = bundle ? bundle.assets : null;
+  if (!isList(a)) return [];
+  /** @type {string[]} */
+  const named = [];
+  for (const p of a) if (typeof p === "string" && p) named.push(p);
+  return named;
 }
 
 /* ---- THE WORD ROWS A MEMBER CARRIES (bundler R38; K3953) ----------------------------------------------------------
@@ -1331,55 +1440,83 @@ const WORD_INDEX_PATH = /(^|[\\/])setup-words[\\/]index\.mjs$/;
 const SCOPES = /^(Program|BlockStatement|StaticBlock|SwitchStatement|CatchClause|ForStatement|ForInStatement|ForOfStatement|FunctionDeclaration|FunctionExpression|ArrowFunctionExpression)$/;
 
 /** The names a binding pattern declares. */
+/**
+ * @param {unknown} p
+ * @param {Set<string>} into
+ */
 function patternNames(p, into) {
-  if (!p) return;
-  if (p.type === "Identifier") into.add(p.name);
-  else if (p.type === "ObjectPattern") p.properties.forEach((q) => patternNames(q.type === "RestElement" ? q.argument : q.value, into));
-  else if (p.type === "ArrayPattern") p.elements.forEach((q) => patternNames(q, into));
+  if (!isNode(p)) return;
+  if (p.type === "Identifier") { const name = p.name; if (typeof name === "string") into.add(name); }
+  else if (p.type === "ObjectPattern") listOf(p.properties).forEach((q) => { if (isNode(q)) patternNames(q.type === "RestElement" ? q.argument : q.value, into); });
+  else if (p.type === "ArrayPattern") listOf(p.elements).forEach((q) => patternNames(q, into));
   else if (p.type === "AssignmentPattern") patternNames(p.left, into);
   else if (p.type === "RestElement") patternNames(p.argument, into);
+}
+
+/** The name an identifier node holds.
+ * @param {unknown} id
+ * @returns {string | undefined} */
+function idName(id) {
+  const name = isNode(id) ? id.name : undefined;
+  return typeof name === "string" ? name : undefined;
 }
 
 /** The names a scope-making node declares for its own body (parameters and function name, `var`s anywhere inside it
  *  but a nested function, the lets, consts, classes and functions of its statement lists, an exported one too). Import
  *  bindings are left out: `word` imported is the call this reads. The rule of setup-words' build, so both agree on
  *  what a call is. */
+/**
+ * @param {AstNode} node
+ * @returns {Set<string>}
+ */
 function declaredNames(node) {
-  const into = new Set();
+  /** @type {Set<string>} */
+  const into = new Set([]);
+  /** @type {(n: unknown, top: boolean) => void} */
   const hoist = (n, top) => {
-    if (!n || typeof n.type !== "string") return;
+    if (!isNode(n)) return;
     if ((n.type === "ExportNamedDeclaration" || n.type === "ExportDefaultDeclaration") && n.declaration) return hoist(n.declaration, top);
-    if (n.type === "VariableDeclaration") for (const d of n.declarations) { if (n.kind === "var" || top) patternNames(d.id, into); }
-    else if ((n.type === "FunctionDeclaration" || n.type === "ClassDeclaration") && n.id) { if (top) into.add(n.id.name); return; }
+    if (n.type === "VariableDeclaration") for (const d of listOf(n.declarations)) { if (n.kind === "var" || top) patternNames(isNode(d) ? d.id : undefined, into); }
+    else if ((n.type === "FunctionDeclaration" || n.type === "ClassDeclaration") && n.id) { const name = idName(n.id); if (top && name !== undefined) into.add(name); return; }
     if (/Function/.test(n.type) || n.type === "ClassBody") return;
     for (const k of Object.keys(n)) {
       const v = n[k];
-      if (Array.isArray(v)) v.forEach((c) => hoist(c, false));
-      else if (v && typeof v.type === "string") hoist(v, false);
+      if (isList(v)) v.forEach((c) => hoist(c, false));
+      else if (isNode(v)) hoist(v, false);
     }
   };
   if (/Function/.test(node.type)) {
-    node.params.forEach((q) => patternNames(q, into));
-    if (node.type === "FunctionExpression" && node.id) into.add(node.id.name);
-    hoist(node.body, false);
-    if (node.body.type === "BlockStatement") node.body.body.forEach((st) => hoist(st, true));
+    listOf(node.params).forEach((q) => patternNames(q, into));
+    const name = idName(node.id);
+    if (node.type === "FunctionExpression" && node.id && name !== undefined) into.add(name);
+    const body = node.body;
+    hoist(body, false);
+    if (isNode(body) && body.type === "BlockStatement") listOf(body.body).forEach((st) => hoist(st, true));
   } else if (node.type === "Program" || node.type === "BlockStatement" || node.type === "StaticBlock") {
-    node.body.forEach((st) => hoist(st, true));
-    node.body.forEach((st) => hoist(st, false));
-  } else if (node.type === "SwitchStatement") node.cases.forEach((c) => c.consequent.forEach((st) => hoist(st, true)));
+    const body = listOf(node.body);
+    body.forEach((st) => hoist(st, true));
+    body.forEach((st) => hoist(st, false));
+  } else if (node.type === "SwitchStatement") listOf(node.cases).forEach((c) => { if (isNode(c)) listOf(c.consequent).forEach((st) => hoist(st, true)); });
   else if (node.type === "CatchClause") patternNames(node.param, into);
-  else if (/^For(In|Of)?Statement$/.test(node.type)) { const i = node.init ?? node.left; if (i?.type === "VariableDeclaration") hoist(i, true); }
+  else if (/^For(In|Of)?Statement$/.test(node.type)) { const i = node.init ?? node.left; if (isNode(i) && i.type === "VariableDeclaration") hoist(i, true); }
   return into;
 }
 
 /** What a key expression starts with, as `[{text, whole}]` (`whole`: the text is the entire key), or null when some
  *  branch has no literal prefix: a string, a template, a `+` chain from its left, both arms of a `?:`, `||` or `??`. */
+/**
+ * @param {unknown} node
+ * @returns {KeyShape[] | null}
+ */
 function keyShapes(node) {
-  if (!node) return null;
-  if (node.type === "Literal") return typeof node.value === "string" ? [{ text: node.value, whole: true }] : null;
+  if (!isNode(node)) return null;
+  if (node.type === "Literal") { const value = node.value; return typeof value === "string" ? [{ text: value, whole: true }] : null; }
   if (node.type === "TemplateLiteral") {
-    if (node.expressions.length === 0) return [{ text: node.quasis[0].value.cooked, whole: true }];
-    const head = node.quasis[0].value.cooked;
+    const first = listOf(node.quasis)[0];
+    const firstValue = isObject(first) ? first.value : undefined;
+    const head = isObject(firstValue) ? firstValue.cooked : undefined;   /* an untagged template's text is always cooked */
+    if (typeof head !== "string") return null;
+    if (listOf(node.expressions).length === 0) return [{ text: head, whole: true }];
     return head ? [{ text: head, whole: false }] : null;
   }
   if (node.type === "BinaryExpression" && node.operator === "+") {
@@ -1405,28 +1542,50 @@ function keyShapes(node) {
 /** R38: what one source text asks of the word table: `{exact, prefixes, sites}` (sets of keys and of literal prefixes,
  *  and a `where:line: why` for each call whose key has no literal prefix, each use of `word` other than as a callee,
  *  and each read of the whole table). `index` is true for setup-words' own index, the one input that holds `WORD_ROWS`. */
+/**
+ * @param {string} source
+ * @param {string} where
+ * @param {{ index?: boolean }} [opts]
+ * @returns {WordKeys}
+ * @throws {Error} `<where> cannot be parsed to find the word rows it reads: …`
+ */
 export function wordKeysOf(source, where, { index = false } = {}) {
   const options = { ecmaVersion: "latest", locations: true, allowHashBang: true, allowReturnOutsideFunction: true };
+  /** @type {unknown} */
   let ast;
   try { ast = acornParse(source, { ...options, sourceType: "module" }); }
   catch { try { ast = acornParse(source, { ...options, sourceType: "script" }); }
-    catch (e) { throw new Error(`${where} cannot be parsed to find the word rows it reads: ${e.message}`); } }
-  const exact = new Set(), prefixes = new Set();
+    catch (e) { throw new Error(`${where} cannot be parsed to find the word rows it reads: ${messageOf(e)}`); } }
+  /** @type {Set<string>} */
+  const exact = new Set([]);
+  /** @type {Set<string>} */
+  const prefixes = new Set([]);
+  /** @type {string[]} */
   const sites = [];
-  const refuse = (node, why) => { sites.push(`${where}:${node.loc.start.line}: ${why}`); };
+  /** @type {(node: AstNode, why: string) => void} */
+  const refuse = (node, why) => {
+    const loc = node.loc;
+    const start = isObject(loc) ? loc.start : undefined;
+    sites.push(`${where}:${isObject(start) ? start.line : undefined}: ${why}`);
+  };
+  /** @type {(node: unknown, parent: AstNode | null, shadowed: Set<string>) => void} */
   const visit = (node, parent, shadowed) => {
-    if (!node || typeof node.type !== "string") return;
+    if (!isNode(node)) return;
+    let hidden = shadowed;
     if (SCOPES.test(node.type)) {
       const own = declaredNames(node);
-      if ([...WORD_FUNCTIONS].some((f) => own.has(f))) shadowed = new Set([...shadowed, ...[...WORD_FUNCTIONS].filter((f) => own.has(f))]);
+      if ([...WORD_FUNCTIONS].some((f) => own.has(f))) hidden = new Set([...hidden, ...[...WORD_FUNCTIONS].filter((f) => own.has(f))]);
     }
-    if (node.type === "CallExpression" && node.callee.type === "Identifier" && WORD_FUNCTIONS.has(node.callee.name) && !shadowed.has(node.callee.name)) {
-      const name = node.callee.name;
-      const arg = node.arguments[0];
-      const shapes = arg && arg.type !== "SpreadElement" ? keyShapes(arg) : null;
+    const inScope = hidden;
+    const calleeName = idName(node.callee), nodeName = node.name;
+    if (node.type === "CallExpression" && calleeName !== undefined && isNode(node.callee) && node.callee.type === "Identifier"
+        && WORD_FUNCTIONS.has(calleeName) && !inScope.has(calleeName)) {
+      const name = calleeName;
+      const arg = listOf(node.arguments)[0];
+      const shapes = isNode(arg) && arg.type !== "SpreadElement" ? keyShapes(arg) : null;
       if (!shapes || shapes.some((s) => s.text === "")) refuse(node, `the key of ${name}(…) has no literal prefix, so the word rows it can read are unknown; write the key, or a literal prefix and the rest (bundler R38)`);
       else for (const s of shapes) (s.whole ? exact : prefixes).add(s.text);
-    } else if (node.type === "Identifier" && WORD_FUNCTIONS.has(node.name) && !shadowed.has(node.name)) {
+    } else if (node.type === "Identifier" && typeof nodeName === "string" && WORD_FUNCTIONS.has(nodeName) && !inScope.has(nodeName)) {
       const p = parent;
       const named = !p
         || (p.type === "CallExpression" && p.callee === node)
@@ -1435,35 +1594,43 @@ export function wordKeysOf(source, where, { index = false } = {}) {
         || (p.type === "Property" && p.key === node && !p.computed && !p.shorthand)
         || (p.type === "MethodDefinition" && p.key === node && !p.computed) || (p.type === "PropertyDefinition" && p.key === node && !p.computed)
         || (p.type === "FunctionDeclaration" && p.id === node) || (p.type === "VariableDeclarator" && p.id === node);
-      if (!named) refuse(node, `${node.name} is used other than as a call, so the word rows it can read are unknown (bundler R38)`);
+      if (!named) refuse(node, `${nodeName} is used other than as a call, so the word rows it can read are unknown (bundler R38)`);
     }
-    if (!index && node.type === "ImportDeclaration" && (WORD_ROWS_PATH.test(String(node.source.value))
-        || node.specifiers.some((s) => s.type === "ImportSpecifier" && s.imported.name === "WORD_ROWS")))
+    const source = node.source;
+    const sourceValue = isObject(source) ? source.value : undefined;
+    if (!index && node.type === "ImportDeclaration" && (WORD_ROWS_PATH.test(String(sourceValue))
+        || listOf(node.specifiers).some((s) => isNode(s) && s.type === "ImportSpecifier" && idName(s.imported) === "WORD_ROWS")))
       refuse(node, "imports the whole word table, which a member's bundle does not carry (bundler R38)");
-    if (!index && (node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") && node.source
-        && (WORD_ROWS_PATH.test(String(node.source.value))
-          || (node.specifiers || []).some((s) => s.local && s.local.name === "WORD_ROWS")))
+    if (!index && (node.type === "ExportNamedDeclaration" || node.type === "ExportAllDeclaration") && source
+        && (WORD_ROWS_PATH.test(String(sourceValue))
+          || listOf(node.specifiers).some((s) => {
+            const local = isObject(s) ? s.local : undefined;
+            return isObject(local) && local.name === "WORD_ROWS";
+          })))
       refuse(node, "re-exports the whole word table, which a member's bundle does not carry (bundler R38)");
-    if (node.type === "ImportExpression" && !(node.source.type === "Literal" && !WORD_ROWS_PATH.test(String(node.source.value))))
+    if (node.type === "ImportExpression" && !(isNode(source) && source.type === "Literal" && !WORD_ROWS_PATH.test(String(sourceValue))))
       refuse(node, "imports a module by a dynamic address, which could read the whole word table (bundler R38)");
     for (const k of Object.keys(node)) {
       const v = node[k];
-      if (Array.isArray(v)) v.forEach((c) => visit(c, node, shadowed));
-      else if (v && typeof v.type === "string") visit(v, node, shadowed);
+      if (isList(v)) v.forEach((c) => visit(c, node, inScope));
+      else if (isNode(v)) visit(v, node, inScope);
     }
   };
-  visit(ast, null, new Set());
+  visit(ast, null, new Set([]));
   return { exact, prefixes, sites };
 }
 
 /** R38 trims the bundle of a fleet member (one a `fleet-member.json` enrols, which `discoverMembers` marks). The plane
  *  (`wholeWordTable`) and any other descriptor handed to `buildMember` (the standalone case checker's) carry the table whole. */
+/** @type {(member: Member) => boolean} */
 const trimsWords = (member) => !!member.marker && !member.wholeWordTable;
+/** @type {(p: string) => boolean} */
 const isWordRows = (p) => WORD_ROWS_PATH.test(p);
 const SOURCE_EXT = /\.(mjs|js|cjs)$/;
 const WORD_STUB = "export const WORDS_COMMIT = \"\";\nexport const WORD_ROWS = Object.freeze([]);\n";
 
 /** An esbuild plugin that answers the `rows.mjs` import with `contents` (the stub, or the trimmed module). */
+/** @type {(contents: string) => Plugin} */
 const wordRowsPlugin = (contents) => ({
   name: "bundler-r38-word-rows",
   setup(b) { b.onLoad({ filter: WORD_ROWS_PATH }, () => ({ contents, loader: "js" })); },
@@ -1474,11 +1641,23 @@ const wordRowsPlugin = (contents) => ({
  *  text, sha256}`: the kept rows' count, the table's size, the module that stands for the table in the bundle and the
  *  SHA-256 of the kept rows; or, when some site could read any row (K3958), `{rows: "all", total, sites, text: null}`
  *  and the table is left whole. */
+/**
+ * @param {Member} member
+ * @param {BuildResult} probe
+ * @returns {Promise<WordsKept | null>}
+ */
 export async function keptWordRows(member, probe) {
-  const paths = Object.keys(probe.metafile.inputs);
+  const metafile = probe.metafile;
+  if (!metafile) throw new TypeError("Cannot read properties of undefined (reading 'inputs')");
+  const paths = Object.keys(metafile.inputs);
   const rowsInput = paths.find(isWordRows);
   if (!trimsWords(member) || !rowsInput) return null;
-  const exact = new Set(), prefixes = new Set(), sites = [];
+  /** @type {Set<string>} */
+  const exact = new Set([]);
+  /** @type {Set<string>} */
+  const prefixes = new Set([]);
+  /** @type {string[]} */
+  const sites = [];
   for (const p of paths) {
     if (isWordRows(p) || isVendored(p) || !SOURCE_EXT.test(p)) continue;
     const keys = wordKeysOf(readFileSync(join(member.abs, p), "utf8"), p, { index: WORD_INDEX_PATH.test(p) });
@@ -1486,10 +1665,11 @@ export async function keptWordRows(member, probe) {
     keys.prefixes.forEach((k) => prefixes.add(k));
     sites.push(...keys.sites);
   }
+  /** @type {{ WORD_ROWS: ReadonlyArray<readonly [string, ...unknown[]]>, WORDS_COMMIT: string }} */
   const table = await import(pathToFileURL(join(member.abs, rowsInput)).href);
   if (sites.length)
     return { rows: "all", total: table.WORD_ROWS.length, text: null, sha256: null,
-      sites: [...new Set(sites.map((x) => x.match(/^(.*?:\d+): /)[1]))].sort() };
+      sites: [...new Set(sites.map(siteOf))].sort() };
   const prefixList = [...prefixes];
   const kept = table.WORD_ROWS.filter((r) => exact.has(r[0]) || prefixList.some((pre) => r[0].startsWith(pre)));
   const body = kept.map((r) => `  ${JSON.stringify(r)},`).join("\n");
@@ -1503,19 +1683,43 @@ export async function keptWordRows(member, probe) {
 /** R38: the manifest's account of the word rows a build carries, as the fields to spread into it: `{words: {rows,
  *  sha256}}` for a trimmed table, `{words: "all", wordSites}` for the whole table kept for the sites named, `{}` for a
  *  member whose inputs do not reach the table or the plane. */
-export const wordsManifest = (w) => !w ? {} : w.rows === "all" ? { words: "all", wordSites: w.sites } : { words: { rows: w.rows, sha256: w.sha256 } };
+/** @type {(w: WordsKept | null | undefined) => WordsManifest} */
+export const wordsManifest = (w) => {
+  if (!w) return {};
+  const rows = w.rows;
+  if (rows === "all") return { words: "all", wordSites: w.sites };
+  return { words: { rows, sha256: w.sha256 } };
+};
+
+/** The `file:line` of a site `wordKeysOf` names.
+ * @param {string} site
+ * @returns {string} */
+function siteOf(site) {
+  const m = /^(.*?:\d+): /.exec(site);
+  if (!m) throw new TypeError("Cannot read properties of null (reading '1')");
+  return m[1] ?? "";
+}
 
 /** Build one member. `write: false` (the default) NEVER touches the tree. */
+/**
+ * @param {Member} member
+ * @param {{ write?: boolean, mutateEntry?: string | null }} [opts]
+ * @returns {Promise<Built>}
+ */
 export async function buildMember(member, { write = false, mutateEntry = null } = {}) {
   /* Silent: a failure arrives as the thrown error, never as stray stderr. */
-  const opts = { ...optionsFor(member), write: false, logLevel: "silent" };   /* esbuild never writes: R2's pass runs on the bytes first */
+  const recipe = optionsFor(member);   /* esbuild never writes: R2's pass runs on the bytes first */
   /* R38: which word rows this member's bundle carries (null: the whole table, or none reachable). */
+  /** @type {WordsKept | null} */
   let words = null;
   if (trimsWords(member)) {
     const probe = await build({ ...optionsFor(member), write: false, logLevel: "silent", plugins: [wordRowsPlugin(WORD_STUB)] });
     words = await keptWordRows(member, probe);
   }
-  opts.plugins = words && words.text ? [wordRowsPlugin(words.text)] : [];
+  const kept = words;
+  const keptText = kept ? kept.text : null;
+  /** @type {Plugin[]} */
+  const plugins = keptText ? [wordRowsPlugin(keptText)] : [];
   /* The independence proof's hook, and the ONLY way anything mutates a source
      here: an in-memory suffix on the ENTRY's contents. Nothing on disk moves.
      **A CALLER MUST PASS SOMETHING THAT SURVIVES THE BUILD.** esbuild STRIPS
@@ -1523,10 +1727,10 @@ export async function buildMember(member, { write = false, mutateEntry = null } 
      — measured 2026-09-10, and it is the reason the input-hash arm is not
      redundant with the byte-identity arm but STRICTER than it. */
   if (mutateEntry) {
-    opts.plugins.push({
+    plugins.push({
       name: "fl9-mutate-entry",
       setup(b) {
-        const entryAbs = join(member.abs, member.bundle.entry);
+        const entryAbs = join(member.abs, bundleOf(member, "entry").entry);
         b.onLoad({ filter: /\.mjs$/ }, (args) => {
           if (resolve(args.path) !== resolve(entryAbs)) return null;
           return { contents: readFileSync(args.path, "utf8") + mutateEntry, loader: "js" };
@@ -1534,12 +1738,15 @@ export async function buildMember(member, { write = false, mutateEntry = null } 
       },
     });
   }
-  const res = await build(opts);
-  let bytes = Buffer.from(res.outputFiles[0].contents);
+  const res = await build({ ...recipe, write: false, logLevel: "silent", plugins });
+  const output = res.outputFiles[0];
+  if (!output) throw new TypeError("Cannot read properties of undefined (reading 'contents')");
+  let bytes = Buffer.from(output.contents);
   if (asciiOf(member)) bytes = asciiOutput(bytes);
   if (write) {
-    mkdirSync(join(member.abs, dirname(member.bundle.outfile)), { recursive: true });
-    writeFileSync(join(member.abs, member.bundle.outfile), bytes);
+    const outfile = bundleOf(member, "outfile").outfile;
+    mkdirSync(join(member.abs, dirname(outfile)), { recursive: true });
+    writeFileSync(join(member.abs, outfile), bytes);
   }
   const inputs = Object.entries(res.metafile.inputs)
     .map(([path, v]) => ({ path, bytes: v.bytes }))
@@ -1548,33 +1755,42 @@ export async function buildMember(member, { write = false, mutateEntry = null } 
 }
 
 /** The committed manifest, computed from a build. */
+/**
+ * @param {Member} member
+ * @param {Built} built
+ * @returns {Manifest}
+ */
 export function manifestFrom(member, built) {
+  /** @type {(rel: string) => string | null} */
   const hashOf = (rel) => {
     try { return sha256(readFileSync(join(member.abs, rel))); } catch { return null; }
   };
   const first = built.inputs.filter((i) => !isVendored(i.path));
   const vendored = built.inputs.filter((i) => isVendored(i.path));
   const assets = assetsOf(member);
+  /** @type {{ path: string, sha256: string } | null} */
   let lock = null;
   try {
     lock = { path: "package-lock.json", sha256: sha256(readFileSync(join(member.abs, "package-lock.json"))) };
   } catch { /* a member with no dependencies has no lock, and that is legal */ }
-  return {
+  const bundle = bundleOf(member, "outfile");
+  /** @type {Manifest} */
+  const manifest = {
     _comment: "GENERATED by bio-plane/scripts/fleet-bundle.mjs. Do not edit. "
       + "The gate bio-plane/test/system/fleetbundles.test.mjs asserts every figure here against the tree; "
       + "a stale artifact FAILS instead of shipping (FL-9, BOB 2026-09-10).",
     member: member.name,
-    artifact: member.bundle.outfile,
+    artifact: bundle.outfile,
     sha256: built.sha256,
     bytes: built.bytes.length,
     recipe: {
-      entry: member.bundle.entry,
+      entry: bundle.entry,
       format: RECIPE.format,
       platform: RECIPE.platform,
-      external: [...(member.bundle.external || DEFAULT_EXTERNAL)],
+      external: [...(bundle.external || DEFAULT_EXTERNAL)],
       absWorkingDir: "<member directory>",   /* pinned; never an absolute path, which would not travel */
       esbuild: ESBUILD_VERSION,
-      ascii: asciiOf(member) ? { ...ASCII_RECIPE } : false,   /* R2, G39 */
+      ascii: asciiOf(member) ? asciiRecord() : false,   /* R2, G39 */
     },
     /* Paths are as ESBUILD names them, which — with `absWorkingDir` pinned — is
        member-relative and therefore identical in every checkout. THREE of
@@ -1583,6 +1799,7 @@ export function manifestFrom(member, built) {
        written down nowhere (IC-68, finding 3). */
     inputs: first.map((i) => ({ path: i.path, bytes: i.bytes, sha256: hashOf(i.path) })),
     vendoredInputs: vendored.map((i) => ({ path: i.path, bytes: i.bytes, sha256: hashOf(i.path) })),
+  };
     /* ---- CPDF-10: THE UPLOAD PARTS A BUNDLE CANNOT SWALLOW ------------------
      *
      * `ocr-worker` is the first member that is NOT a one-part upload, and it is
@@ -1605,23 +1822,30 @@ export function manifestFrom(member, built) {
      * `verifyStatic` treats as staleness rather than as an absence to tolerate:
      * unlike a vendored dependency, an upload part is committed, so it is never
      * legitimately missing. */
-    ...(assets.length ? { assets: assets.map((rel) => ({
-      path: rel,
-      bytes: (() => { try { return readFileSync(join(member.abs, rel)).length; } catch { return null; } })(),
-      sha256: hashOf(rel),
-    })) } : {}),
-    /* R38: the word rows the bundle carries, only for a member whose inputs reach the table. */
-    ...wordsManifest(built.words),
-    lock,
-  };
+  if (assets.length) manifest.assets = assets.map((rel) => ({
+    path: rel,
+    bytes: (() => { try { return readFileSync(join(member.abs, rel)).length; } catch { return null; } })(),
+    sha256: hashOf(rel),
+  }));
+  /* R38: the word rows the bundle carries, only for a member whose inputs reach the table. */
+  const w = wordsManifest(built.words);
+  const words = w.words;
+  if (words !== undefined) manifest.words = words;
+  if (words === "all") manifest.wordSites = w.wordSites;
+  manifest.lock = lock;
+  return manifest;
 }
 
 /** Write the artifact and its manifest. The ONLY writing path in this module. */
+/**
+ * @param {Member} member
+ * @returns {Promise<{ built: Built, manifest: Manifest }>}
+ */
 export async function writeMember(member) {
-  mkdirSync(join(member.abs, dirname(member.bundle.outfile)), { recursive: true });
+  mkdirSync(join(member.abs, dirname(bundleOf(member, "outfile").outfile)), { recursive: true });
   const built = await buildMember(member, { write: true });
   const manifest = manifestFrom(member, built);
-  writeFileSync(join(member.abs, member.bundle.manifest), JSON.stringify(manifest, null, 2) + "\n");
+  writeFileSync(join(member.abs, bundleOf(member, "manifest").manifest), JSON.stringify(manifest, null, 2) + "\n");
   return { built, manifest };
 }
 
@@ -1642,17 +1866,27 @@ export async function writeMember(member) {
  * `verifyFresh` from esbuild's own metafile, wherever a fresh build is runnable.
  * Two instruments, each honest about its reach. */
 /** Is `specifier` one of the `allowed` externals? A trailing `*` is a prefix. */
+/** @type {(allowed: readonly string[], specifier: string) => boolean} */
 const isAllowed = (allowed, specifier) =>
   allowed.some((a) => (a.endsWith("*") ? specifier.startsWith(a.slice(0, -1)) : specifier === a));
 
+/**
+ * @param {string} text
+ * @param {readonly string[]} [allowed]
+ * @returns {string[]}
+ */
 export function unresolvableSpecifiers(text, allowed = DEFAULT_EXTERNAL) {
+  /** @type {(s: string) => boolean} */
   const ok = (s) => isAllowed(allowed, s);
-  const found = new Set();
+  /** @type {Set<string>} */
+  const found = new Set([]);
   const re = /(?:^|[;}\n])\s*(?:import|export)\b[^;]*?\bfrom\s*["']([^"']+)["']/g;   /* `}`: a minified statement can follow one (R2) */
   const bare = /(?:^|[;}\n])\s*import\s*["']([^"']+)["']/g;
   for (const re2 of [re, bare]) {
-    let m;
-    while ((m = re2.exec(text))) if (!ok(m[1])) found.add(m[1]);
+    for (const m of text.matchAll(re2)) {
+      const specifier = m[1];
+      if (specifier !== undefined && !ok(specifier)) found.add(specifier);
+    }
   }
   return [...found].sort();
 }
@@ -1663,32 +1897,41 @@ export function unresolvableSpecifiers(text, allowed = DEFAULT_EXTERNAL) {
    says the gate must fail naming the member. */
 
 /** The dependency-free half. Runs on any checkout, with no install at all. */
+/**
+ * @param {Member} member
+ * @returns {StaticVerdict}
+ */
 export function verifyStatic(member) {
+  /** @type {string[]} */
   const findings = [];
-  const add = (what) => findings.push(`${member.name}: ${what}`);
+  /** @type {(what: string) => void} */
+  const add = (what) => { findings.push(`${member.name}: ${what}`); };
 
   /* R24: a container member with no Worker bundle has no artifact to be stale. It
      is listed, and `guarded: false` says so, so no caller reads it as checked. */
   if (!isGuarded(member)) return { findings, manifest: null, committed: null, guarded: false };
 
-  if (!member.bundle) {
+  const bundle = member.bundle;
+  if (!bundle) {
     add("declares no `bundle` block in fleet-member.json, so nothing guards its artifact. "
       + "Every fleet member commits a guarded bundle (FL-9, BOB 2026-09-10).");
     return { findings, manifest: null, committed: null };
   }
 
+  /** @type {Manifest} */
   let manifest;
-  try { manifest = JSON.parse(readFileSync(join(member.abs, member.bundle.manifest), "utf8")); }
+  try { manifest = /** @type {Manifest} the manifest this module wrote */ (JSON.parse(readFileSync(join(member.abs, bundle.manifest), "utf8"))); }
   catch (e) {
-    add(`its committed manifest ${member.bundle.manifest} is missing or unreadable (${e.message}). `
+    add(`its committed manifest ${bundle.manifest} is missing or unreadable (${messageOf(e)}). `
       + `${REBUILD}.`);
     return { findings, manifest: null, committed: null };
   }
 
+  /** @type {Buffer} */
   let committed;
-  try { committed = readFileSync(join(member.abs, member.bundle.outfile)); }
+  try { committed = readFileSync(join(member.abs, bundle.outfile)); }
   catch (e) {
-    add(`its committed artifact ${member.bundle.outfile} is missing (${e.message}). `
+    add(`its committed artifact ${bundle.outfile} is missing (${messageOf(e)}). `
       + `${REBUILD}.`);
     return { findings, manifest, committed: null };
   }
@@ -1697,27 +1940,27 @@ export function verifyStatic(member) {
   const got = sha256(committed);
   if (got !== manifest.sha256)
     add(`the committed artifact does not match its own manifest — `
-      + `${member.bundle.outfile} is sha256 ${got}, the manifest says ${manifest.sha256}.`);
+      + `${bundle.outfile} is sha256 ${got}, the manifest says ${manifest.sha256}.`);
   if (committed.length !== manifest.bytes)
     add(`the committed artifact is ${committed.length} B, the manifest says ${manifest.bytes} B.`);
 
   /* (b) THE ARM THIS ITEM EXISTS FOR — a source moved and the artifact did not.
      Dependency-free, so it fires on every machine including a fresh checkout. */
-  for (const inp of manifest.inputs || []) {
-    let live;
-    try { live = readFileSync(join(member.abs, inp.path)); }
-    catch {
+  const inputs = manifest.inputs;
+  for (const inp of inputs || []) {
+    const live = (() => { try { return readFileSync(join(member.abs, inp.path)); } catch { return null; } })();
+    if (!live) {
       add(`a recorded build input has vanished: ${inp.path}. The committed bundle cannot be `
         + `reproduced, so it is STALE by definition. ${REBUILD}.`);
       continue;
     }
     const liveSha = sha256(live);
     if (liveSha !== inp.sha256)
-      add(`STALE BUNDLE — the source ${inp.path} has changed since ${member.bundle.outfile} was built `
+      add(`STALE BUNDLE — the source ${inp.path} has changed since ${bundle.outfile} was built `
         + `(source is now sha256 ${liveSha}, the bundle was built from ${inp.sha256}). `
         + `${REBUILD}, and commit the artifacts with the change.`);
   }
-  if (!Array.isArray(manifest.inputs) || manifest.inputs.length === 0)
+  if (!Array.isArray(inputs) || inputs.length === 0)
     add("its manifest records NO first-party inputs, so the dependency-free staleness arm would "
       + "pass over any source change at all. An empty input list is the emptiest possible green.");
 
@@ -1727,11 +1970,11 @@ export function verifyStatic(member) {
      other input, and catching it here rather than only in the byte-identity arm
      means it is caught even when that arm is skipped for some other member. */
   for (const inp of manifest.vendoredInputs || []) {
-    let live;
-    try { live = readFileSync(join(member.abs, inp.path)); } catch { continue; }
+    const live = (() => { try { return readFileSync(join(member.abs, inp.path)); } catch { return null; } })();
+    if (!live) continue;
     const liveSha = sha256(live);
     if (liveSha !== inp.sha256)
-      add(`STALE BUNDLE — the vendored input ${inp.path} has changed since ${member.bundle.outfile} `
+      add(`STALE BUNDLE — the vendored input ${inp.path} has changed since ${bundle.outfile} `
         + `was built (now sha256 ${liveSha}, the bundle was built from ${inp.sha256}). `
         + `${REBUILD}.`);
   }
@@ -1754,7 +1997,8 @@ export function verifyStatic(member) {
          library. The manifest is checked against the member's declaration, not
          only the other way round. */
   const declaredAssets = assetsOf(member);
-  const recordedAssets = Array.isArray(manifest.assets) ? manifest.assets : [];
+  const assetRecords = manifest.assets;
+  const recordedAssets = Array.isArray(assetRecords) ? assetRecords : [];
   for (const rel of declaredAssets) {
     const rec = recordedAssets.find((a) => a && a.path === rel);
     if (!rec) {
@@ -1762,8 +2006,7 @@ export function verifyStatic(member) {
         + `so nothing would notice those bytes changing. ${REBUILD}.`);
       continue;
     }
-    let live = null;
-    try { live = readFileSync(join(member.abs, rel)); } catch { /* named below */ }
+    const live = (() => { try { return readFileSync(join(member.abs, rel)); } catch { return null; } })();   /* absent: named below */
     if (!live) {
       add(`STALE BUNDLE — the declared upload asset ${rel} is MISSING. An upload part is committed, `
         + `so an absent one means this member cannot be installed or reproduced. `
@@ -1772,12 +2015,13 @@ export function verifyStatic(member) {
     }
     const liveSha = sha256(live);
     if (liveSha !== rec.sha256)
-      add(`STALE BUNDLE — the upload asset ${rel} has changed since ${member.bundle.outfile} was built `
+      add(`STALE BUNDLE — the upload asset ${rel} has changed since ${bundle.outfile} was built `
         + `(now sha256 ${liveSha}, the manifest records ${rec.sha256}). This member's stated fidelity `
         + `is a measurement OF these bytes, so a swap here is a claim about something else. `
         + `Re-measure the engine. ${REBUILD}.`);
-    if (rec.bytes != null && live.length !== rec.bytes)
-      add(`STALE BUNDLE — the upload asset ${rel} is ${live.length} B, the manifest says ${rec.bytes} B.`);
+    const recBytes = rec.bytes;
+    if (recBytes != null && live.length !== recBytes)
+      add(`STALE BUNDLE — the upload asset ${rel} is ${live.length} B, the manifest says ${recBytes} B.`);
   }
   for (const rec of recordedAssets)
     if (rec && !declaredAssets.includes(rec.path))
@@ -1786,9 +2030,9 @@ export function verifyStatic(member) {
         + `${REBUILD}.`);
 
   /* (c) the lock moved without a rebuild */
-  let liveLock = null;
-  try { liveLock = sha256(readFileSync(join(member.abs, "package-lock.json"))); } catch { /* none */ }
-  const recordedLock = manifest.lock ? manifest.lock.sha256 : null;
+  const liveLock = (() => { try { return sha256(readFileSync(join(member.abs, "package-lock.json"))); } catch { return null; } })();   /* none: null */
+  const lockRecord = manifest.lock;
+  const recordedLock = lockRecord ? lockRecord.sha256 : null;
   if (liveLock !== recordedLock)
     add(`STALE BUNDLE — package-lock.json has changed since the bundle was built `
       + `(lock is now ${liveLock ?? "absent"}, the bundle was built against ${recordedLock ?? "no lock"}). `
@@ -1797,17 +2041,19 @@ export function verifyStatic(member) {
   /* (d) the recipe the manifest records is the recipe the member declares, and
      the toolchain that built it is the toolchain in the tree. A bundle built by
      an esbuild no longer installed cannot be reproduced, which is staleness. */
-  const want = {
-    entry: member.bundle.entry,
-    format: RECIPE.format,
-    platform: RECIPE.platform,
-    external: [...(member.bundle.external || DEFAULT_EXTERNAL)],
-    absWorkingDir: "<member directory>",
-    esbuild: ESBUILD_VERSION,
-    ascii: asciiOf(member) ? { ...ASCII_RECIPE } : false,
-  };
-  for (const k of Object.keys(want)) {
-    const a = JSON.stringify(want[k]), b = JSON.stringify((manifest.recipe || {})[k]);
+  const r = manifest.recipe;
+  /** @type {Array<[string, unknown, unknown]>} each field of the recipe: the tree's, then the manifest's */
+  const fields = [
+    ["entry", bundle.entry, r ? r.entry : undefined],
+    ["format", RECIPE.format, r ? r.format : undefined],
+    ["platform", RECIPE.platform, r ? r.platform : undefined],
+    ["external", [...(bundle.external || DEFAULT_EXTERNAL)], r ? r.external : undefined],
+    ["absWorkingDir", "<member directory>", r ? r.absWorkingDir : undefined],
+    ["esbuild", ESBUILD_VERSION, r ? r.esbuild : undefined],
+    ["ascii", asciiOf(member) ? asciiRecord() : false, r ? r.ascii : undefined],
+  ];
+  for (const [k, wanted, recorded] of fields) {
+    const a = JSON.stringify(wanted), b = JSON.stringify(recorded);
     if (a !== b)
       add(`the committed manifest's recipe.${k} is ${b}, the tree says ${a}. `
         + (k === "esbuild"
@@ -1818,7 +2064,7 @@ export function verifyStatic(member) {
 
   /* (e) INSTALLABLE WITHOUT BUNDLING — the property `newgroup` needs, asserted
      against the committed bytes rather than against the build. */
-  const unresolved = unresolvableSpecifiers(committed.toString("utf8"), manifest.recipe?.external || DEFAULT_EXTERNAL);
+  const unresolved = unresolvableSpecifiers(committed.toString("utf8"), (r ? r.external : undefined) || DEFAULT_EXTERNAL);
   if (unresolved.length)
     add(`its committed artifact still imports ${unresolved.join(", ")}, which a one-part script `
       + "upload cannot resolve — so an installer that cannot bundle could not install it.");
@@ -1829,6 +2075,11 @@ export function verifyStatic(member) {
 /** Is the fresh-build arm runnable here? A member with no vendored inputs is
  *  always runnable; one with them needs those bytes present. Named rather than
  *  guessed, so a SKIP says exactly what is absent and what to do. */
+/**
+ * @param {Member} member
+ * @param {Manifest} manifest
+ * @returns {{ runnable: boolean, reason: string | null }}
+ */
 export function freshBuildRunnable(member, manifest) {
   const missing = (manifest.vendoredInputs || [])
     .filter((i) => { try { readFileSync(join(member.abs, i.path)); return false; } catch { return true; } })
@@ -1846,30 +2097,40 @@ export function freshBuildRunnable(member, manifest) {
  *  manifest names vendored inputs that are not installed here or the source
  *  does not build here, `{ checked: false, reason, findings: null, built: null }`: it could not check,
  *  and there is no empty list of findings a caller could read as fresh. */
+/**
+ * @param {Member} member
+ * @param {Uint8Array} committed
+ * @returns {Promise<FreshVerdict>}
+ */
 export async function verifyFresh(member, committed) {
   /* R24: nothing to rebuild, and that is neither stale nor fresh. */
   if (!isGuarded(member))
     return { checked: false, guarded: false, findings: null, built: null,
       reason: `${member.name}: not checked — a container member with no Worker bundle is not bundle-guarded (bundler R24)` };
-  let manifest = null;
-  try { manifest = JSON.parse(readFileSync(join(member.abs, member.bundle.manifest), "utf8")); }
+  /** @type {Manifest | null} */
+  let read = null;
+  try { read = /** @type {Manifest} the manifest this module wrote */ (JSON.parse(readFileSync(join(member.abs, bundleOf(member, "manifest").manifest), "utf8"))); }
   catch { /* no manifest to read: the build itself is the test of what is installed */ }
+  const manifest = read;
   if (manifest) {
     const { runnable, reason } = freshBuildRunnable(member, manifest);
     if (!runnable) return { checked: false, reason: `${member.name}: not checked — ${reason}`, findings: null, built: null };
   }
+  /** @type {Built} */
   let built;
   try { built = await buildMember(member, { write: false }); }
   catch (e) {
     /* A source that does not build here (a dependency not installed, with no
        manifest to say so first) is not a fresh artifact: say it was not checked. */
-    return { checked: false, reason: `${member.name}: not checked — a fresh build of ${member.bundle.entry} `
-      + `failed here: ${String(e.message).split("\n").slice(0, 2).join(" ")}`, findings: null, built: null };
+    return { checked: false, reason: `${member.name}: not checked — a fresh build of ${bundleOf(member, "entry").entry} `
+      + `failed here: ${String(messageOf(e)).split("\n").slice(0, 2).join(" ")}`, findings: null, built: null };
   }
+  const bundle = bundleOf(member, "entry");
+  /** @type {string[]} */
   const findings = [];
   if (Buffer.compare(built.bytes, committed) !== 0)
-    findings.push(`${member.name}: STALE BUNDLE — a fresh build of ${member.bundle.entry} is `
-      + `${built.bytes.length} B / sha256 ${built.sha256}, the committed ${member.bundle.outfile} is `
+    findings.push(`${member.name}: STALE BUNDLE — a fresh build of ${bundle.entry} is `
+      + `${built.bytes.length} B / sha256 ${built.sha256}, the committed ${bundle.outfile} is `
       + `${committed.length} B / sha256 ${sha256(committed)}. They must be byte-identical. `
       + `${REBUILD}, and commit the artifacts with the change.`);
 
@@ -1886,7 +2147,7 @@ export async function verifyFresh(member, committed) {
      half a lexical scan of the bytes cannot give honestly — it covers DYNAMIC
      imports too, and it cannot mistake a string for a statement. It is available
      only here, because it comes out of a build. */
-  const allowed = member.bundle.external || DEFAULT_EXTERNAL;
+  const allowed = bundle.external || DEFAULT_EXTERNAL;
   for (const out of Object.values(built.metafile.outputs || {}))
     for (const imp of out.imports || [])
       if (imp.external !== false && !isAllowed(allowed, imp.path))
@@ -1917,14 +2178,24 @@ export async function verifyFresh(member, committed) {
  * imports. Node's and workerd's V8 differ in flags and machines differ in speed, so the figure is a measurement to
  * watch and warn on, never a failure. */
 export const MIB = 1024 * 1024;
-export const BUDGET = Object.freeze({ sizeWarn: 32 * MIB, sizeFail: 48 * MIB, startWarnMs: 500 });
+/** @type {Budget} */
+const BUDGET_FIGURES = { sizeWarn: 32 * MIB, sizeFail: 48 * MIB, startWarnMs: 500 };
+export const BUDGET = Object.freeze(BUDGET_FIGURES);
 
+/** @type {(n: number) => string} */
 const mib = (n) => `${(n / MIB).toFixed(1)} MiB`;
 
 /** R31, size: `{bytes, verdict, finding, warning}` for an artifact of `bytes`: `fail` past `sizeFail` (a finding),
  *  `warn` past `sizeWarn` (a warning), else `ok`. "Past" is strictly greater. */
+/**
+ * @param {Member} member
+ * @param {number} bytes
+ * @param {Readonly<Budget>} [budget]
+ * @returns {{ bytes: number, verdict: string, finding: string | null, warning: string | null }}
+ */
 export function sizeVerdict(member, bytes, budget = BUDGET) {
-  const at = `${member.name}: its built artifact ${member.bundle ? member.bundle.outfile : ""} is ${bytes} B (${mib(bytes)})`;
+  const bundle = member.bundle;
+  const at = `${member.name}: its built artifact ${bundle ? bundle.outfile : ""} is ${bytes} B (${mib(bytes)})`;
   if (bytes > budget.sizeFail)
     return { bytes, verdict: "fail", warning: null,
       finding: `${at}, past the fleet's size budget of ${mib(budget.sizeFail)} (Cloudflare's limit is 64 MiB per Worker). `
@@ -1935,6 +2206,12 @@ export function sizeVerdict(member, bytes, budget = BUDGET) {
 }
 
 /** R31, start-up: `{ms, verdict, warning}`: `warn` past `startWarnMs`, else `ok`. Never a failure (see above). */
+/**
+ * @param {Member} member
+ * @param {number} ms
+ * @param {Readonly<Budget>} [budget]
+ * @returns {{ ms: number, verdict: string, warning: string | null }}
+ */
 export function startVerdict(member, ms, budget = BUDGET) {
   if (ms > budget.startWarnMs)
     return { ms, verdict: "warn",
@@ -1944,39 +2221,62 @@ export function startVerdict(member, ms, budget = BUDGET) {
 }
 
 /* The names an artifact imports statically from each `cloudflare:*` specifier, so its stub can export exactly them. */
+/**
+ * @param {string} text
+ * @returns {Map<string, Set<string>>}
+ */
 function cloudflareImports(text) {
-  const out = new Map();
+  /** @type {Map<string, Set<string>>} */
+  const out = new Map([]);
   for (const m of text.matchAll(/(?:^|[;}\n])\s*import\s*\{([^}]*)\}\s*from\s*["'](cloudflare:[^"']+)["']/g)) {
-    const names = out.get(m[2]) || new Set();
-    for (const part of m[1].split(",")) {
-      const name = part.trim().split(/\s+as\s+/)[0].trim();
+    const spec = m[2] ?? "";
+    /** @type {Set<string>} */
+    const names = out.get(spec) || new Set([]);
+    for (const part of (m[1] ?? "").split(",")) {
+      const name = (part.trim().split(/\s+as\s+/)[0] ?? "").trim();
       if (name) names.add(name);
     }
-    out.set(m[2], names);
+    out.set(spec, names);
   }
   return out;
 }
 
 let freshImport = 0;
 
+/** A member's artifact path: its bundle's `outfile`, or the bundle itself where it has none.
+ * @param {Member} member
+ * @returns {string | null | undefined} */
+function outfileOf(member) {
+  const b = member.bundle;
+  return b && b.outfile;
+}
+
 /** R31: the time to evaluate a member's built artifact's global scope, by a fresh import in this process.
  *  `{measured: true, ms}`, or `{measured: false, reason}` when the artifact cannot be read or its import throws (the
  *  reason names it). `artifact` overrides the path (member-relative); nothing is written. */
-export async function measureStart(member, { artifact = member.bundle && member.bundle.outfile } = {}) {
+/**
+ * @param {Member} member
+ * @param {{ artifact?: string | null }} [opts]
+ * @returns {Promise<StartMeasured>}
+ */
+export async function measureStart(member, { artifact = outfileOf(member) } = {}) {
   const { registerHooks } = await import("node:module");
-  const abs = join(member.abs, artifact);
+  const abs = join(member.abs, /** @type {string} a path, as join requires */ (artifact));
+  /** @type {string} */
   let text;
   try { text = readFileSync(abs, "utf8"); }
-  catch (e) { return { measured: false, reason: `${member.name}: its built artifact ${artifact} cannot be read (${e.message})` }; }
+  catch (e) { return { measured: false, reason: `${member.name}: its built artifact ${artifact} cannot be read (${messageOf(e)})` }; }
   const artifactUrl = pathToFileURL(abs).href;
   const url = `${artifactUrl}?r31-fresh=${process.pid}-${++freshImport}-${Date.now()}`;
-  const stubs = new Map();
+  /** @type {Map<string, string>} */
+  const stubs = new Map([]);
   for (const [spec, names] of cloudflareImports(text)) {
     const body = [...names].map((n) => (n === "env" ? `export const env = {};` : `export class ${n} {}`)).join("\n");
     stubs.set(spec, `data:text/javascript,${encodeURIComponent(body || "export {};")}`);
   }
   /* The upload parts, compiled and read BEFORE the clock starts, as the platform has them before the global scope runs. */
-  const parts = new Map();
+  /** @type {Map<string, unknown>} */
+  const parts = new Map([]);
   const key = `__bundlerR31Parts${freshImport}`;
   try {
     for (const rel of assetsOf(member)) {
@@ -1985,11 +2285,21 @@ export async function measureStart(member, { artifact = member.bundle && member.
         rel.endsWith(".wasm") ? new WebAssembly.Module(bytes) : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length));
     }
   } catch (e) {
-    return { measured: false, reason: `${member.name}: an upload part cannot be read or compiled (${e.message})` };
+    return { measured: false, reason: `${member.name}: an upload part cannot be read or compiled (${messageOf(e)})` };
   }
   globalThis[key] = Object.fromEntries(parts);
-  const fromArtifact = (ctx) => typeof ctx.parentURL === "string" && ctx.parentURL.split("?")[0] === artifactUrl;
+  /** @type {(ctx: HookContext) => boolean} */
+  const fromArtifact = (ctx) => {
+    const parent = ctx.parentURL;
+    return typeof parent === "string" && parent.split("?")[0] === artifactUrl;
+  };
   const hooks = registerHooks({
+    /**
+     * @param {string} spec
+     * @param {HookContext} ctx
+     * @param {(spec: string, ctx: HookContext) => unknown} next
+     * @returns {unknown}
+     */
     resolve(spec, ctx, next) {
       if (fromArtifact(ctx)) {
         if (stubs.has(spec)) return { url: stubs.get(spec), shortCircuit: true };
@@ -1998,6 +2308,12 @@ export async function measureStart(member, { artifact = member.bundle && member.
       }
       return next(spec, ctx);
     },
+    /**
+     * @param {string} u
+     * @param {HookContext} ctx
+     * @param {(u: string, ctx: HookContext) => unknown} next
+     * @returns {unknown}
+     */
     load(u, ctx, next) {
       if (u.startsWith("bundler-r31-part:")) {
         const target = decodeURIComponent(u.slice("bundler-r31-part:".length));
@@ -2012,7 +2328,7 @@ export async function measureStart(member, { artifact = member.bundle && member.
     await import(url);
     return { measured: true, ms: performance.now() - t0 };
   } catch (e) {
-    return { measured: false, reason: `${member.name}: a fresh import of ${artifact} threw: ${String(e && e.message).split("\n")[0]}` };
+    return { measured: false, reason: `${member.name}: a fresh import of ${artifact} threw: ${firstLine(String(e && messageOf(e)))}` };
   } finally {
     hooks.deregister();
     delete globalThis[key];
@@ -2021,20 +2337,32 @@ export async function measureStart(member, { artifact = member.bundle && member.
 
 /** R31, the whole check for one member: its size and its start-up time against `budget`. `findings` are failures;
  *  `warnings` are printed, never failed; `line` is the one line the gate prints for the member. */
+/**
+ * @param {Member} member
+ * @param {Readonly<Budget>} [budget]
+ * @returns {Promise<{ name: string, bytes: number | null, size: string | null, ms: number | null, start: string | null,
+ *   findings: string[], warnings: string[], line: string }>}
+ */
 export async function budgetReport(member, budget = BUDGET) {
-  const findings = [], warnings = [];
-  let bytes = null;
-  try { bytes = readFileSync(join(member.abs, member.bundle.outfile)).length; }
-  catch (e) { findings.push(`${member.name}: its built artifact ${member.bundle.outfile} cannot be read (${e.message}), so its size is unmeasured`); }
+  /** @type {string[]} */
+  const findings = [];
+  /** @type {string[]} */
+  const warnings = [];
+  const bytes = (() => {
+    try { return readFileSync(join(member.abs, bundleOf(member, "outfile").outfile)).length; }
+    catch (e) { findings.push(`${member.name}: its built artifact ${bundleOf(member, "outfile").outfile} cannot be read (${messageOf(e)}), so its size is unmeasured`); return null; }
+  })();
   const size = bytes === null ? null : sizeVerdict(member, bytes, budget);
-  if (size && size.finding) findings.push(size.finding);
-  if (size && size.warning) warnings.push(size.warning);
+  const sizeFinding = size ? size.finding : null, sizeWarning = size ? size.warning : null;
+  if (sizeFinding) findings.push(sizeFinding);
+  if (sizeWarning) warnings.push(sizeWarning);
   const run = await measureStart(member);
   const start = run.measured ? startVerdict(member, run.ms, budget) : null;
   if (!run.measured) findings.push(`${run.reason}, so its start-up time is unmeasured`);
-  if (start && start.warning) warnings.push(start.warning);
-  const line = `${member.name}: ${bytes === null ? "size unmeasured" : `${bytes} B (${mib(bytes)}) ${size.verdict}`} · `
+  const startWarning = start ? start.warning : null;
+  if (startWarning) warnings.push(startWarning);
+  const line = `${member.name}: ${bytes === null || size === null ? "size unmeasured" : `${bytes} B (${mib(bytes)}) ${size.verdict}`} · `
     + `${start ? `global scope ${start.ms.toFixed(0)} ms ${start.verdict}` : "start-up unmeasured"}`;
-  return { name: member.name, bytes, size: size && size.verdict, ms: start ? start.ms : null, start: start && start.verdict,
+  return { name: member.name, bytes, size: size ? size.verdict : null, ms: start ? start.ms : null, start: start ? start.verdict : null,
     findings, warnings, line };
 }
