@@ -6,7 +6,7 @@ import { expandRecurrence, fiscalPeriod, reasonText } from "../../../src/civil-t
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
 import { firstView, testView, day, minute, zoneOf, need, refusal, open, coded, answered } from "./helpers.mjs";
 /** @import { Expansion, FiscalPeriod } from "../../../src/civil-time/recurrence.mjs" */
-/** @import { When, Conflict } from "../../../src/civil-time/kinds.mjs" */
+/** @import { When, Conflict, Reason } from "../../../src/civil-time/kinds.mjs" */
 
 const LA = zoneOf(firstView()), HFX = zoneOf(testView());
 /** @type {(rrule: string, dtstart: When, zone: string, from: When, to: When) => Expansion} */
@@ -141,20 +141,26 @@ test("R30 R20 R21 the reasons of expandRecurrence and fiscalPeriod are {key, var
   const t = testView();
   const window = open(expandRecurrence({ rrule: "FREQ=WEEKLY", dtstart: "2026-10-06T18:00", zone: LA, from: "2026-10-01", to: { value: "2026-12-01/..", precision: "edtf", zone: LA } }));
   assert.equal(window.undetermined, true);
+  /** @type {Reason[]} */
+  const whys = [];
   const whyWindow = window.why;
+  whys.push(whyWindow);
   assert.deepEqual(whyWindow, { key: "civil-time.window_open_end", vars: {} });
   const openDate = open(fiscalPeriod({ date: { value: "2026/..", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t }));
   const whyOpenDate = openDate.why;
+  whys.push(whyOpenDate);
   assert.deepEqual(whyOpenDate, { key: "civil-time.date_open_unknown", vars: {} });
   const across = open(fiscalPeriod({ date: { value: "2026", precision: "edtf", zone: HFX }, body: "Port Ellery Selectboard", view: t }));
   const whyAcross = across.why;
+  whys.push(whyAcross);
   assert.deepEqual(whyAcross, { key: "civil-time.spans_two_fiscal", vars: { value: "2026", label: "FY2025-26", label_2: "FY2026-27" } });
   const bad = testView(); bad.fiscal_year = [{ body: "Odd Body", start: "13-40", named_by: "start" }];
   const form = coded(fiscalPeriod({ date: day("2026-10-05", HFX), body: "Odd Body", view: bad }));
   assert.equal(form.code, "FACT_INVALID");
   const whyForm = form.why;
+  whys.push(whyForm);
   assert.deepEqual(whyForm, { key: "civil-time.recurrence.fiscal_year_form", vars: { body: "Odd Body" } });
-  for (const why of [whyWindow, whyOpenDate, whyAcross, whyForm]) {
+  for (const why of whys) {
     for (const v of Object.values(why.vars)) assert.equal(typeof v, "string");
     assert.ok(reasonText(why).length > 5, why.key);
     if (hasWord(why.key)) assert.equal(word(why.key, why.vars), reasonText(why));
