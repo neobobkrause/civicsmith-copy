@@ -8,7 +8,8 @@ import {
   captureSubresources, normalizeAddress, normalizeCitation, originOf, linkWrapper, LINK_TYPES,
   SUBRESOURCE_CAP, SUBRESOURCE_MAX, SUBRESOURCE_BUDGET,
 } from "../../../src/subresources.mjs";
-/** @import { CaptureArgs, CaptureResult, FetchAnswer, Link, Meter, ResumeState, SiteRecord, SubRecord } from "../../../src/subresources.mjs" */
+/** @import { CaptureArgs, CaptureResult, Link, ResumeState, SiteRecord, SubRecord } from "../../../src/subresources.mjs" */
+/** @import { Meter } from "../../../src/cpu.mjs" */
 
 const BASE = "https://example.org/docs/page.html";
 const ORIGIN = "https://example.org";

@@ -34,6 +34,7 @@
 
 import { makeMeter } from "./cpu.mjs";
 import { localize } from "./setup-words/index.mjs";
+/** @import { Meter, MeterReport } from "./cpu.mjs" */
 
 /**
  * @typedef {Object} Ref  a reference the page makes to something it needs to render
@@ -1550,7 +1551,6 @@ export function readLinkWrapper(v) {
 
 
 
-/** @typedef {ReturnType<typeof makeMeter>} Meter  the meter `runtime-limits` makes */
 /**
  * @typedef {Object} CaptureArgs
  * @property {string} html the primary page's text
@@ -1593,7 +1593,7 @@ export function readLinkWrapper(v) {
  * @property {boolean} truncated
  * @property {boolean} budget_exhausted
  * @property {boolean} complete
- * @property {ReturnType<Meter["report"]>} compute
+ * @property {MeterReport} compute
  * @property {{ reused: number, fetched: number, not_reused: { url: string, kind: string, why: string | undefined }[], fresh_window_ms: number, min_documents: number, note: string }} reuse
  * @property {FetchSpread} part_fetch_spread
  * @property {number} outstanding
