@@ -156,15 +156,62 @@ const RULING_REF = /^(?:D-\d+|DEC-\d+|K\d+)(?: [^\s,;]+)?$/;
 const K_REF = /^K\d+(?: [^\s,;]+)?$/;
 /* R89: a dated measurement entry, so the day read can be shown with the pointer. */
 const DATED_REF = /^(\d{4}-\d{2}-\d{2})(?: [^\s,;]+)?$/;
+/** The parts of a basis string, each trimmed (R2, R44).
+ *  @param {string} b
+ *  @returns {string[]} */
 const basisParts = (b) => b.split(/[,;]\s*/).map((x) => x.trim());
 
+/** A value read from a profile or from a caller before `validate` has judged it: any value the language has.
+ *  @typedef {object | string | number | bigint | boolean | symbol | null | undefined} Value */
+/** A plain object read from a profile or from a caller, whose fields are not yet judged: the module's own reading of a
+ *  value before `validate` has named its shape.
+ *  @typedef {{ [key: string]: Value }} Fields */
+/** A list read from a profile or from a caller, whose entries are not yet judged: the module's own reading of a list
+ *  before `validate` has named its entries' shape.
+ *  @typedef {Value[] & { readonly judged?: never }} Entries */
+
+/** Whether `v` is a plain object (not null, not a list).
+ *  @param {unknown} v
+ *  @returns {v is Fields} */
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-const isStr = (v) => typeof v === "string" && v.trim().length > 0;
-const isPosInt = (v) => Number.isInteger(v) && v > 0;
+/** Whether `v` is a list.
+ *  @param {unknown} v
+ *  @returns {v is Entries} */
+const isList = (v) => Array.isArray(v);
+/** `v` when it is a list, else an empty list.
+ *  @param {unknown} v
+ *  @returns {Entries} */
+const listOr = (v) => (isList(v) ? v : []);
+/** Whether `v` is a string with something other than spaces in it.
+ *  @param {unknown} v
+ *  @returns {boolean} */
+const isStr = (v) => { const s = typeof v === "string" ? v : null; return s !== null && s.trim().length > 0; };
+/** Whether `v` is one of the strings of `list`: `list.includes(v)`, read for a value of any kind.
+ *  @param {readonly string[]} list
+ *  @param {unknown} v
+ *  @returns {boolean} */
+const oneOf = (list, v) => typeof v === "string" && list.includes(v);
+/** Whether `v` is one of the numbers of `list`: `list.includes(v)`, read for a value of any kind.
+ *  @param {readonly number[]} list
+ *  @param {unknown} v
+ *  @returns {boolean} */
+const oneOfNumbers = (list, v) => typeof v === "number" && list.includes(v);
+/** Whether `v` is a positive integer.
+ *  @param {unknown} v
+ *  @returns {boolean} */
+const isPosInt = (v) => typeof v === "number" && Number.isInteger(v) && v > 0;
+/** Whether `o` holds `k` as its own field.
+ *  @param {object} o
+ *  @param {string} k
+ *  @returns {boolean} */
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-/** A four-digit year. */
-const isYear = (v) => Number.isInteger(v) && v >= 1000 && v <= 9999;
-/** A real calendar date written `YYYY-MM-DD` (R33). */
+/** A four-digit year.
+ *  @param {unknown} v
+ *  @returns {boolean} */
+const isYear = (v) => typeof v === "number" && Number.isInteger(v) && v >= 1000 && v <= 9999;
+/** A real calendar date written `YYYY-MM-DD` (R33).
+ *  @param {unknown} v
+ *  @returns {boolean} */
 function isDate(v) {
   const m = typeof v === "string" && DATE_RE.exec(v);
   if (!m) return false;
@@ -173,39 +220,58 @@ function isDate(v) {
   const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
   return days !== undefined && d >= 1 && d <= days;
 }
-/** An IANA time-zone name the runtime's zone database knows (R41). `Intl` reads no clock, store or network. */
+/** An IANA time-zone name the runtime's zone database knows (R41). `Intl` reads no clock, store or network.
+ *  @param {unknown} v
+ *  @returns {boolean} */
 function isTimeZone(v) {
   if (typeof v !== "string" || !TZ_RE.test(v)) return false;
   try { new Intl.DateTimeFormat("en", { timeZone: v }); return true; } catch { return false; }
 }
-/** The epoch milliseconds of an instant written with its offset, or null (R48). Reads no clock. */
+/** The epoch milliseconds of an instant written with its offset, or null (R48). Reads no clock.
+ *  @param {unknown} v
+ *  @returns {number | null} */
 function instant(v) {
-  const m = typeof v === "string" && INSTANT_RE.exec(v);
+  if (typeof v !== "string") return null;
+  const m = INSTANT_RE.exec(v);
   if (!m || !isDate(m[1])) return null;
   const t = Date.parse(v);
   return Number.isNaN(t) ? null : t;
 }
-/** A local date-time with no zone, on a real date (R54). */
+/** A local date-time with no zone, on a real date (R54).
+ *  @param {unknown} v
+ *  @returns {boolean} */
 const isLocalDateTime = (v) => { const m = typeof v === "string" && LOCAL_DT_RE.exec(v); return !!m && isDate(m[1]); };
-/** A month and day `MM-DD` that some year has (R49). */
+/** A month and day `MM-DD` that some year has (R49).
+ *  @param {unknown} v
+ *  @returns {boolean} */
 const isMonthDay = (v) => { const m = typeof v === "string" && MMDD_RE.exec(v); return !!m && isDate(`2000-${m[1]}-${m[2]}`); };
-/** Minutes since midnight of an `HH:MM`, or null (R42). */
+/** Minutes since midnight of an `HH:MM`, or null (R42).
+ *  @param {unknown} v
+ *  @returns {number | null} */
 function minutes(v) {
   const m = typeof v === "string" && HHMM_RE.exec(v);
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 /** One well-formed BCP 47 language tag (R37, N77): the one reading `validate` gives `locale.value`, exported for its
- *  callers (instance-setup R64; N700). `Intl` reads no clock, store or network. Never throws. */
+ *  callers (instance-setup R64; N700). `Intl` reads no clock, store or network. Never throws.
+ *  @param {unknown} v
+ *  @returns {boolean} */
 export function isLocale(v) {
   try {
-    if (!isStr(v) || /\s|,/.test(v)) return false;
+    if (typeof v !== "string" || !isStr(v) || /\s|,/.test(v)) return false;
     return Intl.getCanonicalLocales(v).length === 1;
   } catch { return false; }
 }
-/** A locale's canonical form, so `es-mx` and `es-MX` name one language (R72's key). */
-const localeKey = (v) => { try { return Intl.getCanonicalLocales(v)[0]; } catch { return String(v); } };
+/** A locale's canonical form, so `es-mx` and `es-MX` name one language (R72's key). Read only for a value `isLocale`
+ *  accepts, a string.
+ *  @param {unknown} v
+ *  @returns {string | undefined} */
+const localeKey = (v) => { try { return Intl.getCanonicalLocales(String(v))[0]; } catch { return String(v); } };
 
-/** Whether `b` is a basis a profile may carry. `TEST` only in a test profile (R2). */
+/** Whether `b` is a basis a profile may carry. `TEST` only in a test profile (R2).
+ *  @param {unknown} b
+ *  @param {boolean} [test]
+ *  @returns {boolean} */
 export function basisValid(b, test = false) {
   if (typeof b !== "string") return false;
   if (b === "UNMEASURED") return true;
@@ -214,30 +280,51 @@ export function basisValid(b, test = false) {
   return parts.length > 0 && parts.every((p) => BASIS_REF.test(p.trim()));
 }
 
-/** A pattern `{re, flags?}` compiled, or null when it is not one (R2). */
+/** A pattern `{re, flags?}` compiled, or null when it is not one (R2).
+ *  @param {unknown} p
+ *  @returns {RegExp | null} */
 function compile(p) {
-  if (!isObj(p) || typeof p.re !== "string") return null;
-  for (const k of Object.keys(p)) if (k !== "re" && k !== "flags") return null;
-  const flags = own(p, "flags") ? p.flags : "";
-  if (typeof flags !== "string" || !/^[iu]*$/.test(flags) || new Set(flags).size !== flags.length) return null;
-  try { return new RegExp(p.re, flags); } catch { return null; }
+  const o = isObj(p) ? p : null;
+  if (!o) return null;
+  const re = o.re;
+  if (typeof re !== "string") return null;
+  for (const k of Object.keys(o)) if (k !== "re" && k !== "flags") return null;
+  const given = own(o, "flags") ? o.flags : "";
+  const flags = typeof given === "string" ? given : null;
+  if (flags === null || !/^[iu]*$/.test(flags) || new Set(flags).size !== flags.length) return null;
+  try { return new RegExp(re, flags); } catch { return null; }
 }
-/** How many capture groups a compiled pattern has. */
-const groupCount = (re) => new RegExp(`${re.source}|`, re.flags).exec("").length - 1;
-/** The names of a compiled pattern's named groups (R63). */
-const groupNames = (re) => Object.keys(new RegExp(`${re.source}|`, re.flags).exec("").groups || {});
+/** The match of the empty string by a compiled pattern widened to match it, which always matches.
+ *  @param {RegExp} re
+ *  @returns {RegExpExecArray | null} */
+const emptyMatch = (re) => new RegExp(`${re.source}|`, re.flags).exec("");
+/** How many capture groups a compiled pattern has.
+ *  @param {RegExp} re
+ *  @returns {number} */
+const groupCount = (re) => (emptyMatch(re)?.length ?? 0) - 1;
+/** The names of a compiled pattern's named groups (R63).
+ *  @param {RegExp} re
+ *  @returns {string[]} */
+const groupNames = (re) => Object.keys(emptyMatch(re)?.groups || {});
 
 /* ------------------------------------------------------------------------------------------------ */
 /* Reading a value in a form (R3): used by validate to judge a crosswalk's pairs. The same meaning   */
 /* `id-spaces` gives it: clean, then the pattern, then the normal form from the parts.              */
 
+/** A value read in a form that `validate` has judged whole (its pattern compiles and its normal parts and clean are
+ *  R3's), or null when the value is not in the form.
+ *  @param {Fields} form
+ *  @param {unknown} raw
+ *  @param {unknown[]} [prefixes]
+ *  @returns {string | null} */
 function applyForm(form, raw, prefixes = []) {
   const re = compile(form.pattern);
   if (!re) return null;
   let v = String(raw == null ? "" : raw).trim();
+  /** @type {Fields} */
   const c = isObj(form.clean) ? form.clean : {};
   for (const p of prefixes) { const r = compile(p); if (r) v = v.replace(new RegExp(`^(?:${r.source})`, r.flags), ""); }
-  for (const p of Array.isArray(c.strip) ? c.strip : []) {
+  for (const p of listOr(c.strip)) {
     const r = compile(p);
     if (r) v = v.replace(new RegExp(`^(?:${r.source})`, r.flags), "");
   }
@@ -248,30 +335,43 @@ function applyForm(form, raw, prefixes = []) {
   const m = re.exec(v);
   if (!m) return null;
   let out = "";
-  for (const part of form.normal) {
+  for (const part of listOr(form.normal)) {
     if (typeof part === "string") { out += part; continue; }
-    let g = m[part.group];
-    if (g == null) g = own(part, "default") ? part.default : "";
-    if (part.unpad) g = g.replace(/^0+(?=.)/, "");
-    if (part.upper) g = g.toUpperCase();
-    out += g;
+    const q = isObj(part) ? part : null;
+    if (!q) continue;
+    const group = q.group;
+    const matched = typeof group === "number" ? m[group] : undefined;
+    const dflt = own(q, "default") ? q.default : "";
+    const g0 = matched ?? (typeof dflt === "string" ? dflt : "");
+    const g1 = q.unpad ? g0.replace(/^0+(?=.)/, "") : g0;
+    out += q.upper ? g1.toUpperCase() : g1;
   }
   return out;
 }
 
 
-/* R60: a MemberType entry's key, its type and the body it is for ("" for all bodies). */
-const memberTypeKey = (e) => `${isObj(e) ? String(e.member_type) : ""}\u0000${isObj(e) && typeof e.organisation === "string" ? e.organisation : ""}`;
+/** R60: a MemberType entry's key, its type and the body it is for ("" for all bodies).
+ *  @param {unknown} e
+ *  @returns {string} */
+const memberTypeKey = (e) => { const o = isObj(e) ? e : null; return `${o ? String(o.member_type) : ""}\u0000${o && typeof o.organisation === "string" ? o.organisation : ""}`; };
 
-/* An office a holiday entry names, as a key: a counterparty role or a kind's venue (R43). */
+/** An office a holiday entry names, as a key: a counterparty role or a kind's venue (R43).
+ *  @param {unknown} o
+ *  @returns {string} */
 function officeKey(o) {
   if (typeof o === "string") return `role:${o}`;
-  if (isObj(o) && typeof o.venue === "string") return `venue:${o.venue}`;
+  const x = isObj(o) ? o : null;
+  const v = x ? x.venue : undefined;
+  if (typeof v === "string") return `venue:${v}`;
   return `?:${JSON.stringify(o)}`;
 }
-/* The closure list a holiday entry belongs to ("" for the office calendar, R47). */
-const listKey = (h) => (isObj(h) && typeof h.list === "string" ? h.list : "");
-/* The key of an `offices` list: its offices, in no order ("" for every office). */
-const officesKey = (offices) => (Array.isArray(offices) ? [...new Set(offices.map(officeKey))].sort().join("\u0001") : "");
+/** The closure list a holiday entry belongs to ("" for the office calendar, R47).
+ *  @param {unknown} h
+ *  @returns {string} */
+const listKey = (h) => { const x = isObj(h) ? h : null; const l = x ? x.list : undefined; return typeof l === "string" ? l : ""; };
+/** The key of an `offices` list: its offices, in no order ("" for every office).
+ *  @param {unknown} offices
+ *  @returns {string} */
+const officesKey = (offices) => { const xs = isList(offices) ? offices : null; return xs ? [...new Set(xs.map(officeKey))].sort().join("\u0001") : ""; };
 
-export { DATA_VOCABULARY, LEVELLED_KINDS, FISCAL_PLACEHOLDERS, RRULE_FREQS, POINTER_HOW, POINTER_NAME_MAX, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, REVIEW_REQUIRED, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isStr, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, localeKey, compile, groupCount, groupNames, applyForm, memberTypeKey, officeKey, listKey, officesKey, POINTER_DOES_MAX, PHRASE_MAX };
+export { DATA_VOCABULARY, LEVELLED_KINDS, FISCAL_PLACEHOLDERS, RRULE_FREQS, POINTER_HOW, POINTER_NAME_MAX, EVIDENCE_STANDARD_MAX, VENUE_FACT_MAX, TEMPLATE_NAME_MAX, PHRASE_MIN, REVIEW_REQUIRED, ID_RE, KIND_RE, HEX64, DATE_RE, TEMPLATE_ID_RE, HHMM_RE, MMDD_RE, INSTANT_RE, LOCAL_DT_RE, TZ_RE, BASIS_REF, MEASUREMENT_REF, RULING_REF, K_REF, DATED_REF, basisParts, isObj, isList, listOr, isStr, oneOf, oneOfNumbers, isPosInt, own, isYear, isDate, isTimeZone, instant, isLocalDateTime, isMonthDay, minutes, localeKey, compile, groupCount, groupNames, applyForm, memberTypeKey, officeKey, listKey, officesKey, POINTER_DOES_MAX, PHRASE_MAX };
