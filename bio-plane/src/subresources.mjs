@@ -35,6 +35,292 @@
 import { makeMeter } from "./cpu.mjs";
 import { localize } from "./setup-words/index.mjs";
 
+/**
+ * @typedef {Object} Ref  a reference the page makes to something it needs to render
+ * @property {string} ref the reference as written, trimmed
+ * @property {string} kind stylesheet, css-asset, font, icon, image, media or script
+ * @property {string} where the element and attribute it was found in
+ * @property {string} region body or furniture
+ * @property {string} region_basis what made it that region
+ * @property {string} [family] "srcset", for a member of a responsive family
+ * @property {number} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {boolean} [collapsed] a family member that is not the one fetched
+ */
+/**
+ * @typedef {Object} RefExtra  what a responsive family adds to a reference
+ * @property {string} [family]
+ * @property {number} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {boolean} [collapsed]
+ */
+/**
+ * @typedef {Object} SrcsetCandidate
+ * @property {string} url
+ * @property {string} descriptor
+ */
+/**
+ * @typedef {{ ok: true, url: string } | { ok: false, url: string, reason: string, scheme?: string, final?: true }} Classified
+ *   where a reference resolves (its address without the fragment), or why it is not fetched: REFUSED_SCHEME (with the
+ *   scheme), UNRESOLVABLE (final: the same bytes fail the same way on every call, R36) or REFUSED_LOCATOR
+ */
+/**
+ * @typedef {Object} Origin
+ * @property {string} origin same_host, same_site, third_party or unknown
+ * @property {string | null} host
+ * @property {true} [approximate]
+ */
+/**
+ * @typedef {Object} PolicyRef  what the fetch policy reads of a reference
+ * @property {string} kind
+ * @property {string | undefined} [region]
+ * @property {string | undefined} [region_basis]
+ * @property {boolean} [collapsed]
+ * @property {number} [family_size]
+ */
+/**
+ * @typedef {{ fetch: true, why: string } | { fetch: false, reason: string, detail: string }} Policy
+ *   whether a reference is fetched, and why, or why not
+ */
+/**
+ * @typedef {Object} SiteRecord  what the host has served before, as the caller's `siteLookup` hands it back
+ * @property {string} [sha256]
+ * @property {number} [bytes]
+ * @property {string} [content_type]
+ * @property {string} [last_fetched]
+ * @property {string | null} [last_fetched_by]
+ * @property {string} [stable_since]
+ * @property {number} [documents]
+ * @property {number} [documents_undetermined]
+ * @property {number} [changes]
+ */
+/**
+ * @typedef {Object} ReuseDecision
+ * @property {boolean} reuse
+ * @property {string} [why]
+ * @property {number} [age_ms]
+ * @property {number} [fetched_age_ms]
+ * @property {number | null} [stable_for_ms]
+ * @property {number} [changes]
+ */
+/**
+ * @typedef {Object} Rewrite  one reference a stylesheet names, and the bytes it resolves to
+ * @property {string} ref
+ * @property {string | null | undefined} sha256
+ */
+/**
+ * @typedef {Object} SubRecord  one reference's record
+ * @property {string} url
+ * @property {string} kind
+ * @property {string} [via]
+ * @property {string} [from]
+ * @property {number} [depth]
+ * @property {string} [region]
+ * @property {string} [region_basis]
+ * @property {string} [origin]
+ * @property {string | null} [host]
+ * @property {true} [approximate]
+ * @property {string} [family]
+ * @property {number | undefined} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {string} [considered_at]
+ * @property {boolean} ok
+ * @property {number | null} [status]
+ * @property {string} [reason]
+ * @property {boolean} [final]
+ * @property {string} [scheme]
+ * @property {string | undefined} [detail]
+ * @property {boolean} [fetched]
+ * @property {number} [cap]
+ * @property {number} [budgetBytes]
+ * @property {string | undefined} [sha256]
+ * @property {number | undefined} [bytes]
+ * @property {number} [maxBytes]
+ * @property {string} [content_type]
+ * @property {boolean} [existed]
+ * @property {boolean} [fetched_this_capture]
+ * @property {string | null} [reused_from]
+ * @property {string | undefined} [reused_from_fetched_at]
+ * @property {string | undefined} [reused_stable_since]
+ * @property {number | undefined} [reused_seen_in_documents]
+ * @property {string} [fetch_reason]
+ * @property {string} [fetched_at]
+ * @property {boolean} [css]
+ * @property {Rewrite[]} [rewrite]
+ */
+/**
+ * @typedef {Object} SubRecordPart  any part of a record, each member as the record has it
+ * @property {string} [url]
+ * @property {string} [kind]
+ * @property {string} [via]
+ * @property {string} [from]
+ * @property {number} [depth]
+ * @property {string} [region]
+ * @property {string} [region_basis]
+ * @property {string} [origin]
+ * @property {string | null} [host]
+ * @property {true} [approximate]
+ * @property {string} [family]
+ * @property {number | undefined} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {string} [considered_at]
+ * @property {boolean} [ok]
+ * @property {number | null} [status]
+ * @property {string} [reason]
+ * @property {boolean} [final]
+ * @property {string} [scheme]
+ * @property {string | undefined} [detail]
+ * @property {boolean} [fetched]
+ * @property {number} [cap]
+ * @property {number} [budgetBytes]
+ * @property {string | undefined} [sha256]
+ * @property {number | undefined} [bytes]
+ * @property {number} [maxBytes]
+ * @property {string} [content_type]
+ * @property {boolean} [existed]
+ * @property {boolean} [fetched_this_capture]
+ * @property {string | null} [reused_from]
+ * @property {string | undefined} [reused_from_fetched_at]
+ * @property {string | undefined} [reused_stable_since]
+ * @property {number | undefined} [reused_seen_in_documents]
+ * @property {string} [fetch_reason]
+ * @property {string} [fetched_at]
+ * @property {boolean} [css]
+ * @property {Rewrite[]} [rewrite]
+ */
+/**
+ * @typedef {Object} Stem  what every record of one reference begins with
+ * @property {string} url
+ * @property {string} kind
+ * @property {string} via
+ * @property {string} from
+ * @property {number} depth
+ * @property {string} region
+ * @property {string} region_basis
+ * @property {string} origin
+ * @property {string | null} host
+ * @property {true} [approximate]
+ * @property {string} [family]
+ * @property {number | undefined} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {string} considered_at
+ * @property {boolean} [ok]
+ * @property {number | null} [status]
+ * @property {string} [reason]
+ * @property {boolean} [final]
+ * @property {string} [scheme]
+ * @property {string | undefined} [detail]
+ * @property {boolean} [fetched]
+ * @property {number} [cap]
+ * @property {number} [budgetBytes]
+ * @property {string | undefined} [sha256]
+ * @property {number | undefined} [bytes]
+ * @property {number} [maxBytes]
+ * @property {string} [content_type]
+ * @property {boolean} [existed]
+ * @property {boolean} [fetched_this_capture]
+ * @property {string | null} [reused_from]
+ * @property {string | undefined} [reused_from_fetched_at]
+ * @property {string | undefined} [reused_stable_since]
+ * @property {number | undefined} [reused_seen_in_documents]
+ * @property {string} [fetch_reason]
+ * @property {string} [fetched_at]
+ * @property {boolean} [css]
+ * @property {Rewrite[]} [rewrite]
+ */
+/**
+ * @typedef {Object} QueueItem  a reference waiting its turn to be fetched
+ * @property {string} ref
+ * @property {string} kind
+ * @property {string} where
+ * @property {string | undefined} [region]
+ * @property {string | undefined} [region_basis]
+ * @property {string} [family]
+ * @property {number} [family_size]
+ * @property {string} [evidentiary_prior]
+ * @property {boolean} [collapsed]
+ * @property {number} depth
+ * @property {string} from
+ * @property {string} against the address it is relative to
+ * @property {SubRecord | undefined} [cssOwner] the stylesheet's record that names it
+ * @property {number | null} [cssOwnerIdx] that record's place in `records`, in a resumed queue
+ * @property {string} [retryUrl]
+ */
+/** @typedef {{ push: (item: QueueItem) => void, readonly length: number, shift: () => QueueItem | undefined }} Queue */
+/**
+ * @typedef {Object} Link  one outbound link the page carries
+ * @property {string} ref
+ * @property {string} type anchor, intra, deferred or refused
+ * @property {string | null} address
+ * @property {string} as_of
+ * @property {string} [origin]
+ * @property {string | null} [host]
+ * @property {true} [approximate]
+ * @property {string | null} [fragment]
+ * @property {string} [citation]
+ * @property {string | undefined} [sha256]
+ * @property {string} [reason]
+ * @property {string} [scheme]
+ * @property {boolean} [held_at_capture]
+ * @property {boolean} [chrome]
+ * @property {string | null} [chrome_basis]
+ */
+/**
+ * @typedef {Object} LinkPart  any part of a link's record, each member as the record has it
+ * @property {string} [ref]
+ * @property {string} [type]
+ * @property {string | null} [address]
+ * @property {string} [as_of]
+ * @property {string} [origin]
+ * @property {string | null} [host]
+ * @property {true} [approximate]
+ * @property {string | null} [fragment]
+ * @property {string} [citation]
+ * @property {string | undefined} [sha256]
+ * @property {string} [reason]
+ * @property {string} [scheme]
+ * @property {boolean} [held_at_capture]
+ * @property {boolean} [chrome]
+ * @property {string | null} [chrome_basis]
+ */
+/**
+ * @typedef {Object} LinkClass  how the companion carries an <a> or <area> href
+ * @property {string} type
+ * @property {string} wrapper
+ * @property {string | null} address
+ */
+/**
+ * @typedef {Object} SiteObservation  one fetched or reused resource, for the caller to file
+ * @property {string} address
+ * @property {string} address_norm
+ * @property {string | undefined} sha256
+ * @property {string} kind
+ * @property {boolean} reused
+ * @property {string | null} [reused_from]
+ * @property {number} [bytes]
+ * @property {string | null} [content_type]
+ */
+/**
+ * @typedef {Object} ResumeState  what the next tick of a capture needs
+ * @property {string} [when0]
+ * @property {number} [discovered]
+ * @property {number} [spent]
+ * @property {QueueItem[]} [queue]
+ * @property {SubRecord[]} [records]
+ * @property {Link[]} [links]
+ * @property {SiteObservation[]} [siteObservations]
+ * @property {{ [ref: string]: string | null }} [refToUrl]
+ */
+/**
+ * @typedef {Object} FetchAnswer  what the caller's `fetchOne` hands back
+ * @property {boolean} ok
+ * @property {number} [status]
+ * @property {Uint8Array} [bytes]
+ * @property {string} [contentType]
+ * @property {string} [reason]
+ * @property {string} [detail]
+ */
+
 /** OUR policy ceiling: how many fetches this instance is willing to spend on a
  *  single document. This is a choice about appetite, and it exists because an
  *  adversary-chosen page can name ten thousand addresses.
@@ -72,10 +358,12 @@ const STRIPPED_ELEMENTS = ["script", "iframe", "object", "embed", "applet", "fra
 /** Schemes that are not fetched, recorded by name so the refusal is legible. */
 const REFUSED_SCHEMES = ["javascript:", "data:", "blob:", "about:", "mailto:", "tel:", "file:", "ftp:", "ws:", "wss:", "chrome:", "chrome-extension:", "view-source:"];
 
-const ATTR_RE = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+const ATTR_RE = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)(\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/;
 const LONE_SURROGATE_RE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
-/** The placeholder a rewritten reference becomes. */
+/** The placeholder a rewritten reference becomes.
+ *  @param {string} sha
+ *  @returns {string} */
 export const placeholderFor = (sha) => `about:capture#${sha}`;
 /** What a reference becomes when its bytes are not in the record. */
 export const PLACEHOLDER_MISSING = "about:capture#unavailable";
@@ -92,16 +380,24 @@ export const PLACEHOLDER_MISSING = "about:capture#unavailable";
  * way and are not tried. The matches are those of the patterns they replace.
  * ------------------------------------------------------------------ */
 
+/** @param {number} c @returns {boolean} */
 const isWsCode = (c) => c === 32 || (c >= 9 && c <= 13) || c === 160 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a)
   || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+/** @param {string} t @param {number} i @returns {number} */
 const skipWs = (t, i) => { while (i < t.length && isWsCode(t.charCodeAt(i))) i++; return i; };
+/** @param {number} c @returns {boolean} */
 const isAlphaCode = (c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+/** @param {number} c @returns {boolean} */
 const isNameCode = (c) => isAlphaCode(c) || (c >= 48 && c <= 57) || c === 58 || c === 45;
 
 /** `s` without every `open … close` span that has a closer; an opener with none
- *  after it is left, as is everything after it. */
+ *  after it is left, as is everything after it.
+ *  @param {string} s @param {string} open @param {string} close
+ *  @returns {string} */
 function dropSpans(s, open, close) {
-  let out = "", last = 0, i;
+  let out = "", last = 0;
+  /** @type {number} */
+  let i;
   while ((i = s.indexOf(open, last)) !== -1) {
     const e = s.indexOf(close, i + open.length);
     if (e === -1) break;
@@ -115,13 +411,18 @@ function dropSpans(s, open, close) {
  *  as `{start, end, name, blob, selfClose}`: `<`, an optional `/`, a name, then
  *  attributes up to the first `>` that is not inside a quoted value, where a
  *  `/` just before that `>` is the self-closing mark. A `<` that opens no such
- *  tag is skipped. */
+ *  tag is skipped.
+ *  @param {string} src
+ *  @returns {{ next: (from: number) => Tag | null }} */
 function tagScanner(src) {
   const n = src.length;
   let deadBefore = 0;           // a `<` before this fails: a failed walk from an earlier one passed it unquoted
-  const deadAt = new Set();     // a quote opened (from outside a value) at these positions leads to no `>`
+  /** @type {Set<number>} */
+  const deadAt = new Set([]);     // a quote opened (from outside a value) at these positions leads to no `>`
+  /** @param {number} s @param {number} from @returns {number} */
   const walk = (s, from) => {
     let i = from, firstQuote = -1;
+    /** @type {number[]} */
     const chain = [];
     for (;;) {
       let j = i, c = 0;
@@ -136,11 +437,13 @@ function tagScanner(src) {
       i = close + 1;
     }
   };
+  /** @param {number} firstQuote @param {number[]} chain */
   const fail = (firstQuote, chain) => {
     for (const q of chain) deadAt.add(q);
     deadBefore = firstQuote < 0 ? n : firstQuote;
   };
   return {
+    /** @param {number} from @returns {Tag | null} */
     next(from) {
       let p = Math.max(from, deadBefore);
       for (;;) {
@@ -161,51 +464,86 @@ function tagScanner(src) {
   };
 }
 
-/** `src` with each tag replaced by `fn(tag)` (the tag's own text, kept, if `fn` returns null). */
+/**
+ * @typedef {Object} Tag  one tag of a page's text
+ * @property {number} start
+ * @property {number} end
+ * @property {string} name with its `/` when it closes
+ * @property {string} blob its attributes' text
+ * @property {string} selfClose "/" when self-closing, else ""
+ */
+
+/** `src` with each tag replaced by `fn(tag)` (the tag's own text, kept, if `fn` returns null).
+ *  @param {string} src @param {(whole: string, tag: Tag) => string | null} fn
+ *  @returns {string} */
 function mapTags(src, fn) {
   const tags = tagScanner(src);
   let out = "", last = 0;
-  for (let t; (t = tags.next(last)); last = t.end) {
+  for (;;) {
+    const t = tags.next(last);
+    if (!t) break;
     const whole = src.slice(t.start, t.end);
     const r = fn(whole, t);
     out += src.slice(last, t.start) + (r === null ? whole : r);
+    last = t.end;
   }
   return out + src.slice(last);
 }
 
-/** Each `<name …> … </name>` of `s`, the text between the `>` and the closer given to `fn(whole, attrs, body)`. */
+/** The first match of `re` (neither global nor sticky, and looking neither behind nor before its start) in `s` at
+ *  or after `from`: `{index, text}`, its index counted in `s`, or null.
+ *  @param {RegExp} re @param {string} s @param {number} from
+ *  @returns {{ index: number, text: string, m: RegExpExecArray } | null} */
+function execFrom(re, s, from) {
+  const m = re.exec(s.slice(from));
+  return m ? { index: m.index + from, text: m[0], m } : null;
+}
+
+/** Each `<name …> … </name>` of `s`, the text between the `>` and the closer given to `fn(whole, attrs, body)`.
+ *  @param {string} s @param {string} name @param {(whole: string, attrs: string, body: string) => string} fn
+ *  @returns {string} */
 function mapElements(s, name, fn) {
-  const open = new RegExp(`<${name}\\b`, "gi"), close = new RegExp(`<\\/${name}\\s*>`, "gi");
-  let out = "", last = 0;
-  for (let m; (m = open.exec(s)); ) {
-    const gt = s.indexOf(">", m.index + m[0].length);
+  const open = new RegExp(`<${name}\\b`, "i"), close = new RegExp(`<\\/${name}\\s*>`, "i");
+  let out = "", last = 0, from = 0;
+  for (;;) {
+    const m = execFrom(open, s, from);
+    if (!m) break;
+    const gt = s.indexOf(">", m.index + m.text.length);
     if (gt === -1) break;
-    close.lastIndex = gt + 1;
-    const c = close.exec(s);
+    const c = execFrom(close, s, gt + 1);
     if (!c) break;
-    const end = c.index + c[0].length;
-    out += s.slice(last, m.index) + fn(s.slice(m.index, end), s.slice(m.index + m[0].length, gt), s.slice(gt + 1, c.index));
-    last = open.lastIndex = end;
+    const end = c.index + c.text.length;
+    out += s.slice(last, m.index) + fn(s.slice(m.index, end), s.slice(m.index + m.text.length, gt), s.slice(gt + 1, c.index));
+    last = from = end;
   }
   return out + s.slice(last);
 }
 
-/** `s` without each opening `<name …>` (to its first `>`) for which `keep(span)` is false. */
+/** `s` without each opening `<name …>` (to its first `>`) for which `keep(span)` is false.
+ *  @param {string} s @param {string} name @param {(span: string) => boolean} [drop]
+ *  @returns {string} */
 function dropOpenTags(s, name, drop = () => true) {
-  const open = new RegExp(`<${name}\\b`, "gi");
-  let out = "", last = 0;
-  for (let m; (m = open.exec(s)); ) {
-    const gt = s.indexOf(">", m.index + m[0].length);
+  const open = new RegExp(`<${name}\\b`, "i");
+  let out = "", last = 0, from = 0;
+  for (;;) {
+    const m = execFrom(open, s, from);
+    if (!m) break;
+    const gt = s.indexOf(">", m.index + m.text.length);
     if (gt === -1) break;
     if (drop(s.slice(m.index, gt + 1))) { out += s.slice(last, m.index); last = gt + 1; }
-    open.lastIndex = gt + 1;
+    from = gt + 1;
   }
   return last ? out + s.slice(last) : s;
 }
 
+/** The groups of a match that did not happen. @type {CssGroups} */
+const NO_GROUPS = [];
+
 /** The body of a `url(` whose `(` ends just before `i`: `{end, g}` with `g` the
  *  three groups (double-quoted, single-quoted, bare), or `{skip}` with where to
- *  look next. */
+ *  look next.
+ *  @param {string} t @param {number} i
+ *  @returns {{ end: number | undefined, g: CssGroups, skip: number }} `end` absent where it is `skip` that holds */
 function cssUrlBody(t, i) {
   i = skipWs(t, i);
   const c = t.charCodeAt(i);
@@ -213,9 +551,9 @@ function cssUrlBody(t, i) {
     const e = t.indexOf(c === 34 ? '"' : "'", i + 1);
     if (e !== -1) {
       const k = skipWs(t, e + 1);
-      if (t.charCodeAt(k) === 41) return { end: k + 1, g: c === 34 ? [t.slice(i + 1, e), undefined, undefined] : [undefined, t.slice(i + 1, e), undefined] };
+      if (t.charCodeAt(k) === 41) return { end: k + 1, g: c === 34 ? [t.slice(i + 1, e), undefined, undefined] : [undefined, t.slice(i + 1, e), undefined], skip: 0 };
     }
-    return { skip: i };
+    return { end: undefined, g: NO_GROUPS, skip: i };
   }
   let j = i;
   while (j < t.length) {
@@ -224,43 +562,71 @@ function cssUrlBody(t, i) {
     j++;
   }
   const k = skipWs(t, j);
-  return t.charCodeAt(k) === 41 ? { end: k + 1, g: [undefined, undefined, t.slice(i, j)] } : { skip: j };
+  return t.charCodeAt(k) === 41 ? { end: k + 1, g: [undefined, undefined, t.slice(i, j)], skip: 0 } : { end: undefined, g: NO_GROUPS, skip: j };
 }
 
-/** Every `url( … )` of `t`: `{index, end, g}`. */
+/**
+ * @typedef {(string | undefined)[]} CssGroups  a CSS match's groups, each absent where it did not take part
+ * @typedef {{ index: number, end: number, g: CssGroups }} CssMatch
+ */
+
+/** Every `url( … )` of `t`: `{index, end, g}`.
+ *  @param {string} t @returns {CssMatch[]} */
 function cssUrls(t) {
-  const re = /url\(/gi, out = [];
-  for (let m; (m = re.exec(t)); ) {
-    const b = cssUrlBody(t, m.index + 4);
+  const re = /url\(/i;
+  /** @type {CssMatch[]} */
+  const out = [];
+  let from = 0;
+  for (;;) {
+    const m = execFrom(re, t, from);
+    if (!m) break;
+    from = m.index + m.text.length;
+    const b = cssUrlBody(t, m.index + 4), end = b.end;
     /* A `url(` ending inside the run that failed fails alike; one ending at its delimiter may not. */
-    if (b.end === undefined) { re.lastIndex = Math.max(m.index + 1, b.skip - 4); continue; }
-    out.push({ index: m.index, end: b.end, g: b.g });
-    re.lastIndex = b.end;
+    if (end === undefined) { from = Math.max(m.index + 1, b.skip - 4); continue; }
+    out.push({ index: m.index, end, g: b.g });
+    from = end;
   }
   return out;
 }
 
-/** Every `@import` of `t` with its target, `url( … )` or a quoted string: `{index, end, g}`, `g` the five groups. */
+/** Every `@import` of `t` with its target, `url( … )` or a quoted string: `{index, end, g}`, `g` the five groups.
+ *  @param {string} t @returns {CssMatch[]} */
 function cssImports(t) {
-  const re = /@import\s+/gi, out = [];
-  for (let m; (m = re.exec(t)); ) {
-    const i = m.index + m[0].length, c = t.charCodeAt(i);
-    let hit = null;
-    if (t.slice(i, i + 4).toLowerCase() === "url(") {
-      const b = cssUrlBody(t, i + 4);
-      if (b.end !== undefined) hit = { end: b.end, g: [...b.g, undefined, undefined] };
-    } else if (c === 34 || c === 39) {
-      const e = t.indexOf(c === 34 ? '"' : "'", i + 1);
-      if (e !== -1) hit = { end: e + 1, g: c === 34 ? [undefined, undefined, undefined, t.slice(i + 1, e), undefined] : [undefined, undefined, undefined, undefined, t.slice(i + 1, e)] };
-    }
+  const re = /@import\s+/i;
+  /** @type {CssMatch[]} */
+  const out = [];
+  let from = 0;
+  for (;;) {
+    const m = execFrom(re, t, from);
+    if (!m) break;
+    from = m.index + m.text.length;
+    const hit = importTarget(t, m.index + m.text.length);
     if (!hit) continue;
     out.push({ index: m.index, end: hit.end, g: hit.g });
-    re.lastIndex = hit.end;
+    from = hit.end;
   }
   return out;
 }
 
-/** `t` with each match of `found` (from `cssUrls` or `cssImports`) replaced by `fn(whole, ...groups)`. */
+/** The target of an `@import` whose target starts at `i`: its end and its five groups, or null.
+ *  @param {string} t @param {number} i @returns {{ end: number, g: CssGroups } | null} */
+function importTarget(t, i) {
+  const c = t.charCodeAt(i);
+  if (t.slice(i, i + 4).toLowerCase() === "url(") {
+    const b = cssUrlBody(t, i + 4), end = b.end;
+    return end !== undefined ? { end, g: [...b.g, undefined, undefined] } : null;
+  }
+  if (c === 34 || c === 39) {
+    const e = t.indexOf(c === 34 ? '"' : "'", i + 1);
+    if (e !== -1) return { end: e + 1, g: c === 34 ? [undefined, undefined, undefined, t.slice(i + 1, e), undefined] : [undefined, undefined, undefined, undefined, t.slice(i + 1, e)] };
+  }
+  return null;
+}
+
+/** `t` with each match of `found` (from `cssUrls` or `cssImports`) replaced by `fn(whole, ...groups)`.
+ *  @param {string} t @param {CssMatch[]} found @param {(whole: string, ...groups: CssGroups) => string} fn
+ *  @returns {string} */
 function replaceCss(t, found, fn) {
   let out = "", last = 0;
   for (const m of found) {
@@ -270,23 +636,39 @@ function replaceCss(t, found, fn) {
   return out + t.slice(last);
 }
 
+/**
+ * @typedef {Object} Attr  one attribute of a tag
+ * @property {string} name lower-cased
+ * @property {string} raw as written
+ * @property {string | null} value
+ * @property {string} quote the quote it was written in, or ""
+ * @property {boolean} present whether it has a value at all
+ */
+
+/** @param {string} blob @returns {Attr[]} */
 function attrsOf(blob) {
+  /** @type {Attr[]} */
   const out = [];
-  ATTR_RE.lastIndex = 0;
-  let m;
-  while ((m = ATTR_RE.exec(blob))) {
-    if (!m[0].trim()) { if (ATTR_RE.lastIndex <= m.index) ATTR_RE.lastIndex = m.index + 1; continue; }
+  let from = 0;
+  for (;;) {
+    const found = execFrom(ATTR_RE, blob, from);
+    if (!found) break;
+    const m = found.m, index = found.index;
+    from = index + found.text.length;
+    if (!found.text.trim()) { if (from <= index) from = index + 1; continue; }
+    const g1 = m[1] ?? "", g3 = m[3], g4 = m[4], g5 = m[5];
     out.push({
-      name: m[1].toLowerCase(),
-      raw: m[0],
-      value: m[3] !== undefined ? m[3] : m[4] !== undefined ? m[4] : m[5] !== undefined ? m[5] : null,
-      quote: m[3] !== undefined ? '"' : m[4] !== undefined ? "'" : "",
+      name: g1.toLowerCase(),
+      raw: found.text,
+      value: g3 !== undefined ? g3 : g4 !== undefined ? g4 : g5 !== undefined ? g5 : null,
+      quote: g3 !== undefined ? '"' : g4 !== undefined ? "'" : "",
       present: m[2] !== undefined,
     });
   }
   return out;
 }
 
+/** @param {Attr[]} as @param {string} n @returns {string | null} */
 const attr = (as, n) => { const a = as.find((x) => x.name === n); return a ? a.value : null; };
 
 /** srcset candidates, by HTML's own algorithm rather than by splitting on
@@ -300,18 +682,24 @@ const attr = (as, n) => { const a = as.find((x) => x.name === n); return a ? a.v
  *  with trailing commas and no descriptor ends the candidate itself.
  *
  *  Getting this wrong is not cosmetic here: every invented reference is a fetch
- *  this instance makes at an address the page never named. */
+ *  this instance makes at an address the page never named.
+ *  @param {string} v
+ *  @returns {string[]} */
 export function srcsetUrls(v) {
   return srcsetCandidates(v).map((c) => c.url);
 }
 
 /** The same parse, keeping each candidate's descriptor beside its URL. Pairing
  *  them by splitting the attribute on commas a second time misaligned every
- *  descriptor after a URL that itself contains a comma. */
+ *  descriptor after a URL that itself contains a comma.
+ *  @param {string} v
+ *  @returns {SrcsetCandidate[]} */
 export function srcsetCandidates(v) {
+  /** @type {SrcsetCandidate[]} */
   const out = [];
   const s = String(v);
   let i = 0;
+  /** @param {string | undefined} c @returns {boolean} */
   const isWs = (c) => c === " " || c === "\t" || c === "\n" || c === "\r" || c === "\f";
   while (i < s.length) {
     while (i < s.length && (isWs(s[i]) || s[i] === ",")) i++;
@@ -342,9 +730,13 @@ export function srcsetCandidates(v) {
 /* A commented-out rule was not served to the renderer as a rule, so its url()
    is not a request the browser would make. */
 
-/** A stylesheet's own references, each `{url, kind}`: an @import target is a
- *  stylesheet (it ranks, and is read, as one); a url() is a css-asset. */
+/** A stylesheet's own references, each `{url, kind}`: an import target is a
+ *  stylesheet (it ranks, and is read, as one); a url() is a css-asset. (The
+ *  first is a target of `@import`.)
+ *  @param {string} css
+ *  @returns {{ url: string, kind: string }[]} */
 function cssRefList(css) {
+  /** @type {{ url: string, kind: string }[]} */
   const out = [];
   const text = dropSpans(String(css), "/*", "*/");
   const imports = cssImports(text);
@@ -385,8 +777,11 @@ const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img"
  *  A responsive family is also a WEAK SIGNAL AGAINST evidentiary value. A
  *  scanned document or a photograph entered as evidence is served at one size;
  *  a CMS generating eight widths is managing presentation. Recorded as a prior
- *  on the reference, never as a verdict about it. */
+ *  on the reference, never as a verdict about it.
+ *  @param {SrcsetCandidate[]} cands
+ *  @returns {{ pick: SrcsetCandidate | undefined, rest: SrcsetCandidate[] }} */
 function pickSrcsetCandidate(cands) {
+  /** @param {string} descriptor @returns {number} */
   const score = (descriptor) => {
     const d = /(?:^|\s)(\d+(?:\.\d+)?)[wx](?:\s|$)/i.exec(descriptor || "");
     return d ? Number(d[1]) : 1;
@@ -405,44 +800,58 @@ function pickSrcsetCandidate(cands) {
  *  a logo is bytes and the cost of dropping a figure is evidence.
  *  An entry opened by role= on a generic element (<div role="navigation">)
  *  closes on that element's own end tag, so same-name elements opened inside it
- *  are counted (`nest`) and the entry is not closed by the first </div>. */
+ *  are counted (`nest`) and the entry is not closed by the first </div>.
+ *  @returns {{ here: () => Region, close: (tag: string) => void, open: (tag: string, as: Attr[], selfClosing: boolean) => void }} */
 function regionStack() {
+  /** @type {(Region & { tag: string, nest: number })[]} */
   const region = [];
   return {
+    /** @returns {Region} */
     here() {
       const body = region.find((r) => r.region === "body");
       if (body) return body;
       const furn = region[region.length - 1];
       return furn || { region: "body", basis: "default" };
     },
+    /** @param {string} tag */
     close(tag) {
-      for (let i = region.length - 1; i >= 0; i--)
-        if (region[i].tag === tag) {
-          if (region[i].nest > 0) region[i].nest--;
+      for (let i = region.length - 1; i >= 0; i--) {
+        const r = region[i];
+        if (r && r.tag === tag) {
+          if (r.nest > 0) r.nest--;
           else region.splice(i, 1);
           break;
         }
+      }
     },
+    /** @param {string} tag @param {Attr[]} as @param {boolean} selfClosing */
     open(tag, as, selfClosing) {
       if (VOID_ELEMENTS.has(tag) || selfClosing) return;
-      const role = (attr(as, "role") || "").toLowerCase().trim().split(/\s+/)[0];
-      let entry = null;
-      if (FURNITURE_ROLES.has(role)) entry = { tag, region: "furniture", basis: `role=${role}` };
-      else if (role === "main" || role === "article") entry = { tag, region: "body", basis: `role=${role}` };
-      else if (FURNITURE_TAGS.has(tag)) entry = { tag, region: "furniture", basis: `<${tag}>` };
-      else if (BODY_TAGS.has(tag)) entry = { tag, region: "body", basis: `<${tag}>` };
+      const role = (attr(as, "role") || "").toLowerCase().trim().split(/\s+/)[0] ?? "";
+      /** @type {(Region & { tag: string }) | null} */
+      const entry = FURNITURE_ROLES.has(role) ? { tag, region: "furniture", basis: `role=${role}` }
+        : role === "main" || role === "article" ? { tag, region: "body", basis: `role=${role}` }
+        : FURNITURE_TAGS.has(tag) ? { tag, region: "furniture", basis: `<${tag}>` }
+        : BODY_TAGS.has(tag) ? { tag, region: "body", basis: `<${tag}>` }
+        : null;
       if (entry) region.push({ ...entry, nest: 0 });
-      else for (let i = region.length - 1; i >= 0; i--)
-        if (region[i].tag === tag) { region[i].nest++; break; }
+      else for (let i = region.length - 1; i >= 0; i--) {
+        const r = region[i];
+        if (r && r.tag === tag) { r.nest++; break; }
+      }
     },
   };
 }
+
+/** @typedef {{ region: string, basis: string }} Region  where in the page something sits, and on what basis */
 
 /** Every reference an HTML document makes to something it needs in order to
  *  look like itself, in document order, each carrying what kind of thing it is
  *  and where in the source it was found. Comments are stripped first: a
  *  commented-out stylesheet was not served to the reader and fetching it would
- *  be inventing a request the browser never made. */
+ *  be inventing a request the browser never made.
+ *  @param {string} html
+ *  @returns {Ref[]} */
 export function parseHtmlRefs(html) {
   return scanHtml(html).refs;
 }
@@ -453,38 +862,48 @@ export function parseHtmlRefs(html) {
  *  basis of the first such region met (`<nav>`, `role=navigation`, ...). An href
  *  the site's navigation carried is contained even when the body links it too:
  *  that is the fact capture's R28 counts across pages. A classification, never a
- *  filter: the link is recorded either way. */
+ *  filter: the link is recorded either way.
+ *  @param {string} html
+ *  @returns {{ refs: Ref[], linkChrome: Map<string, string> }} */
 function scanHtml(html) {
   const src = dropSpans(String(html), "<!--", "-->");
+  /** @type {Ref[]} */
   const refs = [];
-  const linkChrome = new Map();
+  /** @type {Map<string, string>} */
+  const linkChrome = new Map([]);
   const region = regionStack();
+  /** @param {string | null | undefined} ref @param {string} kind @param {string} where @param {RefExtra} [extra] */
   const add = (ref, kind, where, extra) => {
     if (!ref || !ref.trim()) return;
     /* A bare #fragment names a part of this same document (an SVG <use>, a
        url(#gradient)), not a resource: resolving it would re-fetch the page. */
     if (ref.trim().startsWith("#")) return;
     const r = region.here();
-    refs.push({ ref: ref.trim(), kind, where, region: r.region, region_basis: r.basis, ...(extra || {}) });
+    /** @type {RefExtra} */
+    const more = extra || {};
+    refs.push({ ref: ref.trim(), kind, where, region: r.region, region_basis: r.basis, ...more });
   };
+  /** @param {SrcsetCandidate[]} cands @param {string} kind @param {string} where */
   const addFamily = (cands, kind, where) => {
     const { pick, rest } = pickSrcsetCandidate(cands);
+    /** @type {RefExtra} */
     const meta = { family: "srcset", family_size: cands.length, evidentiary_prior: "weak_against" };
     if (pick) add(pick.url, kind, where, meta);
     for (const r of rest) add(r.url, kind, where, { ...meta, collapsed: true });
   };
   /* The text of a raw-text element (<script>, <style>) is not markup: a tag
      inside a script's string literal is not a reference the page makes. */
+  /** @param {string} tag @param {number} from @returns {{ body: string, end: number }} */
   const skipTo = (tag, from) => {
-    const re = new RegExp(`<\\/${tag}\\s*>`, "gi");
-    re.lastIndex = from;
-    const e = re.exec(src);
-    return e ? { body: src.slice(from, e.index), end: e.index + e[0].length } : { body: src.slice(from), end: src.length };
+    const e = execFrom(new RegExp(`<\\/${tag}\\s*>`, "i"), src, from);
+    return e ? { body: src.slice(from, e.index), end: e.index + e.text.length } : { body: src.slice(from), end: src.length };
   };
 
   const tags = tagScanner(src);
   let pos = 0;
-  for (let m; (m = tags.next(pos)); ) {
+  for (;;) {
+    const m = tags.next(pos);
+    if (!m) break;
     pos = m.end;
     const raw = m.name;
     const closing = raw.startsWith("/");
@@ -510,7 +929,7 @@ function scanHtml(html) {
       const rel = (attr(as, "rel") || "").toLowerCase().split(/\s+/).filter(Boolean);
       const href = attr(as, "href");
       if (rel.includes("stylesheet")) add(href, "stylesheet", "link[rel=stylesheet]");
-      else if (rel.some((r) => r === "icon" || r === "shortcut" || r === "apple-touch-icon" || r === "mask-icon" || r === "apple-touch-icon-precomposed"))
+      else if (rel.some(/** @param {string} r @returns {boolean} */ (r) => r === "icon" || r === "shortcut" || r === "apple-touch-icon" || r === "mask-icon" || r === "apple-touch-icon-precomposed"))
         add(href, "icon", `link[rel=${rel.join(" ")}]`);
       else if (rel.includes("preload")) {
         const as_ = (attr(as, "as") || "").toLowerCase();
@@ -568,17 +987,20 @@ function scanHtml(html) {
 /** Resolve a reference against the page's address and decide whether this
  *  instance will fetch it. The fence is the caller's isPublicHttpsLocator, the
  *  same one guarding the primary locator and the gathering queue, so a
- *  subresource can never reach an address the primary could not. */
+ *  subresource can never reach an address the primary could not.
+ *  @param {string} ref @param {string} base @param {(url: string) => boolean} isPublic
+ *  @returns {Classified} */
 export function classifyRef(ref, base, isPublic) {
   const lower = ref.toLowerCase();
   for (const s of REFUSED_SCHEMES) {
     if (lower.startsWith(s)) return { ok: false, reason: "REFUSED_SCHEME", scheme: s, url: ref };
   }
+  /** @type {string} */
   let abs;
   try { abs = new URL(ref, base).toString(); }
   /* R36: the same bytes fail the same way on every call, so the record says it is final. */
   catch { return { ok: false, reason: "UNRESOLVABLE", final: true, url: ref }; }
-  const clean = abs.split("#")[0];
+  const clean = abs.split("#")[0] ?? "";
   if (!isPublic(clean)) return { ok: false, reason: "REFUSED_LOCATOR", url: clean };
   return { ok: true, url: clean };
 }
@@ -591,9 +1013,11 @@ const CSP = "default-src 'none'; img-src blob: about:; style-src blob: about: 'u
           + "font-src blob: about:; media-src blob: about:; script-src 'none'; frame-src 'none'; "
           + "object-src 'none'; form-action 'none'; base-uri 'none'";
 
+/** @param {string} primarySha @param {string} when @returns {string} */
 const BANNER = (primarySha, when) =>
   localize("subresources.subresources.derived_banner", "<!-- DERIVED ARTIFACT, not evidence. Generated by bio-plane from the capture\n     {primarySha}\n     at {when}. The raw bytes as served are the evidence and are stored\n     separately, unmodified. This file has had scripts and frames removed and\n     every subresource reference replaced with an about:capture#<sha256>\n     placeholder resolved from data/snapshot-manifest.json. Opened without a\n     resolving viewer it renders blank, on purpose. -->\n", { primarySha: String(primarySha), when: String(when) });
 
+/** @param {string} html @returns {string} */
 function stripElements(html) {
   let out = html;
   for (const el of STRIPPED_ELEMENTS) {
@@ -609,7 +1033,9 @@ function stripElements(html) {
   return out;
 }
 
+/** @param {string} css @param {(u: string) => string | null} resolve @returns {string} */
 function rewriteCssText(css, resolve) {
+  /** @param {string} whole @param {string} u @returns {string} */
   const one = (whole, u) => {
     const t = resolve(u);
     return t === null ? whole : whole.replace(/url\(\s*(?:"[^"]*"|'[^']*'|[^)'"\s]*)\s*\)/i, `url("${t}")`);
@@ -627,7 +1053,10 @@ function rewriteCssText(css, resolve) {
  *  reference becomes, or null to leave it alone. `classifyLink(ref)` returns
  *  `{type, wrapper, address}` for an <a> or <area> href: the address is kept as
  *  a data attribute so what the page pointed at is never lost, while the href
- *  itself becomes a wrapper that cannot navigate anywhere on its own. */
+ *  itself becomes a wrapper that cannot navigate anywhere on its own.
+ *  @param {string} html
+ *  @param {{ resolve: (ref: string, kind: string) => string | null, classifyLink: (ref: string) => LinkClass, primarySha: string, when: string }} how
+ *  @returns {string} */
 export function renderCompanion(html, { resolve, classifyLink, primarySha, when }) {
   let src = stripElements(String(html));
 
@@ -638,6 +1067,7 @@ export function renderCompanion(html, { resolve, classifyLink, primarySha, when 
     const tag = name.toLowerCase();
     const as = attrsOf(blob);
     if (!as.length) return whole;
+    /** @type {string[]} */
     const kept = [];
     for (const a of as) {
       /* Event handlers are executable and go, whatever else happens. */
@@ -645,12 +1075,14 @@ export function renderCompanion(html, { resolve, classifyLink, primarySha, when 
       /* Subresource integrity over bytes the viewer will substitute would fail
          by construction; the record's own hash is the stronger check anyway. */
       if (a.name === "integrity" || a.name === "nonce") continue;
-      if (!a.present || a.value === null) { kept.push(a.raw); continue; }
+      const value = a.value;
+      if (!a.present || value === null) { kept.push(a.raw); continue; }
 
       const q = a.quote || '"';
+      /** @param {string} v */
       const put = (v) => kept.push(`${a.name}=${q}${v}${q}`);
 
-      if (a.name === "style") { put(rewriteCssText(a.value, (u) => resolve(u, "css-asset"))); continue; }
+      if (a.name === "style") { put(rewriteCssText(value, (u) => resolve(u, "css-asset"))); continue; }
 
       if (a.name === "srcset" || a.name === "imagesrcset") {
         /* Collapsing a responsive family leaves the other candidates without
@@ -659,29 +1091,32 @@ export function renderCompanion(html, { resolve, classifyLink, primarySha, when 
            would choose the candidate we deliberately did NOT capture and render
            nothing. So the survivors are the ones we hold, and if exactly one
            survives its descriptor goes too, making it unconditional. */
+        /** @type {SrcsetCandidate[]} */
         const live = [];
         let anyDead = false;
-        for (const cand of srcsetCandidates(a.value)) {
+        for (const cand of srcsetCandidates(value)) {
           const t = resolve(cand.url, "image");
           if (t === PLACEHOLDER_MISSING) { anyDead = true; continue; }
           live.push({ url: t === null ? cand.url : t, descriptor: cand.descriptor });
         }
         if (!live.length) { put(PLACEHOLDER_MISSING); continue; }
-        put(live.length === 1 && anyDead ? live[0].url
+        const only = live[0];
+        put(live.length === 1 && anyDead && only ? only.url
           : live.map((c) => (c.descriptor ? `${c.url} ${c.descriptor}` : c.url)).join(", "));
         continue;
       }
 
       if (a.name === "href" || a.name === "src" || a.name === "poster" || a.name === "xlink:href" || a.name === "data") {
         if (tag === "a" || tag === "area") {
-          const L = classifyLink(a.value);
+          const L = classifyLink(value);
           kept.push(`data-bio-link="${L.type}"`);
-          if (L.address) kept.push(`data-bio-href="${L.address.replace(/"/g, "&quot;")}"`);
+          const address = L.address;
+          if (address) kept.push(`data-bio-href="${address.replace(/"/g, "&quot;")}"`);
           put(L.wrapper);
           continue;
         }
-        const t = resolve(a.value, tag === "script" ? "script" : "asset");
-        put(t === null ? a.value : t);
+        const t = resolve(value, tag === "script" ? "script" : "asset");
+        put(t === null ? value : t);
         continue;
       }
       kept.push(a.raw);
@@ -712,12 +1147,16 @@ export function renderCompanion(html, { resolve, classifyLink, primarySha, when 
  *  same_site is approximate: with no public suffix list it compares the last
  *  two labels, so it is right for oaklandca.gov and wrong for a .co.uk. It is
  *  recorded AS an approximation, and the host is kept beside it, so a better
- *  rule can be applied later without the input having been destroyed. */
+ *  rule can be applied later without the input having been destroyed.
+ *  @param {string} url @param {string | null} baseHost
+ *  @returns {Origin} */
 export function originOf(url, baseHost) {
+  /** @type {string} */
   let h;
   try { h = new URL(url).hostname.toLowerCase(); } catch { return { origin: "unknown", host: null }; }
   const b = String(baseHost || "").toLowerCase();
   if (h === b) return { origin: "same_host", host: h };
+  /** @param {string} x @returns {string} */
   const tail = (x) => x.split(".").slice(-2).join(".");
   if (b && tail(h) === tail(b)) return { origin: "same_site", host: h, approximate: true };
   return { origin: "third_party", host: h };
@@ -754,21 +1193,29 @@ export function originOf(url, baseHost) {
  * those stylesheets name, then the document's own images, and scripts last
  * because they are held as evidence and never rendered at all. Truncation then
  * costs the least important thing rather than an arbitrary one. */
+/** @type {{ [kind: string]: number }} */
 export const FETCH_PRIORITY = { stylesheet: 0, "css-asset": 1, font: 1, icon: 2, image: 3, media: 4, script: 5 };
+/** @param {{ kind: string, region?: string | undefined }} ref @returns {number} */
 export const priorityOf = (ref) =>
   (FETCH_PRIORITY[ref.kind] ?? 3) * 2 + (ref.region === "furniture" ? 1 : 0);
 
 /** The work list in fetch-priority order, lowest value first and, within one
  *  value, in the order the items were added. One list per value, so taking the
  *  next item does not read the whole list (a page naming sixty thousand
- *  references would otherwise make taking them quadratic). */
+ *  references would otherwise make taking them quadratic).
+ *  @param {QueueItem[]} items
+ *  @returns {Queue} */
 function makeQueue(items) {
-  const lists = new Map();
+  /** @type {Map<number, { items: (QueueItem | undefined)[], head: number }>} */
+  const lists = new Map([]);
   let size = 0;
+  /** @param {QueueItem} item */
   const push = (item) => {
     const p = priorityOf(item);
-    let l = lists.get(p);
-    if (!l) lists.set(p, l = { items: [], head: 0 });
+    const had = lists.get(p);
+    /** @type {{ items: (QueueItem | undefined)[], head: number }} */
+    const l = had || { items: [], head: 0 };
+    if (!had) lists.set(p, l);
     l.items.push(item);
     size++;
   };
@@ -777,11 +1224,16 @@ function makeQueue(items) {
     push,
     get length() { return size; },
     shift() {
-      let best = null, at = Infinity;
+      /** @type {{ items: (QueueItem | undefined)[], head: number } | null} */
+      let best = null;
+      let at = Infinity;
       for (const [p, l] of lists) if (l.head < l.items.length && p < at) { at = p; best = l; }
       size--;
-      const item = best.items[best.head];
-      best.items[best.head++] = undefined;
+      const chosen = best;
+      /* Taken only while the length is above zero, so a list with an item is always found. */
+      if (chosen === null) return undefined;
+      const item = chosen.items[chosen.head];
+      chosen.items[chosen.head++] = undefined;
       return item;
     },
   };
@@ -804,8 +1256,11 @@ function makeQueue(items) {
  *
  *  Sorting query parameters is the one liberty taken, because Legistar's
  *  View.ashx?M=F&ID=..&GUID=.. is the shape most of this record's material
- *  arrives in and parameter order there carries no meaning. */
+ *  arrives in and parameter order there carries no meaning.
+ *  @param {string} url
+ *  @returns {string} */
 export function normalizeAddress(url) {
+  /** @type {URL} */
   let u;
   try { u = new URL(url); } catch { return String(url).trim(); }
   u.hash = "";
@@ -816,11 +1271,13 @@ export function normalizeAddress(url) {
      `a+b` and `a%20b` stay what they were, so sorting is the only change. */
   const q = u.search.slice(1);
   if (q) {
+    /** @param {string} x @returns {string} */
     const dec = (x) => { try { return decodeURIComponent(x.replace(/\+/g, " ")); } catch { return x; } };
     const parts = q.split("&").map((p) => {
       const i = p.indexOf("=");
       return { p, k: dec(i === -1 ? p : p.slice(0, i)), v: dec(i === -1 ? "" : p.slice(i + 1)) };
     });
+    /** @param {string} x @param {string} y @returns {number} */
     const cmp = (x, y) => (x < y ? -1 : x > y ? 1 : 0);
     parts.sort((x, y) => cmp(x.k, y.k) || cmp(x.v, y.v));
     u.search = "?" + parts.map((x) => x.p).join("&");
@@ -855,7 +1312,9 @@ export function normalizeAddress(url) {
  *  So both keys are kept on every link. The resource key resolves the link
  *  against what the store has captured; the citation key is the identity of the
  *  citation itself. Collapsing them, which the first cut did, made a link to
- *  #findings and a link to #methodology indistinguishable. */
+ *  #findings and a link to #methodology indistinguishable.
+ *  @param {string} url
+ *  @returns {string} */
 export function normalizeCitation(url) {
   const raw = String(url || "").trim();
   const hash = raw.indexOf("#");
@@ -864,7 +1323,9 @@ export function normalizeCitation(url) {
   return normalizeAddress(raw.slice(0, hash)) + (frag ? "#" + frag : "");
 }
 
-/** The element a citation names, or null when it names the whole document. */
+/** The element a citation names, or null when it names the whole document.
+ *  @param {string} url
+ *  @returns {string | null} */
 export function fragmentOf(url) {
   const raw = String(url || "").trim();
   const hash = raw.indexOf("#");
@@ -873,6 +1334,7 @@ export function fragmentOf(url) {
   return frag || null;
 }
 
+/** @type {Set<string>} */
 export const REUSABLE_KINDS = new Set(["stylesheet", "css-asset", "font", "icon"]);
 
 /** Whether an earlier capture's bytes may stand in for a fetch now.
@@ -892,7 +1354,11 @@ export const REUSABLE_KINDS = new Set(["stylesheet", "css-asset", "font", "icon"
  *  evidence. The bytes must have been seen served within the freshness window.
  *  And it must appear across more than one document, because an asset referenced
  *  by exactly one page is that page's own whatever directory it sits in — a
- *  document being a PAGE (its address), not a capture of it (CAP-13). */
+ *  document being a PAGE (its address), not a capture of it (CAP-13).
+ *  @param {{ kind: string }} ref
+ *  @param {SiteRecord | null | undefined} known
+ *  @param {{ now?: number, freshWindowMs?: number, minDocuments?: number }} [opts] `now` in milliseconds
+ *  @returns {ReuseDecision} */
 export function reuseDecision(ref, known, { now, freshWindowMs = 24 * 3600 * 1000, minDocuments = 2 } = {}) {
   if (!known || !known.sha256) return { reuse: false, why: "not_seen_before" };
   if (!REUSABLE_KINDS.has(ref.kind)) return { reuse: false, why: "evidence_is_always_fetched" };
@@ -907,11 +1373,13 @@ export function reuseDecision(ref, known, { now, freshWindowMs = 24 * 3600 * 100
       ? "shared_across_documents_undetermined" : "not_yet_shared_across_documents" };
   const seen = Date.parse(known.last_fetched || "");
   if (!Number.isFinite(seen)) return { reuse: false, why: "no_fetch_record" };
-  const age = now - seen;
+  /* Without `now` the age is not a number, and the window refuses nothing. */
+  const nowMs = now === undefined ? NaN : now;
+  const age = nowMs - seen;
   if (age > freshWindowMs) return { reuse: false, why: "last_seen_served_too_long_ago", age_ms: age };
   const stable = Date.parse(known.stable_since || "");
   return { reuse: true, fetched_age_ms: age,
-           stable_for_ms: Number.isFinite(stable) ? now - stable : null,
+           stable_for_ms: Number.isFinite(stable) ? nowMs - stable : null,
            changes: known.changes || 0 };
 }
 
@@ -935,41 +1403,68 @@ export function reuseDecision(ref, known, { now, freshWindowMs = 24 * 3600 * 100
  *  A part is a record the capture HOLDS bytes for (`ok`). A reused part whose
  *  instant is absent or unreadable is counted `undetermined`, never placed. The
  *  primary is not a part here: its retrieval is the document's own. */
+/** @typedef {"capture" | "record"} Clock */
+/** @type {{ capture: { instant: "fetched_at", clock: string }, record: { instant: "reused_from_fetched_at", clock: string } }} */
 export const SPREAD_CLOCKS = {
   capture: { instant: "fetched_at", clock: localize("subresources.subresources.the_capturing_worker_s_clock", "the capturing Worker's clock, stamped as this capture issued the request") },
   record: { instant: "reused_from_fetched_at", clock: "the Store's clock (site_assets.last_fetched), stamped when an earlier capture's fetch was filed" },
 };
+/** @type {Clock[]} */
+const CLOCKS = ["capture", "record"];
+/**
+ * @typedef {Object} ClockSpread
+ * @property {string} instant
+ * @property {string} clock
+ * @property {number} parts
+ * @property {string} earliest
+ * @property {string} latest
+ * @property {number} span_ms
+ */
+/**
+ * @typedef {{ parts: number, undetermined: number, clocks: { capture?: ClockSpread, record?: ClockSpread }, state: string, clock: Clock | null, earliest: string | null, latest: string | null, note: string }} FetchSpread
+ */
+/**
+ * @param {(SubRecord | null | undefined)[] | null | undefined} records
+ * @returns {FetchSpread}
+ */
 export function partFetchSpread(records) {
+  /** @type {{ capture: [number, string][], record: [number, string][] }} */
   const acc = { capture: [], record: [] };
   let undetermined = 0, parts = 0;
   for (const r of records || []) {
     if (!r || !r.ok) continue;
     parts++;
+    /** @type {Clock} */
     const clock = r.fetched_this_capture === false ? "record" : "capture";
     const at = r[SPREAD_CLOCKS[clock].instant];
     const ms = typeof at === "string" ? Date.parse(at) : NaN;
-    if (!Number.isFinite(ms)) { undetermined++; continue; }
+    if (typeof at !== "string" || !Number.isFinite(ms)) { undetermined++; continue; }
     acc[clock].push([ms, at]);
   }
+  /** @type {{ capture?: ClockSpread, record?: ClockSpread }} */
   const clocks = {};
-  for (const k of Object.keys(acc)) {
+  for (const k of CLOCKS) {
     if (!acc[k].length) continue;
     const s = acc[k].sort((a, b) => a[0] - b[0]);
-    clocks[k] = { ...SPREAD_CLOCKS[k], parts: s.length, earliest: s[0][1], latest: s[s.length - 1][1],
-                  span_ms: s[s.length - 1][0] - s[0][0] };
+    const first = s[0], last = s[s.length - 1];
+    if (!first || !last) continue;
+    clocks[k] = { ...SPREAD_CLOCKS[k], parts: s.length, earliest: first[1], latest: last[1],
+                  span_ms: last[0] - first[0] };
   }
-  const named = Object.keys(clocks);
-  const one = named.length === 1 ? clocks[named[0]] : null;
+  const named = CLOCKS.filter((k) => clocks[k] !== undefined);
+  const k0 = named[0];
+  const one = named.length === 1 && k0 !== undefined ? clocks[k0] ?? null : null;
   return {
     parts, undetermined, clocks,
     state: named.length === 0 ? "no_instants" : one ? "one_clock" : "two_clocks_not_compared",
-    clock: one ? named[0] : null,
+    clock: one ? k0 ?? null : null,
     earliest: one ? one.earliest : null,
     latest: one ? one.latest : null,
     note: localize("subresources.subresources.the_earliest_and_latest_instants", "the earliest and latest instants at which this composite's parts were fetched, per clock. `capture` instants were stamped by this capture; `record` instants are when an earlier capture's fetch of a reused part was filed, on the Store's clock. The two are never ordered against each other, so a composite holding both states each and leaves the composite-wide earliest and latest null. undetermined counts held parts whose instant the record does not give."),
   };
 }
 
+/** @param {PolicyRef} ref @param {string} origin @returns {Policy} */
 export function fetchPolicy(ref, origin) {
   if (ref.collapsed)
     return { fetch: false, reason: "COLLAPSED_SRCSET_FAMILY",
@@ -1020,20 +1515,27 @@ export function fetchPolicy(ref, origin) {
  * fact about the record's coverage, so it goes in the manifest, dated, where it
  * can be superseded without rewriting anything.
  */
+/** @type {string[]} */
 export const LINK_TYPES = ["anchor", "intra", "deferred", "refused"];
 
 /** The wrapper each partition renders as. `deferred` is resolved by the viewer
  *  into linked-or-offsite; the other three are final at capture. */
 export const linkWrapper = {
+  /** @param {string} frag @returns {string} */
   anchor: (frag) => frag,
+  /** @param {string} sha @returns {string} */
   intra: (sha) => `about:capture#${sha}`,
   /* R24: a lone surrogate would make encodeURIComponent throw; it is U+FFFD, as a URL makes it. */
+  /** @param {string} url @returns {string} */
   deferred: (url) => `about:link#${encodeURIComponent(String(url).replace(LONE_SURROGATE_RE, "\uFFFD"))}`,
+  /** @returns {string} */
   refused: () => "about:link#refused",
 };
 
 /** Read a wrapper back. The viewer needs this and so does anything auditing a
- *  companion, so it lives beside the writer rather than being re-derived. */
+ *  companion, so it lives beside the writer rather than being re-derived.
+ *  @param {string} v
+ *  @returns {{ type: string, url?: string, sha256?: string, fragment?: string } | null} */
 export function readLinkWrapper(v) {
   const s = String(v || "");
   if (s === "about:link#refused") return { type: "refused" };
@@ -1048,6 +1550,128 @@ export function readLinkWrapper(v) {
 
 
 
+/** @typedef {ReturnType<typeof makeMeter>} Meter  the meter `runtime-limits` makes */
+/**
+ * @typedef {Object} CaptureArgs
+ * @property {string} html the primary page's text
+ * @property {string} base its address
+ * @property {string} primarySha
+ * @property {string} primaryFile
+ * @property {(url: string) => Promise<FetchAnswer | null | undefined>} fetchOne
+ * @property {(sha: string, bytes: Uint8Array) => Promise<{ existed?: boolean }>} put
+ * @property {(bytes: Uint8Array) => Promise<string> | string} sha256
+ * @property {(url: string) => boolean} isPublic
+ * @property {number | undefined} [cap]
+ * @property {number | undefined} [perMax]
+ * @property {number | undefined} [budget]
+ * @property {(() => Date) | undefined} [now]
+ * @property {number | null | undefined} [platformCeiling]
+ * @property {number | undefined} [platformMargin]
+ * @property {number | undefined} [subrequestsAlreadySpent]
+ * @property {((addressNorm: string) => Promise<SiteRecord | null | undefined> | SiteRecord | null | undefined) | null | undefined} [siteLookup]
+ * @property {number | undefined} [reuseFreshWindowMs]
+ * @property {number | undefined} [reuseMinDocuments]
+ * @property {((sha: string) => Promise<string | null | undefined> | string | null | undefined) | null | undefined} [readBack]
+ * @property {ResumeState | null | undefined} [resume]
+ * @property {Meter | undefined} [meter]
+ */
+/**
+ * @typedef {Object} Manifest  the snapshot manifest: what the companion's placeholders resolve to, and why anything was not fetched
+ * @property {number} version
+ * @property {boolean} derived
+ * @property {string} of
+ * @property {string} of_sha256
+ * @property {string} base
+ * @property {string} generated
+ * @property {string} render
+ * @property {string} render_sha256
+ * @property {string} placeholder_scheme
+ * @property {string} unavailable
+ * @property {{ cap: number, per_max_bytes: number, budget_bytes: number, css_max_depth: number }} limits
+ * @property {number} discovered
+ * @property {number} attempted
+ * @property {boolean} truncated
+ * @property {boolean} budget_exhausted
+ * @property {boolean} complete
+ * @property {ReturnType<Meter["report"]>} compute
+ * @property {{ reused: number, fetched: number, not_reused: { url: string, kind: string, why: string | undefined }[], fresh_window_ms: number, min_documents: number, note: string }} reuse
+ * @property {FetchSpread} part_fetch_spread
+ * @property {number} outstanding
+ * @property {{ limited: boolean, observed_ceiling: number | null, ceiling_used: number | null, spent_this_invocation: number, note: string }} platform
+ * @property {ManifestCounts} counts
+ * @property {SubRecord[]} subresources
+ * @property {Link[]} links
+ * @property {string} link_note
+ * @property {string} note
+ */
+/**
+ * @typedef {Object} ManifestCounts
+ * @property {number} fetched
+ * @property {number} failed
+ * @property {number} platform_limited
+ * @property {number} deferred
+ * @property {number} refused
+ * @property {number} skipped
+ * @property {number} scripts_held_unreferenced
+ * @property {number} bytes
+ * @property {{ outside_the_document: number, third_party: number, collapsed_srcset: number }} not_fetched
+ * @property {{ same_host: number, same_site: number, third_party: number }} by_origin
+ * @property {{ anchor: number, intra: number, deferred: number, refused: number }} links
+ */
+/**
+ * @typedef {Object} Rendition  a file derived from the primary
+ * @property {string} file
+ * @property {string} kind
+ * @property {string} from_file
+ * @property {string} sha256
+ * @property {number} bytes
+ * @property {string} content_type
+ * @property {string} transform
+ * @property {string} reason
+ */
+/**
+ * @typedef {Object} CaptureResult
+ * @property {SubRecord[]} subresources
+ * @property {Link[]} links
+ * @property {SiteObservation[]} siteObservations
+ * @property {number} reused
+ * @property {Meter} meter
+ * @property {ResumeState | null} resumeState
+ * @property {Manifest} manifest
+ * @property {string} manifestSha
+ * @property {Uint8Array} manifestBytes
+ * @property {string} companionText
+ * @property {string} companionSha
+ * @property {Uint8Array} companionBytes
+ * @property {boolean} truncated
+ * @property {number} discovered
+ * @property {number} attempted
+ * @property {Rendition[]} renditions
+ */
+
+/** The rewrite list of a stylesheet's record, which each reference it names is added to.
+ *  @param {SubRecord} owner @returns {Rewrite[]} */
+function rewriteOf(owner) {
+  const rewrite = owner.rewrite;
+  if (rewrite === undefined) throw new TypeError("Cannot read properties of undefined (reading 'push')");
+  return rewrite;
+}
+
+/** A map's entries as an object's own members, each defined as `Object.fromEntries` defines it.
+ *  @param {Map<string, string | null>} map @returns {{ [ref: string]: string | null }} */
+function entriesOf(map) {
+  /** @type {{ [ref: string]: string | null }} */
+  const out = {};
+  for (const [k, v] of map) Object.defineProperty(out, k, { value: v, writable: true, enumerable: true, configurable: true });
+  return out;
+}
+
+/** The message a thrown value carries, where it carries one.
+ *  @param {unknown} e @returns {unknown} */
+function messageOf(e) {
+  return e !== null && (typeof e === "object" || typeof e === "function") && "message" in e ? e.message : undefined;
+}
+
 /** Fetch, hash, and store every subresource of one captured HTML page, then
  *  build the companion and the manifest.
  *
@@ -1057,6 +1681,9 @@ export function readLinkWrapper(v) {
  *    put(sha, bytes)   -> { existed: boolean }
  *    sha256(bytes)     -> hex string
  *    isPublic(url)     -> boolean
+ *
+ *  @param {CaptureArgs} args
+ *  @returns {Promise<CaptureResult>}
  */
 export async function captureSubresources({
   html, base, primarySha, primaryFile, fetchOne, put, sha256, isPublic,
@@ -1094,30 +1721,41 @@ export async function captureSubresources({
     if (typeof fn !== "function") throw new TypeError(`captureSubresources: ${name} must be a function`);
   /* Why an asset the host has served before was fetched anyway. Recorded so a
      reuse rate that quietly falls to zero is visible rather than mysterious. */
+  /** @type {{ url: string, kind: string, why: string | undefined }[]} */
   const noReuse = [];
+  /** @param {{ url: string, kind: string }} stem @param {ReuseDecision} dec */
   const rec_noreuse = (stem, dec) => noReuse.push({ url: stem.url, kind: stem.kind, why: dec.why });
   const stamp = () => now().toISOString().split(".")[0] + "Z";
+  /** @type {SubRecord[]} */
   const records = [];            // every reference, in the order discovered
-  const bySha = new Map();       // sha -> record, for the manifest
-  const byUrl = new Map();       // absolute url -> record, for dedup
-  const refToUrl = new Map();    // raw ref text -> absolute url or null
+  /** @type {Map<string, SubRecord>} */
+  const bySha = new Map([]);       // sha -> record, for the manifest
+  /** @type {Map<string, SubRecord>} */
+  const byUrl = new Map([]);       // absolute url -> record, for dedup
+  /** @type {Map<string, string | null>} */
+  const refToUrl = new Map([]);    // raw ref text -> absolute url or null
   let attempted = 0, discovered = 0, spent = 0, truncated = false, budgetHit = false, platformHit = false;
   /* Two different stopping conditions that must not be confused. `cap` is what
      we are willing to spend. `ceilingBudget` is what the runtime will let us
      spend, known only if a previous run hit it. */
-  let observedCeiling = null, deferred = 0, reused = 0;
+  /** @type {number | null} */
+  let observedCeiling = null;
+  let deferred = 0, reused = 0;
   /* Everything this run saw of this host, for the caller to file afterwards.
      Written out here rather than inside the loop so that a capture which fails
      partway still reports what it did learn. */
+  /** @type {SiteObservation[]} */
   const siteObservations = [];
   /* Declared HERE, beside the other accumulators, rather than down with the
      link classifier that fills it. It was declared there, and the resume block
      above restores into it, which put it in a temporal dead zone that only
      fired on a page that actually has <a> elements. A fixture without links
      never evaluated the loop body and the suite stayed green. */
+  /** @type {Link[]} */
   const links = [];
   /* What the next tick has to do. Built as the deferrals happen so it is
      correct even if this tick ends unexpectedly. */
+  /** @type {QueueItem[]} */
   const outstanding = [];
   const ceilingBudget = platformCeiling == null ? Infinity
     : Math.max(0, platformCeiling - platformMargin - subrequestsAlreadySpent);
@@ -1128,14 +1766,17 @@ export async function captureSubresources({
      stylesheet at /css/main.css writing `url(img/bg.png)` means /css/img/bg.png,
      and resolving it against the PAGE instead silently captures a different
      file, or nothing, while every count still looks right. */
+  /** @type {string | null} */
   let baseHost = null;
   try { baseHost = new URL(base).hostname; } catch { baseHost = null; }
+  /** @type {Queue} */
   let queue;
   /* N79: which link hrefs sat in furniture, from the same walk that finds the
      references. A resumed tick restores its queue rather than re-walking for it,
      but a link can change partition between ticks (deferred, then intra once its
      bytes are held), and that new entry needs its containment, so the walk is
      made again there for the links alone. */
+  /** @type {Map<string, string>} */
   let linkChrome;
   if (resume) {
     /* cssOwner is a live reference into `records`, so it travels as an INDEX
@@ -1144,7 +1785,8 @@ export async function captureSubresources({
     for (const r of resume.records || []) {
       records.push(r);
       if (r.url) byUrl.set(r.url, r);
-      if (r.ok && r.sha256 && !bySha.has(r.sha256)) bySha.set(r.sha256, r);
+      const sha = r.sha256;
+      if (r.ok && sha && !bySha.has(sha)) bySha.set(sha, r);
     }
     for (const l of resume.links || []) links.push(l);
     linkChrome = meter.sync("link_containment", () => scanHtml(html).linkChrome, html.length);
@@ -1152,20 +1794,25 @@ export async function captureSubresources({
     for (const o of resume.siteObservations || []) siteObservations.push(o);
     discovered = resume.discovered || records.length;
     spent = resume.spent || 0;
-    const queued = (resume.queue || []).map((q) => ({
-      ...q, cssOwner: q.cssOwnerIdx == null ? undefined : records[q.cssOwnerIdx] }));
+    const queued = (resume.queue || []).map((q) => {
+      const idx = q.cssOwnerIdx;
+      return { ...q, cssOwner: idx == null ? undefined : records[idx] };
+    });
     queue = makeQueue(queued);
     /* A resumed item was DEFERRED last tick and is being tried again, so its
        earlier row goes: leaving it would double-count and would leave a
        "deferred" row beside the real outcome. */
     const retry = new Set(queued.map((q) => q.retryUrl).filter(Boolean));
-    for (let i = records.length - 1; i >= 0; i--)
-      if ((records[i].reason === "DEFERRED" || records[i].reason === "PLATFORM_LIMIT") && retry.has(records[i].url)) {
-        byUrl.delete(records[i].url);
+    for (let i = records.length - 1; i >= 0; i--) {
+      const ri = records[i];
+      if (ri && (ri.reason === "DEFERRED" || ri.reason === "PLATFORM_LIMIT") && retry.has(ri.url)) {
+        byUrl.delete(ri.url);
         records.splice(i, 1);
         discovered--;
       }
+    }
   } else {
+    /** @type {{ refs: Ref[], linkChrome: Map<string, string> }} */
     const scan = meter.sync("parse_html", () => scanHtml(html), html.length);
     linkChrome = scan.linkChrome;
     queue = makeQueue(scan.refs.map((r) => ({ ...r, depth: 1, from: primaryFile, against: base })));
@@ -1175,18 +1822,22 @@ export async function captureSubresources({
      its owning stylesheet's rewrite list is updated once, whatever happened to
      it. The first version of this had the bookkeeping on the success path only
      and a 404 background image silently kept its live URL in the CSS. */
-  const recIdx = new Map();
+  /** @type {Map<SubRecord, number>} */
+  const recIdx = new Map([]);
   records.forEach((r, i) => { if (!recIdx.has(r)) recIdx.set(r, i); });
+  /** @param {QueueItem} item @param {SubRecord} rec */
   const settle = (item, rec) => {
     if (rec) { recIdx.set(rec, records.length); records.push(rec); }
-    if (item.cssOwner)
-      item.cssOwner.rewrite.push({ ref: item.ref, sha256: rec && rec.ok ? rec.sha256 : null });
+    const owner = item.cssOwner;
+    if (owner)
+      rewriteOf(owner).push({ ref: item.ref, sha256: rec && rec.ok ? rec.sha256 : null });
   };
 
   while (queue.length) {
     /* Lowest priority value first, ties by discovery order, which keeps the
        result deterministic for a given page. */
     const item = queue.shift();
+    if (!item) break;
     discovered++;
     const cls = classifyRef(item.ref, item.against, isPublic);
     /* Only the page's OWN references go in this map. A relative ref inside a
@@ -1198,21 +1849,52 @@ export async function captureSubresources({
        added only where a fetch was actually issued, below; a reused, skipped,
        deferred, capped or refused record never claims a fetch instant. */
     const at = stamp();
+    /** @type {Origin} */
     const org = cls.ok ? originOf(cls.url, baseHost) : { origin: "unknown", host: null };
+    /* Each part below holds exactly the members the original spread of the origin, the family and the prior gave. */
+    /** @type {SubRecordPart} */
+    const approximatePart = {};
+    if (org.approximate) {
+      approximatePart.approximate = true;
+    }
+    const family = item.family, prior = item.evidentiary_prior;
+    /** @type {SubRecordPart} */
+    const familyPart = {};
+    if (family) {
+      familyPart.family = family;
+      familyPart.family_size = item.family_size;
+    }
+    /** @type {SubRecordPart} */
+    const priorPart = {};
+    if (prior) {
+      priorPart.evidentiary_prior = prior;
+    }
+    /** @type {Stem} */
     const stem = { url: cls.ok ? cls.url : item.ref, kind: item.kind, via: item.where,
                    from: item.from, depth: item.depth,
                    region: item.region || "body", region_basis: item.region_basis || "default",
-                   ...org,
-                   ...(item.family ? { family: item.family, family_size: item.family_size } : {}),
-                   ...(item.evidentiary_prior ? { evidentiary_prior: item.evidentiary_prior } : {}),
+                   origin: org.origin, host: org.host, ...approximatePart,
+                   ...familyPart,
+                   ...priorPart,
                    considered_at: at };
 
     if (!cls.ok) {
+      const scheme = cls.scheme;
+      /** @type {SubRecordPart} */
+      const finalPart = {};
+      if (cls.final) {
+        finalPart.final = true;
+      }
+      /** @type {SubRecordPart} */
+      const schemePart = {};
+      if (scheme) {
+        schemePart.scheme = scheme;
+      }
       settle(item, { ...stem, ok: false, status: null, reason: cls.reason,
-        ...(cls.final ? { final: true } : {}),
-        ...(cls.scheme ? { scheme: cls.scheme } : {}),
+        ...finalPart,
+        ...schemePart,
         detail: cls.reason === "REFUSED_SCHEME"
-          ? localize("subresources.subresources.a_scheme_reference_is_not", "a {scheme} reference is not something this surface fetches", { scheme: String(cls.scheme) })
+          ? localize("subresources.subresources.a_scheme_reference_is_not", "a {scheme} reference is not something this surface fetches", { scheme: String(scheme) })
           : localize("subresources.subresources.the_address_is_not_public_https", "the address is not public https, and the fence that guards the primary locator guards this one") });
       continue;
     }
@@ -1233,8 +1915,9 @@ export async function captureSubresources({
        references still have to resolve, so the second one maps to the bytes the
        first one already stored. */
     if (already) {
-      if (item.cssOwner)
-        item.cssOwner.rewrite.push({ ref: item.ref, sha256: already.ok ? already.sha256 : null });
+      const owner = item.cssOwner;
+      if (owner)
+        rewriteOf(owner).push({ ref: item.ref, sha256: already.ok ? already.sha256 : null });
       continue;
     }
     /* Once the runtime has refused, every further attempt is another refusal.
@@ -1244,8 +1927,9 @@ export async function captureSubresources({
        outstanding rather than failed. */
     if (platformHit || attempted >= ceilingBudget) {
       deferred++;
+      const owner = item.cssOwner;
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
-        cssOwnerIdx: item.cssOwner ? (recIdx.get(item.cssOwner) ?? -1) : null,
+        cssOwnerIdx: owner ? (recIdx.get(owner) ?? -1) : null,
         retryUrl: cls.url });
       settle(item, { ...stem, ok: false, status: null, reason: "DEFERRED",
         detail: platformHit
@@ -1272,10 +1956,19 @@ export async function captureSubresources({
     if (siteLookup) {
       const known = await siteLookup(normalizeAddress(cls.url));
       const dec = reuseDecision(item, known, { now: now().getTime(), freshWindowMs: reuseFreshWindowMs, minDocuments: reuseMinDocuments });
-      if (dec.reuse) {
+      /* A decision to reuse is made only on a record that names its bytes. */
+      const knownSha = known ? known.sha256 : undefined;
+      if (dec.reuse && known && knownSha) {
         reused++;
-        const rec = { ...stem, ok: true, status: null, sha256: known.sha256, bytes: known.bytes,
-          ...(known.content_type ? { content_type: known.content_type } : {}),
+        const knownType = known.content_type, knownBy = known.last_fetched_by, undetermined = known.documents_undetermined;
+        /** @type {SubRecordPart} */
+        const typePart = {};
+        if (knownType) {
+          typePart.content_type = knownType;
+        }
+        /** @type {SubRecord} */
+        const rec = { ...stem, ok: true, status: null, sha256: knownSha, bytes: known.bytes,
+          ...typePart,
           existed: true,
           /* The honesty fields. A reader must never be led to believe a byte was
              verified against the source during THIS capture when it was not. */
@@ -1285,26 +1978,26 @@ export async function captureSubresources({
              the fetch that saw them served. null when the record names none (a
              fetch recorded before the build): UNDETERMINED as to source, never
              inferred from timestamps. */
-          reused_from: known.last_fetched_by || null,
+          reused_from: knownBy || null,
           reused_from_fetched_at: known.last_fetched,
           reused_stable_since: known.stable_since,
           reused_seen_in_documents: known.documents,
-          detail: localize("subresources.subresources.not_fetched_during_this_capture", "not fetched during this capture: the source was seen serving these exact bytes at {last_fetched}{v1}, across {documents} documents on this host{v2}, and they are reused from the record rather than requested again", { last_fetched: String(known.last_fetched), v1: known.last_fetched_by
-                    ? localize("subresources.subresources.by_capture", " by capture {capture}", { capture: String(known.last_fetched_by) })
-                    : localize("subresources.subresources.by_a_capture_undetermined", " by a capture the record does not name (undetermined)"), documents: String(known.documents), v2: known.documents_undetermined
-                    ? (known.documents_undetermined === 1
-                      ? localize("subresources.subresources.and_earlier_capture_undetermined", " (and {count} earlier capture whose page the record does not name, counted as undetermined)", { count: String(known.documents_undetermined) })
-                      : localize("subresources.subresources.and_earlier_captures_undetermined", " (and {count} earlier captures whose page the record does not name, counted as undetermined)", { count: String(known.documents_undetermined) }))
+          detail: localize("subresources.subresources.not_fetched_during_this_capture", "not fetched during this capture: the source was seen serving these exact bytes at {last_fetched}{v1}, across {documents} documents on this host{v2}, and they are reused from the record rather than requested again", { last_fetched: String(known.last_fetched), v1: knownBy
+                    ? localize("subresources.subresources.by_capture", " by capture {capture}", { capture: String(knownBy) })
+                    : localize("subresources.subresources.by_a_capture_undetermined", " by a capture the record does not name (undetermined)"), documents: String(known.documents), v2: undetermined
+                    ? (undetermined === 1
+                      ? localize("subresources.subresources.and_earlier_capture_undetermined", " (and {count} earlier capture whose page the record does not name, counted as undetermined)", { count: String(undetermined) })
+                      : localize("subresources.subresources.and_earlier_captures_undetermined", " (and {count} earlier captures whose page the record does not name, counted as undetermined)", { count: String(undetermined) }))
                     : "" }) };
         byUrl.set(cls.url, rec);
-        if (!bySha.has(known.sha256)) bySha.set(known.sha256, rec);
+        if (!bySha.has(knownSha)) bySha.set(knownSha, rec);
         siteObservations.push({ address: cls.url, address_norm: normalizeAddress(cls.url),
-                                sha256: known.sha256, kind: item.kind, reused: true,
-                                reused_from: known.last_fetched_by || null });
+                                sha256: knownSha, kind: item.kind, reused: true,
+                                reused_from: knownBy || null });
         /* A reused stylesheet still needs its own url() targets resolved, so the
            bytes are read back and followed exactly as a fetched one would be. */
-        if ((item.kind === "stylesheet" || known.content_type === "text/css") && item.depth < CSS_MAX_DEPTH && readBack) {
-          const text = await readBack(known.sha256);
+        if ((item.kind === "stylesheet" || knownType === "text/css") && item.depth < CSS_MAX_DEPTH && readBack) {
+          const text = await readBack(knownSha);
           if (text != null) {
             rec.css = true; rec.rewrite = [];
             for (const c of cssRefList(text))
@@ -1325,10 +2018,12 @@ export async function captureSubresources({
        it was issued: nothing between the two reads a clock or waits on the net
        except siteLookup, and a reused record never carries it. */
     const fetchedAt = at;
-    let r, limited = false;
+    /** @type {FetchAnswer | null | undefined} */
+    let r;
+    let limited = false;
     try { r = await fetchOne(cls.url); }
     catch (e) {
-      const msg = String((e && e.message) || e);
+      const msg = String(messageOf(e) || e);
       /* "we ran out of budget" and "the source did not serve it" are different
          facts and the record must not confuse them. Reporting a platform
          subrequest limit as FETCH_FAILED would put a false statement about the
@@ -1340,7 +2035,8 @@ export async function captureSubresources({
               ? localize("subresources.subresources.the_runtime_refused_another", "the runtime refused another outbound request in this invocation; the source was never asked, and this says nothing about whether it would have answered")
               : msg };
       limited = platform;
-      if (platform && !platformHit) {
+      /* No reference reaches here once the runtime has refused (the DEFERRED branch above), so this is the first refusal. */
+      if (platform) {
         platformHit = true;
         /* The count reached WHEN THE RUNTIME SAID NO. This is the observation,
            and it is worth more than any documented figure because it came from
@@ -1350,45 +2046,69 @@ export async function captureSubresources({
       }
     }
 
+    const answer = r;
     if (limited) {
       /* The runtime refused before the request left, so no fetch instant, and
          the reference is outstanding like the ones after it: a continuation
          retries it rather than losing it. */
+      const owner = item.cssOwner;
       outstanding.push({ ...({ ...item, cssOwner: undefined }),
-        cssOwnerIdx: item.cssOwner ? (recIdx.get(item.cssOwner) ?? -1) : null,
+        cssOwnerIdx: owner ? (recIdx.get(owner) ?? -1) : null,
         retryUrl: cls.url });
-      const rec = { ...stem, ok: false, status: 0, reason: "PLATFORM_LIMIT", detail: r.detail };
+      /** @type {SubRecord} */
+      const rec = { ...stem, ok: false, status: 0, reason: "PLATFORM_LIMIT", detail: answer?.detail };
       byUrl.set(cls.url, rec); settle(item, rec);
       continue;
     }
-    if (!r || !r.ok) {
+    if (!answer || !answer.ok) {
       /* The failed bucket is closed (R16, R33). A reason the caller names that
          is not one of its two fetch outcomes (a governor's HOST_COOLING_OFF, say)
          is not the source refusing, so it is FETCH_FAILED with the caller's
          word kept beside it; an unexplained non-ok answer is the source's. */
-      const named = r?.reason;
+      const named = answer?.reason;
       const reason = named === "SOURCE_REFUSED" || named === "FETCH_FAILED" ? named
         : named ? "FETCH_FAILED" : "SOURCE_REFUSED";
-      const rec = { ...stem, ok: false, status: r ? (r.status ?? null) : null, reason,
-                    ...(named && named !== reason ? { fetch_reason: named } : {}),
+      const detail = answer?.detail;
+      /** @type {SubRecordPart} */
+      const namedPart = {};
+      if (named && named !== reason) {
+        namedPart.fetch_reason = named;
+      }
+      /** @type {SubRecordPart} */
+      const detailPart = {};
+      if (detail) {
+        detailPart.detail = detail;
+      }
+      /** @type {SubRecord} */
+      const rec = { ...stem, ok: false, status: answer ? (answer.status ?? null) : null, reason,
+                    ...namedPart,
                     fetched_at: fetchedAt,
-                    ...(r?.detail ? { detail: r.detail } : {}) };
+                    ...detailPart };
       byUrl.set(cls.url, rec); settle(item, rec);
       continue;
     }
-    const bytes = r.bytes || new Uint8Array(0);
+    const bytes = answer.bytes || new Uint8Array(0);
     if (bytes.length > perMax) {
-      const rec = { ...stem, ok: false, status: r.status ?? 200, reason: "TOO_LARGE",
+      /** @type {SubRecord} */
+      const rec = { ...stem, ok: false, status: answer.status ?? 200, reason: "TOO_LARGE",
                     bytes: bytes.length, maxBytes: perMax, fetched_at: fetchedAt };
       byUrl.set(cls.url, rec); settle(item, rec);
       continue;
     }
     spent += bytes.length;
+    /** @type {string} */
     const sha = await meter.cpuAwait("hash_subresource", () => sha256(bytes), bytes.length);
     const { existed } = await put(sha, bytes);
-    const ct = (r.contentType || "").split(";")[0].trim();
-    const rec = { ...stem, ok: true, status: r.status ?? 200, sha256: sha, bytes: bytes.length,
-                  ...(ct ? { content_type: ct } : {}), existed: !!existed, fetched_at: fetchedAt };
+    const ct = (answer.contentType || "").split(";")[0]?.trim() ?? "";
+    /** @type {SubRecord} */
+    /** @type {SubRecordPart} */
+    const typePart = {};
+    if (ct) {
+      typePart.content_type = ct;
+    }
+    /** @type {SubRecord} */
+    const rec = { ...stem, ok: true, status: answer.status ?? 200, sha256: sha, bytes: bytes.length,
+                  ...typePart, existed: !!existed, fetched_at: fetchedAt };
     rec.fetched_this_capture = true;
     byUrl.set(cls.url, rec);
     if (!bySha.has(sha)) bySha.set(sha, rec);
@@ -1401,11 +2121,14 @@ export async function captureSubresources({
        following them at all would leave the common case looking broken. */
     const isCss = item.kind === "stylesheet" || ct === "text/css";
     if (isCss && item.depth < CSS_MAX_DEPTH) {
+      /** @type {string} */
       let text = "";
-      try { text = meter.sync("decode_css", () => new TextDecoder("utf-8", { fatal: false }).decode(bytes), bytes.length); } catch { text = ""; }
+      try { text = meter.sync("decode_css", () => new TextDecoder().decode(bytes), bytes.length); } catch { text = ""; }
       rec.css = true;
       rec.rewrite = [];
-      for (const c of meter.sync("parse_css", () => cssRefList(text)))
+      /** @type {{ url: string, kind: string }[]} */
+      const cssRefs = meter.sync("parse_css", () => cssRefList(text));
+      for (const c of cssRefs)
         queue.push({ ref: c.url, kind: c.kind, where: `url() in ${cls.url}`,
                      depth: item.depth + 1, from: cls.url, against: cls.url, cssOwner: rec,
                      /* A stylesheet's own assets carry the stylesheet's region,
@@ -1419,11 +2142,12 @@ export async function captureSubresources({
      raw text -> absolute url -> record. Scripts resolve to the dead
      placeholder even though their bytes are held, which is the whole point of
      capturing them without referencing them. */
+  /** @param {string} ref @param {string} kind @returns {string | null} */
   const resolve = (ref, kind) => {
     const trimmed = String(ref || "").trim();
     if (!trimmed) return null;
     if (kind === "script") return PLACEHOLDER_MISSING;
-    const abs = refToUrl.has(trimmed) ? refToUrl.get(trimmed) : (() => {
+    const abs = refToUrl.has(trimmed) ? refToUrl.get(trimmed) ?? null : (() => {
       const c = classifyRef(trimmed, base, isPublic);
       return c.ok ? c.url : null;
     })();
@@ -1431,44 +2155,60 @@ export async function captureSubresources({
     const rec = byUrl.get(abs);
     if (!rec) return PLACEHOLDER_MISSING;
     if (rec.kind === "script") return PLACEHOLDER_MISSING;
-    return rec.ok ? placeholderFor(rec.sha256) : PLACEHOLDER_MISSING;
+    return rec.ok ? placeholderFor(String(rec.sha256)) : PLACEHOLDER_MISSING;
   };
 
-  const when0 = resume && resume.when0 ? resume.when0 : stamp();
+  const resumedWhen = resume ? resume.when0 : undefined;
+  const when0 = resume && resumedWhen ? resumedWhen : stamp();
   /* Links. Every <a href> the page carries is characterised into a partition
      and recorded, because a connection the source itself asserted is material
      the record wants, not noise to be stripped. */
   /* Seeded from whatever a previous tick already recorded, using the same key
      note() builds, so a resumed capture does not re-append every link each time
      it rebuilds the companion. */
+  /** @type {Map<string, Link>} */
   const seenLink = new Map(links.map((l) => [`${l.type}\u0000${l.citation || l.address || l.ref}`, l]));
   /* N79: every link says whether it sat in a chrome region, with that region's
      basis, and says so explicitly when it did not, so the field is never read as
      absent. Whether it IS the site's chrome (it recurs across the host's pages)
      is capture's to decide (its R28), never this page's. */
+  /** @param {Link} l @param {string | null} basis */
   const contain = (l, basis) => {
     if (basis) { if (l.chrome !== true) { l.chrome = true; l.chrome_basis = basis; } }
     else if (l.chrome !== true) { l.chrome = false; l.chrome_basis = null; }
   };
   /* A link restored from an earlier tick that predates the field. */
   for (const l of links) contain(l, linkChrome.get(String(l.ref || "").trim()) || null);
+  /** @param {string} ref @returns {LinkClass} */
   const classifyLink = (ref) => {
     const raw = String(ref || "").trim();
     const basis = linkChrome.get(raw) || null;
+    /** @param {string} type @param {string} address @param {LinkPart} [extra] */
     const note = (type, address, extra = {}) => {
       /* Keyed on the CITATION, so a link to #findings and a link to
          #methodology in the same report are two records rather than one. */
       const key = `${type}\u0000${extra.citation || address || raw}`;
-      if (!seenLink.has(key)) {
+      const prior = seenLink.get(key);
+      if (prior === undefined) {
+        const o = address ? originOf(address, baseHost) : null;
+        /* The members the original spread of the address's origin gave. */
+        /** @type {LinkPart} */
+        const originPart = {};
+        if (o) {
+          originPart.origin = o.origin;
+          originPart.host = o.host;
+          if (o.approximate) originPart.approximate = true;
+        }
+        /** @type {Link} */
         const l = { ref: raw, type, address: address || null, as_of: when0,
-                    ...(address ? originOf(address, baseHost) : {}), ...extra };
+                    ...originPart, ...extra };
         contain(l, basis);
         seenLink.set(key, l);
         links.push(l);
       } else {
         /* The same citation written a second way ("/x" in the body, the absolute
            address in the nav) is still one link, and the nav carried it. */
-        contain(seenLink.get(key), basis);
+        contain(prior, basis);
       }
       return { type, address, ...extra };
     };
@@ -1485,7 +2225,13 @@ export async function captureSubresources({
     }
     const cls = classifyRef(raw, base, isPublic);
     if (!cls.ok) {
-      note("refused", cls.url, { reason: cls.reason, ...(cls.scheme ? { scheme: cls.scheme } : {}) });
+      const scheme = cls.scheme;
+      /** @type {LinkPart} */
+      const schemePart = {};
+      if (scheme) {
+        schemePart.scheme = scheme;
+      }
+      note("refused", cls.url, { reason: cls.reason, ...schemePart });
       return { type: "refused", wrapper: linkWrapper.refused(), address: null };
     }
     /* Intra-record: the link's address is one this capture already holds bytes
@@ -1495,7 +2241,7 @@ export async function captureSubresources({
     if (held && held.ok) {
       note("intra", cls.url, { sha256: held.sha256, fragment: fragmentOf(raw),
                                citation: normalizeCitation(new URL(raw, base).toString()) });
-      return { type: "intra", wrapper: linkWrapper.intra(held.sha256), address: cls.url };
+      return { type: "intra", wrapper: linkWrapper.intra(String(held.sha256)), address: cls.url };
     }
     /* Everything else is deferred: whether the store holds a capture of this
        address is a question about the store, and the store changes. */
@@ -1505,12 +2251,16 @@ export async function captureSubresources({
   };
 
   const when = when0;
+  /** @type {string} */
   const companionText = meter.sync("render_companion", () => renderCompanion(html, { resolve, classifyLink, primarySha, when }), html.length);
+  /** @type {Uint8Array} */
   const companionBytes = meter.sync("encode_companion", () => new TextEncoder().encode(companionText), companionText.length);
+  /** @type {string} */
   const companionSha = await meter.cpuAwait("hash_companion", () => sha256(companionBytes));
   await put(companionSha, companionBytes);
 
   const fetched = records.filter((r) => r.ok);
+  /** @type {Manifest} */
   const manifest = {
     version: 1,
     derived: true,
@@ -1581,7 +2331,9 @@ export async function captureSubresources({
     link_note: localize("subresources.subresources.every_a_the_page_carried", "Every <a> the page carried, characterised. `intra` resolves inside this record and is final. `deferred` is an address whose partition depends on what the store holds and is therefore NOT final: held_at_capture records only what was true when this page was captured, and a viewer must re-resolve it against the store at read time. A deferred link that later resolves to a capture in another record is a link to THAT VERSION of the target only if the target's capture can be shown to be the version the source was pointing at on this page's retrieval date. Until that is established the link is unconfirmed, and unconfirmed is a third answer rather than a synonym for either of the other two."),
     note: localize("subresources.subresources.every_entry_the_viewer_renders", "Every entry the viewer renders must be fetched by sha256 through op=capture and verified against that sha before use. Entries with ok:false are recorded because a stylesheet the source failed to serve is part of what the source served that day. Script entries hold bytes and are never referenced by the render companion."),
   };
+  /** @type {Uint8Array} */
   const manifestBytes = meter.sync("serialise_manifest", () => new TextEncoder().encode(JSON.stringify(manifest, null, 1)), records.length);
+  /** @type {string} */
   const manifestSha = await meter.cpuAwait("hash_manifest", () => sha256(manifestBytes));
   await put(manifestSha, manifestBytes);
 
@@ -1594,7 +2346,7 @@ export async function captureSubresources({
     resumeState: outstanding.length ? {
       when0, discovered, spent, queue: outstanding,
       records, links, siteObservations,
-      refToUrl: Object.fromEntries(refToUrl),
+      refToUrl: entriesOf(refToUrl),
     } : null,
     manifest, manifestSha, manifestBytes,
     companionText, companionSha, companionBytes,
