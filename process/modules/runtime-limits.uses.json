@@ -1,6 +1,6 @@
 {
   "module": "runtime-limits",
-  "written": {"commit":"1f6fd751290ac01cbb4e00423a6db3f531ae19cf","tool":"594844272fb76f6f11bfb346260227f216b959a5"},
+  "written": {"commit":"1e2d0e539650b61b3a465827033715ad3f97c4dd","tool":"594844272fb76f6f11bfb346260227f216b959a5"},
   "providers": ["setup-words"],
   "uses": [
     {"provider":"setup-words","item":"word","itemKind":"function","type":"call","route":"direct","standard":true,"where":[{"file":"bio-plane/src/tokens.mjs","side":"code","line":96,"in":"(top level)"},{"file":"bio-plane/test/m/runtime-limits/runtime-limits.test.mjs","side":"test","line":415,"test":"R13: instanceClaudeStatus answers not configured, CASCADE_UNSET, with a detail naming a member's own account or the group's API key in credentials, for every env; it reads nothing from env and no binding name is exported"},{"file":"bio-plane/test/m/runtime-limits/runtime-limits.test.mjs","side":"test","line":434,"test":"R13 (DEC-149 sweep, tokens.mjs:62): the detail says \"Your group's Civicsmith\", never \"the plane\", \"the instance\" or \"this group's copy\""}]},
@@ -18,17 +18,18 @@
     {"rule":"R1","file":"bio-plane/test/m/runtime-limits/runtime-limits.test.mjs","side":"test","line":219,"mayRefer":["*"],"waitsOn":"this module","tests":["R5: cpuProbe's defaults are startStep 0, maxStep 40, budgetMs 20,000, now Date.now, iterationsPerStep 2,000,000; checkpoint has none"]},
     {"rule":"R1","file":"bio-plane/test/m/runtime-limits/runtime-limits.test.mjs","side":"test","line":222,"mayRefer":["*"],"waitsOn":"this module","tests":["R5: cpuProbe's defaults are startStep 0, maxStep 40, budgetMs 20,000, now Date.now, iterationsPerStep 2,000,000; checkpoint has none"]},
     {"rule":"R1","file":"bio-plane/test/m/runtime-limits/runtime-limits.test.mjs","side":"test","line":223,"mayRefer":["*"],"waitsOn":"this module","tests":["R5: cpuProbe's defaults are startStep 0, maxStep 40, budgetMs 20,000, now Date.now, iterationsPerStep 2,000,000; checkpoint has none"]},
-    {"rule":"R14","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":100,"mayRefer":[],"waitsOn":"ARCH: the facility list","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
-    {"rule":"R14","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":109,"mayRefer":[],"waitsOn":"ARCH: the facility list","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
-    {"rule":"R2","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":111,"mayRefer":["*"],"waitsOn":"the owner of the data: its reader","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
-    {"rule":"R14","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":115,"mayRefer":[],"waitsOn":"ARCH: the facility list","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]}
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":100,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R14","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":100,"mayRefer":["*"],"waitsOn":"ARCH: the facility list","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":101,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":109,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":110,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":111,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]},
+    {"rule":"R1","file":"bio-plane/test/m/runtime-limits/store-place.test.mjs","side":"test","line":115,"mayRefer":["*"],"waitsOn":"this module","tests":["R28: with a hint on the real binding, the stub works (workerd places nothing locally)"]}
   ],
   "orderFaults": [],
   "copies": [],
   "packages": [
-    {"package":"miniflare","facility":"miniflare:Miniflare"},
-    {"package":"miniflare","facility":"miniflare:Miniflare.dispose"},
-    {"package":"miniflare","facility":"miniflare:Miniflare.getBindings"},
+    {"package":"miniflare","facility":"miniflare"},
     {"package":"node","facility":"Array"},
     {"package":"node","facility":"Array.at"},
     {"package":"node","facility":"Array.every"},
