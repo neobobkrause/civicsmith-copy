@@ -132,8 +132,9 @@ export const isCaseMemberBytes = (fm) => {
  * than raw table[ot]: the second rename left them un-normalized and
  * patched with duplicate keys, and DATA-MODEL.md §2.7 measured what that
  * costs a third name. */
-/** @template V @param {Readonly<Record<string, V>>} table @param {string} t @returns {V | undefined} */
-export const vocabFor = (table, t) => table[t] !== undefined ? table[t] : table[normalizeType(t)];
+/* A type's name is a key as the language makes one of it: absent is "undefined", null is "null". */
+/** @template V @param {Readonly<Record<string, V>>} table @param {string | null | undefined} t @returns {V | undefined} */
+export const vocabFor = (table, t) => table[String(t)] !== undefined ? table[String(t)] : table[String(normalizeType(t))];
 
 /** Legal states and transition edges per type (spec Section 4; edge set is catalog-versioned). */
 /* The LEGACY focus machine (below), named once so `focus` and `problem` hold the same object. */

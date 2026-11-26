@@ -35,7 +35,7 @@
    The census of what was minted or validated at T33's opening is in this module's T33 job record. `MTI CHK MSR HYP DUT
    CALC STQ` were reserved at T33 (P8), so no later tranche needs a record-grammar job to admit them. */
 /** One prefix's row: the module that mints it, its form, and (`legacy`) an earlier form still read as valid.
- * @typedef {Readonly<{prefix: string, owner: string, form: string, legacy?: string}>} IdRow */
+ * @typedef {{readonly prefix: string, readonly owner: string, readonly form: string, readonly legacy?: string}} IdRow */
 /** @param {string} prefix @param {string} owner @param {string} [form] @param {string} [legacy] @returns {IdRow} */
 const row = (prefix, owner, form = 'sequential', legacy) =>
   Object.freeze(legacy ? { prefix, owner, form, legacy } : { prefix, owner, form });

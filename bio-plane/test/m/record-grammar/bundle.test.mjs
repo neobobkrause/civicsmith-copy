@@ -343,7 +343,7 @@ test("R62 checkBundle admits a success_record document: a bare SUC id core under
   /* The type is known to C-2.5 and the SUC prefix implies it: no C-2.5 for the document, and the default stamp admits it. */
   assert.ok(!checks(r).includes("C-2.5"));
   /* R1 is unchanged: SUC is no bundle prefix, so neither a reference target nor an annotation id takes a SUC id. */
-  for (const id of ["SUC-2026-0001", "SUC-2026-0001-a"]) assert.ok(BUNDLE_ID_RE.exec(id) === null && ANN_ID_RE.exec(`${id}.ann-20261001T000000Z-a`) === null, id);
+  for (const id of ["SUC-2026-0001", "SUC-2026-0001-a"]) assert.ok(!BUNDLE_ID_RE.test(id) && !ANN_ID_RE.test(`${id}.ann-20261001T000000Z-a`), id);
   assert.ok(!Object.hasOwn(HEADINGS, "success_record"));
 });
 

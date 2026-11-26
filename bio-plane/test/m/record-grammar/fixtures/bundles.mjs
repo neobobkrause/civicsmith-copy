@@ -75,7 +75,7 @@ const HEAD = {
 /** @param {Fields} fm @returns {string} */
 function yamlOf(fm) {
   /** @param {Plain} v @returns {string} */
-  const sc = (v) => (v === null ? "null" : typeof v === "string" && (v === "" || /[:#]/.exec(v) !== null) ? JSON.stringify(v) : String(v));
+  const sc = (v) => (v === null ? "null" : typeof v === "string" && (v === "" || /[:#]/.test(v)) ? JSON.stringify(v) : String(v));
   const out = ["---"];
   for (const [k, v] of Object.entries(fm)) {
     if (Array.isArray(v)) {
