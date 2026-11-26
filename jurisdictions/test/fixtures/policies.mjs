@@ -21,6 +21,19 @@ const PDMS = "https://public.powerdms.com/OAKLAND/documents";
 
 export const READ = "2026-10-07";
 
+/** A family's measurement: the pages read; each citation line with its number as written and, where it differs, its normal
+ *  form; each line citing a portion, with its number and portion; each header line with the field it prints, and `false`
+ *  where the line must not be read as that field; and the lines that cite no item of the family.
+ *  @typedef {Object} Family
+ *  @property {string[]} pages
+ *  @property {[string, string, string?][]} citations
+ *  @property {[string, string, string][]} [portions]
+ *  @property {[string, string, boolean?][]} headers
+ *  @property {string[]} [not]
+ */
+
+/** The families measured, by series key.
+ *  @type {{ [key: string]: Family }} */
 export const FAMILIES = {
   ai: {
     pages: [PDMS, `${PDMS}/579540`, `${PDMS}/2108538`, `${PDMS}/97`,

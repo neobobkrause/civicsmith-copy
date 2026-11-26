@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { list, combine, governingZone } from "../index.mjs";
 
 const IDS = list().map((p) => p.id);
-const zoneOf = (ids) => { const r = combine(ids); return r.ok && r.view.time_zone ? r.view.time_zone.value : null; };
+/** @param {(string | undefined)[]} ids @returns {string | null} */
+const zoneOf = (ids) => { const r = combine(ids); const zone = r.ok ? r.view.time_zone : undefined; return zone ? zone.value : null; };
 const ONE = IDS.find((id) => zoneOf([id]) !== null);
 
 test("R98 a valid team zone wins over the profiles' zone, and holds with no profile", () => {
@@ -22,7 +23,7 @@ test("R98 an invalid or absent team zone falls back to the combined view's zone"
   const want = zoneOf([ONE]);
   for (const bad of [undefined, null, "", "Not/AZone", "Oakland", 5, {}, [], true, "america/los_angeles ", () => 1])
     assert.equal(governingZone([ONE], bad), want, String(bad));
-  assert.equal(governingZone([ONE]), want);
+  assert.equal(governingZone([ONE], undefined), want);
 });
 
 test("R98 no profiles, a list that does not combine, and non-list inputs answer null (or the team zone) without throwing", () => {
@@ -39,7 +40,9 @@ test("R98 no profiles, a list that does not combine, and non-list inputs answer 
 test("R98 never throws, whatever the inputs", () => {
   const hostile = { get length() { throw new Error("x"); } };
   const toxic = { toString() { throw new Error("x"); } };
-  const proxy = new Proxy([], { get() { throw new Error("x"); } });
+  /** @type {(string | number)[]} */
+  const target = [];
+  const proxy = new Proxy(target, { get() { throw new Error("x"); } });
   for (const a of [hostile, toxic, proxy, Symbol("s"), 1n, NaN]) for (const b of [hostile, toxic, Symbol("s"), 1n, NaN])
     assert.doesNotThrow(() => governingZone(a, b));
   assert.equal(governingZone.length, 2);
