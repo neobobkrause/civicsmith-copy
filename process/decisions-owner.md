@@ -78,3 +78,8 @@ Shown to the owner: not yet.
 Rule now: once civicsmith is using the latest Process4 version, ARCH opens a tranche to convert the first 8 modules in order, writing the facility list first; then work stops for the owner's review.
 - 26 Nov 2026: "Instruction: once civicsmith is using the latest process4 version, open a tranche to convert the first 8 modules in order, writing the facility list first; then stop for my review" (typed within code marks)
 Shown to the owner: not yet.
+
+## Stopping for an account switch
+Rule now: all civicsmith work is stopped for an account switch. The stop record names the account being switched from. It is lifted only on the owner's word to the coordinator.
+- 26 Nov 2026: "Instruction: stop all civicsmith work for an account switch"
+Shown to the owner: not yet.
