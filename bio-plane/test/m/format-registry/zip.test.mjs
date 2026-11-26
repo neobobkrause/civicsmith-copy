@@ -6,9 +6,17 @@ import assert from "node:assert/strict";
 import { getFormat, listFormats, detectFormat } from "../../../src/formats.mjs";
 import * as ooxml from "../../../src/ooxml.mjs";
 import { makeZip, officeZip, odfZip } from "./zipfix.mjs";
+/** @import { FormatEntry, FormatDetection } from "../../../src/formats.mjs" */
 
+/** @param {string} s @returns {Uint8Array} */
 const enc = (s) => new TextEncoder().encode(s);
-const zip = getFormat("zip");
+/** @param {FormatDetection | Promise<FormatDetection>} d @returns {FormatDetection} */
+const now = (d) => { if (d instanceof Promise) throw new Error("detectFormat answered later"); return d; };
+/** @param {string} format @returns {FormatEntry} */
+const entryOf = (format) => { const e = getFormat(format); if (!e) throw new Error(`no entry registered for ${format}`); return e; };
+/** @param {string} slot @returns {never} */
+const missing = (slot) => { throw new Error(`a container flavour without ${slot}`); };
+const zip = entryOf("zip");
 const FALSY = [null, undefined, 0, "", false, NaN];
 const ZIP_TYPES = ["application/zip", "application/x-zip-compressed"];
 
@@ -16,7 +24,8 @@ const PLAIN = makeZip([{ name: "minutes/2026-01.txt", data: "the minutes" }, { n
   { name: "budget.csv", data: "a,b\n1,2\n", method: 0 }]);
 const PLAIN_ZIP64 = makeZip([{ name: "a.txt", data: "a" }, { name: "b.bin", data: "bb", method: 0 }], { zip64: true });
 
-/** Every container this suite builds, named. */
+/** Every container this suite builds, named.
+ * @type {Array<[string, Uint8Array]>} */
 const CONTAINERS = [
   ["plain", PLAIN],
   ["plain, one stored member", makeZip([{ name: "x", data: "x", method: 0 }])],
@@ -43,19 +52,32 @@ const CONTAINERS = [
   ["mimetype under a leading slash", odfZip("application/vnd.oasis.opendocument.text", { mimetypeName: "/mimetype" })],
   ["mimetype of an EPUB", odfZip("application/epub+zip")],
   ["mimetype with a trailing newline", odfZip("application/vnd.oasis.opendocument.text\n")],
-  ...ooxml.CONTAINER_FLAVOURS.map((f) => [`${f.variant ?? f.flavour} (${f.partMap ?? "opc"})`,
-    (f.partMap ?? "opc") === "odf" ? odfZip(f.mimetype) : officeZip(f.mainContentType, f.conventionalMainPart)]),
+  ...ooxml.CONTAINER_FLAVOURS.map((f) => {
+    assert.ok(f);
+    /** @type {[string, Uint8Array]} */
+    const named = [`${("variant" in f ? f.variant : undefined) ?? f.flavour} (${f.partMap ?? "opc"})`,
+      (f.partMap ?? "opc") === "odf"
+        ? ("mimetype" in f ? odfZip(f.mimetype) : missing("mimetype"))
+        : ("mainContentType" in f ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"))];
+    return named;
+  }),
   ["html", enc("<!doctype html><html></html>")],
   ["pdf", enc("%PDF-1.7\n%%EOF\n")],
   ["text", enc("plain words")],
 ];
 
-const isZipHit = (r, confidence = "likely") => {
+/**
+ * @param {FormatDetection | null} r
+ * @param {string} [confidence]
+ * @returns {asserts r is FormatDetection}
+ */
+function isZipHit(r, confidence = "likely") {
+  assert.ok(r);
   assert.equal(r.format, "zip");
   assert.equal(r.confidence, confidence);
   assert.ok(Array.isArray(r.signals) && r.signals.length > 0 && r.signals.every((s) => typeof s === "string"));
   assert.deepEqual(Object.keys(r), ["format", "confidence", "signals"]);
-};
+}
 
 test("R23: the roster is the twelve built-in entries, zip last", () => {
   assert.deepEqual(listFormats(), ["jpeg", "png", "html", "pdf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "zip"]);
@@ -68,7 +90,7 @@ test("R28: zip detect with bytes answers zip exactly when ooxml.discriminate ans
     const d = await ooxml.discriminate(bytes);
     const r = zip.detect(bytes, null);
     if (d.ok === true && d.format === "zip") { isZipHit(r); zips++; }
-    else assert.equal(r, null, `${label}: discriminate answered ${d.ok ? d.format : d.why}, detect must answer null`);
+    else assert.equal(r, null, `${label}: discriminate answered ${d.ok ? d.format : ("why" in d ? d.why : undefined)}, detect must answer null`);
     // content type is not consulted while bytes are truthy
     for (const ct of ZIP_TYPES) assert.deepEqual(zip.detect(bytes, ct), r, label);
   }
@@ -88,24 +110,31 @@ test("R28: zip detect is synchronous, reads the central directory only, and neve
   try {
     for (const [, bytes] of CONTAINERS) {
       const r = zip.detect(bytes, null);
-      assert.ok(r === null || (typeof r === "object" && !(r instanceof Promise) && typeof r.then !== "function"));
+      assert.ok(r === null || (typeof r === "object" && !(r instanceof Promise) && (!("then" in r) || typeof r.then !== "function")));
     }
     // a member whose deflate data is garbage still lists: detect never reads member data
     const broken = makeZip([{ name: "a.txt", data: "aaaaaaaaaaaaaaaa" }]);
-    broken[30 + "a.txt".length] ^= 0xff;
+    const at = 30 + "a.txt".length;
+    const was = broken[at];
+    assert.ok(was !== undefined);
+    broken[at] = was ^ 0xff;
     isZipHit(zip.detect(broken, null));
   } finally { globalThis.DecompressionStream = saved; }
 });
 
 test("R28: an office or OpenDocument file never detects as zip, and the registry routes each to its own entry first", () => {
   for (const f of ooxml.CONTAINER_FLAVOURS) {
-    const bytes = (f.partMap ?? "opc") === "odf" ? odfZip(f.mimetype) : officeZip(f.mainContentType, f.conventionalMainPart);
-    assert.equal(zip.detect(bytes, null), null, f.variant ?? f.flavour);
-    const r = detectFormat(bytes, "application/zip");
-    assert.equal(r.format, f.flavour, `${f.variant ?? f.flavour} wins over zip and over its declared type`);
-    assert.deepEqual(r, getFormat(f.flavour).detect(bytes, null));
+    assert.ok(f);
+    const variant = "variant" in f ? f.variant : undefined;
+    const bytes = (f.partMap ?? "opc") === "odf"
+      ? ("mimetype" in f ? odfZip(f.mimetype) : missing("mimetype"))
+      : ("mainContentType" in f ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"));
+    assert.equal(zip.detect(bytes, null), null, variant ?? f.flavour);
+    const r = now(detectFormat(bytes, "application/zip"));
+    assert.equal(r.format, f.flavour, `${variant ?? f.flavour} wins over zip and over its declared type`);
+    assert.deepEqual(r, entryOf(f.flavour).detect(bytes, null));
   }
-  isZipHit(detectFormat(PLAIN, null));
+  isZipHit(now(detectFormat(PLAIN, null)));
   assert.deepEqual(detectFormat(PLAIN, "application/pdf"), zip.detect(PLAIN, null), "bytes outrank a declared type");
   assert.deepEqual(detectFormat(PLAIN, "text/csv"), zip.detect(PLAIN, null));
 });
@@ -133,14 +162,21 @@ test("R28: zip parts(bytes) is ooxml.listArchive(bytes)'s own result, unchanged;
   assert.equal(zip.structure, null);
   assert.equal(zip.text, null);
   assert.equal(typeof zip.parts, "function");
-  const range = (b) => ({ size: b.length, read: async (o, n) => b.slice(o, o + n) });
-  for (const [label, bytes] of [...CONTAINERS, ["empty bytes", new Uint8Array(0)]]) {
+  assert.ok(zip.parts);
+  /** @param {Uint8Array} b */
+  const range = (b) => ({ size: b.length, read: async (/** @type {number} */ o, /** @type {number} */ n) => b.slice(o, o + n) });
+  /** @type {Array<[string, Uint8Array]>} */
+  const withEmpty = [...CONTAINERS, ["empty bytes", new Uint8Array(0)]];
+  for (const [label, bytes] of withEmpty) {
     assert.deepEqual(await zip.parts(bytes), await ooxml.listArchive(bytes), label);
     assert.deepEqual(await zip.parts(range(bytes)), await ooxml.listArchive(range(bytes)), `${label} as a range source`);
   }
   const listed = await zip.parts(PLAIN);
+  assert.ok(listed && "ok" in listed);
   assert.equal(listed.ok, true);
   assert.deepEqual(listed.entries.map((e) => e.name), ["minutes/2026-01.txt", "minutes/", "budget.csv"]);
   // and it is what the registry's detect→parts path reaches
-  assert.deepEqual(await getFormat(detectFormat(PLAIN, null).format).parts(PLAIN), await ooxml.listArchive(PLAIN));
+  const reached = entryOf(now(detectFormat(PLAIN, null)).format);
+  assert.ok(reached.parts);
+  assert.deepEqual(await reached.parts(PLAIN), await ooxml.listArchive(PLAIN));
 });
