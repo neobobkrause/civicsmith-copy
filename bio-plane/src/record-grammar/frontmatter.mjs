@@ -3,8 +3,18 @@
    recovers buried keys by (R10). Moved from the check catalogue at T18 with its comments. */
 
 /**
- * @typedef {{check: string, severity: 'error'|'warn'|'info', message: string, repairable?: boolean, repairs?: string[]}} Finding
+ * @typedef {{check: string, severity: 'error'|'warn'|'info', message: string, repairable?: boolean, repairs?: string[], code?: string}} Finding
  */
+/* `code` is the bundle check's (bundle.mjs); no finding of the parser's names one (R11). */
+/** A scalar the grammar reads (R8): a string, a number, a boolean, null, or an inline `[a, b]` list of them.
+ * @typedef {string | number | boolean | null | ScalarList} Scalar */
+/** An inline `[a, b]` list (R8), or an array block's items (R7). @typedef {Array<Scalar | ScalarMap>} ScalarList */
+/** A one-level map block's value, or an object element of an array block (R7).
+ * @typedef {{[key: string]: Scalar}} ScalarMap */
+/** A top-level key's value (R7): a scalar, a map block, or an array block of scalars and objects.
+ * @typedef {string | number | boolean | null | Array<Scalar | ScalarMap> | ScalarMap} FieldValue */
+/** The front matter's data, top-level key by key: each a FieldValue, written out so a list is a list.
+ * @typedef {{[key: string]: string | number | boolean | null | Array<Scalar | ScalarMap> | ScalarMap}} Frontmatter */
 
 /** Universal core fields (spec 3.1). */
 import { localize } from '../setup-words/index.mjs';
@@ -23,6 +33,10 @@ export const FORBIDDEN_ALIASES = {
 
 /** A finding (R11): `repairable` and `repairs` only when a repair is named. The catalogue's own `f` also carries
  *  REC-56's optional `code`; no finding here has one.
+ * @param {string} check
+ * @param {'error'|'warn'|'info'} severity
+ * @param {string} message
+ * @param {string[]} [repairs]
  * @returns {Finding} */
 function f(check, severity, message, repairs) {
   /** @type {Finding} */
@@ -31,12 +45,32 @@ function f(check, severity, message, repairs) {
   return out;
 }
 
+/** @param {object} o @param {string} k @returns {boolean} */
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
-/* A key is written as an OWN data property, so `__proto__` in a document is a key like any other and never reaches
-   the object's prototype. */
+/** A key is written as an OWN data property, so `__proto__` in a document is a key like any other and never reaches
+   the object's prototype.
+ * @template V
+ * @param {{[key: string]: V}} o
+ * @param {string} k
+ * @param {V} v */
 function put(o, k, v) {
   Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true });
+}
+
+/* The open block's value, written into as the language writes into whatever the key holds now: a key recovered from
+   stray indentation (R10) can replace a block's value with a scalar while the block stays open, and the language's own
+   TypeError is then what the write meets, as before. */
+/** @param {FieldValue} target @param {string} k @param {Scalar} v */
+function putIn(target, k, v) {
+  if (target === null || typeof target !== 'object') throw new TypeError('Object.defineProperty called on non-object');
+  Object.defineProperty(target, k, { value: v, writable: true, enumerable: true, configurable: true });
+}
+/** @param {FieldValue} target @param {Scalar | ScalarMap} v */
+function pushTo(target, v) {
+  if (Array.isArray(target)) { target.push(v); return; }
+  if (target === null) throw new TypeError("Cannot read properties of null (reading 'push')");
+  throw new TypeError('data[topKey].push is not a function');
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +80,7 @@ function put(o, k, v) {
 // inline [] arrays; optional '# ' comments after values; double or single quotes.
 // ---------------------------------------------------------------------------
 
+/** @param {string} raw @returns {string} */
 function stripComment(raw) {
   let inS = false, inD = false;
   for (let i = 0; i < raw.length; i++) {
@@ -57,6 +92,7 @@ function stripComment(raw) {
   return raw;
 }
 
+/** @param {string} raw @returns {string | number | boolean | null | ScalarList} */
 function parseScalar(raw) {
   let v = stripComment(raw).trim();
   if (v === '') return '';
@@ -67,8 +103,11 @@ function parseScalar(raw) {
   if (v.length >= 2 && ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))) return v.slice(1, -1);
   if (v.startsWith('[') && v.endsWith(']')) {
     const inner = v.slice(1, -1).trim();
-    if (inner === '') return [];
-    return inner.split(',').map(s => parseScalar(s));
+    /** @type {ScalarList} */
+    const items = [];
+    if (inner === '') return items;
+    for (const s of inner.split(',')) items.push(parseScalar(s));
+    return items;
   }
   if (/^-?\d+$/.test(v)) return parseInt(v, 10);
   if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
@@ -78,7 +117,7 @@ function parseScalar(raw) {
 /**
  * Parse bundle.md frontmatter under the restricted grammar.
  * @param {string} text full bundle.md content
- * @returns {{data: Record<string, any>|null, findings: Finding[], body: string}}
+ * @returns {{data: Frontmatter|null, findings: Finding[], body: string}}
  */
 export function parseFrontmatter(text) {
   if (typeof text !== 'string') throw new TypeError('parseFrontmatter: text must be a string');
@@ -96,10 +135,13 @@ export function parseFrontmatter(text) {
     return { data: null, findings, body: text };
   }
 
-  /** @type {Record<string, any>} */
+  /** @type {Frontmatter} */
   const data = {};
+  /** @type {string | null} */
   let topKey = null;          // current open block key ('key:' with no value)
+  /** @type {'map' | 'array' | null} */
   let topMode = null;         // 'map' | 'array' | null (undecided)
+  /** @type {ScalarMap | null} */
   let curElem = null;         // current array element object
 
   const keyLine = /^([A-Za-z_][A-Za-z0-9_]*):(.*)$/;
@@ -107,53 +149,63 @@ export function parseFrontmatter(text) {
   const itemLine = /^( +)- (.*)$/;
 
   for (let n = 1; n < end; n++) {
-    const line = lines[n];
+    const line = lines[n] ?? '';
     const stripped = stripComment(line);
     if (stripped.trim() === '') continue;
 
-    let m;
-    if ((m = keyLine.exec(line))) {                     // column-0 key
-      const key = m[1];
-      const rest = m[2];
+    const top = keyLine.exec(line);
+    const item = top ? null : itemLine.exec(line);
+    const ind = top || item ? null : indKeyLine.exec(line);
+    if (top) {                                          // column-0 key
+      const m = top;
+      const key = m[1] ?? '';
+      const rest = m[2] ?? '';
       topKey = null; topMode = null; curElem = null;
       if (own(data, key)) {
         findings.push(f('C-2.1', 'error', localize('record-grammar.frontmatter.duplicate_top_level_key_key', 'duplicate top-level key \'{key}\' at line {v1}', { key: String(key), v1: String(n + 1) })));
       }
       if (stripComment(rest).trim() === '') {           // block start
-        topKey = key; put(data, key, undefined);        // decided by first child
+        topKey = key; put(data, key, []);               // decided by first child; a block with none is [] (R7)
       } else {
         put(data, key, parseScalar(rest));
       }
-    } else if ((m = itemLine.exec(line))) {             // '- ' array item
-      const indent = m[1].length;
-      const rest = m[2];
-      if (!topKey) {
+    } else if (item) {                                  // '- ' array item
+      const m = item;
+      const indent = (m[1] ?? '').length;
+      const rest = m[2] ?? '';
+      const open = topKey;
+      if (!open) {
         findings.push(f('C-2.1', 'error', localize('record-grammar.frontmatter.array_item_outside_any_block', 'array item outside any block at line {v1}', { v1: String(n + 1) })));
         continue;
       }
       if (indent !== 2) findings.push(f('C-2.1', 'error', localize('record-grammar.frontmatter.array_item_indented_indent_expected', 'array item indented {indent} (expected 2) at line {v1}', { indent: String(indent), v1: String(n + 1) })));
-      if (topMode === null) { topMode = 'array'; put(data, topKey, []); }
-      if (topMode !== 'array') { findings.push(f('C-2.1', 'error', localize('record-grammar.frontmatter.array_item_inside_a_map', 'array item inside a map block \'{topKey}\' at line {v1}', { topKey: String(topKey), v1: String(n + 1) }))); continue; }
+      const mode = topMode ?? 'array';
+      if (topMode === null) { topMode = 'array'; put(data, open, []); }
+      if (mode !== 'array') { findings.push(f('C-2.1', 'error', localize('record-grammar.frontmatter.array_item_inside_a_map', 'array item inside a map block \'{topKey}\' at line {v1}', { topKey: String(open), v1: String(n + 1) }))); continue; }
       const km = /^([A-Za-z_][A-Za-z0-9_]*):(.*)$/.exec(rest);
-      if (km && stripComment(km[2]).trim() !== '') {    // object element: '- key: value'
-        curElem = {}; put(curElem, km[1], parseScalar(km[2]));
-        data[topKey].push(curElem);
+      if (km && stripComment(km[2] ?? '').trim() !== '') {    // object element: '- key: value'
+        /** @type {ScalarMap} */
+        const elem = {};
+        curElem = elem; put(elem, km[1] ?? '', parseScalar(km[2] ?? ''));
+        pushTo(data[open] ?? null, elem);
       } else {                                          // scalar element
         curElem = null;
-        data[topKey].push(parseScalar(rest));
+        pushTo(data[open] ?? null, parseScalar(rest));
       }
-    } else if ((m = indKeyLine.exec(line))) {           // indented key
-      const indent = m[1].length;
-      const key = m[2];
-      const rest = m[3];
+    } else if (ind) {                                   // indented key
+      const m = ind;
+      const indent = (m[1] ?? '').length;
+      const key = m[2] ?? '';
+      const rest = m[3] ?? '';
       const isCore = CORE_FIELDS.includes(key) || own(FORBIDDEN_ALIASES, key);
-      if (topKey && topMode === null && indent === 2) { // first child decides: map
-        topMode = 'map'; put(data, topKey, {});
-        put(data[topKey], key, parseScalar(rest));
-      } else if (topKey && topMode === 'map' && indent === 2) {
-        put(data[topKey], key, parseScalar(rest));
-      } else if (topKey && topMode === 'array' && curElem && indent === 4) {
-        put(curElem, key, parseScalar(rest));
+      const open = topKey, mode = topMode, elem = curElem;
+      if (open && mode === null && indent === 2) { // first child decides: map
+        topMode = 'map'; put(data, open, {});
+        putIn(data[open] ?? null, key, parseScalar(rest));
+      } else if (open && mode === 'map' && indent === 2) {
+        putIn(data[open] ?? null, key, parseScalar(rest));
+      } else if (open && mode === 'array' && elem && indent === 4) {
+        put(elem, key, parseScalar(rest));
       } else {
         // A key indented where the grammar has no slot for it: the Alpha buried-key failure mode.
         if (isCore) {
@@ -170,8 +222,7 @@ export function parseFrontmatter(text) {
     }
   }
 
-  // undecided empty blocks become empty arrays
-  for (const k of Object.keys(data)) if (data[k] === undefined) data[k] = [];
+  // undecided empty blocks are empty arrays: each block starts as one (above)
 
   return { data, findings, body: lines.slice(end + 1).join('\n') };
 }

@@ -6,7 +6,13 @@ import { canonicalJson, NON_MEMBER_AUTHORS, ACTOR_CLASSES, MACHINE_AUTHOR_PREFIX
   GRADE_SOURCES, EARNED_GRADE_SOURCES, EARNED_CAPTURE_CEILING, UNREACHABLE_CAPTURE_GRADE }
   from "../../../src/record-grammar/index.mjs";
 
+/** A value the generator makes: a scalar, undefined, a list or an object of them.
+ * @typedef {null | boolean | number | string | undefined | ValueList | ValueMap} Value */
+/** @typedef {Array<Value>} ValueList */
+/** @typedef {{[key: string]: Value}} ValueMap */
+
 /* The reference: key-sorted, recursively, then JSON.stringify's own spelling of every scalar and omission. */
+/** @param {Value} v @returns {Value} */
 const sortDeep = (v) => (Array.isArray(v) ? v.map(sortDeep)
   : v !== null && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sortDeep(v[k])])) : v);
 
@@ -22,12 +28,20 @@ test("R12 canonicalJson: compact, keys sorted recursively, arrays in order, scal
   assert.equal(canonicalJson({ b: 0, B: 0, a: 0, "10": 0, "9": 0, "é": 0, "Z": 0 }), '{"10":0,"9":0,"B":0,"Z":0,"a":0,"b":0,"é":0}');
   /* Equal values, built in any key order, give byte-identical strings; every answer parses back to the value. */
   let seed = 7; const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  /** @param {number} d @returns {null | boolean | number | string | undefined | ValueList | ValueMap} */
   const gen = (d) => {
     const r = rnd();
     if (d > 3 || r < 0.3) return [null, true, false, 0, -1, 2.5, "s", "", "é", undefined][Math.floor(rnd() * 10)];
-    if (r < 0.6) return Array.from({ length: Math.floor(rnd() * 4) }, () => gen(d + 1));
+    if (r < 0.6) {
+      /** @type {ValueList} */
+      const list = [];
+      for (let n = Math.floor(rnd() * 4); n > 0; n--) list.push(gen(d + 1));
+      return list;
+    }
+    /** @type {ValueMap} */
     const o = {}; for (let i = Math.floor(rnd() * 5); i > 0; i--) o["k" + Math.floor(rnd() * 20)] = gen(d + 1); return o;
   };
+  /** @param {Value} v @returns {Value} */
   const shuffle = (v) => (Array.isArray(v) ? v.map(shuffle) : v !== null && typeof v === "object"
     ? Object.fromEntries(Object.keys(v).reverse().map((k) => [k, shuffle(v[k])])) : v);
   for (let i = 0; i < 500; i++) {
@@ -49,13 +63,16 @@ test("R13 the identity vocabulary", () => {
   assert.deepEqual(MACHINE_STAMP_PREFIXES, [MACHINE_AUTHOR_PREFIX, MACHINE_CLASS_PREFIX]);
 });
 
+/** @param {unknown} w @returns {string} */
 const fold = (w) => { try { return String(w ?? "").trim().toLowerCase(); } catch { return ""; } };
-const ODD = [undefined, null, "", "   ", "\n\t", 0, 1, true, false, NaN, [], ["token:x"], {}, Object.create(null),
+/** @type {unknown[]} */
+const ODD = [undefined, null, "", "   ", "\n\t", 0, 1, true, false, NaN, [], ["token:x"], {}, { __proto__: null },
   { toString() { throw new Error("x"); } }, { toString() { return " Token:Member "; } }, Symbol("s"), 10n];
 const NAMES = ["alice", "Bob Smith", "admin", "tokenx", "token", "token :x", "class", "x token:y", "members", "claudette",
   "ai-member", " sweeper", "ctoken:", "ｔoken:x"];
+/** @returns {unknown[]} */
 const all = () => [...ODD, ...NAMES, ...NON_MEMBER_AUTHORS, ...ACTOR_CLASSES,
-  ...[...NON_MEMBER_AUTHORS, ...ACTOR_CLASSES].flatMap((w) => [w.toUpperCase(), ` ${w} `, `\t${w[0].toUpperCase()}${w.slice(1)}\n`]),
+  ...[...NON_MEMBER_AUTHORS, ...ACTOR_CLASSES].flatMap((w) => [w.toUpperCase(), ` ${w} `, `\t${(w[0] ?? "").toUpperCase()}${w.slice(1)}\n`]),
   ...MACHINE_STAMP_PREFIXES.flatMap((p) => [p, p + "member", p.toUpperCase() + "daemon", `  ${p}x  `, p + " ", "x" + p])];
 
 test("R14 isMachineStamp: the folded value is non-empty and begins with a stamp prefix; never throws", () => {

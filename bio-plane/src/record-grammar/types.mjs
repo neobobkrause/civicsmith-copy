@@ -34,5 +34,12 @@ export const OBJECT_TYPES = { INFO: 'information', PROB: 'inquiry', FOCUS: 'inqu
 export const LEGACY_TYPE_ALIASES = { problem: 'inquiry', focus: 'inquiry' };
 /* An OWN key only (R5): `constructor`, `toString` and the other `Object.prototype` names are types nobody declared,
    and answer themselves, never an inherited function. Only a string can be an alias. */
-export const normalizeType = (t) =>
-  (typeof t === 'string' && Object.prototype.hasOwnProperty.call(LEGACY_TYPE_ALIASES, t) ? LEGACY_TYPE_ALIASES[t] : t);
+/** R5: the alias's target for an own key of `LEGACY_TYPE_ALIASES`, and `t` unchanged for anything else.
+ * @template T
+ * @param {T} t
+ * @returns {T | string} */
+export const normalizeType = (t) => {
+  if (t === 'problem') return LEGACY_TYPE_ALIASES.problem;
+  if (t === 'focus') return LEGACY_TYPE_ALIASES.focus;
+  return t;
+};
