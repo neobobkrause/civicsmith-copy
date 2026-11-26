@@ -6,7 +6,8 @@ import { validAt, reasonText } from '../civil-time/index.mjs';
 import { BOUNDS, hubBoundOf } from './bounds.mjs';
 import { connectionErrors } from './shape.mjs';
 import { word, localize, hasWord } from '../setup-words/index.mjs';
-import { isObj, isList, filled, text } from './raw.mjs';
+import { isObj, isList, isTable, filled, text } from './raw.mjs';
+/** @import { WordVars, Reason } from '../setup-words/index.mjs' */
 /** @import { RawFields } from './raw.mjs' */
 /** @import { KindEntry, ReadFailure, PassedRefusal, NeighboursAnswer } from './shape.mjs' */
 
@@ -46,7 +47,27 @@ function reasonFills(why) {
   const vars = isObj(why) ? why.vars : undefined;
   if (key === null || !ID.test(key) || !isObj(vars)) return false;
   if (!hasWord(key)) return true;
-  try { word(key, vars); return true; } catch { return false; }
+  try { word(key, wordVarsOf(vars)); return true; } catch { return false; }
+}
+
+/**
+ * A reason's vars as `setup-words`' `word` reads them (its R11, R19): each own name whose value is neither absent nor
+ * null, a value with a text `key` read as a reason with its own vars, any other value as `String` writes it. `word`
+ * fills a sentence from these exactly as from the vars given.
+ * @param {unknown} vars
+ * @returns {WordVars}
+ */
+function wordVarsOf(vars) {
+  /** @type {{[name: string]: string | number | Reason}} */
+  const out = {};
+  if (!isTable(vars)) return out;
+  for (const name of Object.getOwnPropertyNames(vars)) {
+    const v = vars[name];
+    if (v === undefined || v === null) continue;
+    const key = isObj(v) ? v.key : undefined;
+    out[name] = isObj(v) && typeof key === 'string' ? { key, vars: wordVarsOf(v.vars) } : String(v);
+  }
+  return out;
 }
 
 /**
