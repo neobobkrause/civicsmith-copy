@@ -7,11 +7,12 @@
    K855). Pure over the files it is handed: no store, no network; the clock is
    read only where the caller passes no `nowMs` (C-16.3, C-16.5), as the catalogue's has always read it. */
 
-import { BUNDLE_ID_RE, ANN_ID_RE, FILENAME_RE, ISO_TS_RE, ID_PREFIXES, idPattern } from './ids.mjs';
+import { BUNDLE_ID_RE, ANN_ID_RE, FILENAME_RE, ISO_TS_RE, idPattern } from './ids.mjs';
 import { OBJECT_TYPES, normalizeType } from './types.mjs';
 import { CORE_FIELDS, FORBIDDEN_ALIASES, parseFrontmatter } from './frontmatter.mjs';
 import { HEADINGS, HEADINGS_WHEN, isCaseMemberBytes, STATES, sectionText } from './document.mjs';
 import { localize } from '../setup-words/index.mjs';
+/** @import { Frontmatter } from './frontmatter.mjs' */
 
 // ---------------------------------------------------------------------------
 // Finding helper
@@ -58,8 +59,14 @@ import { localize } from '../setup-words/index.mjs';
  *  none, the property is then absent, and `op=audit`'s `tallyDetail` key is
  *  absent when nothing on the page carried a code.
  *
+ * @param {string} check
+ * @param {'error'|'warn'|'info'} severity
+ * @param {string} message
+ * @param {string[]} [repairs]
+ * @param {string} [code]
  * @returns {Finding} */
 function f(check, severity, message, repairs, code) {
+  /** @type {Finding} */
   const out = { check, severity, message };
   if (repairs) { out.repairable = true; out.repairs = repairs; }
   if (code) out.code = code;
@@ -72,9 +79,38 @@ function f(check, severity, message, repairs, code) {
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number, maxPackageAgeDays?: number}} BundleInput
+ * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs?: number, maxPackageAgeDays?: number, maxReevalAgeDays?: number, elidedPaths?: Set<string> | string[], resolveTarget?: (id: string) => boolean, releaseRegistry?: object | null, publishedRegistry?: object | null, publishedCaseRegistry?: object | null, earnedRegistry?: object | null, sha512?: ((bytes: Uint8Array) => Promise<Uint8Array>) | null}} BundleInput
+ */
+/** What every arm reads, a registered grammar's among them (R39): the input as handed in, the parsed front matter and the
+ *  body, and the defaults filled in.
+ * @typedef {{folderName: string, files: Map<string, Uint8Array|string>, elided: Set<string>, sha256: (bytes: Uint8Array|string) => Promise<string>, nowMs: number | undefined, maxPackageAgeDays: number, maxReevalAgeDays: number, knownSchemas: string[], resolveTarget: ((id: string) => boolean) | undefined, releaseRegistry: object | null, publishedRegistry: object | null, publishedCaseRegistry: object | null, earnedRegistry: object | null, sha512: ((bytes: Uint8Array) => Promise<Uint8Array>) | null, fm: Frontmatter | null, body: string}} BundleContext
+ */
+/** A registered grammar (record-core R67): its module, the check ids it claims, and its arm.
+ * @typedef {{module: string, ids: string[], arm: (ctx: BundleContext, findings: Finding[]) => void | Promise<void>}} Grammar
  */
 
+/** An object read member by member. @typedef {{readonly [key: string]: unknown}} Members */
+/** @param {unknown} v @returns {v is Members} */
+const isMembers = (v) => v !== null && typeof v === 'object';
+/** A list read item by item. @typedef {readonly unknown[]} List */
+/** @param {unknown} v @returns {v is List} */
+const isList = (v) => Array.isArray(v);
+/* A front-matter value's member, read as the language reads `v.key`: an object's or a list's member, nothing on a
+   string, number or boolean (no name read here is on their prototypes), and the language's own TypeError on null. */
+/** @param {unknown} v @param {string} key @returns {unknown} */
+function memberOf(v, key) {
+  if (isMembers(v)) return v[key];
+  if (v === null || v === undefined) throw new TypeError(`Cannot read properties of ${v} (reading '${key}')`);
+  return undefined;
+}
+/* Whether `list` holds `v`, as `includes` answers it for these lists of names (no list here holds NaN). */
+/** @template T @param {readonly T[]} list @param {unknown} v @returns {boolean} */
+const holds = (list, v) => {
+  for (const x of list) if (x === v) return true;
+  return false;
+};
+
+/** @param {Uint8Array | string | undefined} v @returns {string} */
 function asText(v) {
   if (typeof v === 'string') return v;
   return new TextDecoder().decode(v);
@@ -82,7 +118,8 @@ function asText(v) {
 
 /** Presence semantics (1.13.0): a path exists if its bytes are in files OR
  *  it is declared elided (present in the store, deliberately not carried).
- *  Used ONLY by existence assertions; byte checks read ctx.files directly. */
+ *  Used ONLY by existence assertions; byte checks read ctx.files directly.
+ * @param {BundleContext} ctx @param {string} path @returns {boolean} */
 function hasFile_(ctx, path) {
   return ctx.files.has(path) || (ctx.elided && ctx.elided.has(path));
 }
@@ -96,6 +133,7 @@ function hasFile_(ctx, path) {
    id padded with white space disagrees. A non-string or absent id is not this arm's: C-1.2 refuses it. `checkIdentity`
    below and the write door (promotion R38) both run this function, so the gate and the door cannot judge one id two
    ways (one code, one site: K231). */
+/** @param {Frontmatter | null | undefined} fm @param {unknown} folderName @returns {boolean} */
 export function idDisagrees(fm, folderName) {
   const id = fm?.id;
   return typeof id === 'string' && id !== folderName;
@@ -110,8 +148,10 @@ export function idDisagrees(fm, folderName) {
    refused as before (C-1.2, C-2.5). */
 const SUC_CORE_RE = idPattern('SUC');
 const SUCCESS_RECORD = 'success_record';
-const isSuccessRecordDoc = (fm, id) => normalizeType(fm?.object_type) === SUCCESS_RECORD && SUC_CORE_RE.test(id);
+/** @param {Frontmatter | null} fm @param {string} id @returns {boolean} */
+const isSuccessRecordDoc = (fm, id) => normalizeType(fm?.object_type) === SUCCESS_RECORD && SUC_CORE_RE !== null && SUC_CORE_RE.test(id);
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkIdentity(ctx, findings) {
   const id = ctx.fm?.id;
   if (typeof id !== 'string' || !(BUNDLE_ID_RE.test(id) || isSuccessRecordDoc(ctx.fm, id))) {
@@ -122,13 +162,16 @@ function checkIdentity(ctx, findings) {
       [localize('record-grammar.bundle.restore_folder_name_from_frontmatter_id', 'restore folder name from frontmatter id'), localize('record-grammar.bundle.restore_frontmatter_id_from_folder_name', 'restore frontmatter id from folder name if history confirms it')]));
   }
   // annotation records
+  /** @type {Set<string>} */
   const seen = new Set();
   for (const path of ctx.files.keys()) {
     if (!path.startsWith('annotations/')) continue;
     const name = path.slice('annotations/'.length);
     if (!name.endsWith('.json')) { findings.push(f('C-1.3', 'error', localize('record-grammar.bundle.annotation_file_name_is_not', 'annotation file \'{name}\' is not a .json record', { name: String(name) }))); continue; }
+    /* An annotation record is the writer's (record-core); its shape is stated here until its owner offers a reader. */
+    /** @type {{id?: string}} */
     let rec;
-    try { rec = JSON.parse(asText(ctx.files.get(path))); }
+    try { rec = /** @type {{id?: string}} */ (JSON.parse(asText(ctx.files.get(path)))); }
     catch { findings.push(f('C-1.3', 'error', localize('record-grammar.bundle.annotation_record_name_does_not', 'annotation record \'{name}\' does not parse', { name: String(name) }))); continue; }
     const rid = rec.id;
     if (typeof rid !== 'string' || !ANN_ID_RE.test(rid)) {
@@ -151,10 +194,12 @@ function checkIdentity(ctx, findings) {
   let pending = 0;
   for (const path of ctx.files.keys()) {
     if (!path.startsWith('annotations/') || !path.endsWith('.json')) continue;
-    try { if (JSON.parse(asText(ctx.files.get(path))).state === 'pending') pending++; } catch { /* reported above */ }
+    try { if (/** @type {{state?: unknown}} */ (JSON.parse(asText(ctx.files.get(path)))).state === 'pending') pending++; } catch { /* reported above */ }
   }
-  if (ctx.fm && typeof ctx.fm.annotations_open === 'number' && ctx.fm.annotations_open !== pending) {
-    findings.push(f('C-1.3', 'warn', localize('record-grammar.bundle.annotations_open_is_annotations_open', 'annotations_open is {annotations_open} but {pending} annotation record(s) are pending', { annotations_open: String(ctx.fm.annotations_open), pending: String(pending) }), ['refresh annotations_open on the next write']));
+  const fm = ctx.fm;
+  const open = fm ? fm.annotations_open : undefined;
+  if (fm && typeof open === 'number' && open !== pending) {
+    findings.push(f('C-1.3', 'warn', localize('record-grammar.bundle.annotations_open_is_annotations_open', 'annotations_open is {annotations_open} but {pending} annotation record(s) are pending', { annotations_open: String(open), pending: String(pending) }), ['refresh annotations_open on the next write']));
   }
 }
 
@@ -162,31 +207,72 @@ function checkIdentity(ctx, findings) {
    bundle check reads only the bundle prefixes' types, so `object_type: event` is still not a known type here (C-2.5)
    and a prefix outside R1's set implies none, exactly as before the new keys. T47-1 (R62): the success record's `SUC`
    joins them here alone, so `success_record` is a known type and `SUC` implies it (C-2.5); R1's set is unchanged. */
-const BUNDLE_TYPES = Object.fromEntries([...ID_PREFIXES, 'SUC'].map((p) => [p, OBJECT_TYPES[p]]));
+/* The bundle prefixes' types, R1's prefixes (`ID_PREFIXES`, in its order) and `SUC` (R62), read by a prefix's name. */
+/** @type {ReadonlyMap<string, string>} */
+const BUNDLE_TYPES = new Map([
+  ['INFO', OBJECT_TYPES.INFO], ['PROB', OBJECT_TYPES.PROB], ['FOCUS', OBJECT_TYPES.FOCUS], ['INQ', OBJECT_TYPES.INQ], ['PROJ', OBJECT_TYPES.PROJ],
+  ['ACTN', OBJECT_TYPES.ACTN], ['BIAS', OBJECT_TYPES.BIAS], ['STD', OBJECT_TYPES.STD], ['CONF', OBJECT_TYPES.CONF], ['CONS', OBJECT_TYPES.CONS],
+  ['ESC', OBJECT_TYPES.ESC], ['ASP', OBJECT_TYPES.ASP], ['GOAL', OBJECT_TYPES.GOAL], ['PLN', OBJECT_TYPES.PLN], ['SUC', OBJECT_TYPES.SUC]
+]);
 
 /* T40 (N809, K2390; R39): A TYPE IS ONE OF THE TABLES' OWN KEYS. `vocabFor` answers an inherited key too (R34), so an
    `object_type` of `toString`, `constructor` or `__proto__` read `HEADINGS` and `STATES` as a function or
    `Object.prototype`, and `checkBundle` threw on the bytes instead of answering them. Here the declared spelling and
    then the normalized type are looked up by own key only, so such a type is unknown exactly as `memo` is: C-2.5, and no
    heading or state arm. The id prefix's implied type is read the same way. */
+/* The tables read by a type's name, each a copy of the vocabulary's own entries, which nothing writes. */
+/** @type {Readonly<Record<string, string[]>>} */
+const HEADINGS_OF = { information: HEADINGS.information, inquiry: HEADINGS.inquiry, focus: HEADINGS.focus, project: HEADINGS.project, action: HEADINGS.action, bias: HEADINGS.bias, problem: HEADINGS.problem };
+/** @type {Readonly<Record<string, {heading: string, whenCaseMember?: boolean, states?: string[]}[]>>} */
+const CONDITIONAL_OF = { inquiry: HEADINGS_WHEN.inquiry, focus: HEADINGS_WHEN.focus, problem: HEADINGS_WHEN.problem };
+/** A type's state machine (R35). @typedef {{readonly legal: readonly string[], readonly edges: object}} StateMachine */
+/** @type {Readonly<Record<string, StateMachine>>} */
+const MACHINE_OF = {
+  information: STATES.information,
+  inquiry: STATES.inquiry,
+  focus: STATES.focus,
+  project: STATES.project,
+  action: STATES.action,
+  bias: STATES.bias,
+  standard: STATES.standard,
+  determination: STATES.determination,
+  consequence: STATES.consequence,
+  escalation: STATES.escalation,
+  aspiration: STATES.aspiration,
+  goal: STATES.goal,
+  action_plan: STATES.action_plan,
+  success_record: STATES.success_record,
+  problem: STATES.problem
+};
+/* The forbidden aliases with their canonical names, in `FORBIDDEN_ALIASES`' own order. */
+/** @type {[string, string][]} */
+const ALIAS_PAIRS = [['status', FORBIDDEN_ALIASES.status], ['state', FORBIDDEN_ALIASES.state], ['pipeline_state', FORBIDDEN_ALIASES.pipeline_state], ['verdict', FORBIDDEN_ALIASES.verdict], ['type', FORBIDDEN_ALIASES.type], ['updated', FORBIDDEN_ALIASES.updated], ['modified', FORBIDDEN_ALIASES.modified]];
+/** @param {object} o @param {string} k @returns {boolean} */
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-const typeVocab = (table, t) => (own(table, t) ? table[t] : own(table, normalizeType(t)) ? table[normalizeType(t)] : undefined);
+/* A type's entry, its own key first, then its normalized name's; a front-matter value is a key as the language makes
+   one of it (it is never a symbol). */
+/** @template V @param {Readonly<Record<string, V>>} table @param {unknown} t @returns {V | undefined} */
+const typeVocab = (table, t) => {
+  const k = String(t), n = String(normalizeType(t));
+  return own(table, k) ? table[k] : own(table, n) ? table[n] : undefined;
+};
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkFrontmatterContract(ctx, findings) {
   const fm = ctx.fm;
   if (!fm) return;
   for (const key of CORE_FIELDS) {
     if (!(key in fm)) findings.push(f('C-2.2', 'error', localize('record-grammar.bundle.required_core_field_key_is', 'required core field \'{key}\' is missing', { key: String(key) })));
   }
-  for (const [alias, canonical] of Object.entries(FORBIDDEN_ALIASES)) {
+  for (const [alias, canonical] of ALIAS_PAIRS) {
     if (alias in fm) findings.push(f('C-2.3', 'error', localize('record-grammar.bundle.forbidden_alias_alias_present_canonical', 'forbidden alias \'{alias}\' present (canonical name is \'{canonical}\')', { alias: String(alias), canonical: String(canonical) }), [localize('record-grammar.bundle.rename_alias_to_canonical', 'rename \'{alias}\' to \'{canonical}\'', { alias: String(alias), canonical: String(canonical) })]));
   }
   const ot = fm.object_type;
-  if (!Object.values(BUNDLE_TYPES).includes(normalizeType(ot))) {
+  if (!holds([...BUNDLE_TYPES.values()], normalizeType(ot))) {
     findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.object_type_ot_is_not', 'object_type \'{ot}\' is not a known type', { ot: String(ot) })));
   } else {
     const prefix = fm.id && String(fm.id).split('-')[0];
-    const wantType = own(BUNDLE_TYPES, prefix) ? BUNDLE_TYPES[prefix] : undefined;
+    const wantType = typeof prefix === 'string' && BUNDLE_TYPES.has(prefix) ? BUNDLE_TYPES.get(prefix) : undefined;
     if (wantType && wantType !== normalizeType(ot)) findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.id_prefix_prefix_implies_wanttype', 'id prefix \'{prefix}\' implies \'{wantType}\' but object_type is \'{ot}\'', { prefix: String(prefix), wantType: String(wantType), ot: String(ot) })));
     const schema = fm.schema;
     /* N-A1 (T18): a type name may hold `_` (`action_plan`, the first that does), so the stamp's type part does too. */
@@ -194,31 +280,34 @@ function checkFrontmatterContract(ctx, findings) {
     if (!sm) findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.schema_stamp_form', 'schema stamp \'{schema}\' is not of the form <type>@<n>', { schema: String(schema) })));
     else {
       if (normalizeType(sm[1]) !== normalizeType(ot)) findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.schema_stamp_schema_does_not', 'schema stamp \'{schema}\' does not match object_type \'{ot}\'', { schema: String(schema), ot: String(ot) })));
-      if (!ctx.knownSchemas.includes(schema)) findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.schema_version_schema_is_not', 'schema version \'{schema}\' is not known to this check catalog', { schema: String(schema) })));
+      if (!holds(ctx.knownSchemas, schema)) findings.push(f('C-2.5', 'error', localize('record-grammar.bundle.schema_version_schema_is_not', 'schema version \'{schema}\' is not known to this check catalog', { schema: String(schema) })));
     }
   }
   for (const key of ['created', 'last_updated']) {
-    if (typeof fm[key] === 'string' && !ISO_TS_RE.test(fm[key])) {
-      findings.push(f('C-2.6', 'error', localize('record-grammar.bundle.key_v1_is_not_iso', '{key} \'{v1}\' is not ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)', { key: String(key), v1: String(fm[key]) })));
+    const v = fm[key];
+    if (typeof v === 'string' && !ISO_TS_RE.test(v)) {
+      findings.push(f('C-2.6', 'error', localize('record-grammar.bundle.key_v1_is_not_iso', '{key} \'{v1}\' is not ISO 8601 UTC (YYYY-MM-DDTHH:MM:SSZ)', { key: String(key), v1: String(v) })));
     }
   }
-  if (fm.produced_by && typeof fm.produced_by === 'object') {
-    if (!fm.produced_by.mode) findings.push(f('C-2.2', 'error', 'produced_by.mode is missing'));
-    if (!fm.produced_by.capability_tier) findings.push(f('C-2.2', 'error', 'produced_by.capability_tier is missing'));
+  const producedBy = fm.produced_by;
+  if (producedBy && typeof producedBy === 'object') {
+    if (!memberOf(producedBy, 'mode')) findings.push(f('C-2.2', 'error', 'produced_by.mode is missing'));
+    if (!memberOf(producedBy, 'capability_tier')) findings.push(f('C-2.2', 'error', 'produced_by.capability_tier is missing'));
   }
 }
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkHeadings(ctx, findings) {
   const ot = ctx.fm?.object_type;
   /* Normalisation site 1 (REC-10): through the catalog's own alias
      machinery, never a raw table lookup patched with duplicate keys; by own
      key only (`typeVocab`, R39). */
-  const required = typeVocab(HEADINGS, ot);
+  const required = typeVocab(HEADINGS_OF, ot);
   if (!required) return; // type invalid; C-2.5 already fired
   /* REC-14: the state-conditional canon. Permitted in every state, required in
      the states that name it — read through typeVocab like the base set, so a
      legacy focus/problem document is judged by its own contract here too. */
-  const conditional = typeVocab(HEADINGS_WHEN, ot) || [];
+  const conditional = typeVocab(CONDITIONAL_OF, ot) || [];
   const canonical = [...required, ...conditional.map(c => c.heading)];
   const present = (ctx.body.match(/^## .*$/gm) || []).map(h => h.trimEnd());
   for (const h of required) {
@@ -229,7 +318,7 @@ function checkHeadings(ctx, findings) {
        `states:` is gone from this shape because the state it named is gone from
        the machine; the requirement is unchanged. */
     const owed = c.whenCaseMember ? isCaseMemberBytes(ctx.fm)
-               : (c.states || []).includes(ctx.fm?.current_state);
+               : holds(c.states || [], ctx.fm?.current_state);
     if (owed && !present.includes(c.heading))
       findings.push(f('C-3.1', 'error', localize('record-grammar.bundle.required_heading_heading_is_missing', 'required heading \'{heading}\' is missing: a member of a published case carries it', { heading: String(c.heading) }), [localize('record-grammar.bundle.insert_canonical_heading_heading_with', 'insert canonical heading \'{heading}\' with the assertion in it', { heading: String(c.heading) })]));
   }
@@ -238,14 +327,16 @@ function checkHeadings(ctx, findings) {
   }
 }
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkStateLegality(ctx, findings) {
   const ot = ctx.fm?.object_type;
   /* Normalisation site 1 (REC-10), same as checkHeadings: the second rename
      patched this lookup with STATES.problem = STATES.focus instead of
      normalising, and DATA-MODEL.md §2.7 measured what that costs. */
-  const spec = typeVocab(STATES, ot);
-  if (!spec) return;
-  const cur = ctx.fm.current_state;
+  const spec = typeVocab(MACHINE_OF, ot);
+  const fm = ctx.fm;
+  if (!spec || !fm) return;
+  const cur = fm.current_state;
   /* CASE-4 / DEC-72: `legacy` is READ HERE AND NOWHERE ELSE, which is the point
      of it being a separate key. A word this machine no longer produces is still
      a word its own signed history carries, and refusing bytes we ourselves
@@ -253,34 +344,40 @@ function checkStateLegality(ctx, findings) {
      folded into `legal`: every OTHER reader of this table — the affordance
      derivation, the transition guards, `edgesFrom` — asks what the machine can
      DO, and must see the shorter list. */
-  const readable = [...spec.legal, ...(spec.legacy || [])];
-  if (!readable.includes(cur)) {
+  const legacy = memberOf(spec, 'legacy');
+  const readable = [...spec.legal, ...(isList(legacy) ? legacy : [])];
+  if (!holds(readable, cur)) {
     findings.push(f('C-4.1', 'error', localize('record-grammar.bundle.current_state_cur_is_not', 'current_state \'{cur}\' is not legal for {ot} (legal: {legal})', { cur: String(cur), ot: String(ot), legal: String(spec.legal.join(', ')) })));
   }
-  const hist = Array.isArray(ctx.fm.state_history) ? ctx.fm.state_history : [];
+  const history = fm.state_history;
+  const hist = Array.isArray(history) ? history : [];
   for (let i = 0; i < hist.length; i++) {
     const e = hist[i];
     if (typeof e !== 'object' || e === null) { findings.push(f('C-4.2', 'error', localize('record-grammar.bundle.state_history_i_is_not', 'state_history[{i}] is not an object', { i: String(i) }))); continue; }
-    if (typeof e.timestamp === 'string' && !ISO_TS_RE.test(e.timestamp)) {
-      findings.push(f('C-2.6', 'error', localize('record-grammar.bundle.state_history_i_timestamp_timestamp', 'state_history[{i}].timestamp \'{timestamp}\' is not ISO 8601 UTC', { i: String(i), timestamp: String(e.timestamp) })));
+    const timestamp = memberOf(e, 'timestamp');
+    if (typeof timestamp === 'string' && !ISO_TS_RE.test(timestamp)) {
+      findings.push(f('C-2.6', 'error', localize('record-grammar.bundle.state_history_i_timestamp_timestamp', 'state_history[{i}].timestamp \'{timestamp}\' is not ISO 8601 UTC', { i: String(i), timestamp: String(timestamp) })));
     }
   }
 }
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkWriteCompleteness(ctx, findings) {
   const fm = ctx.fm;
   if (!fm) return;
-  if (typeof fm.created === 'string' && typeof fm.last_updated === 'string' && fm.last_updated < fm.created) {
-    findings.push(f('C-13.1', 'error', localize('record-grammar.bundle.last_updated_last_updated_precedes', 'last_updated \'{last_updated}\' precedes created \'{created}\'', { last_updated: String(fm.last_updated), created: String(fm.created) })));
+  const created = fm.created, lastUpdated = fm.last_updated;
+  if (typeof created === 'string' && typeof lastUpdated === 'string' && lastUpdated < created) {
+    findings.push(f('C-13.1', 'error', localize('record-grammar.bundle.last_updated_last_updated_precedes', 'last_updated \'{last_updated}\' precedes created \'{created}\'', { last_updated: String(lastUpdated), created: String(created) })));
   }
-  const hist = Array.isArray(fm.state_history) ? fm.state_history : [];
+  const history = fm.state_history;
+  const hist = Array.isArray(history) ? history : [];
   if (hist.length > 0) {
-    const newest = hist[hist.length - 1].timestamp;
-    if (typeof newest === 'string' && typeof fm.last_updated === 'string' && fm.last_updated < newest) {
+    const newest = memberOf(hist[hist.length - 1], 'timestamp');
+    if (typeof newest === 'string' && typeof lastUpdated === 'string' && lastUpdated < newest) {
       findings.push(f('C-13.1', 'error', localize('record-grammar.bundle.last_updated_precedes_the_newest', 'last_updated precedes the newest state_history timestamp \'{newest}\'', { newest: String(newest) })));
     }
   }
-  if (typeof fm.created === 'string' && typeof fm.last_updated === 'string' && fm.last_updated > fm.created) {
+  if (typeof created === 'string' && typeof lastUpdated === 'string' && lastUpdated > created) {
     const idx = ctx.body.indexOf('## Session Log');
     const section = idx >= 0 ? ctx.body.slice(idx, ctx.body.indexOf('\n## ', idx + 1) === -1 ? undefined : ctx.body.indexOf('\n## ', idx + 1)) : '';
     if (!/^### Session /m.test(section)) {
@@ -289,6 +386,7 @@ function checkWriteCompleteness(ctx, findings) {
   }
 }
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkFormatHygiene(ctx, findings) {
   const escapeRe = /\\[#*_\-\[\]!~&]/;
   for (const [path, content] of ctx.files) {
@@ -306,22 +404,25 @@ function checkFormatHygiene(ctx, findings) {
       catch { findings.push(f('C-14.3', 'error', localize('record-grammar.bundle.path_does_not_parse_as', '{path} does not parse as JSON', { path: String(path) }), ['restore from history'])); }
     }
   }
-  const visuals = Array.isArray(ctx.fm?.visuals) ? ctx.fm.visuals : [];
+  const listed = ctx.fm?.visuals;
+  const visuals = Array.isArray(listed) ? listed : [];
   const svgOnDisk = [...ctx.files.keys()].filter(p => !p.includes('/') && p.endsWith('.svg'));
   for (const v of visuals) {
-    if (typeof v !== 'object' || !v.file || !v.description) {
+    if (typeof v !== 'object' || !memberOf(v, 'file') || !memberOf(v, 'description')) {
       findings.push(f('C-14.4', 'error', localize('record-grammar.bundle.visuals_entry_stringify_lacks_file', 'visuals entry {stringify} lacks file+description', { stringify: String(JSON.stringify(v).slice(0, 50)) })));
       continue;
     }
-    if (!ctx.files.has(v.file)) findings.push(f('C-14.4', 'error', localize('record-grammar.bundle.visuals_entry_file_has_no', 'visuals entry \'{file}\' has no file on disk', { file: String(v.file) })));
+    const file = memberOf(v, 'file');
+    if (!(typeof file === 'string' && ctx.files.has(file))) findings.push(f('C-14.4', 'error', localize('record-grammar.bundle.visuals_entry_file_has_no', 'visuals entry \'{file}\' has no file on disk', { file: String(file) })));
   }
   for (const svg of svgOnDisk) {
-    if (!visuals.some(v => v && v.file === svg)) {
+    if (!visuals.some(v => Boolean(v) && memberOf(v, 'file') === svg)) {
       findings.push(f('C-14.4', 'error', localize('record-grammar.bundle.svg_svg_on_disk_is', 'svg \'{svg}\' on disk is absent from the visuals array', { svg: String(svg) })));
     }
   }
 }
 
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 async function checkQueueAndBase(ctx, findings) {
   // C-16.5: stale advisory artifacts (claims, presence markers, and, at
   // 1.12.0, checkpointed-promotion gate verdicts) never lie around.
@@ -345,14 +446,18 @@ async function checkQueueAndBase(ctx, findings) {
     if (!gm && !lm && !m) continue;
     let stale;
     if (lm) {
+      /** @type {number | null} */
       let expires = null;
-      try { expires = Date.parse(JSON.parse(asText(ctx.files.get(p))).expires || ''); } catch { /* fallthrough */ }
-      stale = expires === null || Number.isNaN(expires) || (ctx.nowMs ?? Date.now()) > expires;
+      try { expires = Date.parse(/** @type {{expires?: string}} */ (JSON.parse(asText(ctx.files.get(p)))).expires || ''); } catch { /* fallthrough */ }
+      const at = expires;
+      stale = at === null || Number.isNaN(at) || (ctx.nowMs ?? Date.now()) > at;
     } else {
       const windowMs = gm ? gateMarkerStaleMs : staleMs;
+      /** @type {number | null} */
       let ts = null;
-      try { const rec = JSON.parse(asText(ctx.files.get(p))); ts = Date.parse(rec.ts || rec['started-at'] || rec.started_at || ''); } catch { /* fallthrough */ }
-      stale = ts === null || Number.isNaN(ts) || (ctx.nowMs ?? Date.now()) - ts > windowMs;
+      try { const rec = /** @type {{ts?: string, 'started-at'?: string, started_at?: string}} */ (JSON.parse(asText(ctx.files.get(p)))); ts = Date.parse(rec.ts || rec['started-at'] || rec.started_at || ''); } catch { /* fallthrough */ }
+      const at = ts;
+      stale = at === null || Number.isNaN(at) || (ctx.nowMs ?? Date.now()) - at > windowMs;
     }
     if (stale) {
       findings.push(f('C-16.5', 'info', localize('record-grammar.bundle.stale_advisory_artifact_p_crashed', 'stale advisory artifact \'{p}\' (crashed or ended actor)', { p: String(p) }), [localize('record-grammar.bundle.delete_the_stale_claim_or_presence', 'delete the stale claim or presence marker')]));
@@ -367,32 +472,39 @@ async function checkQueueAndBase(ctx, findings) {
     }
     return;
   }
+  /* The package's manifest is its producer's (promotion); its shape is stated here until its owner offers a reader. */
+  /** @typedef {{target?: unknown, base?: unknown, files?: ({name?: string, sha256?: string} | null)[], created?: unknown}} PendingManifest */
+  /** @type {PendingManifest} */
   let man;
-  try { man = JSON.parse(asText(manifestRaw)); }
+  try { man = /** @type {PendingManifest} */ (JSON.parse(asText(manifestRaw))); }
   catch { findings.push(f('C-16.1', 'error', 'PENDING_PROMOTION.json does not parse')); return; }
 
   for (const k of ['target', 'base', 'files', 'created', 'author', 'skill_version']) {
     if (!(k in man)) findings.push(f('C-16.1', 'error', `manifest missing '${k}'`));
   }
-  if (man.target && man.target !== ctx.folderName) {
-    findings.push(f('C-16.1', 'error', localize('record-grammar.bundle.manifest_target_target_does_not', 'manifest target \'{target}\' does not match record \'{folderName}\'', { target: String(man.target), folderName: String(ctx.folderName) })));
+  const target = man.target;
+  if (target && target !== ctx.folderName) {
+    findings.push(f('C-16.1', 'error', localize('record-grammar.bundle.manifest_target_target_does_not', 'manifest target \'{target}\' does not match record \'{folderName}\'', { target: String(target), folderName: String(ctx.folderName) })));
   }
+  /** @type {Set<string>} */
   const listed = new Set();
-  if (Array.isArray(man.files)) {
-    for (const entry of man.files) {
-      if (!entry || !entry.name || !entry.sha256) {
+  const manifestFiles = man.files;
+  if (Array.isArray(manifestFiles)) {
+    for (const entry of manifestFiles) {
+      const name = entry ? entry.name : undefined, sha = entry ? entry.sha256 : undefined;
+      if (!entry || !name || !sha) {
         findings.push(f('C-16.1', 'error', localize('record-grammar.bundle.manifest_files_entry_stringify_lacks', 'manifest files entry {stringify} lacks name+sha256', { stringify: String(JSON.stringify(entry)) })));
         continue;
       }
-      listed.add(entry.name + '.pending');
-      const pending = ctx.files.get(entry.name + '.pending');
+      listed.add(name + '.pending');
+      const pending = ctx.files.get(name + '.pending');
       if (!pending) {
-        findings.push(f('C-16.2', 'error', localize('record-grammar.bundle.package_file_name_pending_listed', 'package file \'{name}.pending\' listed in manifest is missing', { name: String(entry.name) }), [localize('record-grammar.bundle.discard_the_package_with_a_finding', 'discard the package with a finding to the producing author'), localize('record-grammar.bundle.re_produce_the_package_from_the', 're-produce the package from the originating session outputs')]));
+        findings.push(f('C-16.2', 'error', localize('record-grammar.bundle.package_file_name_pending_listed', 'package file \'{name}.pending\' listed in manifest is missing', { name: String(name) }), [localize('record-grammar.bundle.discard_the_package_with_a_finding', 'discard the package with a finding to the producing author'), localize('record-grammar.bundle.re_produce_the_package_from_the', 're-produce the package from the originating session outputs')]));
         continue;
       }
       const hash = await ctx.sha256(pending);
-      if (hash !== entry.sha256) {
-        findings.push(f('C-16.2', 'error', `hash mismatch on '${entry.name}.pending' (manifest ${String(entry.sha256).slice(0, 12)}…, actual ${hash.slice(0, 12)}…)`, [localize('record-grammar.bundle.discard_the_package_never_promote', 'discard the package (never promote)'), 're-produce the package']));
+      if (hash !== sha) {
+        findings.push(f('C-16.2', 'error', `hash mismatch on '${name}.pending' (manifest ${String(sha).slice(0, 12)}…, actual ${hash.slice(0, 12)}…)`, [localize('record-grammar.bundle.discard_the_package_never_promote', 'discard the package (never promote)'), 're-produce the package']));
       }
     }
   }
@@ -400,8 +512,9 @@ async function checkQueueAndBase(ctx, findings) {
     if (!listed.has(p)) findings.push(f('C-16.4', 'error', localize('record-grammar.bundle.pending_file_p_is_not', 'pending file \'{p}\' is not listed in the manifest', { p: String(p) }), [localize('record-grammar.bundle.complete_consumption_or_discard_with_reason', 'complete consumption or discard with reason')]));
   }
   // staleness
-  if (typeof man.created === 'string' && ISO_TS_RE.test(man.created)) {
-    const ageDays = ((ctx.nowMs ?? Date.now()) - Date.parse(man.created)) / 86400000;
+  const created = man.created;
+  if (typeof created === 'string' && ISO_TS_RE.test(created)) {
+    const ageDays = ((ctx.nowMs ?? Date.now()) - Date.parse(created)) / 86400000;
     if (ageDays > ctx.maxPackageAgeDays) {
       findings.push(f('C-16.3', 'warn', localize('record-grammar.bundle.pending_package_is_floor_days', 'pending package is {floor} days old (policy {maxPackageAgeDays})', { floor: String(Math.floor(ageDays)), maxPackageAgeDays: String(ctx.maxPackageAgeDays) }), ['promote now', localize('record-grammar.bundle.discard_with_reason_if_superseded_preserving', 'discard with reason if superseded, preserving the manifest as a record')]));
     }
@@ -410,12 +523,13 @@ async function checkQueueAndBase(ctx, findings) {
   }
   // (base coherence follows below)
   const live = ctx.files.get('bundle.md');
-  if (live && typeof man.base === 'string') {
+  const base = man.base;
+  if (live && typeof base === 'string') {
     const liveHash = await ctx.sha256(live);
-    if (liveHash === man.base) {
+    if (liveHash === base) {
       findings.push(f('C-17.1', 'info', localize('record-grammar.bundle.pending_package_base_matches_live_bundle', 'pending package base matches live bundle.md: fast-forward eligible')));
     } else {
-      findings.push(f('C-17.1', 'warn', localize('record-grammar.bundle.pending_package_base_string_does', 'pending package base {String}… does not match live bundle.md {liveHash}…: divergence', { String: String(String(man.base).slice(0, 12)), liveHash: String(liveHash.slice(0, 12)) }), [localize('record-grammar.bundle.rebase_via_a_reconciliation_session', 'rebase via a reconciliation session'), 'supersede: human selects one, the other preserved as a diverged branch in _history', localize('record-grammar.bundle.apply_disjoint_if_file_sets_prove', 'apply-disjoint if file sets prove disjoint (requires history manifests)')]));
+      findings.push(f('C-17.1', 'warn', localize('record-grammar.bundle.pending_package_base_string_does', 'pending package base {String}… does not match live bundle.md {liveHash}…: divergence', { String: String(String(base).slice(0, 12)), liveHash: String(liveHash.slice(0, 12)) }), [localize('record-grammar.bundle.rebase_via_a_reconciliation_session', 'rebase via a reconciliation session'), 'supersede: human selects one, the other preserved as a diverged branch in _history', localize('record-grammar.bundle.apply_disjoint_if_file_sets_prove', 'apply-disjoint if file sets prove disjoint (requires history manifests)')]));
     }
   }
 }
@@ -457,24 +571,29 @@ const REL_VOCAB = ['cites', 'relates_to', 'elevated_into', 'initiates', 'derived
 const SOURCE_ASSERTED_RELS = ['links_to'];
 const EDGE_STATUS = ['proposed', 'confirmed', 'severed'];
 
+/** @param {BundleContext} ctx @returns {string | null} */
 function latestHistorySnapshot(ctx) {
   const snaps = [...ctx.files.keys()].filter(p => /^_history\/bundle_.*\.md$/.test(p)).sort();
-  return snaps.length ? snaps[snaps.length - 1] : null;
+  return snaps.length ? (snaps[snaps.length - 1] ?? null) : null;
 }
 
 /** C-5: append-only surfaces never mutated, verified against the latest history snapshot. */
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkAppendOnly(ctx, findings) {
   const snapPath = latestHistorySnapshot(ctx);
-  if (!snapPath || !ctx.fm) return; // nothing to compare against yet
+  const fm = ctx.fm;
+  if (!snapPath || !fm) return; // nothing to compare against yet
   const snap = parseFrontmatter(asText(ctx.files.get(snapPath)));
-  if (!snap.data) return; // a malformed snapshot is C-12's problem
+  const snapData = snap.data;
+  if (!snapData) return; // a malformed snapshot is C-12's problem
   /* REC-136 / INVESTIGATIVE-SESSION.md §7.1 item 7: a project's `conclusions`
      is the SAME kind of surface as `state_history` — every conclusion and
      withdrawal a project made, readable forever (DEC-19) — so it is held by the
      same rule, structurally rather than by the writer's convention. */
   for (const key of ['state_history', 'conclusions']) {
-    const prior = Array.isArray(snap.data[key]) ? snap.data[key] : [];
-    const live = Array.isArray(ctx.fm[key]) ? ctx.fm[key] : [];
+    const priorValue = snapData[key], liveValue = fm[key];
+    const prior = Array.isArray(priorValue) ? priorValue : [];
+    const live = Array.isArray(liveValue) ? liveValue : [];
     if (live.length < prior.length) {
       findings.push(f('C-5.1', 'error', localize('record-grammar.bundle.key_shrank_from_length_to', '{key} shrank from {length} to {length_2} entries vs. the latest snapshot', { key: String(key), length: String(prior.length), length_2: String(live.length) }), ['restore from _history and re-append new material']));
     } else {
@@ -501,8 +620,9 @@ function checkAppendOnly(ctx, findings) {
   const liveCh = ctx.files.get('data/changes.json');
   if (chSnaps.length && liveCh) {
     try {
-      const priorRecs = JSON.parse(asText(ctx.files.get(chSnaps[chSnaps.length - 1]))).records || [];
-      const liveRecs = JSON.parse(asText(liveCh)).records || [];
+      /* data/changes.json is its writer's (record-core); its shape is stated here until its owner offers a reader. */
+      const priorRecs = /** @type {{records?: object[]}} */ (JSON.parse(asText(ctx.files.get(chSnaps[chSnaps.length - 1] ?? '')))).records || [];
+      const liveRecs = /** @type {{records?: object[]}} */ (JSON.parse(asText(liveCh))).records || [];
       if (liveRecs.length < priorRecs.length || JSON.stringify(liveRecs.slice(0, priorRecs.length)) !== JSON.stringify(priorRecs)) {
         findings.push(f('C-5.1', 'error', localize('record-grammar.bundle.data_changes_json_records_were_mutated', 'data/changes.json records were mutated or removed (append-only surface)'), ['restore from _history and re-append new material']));
       }
@@ -511,35 +631,39 @@ function checkAppendOnly(ctx, findings) {
 }
 
 /** C-6: reference shape, substrate independence, required edges, and (when a resolver is injected) target resolution. */
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkReferences(ctx, findings) {
-  const refs = Array.isArray(ctx.fm?.references) ? ctx.fm.references : [];
+  const refList = ctx.fm?.references;
+  const refs = Array.isArray(refList) ? refList : [];
   for (let i = 0; i < refs.length; i++) {
     const r = refs[i];
     if (typeof r !== 'object' || r === null) { findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_is_not_an', 'references[{i}] is not an object', { i: String(i) }))); continue; }
-    if (!REL_VOCAB.includes(r.rel)) findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is', 'references[{i}].rel \'{rel}\' is not in the closed vocabulary', { i: String(i), rel: String(r.rel) }), [localize('record-grammar.bundle.map_to_the_nearest_vocabulary_value', 'map to the nearest vocabulary value'), 'sever with reason']));
+    const rel = memberOf(r, 'rel'), assertedBy = memberOf(r, 'asserted_by'), address = memberOf(r, 'address');
+    const verdict = memberOf(r, 'verdict'), status = memberOf(r, 'status');
+    if (!holds(REL_VOCAB, rel)) findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is', 'references[{i}].rel \'{rel}\' is not in the closed vocabulary', { i: String(i), rel: String(rel) }), [localize('record-grammar.bundle.map_to_the_nearest_vocabulary_value', 'map to the nearest vocabulary value'), 'sever with reason']));
     /* A source-asserted edge has to say so on its face and carry the two things
        that distinguish it from a member's citation: the address the source
        actually wrote, and a verdict about which version it pointed at. Without
        the address it is unattributable; without the verdict it reads as a
        settled connection when the usual answer is that nothing established it. */
-    if (SOURCE_ASSERTED_RELS.includes(r.rel)) {
-      if (r.asserted_by !== 'source')
-        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is_2', 'references[{i}].rel \'{rel}\' is source-asserted and must carry asserted_by: \'source\', so it is never read as a member\'s claim', { i: String(i), rel: String(r.rel) })));
-      if (typeof r.address !== 'string' || !r.address)
-        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_must', 'references[{i}].rel \'{rel}\' must carry the address the source wrote, as a comment string beside the canonical target', { i: String(i), rel: String(r.rel) })));
-      if (!['contemporaneous', 'superseded', 'undetermined'].includes(r.verdict))
-        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_must_2', 'references[{i}].rel \'{rel}\' must carry a contemporaneity verdict of contemporaneous, superseded or undetermined; undetermined is the resting state and must be stated rather than omitted', { i: String(i), rel: String(r.rel) })));
-    } else if (r.asserted_by === 'source') {
-      findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is_3', 'references[{i}].rel \'{rel}\' is a member\'s relation and cannot be asserted_by \'source\'', { i: String(i), rel: String(r.rel) })));
+    if (holds(SOURCE_ASSERTED_RELS, rel)) {
+      if (assertedBy !== 'source')
+        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is_2', 'references[{i}].rel \'{rel}\' is source-asserted and must carry asserted_by: \'source\', so it is never read as a member\'s claim', { i: String(i), rel: String(rel) })));
+      if (typeof address !== 'string' || !address)
+        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_must', 'references[{i}].rel \'{rel}\' must carry the address the source wrote, as a comment string beside the canonical target', { i: String(i), rel: String(rel) })));
+      if (!holds(['contemporaneous', 'superseded', 'undetermined'], verdict))
+        findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_must_2', 'references[{i}].rel \'{rel}\' must carry a contemporaneity verdict of contemporaneous, superseded or undetermined; undetermined is the resting state and must be stated rather than omitted', { i: String(i), rel: String(rel) })));
+    } else if (assertedBy === 'source') {
+      findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_rel_rel_is_3', 'references[{i}].rel \'{rel}\' is a member\'s relation and cannot be asserted_by \'source\'', { i: String(i), rel: String(rel) })));
     }
-    if (!EDGE_STATUS.includes(r.status)) findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_status_status_is', 'references[{i}].status \'{status}\' is not one of: {EDGE_STATUS}', { i: String(i), status: String(r.status), EDGE_STATUS: String(EDGE_STATUS.join(', ')) })));
-    const t = r.target;
+    if (!holds(EDGE_STATUS, status)) findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_status_status_is', 'references[{i}].status \'{status}\' is not one of: {EDGE_STATUS}', { i: String(i), status: String(status), EDGE_STATUS: String(EDGE_STATUS.join(', ')) })));
+    const t = memberOf(r, 'target');
     if (typeof t !== 'string' || /:\/\/|[/\\]|drive\.google/i.test(t)) {
       findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_target_string_looks', 'references[{i}].target \'{String}\' looks like a substrate locator; targets are canonical IDs only', { i: String(i), String: String(String(t).slice(0, 40)) })));
     } else if (!BUNDLE_ID_RE.test(t)) {
       findings.push(f('C-6.1', 'error', localize('record-grammar.bundle.references_i_target_t_does', 'references[{i}].target \'{t}\' does not match the canonical ID grammar', { i: String(i), t: String(t) })));
     } else if (ctx.resolveTarget) {
-      if (!ctx.resolveTarget(t)) {
+      if (!ctx.resolveTarget?.(t)) {
         findings.push(f('C-6.2', 'error', localize('record-grammar.bundle.references_i_target_t_does_2', 'references[{i}].target \'{t}\' does not resolve in the store', { i: String(i), t: String(t) }), ['restore target from history', 're-point to the successor object (derived_from chain)', localize('record-grammar.bundle.sever_the_edge_with_a_reason', 'sever the edge with a reason note')]));
       }
     }
@@ -559,6 +683,7 @@ function checkReferences(ctx, findings) {
    names so) once lost its last character to the extension formula and the checker looked for a copy that is not stored
    (C-12.2 "is missing", so a case citing a vouched upload could not be signed); a directory with a dot and a file
    without one (`a.b/c`) needs the cut at the last `/` first. */
+/** @param {string} name @param {string | undefined} key @returns {string} */
 function snapshotCopyPath(name, key) {
   const cut = name.lastIndexOf('/');
   const dir = cut === -1 ? '' : name.slice(0, cut + 1);
@@ -571,6 +696,7 @@ function snapshotCopyPath(name, key) {
    form (a stamp with or without milliseconds; an infix a writer adds: `_links_`, `_bar`, `_plan`, `_close`, `takeup_`,
    `resolve_`). The key follows a `_` in the file's name and is followed by the extension's dot or the name's end;
    a key holding a dot (a stamp with milliseconds) is tried at each dot. History already written is never rewritten. */
+/** @param {string} p @param {Set<string>} keys @returns {string | null} */
 function listedKeyOf(p, keys) {
   const base = p.slice(p.lastIndexOf('/') + 1);
   for (let i = base.indexOf('_'); i !== -1; i = base.indexOf('_', i + 1)) {
@@ -584,6 +710,7 @@ function listedKeyOf(p, keys) {
 }
 
 /** C-12: history manifest coherence and snapshot accounting. */
+/** @param {BundleContext} ctx @param {Finding[]} findings */
 function checkHistoryCoherence(ctx, findings) {
   const histFiles = [...ctx.files.keys()].filter(p => p.startsWith('_history/'));
   const manRaw = ctx.files.get('_history/manifest.json');
@@ -591,32 +718,39 @@ function checkHistoryCoherence(ctx, findings) {
     if (histFiles.length) findings.push(f('C-12.1', 'error', '_history contains files but no manifest.json', [localize('record-grammar.bundle.rebuild_manifest_entry_from_surviving_files', 'rebuild manifest entry from surviving files')]));
     return;
   }
+  /* The history manifest is its writer's (record-core); its shape is stated here until its owner offers a reader. */
+  /** @typedef {{key?: string, kind?: unknown, created?: unknown, files?: unknown, snapshotted?: string[]}} HistoryEntry */
+  /** @type {{entries?: (HistoryEntry | null)[]}} */
   let man;
-  try { man = JSON.parse(asText(manRaw)); }
+  try { man = /** @type {{entries?: (HistoryEntry | null)[]}} */ (JSON.parse(asText(manRaw))); }
   catch { findings.push(f('C-12.1', 'error', '_history/manifest.json does not parse', [localize('record-grammar.bundle.rebuild_manifest_entry_from_surviving_files', 'rebuild manifest entry from surviving files')])); return; }
-  const entries = Array.isArray(man.entries) ? man.entries : [];
+  const entryList = man.entries;
+  const entries = Array.isArray(entryList) ? entryList : [];
+  /** @type {Set<string>} */
   const keys = new Set();
   let prevKey = '';
+  /** @type {string[]} */
   const bundleMdCreated = [];
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
     for (const k of ['key', 'kind', 'created', 'files']) if (!(k in (e || {}))) findings.push(f('C-12.1', 'error', `manifest entry[${i}] missing '${k}'`));
-    if (e?.key) {
-      if (keys.has(e.key)) findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.duplicate_manifest_key_key', 'duplicate manifest key \'{key}\'', { key: String(e.key) })));
-      if (e.key < prevKey) findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.manifest_keys_out_of_order', 'manifest keys out of order at \'{key}\'', { key: String(e.key) })));
-      keys.add(e.key); prevKey = e.key;
+    const key = e?.key, created = e?.created, snapshotted = e?.snapshotted;
+    if (key) {
+      if (keys.has(key)) findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.duplicate_manifest_key_key', 'duplicate manifest key \'{key}\'', { key: String(key) })));
+      if (key < prevKey) findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.manifest_keys_out_of_order', 'manifest keys out of order at \'{key}\'', { key: String(key) })));
+      keys.add(key); prevKey = key;
     }
     // Collected, not maxed, because the newest bundle.md-changing entry has to
     // be excluded below. See the C-12.1 note at the comparison.
-    if (typeof e?.created === 'string' && Array.isArray(e?.snapshotted) && e.snapshotted.includes('bundle.md')) {
-      bundleMdCreated.push(e.created);
+    if (typeof created === 'string' && Array.isArray(snapshotted) && snapshotted.includes('bundle.md')) {
+      bundleMdCreated.push(created);
     }
-    if (e?.kind === 'promotion' && e.key && !ctx.files.has(`_history/promotion_${e.key}.json`)) {
-      findings.push(f('C-12.2', 'error', localize('record-grammar.bundle.promotion_record_for_key_is', 'promotion record for \'{key}\' is missing', { key: String(e.key) }), [localize('record-grammar.bundle.rebuild_manifest_entry_from_surviving_files', 'rebuild manifest entry from surviving files'), localize('record-grammar.bundle.record_a_history_loss_finding_and', 'record a history-loss finding and re-snapshot current state')]));
+    if (e?.kind === 'promotion' && key && !ctx.files.has(`_history/promotion_${key}.json`)) {
+      findings.push(f('C-12.2', 'error', localize('record-grammar.bundle.promotion_record_for_key_is', 'promotion record for \'{key}\' is missing', { key: String(key) }), [localize('record-grammar.bundle.rebuild_manifest_entry_from_surviving_files', 'rebuild manifest entry from surviving files'), localize('record-grammar.bundle.record_a_history_loss_finding_and', 'record a history-loss finding and re-snapshot current state')]));
     }
-    if (Array.isArray(e?.snapshotted)) {
-      for (const name of e.snapshotted) {
-        const snapPath = snapshotCopyPath(name, e.key);
+    if (Array.isArray(snapshotted)) {
+      for (const name of snapshotted) {
+        const snapPath = snapshotCopyPath(name, key);
         // 1.16.5: hasFile_, not files.has. This is an EXISTENCE assertion, and
         // the 1.13.0 presence rule above says existence assertions consult
         // files UNION elided. Using files.has here made every tier-scoped read
@@ -627,7 +761,7 @@ function checkHistoryCoherence(ctx, findings) {
         // answer a question about whether a file exists. Byte checks below are
         // unchanged and still read ctx.files directly.
         if (!hasFile_(ctx, snapPath)) {
-          findings.push(f('C-12.2', 'error', localize('record-grammar.bundle.snapshot_snappath_recorded_in_manifest', 'snapshot \'{snapPath}\' recorded in manifest entry \'{key}\' is missing', { snapPath: String(snapPath), key: String(e.key) }), [localize('record-grammar.bundle.record_a_history_loss_finding_and', 'record a history-loss finding and re-snapshot current state')]));
+          findings.push(f('C-12.2', 'error', localize('record-grammar.bundle.snapshot_snappath_recorded_in_manifest', 'snapshot \'{snapPath}\' recorded in manifest entry \'{key}\' is missing', { snapPath: String(snapPath), key: String(key) }), [localize('record-grammar.bundle.record_a_history_loss_finding_and', 'record a history-loss finding and re-snapshot current state')]));
         }
       }
     }
@@ -660,9 +794,12 @@ function checkHistoryCoherence(ctx, findings) {
     if (p === '_history/manifest.json') continue;
     const rec = REFUSAL_RECORD.exec(p);
     if (rec) {
+      /* A refusal record is its writer's (promotion); its shape is stated here until its owner offers a reader. */
+      /** @type {{outcome?: unknown} | null} */
       let parsed = null;
-      try { parsed = JSON.parse(asText(ctx.files.get(p))); } catch { /* reported below */ }
-      if (!parsed || !parsed.outcome) {
+      try { parsed = /** @type {{outcome?: unknown} | null} */ (JSON.parse(asText(ctx.files.get(p)))); } catch { /* reported below */ }
+      const record = parsed;
+      if (!record || !record.outcome) {
         findings.push(f('C-12.2', 'error', localize('record-grammar.bundle.refusal_record_p_does_not', 'refusal record \'{p}\' does not parse or names no outcome', { p: String(p) }),
           [localize('record-grammar.bundle.restore_the_refusal_record_from_history', 'restore the refusal record from history'), localize('record-grammar.bundle.remove_the_unexplained_refusal_artifacts', 'remove the unexplained refusal artifacts')]));
       }
@@ -711,8 +848,9 @@ function checkHistoryCoherence(ctx, findings) {
   const sorted = bundleMdCreated.slice().sort();
   sorted.pop();                                   // the promotion that wrote live
   const newestPrior = sorted.length ? sorted[sorted.length - 1] : '';
-  if (typeof ctx.fm?.last_updated === 'string' && newestPrior && ctx.fm.last_updated < newestPrior) {
-    findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.live_last_updated_last_updated', 'live last_updated \'{last_updated}\' precedes an earlier history entry \'{newestPrior}\': the live bundle.md is older than a version already superseded', { last_updated: String(ctx.fm.last_updated), newestPrior: String(newestPrior) }),
+  const lastUpdated = ctx.fm?.last_updated;
+  if (typeof lastUpdated === 'string' && newestPrior && lastUpdated < newestPrior) {
+    findings.push(f('C-12.1', 'error', localize('record-grammar.bundle.live_last_updated_last_updated', 'live last_updated \'{last_updated}\' precedes an earlier history entry \'{newestPrior}\': the live bundle.md is older than a version already superseded', { last_updated: String(lastUpdated), newestPrior: String(newestPrior) }),
       [localize('record-grammar.bundle.restore_the_newer_bundle_md_from', 'restore the newer bundle.md from history'), 'correct last_updated to reflect the live content']));
   }
 }
@@ -746,10 +884,18 @@ const GRAMMAR_ID_RE = /^C-\d+(\.\d+)?$/;
 
 /* The registered grammars, judged whole before any arm runs: `byArm` maps a built-in arm's name to the grammar that
    replaces it, `rest` holds the others in list order. */
+/** @param {Grammar[] | null | undefined} list @returns {{byArm: Map<string, Grammar>, rest: Grammar[]}} */
 function grammarsOf(list) {
-  if (list === undefined || list === null) return { byArm: new Map(), rest: [] };
+  /** @type {[string, Grammar][]} */
+  const none = [];
+  if (list === undefined || list === null) return { byArm: new Map(none), rest: [] };
   if (!Array.isArray(list)) throw new TypeError('checkBundle: opts.grammars is a list of {module, ids, arm}');
-  const byArm = new Map(), rest = [], claimed = new Map();
+  const byArm = new Map(none);
+  /** @type {Grammar[]} */
+  const rest = [];
+  /** @type {[string, string][]} */
+  const noClaims = [];
+  const claimed = new Map(noClaims);
   list.forEach((g, i) => {
     const at = `checkBundle: opts.grammars[${i}]`;
     if (!g || typeof g !== 'object') throw new TypeError(`${at} is not a {module, ids, arm} entry`);
@@ -775,7 +921,7 @@ function grammarsOf(list) {
 /**
  * Run all applicable checks over one bundle.
  * @param {BundleInput} input
- * @param {{knownSchemas?: string[], grammars?: {module: string, ids: string[], arm: Function}[]}} [opts]
+ * @param {{knownSchemas?: string[], grammars?: Grammar[] | null}} [opts]
  * @returns {Promise<{pass: boolean, findings: Finding[]}>}
  */
 export async function checkBundle(input, opts = {}) {
@@ -783,6 +929,8 @@ export async function checkBundle(input, opts = {}) {
   /** @type {Finding[]} */
   const findings = [];
   const bundleRaw = input.files.get('bundle.md');
+  const elidedPaths = input.elidedPaths;
+  /** @type {BundleContext} */
   const ctx = {
     folderName: input.folderName,
     files: input.files,
@@ -795,8 +943,8 @@ export async function checkBundle(input, opts = {}) {
     // they skip absent content, so nothing is ever verified against bytes
     // the caller does not hold. Inquiry's `checkInquiryEntry` passes nothing
     // here and is byte-complete as before.
-    elided: input.elidedPaths instanceof Set ? input.elidedPaths
-      : new Set(Array.isArray(input.elidedPaths) ? input.elidedPaths : []),
+    elided: elidedPaths instanceof Set ? elidedPaths
+      : new Set(Array.isArray(elidedPaths) ? elidedPaths : []),
     sha256: input.sha256,
     nowMs: input.nowMs,
     maxPackageAgeDays: input.maxPackageAgeDays ?? 14,
@@ -874,6 +1022,7 @@ export async function checkBundle(input, opts = {}) {
     checkWriteCompleteness(ctx, findings);
     /* §1b: each type arm is a place in the order that a registered grammar fills; an arm no grammar claims runs
        nothing here, its built-in body being the module's that owns it (T19, rule 2). */
+    /** @param {string} name */
     const typeArm = async (name) => {
       const g = grammars.byArm.get(name);
       if (g) await g.arm(ctx, findings);
