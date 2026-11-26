@@ -8,10 +8,13 @@ import { csvEntry } from "../../../src/csv-reader/index.mjs";
 import * as ooxml from "../../../src/ooxml.mjs";
 import { enc } from "./fixtures.mjs";
 
+/** UTF-16LE bytes of a string, with or without a BOM.
+ *  @param {string} s @param {boolean} bom @returns {Uint8Array} */
 const u16le = (s, bom) => { const out = bom ? [0xff, 0xfe] : []; for (const c of s) { const n = c.charCodeAt(0); out.push(n & 255, n >> 8); } return new Uint8Array(out); };
 
 test("R7 seam (ooxml decodeText, merged by OOXML #4): the encoding decodeText names for a body is the encoding dialect() names", () => {
   assert.equal(typeof ooxml.decodeText, "function", "ooxml.decodeText is merged (plan 2c.5)");
+  /** @type {[string, Uint8Array, string][]} */
   const bodies = [
     ["utf-8, BOM", new Uint8Array([0xef, 0xbb, 0xbf, ...enc("a,é\n1,2\n")]), "utf-8"],
     ["utf-8, no BOM", enc("a,é’日本\n1,2\n"), "utf-8"],
@@ -22,8 +25,11 @@ test("R7 seam (ooxml decodeText, merged by OOXML #4): the encoding decodeText na
   for (const [name, body, want] of bodies) {
     const seen = ooxml.decodeText(body, { name: "x.csv", kind: "text" });
     assert.equal(seen.ok, true, name);
+    if (!("encoding" in seen)) assert.fail(`${name}: decodeText named no encoding`);
     assert.equal(seen.encoding, want, `${name}: decodeText`);
-    assert.equal(csvEntry.dialect(body).encoding, want, `${name}: dialect()`);
-    assert.equal(csvEntry.dialect(body).assumed, seen.assumed, `${name}: assumed`);
+    const dialect = csvEntry.dialect(body);
+    if (dialect === null) assert.fail(`${name}: dialect() read no bytes`);
+    assert.equal(dialect.encoding, want, `${name}: dialect()`);
+    assert.equal(dialect.assumed, seen.assumed, `${name}: assumed`);
   }
 });
