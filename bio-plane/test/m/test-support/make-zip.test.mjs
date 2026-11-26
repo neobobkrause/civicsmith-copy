@@ -784,26 +784,24 @@ test("R13 a spec it cannot write throws an Error naming the field: an entry with
   ];
   for (const [spec, re] of cases) assert.throws(() => makeZip(spec), (/** @type {unknown} */ e) => e instanceof Error && re.test(e.message), `${JSON.stringify(spec)} → ${re}`);
   /* And every other field it cannot write, by name (J1, reading 8). */
-  /** @type {Array<[() => Uint8Array, RegExp]>} */
-  const more = [
-    [() => makeZip("x"), /entries/],
-    [() => makeZip([null]), /entries\[0\]/],
-    [() => makeZip([{ name: "a", data: "x", method: 70000 }]), /entries\[0\]\.method/],
-    [() => makeZip([{ name: "a", data: "x", local: { bogus: 1 } }]), /entries\[0\]\.local\.bogus/],
-    [() => makeZip([{ name: "a", data: "x", local: { crc32: -1 } }]), /entries\[0\]\.local\.crc32/],
-    [() => makeZip([{ name: "a", data: "x", central: { localOffset: 2 ** 32 } }]), /entries\[0\]\.central\.localOffset/],
-    [() => makeZip([{ name: "a", data: "x", descriptor: { crc32: 1 } }]), /entries\[0\]\.descriptor/],
-    [() => makeZip([], { eocd: { entries: 70000 } }), /options\.eocd\.entries/],
-    [() => makeZip([], { eocd: { comment: "x" } }), /options\.eocd\.comment/],
-    [() => makeZip([], { zip64Record: { entries: 1 } }), /options\.zip64Record/],
-    [() => makeZip([], { comment: 5 }), /options\.comment/],
-    [() => zipBomb({ kernel: 0, entries: 2 }), /kernel/],
-    [() => zipBomb({ kernel: 1, entries: 1.5 }), /entries/],
-    [() => nestedZip({ depth: 0, fanout: 1, leaf: "x" }), /depth/],
-    [() => nestedZip({ depth: 1, fanout: 0, leaf: "x" }), /fanout/],
-    [() => nestedZip({ depth: 1, fanout: 1 }), /leaf/],
-  ];
-  for (const [f, re] of more) assert.throws(f, (/** @type {unknown} */ e) => e instanceof Error && re.test(e.message), String(re));
+  /** @param {RegExp} re @returns {(e: unknown) => boolean} */
+  const naming = (re) => (e) => e instanceof Error && re.test(e.message);
+  assert.throws(() => makeZip("x"), naming(/entries/), String(/entries/));
+  assert.throws(() => makeZip([null]), naming(/entries\[0\]/), String(/entries\[0\]/));
+  assert.throws(() => makeZip([{ name: "a", data: "x", method: 70000 }]), naming(/entries\[0\]\.method/), String(/entries\[0\]\.method/));
+  assert.throws(() => makeZip([{ name: "a", data: "x", local: { bogus: 1 } }]), naming(/entries\[0\]\.local\.bogus/), String(/entries\[0\]\.local\.bogus/));
+  assert.throws(() => makeZip([{ name: "a", data: "x", local: { crc32: -1 } }]), naming(/entries\[0\]\.local\.crc32/), String(/entries\[0\]\.local\.crc32/));
+  assert.throws(() => makeZip([{ name: "a", data: "x", central: { localOffset: 2 ** 32 } }]), naming(/entries\[0\]\.central\.localOffset/), String(/entries\[0\]\.central\.localOffset/));
+  assert.throws(() => makeZip([{ name: "a", data: "x", descriptor: { crc32: 1 } }]), naming(/entries\[0\]\.descriptor/), String(/entries\[0\]\.descriptor/));
+  assert.throws(() => makeZip([], { eocd: { entries: 70000 } }), naming(/options\.eocd\.entries/), String(/options\.eocd\.entries/));
+  assert.throws(() => makeZip([], { eocd: { comment: "x" } }), naming(/options\.eocd\.comment/), String(/options\.eocd\.comment/));
+  assert.throws(() => makeZip([], { zip64Record: { entries: 1 } }), naming(/options\.zip64Record/), String(/options\.zip64Record/));
+  assert.throws(() => makeZip([], { comment: 5 }), naming(/options\.comment/), String(/options\.comment/));
+  assert.throws(() => zipBomb({ kernel: 0, entries: 2 }), naming(/kernel/), String(/kernel/));
+  assert.throws(() => zipBomb({ kernel: 1, entries: 1.5 }), naming(/entries/), String(/entries/));
+  assert.throws(() => nestedZip({ depth: 0, fanout: 1, leaf: "x" }), naming(/depth/), String(/depth/));
+  assert.throws(() => nestedZip({ depth: 1, fanout: 0, leaf: "x" }), naming(/fanout/), String(/fanout/));
+  assert.throws(() => nestedZip({ depth: 1, fanout: 1 }), naming(/leaf/), String(/leaf/));
 });
 
 /* ------------------------------------------------------------------ R14 */
