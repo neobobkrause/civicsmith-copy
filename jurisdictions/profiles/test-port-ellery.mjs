@@ -22,6 +22,22 @@ const R = String.raw;
 
 /* R40: a template's whole attribution, as filing-templates reads a profile template (its R15); every blank in
    the texts below is one of filing-templates' blanks. */
+/**
+ * @typedef {Object} TestReview one review of a made-up template
+ * @property {string} reviewer
+ * @property {string} kind
+ * @property {string} [organisation]
+ * @property {string} [credential]
+ * @property {string} scope
+ * @property {string} outcome
+ * @property {string} at
+ */
+/**
+ * @param {string} id
+ * @param {string} use
+ * @param {string} text
+ * @param {TestReview} review
+ */
 const attributed = (id, use, text, review) => ({
   id, version: 1, use, text, notes: "A made-up template for tests.", authored_by: "Ada Example",
   contributors: ["Ben Example"], reviews: [review], approved_by: "Cy Example", approved_at: "2026-09-01", basis: "TEST",
