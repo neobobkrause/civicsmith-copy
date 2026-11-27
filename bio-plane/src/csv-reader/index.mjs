@@ -464,13 +464,28 @@ import { boundOf } from "../read-bounds.mjs";
  * same argument that made `linkWrapper` imported rather than re-derived.
  * Behaviour here is untouched; the over-strictness arm proves this entry's
  * outputs are byte-identical across the change. */
+/** The text a reference writes for one of its parts (R10, R11, R13). A string
+ *  is written as it is, and any other value as `String()` gives it, which is
+ *  the text a template literal gave every value it could convert; a symbol,
+ *  which a template literal refuses, is written as its own `Symbol(...)`
+ *  text, and a value with no text form at all (a null-prototype object, a
+ *  `toString` that throws) is written as the empty text, so the builder
+ *  never throws.
+ * @param {string} part
+ * @returns {string}
+ */
+function refText(part) {
+  if (typeof part === "string") return part;
+  try { return String(part); } catch { return ""; }
+}
+
 /**
  * @param {string} sheet
  * @param {string} cell
  * @returns {SheetCellRef}
  */
 export function sheetCellRef(sheet, cell) {
-  return { kind: "sheet-cell", ref: `${sheet}!${cell}`, sheet, cell };
+  return { kind: "sheet-cell", ref: `${refText(sheet)}!${refText(cell)}`, sheet, cell };
 }
 
 /** FW-19 / IC-124 — `{kind:"sheet-range", ref:"Sheet1!A1:C10", sheet, range}`
@@ -485,7 +500,7 @@ export function sheetCellRef(sheet, cell) {
  * @returns {SheetRangeRef}
  */
 export function sheetRangeRef(sheet, range) {
-  return { kind: "sheet-range", ref: `${sheet}!${range}`, sheet, range };
+  return { kind: "sheet-range", ref: `${refText(sheet)}!${refText(range)}`, sheet, range };
 }
 
 /** A 1-based column number -> its A1 letters (1 -> A, 27 -> AA). Bijective
