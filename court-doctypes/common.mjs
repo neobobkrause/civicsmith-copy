@@ -585,11 +585,14 @@ function graded(type, detail) {
 }
 
 /** A moved fact's value as the row held it: a JSON fact (links, documents) read back from the text the entity holds.
+ *  A register row states no counts, so rowEntity writes none; a fact of counts in an entity a caller hands in is
+ *  given as its JSON text, as written, never as a value of its own.
  *  @param {MovedFact} m
  *  @param {"was" | "now"} side
  *  @returns {FactValue} */
 function factValue(m, side) {
   const v = m[side];
+  if (v !== null && typeof v === "object") return JSON.stringify(v);
   if (!JSON_FACTS.has(m.fact)) return v;
   return /** @type {Array<RowLink | RowDocument>} the entity's own JSON fact, written by rowEntity */ (JSON.parse(String(v)));
 }
