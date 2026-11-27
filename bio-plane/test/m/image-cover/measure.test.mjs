@@ -14,6 +14,7 @@ import "../../sandbox.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { Miniflare } from "miniflare";
@@ -21,18 +22,48 @@ import { fixture, jpegSegments } from "./answers.mjs";
 
 const MB = 1024 * 1024;
 
-/** The strip's restart segments tiled into a `W` x `H` JPEG (W a multiple of 4032, H of 16), oriented 6 as a phone
- *  held upright writes it. */
+/**
+ * What the test's Worker answers for a cover: the answer's fields, its bytes by their length.
+ * @typedef {Object} Reply
+ * @property {boolean} ok
+ * @property {string} [code]
+ * @property {string} [detail]
+ * @property {number} [covered]
+ * @property {number} [width]
+ * @property {number} [height]
+ * @property {number} [bytes]
+ */
+/**
+ * Whether the Worker's JSON is a Reply (this test's own channel, read back).
+ * @param {unknown} v
+ * @returns {v is Reply}
+ */
+function isReply(v) {
+  if (typeof v !== "object" || v === null || !("ok" in v) || typeof v.ok !== "boolean") return false;
+  return (!("code" in v) || typeof v.code === "string") && (!("detail" in v) || typeof v.detail === "string") &&
+    (!("covered" in v) || typeof v.covered === "number") && (!("width" in v) || typeof v.width === "number") &&
+    (!("height" in v) || typeof v.height === "number") && (!("bytes" in v) || typeof v.bytes === "number");
+}
+
+/**
+ * The strip's restart segments tiled into a `W` x `H` JPEG (W a multiple of 4032, H of 16), oriented 6 as a phone
+ * held upright writes it.
+ * @param {number} W
+ * @param {number} H
+ * @returns {Uint8Array}
+ */
 function phoneJpeg(W, H) {
   const strip = fixture("strip-4032x64.jpg");
   const { segs } = jpegSegments(strip);
   const sos = segs.find((s) => s.marker === 0xda);
+  assert.ok(sos, "the strip has a scan");
   const dataAt = sos.body.byteOffset - strip.byteOffset + sos.body.length;
+  /** @type {Uint8Array[]} */
   const pieces = [];
   let p = dataAt, from = dataAt;
   for (; p < strip.length - 1; p++) {
     if (strip[p] !== 0xff) continue;
-    const n = strip[p + 1];
+    const n = strip[p + 1] ?? NaN;
     if (n === 0) { p++; continue; }
     if ((n >= 0xd0 && n <= 0xd7) || n === 0xd9) { pieces.push(strip.subarray(from, p)); from = p + 2; p++; if (n === 0xd9) break; }
   }
@@ -52,26 +83,33 @@ function phoneJpeg(W, H) {
   out.set(head);
   let o = head.length;
   for (let i = 0; i < n; i++) {
-    const band = Math.floor(i / per);
-    out.set(pieces[band % 4], o); o += pieces[band % 4].length;
+    const piece = pieces[Math.floor(i / per) % 4];
+    assert.ok(piece);
+    out.set(piece, o); o += piece.length;
     out[o++] = 0xff; out[o++] = i === n - 1 ? 0xd9 : 0xd0 + (i & 7);
   }
   return out.subarray(0, o);
 }
 
-/* The workerd process Miniflare started: the child of this process whose command is workerd. */
+/* Each path below is one process's entry under the host's /proc, outside the product: `basename` keeps it one entry. */
+/** The workerd process Miniflare started: the child of this process whose command is workerd. */
 function workerdPid() {
   for (const d of readdirSync("/proc")) {
     if (!/^\d+$/.test(d)) continue;
     try {
-      const stat = readFileSync(`/proc/${d}/stat`, "utf8");
+      const stat = readFileSync(`/proc/${basename(d)}/stat`, "utf8");
       const ppid = Number(stat.slice(stat.lastIndexOf(")") + 2).split(" ")[1]);
-      if (ppid === process.pid && readFileSync(`/proc/${d}/cmdline`, "utf8").includes("workerd")) return Number(d);
+      if (ppid === process.pid && readFileSync(`/proc/${basename(d)}/cmdline`, "utf8").includes("workerd")) return Number(d);
     } catch {}
   }
   throw new Error("no workerd child process");
 }
-const status = (pid, key) => Number(readFileSync(`/proc/${pid}/status`, "utf8").match(new RegExp(`${key}:\\s+(\\d+) kB`))[1]) * 1024;
+/** A size in bytes from the process's status (`VmRSS`, `VmHWM`). @param {number} pid @param {string} key */
+const status = (pid, key) => {
+  const m = readFileSync(`/proc/${basename(String(pid))}/status`, "utf8").match(new RegExp(`${key}:\\s+(\\d+) kB`));
+  assert.ok(m, `${key} in the status`);
+  return Number(m[1]) * 1024;
+};
 
 test("R4 a 12 MP and a 48 MP phone JPEG covered in workerd: time and peak memory measured, the answer complete, the memory inside the isolate's 128 MB", { timeout: 600_000 }, async () => {
   const entry = fileURLToPath(new URL("../../../src/image-cover/index.mjs", import.meta.url));
@@ -88,32 +126,44 @@ export default { async fetch(req) {
     },
     bundle: true, format: "esm", write: false, platform: "neutral",
   });
-  const mf = new Miniflare({ modules: true, script: outputFiles[0].text, compatibilityDate: "2025-01-01" });
+  const bundle = outputFiles[0];
+  assert.ok(bundle, "the bundle");
+  const mf = new Miniflare({ modules: true, script: bundle.text, compatibilityDate: "2025-01-01" });
+  /** @type {Array<Record<string, string | number>>} */
   const rows = [];
   try {
     await mf.ready;
     const pid = workerdPid();
+    /** @param {Uint8Array} body @param {Record<string, string>} headers */
     const call = (body, headers) => mf.dispatchFetch("http://cover/", { method: "POST", body, headers });
-    for (const [label, W, H] of [["12 MP", 4032, 3024], ["48 MP", 8064, 6048]]) {
+    /** @type {Array<[string, number, number]>} */
+    const sizes = [["12 MP", 4032, 3024], ["48 MP", 8064, 6048]];
+    /** @type {Array<[number, number, number, number]>} */
+    const faces = [[400, 900, 700, 1300], [1500, 1000, 1800, 1400], [2200, 2600, 2900, 3100], [100, 3800, 600, 3950]];
+    for (const [label, W, H] of sizes) {
       const photo = phoneJpeg(W, H);
       /* areas as displayed (orientation 6: H x W): three faces and a plate */
-      const areas = [[400, 900, 700, 1300], [1500, 1000, 1800, 1400], [2200, 2600, 2900, 3100], [100, 3800, 600, 3950]].map((a) => a.map((v) => Math.round((v * W) / 4032)));
+      /** @param {number} v */
+      const scaled = (v) => Math.round((v * W) / 4032);
+      /** @type {Array<[number, number, number, number]>} */
+      const areas = faces.map(([x0, y0, x1, y1]) => [scaled(x0), scaled(y0), scaled(x1), scaled(y1)]);
       await (await call(photo, { "x-echo": "1" })).json();       // warm, and the body's own cost
       const t0 = performance.now();
       await (await call(photo, { "x-echo": "1" })).json();
       const echoMs = performance.now() - t0;
       const before = status(pid, "VmRSS");
-      writeFileSync(`/proc/${pid}/clear_refs`, "5");
+      writeFileSync(`/proc/${basename(String(pid))}/clear_refs`, "5");
       const t1 = performance.now();
       const r = await (await call(photo, { "x-areas": JSON.stringify(areas) })).json();
       const ms = performance.now() - t1 - echoMs;
       const peak = status(pid, "VmHWM");
+      assert.ok(isReply(r), `${label}: the Worker's answer`);
       assert.equal(r.ok, true, `${label}: ${r.code} ${r.detail}`);
       assert.deepEqual([r.width, r.height], [H, W], "as displayed");
       /* each area's MCUs, 16 x 16 in the stored frame, six blocks each */
       const mcus = areas.reduce((n, [x0, y0, x1, y1]) => n + (Math.floor((y1 - 1) / 16) - Math.floor(y0 / 16) + 1) * (Math.floor((H - x0 - 1) / 16) - Math.floor((H - x1) / 16) + 1), 0);
       assert.equal(r.covered, mcus * 6, label);
-      rows.push({ label, photo_mb: +(photo.length / MB).toFixed(1), answer_mb: +(r.bytes / MB).toFixed(1), ms: Math.round(ms), peak_growth_mb: +((peak - before) / MB).toFixed(1) });
+      rows.push({ label, photo_mb: +(photo.length / MB).toFixed(1), answer_mb: +((r.bytes ?? NaN) / MB).toFixed(1), ms: Math.round(ms), peak_growth_mb: +((peak - before) / MB).toFixed(1) });
       assert.ok(peak - before < 128 * MB, `${label}: ${((peak - before) / MB).toFixed(1)} MB`);
     }
   } finally {
