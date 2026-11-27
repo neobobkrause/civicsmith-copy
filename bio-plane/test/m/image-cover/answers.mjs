@@ -147,10 +147,12 @@ function storedPixel(o, dx, dy, W, H) {
 
 /**
  * Stored samples to displayed, as EXIF orientation `o` says: displayed (dx, dy) takes stored toStored(dx, dy).
- * @param {Uint8Array} samples @param {number} W @param {number} H @param {number} n @param {number} o
+ * A decoder that answers no samples fails here.
+ * @param {Uint8Array | null} samples @param {number} W @param {number} H @param {number} n @param {number} o
  * @returns {{samples: Uint8Array, width: number, height: number}}
  */
 function orient(samples, W, H, n, o) {
+  if (!samples) throw new Error("the decoder answered no samples");
   if (o === 1) return { samples, width: W, height: H };
   const [DW, DH] = o >= 5 ? [H, W] : [W, H];
   const out = new Uint8Array(samples.length);
