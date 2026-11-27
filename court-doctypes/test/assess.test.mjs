@@ -137,6 +137,18 @@ test("R10: a held row whose date, text, links or sealing changed gives outcome_c
   assert.deepEqual(r.events.map((e) => [e.type, e.key, e.field]), [["outcome_changed", "03/04/2024#3", "text"]]);
 });
 
+test("R10 R14: a held row that newly holds a fact of counts gives outcome_changed naming the row and the field, the counts as written", () => {
+  const before = cl(P4);
+  const after = cl(P4);
+  const at = after.entities.findIndex((e) => e.key === "entry:170");
+  const held = nth(after.entities, at);
+  after.entities[at] = { ...held, facts: { ...held.facts, tally: { ayes: 3, noes: 2 } } };
+  const r = CL.assess(before, after);
+  assert.deepEqual(r.events.map((e) => [e.type, e.key, e.field]), [["outcome_changed", "entry:170", "tally"]]);
+  assert.equal(nth(r.events, 0).was, undefined);
+  assert.equal(nth(r.events, 0).now, JSON.stringify({ ayes: 3, noes: 2 }));
+});
+
 test("R10: the proceeding's status gives status_changed; its caption or a party gives item_changed", () => {
   const card = (/** @type {string} */ h) => CPUC.parse(ctxFor(h, { view: VIEW, locator: L.card }));
   let r = CPUC.assess(card(CARD), card(CARD.replace(">CLOSED<", ">OPEN<")));
