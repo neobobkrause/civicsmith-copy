@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { glyphCount } from "../../../src/textchain.mjs";
 
+/** @param {unknown} s @returns {number} */
 const spelled = (s) => {
   if (typeof s !== "string") return 0;
   let n = 0;
@@ -13,6 +14,7 @@ const spelled = (s) => {
   return n;
 };
 
+/** @param {number} len @returns {string} */
 const mixed = (len) => {
   const parts = ["a", "Z", "é", "ñ", "漢", "字", " ", "\t", " ", "\u{1F600}", "\u{10348}", "7", "\n", " "];
   let s = "";
@@ -20,13 +22,13 @@ const mixed = (len) => {
   return s.slice(0, len);
 };
 
-test("R73 G48 (a): counting glyphs makes no regexp test or exec call", () => {
+test("R73 G48 (a): counting glyphs makes no regexp test or exec call", (t) => {
   const text = mixed(10000);
-  const test0 = RegExp.prototype.test, exec0 = RegExp.prototype.exec;
-  let calls = 0, got;
-  RegExp.prototype.test = function (...a) { calls++; return test0.apply(this, a); };
-  RegExp.prototype.exec = function (...a) { calls++; return exec0.apply(this, a); };
-  try { got = glyphCount(text); } finally { RegExp.prototype.test = test0; RegExp.prototype.exec = exec0; }
+  /* node:test's method mocks wrap the real test and exec and count their calls; the count is read before the control
+     runs, and the test context puts both back when the test ends. */
+  const test0 = t.mock.method(RegExp.prototype, "test"), exec0 = t.mock.method(RegExp.prototype, "exec");
+  const got = glyphCount(text);
+  const calls = test0.mock.callCount() + exec0.mock.callCount();
   assert.equal(calls, 0);
   assert.equal(got, spelled(text));
   assert.ok(got > 0);
@@ -77,5 +79,5 @@ test("R73 G48 (b): a 1 MiB CSV-shaped text with accented and astral cells counts
 });
 
 test("R73 G48 (b): a non-string counts as zero", () => {
-  for (const v of [0, 5, NaN, null, undefined, {}, [], ["a"], true, 12n, Symbol.iterator]) assert.equal(glyphCount(v), 0);
+  for (const v of [0, 5, NaN, null, undefined, {}, [], ["a"], true, 12n, Symbol.iterator]) assert.doesNotThrow(() => assert.equal(glyphCount(v), 0));
 });
