@@ -190,9 +190,8 @@ test("R5 an encrypted member (ZipCrypto bit 0, 6 or 13, or AES method 99) is sta
 test("R31 a member declared over its compressed size times ARCHIVE_RATIO_MAX is refused before any inflation, with its figures, final", async () => {
   /** @type {string[]} */
   const inflated = [];
-  /** @type {new (f: string) => object} */
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {"gzip" | "deflate" | "deflate-raw"} */ f) { inflated.push(f); super(f); } };
   try {
     const kernel = deflate(enc("x"));
     // declared one over the ratio's reach; at the reach exactly the member is read (and then judged by its size)
@@ -235,9 +234,8 @@ test("R31 the XML parts the module decodes itself are refused above STRUCTURAL_P
   const spaces = (head, tail, size) => head + " ".repeat(size - head.length - tail.length) + tail;
   /** @type {string[]} */
   const inflated = [];
-  /** @type {new (f: string) => object} */
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {"gzip" | "deflate" | "deflate-raw"} */ f) { inflated.push(f); super(f); } };
   try {
     const over = STRUCTURAL_PART_MAX + 1;
     /** @type {(name: string) => object} */

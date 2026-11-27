@@ -861,12 +861,6 @@ function readContainerFrom(src) {
  * stops there rather than running a compression bomb to completion before
  * the length check refuses it. Returns `{ bytes }`, `{ over: n }` (stopped
  * after n bytes, n > limit) or null (the deflate stream did not complete). */
-/**
- * The host's reader of a byte stream, as this module reads it.
- * @typedef {Object} ByteReader
- * @property {() => Promise<{ done: true, value?: undefined } | { done: false, value: Uint8Array }>} read
- * @property {() => Promise<unknown>} cancel
- */
 /** @typedef {{ bytes: Uint8Array, over?: undefined } | { over: number, bytes?: undefined }} Inflated */
 /**
  * @param {Uint8Array} u8
@@ -875,7 +869,6 @@ function readContainerFrom(src) {
  */
 async function inflateRaw(u8, limit) {
   try {
-    /** @type {ByteReader} */
     const reader = new Blob([u8]).stream()
       .pipeThrough(new DecompressionStream("deflate-raw")).getReader();
     /** @type {Uint8Array[]} */
@@ -1184,7 +1177,6 @@ export async function readPartPieces(bytes, container, name, cut, onPiece) {
           at += INFLATE_WINDOW;
         },
       });
-      /** @type {ByteReader} */
       const reader = source.pipeThrough(new DecompressionStream("deflate-raw")).getReader();
       try {
         for (;;) {
@@ -1240,6 +1232,7 @@ const ENCODING_LABEL = /^(?:utf-?8|unicode-1-1-utf-8|utf-?16(?:le|be)?|ucs-?2|un
  * @returns {string | null}
  */
 function canonicalEncoding(label) {
+  /** @type {string} */
   let l;
   try { l = String(label ?? "").trim().toLowerCase(); } catch { return null; }
   if (!ENCODING_LABEL.test(l)) return null;
@@ -2957,17 +2950,10 @@ function sha256Js() {
     },
   };
 }
-/**
- * The host's digest stream, as this module uses it (workerd's `crypto.DigestStream`).
- * @typedef {Object} DigestStream
- * @property {() => { write(chunk: Uint8Array): Promise<unknown>, close(): Promise<unknown> }} getWriter
- * @property {Promise<ArrayBuffer>} digest
- */
 /** @returns {Hasher} */
 function sha256Stream() {
   const DS = globalThis.crypto?.DigestStream;
   if (typeof DS !== "function") return sha256Js();
-  /** @type {DigestStream} */
   const stream = new DS("SHA-256");
   const writer = stream.getWriter();
   return {
@@ -3097,12 +3083,6 @@ async function drained(inner, result, unread) {
 const CUT_WINDOW = 1 << 20;
 
 /**
- * The host's inflater, as the cut uses it.
- * @typedef {Object} Inflater
- * @property {{ getWriter(): { write(chunk: Uint8Array): Promise<unknown>, close(): Promise<unknown>, abort(): Promise<unknown> } }} writable
- * @property {{ getReader(): ByteReader }} readable
- */
-/**
  * @param {Input} source
  * @param {ArchiveRow} row
  * @returns {AsyncGenerator<Uint8Array, CutResult, void>}
@@ -3156,7 +3136,7 @@ async function* cut(source, row) {
    * after the whole declared member came out whole is the deflate stream not
    * ending exactly at the end of the data (trailing bytes, or no final
    * block): `stream_end_mismatch`; before, `inflate_failed`. */
-  /** @type {Inflater} */
+  /** @type {DecompressionStream} */
   let ds;
   try { ds = new DecompressionStream("deflate-raw"); } catch { return corrupt("inflate_failed"); }
   const writer = ds.writable.getWriter();
