@@ -49,6 +49,7 @@
  */
 import { makeMember } from "./member.mjs";
 import { TESSERACT } from "./tessengine.mjs";
+/** @import { MemberRequest, MemberEnv } from './member.mjs' */
 
 /* The member's surface, declared: its two routes, and that neither mutates.
  * `fleet-member.json` names this table as `surface`. The fleet-coverage
@@ -69,5 +70,6 @@ export const SURFACE = {
 const member = makeMember(TESSERACT);
 
 export default {
+  /** @param {MemberRequest} req @param {MemberEnv} [env] */
   fetch: (req, env) => member.fetch(req, env),
 };

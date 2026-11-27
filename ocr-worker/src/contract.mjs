@@ -32,6 +32,35 @@
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 
+/**
+ * R27 · A captured object as the renderers take it in place of its bytes: the object's size, and a ranged read of it.
+ * @typedef {Readonly<{ size: number, readRange: (offset: number, length: number) => Promise<Uint8Array> }>} CaptureSource
+ */
+/**
+ * R29 · `OCR_PSM` read as the engine's mode (`psmFrom`).
+ * @typedef {{ set: false, ok: true, mode: null } | { set: true, ok: boolean, mode: string | null, value: string }} PsmSetting
+ */
+/**
+ * One page this call will do (`take`, `null` when the pages name none) and the ones it will not (`chooseChunk`).
+ * @typedef {Object} Chunk
+ * @property {number | null} take
+ * @property {number[]} deferred
+ */
+/**
+ * R7.4 · The frame a picture will reach the engine as, judged from its header (`declaredPictureFrame`).
+ * @typedef {Object} DeclaredFrame
+ * @property {number} width
+ * @property {number} height
+ * @property {number} frame_bytes
+ * @property {PictureDims} declared the picture's own dimensions, as its header states them
+ * @property {number} reduced_by the whole factor the renderer reduces it by
+ */
+/**
+ * @typedef {Object} PictureDims
+ * @property {number} width
+ * @property {number} height
+ */
+
 export const CAP = "C";
 
 /** Where that letter's measurement lives. A free string a HUMAN follows — the
@@ -54,7 +83,10 @@ export const MAX_FRAME_BYTES = boundOf("ocr", "frame_bytes");
 
 /** The frame a page of these pixel dimensions costs. `loadImage` refuses
  *  anything shorter than width*height*4, so this is not avoidable by sending
- *  less (CPDF-15 measured that refusal). */
+ *  less (CPDF-15 measured that refusal).
+ *  @param {number} w
+ *  @param {number} h
+ *  @returns {number} */
 export const frameBytesOf = (w, h) => w * h * 4;
 
 /* D-478 — THE NAMESPACES THIS MEMBER WILL READ FROM: EXACTLY `bio` OR `scratch`, AND NOTHING ELSE.
@@ -117,7 +149,9 @@ export const REFUSALS = {
 export const PAGE_SEG_MODES = Object.freeze(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]);
 
 /** R29 · `OCR_PSM` read as the engine's mode: `{set:false}` when it is absent or empty, `{set:true, ok, mode?, value}`
- *  otherwise, `value` the setting as text truncated to 80 characters. */
+ *  otherwise, `value` the setting as text truncated to 80 characters.
+ *  @param {Readonly<{ OCR_PSM?: unknown }> | null | undefined} env the instance's settings
+ *  @returns {PsmSetting} */
 export function psmFrom(env) {
   const raw = env && env.OCR_PSM;
   if (raw == null || raw === "") return { set: false, ok: true, mode: null };
@@ -129,7 +163,9 @@ export function psmFrom(env) {
 /** R26 · The turns a renderer is asked for and the engine can name. */
 export const QUARTER_TURNS = Object.freeze([0, 90, 180, 270]);
 /** R26 · The engine says by how many degrees clockwise the frame lies turned from upright; the renderer's `turn`
- *  (pdf-pixels R48) is the degrees clockwise to apply, so upright again is the rest of the way round. */
+ *  (pdf-pixels R48) is the degrees clockwise to apply, so upright again is the rest of the way round.
+ *  @param {number} rotation
+ *  @returns {number | null} `null` for a rotation that is not a quarter turn */
 export const turnToUpright = (rotation) => (QUARTER_TURNS.includes(rotation) ? (360 - rotation) % 360 : null);
 
 /** R25 · A word the engine rated at or over this (its own 0..1 confidence for the word, R9's basis) counts as read.
@@ -150,7 +186,9 @@ export const LEGIBLE_REFUSE_BELOW = 0.2;
 export const PICTURE_MAX_EDGE = boundOf("ocr", "picture_edge");
 
 /** R23 · Are these bytes a JPEG or a PNG picture, by their signature? The picture renderer re-judges them; this
- *  only decides which renderer is asked, so bytes that are neither are left to the page renderer's refusal as today. */
+ *  only decides which renderer is asked, so bytes that are neither are left to the page renderer's refusal as today.
+ *  @param {Uint8Array | null | undefined} bytes
+ *  @returns {boolean} */
 export function isPicture(bytes) {
   const b = bytes;
   if (!b || b.length < 4) return false;
@@ -167,21 +205,34 @@ export function isPicture(bytes) {
  *  returning half a document with no way to tell. The plane already carries the
  *  honest reading of a partial answer — a selected page nobody answered for
  *  KEEPS ITS MARKER and stays unread (`mergeTier3Text`) — so chunking costs
- *  another invocation while assuming costs a document that is silently partial. */
+ *  another invocation while assuming costs a document that is silently partial.
+ *  @param {unknown} pages anything; only a list's distinct whole numbers of 0 or more are pages
+ *  @returns {Chunk} */
 export function chooseChunk(pages) {
+  /** @type {number[]} */
   const clean = [];
-  for (const p of Array.isArray(pages) ? pages : [])
-    if (Number.isInteger(p) && p >= 0 && !clean.includes(p)) clean.push(p);
+  for (const p of isList(pages) ? pages : [])
+    if (typeof p === "number" && Number.isInteger(p) && p >= 0 && !clean.includes(p)) clean.push(p);
   clean.sort((a, b) => a - b);
-  return { take: clean.length ? clean[0] : null, deferred: clean.slice(1) };
+  return { take: clean.length ? clean[0] ?? null : null, deferred: clean.slice(1) };
 }
+
+/** A list whose entries are still to be judged one by one.
+ *  @typedef {ReadonlyArray<unknown>} UnjudgedList */
+/** Whether `v` is a list (`Array.isArray`).
+ *  @param {unknown} v
+ *  @returns {v is UnjudgedList} */
+const isList = (v) => Array.isArray(v);
 
 /** R7.4 (fix round 9, G125g) · The frame a picture will reach the engine as, judged from its header before anything is
  *  rendered: `source` is `{size, readRange(offset, length)}`; answers `{width, height, frame_bytes}` for the picture as the
  *  renderer reduces it to `maxEdge` (the renderer's own rule: the smallest whole factor that brings the long edge under
  *  it, each side rounded up), or `null` when the header cannot be read here (the rendered frame is judged anyway).
  *  The preparation only turns the lines level and enlarges, never shrinks, so a frame over the bound here is over it
- *  once prepared: a refusal on this figure is certain. */
+ *  once prepared: a refusal on this figure is certain.
+ *  @param {CaptureSource} source
+ *  @param {number} [maxEdge]
+ *  @returns {Promise<DeclaredFrame | null>} */
 export async function declaredPictureFrame(source, maxEdge = PICTURE_MAX_EDGE) {
   const dims = await pictureDims(source);
   if (!dims) return null;
@@ -190,11 +241,13 @@ export async function declaredPictureFrame(source, maxEdge = PICTURE_MAX_EDGE) {
   return { width, height, frame_bytes: frameBytesOf(width, height), declared: dims, reduced_by: k };
 }
 
+/** @param {number} m @returns {boolean} */
 const SOF = (m) => m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc;
 /** How much of a picture's start is read to find its header: the PNG's IHDR is in the first 33 bytes, a JPEG's frame
  *  header follows its application segments. A header not found inside it is not judged here (the render is). A read
  *  size, never a limit the file is refused on. */
 const HEADER_WINDOW = 65536;
+/** @param {CaptureSource} source @returns {Promise<PictureDims | null>} */
 async function pictureDims({ readRange }) {
   const b = await readRange(0, HEADER_WINDOW);
   if (b.length >= 24 && b[0] === 0x89 && b[1] === 0x50) {
@@ -205,16 +258,19 @@ async function pictureDims({ readRange }) {
   let at = 2;
   while (at + 9 <= b.length) {
     if (b[at] !== 0xff) return null;
-    const m = b[at + 1];
-    if (SOF(m)) return { width: (b[at + 7] << 8) | b[at + 8], height: (b[at + 5] << 8) | b[at + 6] };
+    /* every index read here is under `at + 9`, inside the window the loop's condition holds: none is ever absent */
+    const m = b[at + 1] ?? 0;
+    if (SOF(m)) return { width: ((b[at + 7] ?? 0) << 8) | (b[at + 8] ?? 0), height: ((b[at + 5] ?? 0) << 8) | (b[at + 6] ?? 0) };
     if (m === 0xd9 || m === 0xda) return null;
-    at += 2 + ((b[at + 2] << 8) | b[at + 3]);
+    at += 2 + (((b[at + 2] ?? 0) << 8) | (b[at + 3] ?? 0));
   }
   return null;
 }
 
 /** R27 · A captured object as the renderers take it in place of its bytes (pdf-pixels R47): the object's size and a
- *  ranged read of it. `bytes` is one that is already whole in memory (a caller that holds it, a test). */
+ *  ranged read of it. `bytes` is one that is already whole in memory (a caller that holds it, a test).
+ *  @param {Uint8Array} bytes
+ *  @returns {CaptureSource} */
 export function sourceOfBytes(bytes) {
   return { size: bytes.length, readRange: async (offset, length) => bytes.subarray(offset, offset + length) };
 }

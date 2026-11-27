@@ -49,6 +49,7 @@ import { burn } from "../src/cpu.mjs";
 
 const UA = "CivicOS/0.55.0 (+https://github.com/believeinoakland/bio; instance biosmoke7; acquire)";
 const DOC_URL = "https://oakland.legistar.com/View.ashx?M=F&ID=15721260&GUID=8F04A287-4A49-44DC-83B7-29FAD97140C2";
+/** @param {number[]} xs */
 const median = (xs) => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
 // Ground truth for PDF page 2 (0-based image index 1; CCITT G4, 300 dpi),
@@ -66,11 +67,14 @@ WHEREAS, the City Council finds and determines that the City lacks the equipment
 WHEREAS, the Project is exempt from California Environmental Quality Act (CEQA) pursuant to CEQA Guidelines Sections 21080.25(b) (Pedestrian and Bicycle), 15301(c) (Existing Facilities, Highways and Streets), 15302(c) (Replacement or Reconstruction), 15303(d) (Small Structures), and 15304(h) (minor alterations to land); each of the above exemptions provides a separate and independent basis for CEQA compliance, and the City filed a Notice of Exemption with Alameda County and the Office of Planning and Research's State Clearing House on March 8, 2024; and
 2`;
 
+/** @param {string} s @returns {string} */
 const norm = (s) =>
   s.replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
 
+/** @param {string} a @param {string} b */
 function levenshteinPairs(a, b) {
   const n = a.length, m = b.length;
+  /** @type {number[][]} */
   const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
   for (let i = 0; i <= n; i++) dp[i][0] = i;
   for (let j = 0; j <= m; j++) dp[0][j] = j;
@@ -87,6 +91,7 @@ function levenshteinPairs(a, b) {
   return { dist: dp[n][m], pairs: pairs.reverse() };
 }
 
+/** @param {string} label @param {string} gtRaw @param {string} ocrRaw */
 function score(label, gtRaw, ocrRaw) {
   const gt = norm(gtRaw), ocr = norm(ocrRaw);
   const { dist, pairs } = levenshteinPairs(gt, ocr);
@@ -116,16 +121,26 @@ function score(label, gtRaw, ocrRaw) {
 {
   const ex = score("D-305 exhibit: GT with $50,000 -> $10,000, substitution only",
     GT_PAGE2, GT_PAGE2.replace("$50,000", "$10,000"));
-  if (!(ex.disagree > 0 && ex.minted === 0)) {
-    console.error(`D-305 EXHIBIT BROKEN: expected disagree>0 && minted===0, got disagree=${ex.disagree} minted=${ex.minted}`);
+  const minted = ex.minted;
+  if (!(ex.disagree > 0 && minted === 0)) {
+    console.error(`D-305 EXHIBIT BROKEN: expected disagree>0 && minted===0, got disagree=${ex.disagree} minted=${minted}`);
     process.exit(1);
   }
-  console.log(`  D-305 exhibit holds: disagree=${ex.disagree} (>0), minted=${ex.minted} (0) — the fifth column sees what the minted column cannot`);
+  console.log(`  D-305 exhibit holds: disagree=${ex.disagree} (>0), minted=${minted} (0) — the fifth column sees what the minted column cannot`);
 }
 
 /* D-314 (CPDF-16): THE CONTROL GATE, and the ONLY path to an agreement figure.
  * The gate verdict is taken from the blank AND noise control reads of the same
  * engine run; a floor reference may only be taken from a run that passed both. */
+/**
+ * A run's control-gate verdict (`controlGate`).
+ * @typedef {Object} Gate
+ * @property {boolean} passed
+ * @property {number} blankChars
+ * @property {number} noiseChars
+ * @property {string | null} reason
+ */
+/** @param {string} blankText @param {string} noiseText @returns {Gate} */
 function controlGate(blankText, noiseText) {
   const blankChars = norm(blankText).length, noiseChars = norm(noiseText).length;
   const passed = blankChars === 0 && noiseChars === 0;
@@ -139,9 +154,12 @@ function controlGate(blankText, noiseText) {
  * number scored against noise (D-314's finding), so it is never a number here:
  * it answers `undetermined` naming the gate. Callers must not unwrap
  * `.agreement` without checking for the string. */
+/** @param {Gate | null | undefined} gate @param {string} floorText @param {string} otherText
+ *  @returns {{ agreement: "undetermined", reason: string } | { agreement: number }} */
 function floorAgreement(gate, floorText, otherText) {
   if (!gate || !gate.passed) {
-    return { agreement: "undetermined", reason: `noise gate: ${gate && gate.reason ? gate.reason : "controls never ran"}` };
+    const reason = gate && gate.reason;
+    return { agreement: "undetermined", reason: `noise gate: ${reason ? reason : "controls never ran"}` };
   }
   const ref = norm(floorText), other = norm(otherText);
   const { dist } = levenshteinPairs(ref, other);
@@ -161,12 +179,14 @@ try {
 
 // -- 1. engines + artifact sizes -------------------------------------------
 execSync("npm init -y >/dev/null 2>&1 && npm install --no-audit --no-fund tesseract.js@7.0.0 tesseract-wasm@0.11.0 >/dev/null 2>&1", { cwd: work, shell: "/bin/sh" });
+/** @param {string} url @param {string} out @returns {Promise<void>} */
 const fetchTo = async (url, out) => {
   const r = await fetch(url, { headers: { "user-agent": UA } });
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   writeFileSync(out, Buffer.from(await r.arrayBuffer()));
 };
 await fetchTo("https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata", join(work, "eng-fast.traineddata"));
+/** @param {string} p */
 const sz = (p) => {
   const raw = statSync(p).size;
   return { raw, gz: gzipSync(readFileSync(p), { level: 9 }).length };
@@ -227,13 +247,16 @@ const floorRuns = []; // CPDF-16 (D-314): each model's page-2 read + its control
 // model gets its OWN cache dir: the cache key is just "eng.traineddata", so a
 // shared dir silently serves model A's bytes to model B's run (also found the
 // hard way — the two models reported identical output).
-for (const [label, opts] of [
+/** @type {[string, { langPath?: string, gzip?: boolean, cachePath: string }][]} */
+const models = [
   ["eng 4.0.0_best_int (tesseract.js default, oem=LSTM_ONLY)", { cachePath: join(work, "cache-best") }],
   ["eng tessdata_fast (the only Worker-shippable variant)", { langPath: join(work, "fastdir"), gzip: false, cachePath: join(work, "cache-fast") }],
-]) {
+];
+for (const [label, opts] of models) {
   execSync(`mkdir -p '${opts.cachePath}'`, { shell: "/bin/sh" });
-  if (opts.langPath) {
-    execSync(`mkdir -p '${opts.langPath}' && cp '${work}/eng-fast.traineddata' '${opts.langPath}/eng.traineddata'`, { shell: "/bin/sh" });
+  const langPath = opts.langPath;
+  if (langPath) {
+    execSync(`mkdir -p '${langPath}' && cp '${work}/eng-fast.traineddata' '${langPath}/eng.traineddata'`, { shell: "/bin/sh" });
   }
   const t0 = performance.now();
   const worker = await createWorker("eng", 1, opts);

@@ -33,6 +33,47 @@
 
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * The name of a reason this module refuses with (a key of `PNG_REFUSALS`).
+ * @typedef {"NOT_A_PNG" | "PNG_TRUNCATED" | "PNG_NO_IHDR" | "PNG_NO_IDAT" | "PNG_INTERLACED" | "PNG_UNSUPPORTED_SHAPE"
+ *   | "PNG_FILTER_UNSUPPORTED" | "PNG_SHORT_RASTER" | "PNG_CORRUPT_DATA"} PngRefusalCode
+ */
+/**
+ * What a refusal saw, beside its reason: each member is present only on the refusals that state it.
+ * @typedef {Object} PngRefusalDetail
+ * @property {string} [chunk] the chunk that runs past the end
+ * @property {number} [at] where that chunk starts
+ * @property {number} [interlace]
+ * @property {number} [colorType]
+ * @property {number} [bitDepth]
+ * @property {number} [width]
+ * @property {number} [height]
+ * @property {string} [error] the name of the error the inflater raised
+ * @property {number} [have] the inflated raster's length
+ * @property {number} [need] the length the header's dimensions require
+ * @property {number} [row]
+ * @property {number | undefined} [filter] the filter type the row names
+ */
+/**
+ * A STATED refusal: `detail` is the reason's sentence, and what it saw is beside it.
+ * @typedef {{ ok: false, reason: PngRefusalCode, detail: string } & PngRefusalDetail} PngRefusal
+ */
+/**
+ * The samples of a PNG this estate wrote (`pngToSamples`).
+ * @typedef {Object} PngSamples
+ * @property {true} ok
+ * @property {number} width
+ * @property {number} height
+ * @property {number} bitDepth 1 or 8
+ * @property {number} comps 1 (greyscale) or 3 (RGB)
+ * @property {Uint8Array} packed the raster with every scanline's filter byte removed
+ * @property {number} rowBytes the length of one row of `packed`
+ */
+/**
+ * The samples `samplesToRgba` turns into a frame.
+ * @typedef {Readonly<{ width: number, height: number, bitDepth: number, comps: number, packed: Uint8Array, rowBytes: number }>} SampleFrame
+ */
+
 /** Every reason this module can refuse with. Exported so the caller branches on
  *  the set rather than on a string, and so a suite can assert nothing is emitted
  *  that is not declared here. */
@@ -49,15 +90,18 @@ export const PNG_REFUSALS = {
   PNG_CORRUPT_DATA: localize("ocr-worker.pngsamples.the_image_data_of_the_png_does_not_inflate", "the image data of the PNG does not inflate: it is not a valid compressed stream"),
 };
 
+/** @param {PngRefusalCode} code @param {PngRefusalDetail} [detail] @returns {PngRefusal} */
 const refuse = (code, detail = {}) => ({ ok: false, reason: code, detail: PNG_REFUSALS[code], ...detail });
 
 const SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
+/** @param {Uint8Array} bytes @returns {Promise<Uint8Array>} */
 async function inflateZlib(bytes) {
   const ds = new DecompressionStream("deflate");   /* zlib-wrapped — what an IDAT holds */
   const w = ds.writable.getWriter();
   /* the reader below reports a stream that does not inflate; the writer's own rejection is the same failure, handled there */
   w.write(bytes).then(() => w.close()).catch(() => {});
+  /** @type {Uint8Array[]} */
   const chunks = [];
   const rd = ds.readable.getReader();
   for (;;) { const { done, value } = await rd.read(); if (done) break; chunks.push(value); }
@@ -74,30 +118,36 @@ async function inflateZlib(bytes) {
  *  is the raster with every scanline's filter byte removed and nothing else
  *  changed — for bit depth 1 that is byte-for-byte the representation
  *  `normalisePacked` produces and `pixels_sha256` is taken over, which is what
- *  makes the round-trip assertion possible at all. */
+ *  makes the round-trip assertion possible at all.
+ *  @param {Uint8Array | ArrayBuffer} bytes
+ *  @returns {Promise<PngRefusal | PngSamples>} */
 export async function pngToSamples(bytes) {
   const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   if (b.length < 8 || SIG.some((v, i) => b[i] !== v)) return refuse("NOT_A_PNG");
   const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
 
-  let width = 0, height = 0, bitDepth = 0, colorType = -1, interlace = 0, sawIhdr = false;
+  let width = 0, height = 0, ihdrDepth = 0, colorType = -1, interlace = 0, sawIhdr = false;
+  /** @type {Uint8Array[]} */
   const idats = [];
   let p = 8;
   while (p + 8 <= b.length) {
     const len = dv.getUint32(p);
-    const type = String.fromCharCode(b[p + 4], b[p + 5], b[p + 6], b[p + 7]);
+    /* `p + 8 <= b.length`, so these four bytes are always there */
+    const type = String.fromCharCode(b[p + 4] ?? 0, b[p + 5] ?? 0, b[p + 6] ?? 0, b[p + 7] ?? 0);
     const dataAt = p + 8;
     if (dataAt + len + 4 > b.length) return refuse("PNG_TRUNCATED", { chunk: type, at: p });
     if (type === "IHDR") {
       if (len < 13) return refuse("PNG_TRUNCATED", { chunk: "IHDR" });
       width = dv.getUint32(dataAt); height = dv.getUint32(dataAt + 4);
-      bitDepth = b[dataAt + 8]; colorType = b[dataAt + 9]; interlace = b[dataAt + 12];
+      /* inside the chunk, which the check above holds within the bytes */
+      ihdrDepth = dv.getUint8(dataAt + 8); colorType = dv.getUint8(dataAt + 9); interlace = dv.getUint8(dataAt + 12);
       sawIhdr = true;
     } else if (type === "IDAT") {
       idats.push(b.subarray(dataAt, dataAt + len));
     } else if (type === "IEND") break;
     p = dataAt + len + 4;
   }
+  const bitDepth = ihdrDepth;
   if (!sawIhdr) return refuse("PNG_NO_IHDR");
   if (!idats.length) return refuse("PNG_NO_IDAT");
   if (interlace !== 0) return refuse("PNG_INTERLACED", { interlace });
@@ -107,13 +157,16 @@ export async function pngToSamples(bytes) {
     return refuse("PNG_UNSUPPORTED_SHAPE", { colorType, bitDepth });
   if (!width || !height) return refuse("PNG_UNSUPPORTED_SHAPE", { width, height });
 
+  /** @type {Uint8Array} */
   let z;
-  if (idats.length === 1) z = idats[0];
+  const only = idats[0];
+  if (idats.length === 1 && only) z = only;
   else {
     z = new Uint8Array(idats.reduce((n, c) => n + c.length, 0));
     let o = 0;
     for (const c of idats) { z.set(c, o); o += c.length; }
   }
+  /** @type {Uint8Array} */
   let raw;
   try { raw = await inflateZlib(z); } catch (e) { return refuse("PNG_CORRUPT_DATA", { error: String((e && e.name) || "Error") }); }
 
@@ -144,7 +197,9 @@ export async function pngToSamples(bytes) {
  *  Bit depth 1: sample 1 is WHITE in PNG greyscale, which is what
  *  `pagepixels.mjs` writes and what the CCITT route normalises to. The padding
  *  bits at the end of a scanline are outside `width` and are never read here,
- *  so a frame is unaffected by them whether they were zeroed or not. */
+ *  so a frame is unaffected by them whether they were zeroed or not.
+ *  @param {SampleFrame} samples
+ *  @returns {Uint8Array} */
 export function samplesToRgba({ width, height, bitDepth, comps, packed, rowBytes }) {
   const rgba = new Uint8Array(width * height * 4);
   let j = 0;
@@ -152,7 +207,7 @@ export function samplesToRgba({ width, height, bitDepth, comps, packed, rowBytes
     for (let y = 0; y < height; y++) {
       const row = y * rowBytes;
       for (let x = 0; x < width; x++) {
-        const v = (packed[row + (x >> 3)] >> (7 - (x & 7))) & 1 ? 255 : 0;
+        const v = ((packed[row + (x >> 3)] ?? 0) >> (7 - (x & 7))) & 1 ? 255 : 0;
         rgba[j] = v; rgba[j + 1] = v; rgba[j + 2] = v; rgba[j + 3] = 255; j += 4;
       }
     }
@@ -162,7 +217,8 @@ export function samplesToRgba({ width, height, bitDepth, comps, packed, rowBytes
     const row = y * rowBytes;
     for (let x = 0; x < width; x++) {
       const s = row + x * comps;
-      const r = packed[s], g = comps === 3 ? packed[s + 1] : r, bl = comps === 3 ? packed[s + 2] : r;
+      /* a sample outside `packed` reads as 0, as the typed array stores an absent one */
+      const r = packed[s] ?? 0, g = comps === 3 ? packed[s + 1] ?? 0 : r, bl = comps === 3 ? packed[s + 2] ?? 0 : r;
       rgba[j] = r; rgba[j + 1] = g; rgba[j + 2] = bl; rgba[j + 3] = 255; j += 4;
     }
   }

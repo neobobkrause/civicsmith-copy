@@ -1,4 +1,4 @@
-/* THE MEMBER, BOOTED FROM ITS COMMITTED BYTES, IN ONE PLACE.
+/* THE MEMBER, BOOTED FROM ITS BUILT BUNDLE, IN ONE PLACE.
  *
  * Deliberately NOT a `*.test.mjs`: it is a helper, not a suite, so a runner
  * handed the `*.test.mjs` files never runs it alone; the suites share it —
@@ -14,33 +14,78 @@
  * `CompiledWasm` for the engine core (Workers forbid runtime wasm compilation;
  * the platform compiles it at upload, and miniflare does the same at boot), and
  * a `Data` part for the language model. The module NAMES are the specifiers the
- * committed bundle imports, which is why `modulesRoot` is the member directory
+ * bundle imports, which is why `modulesRoot` is the member directory
  * and the parts sit under `assets/`.
  *
- * THE COMMITTED ARTIFACT IS WHAT BOOTS, never the source. That is the property
- * `newgroup` needs and the one FL-9's guard exists to keep true.
+ * THE BUILT ARTIFACT IS WHAT BOOTS, never the source. The bundle is not
+ * committed (R32): `ocrWorkerDef` first builds it into `dist/` with the
+ * member's own `scripts/build.mjs`, once per process, and boots what that wrote.
  */
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+/** @type {string} the member's folder, the modules' root */
 export const MEMBER_DIR = fileURLToPath(new URL("..", import.meta.url));
+/** @type {string} the built bundle's path (R32) */
 export const BUNDLE = fileURLToPath(new URL("../dist/ocr-worker.bundled.mjs", import.meta.url));
+/** @type {string} the engine core's path */
 export const WASM = fileURLToPath(new URL("../assets/tesseract-core.wasm", import.meta.url));
+/** @type {string} the language model's path */
 export const MODEL = fileURLToPath(new URL("../assets/eng.traineddata", import.meta.url));
+const BUILD = fileURLToPath(new URL("../scripts/build.mjs", import.meta.url));
 
-/** The miniflare worker definition for this member. `extra` folds in bindings a
- *  caller wants (a confidence floor, a version string) without a second recipe. */
+/** Whether this process has built the bundle yet. */
+let built = false;
+
+/** R32: build the bundle and its manifest into `dist/` with the member's own
+ *  build script, once per process, before anything reads them.
+ *  @returns {void} */
+export function buildBundle() {
+  if (built) return;
+  execFileSync(process.execPath, [BUILD], { cwd: MEMBER_DIR, stdio: "ignore" });
+  built = true;
+}
+
+/**
+ * One upload part of the member, as miniflare takes it: the bundle (`ESModule`, its text), the engine core
+ * (`CompiledWasm`) or the language model (`Data`), each under the specifier the bundle imports.
+ * @typedef {Object} OcrModule
+ * @property {"ESModule" | "CompiledWasm" | "Data"} type
+ * @property {string} path
+ * @property {string | Uint8Array} contents
+ */
+/**
+ * The miniflare worker definition `ocrWorkerDef` answers.
+ * @typedef {Object} OcrWorkerDef
+ * @property {string} name
+ * @property {string} modulesRoot
+ * @property {OcrModule[]} modules
+ * @property {string} compatibilityDate
+ * @property {string[]} [r2Buckets] `["CAPTURES"]`, unless the caller asked for none
+ * @property {{ VERSION: string }} bindings `VERSION` and every binding the caller asked for
+ */
+/**
+ * What a caller of `ocrWorkerDef` may ask for.
+ * @typedef {Object} OcrWorkerOptions
+ * @property {string} [name] the worker's name, `"ocr-worker"` unless given
+ * @property {{ [binding: string]: string }} [bindings] folded over `VERSION: "test"`
+ * @property {boolean} [r2] whether the worker has its `CAPTURES` bucket, `true` unless given
+ */
+
+/** The miniflare worker definition for this member, booting the freshly built
+ *  bundle (R32). `extra` folds in bindings a caller wants (a confidence floor, a
+ *  version string) without a second recipe.
+ *  @param {OcrWorkerOptions} [options]
+ *  @returns {OcrWorkerDef} */
 export function ocrWorkerDef({ name = "ocr-worker", bindings = {}, r2 = true } = {}) {
-  return {
-    name,
-    modulesRoot: MEMBER_DIR,
-    modules: [
-      { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
-      { type: "CompiledWasm", path: WASM, contents: readFileSync(WASM) },
-      { type: "Data", path: MODEL, contents: readFileSync(MODEL) },
-    ],
-    compatibilityDate: "2026-07-01",
-    ...(r2 ? { r2Buckets: ["CAPTURES"] } : {}),
-    bindings: { VERSION: "test", ...bindings },
-  };
+  buildBundle();
+  /** @type {OcrModule[]} */
+  const modules = [
+    { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
+    { type: "CompiledWasm", path: WASM, contents: readFileSync(WASM) },
+    { type: "Data", path: MODEL, contents: readFileSync(MODEL) },
+  ];
+  if (r2) return { name, modulesRoot: MEMBER_DIR, modules, compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"], bindings: { VERSION: "test", ...bindings } };
+  return { name, modulesRoot: MEMBER_DIR, modules, compatibilityDate: "2026-07-01", bindings: { VERSION: "test", ...bindings } };
 }

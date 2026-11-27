@@ -16,35 +16,48 @@ import { createOCREngine } from "../src/tesslib.mjs";
 import { WASM, MODEL } from "./memberworker.mjs";
 import { renderPictureToPixels } from "../../pdf-worker/src/picturepixels.mjs";
 import { generate } from "../../bio-plane/test/imggen.mjs";
+import TRUTH from "./fixtures/page-words.json" with { type: "json" };
+/** @import { MemberEngine, CaptureBucket } from '../src/member.mjs' */
+/** @import { CaptureSource } from '../src/contract.mjs' */
+/** @import { Degrade } from '../../bio-plane/test/imggen.mjs' */
 
 const NOTE_BELOW = contract.LEGIBLE_NOTE_BELOW ?? 0.8, REFUSE_BELOW = contract.LEGIBLE_REFUSE_BELOW ?? 0.2;   /* the requirement's stated 0.8 and 0.2 (R25) */
+/** @param {string} n @returns {Uint8Array} */
 const FIX = (n) => new Uint8Array(readFileSync(fileURLToPath(new URL(`./fixtures/${n}`, import.meta.url))));
-const TRUTH = JSON.parse(Buffer.from(FIX("page-words.json")).toString("utf8"));
+/** @param {Uint8Array} b @returns {string} */
 const hex = (b) => createHash("sha256").update(b).digest("hex");
 
 const wasmCore = await WebAssembly.compile(readFileSync(WASM));
 const modelBytes = readFileSync(MODEL);
+/** @type {MemberEngine} */
 const engine = { name: "tesseract-wasm", version: "0.11.0", model: "tessdata_fast/eng", check: () => null,
-  transcribeFrame: (rgba, width, height, opts) => readFrame(() => createOCREngine({ instantiateWasm: (info, receive) => { const i = new WebAssembly.Instance(wasmCore, info); receive(i, wasmCore); return i.exports; }, locateFile: (p) => p }), modelBytes, rgba, width, height, opts) };
-const viaBytes = (render) => async (input, page, opts) => render(input instanceof Uint8Array ? input : await input.readRange(0, input.size), page, opts);
+  transcribeFrame: (rgba, width, height, opts) => readFrame(() => createOCREngine({ instantiateWasm: (info, receive) => { const i = new WebAssembly.Instance(wasmCore, info); receive(i, wasmCore); return i.exports; }, locateFile: /** @param {string} p */ (p) => p }), modelBytes, rgba, width, height, opts) };
+/** @param {typeof renderPictureToPixels} render */
+const viaBytes = (render) => /** @param {Uint8Array | CaptureSource} input @param {number} page */ async (input, page, opts) => render(input instanceof Uint8Array ? input : await input.readRange(0, input.size), page, opts);
 const member = makeMember(engine, { renderPicture: viaBytes(renderPictureToPixels) });
 
+/** @param {Uint8Array} bytes */
 async function transcribe(bytes) {
   const sha = hex(bytes), key = `scratch/captures/${sha}`;
+  /** @type {CaptureBucket} */
   const bucket = { get: async (k, o) => { if (k !== key) return null; const r = o && o.range; const part = r ? bytes.subarray(r.offset, Math.min(bytes.length, r.offset + r.length)) : bytes; return { size: bytes.length, arrayBuffer: async () => part.slice().buffer }; } };
   const res = await member.fetch(new Request("http://ocr-worker/transcribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ capture_sha: sha, store: "scratch", pages: [0] }) }), { CAPTURES: bucket, VERSION: "stub-build" });
   return { status: res.status, body: await res.json() };
 }
+/** @param {string} x @returns {string[]} */
 const words = (x) => x.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+/** @param {string} truth @param {string} got @returns {number} */
 const shareRead = (truth, got) => {
+  /** @type {Map<string, number>} */
   const left = new Map(); for (const w of words(got)) left.set(w, (left.get(w) || 0) + 1);
   const want = words(truth); let hit = 0;
-  for (const w of want) if (left.get(w) > 0) { hit++; left.set(w, left.get(w) - 1); }
+  for (const w of want) { const n = left.get(w); if (n !== undefined && n > 0) { hit++; left.set(w, n - 1); } }
   return want.length ? hit / want.length : 0;
 };
 const textOf = (a) => (a.body.ok ? a.body.pages[0].regions.map((r) => r.text).join(" ") : "");
 
-/** the statement a photograph's answer must make, whatever the engine read of it */
+/** the statement a photograph's answer must make, whatever the engine read of it
+ *  @param {string} label @param {string} truthText @param a the member's answer, as `transcribe` gives it @param {{ calibrated?: boolean }} [options] */
 function statementHolds(label, truthText, a, { calibrated = true } = {}) {
   const truly = shareRead(truthText, textOf(a)), total = words(truthText).length;
   console.log(`        ${label}: ${total} words, truly read ${(truly * 100).toFixed(0)} %, answer ok ${a.body.ok}${a.body.legibility ? `, stated share ${a.body.legibility.share}` : ", NO legibility stated"}, notes ${(a.body.notes || []).length}${a.body.reason ? ", " + a.body.reason : ""}`);
@@ -66,20 +79,25 @@ function statementHolds(label, truthText, a, { calibrated = true } = {}) {
   if (a.body.legibility.share < NOTE_BELOW) assert.ok((a.body.notes || []).length > 0 && a.body.notes.every((n) => String(n).trim()), `${label}: a share of ${a.body.legibility.share} (under ${NOTE_BELOW}) is not said in a note`);
 }
 
-for (const name of ["page-hard", "page-combined-a", "page-noise-shade", "page-110dpi"]) {
-  test(`G128i L26 ${name}: the walk's photograph is read through the member's real path and what it states of the read is true and never silent`, { timeout: 600_000 }, async () => {
-    statementHolds(name, TRUTH[name], await transcribe(FIX(`${name}.jpg`)));
-  });
-}
+/** @param {"page-hard" | "page-combined-a" | "page-noise-shade" | "page-110dpi"} name */
+const walkPhotoHolds = async (name) => {
+  statementHolds(name, TRUTH[name], await transcribe(FIX(`${name}.jpg`)));
+};
+test("G128i L26 page-hard: the walk's photograph is read through the member's real path and what it states of the read is true and never silent", { timeout: 600_000 }, async () => { await walkPhotoHolds("page-hard"); });
+test("G128i L26 page-combined-a: the walk's photograph is read through the member's real path and what it states of the read is true and never silent", { timeout: 600_000 }, async () => { await walkPhotoHolds("page-combined-a"); });
+test("G128i L26 page-noise-shade: the walk's photograph is read through the member's real path and what it states of the read is true and never silent", { timeout: 600_000 }, async () => { await walkPhotoHolds("page-noise-shade"); });
+test("G128i L26 page-110dpi: the walk's photograph is read through the member's real path and what it states of the read is true and never silent", { timeout: 600_000 }, async () => { await walkPhotoHolds("page-110dpi"); });
 
 test("G128i L26 page-hard-blur: a photograph no preparation can read is refused PICTURE_NOT_LEGIBLE with its figures, not returned as a short text", { timeout: 600_000 }, async () => {
   statementHolds("page-hard-blur", TRUTH["page-hard-blur"] || "", await transcribe(FIX("page-hard-blur.jpg")));
 });
 
 /* a family generated by imggen: a page of 18 lines photographed at 110 dpi with a tilt, a shade and noise, three seeds */
-for (const [seed, degrade] of [["l26a", { tilt: 2.4, shade: 0.3, noise: 0.01 }], ["l26b", { tilt: -1.8, shade: 0.45, noise: 0.03 }], ["l26c", { tilt: 3.1, shade: 0.2, noise: 0.06 }]]) {
-  test(`G128i L26 generated photo ${seed} (110 dpi, 18 lines, ${JSON.stringify(degrade)}): what the member states of the read is true and never silent`, { timeout: 600_000 }, async () => {
-    const g = generate({ kind: "png", mode: "L", seed, size: { pages: 1, lines: 18 }, dpi: 110, degrade });
-    statementHolds(`generated ${seed}`, g.truth.pages[0].lines.join("\n"), await transcribe(await g.bytes()), { calibrated: false });
-  });
-}
+/** @param {string} seed @param {Degrade} degrade */
+const generatedHolds = async (seed, degrade) => {
+  const g = generate({ kind: "png", mode: "L", seed, size: { pages: 1, lines: 18 }, dpi: 110, degrade });
+  statementHolds(`generated ${seed}`, g.truth.pages[0].lines.join("\n"), await transcribe(await g.bytes()), { calibrated: false });
+};
+test('G128i L26 generated photo l26a (110 dpi, 18 lines, {"tilt":2.4,"shade":0.3,"noise":0.01}): what the member states of the read is true and never silent', { timeout: 600_000 }, async () => { await generatedHolds("l26a", { tilt: 2.4, shade: 0.3, noise: 0.01 }); });
+test('G128i L26 generated photo l26b (110 dpi, 18 lines, {"tilt":-1.8,"shade":0.45,"noise":0.03}): what the member states of the read is true and never silent', { timeout: 600_000 }, async () => { await generatedHolds("l26b", { tilt: -1.8, shade: 0.45, noise: 0.03 }); });
+test('G128i L26 generated photo l26c (110 dpi, 18 lines, {"tilt":3.1,"shade":0.2,"noise":0.06}): what the member states of the read is true and never silent', { timeout: 600_000 }, async () => { await generatedHolds("l26c", { tilt: 3.1, shade: 0.2, noise: 0.06 }); });
