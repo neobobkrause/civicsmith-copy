@@ -9,8 +9,8 @@
   "account_id": "20b533579290b9b93168345edd3b7f72",
 
   // Built by scripts/build.mjs (esbuild), which INLINES unpdf/pdf.js. The
-  // committed bundle is what deploys and what test/structure.test.mjs loads under miniflare,
-  // exactly as the plane ships dist/bio-plane.bundled.mjs. unpdf never enters
+  // bundle is never committed (R45): it is built into dist/ whenever a
+  // deployment or a release needs it. unpdf never enters
   // the plane's module graph — that separation is the whole point of the fleet.
   "main": "dist/pdf-worker.bundled.mjs",
   "compatibility_date": "2026-07-01",

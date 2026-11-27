@@ -1,4 +1,4 @@
-/* pdf-worker R8, the envelope: the smallest V8 old space in which the committed bundle reads a PDF's text at tier 2
+/* pdf-worker R8, the envelope: the smallest V8 old space in which the bundle reads a PDF's text at tier 2
  * (`POST /structure`, the real handler) under raw workerd, so `MAX_PDF_BYTES` is measured and not chosen. A probe, not a
  * test (it boots workerd many times):
  *   node envelope-memory.probe.mjs <dir> <file.pdf>...
@@ -6,7 +6,7 @@
  * does (`obj.arrayBuffer()`), and the handler runs with `MAX_PDF_BYTES` high enough that tier 2 is attempted. The smallest
  * `--max-old-space-size` (MB) in which the answer is a tier-2 text is found by bisection; the object's need is that heap
  * plus the file's bytes (held outside old space) under 128 MB. One line per file: bytes, heap, heap + bytes, request ms and
- * the characters read. `PROBE_BUNDLE` names the bundle to measure (default: the committed one). The numbers are recorded in
+ * the characters read. `PROBE_BUNDLE` names the bundle to measure (default: a fresh build of the source, `subject.mjs`, R45). The numbers are recorded in
  * build/jobs/T51/pdf-worker.md. */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, copyFileSync, statSync, readFileSync } from "node:fs";
@@ -25,7 +25,7 @@ if (!given || !files.length) { console.error("usage: envelope-memory.probe.mjs <
 const dir = given;
 const BIN = here("../node_modules/.bin/");
 mkdirSync(join(dir, "pdfs"), { recursive: true });
-copyFileSync(process.env.PROBE_BUNDLE || here("../dist/pdf-worker.bundled.mjs"), join(dir, "pdf-worker.bundled.mjs"));
+copyFileSync(process.env.PROBE_BUNDLE || (await import("./subject.mjs")).BUNDLE, join(dir, "pdf-worker.bundled.mjs"));
 writeFileSync(join(dir, "worker.mjs"), `
 import pdfWorker from "./pdf-worker.bundled.mjs";
 export default { async fetch(req, env) {
