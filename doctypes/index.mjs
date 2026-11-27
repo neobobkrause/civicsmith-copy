@@ -34,9 +34,7 @@ import generic from "./generic.mjs";
  */
 /**
  * A registry handed whole (`makeRegistry()`'s): its `register` method and, where it has one, `all`, the members it holds.
- * @typedef {Object} DoctypeRegistry
- * @property {RegisterType} register
- * @property {(() => ReadonlyArray<HeldType | null | undefined>) | undefined} [all]
+ * @typedef {{ readonly register: RegisterType, readonly all?: (() => ReadonlyArray<HeldType | null | undefined>) | undefined }} DoctypeRegistry
  */
 /**
  * A member a registry already holds, as `registerDoctypes` reads it: by its key.

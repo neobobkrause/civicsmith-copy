@@ -11,6 +11,7 @@
  * paragraphs opening with a bold `Section <n>.`; a subsection is a marker paragraph whose class
  * is `incr<k>` (or `incr_ml<k>`), nested by its indentation `k`. */
 import fs from "node:fs";
+/** @import { SuppliedText } from "../../docprofile/doctypes/index.mjs" */
 
 /**
  * One document as the codifier served it: its id, its title and its HTML.
@@ -44,10 +45,9 @@ import fs from "node:fs";
  * @property {string} cls
  */
 /**
- * The text a reader is given for one served document: I2's paragraph shape.
- * @typedef {Object} ParagraphText
- * @property {string} document
- * @property {{ para: number, text: string }[]} paragraphs
+ * The text a reader is given for one served document: I2's paragraph shape (docprofile's `SuppliedText`, with its
+ * document and its paragraphs always there).
+ * @typedef {SuppliedText & { readonly document: string, readonly paragraphs: ReadonlyArray<{ readonly para: number, readonly text: string }> }} ParagraphText
  */
 /**
  * A top-level section as the markup gives it: its number, its heading, and the paragraph it opens at.

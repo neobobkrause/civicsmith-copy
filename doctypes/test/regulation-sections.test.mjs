@@ -15,7 +15,7 @@ import { combine, list } from "../../jurisdictions/index.mjs";
 import { PORT_ALDER, LAKEMONT, view, HELD, PA_BYLAW, PA_CODE, withCodeSections, PA_SECTIONS } from "./fixtures.mjs";
 import { servedDocuments, textOf, CODIFIER } from "./codifier.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
-/** @import { View } from "../../jurisdictions/index.mjs" */
+/** @import { View, SectionMarker } from "../../jurisdictions/index.mjs" */
 /** @import { Detection, SuppliedText } from "../../docprofile/doctypes/index.mjs" */
 /** @import { Locate } from "../../docprofile/readtext.mjs" */
 /** @import { EventHead } from "../../site-profiles/index.mjs" */
@@ -187,8 +187,10 @@ test("R11 numbers, separators and marker order come from the view; SECTION n. is
   // the same code text under two marker orders reads two structures
   const p1 = regulation.parse({ text: PA_CODE, view: PA });
   assert.deepEqual(p1.sections.map((s) => s.path.join("/")), ["4/12", "4/12/a", "4/12/b", "4/12/b/i", "4/12/b/ii"]);
+  /** @type {SectionMarker[]} */
+  const letters = ["paren_letter"];
   /** @type {CodeSectionsByKey} */
-  const oneLevel = { pac: { ...PA_SECTIONS.pac, markers: ["paren_letter"] } };
+  const oneLevel = { pac: { ...PA_SECTIONS.pac, markers: letters } };
   const flatOrder = view(withCodeSections(PORT_ALDER, oneLevel));
   assert.deepEqual(regulation.parse({ text: PA_CODE, view: flatOrder }).sections.map((s) => s.path.join("/")), ["4/12", "4/12/a", "4/12/b"]);
   const noSep = view(withCodeSections(PORT_ALDER, { pac: { ...PA_SECTIONS.pac, separators: "" } }));
@@ -224,6 +226,7 @@ test("R12 a per-section document gives its one section with exact boundaries; a 
     const t = top(c.parsed);
     const want = must(c.want, "answers").sections;
     assert.deepEqual(t.map((s) => [s.number, s.heading]), want.map((s) => [s.number, s.heading]), c.doc.Title);
+    /** @type {ReadonlyArray<{ readonly text: string }>} */
     const paras = textOf(c.doc).paragraphs;
     /** @param {number} i @returns {number} */
     const offsetOf = (i) => paras.slice(0, i).reduce((n, p) => n + p.text.length + 1, 0);

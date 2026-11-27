@@ -4,14 +4,18 @@
  * K1924): kept as that record, read by no test. */
 import fs from "node:fs";
 /** @import { HeaderFields } from "../policy-header.mjs" */
+/** @import { SuppliedPage, SuppliedText } from "../../docprofile/doctypes/index.mjs" */
 /** @import { PolicyHeaderField } from "../../jurisdictions/index.mjs" */
 /** @import { Section } from "../sections.mjs" */
 
 /**
- * One page of a captured policy's reading: its number and its text.
- * @typedef {Object} CapturedPage
- * @property {number} page
- * @property {string} text
+ * One page of a captured policy's reading: its number and its text (docprofile's `SuppliedPage`, with both there).
+ * @typedef {SuppliedPage & { readonly page: number, readonly text: string }} CapturedPage
+ */
+/**
+ * A captured policy's reading, the text a type is given (I2's `{document, pages}`; docprofile's `SuppliedText`, with
+ * both there).
+ * @typedef {SuppliedText & { readonly document: string, readonly pages: ReadonlyArray<CapturedPage> }} CapturedText
  */
 /**
  * A captured policy (`capture-policies.mjs`): where it came from, when, its sha256 and length as served, how it was read
@@ -29,7 +33,7 @@ import fs from "node:fs";
  * @property {number} pages
  * @property {number} tier
  * @property {string | null} tier_why
- * @property {{ document: string, pages: CapturedPage[] }} text
+ * @property {CapturedText} text
  */
 /**
  * A fixture of captured policies (`policies.json`, `policies-fresh.json`).

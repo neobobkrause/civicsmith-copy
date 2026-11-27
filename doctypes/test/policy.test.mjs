@@ -18,7 +18,6 @@ import { POLICIES, ANSWERS, SECTION_ANSWERS, FRESH, FRESH_ANSWERS, score, scoreS
 /** @import { EventHead } from "../../site-profiles/index.mjs" */
 /** @import { PolicyReading } from "../policy.mjs" */
 /** @import { HeaderFields, PolicyHeaderReading } from "../policy-header.mjs" */
-/** @import { CaseContext } from "./golden-cases.mjs" */
 
 /** `x`, which the test has made sure is there; a `TypeError` where it is not, as reading a member of it would have.
  *  @template T
@@ -66,9 +65,6 @@ const measuredOf = (v) => ("measured" in v ? v.measured : undefined);
 /** A reading's header, which the test has made sure was read. @param {PolicyReading} p @returns {PolicyHeaderReading} */
 const headerOf = (p) => must(p.header, "header");
 
-/** A golden case's context as docprofile's `DoctypeContext`: the same members, `locator` only where the case has one.
- *  @param {CaseContext} c @returns {DoctypeContext} */
-const contextOf = (c) => (c.locator === undefined ? { view: c.view, now: c.now } : { view: c.view, now: c.now, locator: c.locator });
 /* A registry holding every type, in R1's order (read.mjs's `registryOf`: `makeRegistry()`, each type registered). */
 const REG = registryOf(DOCTYPES);
 /** @param {string} text @param {View} [view] @param {DoctypeContext} [extra] @returns {PolicyReading} */
@@ -458,8 +454,8 @@ test("R3 R20 policy takes its series and labels from ctx.view, and with no view 
 
 test("R36 adding policy changes no other type's verdict: no existing fixture is read as a policy", () => {
   for (const c of CASES) {
-    const r = readWith(REG, c.supplied, contextOf(c.ctx));
+    const r = readWith(REG, c.supplied, c.ctx);
     assert.notEqual(must(r.doctype.type, "type").key, "policy", c.id);
-    assert.notEqual(policy.detect({ ...contextOf(c.ctx), text: r.text }).confidence, CONFIDENCE.CERTAIN, c.id);
+    assert.notEqual(policy.detect({ ...c.ctx, text: r.text }).confidence, CONFIDENCE.CERTAIN, c.id);
   }
 });
