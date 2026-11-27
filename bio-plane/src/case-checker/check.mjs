@@ -371,7 +371,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     : word("case-checker.text.read_signature"));
   async function verifyOver(armored, message) {
     const v = await verifySshsig(armored, message, NS_RATIFY, allowed);
-    const key = v.keyB64 || embedded(armored);
+    const key = ("keyB64" in v ? v.keyB64 : undefined) || embedded(armored);
     const pubOk = published && key ? published.includes(key) : true;
     return { verified: v.ok === true && pubOk, reason: v.ok ? (pubOk ? null : "NOT_PUBLISHED_KEY") : v.reason, ...keyFacts(key),
              words: v.ok && !pubOk ? localize("case-checker.check.not_published_key", "was made with a key that is not among the team's published keys") : sigWords(v) };

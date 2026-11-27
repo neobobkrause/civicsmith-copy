@@ -130,13 +130,15 @@ const REASONS_SSHSIG = ["MALFORMED", "NAMESPACE", "UNKNOWN_KEY", "BAD_SIGNATURE"
 const REASONS_TSA = ["MALFORMED", "REJECTED", "NO_TOKEN", "NOT_BOUND"];
 /* Every "no" these tests see, checked against R29 at the end. */
 const NOES = { sshsig: [], tsa: [] };
-const verifyAndLog = async (...a) => {
-  const r = await verifySshsig(...a);
+/** `signatures`' answer's reason: a "no" names one, a "yes" none */
+const reasonOf = (r) => ("reason" in r ? r.reason : undefined);
+const verifyAndLog = async (armored, message, namespace, allowedKeys) => {
+  const r = await verifySshsig(armored, message, namespace, allowedKeys);
   if (!r.ok) NOES.sshsig.push(r);
   return r;
 };
-const parseAndLog = (...a) => {
-  const r = parseTimestampResponse(...a);
+const parseAndLog = (bytes, expectDigestHex) => {
+  const r = parseTimestampResponse(bytes, expectDigestHex);
   if (!r.ok) NOES.tsa.push(r);
   return r;
 };
@@ -183,7 +185,7 @@ test("R2 fresh ssh-keygen signatures verify, in sha512 and in sha256", { skip: N
     const f = keygenSign(NS_RATIFY, msg, hashalg);
     const r = await verifyAndLog(f.sig, msg, NS_RATIFY, [f.pub]);
     assert.deepEqual(r, { ok: true, keyB64: f.pub.split(/\s+/)[1], namespace: NS_RATIFY });
-    assert.equal((await verifyAndLog(f.sig, enc(`fresh message ${hashalg}!\n`), NS_RATIFY, [f.pub])).reason,
+    assert.equal(reasonOf(await verifyAndLog(f.sig, enc(`fresh message ${hashalg}!\n`), NS_RATIFY, [f.pub])),
       "BAD_SIGNATURE");
   }
 });
@@ -198,7 +200,7 @@ test("R2 the blob's declared hash decides the inner hash: sha512 and sha256 both
   const signed256 = u8(enc("SSHSIG"), sstr(NS_RELEASE), sstr(new Uint8Array(0)), sstr("sha256"), sstr(h));
   const sig = new Uint8Array(await webcrypto.subtle.sign("Ed25519", KEY.priv, signed256));
   const relabelled = await sign(KEY, NS_RELEASE, msg, { hashAlg: "sha512", sig });
-  assert.equal((await verifyAndLog(relabelled, msg, NS_RELEASE, [KEY.line])).reason, "BAD_SIGNATURE");
+  assert.equal(reasonOf(await verifyAndLog(relabelled, msg, NS_RELEASE, [KEY.line])), "BAD_SIGNATURE");
 });
 
 test("R2 the reserved field is part of the signed bytes", async () => {
@@ -217,7 +219,7 @@ test("R2 allowedKeys: a bare base64 field, a full key line and a principal-prefi
     assert.equal((await verifyAndLog(sig, msg, NS_RATIFY, ["junk", OTHER.line, form])).ok, true);
   }
   for (const notIt of [OTHER.keyB64, OTHER.line, `ssh-rsa ${KEY.keyB64}`, "", "AAAA", KEY.keyB64.slice(0, -4)]) {
-    assert.equal((await verifyAndLog(sig, msg, NS_RATIFY, [notIt])).reason, "UNKNOWN_KEY");
+    assert.equal(reasonOf(await verifyAndLog(sig, msg, NS_RATIFY, [notIt])), "UNKNOWN_KEY");
   }
 });
 
@@ -228,7 +230,7 @@ test("R2 the signature covers exactly the bytes of message, whatever byte view c
     new DataView(msg.buffer, msg.byteOffset, msg.length)];
   for (const v of views) assert.equal((await verifyAndLog(sig, v, NS_RELEASE, [KEY.line])).ok, true);
   for (const other of [enc("exact bytes"), enc("exact bytes\n\n"), enc("Exact bytes\n"), new Uint8Array(0)]) {
-    assert.equal((await verifyAndLog(sig, other, NS_RELEASE, [KEY.line])).reason, "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifyAndLog(sig, other, NS_RELEASE, [KEY.line])), "BAD_SIGNATURE");
   }
 });
 
@@ -272,8 +274,8 @@ test("R3 NAMESPACE carries expected and got; UNKNOWN_KEY and BAD_SIGNATURE carry
   assert.deepEqual(await verifyAndLog(sig, enc("reasons!\n"), NS_RATIFY, [KEY.line]),
     { ok: false, reason: "BAD_SIGNATURE", keyB64: KEY.keyB64 });
   /* The namespace is judged before the key list, and the key list before the signature. */
-  assert.equal((await verifyAndLog(sig, enc("other"), NS_RELEASE, [])).reason, "NAMESPACE");
-  assert.equal((await verifyAndLog(sig, enc("other"), NS_RATIFY, [])).reason, "UNKNOWN_KEY");
+  assert.equal(reasonOf(await verifyAndLog(sig, enc("other"), NS_RELEASE, [])), "NAMESPACE");
+  assert.equal(reasonOf(await verifyAndLog(sig, enc("other"), NS_RATIFY, [])), "UNKNOWN_KEY");
 });
 
 test("R3 CRYPTO_UNAVAILABLE when the runtime refuses to import the key", async (t) => {
@@ -341,7 +343,7 @@ test("R7 a bundle ratification and a case ratification are never the same bytes,
     assert.ok(bundle.startsWith("bio-ratify ") && kase.startsWith("bio-ratify-case "));
   }
   const sig = await sign(KEY, NS_RATIFY, ratifyStatement("CASE-1", "0".repeat(64)));
-  assert.equal((await verifyAndLog(sig, caseRatifyStatement("CASE-1", 1, "0".repeat(64)), NS_RATIFY, [KEY.line])).reason,
+  assert.equal(reasonOf(await verifyAndLog(sig, caseRatifyStatement("CASE-1", 1, "0".repeat(64)), NS_RATIFY, [KEY.line])),
     "BAD_SIGNATURE");
 });
 
@@ -350,9 +352,9 @@ test("R7 a bundle ratification and a case ratification are never the same bytes,
 const NOTICE_SHA = "0123456789abcdef".repeat(4);
 
 test("R38 noticeStatement is exactly the ASCII line, the same bytes every time", () => {
-  for (const [id, rev] of [["NOTE-2026-4817", 1], ["NOTE-2026-0000", 2], ["WON-2027-9999", 12345],
+  for (const [id, rev] of /** @type {Array<[string, number]>} */ ([["NOTE-2026-4817", 1], ["NOTE-2026-0000", 2], ["WON-2027-9999", 12345],
     ["N-2026-0001-a-slug-tail", 1], ["NOTE-2026-4817-x", Number.MAX_SAFE_INTEGER], ["NOTE-2026-10000", 1],
-    ["NOTE-2026-48170", 3], ["NOTE-2026-123456789-a-tail", 2]]) {
+    ["NOTE-2026-48170", 3], ["NOTE-2026-123456789-a-tail", 2]])) {
     const out = noticeStatement(id, rev, NOTICE_SHA);
     assert.ok(out instanceof Uint8Array);
     assert.deepEqual([...out], [...Buffer.from(`bio-working-on ${id} ${rev} ${NOTICE_SHA}\n`, "ascii")]);
@@ -395,9 +397,9 @@ test("R38 a notice statement is never the bytes of a ratification, a case ratifi
   assert.notEqual(fleetStatement({ version: "1", plane: PLANE, members: [] }), notice);
   /* A ratification signature over the same fields does not verify as a notice, in either namespace. */
   const rsig = await sign(KEY, NS_RATIFY, ratifyStatement("NOTE-2026-4817", NOTICE_SHA));
-  assert.equal((await verifyAndLog(rsig, noticeStatement("NOTE-2026-4817", 1, NOTICE_SHA), NS_NOTICE, [KEY.line])).reason,
+  assert.equal(reasonOf(await verifyAndLog(rsig, noticeStatement("NOTE-2026-4817", 1, NOTICE_SHA), NS_NOTICE, [KEY.line])),
     "NAMESPACE");
-  assert.equal((await verifyAndLog(rsig, noticeStatement("NOTE-2026-4817", 1, NOTICE_SHA), NS_RATIFY, [KEY.line])).reason,
+  assert.equal(reasonOf(await verifyAndLog(rsig, noticeStatement("NOTE-2026-4817", 1, NOTICE_SHA), NS_RATIFY, [KEY.line])),
     "BAD_SIGNATURE");
 });
 
@@ -413,7 +415,7 @@ test("R37 NS_NOTICE is bio-working-on, distinct from every other namespace, and 
   }
   /* The same statement signed as a ratification is not a notice signature. */
   const asRatify = await sign(KEY, NS_RATIFY, stmt);
-  assert.equal((await verifyAndLog(asRatify, stmt, NS_NOTICE, [KEY.line])).reason, "NAMESPACE");
+  assert.equal(reasonOf(await verifyAndLog(asRatify, stmt, NS_NOTICE, [KEY.line])), "NAMESPACE");
 });
 
 /* ================================================================= R39–R40 */
@@ -421,9 +423,9 @@ test("R37 NS_NOTICE is bio-working-on, distinct from every other namespace, and 
 const DOCKET_SHA = "fedcba9876543210".repeat(4);
 
 test("R40 docketStatement is exactly the ASCII line, the same bytes every time", () => {
-  for (const [id, seq] of [["CASE-2026-3091", 1], ["CASE-2026-0000", 2], ["C-2027-9999", 12345],
+  for (const [id, seq] of /** @type {Array<[string, number]>} */ ([["CASE-2026-3091", 1], ["CASE-2026-0000", 2], ["C-2027-9999", 12345],
     ["CASE-2026-0001-a-slug-tail", 1], ["CASE-2026-3091-x", Number.MAX_SAFE_INTEGER], ["CASE-2026-10000", 1],
-    ["CASE-2026-30910", 3], ["CASE-2026-123456789-a-tail", 2]]) {
+    ["CASE-2026-30910", 3], ["CASE-2026-123456789-a-tail", 2]])) {
     const out = docketStatement(id, seq, DOCKET_SHA);
     assert.ok(out instanceof Uint8Array);
     assert.deepEqual([...out], [...Buffer.from(`bio-docket ${id} ${seq} ${DOCKET_SHA}\n`, "ascii")]);
@@ -472,13 +474,13 @@ test("R40 a docket statement's leading token differs from every other statement'
   for (const [ns, m] of [[NS_RATIFY, ratifyStatement(id, DOCKET_SHA)], [NS_RATIFY, caseRatifyStatement(id, 1, DOCKET_SHA)],
     [NS_NOTICE, noticeStatement(id, 1, DOCKET_SHA)]]) {
     const sig = await sign(KEY, ns, m);
-    assert.equal((await verifyAndLog(sig, stmt, NS_DOCKET, [KEY.line])).reason, "NAMESPACE");
-    assert.equal((await verifyAndLog(sig, stmt, ns, [KEY.line])).reason, "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifyAndLog(sig, stmt, NS_DOCKET, [KEY.line])), "NAMESPACE");
+    assert.equal(reasonOf(await verifyAndLog(sig, stmt, ns, [KEY.line])), "BAD_SIGNATURE");
   }
   /* And a docket signature is no other statement's: its bytes differ even signed in the docket namespace. */
   const dsig = await sign(KEY, NS_DOCKET, stmt);
   for (const m of [ratifyStatement(id, DOCKET_SHA), caseRatifyStatement(id, 1, DOCKET_SHA), noticeStatement(id, 1, DOCKET_SHA)]) {
-    assert.equal((await verifyAndLog(dsig, m, NS_DOCKET, [KEY.line])).reason, "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifyAndLog(dsig, m, NS_DOCKET, [KEY.line])), "BAD_SIGNATURE");
   }
 });
 
@@ -541,7 +543,7 @@ test("R39 NS_DOCKET is bio-docket, distinct from every other namespace, and a do
   }
   /* The same statement signed in another namespace is not a docket signature. */
   for (const ns of [NS_RATIFY, NS_NOTICE]) {
-    assert.equal((await verifyAndLog(await sign(KEY, ns, stmt), stmt, NS_DOCKET, [KEY.line])).reason, "NAMESPACE");
+    assert.equal(reasonOf(await verifyAndLog(await sign(KEY, ns, stmt), stmt, NS_DOCKET, [KEY.line])), "NAMESPACE");
   }
 });
 
@@ -638,13 +640,13 @@ test("R41 a capture account's leading token differs from every other statement's
   const sig = await sign(KEY, NS_RATIFY, stmt);
   assert.deepEqual(await verifyAndLog(sig, stmt, NS_RATIFY, [KEY.line]), { ok: true, keyB64: KEY.keyB64, namespace: NS_RATIFY });
   for (const ns of [NS_RELEASE, NS_FLEET, NS_NOTICE, NS_DOCKET]) {
-    assert.equal((await verifyAndLog(sig, stmt, ns, [KEY.line])).reason, "NAMESPACE");
+    assert.equal(reasonOf(await verifyAndLog(sig, stmt, ns, [KEY.line])), "NAMESPACE");
   }
   /* A ratification or case ratification over the same digest never verifies as an account, nor the reverse. */
   for (const m of [ratifyStatement(id, sha), caseRatifyStatement(id, 1, sha)]) {
     const rsig = await sign(KEY, NS_RATIFY, m);
-    assert.equal((await verifyAndLog(rsig, stmt, NS_RATIFY, [KEY.line])).reason, "BAD_SIGNATURE");
-    assert.equal((await verifyAndLog(sig, m, NS_RATIFY, [KEY.line])).reason, "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifyAndLog(rsig, stmt, NS_RATIFY, [KEY.line])), "BAD_SIGNATURE");
+    assert.equal(reasonOf(await verifyAndLog(sig, m, NS_RATIFY, [KEY.line])), "BAD_SIGNATURE");
   }
 });
 
@@ -652,7 +654,7 @@ test("R41 a capture account signed by stock ssh-keygen in bio-ratify verifies, a
   const stmt = captureAccountStatement(CAPTURE_SHA, ACCOUNTS[4]);
   const f = keygenSign(NS_RATIFY, stmt);
   assert.deepEqual(await verifyAndLog(f.sig, stmt, NS_RATIFY, [f.pub]), { ok: true, keyB64: f.pub.split(/\s+/)[1], namespace: NS_RATIFY });
-  assert.equal((await verifyAndLog(f.sig, captureAccountStatement(CAPTURE_SHA, ACCOUNTS[4] + "\n"), NS_RATIFY, [f.pub])).reason,
+  assert.equal(reasonOf(await verifyAndLog(f.sig, captureAccountStatement(CAPTURE_SHA, ACCOUNTS[4] + "\n"), NS_RATIFY, [f.pub])),
     "BAD_SIGNATURE");
 });
 
@@ -855,7 +857,7 @@ test("R17 a real granted reply is ok, bound to its digest, and the token is the 
   writeFileSync(tok, r.token);
   assert.doesNotThrow(() => execFileSync("openssl", ["ts", "-reply", "-in", tok, "-token_in", "-text", "-token_out"],
     { stdio: "ignore" }));
-  assert.equal(parseAndLog(reply, createHash("sha256").update("another capture").digest("hex")).reason, "NOT_BOUND");
+  assert.equal(reasonOf(parseAndLog(reply, createHash("sha256").update("another capture").digest("hex"))), "NOT_BOUND");
 });
 
 test("R17 status 0 and 1 carrying a token that holds the digest are ok, with the token returned", () => {
@@ -1071,26 +1073,26 @@ test("R28 (R41 and R47 among the messages) a signature never verifies for anothe
     for (const [j, other] of messages.entries()) {
       const r = await verifyAndLog(sig, other, NS_RATIFY, [KEY.line]);
       assert.equal(r.ok, i === j);
-      if (i !== j) assert.equal(r.reason, "BAD_SIGNATURE");
+      if (i !== j) assert.equal(reasonOf(r), "BAD_SIGNATURE");
     }
     for (const ns of [NS_RELEASE, NS_FLEET, NS_NOTICE, NS_DOCKET, NS_RELEASE_NOTICE, "", "bio-ratify ", "BIO-RATIFY"]) {
-      assert.equal((await verifyAndLog(sig, m, ns, [KEY.line])).reason, "NAMESPACE");
+      assert.equal(reasonOf(await verifyAndLog(sig, m, ns, [KEY.line])), "NAMESPACE");
     }
     /* Every single-bit change to the message is refused. */
     for (let bit = 0; bit < m.length * 8; bit += 3) {
       const t = m.slice(); t[bit >> 3] ^= 1 << (bit & 7);
-      assert.equal((await verifyAndLog(sig, t, NS_RATIFY, [KEY.line])).reason, "BAD_SIGNATURE");
+      assert.equal(reasonOf(await verifyAndLog(sig, t, NS_RATIFY, [KEY.line])), "BAD_SIGNATURE");
     }
   }
   /* Every single-bit change to the signature is refused as BAD_SIGNATURE. */
   const m = enc("tamper the signature\n");
   const sig = await sign(KEY, NS_RELEASE, m);
   for (let bit = 0; bit < 512; bit++) {
-    assert.equal((await verifyAndLog(flipSignatureBit(sig, bit), m, NS_RELEASE, [KEY.line])).reason, "BAD_SIGNATURE", `bit ${bit}`);
+    assert.equal(reasonOf(await verifyAndLog(flipSignatureBit(sig, bit), m, NS_RELEASE, [KEY.line])), "BAD_SIGNATURE", `bit ${bit}`);
   }
   /* A key substituted into someone else's signature does not carry it. */
   const swapped = await sign(OTHER, NS_RELEASE, m, { sig: dearmor(sig).slice(-64) });
-  assert.equal((await verifyAndLog(swapped, m, NS_RELEASE, [KEY.line, OTHER.line])).reason, "BAD_SIGNATURE");
+  assert.equal(reasonOf(await verifyAndLog(swapped, m, NS_RELEASE, [KEY.line, OTHER.line])), "BAD_SIGNATURE");
 });
 
 /* ===================================================================== R29 */
