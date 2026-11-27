@@ -7,23 +7,33 @@ import { stripMetadata } from "../image-cover/index.mjs";
 import { editXml } from "./xml.mjs";
 import { CleanRefusal } from "./refusal.mjs";
 import { word, localize } from "../setup-words/index.mjs";
+/** @import { XmlRules, Scan } from "./xml.mjs" */
 
 export { CleanRefusal };
 
+/** An image format this module names from leading bytes.
+ *  @typedef {"jpeg" | "png" | "gif" | "webp" | "jp2" | "j2k" | "tiff" | "jxl" | "heif" | "bmp" | "emf" | "wmf" | "svm" | "gzip" | "svg"} ImageKind */
+/** One image as it leaves: its bytes, and whether they differ from what came in.
+ *  @typedef {{ bytes: Uint8Array, changed: boolean }} ImageOut */
+
+/** @param {Uint8Array} d @param {number} o @param {...number} b */
 const at = (d, o, ...b) => d.length >= o + b.length && b.every((x, i) => d[o + i] === x);
 /** The bytes `d[o, o + n)` as a string of one character per byte. */
+/** @param {Uint8Array} d @param {number} [o] @param {number} [n] @returns {string} */
 export function latin1(d, o = 0, n = d.length - o) {
   let s = "";
-  for (let i = o, end = Math.min(d.length, o + n); i < end; i += 0x8000) s += String.fromCharCode.apply(null, d.subarray(i, Math.min(end, i + 0x8000)));
+  for (let i = o, end = Math.min(d.length, o + n); i < end; i += 0x8000) s += String.fromCharCode(...d.subarray(i, Math.min(end, i + 0x8000)));
   return s;
 }
 const ascii = latin1;
-const u32le = (d, o) => (d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24)) >>> 0;
+/** @param {Uint8Array} d @param {number} o */
+const u32le = (d, o) => ((d[o] ?? 0) | ((d[o + 1] ?? 0) << 8) | ((d[o + 2] ?? 0) << 16) | ((d[o + 3] ?? 0) << 24)) >>> 0;
 
 /** The ISO-BMFF brands of HEIF and AVIF files. */
 const HEIF_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "mif1", "msf1", "avif", "avis", "mif2"]);
 
-/** The image format of `d`, from its leading bytes, or `null`. */
+/** The image format of `d`, from its leading bytes, or `null`.
+ *  @param {Uint8Array} d @returns {ImageKind | null} */
 export function imageKind(d) {
   if (at(d, 0, 0xff, 0xd8, 0xff)) return "jpeg";
   if (at(d, 0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "png";
@@ -34,7 +44,7 @@ export function imageKind(d) {
   if (at(d, 0, 0x49, 0x49, 0x2a, 0) || at(d, 0, 0x4d, 0x4d, 0, 0x2a) || at(d, 0, 0x49, 0x49, 0x2b, 0) || at(d, 0, 0x4d, 0x4d, 0, 0x2b)) return "tiff";
   if (at(d, 0, 0xff, 0x0a) || at(d, 0, 0, 0, 0, 0x0c, 0x4a, 0x58, 0x4c, 0x20)) return "jxl";
   if (d.length >= 12 && ascii(d, 4, 4) === "ftyp") {
-    const n = Math.min(d.length, (d[0] << 24 | d[1] << 16 | d[2] << 8 | d[3]) >>> 0);
+    const n = Math.min(d.length, ((d[0] ?? 0) << 24 | (d[1] ?? 0) << 16 | (d[2] ?? 0) << 8 | (d[3] ?? 0)) >>> 0);
     for (let o = 8; o + 4 <= n; o += 4) if (o !== 12 && HEIF_BRANDS.has(ascii(d, o, 4))) return "heif";
     return null;
   }
@@ -47,14 +57,15 @@ export function imageKind(d) {
   return null;
 }
 
-/** What kind of video or audio `d` is, from its leading bytes, or `null` (R3 `EMBEDDED_MEDIA`, K2351). */
+/** What kind of video or audio `d` is, from its leading bytes, or `null` (R3 `EMBEDDED_MEDIA`, K2351).
+ *  @param {Uint8Array} d @returns {string | null} */
 export function mediaKind(d) {
   if (d.length >= 12 && ascii(d, 4, 4) === "ftyp" && !imageKind(d)) return word("doc-clean.text.video_audio_file");
   if (d.length >= 12 && ascii(d, 0, 4) === "RIFF" && ["AVI ", "WAVE", "RMID", "CDXA"].includes(ascii(d, 8, 4))) return `a ${ascii(d, 8, 4).trim()} file`;
   if (d.length >= 12 && ascii(d, 0, 4) === "FORM" && ["AIFF", "AIFC"].includes(ascii(d, 8, 4))) return "an AIFF file";
   if (at(d, 0, 0x1a, 0x45, 0xdf, 0xa3)) return word("doc-clean.text.matroska_webm_file");
   if (at(d, 0, 0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11)) return word("doc-clean.text.windows_media_file");
-  if (at(d, 0, 0x49, 0x44, 0x33) || (d[0] === 0xff && (d[1] & 0xe0) === 0xe0 && d[1] < 0xfe && (d[1] & 0x06) !== 0 && d[2] >> 4 !== 15 && ((d[2] >> 2) & 3) !== 3)) return word("doc-clean.text.mpeg_audio_file");
+  if (at(d, 0, 0x49, 0x44, 0x33) || (d[0] === 0xff && ((d[1] ?? 0) & 0xe0) === 0xe0 && (d[1] ?? 0) < 0xfe && ((d[1] ?? 0) & 0x06) !== 0 && (d[2] ?? 0) >> 4 !== 15 && (((d[2] ?? 0) >> 2) & 3) !== 3)) return word("doc-clean.text.mpeg_audio_file");
   if (d.length >= 4 && ["OggS", "fLaC", "MThd", ".snd", "FLV\x01"].includes(ascii(d, 0, 4))) return word("doc-clean.text.audio_video_file");
   if (at(d, 0, 0, 0, 1, 0xba) || at(d, 0, 0, 0, 1, 0xb3) || (d[0] === 0x47 && d[188] === 0x47 && d.length > 376 && d[376] === 0x47)) return word("doc-clean.text.mpeg_video_file");
   if (at(d, 0, 0x23, 0x21, 0x41, 0x4d, 0x52)) return word("doc-clean.text.amr_audio_file");
@@ -62,14 +73,16 @@ export function mediaKind(d) {
 }
 
 /** The local name of an XML document's first element (after a BOM, the declaration, comments, processing
- *  instructions and a doctype), lower-cased, read from at most its first 4 KB; `null` when it does not start as XML. */
+ *  instructions and a doctype), lower-cased, read from at most its first 4 KB; `null` when it does not start as XML.
+ *  @param {Uint8Array} d @returns {string | null} */
 export function rootElement(d) {
   const s = ascii(d, d[0] === 0xef && d[1] === 0xbb && d[2] === 0xbf ? 3 : 0, Math.min(d.length, 4096));
   const m = /^\s*(?:(?:<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>[]*(?:\[[\s\S]*?\])?\s*>)\s*)*<([A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/.exec(s);
-  return m ? m[2].toLowerCase() : null;
+  return m ? (m[2] ?? "").toLowerCase() : null;
 }
 
 /** Whether `d` holds a whole JPEG or PNG inside it (a metafile's embedded bitmap). */
+/** @param {Uint8Array} d @returns {string | null} */
 function holdsRaster(d) {
   for (let i = 0; i + 8 <= d.length; i++) {
     if (d[i] === 0xff && d[i + 1] === 0xd8 && d[i + 2] === 0xff) return "a JPEG";
@@ -88,9 +101,11 @@ const NAMES = {
 };
 
 /** Gunzip `d` whole, capped at `max` bytes out; `null` when it cannot be read or runs over. */
+/** @param {Uint8Array} d @param {number} max @returns {Promise<Uint8Array | null>} */
 async function gunzip(d, max) {
   try {
     const reader = new Blob([d]).stream().pipeThrough(new DecompressionStream("gzip")).getReader();
+    /** @type {Uint8Array[]} */
     const parts = [];
     let n = 0;
     for (;;) {
@@ -110,8 +125,10 @@ async function gunzip(d, max) {
 }
 
 /** Gzip `d` afresh (no name, comment or time in its header). */
+/** @param {Uint8Array} d @returns {Promise<Uint8Array>} */
 async function gzip(d) {
   const reader = new Blob([d]).stream().pipeThrough(new CompressionStream("gzip")).getReader();
+  /** @type {Uint8Array[]} */
   const parts = [];
   let n = 0;
   for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); n += value.length; }
@@ -125,6 +142,7 @@ async function gzip(d) {
 
 /** An EMF with its header's description string (the producing application and the picture's name) emptied: its
  *  characters zeroed and its length and offset set to 0 (R6, K2351). */
+/** @param {Uint8Array} d @returns {ImageOut} */
 function emfWithoutDescription(d) {
   const n = u32le(d, 60), off = u32le(d, 64);
   if (d.length < 68 || u32le(d, 4) < 88 || (n === 0 && off === 0)) return { bytes: d, changed: false };
@@ -135,30 +153,34 @@ function emfWithoutDescription(d) {
 }
 
 /** An SVG's editor-namespace elements and attributes (Inkscape, Sodipodi, Adobe) removed (R6, K2351). */
+/** @type {XmlRules} */
 const SVG_RULES = { removeNs: ["editor"] };
 
 /** A JBIG2 segment stream (as a PDF embeds it, without a file header) with its comment extension segments
  *  dropped, every other segment copied as it is (R6, K2351). Throws a refusal when its segments cannot be walked. */
+/** @param {Uint8Array} d @param {string} where @returns {ImageOut} */
 export function jbig2WithoutComments(d, where) {
+  /** @type {Uint8Array[]} */
   const keep = [];
   let o = 0, changed = false;
+  /** @param {string} why */
   const bad = (why) => new CleanRefusal("IMAGE_NOT_CLEANABLE", localize("doc-clean.images.where_a_jbig2_stream_whose", "{where}: a JBIG2 stream whose segments cannot be walked ({why})", { where: String(where), why: String(why) }));
   while (o < d.length) {
     const start = o;
     if (o + 6 > d.length) throw bad(localize("doc-clean.images.a_truncated_segment_header", "a truncated segment header"));
-    const num = ((d[o] << 24) | (d[o + 1] << 16) | (d[o + 2] << 8) | d[o + 3]) >>> 0, flags = d[o + 4];
+    const num = (((d[o] ?? 0) << 24) | ((d[o + 1] ?? 0) << 16) | ((d[o + 2] ?? 0) << 8) | (d[o + 3] ?? 0)) >>> 0, flags = d[o + 4] ?? 0;
     o += 5;
-    let count = d[o] >> 5;
-    if (count === 7) { count = ((d[o] & 0x1f) << 24 | d[o + 1] << 16 | d[o + 2] << 8 | d[o + 3]) >>> 0; o += 4 + Math.ceil((count + 1) / 8); }
+    let count = (d[o] ?? 0) >> 5;
+    if (count === 7) { count = (((d[o] ?? 0) & 0x1f) << 24 | (d[o + 1] ?? 0) << 16 | (d[o + 2] ?? 0) << 8 | (d[o + 3] ?? 0)) >>> 0; o += 4 + Math.ceil((count + 1) / 8); }
     else if (count > 4) throw bad(localize("doc-clean.images.a_malformed_referred_to_count", "a malformed referred-to count"));
     else o += 1;
     o += count * (num <= 256 ? 1 : num <= 0x10000 ? 2 : 4) + (flags & 0x40 ? 4 : 1);
     if (o + 4 > d.length) throw bad(localize("doc-clean.images.a_truncated_segment_header", "a truncated segment header"));
-    const len = ((d[o] << 24) | (d[o + 1] << 16) | (d[o + 2] << 8) | d[o + 3]) >>> 0;
+    const len = (((d[o] ?? 0) << 24) | ((d[o + 1] ?? 0) << 16) | ((d[o + 2] ?? 0) << 8) | (d[o + 3] ?? 0)) >>> 0;
     o += 4;
     if (len === 0xffffffff) throw bad(localize("doc-clean.images.a_segment_of_unstated_length", "a segment of unstated length"));
     if (o + len > d.length) throw bad(localize("doc-clean.images.a_segment_longer_than_the_stream", "a segment longer than the stream"));
-    const ext = (flags & 0x3f) === 62 && len >= 4 ? (((d[o] << 24) | (d[o + 1] << 16) | (d[o + 2] << 8) | d[o + 3]) >>> 0) & 0x7fffffff : null;
+    const ext = (flags & 0x3f) === 62 && len >= 4 ? ((((d[o] ?? 0) << 24) | ((d[o + 1] ?? 0) << 16) | ((d[o + 2] ?? 0) << 8) | (d[o + 3] ?? 0)) >>> 0) & 0x7fffffff : null;
     o += len;
     if (ext === 0x20000000 || ext === 0x20000002) { changed = true; continue; }
     keep.push(d.subarray(start, o));
@@ -172,21 +194,24 @@ export function jbig2WithoutComments(d, where) {
 
 /** A gzip member's header rewritten to carry no name, comment, extra field or time; the deflate data and trailer
  *  unchanged. `null` when the header cannot be walked. */
+/** @param {Uint8Array} d @returns {Uint8Array | null} */
 function bareGzip(d) {
-  const flg = d[3];
+  const flg = d[3] ?? 0;
   let o = 10;
-  if (flg & 4) { if (o + 2 > d.length) return null; o += 2 + (d[o] | (d[o + 1] << 8)); }
+  if (flg & 4) { if (o + 2 > d.length) return null; o += 2 + ((d[o] ?? 0) | ((d[o + 1] ?? 0) << 8)); }
   for (const bit of [8, 16]) if (flg & bit) { while (o < d.length && d[o] !== 0) o++; o++; }
   if (flg & 2) o += 2;
   if (o > d.length) return null;
   if (o === 10 && (flg & 0x1e) === 0 && d[4] === 0 && d[5] === 0 && d[6] === 0 && d[7] === 0) return d;
   const out = new Uint8Array(10 + d.length - o);
-  out.set([0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, d[8], 0xff]);
+  out.set([0x1f, 0x8b, 0x08, 0, 0, 0, 0, 0, d[8] ?? 0, 0xff]);
   out.set(d.subarray(o), 10);
   return out;
 }
 
-/** Strip, keep or refuse one image (R2, R3). `kind` is `imageKind(bytes)`, never `null`. */
+/** Strip, keep or refuse one image (R2, R3). `kind` is `imageKind(bytes)`, never `null`.
+ *  @param {Uint8Array} bytes @param {ImageKind} kind @param {string} where @param {number} maxInflated @param {Scan} [scan]
+ *  @returns {Promise<ImageOut>} */
 export async function cleanImage(bytes, kind, where, maxInflated, scan) {
   switch (kind) {
     case "jpeg": case "png": case "gif": case "webp": case "jp2": case "j2k": {
@@ -213,7 +238,7 @@ export async function cleanImage(bytes, kind, where, maxInflated, scan) {
     case "svg": {
       const s = ascii(bytes, 0, bytes.length);
       const m = /<([\w.-]+:)?(image|metadata)(?=[\s/>])/i.exec(s);
-      if (m) throw new CleanRefusal("IMAGE_NOT_CLEANABLE", localize("doc-clean.images.where_an_svg_image_with_an", "{where}: an SVG image with an <{tag}> element", { where: String(where), tag: m[2].toLowerCase() }));
+      if (m) throw new CleanRefusal("IMAGE_NOT_CLEANABLE", localize("doc-clean.images.where_an_svg_image_with_an", "{where}: an SVG image with an <{tag}> element", { where: String(where), tag: (m[2] ?? "").toLowerCase() }));
       const out = await editXml(bytes, SVG_RULES, { where, scan });
       return { bytes: out, changed: out !== bytes };
     }

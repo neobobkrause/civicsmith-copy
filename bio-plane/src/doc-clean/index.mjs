@@ -13,6 +13,18 @@ import { cleanPackage, tooManyEntries, CLEAN_MAX_PART_BYTES, CLEAN_MAX_ENTRIES }
 import { newScan } from "./xml.mjs";
 import { boundOf } from "../read-bounds.mjs";
 import { localize } from "../setup-words/index.mjs";
+/** @import { Scan } from "./xml.mjs" */
+/** @import { Cleaned, ImageCounts } from "./refusal.mjs" */
+
+/** What `cleanDocument` may be handed beside the bytes (R11).
+ *  @typedef {{ yieldNow?: () => Promise<unknown>, scan?: Scan }} CleanOptions */
+/** The original carries nothing R2 or R6 removes and may travel whole (R1).
+ *  @typedef {{ ok: true, clean: true, format: string }} CleanWhole */
+/** The copy, and the counts of embedded images it changed and left as they were (R1, R2, R6).
+ *  @typedef {{ ok: true, clean: false, bytes: Uint8Array, format: string, images: ImageCounts }} CleanCopy */
+/** A refusal by name, `detail` naming the object, part or image at fault (R3).
+ *  @typedef {{ ok: false, code: string, detail: string }} CleanRefused */
+/** @typedef {CleanWhole | CleanCopy | CleanRefused} CleanAnswer */
 
 export { CLEAN_MAX_PART_BYTES, CLEAN_MAX_ENTRIES };
 
@@ -35,51 +47,60 @@ export const CLEAN_REFUSALS = Object.freeze({
   TOO_MANY_ENTRIES: localize("doc-clean.index.the_package_holds_more_entries", "the package holds more entries than this module copies"),
 });
 
-const FAMILY = { docx: "ooxml", xlsx: "ooxml", pptx: "ooxml", odt: "odf", ods: "odf", odp: "odf" };
+/** @type {Map<string, string>} */
+const FAMILY = new Map([["docx", "ooxml"], ["xlsx", "ooxml"], ["pptx", "ooxml"], ["odt", "odf"], ["ods", "odf"], ["odp", "odf"]]);
 
 /** Clean one document (R1–R12). Never throws. `options.yieldNow` is awaited at least every 65,536 tokens of markup
  *  scanned (R11; default: a turn of the microtask queue); `options.scan`, when given, is filled with the counts of the
  *  scan (`scanned` bytes, `tokens`, `yields`), so a caller can see that the work was bounded by count, not by time
- *  (R-CLOCK). Nothing is kept between calls (R7). */
+ *  (R-CLOCK). Nothing is kept between calls (R7).
+ *  @param {unknown} bytes a Uint8Array or an ArrayBuffer; anything else is refused
+ *  @param {CleanOptions} [options]
+ *  @returns {Promise<CleanAnswer>} */
 export async function cleanDocument(bytes, { yieldNow, scan = newScan(yieldNow) } = {}) {
   try {
     const d = bytes instanceof Uint8Array ? bytes : bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : null;
     if (!d) throw new CleanRefusal("NOT_A_CLEANABLE_FORMAT", localize("doc-clean.index.the_document_s_bytes_are_not", "the document's bytes are not a byte array"));
     if (d.length > CLEAN_MAX_BYTES)
       throw new CleanRefusal("DOCUMENT_TOO_LARGE", localize("doc-clean.index.the_document_is_length_bytes", "the document is {length} bytes, over the {CLEAN_MAX_BYTES} this module reads", { length: String(d.length), CLEAN_MAX_BYTES: String(CLEAN_MAX_BYTES) }));
-    let format, done;
-    if (latin1(d, 0, Math.min(d.length, 1024)).includes("%PDF-")) {
-      format = "pdf";
-      done = await cleanPdf(d, CLEAN_MAX_PART_BYTES);
-    } else if (hasZipMagic(d)) {
-      format = await packageFormat(d);
-      done = await cleanPackage(d, FAMILY[format], scan);
-    } else {
-      format = textFormat(d);
-      done = { clean: true };
-    }
+    const { format, done } = await judge(d, scan);
     return done.clean ? { ok: true, clean: true, format } : { ok: true, clean: false, bytes: done.bytes, format, images: done.images };
   } catch (e) {
     if (e instanceof CleanRefusal) return { ok: false, code: e.code, detail: e.detail };
-    return { ok: false, code: "DOCUMENT_UNREADABLE", detail: localize("doc-clean.index.the_document_could_not_be", "the document could not be read whole ({String})", { String: String(String(e?.message ?? e).slice(0, 120)) }) };
+    return { ok: false, code: "DOCUMENT_UNREADABLE", detail: localize("doc-clean.index.the_document_could_not_be", "the document could not be read whole ({String})", { String: String(String(e instanceof Error ? e.message : e).slice(0, 120)) }) };
   }
 }
 
-/** The package flavour of a ZIP (`docx`, `xlsx`, `pptx` for their macro-enabled twins too, `odt`, `ods`, `odp`), or
- *  a refusal. */
+/** The format of `d` (R1) and its writer's answer.
+ *  @param {Uint8Array} d @param {Scan} scan @returns {Promise<{ format: string, done: Cleaned }>} */
+async function judge(d, scan) {
+  if (latin1(d, 0, Math.min(d.length, 1024)).includes("%PDF-")) return { format: "pdf", done: await cleanPdf(d, CLEAN_MAX_PART_BYTES) };
+  if (hasZipMagic(d)) {
+    const { format, family } = await packageFormat(d);
+    return { format, done: await cleanPackage(d, family, scan) };
+  }
+  return { format: textFormat(d), done: { clean: true } };
+}
+
+/** The package flavour of a ZIP (`docx`, `xlsx`, `pptx` for their macro-enabled twins too, `odt`, `ods`, `odp`), with
+ *  its family (`ooxml` or `odf`), or a refusal.
+ *  @param {Uint8Array} d @returns {Promise<{ format: string, family: string }>} */
 async function packageFormat(d) {
   const r = await discriminate(d);
   if (!r.ok && r.why === "OFFICE_ENTRIES_MAX") throw tooManyEntries(d);
   if (!r.ok) throw new CleanRefusal("DOCUMENT_UNREADABLE", localize("doc-clean.index.the_zip_directory_cannot_be", "the ZIP directory cannot be read ({why})", { why: String(r.why) }));
-  if (r.format === "zip") throw new CleanRefusal("ARCHIVE", localize("doc-clean.index.a_zip_archive_that_is_neither", "a ZIP archive that is neither an OOXML nor an ODF package"));
-  if (FAMILY[r.format]) return r.format;
+  const format = r.format;
+  if (format === "zip") throw new CleanRefusal("ARCHIVE", localize("doc-clean.index.a_zip_archive_that_is_neither", "a ZIP archive that is neither an OOXML nor an ODF package"));
+  const family = format === undefined ? undefined : FAMILY.get(format);
+  if (format !== undefined && family) return { format, family };
   if (/unreadable|unparseable/.test(r.why ?? "")) throw new CleanRefusal("DOCUMENT_UNREADABLE", localize("doc-clean.index.the_package_cannot_be_read", "the package cannot be read ({why})", { why: String(r.why) }));
   throw new CleanRefusal("NOT_A_CLEANABLE_FORMAT", localize("doc-clean.index.a_zip_package_of_no", "a ZIP package of no office format this module cleans ({why})", { why: String(r.why) }));
 }
 
 /** `html` or `text` for bytes that decode as text (UTF-8, UTF-16 by its byte-order mark, or single-byte text with
  *  no control byte but tab, line feed, form feed and carriage return), or a refusal. HTML is any text with an
- *  HTML tag, judged whatever the text's encoding, and is refused when it embeds an image. */
+ *  HTML tag, judged whatever the text's encoding, and is refused when it embeds an image.
+ *  @param {Uint8Array} d @returns {string} */
 function textFormat(d) {
   if (d.length >= 8 && d[0] === 0xd0 && d[1] === 0xcf && d[2] === 0x11 && d[3] === 0xe0 && d[4] === 0xa1 && d[5] === 0xb1 && d[6] === 0x1a && d[7] === 0xe1) {
     if (latin1(d).includes("E\0n\0c\0r\0y\0p\0t\0e\0d\0P\0a\0c\0k\0a\0g\0e\0"))
@@ -101,7 +122,9 @@ function textFormat(d) {
   return "html";
 }
 
+/** @param {Uint8Array} d @returns {string | null} */
 function decodeText(d) {
+  /** @param {string} enc @param {number} from */
   const tryDecode = (enc, from) => { try { return new TextDecoder(enc, { fatal: true }).decode(d.subarray(from)); } catch { return null; } };
   if (d[0] === 0xff && d[1] === 0xfe) return tryDecode("utf-16le", 2);
   if (d[0] === 0xfe && d[1] === 0xff) return tryDecode("utf-16be", 2);
