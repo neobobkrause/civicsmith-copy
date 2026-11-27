@@ -138,7 +138,7 @@ import { segmentsOver, classifiedWhy } from "./classify-view.mjs";
 /* What a thrown error says: an Error's message, else the thrown value as text. */
 const said = /** @param {unknown} e @returns {string} */ (e) => String((e instanceof Error && e.message) || e);
 /* An itemised part's text, or "" where it carries none. */
-const itemText = /** @param {{ readonly text?: string } | null | undefined} p @returns {string} */ (p) => {
+const itemText = /** @param {{ readonly text?: string | null } | null | undefined} p @returns {string} */ (p) => {
   const t = p ? p.text : undefined;
   return typeof t === "string" ? t : "";
 };
@@ -256,7 +256,7 @@ export function glyphs(text) {
 /* The size refusals among a producer's markers (G141; PLANE #56 J53): a marker saying `why: "over_size_bound"` (ooxml's
    `sizeGuard`, as the marker itself or inside its `guard`) states the file's size and the limit, and it is a size refusal,
    never an undecodable region. */
-/** @param {ReadonlyArray<UndeterminedMarker | null>} markers @returns {SizeRefusal | null} */
+/** @param {ReadonlyArray<UndeterminedMarker>} markers @returns {SizeRefusal | null} */
 function sizeRefusal(markers) {
   for (const m of markers) {
     if (!m || typeof m !== "object" || m.why !== "over_size_bound") continue;

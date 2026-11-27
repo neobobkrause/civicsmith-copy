@@ -232,7 +232,7 @@ function bounded(ctx, typeCount) {
 }
 
 /* The view of a text over the bound, the sheets' heads among it where `sheets` is the supplied sheets. */
-const viewOf = /** @param {string} text @param {Array<SuppliedSheet | null> | undefined} sheets @returns {ClassificationView} */
+const viewOf = /** @param {string} text @param {Array<SuppliedSheet> | undefined} sheets @returns {ClassificationView} */
   (text, sheets) => classificationView(text, Array.isArray(sheets) ? sheets : null);
 
 /* The one walk behind `doctypeFor` and `doctypeForYielding`: the engine's `recognise` (site-profiles, whose exported

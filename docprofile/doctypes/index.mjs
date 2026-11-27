@@ -46,20 +46,20 @@
  */
 /**
  * One page of interface I2's text shape (R23, R37, R38): its 0-based index and its text.
- * @typedef {{ readonly page?: number, readonly text?: string }} SuppliedPage
+ * @typedef {{ readonly page?: number | null, readonly text?: string | null, readonly undetermined?: Array<UndeterminedMarker> }} SuppliedPage
  */
 /**
  * One paragraph of interface I2's pageless text shape (R23): its 0-based index, the producer's own reference and its text.
- * @typedef {{ readonly para?: number, readonly ref?: string, readonly text?: string }} SuppliedParagraph
+ * @typedef {{ readonly para?: number | null, readonly ref?: string | null, readonly text?: string | null }} SuppliedParagraph
  */
 /**
  * One sheet of a sheet container's text (R39): its text.
- * @typedef {{ readonly text?: string }} SuppliedSheet
+ * @typedef {{ readonly name?: string, readonly text?: string | null }} SuppliedSheet
  */
 /**
  * A marker naming what a producer could not decode (R18, R24): how many regions or code points, and why. A size refusal
  * names `over_size_bound` and the size and the limit, on itself or in its `guard`.
- * @typedef {{ readonly count?: number, readonly reason?: string, readonly why?: string, readonly size?: number, readonly bound?: number, readonly guard?: SizeGuard }} UndeterminedMarker
+ * @typedef {{ readonly count?: number, readonly reason?: string, readonly why?: string, readonly size?: number, readonly bound?: number, readonly guard?: SizeGuard, readonly page?: number, readonly rect?: number[] | null }} UndeterminedMarker
  */
 /**
  * A size guard's answer inside a marker (R18): the size and the limit.
@@ -68,11 +68,23 @@
 /**
  * Interface I2's text shape as a producer emits it (R21 to R24, R37): the document's text, its pages or paragraphs, what
  * could not be decoded, the counts, and a sheet container's sheets.
- * @typedef {{ readonly document?: string, readonly pages?: Array<SuppliedPage | null>, readonly paragraphs?: Array<SuppliedParagraph | null>, readonly undetermined?: Array<UndeterminedMarker | null>, readonly counts?: SuppliedCounts, readonly sheets?: Array<SuppliedSheet | null> }} SuppliedText
+ * @typedef {{ readonly document?: string | null, readonly pages?: Array<SuppliedPage>, readonly paragraphs?: Array<SuppliedParagraph>, readonly undetermined?: Array<UndeterminedMarker>, readonly counts?: SuppliedCounts, readonly sheets?: Array<SuppliedSheet>, readonly images?: Array<SuppliedImage>, readonly ocr?: SuppliedOcr | null, readonly cells?: Array<SuppliedCell>, readonly container?: string }} SuppliedText
+ */
+/**
+ * An image a producer found on a page (R37), handed to the reader unchanged.
+ * @typedef {{ readonly page?: number, readonly width?: number, readonly height?: number }} SuppliedImage
+ */
+/**
+ * An OCR transcription a caller supplied (R37), handed to the reader unchanged: its pages and the engine that read them.
+ * @typedef {{ readonly pages?: Array<SuppliedPage>, readonly engine?: string }} SuppliedOcr
+ */
+/**
+ * A sheet's typed cell (R37; office-readers R30), handed to the reader unchanged.
+ * @typedef {{ readonly sheet?: string, readonly ref?: string, readonly type?: string, readonly value?: string | null, readonly formula?: string | null, readonly cached?: string | null }} SuppliedCell
  */
 /**
  * A producer's stated counts (R24).
- * @typedef {{ readonly chars?: number, readonly undetermined?: number }} SuppliedCounts
+ * @typedef {{ readonly chars?: number, readonly undetermined?: number, readonly cells?: number }} SuppliedCounts
  */
 /**
  * Which part of the text a content type's `detect` is handed (R40): characters `from` to `to` of a text of `of` characters.
@@ -92,7 +104,7 @@
  * What a content type is handed (R19, R20, R37, R38, R40): what the caller knows about the document, with the text, and what
  * this module adds for the type (the locator, the other types the text satisfies, the supplied structure, the window and the
  * work budget).
- * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage | null>, readonly sheets?: Array<SuppliedSheet | null>, readonly locate?: (offset: number) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
+ * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage>, readonly sheets?: Array<SuppliedSheet>, readonly locate?: (offset: number) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
  */
 /**
  * What a content type's `detect` answers: whether the document is that kind, how sure, and on what signals.
@@ -153,7 +165,7 @@
  * @typedef {Object} TemporalConnection
  * @property {"temporal"} connection
  * @property {string} from
- * @property {string} to
+ * @property {string | null} to
  * @property {string} relation
  * @property {string | null} at
  * @property {string | null} expected_by
@@ -724,7 +736,7 @@ export function referential(from, to, relation, why) {
 }
 /** `expected_by` turns an absence into a fact with a date on it.
  *  @param {string} from
- *  @param {string} to
+ *  @param {string | null} to
  *  @param {string} relation
  *  @param {TemporalWhen} [when]
  *  @returns {TemporalConnection} */

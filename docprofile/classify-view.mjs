@@ -46,7 +46,7 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  */
 /**
  * A sheet of a sheet container, read for its text (R39).
- * @typedef {{ readonly text?: string }} ViewSheet
+ * @typedef {{ readonly text?: string | null }} ViewSheet
  */
 
 /** The segment map of an itemised array over a `document` string it is compared with,
@@ -131,7 +131,7 @@ const sheetText = /** @param {ViewSheet | null | undefined} x @returns {string} 
  *  by a newline are `text` (as `segmentsOver` checks), else `heads_used` is false. When the pieces would pass `view`, the
  *  sheet heads are dropped first (`heads_used` false), then the earliest windows, never the last, then the head is cut back.
  *  @param {string} text
- *  @param {Array<ViewSheet | null> | null} [sheets]
+ *  @param {Array<ViewSheet> | null} [sheets]
  *  @param {ClassifyLimits} [limits]
  *  @returns {ClassificationView} */
 export function classificationView(text, sheets = null, limits = LIMITS) {

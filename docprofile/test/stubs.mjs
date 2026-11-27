@@ -22,9 +22,18 @@ import {
   practiceValue, alsoSatisfies,
 } from "../registry.mjs";
 
-const ROW = /<tr><td><a href="MeetingDetail\.aspx\?ID=(\d+)[^"]*">([^<]*?)(?: - ([A-Z]+))?<\/a><\/td><td>([^<]*)<\/td><td>(?:<a href="View\.ashx\?M=A&amp;ID=(\d+)">)?[^<]*(?:<\/a>)?<\/td><td>(?:<a href="View\.ashx\?M=M&amp;ID=(\d+)">)?/g;
-const isoOf = (mdy) => { const [m, d, y] = mdy.split("/").map(Number); return new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10); };
+/** @import { ContentType, Entity, Connection, Registration } from "../registry.mjs" */
+/**
+ * A stub's reading: the entities it read and its facts, and why it read no reference where it read none.
+ * @typedef {{ entities: Entity[], facts: { [fact: string]: number | string[] }, references_why?: string }} StubReading
+ */
+/* The seam hands a type back the reading its own `parse` made, as a reading of no stated kind (R36): the stub's own. */
+const readingOf = /** @param {object | null | undefined} r @returns {StubReading} */ (r) => /** @type {StubReading} */ (r);
 
+const ROW = /<tr><td><a href="MeetingDetail\.aspx\?ID=(\d+)[^"]*">([^<]*?)(?: - ([A-Z]+))?<\/a><\/td><td>([^<]*)<\/td><td>(?:<a href="View\.ashx\?M=A&amp;ID=(\d+)">)?[^<]*(?:<\/a>)?<\/td><td>(?:<a href="View\.ashx\?M=M&amp;ID=(\d+)">)?/g;
+const isoOf = /** @param {string} mdy */ (mdy) => { const [m = NaN, d = NaN, y = NaN] = mdy.split("/").map(Number); return new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10); };
+
+/** @type {ContentType} */
 export const stubMeetings = { // fixtures-own: harness a test reader registered through this module's own registerDoctype seam; no module provides it
   key: "stub_meetings", label: "stub: a list of meetings", version: 1, contract: CONTRACT.MEMBERSHIP,
   detect(ctx) {
@@ -35,17 +44,20 @@ export const stubMeetings = { // fixtures-own: harness a test reader registered 
       ? { match: true, confidence: CONFIDENCE.CERTAIN, signals: ["the meeting list's range selector"] } : { match: false };
   },
   parse(ctx) {
+    /** @type {Entity[]} */
     const entities = [];
     for (const m of String(ctx.text || "").matchAll(ROW))
-      entities.push(entity(`meeting:${m[1]}`, "meeting", m[2], {
-        body: m[2], date: isoOf(m[4]), status: m[3] || "scheduled", agenda: m[5] || null, minutes: m[6] || null }));
+      entities.push(entity(`meeting:${m[1]}`, "meeting", String(m[2]), {
+        body: String(m[2]), date: isoOf(String(m[4])), status: m[3] || "scheduled", agenda: m[5] || null, minutes: m[6] || null }));
     return { entities, facts: { meetings: entities.length } };
   },
-  assess(a, b) {
+  assess(ra, rb) {
+    const a = readingOf(ra), b = readingOf(rb);
     if (!a.entities.length || !b.entities.length)
       return { meaningful: null, events: [], confirmed: null,
                why: "one side's meetings could not be read: a reading that found nothing is a failed reader" };
     const d = diffEntities(a.entities, b.entities);
+    /** @type {object[]} */
     const events = [];
     for (const g of d.gone) events.push(event("delisted", { entity: g.key }));
     for (const n of d.appeared) events.push(event("scheduled", { entity: n.key }));
@@ -60,7 +72,9 @@ export const stubMeetings = { // fixtures-own: harness a test reader registered 
              confirmed: intact > 0 ? { entries: d.before_count, intact, why: `${intact} meeting(s) say what they said` } : null,
              why: events.length ? `${events.length} change(s) among the meetings` : "the same meetings" };
   },
-  connections(a, b, ctx) {
+  connections(ra, rb, ctx) {
+    const b = readingOf(rb);
+    /** @type {Connection[]} */
     const out = [];
     const due = practiceValue(ctx, "minutes_due_days");
     for (const e of b.entities) {
@@ -68,13 +82,13 @@ export const stubMeetings = { // fixtures-own: harness a test reader registered 
       if (e.facts.agenda) out.push(referential(`agenda:${e.facts.agenda}`, e.key, "is_the_agenda_for", "the row links it"));
       if (e.facts.minutes) {
         out.push(referential(`minutes:${e.facts.minutes}`, e.key, "is_the_minutes_of", "the row links it"));
-        out.push(temporal(e.key, `minutes:${e.facts.minutes}`, "minutes_published_after", { at: e.facts.date, why: "linked" }));
-      } else if (ctx.now && e.facts.date < String(ctx.now).slice(0, 10)) {
-        const by = due ? new Date(Date.parse(e.facts.date) + due.value * 864e5).toISOString().slice(0, 10) : null;
-        out.push(temporal(e.key, null, "minutes_not_yet_published", { at: e.facts.date, expected_by: by,
+        out.push(temporal(e.key, `minutes:${e.facts.minutes}`, "minutes_published_after", { at: String(e.facts.date), why: "linked" }));
+      } else if (ctx.now && String(e.facts.date) < String(ctx.now).slice(0, 10)) {
+        const by = due ? new Date(Date.parse(String(e.facts.date)) + due.value * 864e5).toISOString().slice(0, 10) : null;
+        out.push(temporal(e.key, null, "minutes_not_yet_published", { at: String(e.facts.date), expected_by: by,
           why: due ? `the view's practice gives ${due.value} days (${due.basis})` : "when minutes are due is not known in this view" }));
       } else if (!e.facts.agenda) {
-        out.push(temporal(e.key, null, "agenda_not_yet_published", { at: e.facts.date, why: "no agenda is linked yet" }));
+        out.push(temporal(e.key, null, "agenda_not_yet_published", { at: String(e.facts.date), why: "no agenda is linked yet" }));
       }
     }
     return out;
@@ -83,6 +97,7 @@ export const stubMeetings = { // fixtures-own: harness a test reader registered 
 
 /* A masthead names the document on a line of its own, once per page (FURNITURE_RECURS). */
 const ITEMS_WORD = /^ITEMS\b/;
+/** @type {ContentType} */
 export const stubItems = { // fixtures-own: harness a test reader registered through this module's own registerDoctype seam; no module provides it
   key: "stub_items", label: "stub: a list of filed items", version: 1, contract: CONTRACT.MEMBERSHIP,
   detect(ctx) {
@@ -95,12 +110,17 @@ export const stubItems = { // fixtures-own: harness a test reader registered thr
   },
   parse(ctx) {
     const text = String(ctx.text || "");
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
-    const shapes = vocabulary(ctx, "file_numbers").map((e) => vocabRegex(e.pattern, IN_PROSE, "g")).filter(Boolean);
+    const given = ctx.locate;
+    const locate = typeof given === "function" ? given : () => null;
+    /** @type {RegExp[]} */
+    const shapes = [];
+    for (const e of vocabulary(ctx, "file_numbers")) { const re = vocabRegex("pattern" in e ? e.pattern : null, IN_PROSE, "g"); if (re) shapes.push(re); }
     if (!shapes.length)
       return { entities: [], facts: { also: alsoSatisfies(ctx, "stub_items") },
                references_why: "no active jurisdiction profile describes a file number, so none was read" };
+    /** @type {Map<string, Entity>} */
     const byKey = new Map();
+    /** @type {RegExpExecArray[]} */
     const hits = [];
     for (const re of shapes) { re.lastIndex = 0; for (const m of text.matchAll(re)) hits.push(m); }
     hits.sort((x, y) => x.index - y.index);
@@ -112,7 +132,8 @@ export const stubItems = { // fixtures-own: harness a test reader registered thr
     }
     return { entities: [...byKey.values()], facts: { also: alsoSatisfies(ctx, "stub_items") } };
   },
-  assess(a, b) {
+  assess(ra, rb) {
+    const a = readingOf(ra), b = readingOf(rb);
     if (!a.entities.length || !b.entities.length)
       return { meaningful: null, events: [], confirmed: null, why: "one side's items could not be read" };
     const d = diffEntities(a.entities, b.entities);
@@ -123,6 +144,7 @@ export const stubItems = { // fixtures-own: harness a test reader registered thr
   },
 };
 
+/** @type {ContentType} */
 export const stubFallback = { // fixtures-own: harness a test reader registered through this module's own registerDoctype seam; no module provides it
   key: "stub_fallback", label: "stub: a document of no recognised type", version: 1, fallback: true,
   contract: CONTRACT.SUBSTANCE,
@@ -134,7 +156,9 @@ export const stubFallback = { // fixtures-own: harness a test reader registered 
   },
 };
 
-/** Register the three stubs, in the order a composer would: the readers, then the fallback. */
+/** Register the three stubs, in the order a composer would: the readers, then the fallback.
+ *  @param {(type: ContentType) => Registration} register
+ *  @returns {Registration[]} */
 export function registerStubs(register) {
   return [stubMeetings, stubItems, stubFallback].map((t) => register(t));
 }
