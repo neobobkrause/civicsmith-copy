@@ -46,17 +46,54 @@ import { MqDecoder, mqContexts } from "./mq.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { READ_BOUNDS, boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
 
+/** @typedef {"UNSUPPORTED" | "UNSUPPORTED_SAMPLES" | "IMAGE_TOO_LARGE" | "TRUNCATED" | "CORRUPT"} JpxCode a refusal's code */
+/**
+ * What a refusal carries beside its code; each refusal sets the members it names.
+ * @typedef {Object} JpxDetail
+ * @property {string} [feature] UNSUPPORTED: the feature, a key of `JPX_REFUSES`
+ * @property {string} [note] what was found
+ * @property {number} [rsiz] the SIZ's Rsiz, for an extended capability
+ * @property {string} [marker] the marker refused ("PPM", "PPT", "CAP")
+ * @property {number} [components] the image's component count
+ * @property {number} [dx] a sub-sampled component's horizontal factor
+ * @property {number} [dy] a sub-sampled component's vertical factor
+ * @property {number} [precision] the samples' bits
+ * @property {string} [bound_name] IMAGE_TOO_LARGE: the bound passed
+ * @property {number} [size] IMAGE_TOO_LARGE: the declared size
+ * @property {number} [bound] IMAGE_TOO_LARGE: the bound's active figure
+ * @property {string} [key] IMAGE_TOO_LARGE: the bound's sentence key
+ * @property {number} [width] the image's width
+ * @property {number} [height] the image's height
+ * @property {number} [working_set_bytes] the working set the headers declare
+ * @property {number} [bound_bytes] the memory bound
+ */
+
+/** A refusal's message: its code, and its feature or else its note.
+ *  @param {JpxCode} code @param {JpxDetail} detail @returns {string} */
+function refusalMessage(code, detail) {
+  const { feature, note } = detail;
+  return `${code}${feature ? `: ${feature}` : note ? `: ${note}` : ""}`;
+}
+
 export class JpxRefusal extends Error {
+  /** @param {JpxCode} code @param {JpxDetail} [detail] */
   constructor(code, detail = {}) {
-    super(`${code}${detail.feature ? `: ${detail.feature}` : detail.note ? `: ${detail.note}` : ""}`);
-    this.code = code;
-    this.detail = detail;
+    super(refusalMessage(code, detail));
+    /** @type {JpxCode} */ this.code = code;
+    /** @type {JpxDetail} */ this.detail = detail;
   }
 }
+/** @param {string} feature @param {JpxDetail} [extra] @returns {JpxRefusal} */
 const unsupported = (feature, extra = {}) => new JpxRefusal("UNSUPPORTED", { feature, ...extra });
+/** @param {string} note @param {JpxDetail} [extra] @returns {JpxRefusal} */
 const samples = (note, extra = {}) => new JpxRefusal("UNSUPPORTED_SAMPLES", { note, ...extra });
+/** @param {string} note @param {JpxDetail} [extra] @returns {JpxRefusal} */
 const corrupt = (note, extra = {}) => new JpxRefusal("CORRUPT", { note, ...extra });
+/** @param {string} note @param {JpxDetail} [extra] @returns {JpxRefusal} */
 const truncated = (note, extra = {}) => new JpxRefusal("TRUNCATED", { note, ...extra });
+/** A state the decoder's own structure rules out (an index past an array it sized itself): the TypeError reading it
+ *  would have raised. @param {string} what @returns {TypeError} */
+const impossible = (what) => new TypeError(`jpxdecode: ${what}`);
 
 /** The old `feature` of the memory refusal, an identifier read by code. The refusal is `IMAGE_TOO_LARGE` now (R4, R12) and no
  *  longer a key of `JPX_REFUSES`; the name stays exported so `pdf-pixels`' import of it still loads until it maps the code. */
@@ -100,17 +137,101 @@ const EDGE_MAX = boundOf("image", "edge");
 /* the two rows BOB ruled for this module (K4858): `image.working_set` and `image.retained_objects`. Until runtime-limits has added them
  * the same figures are read from the rows that hold them today, `ocr.frame_bytes` and `office.retained_objects`; the guard needs no
  * edit when the rows land. */
-const WORKING_ROW = Object.hasOwn(READ_BOUNDS.image, "working_set") ? ["image", "working_set"] : ["ocr", "frame_bytes"];
-const OBJECTS_ROW = Object.hasOwn(READ_BOUNDS.image, "retained_objects") ? ["image", "retained_objects"] : ["office", "retained_objects"];
+const IMAGE_ROWS = READ_BOUNDS.image;               // present: `boundOf("image", ...)` above has read it
+/** @type {[string, string]} */
+const WORKING_ROW = IMAGE_ROWS && Object.hasOwn(IMAGE_ROWS, "working_set") ? ["image", "working_set"] : ["ocr", "frame_bytes"];
+/** @type {[string, string]} */
+const OBJECTS_ROW = IMAGE_ROWS && Object.hasOwn(IMAGE_ROWS, "retained_objects") ? ["image", "retained_objects"] : ["office", "retained_objects"];
 const WORKING_SET_MAX = boundOf(...WORKING_ROW);
 const OBJECTS_MAX = boundOf(...OBJECTS_ROW);
-const tooLarge = (kind, name, size, note, extra) => new JpxRefusal("IMAGE_TOO_LARGE", { note, bound_name: name, ...statement(kind, name, size), ...extra });
+/** @param {string} kind @param {string} name @param {number} size @param {string} note @param {JpxDetail} extra @returns {JpxRefusal} */
+const tooLarge = (kind, name, size, note, extra) => {
+  const st = statement(kind, name, size);             // its members, as `BoundStatement` states them
+  return new JpxRefusal("IMAGE_TOO_LARGE", { note, bound_name: name, size: st.size, bound: st.bound, key: st.key, ...extra });
+};
+
+/* ── the codestream's model ───────────────────────────────────────────────── */
+
+/** @typedef {{ type: string, start: number, end: number }} Box a JP2 box: its type and its contents' range */
+/** @typedef {{ method: string, enumCs: number }} EnumeratedColour an enumerated colour space (`method` "enumerated") */
+/** @typedef {EnumeratedColour | { method: string }} Colour the JP2 header's colour specification */
+/** @typedef {{ prec: number, sgnd: number, dx: number, dy: number }} SizComp one component, as SIZ declares it */
+/**
+ * @typedef {Object} Siz the SIZ marker segment
+ * @property {number} rsiz @property {number} X @property {number} Y @property {number} XO @property {number} YO
+ * @property {number} XT @property {number} YT @property {number} XTO @property {number} YTO
+ * @property {SizComp[]} comps
+ */
+/**
+ * @typedef {Object} Spcod SPcod/SPcoc: a component's coding parameters
+ * @property {number} nl @property {number} xcb @property {number} ycb @property {number} cblksty @property {number} qmfbid
+ * @property {[number, number][]} prc each resolution's precinct size exponents
+ */
+/** @typedef {{ expn: number, mant: number }} QStep a quantisation step */
+/** @typedef {{ style: number, guard: number, steps: QStep[] }} Qcd QCD/QCC */
+/** @typedef {{ scod: number, prog: number, layers: number, mct: number, sp: Spcod }} Cod COD */
+/** @typedef {{ rs: number, cs: number, lye: number, re: number, ce: number, prog: number }} Poc one progression */
+/**
+ * @typedef {Object} Header the main header's coding segments, or a tile's
+ * @property {Cod | null} cod @property {Spcod[]} coc @property {Qcd | null} qcd @property {Qcd[]} qcc
+ * @property {number[]} rgn @property {Poc[] | null} poc
+ */
+/**
+ * @typedef {Object} Tile a tile's header segments and its tile-parts' data
+ * @property {number} index
+ * @property {Cod | null} cod @property {Spcod[]} coc @property {Qcd | null} qcd @property {Qcd[]} qcc
+ * @property {number[]} rgn @property {Poc[] | null} poc
+ * @property {Uint8Array[]} data
+ */
+/**
+ * @typedef {Object} Codestream
+ * @property {Siz} siz @property {Header} main @property {Map<number, Tile>} tiles
+ * @property {Cod} cod the main header's COD (`main.cod`, which the codestream must have)
+ * @property {Qcd} qcd the main header's QCD (`main.qcd`, likewise)
+ */
+/** @typedef {{ x0: number, y0: number, x1: number, y1: number }} Rect */
+/** @typedef {{ max: number, passes: number, claimed: number, chunks: Uint8Array[] }} CodewordSeg a codeword segment as tier 2 gathers it */
+/**
+ * @typedef {Object} Cblk a code-block
+ * @property {number} x0 @property {number} y0 @property {number} x1 @property {number} y1
+ * @property {boolean} included @property {number} numbps @property {number} lblock
+ * @property {CodewordSeg[] | null} segs null once tier 1 has read them
+ * @property {number} passes
+ */
+/**
+ * @typedef {Object} Precinct
+ * @property {Cblk[]} cblks @property {number} cw @property {number} ch
+ * @property {TagTree} [incl] @property {TagTree} [imsb] the tag trees, for a precinct with code-blocks
+ */
+/** @typedef {0 | 1 | 2 | 3} BandNo LL, HL, LH, HH */
+/**
+ * @typedef {Object} Band
+ * @property {BandNo} bandno @property {number} x0 @property {number} y0 @property {number} x1 @property {number} y1
+ * @property {number} numbps @property {number} stepsize @property {number} bpx @property {number} bpy
+ * @property {number} xcb @property {number} ycb
+ * @property {Precinct[] | null} prec null until `addPrecincts`
+ */
+/**
+ * @typedef {Object} Res a resolution
+ * @property {number} r @property {number} x0 @property {number} y0 @property {number} x1 @property {number} y1
+ * @property {number} ppx @property {number} ppy @property {number} pgx @property {number} pgy
+ * @property {number} npw @property {number} nph @property {Band[]} bands
+ */
+/**
+ * @typedef {Object} TileComp a tile's component
+ * @property {number} x0 @property {number} y0 @property {number} x1 @property {number} y1
+ * @property {number} nl @property {Spcod} sp @property {Qcd} qc @property {number} roi @property {Res[]} res
+ */
+/** @typedef {{ tile: Rect, cod: Cod, tc: TileComp[] }} Layout */
+/** @typedef {{ tmp: Int32Array, flags: Uint16Array }} T1Scratch tier 1's scratch, one per decode */
 
 /** What decoding this codestream must hold at once, from its headers alone:
  *  the 8-bit output, and the buffers the tiles share (`Pool`), each slot as
- *  large as the largest tile asks of it. */
+ *  large as the largest tile asks of it.
+ *  @param {Codestream} cs @param {number} nTiles @returns {number} */
 function workingSet(cs, nTiles) {
   const { siz } = cs;
+  /** @type {number[]} */
   const slots = [];
   for (const [no, t] of cs.tiles) {
     if (no >= nTiles) continue;
@@ -122,7 +243,8 @@ function workingSet(cs, nTiles) {
 /** The objects tier 2 would build for the tiles present, counted from the headers alone: per band, one per precinct and one
  *  per code-block; per tile, one, and one entry of the packet order for every layer of every precinct of every component
  *  and resolution (`packetOrder` lists them all before a packet byte is read). Stops at the bound, so a hostile count is
- *  not summed past it. */
+ *  not summed past it.
+ *  @param {Codestream} cs @param {number} nTiles @returns {number} */
 function retainedObjects(cs, nTiles) {
   let n = 0;
   for (const [no, t] of cs.tiles) {
@@ -148,16 +270,18 @@ const f32 = Math.fround;
 
 /* ── the container ────────────────────────────────────────────────────────── */
 
+/** @param {Uint8Array} d @param {number} p @param {number} end @returns {Box[]} @throws {JpxRefusal} */
 function boxes(d, p, end) {
+  /** @type {Box[]} */
   const out = [];
   while (p + 8 <= end) {
-    let len = ((d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0;
-    const type = String.fromCharCode(d[p + 4], d[p + 5], d[p + 6], d[p + 7]);
+    let len = (((d[p] ?? 0) << 24) | ((d[p + 1] ?? 0) << 16) | ((d[p + 2] ?? 0) << 8) | (d[p + 3] ?? 0)) >>> 0;
+    const type = String.fromCharCode(d[p + 4] ?? 0, d[p + 5] ?? 0, d[p + 6] ?? 0, d[p + 7] ?? 0);
     let hdr = 8;
     if (len === 1) {
       if (p + 16 > end) throw truncated("a JP2 box's extended length");
-      len = (((d[p + 8] << 24) | (d[p + 9] << 16) | (d[p + 10] << 8) | d[p + 11]) >>> 0) * 2 ** 32
-        + (((d[p + 12] << 24) | (d[p + 13] << 16) | (d[p + 14] << 8) | d[p + 15]) >>> 0);
+      len = ((((d[p + 8] ?? 0) << 24) | ((d[p + 9] ?? 0) << 16) | ((d[p + 10] ?? 0) << 8) | (d[p + 11] ?? 0)) >>> 0) * 2 ** 32
+        + ((((d[p + 12] ?? 0) << 24) | ((d[p + 13] ?? 0) << 16) | ((d[p + 14] ?? 0) << 8) | (d[p + 15] ?? 0)) >>> 0);
       hdr = 16;
     } else if (len === 0) len = end - p;
     if (len < hdr || p + len > end) throw truncated(localize("image-codecs.jpxdecode.the_jp2_box_type_runs", "the JP2 box '{type}' runs past the data", { type: String(type) }));
@@ -167,12 +291,17 @@ function boxes(d, p, end) {
   return out;
 }
 
-/** The codestream's range, and what the JP2 header says about colour. */
+/** The codestream's range, and what the JP2 header says about colour.
+ *  @param {Uint8Array} d @returns {{ cs: [number, number], colour: Colour | null, jp2: boolean }} @throws {JpxRefusal} */
 function container(d) {
   if (d.length >= 2 && d[0] === 0xff && d[1] === 0x4f) return { cs: [0, d.length], colour: null, jp2: false };
   if (d.length < 12 || !(d[4] === 0x6a && d[5] === 0x50 && d[6] === 0x20 && d[7] === 0x20))
     throw corrupt("neither a JPEG 2000 codestream (SOC) nor a JP2 file (signature box)");
-  let colour = null, cs = null, palette = false;
+  /** @type {Colour | null} */
+  let colour = null;
+  /** @type {[number, number] | null} */
+  let cs = null;
+  let palette = false;
   for (const b of boxes(d, 0, d.length)) {
     if (b.type === "jp2c") { cs = [b.start, b.end]; break; }
     if (b.type === "jp2h") {
@@ -181,37 +310,51 @@ function container(d) {
         if (h.type === "colr" && !colour) {
           const meth = d[h.start];
           colour = meth === 1
-            ? { method: "enumerated", enumCs: ((d[h.start + 3] << 24) | (d[h.start + 4] << 16) | (d[h.start + 5] << 8) | d[h.start + 6]) >>> 0 }
+            ? { method: "enumerated", enumCs: (((d[h.start + 3] ?? 0) << 24) | ((d[h.start + 4] ?? 0) << 16) | ((d[h.start + 5] ?? 0) << 8) | (d[h.start + 6] ?? 0)) >>> 0 }
             : { method: meth === 2 ? "icc" : `method ${meth}` };
         }
       }
     }
   }
-  if (!cs) throw truncated(localize("image-codecs.jpxdecode.the_jp2_file_holds_no", "the JP2 file holds no codestream (jp2c box)"));
+  const range = cs, col = colour;
+  if (!range) throw truncated(localize("image-codecs.jpxdecode.the_jp2_file_holds_no", "the JP2 file holds no codestream (jp2c box)"));
   if (palette) throw unsupported("a JP2 palette");
-  if (colour && colour.method === "enumerated" && colour.enumCs === 18) throw unsupported("sYCC colour");
-  return { cs, colour, jp2: true };
+  if (col && col.method === "enumerated" && "enumCs" in col && col.enumCs === 18) throw unsupported("sYCC colour");
+  return { cs: range, colour: col, jp2: true };
 }
 
 /* ── the codestream's marker segments ─────────────────────────────────────── */
 
+/** The marker segments' reader: big-endian fields of `d[p, end)`. */
 class R {
-  constructor(d, p, end) { this.d = d; this.p = p; this.end = end; }
+  /** @param {Uint8Array} d @param {number} p @param {number} end */
+  constructor(d, p, end) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.p = p;
+    /** @type {number} */ this.end = end;
+  }
+  /** @param {number} n @param {string} what @returns {void} @throws {JpxRefusal} */
   need(n, what) { if (this.p + n > this.end) throw truncated(localize("image-codecs.jpxdecode.what_runs_past_the_codestream", "{what} runs past the codestream", { what: String(what) })); }
-  u8(w = "a field") { this.need(1, w); return this.d[this.p++]; }
-  u16(w = "a field") { this.need(2, w); const v = (this.d[this.p] << 8) | this.d[this.p + 1]; this.p += 2; return v; }
-  u32(w = "a field") { this.need(4, w); const d = this.d, p = this.p; this.p += 4; return ((d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0; }
+  /** @param {string} [w] @returns {number} @throws {JpxRefusal} */
+  u8(w = "a field") { this.need(1, w); return this.d[this.p++] ?? NaN; }
+  /** @param {string} [w] @returns {number} @throws {JpxRefusal} */
+  u16(w = "a field") { this.need(2, w); const v = ((this.d[this.p] ?? 0) << 8) | (this.d[this.p + 1] ?? 0); this.p += 2; return v; }
+  /** @param {string} [w] @returns {number} @throws {JpxRefusal} */
+  u32(w = "a field") { this.need(4, w); const d = this.d, p = this.p; this.p += 4; return (((d[p] ?? 0) << 24) | ((d[p + 1] ?? 0) << 16) | ((d[p + 2] ?? 0) << 8) | (d[p + 3] ?? 0)) >>> 0; }
 }
 
+/** @param {R} r @param {number} len @returns {Siz} @throws {JpxRefusal} */
 function readSiz(r, len) {
   const end = r.p + len - 2;
   const rsiz = r.u16("Rsiz");
-  const s = { rsiz, X: r.u32(), Y: r.u32(), XO: r.u32(), YO: r.u32(), XT: r.u32(), YT: r.u32(), XTO: r.u32(), YTO: r.u32() };
+  /** @type {SizComp[]} */
+  const comps = [];
+  /** @type {Siz} */
+  const s = { rsiz, X: r.u32(), Y: r.u32(), XO: r.u32(), YO: r.u32(), XT: r.u32(), YT: r.u32(), XTO: r.u32(), YTO: r.u32(), comps };
   const n = r.u16("Csiz");
-  s.comps = [];
   for (let i = 0; i < n; i++) {
     const ssiz = r.u8("Ssiz");
-    s.comps.push({ prec: (ssiz & 0x7f) + 1, sgnd: ssiz >> 7, dx: r.u8("XRsiz"), dy: r.u8("YRsiz") });
+    comps.push({ prec: (ssiz & 0x7f) + 1, sgnd: ssiz >> 7, dx: r.u8("XRsiz"), dy: r.u8("YRsiz") });
   }
   r.p = end;
   if (!s.XT || !s.YT || s.X <= s.XO || s.Y <= s.YO || s.XTO > s.XO || s.YTO > s.YO || s.XTO + s.XT <= s.XO || s.YTO + s.YT <= s.YO)
@@ -221,25 +364,29 @@ function readSiz(r, len) {
   return s;
 }
 
-/** SPcod/SPcoc: the component's coding parameters. */
+/** SPcod/SPcoc: the component's coding parameters.
+ *  @param {R} r @param {number} precincts @returns {Spcod} @throws {JpxRefusal} */
 function readSpcod(r, precincts) {
-  const c = { nl: r.u8("decomposition levels"), xcb: (r.u8("code-block width") & 0xf) + 2, ycb: (r.u8("code-block height") & 0xf) + 2,
-              cblksty: r.u8("code-block style"), qmfbid: r.u8("the wavelet") };
-  if (c.nl > 32) throw corrupt(`${c.nl} decomposition levels`);
-  if (c.xcb + c.ycb > 12 || c.xcb > 10 || c.ycb > 10) throw corrupt(localize("image-codecs.jpxdecode.a_code_block_larger_than", "a code-block larger than 4096 samples"));
-  if (c.cblksty & 0x40) throw unsupported("high-throughput coding");
-  c.prc = [];
-  for (let i = 0; i <= c.nl; i++) {
-    if (precincts) { const b = r.u8("a precinct size"); c.prc.push([b & 0xf, b >> 4]); }
-    else c.prc.push([15, 15]);
+  const nl = r.u8("decomposition levels"), xcb = (r.u8("code-block width") & 0xf) + 2, ycb = (r.u8("code-block height") & 0xf) + 2,
+        cblksty = r.u8("code-block style"), qmfbid = r.u8("the wavelet");
+  if (nl > 32) throw corrupt(`${nl} decomposition levels`);
+  if (xcb + ycb > 12 || xcb > 10 || ycb > 10) throw corrupt(localize("image-codecs.jpxdecode.a_code_block_larger_than", "a code-block larger than 4096 samples"));
+  if (cblksty & 0x40) throw unsupported("high-throughput coding");
+  /** @type {[number, number][]} */
+  const prc = [];
+  for (let i = 0; i <= nl; i++) {
+    if (precincts) { const b = r.u8("a precinct size"); prc.push([b & 0xf, b >> 4]); }
+    else prc.push([15, 15]);
   }
-  return c;
+  return { nl, xcb, ycb, cblksty, qmfbid, prc };
 }
 
+/** @param {R} r @param {number} len @returns {Qcd} @throws {JpxRefusal} */
 function readQcd(r, len) {
   const end = r.p + len;
   const s = r.u8("Sqcd");
   const style = s & 0x1f, guard = s >> 5;
+  /** @type {QStep[]} */
   const steps = [];
   if (style === 0) while (r.p < end) steps.push({ expn: r.u8("an exponent") >> 3, mant: 0 });
   else while (r.p + 1 < end) { const v = r.u16("a step size"); steps.push({ expn: v >> 11, mant: v & 0x7ff }); }
@@ -251,16 +398,22 @@ function readQcd(r, len) {
 /**
  * Parse the whole codestream: the main header, and every tile-part's header
  * and data, gathered per tile.
+ * @param {Uint8Array} d @param {number} start @param {number} end @returns {Codestream} @throws {JpxRefusal}
  */
 function parseCodestream(d, start, end) {
   const r = new R(d, start, end);
   if (r.u16("SOC") !== 0xff4f) throw corrupt("no SOC marker");
+  /** @type {Header} */
   const main = { cod: null, coc: [], qcd: null, qcc: [], rgn: [], poc: null };
+  /** @type {Siz | null} */
   let siz = null;
-  const tiles = new Map();
+  /** @type {Map<number, Tile>} */
+  const tiles = new Map([]);
+  /** @param {Header} h @param {number} m @param {number} len @returns {void} */
   const readSeg = (h, m, len) => {
     const segEnd = r.p + len - 2;
-    const wide = siz && siz.comps.length > 256;
+    const sz = siz;
+    const wide = sz && sz.comps.length > 256;
     const comp = () => (wide ? r.u16("a component index") : r.u8("a component index"));
     switch (m) {
       case 0xff52: {
@@ -274,6 +427,7 @@ function parseCodestream(d, start, end) {
       case 0xff5d: { const c = comp(); h.qcc[c] = readQcd(r, segEnd - r.p); break; }
       case 0xff5e: { const c = comp(); r.u8("Srgn"); h.rgn[c] = r.u8("the ROI shift"); break; }
       case 0xff5f: {
+        /** @type {Poc[]} */
         const list = [];
         while (r.p < segEnd) list.push({ rs: r.u8(), cs: comp(), lye: r.u16(), re: r.u8(), ce: wide ? r.u16() : r.u8() || 256, prog: r.u8() });
         h.poc = (h.poc || []).concat(list);
@@ -298,7 +452,8 @@ function parseCodestream(d, start, end) {
     if (!siz) throw corrupt("a marker before SIZ");
     readSeg(main, m, len);
   }
-  if (!siz || !main.cod || !main.qcd) throw corrupt("the main header lacks SIZ, COD or QCD");
+  const sizOf = siz, cod = main.cod, qcd = main.qcd;
+  if (!sizOf || !cod || !qcd) throw corrupt("the main header lacks SIZ, COD or QCD");
   /* The tile-parts. */
   while (r.p + 2 <= end) {
     const m = r.u16("a tile-part marker");
@@ -310,9 +465,11 @@ function parseCodestream(d, start, end) {
     r.u8("TPsot"); r.u8("TNsot");
     const tpEnd = psot ? sotAt + psot : end;
     if (tpEnd > end) throw truncated(localize("image-codecs.jpxdecode.tile_part_of_tile_isot", "tile-part of tile {isot} runs past the codestream", { isot: String(isot) }));
-    let t = tiles.get(isot);
-    const first = !t;
-    if (!t) { t = { index: isot, cod: null, coc: [], qcd: null, qcc: [], rgn: [], poc: null, data: [] }; tiles.set(isot, t); }
+    const seen = tiles.get(isot);
+    const first = !seen;
+    /** @type {Tile} */
+    const t = seen ?? { index: isot, cod: null, coc: [], qcd: null, qcc: [], rgn: [], poc: null, data: [] };
+    if (!seen) tiles.set(isot, t);
     for (;;) {
       const mm = r.u16("a tile-part header marker");
       if (mm === 0xff93) break;
@@ -324,59 +481,83 @@ function parseCodestream(d, start, end) {
     t.data.push(d.subarray(r.p, Math.min(tpEnd, end)));
     r.p = tpEnd;
   }
-  return { siz, main, tiles };
+  return { siz: sizOf, main, tiles, cod, qcd };
 }
 
 /* ── geometry ─────────────────────────────────────────────────────────────── */
 
+/** @param {number} a @param {number} b @returns {number} */
 const ceilDiv = (a, b) => Math.ceil(a / b);
+/** @param {number} v @returns {number} */
 const floorLog2 = (v) => 31 - Math.clz32(v);
+
+/** @typedef {{ w: number, h: number, value: Int32Array, low: Int32Array }} TagLevel one level of a tag tree */
 
 /** A tag tree over w×h leaves (B.10.2). */
 class TagTree {
+  /** @param {number} w @param {number} h */
   constructor(w, h) {
-    this.levels = [];
-    do {
-      this.levels.push({ w, h, value: new Int32Array(w * h).fill(0x7fffffff), low: new Int32Array(w * h) });
-      if (w === 1 && h === 1) break;
+    /** @type {TagLevel} the leaves' level, the first of `levels` */
+    const leaf = { w, h, value: new Int32Array(w * h).fill(0x7fffffff), low: new Int32Array(w * h) };
+    /** @type {TagLevel[]} */ this.levels = [leaf];
+    /** @type {TagLevel} */ this.leaf = leaf;
+    while (!(w === 1 && h === 1)) {
       w = ceilDiv(w, 2); h = ceilDiv(h, 2);
-    } while (true);   // eslint-disable-line no-constant-condition
+      this.levels.push({ w, h, value: new Int32Array(w * h).fill(0x7fffffff), low: new Int32Array(w * h) });
+    }
   }
-  /** Decode leaf (x, y) against `threshold`: true when its value is below it. */
+  /** Decode leaf (x, y) against `threshold`: true when its value is below it.
+   *  @param {Bio} bio @param {number} x @param {number} y @param {number} threshold @returns {boolean} */
   decode(bio, x, y, threshold) {
+    const leafAt = y * this.leaf.w + x;
+    /** @type {number[]} */
     const path = [];
-    for (let l = 0; l < this.levels.length; l++) { path.push(y * this.levels[l].w + x); x >>= 1; y >>= 1; }
+    for (const lv of this.levels) { path.push(y * lv.w + x); x >>= 1; y >>= 1; }
     let low = 0;
     for (let l = this.levels.length - 1; l >= 0; l--) {
       const lv = this.levels[l], i = path[l];
-      if (low > lv.low[i]) lv.low[i] = low; else low = lv.low[i];
-      while (low < threshold && low < lv.value[i]) {
+      if (lv === undefined || i === undefined) throw impossible("a tag-tree level past its own count");
+      const li = lv.low[i] ?? NaN;
+      if (low > li) lv.low[i] = low; else low = li;
+      while (low < threshold && low < (lv.value[i] ?? NaN)) {
         if (bio.bit()) lv.value[i] = low; else low++;
       }
       lv.low[i] = low;
     }
-    return this.levels[0].value[path[0]] < threshold;
+    return (this.leaf.value[leafAt] ?? NaN) < threshold;
   }
-  value(x, y) { return this.levels[0].value[y * this.levels[0].w + x]; }
+  /** @param {number} x @param {number} y @returns {number | undefined} */
+  value(x, y) { return this.leaf.value[y * this.leaf.w + x]; }
 }
 
 /** The packet-header bit reader (B.10.1): after a 0xFF byte, the next byte
  *  carries 7 bits. */
 class Bio {
-  constructor(d, p, end) { this.d = d; this.p = p; this.end = end; this.buf = 0; this.ct = 0; }
+  /** @param {Uint8Array} d @param {number} p @param {number} end */
+  constructor(d, p, end) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.p = p;
+    /** @type {number} */ this.end = end;
+    /** @type {number} */ this.buf = 0;
+    /** @type {number} */ this.ct = 0;
+    /** @type {boolean} true once a byte past `end` was asked for */ this.over = false;
+  }
+  /** @returns {void} */
   byteIn() {
     this.buf = (this.buf << 8) & 0xffff;
     this.ct = this.buf === 0xff00 ? 7 : 8;
-    if (this.p < this.end) this.buf |= this.d[this.p++];
+    if (this.p < this.end) this.buf |= this.d[this.p++] ?? 0;
     else { this.p++; this.over = true; }
   }
+  /** @returns {number} */
   bit() {
     if (this.ct === 0) this.byteIn();
     this.ct--;
     return (this.buf >> this.ct) & 1;
   }
+  /** @param {number} n @returns {number} */
   bits(n) { let v = 0; for (let i = 0; i < n; i++) v = (v << 1) | this.bit(); return v; }
-  /** Byte-align after a header: a final 0xFF is followed by a stuffed byte. */
+  /** Byte-align after a header: a final 0xFF is followed by a stuffed byte. @returns {void} */
   align() { if ((this.buf & 0xff) === 0xff) this.byteIn(); this.ct = 0; }
 }
 
@@ -391,9 +572,12 @@ const NBR = 255;
 
 /* ZC contexts per band (0 LL, 1 HL, 2 LH, 3 HH): Table D.1, whose columns
  * swap the horizontal and vertical counts for HL, the horizontally high-pass band. */
-const ZC = [0, 1, 2, 3].map((orient) => Uint8Array.from({ length: 256 }, (_, f) => {
-  let h = ((f & W) !== 0) + ((f & E) !== 0), v = ((f & N) !== 0) + ((f & S) !== 0);
-  const d = ((f & NW) !== 0) + ((f & NE) !== 0) + ((f & SW) !== 0) + ((f & SE) !== 0);
+/** @param {number} f @returns {number} 1 when any of `f`'s bits is set */
+const one = (f) => (f !== 0 ? 1 : 0);
+/** @param {BandNo} orient @returns {Uint8Array} */
+const zcTable = (orient) => Uint8Array.from({ length: 256 }, (_, f) => {
+  let h = one(f & W) + one(f & E), v = one(f & N) + one(f & S);
+  const d = one(f & NW) + one(f & NE) + one(f & SW) + one(f & SE);
   if (orient === 1) [h, v] = [v, h];
   if (orient === 3) {
     const hv = h + v;
@@ -405,13 +589,21 @@ const ZC = [0, 1, 2, 3].map((orient) => Uint8Array.from({ length: 256 }, (_, f) 
   if (!h) return !v ? (!d ? 0 : d === 1 ? 1 : 2) : v === 1 ? 3 : 4;
   if (h === 1) return !v ? (!d ? 5 : 6) : 7;
   return 8;
-}));
+});
+/** @type {[Uint8Array, Uint8Array, Uint8Array, Uint8Array]} */
+const ZC = [zcTable(0), zcTable(1), zcTable(2), zcTable(3)];
 /* Sign context and prediction bit, from the 4 direct neighbours' significance
  * and signs (Table D.3). Index: N,S,W,E significance (4 bits) | signs << 4. */
 const SC = new Uint8Array(256), SPB = new Uint8Array(256);
 for (let i = 0; i < 256; i++) {
-  const sig = (b) => (i >> b) & 1, neg = (b) => (i >> (4 + b)) & 1;
-  const pos = (b) => sig(b) && !neg(b), ng = (b) => sig(b) && neg(b);
+  /** @param {number} b @returns {number} */
+  const sig = (b) => (i >> b) & 1;
+  /** @param {number} b @returns {number} */
+  const neg = (b) => (i >> (4 + b)) & 1;
+  /** @param {number} b @returns {number} */
+  const pos = (b) => (sig(b) && !neg(b) ? 1 : 0);
+  /** @param {number} b @returns {number} */
+  const ng = (b) => (sig(b) && neg(b) ? 1 : 0);
   const hc = Math.min(pos(2) + pos(3), 1) - Math.min(ng(2) + ng(3), 1);
   const vc0 = Math.min(pos(0) + pos(1), 1) - Math.min(ng(0) + ng(1), 1);
   SPB[i] = !hc && !vc0 ? 0 : (!(hc > 0 || (!hc && vc0 > 0)) ? 1 : 0);
@@ -421,11 +613,20 @@ for (let i = 0; i < 256; i++) {
 }
 const CTX_SC = 9, CTX_MAG = 14, CTX_AGG = 17, CTX_UNI = 18;
 
+/** A raw (bypass) segment's bit reader (D.6). */
 class RawDecoder {
-  constructor(d, p, end) { this.d = d; this.bp = p; this.end = end; this.c = 0; this.ct = 0; }
+  /** @param {Uint8Array} d @param {number} p @param {number} end */
+  constructor(d, p, end) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.bp = p;
+    /** @type {number} */ this.end = end;
+    /** @type {number} */ this.c = 0;
+    /** @type {number} */ this.ct = 0;
+  }
+  /** @returns {number} */
   bit() {
     if (this.ct === 0) {
-      const next = this.bp < this.end ? this.d[this.bp] : 0xff;
+      const next = this.bp < this.end ? this.d[this.bp] ?? NaN : 0xff;
       if (this.c === 0xff) {
         if (next > 0x8f) { this.c = 0xff; this.ct = 8; }
         else { this.c = next; this.bp++; this.ct = 7; }
@@ -439,6 +640,9 @@ class RawDecoder {
 /**
  * Decode one code-block's passes into `out` (w×h, doubled units, signed).
  * `segs` are the codeword segments `[{data, passes}]` in order.
+ * @param {number} w @param {number} h @param {BandNo} orient @param {number} numbps @param {number} lazyFrom
+ * @param {number} cblksty @param {{ data: Uint8Array, passes: number }[]} segs @param {Int32Array} out
+ * @param {Uint16Array} scratch @returns {void}
  */
 function decodeCodeBlock(w, h, orient, numbps, lazyFrom, cblksty, segs, out, scratch) {
   const fw = w + 2;
@@ -454,20 +658,24 @@ function decodeCodeBlock(w, h, orient, numbps, lazyFrom, cblksty, segs, out, scr
   const vsc = cblksty & 8, lazy = cblksty & 1, reset = cblksty & 2, segsym = cblksty & 32;
   let bpno = numbps;                  // "bpno_plus_one"
   let passtype = 2;
+  /** @param {number} x @param {number} y @returns {number} */
   const at = (x, y) => (y + 1) * fw + x + 1;
+  /** @param {number} x @param {number} y @param {number} neg @returns {void} */
   const setSig = (x, y, neg) => {
     const i = at(x, y);
-    flags[i] |= SIG | (neg ? NEG : 0);
-    flags[i - fw] |= S | (neg ? SGN_S : 0);           // for the neighbour above, this is its south
-    flags[i + fw] |= N | (neg ? SGN_N : 0);
-    flags[i - 1] |= E | (neg ? SGN_E : 0);
-    flags[i + 1] |= W | (neg ? SGN_W : 0);
-    flags[i - fw - 1] |= SE; flags[i - fw + 1] |= SW;
-    flags[i + fw - 1] |= NE; flags[i + fw + 1] |= NW;
+    flags[i] = (flags[i] ?? 0) | SIG | (neg ? NEG : 0);
+    flags[i - fw] = (flags[i - fw] ?? 0) | S | (neg ? SGN_S : 0);           // for the neighbour above, this is its south
+    flags[i + fw] = (flags[i + fw] ?? 0) | N | (neg ? SGN_N : 0);
+    flags[i - 1] = (flags[i - 1] ?? 0) | E | (neg ? SGN_E : 0);
+    flags[i + 1] = (flags[i + 1] ?? 0) | W | (neg ? SGN_W : 0);
+    flags[i - fw - 1] = (flags[i - fw - 1] ?? 0) | SE; flags[i - fw + 1] = (flags[i - fw + 1] ?? 0) | SW;
+    flags[i + fw - 1] = (flags[i + fw - 1] ?? 0) | NE; flags[i + fw + 1] = (flags[i + fw + 1] ?? 0) | NW;
   };
   /* The neighbourhood as the coefficient sees it: under vertical causality a
    * stripe's last row does not see the stripe below. */
+  /** @param {number} f @param {number} y @returns {number} */
   const nbr = (f, y) => (vsc && (y & 3) === 3 ? f & ~(S | SW | SE | SGN_S) : f);
+  /** @param {number} f @returns {number} */
   const scIndex = (f) => ((f & N) ? 1 : 0) | ((f & S) ? 2 : 0) | ((f & W) ? 4 : 0) | ((f & E) ? 8 : 0)
     | ((f & SGN_N) ? 16 : 0) | ((f & SGN_S) ? 32 : 0) | ((f & SGN_W) ? 64 : 0) | ((f & SGN_E) ? 128 : 0);
 
@@ -481,63 +689,66 @@ function decodeCodeBlock(w, h, orient, numbps, lazyFrom, cblksty, segs, out, scr
       if (passtype === 0) {
         /* significance propagation */
         for (let y0 = 0; y0 < h; y0 += 4) for (let x = 0; x < w; x++) for (let y = y0; y < y0 + 4 && y < h; y++) {
-          const i = at(x, y), f = nbr(flags[i], y);
+          const i = at(x, y), f = nbr(flags[i] ?? 0, y);
           if ((f & SIG) || !(f & NBR)) continue;
-          const bit = raw ? rd.bit() : mq.decode(ctx, zc[f & NBR]);
+          /* `mq` is null exactly when the segment is raw, and then `rd` is not */
+          const bit = mq ? mq.decode(ctx, zc[f & NBR] ?? NaN) : rd ? rd.bit() : 0;
           if (bit) {
+            /** @type {number} */
             let neg;
-            if (raw) neg = rd.bit();
-            else { const k = scIndex(f); neg = mq.decode(ctx, CTX_SC + SC[k]) ^ SPB[k]; }
+            if (mq) { const k = scIndex(f); neg = mq.decode(ctx, CTX_SC + (SC[k] ?? NaN)) ^ (SPB[k] ?? 0); }
+            else neg = rd ? rd.bit() : 0;
             out[y * w + x] = neg ? -oneplushalf : oneplushalf;
             setSig(x, y, neg);
           }
-          flags[i] |= VISIT;
+          flags[i] = (flags[i] ?? 0) | VISIT;
         }
       } else if (passtype === 1) {
         /* magnitude refinement */
         for (let y0 = 0; y0 < h; y0 += 4) for (let x = 0; x < w; x++) for (let y = y0; y < y0 + 4 && y < h; y++) {
-          const i = at(x, y), f = flags[i];
+          const i = at(x, y), f = flags[i] ?? 0;
           if ((f & (SIG | VISIT)) !== SIG) continue;
-          const bit = raw ? rd.bit()
-            : mq.decode(ctx, (f & REFINED) ? CTX_MAG + 2 : (nbr(f, y) & NBR) ? CTX_MAG + 1 : CTX_MAG);
-          const v = out[y * w + x];
+          const bit = mq ? mq.decode(ctx, (f & REFINED) ? CTX_MAG + 2 : (nbr(f, y) & NBR) ? CTX_MAG + 1 : CTX_MAG)
+            : rd ? rd.bit() : 0;
+          const v = out[y * w + x] ?? NaN;
           out[y * w + x] = v + ((bit ^ (v < 0 ? 1 : 0)) ? half : -half);
-          flags[i] |= REFINED;
+          flags[i] = (flags[i] ?? 0) | REFINED;
         }
       } else {
+        if (!mq) throw impossible("a raw cleanup pass");    // a raw segment holds no cleanup pass
         /* cleanup, with run-length coding of all-quiet stripe columns */
         for (let y0 = 0; y0 < h; y0 += 4) for (let x = 0; x < w; x++) {
           let y = y0;
           if (y0 + 4 <= h) {
             let quiet = true;
             for (let k = 0; k < 4 && quiet; k++) {
-              const f = nbr(flags[at(x, y0 + k)], y0 + k);
+              const f = nbr(flags[at(x, y0 + k)] ?? 0, y0 + k);
               if (f & (SIG | VISIT | NBR)) quiet = false;
             }
             if (quiet) {
               if (!mq.decode(ctx, CTX_AGG)) continue;
               const k = (mq.decode(ctx, CTX_UNI) << 1) | mq.decode(ctx, CTX_UNI);
               y = y0 + k;
-              const f = nbr(flags[at(x, y)], y);
+              const f = nbr(flags[at(x, y)] ?? 0, y);
               const sk = scIndex(f);
-              const neg = mq.decode(ctx, CTX_SC + SC[sk]) ^ SPB[sk];
+              const neg = mq.decode(ctx, CTX_SC + (SC[sk] ?? NaN)) ^ (SPB[sk] ?? 0);
               out[y * w + x] = neg ? -oneplushalf : oneplushalf;
               setSig(x, y, neg);
               y++;
             }
           }
           for (; y < y0 + 4 && y < h; y++) {
-            const i = at(x, y), f = nbr(flags[i], y);
+            const i = at(x, y), f = nbr(flags[i] ?? 0, y);
             if (f & (SIG | VISIT)) continue;
-            if (mq.decode(ctx, zc[f & NBR])) {
+            if (mq.decode(ctx, zc[f & NBR] ?? NaN)) {
               const sk = scIndex(f);
-              const neg = mq.decode(ctx, CTX_SC + SC[sk]) ^ SPB[sk];
+              const neg = mq.decode(ctx, CTX_SC + (SC[sk] ?? NaN)) ^ (SPB[sk] ?? 0);
               out[y * w + x] = neg ? -oneplushalf : oneplushalf;
               setSig(x, y, neg);
             }
           }
         }
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) flags[at(x, y)] &= ~VISIT;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = at(x, y); flags[i] = (flags[i] ?? 0) & ~VISIT; }
         /* the segmentation symbol, 1010 when intact: OpenJPEG decodes it and
          * does not act on it, so neither does this */
         if (segsym) for (let k = 0; k < 4; k++) mq.decode(ctx, CTX_UNI);
@@ -554,56 +765,102 @@ const K = f32(1.230174105), TWO_INVK = f32(1.625732422);
 const ALPHA = f32(-1.586134342), BETA = f32(-0.052980118), GAMMA = f32(0.882911075), DELTA = f32(0.443506852);
 
 /** One 5/3 synthesis over `x` (interleaved in place), `cas` the parity of the
- *  first sample (1 = it is a high-pass one). F.3.8.2, as OpenJPEG. */
+ *  first sample (1 = it is a high-pass one). F.3.8.2, as OpenJPEG.
+ *  @param {Int32Array | Float32Array} x @param {number} n @param {number} cas @returns {void} */
 function idwt53(x, n, cas) {
-  if (n === 1) { if (cas) x[0] = Math.trunc(x[0] / 2); return; }
-  const at = (i) => x[i < 0 ? -i : i >= n ? 2 * (n - 1) - i : i];     // symmetric extension
-  for (let i = cas ? 1 : 0; i < n; i += 2) x[i] -= Math.floor((at(i - 1) + at(i + 1) + 2) / 4);
-  for (let i = cas ? 0 : 1; i < n; i += 2) x[i] += Math.floor((at(i - 1) + at(i + 1)) / 2);
+  if (n === 1) { if (cas) x[0] = Math.trunc((x[0] ?? NaN) / 2); return; }
+  /** @param {number} i @returns {number} */
+  const at = (i) => x[i < 0 ? -i : i >= n ? 2 * (n - 1) - i : i] ?? NaN;     // symmetric extension
+  for (let i = cas ? 1 : 0; i < n; i += 2) x[i] = (x[i] ?? NaN) - Math.floor((at(i - 1) + at(i + 1) + 2) / 4);
+  for (let i = cas ? 0 : 1; i < n; i += 2) x[i] = (x[i] ?? NaN) + Math.floor((at(i - 1) + at(i + 1)) / 2);
 }
 
-/** One 9/7 synthesis, `opj_v8dwt_decode` exactly. `x` is a Float32Array. */
+/** One 9/7 synthesis, `opj_v8dwt_decode` exactly. `x` is a Float32Array.
+ *  @param {Int32Array | Float32Array} x @param {number} n @param {number} cas @returns {void} */
 function idwt97(x, n, cas) {
   const sn = cas ? n >> 1 : (n + 1) >> 1, dn = n - sn;
   if (cas === 0) { if (!(dn > 0 || sn > 1)) return; }
   else if (!(sn > 0 || dn > 1)) return;
   const a = cas, b = 1 - cas;
-  for (let i = 0; i < sn; i++) x[a + 2 * i] = f32(x[a + 2 * i] * K);
-  for (let i = 0; i < dn; i++) x[b + 2 * i] = f32(x[b + 2 * i] * TWO_INVK);
+  for (let i = 0; i < sn; i++) x[a + 2 * i] = f32((x[a + 2 * i] ?? NaN) * K);
+  for (let i = 0; i < dn; i++) x[b + 2 * i] = f32((x[b + 2 * i] ?? NaN) * TWO_INVK);
   step97(x, b, a + 1, sn, Math.min(sn, dn - a), f32(-DELTA));
   step97(x, a, b + 1, dn, Math.min(dn, sn - b), f32(-GAMMA));
   step97(x, b, a + 1, sn, Math.min(sn, dn - a), f32(-BETA));
   step97(x, a, b + 1, dn, Math.min(dn, sn - b), f32(-ALPHA));
 }
+/** One lifting step of `idwt97`, `opj_v8dwt_decode_step2`'s.
+ *  @param {Int32Array | Float32Array} x @param {number} l @param {number} w @param {number} end @param {number} m
+ *  @param {number} c @returns {void} */
 function step97(x, l, w, end, m, c) {
   const imax = Math.min(end, m);
   let fl = l, fw = w;
   for (let i = 0; i < imax; i++) {
-    x[fw - 1] = f32(x[fw - 1] + f32(f32(x[fl] + x[fw]) * c));
+    x[fw - 1] = f32((x[fw - 1] ?? NaN) + f32(f32((x[fl] ?? NaN) + (x[fw] ?? NaN)) * c));
     fl = fw; fw += 2;
   }
-  if (m < end) x[fw - 1] = f32(x[fw - 1] + f32(x[fl] * f32(c + c)));
+  if (m < end) x[fw - 1] = f32((x[fw - 1] ?? NaN) + f32((x[fl] ?? NaN) * f32(c + c)));
 }
 
 /* ── the tile ─────────────────────────────────────────────────────────────── */
 
-/** The progression's packets, in order, as [layer, res, comp, precinct]. */
+/** @typedef {[number, number, number, number]} Packet a packet, as [layer, res, comp, precinct] */
+/** @typedef {{ c: number, r: number, p: number, X: number, Y: number }} PositionItem a precinct met at a reference-grid position */
+/** @typedef {[number, number, number, number]} PositionKey */
+
+/* The position-driven orders' sort keys (B.12.1.3 to B.12.1.5). */
+/** @param {PositionItem} a @returns {PositionKey} */
+const keyRPCL = (a) => [a.r, a.Y, a.X, a.c];
+/** @param {PositionItem} a @returns {PositionKey} */
+const keyPCRL = (a) => [a.Y, a.X, a.c, a.r];
+/** @param {PositionItem} a @returns {PositionKey} */
+const keyCPRL = (a) => [a.c, a.Y, a.X, a.r];
+/** @param {number} prog @returns {((a: PositionItem) => PositionKey) | undefined} */
+function positionKey(prog) {
+  switch (prog) {
+    case 2: return keyRPCL;
+    case 3: return keyPCRL;
+    case 4: return keyCPRL;
+    default: return undefined;
+  }
+}
+
+/** The progression's packets, in order, as [layer, res, comp, precinct].
+ *  @param {TileComp[]} tc @param {number} layers @param {Poc[]} progs @param {Rect} tile @param {SizComp[]} comps
+ *  @returns {Packet[]} @throws {JpxRefusal} */
 function packetOrder(tc, layers, progs, tile, comps) {
-  const out = [], seen = new Set();
+  /** @type {Packet[]} */
+  const out = [];
+  /** @type {Set<string>} */
+  const seen = new Set();
+  /** @param {number} l @param {number} r @param {number} c @param {number} p @returns {void} */
   const push = (l, r, c, p) => { const k = `${l}.${r}.${c}.${p}`; if (!seen.has(k)) { seen.add(k); out.push([l, r, c, p]); } };
+  /** Component c's resolution r, if it has one. @param {number} c @param {number} r @returns {Res | undefined} */
+  const resAt = (c, r) => {
+    const x = tc[c];
+    if (x === undefined) throw impossible("a component past the tile's");
+    return x.res[r];
+  };
   for (const pg of progs) {
     const LYE = Math.min(pg.lye, layers), RE = pg.re, CE = Math.min(pg.ce, comps.length);
-    const cs = [], rs = [];
+    /** @type {number[]} */
+    const cs = [];
+    /** @type {number[]} */
+    const rs = [];
     for (let c = pg.cs; c < CE; c++) cs.push(c);
     for (let r = pg.rs; r < RE; r++) rs.push(r);
-    const has = (c, r) => r < tc[c].res.length;
-    if (pg.prog === 0 || pg.prog === 1) {
-      for (const o1 of pg.prog === 0 ? [...Array(LYE).keys()] : rs)
-        for (const o2 of pg.prog === 0 ? rs : [...Array(LYE).keys()])
+    const prog = pg.prog;
+    if (prog === 0 || prog === 1) {
+      /** @type {number[]} */
+      const ls = [];
+      for (let l = 0; l < LYE; l++) ls.push(l);
+      for (const o1 of prog === 0 ? ls : rs)
+        for (const o2 of prog === 0 ? rs : ls)
           for (const c of cs) {
-            const [l, r] = pg.prog === 0 ? [o1, o2] : [o2, o1];
-            if (!has(c, r)) continue;
-            const res = tc[c].res[r];
+            /** @type {[number, number]} */
+            const [l, r] = prog === 0 ? [o1, o2] : [o2, o1];
+            const res = resAt(c, r);
+            if (!res) continue;
             for (let p = 0; p < res.npw * res.nph; p++) push(l, r, c, p);
           }
       continue;
@@ -611,10 +868,13 @@ function packetOrder(tc, layers, progs, tile, comps) {
     /* Position-driven orders: each precinct is met at the first reference-grid
      * position whose conditions (B.12.1.3) it satisfies — its top-left corner,
      * or the tile's own corner for a precinct the tile's edge cuts. */
+    /** @type {PositionItem[]} */
     const items = [];
     for (const c of cs) for (const r of rs) {
-      if (!has(c, r)) continue;
-      const res = tc[c].res[r], n = tc[c].nl - r, cp = comps[c];
+      const res = resAt(c, r), x = tc[c], cp = comps[c];
+      if (!res) continue;
+      if (!x || !cp) throw impossible("a component past the tile's");
+      const n = x.nl - r;
       for (let py = 0; py < res.nph; py++) for (let px = 0; px < res.npw; px++) {
         const gx = (res.pgx + px) << res.ppx, gy = (res.pgy + py) << res.ppy;
         const X = gx <= res.x0 ? (((res.x0 << n) * cp.dx) % ((cp.dx << (res.ppx + n))) === 0 ? res.x0 * cp.dx << n : tile.x0) : (gx * cp.dx) << n;
@@ -622,9 +882,13 @@ function packetOrder(tc, layers, progs, tile, comps) {
         items.push({ c, r, p: py * res.npw + px, X, Y });
       }
     }
-    const key = { 2: (a) => [a.r, a.Y, a.X, a.c], 3: (a) => [a.Y, a.X, a.c, a.r], 4: (a) => [a.c, a.Y, a.X, a.r] }[pg.prog];
-    if (!key) throw corrupt(`progression order ${pg.prog}`);
-    items.sort((a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < 4; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i]; return 0; });
+    const key = positionKey(prog);
+    if (!key) throw corrupt(`progression order ${prog}`);
+    items.sort((a, b) => {
+      const ka = key(a), kb = key(b);
+      for (let i = 0; i < 4; i++) { const u = ka[i] ?? NaN, v = kb[i] ?? NaN; if (u !== v) return u - v; }
+      return 0;
+    });
     for (const it of items) for (let l = 0; l < LYE; l++) push(l, it.r, it.c, it.p);
   }
   return out;
@@ -635,63 +899,76 @@ function packetOrder(tc, layers, progs, tile, comps) {
  * their bands with quantisation and code-block size, and the precinct grid.
  * Nothing here is sized by the samples, so the working set can be read from it
  * before a decode allocates anything.
+ * @param {Codestream} cs @param {Tile} t @param {number} tileNo @returns {Layout} @throws {JpxRefusal}
  */
 function tileLayout(cs, t, tileNo) {
   const { siz, main } = cs;
-  const cod = t.cod || main.cod;
+  const tileCod = t.cod;
+  const cod = tileCod || cs.cod;
   const nTx = ceilDiv(siz.X - siz.XTO, siz.XT);
   const p = tileNo % nTx, q = Math.floor(tileNo / nTx);
+  /** @type {Rect} */
   const tile = { x0: Math.max(siz.XTO + p * siz.XT, siz.XO), y0: Math.max(siz.YTO + q * siz.YT, siz.YO),
                  x1: Math.min(siz.XTO + (p + 1) * siz.XT, siz.X), y1: Math.min(siz.YTO + (q + 1) * siz.YT, siz.Y) };
   const tc = siz.comps.map((cp, c) => {
-    const sp = t.coc[c] || (t.cod ? t.cod.sp : null) || main.coc[c] || main.cod.sp;
-    const qc = t.qcc[c] || t.qcd || main.qcc[c] || main.qcd;
+    const sp = t.coc[c] || (tileCod ? tileCod.sp : null) || main.coc[c] || cs.cod.sp;
+    const qc = t.qcc[c] || t.qcd || main.qcc[c] || cs.qcd;
     const roi = t.rgn[c] ?? main.rgn[c] ?? 0;
     const x0 = ceilDiv(tile.x0, cp.dx), y0 = ceilDiv(tile.y0, cp.dy), x1 = ceilDiv(tile.x1, cp.dx), y1 = ceilDiv(tile.y1, cp.dy);
+    /** @type {Res[]} */
     const res = [];
     for (let r = 0; r <= sp.nl; r++) {
       const sc = 2 ** (sp.nl - r);
-      const R0 = { r, x0: ceilDiv(x0, sc), y0: ceilDiv(y0, sc), x1: ceilDiv(x1, sc), y1: ceilDiv(y1, sc) };
-      const [ppx, ppy] = sp.prc[r];
-      R0.ppx = ppx; R0.ppy = ppy;
-      R0.pgx = Math.floor(R0.x0 / 2 ** ppx); R0.pgy = Math.floor(R0.y0 / 2 ** ppy);
-      R0.npw = R0.x1 > R0.x0 ? ceilDiv(R0.x1, 2 ** ppx) - R0.pgx : 0;
-      R0.nph = R0.y1 > R0.y0 ? ceilDiv(R0.y1, 2 ** ppy) - R0.pgy : 0;
+      const rx0 = ceilDiv(x0, sc), ry0 = ceilDiv(y0, sc), rx1 = ceilDiv(x1, sc), ry1 = ceilDiv(y1, sc);
+      const pp = sp.prc[r];
+      if (!pp) throw impossible("a resolution past its precinct sizes");
+      const [ppx, ppy] = pp;
+      const pgx = Math.floor(rx0 / 2 ** ppx), pgy = Math.floor(ry0 / 2 ** ppy);
+      const npw = rx1 > rx0 ? ceilDiv(rx1, 2 ** ppx) - pgx : 0;
+      const nph = ry1 > ry0 ? ceilDiv(ry1, 2 ** ppy) - pgy : 0;
+      /** @type {[BandNo, number, number][]} */
       const bandSpecs = r === 0 ? [[0, 0, 0]] : [[1, 1, 0], [2, 0, 1], [3, 1, 1]];
       const nb = r === 0 ? sp.nl : sp.nl - r + 1;
       const xcb = Math.min(sp.xcb, r === 0 ? ppx : ppx - 1), ycb = Math.min(sp.ycb, r === 0 ? ppy : ppy - 1);
-      R0.bands = bandSpecs.map(([bandno, xob, yob]) => {
+      const bands = bandSpecs.map(([bandno, xob, yob]) => {
         const s = 2 ** nb, hx = xob ? 2 ** (nb - 1) : 0, hy = yob ? 2 ** (nb - 1) : 0;
-        const B = { bandno, x0: ceilDiv(x0 - hx, s), y0: ceilDiv(y0 - hy, s), x1: ceilDiv(x1 - hx, s), y1: ceilDiv(y1 - hy, s) };
+        const bx0 = ceilDiv(x0 - hx, s), by0 = ceilDiv(y0 - hy, s), bx1 = ceilDiv(x1 - hx, s), by1 = ceilDiv(y1 - hy, s);
         const bi = r === 0 ? 0 : 3 * (r - 1) + bandno;
+        const s0 = qc.steps[0];                        // present: a QCD without steps is refused when read
         const st = qc.style === 1
-          ? { expn: Math.max(0, qc.steps[0].expn - (r === 0 ? 0 : Math.floor((bi - 1) / 3))), mant: qc.steps[0].mant }
+          ? (s0 ? { expn: Math.max(0, s0.expn - (r === 0 ? 0 : Math.floor((bi - 1) / 3))), mant: s0.mant } : undefined)
           : qc.steps[bi];
         if (!st) throw corrupt(localize("image-codecs.jpxdecode.no_quantisation_step_for_band", "no quantisation step for band {bi}", { bi: String(bi) }));
-        B.numbps = st.expn + qc.guard - 1;
         const rb = cp.prec + (sp.qmfbid === 0 ? 0 : bandno === 0 ? 0 : bandno === 3 ? 2 : 1);
-        B.stepsize = f32((1 + st.mant / 2048) * 2 ** (rb - st.expn));
-        /* the band's precinct grid (the resolution's, halved for a detail band)
-         * and its code-block size */
-        B.bpx = r === 0 ? ppx : ppx - 1; B.bpy = r === 0 ? ppy : ppy - 1;
-        B.xcb = xcb; B.ycb = ycb;
+        /** @type {Band} */
+        const B = { bandno, x0: bx0, y0: by0, x1: bx1, y1: by1,
+                    numbps: st.expn + qc.guard - 1,
+                    stepsize: f32((1 + st.mant / 2048) * 2 ** (rb - st.expn)),
+                    /* the band's precinct grid (the resolution's, halved for a detail band)
+                     * and its code-block size */
+                    bpx: r === 0 ? ppx : ppx - 1, bpy: r === 0 ? ppy : ppy - 1,
+                    xcb, ycb, prec: null };
         return B;
       });
-      res.push(R0);
+      res.push({ r, x0: rx0, y0: ry0, x1: rx1, y1: ry1, ppx, ppy, pgx, pgy, npw, nph, bands });
     }
     return { x0, y0, x1, y1, nl: sp.nl, sp, qc, roi, res };
   });
   return { tile, cod, tc };
 }
 
-/** Each band's precincts, each holding its code-blocks and two tag trees. */
+/** Each band's precincts, each holding its code-blocks and two tag trees.
+ *  @param {TileComp} x @returns {void} */
 function addPrecincts(x) {
   for (const R0 of x.res) for (const B of R0.bands) {
     const { bpx, bpy, xcb, ycb } = B;
-    B.prec = [];
+    /** @type {Precinct[]} */
+    const prec = [];
+    B.prec = prec;
     for (let py = 0; py < R0.nph; py++) for (let px = 0; px < R0.npw; px++) {
       const X0 = Math.max(B.x0, (R0.pgx + px) * 2 ** bpx), Y0 = Math.max(B.y0, (R0.pgy + py) * 2 ** bpy);
       const X1 = Math.min(B.x1, (R0.pgx + px + 1) * 2 ** bpx), Y1 = Math.min(B.y1, (R0.pgy + py + 1) * 2 ** bpy);
+      /** @type {Precinct} */
       const pr = { cblks: [], cw: 0, ch: 0 };
       if (X1 > X0 && Y1 > Y0) {
         const cx0 = Math.floor(X0 / 2 ** xcb), cy0 = Math.floor(Y0 / 2 ** ycb);
@@ -704,13 +981,14 @@ function addPrecincts(x) {
         pr.incl = new TagTree(pr.cw, pr.ch);
         pr.imsb = new TagTree(pr.cw, pr.ch);
       }
-      B.prec.push(pr);
+      prec.push(pr);
     }
   }
 }
 
 /** A tile's layout with every code-block's codeword segments read from its
- *  packets (tier 2). No sample is decoded here. */
+ *  packets (tier 2). No sample is decoded here.
+ *  @param {Codestream} cs @param {Tile} t @param {number} tileNo @returns {Layout} @throws {JpxRefusal} */
 function decodeTile(cs, t, tileNo) {
   const comps = cs.siz.comps;
   const layout = tileLayout(cs, t, tileNo);
@@ -718,35 +996,48 @@ function decodeTile(cs, t, tileNo) {
   for (const x of tc) addPrecincts(x);
 
   /* Tier 2: every packet, in the progression's order. */
-  const progs = (t.poc || cs.main.poc)
-    ? (t.poc || cs.main.poc).map((pg) => ({ ...pg, re: Math.min(pg.re, 33) }))
+  const poc = t.poc || cs.main.poc;
+  /** @type {Poc[]} */
+  const progs = poc
+    ? poc.map((pg) => ({ ...pg, re: Math.min(pg.re, 33) }))
     : [{ rs: 0, cs: 0, lye: cod.layers, re: 33, ce: comps.length, prog: cod.prog }];
   const packets = packetOrder(tc, cod.layers, progs, tile, comps);
   const body = concat(t.data);
   let bp = 0;
   const sop = cod.scod & 2, eph = cod.scod & 4;
   for (const [l, r, c, pi] of packets) {
-    const res = tc[c].res[r];
-    const sp = tc[c].sp;
+    const x = tc[c];
+    const res = x ? x.res[r] : undefined;
+    if (!x || !res) throw impossible("a packet of a resolution the tile lacks");
+    const sp = x.sp;
     if (sop && bp + 6 <= body.length && body[bp] === 0xff && body[bp + 1] === 0x91) bp += 6;
     const bio = new Bio(body, bp, body.length);
+    /** @type {{ seg: CodewordSeg, len: number, n: number }[]} */
     const contrib = [];
-    if (bio.p >= body.length) throw truncated(localize("image-codecs.jpxdecode.the_tiles_packets_run_out", "the tile's packets run out at packet {v1} of {length}", { v1: String(packets.indexOf(packets.find((q) => q[0] === l && q[1] === r && q[2] === c && q[3] === pi)) + 1), length: String(packets.length) }));
+    if (bio.p >= body.length) throw truncated(localize("image-codecs.jpxdecode.the_tiles_packets_run_out", "the tile's packets run out at packet {v1} of {length}", { v1: String(packets.findIndex((q) => q[0] === l && q[1] === r && q[2] === c && q[3] === pi) + 1), length: String(packets.length) }));
     if (bio.bit()) {
       for (const B of res.bands) {
-        const pr = B.prec[pi];
+        const prec = B.prec;
+        const pr = prec ? prec[pi] : undefined;
+        if (!pr) throw impossible("a precinct past the band's");
+        const { incl, imsb } = pr;
         for (let k = 0; k < pr.cblks.length; k++) {
           const cb = pr.cblks[k], cx = k % pr.cw, cy = Math.floor(k / pr.cw);
+          if (!cb || !incl || !imsb) throw impossible("a code-block past the precinct's");
+          const segs = cb.segs;
+          if (!segs) throw impossible("a code-block read by tier 1 before tier 2 is done");
+          /** @type {boolean | number} */
           let inc;
-          if (!cb.included) inc = pr.incl.decode(bio, cx, cy, l + 1);
+          if (!cb.included) inc = incl.decode(bio, cx, cy, l + 1);
           else inc = bio.bit();
           if (!inc) continue;
           if (!cb.included) {
             let i = 0;
-            while (!pr.imsb.decode(bio, cx, cy, i)) i++;
+            while (!imsb.decode(bio, cx, cy, i)) i++;
             cb.numbps = B.numbps + 1 - i;
             cb.included = true;
           }
+          /** @type {number} */
           let np;
           if (!bio.bit()) np = 1;
           else if (!bio.bit()) np = 2;
@@ -755,11 +1046,14 @@ function decodeTile(cs, t, tileNo) {
           /* the passes' lengths, one per codeword segment they reach (B.10.7) */
           let left = np;
           while (left > 0) {
-            let seg = cb.segs[cb.segs.length - 1];
-            if (!seg || seg.claimed >= seg.max) {
-              const max = (sp.cblksty & 4) ? 1 : (sp.cblksty & 1) ? (!seg ? 10 : (seg.max === 1 || seg.max === 10) ? 2 : 1) : 109;
+            const last = segs[segs.length - 1];
+            /** @type {CodewordSeg} */
+            let seg;
+            if (last && !(last.claimed >= last.max)) seg = last;
+            else {
+              const max = (sp.cblksty & 4) ? 1 : (sp.cblksty & 1) ? (!last ? 10 : (last.max === 1 || last.max === 10) ? 2 : 1) : 109;
               seg = { max, passes: 0, claimed: 0, chunks: [] };
-              cb.segs.push(seg);
+              segs.push(seg);
             }
             const n = Math.min(left, seg.max - seg.claimed);
             seg.claimed += n;          // passes this and earlier headers gave the segment
@@ -806,48 +1100,66 @@ const LIFT97 = [f32(-DELTA), f32(-GAMMA), f32(-BETA), f32(-ALPHA)];
 /** Buffers reused from tile to tile: slot i is as large as the largest tile
  *  asks of it (`tileSlots` lists what a tile asks, in the same order). */
 class Pool {
-  constructor() { this.slots = []; this.i = 0; }
+  constructor() {
+    /** @type {ArrayBuffer[]} */
+    this.slots = [];
+    /** @type {number} */
+    this.i = 0;
+  }
+  /** The next slot, as `n` samples of `T`.
+   *  @param {Float32ArrayConstructor | Int32ArrayConstructor} T @param {number} n @returns {Float32Array | Int32Array} */
   take(T, n) {
     const i = this.i++;
-    if (!this.slots[i] || this.slots[i].byteLength < n * 4) this.slots[i] = new ArrayBuffer(n * 4);
-    return new T(this.slots[i], 0, n);
+    const old = this.slots[i];
+    const slot = old && !(old.byteLength < n * 4) ? old : (this.slots[i] = new ArrayBuffer(n * 4));
+    return new T(slot, 0, n);
   }
 }
 
-/** The samples a band's strip holds: `w` by at most 2^ycb rows. */
+/** The samples a band's strip holds: `w` by at most 2^ycb rows. @param {Band} B @returns {number} */
 const stripSize = (B) => (B.x1 - B.x0) * Math.max(0, Math.min(2 ** B.ycb, B.y1 - B.y0));
 
 /** A band's dequantised samples, one row at a time, in order. */
 class BandRows {
+  /** @param {TileComp} x @param {Band} B @param {boolean} irr @param {T1Scratch} t1 @param {Pool} pool */
   constructor(x, B, irr, t1, pool) {
-    this.x = x; this.B = B; this.irr = irr; this.t1 = t1;
-    this.w = B.x1 - B.x0;
-    this.g = 2 ** B.ycb; this.s0 = Math.floor(B.y0 / this.g);
-    this.strips = new Map();                         // strip → its code-blocks
-    for (const pr of B.prec) for (const cb of pr.cblks) {
+    /** @type {TileComp} */ this.x = x;
+    /** @type {Band} */ this.B = B;
+    /** @type {boolean} */ this.irr = irr;
+    /** @type {T1Scratch} */ this.t1 = t1;
+    /** @type {number} */ this.w = B.x1 - B.x0;
+    /** @type {number} */ this.g = 2 ** B.ycb;
+    /** @type {number} */ this.s0 = Math.floor(B.y0 / this.g);
+    /** @type {Map<number, Cblk[]>} */ this.strips = new Map([]);                         // strip → its code-blocks
+    const prec = B.prec;
+    if (!prec) throw impossible("a band read before its precincts are built");
+    for (const pr of prec) for (const cb of pr.cblks) {
       const s = Math.floor(cb.y0 / this.g) - this.s0;
-      if (!this.strips.has(s)) this.strips.set(s, []);
-      this.strips.get(s).push(cb);
+      const list = this.strips.get(s);
+      if (list) list.push(cb); else this.strips.set(s, [cb]);
     }
-    this.buf = pool.take(irr ? Float32Array : Int32Array, stripSize(B));
-    this.strip = -1; this.top = 0;
+    /** @type {Float32Array | Int32Array} */ this.buf = pool.take(irr ? Float32Array : Int32Array, stripSize(B));
+    /** @type {number} */ this.strip = -1;
+    /** @type {number} */ this.top = 0;
   }
-  /** Band row y's offset in `buf`. */
+  /** Band row y's offset in `buf`. @param {number} y @returns {number} */
   row(y) {
     const s = Math.floor((this.B.y0 + y) / this.g) - this.s0;
     if (s !== this.strip) this.load(s);
     return (y - this.top) * this.w;
   }
-  /** Decode one strip's code-blocks into the buffer (dequantised, as before). */
+  /** Decode one strip's code-blocks into the buffer (dequantised, as before). @param {number} s @returns {void} @throws {JpxRefusal} */
   load(s) {
     const { x, B, irr, w, buf } = this;
     this.strip = s;
     this.top = Math.max(0, (this.s0 + s) * this.g - B.y0);
-    buf.fill(0);
+    if (buf instanceof Float32Array) buf.fill(0); else buf.fill(0);   // one call per strip, on the buffer's own kind
     const half = f32(0.5 * B.stepsize), tmp = this.t1.tmp;
     for (const cb of this.strips.get(s) || []) {
       const cw = cb.x1 - cb.x0, ch = cb.y1 - cb.y0;
-      const segs = cb.segs.filter((sg) => sg.passes > 0).map((sg) => ({ data: concat(sg.chunks), passes: sg.passes }));
+      const read = cb.segs;
+      if (!read) throw impossible("a code-block read twice");
+      const segs = read.filter((sg) => sg.passes > 0).map((sg) => ({ data: concat(sg.chunks), passes: sg.passes }));
       cb.segs = null;                                // read once; its bytes can go
       if (!segs.length) continue;
       const bpn = x.roi + cb.numbps;
@@ -856,11 +1168,11 @@ class BandRows {
       decodeCodeBlock(cw, ch, B.bandno, bpn, cb.numbps, x.sp.cblksty, segs, tmp, this.t1.flags);
       if (x.roi) {
         const th = 2 ** x.roi;
-        for (let i = 0; i < cw * ch; i++) { const v = tmp[i], m = Math.abs(v); if (m >= th) tmp[i] = v < 0 ? -(m >> x.roi) : m >> x.roi; }
+        for (let i = 0; i < cw * ch; i++) { const v = tmp[i] ?? NaN, m = Math.abs(v); if (m >= th) tmp[i] = v < 0 ? -(m >> x.roi) : m >> x.roi; }
       }
       const bx = cb.x0 - B.x0, by = cb.y0 - B.y0 - this.top;
       for (let j = 0; j < ch; j++) for (let i = 0; i < cw; i++) {
-        const v = tmp[j * cw + i];
+        const v = tmp[j * cw + i] ?? NaN;
         buf[(by + j) * w + bx + i] = irr ? f32(f32(v) * half) : Math.trunc(v / 2);
       }
     }
@@ -869,30 +1181,52 @@ class BandRows {
 
 /** Resolution 0: the LL band's rows as they are. */
 class LowestRows {
-  constructor(band) { this.band = band; this.buf = band.buf; this.y = 0; }
+  /** @param {BandRows} band */
+  constructor(band) {
+    /** @type {BandRows} */ this.band = band;
+    /** @type {Float32Array | Int32Array} */ this.buf = band.buf;
+    /** @type {number} */ this.y = 0;
+  }
+  /** The next row's offset in `buf`. @returns {number} @throws {JpxRefusal} */
   next() { return this.band.row(this.y++); }
 }
 
 /** One level of the inverse wavelet, row by row (see "THE LINE-BASED DECODE"). */
 class LevelRows {
-  constructor(prev, [hl, lh, hh], R0, P, irr, pool) {
-    Object.assign(this, { prev, hl, lh, hh, irr });
-    this.rw = R0.x1 - R0.x0; this.rh = R0.y1 - R0.y0; this.sw = P.x1 - P.x0;
-    this.casx = R0.x0 & 1; this.casy = R0.y0 & 1;
-    this.S = irr ? 4 : 2;                            // lifting steps
+  /** @param {LowestRows | LevelRows} prev @param {BandRows[]} bands the HL, LH and HH bands @param {Res} R0 @param {Res} P
+   *  @param {boolean} irr @param {Pool} pool */
+  constructor(prev, bands, R0, P, irr, pool) {
+    const [hl, lh, hh] = bands;
+    if (!hl || !lh || !hh) throw impossible("a level without its three bands");
+    /** @type {LowestRows | LevelRows} */ this.prev = prev;
+    /** @type {BandRows} */ this.hl = hl;
+    /** @type {BandRows} */ this.lh = lh;
+    /** @type {BandRows} */ this.hh = hh;
+    /** @type {boolean} */ this.irr = irr;
+    /** @type {number} */ this.rw = R0.x1 - R0.x0;
+    /** @type {number} */ this.rh = R0.y1 - R0.y0;
+    /** @type {number} */ this.sw = P.x1 - P.x0;
+    /** @type {number} */ this.casx = R0.x0 & 1;
+    /** @type {number} */ this.casy = R0.y0 & 1;
+    /** @type {number} */ this.S = irr ? 4 : 2;                            // lifting steps
     const T = irr ? Float32Array : Int32Array;
-    this.line = pool.take(T, this.rw);
+    /** @type {Float32Array | Int32Array} */ this.line = pool.take(T, this.rw);
     /* a ring of S+3 rows: arrival k reads rows k-S-1 to k, and the row last
      * answered stays whole until its caller has read it */
-    this.R = this.S + 3;
-    this.buf = pool.take(T, this.R * this.rw);
-    this.k = 0; this.m = 0; this.lo = 0; this.hi = 0;
+    /** @type {number} */ this.R = this.S + 3;
+    /** @type {Float32Array | Int32Array} */ this.buf = pool.take(T, this.R * this.rw);
+    /** @type {number} */ this.k = 0;
+    /** @type {number} */ this.m = 0;
+    /** @type {number} */ this.lo = 0;
+    /** @type {number} */ this.hi = 0;
   }
+  /** The next row's offset in `buf`. @returns {number} @throws {JpxRefusal} */
   next() {
     const m = this.m++;
     while (this.k <= m + this.S && this.k < this.rh + this.S) this.arrive();
     return (m % this.R) * this.rw;
   }
+  /** One input row arrives, and the lifting steps it completes are applied. @returns {void} @throws {JpxRefusal} */
   arrive() {
     const k = this.k++, { rw, rh, sw, casx, casy, irr, S, R, buf, line } = this;
     if (k < rh) {
@@ -903,17 +1237,17 @@ class LevelRows {
       const ao = low ? this.prev.next() : this.lh.row(this.hi);
       const bo = low ? this.hl.row(this.lo++) : this.hh.row(this.hi++);
       const a = A.buf, b = B.buf;
-      for (let i = 0; i < sw; i++) line[casx ? 2 * i + 1 : 2 * i] = a[ao + i];
-      for (let i = 0; i < rw - sw; i++) line[casx ? 2 * i : 2 * i + 1] = b[bo + i];
+      for (let i = 0; i < sw; i++) line[casx ? 2 * i + 1 : 2 * i] = a[ao + i] ?? NaN;
+      for (let i = 0; i < rw - sw; i++) line[casx ? 2 * i : 2 * i + 1] = b[bo + i] ?? NaN;
       (irr ? idwt97 : idwt53)(line, rw, casx);
       const o = (k % R) * rw;
       if (rh === 1) {                                // a one-sample column: `idwt97` leaves it, `idwt53` halves a high-pass one
-        if (!irr && casy) for (let i = 0; i < rw; i++) buf[o + i] = Math.trunc(line[i] / 2);
-        else buf.set(line, o);
+        if (!irr && casy) for (let i = 0; i < rw; i++) buf[o + i] = Math.trunc((line[i] ?? NaN) / 2);
+        else if (buf instanceof Float32Array) buf.set(line, o); else buf.set(line, o);
       } else if (irr) {
         const g = low ? K : TWO_INVK;
-        for (let i = 0; i < rw; i++) buf[o + i] = f32(line[i] * g);
-      } else buf.set(line, o);
+        for (let i = 0; i < rw; i++) buf[o + i] = f32((line[i] ?? NaN) * g);
+      } else if (buf instanceof Float32Array) buf.set(line, o); else buf.set(line, o);
     }
     if (rh < 2) return;
     for (let s = 1; s <= S; s++) {
@@ -921,30 +1255,41 @@ class LevelRows {
       if (j < 0 || j >= rh || (j & 1) !== (s & 1 ? casy : 1 - casy)) continue;
       const o = (j % R) * rw, up = j > 0 ? ((j - 1) % R) * rw : -1, dn = j + 1 < rh ? ((j + 1) % R) * rw : -1;
       if (irr) {
-        const c = LIFT97[s - 1];
-        if (up < 0) for (let i = 0; i < rw; i++) buf[o + i] = f32(buf[o + i] + f32(f32(buf[dn + i] + buf[dn + i]) * c));
-        else if (dn < 0) { const c2 = f32(c + c); for (let i = 0; i < rw; i++) buf[o + i] = f32(buf[o + i] + f32(buf[up + i] * c2)); }
-        else for (let i = 0; i < rw; i++) buf[o + i] = f32(buf[o + i] + f32(f32(buf[up + i] + buf[dn + i]) * c));
+        const c = LIFT97[s - 1] ?? NaN;
+        if (up < 0) for (let i = 0; i < rw; i++) buf[o + i] = f32((buf[o + i] ?? NaN) + f32(f32((buf[dn + i] ?? NaN) + (buf[dn + i] ?? NaN)) * c));
+        else if (dn < 0) { const c2 = f32(c + c); for (let i = 0; i < rw; i++) buf[o + i] = f32((buf[o + i] ?? NaN) + f32((buf[up + i] ?? NaN) * c2)); }
+        else for (let i = 0; i < rw; i++) buf[o + i] = f32((buf[o + i] ?? NaN) + f32(f32((buf[up + i] ?? NaN) + (buf[dn + i] ?? NaN)) * c));
       } else {
         const u = up < 0 ? dn : up, d = dn < 0 ? up : dn;
-        if (s === 1) for (let i = 0; i < rw; i++) buf[o + i] -= Math.floor((buf[u + i] + buf[d + i] + 2) / 4);
-        else for (let i = 0; i < rw; i++) buf[o + i] += Math.floor((buf[u + i] + buf[d + i]) / 2);
+        if (s === 1) for (let i = 0; i < rw; i++) buf[o + i] = (buf[o + i] ?? NaN) - Math.floor(((buf[u + i] ?? NaN) + (buf[d + i] ?? NaN) + 2) / 4);
+        else for (let i = 0; i < rw; i++) buf[o + i] = (buf[o + i] ?? NaN) + Math.floor(((buf[u + i] ?? NaN) + (buf[d + i] ?? NaN)) / 2);
       }
     }
   }
 }
 
-/** A component of a decoded tile (`decodeTile`), as a source of its rows. */
+/** A component of a decoded tile (`decodeTile`), as a source of its rows.
+ *  @param {TileComp} x @param {boolean} irr @param {T1Scratch} t1 @param {Pool} pool @returns {LowestRows | LevelRows} */
 function componentRows(x, irr, t1, pool) {
+  /** @param {Band} B @returns {BandRows} */
   const band = (B) => new BandRows(x, B, irr, t1, pool);
-  let src = new LowestRows(band(x.res[0].bands[0]));
-  for (let r = 1; r < x.res.length; r++) src = new LevelRows(src, x.res[r].bands.map(band), x.res[r], x.res[r - 1], irr, pool);
+  const res0 = x.res[0], ll = res0 ? res0.bands[0] : undefined;
+  if (!ll) throw impossible("a component without its LL band");
+  /** @type {LowestRows | LevelRows} */
+  let src = new LowestRows(band(ll));
+  for (let r = 1; r < x.res.length; r++) {
+    const R0 = x.res[r], P = x.res[r - 1];
+    if (!R0 || !P) throw impossible("a resolution past the component's");
+    src = new LevelRows(src, R0.bands.map(band), R0, P, irr, pool);
+  }
   return src;
 }
 
 /** The pool slots a tile's decode takes, in bytes, in `componentRows`' order:
- *  per component, a strip of every band and each level's line and ring. */
+ *  per component, a strip of every band and each level's line and ring.
+ *  @param {Layout} layout @returns {number[]} */
 function tileSlots({ tc }) {
+  /** @type {number[]} */
   const out = [];
   for (const x of tc) {
     const S = x.sp.qmfbid === 0 ? 4 : 2;
@@ -956,15 +1301,17 @@ function tileSlots({ tc }) {
   return out;
 }
 
+/** @param {Uint8Array[]} parts @returns {Uint8Array} */
 function concat(parts) {
-  if (parts.length === 1) return parts[0];
+  const only = parts.length === 1 ? parts[0] : undefined;
+  if (only) return only;
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0;
   for (const p of parts) { out.set(p, o); o += p.length; }
   return out;
 }
 
-/** lrintf under the default rounding mode: to nearest, ties to even. */
+/** lrintf under the default rounding mode: to nearest, ties to even. @param {number} v @returns {number} */
 function rintEven(v) {
   const f = Math.floor(v), d = v - f;
   if (d < 0.5) return f;
@@ -973,9 +1320,30 @@ function rintEven(v) {
 }
 
 /**
+ * What a decode states about the stream, beside its samples.
+ * @typedef {Object} JpxInfo
+ * @property {"jp2" | "codestream"} container
+ * @property {Colour | null} colour the JP2 header's colour specification, null for a bare codestream
+ * @property {number} tiles @property {number} layers @property {number} levels
+ * @property {"9/7" | "5/3" | null} transform the first tile's wavelet
+ * @property {string | number} progression its name, or the number of one past Part 1's five
+ * @property {boolean} colour_transform
+ */
+/**
+ * A decoded image.
+ * @typedef {Object} JpxImage
+ * @property {number} width @property {number} height @property {number} comps
+ * @property {Uint8Array} samples interleaved 8-bit, one byte per component per pixel, rows top to bottom
+ * @property {JpxInfo} detail
+ */
+
+/**
  * Decode a `JPXDecode` stream (a JP2 file or a bare codestream). Returns
  * `{ width, height, comps, samples, detail }`: `samples` interleaved 8-bit,
  * one byte per component per pixel, rows top to bottom.
+ * @param {Uint8Array} d the stream's bytes
+ * @returns {JpxImage}
+ * @throws {JpxRefusal} UNSUPPORTED, UNSUPPORTED_SAMPLES, IMAGE_TOO_LARGE, TRUNCATED or CORRUPT
  */
 export function decodeJpx(d) {
   const box = container(d);
@@ -1002,57 +1370,67 @@ export function decodeJpx(d) {
   if (objects > OBJECTS_MAX)
     throw tooLarge(...OBJECTS_ROW, objects, localize("image-codecs.jpxdecode.the_codestream_s_precincts_and_code", "the codestream's precincts and code-blocks would be {objects} objects, past the {bound} the decoder builds", { objects: String(objects), bound: String(OBJECTS_MAX) }), { bound_name: "objects", width: W, height: H, components: nc });
   if (cs.tiles.size < nTiles) throw truncated(localize("image-codecs.jpxdecode.size_of_ntiles_tiles_are", "{size} of {nTiles} tiles are present", { size: String(cs.tiles.size), nTiles: String(nTiles) }));
+  /** @type {Uint8Array | null} */
   let out = null;
+  /** @type {T1Scratch} */
   const t1 = { tmp: new Int32Array(4096), flags: new Uint16Array(1026 * 6) };
   const pool = new Pool();
   const shift = 1 << 7;
+  /** @param {number} v @param {boolean} irr @returns {number} */
   const put = (v, irr) => {
     const s = irr ? (v > 2147483647 ? 255 : v < -2147483648 ? 0 : rintEven(v) + shift) : v + shift;
     return s < 0 ? 0 : s > 255 ? 255 : s;
   };
+  /** @type {"9/7" | "5/3" | null} */
   let transform = null;
   for (const [no, t] of cs.tiles) {
     if (no >= nTiles) throw corrupt(`tile ${no} of ${nTiles}`);
     const { tile, cod, tc } = decodeTile(cs, t, no);
-    out ??= new Uint8Array(W * H * nc);              // after the first tile's packets have been read
+    const px = (out ??= new Uint8Array(W * H * nc)); // after the first tile's packets have been read
     const irreversible = tc.map((x) => x.sp.qmfbid === 0);
     transform ??= irreversible[0] ? "9/7" : "5/3";
     const mct = cod.mct && nc >= 3;
     if (mct && (irreversible[0] !== irreversible[1] || irreversible[1] !== irreversible[2])) throw corrupt(localize("image-codecs.jpxdecode.a_colour_transform_over_mixed", "a colour transform over mixed wavelets"));
     pool.i = 0;
-    const src = tc.map((x, c) => componentRows(x, irreversible[c], t1, pool));
+    const src = tc.map((x, c) => componentRows(x, irreversible[c] === true, t1, pool));
     const w = tile.x1 - tile.x0, h = tile.y1 - tile.y0;
     /* Row by row: the component transform (G.2, G.3), then rounding, level
      * shift and clamp, straight into the output. */
-    const ro = new Array(nc);
+    /** @type {number[]} */
+    const ro = [];
     for (let j = 0; j < h; j++) {
-      for (let c = 0; c < nc; c++) ro[c] = src[c].next();
+      for (let c = 0; c < nc; c++) { const sc = src[c]; if (!sc) throw impossible("a component past the tile's"); ro[c] = sc.next(); }
       let o = ((tile.y0 - siz.YO + j) * W + (tile.x0 - siz.XO)) * nc;
       if (mct && irreversible[0]) {
-        const [a, b, c] = src.map((s) => s.buf), [ao, bo, co] = ro;
+        const [a, b, c] = src.map((s) => s.buf), [ao = NaN, bo = NaN, co = NaN] = ro;
+        if (!a || !b || !c) throw impossible("a colour transform over fewer than three components");
         for (let i = 0; i < w; i++, o += 3) {
-          const y = a[ao + i], u = b[bo + i], v = c[co + i];
-          out[o] = put(f32(y + f32(v * f32(1.402))), true);
-          out[o + 1] = put(f32(f32(y - f32(u * f32(0.34413))) - f32(v * f32(0.71414))), true);
-          out[o + 2] = put(f32(y + f32(u * f32(1.772))), true);
+          const y = a[ao + i] ?? NaN, u = b[bo + i] ?? NaN, v = c[co + i] ?? NaN;
+          px[o] = put(f32(y + f32(v * f32(1.402))), true);
+          px[o + 1] = put(f32(f32(y - f32(u * f32(0.34413))) - f32(v * f32(0.71414))), true);
+          px[o + 2] = put(f32(y + f32(u * f32(1.772))), true);
         }
       } else if (mct) {
-        const [a, b, c] = src.map((s) => s.buf), [ao, bo, co] = ro;
+        const [a, b, c] = src.map((s) => s.buf), [ao = NaN, bo = NaN, co = NaN] = ro;
+        if (!a || !b || !c) throw impossible("a colour transform over fewer than three components");
         for (let i = 0; i < w; i++, o += 3) {
-          const y = a[ao + i], u = b[bo + i], v = c[co + i];
+          const y = a[ao + i] ?? NaN, u = b[bo + i] ?? NaN, v = c[co + i] ?? NaN;
           const g = y - Math.floor((u + v) / 4);
-          out[o] = put((v + g) | 0, false); out[o + 1] = put(g | 0, false); out[o + 2] = put((u + g) | 0, false);
+          px[o] = put((v + g) | 0, false); px[o + 1] = put(g | 0, false); px[o + 2] = put((u + g) | 0, false);
         }
       } else {
         for (let c = 0; c < nc; c++) {
-          const row = src[c].buf, rc = ro[c], irr = irreversible[c];
-          for (let i = 0; i < w; i++) out[o + i * nc + c] = put(row[rc + i], irr);
+          const sc = src[c];
+          if (!sc) throw impossible("a component past the tile's");
+          const row = sc.buf, rc = ro[c] ?? NaN, irr = irreversible[c] === true;
+          for (let i = 0; i < w; i++) px[o + i * nc + c] = put(row[rc + i] ?? NaN, irr);
         }
       }
     }
   }
-  const cod = cs.main.cod;
-  return { width: W, height: H, comps: nc, samples: out,
+  const cod = cs.cod, samplesOut = out;
+  if (!samplesOut) throw impossible("no tile decoded");   // never: every tile is present, and there is at least one
+  return { width: W, height: H, comps: nc, samples: samplesOut,
            detail: { container: box.jp2 ? "jp2" : "codestream", colour: box.colour, tiles: nTiles, layers: cod.layers,
                      levels: cod.sp.nl, transform, progression: ["LRCP", "RLCP", "RPCL", "PCRL", "CPRL"][cod.prog] ?? cod.prog,
                      colour_transform: !!cod.mct } };

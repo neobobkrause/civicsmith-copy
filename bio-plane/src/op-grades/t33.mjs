@@ -16,6 +16,7 @@
 
 import { localize } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs, each with the backing it names (`affordances` R19) ---- */

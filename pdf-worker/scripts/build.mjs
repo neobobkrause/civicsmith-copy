@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-/* Build the pdf-worker into ONE self-contained module. The output is committed
- * so a fresh worktree's suite (`test/structure.test.mjs`) can load it under
- * miniflare without installing `unpdf` — exactly as the plane commits
- * dist/bio-plane.bundled.mjs.
+/* Build the pdf-worker into ONE self-contained module, `dist/pdf-worker.bundled.mjs`,
+ * with its manifest `dist/pdf-worker.bundle.json`. Neither is committed (R45;
+ * ARCH's decision "Committed built files"): `dist/` holds only a `.gitignore`,
+ * and this script builds the two there whenever a test, a deployment or a
+ * release needs them.
  *
  * `unpdf` (pdf.js) is INLINED here and never enters the plane's module graph:
  * that separation is the whole point of the fleet (adding unpdf to the plane
@@ -11,19 +12,11 @@
  *
  * ---- FL-9, 2026-09-10: THE RECIPE MOVED, AND SO DID WHAT THIS PRODUCES ------
  *
- * The esbuild options are no longer written here. They live in
- * `bio-plane/scripts/fleet-bundle.mjs`, which is ALSO what
- * `bio-plane/test/system/fleetbundles.test.mjs` builds with when it asserts this
- * committed artifact is byte-identical to a fresh build of its source. **One
- * expression of the recipe, or the build and the guard can disagree and the
- * guard is the one that would be wrong.**
- *
- * This step now also writes `dist/pdf-worker.bundle.json` — the artifact's
- * sha256, its byte length, the exact recipe, and the sha256 of every input — so
- * the staleness check runs on a checkout with no `node_modules` at all. This
- * member had committed a bundle since 2026-07-31 with nothing asserting it
- * matched its source; DIST measured that gap on 2026-09-10 and it is what FL-9
- * closes for BOTH members.
+ * The esbuild options are not written here. They live in
+ * `bio-plane/scripts/fleet-bundle.mjs`, the one recipe this script, the
+ * module's test subject (`test/subject.mjs`) and the release tooling all build
+ * with. The manifest states the artifact's sha256, its byte length, the exact
+ * recipe, and the sha256 of every input.
  *
  * Run from pdf-worker/: `npm run build`.
  */
@@ -31,10 +24,11 @@ import { discoverMembers, writeMember } from "../../bio-plane/scripts/fleet-bund
 
 const member = discoverMembers().find((m) => m.name === "pdf-worker");
 if (!member) throw new Error("pdf-worker declares no fleet-member.json — it cannot be discovered");
-if (!member.bundle) throw new Error("pdf-worker/fleet-member.json declares no `bundle` block");
+const bundle = member.bundle;
+if (!bundle) throw new Error("pdf-worker/fleet-member.json declares no `bundle` block");
 
 const { built, manifest } = await writeMember(member);
-console.log(`pdf-worker: built ${member.bundle.outfile}`
+console.log(`pdf-worker: built ${bundle.outfile}`
   + ` — ${built.bytes.length} B, sha256 ${built.sha256}`);
-console.log(`pdf-worker: wrote ${member.bundle.manifest}`
+console.log(`pdf-worker: wrote ${bundle.manifest}`
   + ` — ${manifest.inputs.length} first-party input(s), ${manifest.vendoredInputs.length} vendored`);

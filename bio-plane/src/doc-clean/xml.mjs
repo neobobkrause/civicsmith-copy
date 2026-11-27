@@ -13,7 +13,7 @@
  *   remove: elements removed, content and all;     empty: elements whose content is removed;
  *   attrs:  `{el, attr, value, when}`: the attribute `attr` (on the element `el`, or on any; whose value `when`
  *           accepts, when given) set to `""`, or removed when `value` is null;
- *   drop:   `{el, when}`: elements removed whose attributes `when` accepts;
+ *   drop:   `{el, when}`: elements removed whose attributes (a map of name to value) `when` accepts;
  *   removeNs: namespaces whose every element (content and all) and attribute is removed.
  * Every byte outside an edited tag or a removed content is copied as it was. A part in UTF-16 is edited as UTF-8 and
  * written back as UTF-16. Edits only shorten, so a part can be edited in its own buffer. */
@@ -21,6 +21,27 @@ import { boundOf } from "../read-bounds.mjs";
 import { CleanRefusal } from "./refusal.mjs";
 import { localize } from "../setup-words/index.mjs";
 
+/** @typedef {"dc" | "dcterms" | "cp" | "ep" | "w" | "w15" | "w16cex" | "p" | "p188" | "x" | "xtc" | "x15ac" | "rel" | "ct" | "meta" | "r" | "editor" | "manifest"} NsKey
+ *  a key of `NS` */
+/** An element's or attribute's name in a rule: `[ns, local]`, `ns` a key of `NS`, or `""` for an unqualified attribute.
+ *  @typedef {[string, string]} RuleName */
+/** A name as the part spells it, resolved: its namespace's key (`null` when the prefix names none of `NS`), its local name.
+ *  @typedef {[string | null, string]} SeenName */
+/** @typedef {{ el?: RuleName, attr: RuleName, value: string | null, when?: (value: string) => boolean }} AttrRule
+ *  the attribute `attr` (on `el`, or on any; whose value `when` accepts) set to `""`, or removed when `value` is null */
+/** @typedef {(attrs: Map<string, string>) => boolean} DropWhen
+ *  whether an element with these attributes (name to value; a repeated name its last value) is removed */
+/** @typedef {{ el: RuleName, when: DropWhen }} DropRule  elements `el` removed whose attributes `when` accepts */
+/** @typedef {{ remove?: RuleName[], empty?: RuleName[], attrs?: AttrRule[], drop?: DropRule[], removeNs?: string[] }} XmlRules */
+/** The counters of one clean (R11).
+ *  @typedef {{ scanned: number, tokens: number, yields: number, yieldNow: () => Promise<unknown> }} Scan */
+/** @typedef {{ inPlace?: boolean, where?: string, scan?: Scan | undefined }} EditOptions */
+/** One attribute of a start tag: where its name starts, the name, the quote, where its value starts and ends.
+ *  @typedef {{ ns: number, name: string, q: number, vs: number, ve: number }} Attr */
+/** @typedef {{ name: string, attrs: Attr[], end: number, self: boolean }} StartTag */
+/** @typedef {{ name: string, depth: number, keepEnd: boolean }} Skip */
+
+/** @param {string} s */
 const OOXML = (s) => [`http://schemas.openxmlformats.org/${s}`];
 export const NS = {
   dc: ["http://purl.org/dc/elements/1.1/"],
@@ -44,11 +65,16 @@ export const NS = {
       "ImageReplacement/1.0", "Flows/1.0", "GenericCustomNamespace/1.0", "XPath/1.0"].map((n) => `http://ns.adobe.com/${n}/`)],
   manifest: ["urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"],
 };
-const URI_NS = new Map(Object.entries(NS).flatMap(([k, uris]) => uris.map((u) => [u, k])));
+/** @type {NsKey[]} */
+const NS_KEYS = ["dc", "dcterms", "cp", "ep", "w", "w15", "w16cex", "p", "p188", "x", "xtc", "x15ac", "rel", "ct", "meta", "r", "editor", "manifest"];
+/** @type {Map<string, string>} */
+const URI_NS = new Map(NS_KEYS.flatMap((k) => NS[k].map((u) => /** @type {[string, string]} */ ([u, k]))));
 
 const LT = 0x3c, GT = 0x3e, SLASH = 0x2f, EQ = 0x3d, Q1 = 0x22, Q2 = 0x27, LBRACKET = 0x5b;
+/** @param {number | undefined} c */
 const isWs = (c) => c === 0x20 || c === 0x0a || c === 0x0d || c === 0x09;
-const str = (d, a, b) => String.fromCharCode.apply(null, d.subarray(a, b));
+/** @param {Uint8Array} d @param {number} a @param {number} b */
+const str = (d, a, b) => String.fromCharCode(...d.subarray(a, b));
 
 /** The longest a tag may be (R11). */
 export const TAG_MAX = boundOf("xml", "tag");
@@ -57,21 +83,28 @@ const YIELD_TOKENS = 1 << 16;
 
 /** The counters of one clean: bytes scanned, tokens walked, yields made; `yieldNow` is what the caller lets the pass
  *  await (default: a turn of the microtask queue). */
+/** @param {() => Promise<unknown>} [yieldNow]
+ *  @returns {Scan} */
 export const newScan = (yieldNow = () => Promise.resolve()) => ({ scanned: 0, tokens: 0, yields: 0, yieldNow });
 
+/** @param {string} where */
 const tooLong = (where) => new CleanRefusal("DOCUMENT_UNREADABLE",
   localize("doc-clean.xml.where_has_a_tag_of_more", "{where} has a tag of more than {max} bytes", { where: String(where), max: String(TAG_MAX) }));
 
 /** A start tag at `lt`: its name, its attributes (`{ns, name, q, vs, ve}`: where the name starts, the name, the quote,
  *  where the value starts and ends), where it ends, whether it closes itself. `null` when it does not end. `stop` is
  *  where the tag must have ended by; running past it with bytes to spare throws `over`. */
+/** @param {Uint8Array} d @param {number} lt @param {number} stop @param {() => CleanRefusal} over
+ *  @returns {StartTag | null} */
 function startTag(d, lt, stop, over) {
   const cap = stop < d.length ? over : null; // past `stop` the tag is too long only when the part goes on
   const end = Math.min(d.length, stop);
   const fail = () => { if (cap) throw cap(); return null; };
   let i = lt + 1;
   while (i < end && !isWs(d[i]) && d[i] !== GT && d[i] !== SLASH) i++;
-  const name = str(d, lt + 1, i), attrs = [];
+  const name = str(d, lt + 1, i);
+  /** @type {Attr[]} */
+  const attrs = [];
   for (;;) {
     while (i < end && isWs(d[i])) i++;
     if (i >= end) return fail();
@@ -95,11 +128,15 @@ function startTag(d, lt, stop, over) {
   }
 }
 
+/** @param {string} qn @returns {[string, string]} */
 const split = (qn) => { const c = qn.indexOf(":"); return c < 0 ? ["", qn] : [qn.slice(0, c), qn.slice(c + 1)]; };
+/** @param {RuleName | SeenName} name */
 const key = ([ns, local]) => `${ns} ${local}`;
 
 /** Apply `rules` to an XML part's bytes; with `inPlace`, into the same buffer (the copy is never longer than what it
  *  has read, so it never overtakes it). */
+/** @param {Uint8Array} bytes @param {XmlRules} rules @param {EditOptions} [options]
+ *  @returns {Promise<Uint8Array>} */
 export async function editXml(bytes, rules, { inPlace = false, where = "?", scan = newScan() } = {}) {
   const le = bytes[0] === 0xff && bytes[1] === 0xfe, be = bytes[0] === 0xfe && bytes[1] === 0xff;
   if (le || be) {
@@ -118,30 +155,41 @@ export async function editXml(bytes, rules, { inPlace = false, where = "?", scan
   return edit(bytes, rules, inPlace, where, scan);
 }
 
+/** @param {Uint8Array} d @param {XmlRules} rules @param {boolean} inPlace @param {string} where @param {Scan} scan
+ *  @returns {Promise<Uint8Array>} */
 async function edit(d, { remove = [], empty = [], attrs = [], drop = [], removeNs = [] }, inPlace, where, scan) {
+  /** @type {Set<string | null>} */
   const wholeNs = new Set(removeNs);
   const removeSet = new Set(remove.map(key)), emptySet = new Set(empty.map(key));
-  const dropBy = new Map(drop.map((r) => [key(r.el), r.when]));
-  const locals = new Set([...remove, ...empty, ...drop.map((r) => r.el), ...attrs.filter((r) => r.el).map((r) => r.el)].map((x) => x[1]));
+  const dropBy = new Map(drop.map((r) => /** @type {[string, DropWhen]} */ ([key(r.el), r.when])));
+  const locals = new Set([...remove, ...empty, ...drop.map((r) => r.el), ...attrs.flatMap((r) => { const el = r.el; return el ? [el] : []; })].map((x) => x[1]));
   const attrLocals = new Set(attrs.map((r) => r.attr[1]));
-  const prefixes = new Map();
-  const nsOf = (prefix) => URI_NS.get(prefixes.get(prefix)) ?? null;
+  /** @type {Map<string, string>} */
+  const prefixes = new Map(null);
+  /** @param {string} prefix @returns {string | null} */
+  const nsOf = (prefix) => { const uri = prefixes.get(prefix); return (uri === undefined ? undefined : URI_NS.get(uri)) ?? null; };
   const out = inPlace ? d : new Uint8Array(d.length);
-  let w = 0, i = 0, changed = false, skip = null;
+  let w = 0, i = 0, changed = false;
+  /** @type {Skip | null} */
+  let skip = null;
   const over = () => tooLong(where);
+  /** @param {number} a @param {number} b */
   const copy = (a, b) => {
     if (skip || b <= a) return;
     if (inPlace) { if (w !== a) d.copyWithin(w, a, b); } else out.set(d.subarray(a, b), w);
     w += b - a;
   };
+  /** @param {string} s */
   const put = (s) => { for (let k = 0; k < s.length; k++) out[w++] = s.charCodeAt(k); };
   /* every search below is counted: `from` to where it stopped */
+  /** @param {number} byte @param {number} from @param {number} [to] */
   const idx = (byte, from, to = d.length) => {
     const at = d.subarray(from, to).indexOf(byte);
     scan.scanned += at < 0 ? to - from : at + 1;
     return at < 0 ? -1 : from + at;
   };
   /* the end of the first `pat` at or after `from`, or -1 */
+  /** @param {string} pat @param {number} from */
   const until = (pat, from) => {
     const first = pat.charCodeAt(0);
     for (let at = idx(first, from); at >= 0; at = idx(first, at + 1)) {
@@ -172,8 +220,9 @@ async function edit(d, { remove = [], empty = [], attrs = [], drop = [], removeN
       const room = Math.min(d.length, stop), gt = idx(GT, lt, room);
       if (gt < 0 && room < d.length) throw over();
       end = gt < 0 ? -1 : gt + 1;
-      if (end > 0 && skip && str(d, lt + 2, gt).trim() === skip.name && --skip.depth === 0) {
-        const keep = skip.keepEnd;
+      const sk = skip;
+      if (end > 0 && sk && str(d, lt + 2, gt).trim() === sk.name && --sk.depth === 0) {
+        const keep = sk.keepEnd;
         skip = null;
         if (!keep) { i = end; continue; }
       }
@@ -182,34 +231,40 @@ async function edit(d, { remove = [], empty = [], attrs = [], drop = [], removeN
       if (!t) { copy(lt, d.length); break; }
       scan.scanned += t.end - lt;
       i = t.end;
-      if (skip) { if (t.name === skip.name && !t.self) skip.depth++; continue; }
+      const sk = skip;
+      if (sk) { if (t.name === sk.name && !t.self) sk.depth++; continue; }
       for (const a of t.attrs) if (a.name === "xmlns" || a.name.startsWith("xmlns:")) prefixes.set(a.name === "xmlns" ? "" : a.name.slice(6), str(d, a.vs, a.ve));
       const [prefix, local] = split(t.name);
       const el = locals.has(local) ? key([nsOf(prefix), local]) : null;
-      if ((wholeNs.size && wholeNs.has(nsOf(prefix))) || el && (removeSet.has(el) || dropBy.get(el)?.(Object.fromEntries(t.attrs.map((a) => [a.name, str(d, a.vs, a.ve)]))))) {
+      if ((wholeNs.size && wholeNs.has(nsOf(prefix))) || el && (removeSet.has(el) || dropBy.get(el)?.(new Map(t.attrs.map((a) => /** @type {[string, string]} */ ([a.name, str(d, a.vs, a.ve)])))))) {
         changed = true;
         if (!t.self) skip = { name: t.name, depth: 1, keepEnd: false };
         continue;
       }
+      /** @type {Map<Attr, string | null> | null} */
       let edits = null;
       if (wholeNs.size)
-        for (const a of t.attrs) { const ap = split(a.name)[0]; if (ap && ap !== "xmlns" && wholeNs.has(nsOf(ap))) (edits ??= new Map()).set(a, null); }
+        for (const a of t.attrs) { const ap = split(a.name)[0]; if (ap && ap !== "xmlns" && wholeNs.has(nsOf(ap))) { const m = edits ?? (edits = new Map(null)); m.set(a, null); } }
       if (attrLocals.size)
         for (const a of t.attrs) {
           const [ap, al] = split(a.name);
           if (!attrLocals.has(al)) continue;
           const ans = ap ? nsOf(ap) : "";
-          const rule = attrs.find((r) => r.attr[1] === al && r.attr[0] === ans && (!r.el || (r.el[1] === local && r.el[0] === nsOf(prefix))) &&
-            (!r.when || r.when(str(d, a.vs, a.ve))));
-          if (rule && (rule.value === null || a.ve > a.vs)) (edits ??= new Map()).set(a, rule.value);
+          const rule = attrs.find((r) => {
+            const el = r.el, when = r.when;
+            return r.attr[1] === al && r.attr[0] === ans && (!el || (el[1] === local && el[0] === nsOf(prefix))) &&
+              (!when || when(str(d, a.vs, a.ve)));
+          });
+          if (rule && (rule.value === null || a.ve > a.vs)) { const m = edits ?? (edits = new Map(null)); m.set(a, rule.value); }
         }
-      if (!edits) copy(lt, t.end);
+      const ed = edits;
+      if (!ed) copy(lt, t.end);
       else {
         changed = true;
         put(`<${t.name}`);
         for (const a of t.attrs) {
-          if (!edits.has(a)) { put(" "); copy(a.ns, a.ve + 1); }
-          else if (edits.get(a) !== null) put(` ${a.name}=${String.fromCharCode(a.q, a.q)}`);
+          if (!ed.has(a)) { put(" "); copy(a.ns, a.ve + 1); }
+          else if (ed.get(a) !== null) put(` ${a.name}=${String.fromCharCode(a.q, a.q)}`);
         }
         put(t.self ? "/>" : ">");
       }

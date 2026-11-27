@@ -9,6 +9,7 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 const NOTE_DIRECTED = "note-directed: a member's own note, keyed by the note and answered to its author alone; never a "
   + "record id, never cited, published or counted; moves no bundle";

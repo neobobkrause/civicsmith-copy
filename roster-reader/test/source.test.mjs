@@ -6,8 +6,15 @@ import assert from "node:assert/strict";
 import { rosterSource, LEVEL_READ, LEVEL_NOT_READ, staffRoster } from "../index.mjs";
 import { ROSTER_DOCS, FIRST, ctxOf, freeze } from "./fixtures.mjs";
 import { word, localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { StoreRead, RosterQuery, HeldRoster, RosterAnswer } from "../source.mjs" */
+/** @import { CapturedDoc } from "./fixtures.mjs" */
+/** @import { Value } from "../lines.mjs" */
 
 const D = ROSTER_DOCS.documents;
+/** @param {string} k @returns {CapturedDoc} */
+const doc = (k) => { const d = D[k]; assert.ok(d, k); return d; };
+/** The first roster of an answer, which the test expects there. @param {RosterAnswer} a @returns {HeldRoster} */
+const first = (a) => { const r = a.rosters[0]; assert.ok(r); return r; };
 const Q = { organisation: "ENT-7", at: "2025-03-01", viewer: "MBR-1" };
 const CONTACT = /@|\b\d{3}[-.]\d{4}\b|\b\d{1,6}\s+\w+\s+(?:Street|St|Avenue|Ave|Blvd)\b/;
 const TABLE = {
@@ -17,9 +24,11 @@ const TABLE = {
          ["John Roe 510-555-0102", "Analyst II", "Finance", "2021-01-04", "2024-06-30", "E101", "510-555-0199", "4 Oak Ave", "x"],
          ["", "", "", "", "", "", "510-555-0000", "", ""]],
 };
-const docItem = (k, extra) => ({ source: { sha256: D[k].sha256 }, text: D[k].text, view: FIRST, ...(extra || {}) });
+/** A held document as the store's read answers it. @param {string} k */
+const docItem = (k) => ({ source: { sha256: doc(k).sha256 }, text: doc(k).text, view: FIRST });
 
 test("R12 a held roster document is read by R2 and answered as {source, as_of, rows}, its own date stated, at the level read by roster-reader", () => {
+  /** @type {Value[]} */
   const seen = [];
   const src = rosterSource((q) => { seen.push(q); return [docItem("roster_committee")]; });
   const a = src(Q);
@@ -29,16 +38,17 @@ test("R12 a held roster document is read by R2 and answered as {source, as_of, r
   assert.equal(a.organisation, "ENT-7");
   assert.equal(a.at, "2025-03-01");
   assert.equal(a.rosters.length, 1);
-  const r = a.rosters[0];
-  assert.deepEqual(r.source, { sha256: D.roster_committee.sha256 });
+  const r = first(a);
+  assert.deepEqual(r.source, { sha256: doc("roster_committee").sha256 });
   assert.equal(r.as_of, "2025-01-10");
   /* Every row is R2's row, as the document states it, placed where its own text says. */
-  const want = staffRoster.parse(ctxOf(D.roster_committee, FIRST)).rows;
-  assert.deepEqual(r.rows, want);
-  assert.ok(r.rows.some((x) => x.name === "Zac Unger" && x.title === "Chair" && x.unit === "Public Works"));
-  for (const x of r.rows) assert.equal(x.source.kind, "pdf-page");
+  const want = staffRoster.parse(ctxOf(doc("roster_committee"), FIRST)).rows;
+  const rows = r.rows;
+  assert.deepEqual(rows, want);
+  assert.ok(rows.some((x) => x.name === "Zac Unger" && x.title === "Chair" && x.unit === "Public Works"));
+  for (const x of rows) { const src = x.source; assert.equal(src && "kind" in src ? src.kind : undefined, "pdf-page"); }
   /* A roster whose text states no date: as_of null, with why. */
-  const w = rosterSource(() => [docItem("roster_wdb")])(Q).rosters[0];
+  const w = first(rosterSource(() => [docItem("roster_wdb")])(Q));
   assert.equal(w.as_of, null);
   assert.equal(w.as_of_why, localize("roster-reader.staff-roster.no_line_among_the_documents_first", "no line among the document's first eight, or beside its self-naming line, states a date"));
   assert.equal(w.rows.length, 18);
@@ -47,7 +57,7 @@ test("R12 a held roster document is read by R2 and answered as {source, as_of, r
 test("R12 a held roster table is read through R6's column roles, each row {name?, title?, unit?, start?, end?, employee_id?, source}; a contact or unnamed column is never read", () => {
   const a = rosterSource(() => [TABLE])(Q);
   assert.equal(a.level, LEVEL_READ);
-  const r = a.rosters[0];
+  const r = first(a);
   assert.deepEqual(r.source, { table: "TBL-1" });
   assert.equal(r.as_of, "2025-02-01");
   assert.deepEqual(r.rows, [
@@ -56,11 +66,11 @@ test("R12 a held roster table is read through R6's column roles, each row {name?
   ]);
   assert.doesNotMatch(JSON.stringify(a), CONTACT);
   assert.doesNotMatch(JSON.stringify(a), /private note/);
-  assert.deepEqual(r.columns.map((c) => c.role), ["name", "title", "unit", "start", "end", "employee_id", "contact", "contact", null]);
+  assert.deepEqual((r.columns || []).map((c) => c.role), ["name", "title", "unit", "start", "end", "employee_id", "contact", "contact", null]);
   assert.equal(r.columns_why, `${localize("roster-reader.source.contact_contact_column_s_not", "{contact} contact column(s) not read", { contact: "2" })}; ${localize("roster-reader.source.unnamed_column_s_with_no", "{unnamed} column(s) with no role not read", { unnamed: "1" })}`);
   /* Rows keyed by header text read the same way; a table stating no date says so. */
   const keyed = { source: "T2", header: ["Name", "Title", "Email"], rows: [{ Name: "Ann Lee", Title: "Chair", Email: "a@x.example" }] };
-  const k = rosterSource(() => ({ items: [keyed], view: FIRST }))(Q).rosters[0];
+  const k = first(rosterSource(() => ({ items: [keyed], view: FIRST }))(Q));
   assert.deepEqual(k.rows, [{ name: "Ann Lee", title: "Chair", source: { roster: "T2", row: 0 } }]);
   assert.equal(k.as_of, null);
   assert.equal(k.as_of_why, localize("roster-reader.source.the_held_table_states_no", "the held table states no date of its own; a row's own `as_of` column, where it has one, is kept on the row"));
@@ -74,7 +84,7 @@ test("R12 a held roster table is read through R6's column roles, each row {name?
 test("R12 a held organisation chart gives as rows only the posts that name their holder on their own line", () => {
   const text = "Records Division\nDirector Jane Doe\nManager\nJohn Roe\nFiscal Section\nPayroll Unit\nAnalyst Ann Lee\nGrants Unit";
   const a = rosterSource(() => [{ source: "C1", text, type: "org_chart", view: FIRST }])(Q);
-  const r = a.rosters[0];
+  const r = first(a);
   assert.deepEqual(r.rows.map((x) => [x.name, x.title]), [["Jane Doe", "Director"], ["Ann Lee", "Analyst"]]);
   assert.equal(r.rows_why, localize("roster-reader.source.an_organisation_chart_a_row", "an organisation chart: a row is a post whose holder is named on its own line; a box with no name, and any reporting line the drawing shows, are not rows"));
 });
@@ -101,6 +111,7 @@ test("R12 with no held roster it answers rosters: [] with why; with reads absent
   assert.equal(none.why, localize("roster-reader.source.no_roster_document_or_roster", "no roster document or roster table of this organisation is held that the viewer may see"));
   const later = localize("roster-reader.source.the_stores_read_answered_later", "the store's read answered later (a promise), and a roster source answers at once, so no held roster is read");
   const noList = localize("roster-reader.source.the_stores_read_answered_no", "the store's read answered no list of held rosters, so no held roster is read");
+  /** @type {Array<[StoreRead | undefined, string]>} */
   const cases = [
     [undefined, localize("roster-reader.source.no_read_of_the_store", "no read of the store was handed to roster-reader, so no held roster is read")],
     [() => { throw new Error("db closed"); }, localize("roster-reader.source.the_stores_read_of_held", "the store's read of held rosters failed ({msg}), so no held roster is read", { msg: "db closed" })],
@@ -119,12 +130,14 @@ test("R12 with no held roster it answers rosters: [] with why; with reads absent
     assert.equal(a.why, why);
   }
   /* Malformed questions and items are answered, never thrown: each item it cannot read is named with why. */
-  for (const q of [undefined, null, 7, {}]) assert.equal(rosterSource(() => [])(q).level, LEVEL_READ);
+  /** @type {Array<RosterQuery | null | undefined>} */
+  const questions = [undefined, null, {}];
+  for (const q of questions) assert.equal(rosterSource(() => [])(q).level, LEVEL_READ);
   const bad = rosterSource(() => [null, { source: "X" }, { source: "Y", text: "" }, { source: "Z", header: ["Name"] },
                                   { source: "V", get text() { throw new Error("boom"); } }])(Q);
   assert.deepEqual(bad.rosters, []);
-  assert.deepEqual(bad.unread.map((u) => u.source), [null, "X", "Y", "Z", "V"]);
-  for (const u of bad.unread) assert.ok(typeof u.why === "string" && u.why.length > 10, u.source);
+  assert.deepEqual((bad.unread || []).map((u) => u.source), [null, "X", "Y", "Z", "V"]);
+  for (const u of bad.unread || []) assert.ok(typeof u.why === "string" && u.why.length > 10, String(u.source));
 });
 
 test("R12 it writes nothing: the store's answer and the question are read, not changed, and two asks answer the same", () => {
@@ -132,5 +145,5 @@ test("R12 it writes nothing: the store's answer and the question are read, not c
   const q = freeze({ ...Q });
   const src = rosterSource(() => items);
   assert.deepEqual(src(q), src(q));
-  assert.ok(src(q).rosters[0].rows.length > 0);
+  assert.ok(first(src(q)).rows.length > 0);
 });

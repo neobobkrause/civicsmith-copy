@@ -17,15 +17,23 @@
 import { word } from "../setup-words/index.mjs";
 
 /* the sentence an owner declared, a code-held word the design has not taken into its list: its id is composed, as the words check judges a literal one */
+/** @param {string} module the owner module's name @param {string} op */
 const declared = (module, op) => word(`${module}.declared.${op}`);
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
+/** @param {string} s */
 const STEP = (s) => `step-directed: ${s}; never evidence and writes no leg; moves no bundle`;
+/** @param {string} s */
 const PROJECT_ACCOUNT = (s) => `credential governance: ${s}; the subject is who pays for the assistant, not a bundle`;
+/** @param {string} s */
 const ACCOUNT_SETTING = (s) => `the account's configuration: ${s}; moves no document, claim or grade`;
+/** @param {string} s */
 const MILESTONE = (s) => `milestone-directed: ${s}; the group's own date, never a duty or finding, never published; `
   + "moves no bundle";
+/** @param {string} s */
 const WORKING = (s) => `project-directed: ${s}; working material, never published and never evidence; moves no bundle`;
+/** @param {string} s */
 const GUIDE = (s) => `guide-directed: ${s}; a reading guide carries no conduct and loosens no rule; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */

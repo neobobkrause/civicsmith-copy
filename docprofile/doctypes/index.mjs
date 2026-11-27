@@ -28,6 +28,7 @@
  */
 
 /** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
+/** @import { Detection as RecogniserDetection } from "../../site-profiles/index.mjs" */
 /** @import { View, ViewSpaces, ViewVocabulary, ViewPractice, Form } from "../../jurisdictions/index.mjs" */
 /** @import { Tagged, VocabularyPattern, CodeEntry, FileNumber, AmendingEntry, MeetingMarkerEntry, BodyVariant, RosterWord, RosterHeader, BudgetHeader, VoteValue, ResponseStatus, MemberType, PolicyHeader } from "../../jurisdictions/types.mjs" */
 
@@ -107,11 +108,9 @@
  * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage>, readonly sheets?: Array<SuppliedSheet>, readonly locate?: (offset: unknown) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
  */
 /**
- * What a content type's `detect` answers: whether the document is that kind, how sure, and on what signals.
- * @typedef {Object} Detection
- * @property {boolean} match
- * @property {string} [confidence]
- * @property {string[]} [signals]
+ * What a content type's `detect` answers: whether the document is that kind, how sure, and on what signals. It is
+ * site-profiles' recogniser answer, so a match carries its confidence and a content type is a recogniser of the content axis.
+ * @typedef {RecogniserDetection} Detection
  */
 /**
  * A content type's judgement of two readings (R13 to R16): the graded events, whether it could say, why, and what it
@@ -125,20 +124,21 @@
 /**
  * A content type registered through the seam (R4, R36; doctypes R1): its key, label and version, whether it is the
  * fallback, its watching contract (R29), and its four answers. A type's reading is its own.
- * @typedef {Object} ContentType
- * @property {string} key
- * @property {string} [label]
- * @property {number} [version]
- * @property {boolean} [fallback]
- * @property {string} [contract]
- * @property {(ctx: DoctypeContext) => Detection | null | undefined} detect
- * @property {((ctx: DoctypeContext) => object | null | undefined) | undefined} [parse]
- * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined) | undefined} [assess]
- * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections]
+ * Every member is readonly: the seam reads a type and never writes one, so a caller's own narrower type stands in for it.
+ * @typedef {{ readonly key: string, readonly label?: string, readonly version?: number, readonly fallback?: boolean, readonly contract?: string, readonly detect: (ctx: DoctypeContext) => Detection | null | undefined, readonly parse?: ((ctx: DoctypeContext) => object | null | undefined) | undefined, readonly assess?: ((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined) | undefined, readonly connections?: ((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined }} ContentType
+ */
+/**
+ * A record of counts by label, as a fact of an entity: an item's vote tally as the clerk recorded it (`{ aye: 3, excused: 1 }`).
+ * @typedef {{ readonly [label: string]: number }} FactCounts
+ * @bound each count: a whole number, zero or more
+ */
+/**
+ * One fact of an entity: a text, a number, a yes or no, a record of counts (a vote tally), or null.
+ * @typedef {string | number | boolean | null | FactCounts} EntityFact
  */
 /**
  * The facts of an entity whose change might mean something, by name.
- * @typedef {{ [fact: string]: string | number | boolean | null }} EntityFacts
+ * @typedef {{ [fact: string]: EntityFact }} EntityFacts
  */
 /**
  * An entity a content type found in a document (R34): a stable key, its kind, its label, its facts, where it was first read
@@ -186,8 +186,8 @@
  * One fact that moved between two readings of one entity.
  * @typedef {Object} MovedFact
  * @property {string} fact
- * @property {string | number | boolean | null | undefined} was
- * @property {string | number | boolean | null | undefined} now
+ * @property {EntityFact | undefined} was
+ * @property {EntityFact | undefined} now
  */
 /**
  * An entity whose facts moved, with its reading before.

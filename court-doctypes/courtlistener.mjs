@@ -13,9 +13,19 @@
  * This structure is CourtListener's own, the same for every court it publishes, so it stays in code; the
  * address it is served at, and the number forms, come from the view (R15). Nothing is followed: a
  * document link is listed with its label as written, a fee-bearing one ("Buy on PACER") marked `fee`. */
-import { CONTRACT, TAG, feeBearing, written, element, elements, linksIn, sourceAt,
-  proceedingNumber, row, reading, pageOf, assessRegister, detectAnswer } from "./common.mjs";
+import { CONTRACT, TAG, fieldsAsWritten, feeBearing, written, element, elements, linksIn, sourceAt,
+  proceedingNumber, row, reading, pageOf, assessHeld, detectAnswer } from "./common.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext } from "../docprofile/doctypes/index.mjs" */
+/** @import { FoundElement, RegisterDetection, RegisterReading, RegisterRow, RegisterType, RowDocument, RowLink, Party, Proceeding, ProceedingWhy, Unkeyed } from "./common.mjs" */
+
+/**
+ * A labelled header field: its value as written, its markup, and where its label is.
+ * @typedef {Object} HeaderField
+ * @property {string | null} value
+ * @property {string} html
+ * @property {number} at
+ */
 
 const KEY = "courtlistener_docket";
 const LABEL = localize("court-doctypes.courtlistener.label", "a CourtListener docket");
@@ -23,21 +33,24 @@ const LABEL = localize("court-doctypes.courtlistener.label", "a CourtListener do
 const HEADER = /<h1\b[^>]*\bdata-type\s*=\s*["']search\.Docket["']/i;
 const ROW_START = new RegExp(`<div\\b(?=${TAG}\\bid\\s*=\\s*["'](?:minute-)?entry-[0-9]+["'])${TAG}>`, "gi");
 
-/** The labelled header fields, `{label → {value, at}}`, each value as written. */
+/** The labelled header fields, `{label → {value, at}}`, each value as written.
+ *  @param {string} html
+ *  @returns {Map<string, HeaderField>} */
 function headerFields(html) {
-  const out = new Map();
+  const out = new Map(/** @type {Array<[string, HeaderField]>} */ ([]));
   const re = new RegExp(`<span\\b${TAG}\\bclass\\s*=\\s*["'][^"']*\\bmeta-data-header\\b[^"']*["']${TAG}>([\\s\\S]*?)<\\/span\\s*>\\s*(<span\\b${TAG}>)`, "gi");
   for (const m of html.matchAll(re)) {
     const label = written(m[1]);
     if (!label) continue;
-    const e = element(html, m.index + m[0].length - m[2].length);
+    const e = element(html, (m.index ?? 0) + m[0].length - (m[2] ?? "").length);
     if (!e) continue;
     const name = label.replace(/:\s*$/, "");
-    if (!out.has(name)) out.set(name, { value: written(e.inner), html: e.inner, at: m.index });
+    if (!out.has(name)) out.set(name, { value: written(e.inner), html: e.inner, at: m.index ?? 0 });
   }
   return out;
 }
 
+/** @param {DoctypeContext} ctx @returns {RegisterDetection} */
 function detect(ctx) {
   const html = String((ctx && ctx.text) || "");
   const header = HEADER.test(html);
@@ -47,17 +60,24 @@ function detect(ctx) {
     structure: header && rows, structureSignals: ["a docket header", "entry rows (div#entry-n)"] });
 }
 
-/** One register row: its number, date, text and documents, each as written. */
+/** One register row: its number, date, text and documents, each as written.
+ *  @param {DoctypeContext} ctx
+ *  @param {string} html
+ *  @param {FoundElement} e
+ *  @returns {{ row: RegisterRow } | { unkeyed: Unkeyed }} */
 function readRow(ctx, html, e) {
   const id = /\bid\s*=\s*["']((minute-)?entry-([0-9]+))["']/i.exec(e.match[0]);
   const cells = elements(e.inner, new RegExp(`<div\\b${TAG}>`, "gi"));
-  const ps = (c) => (c ? elements(c.inner, new RegExp(`<p\\b${TAG}>`, "gi")) : []);
   const numberCell = cells[0], dateCell = cells[1], body = cells[2];
   const number = numberCell ? written(numberCell.inner) : null;
   const date = dateCell ? written(dateCell.inner) : null;
   /* The text is the body's own paragraphs, the documents' rows set aside. */
+  /** @type {string | null} */
   let text = null;
-  const links = [], documents = [];
+  /** @type {RowLink[]} */
+  const links = [];
+  /** @type {RowDocument[]} */
+  const documents = [];
   if (body) {
     const docs = elements(body.inner, new RegExp(`<div\\b(?=${TAG}\\bclass\\s*=\\s*["'][^"']*\\brecap-documents\\b)${TAG}>`, "gi"));
     let rest = body.inner;
@@ -67,14 +87,16 @@ function readRow(ctx, html, e) {
       const parts = elements(d.inner, new RegExp(`<div\\b${TAG}>`, "gi"));
       /* A document's own label ("Main Document", "Attachment 1") is its first cell's link; its
          description is the cell after. A minute entry's document row holds only a description. */
-      const first = parts[0] ? linksIn(parts[0].inner) : [];
-      const document = first.length ? first[0].label : null;
+      const firstPart = parts[0];
+      const firstLink = (firstPart ? linksIn(firstPart.inner) : [])[0];
+      const document = firstLink ? firstLink.label : null;
       const description = parts.map((p) => (linksIn(p.inner).length ? null : written(p.inner))).find((x) => x) || null;
       documents.push({ document, description });
       const base = e.innerStart + body.innerStart + d.innerStart;
       for (const l of linksIn(d.inner, base)) {
-        if (!l.label) continue;
-        links.push({ document, description, label: l.label, href: l.href, fee: feeBearing(l.label) });
+        const label = l.label;
+        if (!label) continue;
+        links.push({ document, description, label, href: l.href, fee: feeBearing(label) });
       }
     }
   }
@@ -89,12 +111,16 @@ function readRow(ctx, html, e) {
   return { row: r };
 }
 
+/** @param {DoctypeContext} ctx @returns {RegisterReading} */
 function parse(ctx) {
   const html = String((ctx && ctx.text) || "");
   const fields = headerFields(html);
   const h1m = HEADER.exec(html);
   const h1 = h1m ? element(html, h1m.index) : null;
-  let caption = null, numberWritten = null;
+  /** @type {string | null} */
+  let caption = null;
+  /** @type {string | null} */
+  let numberWritten = null;
   if (h1) {
     const spans = elements(h1.inner, new RegExp(`<span\\b(?=${TAG}\\bclass\\s*=\\s*["'][^"']*\\bselect-all\\b)${TAG}>`, "gi"));
     caption = spans[0] ? written(spans[0].inner) : null;
@@ -107,35 +133,42 @@ function parse(ctx) {
     after = after.slice(0, m.start) + " ".repeat(m.end - m.start) + after.slice(m.end);
   const h2 = /<h2\b[^>]*>([\s\S]*?)<\/h2\s*>/i.exec(after);
   const forum = h2 && !/<(?:h1|div\b[^>]*\bid\s*=\s*["'](?:minute-)?entry-)/i.test(after.slice(0, h2.index)) ? written(h2[1]) : null;
-  const value = (k) => (fields.has(k) ? fields.get(k).value : null);
+  const value = (/** @type {string} */ k) => fields.get(k)?.value ?? null;
   const terminated = fields.has("Date Terminated") ? `Date Terminated: ${value("Date Terminated")}` : null;
   const n = proceedingNumber(ctx, numberWritten);
+  /** @type {Proceeding} */
   const proceeding = {
     number: n.number, number_as_written: numberWritten, caption, forum_as_written: forum,
     kind_as_written: value("Nature of Suit"), status_as_written: terminated, filed: value("Date Filed"),
     source: h1 ? sourceAt(ctx, h1.start) : null,
     docket_number_core: null,
-    fields_as_written: Object.fromEntries([...fields].map(([k, v]) => [k, v.value])),
+    fields_as_written: fieldsAsWritten(fields),
   };
+  /** @type {ProceedingWhy} */
   const why = {};
   if (n.why) why.number = n.why;
   if (!terminated) why.status_as_written = localize("court-doctypes.courtlistener.the_docket_page_states_no", "the docket page states no status; a terminated case shows a Date Terminated field, and this page has none");
   why.docket_number_core = "the docket page does not state CourtListener's docket_number_core (its API does), so it is not given";
   proceeding.why = why;
 
+  /** @type {Party[]} */
   const parties = [];
   for (const role of ["Assigned To", "Referred To"]) {
-    if (!fields.has(role)) continue;
     const f = fields.get(role);
-    const names = linksIn(f.html).map((l) => l.label).filter(Boolean);
-    for (const name of names.length ? names : [f.value].filter(Boolean))
+    if (!f) continue;
+    const names = linksIn(f.html).flatMap((l) => { const label = l.label; return label ? [label] : []; });
+    const value = f.value;
+    for (const name of names.length ? names : value ? [value] : [])
       parties.push({ name, role_as_written: role, source: sourceAt(ctx, f.at) });
   }
 
-  const rows = [], unkeyed = [];
+  /** @type {RegisterRow[]} */
+  const rows = [];
+  /** @type {Unkeyed[]} */
+  const unkeyed = [];
   for (const e of elements(html, ROW_START)) {
     const r = readRow(ctx, html, e);
-    if (r.row) rows.push(r.row); else unkeyed.push(r.unkeyed);
+    if ("row" in r) rows.push(r.row); else unkeyed.push(r.unkeyed);
   }
   const pm = /Page\s*<\/span>\s*([0-9]+)\s+of\s+([0-9]+)/i.exec(html) || /\(Page\s+([0-9]+)\s+of\s+([0-9]+)\)/i.exec(html.replace(/\s+/g, " "));
   const pagination = pm ? pageOf(Number(pm[1]), Number(pm[2])) : pageOf(null, null);
@@ -147,11 +180,13 @@ function parse(ctx) {
   });
 }
 
-export default {
+/** @type {RegisterType} */
+const courtlistenerDocket = {
   key: KEY, label: LABEL, version: 1,
   /* A register is a list: what matters is which rows it holds and whether each still says what it said. */
   contract: CONTRACT.MEMBERSHIP,
   detect, parse,
-  assess(before, after) { return assessRegister(before, after); },
+  assess(before, after) { return assessHeld(before, after); },
 };
+export default courtlistenerDocket;
 

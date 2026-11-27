@@ -14,6 +14,7 @@
 import { renderPageToPixels } from "./pagepixels.mjs";
 
 export default {
+  /** @param {{ url: string, arrayBuffer: () => Promise<ArrayBuffer> }} request the request workerd hands its entry */
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname !== "/render") return new Response("not found", { status: 404 });
@@ -23,7 +24,7 @@ export default {
     try {
       r = await renderPageToPixels(bytes, page);
     } catch (e) {
-      return Response.json({ ok: false, reason: "THREW", message: String(e && e.message || e) }, { status: 500 });
+      return Response.json({ ok: false, reason: "THREW", message: String(e instanceof Error ? e.message || e : e) }, { status: 500 });
     }
     if (!r.ok) return Response.json(r);
     if (url.searchParams.get("raw") === "1") {

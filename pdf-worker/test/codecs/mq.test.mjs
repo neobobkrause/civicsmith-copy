@@ -14,6 +14,7 @@ import assert from "node:assert/strict";
 import { MqDecoder, mqContexts } from "../../src/mq.mjs";
 
 /* T.88 Table E.1: Qe, NMPS, NLPS, SWITCH. */
+/** @type {Array<[number, number, number, number]>} */
 const TABLE = [
   [0x5601, 1, 1, 1], [0x3401, 2, 6, 0], [0x1801, 3, 9, 0], [0x0AC1, 4, 12, 0], [0x0521, 5, 29, 0], [0x0221, 38, 33, 0],
   [0x5601, 7, 6, 1], [0x5401, 8, 14, 0], [0x4801, 9, 14, 0], [0x3801, 10, 14, 0], [0x3001, 11, 17, 0], [0x2401, 12, 18, 0],
@@ -25,22 +26,27 @@ const TABLE = [
   [0x0015, 43, 40, 0], [0x0009, 44, 41, 0], [0x0005, 45, 42, 0], [0x0001, 45, 43, 0], [0x5601, 46, 46, 0],
 ];
 
-/** T.88 E.2's encoder. C is kept as a plain number (at most 28 bits live). */
+/** T.88 E.2's encoder. C is kept as a plain number (at most 28 bits live).
+ *  @param {Array<[number, number]>} decisions (context, decision) pairs @returns {Uint8Array} */
 function mqEncode(decisions) {
-  const I = new Map(), MPS = new Map();
-  const out = [0];            // out[0] is the byte before BPST, which FLUSH may never touch
+  /** @type {Array<[number, number]>} */
+  const none = [];
+  const I = new Map(none), MPS = new Map(none);   // context → state index, context → MPS
+  /** @type {number[]} */ const out = [0];            // out[0] is the byte before BPST, which FLUSH may never touch
   let A = 0x8000, C = 0, CT = 12, bp = 0;
   const byteOut = () => {
     if (out[bp] === 0xff) { bp++; out[bp] = Math.floor(C / 2 ** 20); C %= 2 ** 20; CT = 7; return; }
     if (C < 0x8000000) { bp++; out[bp] = Math.floor(C / 2 ** 19); C %= 2 ** 19; CT = 8; return; }
-    out[bp]++;
+    out[bp] = (out[bp] ?? NaN) + 1;
     if (out[bp] === 0xff) { C %= 0x8000000; bp++; out[bp] = Math.floor(C / 2 ** 20); C %= 2 ** 20; CT = 7; }
     else { bp++; out[bp] = Math.floor(C / 2 ** 19); C %= 2 ** 19; CT = 8; }
   };
   const renorm = () => { do { A *= 2; C *= 2; CT--; if (CT === 0) byteOut(); } while (A < 0x8000); };
   for (const [cx, d] of decisions) {
     const i = I.get(cx) ?? 0, mps = MPS.get(cx) ?? 0;
-    const [qe, nmps, nlps, sw] = TABLE[i];
+    const row = TABLE[i];
+    if (row === undefined) throw new TypeError(`no state ${i} in Table E.1`);
+    const [qe, nmps, nlps, sw] = row;
     A -= qe;
     if (d === mps) {                                   // CODEMPS
       if (A < 0x8000) {
@@ -66,12 +72,18 @@ function mqEncode(decisions) {
   return Uint8Array.from(out.slice(1));
 }
 
-/** A reproducible stream of decisions: `n` contexts, each with its own bias. */
+/** A reproducible stream of decisions: `n` contexts, each with its own bias.
+ *  @param {number} seed @param {number} count @param {number} n @returns {Array<[number, number]>} (context, decision) pairs */
 function decisions(seed, count, n) {
   let s = seed >>> 0;
   const rnd = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 2 ** 32);
   const bias = Array.from({ length: n }, () => rnd());
-  return Array.from({ length: count }, () => { const cx = Math.floor(rnd() * n); return [cx, rnd() < bias[cx] ? 1 : 0]; });
+  return Array.from({ length: count }, () => {
+    const cx = Math.floor(rnd() * n);
+    /** @type {[number, number]} */
+    const pair = [cx, rnd() < (bias[cx] ?? NaN) ? 1 : 0];
+    return pair;
+  });
 }
 
 test("R5 T.88 Annex H.2's test sequence decodes to the standard's 256 decisions", () => {
@@ -88,13 +100,19 @@ test("R5 T.88 Annex H.2's test sequence decodes to the standard's 256 decisions"
 test("R5 the encoder below reproduces H.2's coded bytes, so its round trips are the standard's", () => {
   const want = [0x00, 0x02, 0x00, 0x51, 0x00, 0x00, 0x00, 0xC0, 0x03, 0x52, 0x87, 0x2A, 0xAA, 0xAA, 0xAA, 0xAA, 0x82, 0xC0,
     0x20, 0x00, 0xFC, 0xD7, 0x9E, 0xF6, 0xBF, 0x7F, 0xED, 0x90, 0x4F, 0x46, 0xA3, 0xBF];
-  const bits = want.flatMap((b) => [7, 6, 5, 4, 3, 2, 1, 0].map((k) => [0, (b >> k) & 1]));
+  const bits = want.flatMap((b) => [7, 6, 5, 4, 3, 2, 1, 0].map((k) => {
+    /** @type {[number, number]} */
+    const bit = [0, (b >> k) & 1];
+    return bit;
+  }));
   assert.deepEqual([...mqEncode(bits)], [0x84, 0xC7, 0x3B, 0xFC, 0xE1, 0xA1, 0x43, 0x04, 0x02, 0x20, 0x00, 0x00, 0x41, 0x0D,
     0xBB, 0x86, 0xF4, 0x31, 0x7F, 0xFF, 0x88, 0xFF, 0x37, 0x47, 0x1A, 0xDB, 0x6A, 0xDF, 0xFF, 0xAC]);
 });
 
 test("R5 the same bytes and context states decode the decisions the standard's encoder coded", () => {
-  for (const [seed, count, n] of [[1, 5000, 1], [2, 20000, 3], [3, 20000, 19], [4, 40000, 512], [5, 3000, 2], [6, 60000, 64]]) {
+  /** @type {Array<[number, number, number]>} */
+  const runs = [[1, 5000, 1], [2, 20000, 3], [3, 20000, 19], [4, 40000, 512], [5, 3000, 2], [6, 60000, 64]];
+  for (const [seed, count, n] of runs) {
     const ds = decisions(seed, count, n);
     const coded = mqEncode(ds);
     const mq = new MqDecoder(coded), ctx = mqContexts(n);
@@ -118,10 +136,11 @@ test("R5 context states: mqContexts(n) is n zero states, and a context keeps its
   assert.ok(c instanceof Uint8Array);
   assert.deepEqual([...c], [0, 0, 0, 0, 0]);
   /* Two contexts decoded in one stream decode as the encoder coded each. */
+  /** @type {Array<[number, number]>} */
   const ds = decisions(11, 4000, 2).map(([cx, d]) => [cx, cx === 0 ? 1 : d]);
   const mq = new MqDecoder(mqEncode(ds)), ctx = mqContexts(2);
   assert.deepEqual(ds.map(([cx]) => mq.decode(ctx, cx)), ds.map(([, d]) => d));
-  assert.equal(ctx[0] & 1, 1, "context 0 learned MPS 1");
+  assert.equal((ctx[0] ?? NaN) & 1, 1, "context 0 learned MPS 1");
 });
 
 test("R5 data running out is counted, never hidden: overrun names the bytes needed and missing", () => {
@@ -141,7 +160,7 @@ test("R5 (fix round 9, G132l (d)) data running out is detected as the bytes are 
   const stop = Symbol("short");
   let decoded = 0;
   const mq = new MqDecoder(cut, 0, cut.length, { onShort() { throw stop; } }), ctx = mqContexts(9);
-  let thrown;
+  /** @type {unknown} */ let thrown;
   try { for (const [cx] of ds) { mq.decode(ctx, cx); decoded++; } } catch (e) { thrown = e; }
   assert.equal(thrown, stop, "the decode was stopped by onShort");
   assert.ok(decoded > 0 && decoded < ds.length / 2 + 1000, `stopped after ${decoded} of ${ds.length} decisions`);
@@ -153,7 +172,9 @@ test("R5 (fix round 9, G132l (d)) data running out is detected as the bytes are 
 });
 
 test("R5 (fix round 9, G132l (d)) a stream that ends in its 0xFFAC marker is short once the decode feeds on the marker past the coder's look-ahead; a whole stream never is", () => {
-  for (const [seed, count, n] of [[1, 5000, 1], [2, 20000, 3], [3, 20000, 19], [4, 40000, 512], [5, 3000, 2], [6, 60000, 64], [7, 1, 1], [8, 17, 2]]) {
+  /** @type {Array<[number, number, number]>} */
+  const runs = [[1, 5000, 1], [2, 20000, 3], [3, 20000, 19], [4, 40000, 512], [5, 3000, 2], [6, 60000, 64], [7, 1, 1], [8, 17, 2]];
+  for (const [seed, count, n] of runs) {
     const ds = decisions(seed, count, n), coded = mqEncode(ds);
     assert.deepEqual([...coded.subarray(-2)], [0xff, 0xac], "the standard's encoder ends on the marker");
     const mq = new MqDecoder(coded, 0, coded.length, { onShort() { assert.fail(`seed ${seed}: a whole stream is not short`); } }), ctx = mqContexts(n);
@@ -165,7 +186,8 @@ test("R5 (fix round 9, G132l (d)) a stream that ends in its 0xFFAC marker is sho
   const stop = Symbol("short");
   const mq = new MqDecoder(coded, 0, coded.length, { onShort() { throw stop; } }), ctx = mqContexts(3);
   for (const [cx] of ds) mq.decode(ctx, cx);
-  let extra = 0, thrown;
+  let extra = 0;
+  /** @type {unknown} */ let thrown;
   try { for (; extra < 5000; extra++) mq.decode(ctx, extra % 3); } catch (e) { thrown = e; }
   assert.equal(thrown, stop);
   assert.ok(extra > 0 && extra < 1000, `stopped after ${extra} invented decisions`);

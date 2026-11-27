@@ -17,6 +17,76 @@
  * "name-shaped", and every reading built on one says so (R10). */
 import { vocabPatterns, vocabulary, vocabRegex, IN_PROSE } from "../docprofile/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext } from "../docprofile/registry.mjs" */
+/** @import { RosterKind } from "../jurisdictions/types.mjs" */
+
+/** A value read from a reading handed back, or from the store's read, before this module has judged its shape.
+ *  @typedef {object | string | number | bigint | boolean | symbol | null | undefined} Value */
+/** A plain object read so, whose fields are not yet judged: this module's own reading of it.
+ *  @typedef {{ [key: string]: Value }} Fields */
+/** A list read so, whose entries are not yet judged: this module's own reading of it.
+ *  @typedef {Value[] & { readonly judged?: never }} Entries */
+
+/** Whether `v` is a plain object (not null, not a list).
+ *  @param {unknown} v
+ *  @returns {v is Fields} */
+export const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+/** Whether `v` is a list.
+ *  @param {unknown} v
+ *  @returns {v is Entries} */
+export const isList = (v) => Array.isArray(v);
+/** A field of a plain object when it is a string, else undefined.
+ *  @param {Fields} o
+ *  @param {string} k
+ *  @returns {string | undefined} */
+export const strField = (o, k) => { const v = o[k]; return typeof v === "string" ? v : undefined; };
+
+/**
+ * A span of a string: its text and where it starts.
+ * @typedef {Object} Span
+ * @property {string} text
+ * @property {number} index
+ */
+/**
+ * A line with its contact points removed (R4): its words closed up, the runs between the removed points, and how many
+ * were removed.
+ * @typedef {Object} Contactless
+ * @property {string} text
+ * @property {string[]} parts
+ * @property {number} removed
+ */
+/**
+ * A self-naming recogniser of the view and the kinds of document it names.
+ * @typedef {Object} RosterWordPattern
+ * @property {RegExp} re
+ * @property {RosterKind[]} kinds
+ */
+/**
+ * One non-empty line of a text, its white space closed up, and where it starts in the text.
+ * @typedef {Object} Line
+ * @property {string} text
+ * @property {number} offset
+ */
+/**
+ * A self-naming line, with the kinds of document it names.
+ * @typedef {Line & { kinds: RosterKind[] }} SelfLine
+ */
+/**
+ * What a document's self-naming lines name it, for one kind.
+ * @typedef {Object} NamedAs
+ * @property {SelfLine[]} as
+ * @property {boolean} only_other
+ */
+/**
+ * A date a line states: its text, the date (`YYYY-MM-DD`, or `YYYY-MM` for a month alone) or null with why, its
+ * precision, and where it starts.
+ * @typedef {Object} StatedDate
+ * @property {string} text
+ * @property {string | null} date
+ * @property {"day" | "month" | null} precision
+ * @property {number} offset
+ * @property {string} [why]
+ */
 
 /* A word that, opening or ending a span, makes it a phrase rather than a name: function words, the
    kinds of unit an organisation is divided into, the words of a schedule and of a blank form, and the
@@ -55,11 +125,12 @@ const NAME_AT = new RegExp(`^(?:${NAME_SRC})`, "u");
 const NAME_WHOLE = new RegExp(`^(?:${NAME_SRC})$`, "u");
 const NAME_ALL = new RegExp(`(?<![\\p{L}\\p{N}])${NAME_SRC}(?![\\p{L}\\p{N}])`, "gu");
 
-const words = (s) => String(s).replace(/["“”]/g, "").split(/\s+/).filter(Boolean);
+const words = /** @param {unknown} s @returns {string[]} */ (s) => String(s).replace(/["“”]/g, "").split(/\s+/).filter(Boolean);
 /* Is this UTF-16 code unit white space as `\s` reads it? */
-const isSpaceCode = (c) => c === 32 || (c >= 9 && c <= 13) || c === 160 || c === 5760 || (c >= 8192 && c <= 8202) ||
+const isSpaceCode = /** @param {number} c @returns {boolean} */ (c) => c === 32 || (c >= 9 && c <= 13) || c === 160 || c === 5760 || (c >= 8192 && c <= 8202) ||
   c === 8232 || c === 8233 || c === 8239 || c === 8287 || c === 12288 || c === 65279;
 /* How many words `words` gives, counted in place: no copy of the string, no array. It stops past `cap` (default: all). */
+/** @param {string} s @param {number} [cap] @returns {number} */
 function countWords(s, cap = Infinity) {
   let n = 0, inWord = false;
   for (let i = 0; i < s.length; i++) {
@@ -73,20 +144,22 @@ function countWords(s, cap = Infinity) {
 /* Is this word one that ends a name? Answered once per distinct word (a text repeats its words): the cache is cleared
    when it passes PHRASE_CACHE entries, so a text of any size holds a bounded number. */
 const PHRASE_CACHE = 4096;
-const phraseCache = new Map();
+/** @type {Map<string, boolean>} */
+const phraseCache = new Map(/** @type {Array<[string, boolean]>} */ ([]));
+/** @param {string} w @returns {boolean} */
 function phraseWord(w) {
-  let v = phraseCache.get(w);
-  if (v === undefined) {
-    v = NOT_NAME_WORDS.has(w.replace(/["“”.,]+/g, "").toLowerCase());
-    if (phraseCache.size >= PHRASE_CACHE) phraseCache.clear();
-    phraseCache.set(w, v);
-  }
+  const held = phraseCache.get(w);
+  if (held !== undefined) return held;
+  const v = NOT_NAME_WORDS.has(w.replace(/["“”.,]+/g, "").toLowerCase());
+  if (phraseCache.size >= PHRASE_CACHE) phraseCache.clear();
+  phraseCache.set(w, v);
   return v;
 }
 /* A name ends where a phrase word begins: a matched run is cut at its first phrase word, and what is
    left is a name only while it keeps two name words ("Langston Buddenhagen District 1" reads the name
    "Langston Buddenhagen"). A span is never shortened from its front: that would choose a name inside a
    phrase, the guess R2 forbids. */
+/** @param {string} run @returns {string | null} */
 function cut(run) {
   let end = 0, n = 0, at = 0;
   while (at < run.length) {
@@ -105,20 +178,25 @@ function cut(run) {
 }
 
 /* The first word of a string (to its first white space). */
+/** @param {string} s @returns {string} */
 function firstWord(s) {
   let to = 0;
   while (to < s.length && !isSpaceCode(s.charCodeAt(to))) to++;
   return s.slice(0, to);
 }
 
-/** The name-shaped spans in a string, in order, each `{text, index}`. */
+/** The name-shaped spans in a string, in order, each `{text, index}`.
+ *  @param {unknown} s
+ *  @returns {Span[]} */
 export function nameSpans(s) {
+  /** @type {Span[]} */
   const out = [];
   const str = String(s);
   /* `exec` on the shared recogniser, as `matchAll` does on a clone of it: no regex is made per line. */
   NAME_ALL.lastIndex = 0;
-  let m;
-  while ((m = NAME_ALL.exec(str)) !== null) {
+  for (;;) {
+    const m = NAME_ALL.exec(str);
+    if (m === null) break;
     if (!phraseWord(firstWord(m[0]))) {
       const t = cut(m[0]);
       if (t) out.push({ text: t, index: m.index });
@@ -129,16 +207,22 @@ export function nameSpans(s) {
 }
 
 /** Does the string hold a name-shaped span? The same answer as `nameSpans(s).length > 0`, found without building them. */
+/** @param {unknown} s @returns {boolean} */
 export function hasNameSpan(s) {
   const str = String(s);
   NAME_ALL.lastIndex = 0;
-  let m, found = false;
-  while (!found && (m = NAME_ALL.exec(str)) !== null) found = !phraseWord(firstWord(m[0])) && cut(m[0]) !== null;
+  let found = false;
+  while (!found) {
+    const m = NAME_ALL.exec(str);
+    if (m === null) break;
+    found = !phraseWord(firstWord(m[0])) && cut(m[0]) !== null;
+  }
   NAME_ALL.lastIndex = 0;
   return found;
 }
 
 /** Is the whole string (trimmed, a trailing comma or full stop aside) exactly one name-shaped span? */
+/** @param {unknown} s @returns {boolean} */
 export function isName(s) {
   const t = String(s).trim().replace(/[,;]+$/, "").trim();
   if (!t) return false;
@@ -146,6 +230,7 @@ export function isName(s) {
 }
 
 /** The leading name-shaped span of a string, or null. */
+/** @param {unknown} s @returns {string | null} */
 export function leadingName(s) {
   const t = String(s).trim();
   const m = NAME_AT.exec(t);
@@ -162,6 +247,7 @@ export const STREET = /\b\d{1,6}\s+(?:[NSEW]\.?\s+)?(?:[A-Z0-9][\w'.-]*\s+){0,4}
 /** A line with every contact point removed: `text` with the line's words closed up, `parts` the runs
  *  of text between the removed points (a removed point is a boundary no name runs across), and how many
  *  were removed. */
+/** @param {unknown} line @returns {Contactless} */
 export function withoutContacts(line) {
   const raw = String(line);
   /* A line with no "@", no digit and no NUL holds none of the four contact points (each needs one of them), so
@@ -183,44 +269,49 @@ const MARK = "\u0000";
 let cuts = 0;
 const markCut = () => { cuts++; return MARK; };
 /* Every match of a contact recogniser replaced by the cut mark; a string it does not match is returned as it is. */
+/** @param {RegExp} re @param {string} s @returns {string} */
 function cutAll(re, s) {
-  re.lastIndex = 0;
-  if (!re.test(s)) return s;
-  re.lastIndex = 0;
+  /* `search` reads from the start whatever the recogniser's lastIndex, and `replace` with a global one does too. */
+  if (s.search(re) < 0) return s;
   return s.replace(re, markCut);
 }
 /* A character any contact point needs: an "@" (e-mail), a digit (phone, extension, street), or the NUL that marks a cut. */
 const CONTACT_POSSIBLE = /[@\d\u0000]/;
 /* A string's words closed up, a space dropped before , ; :, and the edges stripped. A string with nothing to change is returned as it is. */
 const TIDY_NEEDED = /[^\S ]|  | [,;:]|^[\s,;:|-]|[\s,;|-]$/;
-const tidy = (s) => TIDY_NEEDED.test(s)
+const tidy = /** @param {string} s @returns {string} */ (s) => TIDY_NEEDED.test(s)
   ? s.replace(/\s+/g, " ").replace(/\s+([,;:])/g, "$1").replace(/^[\s,;:|-]+|[\s,;|-]+$/g, "").trim()
   : s;
 
 /* ---- the view's staff titles ---- */
 
 /** The staff-title recognisers of the view, each bounded by non-letters and global. */
+/** @param {DoctypeContext | null | undefined} ctx @returns {RegExp[]} */
 export function titlePatterns(ctx) {
   return vocabPatterns(ctx, "staff_titles", IN_PROSE, "g");
 }
 
 /** Every staff-title span in a string, merged in reading order, overlaps dropped (the earlier, then the
  *  longer, kept), each `{text, index}`. */
+/** @param {ReadonlyArray<RegExp>} patterns @param {unknown} s @returns {Span[]} */
 export function titleSpans(patterns, s) {
+  /** @type {Span[]} */
   const hits = [];
   const str = String(s);
   for (const re of patterns) {
     /* `exec` on the recogniser itself, as `matchAll` does on a clone of it: no regex is made per line. */
     re.lastIndex = 0;
-    let m;
-    while ((m = re.exec(str)) !== null) {
+    for (;;) {
+      const m = re.exec(str);
+      if (m === null) break;
       if (m[0].trim()) hits.push({ text: m[0], index: m.index });
-      if (m[0] === "") re.lastIndex += re.unicode && str.codePointAt(re.lastIndex) > 0xffff ? 2 : 1;
+      if (m[0] === "") re.lastIndex += re.unicode && (str.codePointAt(re.lastIndex) ?? 0) > 0xffff ? 2 : 1;
     }
     re.lastIndex = 0;
   }
   if (hits.length < 2) return hits;
   hits.sort((a, b) => a.index - b.index || b.text.length - a.text.length);
+  /** @type {Span[]} */
   const out = [];
   let end = -1;
   for (const h of hits) { if (h.index < end) continue; out.push(h); end = h.index + h.text.length; }
@@ -228,6 +319,7 @@ export function titleSpans(patterns, s) {
 }
 
 /** A string with the given spans removed, collapsed. */
+/** @param {string} s @param {ReadonlyArray<Span>} spans @returns {string} */
 export function removeSpans(s, spans) {
   let out = "", at = 0;
   for (const h of spans) { out += s.slice(at, h.index) + " "; at = h.index + h.text.length; }
@@ -238,12 +330,16 @@ export function removeSpans(s, spans) {
 
 /** The self-naming recognisers of the view (`roster_words`), bounded and case as the profile wrote, each
  *  with the kind of document it names: `roster`, `chart`, or both when the entry names no kind. */
+/** @param {DoctypeContext | null | undefined} ctx @returns {RosterWordPattern[]} */
 export function rosterWordPatterns(ctx) {
+  /** @type {RosterWordPattern[]} */
   const out = [];
   for (const e of vocabulary(ctx, "roster_words")) {
-    const re = vocabRegex(e.pattern, IN_PROSE);
+    const re = vocabRegex("pattern" in e ? e.pattern : undefined, IN_PROSE);
     if (!re) continue;
-    const kinds = e.kind === "roster" || e.kind === "chart" ? [e.kind] : ["roster", "chart"];
+    const { kind } = "kind" in e ? e : { kind: undefined };
+    /** @type {RosterKind[]} */
+    const kinds = kind === "roster" || kind === "chart" ? [kind] : ["roster", "chart"];
     out.push({ re, kinds });
   }
   return out;
@@ -259,10 +355,11 @@ const ODD_SPACE = /[^\S ]|  /;
 
 /* A string made of one piece. A global replace leaves a chain of pieces behind (on node 26, ten times the
    memory of the flat string it spells), and a line kept in a reading is kept for its whole life. */
-const flat = (s) => { if (s.length) s.charCodeAt(0); return s; };
+const flat = /** @param {string} s @returns {string} */ (s) => { if (s.length) s.charCodeAt(0); return s; };
 
 /** Calls `visit({text, offset})` for each non-empty line of a text, in order, one line at a time: nothing of the
  *  lines is kept here, so a reader that counts and discards holds one line, however long the text (R1, R3). */
+/** @param {unknown} text @param {(line: Line) => void} visit @returns {void} */
 export function eachLine(text, visit) {
   const raw = String(text || "");
   let at = 0;
@@ -278,15 +375,19 @@ export function eachLine(text, visit) {
 }
 
 /** The self-naming line `x` is, with the kinds it names, or null: a short line a `roster_words` pattern matches. */
+/** @param {Line} x @param {ReadonlyArray<RosterWordPattern>} patterns @returns {SelfLine | null} */
 export function selfNamingLine(x, patterns) {
   if (countWords(x.text, TITLE_WORDS) > TITLE_WORDS) return null;
+  /** @type {Set<RosterKind>} */
   const kinds = new Set();
-  for (const p of patterns) { p.re.lastIndex = 0; if (p.re.test(x.text)) for (const k of p.kinds) kinds.add(k); }
+  for (const p of patterns) if (x.text.search(p.re) >= 0) for (const k of p.kinds) kinds.add(k);
   return kinds.size ? { ...x, kinds: [...kinds] } : null;
 }
 
 /** The lines that name the document as a roster or chart: short lines a `roster_words` pattern matches. */
+/** @param {ReadonlyArray<Line>} lines @param {ReadonlyArray<RosterWordPattern>} patterns @returns {SelfLine[]} */
 export function selfNamingLines(lines, patterns) {
+  /** @type {SelfLine[]} */
   const out = [];
   if (!patterns.length) return out;
   for (const x of lines) { const s = selfNamingLine(x, patterns); if (s) out.push(s); }
@@ -295,6 +396,7 @@ export function selfNamingLines(lines, patterns) {
 
 /** What a document's self-naming lines name it: `{as, only_other}` for the kind asked. `as` holds the
  *  lines that name it this kind; `only_other` is true when it names itself, and only as the other kind. */
+/** @param {ReadonlyArray<SelfLine>} selfLines @param {RosterKind} kind @returns {NamedAs} */
 export function namedAs(selfLines, kind) {
   const as = selfLines.filter((x) => x.kinds.includes(kind));
   return { as, only_other: selfLines.length > 0 && !as.length };
@@ -312,6 +414,7 @@ const FULL_DATE = new RegExp(`\\b(${MONTH})\\.?\\s+(\\d{1,2}),?\\s+(\\d{4})\\b|\
 /** How many dates the document's rows carry, as staff_directory counts them over the flattened text: the date
  *  patterns take any run of white space where the flatten leaves one space, so the text is counted as it is,
  *  not copied (R1). */
+/** @param {unknown} text @returns {number} */
 export function datesIn(text) {
   const re = new RegExp(DATE_IN_ROWS.source, DATE_IN_ROWS.flags);
   const raw = String(text || "");
@@ -320,45 +423,52 @@ export function datesIn(text) {
   return n;
 }
 
-const pad = (n) => String(n).padStart(2, "0");
+const pad = /** @param {string | number} n @returns {string} */ (n) => String(n).padStart(2, "0");
 /** The first date one of these lines states, as `{text, date, precision, offset}` (`date` is `YYYY-MM-DD`
  *  or, for a month and a year alone, `YYYY-MM`), or null. A two-digit year is not expanded: it is read as
  *  stated and given no `date`. */
+/** @param {ReadonlyArray<Line>} lines @returns {StatedDate | null} */
 export function statedDate(lines) {
   for (const x of lines) {
     const m = FULL_DATE.exec(x.text);
     if (!m) continue;
     const text = m[0];
     const offset = x.offset + m.index;
+    /* The groups each alternative of FULL_DATE captures: 1 to 3, 4 to 6, or 7 and 8, each present when it matched. */
+    const g = (/** @type {number} */ i) => m[i] ?? "";
     if (m[1]) {
       const mo = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1;
-      return { text, date: `${m[3]}-${pad(mo)}-${pad(m[2])}`, precision: "day", offset };
+      return { text, date: `${g(3)}-${pad(mo)}-${pad(g(2))}`, precision: "day", offset };
     }
     if (m[4]) {
-      const y = m[6].length === 4 ? m[6] : null;
-      return { text, date: y ? `${y}-${pad(m[4])}-${pad(m[5])}` : null, precision: y ? "day" : null, offset,
-               ...(y ? {} : { why: localize("roster-reader.lines.the_line_states_a_two_digit", "the line states a two-digit year, which is not expanded") }) };
+      const y = g(6).length === 4 ? g(6) : null;
+      /** @type {StatedDate} */
+      const d = { text, date: y ? `${y}-${pad(m[4])}-${pad(g(5))}` : null, precision: y ? "day" : null, offset };
+      if (!y) d.why = localize("roster-reader.lines.the_line_states_a_two_digit", "the line states a two-digit year, which is not expanded");
+      return d;
     }
-    const mo = MONTHS.indexOf(m[7].slice(0, 3).toLowerCase()) + 1;
-    return { text, date: `${m[8]}-${pad(mo)}`, precision: "month", offset };
+    const mo = MONTHS.indexOf(g(7).slice(0, 3).toLowerCase()) + 1;
+    return { text, date: `${g(8)}-${pad(mo)}`, precision: "month", offset };
   }
   return null;
 }
 
 /* Does str[a, b) hold a letter? Looked for in place: no slice is made. */
+/** @param {string} str @param {number} a @param {number} b @returns {boolean} */
 function hasLetter(str, a, b) {
   for (let i = a; i < b; i++) {
     let c = str.charCodeAt(i);
     if (c < 128) { if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return true; continue; }
-    if (c >= 0xd800 && c <= 0xdbff && i + 1 < b) { c = str.codePointAt(i); i++; }
+    if (c >= 0xd800 && c <= 0xdbff && i + 1 < b) { c = str.codePointAt(i) ?? c; i++; }
     if (LETTER_IN.test(String.fromCodePoint(c))) return true;
   }
   return false;
 }
 /* A word's letters alone, lowercased. */
-const lettersOf = (str, a, b) => str.slice(a, b).replace(/[^\p{L}]/gu, "").toLowerCase();
+const lettersOf = /** @param {string} str @param {number} a @param {number} b @returns {string} */ (str, a, b) => str.slice(a, b).replace(/[^\p{L}]/gu, "").toLowerCase();
 
 /** Is a short line a unit's label: its last word, or its first before "of", a kind of unit? */
+/** @param {unknown} s @returns {boolean} */
 export function isUnitLine(s) {
   const str = String(s);
   /* The words that hold a letter: counted in place, the first two and the last stripped to their letters. */
@@ -380,4 +490,4 @@ export function isUnitLine(s) {
 }
 const LETTER_IN = /\p{L}/u;
 
-export const wordCount = (s) => countWords(String(s));
+export const wordCount = /** @param {unknown} s @returns {number} */ (s) => countWords(String(s));
