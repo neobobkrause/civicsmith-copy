@@ -10,13 +10,18 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, JUSTIFICATION_REFUSALS,
 import { T41_RUNGS, T41_RUNG_ABSENT, T41_NON_ACTS } from "../../../src/op-grades/t41.mjs";
 import { reqText, between, ticked, readRows, declaredSentence } from "./declared.mjs";
 
-const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
-const isRead = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("read: ");
+/** @param {string} op @returns {string | null | undefined} */
+const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op]?.ground : null;
+/** @param {string} op */
+const isRead = (op) => {
+  const sentence = NON_ACTS[op];
+  return typeof sentence === "string" && sentence.startsWith("read: ");
+};
+/** @param {{ [op: string]: string }} ops */
 const grades = (ops) => Object.fromEntries(Object.keys(ops).map((op) => [op, gradeOf(op)]));
 
 /* ---- R29 ----------------------------------------------------------------------------------------------------------- */
-test("R29 R34: handlechange `caller-owned` as setpassword, its member-directed sentence stating the refusal it is (T46, "
-   + "R34); handlecheck a read that never names who holds a handle; neither a machine refusal; both phone acts", () => {
+test("R29 R34: handlechange `caller-owned` as setpassword, its member-directed sentence stating the refusal it is (T46, R34); handlecheck a read that never names who holds a handle; neither a machine refusal; both phone acts", () => {
   assert.equal(gradeOf("handlechange"), "caller-owned");
   assert.equal(gradeOf("handlechange"), gradeOf("setpassword"));
   assert.equal(NON_ACTS.handlechange, "member-directed: a handle is fixed at joining; this act refuses every change, "
@@ -31,6 +36,7 @@ test("R29 R34: handlechange `caller-owned` as setpassword, its member-directed s
 
 /* ---- R30 ----------------------------------------------------------------------------------------------------------- */
 /* R30's grades, op by op, as it states them */
+/** @type {{ [op: string]: string }} */
 const R30_WRITES = {
   projectaikeepaway: "reasoned", milestoneremove: "reasoned", milestoneitemremove: "reasoned",
   projectclosewithgaps: "reasoned", hypothesissetaside: "reasoned", guidereview: "reasoned", guideretire: "reasoned",
@@ -54,6 +60,7 @@ const R30_WRITES = {
   guidepropose: "reversible", guideproposetocivicsmith: "undetermined",
 };
 /* the code each `reasoned` op's owner refuses an absent reason with (driven in affordances' R19 tests) */
+/** @type {{ [op: string]: string }} */
 const R30_CODES = {
   projectaikeepaway: "AI_KEEP_AWAY_NO_REASON", milestoneremove: "INVESTIGATION_NO_REASON",
   milestoneitemremove: "INVESTIGATION_NO_REASON", projectclosewithgaps: "CLOSE_BAD_REASON",
@@ -61,6 +68,7 @@ const R30_CODES = {
   stepaccept: "STEP_BAD_TEXT",
 };
 /* each `reversible` op and the owner's published act that takes it back (R3) */
+/** @type {{ [op: string]: string }} */
 const TAKEN_BACK_BY = {
   stepcreate: "stepend", stepstart: "stepend", stepend: "stepstart", stepwait: "stepwaitremove",
   stepwaitremove: "stepwait", stepcostadd: "stepcostremove", stepcostremove: "stepcostadd",
@@ -74,9 +82,7 @@ const TAKEN_BACK_BY = {
 const R30_READS = [...readRows(T41_NON_ACTS).filter((op) => op !== "handlecheck"), "aiusage"];
 const RETIRED = ["aiceilingset", "aicopyceilingset", "accountswitchset", "groupswitchset"];
 
-test("R30: every write op-declarations R41, R43 and R45 declares, and actionseekspropose, carries R30's grade, the "
-   + "reasoned ones backed by their owner's code in JUSTIFICATION_REFUSALS and each reversible one taken back by a graded "
-   + "act; each with a NON_ACTS reason that is no read and no capture act", () => {
+test("R30: every write op-declarations R41, R43 and R45 declares, and actionseekspropose, carries R30's grade, the reasoned ones backed by their owner's code in JUSTIFICATION_REFUSALS and each reversible one taken back by a graded act; each with a NON_ACTS reason that is no read and no capture act", () => {
   const got = grades(R30_WRITES);
   assert.deepEqual(got, R30_WRITES);
   assert.deepEqual(Object.keys(R30_WRITES).filter((op) => R30_WRITES[op] === "reasoned").sort(),
@@ -92,29 +98,29 @@ test("R30: every write op-declarations R41, R43 and R45 declares, and actionseek
   }
   for (const [op, e] of Object.entries(T41_RUNG_ABSENT)) assert.ok(e.is.length > 40, op);
   /* each beside the precedent R30 names */
-  for (const [op, like] of [["findmute", "queuemute"], ["projectkeyset", "groupkeyset"], ["accountusesset",
-    "groupkeyswitch"], ["projectkeynoticeseen", "groupkeynoticeseen"], ["actionseekspropose", "actionlawspropose"]])
+  /** @type {[string, string][]} */
+  const likenesses = [["findmute", "queuemute"], ["projectkeyset", "groupkeyset"], ["accountusesset",
+    "groupkeyswitch"], ["projectkeynoticeseen", "groupkeynoticeseen"], ["actionseekspropose", "actionlawspropose"]];
+  for (const [op, like] of likenesses)
     assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
-  assert.match(NON_ACTS.actionseekspropose, /^action-directed: a machine \(or a member\) proposes/);
+  assert.match(NON_ACTS.actionseekspropose ?? "", /^action-directed: a machine \(or a member\) proposes/);
   /* negative controls: a misgrade is seen, and stepdelete, noteunshare and caseapprove are not `reasoned` (K2569) */
   assert.notDeepEqual({ ...got, stepdelete: "reasoned" }, R30_WRITES);
   assert.deepEqual(["stepdelete", "noteunshare", "caseapprove"].map(gradeOf), ["undetermined", "reversible", "undetermined"]);
 });
 
-test("R30: every other op of those lists is a read, a NON_ACTS row beginning `read: …` with no grade; aiusage's sentence "
-   + "names no ceiling", () => {
+test("R30: every other op of those lists is a read, a NON_ACTS row beginning `read: …` with no grade; aiusage's sentence names no ceiling", () => {
   for (const op of R30_READS) {
-    assert.ok(isRead(op) && NON_ACTS[op].length > 20, op);
+    assert.ok(isRead(op) && (NON_ACTS[op] ?? "").length > 20, op);
     assert.equal(gradeOf(op), null, op);
   }
-  assert.doesNotMatch(NON_ACTS.aiusage, /ceiling/);
-  assert.match(NON_ACTS.aiusage, /limit/);
+  assert.doesNotMatch(NON_ACTS.aiusage ?? "", /ceiling/);
+  assert.match(NON_ACTS.aiusage ?? "", /limit/);
   /* negative control */
   assert.ok(!isRead("stepcreate"));
 });
 
-test("R30 R5 R18: none of T41's ops is in MACHINE_REFUSALS; only projectkeyset, projectsigninset and projectaccountremove "
-   + "answer phone false; no statement, weight, larger-screen entry or alias is added", () => {
+test("R30 R5 R18: none of T41's ops is in MACHINE_REFUSALS; only projectkeyset, projectsigninset and projectaccountremove answer phone false; no statement, weight, larger-screen entry or alias is added", () => {
   const ALL = [...Object.keys(R30_WRITES), ...R30_READS, "handlechange", "handlecheck"];
   assert.deepEqual(ALL.filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)), []);
   assert.deepEqual(ALL.filter((op) => !phoneOf(op)).sort(), ["projectaccountremove", "projectkeyset", "projectsigninset"]);
@@ -128,8 +134,7 @@ test("R30 R5 R18: none of T41's ops is in MACHINE_REFUSALS; only projectkeyset, 
   assert.equal(phoneOf("projectaccountswitch"), true);
 });
 
-test("R30 R25 (DEC-188 (8)): aiceilingset, aicopyceilingset, accountswitchset and groupswitchset leave RUNG_ABSENT and "
-   + "NON_ACTS, as assistantset left them; no table names them", () => {
+test("R30 R25 (DEC-188 (8)): aiceilingset, aicopyceilingset, accountswitchset and groupswitchset leave RUNG_ABSENT and NON_ACTS, as assistantset left them; no table names them", () => {
   for (const op of [...RETIRED, "assistantset"]) {
     for (const t of [RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS]) assert.ok(!Object.hasOwn(t, op), op);
     assert.equal(gradeOf(op), null, op);
@@ -157,6 +162,8 @@ const STAND_IN = [
   { op: "handlecheck", mutating: false, gated: true },
 ];
 /* `unaccounted`'s two totalities restricted to the stand-in's ops, so the rest of the table is not presumed */
+/** @typedef {{ op: string, mutating: boolean, gated: boolean }} StandInRow */
+/** @param {StandInRow[]} rows */
 const unaccountedOver = (rows) => {
   const mutating = new Set(rows.filter((r) => r.mutating).map((r) => r.op));
   const gated = new Set(rows.filter((r) => r.gated).map((r) => r.op));
@@ -169,8 +176,7 @@ const unaccountedOver = (rows) => {
   };
 };
 
-test("R29 R30: affordances R12's totality holds over a stand-in of the table op-declarations declares — no op "
-   + "unpublished, unranked or stale, and every T41 table key is in the stand-in", () => {
+test("R29 R30: affordances R12's totality holds over a stand-in of the table op-declarations declares — no op unpublished, unranked or stale, and every T41 table key is in the stand-in", () => {
   assert.deepEqual(unaccountedOver(STAND_IN), { unpublished: [], unranked: [], stale: [] });
   const named = new Set(STAND_IN.map((r) => r.op));
   for (const op of [...Object.keys(T41_RUNGS), ...Object.keys(T41_RUNG_ABSENT), ...Object.keys(T41_NON_ACTS)])
@@ -182,14 +188,13 @@ test("R29 R30: affordances R12's totality holds over a stand-in of the table op-
 });
 
 /* ---- R30 (K2583, B3): the five reading-guides ops op-declarations adds ------------------------------------------------ */
-test("R30 (K2583): guidepropose graded as extractpropose (run-directed, labeled machine work); guideproposetocivicsmith "
-   + "`undetermined` as guideoffer; guidefor, guide and guideproposals reads; none a machine refusal, all phone acts", () => {
+test("R30 (K2583): guidepropose graded as extractpropose (run-directed, labeled machine work); guideproposetocivicsmith `undetermined` as guideoffer; guidefor, guide and guideproposals reads; none a machine refusal, all phone acts", () => {
   assert.equal(gradeOf("guidepropose"), gradeOf("extractpropose"));
   assert.equal(gradeOf("guidepropose"), "reversible");
-  assert.ok(NON_ACTS.guidepropose.startsWith("run-directed:") && NON_ACTS.extractpropose.startsWith("run-directed:"));
+  assert.ok((NON_ACTS.guidepropose ?? "").startsWith("run-directed:") && (NON_ACTS.extractpropose ?? "").startsWith("run-directed:"));
   assert.equal(gradeOf("guideproposetocivicsmith"), gradeOf("guideoffer"));
   assert.equal(gradeOf("guideproposetocivicsmith"), "undetermined");
-  assert.ok(!isRead("guideproposetocivicsmith") && NON_ACTS.guideproposetocivicsmith.startsWith("guide-directed:"));
+  assert.ok(!isRead("guideproposetocivicsmith") && (NON_ACTS.guideproposetocivicsmith ?? "").startsWith("guide-directed:"));
   for (const op of ["guidefor", "guide", "guideproposals"]) { assert.ok(isRead(op), op); assert.equal(gradeOf(op), null, op); }
   /* the ops R30's K2583 sentence names: guidepropose, guideproposetocivicsmith (and the likenesses extractpropose and
      guideoffer, which are graded already), the reads guidefor, guide and guideproposals */
