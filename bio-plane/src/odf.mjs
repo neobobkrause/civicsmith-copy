@@ -637,6 +637,10 @@ const META_PART = "meta.xml";
  * cannot read yields a stated undetermined, never a guessed structure.
  * ------------------------------------------------------------------ */
 
+/* The five entities XML predefines, and no others. A Map, not a plain object: `&constructor;` or `&toString;` names
+ * no entity and is left as written, never looked up on Object.prototype. */
+const XML_ENTITIES = new Map([["amp", "&"], ["lt", "<"], ["gt", ">"], ["quot", '"'], ["apos", "'"]]);
+
 /** @param {string} s */
 function decodeEntities(s) {
   return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (/** @type {string} */ m, /** @type {string} */ e) => {
@@ -646,7 +650,7 @@ function decodeEntities(s) {
          names no character, and fromCodePoint would throw on it. */
       return Number.isInteger(code) && code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m;
     }
-    return { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[e] ?? m;
+    return XML_ENTITIES.get(e) ?? m;
   });
 }
 
