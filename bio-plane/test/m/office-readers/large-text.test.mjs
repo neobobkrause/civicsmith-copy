@@ -1,6 +1,11 @@
 /* office-readers R35 (fix round 4b, F7; K4487): text parts over the 20 MiB bound are read, in bounded pieces,
    through each entry's real text() and structure(). Every package here is a real one built by `large.mjs`, its
    expected text computed by a route that shares no code with the reader. */
+/** @import { XlsxUndetermined } from "../../../src/formats-xlsx.mjs" */
+/** @import { Undetermined } from "../../../src/docx.mjs" */
+/** @import { PptxUndetermined } from "../../../src/pptx.mjs" */
+/** @import { BigXlsx, BigDocx, BigPptx } from "./large.mjs" */
+/** @import { LargeAnswer } from "./large-worker.mjs" */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Worker } from "node:worker_threads";
@@ -15,8 +20,16 @@ import { enc } from "./fixtures.mjs";
 import { sheetCellRef } from "../../../src/formats-xlsx.mjs";
 
 const BOUND = MEASURED_OOXML_TEXT_BOUND_BYTES;
+/** @param {string | null | undefined} got @param {string} want @param {string} what */
 const same = (got, want, what) => assert.ok(got === want, `${what}: ${got == null ? got : got.length} chars, wanted ${want.length}`);
-const noGuard = (list) => assert.ok(!list.some((u) => u.why === "over_size_bound"), "no over_size_bound marker");
+/** @param {ReadonlyArray<XlsxUndetermined | Undetermined | PptxUndetermined>} list */
+const noGuard = (list) => assert.ok(!list.some((u) => "why" in u && u.why === "over_size_bound"), "no over_size_bound marker");
+/** The `i`th of `list`, which the case reads as there.
+ * @template T
+ * @param {ReadonlyArray<T>} list
+ * @param {number} i
+ * @returns {T} */
+const nth = (list, i) => { const x = list[i]; assert(x !== undefined, `no item ${i}`); return x; };
 
 test("R35 xlsx: a 25 MB workbook whose declared text is 30 MB yields its text, its extent and its formulas", async () => {
   const f = bigXlsx({ rows: 13500 });
@@ -29,7 +42,7 @@ test("R35 xlsx: a 25 MB workbook whose declared text is 30 MB yields its text, i
   noGuard(t.undetermined);
   same(t.document, f.expected, "document");
   assert.equal(t.sheets.length, 1);
-  const s = t.sheets[0];
+  const s = nth(t.sheets, 0);
   same(s.text, f.expected, "sheet text");
   assert.equal(s.usedRows, f.rows);
   assert.equal(s.usedCols, f.usedCols);
@@ -40,14 +53,15 @@ test("R35 xlsx: a 25 MB workbook whose declared text is 30 MB yields its text, i
   assert.equal(t.piecewise.bound, BOUND);
   const st = await xlsxEntry.structure(parts);
   assert.equal(st.ok, true);
-  assert.equal(st.evidentiary.items.filter((i) => i.kind === "formula").length, f.formulas);
-  assert.ok(!st.evidentiary.undetermined.some((u) => u.why === "over_size_bound"));
+  assert.equal(st.evidentiary.items.filter(/** @returns {boolean} */ (i) => i.kind === "formula").length, f.formulas);
+  assert.ok(!st.evidentiary.undetermined.some((u) => "why" in u && u.why === "over_size_bound"));
   assert.ok(st.notes.includes("text_read_in_pieces"));
 });
 
 test("R35 xlsx: the same workbook gives the same text from raw bytes as from parts()", async () => {
   const f = bigXlsx({ rows: 9500, seed: 3 });
   const t = await xlsxEntry.text(f.bytes);
+  assert(t.ok);
   same(t.document, f.expected, "document");
 });
 
@@ -61,16 +75,19 @@ test("R35 docx: a document whose body is over the bound yields its paragraphs, t
   noGuard(t.undetermined);
   same(t.document, f.expected, "document");
   assert.equal(t.paragraphs.length, f.paragraphs);
-  assert.equal(t.paragraphs[41].ref, "¶42");
-  assert.equal(t.tables.length, f.tables);
-  assert.equal(t.tables[0].rows, 2);
-  assert.equal(t.tables[0].cols, 2);
-  assert.equal(t.tables[0].cells, null);
+  const p42 = nth(t.paragraphs, 41);
+  assert.equal("ref" in p42 ? p42.ref : undefined, "¶42");
+  const tables = t.tables;
+  assert(tables !== null, "tables are listed");
+  assert.equal(tables.length, f.tables);
+  assert.equal(nth(tables, 0).rows, 2);
+  assert.equal(nth(tables, 0).cols, 2);
+  assert.equal(nth(tables, 0).cells, null);
   assert.equal(t.piecewise.declared, f.declared);
   const st = await docxEntry.structure(parts);
   assert.equal(st.ok, true);
   assert.equal(st.paragraphs, f.paragraphs);
-  assert.equal(st.evidentiary.items.filter((i) => i.kind === "tracked-change" && i.change === "insertion").length, f.insertions);
+  assert.equal(st.evidentiary.items.filter(/** @returns {boolean} */ (i) => i.kind === "tracked-change" && i.change === "insertion").length, f.insertions);
   assert.ok(!st.evidentiary.undetermined.some((u) => u.why === "over_size_bound"));
 });
 
@@ -84,9 +101,9 @@ test("R35 pptx: a deck whose slides together are over the bound yields every sli
   noGuard(t.undetermined);
   assert.equal(t.slides.length, 64);
   assert.equal(t.deckLength, 64);
-  f.slideTexts.forEach((want, i) => same(t.slides[i].text, want, `slide ${i + 1}`));
+  f.slideTexts.forEach((want, i) => same(nth(t.slides, i).text, want, `slide ${i + 1}`));
   same(t.document, f.expected, "document");
-  assert.equal(t.slides[0].shapes, 100);
+  assert.equal(nth(t.slides, 0).shapes, 100);
   assert.equal(t.piecewise.declared, f.declared);
   const st = await pptxEntry.structure(parts);
   assert.equal(st.ok, true);
@@ -95,6 +112,7 @@ test("R35 pptx: a deck whose slides together are over the bound yields every sli
 });
 
 const WORKER = new URL("./large-worker.mjs", import.meta.url);
+/** @param {"xlsx" | "docx" | "pptx"} job @param {Uint8Array} bytes @param {number} limitMb @returns {Promise<LargeAnswer>} */
 const inWorker = (job, bytes, limitMb) => new Promise((resolve, reject) => {
   const w = new Worker(WORKER, { workerData: { job, bytes }, resourceLimits: { maxOldGenerationSizeMb: limitMb } });
   w.once("message", resolve);
@@ -102,12 +120,13 @@ const inWorker = (job, bytes, limitMb) => new Promise((resolve, reject) => {
 });
 
 test("R35 memory: each format's largest read — about 30 MiB declared, the ceiling's neighbourhood — completes inside a 128 MB old-space limit", async () => {
-  const fixtures = {
-    xlsx: bigXlsx({ rows: 13500 }),
-    docx: bigDocx({ paras: 46000 }),
-    pptx: bigPptx({ slides: 64 }),
-  };
-  for (const [job, f] of Object.entries(fixtures)) {
+  /** @type {Array<["xlsx", BigXlsx] | ["docx", BigDocx] | ["pptx", BigPptx]>} */
+  const fixtures = [
+    ["xlsx", bigXlsx({ rows: 13500 })],
+    ["docx", bigDocx({ paras: 46000 })],
+    ["pptx", bigPptx({ slides: 64 })],
+  ];
+  for (const [job, f] of fixtures) {
     assert.ok(f.declared > BOUND && f.declared <= STREAMED_TEXT_BOUND_BYTES, `${job} declares ${f.declared}`);
     const got = await inWorker(job, f.bytes, 128);
     assert.equal(got.ok, true, job);
@@ -121,17 +140,19 @@ test("R35 xlsx: shared strings, hidden rows and columns and hyperlinks are carri
   assert.ok(f.declared > BOUND, `fixture declares ${f.declared}`);
   const parts = await xlsxEntry.parts(f.bytes);
   const t = await xlsxEntry.text(parts);
+  assert(t.ok);
   noGuard(t.undetermined);
   same(t.document, f.expected, "document");
   assert.deepEqual(t.undetermined, []);
-  assert.equal(t.sheets[0].usedRows, f.rows);
+  assert.equal(nth(t.sheets, 0).usedRows, f.rows);
   const st = await xlsxEntry.structure(parts);
+  assert(st.ok);
   const items = st.evidentiary.items;
-  assert.deepEqual(items.filter((i) => i.kind === "hidden-rows").map((i) => i.rows), [[9]]);
-  assert.deepEqual(items.filter((i) => i.kind === "hidden-cols").map((i) => i.cols), [[{ min: 2, max: 2 }]]);
-  assert.deepEqual(st.links.filter((l) => l.partition === "deferred").map((l) => [l.target.url, l.source]),
+  assert.deepEqual(items.flatMap((i) => (i.kind === "hidden-rows" ? [i.rows] : [])), [[9]]);
+  assert.deepEqual(items.flatMap((i) => (i.kind === "hidden-cols" ? [i.cols] : [])), [[{ min: 2, max: 2 }]]);
+  assert.deepEqual(st.links.filter((l) => l.partition === "deferred").map((l) => { const target = l.target; return ["url" in target ? target.url : undefined, l.source]; }),
     [["http://example.org/", sheetCellRef("Sheet1", "A1")]]);
-  assert.deepEqual(st.links.filter((l) => l.partition === "anchor").map((l) => [l.target.location, l.source]),
+  assert.deepEqual(st.links.filter((l) => l.partition === "anchor").map((l) => { const target = l.target; return ["location" in target ? target.location : undefined, l.source]; }),
     [["Sheet1!A1", sheetCellRef("Sheet1", `A${f.rows}`)]]);
 });
 
@@ -140,25 +161,29 @@ test("R35 xlsx: a sheet over the bound whose CRC is wrong gives no text of it, o
   const t = await xlsxEntry.text(bytes);
   assert.equal(t.ok, true);
   assert.equal(t.document, "");
-  assert.equal(t.sheets[0].text, "");
-  assert.equal(t.sheets[0].range, null);
+  assert.equal(nth(t.sheets, 0).text, "");
+  assert.equal(nth(t.sheets, 0).range, null);
   assert.deepEqual(t.undetermined, [{ sheet: 0, cell: null, reason: "crc_mismatch" }]);
   const st = await xlsxEntry.structure(bytes);
-  assert.ok(st.evidentiary.undetermined.some((u) => u.part === "xl/worksheets/sheet1.xml" && u.why === "crc_mismatch"));
+  assert(st.ok);
+  assert.ok(st.evidentiary.undetermined.some((u) => "part" in u && u.part === "xl/worksheets/sheet1.xml" && "why" in u && u.why === "crc_mismatch"));
 });
 
 test("R35 xlsx: a sheet that is one row of 21 MiB has no place to end a piece, and is stated with its size, final", async () => {
   const f = oneRowXlsx();
   const t = await xlsxEntry.text(f.bytes);
   assert.equal(t.ok, true);
-  assert.equal(t.sheets[0].text, "");
+  assert.equal(nth(t.sheets, 0).text, "");
   assert.deepEqual(t.undetermined, [{ sheet: 0, cell: null, reason: "over_size_bound", detail: "piece_unbounded", size: f.declared, final: true }]);
   const st = await xlsxEntry.structure(f.bytes);
-  assert.ok(st.evidentiary.undetermined.some((u) => u.why === "over_size_bound" && u.detail === "piece_unbounded" && u.size === f.declared && u.final === true));
+  assert(st.ok);
+  assert.ok(st.evidentiary.undetermined.some((u) => "why" in u && u.why === "over_size_bound" && "detail" in u && u.detail === "piece_unbounded"
+    && "size" in u && u.size === f.declared && "final" in u && u.final === true));
 });
 
 test("R35 xlsx: over the streamed ceiling the text is refused with the marker, the size and final", async () => {
   const t = await xlsxEntry.text(xlsx({ sheets: [{ name: "S", data: {}, cd: { usize: STREAMED_TEXT_BOUND_BYTES + 5 } }] }));
+  assert(t.ok);
   assert.equal(t.document, null);
   assert.deepEqual(t.undetermined, [{ ok: false, text: "undetermined", why: "over_size_bound", size: STREAMED_TEXT_BOUND_BYTES + 5,
     bound: STREAMED_TEXT_BOUND_BYTES, boundName: "STREAMED_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes", final: true }]);
@@ -169,11 +194,14 @@ test("R35 docx: a piece cut at a > inside an attribute value or in text reads as
   assert.ok(f.declared > BOUND, `fixture declares ${f.declared}`);
   const parts = await docxEntry.parts(f.bytes);
   const t = await docxEntry.text(parts);
+  assert(t.ok);
   noGuard(t.undetermined);
   same(t.document, f.expected, "document");
   assert.equal(t.paragraphs.length, f.paragraphs);
   const st = await docxEntry.structure(parts);
-  const comment = st.evidentiary.items.find((i) => i.kind === "comment");
+  assert(st.ok);
+  const comment = st.evidentiary.items.find(/** @returns {boolean} */ (i) => i.kind === "comment");
+  assert(comment?.kind === "comment", "a comment item");
   assert.equal(comment.text, "check this");
   assert.deepEqual(comment.source, { kind: "doc-para", ref: "¶1", para: 0, run: 1 });
 });
@@ -187,6 +215,7 @@ test("R35 docx: a body that is one run of 21 MiB of text has no place to end a p
   assert.equal(t.document, null);
   assert.deepEqual(t.undetermined, [{ reason: "main_part_unreadable", part: "word/document.xml", why: "over_size_bound", detail: "piece_unbounded", size: declared, final: true }]);
   const st = await docxEntry.structure(bytes);
+  assert(st.ok);
   assert.equal(st.paragraphs, null);
   assert.deepEqual(st.evidentiary.undetermined, [{ part: "word/document.xml", why: "over_size_bound", detail: "piece_unbounded", size: declared, final: true }]);
 });
@@ -194,20 +223,26 @@ test("R35 docx: a body that is one run of 21 MiB of text has no place to end a p
 test("R35 pptx: a hidden slide and speaker notes survive a deck read one part at a time", async () => {
   const f = hiddenPptx();
   const parts = await pptxEntry.parts(f.bytes);
+  assert(parts.ok);
   assert.deepEqual([...parts.hiddenParts], ["ppt/slides/slide3.xml"]);
   const t = await pptxEntry.text(parts);
+  assert(t.ok);
   assert.deepEqual(t.slides.map((s) => s.hidden).map((h, i) => (h ? i + 1 : 0)).filter(Boolean), [3]);
-  assert.equal(t.slides[2].text.length, 100 * 5000 + 99);
+  assert.equal(nth(t.slides, 2).text.length, 100 * 5000 + 99);
   assert.equal(t.speakerNotes.length, 1);
-  assert.equal(t.speakerNotes[0].text, "speaker words");
+  assert.equal(nth(t.speakerNotes, 0).text, "speaker words");
   const st = await pptxEntry.structure(parts);
-  assert.deepEqual(st.evidentiary.items.filter((i) => i.kind === "hidden-slide").map((i) => i.slide), [3]);
-  assert.equal(st.evidentiary.items.find((i) => i.kind === "speaker-notes").text, "speaker words");
+  assert(st.ok);
+  assert.deepEqual(st.evidentiary.items.flatMap((i) => (i.kind === "hidden-slide" ? [i.slide] : [])), [3]);
+  const notes = st.evidentiary.items.find(/** @returns {boolean} */ (i) => i.kind === "speaker-notes");
+  assert(notes?.kind === "speaker-notes", "a speaker-notes item");
+  assert.equal(notes.text, "speaker words");
 });
 
 test("R35 pptx: a slide that is itself over the bound is stated with its size, final, and the other slides are read", async () => {
   const f = oneBigSlidePptx();
   const t = await pptxEntry.text(f.bytes);
+  assert(t.ok);
   assert.deepEqual(t.slides.map((s) => s.text), ["after"]);
   assert.deepEqual(t.undetermined, [{ reason: "slide_unreadable", part: "ppt/slides/slide1.xml", why: "over_size_bound", size: f.declared, final: true }]);
   assert.equal(t.deckLength, 2);

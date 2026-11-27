@@ -3,11 +3,90 @@
  * a seeded generator so a run draws nothing from a clock or the system's
  * randomness, and each returned with the document text its reader must give
  * back, computed here by a route that shares no code with the reader. */
+/** @import { PptxSlide } from "./fixtures.mjs" */
 import { zip, enc, sheetXml, slideXml, skeleton, wdoc, xlsx, pptx, docx, sst, rels, RT, CORRUPT } from "./fixtures.mjs";
 
 const ALNUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-/** xorshift32: the same sequence for the same seed. */
+/** @typedef {() => number} Rand a seeded source of 32-bit unsigned whole numbers */
+/**
+ * @typedef {Object} BigXlsxOptions
+ * @property {number} rows
+ * @property {number} [strLen]
+ * @property {number} [seed]
+ */
+/**
+ * @typedef {Object} BigXlsx
+ * @property {Uint8Array} bytes
+ * @property {string} expected
+ * @property {number} declared
+ * @property {number} formulas
+ * @property {number} rows
+ * @property {number} usedCols
+ */
+/**
+ * @typedef {Object} BigDocxOptions
+ * @property {number} paras
+ * @property {number} [strLen]
+ * @property {number} [seed]
+ */
+/**
+ * @typedef {Object} BigDocx
+ * @property {Uint8Array} bytes
+ * @property {string} expected
+ * @property {number} declared
+ * @property {number} paragraphs
+ * @property {number} tables
+ * @property {number} insertions
+ */
+/**
+ * @typedef {Object} BigPptxOptions
+ * @property {number} slides
+ * @property {number} [shapes]
+ * @property {number} [strLen]
+ * @property {number} [seed]
+ */
+/**
+ * @typedef {Object} BigPptx
+ * @property {Uint8Array} bytes
+ * @property {string[]} slideTexts
+ * @property {string} expected
+ * @property {number} declared
+ */
+/**
+ * @typedef {Object} StructuredXlsx
+ * @property {Uint8Array} bytes
+ * @property {string} expected
+ * @property {number} declared
+ * @property {number} rows
+ */
+/**
+ * @typedef {Object} SizedPackage
+ * @property {Uint8Array} bytes
+ * @property {number} declared
+ */
+/**
+ * @typedef {Object} AngleDocxOptions
+ * @property {number} [paras]
+ * @property {number} [strLen]
+ * @property {number} [seed]
+ */
+/**
+ * @typedef {Object} AngleDocx
+ * @property {Uint8Array} bytes
+ * @property {string} expected
+ * @property {number} declared
+ * @property {number} paragraphs
+ */
+/**
+ * @typedef {Object} HiddenPptx
+ * @property {Uint8Array} bytes
+ * @property {number} slides
+ */
+
+/** xorshift32: the same sequence for the same seed.
+ *  @param {number} seed
+ *  @returns {Rand} */
 export function prng(seed) {
   let x = seed >>> 0 || 1;
   return () => {
@@ -19,22 +98,30 @@ export function prng(seed) {
 }
 
 /** `n` characters of letters and digits: close to incompressible, so the
- *  package is nearly as large as the text it carries. */
+ *  package is nearly as large as the text it carries.
+ *  @param {Rand} rand
+ *  @param {number} n
+ *  @returns {string} */
 export function randomText(rand, n) {
   let s = "";
-  for (let i = 0; i < n; i++) s += ALNUM[rand() % 62];
+  for (let i = 0; i < n; i++) s += ALNUM.charAt(rand() % 62);
   return s;
 }
 
+/** @type {number} */
 export const MIB = 1024 * 1024;
 
 /** An XLSX with one sheet of `rows` rows: a number, five inline strings of
  *  `strLen` characters, and every 50th row a formula with its cached value.
  *  `expected` is the document text the reader must give, `declared` the sheet
- *  part's size, `formulas` how many formula cells it holds. */
+ *  part's size, `formulas` how many formula cells it holds.
+ *  @param {BigXlsxOptions} o
+ *  @returns {BigXlsx} */
 export function bigXlsx({ rows, strLen = 400, seed = 7 }) {
   const rand = prng(seed);
+  /** @type {string[]} */
   const parts = [];
+  /** @type {string[]} */
   const lines = [];
   let formulas = 0;
   for (let r = 1; r <= rows; r++) {
@@ -59,12 +146,17 @@ export function bigXlsx({ rows, strLen = 400, seed = 7 }) {
 }
 
 /** A DOCX of `paras` paragraphs of `strLen` characters, a 2x2 table every 200
- *  paragraphs and an insertion every 500. */
+ *  paragraphs and an insertion every 500.
+ *  @param {BigDocxOptions} o
+ *  @returns {BigDocx} */
 export function bigDocx({ paras, strLen = 600, seed = 11 }) {
   const rand = prng(seed);
+  /** @type {string[]} */
   const body = [];
+  /** @type {string[]} */
   const texts = [];
   let tables = 0, insertions = 0;
+  /** @param {string} t */
   const p = (t) => { body.push(`<w:p><w:r><w:t>${t}</w:t></w:r></w:p>`); texts.push(t); };
   for (let i = 1; i <= paras; i++) {
     const t = randomText(rand, strLen);
@@ -93,10 +185,14 @@ export function bigDocx({ paras, strLen = 600, seed = 11 }) {
     declared: enc(document).length, paragraphs: texts.length, tables, insertions };
 }
 
-/** A PPTX of `slides` slides, each of `shapes` text shapes of `strLen` characters. */
+/** A PPTX of `slides` slides, each of `shapes` text shapes of `strLen` characters.
+ *  @param {BigPptxOptions} o
+ *  @returns {BigPptx} */
 export function bigPptx({ slides, shapes = 100, strLen = 5000, seed = 13 }) {
   const rand = prng(seed);
+  /** @type {PptxSlide[]} */
   const deck = [];
+  /** @type {string[]} */
   const slideTexts = [];
   let declared = 0;
   for (let i = 1; i <= slides; i++) {
@@ -111,10 +207,14 @@ export function bigPptx({ slides, shapes = 100, strLen = 5000, seed = 13 }) {
 
 /** An XLSX of 28,000 numbered rows, `rows` of them carrying a shared-string cell, with a hidden row, a hidden
  *  column, hyperlinks after the rows and a sharedStrings part: what a sheet read in pieces has to carry across its
- *  pieces. `expected` is the document text. */
+ *  pieces. `expected` is the document text.
+ *  @param {{rows?: number}} [o]
+ *  @returns {StructuredXlsx} */
 export function structuredXlsx({ rows = 28000 } = {}) {
   const strings = Array.from({ length: 5 }, (_, i) => `shared ${i} & more`);
+  /** @type {string[]} */
   const parts = [];
+  /** @type {string[]} */
   const lines = [];
   for (let r = 1; r <= rows; r++) {
     const si = r % 5;
@@ -132,8 +232,11 @@ export function structuredXlsx({ rows = 28000 } = {}) {
   return { bytes, expected: lines.join("\n"), declared: enc(xml).length, rows };
 }
 
-/** An XLSX whose one sheet is `megabytes` MiB of rows, its CRC declared wrong. */
+/** An XLSX whose one sheet is `megabytes` MiB of rows, its CRC declared wrong.
+ *  @param {number} [megabytes]
+ *  @returns {Uint8Array} */
 export function corruptBigXlsx(megabytes = 21) {
+  /** @param {number} i */
   const row = (i) => `<row r="${i}"><c r="A${i}"><v>${i}</v></c></row>`;
   let body = "";
   for (let i = 1; body.length < megabytes * MIB; i++) body += row(i);
@@ -141,7 +244,9 @@ export function corruptBigXlsx(megabytes = 21) {
   return xlsx({ sheets: [{ name: "Big", xml, cd: CORRUPT }] });
 }
 
-/** An XLSX whose one sheet is a single row of `megabytes` MiB of cells: no place to end a piece. */
+/** An XLSX whose one sheet is a single row of `megabytes` MiB of cells: no place to end a piece.
+ *  @param {number} [megabytes]
+ *  @returns {SizedPackage} */
 export function oneRowXlsx(megabytes = 21) {
   let cells = "";
   for (let i = 1; cells.length < megabytes * MIB; i++) cells += `<c r="A${i}"><v>${i}</v></c>`;
@@ -150,10 +255,14 @@ export function oneRowXlsx(megabytes = 21) {
 }
 
 /** A DOCX whose paragraphs carry a `>` inside an attribute value and in their text, with a comment, so a piece cut
- *  at a `>` falls inside a tag now and then. */
+ *  at a `>` falls inside a tag now and then.
+ *  @param {AngleDocxOptions} [o]
+ *  @returns {AngleDocx} */
 export function angleDocx({ paras = 36000, strLen = 640, seed = 19 } = {}) {
   const rand = prng(seed);
+  /** @type {string[]} */
   const body = [];
+  /** @type {string[]} */
   const texts = [];
   for (let i = 1; i <= paras; i++) {
     const t = randomText(rand, strLen);
@@ -166,9 +275,12 @@ export function angleDocx({ paras = 36000, strLen = 640, seed = 19 } = {}) {
   return { bytes: docx({ document, comments }), expected: texts.join("\n"), declared: enc(document).length, paragraphs: texts.length };
 }
 
-/** A PPTX of `slides` slides of `strLen`-character shapes, slide 3 hidden by its own root and slide 2 with notes. */
+/** A PPTX of `slides` slides of `strLen`-character shapes, slide 3 hidden by its own root and slide 2 with notes.
+ *  @param {{slides?: number, shapes?: number, strLen?: number, seed?: number}} [o]
+ *  @returns {HiddenPptx} */
 export function hiddenPptx({ slides = 64, shapes = 100, strLen = 5000, seed = 23 } = {}) {
   const rand = prng(seed);
+  /** @type {PptxSlide[]} */
   const deck = [];
   for (let i = 1; i <= slides; i++) {
     const texts = Array.from({ length: shapes }, () => randomText(rand, strLen));
@@ -177,7 +289,9 @@ export function hiddenPptx({ slides = 64, shapes = 100, strLen = 5000, seed = 23
   return { bytes: pptx({ slides: deck }), slides };
 }
 
-/** A PPTX with one slide of `megabytes` MiB: over the bound by itself. */
+/** A PPTX with one slide of `megabytes` MiB: over the bound by itself.
+ *  @param {number} [megabytes]
+ *  @returns {SizedPackage} */
 export function oneBigSlidePptx(megabytes = 21) {
   const rand = prng(29);
   const texts = Array.from({ length: Math.ceil(megabytes * MIB / 5000) }, () => randomText(rand, 5000));
