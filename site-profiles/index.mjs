@@ -137,7 +137,7 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {boolean} assumed
  * @property {number} replaced
  * @property {number} replaced_ratio
- * @property {boolean} disagree
+ * @property {number[]} disagree the offsets of the windows whose bytes disagree with `name`
  */
 
 /**
