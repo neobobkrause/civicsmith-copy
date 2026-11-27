@@ -31,6 +31,49 @@
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { pdfPageImages, imagePlacementSource } from "../../bio-plane/src/pdfstructure.mjs";
 import { loadPdf, decodeImage, imageOf } from "./pagepixels.mjs";
+/** @import { Route } from "./pagepixels.mjs" */
+
+/** Every reason a crop can refuse with (R39): a key of `CROP_REFUSALS`.
+ *  @typedef {"NOT_AN_IMAGE_EXTENT" | "RECT_REQUIRED" | "NOT_A_PDF" | "ENCRYPTED" | "NO_SUCH_PAGE" | "PAGE_UNWALKABLE"
+ *    | "NO_IMAGE_AT_RECT" | "AMBIGUOUS_RECT" | "INLINE_IMAGE" | "DECODE_REFUSED"} CropRefusalReason */
+/** A content row's extent as handed in (R27): only `{kind: "image", page, rect}` with four finite numbers and no `part` is
+ *  cropped; anything else is refused by name.
+ *  @typedef {Object} CropExtent
+ *  @property {string} [kind]
+ *  @property {number} [page]
+ *  @property {readonly number[] | null} [rect]
+ *  @property {string | number | null} [part] */
+/** The evidence a crop's refusal carries (R27-R31).
+ *  @typedef {Object} CropRefusalDetail
+ *  @property {CropExtent} [extent] the extent refused
+ *  @property {number} [page]
+ *  @property {number} [pageCount]
+ *  @property {string} [detail] pdf-reader's own why, when the page cannot be walked (R29)
+ *  @property {number[]} [rect] the rectangle asked for, normalised
+ *  @property {number[][]} [painted] every rectangle the page paints an image at (R30)
+ *  @property {number} [count] how many images the page paints at the rectangle (R30)
+ *  @property {string} [decoder] the decoder's own refusal reason (R31)
+ *  @property {string} [decoderWhy] and its text */
+/** A crop's stated refusal (R27-R31, R39): always marked derived.
+ *  @typedef {{ ok: false, derived: true, reason: CropRefusalReason, why: string } & CropRefusalDetail} CropRefusal */
+/** A crop: the image a page paints at a rectangle, as a derived rendition for display (R32-R34).
+ *  @typedef {Object} Crop
+ *  @property {true} ok
+ *  @property {true} derived
+ *  @property {"crop"} rendition
+ *  @property {string} why
+ *  @property {{ kind: "image", page: number, rect: number[] }} of
+ *  @property {string} capture_sha256 of the whole capture
+ *  @property {{ name: string | null, axis_aligned: boolean, filters: string[] }} placement
+ *  @property {Route} route
+ *  @property {"image/png" | "image/jpeg"} mediaType
+ *  @property {Uint8Array} bytes
+ *  @property {number | null} width
+ *  @property {number | null} height
+ *  @property {true | null} upright true only when known upright (R33), else null
+ *  @property {string} file_sha256 of the returned bytes
+ *  @property {string} [pixels_sha256] on a decoded route only */
+/** @typedef {Crop | CropRefusal} CropAnswer */
 
 export const CROP_REFUSALS = Object.freeze({
   NOT_AN_IMAGE_EXTENT: "the extent is not an `image` extent in its PDF form ({kind:'image', page, rect})",
@@ -45,15 +88,28 @@ export const CROP_REFUSALS = Object.freeze({
   DECODE_REFUSED: localize("pdf-pixels.imagecrop.the_image_was_found_and", "the image was found and its samples could not be decoded here"),
 });
 
+/** @param {CropRefusalReason} reason
+ *  @param {CropRefusalDetail} [detail]
+ *  @returns {CropRefusal} */
 const refuse = (reason, detail = {}) => {
   if (!(reason in CROP_REFUSALS)) throw new Error(`undeclared refusal: ${reason}`);
   return { ok: false, derived: true, reason, why: CROP_REFUSALS[reason], ...detail };
 };
 
 const RECT_TOL = 0.001;   // pdfPageImages writes rects at 1/1000 pt
-const sameRect = (a, b) => a.every((v, i) => Math.abs(v - b[i]) <= RECT_TOL);
-const normRect = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
+/** @param {readonly number[]} a
+ *  @param {readonly number[]} b
+ *  @returns {boolean} */
+const sameRect = (a, b) => a.every((v, i) => Math.abs(v - (b[i] ?? NaN)) <= RECT_TOL);
+/** @param {readonly number[]} r
+ *  @returns {number[]} */
+const normRect = (r) => {
+  const x0 = r[0] ?? NaN, y0 = r[1] ?? NaN, x1 = r[2] ?? NaN, y1 = r[3] ?? NaN;
+  return [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
+};
 
+/** @param {Uint8Array} u8
+ *  @returns {Promise<string>} */
 async function sha256Hex(u8) {
   const d = new Uint8Array(await crypto.subtle.digest("SHA-256", u8));
   return [...d].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -62,37 +118,42 @@ async function sha256Hex(u8) {
 /**
  * Crop the image a content row's extent names.
  * @param {Uint8Array} bytes   the capture's bytes (the evidence)
- * @param {object} extent      `{kind:"image", page, rect}` — the row's extent
- * @returns a derived rendition `{ok:true, derived:true, rendition:"crop", …}`
+ * @param {CropExtent | null} extent      `{kind:"image", page, rect}` — the row's extent
+ * @returns {Promise<CropAnswer>} a derived rendition `{ok:true, derived:true, rendition:"crop", …}`
  *          or a NAMED refusal from CROP_REFUSALS. Never a blank frame.
  */
 export async function cropImage(bytes, extent) {
+  /** @type {CropExtent} */
   const e = extent && typeof extent === "object" ? extent : {};
-  if (e.kind !== "image" || !Number.isInteger(e.page) || e.part != null)
+  const page = e.page;
+  if (e.kind !== "image" || page === undefined || !Number.isInteger(page) || e.part != null)
     return refuse("NOT_AN_IMAGE_EXTENT", { extent: e });
-  if (!(Array.isArray(e.rect) && e.rect.length === 4 && e.rect.every((n) => typeof n === "number" && Number.isFinite(n))))
-    return refuse("RECT_REQUIRED", { page: e.page });
+  const rect = e.rect;
+  if (!(Array.isArray(rect) && rect.length === 4 && rect.every((n) => typeof n === "number" && Number.isFinite(n))))
+    return refuse("RECT_REQUIRED", { page });
 
   const doc = await loadPdf(bytes);
   if (!doc) return refuse("NOT_A_PDF");
   if (doc.isEncrypted()) return refuse("ENCRYPTED");
   const n = doc.pageCount;
-  if (e.page < 0 || e.page >= n) return refuse("NO_SUCH_PAGE", { page: e.page, pageCount: n });
+  if (page < 0 || page >= n) return refuse("NO_SUCH_PAGE", { page, pageCount: n });
 
-  const got = await pdfPageImages(doc, e.page);
-  if (!got.images) return refuse("PAGE_UNWALKABLE", { page: e.page, detail: got.why });
-  const want = normRect(e.rect);
+  const got = await pdfPageImages(doc, page);
+  if (!got.images) return refuse("PAGE_UNWALKABLE", { page, detail: got.why });
+  const want = normRect(rect);
   const hits = got.images.filter((im) => Array.isArray(im.rect) && sameRect(im.rect, want));
   if (hits.length === 0)
-    return refuse("NO_IMAGE_AT_RECT", { page: e.page, rect: want, painted: got.images.map((im) => im.rect) });
-  if (hits.length > 1) return refuse("AMBIGUOUS_RECT", { page: e.page, rect: want, count: hits.length });
+    return refuse("NO_IMAGE_AT_RECT", { page, rect: want, painted: got.images.map((im) => im.rect) });
+  if (hits.length > 1) return refuse("AMBIGUOUS_RECT", { page, rect: want, count: hits.length });
   const hit = hits[0];
+  if (!hit) return refuse("NO_IMAGE_AT_RECT", { page, rect: want, painted: got.images.map((im) => im.rect) });
   const src = imagePlacementSource(hit);
-  if (hit.inline || !src?.stream) return refuse("INLINE_IMAGE", { page: e.page, rect: want });
+  const stream = src?.stream;
+  if (hit.inline || !src || !stream) return refuse("INLINE_IMAGE", { page, rect: want });
 
   const im = imageOf(doc, hit);
-  const out = await decodeImage(doc, im, { rotate: 0 });
-  if (!out.ok) return refuse("DECODE_REFUSED", { page: e.page, rect: want, decoder: out.reason, decoderWhy: out.why });
+  const out = await decodeImage(doc, { ...im, obj: stream }, { rotate: 0 });
+  if (!out.ok) return refuse("DECODE_REFUSED", { page, rect: want, decoder: out.reason, decoderWhy: out.why });
 
   return {
     ok: true,
@@ -100,7 +161,7 @@ export async function cropImage(bytes, extent) {
     rendition: "crop",
     why: "a DERIVED rendition for display: the evidence is the capture's bytes plus this extent, "
        + "and this file can be re-derived from them (EXTRACTION-BREADTH §3.4)",
-    of: { kind: "image", page: e.page, rect: want },
+    of: { kind: "image", page, rect: want },
     capture_sha256: await sha256Hex(bytes),
     placement: { name: hit.name, axis_aligned: hit.axis_aligned, filters: hit.filters },
     route: out.route,
@@ -115,7 +176,7 @@ export async function cropImage(bytes, extent) {
        rather than true. */
     upright: (() => {
       const m = src.ctm;
-      const plain = Array.isArray(m) && m[1] === 0 && m[2] === 0 && m[0] > 0 && m[3] > 0;
+      const plain = Array.isArray(m) && m[1] === 0 && m[2] === 0 && (m[0] ?? NaN) > 0 && (m[3] ?? NaN) > 0;
       return plain && out.upright === true ? true : null;
     })(),
     /* Both hashes, each labelled (D-246's recommendation, CPDF-12): the FILE
