@@ -5,30 +5,36 @@ import assert from "node:assert/strict";
 import {
   readingSource, readingSourceJson, readingOccurrenceKey, readingSourceFromColumns, readingPositionInExtent, glyphCount,
 } from "../../../src/textchain.mjs";
+/** @import { ReadingPosition } from "../../../src/textchain.mjs" */
 
 const pdf = (x = {}) => ({ kind: "pdf-page", ref: "p. 1", page: 0, ...x });
 const para = (x = {}) => ({ kind: "doc-para", ref: "¶1", para: 0, ...x });
 const cell = (x = {}) => ({ kind: "sheet-cell", ref: "S!B3", sheet: "S", cell: "B3", ...x });
 const shape = (x = {}) => ({ kind: "slide-shape", ref: "slide 1", slide: 1, shape: 0, ...x });
 const VALID = [pdf(), para(), cell(), shape()];
+/** The position a source reads as, where it reads as one. @param {unknown} s @returns {ReadingPosition} */
+const placed = (s) => { const r = readingSource(s); assert.ok(r, JSON.stringify(s)); return r; };
 
 test("R61: null unless a plain object of kind pdf-page|sheet-cell|slide-shape|doc-para with a non-empty ref (truncated to 200)", () => {
   for (const s of [null, undefined, "pdf-page", 3, [], [pdf()], { ...pdf(), kind: "dom" }, { ...pdf(), kind: "image" },
     { ...pdf(), kind: "" }, { ...pdf(), kind: undefined }, { ...pdf(), ref: "" }, { ...pdf(), ref: "  " }, { ...pdf(), ref: 5 }, { ...pdf(), ref: undefined }])
     assert.equal(readingSource(s), null, JSON.stringify(s));
-  for (const v of VALID) assert.equal(readingSource(v).kind, v.kind);
+  for (const v of VALID) assert.equal(placed(v).kind, v.kind);
   const long = "x".repeat(300);
-  for (const v of VALID) assert.equal(readingSource({ ...v, ref: long }).ref, long.slice(0, 200));
+  for (const v of VALID) assert.equal(placed({ ...v, ref: long }).ref, long.slice(0, 200));
   /* The result is key-ordered and rebuilt: extra caller fields are not carried. */
-  assert.deepEqual(Object.keys(readingSource({ zz: 1, ...pdf(), extra: 2 })), ["kind", "ref", "page", "rect"]);
+  assert.deepEqual(Object.keys(placed({ zz: 1, ...pdf(), extra: 2 })), ["kind", "ref", "page", "rect"]);
 });
 
 test("R62: pdf-page needs a non-negative integer page; a valid rect carries, else null", () => {
   for (const page of [undefined, -1, 1.5, "0"]) assert.equal(readingSource(pdf({ page })), null);
   assert.deepEqual(readingSource(pdf({ page: 3 })), { kind: "pdf-page", ref: "p. 1", page: 3, rect: null });
   assert.deepEqual(readingSource(pdf({ rect: [1, 2, 3, 4] })), { kind: "pdf-page", ref: "p. 1", page: 0, rect: [1, 2, 3, 4] });
-  for (const rect of [[1, 2, 3], [1, 2, 3, NaN], [1, 2, 3, "4"], "1 2 3 4", [1, 2, 3, 4, 5], [1, 2, 3, Infinity]])
-    assert.equal(readingSource(pdf({ rect })).rect, null);
+  for (const rect of [[1, 2, 3], [1, 2, 3, NaN], [1, 2, 3, "4"], "1 2 3 4", [1, 2, 3, 4, 5], [1, 2, 3, Infinity]]) {
+    const r = placed(pdf({ rect }));
+    assert.ok(r.kind === "pdf-page", r.kind);
+    assert.equal(r.rect, null);
+  }
 });
 
 test("R63: doc-para needs a non-negative integer para; a valid run carries, else null", () => {
@@ -40,7 +46,8 @@ test("R63: doc-para needs a non-negative integer para; a valid run carries, else
 test("R64: sheet-cell needs non-empty string sheet and cell, truncated to 200/64", () => {
   for (const x of [{ sheet: "" }, { sheet: undefined }, { sheet: 3 }, { cell: "" }, { cell: "  " }, { cell: 5 }]) assert.equal(readingSource(cell(x)), null);
   assert.deepEqual(readingSource(cell()), { kind: "sheet-cell", ref: "S!B3", sheet: "S", cell: "B3" });
-  const r = readingSource(cell({ sheet: "s".repeat(250), cell: "c".repeat(80) }));
+  const r = placed(cell({ sheet: "s".repeat(250), cell: "c".repeat(80) }));
+  assert.ok(r.kind === "sheet-cell", r.kind);
   assert.equal(r.sheet.length, 200);
   assert.equal(r.cell.length, 64);
 });
@@ -69,13 +76,14 @@ test("R67: readingOccurrenceKey is kind:json for a placed source, \"\" otherwise
 
 test("R68: readingSourceFromColumns inverts the three stored columns, null for anything malformed", () => {
   for (const v of VALID) {
-    const s = readingSource(v);
+    const s = placed(v);
     assert.deepEqual(readingSourceFromColumns(s.kind, readingSourceJson(s), s.ref), s);
   }
+  /** @type {readonly (readonly [unknown, unknown, unknown])[]} */
   const cases = [["", "{}", "r"], ["pdf-page", "{\"page\":0}", ""], [null, "{}", "r"], ["pdf-page", "{\"page\":0}", 3],
     ["pdf-page", "{bad json", "r"], ["pdf-page", "null", "r"], ["pdf-page", "3", "r"], ["pdf-page", { page: 0 }, "r"],
     ["pdf-page", "{\"page\":-1}", "r"], ["dom", "{}", "r"]];
-  for (const c of cases) assert.equal(readingSourceFromColumns(...c), null, JSON.stringify(c));
+  for (const c of cases) assert.equal(readingSourceFromColumns(c[0], c[1], c[2]), null, JSON.stringify(c));
 });
 
 test("R69: false unless the position normalises and extentKind is a non-empty string", () => {
@@ -123,6 +131,7 @@ test("R71: otherwise the extent kind must equal the position's, with each arm's 
 });
 
 test("R72: a sheet-cell position is inside a sheet-range extent of its sheet whose bounds hold its cell", () => {
+  /** @param {string} c @param {unknown} range @param {string} [sheet] @returns {boolean} */
   const inR = (c, range, sheet = "S") => readingPositionInExtent(cell({ cell: c }), "sheet-range", { sheet, range });
   /* Every cell of a 3x3 grid around the range B2:C3, exactly. */
   for (const col of ["A", "B", "C", "D"]) for (const row of [1, 2, 3, 4]) {
@@ -151,7 +160,7 @@ test("R72: a sheet-cell position is inside a sheet-range extent of its sheet who
 });
 
 test("R73: glyphCount counts non-whitespace code points; 0 for a non-string", () => {
-  for (const x of [undefined, null, 5, ["ab"], {}]) assert.equal(glyphCount(x), 0);
+  for (const x of [undefined, null, 5, ["ab"], {}]) assert.doesNotThrow(() => { assert.equal(glyphCount(x), 0); });
   assert.equal(glyphCount(""), 0);
   assert.equal(glyphCount(" \t\n\r  　"), 0);
   assert.equal(glyphCount("a b\nc"), 3);
