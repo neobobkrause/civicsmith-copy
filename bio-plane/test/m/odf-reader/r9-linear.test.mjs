@@ -7,6 +7,12 @@ import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { members, buildZip, contentXml } from "./pkg.mjs";
 import { cellOf, rowOf, tableOf, ods } from "./r9.mjs";
 
+/** @typedef {import("../../../src/odf.mjs").OdsStructure} OdsStructure */
+/** @typedef {import("../../../src/odf.mjs").OdsText} OdsText */
+/** @typedef {import("../../../src/odf.mjs").OdpStructure} OdpStructure */
+/** @typedef {import("../../../src/odf.mjs").OdpText} OdpText */
+/** @typedef {import("../../../src/odf.mjs").OdfEntry<OdsStructure, OdsText> | import("../../../src/odf.mjs").OdfEntry<OdpStructure, OdpText>} SheetOrDeckEntry */
+
 const SHAPES = {
   "an unterminated <a  (96 KB)": () => "<text:p>ok</text:p>" + "<a ".repeat(32768),
   "40,000 copies of <a b=\"": () => "<text:p>ok</text:p>" + "<a b=\"".repeat(40000),
@@ -26,7 +32,9 @@ for (const [shape, make] of Object.entries(SHAPES)) {
     assert.equal(typeof t.counts.scanned_bytes, "number", "scanned_bytes is stated");
     assert.equal(t.counts.scanned_bytes <= 4 * size, true, `${t.counts.scanned_bytes} > 4 * ${size}`);
     assert.equal(t.counts.scanned_bytes > 0, true);
-    for (const op of ["structure"]) assert.equal((await odtEntry[op](bytes)).ok, true);
+    /** @type {"structure"[]} */
+    const ops = ["structure"];
+    for (const op of ops) assert.equal((await odtEntry[op](bytes)).ok, true);
   });
 }
 
@@ -34,8 +42,12 @@ test("R52 the same shapes inside a cell and a slide", async () => {
   const junk = "<a b=\"".repeat(40000);
   const sheet = contentXml("ods", `<table:table table:name="S"><table:table-row><table:table-cell office:value-type="string"><text:p>v</text:p></table:table-cell></table:table-row></table:table>${junk}`);
   const deck = contentXml("odp", `<draw:page draw:name="p"><draw:frame><draw:text-box><text:p>s</text:p></draw:text-box></draw:frame></draw:page>${junk}`);
-  for (const [entry, xml] of [[odsEntry, sheet], [odpEntry, deck]]) {
-    const bytes = buildZip(members(entry.format, { content: xml }));
+  /** @type {[SheetOrDeckEntry, string][]} */
+  const cases = [[odsEntry, sheet], [odpEntry, deck]];
+  for (const [entry, xml] of cases) {
+    const flavour = entry.format;
+    assert.ok(flavour === "ods" || flavour === "odp");
+    const bytes = buildZip(members(flavour, { content: xml }));
     const t = await entry.text(bytes);
     assert.equal(t.ok, true);
     assert.equal(t.counts.scanned_bytes <= 4 * new TextEncoder().encode(xml).length, true);
@@ -47,13 +59,16 @@ test("R52 a tag longer than 64 KiB is stated as text with tag_over_bound, and th
   const bytes = buildZip(members("odt", { body: `<text:p>one</text:p>${long}<text:p>two</text:p>` }));
   const t = await odtEntry.text(bytes);
   assert.equal(t.ok, true);
-  const stated = t.undetermined.find((u) => u.reason === "tag_over_bound");
+  const stated = t.undetermined.find((u) => "reason" in u && u.reason === "tag_over_bound");
+  assert.ok(stated && "reason" in stated);
   assert.equal(stated.part, "content.xml");
+  assert.ok(stated.count !== undefined);
   assert.equal(stated.count >= 1, true);
   assert.equal(t.counts.undetermined, t.undetermined.length);
   assert.equal(t.paragraphs.some((p) => p.text === "one"), true);
   assert.equal(t.paragraphs.some((p) => p.text === "two"), true);
   const ok = await odtEntry.text(buildZip(members("odt", { body: `<text:p text:style-name="${"x".repeat(60000)}">fits</text:p>` })));
+  assert.ok(ok.ok);
   assert.deepEqual(ok.undetermined, []);
 });
 
@@ -64,13 +79,15 @@ test("R52 yieldNow is awaited at least once for every 65,536 tokens", async () =
   const bytes = ods(tableOf("Long", body));
   let calls = 0;
   const t = await odsEntry.text(bytes, { yieldNow: async () => { calls++; } });
-  assert.equal(t.sheets[0].usedRows, rows);
+  assert.ok(t.ok);
+  assert.equal(t.sheets[0]?.usedRows, rows);
   const tokens = rows * 6; // row, cell, p open and close, cell and row close
   assert.equal(calls >= Math.floor(tokens / 65536), true, `${calls} yields for ${tokens} tokens`);
   let paras = "";
   for (let p = 0; p < 200000; p++) paras += `<text:p>p${p}</text:p>`;
   let callsOdt = 0;
   const o = await odtEntry.text(buildZip(members("odt", { body: paras })), { yieldNow: async () => { callsOdt++; } });
+  assert.ok(o.ok);
   assert.equal(o.paragraphs.length, 200000);
   assert.equal(callsOdt >= Math.floor(400000 / 65536), true, `${callsOdt}`);
 });

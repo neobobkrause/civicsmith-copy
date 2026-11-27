@@ -7,15 +7,27 @@ import { sizeGuard } from "../../../src/ooxml.mjs";
 import { sheetCellRef } from "../../../src/formats-xlsx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
 
+/** @param {string} body */
 const ods = (body) => pkg("ods", { body });
-const T = (body) => odsEntry.text(ods(body));
+/* Every test that calls T reads the answer's sheets, so relies on the read succeeding: T states that
+   (assert.ok(t.ok)) before handing the answer back. */
+/** @param {string} body */
+const T = async (body) => { const t = await odsEntry.text(ods(body)); assert.ok(t.ok); return t; };
+/** @param {string} cells @param {string} [attrs] */
 const row = (cells, attrs = "") => `<table:table-row${attrs ? " " + attrs : ""}>${cells}</table:table-row>`;
+/** @param {string} name @param {string} rows @param {string} [attrs] */
 const table = (name, rows, attrs = "") => `<table:table table:name="${name}"${attrs ? " " + attrs : ""}>${rows}</table:table>`;
+/** @param {string} attrs @param {string | null} [text] */
 const c = (attrs, text = null) => (text == null
   ? `<table:table-cell ${attrs}/>`
   : `<table:table-cell ${attrs}><text:p>${text}</text:p></table:table-cell>`);
+/** @param {number} [n] */
 const empty = (n = 1) => `<table:table-cell${n > 1 ? ` table:number-columns-repeated="${n}"` : ""}/>`;
 const KEYS = ["source", "value", "type", "declared", "cached", "formula"];
+/**
+ * @param {string} sheet @param {string} at @param {string | null} value @param {string | null} type
+ * @param {string | null} declared @param {string | null} [cached] @param {string | null} [formula]
+ */
 const cell = (sheet, at, value, type, declared, cached = null, formula = null) =>
   ({ source: sheetCellRef(sheet, at), value, type, declared, cached, formula });
 
@@ -35,7 +47,9 @@ test("R46 each value type maps as office-readers R30's set, value the attribute 
       + c("", "untyped text")),
   ].join(""));
   const t = await T(body);
-  assert.deepEqual(t.sheets[0].cells, [
+  const [s0] = t.sheets;
+  assert.ok(s0);
+  assert.deepEqual(s0.cells, [
     cell("V", "A1", "0.1", "number", "float"),
     cell("V", "B1", "1.10", "number", "float"),
     cell("V", "C1", "0.30000000000000004", "number", "float"),
@@ -49,9 +63,11 @@ test("R46 each value type maps as office-readers R30's set, value the attribute 
     cell("V", "C3", "a&b", "text", "string"),
     cell("V", "D3", "untyped text", "text", null),
   ]);
-  for (const x of t.sheets[0].cells) assert.deepEqual(Object.keys(x), KEYS);
+  const cells0 = s0.cells;
+  assert.ok(cells0);
+  for (const x of cells0) assert.deepEqual(Object.keys(x), KEYS);
   // the displayed text stream is unchanged: values are never re-rendered into it
-  assert.equal(t.sheets[0].text.split("\n")[0], "0.10\t1.1\t0.3\t1.2E+29");
+  assert.equal(s0.text.split("\n")[0], "0.10\t1.1\t0.3\t1.2E+29");
 });
 
 test("R46 a formula cell keeps its formula verbatim and its value attribute as cached (null when none); nothing is recalculated", async () => {
@@ -64,7 +80,9 @@ test("R46 a formula cell keeps its formula verbatim and its value attribute as c
     + c('table:formula="of:=2+2" office:value-type="float" office:value="5"', "5"),
   ));
   const t = await T(body);
-  assert.deepEqual(t.sheets[0].cells, [
+  const [s0] = t.sheets;
+  assert.ok(s0);
+  assert.deepEqual(s0.cells, [
     cell("F", "A1", "3", "number", "float", "3", "of:=SUM([.A1:.A2])"),
     cell("F", "B1", "0.333333333333333", "number", "float", "0.333333333333333", "of:=1/3"),
     cell("F", "C1", null, null, null, null, "of:=NA()"),
@@ -91,30 +109,42 @@ test("R46 one entry per cell holding a value or a formula, in row then column or
     [cell("Hidden", "A1", "secret", "text", "string")],
     [],
   ]);
-  assert.equal(t.sheets.reduce((n, s) => n + s.cells.length, 0), t.counts.cells);
+  assert.equal(t.sheets.reduce((n, s) => { const cs = s.cells; assert.ok(cs); return n + cs.length; }, 0), t.counts.cells);
 });
 
 test("R46 an unknown value type types nothing: declared as written, type null", async () => {
   const t = await T(table("U", row(c('office:value-type="void" office:value="1"', "1") + c('office:value-type="Float" office:value="2"', "2"))));
-  assert.deepEqual(t.sheets[0].cells, [cell("U", "A1", "1", null, "void"), cell("U", "B1", "2", null, "Float")]);
+  const [s0] = t.sheets;
+  assert.ok(s0);
+  assert.deepEqual(s0.cells, [cell("U", "A1", "1", null, "void"), cell("U", "B1", "2", null, "Float")]);
 });
 
 test("R46 within R45's bound every address is given; over it, over the guard or with no body, no sheet and so no cells list stands", async () => {
   const MAX = ODF_REPEAT_EXPANSION_MAX;
   const at = await T(table("S", row(c(`office:value-type="float" office:value="1" table:number-columns-repeated="${MAX}"`, "1"))));
-  assert.equal(at.sheets[0].cells.length, MAX);
+  const [atSheet] = at.sheets;
+  assert.ok(atSheet);
+  const atCells = atSheet.cells;
+  assert.ok(atCells);
+  assert.equal(atCells.length, MAX);
+  /** @param {number} n */
   const letters = (n) => { let s = ""; for (; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s; return s; };
-  assert.deepEqual(at.sheets[0].cells[MAX - 1], cell("S", `${letters(MAX)}1`, "1", "number", "float"));
-  for (const [bytes, marker] of [
+  assert.deepEqual(atCells[MAX - 1], cell("S", `${letters(MAX)}1`, "1", "number", "float"));
+  /* the guard's marker names its why as sizeGuard (ooxml) states it: string | undefined */
+  /** @type {[Uint8Array, string | undefined][]} */
+  const unread = [
     [ods(table("S", row(c(`office:value-type="float" office:value="1" table:number-columns-repeated="${MAX + 1}"`, "1")))), "over_repeat_bound"],
     [buildZip(withCd(members("ods", { body: table("S", row(c('office:value-type="float" office:value="1"', "1"))) }), "content.xml", { usize: OVER_BOUND })), sizeGuard(OVER_BOUND).why],
     [pkg("ods", { content: "<office:document-content><office:body><office:text/></office:body></office:document-content>" }), "no_office_spreadsheet_body"],
-  ]) {
+  ];
+  for (const [bytes, marker] of unread) {
     const t = await odsEntry.text(bytes);
     assert.equal(t.ok, true);
     assert.deepEqual(t.sheets, []);
     assert.equal(t.document, null);
     assert.equal(t.undetermined.length, 1);
-    assert.equal(t.undetermined[0].why ?? t.undetermined[0].reason, marker);
+    const [u0] = t.undetermined;
+    assert.ok(u0);
+    assert.equal(u0.why ?? ("reason" in u0 ? u0.reason : undefined), marker);
   }
 });

@@ -10,9 +10,13 @@ import { sheetCellRef, usedSheetRange } from "../../../src/formats-xlsx.mjs";
 import { slideShapeRef } from "../../../src/pptx.mjs";
 import { buildZip, members, pkg, withCd, TYPES, contentXml, enc, prng, sha256Hex, OVER_BOUND, metaXml } from "./pkg.mjs";
 
+/** @typedef {import("./pkg.mjs").Flavour} Flavour */
+
 const { odtEntry, odsEntry, odpEntry, odfEvidentiaryDigest } = M;
 const ENTRIES = { odt: odtEntry, ods: odsEntry, odp: odpEntry };
+/** @type {Flavour[]} */
 const FLAVOURS = ["odt", "ods", "odp"];
+/** @type {unknown[]} */
 const ODD = [undefined, null, 0, -1, 1.5, NaN, "", "PK\x03\x04", {}, [], [1, 2, 300], Symbol("s"), () => 0, true, { length: 1e12 }];
 
 /* ------------------------------------------------------------------ R1 */
@@ -23,6 +27,7 @@ test("R1 detect(bytes, null): certain for a conforming package of the entry's ow
     for (const g of FLAVOURS) {
       const d = ENTRIES[g].detect(bytes, null);
       if (g === f) {
+        assert.ok(d);
         assert.equal(d.format, f);
         assert.equal(d.confidence, "certain");
         assert.ok(Array.isArray(d.signals) && d.signals.length > 0);
@@ -34,11 +39,13 @@ test("R1 detect(bytes, null): certain for a conforming package of the entry's ow
     assert.equal(ENTRIES[f].detect(bytes, "text/plain")?.confidence, "certain");
 
     const e = ENTRIES[f];
+    const [m0, m1, m2] = members(f);
+    assert.ok(m0 && m1 && m2);
     const cases = {
       "no ZIP magic": enc("not a zip at all, just text"),
       "no central directory (a 1 KiB head)": bytes.subarray(0, Math.min(bytes.length - 23, 1024)),
       "mimetype not first in the central directory": buildZip(members(f), { cdOrder: [1, 0, 2] }),
-      "mimetype first in the directory but not first in the file": buildZip([members(f)[1], members(f)[0], members(f)[2]], { cdOrder: [1, 0, 2] }),
+      "mimetype first in the directory but not first in the file": buildZip([m1, m0, m2], { cdOrder: [1, 0, 2] }),
       "mimetype compressed": buildZip(members(f).map((m) => (m.name === "mimetype" ? { ...m, method: 8 } : m))),
       "mimetype with a trailing newline (never trimmed)": pkg(f, { mimetype: TYPES[f] + "\n" }),
       "mimetype with a leading space": pkg(f, { mimetype: " " + TYPES[f] }),
@@ -59,6 +66,7 @@ test("R1 detect(bytes, null): certain for a conforming package of the entry's ow
 test("R2 detect(null, contentType): likely exactly when the content type is the entry's media type", () => {
   for (const f of FLAVOURS) {
     const d = ENTRIES[f].detect(null, TYPES[f]);
+    assert.ok(d);
     assert.equal(d.format, f);
     assert.equal(d.confidence, "likely");
     assert.ok(Array.isArray(d.signals) && d.signals.length > 0);
@@ -103,6 +111,8 @@ test("R3 parts(): each failure is {ok:false, container, why, signals, part, flav
   for (const f of FLAVOURS) {
     const e = ENTRIES[f];
     const other = FLAVOURS.find((g) => g !== f);
+    assert.ok(other);
+    /** @type {[Uint8Array, { why: string, part: string | null, flavourDeclared: string | null }][]} */
     const expect = [
       [enc("plain text"), { why: "not_a_zip", part: null, flavourDeclared: null }],
       [enc("PK\x03\x04 truncated"), { why: "too_short_for_zip", part: null, flavourDeclared: null }],
@@ -155,6 +165,7 @@ test("R5 a failed parts() makes structure() and text() return {ok:false, contain
   for (const f of FLAVOURS) {
     const e = ENTRIES[f];
     const other = FLAVOURS.find((g) => g !== f);
+    assert.ok(other);
     for (const bytes of [enc("x"), pkg(other), pkg(f, { content: false }), pkg(f, { manifest: false })]) {
       const p = await e.parts(bytes);
       assert.equal(p.ok, false);
@@ -181,8 +192,10 @@ test("R31 the three media types and ODF_FORMATS are the partMap:\"odf\" rows' ow
   assert.deepEqual([...M.ODF_FORMATS], ["odt", "ods", "odp"]);
   assert.ok(Object.isFrozen(M.ODF_FORMATS));
   assert.deepEqual([odtEntry.format, odsEntry.format, odpEntry.format], ["odt", "ods", "odp"]);
-  for (const [e, ct] of [[odtEntry, M.ODT_CONTENT_TYPE], [odsEntry, M.ODS_CONTENT_TYPE], [odpEntry, M.ODP_CONTENT_TYPE]]) {
-    assert.equal(e.detect(null, ct).confidence, "likely");
+  for (const [e, ct] of /** @type {[typeof odtEntry | typeof odsEntry | typeof odpEntry, string][]} */ ([[odtEntry, M.ODT_CONTENT_TYPE], [odsEntry, M.ODS_CONTENT_TYPE], [odpEntry, M.ODP_CONTENT_TYPE]])) {
+    const d = e.detect(null, ct);
+    assert.ok(d);
+    assert.equal(d.confidence, "likely");
   }
 });
 
@@ -190,6 +203,7 @@ test("R31 the three media types and ODF_FORMATS are the partMap:\"odf\" rows' ow
 
 test("R38 no service throws on malformed, truncated or hostile bytes; every failure names why", async () => {
   const rnd = prng(38);
+  /** @type {[string, ...string[]]} */
   const hostile = [
     "<text:p>&#99999999; &#xFFFFFFFF; &bogus;</text:p>",
     "<text:p>" + "<text:span>".repeat(2000) + "deep</text:p>",
@@ -246,6 +260,7 @@ test("R38 no service throws on malformed, truncated or hostile bytes; every fail
 
 test("R39 pure: no network, no clock, no randomness; the same bytes give the same answer", async () => {
   const saved = { fetch: globalThis.fetch, now: Date.now, random: Math.random };
+  /** @type {unknown[][]} */
   const calls = [];
   globalThis.fetch = (...a) => { calls.push(["fetch", a]); throw new Error("network"); };
   Date.now = () => { calls.push(["Date.now"]); return 0; };
@@ -261,13 +276,12 @@ test("R39 pure: no network, no clock, no randomness; the same bytes give the sam
         extra: [{ name: "Object 1/content.xml", data: "<x/>" }, { name: "Pictures/p.png", data: "PNG" }],
       });
       const run = async () => ({
-        d: ENTRIES[f].detect(bytes, null), p: await ENTRIES[f].parts(bytes),
+        d: ENTRIES[f].detect(bytes, null), p: { ...(await ENTRIES[f].parts(bytes)), bytes: null },
         s: await ENTRIES[f].structure(bytes), t: await ENTRIES[f].text(bytes),
         g: await odfEvidentiaryDigest(bytes, sha256Hex),
       });
       const a = await run();
       const b = await run();
-      delete a.p.bytes; delete b.p.bytes;
       assert.deepEqual(a, b);
     }
   } finally {
@@ -279,8 +293,10 @@ test("R39 pure: no network, no clock, no randomness; the same bytes give the sam
 /* ------------------------------------------------------------------ R40 */
 
 test("R40 no jurisdiction: nothing the module exports or emits names a place, system or local vocabulary", async () => {
+  /** @type {string[]} */
   const strings = [];
-  const walk = (v, seen = new Set()) => {
+  /** @param {unknown} v @param {Set<object>} [seen] */
+  const walk = (v, seen = new Set(/** @type {object[]} */ ([]))) => {
     if (typeof v === "string") strings.push(v);
     else if (v && typeof v === "object" && !seen.has(v) && !(v instanceof Uint8Array)) {
       seen.add(v);
@@ -306,29 +322,33 @@ test("R40 no jurisdiction: nothing the module exports or emits names a place, sy
 test("R41 every \"not read\" is stated with the part and why, R45's over_repeat_bound included; no absence reads as a zero, an empty list or silence", async () => {
   for (const f of FLAVOURS) {
     const e = ENTRIES[f];
-    const unit = { odt: "paragraphs", ods: "sheets", odp: "slides" }[f];
     // over the guard
     const over = buildZip(withCd(members(f), "content.xml", { usize: OVER_BOUND }));
     const so = await e.structure(over);
     const to = await e.text(over);
+    assert.ok(so.ok);
+    assert.ok(to.ok);
     assert.deepEqual(so.evidentiary.undetermined.find((u) => u.part === "content.xml"),
       { part: "content.xml", why: "over_size_bound", guard: { ...sizeGuard(OVER_BOUND), final: true } });
     assert.ok(so.notes.some((n) => /size bound/.test(n)));
     assert.equal(to.document, null);
     assert.deepEqual(to.undetermined, [{ ...sizeGuard(OVER_BOUND), final: true }]);
-    if (f !== "ods") assert.equal(so[unit], null, "a count never read is null, never 0");
+    if (f === "odt") { assert.ok("paragraphs" in so); assert.equal(so.paragraphs, null, "a count never read is null, never 0"); }
+    if (f === "odp") { assert.ok("slides" in so); assert.equal(so.slides, null, "a count never read is null, never 0"); }
     // unreadable content.xml
     const bad = buildZip(withCd(members(f), "content.xml", { crc: 1 }));
     const sb = await e.structure(bad);
     const tb = await e.text(bad);
+    assert.ok(sb.ok);
+    assert.ok(tb.ok);
     assert.deepEqual(sb.evidentiary.undetermined.find((u) => u.part === "content.xml"), { part: "content.xml", why: "crc_mismatch" });
     assert.ok(sb.notes.some((n) => /unreadable/.test(n)));
     assert.equal(tb.document, null);
     assert.deepEqual(tb.undetermined, f === "ods"
       ? [{ sheet: null, cell: null, reason: "crc_mismatch" }]
       : [{ reason: "main_part_unreadable", part: "content.xml", why: "crc_mismatch" }]);
-    if (f === "odt") assert.equal(tb.tables, null);
-    if (f === "odp") assert.equal(tb.deckLength, null);
+    if (f === "odt") { assert.ok("tables" in tb); assert.equal(tb.tables, null); }
+    if (f === "odp") { assert.ok("deckLength" in tb); assert.equal(tb.deckLength, null); }
     // repeats past ODF_REPEAT_EXPANSION_MAX (R45): the same shapes, with the repeat marker in the guard's place
     const huge = `<text:p>x<office:annotation><text:p><text:s text:c="2000000000"/></text:p></office:annotation></text:p>`;
     const repeatBody = {
@@ -340,17 +360,21 @@ test("R41 every \"not read\" is stated with the part and why, R45's over_repeat_
       boundName: "ODF_REPEAT_EXPANSION_MAX", metric: "expanded_repeat_units", final: true };
     const sr = await e.structure(pkg(f, { body: repeatBody }));
     const tr = await e.text(pkg(f, { body: repeatBody }));
+    assert.ok(sr.ok);
+    assert.ok(tr.ok);
     assert.deepEqual(sr.evidentiary.undetermined.find((u) => u.part === "content.xml"),
       { part: "content.xml", why: "over_repeat_bound", guard: marker });
     assert.ok(sr.notes.some((n) => /ODF_REPEAT_EXPANSION_MAX/.test(n)));
-    if (f !== "ods") assert.equal(sr[unit], null, "a count never read is null, never 0");
+    if (f === "odt") { assert.ok("paragraphs" in sr); assert.equal(sr.paragraphs, null, "a count never read is null, never 0"); }
+    if (f === "odp") { assert.ok("slides" in sr); assert.equal(sr.slides, null, "a count never read is null, never 0"); }
     assert.equal(tr.document, null);
     assert.deepEqual(tr.undetermined, [marker]);
-    if (f === "odt") assert.equal(tr.tables, null);
-    if (f === "ods") assert.deepEqual([tr.rangeUnits, tr.rangeUnitsSkipped], [null, null]);
-    if (f === "odp") assert.equal(tr.deckLength, null);
+    if (f === "odt") { assert.ok("tables" in tr); assert.equal(tr.tables, null); }
+    if (f === "ods") { assert.ok("rangeUnits" in tr && "rangeUnitsSkipped" in tr); assert.deepEqual([tr.rangeUnits, tr.rangeUnitsSkipped], [null, null]); }
+    if (f === "odp") { assert.ok("deckLength" in tr); assert.equal(tr.deckLength, null); }
     // meta.xml absent is said; an empty intra partition is always explained
     const plain = await e.structure(pkg(f));
+    assert.ok(plain.ok);
     assert.ok(plain.evidentiary.undetermined.some((u) => u.part === "meta.xml" && u.why === "part_absent"));
     assert.equal(plain.counts.intra, 0);
     assert.ok(plain.notes.some((n) => /no intra link/.test(n)));
@@ -365,26 +389,38 @@ test("R43 the module owns no check: it exports readers and constants only, and e
     "ODP_CONTENT_TYPE", "ODP_ROW", "ODS_CONTENT_TYPE", "ODS_ROW", "ODT_CONTENT_TYPE", "ODT_ROW",
     "isOdfTextPart", "odfEvidentiaryDigest", "odpEntry", "odsEntry", "odtEntry", "odtNormalisedContentXml",
   ]);
+  /** @type {{ value: object, kind: string, ref: string }[]} */
   const refs = [];
+  /** @param {unknown} v */
   const walk = (v) => {
     if (v && typeof v === "object") {
-      if (typeof v.kind === "string" && typeof v.ref === "string" && /^(doc|sheet|slide)-/.test(v.kind)) refs.push(v);
+      if ("kind" in v && typeof v.kind === "string" && "ref" in v && typeof v.ref === "string" && /^(doc|sheet|slide)-/.test(v.kind)) refs.push({ value: v, kind: v.kind, ref: v.ref });
       for (const x of Object.values(v)) walk(x);
     }
   };
   const odt = pkg("odt", { body: "<text:p>a<text:a xlink:href='#x'>b</text:a></text:p><table:table><table:table-row><table:table-cell/></table:table-row></table:table>" });
   const ods = pkg("ods", { body: "<table:table table:name='S'><table:table-row><table:table-cell office:value-type='string' table:formula='of:=1'><text:p><text:a xlink:href='#y'>c</text:a></text:p></table:table-cell></table:table-row></table:table>" });
   const odp = pkg("odp", { body: "<draw:page><draw:frame><draw:text-box><text:p><text:a xlink:href='#z'>d</text:a></text:p></draw:text-box></draw:frame><presentation:notes><draw:frame><draw:text-box><text:p>n</text:p></draw:text-box></draw:frame></presentation:notes></draw:page>" });
-  for (const [e, b] of [[odtEntry, odt], [odsEntry, ods], [odpEntry, odp]]) { walk(await e.structure(b)); walk(await e.text(b)); }
-  const rebuilt = (r) => ({
-    "doc-para": () => docParaRef(r.para),
-    "doc-table": () => docTableRef(r.table),
-    "sheet-cell": () => sheetCellRef(r.sheet, r.cell),
-    "sheet-range": () => usedSheetRange(r.sheet, 1, 1),
-    "slide-shape": () => slideShapeRef(r.slide, r.shape ?? null),
-  }[r.kind]());
+  for (const [e, b] of /** @type {[typeof odtEntry | typeof odsEntry | typeof odpEntry, Uint8Array][]} */ ([[odtEntry, odt], [odsEntry, ods], [odpEntry, odp]])) { walk(await e.structure(b)); walk(await e.text(b)); }
+  /** @param {{ value: object, kind: string }} r */
+  const rebuilt = (r) => {
+    const v = r.value;
+    const build = new Map(/** @type {[string, () => unknown][]} */ ([
+      ["doc-para", () => docParaRef("para" in v ? v.para : undefined)],
+      ["doc-table", () => docTableRef("table" in v ? v.table : undefined)],
+      ["sheet-cell", () => sheetCellRef("sheet" in v ? v.sheet : undefined, "cell" in v ? v.cell : undefined)],
+      ["sheet-range", () => usedSheetRange("sheet" in v ? v.sheet : undefined, 1, 1)],
+      ["slide-shape", () => slideShapeRef("slide" in v ? v.slide : undefined, ("shape" in v ? v.shape : undefined) ?? null)],
+    ]));
+    const make = build.get(r.kind);
+    assert.ok(make);
+    return make();
+  };
   assert.deepEqual([...new Set(refs.map((r) => r.kind))].sort(), ["doc-para", "sheet-cell", "sheet-range", "slide-shape"]);
-  const tables = (await odtEntry.text(odt)).tables;
+  const odtText = await odtEntry.text(odt);
+  assert.ok(odtText.ok);
+  const tables = odtText.tables;
+  assert.ok(tables);
   assert.deepEqual(tables.map((t) => t.ref), [docTableRef(0).ref]);
-  for (const r of refs) assert.deepEqual(r, rebuilt(r), r.ref);
+  for (const r of refs) assert.deepEqual(r.value, rebuilt(r), r.ref);
 });

@@ -8,11 +8,22 @@ import { linkWrapper } from "../../../src/subresources.mjs";
 import { docParaRef, docTableRef } from "../../../src/docx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
 
+/** @typedef {import("./pkg.mjs").PackageOptions} PackageOptions */
+/** @typedef {import("../../../src/odf.mjs").OdtStructure} OdtStructure */
+/** @typedef {import("../../../src/odf.mjs").ProjectionFailure} ProjectionFailure */
+
+/** @param {string} body @param {PackageOptions} [o] */
 const odt = (body, o = {}) => pkg("odt", { body, ...o });
-const S = (b, o) => odtEntry.structure(odt(b, o));
-const T = (b, o) => odtEntry.text(odt(b, o));
+/** The structure of an .odt that every caller reads as a success.
+ *  @param {string} b @param {PackageOptions} [o] */
+const S = async (b, o) => { const s = await odtEntry.structure(odt(b, o)); assert.ok(s.ok); return s; };
+/** The text of an .odt that every caller reads as a success.
+ *  @param {string} b @param {PackageOptions} [o] */
+const T = async (b, o) => { const t = await odtEntry.text(odt(b, o)); assert.ok(t.ok); return t; };
+/** @param {OdtStructure} s @param {string} kind */
 const items = (s, kind) => s.evidentiary.items.filter((i) => i.kind === kind);
 
+/** @param {string | null} creator @param {string | null} date */
 const INFO = (creator, date) => `<office:change-info>${creator == null ? "" : `<dc:creator>${creator}</dc:creator>`}${date == null ? "" : `<dc:date>${date}</dc:date>`}</office:change-info>`;
 const DELETED_TABLE = "<table:table table:name='gone'><table:table-row><table:table-cell><text:p>gone cell</text:p></table:table-cell></table:table-row></table:table>";
 
@@ -42,12 +53,15 @@ test("R6 paragraphs counts every <text:p>/<text:h> of the served body, tables in
   assert.equal(s.paragraphs, 9);
   assert.equal((await S("")).paragraphs, 0);
   assert.equal((await S("<text:h>a</text:h><text:h/>")).paragraphs, 2);
-  assert.equal((await odtEntry.structure(pkg("odt", { content: "<office:document-content/>" }))).paragraphs, null);
+  const empty = await odtEntry.structure(pkg("odt", { content: "<office:document-content/>" }));
+  assert.ok(empty.ok);
+  assert.equal(empty.paragraphs, null);
 });
 
 /* ------------------------------------------------------------------ R7 */
 
 test("R7 links: every <text:a xlink:href> in the body, located to its doc-para, partitioned as linkWrapper partitions it", async () => {
+  /** @type {[string, string][]} */
   const hrefs = [
     ["#bookmark", "anchor"], ["https://example.org/a?b=1", "deferred"], ["http://example.org", "deferred"],
     ["relative/page.html", "deferred"], ["mailto:someone@example.org", "refused"], ["javascript:alert(1)", "refused"],
@@ -85,16 +99,18 @@ test("R8 tracked changes: one item per changed region, with author, date, source
     { kind: "tracked-change", change: "insertion", author: "A", date: "D", source: null, text: null, why: "change_region_unmarked_in_body" }]);
   // an insertion marked with a start and no end: located, its text null (absent, never "")
   const h = await S(`<text:tracked-changes><text:changed-region text:id="i8"><text:insertion>${INFO("A", "D")}</text:insertion></text:changed-region></text:tracked-changes><text:p>x<text:change-start text:change-id="i8"/>y</text:p>`);
-  assert.deepEqual(items(h, "tracked-change")[0].text, null);
-  assert.deepEqual(items(h, "tracked-change")[0].source, docParaRef(0));
+  const hChanges = h.evidentiary.items.filter((i) => i.kind === "tracked-change");
+  assert.deepEqual(hChanges[0]?.text, null);
+  assert.deepEqual(hChanges[0]?.source, docParaRef(0));
   // the deleted region's own paragraphs and table are in no count, no text and no numbering
   const t = await T(RICH);
   assert.equal(t.paragraphs.length, 9);
+  const doc = t.document;
   for (const gone of ["gone one", "gone two", "gone cell", "never marked"]) {
-    assert.ok(!t.document.includes(gone), gone);
-    assert.ok(t.paragraphs.every((p) => !p.text.includes(gone)), gone);
+    assert.ok(doc !== null && !doc.includes(gone), gone);
+    assert.ok(t.paragraphs.every((p) => p.text !== null && !p.text.includes(gone)), gone);
   }
-  assert.deepEqual(t.tables.map((x) => x.table), [0]);
+  assert.deepEqual(t.tables?.map((x) => x.table), [0]);
 });
 
 /* ------------------------------------------------------------------ R9 */
@@ -106,11 +122,16 @@ test("R9 comments: one item per <office:annotation>, located to its paragraph, i
     { kind: "comment", id: null, author: null, date: null, initials: null, text: "bare comment", source: docParaRef(8) },
   ]);
   const t = await T(RICH);
-  assert.equal(t.paragraphs[1].text, "First para end");
-  assert.equal(t.paragraphs[8].text, "host");
-  for (const w of ["note line", "bare comment", "Commenter"]) assert.ok(!t.document.includes(w), w);
+  assert.equal(t.paragraphs[1]?.text, "First para end");
+  assert.equal(t.paragraphs[8]?.text, "host");
+  const doc = t.document;
+  for (const w of ["note line", "bare comment", "Commenter"]) assert.ok(doc !== null && !doc.includes(w), w);
   // the evidentiary text of the tracked change beside it excludes it too
-  assert.ok(items(s, "tracked-change").every((c) => !(c.text ?? c.superseded).includes("note")));
+  assert.ok(s.evidentiary.items.filter((i) => i.kind === "tracked-change").every((c) => {
+    const wording = c.text ?? c.superseded;
+    assert.ok(typeof wording === "string");
+    return !wording.includes("note");
+  }));
 });
 
 /* ------------------------------------------------------------------ R10 */
@@ -119,7 +140,9 @@ test("R10 over the guard, or with no readable body: paragraphs null, no body lin
   const over = await odtEntry.structure(buildZip(withCd(members("odt", { body: RICH }), "content.xml", { usize: OVER_BOUND })));
   const noBody = await odtEntry.structure(pkg("odt", { content: "<office:document-content><office:body><office:spreadsheet/></office:body></office:document-content>" }));
   const bad = await odtEntry.structure(buildZip(withCd(members("odt", { body: RICH }), "content.xml", { crc: 7 })));
-  for (const [s, re] of [[over, /size bound/], [noBody, /no <office:text>/], [bad, /unreadable/]]) {
+  /** @type {[OdtStructure | ProjectionFailure, RegExp][]} */
+  const cases = [[over, /size bound/], [noBody, /no <office:text>/], [bad, /unreadable/]];
+  for (const [s, re] of cases) {
     assert.equal(s.ok, true);
     assert.equal(s.paragraphs, null);
     assert.deepEqual(s.links, []);
@@ -146,7 +169,7 @@ test("R11 text(): every body paragraph as {para, ref, text} in order; document i
   assert.equal(odd.document, null);
   assert.deepEqual(odd.undetermined, [{ reason: "main_part_unreadable", part: "content.xml", why: "char_ref_invalid", final: true }]);
   const named = await T("<text:p>c &bogus; d &#65;</text:p>");
-  assert.equal(named.paragraphs[0].text, "c &bogus; d A");
+  assert.equal(named.paragraphs[0]?.text, "c &bogus; d A");
   const empty = await T("");
   assert.deepEqual([empty.paragraphs, empty.document], [[], ""]);
 });
@@ -172,11 +195,13 @@ test("R12 tables: one per <table:table> as it opens, nested included, rows and c
   assert.deepEqual((await T("<text:p>no tables</text:p>")).tables, []);
   // a deleted table is never counted, and the one after it keeps number 0
   const del = await T(`<text:tracked-changes><text:changed-region text:id="d"><text:deletion>${INFO("a", "b")}${DELETED_TABLE}</text:deletion></text:changed-region></text:tracked-changes>` + body);
-  assert.deepEqual(del.tables.map((x) => [x.table, x.ref]), [[0, "table 1"], [1, "table 2"], [2, "table 3"]]);
+  assert.deepEqual(del.tables?.map((x) => [x.table, x.ref]), [[0, "table 1"], [1, "table 2"], [2, "table 3"]]);
   // not read: null, never []
   const over = await odtEntry.text(buildZip(withCd(members("odt", { body }), "content.xml", { usize: OVER_BOUND })));
+  assert.ok(over.ok);
   assert.equal(over.tables, null);
   const noBody = await odtEntry.text(pkg("odt", { content: "<office:document-content/>" }));
+  assert.ok(noBody.ok);
   assert.equal(noBody.tables, null);
 });
 
@@ -184,6 +209,7 @@ test("R12 tables: one per <table:table> as it opens, nested included, rows and c
 
 test("R13 text() over the guard carries the guard marker verbatim; with no readable body, main_part_unreadable naming why", async () => {
   const over = await odtEntry.text(buildZip(withCd(members("odt", { body: RICH }), "content.xml", { usize: OVER_BOUND })));
+  assert.ok(over.ok);
   assert.deepEqual({ ...over, images: undefined, imagesWhy: undefined, counts: { ...over.counts, scanned_bytes: undefined } }, {
     ok: true, container: "odt", document: null, paragraphs: [], tables: null, parts: null,
     undetermined: [{ ...sizeGuard(OVER_BOUND), final: true }], counts: { chars: 0, undetermined: 1, scanned_bytes: undefined }, images: undefined, imagesWhy: undefined,
@@ -191,11 +217,13 @@ test("R13 text() over the guard carries the guard marker verbatim; with no reada
   });
   assert.deepEqual(over.undetermined[0], { ok: false, text: "undetermined", why: "over_size_bound", size: OVER_BOUND,
     bound: 20 * 1024 * 1024, boundName: "MEASURED_OOXML_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes", final: true });
-  for (const [bytes, why] of [
+  /** @type {[Uint8Array, string][]} */
+  const cases = [
     [buildZip(withCd(members("odt"), "content.xml", { crc: 3 })), "crc_mismatch"],
     [pkg("odt", { content: "<office:document-content><office:body/></office:document-content>" }), "no_office_text_body"],
     [pkg("odt", { content: "not xml at all" }), "no_office_text_body"],
-  ]) {
+  ];
+  for (const [bytes, why] of cases) {
     const t = await odtEntry.text(bytes);
     assert.equal(t.ok, true);
     assert.equal(t.document, null);

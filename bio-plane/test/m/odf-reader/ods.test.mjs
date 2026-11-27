@@ -8,14 +8,26 @@ import { linkWrapper } from "../../../src/subresources.mjs";
 import { sheetCellRef, usedSheetRange } from "../../../src/formats-xlsx.mjs";
 import { buildZip, members, pkg, withCd, OVER_BOUND } from "./pkg.mjs";
 
+/** @typedef {import("../../../src/odf.mjs").OdsStructure} OdsStructure */
+
+/** @param {string} body @param {string} [styles] */
 const ods = (body, styles = "") => pkg("ods", { body, styles });
-const S = (b, st) => odsEntry.structure(ods(b, st));
-const T = (b, st) => odsEntry.text(ods(b, st));
+/* Every test that calls S or T reads the answer's sheets, links, text or items, so relies on the read succeeding:
+   the helpers state that (assert.ok(x.ok)) before handing the answer back. */
+/** @param {string} b @param {string} [st] */
+const S = async (b, st) => { const s = await odsEntry.structure(ods(b, st)); assert.ok(s.ok); return s; };
+/** @param {string} b @param {string} [st] */
+const T = async (b, st) => { const t = await odsEntry.text(ods(b, st)); assert.ok(t.ok); return t; };
+/** @param {OdsStructure} s @param {string} kind */
 const items = (s, kind) => s.evidentiary.items.filter((i) => i.kind === kind);
 
+/** @param {string} text @param {string} [attrs] */
 const cell = (text, attrs = "") => `<table:table-cell office:value-type="string"${attrs ? " " + attrs : ""}><text:p>${text}</text:p></table:table-cell>`;
+/** @param {number} [n] */
 const empty = (n = 1) => `<table:table-cell${n > 1 ? ` table:number-columns-repeated="${n}"` : ""}/>`;
+/** @param {string} cells @param {string} [attrs] */
 const row = (cells, attrs = "") => `<table:table-row${attrs ? " " + attrs : ""}>${cells}</table:table-row>`;
+/** @param {string} name @param {string} rows @param {string} [attrs] */
 const table = (name, rows, attrs = "") => `<table:table table:name="${name}"${attrs ? " " + attrs : ""}>${rows}</table:table>`;
 
 const TABLE_STYLES = `<style:style style:name="ta1" style:family="table"><style:table-properties table:display="true"/></style:style>
@@ -64,8 +76,10 @@ test("R15 formulas: one item per cell carrying table:formula, verbatim, beside t
   ]);
   // never the formula in the text stream
   const t = await T(body);
-  assert.ok(!t.document.includes("of:="));
-  assert.ok(!t.document.includes("SUM"));
+  const doc = t.document;
+  assert.ok(doc !== null);
+  assert.ok(!doc.includes("of:="));
+  assert.ok(!doc.includes("SUM"));
 });
 
 /* ------------------------------------------------------------------ R16 */
@@ -101,6 +115,7 @@ test("R16 hidden rows and columns as one range per run, never expanded, and hidd
 /* ------------------------------------------------------------------ R17 */
 
 test("R17 links: every <text:a>/<draw:a> href in a cell, at that cell's sheet-cell reference, a repeated cell's at each address", async () => {
+  /** @param {string} h */
   const link = (h) => `<table:table-cell office:value-type="string"><text:p><text:a xlink:href="${h}">t</text:a></text:p></table:table-cell>`;
   const body = table("L", [
     row(empty() + link("https://example.org/a")),
@@ -109,6 +124,7 @@ test("R17 links: every <text:a>/<draw:a> href in a cell, at that cell's sheet-ce
     row(link("page.html"), 'table:number-rows-repeated="2"'),
   ].join(""));
   const s = await S(body);
+  /** @param {string} h @param {string} partition @param {string} cellRef */
   const rec = (h, partition, cellRef) => (partition === "anchor"
     ? { partition, wrapper: h, target: { fragment: h, name: h.slice(1) }, source: sheetCellRef("L", cellRef) }
     : { partition, wrapper: partition === "deferred" ? linkWrapper.deferred(h) : linkWrapper.refused(), target: { url: h }, source: sheetCellRef("L", cellRef) });
@@ -151,10 +167,11 @@ test("R19 a sheet's text is its non-empty rows of displayed values, tab-joined; 
   ].join("")) + table("Empty", row(empty(4))) + table("Hid", row(cell("secret")), 'table:display="false"');
   const t = await T(body);
   assert.deepEqual(t.sheets.map((s) => s.text), ["a1\tb1\n7\tb3\n2", "", "secret"]);
-  assert.equal(t.document, "a1\tb1\n7\tb3\n2\nsecret");
-  assert.deepEqual({ ...t.counts, scanned_bytes: undefined }, { chars: t.document.length, cells: 6, formulas: 2, undetermined: 0, scanned_bytes: undefined });
+  const doc = t.document;
+  assert.equal(doc, "a1\tb1\n7\tb3\n2\nsecret");
+  assert.deepEqual({ ...t.counts, scanned_bytes: undefined }, { chars: doc.length, cells: 6, formulas: 2, undetermined: 0, scanned_bytes: undefined });
   assert.deepEqual(t.undetermined, []);
-  assert.ok(!t.document.includes("of:"));
+  assert.ok(!doc.includes("of:"));
 });
 
 test("R19 lineRows: every sheet carries one 1-based sheet row per line of its text, through empty rows, repeated rows and a cell holding several lines", async () => {
@@ -171,6 +188,7 @@ test("R19 lineRows: every sheet carries one 1-based sheet row per line of its te
     + table("Hid", row(empty(1)) + row(cell("secret")), 'table:display="false"');
   const t = await T(body);
   const [rows, blank, hid] = t.sheets;
+  assert.ok(rows); assert.ok(blank); assert.ok(hid);
   assert.deepEqual(rows.text.split("\n"), ["head\th2", "r8", "rep", "rep", "rep", "m1", "m2", "late"]);
   assert.deepEqual(rows.lineRows, [1, 8, 9, 10, 11, 12, 12, 13]);
   assert.equal(rows.lineRows.length, rows.text.split("\n").length);
@@ -189,11 +207,14 @@ test("R20 text() over the guard carries the guard marker verbatim; with no reada
   assert.deepEqual(over.sheets, []);
   assert.deepEqual(over.undetermined, [{ ...sizeGuard(OVER_BOUND), final: true }]);
   assert.deepEqual({ ...over.counts, scanned_bytes: undefined }, { chars: 0, cells: 0, formulas: 0, undetermined: 1, scanned_bytes: undefined });
-  for (const [bytes, reason] of [
+  /** @type {[Uint8Array, string][]} */
+  const unread = [
     [buildZip(withCd(members("ods"), "content.xml", { crc: 9 })), "crc_mismatch"],
     [pkg("ods", { content: "<office:document-content><office:body><office:text/></office:body></office:document-content>" }), "no_office_spreadsheet_body"],
-  ]) {
+  ];
+  for (const [bytes, reason] of unread) {
     const t = await odsEntry.text(bytes);
+    assert.ok(t.ok);
     assert.equal(t.document, null);
     assert.deepEqual(t.sheets, []);
     assert.deepEqual(t.undetermined, [{ sheet: null, cell: null, reason }]);
@@ -201,6 +222,7 @@ test("R20 text() over the guard carries the guard marker verbatim; with no reada
   }
   // structure() on the same: no sheets read, and the notes say which
   const so = await odsEntry.structure(buildZip(withCd(members("ods", { body: table("S", row(cell("x"))) }), "content.xml", { usize: OVER_BOUND })));
+  assert.ok(so.ok);
   assert.deepEqual(so.sheets, []);
   assert.ok(so.notes.some((n) => /size bound/.test(n)));
 });
@@ -210,9 +232,11 @@ test("R20 text() over the guard carries the guard marker verbatim; with no reada
 test("R42 a sheet's capacity is always null, however large its used range", async () => {
   const wide = table("Wide", row(empty(20000) + cell("far")) + row(empty(), 'table:number-rows-repeated="2000000"') + row(cell("deep")));
   const t = await T(wide);
-  assert.equal(t.sheets[0].rows, null);
-  assert.equal(t.sheets[0].cols, null);
-  assert.equal(t.sheets[0].usedCols, 20001);
-  assert.equal(t.sheets[0].usedRows, 2000002);
+  const [s0] = t.sheets;
+  assert.ok(s0);
+  assert.equal(s0.rows, null);
+  assert.equal(s0.cols, null);
+  assert.equal(s0.usedCols, 20001);
+  assert.equal(s0.usedRows, 2000002);
   for (const b of ["", table("E", "")]) for (const s of (await T(b)).sheets) assert.deepEqual([s.rows, s.cols], [null, null]);
 });

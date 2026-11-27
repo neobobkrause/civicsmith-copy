@@ -197,11 +197,236 @@ import { sheetCellRef, usedSheetRange, a1Corner, rangeUnitFor } from "./formats-
 import { slideShapeRef } from "./pptx.mjs";
 import { word, localize } from "./setup-words/index.mjs";
 
-const UTF8 = new TextDecoder("utf-8", { fatal: false });
+/* ------------------------------------------------------------------ *
+ * The kinds this module takes and hands back
+ * ------------------------------------------------------------------ */
+
+/**
+ * @typedef {any} OoxmlContainer ooxml's `readContainer` answer (`{ok, entries, byName, why}`), read here and handed
+ *   back to ooxml's own readers as ooxml hands it: ooxml states no kind for it yet.
+ */
+/**
+ * @typedef {Object} OdfRow one `partMap:"odf"` row of ooxml's CONTAINER_FLAVOURS
+ * @property {string} partMap
+ * @property {string} flavour
+ * @property {string} mimetype
+ * @property {string} conventionalMainPart
+ */
+/** @typedef {ReadonlyMap<string, string>} Attrs an element's attributes by local name (R56: `calcext-value-type` apart) */
+/** @typedef {{ attrs: Attrs, inner: string }} Element an element's attributes and the raw markup between its tags */
+/** @typedef {{ name: string, attrs: Attrs, inner: string }} NamedElement an element with its local name */
+/**
+ * @typedef {Object} Meter one content.xml read's meter (R45, R49, R52)
+ * @property {number} units the repeat units spent
+ * @property {number} chars the characters repeats copied
+ * @property {number} tokens the tokens the walks read
+ * @property {number} last the token count at the last yield
+ */
+/**
+ * @typedef {Object} SizeMarker ooxml's size-guard marker, with `final` (R13, R48)
+ * @property {false} ok the size guard's own `ok: false`
+ * @property {string} text always "undetermined"
+ * @property {string} why "over_size_bound"
+ * @property {number} size the declared bytes
+ * @property {number} bound
+ * @property {string} boundName
+ * @property {string} metric
+ * @property {boolean} final
+ */
+/**
+ * @typedef {Object} RepeatMarker the repeat bound's marker, in the size guard's place (R45)
+ * @property {string} text always "undetermined"
+ * @property {string} why "over_repeat_bound"
+ * @property {number} units the count reached when the read stopped
+ * @property {number} bound
+ * @property {string} boundName
+ * @property {string} metric
+ * @property {boolean} final
+ */
+/** @typedef {SizeMarker | RepeatMarker} BoundMarker */
+/**
+ * @typedef {Object} PartStatement a part not read, or read with a statement (R28, R51, R52, R54)
+ * @property {string} part
+ * @property {string} why
+ * @property {boolean} [final]
+ * @property {string | null | undefined} [name] the encoding named, for ENCODING_UNSUPPORTED
+ * @property {string} [detail]
+ * @property {number} [replaced]
+ * @property {number} [count]
+ * @property {BoundMarker} [guard] the marker, on the envelope's statement of a bound
+ */
+/**
+ * @typedef {Object} ActiveItem one finding of what can act when the file is opened (R47, office-readers R32)
+ * @property {string} kind "odf-basic", "odf-script", "embedded-file", "launch" or "unread"
+ * @property {string} part
+ * @property {string | null} [event]
+ * @property {string} [why]
+ */
+/**
+ * @typedef {Object} CoreProperties meta.xml read as OOXML's core properties (R29)
+ * @property {true} ok
+ * @property {string | null} creator
+ * @property {string | null} lastModifiedBy
+ * @property {string | null} revision
+ * @property {number | null} revisionNumber
+ * @property {string | null} created
+ * @property {string | null} modified
+ * @property {string | null} title
+ */
+/** @typedef {{ kind: string, ref: string, para: number }} DocParaRef IC-1's `doc-para`, built by office-readers */
+/** @typedef {{ kind: string, ref: string, table: number }} DocTableRef IC-1's `doc-table`, built by office-readers */
+/** @typedef {{ kind: string, ref: string, sheet: string, cell: string }} SheetCellRef IC-1's `sheet-cell`, built by office-readers */
+/** @typedef {{ kind: string, ref: string, sheet: string, range: string }} SheetRangeRef IC-1's `sheet-range`, built by office-readers */
+/** @typedef {{ kind: string, ref: string, slide: number, shape?: number }} SlideShapeRef IC-1's `slide-shape`, built by office-readers */
+/** @typedef {DocParaRef | SheetCellRef | SlideShapeRef} ElementRef */
+/**
+ * @typedef {{ fragment: string, name: string } | { url: string } | { why: string, name: string }
+ *   | { sha256: string, name: string, bytes: number }} LinkTarget
+ */
+/**
+ * @typedef {Object} Link one link, partitioned as subresources' linkWrapper partitions it (R7, R17, R23, R29)
+ * @property {"anchor" | "intra" | "deferred" | "refused" | "undetermined"} partition
+ * @property {string | null} wrapper
+ * @property {LinkTarget} target
+ * @property {ElementRef | null} source
+ */
+/** @typedef {{ anchor: number, intra: number, deferred: number, refused: number, undetermined: number }} PartitionCounts */
+/**
+ * @typedef {Object} TrackedChangeItem (R8)
+ * @property {"tracked-change"} kind
+ * @property {string} change "insertion" or "deletion"
+ * @property {string | null} author
+ * @property {string | null} date
+ * @property {DocParaRef | null} source
+ * @property {string | null} [superseded]
+ * @property {string | null} [text]
+ * @property {string} [why]
+ */
+/**
+ * @typedef {Object} CommentItem (R9)
+ * @property {"comment"} kind
+ * @property {string | null} id
+ * @property {string | null} author
+ * @property {string | null} date
+ * @property {string | null} initials
+ * @property {string} text
+ * @property {DocParaRef | null} source
+ */
+/**
+ * @typedef {Object} FormulaItem (R15)
+ * @property {"formula"} kind
+ * @property {SheetCellRef} source
+ * @property {string} formula
+ * @property {string | null} value
+ */
+/** @typedef {{ min: number, max: number, visibility: string }} HiddenRange a hidden run of rows or columns (R16) */
+/** @typedef {{ kind: "hidden-rows", sheet: string, rows: HiddenRange[], count: number, source: null }} HiddenRowsItem */
+/** @typedef {{ kind: "hidden-cols", sheet: string, cols: HiddenRange[], count: number, source: null }} HiddenColsItem */
+/** @typedef {{ kind: "hidden-sheet", sheet: string, state: string, source: null }} HiddenSheetItem */
+/** @typedef {{ kind: "speaker-notes", slide: number, part: string, text: string, source: SlideShapeRef }} SpeakerNotesItem (R22) */
+/** @typedef {{ kind: "hidden-slide", slide: number, part: string, source: SlideShapeRef }} HiddenSlideItem (R22) */
+/**
+ * @typedef {Object} CorePropertiesItem (R29)
+ * @property {"core-properties"} kind
+ * @property {string | null} creator
+ * @property {string | null} lastModifiedBy
+ * @property {string | null} revision
+ * @property {number | null} revisionNumber
+ * @property {string | null} created
+ * @property {string | null} modified
+ * @property {string | null} title
+ * @property {null} source
+ */
+/**
+ * @typedef {TrackedChangeItem | CommentItem | FormulaItem | HiddenRowsItem | HiddenColsItem | HiddenSheetItem
+ *   | SpeakerNotesItem | HiddenSlideItem | CorePropertiesItem} EvidentiaryItem
+ */
+/**
+ * @typedef {Object} Envelope the DEC-5 evidentiary envelope
+ * @property {string} container
+ * @property {string[]} kinds
+ * @property {EvidentiaryItem[]} items
+ * @property {PartStatement[]} undetermined
+ * @property {{ [kind: string]: number }} counts
+ */
+/**
+ * @typedef {Object} OdfParts parts()'s answer on success (R3)
+ * @property {true} ok
+ * @property {string} format
+ * @property {OdfRow} row
+ * @property {Uint8Array} bytes
+ * @property {OoxmlContainer} container
+ * @property {string | null} contentXml
+ * @property {string | null} stylesXml
+ * @property {{ total: number, parts: { name: string, declared: number }[] }} declared
+ * @property {SizeMarker | null} guard
+ * @property {CoreProperties | null} core
+ * @property {Link[]} embedded
+ * @property {string | null} manifestWhy
+ * @property {PartStatement[]} undetermined
+ * @property {ActiveItem[]} active
+ * @property {PartStatement[]} statements
+ * @property {number} scanned
+ * @property {RepeatMarker} [repeat] the repeat bound's marker, on the re-run of a projection that crossed it (R45)
+ */
+/**
+ * @typedef {Object} PartsFailure parts()'s answer on failure (R3)
+ * @property {false} ok
+ * @property {string} container
+ * @property {string} why
+ * @property {string | null} part
+ * @property {string | null} flavourDeclared
+ * @property {string[]} signals
+ */
+/** @typedef {OdfParts | PartsFailure} PartsResult */
+/** @typedef {PartsResult | ArrayBuffer | ArrayBufferView} PartsOrBytes parts()'s output, or raw bytes read through it */
+/** @typedef {{ format: string, confidence: string, signals: string[] }} Detected detect()'s claim (R1, R2) */
+/** @typedef {{ ok: false, container: string, reason: string, part: string | null }} ProjectionFailure (R5, R38) */
+/**
+ * @typedef {Object} TextOptions what text() accepts beside its parts (R49)
+ * @property {number} [inlineCellsMax] bytes of the cells' JSON a whole read lists; past it every sheet's cells are held
+ * @property {unknown} [yieldNow] awaited between windows when it is a function; anything else is no yield
+ */
+/**
+ * @typedef {Object} ReadCtx one projection's read: its meter and the caller's options
+ * @property {Meter} meter
+ * @property {TextOptions | undefined} opts
+ * @property {unknown} yieldNow
+ */
+/**
+ * @typedef {Object} TextUnit one part of a document that is not a body paragraph, with its kind (R53)
+ * @property {string} kind
+ * @property {string} ref
+ * @property {string} part
+ * @property {string} text
+ * @property {number[]} [paras]
+ * @property {boolean} [hidden]
+ */
+/**
+ * @typedef {Object} TextStatement text()'s statement of what it could not read, or read with a statement
+ * @property {string} [reason]
+ * @property {string} [part]
+ * @property {string} [why]
+ * @property {boolean} [final]
+ * @property {string | null | undefined} [name]
+ * @property {number} [replaced]
+ * @property {number} [count]
+ * @property {string} [detail]
+ * @property {BoundMarker} [guard]
+ * @property {null} [sheet]
+ * @property {null} [cell]
+ */
+/** @typedef {BoundMarker | TextStatement} TextUndetermined */
+/** @typedef {{ kind: string, ref: string, part: string, mime: string | null, name: string | null }} ImageRef an image's unit, built by ooxml */
+/** @typedef {{ images: ImageRef[] | null, imagesWhy?: string }} ImagesPart text()'s `images` (R30), added by ooxml's withContainerImages */
+
+const UTF8 = new TextDecoder();                // UTF-8, replacing what does not decode
 
 /** Bytes as a Uint8Array view, from a Uint8Array, an ArrayBuffer, any typed
  *  view or a plain byte array; anything else reads as NO bytes (null), so a
- *  caller's odd argument is answered as "not this format", never a throw. */
+ *  caller's odd argument is answered as "not this format", never a throw.
+ *  @param {unknown} x
+ *  @returns {Uint8Array | null} */
 function asBytes(x) {
   if (x instanceof Uint8Array) return x;
   if (x instanceof ArrayBuffer) return new Uint8Array(x);
@@ -249,37 +474,71 @@ const WINDOW_TOKENS = 65536;
 /** Thrown out of a metered read the moment it would cross a bound, and caught
  *  only by `metered` callers, which answer with its marker. */
 class OverRepeatBound extends Error {
-  constructor(marker) { super("over_repeat_bound"); this.marker = marker; }
+  /** @param {RepeatMarker} marker */
+  constructor(marker) {
+    super("over_repeat_bound");
+    /** @type {RepeatMarker} */
+    this.marker = marker;
+  }
 }
 
 /* The running read's meter. Every projection that expands anything runs its synchronous pieces under `withMeter`,
  * which installs the read's own meter and restores the one before it, so two reads in flight at once (R49: a read awaits
  * `yieldNow` between windows) never share a count. `tokens` counts the tokens the walks have read, and `last` the count
  * at the last yield (R52). */
+/** @type {Meter | null} */
 let meter = null;
 
+/** @returns {Meter} */
 const newMeter = () => ({ units: 0, chars: 0, tokens: 0, last: 0 });
 
+/** The running read's meter, which every expansion needs.
+ *  @returns {Meter} */
+function currentMeter() {
+  const running = meter;
+  if (!running) throw new Error("odf.mjs: an expansion ran outside a metered read");
+  return running;
+}
+
+/**
+ * @template T
+ * @param {Meter} m
+ * @param {() => T} fn
+ * @returns {T}
+ */
 function withMeter(m, fn) {
   const saved = meter;
   meter = m;
   try { return fn(); } finally { meter = saved; }
 }
 
+/**
+ * @template T
+ * @param {() => T} fn
+ * @returns {T}
+ */
 const metered = (fn) => withMeter(newMeter(), fn);
 
-/** True when a window of tokens has been read since the last yield. */
+/** True when a window of tokens has been read since the last yield.
+ *  @param {Meter | null} [m] */
 const windowDue = (m = meter) => m != null && m.tokens - m.last >= WINDOW_TOKENS;
 
 /** Let the caller's turn pass (R49): a `yieldNow` that is not a function is no yield; one that throws or rejects is
  *  ignored, and the answer does not depend on it. */
+/** @param {ReadCtx} ctx */
 async function letPass(ctx) {
   ctx.meter.last = ctx.meter.tokens;
-  if (typeof ctx.yieldNow !== "function") return;
-  try { await ctx.yieldNow(); } catch { /* a yield that fails is no yield */ }
+  const yieldNow = ctx.yieldNow;
+  if (typeof yieldNow !== "function") return;
+  try { await yieldNow.call(ctx); } catch { /* a yield that fails is no yield */ }
 }
 
-/** Run a generator of windows to its end under the read's meter, awaiting the pass between its yields. */
+/** Run a generator of windows to its end under the read's meter, awaiting the pass between its yields.
+ * @template T
+ * @param {Generator<undefined, T, undefined>} gen
+ * @param {ReadCtx} ctx
+ * @returns {Promise<T>}
+ */
 async function drive(gen, ctx) {
   for (;;) {
     const r = withMeter(ctx.meter, () => gen.next());
@@ -288,15 +547,20 @@ async function drive(gen, ctx) {
   }
 }
 
-/** The same generator run without passes (structure(), which gives the thread back to no one). */
+/** The same generator run without passes (structure(), which gives the thread back to no one).
+ * @template T
+ * @param {Generator<undefined, T, undefined>} gen
+ * @returns {T}
+ */
 function driveSync(gen) {
   for (;;) { const r = gen.next(); if (r.done) return r.value; }
 }
 
 /** Pay `n` units before expanding them, or stop the read. `units` in the
  *  marker is the count reached when it stopped: one past the bound. */
+/** @param {number} n */
 function spend(n) {
-  if (!meter) throw new Error("odf.mjs: an expansion ran outside a metered read");
+  const meter = currentMeter();
   if (!(n > 0)) return;
   if (meter.units + n > ODF_REPEAT_EXPANSION_MAX) {
     throw new OverRepeatBound({ text: "undetermined", why: "over_repeat_bound",
@@ -307,8 +571,9 @@ function spend(n) {
 }
 
 /** Pay for `n` characters a repeat copies, or stop the read. */
+/** @param {number} n */
 function spendChars(n) {
-  if (!meter) throw new Error("odf.mjs: an expansion ran outside a metered read");
+  const meter = currentMeter();
   if (!(n > 0)) return;
   if (meter.chars + n > REPEAT_TEXT_BOUND_CHARS) {
     throw new OverRepeatBound({ text: "undetermined", why: "over_repeat_bound",
@@ -328,14 +593,19 @@ function spendChars(n) {
  * in `ooxml.mjs` plus one projection here — and, more to the point, these
  * entries cannot drift from the discriminator they dispatch on, because there
  * is only one place the facts live. */
-const ODF_ROWS = CONTAINER_FLAVOURS.filter((f) => f.partMap === "odf");
+const ODF_ROWS = CONTAINER_FLAVOURS.filter((f) => f?.partMap === "odf");
 
+/**
+ * @param {string} flavour
+ * @returns {OdfRow}
+ */
 function odfRow(flavour) {
-  const row = ODF_ROWS.find((f) => f.flavour === flavour);
+  const row = ODF_ROWS.find((f) => f?.flavour === flavour);
   /* Not defensive decoration: if COFF-9's table ever stopped carrying a row
    * these entries project, the honest outcome is a loud failure at module
-   * load rather than three entries silently detecting nothing. */
-  if (!row) throw new Error(`odf.mjs: no partMap:"odf" row for "${flavour}" in ooxml.mjs`);
+   * load rather than three entries silently detecting nothing. (Every
+   * `partMap:"odf"` row carries its `mimetype`.) */
+  if (!row || !("mimetype" in row)) throw new Error(`odf.mjs: no partMap:"odf" row for "${flavour}" in ooxml.mjs`);
   return row;
 }
 
@@ -367,8 +637,9 @@ const META_PART = "meta.xml";
  * cannot read yields a stated undetermined, never a guessed structure.
  * ------------------------------------------------------------------ */
 
+/** @param {string} s */
 function decodeEntities(s) {
-  return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => {
+  return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (/** @type {string} */ m, /** @type {string} */ e) => {
     if (e[0] === "#") {
       const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
       /* An out-of-range code point (`&#99999999;`) is left as written: it
@@ -382,11 +653,17 @@ function decodeEntities(s) {
 /* One pass over the raw attribute text of a tag, left to right, each character read once (R52: a regular expression
  * with a backtracking name group took quadratic time on a long run of name characters). A name is a run of name
  * characters (a prefix, a colon, a local name), then `=`, then a quoted value; anything else is skipped past. */
+/** @param {number} c */
 const isNameChar = (c) => (c >= 48 && c <= 58) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95 || c === 45 || c === 46;
+/** @param {number} c */
 const isSpaceChar = (c) => c === 32 || (c >= 9 && c <= 13);
 
+/**
+ * @param {string | undefined} raw
+ * @returns {Attrs}
+ */
 function attrsOf(raw) {
-  const attrs = {};
+  const attrs = new Map(/** @type {[string, string][]} */ ([]));
   const s = String(raw || "");
   const n = s.length;
   let i = 0;
@@ -407,13 +684,17 @@ function attrsOf(raw) {
     const local = name.includes(":") ? name.slice(name.lastIndexOf(":") + 1) : name;
     /* R56: `calcext:value-type` (LibreOffice's refinement, "error") shares its local name with `office:value-type`, which
        decides a cell's type whichever the file writes first; calcext's is kept apart, for a cell with no office type. */
-    attrs[name === "calcext:value-type" ? "calcext-value-type" : local] = decodeEntities(s.slice(k + 1, e));
+    attrs.set(name === "calcext:value-type" ? "calcext-value-type" : local, decodeEntities(s.slice(k + 1, e)));
     i = e + 1;
   }
   return attrs;
 }
 
-const localOf = (n) => (n.includes(":") ? n.split(":").pop() : n);
+/** No attributes. @type {Attrs} */
+const NO_ATTRS = new Map(/** @type {[string, string][]} */ ([]));
+
+/** @param {string} n */
+const localOf = (n) => (n.includes(":") ? n.slice(n.lastIndexOf(":") + 1) : n);
 
 /* One token pass over the document: an open/close/self-closing tag, or a
  * comment / CDATA / processing instruction skipped whole. Group 1 is the tag
@@ -430,12 +711,16 @@ const localOf = (n) => (n.includes(":") ? n.split(":").pop() : n);
  * of the document and it never terminated. A fresh instance per call has no
  * shared cursor to corrupt. */
 const TOKEN_SOURCE = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<\/?([\w.-]+(?::[\w.-]+)?)((?:[^>"']|"[^"]*"|'[^']*')*?)(\/)?>/.source;
+/** @typedef {{ exec(xml: string): RegExpExecArray | null, readonly lastIndex: number }} Tokens */
+/** @returns {Tokens} */
 const tokens = () => {
   const re = new RegExp(TOKEN_SOURCE, "g");
   return {
+    /** @param {string} xml */
     exec(xml) {
       const m = re.exec(xml);
-      if (m !== null && meter !== null) meter.tokens++;
+      const running = meter;
+      if (m !== null && running !== null) running.tokens++;
       return m;
     },
     get lastIndex() { return re.lastIndex; },
@@ -448,7 +733,14 @@ const tokens = () => {
  *  closes of the same local name, so `<draw:g>` inside `<draw:g>` does not
  *  end the outer one early. Only TOP-LEVEL occurrences are returned (a nested
  *  match is inside its parent's `inner`, where the caller can recurse). */
+/**
+ * @param {string} xml
+ * @param {string} localName
+ * @param {number} [limit]
+ * @returns {Element[]}
+ */
 function elementsNested(xml, localName, limit = Infinity) {
+  /** @type {Element[]} */
   const out = [];
   for (const el of iterNested(xml, new Set([localName]))) {
     out.push({ attrs: el.attrs, inner: el.inner });
@@ -459,10 +751,19 @@ function elementsNested(xml, localName, limit = Infinity) {
 
 /** The same walk, one top-level element at a time as it is found, for any of a set of local names: a sheet's rows are
  *  read this way so that no more than the row in hand is held (R49). Yields `{name, attrs, inner}`. */
+/**
+ * @param {string} xml
+ * @param {ReadonlySet<string>} names
+ * @returns {Generator<NamedElement, void, undefined>}
+ */
 function* iterNested(xml, names) {
   const RE = tokens();
-  let m, depth = 0, start = -1, openAttrs = null, openName = null;
-  while ((m = RE.exec(xml)) !== null) {
+  let depth = 0;
+  /** @type {{ start: number, attrs: Attrs, name: string } | null} the top-level element open now */
+  let open = null;
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const local = localOf(m[1]);
     if (!names.has(local)) continue;
@@ -470,9 +771,10 @@ function* iterNested(xml, names) {
     const selfClosed = m[3] === "/";
     if (closing) {
       depth--;
-      if (depth === 0 && start >= 0) {
-        const el = { name: openName, attrs: openAttrs, inner: xml.slice(start, m.index) };
-        start = -1; openAttrs = null; openName = null;
+      const was = open;
+      if (depth === 0 && was !== null) {
+        const el = { name: was.name, attrs: was.attrs, inner: xml.slice(was.start, m.index) };
+        open = null;
         yield el;
       }
       continue;
@@ -481,7 +783,7 @@ function* iterNested(xml, names) {
       if (depth === 0) yield { name: local, attrs: attrsOf(m[2]), inner: "" };
       continue;
     }
-    if (depth === 0) { start = RE.lastIndex; openAttrs = attrsOf(m[2]); openName = local; }
+    if (depth === 0) open = { start: RE.lastIndex, attrs: attrsOf(m[2]), name: local };
     depth++;
   }
 }
@@ -491,12 +793,19 @@ function* iterNested(xml, names) {
  *  paragraph it annotates, and a page's speaker notes out of the slide's own
  *  text: in both cases the nested content is REAL and is emitted SEPARATELY,
  *  so merging it here would be the conflation DEC-5 forbids. */
+/**
+ * @param {string} xml
+ * @param {string} localName
+ * @returns {string}
+ */
 function stripElement(xml, localName) {
   let out = "";
   let cut = 0;
   const RE = tokens();
-  let m, depth = 0, start = -1;
-  while ((m = RE.exec(xml)) !== null) {
+  let depth = 0, start = -1;
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     if (localOf(m[1]) !== localName) continue;
     const closing = m[0][1] === "/";
@@ -523,19 +832,24 @@ function stripElement(xml, localName) {
  *  silently close up gaps in the extracted text. Each space is paid for
  *  before it is made (R45), so `text:c="2000000000"` stops the read rather
  *  than ending in a RangeError. */
+/**
+ * @param {string} xml
+ * @returns {string}
+ */
 function visibleText(xml) {
   let out = "";
   let prev = 0;
   const RE = tokens();
-  let m;
-  while ((m = RE.exec(xml)) !== null) {
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m.index > prev) out += decodeEntities(xml.slice(prev, m.index));
     prev = RE.lastIndex;
     if (m[1] === undefined) continue;
     if (m[0][1] === "/") continue;
     const name = localOf(m[1]);
     if (name === "s") {
-      const c = parseInt(attrsOf(m[2]).c ?? "1", 10);
+      const c = parseInt(attrsOf(m[2]).get("c") ?? "1", 10);
       const n = Number.isFinite(c) && c > 0 ? c : 1;
       spend(n);
       out += " ".repeat(n);
@@ -557,20 +871,28 @@ function visibleText(xml) {
  *  `{ tableDisplay: Map(name → boolean), pageVisible: Map(name → boolean) }`;
  *  a style that declares neither appears in neither map, so "absent" is
  *  distinguishable from "declared true". */
+/** @typedef {{ tableDisplay: Map<string, boolean>, pageVisible: Map<string, boolean> }} AutomaticStyles */
+/** No automatic styles: content.xml was not read.
+ *  @returns {AutomaticStyles} */
+const noStyles = () => ({ tableDisplay: new Map(/** @type {[string, boolean][]} */ ([])), pageVisible: new Map(/** @type {[string, boolean][]} */ ([])) });
+/**
+ * @param {string} xml
+ * @returns {AutomaticStyles}
+ */
 function automaticStyles(xml) {
-  const tableDisplay = new Map();
-  const pageVisible = new Map();
+  const tableDisplay = new Map(/** @type {[string, boolean][]} */ ([]));
+  const pageVisible = new Map(/** @type {[string, boolean][]} */ ([]));
   for (const block of elementsNested(xml, "automatic-styles")) {
     for (const st of elementsNested(block.inner, "style")) {
-      const name = st.attrs["name"];
+      const name = st.attrs.get("name");
       if (!name) continue;
-      if (st.attrs.family === "table") {
+      if (st.attrs.get("family") === "table") {
         for (const p of elementsNested(st.inner, "table-properties")) {
-          if (p.attrs.display != null) tableDisplay.set(name, p.attrs.display !== "false");
+          if (p.attrs.get("display") != null) tableDisplay.set(name, p.attrs.get("display") !== "false");
         }
-      } else if (st.attrs.family === "drawing-page") {
+      } else if (st.attrs.get("family") === "drawing-page") {
         for (const p of elementsNested(st.inner, "drawing-page-properties")) {
-          if (p.attrs.visibility != null) pageVisible.set(name, p.attrs.visibility !== "hidden");
+          if (p.attrs.get("visibility") != null) pageVisible.set(name, p.attrs.get("visibility") !== "hidden");
         }
       }
     }
@@ -583,14 +905,20 @@ function automaticStyles(xml) {
  * formats-xlsx and pptx apply
  * ------------------------------------------------------------------ */
 
+/** @param {string} uri */
 function classifyUri(uri) {
   const m = /^([a-zA-Z][a-zA-Z0-9+.\-]*):/.exec(uri || "");
-  const scheme = m ? m[1].toLowerCase() : null;
+  const scheme = m && m[1] !== undefined ? m[1].toLowerCase() : null;
   if (scheme === "http" || scheme === "https") return "deferred";
   if (!scheme && uri) return "deferred";
   return "refused";
 }
 
+/**
+ * @param {string} uri
+ * @param {ElementRef | null} source
+ * @returns {Link}
+ */
 function linkRecord(uri, source) {
   /* An `xlink:href` that is a bare fragment is an INTERNAL reference — a
    * bookmark, a named range, a slide jump — final at capture, so it is an
@@ -612,14 +940,20 @@ function linkRecord(uri, source) {
  *  order: ODF's `<text:a>` (text documents, sheet cells, shape text) and
  *  `<draw:a>` (a whole shape made clickable). Returns the raw hrefs — the
  *  caller attaches the element reference it alone knows. */
+/**
+ * @param {string} xml
+ * @returns {string[]}
+ */
 function hrefsIn(xml) {
+  /** @type {string[]} */
   const out = [];
   const RE = tokens();
-  let m;
-  while ((m = RE.exec(xml)) !== null) {
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m[1] === undefined || m[0][1] === "/") continue;
     if (localOf(m[1]) !== "a") continue;
-    const href = attrsOf(m[2]).href;
+    const href = attrsOf(m[2]).get("href");
     if (href != null) out.push(href);
   }
   return out;
@@ -644,17 +978,25 @@ function hrefsIn(xml) {
  * central directory with `ooxml.mjs`'s OWN exported `crc32` — so a value that
  * passes here has passed exactly the checks `readPart` would have applied.
  * Every other part in this module goes through `readPart`. */
+/**
+ * @param {Uint8Array} bytes
+ * @param {OoxmlContainer} container
+ * @param {string} name
+ * @param {number} maxBytes
+ * @returns {string | null}
+ */
 function readStoredMemberSync(bytes, container, name, maxBytes) {
   const want = normalizePartName(name);
   const entry = container.byName.get(want)
-    ?? container.entries.find((e) => normalizePartName(e.name) === want);
+    ?? container.entries.find((/** @type {OoxmlContainer} */ e) => normalizePartName(e.name) === want);
   if (!entry) return null;
   if (entry.method !== 0) return null;                    // not stored: ODF's own rule, as an absence
   if (entry.uncompressedSize > maxBytes) return null;     // the COFF-9 bound
   const lh = entry.localHeaderOffset;
   if (lh + 30 > bytes.length) return null;
-  const nameLen = bytes[lh + 26] | (bytes[lh + 27] << 8);
-  const extraLen = bytes[lh + 28] | (bytes[lh + 29] << 8);
+  /* Each of the four bytes is inside `bytes`: `lh + 30` is within its length. */
+  const nameLen = (bytes[lh + 26] ?? 0) | ((bytes[lh + 27] ?? 0) << 8);
+  const extraLen = (bytes[lh + 28] ?? 0) | ((bytes[lh + 29] ?? 0) << 8);
   const start = lh + 30 + nameLen + extraLen;
   const end = start + entry.compressedSize;
   if (end > bytes.length) return null;
@@ -670,14 +1012,19 @@ function readStoredMemberSync(bytes, container, name, maxBytes) {
 
 /** The `encoding` an XML declaration states, from the first bytes read as Latin-1 (every encoding a declaration
  *  names starts ASCII-compatibly, UTF-16 aside, which a BOM or the NUL pattern settles first), else null. */
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string | null}
+ */
 function declaredEncoding(bytes) {
   const head = Array.from(bytes.subarray(0, 256), (c) => String.fromCharCode(c)).join("");
   const decl = /^\s*<\?xml\b[^>]*?\bencoding\s*=\s*("([^"]*)"|'([^']*)')/.exec(head);
-  return decl ? (decl[2] ?? decl[3]).trim() || null : null;
+  return decl ? (decl[2] ?? decl[3] ?? "").trim() || null : null;
 }
 
 /** A numeric character reference in `text` that names no Unicode scalar value (above U+10FFFF, a surrogate, U+0000,
  *  or digits that do not parse): the part cannot be read as XML. One pass, each reference read once. */
+/** @param {string} text */
 function hasInvalidCharRef(text) {
   const n = text.length;
   for (let i = text.indexOf("&#"); i !== -1; i = text.indexOf("&#", i + 2)) {
@@ -701,29 +1048,43 @@ function hasInvalidCharRef(text) {
  *  becomes text (`&lt;`, the whole examined span), so that every walk after this one meets only tokens that end, and a
  *  hostile run of openers costs one scan, not one scan each. Returns the text (the same string when nothing changed)
  *  and the work done: `scanned` characters examined, `tagOver` tags over the bound, `unterminated` openers never closed. */
+/**
+ * @param {string} text
+ * @returns {{ text: string, scanned: number, tagOver: number, unterminated: number }}
+ */
 function linearMarkup(text) {
   const n = text.length;
   let scanned = 0, tagOver = 0, unterminated = 0;
-  let out = null, keep = 0;                       // out: the pieces so far, keep: where the unwritten part begins
+  /** @type {string[]} */
+  const out = [];                                 // the pieces so far: none while nothing is turned to text
+  let keep = 0;                                   // where the unwritten part begins
+  /** @param {number} i @param {number} stop */
   const turnToText = (i, stop) => {
-    (out ??= []).push(text.slice(keep, i), text.slice(i, stop).replaceAll("<", "&lt;"));
+    out.push(text.slice(keep, i), text.slice(i, stop).replaceAll("<", "&lt;"));
     keep = stop;
   };
-  const closer = { comment: null, cdata: null, pi: null };   // null: not searched yet; -1: there is none ahead
+  /* Each closer's next place: absent, not searched yet; -1, there is none ahead. */
+  const closer = new Map(/** @type {[string, number][]} */ ([]));
+  /** @param {"comment" | "cdata" | "pi"} key @param {string} token @param {number} from */
   const close = (key, token, from) => {
-    const cached = closer[key];
+    const cached = closer.get(key);
     if (cached === -1) return -1;                  // none ahead of an earlier opener, so none ahead of this one
-    if (cached !== null && cached >= from) return cached;
-    return (closer[key] = text.indexOf(token, from));
+    if (cached !== undefined && cached >= from) return cached;
+    const found = text.indexOf(token, from);
+    closer.set(key, found);
+    return found;
   };
   /* The next quote of a kind at or after `from`; the search only moves forward, so what one search found (or that there
      is none ahead) holds for the next, and a long run of openers never searches the same stretch twice. */
-  const quoted = { 34: null, 39: null };
+  const quoted = new Map(/** @type {[number, number][]} */ ([]));
+  /** @param {number} ch @param {number} from */
   const quote = (ch, from) => {
-    const cached = quoted[ch];
+    const cached = quoted.get(ch);
     if (cached === -1) return -1;
-    if (cached !== null && cached >= from) return cached;
-    return (quoted[ch] = text.indexOf(ch === 34 ? '"' : "'", from));
+    if (cached !== undefined && cached >= from) return cached;
+    const found = text.indexOf(ch === 34 ? '"' : "'", from);
+    quoted.set(ch, found);
+    return found;
   };
   let i = text.indexOf("<");
   while (i !== -1) {
@@ -760,14 +1121,25 @@ function linearMarkup(text) {
     } else scanned += 1;
     i = text.indexOf("<", next);
   }
-  return { text: out === null ? text : out.join("") + text.slice(keep), scanned, tagOver, unterminated };
+  return { text: out.length === 0 ? text : out.join("") + text.slice(keep), scanned, tagOver, unterminated };
 }
 
 /** One part's bytes to the text a walk reads (R54, R51, R52), or the stated reason it cannot be:
  *  `{ok:true, xml, replaced, replacedRatio, scanned, tagOver, unterminated}` or `{ok:false, why, final?}`. */
+/**
+ * @typedef {{ ok: true, xml: string, replaced: number, replacedRatio: number, scanned: number, tagOver: number,
+ *   unterminated: number } | { ok: false, why: string, final?: boolean, name?: string | null }} XmlText
+ */
+/**
+ * @param {Uint8Array} bytes
+ * @param {string} name
+ * @returns {XmlText}
+ */
 function readXmlText(bytes, name) {
   const d = ooxml.decodeText(bytes, { declared: declaredEncoding(bytes), name, kind: "xml" });
-  if (!d || !d.ok) return { ok: false, why: d?.why ?? "ENCODING_UNSUPPORTED", name: d?.name ?? null };
+  if (!d || !d.ok || !("text" in d)) {
+    return { ok: false, why: (d && "why" in d ? d.why : null) ?? "ENCODING_UNSUPPORTED", name: (d && "name" in d ? d.name : null) ?? null };
+  }
   if (hasInvalidCharRef(d.text)) return { ok: false, why: "char_ref_invalid", final: true };
   const lin = linearMarkup(d.text);
   return { ok: true, xml: lin.text, replaced: d.replaced ?? 0, replacedRatio: d.replaced_ratio ?? 0, scanned: lin.scanned, tagOver: lin.tagOver, unterminated: lin.unterminated };
@@ -778,6 +1150,10 @@ const PARTIAL_REPLACED_RATIO = 0.005;
 
 /** R55: the package parts this module inflates for text, for a caller summing `declaredTextBytes(container, ...)`. */
 const TEXT_PARTS = new Set(["content.xml", "styles.xml", "meta.xml"]);
+/**
+ * @param {unknown} name
+ * @returns {boolean}
+ */
 export function isOdfTextPart(name) {
   try { return typeof name === "string" && TEXT_PARTS.has(normalizePartName(name)); } catch { return false; }
 }
@@ -786,10 +1162,22 @@ export function isOdfTextPart(name) {
  * detect() — shared by all three entries, parameterised by the ROW
  * ------------------------------------------------------------------ */
 
+/**
+ * @param {OdfRow} row
+ * @param {unknown} raw
+ * @param {unknown} contentType
+ * @returns {Detected | null}
+ */
 function detectOdf(row, raw, contentType) {
   try { return detectOdfUnguarded(row, raw, contentType); } catch { return null; }
 }
 
+/**
+ * @param {OdfRow} row
+ * @param {unknown} raw
+ * @param {unknown} contentType
+ * @returns {Detected | null}
+ */
 function detectOdfUnguarded(row, raw, contentType) {
   if (raw) {
     const bytes = asBytes(raw);
@@ -804,12 +1192,12 @@ function detectOdfUnguarded(row, raw, contentType) {
      * what the container cannot support. */
     const first = container.entries[0];
     if (!first || normalizePartName(first.name) !== ODF_MIMETYPE_PART) return null;
-    if (container.entries.some((e) => e.localHeaderOffset < first.localHeaderOffset)) return null;
+    if (container.entries.some((/** @type {OoxmlContainer} */ e) => e.localHeaderOffset < first.localHeaderOffset)) return null;
     const declared = readStoredMemberSync(bytes, container, ODF_MIMETYPE_PART, ODF_MIMETYPE_MAX_BYTES);
     if (declared !== row.mimetype) return null;           // EXACT, never trimmed — COFF-9's rule
     const main = normalizePartName(row.conventionalMainPart);
     const present = container.byName.has(main)
-      || container.entries.some((e) => normalizePartName(e.name) === main);
+      || container.entries.some((/** @type {OoxmlContainer} */ e) => normalizePartName(e.name) === main);
     if (!present) return null;                            // both halves, or no claim
     /* CERTAIN, and this is the one place an office entry may say so. The OOXML
      * entries top out at "likely" because their discriminating declaration is
@@ -839,15 +1227,29 @@ function detectOdfUnguarded(row, raw, contentType) {
  * projections of what it assembled (the formats-xlsx.mjs pattern)
  * ------------------------------------------------------------------ */
 
+/** The name a thrown error gives, for a stated `reader_failed` (R38): every throw this module can meet is an Error.
+ *  @param {unknown} e */
+const errorName = (e) => (e instanceof Error ? e.name : null) ?? "Error";
+
+/**
+ * @param {OdfRow} row
+ * @param {unknown} bytes
+ * @returns {Promise<PartsResult>}
+ */
 async function odfParts(row, bytes) {
   try { return await odfPartsUnguarded(row, bytes); } catch (e) {
     /* R38's last line of defence: nothing below is expected to throw, and if
        something does the caller still gets a stated refusal, never an
        exception. */
-    return { ok: false, container: row.flavour, why: `reader_failed:${e?.name ?? "Error"}`, part: null, flavourDeclared: null, signals: [] };
+    return { ok: false, container: row.flavour, why: `reader_failed:${errorName(e)}`, part: null, flavourDeclared: null, signals: [] };
   }
 }
 
+/**
+ * @param {OdfRow} row
+ * @param {unknown} bytes
+ * @returns {Promise<PartsResult>}
+ */
 async function odfPartsUnguarded(row, bytes) {
   const b = asBytes(bytes) ?? new Uint8Array(0);
 
@@ -856,7 +1258,7 @@ async function odfPartsUnguarded(row, bytes) {
    * honestly this flavour yields a STATED refusal, never a walk of something
    * else's parts. */
   const d = await discriminate(b);
-  if (!d.ok) return { ok: false, container: row.flavour, why: d.why, part: null, flavourDeclared: null, signals: d.signals };
+  if (!d.ok) return { ok: false, container: row.flavour, why: "why" in d ? d.why : undefined, part: null, flavourDeclared: null, signals: d.signals };
   if (d.format !== row.flavour) {
     /* THE ABSENCE IS NAMED. `discriminate` reports a package whose mimetype
      * declares a flavour but whose main part is missing as
@@ -865,16 +1267,17 @@ async function odfPartsUnguarded(row, bytes) {
      * fact a reader needs and "declared_main_part_absent" alone makes them
      * look it up. A package of the WRONG flavour is refused by name too:
      * `not_odt:ods`, never a silent empty structure. */
-    const absent = d.why === "declared_main_part_absent";
+    const why = "why" in d ? d.why : undefined;
+    const absent = why === "declared_main_part_absent";
     return {
       ok: false,
       container: row.flavour,
-      why: d.format === "undetermined" ? d.why : `not_${row.flavour}:${d.format}`,
+      why: d.format === "undetermined" ? why : `not_${row.flavour}:${d.format}`,
       part: absent ? CONTENT_PART : null,
       /* The flavour the package's own mimetype named: stated by
          `discriminate` on an undetermined read, and the flavour it found on a
          package of another OpenDocument kind (`not_odt:ods` declared ods). */
-      flavourDeclared: d.flavourDeclared ?? (ODF_ROWS.some((r) => r.flavour === d.format) ? d.format : null),
+      flavourDeclared: ("flavourDeclared" in d ? d.flavourDeclared : undefined) ?? (ODF_ROWS.some((r) => r?.flavour === d.format) ? d.format ?? null : null),
       signals: d.signals,
     };
   }
@@ -882,23 +1285,27 @@ async function odfPartsUnguarded(row, bytes) {
   const container = readContainer(b);
   if (!container.ok) return { ok: false, container: row.flavour, why: container.why, part: null, flavourDeclared: null, signals: d.signals };
 
+  /** @type {PartStatement[]} */
   const undetermined = [];
 
   /* COFF-6's metric, enacted in ooxml.mjs: the DECLARED UNCOMPRESSED size of
    * the text-bearing parts, from the central directory BEFORE inflation. For
    * OpenDocument there is exactly one: content.xml. */
-  const declared = declaredTextBytes(container, (n) => n === CONTENT_PART);
+  const declared = declaredTextBytes(container, (/** @type {string} */ n) => n === CONTENT_PART);
   const guardR = sizeGuard(declared.total);
   /* R35 (F7; BOB K4489): a content.xml over the bound is NOT read in pieces, and is
    * stated as it always was, with its size, and now as `final`: this reader
    * holds the part as one string that about fifteen walks slice and re-walk,
    * and R45's own bound stops a sheet of that size whatever is done. */
-  const guard = guardR.ok ? null : { ...guardR, final: true };
+  /** @type {SizeMarker | null} */
+  const guard = guardR.ok || guardR.bound === undefined ? null : { ...guardR, ok: false, final: true };
 
+  /** @type {PartStatement[]} */
   const statements = [];
   let scanned = 0;
   /* R54, R51, R52: every part read for text goes through one reader; what it cannot read it states, final when the
      file's own bytes decide it. A part decoded with replacement characters over the share is stated partial. */
+  /** @param {string} name @returns {Promise<XmlText>} */
   const readText = async (name) => {
     const read = await readPart(b, container, name);
     if (!read.ok) return { ok: false, why: read.why };
@@ -911,8 +1318,16 @@ async function odfPartsUnguarded(row, bytes) {
     if (t.unterminated) statements.push({ part: name, why: "markup_unterminated", count: t.unterminated });
     return t;
   };
-  const stated = (name, t) => ({ part: name, why: t.why, ...(t.final ? { final: true } : {}), ...(t.why === "ENCODING_UNSUPPORTED" ? { name: t.name } : {}) });
+  /** @param {string} name @param {{ why: string, final?: boolean, name?: string | null }} t @returns {PartStatement} */
+  const stated = (name, t) => {
+    /** @type {PartStatement} */
+    const out = { part: name, why: t.why };
+    if (t.final) out.final = true;
+    if (t.why === "ENCODING_UNSUPPORTED") out.name = t.name;
+    return out;
+  };
 
+  /** @type {string | null} */
   let contentXml = null;
   if (!guard) {
     const t = await readText(CONTENT_PART);
@@ -933,12 +1348,16 @@ async function odfPartsUnguarded(row, bytes) {
    * STATED, by the part and the reason — including a package with NO meta.xml,
    * which OpenDocument permits and which is therefore said, not left silent:
    * no core-properties item and no statement would read as "no author". */
+  /** @type {CoreProperties | null} */
   let core = null;
   if (hasMember(container, META_PART)) {
     const t = await readText(META_PART);
-    const c = t.ok ? metaOf(t.xml) : { ok: false, ...stated(META_PART, t) };
-    if (c.ok) core = c;
-    else undetermined.push(t.ok ? { part: META_PART, why: c.why } : stated(META_PART, t));
+    if (!t.ok) undetermined.push(stated(META_PART, t));
+    else {
+      const c = metaOf(t.xml);
+      if (c.ok) core = c;
+      else undetermined.push({ part: META_PART, why: c.why });
+    }
   } else {
     undetermined.push({
       part: META_PART,
@@ -949,10 +1368,13 @@ async function odfPartsUnguarded(row, bytes) {
 
   /* styles.xml: the master pages' headers, footers and master text (R53) and the event bindings (R47). It is bounded
      as content.xml is (COFF-6's metric, from the central directory first). */
-  let stylesXml = null, stylesWhy = null;
+  /** @type {string | null} */
+  let stylesXml = null;
+  /** @type {string | null} */
+  let stylesWhy = null;
   if (hasMember(container, STYLES_PART)) {
-    const g = sizeGuard(declaredTextBytes(container, (n) => n === STYLES_PART).total);
-    if (!g.ok) stylesWhy = g.why;
+    const g = sizeGuard(declaredTextBytes(container, (/** @type {string} */ n) => n === STYLES_PART).total);
+    if (!g.ok) stylesWhy = g.why ?? null;
     else {
       const t = await readText(STYLES_PART);
       if (t.ok) stylesXml = t.xml; else stylesWhy = t.why;
@@ -995,16 +1417,24 @@ async function odfPartsUnguarded(row, bytes) {
  * looked". Nothing is run, evaluated or resolved: a listener's target is not
  * followed, and no Basic module's or script's source is read. This asserts
  * no threat: an item says the file CAN act, not that it is malicious. */
+/** @type {string} */
 const STYLES_PART = "styles.xml";
 const SCRIPT_NS = "urn:oasis:names:tc:opendocument:xmlns:script:1.0";
 const PRESENTATION_NS = "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
 
 /** The prefixes a part binds to a namespace; the conventional prefix when it
  *  declares none (a producer that never declares it still means it). */
+/**
+ * @param {string} xml
+ * @param {string} ns
+ * @param {string} conventional
+ * @returns {Set<string>}
+ */
 function prefixesFor(xml, ns, conventional) {
+  /** @type {Set<string>} */
   const out = new Set();
   for (const m of xml.matchAll(/\sxmlns:([\w.-]+)\s*=\s*("([^"]*)"|'([^']*)')/g)) {
-    if ((m[3] ?? m[4]) === ns) out.add(m[1]);
+    if ((m[3] ?? m[4]) === ns && m[1] !== undefined) out.add(m[1]);
   }
   if (!out.size) out.add(conventional);
   return out;
@@ -1015,28 +1445,44 @@ function prefixesFor(xml, ns, conventional) {
  *  `script:event-name` it binds, a `presentation:event-listener` whose
  *  `presentation:action` is `execute` as `launch` (each `event` null when it
  *  names none). */
+/**
+ * @param {string} xml
+ * @returns {{ kind: string, event: string | null }[]}
+ */
 function eventBindingsIn(xml) {
   const script = prefixesFor(xml, SCRIPT_NS, "script");
   const presentation = prefixesFor(xml, PRESENTATION_NS, "presentation");
+  /** @type {{ kind: string, event: string | null }[]} */
   const out = [];
   const RE = tokens();
-  let m;
-  while ((m = RE.exec(xml)) !== null) {
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m[1] === undefined || m[0][1] === "/") continue;
     const i = m[1].indexOf(":");
     if (i < 0 || m[1].slice(i + 1) !== "event-listener") continue;
     const prefix = m[1].slice(0, i);
-    if (script.has(prefix)) out.push({ kind: "odf-basic", event: attrsOf(m[2])["event-name"] ?? null });
+    if (script.has(prefix)) out.push({ kind: "odf-basic", event: attrsOf(m[2]).get("event-name") ?? null });
     else if (presentation.has(prefix)) {
       const attrs = attrsOf(m[2]);
-      if (attrs.action === "execute") out.push({ kind: "launch", event: attrs["event-name"] ?? null });
+      if (attrs.get("action") === "execute") out.push({ kind: "launch", event: attrs.get("event-name") ?? null });
     }
   }
   return out;
 }
 
+/**
+ * @param {OoxmlContainer} container
+ * @param {string | null} contentXml
+ * @param {string | null} contentWhy
+ * @param {string | null} stylesXml
+ * @param {string | null} stylesWhy
+ * @returns {ActiveItem[]}
+ */
 function activeOf(container, contentXml, contentWhy, stylesXml, stylesWhy) {
+  /** @type {string[]} */
   const names = [];
+  /** @type {Set<string>} */
   const seen = new Set();
   for (const e of container.entries) {
     const name = normalizePartName(e.name);
@@ -1046,6 +1492,7 @@ function activeOf(container, contentXml, contentWhy, stylesXml, stylesWhy) {
   }
   const has = new Set(names);
   /* The OLE blobs: the source each `ObjectReplacements/X` rendering names. */
+  /** @type {Set<string>} */
   const replaced = new Set();
   for (const n of names) {
     if (!n.startsWith("ObjectReplacements/")) continue;
@@ -1053,13 +1500,14 @@ function activeOf(container, contentXml, contentWhy, stylesXml, stylesWhy) {
     if (source && has.has(source)) replaced.add(source);
   }
 
+  /** @type {ActiveItem[]} */
   const items = [];
   for (const name of names) {
     if (name.startsWith("Basic/")) items.push({ kind: "odf-basic", part: name });
     else if (name.startsWith("Scripts/")) items.push({ kind: "odf-script", part: name });
     else if (/^Object [^/]*\//.test(name) || replaced.has(name)) items.push({ kind: "embedded-file", part: name });
     else if (name === CONTENT_PART) {
-      if (contentXml == null) items.push({ kind: "unread", part: name, why: contentWhy });
+      if (contentXml == null) items.push({ kind: "unread", part: name, why: contentWhy ?? "part_unreadable" });
       else for (const b of eventBindingsIn(contentXml)) items.push({ kind: b.kind, part: name, event: b.event });
     } else if (name === STYLES_PART) {
       if (stylesXml == null) items.push({ kind: "unread", part: name, why: stylesWhy ?? "part_unreadable" });
@@ -1073,16 +1521,25 @@ function activeOf(container, contentXml, contentWhy, stylesXml, stylesWhy) {
  * D-346 — meta.xml into `core-properties`, the manifest into `intra`
  * ------------------------------------------------------------------ */
 
+/**
+ * @param {OoxmlContainer} container
+ * @param {string} name
+ * @returns {boolean}
+ */
 function hasMember(container, name) {
   return container.byName.has(name)
-    || container.entries.some((e) => normalizePartName(e.name) === name);
+    || container.entries.some((/** @type {OoxmlContainer} */ e) => normalizePartName(e.name) === name);
 }
 
 const HEX = "0123456789abcdef";
+/**
+ * @param {Uint8Array} u8
+ * @returns {Promise<string>}
+ */
 async function sha256Hex(u8) {
   const d = new Uint8Array(await crypto.subtle.digest("SHA-256", u8));
   let out = "";
-  for (let i = 0; i < d.length; i++) out += HEX[d[i] >> 4] + HEX[d[i] & 15];
+  for (const byte of d) out += HEX.charAt(byte >> 4) + HEX.charAt(byte & 15);
   return out;
 }
 
@@ -1107,10 +1564,16 @@ async function sha256Hex(u8) {
  *  the author's field — a false attribution, which is the defect this record
  *  exists to avoid. Each field is the string the file carries or null when
  *  absent — never filled in from another. */
+/** @typedef {CoreProperties | { ok: false, why: string }} MetaRead */
+/**
+ * @param {string} xml
+ * @returns {MetaRead}
+ */
 function parseOdfMeta(xml) {
   const doc = elementsNested(xml, "document-meta")[0];
   const meta = doc ? elementsNested(doc.inner, "meta")[0] : null;
   if (!meta) return { ok: false, why: "core_properties_unparseable" };
+  /** @param {string} local @returns {string | null} */
   const field = (local) => {
     const el = elementsNested(meta.inner, local)[0];
     return el ? visibleText(el.inner) : null;
@@ -1133,6 +1596,10 @@ function parseOdfMeta(xml) {
 /** meta.xml read on its OWN meter: its text is expanded like content.xml's
  *  (`<text:s>` included), so a hostile meta.xml is stated as not read, never
  *  a failed package — and it never spends content.xml's bound (R45). */
+/**
+ * @param {string} xml
+ * @returns {MetaRead}
+ */
 function metaOf(xml) {
   try { return metered(() => parseOdfMeta(xml)); } catch (e) {
     if (e instanceof OverRepeatBound) return { ok: false, why: "over_repeat_bound" };
@@ -1142,9 +1609,13 @@ function metaOf(xml) {
 
 /** The `core-properties` item, field for field the one docx.mjs,
  *  formats-xlsx.mjs and pptx.mjs push (IC-2 as accepted). */
+/**
+ * @param {OdfParts} parts
+ * @returns {CorePropertiesItem[]}
+ */
 function corePropertiesItems(parts) {
-  if (!parts.core) return [];
   const c = parts.core;
+  if (!c) return [];
   return [{
     kind: "core-properties",
     creator: c.creator, lastModifiedBy: c.lastModifiedBy,
@@ -1189,6 +1660,15 @@ const PACKAGE_OWN_DIRS = ["META-INF/", "Thumbnails/", "Configurations2/"];
  *  font face when content.xml was not read (over the bound) — those are
  *  linked as `intra`, an over-inclusion, never an omission. `source` is null:
  *  locating a member to the `draw:object` that references it is not built. */
+/**
+ * @param {Uint8Array} bytes
+ * @param {OoxmlContainer} container
+ * @param {string | null} contentXml
+ * @param {PartStatement[]} undetermined
+ * @param {(name: string) => Promise<XmlText>} readText
+ * @param {(name: string, t: { why: string, final?: boolean, name?: string | null }) => PartStatement} stated
+ * @returns {Promise<{ links: Link[], why: string | null }>}
+ */
 async function manifestIntraLinks(bytes, container, contentXml, undetermined, readText, stated) {
   const read = await readText(ODF_MANIFEST_PART);
   if (!read.ok) {
@@ -1202,20 +1682,23 @@ async function manifestIntraLinks(bytes, container, contentXml, undetermined, re
     return { links: [], why: "manifest_unparseable" };
   }
 
+  /** @type {Set<string>} */
   const fonts = new Set();
   if (contentXml != null) {
     for (const f of elementsNested(contentXml, "font-face-uri")) {
-      const href = f.attrs.href;
+      const href = f.attrs.get("href");
       if (typeof href === "string" && href) fonts.add(normalizePartName(href.replace(/^(?:\.\/)+/, "")));
     }
   }
 
   /* First the listing: which members are embedded, each once (a manifest
      naming a member twice does not make two embeddings). */
+  /** @type {{ name: string, encrypted: boolean }[]} */
   const listed = [];
+  /** @type {Set<string>} */
   const seen = new Set();
   for (const fe of elementsNested(root.inner, "file-entry")) {
-    const path = fe.attrs["full-path"];
+    const path = fe.attrs.get("full-path");
     if (typeof path !== "string" || !path || path.endsWith("/")) continue;
     const name = normalizePartName(path);
     if (seen.has(name)) continue;
@@ -1223,12 +1706,13 @@ async function manifestIntraLinks(bytes, container, contentXml, undetermined, re
     if (PACKAGE_OWN.has(name) || PACKAGE_OWN_DIRS.some((d) => name.startsWith(d))) continue;
     if (name.startsWith("Pictures/")) {
       const dot = name.lastIndexOf(".");
-      if (dot > name.lastIndexOf("/") && IMAGE_MIME_BY_EXT[name.slice(dot + 1).toLowerCase()]) continue;
+      if (dot > name.lastIndexOf("/") && name.slice(dot + 1).toLowerCase() in IMAGE_MIME_BY_EXT) continue;
     }
     if (fonts.has(name)) continue;
     listed.push({ name, encrypted: elementsNested(fe.inner, "encryption-data", 1).length > 0 });
   }
 
+  /** @param {string} why @param {string} name @returns {Link} */
   const undeterminedLink = (why, name) => ({ partition: "undetermined", wrapper: null,
     target: { why, name }, source: null });
 
@@ -1240,11 +1724,12 @@ async function manifestIntraLinks(bytes, container, contentXml, undetermined, re
   let total = 0;
   for (const l of listed) {
     if (l.encrypted) continue;
-    const e = container.byName.get(l.name) ?? container.entries.find((x) => normalizePartName(x.name) === l.name);
+    const e = container.byName.get(l.name) ?? container.entries.find((/** @type {OoxmlContainer} */ x) => normalizePartName(x.name) === l.name);
     if (e) total += e.uncompressedSize;
   }
   const g = sizeGuard(total);
 
+  /** @type {Link[]} */
   const links = [];
   for (const { name, encrypted } of listed) {
     if (encrypted) { links.push(undeterminedLink("embedding_encrypted", name)); continue; }
@@ -1263,9 +1748,14 @@ async function manifestIntraLinks(bytes, container, contentXml, undetermined, re
 /** Why `intra` holds nothing, when it holds nothing — so an empty partition
  *  is never read as "this package embeds nothing" when the manifest was not
  *  read, and says so plainly when the manifest was read and lists none. */
+/**
+ * @param {OdfParts} parts
+ * @returns {string[]}
+ */
 function intraNotes(parts) {
-  if (parts.manifestWhy) {
-    return [localize("odf-reader.odf.no_intra_link_odf_manifest", "no intra link: {ODF_MANIFEST_PART} could not be read ({manifestWhy}), so embedded members were not looked for (stated in evidentiary.undetermined)", { ODF_MANIFEST_PART: String(ODF_MANIFEST_PART), manifestWhy: String(parts.manifestWhy) })];
+  const manifestWhy = parts.manifestWhy;
+  if (manifestWhy) {
+    return [localize("odf-reader.odf.no_intra_link_odf_manifest", "no intra link: {ODF_MANIFEST_PART} could not be read ({manifestWhy}), so embedded members were not looked for (stated in evidentiary.undetermined)", { ODF_MANIFEST_PART: String(ODF_MANIFEST_PART), manifestWhy: String(manifestWhy) })];
   }
   if (!parts.embedded.length) return [localize("odf-reader.odf.no_intra_link_odf_manifest_2", "no intra link: {ODF_MANIFEST_PART} lists no embedded member", { ODF_MANIFEST_PART: String(ODF_MANIFEST_PART) })];
   return [];
@@ -1274,6 +1764,11 @@ function intraNotes(parts) {
 /* The body of content.xml for a given office body kind, or null. Every walk
  * below starts here rather than at the document root, so that automatic
  * styles and font declarations can never be mistaken for content. */
+/**
+ * @param {string | null} contentXml
+ * @param {string} kind
+ * @returns {string | null}
+ */
 function officeBody(contentXml, kind) {
   if (contentXml == null) return null;
   /* An EMPTY body ("" — a document with no paragraphs, sheets or pages) is a
@@ -1285,27 +1780,46 @@ function officeBody(contentXml, kind) {
 }
 
 /** Why a structure() read no body (R10), for its notes. */
+/**
+ * @param {OdfParts} parts
+ * @param {string} element
+ * @returns {string}
+ */
 function bodyNotRead(parts, element) {
   if (parts.guard) return localize("odf-reader.odf.content_xml_not_read_over", "content.xml not read: over the size bound (stated in evidentiary.undetermined and by text())");
-  if (parts.repeat) return localize("odf-reader.odf.content_xml_not_read_its", "content.xml not read: its repeats expand past {boundName} (stated in evidentiary.undetermined and by text())", { boundName: String(parts.repeat.boundName) });
+  const repeat = parts.repeat;
+  if (repeat) return localize("odf-reader.odf.content_xml_not_read_its", "content.xml not read: its repeats expand past {boundName} (stated in evidentiary.undetermined and by text())", { boundName: String(repeat.boundName) });
   return `content.xml unreadable or carries no <office:${element}>: element references unavailable (stated)`;
 }
 
 /** The two absences above plus whatever parts() could not read, as the
  *  envelope's `undetermined` — and the size-guard marker when it fired. A part read with a statement (R54, R52) is
  *  stated here too, as it is by text(). */
+/**
+ * @param {OdfParts} parts
+ * @returns {PartStatement[]}
+ */
 function envelopeUndetermined(parts) {
   const out = [...parts.undetermined, ...parts.statements];
-  if (parts.guard) out.push({ part: CONTENT_PART, why: "over_size_bound", guard: parts.guard });
+  const { guard, repeat } = parts;
+  if (guard) out.push({ part: CONTENT_PART, why: "over_size_bound", guard });
   /* R45: the read that crossed the repeat bound, its marker in the guard's place. */
-  if (parts.repeat) out.push({ part: CONTENT_PART, why: "over_repeat_bound", guard: parts.repeat });
+  if (repeat) out.push({ part: CONTENT_PART, why: "over_repeat_bound", guard: repeat });
   return out;
 }
 
 /** What text() says of the parts it read with a statement, in its own `undetermined` shape. */
+/** @param {OdfParts} parts @returns {TextStatement[]} */
 const statedByText = (parts) => parts.statements.map(({ part, why, ...rest }) => ({ reason: why, part, ...rest }));
 
+/**
+ * @param {string} container
+ * @param {EvidentiaryItem[]} items
+ * @param {PartStatement[]} undetermined
+ * @returns {Envelope}
+ */
 function envelopeOf(container, items, undetermined) {
+  /** @type {{ [kind: string]: number }} */
   const counts = {};
   for (const it of items) counts[it.kind] = (counts[it.kind] ?? 0) + 1;
   return {
@@ -1317,6 +1831,10 @@ function envelopeOf(container, items, undetermined) {
   };
 }
 
+/**
+ * @param {Link[]} links
+ * @returns {PartitionCounts}
+ */
 function countPartitions(links) {
   const counts = { anchor: 0, intra: 0, deferred: 0, refused: 0, undetermined: 0 };
   for (const l of links) counts[l.partition]++;
@@ -1342,11 +1860,34 @@ function countPartitions(links) {
  *  text stream, which is exactly the docx rule (`w:delText` is not in the
  *  text stream; it is the evidentiary superseded wording). An annotation's
  *  own paragraphs are excluded for the same reason at a smaller scale. */
+/** @typedef {{ kind: string, inner: string, para: number | null, paras?: number[] }} InBodyUnit */
+/**
+ * @typedef {Object} TextWalk
+ * @property {WalkedParagraph[]} paragraphs
+ * @property {WalkedLink[]} hyperlinks
+ * @property {WalkedAnnotation[]} annotations
+ * @property {InBodyUnit[]} inBody
+ * @property {ChangeMark[]} marks
+ */
+/** @typedef {{ para: number, text: string | null }} WalkedParagraph */
+/** @typedef {{ href: string, para: number | null }} WalkedLink */
+/** @typedef {{ attrs: Attrs, inner: string, para: number | null }} WalkedAnnotation */
+/** @typedef {{ id: string, para: number | null }} ChangeMark */
+/**
+ * @param {string} bodyXml
+ * @param {{ withText?: boolean }} [opts]
+ * @returns {Generator<undefined, TextWalk, undefined>}
+ */
 function* walkTextBodyG(bodyXml, { withText = true } = {}) {
+  /** @type {WalkedParagraph[]} */
   const paragraphs = [];
+  /** @type {WalkedLink[]} */
   const hyperlinks = [];
+  /** @type {WalkedAnnotation[]} */
   const annotations = [];
+  /** @type {InBodyUnit[]} */
   const inBody = [];              // R53: { kind, inner, para }, the notes, annotations and text boxes in the order met
+  /** @type {ChangeMark[]} */
   const marks = [];               // { id, para } — where a changed region sits
 
   /* The tracked-changes declaration block is read separately below; strip it
@@ -1354,14 +1895,15 @@ function* walkTextBodyG(bodyXml, { withText = true } = {}) {
   const served = stripElement(bodyXml, "tracked-changes");
 
   const RE = tokens();
-  let m;
   let para = -1;
   let inPara = false;
   let depthInPara = 0;
   let skipDepth = 0;              // inside an annotation, a note or a text box: its text is its own
   let paraStart = -1;
 
-  while ((m = RE.exec(served)) !== null) {
+  for (;;) {
+    const m = RE.exec(served);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const name = localOf(m[1]);
     const closing = m[0][1] === "/";
@@ -1396,15 +1938,21 @@ function* walkTextBodyG(bodyXml, { withText = true } = {}) {
       const rest = served.slice(m.index);
       const el = elementsNested(rest, name, 1)[0];
       const inner = el ? el.inner : "";
-      const unitOf = { kind: name === "text-box" ? "text_box" : attrsOf(m[2])["note-class"] === "endnote" ? "endnote" : "footnote", inner, para: para >= 0 ? para : null };
+      /** @type {InBodyUnit} */
+      const unitOf = { kind: name === "text-box" ? "text_box" : attrsOf(m[2]).get("note-class") === "endnote" ? "endnote" : "footnote", inner, para: para >= 0 ? para : null };
       if (name === "text-box") {
+        /** @type {number[]} */
         const own = [];
         if (!inPara) {
           for (const _ of iterNested(inner, PARAGRAPH_NAMES)) { para++; paragraphs.push({ para, text: withText ? "" : null }); own.push(para); }
-          if (own.length) unitOf.para = own[0];
+          const first = own[0];
+          if (first !== undefined) unitOf.para = first;
         }
         unitOf.paras = own;
-        for (const a of iterNested(inner, LINK_NAMES)) if (a.attrs.href != null) hyperlinks.push({ href: a.attrs.href, para: unitOf.para });
+        for (const a of iterNested(inner, LINK_NAMES)) {
+          const href = a.attrs.get("href");
+          if (href != null) hyperlinks.push({ href, para: unitOf.para });
+        }
       }
       inBody.push(unitOf);
       skipDepth = 1;
@@ -1437,23 +1985,27 @@ function* walkTextBodyG(bodyXml, { withText = true } = {}) {
       continue;
     }
 
-    const attrs = m[2] && m[2].includes("=") ? attrsOf(m[2]) : {};
+    const attrs = m[2] && m[2].includes("=") ? attrsOf(m[2]) : NO_ATTRS;
 
-    if (!closing && name === "a" && attrs.href != null) {
-      hyperlinks.push({ href: attrs.href, para: para >= 0 ? para : null });
-    } else if (name === "change-start" && attrs["change-id"] != null) {
-      marks.push({ id: attrs["change-id"], para: para >= 0 ? para : null });
-    } else if (name === "change" && attrs["change-id"] != null) {
+    const href = attrs.get("href");
+    const changeId = attrs.get("change-id");
+    if (!closing && name === "a" && href != null) {
+      hyperlinks.push({ href, para: para >= 0 ? para : null });
+    } else if (name === "change-start" && changeId != null) {
+      marks.push({ id: changeId, para: para >= 0 ? para : null });
+    } else if (name === "change" && changeId != null) {
       /* A bare `<text:change/>` is the position a deletion was taken FROM. */
-      marks.push({ id: attrs["change-id"], para: para >= 0 ? para : null });
+      marks.push({ id: changeId, para: para >= 0 ? para : null });
     }
   }
   return { paragraphs, hyperlinks, annotations, inBody, marks };
 }
 
+/** @param {string} bodyXml @param {{ withText?: boolean }} [opts] */
 const walkTextBody = (bodyXml, opts) => driveSync(walkTextBodyG(bodyXml, opts));
 
 /** A paragraph's markup without what is a unit of its own: its annotations, its notes and its text boxes (R9, R53). */
+/** @param {string} raw */
 function stripInline(raw) {
   let out = raw;
   for (const name of ["annotation", "note", "text-box"]) if (out.includes(name)) out = stripElement(out, name);
@@ -1464,14 +2016,18 @@ const PARAGRAPH_NAMES = new Set(["p", "h"]);
 const LINK_NAMES = new Set(["a"]);
 
 /** The paragraphs (`<text:p>`/`<text:h>`) of a run of markup, each as visible text, newline-joined. */
+/** @param {string} xml */
 function paragraphsText(xml) {
+  /** @type {string[]} */
   const out = [];
   for (const el of iterNested(xml, PARAGRAPH_NAMES)) out.push(visibleText(el.inner));
   return out.join("\n");
 }
 
+/** @param {string} text */
 const hasWords = (text) => /\S/.test(text);
 /** A master page is mostly empty paragraphs and field placeholders: its unit keeps the lines that hold something. */
+/** @param {string} text */
 const nonEmptyLines = (text) => text.split("\n").filter(hasWords).join("\n");
 
 /** The inserted text of every change region, taken from the BODY between
@@ -1483,16 +2039,21 @@ const nonEmptyLines = (text) => text.split("\n").filter(hasWords).join("\n");
  *  region with no start, no end, or an end before its start is absent from
  *  the map, and its text is null — absent is not empty. An annotation inside
  *  the region is the annotation's text, not the insertion's. */
+/**
+ * @param {string} servedXml
+ * @returns {Map<string, string>}
+ */
 function insertedTexts(servedXml) {
-  const out = new Map();
-  const starts = new Map();
+  const out = new Map(/** @type {[string, string][]} */ ([]));
+  const starts = new Map(/** @type {[string, number][]} */ ([]));
   const RE = tokens();
-  let m;
-  while ((m = RE.exec(servedXml)) !== null) {
+  for (;;) {
+    const m = RE.exec(servedXml);
+    if (m === null) break;
     if (m[1] === undefined || m[0][1] === "/") continue;
     const name = localOf(m[1]);
     if (name !== "change-start" && name !== "change-end") continue;
-    const id = attrsOf(m[2])["change-id"];
+    const id = attrsOf(m[2]).get("change-id");
     if (id == null) continue;
     if (name === "change-start") { if (!starts.has(id)) starts.set(id, RE.lastIndex); }
     else if (starts.has(id) && !out.has(id)) {
@@ -1504,13 +2065,21 @@ function insertedTexts(servedXml) {
 
 /** `<text:tracked-changes>`: one entry per `<text:changed-region>`, each an
  *  insertion or a deletion with `<office:change-info>`'s author and date. */
+/** @typedef {{ id: string | null, change: string, author: string | null, date: string | null, superseded: string | null }} TrackedChange */
+/** @type {ReadonlyArray<readonly [string, string]>} each changed region's element, and the change it records */
+const CHANGE_KINDS = [["insertion", "insertion"], ["deletion", "deletion"]];
+/**
+ * @param {string} bodyXml
+ * @returns {TrackedChange[]}
+ */
 function parseTrackedChanges(bodyXml) {
   const block = elementsNested(bodyXml, "tracked-changes")[0];
   if (!block) return [];
+  /** @type {TrackedChange[]} */
   const out = [];
   for (const region of elementsNested(block.inner, "changed-region")) {
-    const id = region.attrs.id ?? null;
-    for (const [kind, change] of [["insertion", "insertion"], ["deletion", "deletion"]]) {
+    const id = region.attrs.get("id") ?? null;
+    for (const [kind, change] of CHANGE_KINDS) {
       for (const el of elementsNested(region.inner, kind)) {
         const info = elementsNested(el.inner, "change-info")[0];
         const creator = info ? elementsNested(info.inner, "creator")[0] : null;
@@ -1531,25 +2100,43 @@ function parseTrackedChanges(bodyXml) {
   return out;
 }
 
+/**
+ * @typedef {Object} OdtStructure odtEntry.structure()'s answer (R6 to R10)
+ * @property {true} ok
+ * @property {"odt"} container
+ * @property {number | null} paragraphs
+ * @property {Link[]} links
+ * @property {PartitionCounts} counts
+ * @property {Envelope} evidentiary
+ * @property {string[]} notes
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @returns {OdtStructure | ProjectionFailure}
+ */
 function odtStructure(parts) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "odt", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
   }
   const notes = intraNotes(parts);
+  /** @type {Link[]} */
   const links = [];
+  /** @type {EvidentiaryItem[]} */
   const items = [];
   const body = officeBody(parts.contentXml, "text");
   if (body == null) {
     notes.push(bodyNotRead(parts, "text"));
   }
 
+  /** @type {number | null} */
   let paragraphs = null;
   if (body != null) {
     const walk = walkTextBody(body, { withText: false });
     paragraphs = walk.paragraphs.length;
 
     for (const h of walk.hyperlinks) {
-      links.push(linkRecord(h.href, h.para == null ? null : docParaRef(h.para)));
+      const at = h.para;
+      links.push(linkRecord(h.href, at == null ? null : docParaRef(at)));
     }
 
     /* DEC-5: tracked changes, author/date/superseded-wording, located to the
@@ -1557,10 +2144,12 @@ function odtStructure(parts) {
      * still carried — with source null and the reason stated — because the
      * change is evidence whether or not we can place it. */
     const inserted = insertedTexts(stripElement(body, "tracked-changes"));
-    const markFor = new Map();
+    const markFor = new Map(/** @type {[string, number | null][]} */ ([]));
     for (const mk of walk.marks) if (!markFor.has(mk.id)) markFor.set(mk.id, mk.para);
-    for (const c of parseTrackedChanges(parts.contentXml)) {
-      const at = c.id != null ? markFor.get(c.id) : undefined;
+    for (const c of parseTrackedChanges(parts.contentXml ?? "")) {
+      const id = c.id;
+      const at = id != null ? markFor.get(id) : undefined;
+      /** @type {TrackedChangeItem} */
       const item = {
         kind: "tracked-change",
         change: c.change,
@@ -1569,7 +2158,7 @@ function odtStructure(parts) {
         source: at == null ? null : docParaRef(at),
       };
       if (c.change === "deletion") item.superseded = c.superseded;
-      else item.text = c.id != null && inserted.has(c.id) ? inserted.get(c.id) : null;
+      else item.text = id != null ? inserted.get(id) ?? null : null;
       if (at === undefined) item.why = "change_region_unmarked_in_body";
       items.push(item);
     }
@@ -1580,17 +2169,18 @@ function odtStructure(parts) {
      * `<meta:creator-initials>` and LibreOffice does not write it, so it is
      * null when absent and that null is the file speaking. */
     for (const a of walk.annotations) {
+      const annotated = a.para;
       const creator = elementsNested(a.inner, "creator")[0];
       const date = elementsNested(a.inner, "date")[0];
       const initials = elementsNested(a.inner, "creator-initials")[0];
       items.push({
         kind: "comment",
-        id: a.attrs.name ?? null,
+        id: a.attrs.get("name") ?? null,
         author: creator ? visibleText(creator.inner) : null,
         date: date ? visibleText(date.inner) : null,
         initials: initials ? visibleText(initials.inner) : null,
         text: elementsNested(stripElement(a.inner, "change-info"), "p").map((p) => visibleText(p.inner)).join("\n"),
-        source: a.para == null ? null : docParaRef(a.para),
+        source: annotated == null ? null : docParaRef(annotated),
       });
     }
   }
@@ -1618,24 +2208,31 @@ function odtStructure(parts) {
  *  repeats exactly as `walkSheet` does; `cols` is the declared
  *  `<table:table-column>` grid. A figure the walk did not establish is NULL,
  *  never 0. */
+/** @typedef {{ table: number, rows: number | null, cols: number | null }} OdfTable */
+/**
+ * @param {string} bodyXml
+ * @returns {OdfTable[]}
+ */
 function walkOdfTables(bodyXml) {
+  /** @type {OdfTable[]} */
   const done = [];
+  /** @type {{ table: number, rows: number, cols: number }[]} */
   const stack = [];
   let next = 0;
   const RE = tokens();
+  /** @param {string | undefined} v */
   const rep = (v) => { const n = parseInt(v ?? "1", 10); return Number.isFinite(n) && n > 0 ? n : 1; };
-  let m;
-  while ((m = RE.exec(bodyXml)) !== null) {
+  for (;;) {
+    const m = RE.exec(bodyXml);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const name = localOf(m[1]);
     const closing = m[0][1] === "/";
     const selfClosed = m[3] === "/";
-    const top = stack.length ? stack[stack.length - 1] : null;
+    const top = stack.length ? stack[stack.length - 1] ?? null : null;
     if (closing) {
-      if (name === "table" && stack.length) {
-        const t = stack.pop();
-        done[t.table] = { table: t.table, rows: t.rows, cols: t.cols > 0 ? t.cols : null };
-      }
+      const t = name === "table" ? stack.pop() : undefined;
+      if (t) done[t.table] = { table: t.table, rows: t.rows, cols: t.cols > 0 ? t.cols : null };
       continue;
     }
     if (name === "table") {
@@ -1644,41 +2241,62 @@ function walkOdfTables(bodyXml) {
       continue;
     }
     if (!top) continue;
-    const attrs = m[2] && m[2].includes("=") ? attrsOf(m[2]) : {};
-    if (name === "table-column") top.cols += rep(attrs["number-columns-repeated"]);
-    else if (name === "table-row") top.rows += rep(attrs["number-rows-repeated"]);
+    const attrs = m[2] && m[2].includes("=") ? attrsOf(m[2]) : NO_ATTRS;
+    if (name === "table-column") top.cols += rep(attrs.get("number-columns-repeated"));
+    else if (name === "table-row") top.rows += rep(attrs.get("number-rows-repeated"));
   }
-  while (stack.length) {
+  for (;;) {
     const t = stack.pop();
+    if (!t) break;
     done[t.table] = { table: t.table, rows: t.rows || null, cols: t.cols > 0 ? t.cols : null };
   }
   return done.filter(Boolean);
 }
 
+/**
+ * @typedef {Object} OdtText odtEntry.text()'s answer, before its images (R11 to R13, R53)
+ * @property {true} ok
+ * @property {"odt"} container
+ * @property {string | null} document
+ * @property {{ para: number, ref: string, text: string | null }[]} paragraphs
+ * @property {{ table: number, ref: string, rows: number | null, cols: number | null }[] | null} tables
+ * @property {TextUnit[] | null} parts
+ * @property {TextUndetermined[]} undetermined
+ * @property {{ chars: number, undetermined: number, scanned_bytes: number }} counts
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @param {ReadCtx} ctx
+ * @returns {Promise<OdtText | ProjectionFailure>}
+ */
 async function odtText(parts, ctx) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "odt", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
   }
-  if (parts.guard || parts.repeat) {
+  const marker = parts.guard ?? parts.repeat;
+  if (marker) {
     return {
       ok: true, container: "odt", document: null, paragraphs: [], tables: null, parts: null,
-      undetermined: [parts.guard ?? parts.repeat],           // the marker VERBATIM, never a truncation
+      undetermined: [marker],           // the marker VERBATIM, never a truncation
       counts: { chars: 0, undetermined: 1, scanned_bytes: parts.scanned },
     };
   }
   const body = officeBody(parts.contentXml, "text");
   if (body == null) {
     const stated = parts.undetermined.find((u) => u.part === CONTENT_PART);
+    /** @type {TextStatement} */
+    const unread = { reason: "main_part_unreadable", part: CONTENT_PART, why: stated?.why ?? "no_office_text_body" };
+    if (stated?.final) unread.final = true;
     return {
       ok: true, container: "odt", document: null, paragraphs: [], tables: null, parts: null,
-      undetermined: [{ reason: "main_part_unreadable", part: CONTENT_PART, why: stated?.why ?? "no_office_text_body", ...(stated?.final ? { final: true } : {}) }],
+      undetermined: [unread],
       counts: { chars: 0, undetermined: 1, scanned_bytes: parts.scanned },
     };
   }
   const walk = await drive(walkTextBodyG(body), ctx);
   return withMeter(ctx.meter, () => {
     const paragraphs = walk.paragraphs.map((p) => ({ para: p.para, ref: `¶${p.para + 1}`, text: p.text }));
-    const document = paragraphs.map((p) => p.text).filter((t) => t.length).join("\n");
+    const document = paragraphs.map((p) => p.text).filter((t) => t !== null && t.length > 0).join("\n");
     /* FW-19 / IC-124: the `doc-table` units, in docx.mjs's shape and through
        its builder. An EMPTY list is a real zero; the branches above that walked
        nothing say `tables: null`. The tracked-changes block is stripped first,
@@ -1687,17 +2305,26 @@ async function odtText(parts, ctx) {
     const tables = walkOdfTables(stripElement(body, "tracked-changes"))
       .map((t) => ({ table: t.table, ref: docTableRef(t.table).ref, rows: t.rows, cols: t.cols }));
     /* R53: every part of the document that is not a body paragraph, with its kind. */
+    /** @type {TextUnit[]} */
     const units = [];
-    const unit = (kind, para, text, paras) => { if (hasWords(text)) units.push({ kind, ref: para == null ? "document" : docParaRef(para).ref, part: CONTENT_PART, text, ...(paras ? { paras } : {}) }); };
+    /** @param {string} kind @param {number | null} para @param {string} text @param {number[]} [paras] */
+    const unit = (kind, para, text, paras) => {
+      if (!hasWords(text)) return;
+      /** @type {TextUnit} */
+      const u = { kind, ref: para == null ? "document" : docParaRef(para).ref, part: CONTENT_PART, text };
+      if (paras) u.paras = paras;
+      units.push(u);
+    };
     for (const x of walk.inBody) {
       if (x.kind === "comment") unit("comment", x.para, paragraphsText(stripElement(x.inner, "change-info")));
       else if (x.kind === "text_box") unit("text_box", x.para, paragraphsText(x.inner), x.paras);
       else unit(x.kind, x.para, paragraphsText(elementsNested(x.inner, "note-body", 1)[0]?.inner ?? ""));
     }
-    const marked = new Map();
+    const marked = new Map(/** @type {[string, number | null][]} */ ([]));
     for (const mk of walk.marks) if (!marked.has(mk.id)) marked.set(mk.id, mk.para);
-    for (const c of parseTrackedChanges(parts.contentXml)) {
-      if (c.change === "deletion") unit("tracked_deletion", c.id != null ? marked.get(c.id) ?? null : null, c.superseded ?? "");
+    for (const c of parseTrackedChanges(parts.contentXml ?? "")) {
+      const id = c.id;
+      if (c.change === "deletion") unit("tracked_deletion", id != null ? marked.get(id) ?? null : null, c.superseded ?? "");
     }
     units.push(...masterUnits(parts.stylesXml, "odt"));
     const stated = statedByText(parts);
@@ -1714,11 +2341,17 @@ odtText.owns = true;
  *  `.odp`'s master-page text. Empty ones are not units. */
 const HEADER_FOOTER = new Set(["header", "header-left", "header-first", "footer", "footer-left", "footer-first"]);
 const MASTER_PAGE = new Set(["master-page"]);
+/**
+ * @param {string | null} stylesXml
+ * @param {string} flavour
+ * @returns {TextUnit[]}
+ */
 function masterUnits(stylesXml, flavour) {
   if (stylesXml == null) return [];
+  /** @type {TextUnit[]} */
   const out = [];
   for (const page of iterNested(stylesXml, MASTER_PAGE)) {
-    const label = page.attrs.name ?? "master";
+    const label = page.attrs.get("name") ?? "master";
     if (flavour === "odt") {
       for (const hf of iterNested(page.inner, HEADER_FOOTER)) {
         const text = nonEmptyLines(paragraphsText(hf.inner));
@@ -1737,6 +2370,7 @@ function masterUnits(stylesXml, flavour) {
  * ================================================================== */
 
 /** A1-style column name from a 0-based index. */
+/** @param {number} i */
 function columnName(i) {
   let n = i, out = "";
   do { out = String.fromCharCode(65 + (n % 26)) + out; n = Math.floor(n / 26) - 1; } while (n >= 0);
@@ -1747,29 +2381,67 @@ function columnName(i) {
  * cell's type in `office:value-type` and its value in the attribute that type
  * names, written as the file writes it; both are taken as written, never
  * re-rendered through a binary float, and nothing is recalculated. */
+/** @type {Readonly<{ [type: string]: string }>} */
 const VALUE_ATTR = Object.freeze({ float: "value", percentage: "value", currency: "value",
   date: "date-value", time: "time-value", boolean: "boolean-value", string: "string-value" });
+/** @type {Readonly<{ [type: string]: string }>} */
 const CELL_TYPE = Object.freeze({ float: "number", percentage: "number", currency: "number",
   date: "date", time: "time", boolean: "boolean", string: "text" });
 const VALUE_ATTRS = ["value", "date-value", "time-value", "boolean-value", "string-value"];
 
 /** The cell's value attribute as written: the one its declared type names,
  *  else the first one it carries, else null. */
+/**
+ * @param {Attrs} attrs
+ * @returns {string | null}
+ */
 function valueAttrOf(attrs) {
-  const own = VALUE_ATTR[attrs["value-type"]];
-  if (own && attrs[own] != null) return attrs[own];
-  for (const a of VALUE_ATTRS) if (attrs[a] != null) return attrs[a];
+  const declared = attrs.get("value-type");
+  const own = declared === undefined ? undefined : VALUE_ATTR[declared];
+  const ownValue = own ? attrs.get(own) : undefined;
+  if (ownValue != null) return ownValue;
+  for (const a of VALUE_ATTRS) {
+    const value = attrs.get(a);
+    if (value != null) return value;
+  }
   return null;
 }
 
 /** One walked cell as R46's typed cell, or null when it holds neither a value nor a formula: a cell once at each
  *  address `sheetRows` gave it (within R45's bound, which `sheetRows` already paid). A value type this table does not
  *  know types nothing: `type` is null, `declared` says what the file wrote. */
+/**
+ * @typedef {Object} TypedCell one cell in office-readers R30's contract (R46)
+ * @property {SheetCellRef} source
+ * @property {string | null} value
+ * @property {string | null} type
+ * @property {string | null} declared
+ * @property {string | null} cached
+ * @property {string | null} formula
+ */
+/**
+ * @typedef {Object} WalkedCell one cell as a sheet's walk gives it, at one address
+ * @property {number} col 0-based
+ * @property {string} cell its A1 address
+ * @property {string | null} valueType
+ * @property {string | null} value
+ * @property {string | null} formula
+ * @property {string} display
+ * @property {string[]} hrefs
+ * @property {string | null} note
+ */
+/** @typedef {{ r: number, hidden: string | false, cells: WalkedCell[] }} SheetRow one row as a sheet's walk gives it */
+/**
+ * @param {string} sheetName
+ * @param {WalkedCell} c
+ * @returns {TypedCell | null}
+ */
 function typedCellOf(sheetName, c) {
   const value = c.value ?? (c.display !== "" ? c.display : null);
   if (c.formula == null && (value == null || value === "")) return null;
-  const type = c.valueType != null
-    ? (CELL_TYPE[c.valueType] ?? null)
+  const valueType = c.valueType;
+  const type = valueType != null
+    ? (CELL_TYPE[valueType] ?? null)
     : (c.display !== "" ? "text" : null);
   return {
     source: sheetCellRef(sheetName, c.cell),
@@ -1785,13 +2457,18 @@ const ROW_NAMES = new Set(["table-row"]);
 const CELL_NAMES = new Set(["table-cell", "covered-table-cell"]);
 
 /** A sheet's hidden column ranges (R16): a repeat is one range, never expanded. */
+/**
+ * @param {string} tableXml
+ * @returns {HiddenRange[]}
+ */
 function sheetHiddenCols(tableXml) {
+  /** @type {HiddenRange[]} */
   const hiddenCols = [];
   let colIndex = 0;
   for (const col of elementsNested(tableXml, "table-column")) {
-    const rep = parseInt(col.attrs["number-columns-repeated"] ?? "1", 10);
+    const rep = parseInt(col.attrs.get("number-columns-repeated") ?? "1", 10);
     const n = Number.isFinite(rep) && rep > 0 ? rep : 1;
-    const vis = col.attrs.visibility;
+    const vis = col.attrs.get("visibility");
     if (vis === "collapse" || vis === "filter") {
       hiddenCols.push({ min: colIndex + 1, max: colIndex + n, visibility: vis });
     }
@@ -1815,30 +2492,38 @@ function sheetHiddenCols(tableXml) {
  *  `{min, max, visibility}`, never a number per row, so a collapsed tail of a
  *  million rows costs one unit. `st.hiddenRows` collects those ranges when the caller gives a state.
  *  R53: a cell's annotation is the cell's `note`, apart from its displayed value, at its first address. */
+/**
+ * @param {string} tableXml
+ * @param {{ hiddenRows: HiddenRange[] } | null} st
+ * @returns {Generator<SheetRow, void, undefined>}
+ */
 function* sheetRows(tableXml, st) {
   /* R56: the repeat meter counts per sheet: each sheet's walk starts its units at zero. */
-  if (meter) meter.units = 0;
+  const running = meter;
+  if (running) running.units = 0;
   let rowIndex = 0;
   for (const row of iterNested(tableXml, ROW_NAMES)) {
-    const rep = parseInt(row.attrs["number-rows-repeated"] ?? "1", 10);
+    const rep = parseInt(row.attrs.get("number-rows-repeated") ?? "1", 10);
     const nRows = Number.isFinite(rep) && rep > 0 ? rep : 1;
-    const vis = row.attrs.visibility;
-    const hidden = vis === "collapse" || vis === "filter";
-    if (hidden) {
+    const vis = row.attrs.get("visibility");
+    const hiddenAs = vis === "collapse" || vis === "filter" ? vis : null;
+    if (hiddenAs !== null) {
       spend(1);
-      st?.hiddenRows.push({ min: rowIndex + 1, max: rowIndex + nRows, visibility: vis });
+      st?.hiddenRows.push({ min: rowIndex + 1, max: rowIndex + nRows, visibility: hiddenAs });
     }
 
+    /** @type {WalkedCell[]} */
     const cells = [];
     /* What ONE copy of this row costs beyond its cells: the spaces its texts
        expanded, the characters and the links each cell carries. */
     let rowSpaces = 0, rowChars = 0, rowLinks = 0;
     let c = 0;
     for (const cell of iterNested(row.inner, CELL_NAMES)) {
-      const crep = parseInt(cell.attrs["number-columns-repeated"] ?? "1", 10);
+      const crep = parseInt(cell.attrs.get("number-columns-repeated") ?? "1", 10);
       const nCols = Number.isFinite(crep) && crep > 0 ? crep : 1;
       if (cell.name === "covered-table-cell") { c += nCols; continue; }
       let inner = cell.inner;
+      /** @type {string | null} */
       let note = null;
       if (inner.includes("annotation")) {
         const found = elementsNested(inner, "annotation");
@@ -1850,16 +2535,16 @@ function* sheetRows(tableXml, st) {
       }
       /* R56: a typed cell with no value, no formula, no text and no note (a producer's padding to the sheet's edge) is an
          empty run: advanced over, never expanded. */
-      const carries = valueAttrOf(cell.attrs) != null || cell.attrs.formula != null || inner.trim() !== "" || note != null;
+      const carries = valueAttrOf(cell.attrs) != null || cell.attrs.get("formula") != null || inner.trim() !== "" || note != null;
       /* An empty repeated run holds no content and no reference worth
          emitting; skip it but still advance the address. */
       if (carries) {
         /* Read ONCE per element, then given at each address it spans. */
-        const before = meter.units;
+        const before = currentMeter().units;
         /* The DISPLAYED form: ODF writes what the sheet shows as the cell's
            `<text:p>` children, which is the analogue of xlsx's cached <v>. */
         const display = elementsNested(inner, "p").map((p) => visibleText(p.inner)).join("\n");
-        const spaces = meter.units - before;
+        const spaces = currentMeter().units - before;
         const value = valueAttrOf(cell.attrs);
         const hrefs = hrefsIn(inner);
         const chars = display !== "" ? display.length : (value ?? "").length;
@@ -1871,9 +2556,9 @@ function* sheetRows(tableXml, st) {
         rowChars += chars * nCols;
         rowLinks += hrefs.length * nCols;
         const base = {
-          valueType: cell.attrs["value-type"] ?? cell.attrs["calcext-value-type"] ?? null,
+          valueType: cell.attrs.get("value-type") ?? cell.attrs.get("calcext-value-type") ?? null,
           value,
-          formula: cell.attrs.formula ?? null,
+          formula: cell.attrs.get("formula") ?? null,
           display,
           hrefs,
         };
@@ -1899,7 +2584,7 @@ function* sheetRows(tableXml, st) {
       const r = rowIndex + k;
       yield {
         r: r + 1,
-        hidden: hidden ? vis : false,
+        hidden: hiddenAs ?? false,
         cells: k === 0 ? cells : cells.map((cell) => ({ ...cell, cell: `${columnName(cell.col)}${r + 1}`, note: null })),
       };
     }
@@ -1912,16 +2597,22 @@ function* sheetRows(tableXml, st) {
  *  `<style:table-properties>`) — MEASURED as where LibreOffice writes it —
  *  and a producer may also write `table:display` on the element itself; both
  *  are read, the element winning because it is the more specific statement. */
+/** @typedef {{ index: number, name: string, sheetId: null, state: string, hidden: false | "hidden", xml: string }} OdsSheet */
+/**
+ * @param {string} bodyXml
+ * @param {AutomaticStyles} styles
+ * @returns {OdsSheet[]}
+ */
 function sheetsOf(bodyXml, styles) {
   return elementsNested(bodyXml, "table").map((tbl, index) => {
-    const styleName = tbl.attrs["style-name"] ?? null;
-    const fromElement = tbl.attrs.display != null ? tbl.attrs.display !== "false" : null;
+    const styleName = tbl.attrs.get("style-name") ?? null;
+    const fromElement = tbl.attrs.get("display") != null ? tbl.attrs.get("display") !== "false" : null;
     const fromStyle = styleName != null && styles.tableDisplay.has(styleName)
       ? styles.tableDisplay.get(styleName) : null;
     const displayed = fromElement ?? fromStyle ?? true;   // absence means shown; nothing is guessed
     return {
       index,
-      name: tbl.attrs.name ?? `table${index + 1}`,
+      name: tbl.attrs.get("name") ?? `table${index + 1}`,
       /* ODF identifies a table by NAME only — there is no numeric sheet id.
          null is the FORMAT speaking, not a gap in this reader. */
       sheetId: null,
@@ -1933,12 +2624,28 @@ function sheetsOf(bodyXml, styles) {
   });
 }
 
+/**
+ * @typedef {Object} OdsStructure odsEntry.structure()'s answer (R14 to R17)
+ * @property {true} ok
+ * @property {"ods"} container
+ * @property {{ sheet: number, name: string, sheetId: null, state: string, hidden: false | "hidden" }[]} sheets
+ * @property {Link[]} links
+ * @property {PartitionCounts} counts
+ * @property {Envelope} evidentiary
+ * @property {string[]} notes
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @returns {OdsStructure | ProjectionFailure}
+ */
 function odsStructure(parts) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "ods", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
   }
   const notes = intraNotes(parts);
+  /** @type {Link[]} */
   const links = [];
+  /** @type {EvidentiaryItem[]} */
   const items = [];
   const body = officeBody(parts.contentXml, "spreadsheet");
   if (body == null) {
@@ -1946,10 +2653,12 @@ function odsStructure(parts) {
   }
   if (parts.guard) notes.push("text_parts_over_bound");
 
-  const styles = parts.contentXml ? automaticStyles(parts.contentXml) : { tableDisplay: new Map(), pageVisible: new Map() };
+  const contentXml = parts.contentXml;
+  const styles = contentXml ? automaticStyles(contentXml) : noStyles();
   const sheets = body != null ? sheetsOf(body, styles) : [];
 
   for (const sheet of sheets) {
+    /** @type {{ hiddenRows: HiddenRange[] }} */
     const st = { hiddenRows: [] };
     for (const row of sheetRows(sheet.xml, st)) {
       for (const cell of row.cells) {
@@ -1961,11 +2670,12 @@ function odsStructure(parts) {
            prefix (`of:=SUM([.B2:.B3])`); it is held VERBATIM, because
            rewriting it into another dialect would be this module inventing a
            derivation the file does not state. */
-        if (cell.formula != null) {
+        const formula = cell.formula;
+        if (formula != null) {
           items.push({
             kind: "formula",
             source: ref,
-            formula: cell.formula,
+            formula,
             value: cell.display !== "" ? cell.display : cell.value,   // the cached result; null when the file carries none
           });
         }
@@ -2023,11 +2733,17 @@ function odsStructure(parts) {
 
 /** Split at every character `sepRe` matches outside a quoted sheet name
  *  (`'a b'`, `'it''s'`). */
+/**
+ * @param {string} s
+ * @param {RegExp} sepRe
+ * @returns {string[]}
+ */
 function splitUnquoted(s, sepRe) {
+  /** @type {string[]} */
   const out = [];
   let quoted = false, cur = "";
   for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
+    const ch = s.charAt(i);
     if (ch === "'") {
       if (quoted && s[i + 1] === "'") { cur += "''"; i++; continue; }
       quoted = !quoted;
@@ -2041,19 +2757,31 @@ function splitUnquoted(s, sepRe) {
 /** One ODF cell address (`$Sheet1.$A$1`, `$'My Sheet'.B2`, `.B2`) ->
  *  `{sheet (null when omitted), corner}`, `{sheet, line:true}` for a whole
  *  column or row (`.$A`, `.$3`), or null. */
+/** @typedef {{ sheet: string | null, corner: { col: number, row: number } } | { sheet: string | null, line: true }} OdfCellAddress */
+/**
+ * @param {string | undefined} s
+ * @returns {OdfCellAddress | null}
+ */
 function odfCellAddress(s) {
   const m = /^\$?(?:'((?:[^']|'')*)'|([^'.\s]*))\.(\S+)$/.exec(String(s ?? "").trim());
   if (!m) return null;
-  const sheet = m[1] != null ? m[1].replace(/''/g, "'") : (m[2] === "" ? null : m[2]);
-  const corner = a1Corner(m[3]);
+  /* Group 2 takes part whenever group 1 does not, and group 3 always does. */
+  const sheet = m[1] != null ? m[1].replace(/''/g, "'") : (m[2] === "" || m[2] === undefined ? null : m[2]);
+  const address = m[3] ?? "";
+  const corner = a1Corner(address);
   if (corner) return { sheet, corner };
-  return /^\$?(?:[A-Za-z]{1,3}|[1-9]\d*)$/.test(m[3]) ? { sheet, line: true } : null;
+  return /^\$?(?:[A-Za-z]{1,3}|[1-9]\d*)$/.test(address) ? { sheet, line: true } : null;
 }
 
 /** An ODF range address (`table:cell-range-address`,
  *  `table:target-range-address`) -> `{unit}` or `{why}`. A space-separated
  *  list is several areas; the second corner may omit its sheet
  *  (`$S.$A$1:.$B$3`), meaning the first's. */
+/**
+ * @param {string | null} address
+ * @param {string[]} sheets
+ * @returns {{ unit: SheetRangeRef, why?: undefined } | { unit?: undefined, why: string }}
+ */
 function odsRangeAddressUnit(address, sheets) {
   const a = String(address ?? "").trim();
   if (!a) return { why: "empty_reference" };
@@ -2065,10 +2793,12 @@ function odsRangeAddressUnit(address, sheets) {
   if (ends.length > 2) return { why: "not_a_range_reference" };
   const first = odfCellAddress(ends[0]);
   const second = ends.length === 2 ? odfCellAddress(ends[1]) : first;
-  if (!first || !second || first.sheet == null) return { why: "not_a_range_reference" };
-  if (second.sheet != null && second.sheet !== first.sheet) return { why: "multi_sheet_reference" };
-  if (first.line || second.line) return { why: "whole_row_or_column" };
-  return rangeUnitFor(first.sheet, first.corner, second.corner, sheets, null);
+  const sheet = first?.sheet;
+  if (!first || !second || sheet == null) return { why: "not_a_range_reference" };
+  const secondSheet = second.sheet;
+  if (secondSheet != null && secondSheet !== sheet) return { why: "multi_sheet_reference" };
+  if ("line" in first || "line" in second) return { why: "whole_row_or_column" };
+  return rangeUnitFor(sheet, first.corner, second.corner, sheets, null);
 }
 
 /** Every named range, named expression and database range the spreadsheet
@@ -2078,12 +2808,26 @@ function odsRangeAddressUnit(address, sheets) {
  *  null`). A database range's scope is the sheet its unit lies on, as an xlsx
  *  table's is. ODF has no hidden flag on a name, so `hidden` is false — the
  *  format speaking, as `sheetId: null` is. */
+/** @typedef {{ source: string, name: string | null, scope: string | null, hidden: false, unit: SheetRangeRef }} RangeUnit (R44) */
+/** @typedef {{ source: string, name: string | null, ref: string | null, why: string }} RangeUnitSkipped (R44) */
+/**
+ * @param {string} bodyXml
+ * @param {OdsSheet[]} sheets
+ * @returns {{ rangeUnits: RangeUnit[], rangeUnitsSkipped: RangeUnitSkipped[] }}
+ */
 function odsRangeUnits(bodyXml, sheets) {
   const names = sheets.map((s) => s.name);
-  const rangeUnits = [], rangeUnitsSkipped = [];
+  /** @type {RangeUnit[]} */
+  const rangeUnits = [];
+  /** @type {RangeUnitSkipped[]} */
+  const rangeUnitsSkipped = [];
   const RE = tokens();
-  let m, depth = 0, top = -1, scope = null;
-  while ((m = RE.exec(bodyXml)) !== null) {
+  let depth = 0, top = -1;
+  /** @type {string | null} */
+  let scope = null;
+  for (;;) {
+    const m = RE.exec(bodyXml);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const name = localOf(m[1]);
     const closing = m[0][1] === "/";
@@ -2100,12 +2844,12 @@ function odsRangeUnits(bodyXml, sheets) {
     const kind = name === "named-range" || name === "named-expression" || name === "database-range" ? name : null;
     if (!kind) continue;
     const attrs = attrsOf(m[2]);
-    const label = attrs.name ?? null;
+    const label = attrs.get("name") ?? null;
     if (kind === "named-expression") {
-      rangeUnitsSkipped.push({ source: kind, name: label, ref: attrs.expression ?? null, why: "not_a_range_reference" });
+      rangeUnitsSkipped.push({ source: kind, name: label, ref: attrs.get("expression") ?? null, why: "not_a_range_reference" });
       continue;
     }
-    const ref = (kind === "named-range" ? attrs["cell-range-address"] : attrs["target-range-address"]) ?? null;
+    const ref = (kind === "named-range" ? attrs.get("cell-range-address") : attrs.get("target-range-address")) ?? null;
     const r = odsRangeAddressUnit(ref, names);
     if (r.unit) {
       rangeUnits.push({ source: kind, name: label, scope: kind === "named-range" ? scope : r.unit.sheet,
@@ -2115,28 +2859,58 @@ function odsRangeUnits(bodyXml, sheets) {
   return { rangeUnits, rangeUnitsSkipped };
 }
 
+/** @param {string} str */
 const utf8Length = (str) => (/[^\x00-\x7f]/.test(str) ? new TextEncoder().encode(str).length : str.length);
 
 /** The inline-cells option as a number of bytes, or null (every cell is listed). */
-const inlineCellsCap = (opts) => (Number.isFinite(opts?.inlineCellsMax) && opts.inlineCellsMax >= 0 ? opts.inlineCellsMax : null);
+/**
+ * @param {TextOptions | undefined} opts
+ * @returns {number | null}
+ */
+const inlineCellsCap = (opts) => {
+  const max = opts?.inlineCellsMax;
+  return typeof max === "number" && Number.isFinite(max) && max >= 0 ? max : null;
+};
 
+/**
+ * @typedef {Object} OdsTextSheet one sheet of odsEntry.text() (R18, R19, R46, R49)
+ * @property {number} sheet
+ * @property {string} name
+ * @property {false | "hidden"} hidden
+ * @property {null} rows
+ * @property {null} cols
+ * @property {number} usedRows
+ * @property {number} usedCols
+ * @property {SheetRangeRef | null} range
+ * @property {string} text
+ * @property {TextUndetermined[]} undetermined
+ * @property {number[]} lineRows
+ * @property {TypedCell[] | null} cells
+ * @property {true} [cells_held]
+ */
+/**
+ * @typedef {Object} OdsText odsEntry.text()'s answer, before its images (R18 to R20, R44, R46, R49, R53)
+ * @property {true} ok
+ * @property {"ods"} container
+ * @property {string | null} document
+ * @property {OdsTextSheet[]} sheets
+ * @property {RangeUnit[] | null} rangeUnits
+ * @property {RangeUnitSkipped[] | null} rangeUnitsSkipped
+ * @property {TextUnit[] | null} parts
+ * @property {TextUndetermined[]} undetermined
+ * @property {{ chars: number, cells: number, formulas: number, undetermined: number, scanned_bytes: number }} counts
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @param {ReadCtx} ctx
+ * @returns {Promise<OdsText | ProjectionFailure>}
+ */
 async function odsText(parts, ctx) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "ods", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
   }
-  if (parts.guard || parts.repeat) {
-    return {
-      ok: true, container: "ods", document: null, sheets: [],
-      rangeUnits: null, rangeUnitsSkipped: null,   // content.xml not read: not looked, never none
-      parts: null,
-      undetermined: [parts.guard ?? parts.repeat],
-      counts: { chars: 0, cells: 0, formulas: 0, undetermined: 1, scanned_bytes: parts.scanned },
-    };
-  }
-  const body = officeBody(parts.contentXml, "spreadsheet");
-  if (body == null) {
-    const stated = parts.undetermined.find((u) => u.part === CONTENT_PART);
-    const marker = { sheet: null, cell: null, reason: stated?.why ?? "no_office_spreadsheet_body", ...(stated?.final ? { final: true } : {}) };
+  const marker = parts.guard ?? parts.repeat;
+  if (marker) {
     return {
       ok: true, container: "ods", document: null, sheets: [],
       rangeUnits: null, rangeUnitsSkipped: null,   // content.xml not read: not looked, never none
@@ -2145,34 +2919,58 @@ async function odsText(parts, ctx) {
       counts: { chars: 0, cells: 0, formulas: 0, undetermined: 1, scanned_bytes: parts.scanned },
     };
   }
-  const styles = withMeter(ctx.meter, () => automaticStyles(parts.contentXml));
+  const body = officeBody(parts.contentXml, "spreadsheet");
+  if (body == null) {
+    const stated = parts.undetermined.find((u) => u.part === CONTENT_PART);
+    /** @type {TextStatement} */
+    const unread = { sheet: null, cell: null, reason: stated?.why ?? "no_office_spreadsheet_body" };
+    if (stated?.final) unread.final = true;
+    return {
+      ok: true, container: "ods", document: null, sheets: [],
+      rangeUnits: null, rangeUnitsSkipped: null,   // content.xml not read: not looked, never none
+      parts: null,
+      undetermined: [unread],
+      counts: { chars: 0, cells: 0, formulas: 0, undetermined: 1, scanned_bytes: parts.scanned },
+    };
+  }
+  const contentXml = parts.contentXml ?? "";            // read: its body was found in it
+  const styles = withMeter(ctx.meter, () => automaticStyles(contentXml));
   const odsSheets = withMeter(ctx.meter, () => sheetsOf(body, styles));
+  /** @type {OdsTextSheet[]} */
   const outSheets = [];
+  /** @type {TextUnit[]} */
   const units = [];
   let cellCount = 0, formulaCount = 0;
   /* R49: with the caller's option, the cells are listed while the JSON of all the sheets' lists is within it; past it
      none is kept (`held`), the walk goes on for the text and the counts, and `cellsIn` makes the cells of a range. */
   const cap = inlineCellsCap(ctx.opts);
-  let held = false, listedBytes = 0;
+  let held = /** @type {boolean} */ (false), listedBytes = 0;
+  /** @type {TypedCell[][]} */
   const lists = [];
   for (const sheet of odsSheets) {
+    /** @type {string[]} */
     const lines = [];
+    /** @type {number[]} */
     const lineRows = [];
+    /** @type {TypedCell[]} */
     const cells = [];
     lists.push(cells);
     if (!held) listedBytes += 2;
     let usedRows = 0, usedCols = 0;
+    /** @param {SheetRow} row */
     const consume = (row) => {
+      /** @type {string[]} */
       const vals = [];
       for (const c of row.cells) {
         if (c.formula != null) formulaCount++;
-        if (c.note != null) units.push({ kind: "cell_note", ref: sheetCellRef(sheet.name, c.cell).ref, part: CONTENT_PART, text: c.note });
+        const note = c.note;
+        if (note != null) units.push({ kind: "cell_note", ref: sheetCellRef(sheet.name, c.cell).ref, part: CONTENT_PART, text: note });
         if (!held) {
           const tc = typedCellOf(sheet.name, c);
           if (tc) {
             if (cap != null) {
               listedBytes += utf8Length(JSON.stringify(tc)) + (cells.length ? 1 : 0);
-              if (listedBytes > cap) { held = true; for (const l of lists) l.length = 0; }
+              if (listedBytes > cap) { held = true; for (const l of lists) l.splice(0); }
             }
             if (!held) cells.push(tc);
           }
@@ -2272,64 +3070,103 @@ odsText.owns = true;
  *  (whole rows; a first row alone over it is given whole) and `next_row` names that row. The walk covers the sheets before
  *  the one asked for and that sheet to its `toRow`, under the same repeat meter as a whole read, and holds nothing else.
  *  Never throws. */
+/**
+ * @typedef {Object} CellsQuery what cellsIn() is asked for (R49)
+ * @property {number | string} [sheet] the sheet's 0-based index, or its name
+ * @property {number} [fromRow]
+ * @property {number} [toRow]
+ * @property {number} [fromCol]
+ * @property {number} [toCol]
+ * @property {number} [maxCells]
+ */
+/** @typedef {{ ok: true, cells: TypedCell[], rows: { from: number, to: number }, next_row?: number }} CellsInCells */
+/** @typedef {CellsInCells | { ok: false, why: string } | SizeMarker | (RepeatMarker & { ok: false })} CellsInAnswer cellsIn()'s answer (R49) */
+/** The sheet a query names: by its 0-based index, or by its name exactly, else without case when one sheet answers.
+ * @param {OdsSheet[]} sheets
+ * @param {number | string | undefined} asked
+ * @returns {OdsSheet | null}
+ */
+function sheetAsked(sheets, asked) {
+  if (typeof asked === "number" && Number.isInteger(asked)) return sheets[asked] ?? null;
+  if (typeof asked !== "string") return null;
+  const exact = sheets.find((s) => s.name === asked);
+  if (exact) return exact;
+  const loose = sheets.filter((s) => s.name.toLowerCase() === asked.toLowerCase());
+  return loose.length === 1 ? loose[0] ?? null : null;
+}
+
+/** An object handed where parts() or bytes are expected is taken as parts()'s own output (the entries' contract, R5);
+ *  a value that is no object reads as no parts.
+ * @param {unknown} x
+ * @returns {x is PartsResult}
+ */
+const asPartsGiven = (x) => x !== null && (typeof x === "object" || typeof x === "function");
+
+/**
+ * @param {OdfRow} row
+ * @param {unknown} partsOrBytes parts()'s output or raw bytes; anything else reads as no parts (R38)
+ * @param {CellsQuery | null | undefined} query
+ * @returns {Promise<CellsInAnswer>}
+ */
 async function odsCellsIn(row, partsOrBytes, query) {
   try {
-    const parts = isRawBytes(partsOrBytes) ? await odfParts(row, partsOrBytes) : partsOrBytes;
-    if (!parts || typeof parts !== "object" || !parts.ok) return { ok: false, why: parts?.why ?? "PARTS_ABSENT" };
+    const parts = partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? await odfParts(row, partsOrBytes)
+      : asPartsGiven(partsOrBytes) ? partsOrBytes : null;
+    if (!parts || !parts.ok) return { ok: false, why: parts?.why ?? "PARTS_ABSENT" };
     if (parts.format !== row.flavour) return { ok: false, why: `not_${row.flavour}:${parts.format}` };
-    if (parts.guard) return { ...parts.guard };
+    const guard = parts.guard;
+    if (guard) return { ...guard };
+    /** @type {CellsQuery} */
     const q = query && typeof query === "object" ? query : {};
+    /** @param {number} n @param {number} min */
     const whole = (n, min) => Number.isInteger(n) && n >= min;
     const fromRow = q.fromRow ?? 1, fromCol = q.fromCol ?? 1;
     const toRow = q.toRow ?? Infinity, toCol = q.toCol ?? Infinity;
     const maxCells = q.maxCells ?? Infinity;
     const body = officeBody(parts.contentXml, "spreadsheet");
     if (body == null) return { ok: false, why: parts.undetermined.find((u) => u.part === CONTENT_PART)?.why ?? "no_office_spreadsheet_body" };
-    const sheets = sheetsOf(body, automaticStyles(parts.contentXml));
-    let sheet = null;
-    if (Number.isInteger(q.sheet)) sheet = sheets[q.sheet] ?? null;
-    else if (typeof q.sheet === "string") {
-      sheet = sheets.find((s) => s.name === q.sheet) ?? null;
-      if (!sheet) {
-        const loose = sheets.filter((s) => s.name.toLowerCase() === q.sheet.toLowerCase());
-        if (loose.length === 1) sheet = loose[0];
-      }
-    }
+    const sheets = sheetsOf(body, automaticStyles(parts.contentXml ?? ""));
+    const sheet = sheetAsked(sheets, q.sheet);
     if (!sheet) return { ok: false, why: "no_such_sheet" };
     if (!whole(fromRow, 1) || !whole(fromCol, 1) || !(toRow === Infinity || whole(toRow, fromRow))
       || !(toCol === Infinity || whole(toCol, fromCol)) || !(maxCells === Infinity || whole(maxCells, 1))) {
       return { ok: false, why: "bad_range" };
     }
+    const target = sheet;     // the walk below refers to it from a closure
+    /** @type {TypedCell[]} */
     const cells = [];
-    let nextRow = null, last = 0;
+    /** @type {{ nextRow: number | null, last: number }} where the walk stopped */
+    const at = { nextRow: null, last: 0 };
     try {
       withMeter(newMeter(), () => {
         for (const other of sheets) {
           for (const r of sheetRows(other.xml, null)) {
-            if (other !== sheet) continue;
+            if (other !== target) continue;
             if (r.r > toRow) return;
-            last = r.r;
+            at.last = r.r;
             if (r.r < fromRow) continue;
+            /** @type {TypedCell[]} */
             const rowCells = [];
             for (const c of r.cells) {
               if (c.col + 1 < fromCol || c.col + 1 > toCol) continue;
-              const tc = typedCellOf(sheet.name, c);
+              const tc = typedCellOf(target.name, c);
               if (tc) rowCells.push(tc);
             }
-            if (cells.length > 0 && cells.length + rowCells.length > maxCells) { nextRow = r.r; return; }
+            if (cells.length > 0 && cells.length + rowCells.length > maxCells) { at.nextRow = r.r; return; }
             for (const tc of rowCells) cells.push(tc);
           }
-          if (other === sheet) return;
+          if (other === target) return;
         }
       });
     } catch (e) {
       if (e instanceof OverRepeatBound) return { ok: false, ...e.marker };
       throw e;
     }
-    const to = nextRow != null ? nextRow - 1 : Math.max(fromRow - 1, Math.min(toRow, last));
+    const nextRow = at.nextRow;
+    const to = nextRow != null ? nextRow - 1 : Math.max(fromRow - 1, Math.min(toRow, at.last));
     return { ok: true, cells, rows: { from: fromRow, to }, ...(nextRow != null ? { next_row: nextRow } : {}) };
   } catch (e) {
-    return { ok: false, why: `reader_failed:${e?.name ?? "Error"}` };
+    return { ok: false, why: `reader_failed:${errorName(e)}` };
   }
 }
 
@@ -2349,12 +3186,24 @@ const ODP_SHAPE_TAGS = new Set([
 /** One page's shapes: index, visible text, and the hrefs each carries. The
  *  `<presentation:notes>` subtree is EXCLUDED — the notes are walked
  *  separately and emitted as their own unit, never merged into slide text. */
+/**
+ * @typedef {Object} PageWalk
+ * @property {number} count the shapes opened, nested included
+ * @property {string[]} pageHrefs the links no shape owns
+ * @property {{ shape: number, text: string | null, textBox: boolean, hrefs: string[] }[]} shapes
+ */
+/**
+ * @param {string} pageXml
+ * @param {{ withText?: boolean }} [opts]
+ * @returns {PageWalk}
+ */
 function walkPage(pageXml, { withText = true } = {}) {
   const slideOnly = stripElement(pageXml, "notes");
+  /** @type {{ shape: number, name: string, attrs: Attrs, inner: string }[]} */
   const shapes = [];
   const RE = tokens();
-  let m;
   let index = -1;
+  /** @type {{ index: number, start: number, name: string, attrs: Attrs }[]} */
   const open = [];
   /* EACH LINK IS LOCATED ONCE, to the shape that owns it. A `<text:a>` inside
      a paragraph belongs to the innermost shape open around it — never also to
@@ -2363,17 +3212,27 @@ function walkPage(pageXml, { withText = true } = {}) {
      clickable shape) and belongs to the first shape it opens; one that wraps
      no shape belongs to the shape around it, or, at page level, to the page
      itself (`page`), never dropped. */
-  const hrefsOf = new Map();                  // shape index → hrefs
+  /** @typedef {{ href: string, placed: boolean }} PendingHref */
+  const hrefsOf = new Map(/** @type {[number, string[]][]} */ ([]));                  // shape index → hrefs
+  /** @type {string[]} */
   const pageHrefs = [];
+  /** @type {PendingHref[]} */
   const pending = [];                         // draw:a hrefs waiting for their shape
+  /** @type {(PendingHref | null)[]} */
   const aStack = [];                          // for each open <a>: its pending entry, or null
   let paraDepth = 0;
+  /** @param {string} href */
   const own = (href) => {
-    const top = open.length ? open[open.length - 1].index : null;
+    const top = open.length ? open[open.length - 1]?.index ?? null : null;
     if (top == null) pageHrefs.push(href);
-    else { if (!hrefsOf.has(top)) hrefsOf.set(top, []); hrefsOf.get(top).push(href); }
+    else {
+      const held = hrefsOf.get(top);
+      if (held) held.push(href); else hrefsOf.set(top, [href]);
+    }
   };
-  while ((m = RE.exec(slideOnly)) !== null) {
+  for (;;) {
+    const m = RE.exec(slideOnly);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const name = localOf(m[1]);
     const closing = m[0][1] === "/";
@@ -2391,9 +3250,10 @@ function walkPage(pageXml, { withText = true } = {}) {
         }
         continue;
       }
-      const href = attrsOf(m[2]).href;
+      const href = attrsOf(m[2]).get("href");
       if (href == null) { if (!selfClosed) aStack.push(null); continue; }
       if (paraDepth > 0 || selfClosed) { own(href); if (!selfClosed) aStack.push(null); continue; }
+      /** @type {PendingHref} */
       const entry = { href, placed: false };
       pending.push(entry);
       aStack.push(entry);
@@ -2409,17 +3269,18 @@ function walkPage(pageXml, { withText = true } = {}) {
     if (pending.length) {
       hrefsOf.set(index, pending.map((e) => e.href));
       for (const e of pending) e.placed = true;
-      pending.length = 0;
+      pending.splice(0);
     }
-    if (selfClosed) { shapes.push({ shape: index, name, attrs: {}, inner: "" }); continue; }
-    open.push({ index, start: RE.lastIndex, name, attrs: name === "frame" ? attrsOf(m[2]) : {} });
+    if (selfClosed) { shapes.push({ shape: index, name, attrs: NO_ATTRS, inner: "" }); continue; }
+    open.push({ index, start: RE.lastIndex, name, attrs: name === "frame" ? attrsOf(m[2]) : NO_ATTRS });
   }
   /* An unclosed wrapper at the end of the page still states its link. */
   for (const e of pending) pageHrefs.push(e.href);
   /* A shape left open at the end of the page (malformed markup) still counts
      and still carries its text, to the end of the page. */
-  while (open.length) {
+  for (;;) {
     const o = open.pop();
+    if (!o) break;
     shapes.push({ shape: o.index, name: o.name, attrs: o.attrs, inner: slideOnly.slice(o.start) });
   }
   shapes.sort((a, b) => a.shape - b.shape);
@@ -2436,7 +3297,7 @@ function walkPage(pageXml, { withText = true } = {}) {
          text-box-only reading dropped). */
       text: withText ? ownShapeText(s.inner) : null,   // structure() emits none, so expands none (R45)
       /* R53: a free text box, a frame holding a text box that is no placeholder of the layout (`presentation:class`). */
-      textBox: s.name === "frame" && s.attrs.class == null && s.inner.includes("text-box"),
+      textBox: s.name === "frame" && s.attrs.get("class") == null && s.inner.includes("text-box"),
       hrefs: hrefsOf.get(s.shape) ?? [],
     })),
   };
@@ -2444,11 +3305,18 @@ function walkPage(pageXml, { withText = true } = {}) {
 
 /** The paragraphs (`<text:p>`/`<text:h>`) of a shape's inner markup that lie
  *  outside every shape nested in it, each as visible text, newline-joined. */
+/**
+ * @param {string} xml
+ * @returns {string}
+ */
 function ownShapeText(xml) {
+  /** @type {string[]} */
   const paras = [];
   const RE = tokens();
-  let m, shapeDepth = 0, paraDepth = 0, start = -1;
-  while ((m = RE.exec(xml)) !== null) {
+  let shapeDepth = 0, paraDepth = 0, start = -1;
+  for (;;) {
+    const m = RE.exec(xml);
+    if (m === null) break;
     if (m[1] === undefined) continue;
     const name = localOf(m[1]);
     const closing = m[0][1] === "/";
@@ -2466,6 +3334,10 @@ function ownShapeText(xml) {
   return paras.join("\n");
 }
 
+/**
+ * @param {string} pageXml
+ * @returns {string | null}
+ */
 function notesTextOf(pageXml) {
   const notes = elementsNested(pageXml, "notes")[0];
   if (!notes) return null;
@@ -2480,29 +3352,52 @@ function notesTextOf(pageXml) {
  *  order — OpenDocument's `<draw:page>` elements ARE in presentation order
  *  inside the one content.xml, so the deck order needs no indirection and can
  *  never be unreadable while the body is readable. */
+/** @typedef {{ slide: number, name: string | null, hidden: boolean, xml: string }} OdpPage */
+/**
+ * @param {string} bodyXml
+ * @param {AutomaticStyles} styles
+ * @returns {OdpPage[]}
+ */
 function deckOf(bodyXml, styles) {
   return elementsNested(bodyXml, "page").map((page, i) => {
-    const styleName = page.attrs["style-name"] ?? null;
-    const fromElement = page.attrs.visibility != null ? page.attrs.visibility !== "hidden" : null;
+    const styleName = page.attrs.get("style-name") ?? null;
+    const fromElement = page.attrs.get("visibility") != null ? page.attrs.get("visibility") !== "hidden" : null;
     const fromStyle = styleName != null && styles.pageVisible.has(styleName)
       ? styles.pageVisible.get(styleName) : null;
     const visible = fromElement ?? fromStyle ?? true;     // absence means shown
-    return { slide: i + 1, name: page.attrs.name ?? null, hidden: !visible, xml: page.inner };
+    return { slide: i + 1, name: page.attrs.get("name") ?? null, hidden: !visible, xml: page.inner };
   });
 }
 
+/**
+ * @typedef {Object} OdpStructure odpEntry.structure()'s answer (R21 to R23)
+ * @property {true} ok
+ * @property {"odp"} container
+ * @property {number | null} slides
+ * @property {Link[]} links
+ * @property {PartitionCounts} counts
+ * @property {Envelope} evidentiary
+ * @property {string[]} notes
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @returns {OdpStructure | ProjectionFailure}
+ */
 function odpStructure(parts) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "odp", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
   }
   const notes = intraNotes(parts);
+  /** @type {Link[]} */
   const links = [];
+  /** @type {EvidentiaryItem[]} */
   const items = [];
   const body = officeBody(parts.contentXml, "presentation");
   if (body == null) {
     notes.push(bodyNotRead(parts, "presentation"));
   }
-  const styles = parts.contentXml ? automaticStyles(parts.contentXml) : { tableDisplay: new Map(), pageVisible: new Map() };
+  const contentXml = parts.contentXml;
+  const styles = contentXml ? automaticStyles(contentXml) : noStyles();
   const deck = body != null ? deckOf(body, styles) : null;
 
   if (deck) {
@@ -2544,6 +3439,25 @@ function odpStructure(parts) {
   };
 }
 
+/** @typedef {{ slide: number, ref: string, part: string, hidden: boolean, shapes: number, text: string }} OdpSlide */
+/** @typedef {{ slide: number, ref: string, part: string, hidden: boolean, text: string }} OdpSpeakerNotes */
+/**
+ * @typedef {Object} OdpText odpEntry.text()'s answer, before its images (R24 to R27, R53)
+ * @property {true} ok
+ * @property {"odp"} container
+ * @property {string | null} document
+ * @property {OdpSlide[]} slides
+ * @property {OdpSpeakerNotes[]} speakerNotes
+ * @property {TextUnit[] | null} parts
+ * @property {number | null} deckLength
+ * @property {TextUndetermined[]} undetermined
+ * @property {{ chars: number, notesChars: number, undetermined: number, scanned_bytes: number }} counts
+ */
+/**
+ * @param {PartsResult | null | undefined} parts
+ * @param {ReadCtx} ctx
+ * @returns {Promise<OdpText | ProjectionFailure>}
+ */
 async function odpText(parts, ctx) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "odp", reason: parts?.why ?? "PARTS_ABSENT", part: parts?.part ?? null };
@@ -2551,32 +3465,39 @@ async function odpText(parts, ctx) {
   /* COFF-13: `deckLength` is NULL on both branches that did not read the body —
      the deck lives only in content.xml, so a format that has not read it
      cannot answer, and the null is a statement rather than a zero. */
-  if (parts.guard || parts.repeat) {
+  const marker = parts.guard ?? parts.repeat;
+  if (marker) {
     return {
       ok: true, container: "odp", document: null, slides: [], speakerNotes: [], parts: null,
       deckLength: null,
-      undetermined: [parts.guard ?? parts.repeat],
+      undetermined: [marker],
       counts: { chars: 0, notesChars: 0, undetermined: 1, scanned_bytes: parts.scanned },
     };
   }
   const body = officeBody(parts.contentXml, "presentation");
   if (body == null) {
     const stated = parts.undetermined.find((u) => u.part === CONTENT_PART);
+    /** @type {TextStatement} */
+    const unread = { reason: "main_part_unreadable", part: CONTENT_PART, why: stated?.why ?? "no_office_presentation_body" };
+    if (stated?.final) unread.final = true;
     return {
       ok: true, container: "odp", document: null, slides: [], speakerNotes: [], parts: null,
       deckLength: null,
-      undetermined: [{ reason: "main_part_unreadable", part: CONTENT_PART, why: stated?.why ?? "no_office_presentation_body", ...(stated?.final ? { final: true } : {}) }],
+      undetermined: [unread],
       counts: { chars: 0, notesChars: 0, undetermined: 1, scanned_bytes: parts.scanned },
     };
   }
+  /** @type {OdpSlide[]} */
   const slides = [];
+  /** @type {OdpSpeakerNotes[]} */
   const speakerNotes = [];
+  /** @type {TextUnit[]} */
   const units = [];
-  const deck = withMeter(ctx.meter, () => deckOf(body, automaticStyles(parts.contentXml)));
+  const deck = withMeter(ctx.meter, () => deckOf(body, automaticStyles(parts.contentXml ?? "")));
   for (const page of deck) {
     withMeter(ctx.meter, () => {
       const walked = walkPage(page.xml);
-      const text = walked.shapes.map((s) => s.text).filter((t) => t.length).join("\n");
+      const text = walked.shapes.map((s) => s.text).filter((t) => t !== null && t.length > 0).join("\n");
       /* COFF-11 / IC-100 / D-359 — the slide's shape COUNT, which `walkPage` has
          always returned as `count` and this entry has always discarded. The
          pptx.mjs decision applies verbatim and for the same reason: a shape list
@@ -2587,15 +3508,17 @@ async function odpText(parts, ctx) {
          references it bounds are counted by one walk. */
       slides.push({ slide: page.slide, ref: `slide ${page.slide}`, part: CONTENT_PART,
         hidden: page.hidden, shapes: walked.count, text });
-      const hide = page.hidden ? { hidden: true } : {};
+      /** @param {TextUnit} u a hidden page's unit is marked hidden */
+      const add = (u) => { if (page.hidden) u.hidden = true; units.push(u); };
       for (const sh of walked.shapes) {
-        if (sh.textBox && hasWords(sh.text)) units.push({ kind: "text_box", ref: `slide ${page.slide} shape ${sh.shape}`, part: CONTENT_PART, text: sh.text, ...hide });
+        const shapeText = sh.text;
+        if (sh.textBox && shapeText !== null && hasWords(shapeText)) add({ kind: "text_box", ref: `slide ${page.slide} shape ${sh.shape}`, part: CONTENT_PART, text: shapeText });
       }
       const nt = notesTextOf(page.xml);
       if (nt != null && nt.length) {
         speakerNotes.push({ slide: page.slide, ref: `slide ${page.slide} (notes)`, part: CONTENT_PART,
           hidden: page.hidden, text: nt });
-        units.push({ kind: "speaker_note", ref: `slide ${page.slide} (notes)`, part: CONTENT_PART, text: nt, ...hide });
+        add({ kind: "speaker_note", ref: `slide ${page.slide} (notes)`, part: CONTENT_PART, text: nt });
       }
     });
     if (windowDue(ctx.meter)) await letPass(ctx);
@@ -2628,35 +3551,72 @@ odpText.owns = true;
  * this axis exists to keep)
  * ================================================================== */
 
-/** Raw bytes in any form `asBytes` accepts are read through parts(); anything
- *  else is taken as parts()'s own output. */
-const isRawBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
-
+/**
+ * @template {{ ok: true }} S
+ * @template {{ ok: true }} X
+ * @typedef {Object} OdfEntry an I7 FormatEntry (R1 to R5, R38, R47, R49)
+ * @property {string} format
+ * @property {(bytes: unknown, contentType?: unknown) => Detected | null} detect
+ * @property {(bytes: unknown) => Promise<PartsResult>} parts
+ * @property {(partsOrBytes: unknown) => Promise<(S & { active: ActiveItem[] }) | ProjectionFailure>} structure
+ * @property {(partsOrBytes: unknown, opts?: TextOptions) => Promise<(X & { active: ActiveItem[] } & ImagesPart) | ProjectionFailure>} text
+ */
+/** @typedef {(partsOrBytes: unknown, query?: CellsQuery | null) => Promise<CellsInAnswer>} CellsIn (R49) */
+/**
+ * @template {{ ok: true }} S
+ * @template {{ ok: true }} X
+ * @param {OdfRow} row
+ * @param {(parts: PartsResult | null | undefined) => S | ProjectionFailure} structureOf
+ * @param {{ (parts: PartsResult | null | undefined, ctx: ReadCtx): Promise<X | ProjectionFailure>, owns?: boolean }} textOf
+ * @returns {OdfEntry<S, X>}
+ */
 function entryFor(row, structureOf, textOf) {
   /* R38: a stated refusal, never an exception, whatever the argument. */
-  const failed = (e) => ({ ok: false, container: row.flavour, reason: `reader_failed:${e?.name ?? "Error"}`, part: null });
-  const partsOf = async (partsOrBytes) => (isRawBytes(partsOrBytes) ? odfParts(row, partsOrBytes) : partsOrBytes);
+  /** @param {unknown} e @returns {ProjectionFailure} */
+  const failed = (e) => ({ ok: false, container: row.flavour, reason: `reader_failed:${errorName(e)}`, part: null });
+  /* Raw bytes in any form `asBytes` accepts are read through parts(); anything else is taken as parts()'s own output. */
+  /** @param {unknown} partsOrBytes @returns {Promise<PartsResult | null>} */
+  const partsOf = async (partsOrBytes) => (partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes) ? odfParts(row, partsOrBytes)
+    : asPartsGiven(partsOrBytes) ? partsOrBytes : null);
   /* R45: each projection is one content.xml read, on its own meter. The read
      that would cross the bound stops, and the projection answers as it does
      over the size guard, content.xml not read and the repeat marker stated;
      what parts() read outside content.xml (R28–R30) is still answered. A projection that awaits (`owns`) installs the
      meter for its own synchronous windows (R49); the others run under it whole. */
+  /**
+   * @template {{ ok: true }} T
+   * @param {{ (parts: PartsResult | null | undefined, ctx: ReadCtx): T | ProjectionFailure | Promise<T | ProjectionFailure>, owns?: boolean }} projectionOf
+   * @param {PartsResult | null | undefined} parts
+   * @param {TextOptions} [opts]
+   * @returns {Promise<(T & { active: ActiveItem[] }) | ProjectionFailure>}
+   */
   const bounded = async (projectionOf, parts, opts) => {
+    /** @param {PartsResult | null | undefined} p */
     const run = (p) => {
+      /** @type {ReadCtx} */
       const ctx = { meter: newMeter(), opts, yieldNow: opts?.yieldNow };
       return projectionOf.owns ? projectionOf(p, ctx) : withMeter(ctx.meter, () => projectionOf(p, ctx));
     };
+    /** @type {T | ProjectionFailure} */
     let out;
     try { out = await run(parts); } catch (e) {
-      if (!(e instanceof OverRepeatBound)) throw e;
+      /* Only a read of parts() that succeeded expands anything, so only it can cross the bound. */
+      if (!(e instanceof OverRepeatBound) || !parts || !parts.ok) throw e;
       out = await run({ ...parts, contentXml: null, repeat: e.marker });
     }
     return withActive(parts, out);
   };
   /* R47: both projections carry parts()' one `active` list, on every
      successful answer, the bound branches included. */
-  const withActive = (parts, out) => (out && out.ok ? { ...out, active: parts.active } : out);
-  return {
+  /**
+   * @template {{ ok: true }} T
+   * @param {PartsResult | null | undefined} parts
+   * @param {T | ProjectionFailure} out
+   * @returns {(T & { active: ActiveItem[] }) | ProjectionFailure}
+   */
+  const withActive = (parts, out) => (out && out.ok ? { ...out, active: parts && parts.ok ? parts.active : [] } : out);
+  /** @type {OdfEntry<S, X>} */
+  const entry = {
     format: row.flavour,
     detect: (bytes, contentType) => detectOdf(row, bytes, contentType),
     parts: (bytes) => odfParts(row, bytes),
@@ -2677,12 +3637,14 @@ function entryFor(row, structureOf, textOf) {
         return await withContainerImages(await bounded(textOf, parts, opts), parts, "Pictures/");
       } catch (e) { return failed(e); }
     },
-    ...(row.flavour === "ods" ? { cellsIn: (partsOrBytes, query) => odsCellsIn(row, partsOrBytes, query) } : {}),
   };
+  return entry;
 }
 
 export const odtEntry = entryFor(ODT_ROW, odtStructure, odtText);
-export const odsEntry = entryFor(ODS_ROW, odsStructure, odsText);
+/** The `.ods` entry carries the optional slot `cellsIn` (R49). */
+/** @type {OdfEntry<OdsStructure, OdsText> & { cellsIn: CellsIn }} */
+export const odsEntry = { ...entryFor(ODS_ROW, odsStructure, odsText), cellsIn: (partsOrBytes, query) => odsCellsIn(ODS_ROW, partsOrBytes, query) };
 export const odpEntry = entryFor(ODP_ROW, odpStructure, odpText);
 
 /* ==================================================================
@@ -2754,6 +3716,10 @@ export const ODF_EVIDENTIARY_MEASURED = Object.freeze({
   ods: localize("odf-reader.odf.content_xml_byte_identical_across", "content.xml byte-identical across Google exports of an unchanged document: 3/3 (the MEASUREMENTS ledger 2026-09-14 §4) and 18/18 over 3 census targets (M-123)"),
   odt: localize("odf-reader.odf.content_xml_with_text_list", "content.xml with text:list xml:id relabelled is byte-identical across two Google exports taken apart in time on every pair M-167 read (8 public government Docs; the only list-bearing difference is text:list@xml:id), after M-123 found the class on 2 census documents"),
 });
+/** The measured flavours, by flavour. */
+/** @type {ReadonlyMap<string, string>} */
+const MEASURED_BY_FLAVOUR = new Map(Object.entries(ODF_EVIDENTIARY_MEASURED));
+/** @type {Readonly<{ [flavour: string]: string }>} */
 const ODF_EVIDENTIARY_UNMEASURED = Object.freeze({
   odp: localize("odf-reader.odf.no_odp_export_has_been", "no .odp export has been measured for content.xml stability on a census target: M-167 read 8 public government Slides decks (content.xml raw byte-identical on every readable pair, every deck referencing a package member) and M-123's census holds no Slides target, so no evidentiary digest is claimed for .odp"),
 });
@@ -2777,15 +3743,23 @@ const ODF_EVIDENTIARY_UNMEASURED = Object.freeze({
  *  under an unchanged name would render differently with content.xml
  *  unchanged; the rule discounts that as it discounts a restyled styles.xml. */
 const PRESENTATIONAL_REF = new Set(["font-face-uri"]);
+/**
+ * @param {string} contentXml
+ * @param {OoxmlContainer} container
+ * @returns {string[]}
+ */
 function referencedMembers(contentXml, container) {
-  const names = container.entries.map((e) => normalizePartName(e.name));
+  /** @type {string[]} */
+  const names = container.entries.map((/** @type {OoxmlContainer} */ e) => normalizePartName(e.name));
+  /** @type {Set<string>} */
   const hit = new Set();
   const RE = tokens();
-  let m;
-  while ((m = RE.exec(contentXml)) !== null) {
+  for (;;) {
+    const m = RE.exec(contentXml);
+    if (m === null) break;
     if (m[1] === undefined || m[0][1] === "/") continue;
     if (PRESENTATIONAL_REF.has(localOf(m[1]))) continue;
-    const href = attrsOf(m[2]).href;
+    const href = attrsOf(m[2]).get("href");
     if (typeof href !== "string" || !href || href.startsWith("#")) continue;
     if (/^[a-zA-Z][a-zA-Z0-9+.\-]*:/.test(href)) continue;
     const want = normalizePartName(href.replace(/^(?:\.\/)+/, "").replace(/\/+$/, ""));
@@ -2823,23 +3797,29 @@ const UTF8_STRICT = new TextDecoder("utf-8", { fatal: true });
 /** content.xml's bytes with Google's per-export list ids relabelled, or null
  *  when the bytes are not valid UTF-8. Exported so the measurement instrument
  *  digests exactly what the product digests. */
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Uint8Array | null}
+ */
 export function odtNormalisedContentXml(bytes) {
-  let xml;
+  let xml = "";
   try { xml = UTF8_STRICT.decode(bytes); } catch { return null; }
-  const label = new Map();
-  let out = xml.replace(LIST_ID_RE, (m, head, q, dq, sq) => {
-    const id = dq ?? sq;
+  const label = new Map(/** @type {[string, string][]} */ ([]));
+  /* One of the two quoted forms always takes part in a match. */
+  let out = xml.replace(LIST_ID_RE, (/** @type {string} */ m, /** @type {string} */ head, /** @type {string} */ q, /** @type {string | undefined} */ dq, /** @type {string | undefined} */ sq) => {
+    const id = dq ?? sq ?? "";
     if (!label.has(id)) label.set(id, `L${label.size + 1}`);
     return `${head}"${label.get(id)}"`;
   });
-  out = out.replace(CONTINUE_RE, (m, head, q, dq, sq) => {
-    const id = dq ?? sq;
+  out = out.replace(CONTINUE_RE, (/** @type {string} */ m, /** @type {string} */ head, /** @type {string} */ q, /** @type {string | undefined} */ dq, /** @type {string | undefined} */ sq) => {
+    const id = dq ?? sq ?? "";
     return label.has(id) ? `${head}"${label.get(id)}"` : m;
   });
   return new TextEncoder().encode(out);
 }
 /** Per flavour, the normalisation applied to content.xml before it is digested.
  *  `.ods` needs none (content.xml measured byte-stable, M-123). */
+/** @type {Readonly<{ [flavour: string]: { name: string, apply: (bytes: Uint8Array) => Uint8Array | null } }>} */
 const ODF_EVIDENTIARY_NORMALISE = Object.freeze({
   odt: { name: "odt-list-ids v1 (xml:id on text:list relabelled in document order, text:continue-list rewritten to match)",
          apply: odtNormalisedContentXml },
@@ -2851,32 +3831,45 @@ const ODF_EVIDENTIARY_NORMALISE = Object.freeze({
  *    { determined:true, flavour, over:"content.xml", evidentiary, basis }
  *  or { determined:false, flavour|null, evidentiary:null, basis }. Never throws
  *  on bad bytes: every failure is a sentence. */
+/**
+ * @typedef {{ determined: true, flavour: string, over: string, evidentiary: string, basis: string }
+ *   | { determined: false, flavour: string | null, evidentiary: null, basis: string }} EvidentiaryDigest (R32 to R37)
+ */
+/** @typedef {(bytes: Uint8Array) => string | Promise<string>} Sha256Hex the caller's hasher: the sha256 of the bytes, in hex */
+/**
+ * @param {unknown} bytes
+ * @param {Sha256Hex} sha256Hex
+ * @returns {Promise<EvidentiaryDigest>}
+ */
 export async function odfEvidentiaryDigest(bytes, sha256Hex) {
   try { return await odfEvidentiaryDigestUnguarded(bytes, sha256Hex); } catch (e) {
     return { determined: false, flavour: null, evidentiary: null,
-      basis: word("odf.why.digest_taken_none", { name: String(e?.name ?? "Error"), message: String(e?.message ?? "no message") }) };
+      basis: word("odf.why.digest_taken_none", { name: errorName(e), message: String((e instanceof Error ? e.message : null) ?? "no message") }) };
   }
 }
 
+/**
+ * @param {unknown} bytes
+ * @param {Sha256Hex} sha256Hex
+ * @returns {Promise<EvidentiaryDigest>}
+ */
 async function odfEvidentiaryDigestUnguarded(bytes, sha256Hex) {
   const b = asBytes(bytes) ?? new Uint8Array(0);
+  /** @param {string | null} flavour @param {string} basis @returns {EvidentiaryDigest} */
   const no = (flavour, basis) => ({ determined: false, flavour, evidentiary: null, basis });
   /* CERTAIN detection only — the mimetype member read first, stored,
      CRC-verified, compared exactly, and the main part present. A content type
      or a 1 KiB head is "likely", and "likely" never asserts sameness. */
-  let row = null;
-  for (const r of [ODT_ROW, ODS_ROW, ODP_ROW]) {
-    const d = detectOdf(r, b, null);
-    if (d && d.confidence === "certain") { row = r; break; }
-  }
+  const row = [ODT_ROW, ODS_ROW, ODP_ROW].find((r) => detectOdf(r, b, null)?.confidence === "certain") ?? null;
   if (!row) return no(null, localize("odf-reader.odf.the_bytes_are_not_an", "the bytes are not an OpenDocument package detected with certainty, so no container digest was taken"));
   const flavour = row.flavour;
-  if (!ODF_EVIDENTIARY_MEASURED[flavour])
+  const measured = MEASURED_BY_FLAVOUR.get(flavour);
+  if (!measured)
     return no(flavour, ODF_EVIDENTIARY_UNMEASURED[flavour]
       || localize("odf-reader.odf.no_flavour_export_has_been", "no .{flavour} export has been measured for content.xml stability, so no evidentiary digest is claimed", { flavour: String(flavour) }));
   const container = readContainer(b);
   if (!container.ok) return no(flavour, localize("odf-reader.odf.the_packages_central_directory_could", "the package's central directory could not be read ({why})", { why: String(container.why) }));
-  const declared = declaredTextBytes(container, (n) => n === CONTENT_PART);
+  const declared = declaredTextBytes(container, (/** @type {string} */ n) => n === CONTENT_PART);
   const guard = sizeGuard(declared.total);
   if (!guard.ok) return no(flavour, localize("odf-reader.odf.content_xml_is_over_the", "content.xml is over the declared-uncompressed text bound ({v1}), so it was not inflated and no digest was taken", { v1: String(guard.why || "size_guard") }));
   const read = await readPart(b, container, CONTENT_PART);
@@ -2885,7 +3878,7 @@ async function odfEvidentiaryDigestUnguarded(bytes, sha256Hex) {
      lossy decode could hide an href behind a replacement character, and a
      digest of bytes that are not the text they claim to be speaks for
      nothing (R37). */
-  let xml;
+  let xml = "";
   try { xml = UTF8_STRICT.decode(read.bytes); } catch {
     return no(flavour, localize("odf-reader.odf.content_xml_is_not_valid", "content.xml is not valid UTF-8, so it was not decoded lossily and no digest was taken"));
   }
@@ -2898,6 +3891,6 @@ async function odfEvidentiaryDigestUnguarded(bytes, sha256Hex) {
   return {
     determined: true, flavour, over: CONTENT_PART,
     evidentiary: await sha256Hex(digested),
-    basis: localize("odf-reader.odf.the_sha256_of_the_flavour", "the sha256 of the .{flavour} package's content.xml member (inflated, length and CRC-32 verified){v1}, odf-evidentiary v{ODF_EVIDENTIARY_VERSION}; the ZIP envelope, meta.xml, settings.xml, styles.xml, thumbnails and embedded font faces are discounted; measured: {v2}", { flavour: String(flavour), v1: String(norm ? `, normalised by ${norm.name}` : ", no byte rewritten"), ODF_EVIDENTIARY_VERSION: String(ODF_EVIDENTIARY_VERSION), v2: String(ODF_EVIDENTIARY_MEASURED[flavour]) }),
+    basis: localize("odf-reader.odf.the_sha256_of_the_flavour", "the sha256 of the .{flavour} package's content.xml member (inflated, length and CRC-32 verified){v1}, odf-evidentiary v{ODF_EVIDENTIARY_VERSION}; the ZIP envelope, meta.xml, settings.xml, styles.xml, thumbnails and embedded font faces are discounted; measured: {v2}", { flavour: String(flavour), v1: String(norm ? `, normalised by ${norm.name}` : ", no byte rewritten"), ODF_EVIDENTIARY_VERSION: String(ODF_EVIDENTIARY_VERSION), v2: String(measured) }),
   };
 }

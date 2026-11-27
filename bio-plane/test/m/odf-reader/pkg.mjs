@@ -6,24 +6,45 @@
 import { deflateRawSync, crc32 as zcrc32 } from "node:zlib";
 import { createHash } from "node:crypto";
 
+/** @param {string | Uint8Array} s @returns {Uint8Array} */
 export const enc = (s) => (typeof s === "string" ? new TextEncoder().encode(s) : s);
+/** @param {string | Uint8Array} b @returns {string} */
 export const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+/** @param {Uint8Array} b @returns {Promise<string>} */
 export const sha256Hex = async (b) => sha256(b);
 
+/** @typedef {"odt" | "ods" | "odp"} Flavour */
+/** @type {{ odt: string, ods: string, odp: string }} */
 export const TYPES = {
   odt: "application/vnd.oasis.opendocument.text",
   ods: "application/vnd.oasis.opendocument.spreadsheet",
   odp: "application/vnd.oasis.opendocument.presentation",
 };
+/** @type {{ odt: string, ods: string, odp: string }} */
 export const BODY = { odt: "text", ods: "spreadsheet", odp: "presentation" };
 
+/**
+ * @typedef {Object} Member one member of a ZIP fixture
+ * @property {string} name
+ * @property {string | Uint8Array} [data]
+ * @property {number} [method] 8 (deflated, the default) or 0 (stored)
+ * @property {{ crc?: number, usize?: number, csize?: number, lhOffset?: number }} [cd] central-directory fields to write instead
+ */
 /** members: [{ name, data, method=8, cd:{crc, usize, csize, lhOffset} }];
- *  o: { cdOrder: [indices] } */
+ *  o: { cdOrder: [indices] }
+ * @param {Member[]} members
+ * @param {{ cdOrder?: number[] }} [o]
+ * @returns {Uint8Array}
+ */
 export function buildZip(members, o = {}) {
+  /** @type {Uint8Array[]} */
   const chunks = [];
   let length = 0;
+  /** @param {Uint8Array} b */
   const put = (b) => { chunks.push(b); length += b.length; };
+  /** @param {number} v */
   const u16 = (v) => { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, v, true); put(b); };
+  /** @param {number} v */
   const u32 = (v) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v >>> 0, true); put(b); };
   const recs = members.map((m) => {
     const data = enc(m.data ?? "");
@@ -39,6 +60,7 @@ export function buildZip(members, o = {}) {
   const order = o.cdOrder ?? recs.map((_, i) => i);
   for (const i of order) {
     const c = recs[i];
+    if (c === undefined) throw new RangeError(`cdOrder names no member ${i}`);
     u32(0x02014b50); u16(20); u16(20); u16(0); u16(c.method); u16(0); u16(0);
     u32(c.crc); u32(c.csize); u32(c.usize);
     u16(c.name.length); u16(0); u16(0); u16(0); u16(0); u32(0); u32(c.lhOffset); put(c.name);
@@ -67,6 +89,12 @@ const NS = [
 /** content.xml for a flavour: `body` is the markup inside `<office:text>` /
  *  `<office:spreadsheet>` / `<office:presentation>`; `styles` the automatic
  *  styles; `fonts` the font-face declarations. */
+/**
+ * @param {Flavour} flavour
+ * @param {string} [body]
+ * @param {{ styles?: string, fonts?: string }} [o]
+ * @returns {string}
+ */
 export function contentXml(flavour, body = "", { styles = "", fonts = "" } = {}) {
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NS} office:version="1.3">`
     + `<office:font-face-decls>${fonts}</office:font-face-decls>`
@@ -76,6 +104,11 @@ export function contentXml(flavour, body = "", { styles = "", fonts = "" } = {})
 
 /** META-INF/manifest.xml listing each entry: a path string, or
  *  `{ path, type, encrypted }`. */
+/**
+ * @param {(string | { path: string, type?: string, encrypted?: boolean })[]} [entries]
+ * @param {Flavour} [flavour]
+ * @returns {string}
+ */
 export function manifestXml(entries = [], flavour = "odt") {
   return `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3">`
     + `<manifest:file-entry manifest:full-path="/" manifest:media-type="${TYPES[flavour]}"/>`
@@ -90,6 +123,10 @@ export function manifestXml(entries = [], flavour = "odt") {
 
 /** meta.xml carrying the given `<office:meta>` children, e.g.
  *  `{ "meta:initial-creator": "A" }`. */
+/**
+ * @param {{ [element: string]: string }} [fields]
+ * @returns {string}
+ */
 export function metaXml(fields = {}) {
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-meta ${NS} office:version="1.3"><office:meta>`
     + Object.entries(fields).map(([k, v]) => `<${k}>${v}</${k}>`).join("")
@@ -98,6 +135,23 @@ export function metaXml(fields = {}) {
 
 /** The members of a conforming package: mimetype first and stored, the
  *  manifest, content.xml, then meta.xml when given, then `extra`. */
+/**
+ * @typedef {Object} PackageOptions
+ * @property {string} [body]
+ * @property {string} [styles]
+ * @property {string} [fonts]
+ * @property {string | Uint8Array | false} [content] content.xml whole, or false for none
+ * @property {string | Uint8Array | null} [meta]
+ * @property {string | Uint8Array | false} [manifest] the manifest whole, or false for none
+ * @property {(string | { path: string, type?: string, encrypted?: boolean })[]} [manifestEntries]
+ * @property {Member[]} [extra]
+ * @property {string} [mimetype]
+ */
+/**
+ * @param {Flavour} flavour
+ * @param {PackageOptions} [o]
+ * @returns {Member[]}
+ */
 export function members(flavour, { body = "", styles = "", fonts = "", content, meta = null,
   manifest, manifestEntries = [], extra = [], mimetype = TYPES[flavour] } = {}) {
   return [
@@ -109,14 +163,29 @@ export function members(flavour, { body = "", styles = "", fonts = "", content, 
   ];
 }
 
+/**
+ * @param {Flavour} flavour
+ * @param {PackageOptions} [o]
+ * @param {{ cdOrder?: number[] }} [zo]
+ */
 export const pkg = (flavour, o = {}, zo = {}) => buildZip(members(flavour, o), zo);
 
 /** Replace the named member's central-directory fields. */
+/**
+ * @param {Member[]} list
+ * @param {string} name
+ * @param {{ crc?: number, usize?: number, csize?: number, lhOffset?: number }} cd
+ * @returns {Member[]}
+ */
 export function withCd(list, name, cd) {
   return list.map((m) => (m.name === name ? { ...m, cd: { ...(m.cd ?? {}), ...cd } } : m));
 }
 
 /** A deterministic PRNG (mulberry32), so the adversarial cases are reproducible. */
+/**
+ * @param {number} seed
+ * @returns {() => number}
+ */
 export function prng(seed) {
   let a = seed >>> 0;
   return () => {

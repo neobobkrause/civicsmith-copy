@@ -6,7 +6,9 @@ import { odtEntry, odsEntry, odfEvidentiaryDigest, isOdfTextPart } from "../../.
 import { readContainer, declaredTextBytes } from "../../../src/ooxml.mjs";
 import { members, buildZip, contentXml, metaXml, sha256Hex } from "./pkg.mjs";
 
+/** @param {string} s */
 const latin1 = (s) => Uint8Array.from([...s].map((c) => c.charCodeAt(0)));
+/** @param {string} s @param {boolean} [be] @param {boolean} [bom] @returns {Uint8Array} */
 function utf16(s, be = false, bom = true) {
   const out = new Uint8Array((s.length + (bom ? 1 : 0)) * 2);
   const v = new DataView(out.buffer);
@@ -15,6 +17,7 @@ function utf16(s, be = false, bom = true) {
   for (let i = 0; i < s.length; i++, at += 2) v.setUint16(at, s.charCodeAt(i), !be);
   return out;
 }
+/** @param {string | Uint8Array} content */
 const pack = (content) => buildZip(members("odt", { content }));
 
 test("R54 a UTF-16 content.xml (with a BOM, either order) is read", async () => {
@@ -22,7 +25,7 @@ test("R54 a UTF-16 content.xml (with a BOM, either order) is read", async () => 
   for (const be of [false, true]) {
     const t = await odtEntry.text(pack(utf16(xml, be)));
     assert.equal(t.ok, true);
-    assert.equal(t.paragraphs[0].text, "Café déjà vu — ünï", be ? "UTF-16BE" : "UTF-16LE");
+    assert.equal(t.paragraphs[0]?.text, "Café déjà vu — ünï", be ? "UTF-16BE" : "UTF-16LE");
     assert.deepEqual(t.undetermined, []);
   }
 });
@@ -30,19 +33,26 @@ test("R54 a UTF-16 content.xml (with a BOM, either order) is read", async () => 
 test("R54 a part in a declared legacy charset is not decoded as UTF-8", async () => {
   const xml = contentXml("odt", "<text:p>Caf\xe9 r\xe9sum\xe9</text:p>").replace('encoding="UTF-8"', 'encoding="ISO-8859-1"');
   const t = await odtEntry.text(pack(latin1(xml)));
-  assert.equal(t.paragraphs[0].text, "Café résumé");
+  assert.ok(t.ok);
+  assert.equal(t.paragraphs[0]?.text, "Café résumé");
   const w = contentXml("odt", "<text:p>It\x92s 5\x80</text:p>").replace('encoding="UTF-8"', 'encoding="windows-1252"');
-  assert.equal((await odtEntry.text(pack(latin1(w)))).paragraphs[0].text, "It’s 5€");
+  const tw = await odtEntry.text(pack(latin1(w)));
+  assert.ok(tw.ok);
+  assert.equal(tw.paragraphs[0]?.text, "It’s 5€");
 });
 
 test("R54 meta.xml is decoded the same way: a UTF-16 meta.xml gives its core properties", async () => {
   const meta = metaXml({ "dc:title": "Título único" }).replace("UTF-8", "UTF-16");
   const bytes = buildZip(members("odt", { body: "<text:p>x</text:p>", meta: utf16(meta) }));
   const s = await odtEntry.structure(bytes);
-  assert.equal(s.evidentiary.items.find((i) => i.kind === "core-properties").title, "Título único");
+  assert.ok(s.ok);
+  const core = s.evidentiary.items.find((i) => i.kind === "core-properties");
+  assert.ok(core?.kind === "core-properties");
+  assert.equal(core.title, "Título único");
 });
 
 test("R54 a part with more than 0.5 % replacement characters is stated partial with the count; under it, none", async () => {
+  /** @param {number} n @param {number} total */
   const bad = (n, total) => {
     const text = "a".repeat(total - n);
     const body = latin1(contentXml("odt", `<text:p>${text}</text:p>`));
@@ -53,11 +63,13 @@ test("R54 a part with more than 0.5 % replacement characters is stated partial w
   };
   const many = await odtEntry.text(pack(bad(40, 2000)));
   assert.equal(many.ok, true);
-  const p = many.undetermined.find((u) => u.reason === "partial");
+  const p = many.undetermined.find((u) => "reason" in u && u.reason === "partial");
+  assert.ok(p && "reason" in p);
   assert.deepEqual({ part: p.part, replaced: p.replaced }, { part: "content.xml", replaced: 40 });
   assert.equal(many.counts.undetermined, many.undetermined.length);
   const few = await odtEntry.text(pack(bad(2, 20000)));
-  assert.equal(few.undetermined.some((u) => u.reason === "partial"), false);
+  assert.ok(few.ok);
+  assert.equal(few.undetermined.some((u) => "reason" in u && u.reason === "partial"), false);
 });
 
 test("R54 the evidentiary digest stays over UTF-8 bytes and refuses anything else", async () => {

@@ -21,7 +21,10 @@ test("R48 the text bound is 20 MiB and is the ods.content_xml row; a repeat's co
   assert.equal(boundOf("ods", "content_xml"), MEASURED_OOXML_TEXT_BOUND_BYTES);
   const cell = `<table:table-cell office:value-type="string" table:number-columns-repeated="4"><text:p>${"x".repeat(9_000_000)}</text:p></table:table-cell>`;
   const t = await odsEntry.text(ods(tableOf("S", rowOf(cell))));
-  assert.equal(t.undetermined[0].why, "over_repeat_bound");
-  assert.equal(t.undetermined[0].bound, boundOf("ods", "content_xml"));
-  assert.equal(t.undetermined[0].boundName, "MEASURED_OOXML_TEXT_BOUND_BYTES");
+  assert.ok(t.ok);
+  const u = t.undetermined[0];
+  assert.ok(u && "bound" in u);
+  assert.equal(u.why, "over_repeat_bound");
+  assert.equal(u.bound, boundOf("ods", "content_xml"));
+  assert.equal(u.boundName, "MEASURED_OOXML_TEXT_BOUND_BYTES");
 });
