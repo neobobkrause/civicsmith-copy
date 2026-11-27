@@ -6,9 +6,13 @@ import fs from "node:fs";
 import { READINGS, registerCorpusTypes } from "./g48-readings.mjs";
 import { readText } from "../registry.mjs";
 
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
+
 registerCorpusTypes();
+/** @type {{ note: string, taken_at: string, readings: { [id: string]: unknown } }} */
 const out = { note: "readText over each reading of g48-readings.mjs, before G48 (docprofile R5, R19, R38)", taken_at: "2026-10-23", readings: {} };
-for (const [id, supplied, ctx] of READINGS) out.readings[id] = JSON.parse(JSON.stringify(readText(supplied, ctx)));
+for (const [id, supplied, ctx] of READINGS) out.readings[id] = JSON.parse(JSON.stringify(readText(asGiven(supplied), ctx)));
 fs.mkdirSync(new URL("./fixtures/", import.meta.url), { recursive: true });
 fs.writeFileSync(new URL("./fixtures/g48-answers.json", import.meta.url), JSON.stringify(out, null, 1) + "\n");
 console.log(`${Object.keys(out.readings).length} readings`);

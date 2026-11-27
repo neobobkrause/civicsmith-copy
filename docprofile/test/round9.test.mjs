@@ -11,26 +11,53 @@ import * as dp from "../registry.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { shellHtml } from "./fixtures.mjs";
 
+/** @import { ContentType, DoctypeContext, ReadTextAnswer, ReadingDone, Registration, SuppliedText, ClassifyWindow, ClassifyWork } from "../registry.mjs" */
+
 const { assess, readText, flattenText, doctypeFor, doctypeForYielding, registerDoctype, CONFIDENCE, CONTRACT } = dp;
-const enc = (s) => new TextEncoder().encode(s);
-const sha256 = async (b) => createHash("sha256").update(b).digest("hex");
+const enc = /** @param {string} s */ (s) => new TextEncoder().encode(s);
+const sha256 = /** @param {Uint8Array} b */ async (b) => createHash("sha256").update(b).digest("hex");
 const MB = 1024 * 1024;
 
+/** What one detect was handed and charged.
+ *  @typedef {{ key: string, len: number, text?: string, window?: ClassifyWindow | undefined, work: ClassifyWork | undefined }} Handed */
+/** The facts this suite's readers read.
+ *  @typedef {{ read_by: string, text_len: number, paragraphs?: number }} R9Facts */
+
 /* What each detect was handed and charged, in order. */
+/** @type {Handed[]} */
 let handed = [];
-const SCAN = (key, marker, confidence) => ({
+/** The text a reader is handed; none throws, as reading its length did. */
+const textOf = /** @param {DoctypeContext} ctx @returns {string} */ (ctx) => {
+  const t = ctx.text;
+  if (typeof t !== "string") throw new TypeError("the reader was handed no text");
+  return t;
+};
+const SCAN = /** @param {string} key @param {string} marker @param {string} confidence @returns {ContentType} */ (key, marker, confidence) => ({
   key, label: `r9 ${key}`, version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) {
     const text = String(ctx.text || "");
-    handed.push({ key, len: text.length, text, window: ctx.window, work: ctx.work });
-    if (ctx.work) ctx.work.chars += text.length; // a pass over the whole window, charged as the contract says
-    return text.includes(marker) ? { match: true, confidence, signals: [marker] } : { match: false };
+    const work = ctx.work;
+    handed.push({ key, len: text.length, text, window: ctx.window, work });
+    if (work) work.chars += text.length; // a pass over the whole window, charged as the contract says
+    if (text.includes(marker)) return { match: true, confidence, signals: [marker] };
+    return { match: false };
   },
-  parse: (ctx) => ({ entities: [], facts: { read_by: key, text_len: ctx.text.length, paragraphs: (ctx.text.match(/<p>/g) || []).length } }),
+  parse: (ctx) => ({ entities: [], facts: { read_by: key, text_len: textOf(ctx).length, paragraphs: (textOf(ctx).match(/<p>/g) || []).length } }),
 });
-const stand = (k) => SCAN(k, `NEVER-${k}`, CONFIDENCE.LIKELY);
+const stand = /** @param {string} k */ (k) => SCAN(k, `NEVER-${k}`, CONFIDENCE.LIKELY);
+/** @type {ContentType} */
 const FALLBACK = { key: "r9_fallback", label: "r9 fallback", version: 1, fallback: true, contract: CONTRACT.SUBSTANCE,
-  detect: () => ({ match: false }), parse: (ctx) => ({ entities: [], facts: { read_by: "r9_fallback", text_len: ctx.text.length } }) };
+  detect: () => ({ match: false }), parse: (ctx) => ({ entities: [], facts: { read_by: "r9_fallback", text_len: textOf(ctx).length } }) };
+
+/** The determined reading; a refused one fails the test, as reading its members did. */
+const done = /** @param {ReadTextAnswer} r @returns {ReadingDone} */ (r) => {
+  if (!r.determined) assert.fail(`the reading was refused: ${r.why}`);
+  return r;
+};
+/** A reading's facts, as this suite's readers wrote them (R36: the reading is the reader's own, stated as an object). */
+const factsOf = /** @param {object | null} parsed @returns {R9Facts} */ (parsed) => /** @type {{ facts: R9Facts }} */ (parsed).facts;
+/** Whether a registration replaced a held key; a refusal replaced nothing. */
+const replaced = /** @param {Registration} r */ (r) => (r.ok ? r.replaced : undefined);
 for (const t of [SCAN("r9_a", "R9-A", CONFIDENCE.CERTAIN), SCAN("r9_page", "SERVERTEXT-29", CONFIDENCE.CERTAIN), FALLBACK])
   assert.equal(registerDoctype(t).ok, true);
 
@@ -62,28 +89,31 @@ test("R12 an unwatchable verdict only for a CERTAIN shell: a client-rendered mat
 test("R41 a profile verdict gates watching and never reading: the reading is the same whatever stack was recognised and whatever assess called it", async () => {
   const one = serverPage("__NEXT_DATA__"), plain = serverPage("NEXT_DATA");
   assert.equal(dp.identify({ text: plain }).handler.shell, undefined, "the control page is no shell at all");
-  const a = readText(one, {}), b = readText(plain, {});
+  const a = done(readText(one, {})), b = done(readText(plain, {}));
   for (const r of [a, b]) {
     assert.equal(r.determined, true);
     assert.equal(r.doctype.type.key, "r9_page");
     assert.equal(r.parse_error, null);
-    assert.equal(r.parsed.facts.paragraphs, 30, "all thirty paragraphs of server text are read");
+    assert.equal(factsOf(r.parsed).paragraphs, 30, "all thirty paragraphs of server text are read");
   }
-  assert.deepEqual([a.parsed.facts.read_by, a.parsed.facts.paragraphs], [b.parsed.facts.read_by, b.parsed.facts.paragraphs]);
+  assert.deepEqual([factsOf(a.parsed).read_by, factsOf(a.parsed).paragraphs], [factsOf(b.parsed).read_by, factsOf(b.parsed).paragraphs]);
   assert.equal(a.chars - b.chars, 4, "the two texts differ by the marker's four underscores and nothing else");
   // the verdict assess gives about the same bytes changes nothing about the reading
   const before = JSON.stringify(readText(one, {}));
-  for (const [x, y] of [[one, one], [one, one.replace("item 3", "item 4")], [shellHtml("1"), shellHtml("2")]]) await assess(enc(x), enc(y), { sha256 });
+  /** @type {Array<[string, string]>} */
+  const pairs = [[one, one], [one, one.replace("item 3", "item 4")], [shellHtml("1"), shellHtml("2")]];
+  for (const [x, y] of pairs) await assess(enc(x), enc(y), { sha256 });
   assert.equal(JSON.stringify(readText(one, {})), before, "the reading is not a function of any verdict");
   // and a text whose stack IS a CERTAIN shell is read, classified and parsed all the same
-  const shell = readText(shellHtml("1"), {});
+  const shell = done(readText(shellHtml("1"), {}));
   assert.equal(shell.determined, true);
   assert.deepEqual([shell.stack.handler.key, shell.stack.confidence], ["client_rendered", CONFIDENCE.CERTAIN]);
   assert.equal(shell.doctype.type.key, "r9_fallback");
-  assert.equal(shell.parsed.facts.text_len, shellHtml("1").length, "parsed over the whole text");
+  assert.equal(factsOf(shell.parsed).text_len, shellHtml("1").length, "parsed over the whole text");
 });
 
 test("R18 a decoded character is a glyph: white space, U+FFFD and NUL are not decoded text", () => {
+  /** @type {SuppliedText} */
   const spaced = { document: "ab" + " ".repeat(1000), counts: { undetermined: 600 } };
   assert.equal(flattenText(spaced).chars, 2);
   const r = readText(spaced, {});
@@ -109,6 +139,7 @@ test("R18 a marker's why is read as its reason, and a size refusal is worded as 
   const size = 44732492, bound = 33554432;
   const guard = { ok: false, text: "undetermined", why: "over_size_bound", size, bound, boundName: "STREAMED_TEXT_BOUND_BYTES", final: true };
   // the 200,000-row workbook's text as office-readers hands it over: no text, one marker, `why` and the guard's size and bound
+  /** @type {SuppliedText} */
   const supplied = { document: "", undetermined: [{ part: "(text parts: worksheets + sharedStrings)", why: "over_size_bound", guard }],
                      counts: { chars: 0, cells: 0, undetermined: 1 } };
   assert.deepEqual(flattenText(supplied).reasons, ["over_size_bound"]);
@@ -132,15 +163,21 @@ test("R18 a marker's why is read as its reason, and a size refusal is worded as 
 });
 
 /** A text of about `n` characters of numbered whole lines. */
-const lines = (n) => { const rows = []; for (let c = 0, i = 0; c < n; i++) { const r = `line ${i} of the record ${"w".repeat(30 + (i % 7))}`; rows.push(r); c += r.length + 1; } return rows.join("\n"); };
+const lines = /** @param {number} n */ (n) => {
+  /** @type {string[]} */
+  const rows = [];
+  for (let c = 0, i = 0; c < n; i++) { const r = `line ${i} of the record ${"w".repeat(30 + (i % 7))}`; rows.push(r); c += r.length + 1; }
+  return rows.join("\n");
+};
 
 test("R39 every kind of text over the bound is classified from the stated view: string, pages, paragraphs, document; at the bound, whole", async () => {
   const big = lines(4 * MB) + "\nR9-A at the end";
-  const shapes = { string: big, pages: { pages: [{ page: 0, text: big }] }, paragraphs: { paragraphs: [{ para: 0, text: big }] },
-                   document: { document: big }, "document and pages": { document: big, pages: [{ page: 0, text: big }] } };
-  for (const [name, supplied] of Object.entries(shapes)) {
+  /** @type {Array<[string, SuppliedText | string]>} */
+  const shapes = [["string", big], ["pages", { pages: [{ page: 0, text: big }] }], ["paragraphs", { paragraphs: [{ para: 0, text: big }] }],
+                  ["document", { document: big }], ["document and pages", { document: big, pages: [{ page: 0, text: big }] }]];
+  for (const [name, supplied] of shapes) {
     handed = [];
-    const r = readText(supplied, {});
+    const r = done(readText(supplied, {}));
     const co = r.classified_over;
     assert.ok(co, `${name}: a stated view`);
     assert.deepEqual([co.of, co.sheet_heads, co.heads_used], [big.length, [], false], name);
@@ -148,7 +185,7 @@ test("R39 every kind of text over the bound is classified from the stated view: 
     assert.ok(handed.length >= 1 && handed.every((h) => h.len === co.chars), `${name}: every detect is handed the view, never the text`);
     assert.equal(r.doctype.type.key, "r9_a", `${name}: the view ends at the text's end, so its last line is classified`);
     assert.ok(r.why.endsWith(`; ${dp.classifiedWhy(co)}`), name);
-    assert.equal(r.parsed.facts.text_len, big.length, `${name}: parse reads all of it`);
+    assert.equal(factsOf(r.parsed).text_len, big.length, `${name}: parse reads all of it`);
   }
   // exactly the bound: whole, the same string; one over: the view
   const at = lines(dp.CLASSIFY_WHOLE_MAX_CHARS).slice(0, dp.CLASSIFY_WHOLE_MAX_CHARS);
@@ -158,10 +195,11 @@ test("R39 every kind of text over the bound is classified from the stated view: 
   assert.ok(handed.every((h) => h.text === at), "handed the very string");
   assert.ok("classified_over" in doctypeFor({ text: at + "x" }));
   // doctypeFor bounds every caller, not only readText: the answer carries the view and the twin answers the same
+  /** @type {DoctypeContext} */
   const ctx = { text: big };
-  const sync = doctypeFor(ctx), twin = await doctypeForYielding(ctx, { yieldNow: () => new Promise((go) => setImmediate(go)) });
+  const sync = doctypeFor(ctx), twin = await doctypeForYielding(ctx, { yieldNow: /** @returns {Promise<void>} */ () => new Promise((go) => setImmediate(go)) });
   assert.deepEqual(twin, sync);
-  assert.equal(sync.classified_over.of, big.length);
+  assert.equal(sync.classified_over?.of, big.length);
   assert.equal(ctx.text, big, "the caller's ctx is not changed");
 });
 
@@ -169,25 +207,28 @@ test("R40 each detect is handed the view's window and one shared work count, and
   const stands = ["r9_s1", "r9_s2"].map((k) => SCAN(k, `NEVER-${k}`, CONFIDENCE.LIKELY));
   for (const t of stands) assert.equal(registerDoctype(t).ok, true);
   const registered = dp.doctypes().length;
-  const shapes = {
-    "a long run of one pattern": "a-".repeat(200_000), "16,000 addresses on one line": Array.from({ length: 16_000 }, (_, i) => `u${i}@city.example`).join(" "),
-    "40,000 definitions": Array.from({ length: 40_000 }, (_, i) => `"Term${i}" means a thing.`).join("\n"),
-    "150,000 dates": Array.from({ length: 150_000 }, (_, i) => `2026-${String(1 + (i % 12)).padStart(2, "0")}-01`).join("\n"),
-    "a 240 KB run of <div": "<div".repeat(60_000), "a 5 MiB text": lines(5 * MB),
-  };
-  for (const [name, text] of Object.entries(shapes)) {
+  /** @type {Array<[string, string]>} */
+  const shapes = [
+    ["a long run of one pattern", "a-".repeat(200_000)], ["16,000 addresses on one line", Array.from({ length: 16_000 }, (_, i) => `u${i}@city.example`).join(" ")],
+    ["40,000 definitions", Array.from({ length: 40_000 }, (_, i) => `"Term${i}" means a thing.`).join("\n")],
+    ["150,000 dates", Array.from({ length: 150_000 }, (_, i) => `2026-${String(1 + (i % 12)).padStart(2, "0")}-01`).join("\n")],
+    ["a 240 KB run of <div", "<div".repeat(60_000)], ["a 5 MiB text", lines(5 * MB)],
+  ];
+  for (const [name, text] of shapes) {
     handed = [];
     const r = doctypeFor({ text });
-    const view = r.classified_over ? r.classified_over.chars : text.length;
-    assert.equal(handed.length, 4, `${name}: the four types were asked`);
+    const co = r.classified_over;
+    const view = co ? co.chars : text.length;
+    const asked = handed.length;
+    assert.equal(asked, 4, `${name}: the four types were asked`);
     for (const h of handed) {
       assert.equal(h.len, view, `${name}: handed the view`);
       assert.deepEqual(h.window, { from: 0, to: view, of: text.length }, name);
-      assert.equal(h.work, handed[0].work, `${name}: one work object for the whole classification`);
+      assert.equal(h.work, handed[0]?.work, `${name}: one work object for the whole classification`);
     }
     assert.equal(dp.CLASSIFY_WORK_FACTOR, 4);
     assert.equal(r.work.limit, 4 * view * registered, `${name}: four views for each registered type`);
-    assert.equal(r.work.chars, handed.length * view, `${name}: the count is what the detects charged`);
+    assert.equal(r.work.chars, asked * view, `${name}: the count is what the detects charged`);
     assert.ok(r.work.chars <= r.work.limit, name);
     assert.equal(r.work.stopped_before, null, name);
   }
@@ -206,12 +247,17 @@ test("R40 seven honest detects are all asked over a view, and a runaway first de
   assert.equal(r.work.chars, handed.length * text.length);
   assert.equal(r.work.stopped_before, null);
   assert.equal(r.type.key, "r9_fallback", "nothing recognised it: the registered fallback, as ever");
-  assert.ok(!r.why || !r.why.includes("work budget"), "no budget statement when every type was asked");
+  const why = r.why;
+  assert.ok(!why || !why.includes("work budget"), "no budget statement when every type was asked");
   // a runaway: one detect charging far over its share stops the types after it, stated with the figures
+  /** @type {ContentType} */
   const runaway = { ...SCAN("r9_s1", "NEVER-r9_s1", CONFIDENCE.LIKELY), detect(ctx) {
-    handed.push({ key: "r9_s1", len: ctx.text.length, work: ctx.work }); ctx.work.chars += 60 * ctx.text.length; return { match: false };
+    const work = ctx.work;
+    handed.push({ key: "r9_s1", len: textOf(ctx).length, work });
+    if (!work) throw new TypeError("the detect was handed no work count");
+    work.chars += 60 * textOf(ctx).length; return { match: false };
   } };
-  assert.equal(registerDoctype(runaway).replaced, true);
+  assert.equal(replaced(registerDoctype(runaway)), true);
   try {
     handed = [];
     const x = doctypeFor({ text });
@@ -219,7 +265,8 @@ test("R40 seven honest detects are all asked over a view, and a runaway first de
     assert.deepEqual(asked, ["r9_a", "r9_page", "r9_s1"], "stopped after the detect that crossed the limit");
     assert.equal(x.work.stopped_before, "r9_s2");
     assert.ok(x.work.chars > x.work.limit && x.work.chars <= x.work.limit + 60 * text.length);
-    assert.ok(x.why.includes("r9_s2") && x.why.includes(String(x.work.limit)) && x.why.includes(String(x.work.chars)), "stated, with the figures");
+    const xwhy = x.why ?? "";
+    assert.ok(xwhy.includes("r9_s2") && xwhy.includes(String(x.work.limit)) && xwhy.includes(String(x.work.chars)), "stated, with the figures");
     // the also pass is under the same count: a CERTAIN winner first, the rest asked until the count passes
     handed = [];
     const won = text + "\nR9-A";
@@ -229,17 +276,18 @@ test("R40 seven honest detects are all asked over a view, and a runaway first de
     assert.equal(w.work.stopped_before, "r9_s2");
     assert.ok(w.work.chars > w.work.limit);
   } finally {
-    assert.equal(registerDoctype(stand("r9_s1")).replaced, true);
+    assert.equal(replaced(registerDoctype(stand("r9_s1"))), true);
   }
 });
 
 test("R40 a ctx whose text is an accessor is wrapped, not read ahead: each detect reads it as it always did", () => {
   let reads = 0;
+  /** @type {DoctypeContext} */
   const ctx = { get text() { reads++; return "R9-A here"; } };
   handed = [];
   const r = doctypeFor(ctx);
   assert.equal(r.type.key, "r9_a");
-  assert.ok(reads >= 1 && handed[0].work && handed[0].window);
+  assert.ok(reads >= 1 && handed[0]?.work && handed[0]?.window);
   assert.equal(r.work.stopped_before, null);
   // no text at all is still an answer
   assert.equal(doctypeFor({}).type.key, "r9_fallback");
@@ -247,8 +295,8 @@ test("R40 a ctx whose text is an accessor is wrapped, not read ahead: each detec
 });
 
 test("R12 R41 markup-free text (a CSV, prose) is never unwatchable through the pipeline; a CERTAIN shell still is", async () => {
-  const csv = (n) => Array.from({ length: 400 }, (_, i) => `row ${i},${i * n},value`).join("\n");
-  const prose = (n) => `Minutes ${n}. ` + "The council heard the item and adjourned. ".repeat(80);
+  const csv = /** @param {number} n */ (n) => Array.from({ length: 400 }, (_, i) => `row ${i},${i * n},value`).join("\n");
+  const prose = /** @param {number} n */ (n) => `Minutes ${n}. ` + "The council heard the item and adjourned. ".repeat(80);
   for (const mk of [csv, prose]) {
     const r = await assess(enc(mk(1)), enc(mk(2)), { sha256 });
     assert.notEqual(r.verdict, "unwatchable");
