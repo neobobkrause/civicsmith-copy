@@ -15,7 +15,10 @@ import { combine, validate, list } from "../../jurisdictions/index.mjs";
 /** @import { Profile, Pattern, View } from "../../jurisdictions/index.mjs" */
 /** @import { SuppliedPage } from "../registry.mjs" */
 
-const p = /** @param {string} re @param {string} [flags] @returns {Pattern} */ (re, flags) => (flags ? { re, flags } : { re });
+const p = /** @param {string} re @param {string} [flags] @returns {Pattern} */ (re, flags) => {
+  if (flags) return { re, flags };
+  return { re };
+};
 const fact = /** @param {Pattern} pattern @returns {{ pattern: Pattern, basis: string }} */ (pattern) => ({ pattern, basis: "TEST" });
 
 /** @type {Profile} */

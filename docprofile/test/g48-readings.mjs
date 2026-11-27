@@ -17,12 +17,15 @@ const { CONFIDENCE, CONTRACT } = dp;
 const PA = view(PORT_ALDER), LK = view(LAKEMONT);
 /** @param {string} key @param {string} marker @param {string} confidence
  *  @param {{ detect: (ctx: DoctypeContext) => Detection }} [extra] @returns {ContentType} */
-const probe = (key, marker, confidence, extra) => ({
-  key, label: `g48 ${key}`, version: 1, contract: CONTRACT.SUBSTANCE,
-  detect: (ctx) => (String(ctx.text || "").includes(marker) ? { match: true, confidence, signals: [marker] } : { match: false }),
-  parse: () => ({ entities: [], facts: { read_by: key } }),
-  ...(extra || {}),
-});
+const probe = (key, marker, confidence, extra) => {
+  /** @param {DoctypeContext} ctx @returns {Detection} */
+  const own = (ctx) => {
+    if (String(ctx.text || "").includes(marker)) return { match: true, confidence, signals: [marker] };
+    return { match: false };
+  };
+  return { key, label: `g48 ${key}`, version: 1, contract: CONTRACT.SUBSTANCE, detect: extra ? extra.detect : own,
+    parse: () => ({ entities: [], facts: { read_by: key } }) };
+};
 
 /** The probes this suite registers after the stub readers and before the fallback, in this order. */
 /** @type {ContentType[]} */

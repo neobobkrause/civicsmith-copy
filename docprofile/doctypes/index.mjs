@@ -54,12 +54,12 @@
  */
 /**
  * One sheet of a sheet container's text (R39): its text.
- * @typedef {{ readonly name?: string, readonly text?: string | null }} SuppliedSheet
+ * @typedef {{ readonly sheet?: number, readonly name?: string, readonly text?: string | null }} SuppliedSheet
  */
 /**
  * A marker naming what a producer could not decode (R18, R24): how many regions or code points, and why. A size refusal
  * names `over_size_bound` and the size and the limit, on itself or in its `guard`.
- * @typedef {{ readonly count?: number, readonly reason?: string, readonly why?: string, readonly size?: number, readonly bound?: number, readonly guard?: SizeGuard, readonly page?: number, readonly rect?: number[] | null }} UndeterminedMarker
+ * @typedef {{ readonly count?: number, readonly reason?: string, readonly why?: string, readonly size?: number, readonly bound?: number, readonly guard?: SizeGuard, readonly page?: number | null, readonly part?: string, readonly rect?: number[] | null }} UndeterminedMarker
  */
 /**
  * A size guard's answer inside a marker (R18): the size and the limit.
@@ -104,7 +104,7 @@
  * What a content type is handed (R19, R20, R37, R38, R40): what the caller knows about the document, with the text, and what
  * this module adds for the type (the locator, the other types the text satisfies, the supplied structure, the window and the
  * work budget).
- * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage>, readonly sheets?: Array<SuppliedSheet>, readonly locate?: (offset: number) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
+ * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage>, readonly sheets?: Array<SuppliedSheet>, readonly locate?: (offset: unknown) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
  */
 /**
  * What a content type's `detect` answers: whether the document is that kind, how sure, and on what signals.
@@ -132,9 +132,9 @@
  * @property {boolean} [fallback]
  * @property {string} [contract]
  * @property {(ctx: DoctypeContext) => Detection | null | undefined} detect
- * @property {(ctx: DoctypeContext) => object | null | undefined} [parse]
- * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined} [assess]
- * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined} [connections]
+ * @property {((ctx: DoctypeContext) => object | null | undefined) | undefined} [parse]
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined) | undefined} [assess]
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections]
  */
 /**
  * The facts of an entity whose change might mean something, by name.
@@ -207,15 +207,17 @@
  */
 /**
  * A compiled pattern with what its entry says about it, for `allMatches`.
+ * @template T
  * @typedef {Object} TaggedPattern
  * @property {RegExp | null} re
- * @property {object} tag
+ * @property {T} tag
  */
 /**
  * A match of `allMatches`: the match and its pattern's tag.
+ * @template T
  * @typedef {Object} TaggedMatch
  * @property {RegExpExecArray} m
- * @property {object} tag
+ * @property {T} tag
  */
 /**
  * An enactment kind's recogniser: the kind in lower case, and the space's forms its number is normalised by.
@@ -505,11 +507,12 @@ export function anyMatch(patterns, s) {
 /** Every match of several global patterns over one string, merged in reading
  *  order, overlaps dropped (the earlier, then longer, match is kept). `tag` is
  *  carried from the pattern's own entry so a reader knows WHICH fact matched.
- *  @param {ReadonlyArray<TaggedPattern>} tagged
+ *  @template T
+ *  @param {ReadonlyArray<TaggedPattern<T>>} tagged
  *  @param {string} s
- *  @returns {TaggedMatch[]} */
+ *  @returns {TaggedMatch<T>[]} */
 export function allMatches(tagged, s) {
-  /** @type {TaggedMatch[]} */
+  /** @type {TaggedMatch<T>[]} */
   const hits = [];
   for (const { re, tag } of tagged) {
     if (!re || !re.global) continue;
@@ -517,7 +520,7 @@ export function allMatches(tagged, s) {
     for (const m of s.matchAll(re)) if (m[0].length) hits.push({ m, tag });
   }
   hits.sort((a, b) => a.m.index - b.m.index || b.m[0].length - a.m[0].length);
-  /** @type {TaggedMatch[]} */
+  /** @type {TaggedMatch<T>[]} */
   const out = [];
   let end = -1;
   for (const h of hits) {

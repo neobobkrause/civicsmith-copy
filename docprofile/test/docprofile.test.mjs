@@ -361,7 +361,7 @@ test("R19 a determined reading carries partial, text_from, stack, doctype, parse
 });
 
 test("R20 the reader is handed a total locate built from the supplied segment map, and places references only there", () => {
-  /** @type {((offset: number) => ReadingPosition | null) | null | undefined} */
+  /** @type {((offset: unknown) => ReadingPosition | null) | null | undefined} */
   let handed = null;
   const got = () => must(handed, "locate handed");
   assert.equal(registerDoctype({ ...stubItems, key: "stub_locate_probe",

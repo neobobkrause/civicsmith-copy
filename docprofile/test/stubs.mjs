@@ -77,13 +77,14 @@ export const stubMeetings = { // fixtures-own: harness a test reader registered 
     /** @type {Connection[]} */
     const out = [];
     const due = practiceValue(ctx, "minutes_due_days");
+    const now = ctx.now;
     for (const e of b.entities) {
       out.push(referential(e.key, `body:${e.facts.body}`, "held_by", "the row names the body"));
       if (e.facts.agenda) out.push(referential(`agenda:${e.facts.agenda}`, e.key, "is_the_agenda_for", "the row links it"));
       if (e.facts.minutes) {
         out.push(referential(`minutes:${e.facts.minutes}`, e.key, "is_the_minutes_of", "the row links it"));
         out.push(temporal(e.key, `minutes:${e.facts.minutes}`, "minutes_published_after", { at: String(e.facts.date), why: "linked" }));
-      } else if (ctx.now && String(e.facts.date) < String(ctx.now).slice(0, 10)) {
+      } else if (now && String(e.facts.date) < String(now).slice(0, 10)) {
         const by = due ? new Date(Date.parse(String(e.facts.date)) + due.value * 864e5).toISOString().slice(0, 10) : null;
         out.push(temporal(e.key, null, "minutes_not_yet_published", { at: String(e.facts.date), expected_by: by,
           why: due ? `the view's practice gives ${due.value} days (${due.basis})` : "when minutes are due is not known in this view" }));

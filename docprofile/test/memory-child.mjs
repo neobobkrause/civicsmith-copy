@@ -104,12 +104,11 @@ if (isMainThread) {
   /** @type {ChildData} */
   const data = { mode, pages: Number(pages), per: Number(per) };
   const file = fileURLToPath(import.meta.url);
-  /* `sheet` runs under a 2 MB young generation, as the plane's isolate does. */
-  const sheetOptions = { workerData: data, resourceLimits: { maxYoungGenerationSizeMb: 2 } };
-  const w = mode === "sheet" ? new Worker(file, sheetOptions) : new Worker(file, { workerData: data });
+  const w = mode === "sheet" ? new Worker(file, { workerData: data, resourceLimits: { maxYoungGenerationSizeMb: 2 } })
+                             : new Worker(file, { workerData: data });
   let base = 0, peak = 0, samples = 0, stop = false;
   /** @returns {Promise<number>} */
-  const heap = async () => { const h = await w.getHeapStatistics(); return h.used_heap_size + h.external_memory; };
+  const heap = async () => { /** @type {{ used_heap_size: number, external_memory: number }} */ const h = await w.getHeapStatistics(); return h.used_heap_size + h.external_memory; };
   w.on("message", /** @param {unknown} raw */ async (raw) => {
     const m = /** @type {WorkerMessage} */ (raw);
     if ("base" in m) {
@@ -124,7 +123,7 @@ if (isMainThread) {
       w.terminate();
     }
   });
-  w.on("error", (e) => { console.error(e); process.exit(1); });
+  w.on("error", /** @param {unknown} e */ (e) => { console.error(e); process.exit(1); });
 } else {
   const { CONFIDENCE, CONTRACT, registerDoctype, readText, doctypeForYielding } = await import("../registry.mjs");
   /** @returns {number} */
@@ -216,7 +215,9 @@ if (isMainThread) {
   /** @type {{ chars: number, determined: boolean, doctype: DoctypeAnswer, position_parts: number, text_from: string | null, parsed: object | null }} */
   let r;
   if (twin) {
-    const d = await doctypeForYielding({ text: document, pages }, { yieldNow: () => new Promise((go) => { setImmediate(go); }) });
+    /** A real turn of the loop. @returns {Promise<void>} */
+    const turn = () => new Promise((go) => { setImmediate(() => go()); });
+    const d = await doctypeForYielding({ text: document, pages }, { yieldNow: turn });
     r = { chars: document.length, determined: true, doctype: d, position_parts: pages.length, text_from: "document", parsed: { entities: [], facts: { pages: pages.length } } };
   } else {
     const read = readText(supplied, {});
