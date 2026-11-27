@@ -12,6 +12,7 @@
  * Pure: no store, no network, no clock. Never throws. */
 
 import * as OOXML from "./ooxml.mjs";
+/** @import { DecodeResult } from "./ooxml.mjs" */
 import { boundOf } from "./read-bounds.mjs";
 
 /**
@@ -557,10 +558,17 @@ export function scanNotes(part, sc) {
  *  @type {number} */
 export const REPLACED_RATIO_MAX = 0.005;
 
+/** The reason a refusal states. ooxml states one on every refusal it answers (its `Discrimination`, `CutResult` and
+ *  `pieceWhy` type it as optional), so the fallback is never reached; it keeps a stated refusal a string.
+ *  @param {string | undefined} why
+ *  @returns {string} */
+export const statedWhy = (why) => why ?? "reason_not_stated";
+
 /** A text part's bytes as text: ooxml's `decodeText` when it is there, else the local one of the same contract.
  *  @param {Uint8Array} bytes
  *  @param {string} part
- *  @param {string | null} [declared] */
+ *  @param {string | null} [declared]
+ *  @returns {DecodeResult} */
 export function decodePart(bytes, part, declared = null) {
   try {
     return OOXML.decodeText(bytes, { declared, name: part, kind: "xml" });
@@ -663,7 +671,11 @@ export async function scanPart(bytes, container, name, handler, { mode = "whole"
       }
       return held;
     });
-    if (!read.ok) return { ok: false, ...OOXML.pieceWhy(read) };
+    if (!read.ok) {
+      const pw = OOXML.pieceWhy(read);
+      if ("detail" in pw) return { ok: false, why: pw.why, detail: pw.detail, ...(pw.size != null ? { size: pw.size } : {}), final: true };
+      return { ok: false, why: statedWhy(pw.why) };
+    }
     scanner.push("", true);
   } else {
     const r = await readText(bytes, container, name);
@@ -802,9 +814,10 @@ export async function memberIdentities(bytes, names) {
       const m = OOXML.streamMember(bytes, row);
       for await (const chunk of m.chunks) void chunk; // passes through; nothing is kept
       const d = await m.done;
-      out.set(n, d.ok
-        ? { ok: true, sha256: d.sha256, size: d.size }
-        : { ok: false, why: d.why, ...(d.detail ? { detail: d.detail } : {}), ...(d.limit != null ? { limit: d.limit } : {}) });
+      const { sha256, size } = d;
+      out.set(n, d.ok && sha256 != null && size != null
+        ? { ok: true, sha256, size }
+        : { ok: false, why: statedWhy(d.why), ...(d.detail ? { detail: d.detail } : {}), ...(d.limit != null ? { limit: d.limit } : {}) });
     } catch {
       out.set(n, { ok: false, why: "source_unreadable" });
     }

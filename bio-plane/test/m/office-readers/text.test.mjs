@@ -186,7 +186,9 @@ test("R12 docx guard: word/document.xml + word/comments.xml declared bytes over 
   assert.deepEqual(t.paragraphs, []);
   assert.equal(t.tables, null);
   const guard = t.undetermined[0];
-  assert.deepEqual(t.undetermined, [textPlan(CEIL + 2).guard]);
+  const plan = textPlan(CEIL + 2);
+  if (plan.read !== "none") assert.fail(`over the ceiling the plan reads nothing, not ${plan.read}`);
+  assert.deepEqual(t.undetermined, [plan.guard]);
   assert.ok(guard);
   assert.ok("final" in guard);
   assert.equal(guard.final, true);

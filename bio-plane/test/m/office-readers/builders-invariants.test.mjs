@@ -55,26 +55,26 @@ test("R19 slideShapeRef(slide, shape=null): {kind:'slide-shape', ref:'slide <sli
 
 /* ------------------------------------------------------------------ R20 */
 
-test("R20 pure: the same bytes always give the same answer, whatever the clock, and nothing reaches the network", async () => {
+test("R20 pure: the same bytes always give the same answer, whatever the clock, and nothing reaches the network", async (t) => {
   /** @type {[Entry, Uint8Array][]} */
   const inputs = [
     [docxEntry, F.docx({ core: F.core({ creator: "a" }), extra: [{ name: "word/embeddings/e.bin", data: "E" }, { name: "word/media/i.png", data: "I" }] })],
     [pptxEntry, F.pptx({ slides: [{ file: "slide1.xml", texts: ["x"], notes: "n" }] })],
     [xlsxEntry, F.xlsx({ definedNames: [{ name: "N", ref: "Sheet1!A1" }], extra: [{ name: "xl/embeddings/e.bin", data: "E" }] })],
   ];
-  const realNow = Date.now, realFetch = globalThis.fetch, RealDate = globalThis.Date;
   /** @param {Entry} e @param {Uint8Array} b */
   const run = async (e, b) => ({ d: e.detect(b, null), s: await e.structure(b), t: await e.text(b) });
-  for (const [e, b] of inputs) {
-    const first = await run(e, b);
-    globalThis.fetch = () => { throw new Error("network reached"); };
-    Date.now = () => 0;
-    globalThis.Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [0])); } static now() { return 0; } };
-    try {
-      assert.deepEqual(await run(e, b), first, e.format);
-      Date.now = () => 9e12;
-      assert.deepEqual(await run(e, b), first, e.format);
-    } finally { Date.now = realNow; globalThis.fetch = realFetch; globalThis.Date = RealDate; }
+  /** @type {{d: unknown, s: unknown, t: unknown}[]} */
+  const firsts = [];
+  for (const [e, b] of inputs) firsts.push(await run(e, b));
+  /* The clock and the network are the test's own mocks, which node:test puts back when this test ends. */
+  t.mock.method(globalThis, "fetch", () => { throw new Error("network reached"); });
+  t.mock.timers.enable({ apis: ["Date"], now: 0 });
+  for (const [i, [e, b]] of inputs.entries()) {
+    t.mock.timers.setTime(0);
+    assert.deepEqual(await run(e, b), firsts[i], e.format);
+    t.mock.timers.setTime(9e12);
+    assert.deepEqual(await run(e, b), firsts[i], e.format);
   }
 });
 
