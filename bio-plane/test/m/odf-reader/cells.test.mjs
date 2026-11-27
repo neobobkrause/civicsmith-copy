@@ -134,7 +134,7 @@ test("R46 within R45's bound every address is given; over it, over the guard or 
   /** @type {[Uint8Array, string | undefined][]} */
   const unread = [
     [ods(table("S", row(c(`office:value-type="float" office:value="1" table:number-columns-repeated="${MAX + 1}"`, "1")))), "over_repeat_bound"],
-    [buildZip(withCd(members("ods", { body: table("S", row(c('office:value-type="float" office:value="1"', "1"))) }), "content.xml", { usize: OVER_BOUND })), sizeGuard(OVER_BOUND).why],
+    [buildZip(withCd(members("ods", { body: table("S", row(c('office:value-type="float" office:value="1"', "1"))) }), "content.xml", { usize: OVER_BOUND })), ((g) => (g.ok ? undefined : g.why))(sizeGuard(OVER_BOUND))],
     [pkg("ods", { content: "<office:document-content><office:body><office:text/></office:body></office:document-content>" }), "no_office_spreadsheet_body"],
   ];
   for (const [bytes, marker] of unread) {
