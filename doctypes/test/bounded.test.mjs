@@ -153,9 +153,9 @@ test("R37 padding a fixture with a long text that says nothing leaves each type'
         checked++;
       }
       if (["meeting_minutes", "meeting_agenda", "staff_report", "staff_directory"].includes(t.key)) {
-        const ref = JSON.stringify(parseWith(t, { ...c.ctx, text, locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [] }));
+        const ref = JSON.stringify(parseWith(t, { ...c.ctx, text, locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [] }));
         for (const n of pads)
-          assert.equal(JSON.stringify(parseWith(t, { ...c.ctx, text: text + "\n" + filler(n), locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [] })), ref, `${c.id} ${t.key} parse ${n}`);
+          assert.equal(JSON.stringify(parseWith(t, { ...c.ctx, text: text + "\n" + filler(n), locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [] })), ref, `${c.id} ${t.key} parse ${n}`);
       }
     }
   }

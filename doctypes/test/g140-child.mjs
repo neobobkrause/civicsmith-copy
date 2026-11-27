@@ -10,6 +10,7 @@ import { staffDirectory, staffReport, regulation } from "../index.mjs";
 import { HELD } from "./fixtures.mjs";
 import { addresses, csvOfAddresses, citations, repeated } from "./r40-texts.mjs";
 /** @import { DoctypeContext, Entity } from "../../docprofile/doctypes/index.mjs" */
+/** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
 
 const [mode, name] = process.argv.slice(2);
 /** The heap in use, in MB. @returns {number} */
@@ -48,7 +49,9 @@ settle();
 if (mode === "base") {
   console.log(JSON.stringify({ baseMB: mb(), chars: text.length }));
 } else if (mode === "run") {
-  const locate = /** @param {number} o */ (o) => ({ arm: "pdf-page", page: 1 + (o >> 12), at: o });
+  /** A page position for every offset that is a number, a page per 4,096 characters, as a PDF's locator answers.
+   *  @param {unknown} o @returns {ReadingPosition | null} */
+  const locate = (o) => (typeof o === "number" ? { kind: "pdf-page", ref: "test", page: 1 + (o >> 12), rect: null } : null);
   /** The context the types are handed, with `extra` over it. @param {DoctypeContext} extra @returns {DoctypeContext} */
   const ctx = (extra) => ({ view: HELD, text, locate, alsoSatisfies: () => [], ...extra });
   if (name === "dash" || name === "oneline" || name === "csv") {

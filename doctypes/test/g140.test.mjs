@@ -67,18 +67,18 @@ import { randomTexts, repeated, addresses, definitions, exceptions, citations, d
 
 const CHILD = fileURLToPath(new URL("./g140-child.mjs", import.meta.url));
 const BOUND_MB = 16;
-/** The context a type is handed: the held view, the text, a locator that answers each offset as `{at}`, no other type
- *  satisfied, and `extra` over these.
+/** The context a type is handed: the held view, the text, a locator that answers each offset as a paragraph position
+ *  whose `para` is the offset (null for an offset that is not a number), no other type satisfied, and `extra` over these.
  *  @param {string} text @param {DoctypeContext} [extra] @returns {DoctypeContext} */
-const ctxOf = (text, extra) => ({ view: HELD, text, locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [], ...extra });
+const ctxOf = (text, extra) => ({ view: HELD, text, locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [], ...extra });
 registerDoctypes(registerDoctype);
 /** The two answers each type gives. @type {ReadonlyArray<"detect" | "parse">} */
 const DETECT_AND_PARSE = ["detect", "parse"];
-/** Where a sighting was, as `ctxOf`'s locator recorded it (`{at}`); the `TypeError` reading a missing one raised.
+/** Where a sighting was, as `ctxOf`'s locator recorded it (the offset, as `para`); the `TypeError` reading a missing one raised.
  *  @param {ReadingPosition | null} o @returns {unknown} @throws {TypeError} where there is no sighting */
 const sightingAt = (o) => {
-  if (o === null) throw new TypeError("Cannot read properties of null (reading 'at')");
-  return "at" in o ? o.at : undefined;
+  if (o === null) throw new TypeError("Cannot read properties of null (reading 'para')");
+  return o.kind === "doc-para" ? o.para : undefined;
 };
 
 /** @param {string[]} args @param {string[]} [nodeArgs] @returns {Promise<ChildRun>} */

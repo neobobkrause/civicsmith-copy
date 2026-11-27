@@ -11,10 +11,10 @@ import { randomTexts } from "./r40-texts.mjs";
 /** @import { DoctypeContext } from "../../docprofile/doctypes/index.mjs" */
 
 const COUNT = 700;
-/** The context a type's parse is handed: the held view, the text, a locator that answers each offset as `{at}`, and no
- *  other type satisfied.
+/** The context a type's parse is handed: the held view, the text, a locator that answers each offset as a paragraph
+ *  position whose `para` is the offset (null for an offset that is not a number), and no other type satisfied.
  *  @param {string} text @returns {DoctypeContext} */
-const ctxOf = (text) => ({ view: HELD, text, locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [] });
+const ctxOf = (text) => ({ view: HELD, text, locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [] });
 /** @type {{ note: string, taken_at: string, count: number, answers: { [key: string]: Array<[string, string]> } }} */
 const out = { note: "what the types answer on the seeded texts of r40-texts.mjs, as digests, before R40 (doctypes R40, R41)", taken_at: "2026-10-24", count: COUNT, answers: {} };
 const texts = randomTexts(COUNT);

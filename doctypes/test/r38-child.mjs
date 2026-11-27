@@ -31,11 +31,11 @@ if (mode === "base") {
   const d = type.detect(ctx);
   if (!d) throw new TypeError(`Cannot read properties of ${d} (reading 'match')`);
   if (!d.match) throw new Error(`${kind}: not recognised as ${type.key}: ${JSON.stringify(d)}`);
-  const parsed = parseWith(type, { ...ctx, locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [] });
+  const parsed = parseWith(type, { ...ctx, locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [] });
   console.log(JSON.stringify({ ok: true, chars: text.length, digest: sha(parsed) }));
 } else if (mode === "digest") {
   /* the same parse with no memory bound, for `make-r38-answers.mjs` */
   const type = DOCTYPES.find((t) => t.key === TYPE_OF[kind]);
-  const parsed = parseWith(type, { view: HELD, text, locate: (/** @type {unknown} */ o) => ({ at: o }), alsoSatisfies: () => [] });
+  const parsed = parseWith(type, { view: HELD, text, locate: (/** @type {unknown} */ o) => (typeof o === "number" ? { kind: "doc-para", ref: "test", para: o, run: null } : null), alsoSatisfies: () => [] });
   console.log(JSON.stringify({ digest: sha(parsed) }));
 }
