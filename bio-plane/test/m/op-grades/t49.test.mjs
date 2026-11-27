@@ -9,19 +9,21 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, CONSEQUENCE_STATEMENTS,
 import * as T49 from "../../../src/op-grades/t49.mjs";
 import { declaredSentence } from "./declared.mjs";
 
+/** @param {string} g */
 const ground = (g) => Object.entries(RUNG_ABSENT).filter(([, v]) => v.ground === g).map(([k]) => k);
 
 test("R43: founderhandleset is stated absent on the `caller-owned` ground, as handlechange and setpassword, and holds no rung", () => {
-  assert.equal(RUNG_ABSENT.founderhandleset.ground, "caller-owned");
-  assert.equal(RUNG_ABSENT.founderhandleset.ground, RUNG_ABSENT.handlechange.ground, "as handlechange (R29, R34)");
-  assert.equal(RUNG_ABSENT.founderhandleset.ground, RUNG_ABSENT.setpassword.ground, "as setpassword (R27)");
-  assert.ok(RUNG_ABSENT.founderhandleset.is.length > 40);
-  assert.match(RUNG_ABSENT.founderhandleset.is, /HANDLE_FIXED/);
-  assert.match(RUNG_ABSENT.founderhandleset.is, /membership R144, R129/);
+  const founderGround = RUNG_ABSENT.founderhandleset?.ground;
+  assert.equal(founderGround, "caller-owned");
+  assert.equal(founderGround, RUNG_ABSENT.handlechange?.ground, "as handlechange (R29, R34)");
+  assert.equal(founderGround, RUNG_ABSENT.setpassword?.ground, "as setpassword (R27)");
+  assert.ok((RUNG_ABSENT.founderhandleset?.is.length ?? 0) > 40);
+  assert.match(RUNG_ABSENT.founderhandleset?.is ?? "", /HANDLE_FIXED/);
+  assert.match(RUNG_ABSENT.founderhandleset?.is ?? "", /membership R144, R129/);
   /* controls: not the plan's `reversible` (K3333), and by R3 neither `reversible` nor `reasoned`; not in the other table of grades */
   assert.ok(!Object.hasOwn(RUNGS, "founderhandleset"));
-  assert.notEqual(RUNG_ABSENT.founderhandleset.ground, "undetermined");
-  assert.notEqual(RUNG_ABSENT.founderhandleset.ground, "credential");
+  assert.notEqual(founderGround, "undetermined");
+  assert.notEqual(founderGround, "credential");
 });
 
 test("R43: founderhandleset's NON_ACTS sentence is the member-directed one R43 gives, naming HANDLE_FIXED and no record or bundle", () => {
@@ -32,14 +34,15 @@ test("R43: founderhandleset's NON_ACTS sentence is the member-directed one R43 g
   assert.doesNotMatch(NON_ACTS.founderhandleset, /formerly|changeable/);
 });
 
-test("R43 R18: founderhandleset carries phone true (a caller-owned absence); and it is no machine refusal, weight, consequence "
-   + "statement, larger-screen act or alias", () => {
+test("R43 R18: founderhandleset carries phone true (a caller-owned absence); and it is no machine refusal, weight, consequence statement, larger-screen act or alias", () => {
   assert.equal(phoneOf("founderhandleset"), true);
   assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "founderhandleset"), "membership refuses a machine by FOUNDER_HANDLE_NOT_FOUNDER");
   assert.ok(!IRREVERSIBLE_WEIGHT.includes("founderhandleset"));
   assert.ok(!Object.hasOwn(CONSEQUENCE_STATEMENTS, "founderhandleset"));
   assert.ok(!LARGER_SCREEN_ACTS.includes("founderhandleset"));
-  assert.ok(!Object.hasOwn(OP_ALIASES, "founderhandleset") && !Object.values(OP_ALIASES).includes("founderhandleset"));
+  /** @type {readonly string[]} */
+  const aliasTargets = Object.values(OP_ALIASES);
+  assert.ok(!Object.hasOwn(OP_ALIASES, "founderhandleset") && !aliasTargets.includes("founderhandleset"));
   /* control: a credential-ground act answers false, so true is the ground's doing */
   assert.equal(phoneOf("signeradd"), false);
 });
@@ -58,9 +61,7 @@ test("R43: projectownervotes is a read: its NON_ACTS sentence is R43's, and it h
   assert.ok(!NON_ACTS.projectowneradd?.startsWith("read: "));
 });
 
-test("R43 R3 (START measure): the `undetermined` tally is 109 after T50 (R45 adds actioninquiry, R47 takes planopen and "
-   + "wizarddraft out) and T49 left it unchanged; the `caller-owned` set is 35 (37 less securitymap, a read since K4210, and "
-   + "groupdescriptiondraft, a read since K4247), founderhandleset its newest; T49's tables hold exactly these two ops", () => {
+test("R43 R3 (START measure): the `undetermined` tally is 109 after T50 (R45 adds actioninquiry, R47 takes planopen and wizarddraft out) and T49 left it unchanged; the `caller-owned` set is 35 (37 less securitymap, a read since K4210, and groupdescriptiondraft, a read since K4247), founderhandleset its newest; T49's tables hold exactly these two ops", () => {
   assert.equal(ground("undetermined").length, 109);
   assert.ok(!ground("undetermined").includes("founderhandleset"));
   const caller = ground("caller-owned");
@@ -72,8 +73,7 @@ test("R43 R3 (START measure): the `undetermined` tally is 109 after T50 (R45 add
   assert.equal(caller.filter((op) => op !== "founderhandleset").length, 34);
 });
 
-test("R43 R42: founderhandleset, a rungless act the registry lists as owed, is marked Reasoned by the kit's owed_ weight; "
-   + "the mark moves no grade", () => {
+test("R43 R42: founderhandleset, a rungless act the registry lists as owed, is marked Reasoned by the kit's owed_ weight; the mark moves no grade", () => {
   assert.equal(MARKS.founderhandleset, "Reasoned");
   assert.ok(!Object.hasOwn(RUNGS, "founderhandleset"));
   /* control: projectownervotes is no act on a screen, so it takes no mark */
