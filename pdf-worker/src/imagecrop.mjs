@@ -36,16 +36,9 @@ import { loadPdf, decodeImage, imageOf } from "./pagepixels.mjs";
 /** Every reason a crop can refuse with (R39): a key of `CROP_REFUSALS`.
  *  @typedef {"NOT_AN_IMAGE_EXTENT" | "RECT_REQUIRED" | "NOT_A_PDF" | "ENCRYPTED" | "NO_SUCH_PAGE" | "PAGE_UNWALKABLE"
  *    | "NO_IMAGE_AT_RECT" | "AMBIGUOUS_RECT" | "INLINE_IMAGE" | "DECODE_REFUSED"} CropRefusalReason */
-/** A content row's extent as handed in (R27): only `{kind: "image", page, rect}` with four finite numbers and no `part` is
- *  cropped; anything else is refused by name.
- *  @typedef {Object} CropExtent
- *  @property {string} [kind]
- *  @property {number} [page]
- *  @property {readonly number[] | null} [rect]
- *  @property {string | number | null} [part] */
 /** The evidence a crop's refusal carries (R27-R31).
  *  @typedef {Object} CropRefusalDetail
- *  @property {CropExtent} [extent] the extent refused
+ *  @property {object} [extent] the extent refused, as handed in (an object), or `{}` for one that is not an object
  *  @property {number} [page]
  *  @property {number} [pageCount]
  *  @property {string} [detail] pdf-reader's own why, when the page cannot be walked (R29)
@@ -118,18 +111,33 @@ async function sha256Hex(u8) {
 /**
  * Crop the image a content row's extent names.
  * @param {Uint8Array} bytes   the capture's bytes (the evidence)
- * @param {CropExtent | null} extent      `{kind:"image", page, rect}` — the row's extent
+ * @param {unknown} extent    `{kind:"image", page, rect}` — the row's extent; any other value is refused by name (R27)
  * @returns {Promise<CropAnswer>} a derived rendition `{ok:true, derived:true, rendition:"crop", …}`
  *          or a NAMED refusal from CROP_REFUSALS. Never a blank frame.
  */
 export async function cropImage(bytes, extent) {
-  /** @type {CropExtent} */
+  /** @type {object} */
   const e = extent && typeof extent === "object" ? extent : {};
-  const page = e.page;
-  if (e.kind !== "image" || page === undefined || !Number.isInteger(page) || e.part != null)
+  const kind = "kind" in e ? e.kind : undefined;
+  const page = "page" in e ? e.page : undefined;
+  const part = "part" in e ? e.part : undefined;
+  if (kind !== "image" || typeof page !== "number" || !Number.isInteger(page) || part != null)
     return refuse("NOT_AN_IMAGE_EXTENT", { extent: e });
-  const rect = e.rect;
-  if (!(Array.isArray(rect) && rect.length === 4 && rect.every((n) => typeof n === "number" && Number.isFinite(n))))
+  /** @type {unknown} */
+  const given = "rect" in e ? e.rect : undefined;
+  /** @type {number[]} */
+  const rect = [];
+  if (Array.isArray(given) && given.length === 4) {
+    /** @type {unknown[]} */
+    const four = given;
+    for (let i = 0; i < 4; i++) {
+      /* A hole passes the test of every element, and reads below as the missing number it is. */
+      if (!(i in four)) { rect.push(NaN); continue; }
+      const n = four[i];
+      if (typeof n === "number" && Number.isFinite(n)) rect.push(n);
+    }
+  }
+  if (rect.length !== 4)
     return refuse("RECT_REQUIRED", { page });
 
   const doc = await loadPdf(bytes);
