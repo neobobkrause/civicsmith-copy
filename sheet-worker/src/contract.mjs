@@ -44,6 +44,7 @@ export const TIME_BUDGET_MS = boundOf("sheet_worker", "ms");
 
 /** The instance setting that enables recompute; any value but exactly "on" leaves the member answering NOT_ENABLED. */
 export const SETTING = "SHEET_RECOMPUTE";
+/** @param {{ readonly SHEET_RECOMPUTE?: unknown } | null | undefined} env the instance's settings @returns {boolean} */
 export const enabledIn = (env) => (env && env[SETTING]) === "on";
 
 /* ---- namespaces and plane ops (R11) --------------------------------------------------------------------------- */

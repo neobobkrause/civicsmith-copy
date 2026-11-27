@@ -5,10 +5,19 @@ import { fileURLToPath } from "node:url";
 import { makeEngine } from "../src/enginecore.mjs";
 import { makeMember } from "../src/member.mjs";
 
+/**
+ * @typedef {Object} NotEnabledAnswer the member's answer while recompute is not enabled (R2)
+ * @property {false} ok
+ * @property {"NOT_ENABLED"} reason
+ * @property {string} not_recomputed
+ * @property {string} detail
+ */
+
 const MODULE = new WebAssembly.Module(readFileSync(fileURLToPath(new URL("../assets/sheet-engine.wasm", import.meta.url))));
 
 /** The real member's answer to a recompute request while `SHEET_RECOMPUTE` is unset: `{ok:false, reason:"NOT_ENABLED"}`
- *  with its `not_recomputed` and `detail`, answered 200 before any bytes are read (R2). The body, parsed. */
+ *  with its `not_recomputed` and `detail`, answered 200 before any bytes are read (R2). The body, parsed.
+ *  @returns {Promise<NotEnabledAnswer>} */
 export async function recomputeNotEnabled() {
   const member = makeMember(makeEngine(MODULE));
   const req = new Request("https://sheet-worker/recompute", {
@@ -17,5 +26,7 @@ export async function recomputeNotEnabled() {
     body: JSON.stringify({ capture_sha: "ab".repeat(32), store: "bio" }),
   });
   const res = await member.fetch(req, {});
-  return res.json();
+  /** @type {NotEnabledAnswer} the member's own JSON answer */
+  const body = await res.json();
+  return body;
 }

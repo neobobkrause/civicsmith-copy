@@ -11,22 +11,113 @@
 import { makeMeter } from "../../bio-plane/src/cpu.mjs";
 import { MAX_CELLS, MAX_UNZIPPED_BYTES, NAMESPACES, NOT_RECOMPUTED, REFUSALS, TIME_BUDGET_MS, enabledIn } from "./contract.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { Engine, Evaluated, InspectRead } from './enginecore.mjs' */
+/** @import { MeterReport } from '../../bio-plane/src/cpu.mjs' */
 
+/**
+ * @typedef {Object} CapturedObject what `CAPTURES.get` hands back for a key that holds bytes
+ * @property {() => Promise<ArrayBufferLike>} arrayBuffer
+ */
+/**
+ * @typedef {Object} CaptureBucket the member's one binding, of which it calls only `get` (R10)
+ * @property {(key: string) => Promise<CapturedObject | null>} get
+ */
+/**
+ * @typedef {Object} WorkerEnv the instance's settings and bindings the member reads
+ * @property {CaptureBucket} [CAPTURES]
+ * @property {string} [SHEET_RECOMPUTE]
+ * @property {string} [VERSION]
+ */
+/**
+ * @typedef {Object} WorkerRequest the request as the member reads it
+ * @property {string} method
+ * @property {string} url
+ * @property {() => Promise<unknown>} json
+ */
+/** @typedef {{ capture_sha?: unknown, store?: unknown }} RecomputeBody the request's body, any shape */
+/** @typedef {{ maxUnzippedBytes: number, maxCells: number, timeBudgetMs: number }} Bounds */
+/** @typedef {"ENGINE_ABSENT" | "NOT_A_WORKBOOK" | "OVER_BOUND" | "EXTERNAL_LINKS" | "ENGINE_FAILED" | "TIME_LIMIT"} WorkbookRefusal */
+/**
+ * @typedef {Object} RefusalExtra what a refusal adds beside its reason
+ * @property {"unzipped_bytes" | "cells"} [measure]
+ * @property {number | null} [measured]
+ * @property {"at_least" | "exact"} [measured_is]
+ * @property {number} [bound]
+ * @property {number} [links]
+ * @property {{ parts: number, formulas: number, defined_names: number }} [external]
+ * @property {"load" | "evaluate"} [stage]
+ * @property {string} [engine_error]
+ * @property {number} [elapsed_ms]
+ * @property {number} [budget_ms]
+ */
+/**
+ * @typedef {Object} RefusalHead
+ * @property {false} ok
+ * @property {WorkbookRefusal} reason
+ * @property {string} not_recomputed
+ * @property {string} why
+ * @property {string} detail
+ */
+/** @typedef {RefusalHead & RefusalExtra} Refusal R3's refusal of one workbook */
+/**
+ * @typedef {Object} AnswerCell one formula cell of a recomputed workbook (R4, R5, R6)
+ * @property {{ kind: "sheet-cell", ref: string, sheet: string, cell: string }} source
+ * @property {string} formula
+ * @property {number | string | boolean | null} value
+ * @property {"number" | "text" | "boolean" | "error"} type
+ * @property {string | undefined} [error]
+ * @property {string | undefined} [cause]
+ * @property {string} [function]
+ * @property {string} [via]
+ * @property {string} [engine_message]
+ * @property {string} [not_recomputed]
+ * @property {boolean} [volatile]
+ */
+/** @typedef {MeterReport & { wasm_memory_bytes: number | null }} Work */
+/**
+ * @typedef {Object} Recomputed R4's answer for a recomputed workbook
+ * @property {true} ok
+ * @property {string} engine
+ * @property {string} engine_version
+ * @property {string} wasm_sha256
+ * @property {boolean} macros_present
+ * @property {{ formula_cells: number, errors: number, volatile: number }} counts
+ * @property {string[]} notes
+ * @property {AnswerCell[]} cells
+ * @property {Work} work
+ */
+/**
+ * @typedef {Object} Member
+ * @property {(req: WorkerRequest, env: WorkerEnv | undefined) => Promise<Response>} fetch
+ * @property {(bytes: Uint8Array) => Promise<Refusal | Recomputed>} recompute
+ */
+
+/** @param {unknown} obj @param {number} [status] */
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json" } });
 
 /** The default turn boundary: workerd advances `Date.now()` only between turns, so the time a synchronous load took
  *  is read after one. */
+/** @returns {Promise<unknown>} */
 const nextTurn = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+/** @param {WorkbookRefusal} reason @param {string} why @param {RefusalExtra} [extra] @returns {Refusal} */
 const refusal = (reason, why, extra = {}) =>
   ({ ok: false, reason, not_recomputed: NOT_RECOMPUTED, why, detail: REFUSALS[reason], ...extra });
 
-const engineMessage = (e) => String((e && e.message) || e);
+/** An engine error's message, else the thrown value itself, as text.
+ *  @param {unknown} e @returns {string} */
+const engineMessage = (e) => {
+  /* Every value the engine throws is an Error: the glue's own, a wasm trap, or this file's. */
+  return String((e instanceof Error && e.message) || e);
+};
 
 /**
  * The member over an engine (`enginecore.mjs`'s `makeEngine`, or a stand-in of the same shape).
  * `bounds` and `now`/`turn` exist so the suite can reach each refusal; the worker uses the defaults.
+ * @param {Engine} engine
+ * @param {{ bounds?: Bounds, now?: () => number, turn?: () => Promise<unknown> }} [options]
+ * @returns {Member}
  */
 export function makeMember(engine, {
   bounds = { maxUnzippedBytes: MAX_UNZIPPED_BYTES, maxCells: MAX_CELLS, timeBudgetMs: TIME_BUDGET_MS },
@@ -34,7 +125,8 @@ export function makeMember(engine, {
   turn = nextTurn,
 } = {}) {
 
-  /** R3-R7 over one workbook's bytes. A function of the bytes, the engine and the bounds (R12). */
+  /** R3-R7 over one workbook's bytes. A function of the bytes, the engine and the bounds (R12).
+   *  @param {Uint8Array} bytes @returns {Promise<Refusal | Recomputed>} */
   async function recompute(bytes) {
     const meter = makeMeter();
     const absent = engine.open();
@@ -67,6 +159,7 @@ export function makeMember(engine, {
         return refusal("TIME_LIMIT", localize("sheet-worker.member.loading_took_elapsed_ms_the", "loading took {elapsed} ms; the budget is {timeBudgetMs} ms", { elapsed: String(elapsed), timeBudgetMs: String(bounds.timeBudgetMs) }),
           { elapsed_ms: elapsed, budget_ms: bounds.timeBudgetMs });
 
+      /** @type {Evaluated} */
       let out;
       try {
         out = meter.sync("evaluate", () => engine.evaluate());
@@ -80,9 +173,11 @@ export function makeMember(engine, {
     }
   }
 
+  /** @param {Evaluated} out @param {InspectRead} seen @param {Work} work @returns {Recomputed} */
   function answer(out, seen, work) {
     const cells = out.cells.map((c) => {
       const ref = `${c.sheet}!${c.cell}`;
+      /** @type {AnswerCell} */
       const entry = {
         source: { kind: "sheet-cell", ref, sheet: c.sheet, cell: c.cell },
         formula: c.formula,
@@ -92,14 +187,16 @@ export function makeMember(engine, {
       if (c.type === "error") {
         entry.error = c.error;
         entry.cause = c.cause;
-        if (c.function) entry.function = c.function;
-        if (c.via) entry.via = c.via;
-        if (c.message) entry.engine_message = c.message;
+        const { function: fn, via, message } = c;
+        if (fn) entry.function = fn;
+        if (via) entry.via = via;
+        if (message) entry.engine_message = message;
         entry.not_recomputed = NOT_RECOMPUTED;
       }
       entry.volatile = c.volatile;
       return entry;
     });
+    /** @type {string[]} */
     const notes = [];
     if (seen.macros)
       notes.push("the workbook carries a VBA project; macros are never run, so it was recomputed by its formulas alone");
@@ -122,27 +219,33 @@ export function makeMember(engine, {
     };
   }
 
+  /** @param {WorkerRequest} req @param {WorkerEnv | undefined} env @returns {Promise<Response>} */
   async function handleRecompute(req, env) {
-    const body = await req.json().catch(() => null);
-    const sha = typeof body?.capture_sha === "string" ? body.capture_sha.toLowerCase() : "";
-    if (!/^[0-9a-f]{64}$/.test(sha)) return json({ ok: false, reason: "BAD_SHA", detail: REFUSALS.BAD_SHA }, 400);
-    if (typeof body.store !== "string") return json({ ok: false, reason: "BAD_STORE", detail: REFUSALS.BAD_STORE }, 400);
+    /** @type {RecomputeBody | null} the request's own body, read as JSON: any shape, or null where it did not parse */
+    const body = /** @type {RecomputeBody | null} */ (await req.json().catch(() => null));
+    const asked = body?.capture_sha;
+    const sha = typeof asked === "string" ? asked.toLowerCase() : "";
+    /* A body that is null has no capture_sha, so `!body` adds no case to BAD_SHA. */
+    if (!/^[0-9a-f]{64}$/.test(sha) || !body) return json({ ok: false, reason: "BAD_SHA", detail: REFUSALS.BAD_SHA }, 400);
     const store = body.store;
+    if (typeof store !== "string") return json({ ok: false, reason: "BAD_STORE", detail: REFUSALS.BAD_STORE }, 400);
     if (!NAMESPACES.includes(store))
       return json({ ok: false, reason: "NAMESPACE_UNKNOWN", detail: REFUSALS.NAMESPACE_UNKNOWN,
         asked: store.slice(0, 80), namespaces: [...NAMESPACES] }, 400);
     if (!enabledIn(env))
       return json({ ok: false, reason: "NOT_ENABLED", not_recomputed: NOT_RECOMPUTED, detail: REFUSALS.NOT_ENABLED });
-    if (typeof env?.CAPTURES?.get !== "function")
+    const captures = env?.CAPTURES;
+    if (typeof captures?.get !== "function")
       return json({ ok: false, reason: "R2_NOT_CONFIGURED", detail: REFUSALS.R2_NOT_CONFIGURED }, 503);
-    const obj = await env.CAPTURES.get(`${store}/captures/${sha}`);
+    const obj = await captures.get(`${store}/captures/${sha}`);
     if (!obj) return json({ ok: false, reason: "NOT_FOUND", detail: REFUSALS.NOT_FOUND, capture_sha: sha, store }, 404);
     const bytes = new Uint8Array(await obj.arrayBuffer());
     /* A refusal is a 200 with ok:false: the member answered. */
     return json(await recompute(bytes));
   }
 
-  /** R8. `engine_loaded` is asked, never assumed: a member deployed without its wasm part looks healthy otherwise. */
+  /** R8. `engine_loaded` is asked, never assumed: a member deployed without its wasm part looks healthy otherwise.
+   *  @param {WorkerEnv | undefined} env @returns {Response} */
   function handleVersion(env) {
     const why = engine.check();
     return json({
@@ -155,6 +258,7 @@ export function makeMember(engine, {
     });
   }
 
+  /** @param {WorkerRequest} req @param {WorkerEnv | undefined} env @returns {Promise<Response>} */
   async function fetch(req, env) {
     const path = new URL(req.url).pathname;
     if (req.method === "GET" && path === "/version") return handleVersion(env);
