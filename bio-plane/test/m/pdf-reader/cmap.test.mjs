@@ -6,20 +6,53 @@ import assert from "node:assert/strict";
 import { extractPdfStructure } from "../../../src/pdfstructure.mjs";
 import { boundOf } from "../../../src/read-bounds.mjs";
 import { build } from "./pdf.mjs";
+/** @import { PdfStructureAnswer, PdfStructure } from "../../../src/pdfstructure.mjs" */
+/** @import { Objects } from "./pdf.mjs" */
+
+/** A value that is there; a thrown failure naming `what` when it is undefined.
+ *  @template T
+ *  @param {T | undefined} v
+ *  @param {string} what
+ *  @returns {T} */
+function must(v, what) {
+  if (v === undefined) throw new Error(`${what}: none`);
+  return v;
+}
+/** The reading of a PDF; a thrown failure when the answer is a refusal.
+ *  @param {PdfStructureAnswer} r
+ *  @returns {PdfStructure} */
+function readingOf(r) {
+  if (!r.ok) throw new Error(`refused: ${r.reason}`);
+  return r;
+}
+/** What `read` gives back: the page's text, the markers as `reason:codes`, and the whole reading.
+ *  @typedef {Object} Read
+ *  @property {string} text
+ *  @property {string[]} marks
+ *  @property {PdfStructure} r
+ */
+/** A bfrange's code as eight upper-case hex digits.
+ *  @param {number} n
+ *  @returns {string} */
+const hexN = (n) => n.toString(16).padStart(8, "0").toUpperCase();
 
 const TYPE0 = "<< /Type /Font /Subtype /Type0 /BaseFont /X /Encoding /Identity-H /DescendantFonts [13 0 R] /ToUnicode 11 0 R >>";
 const CID = "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /X /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /DW 1000 >>";
 
-/** A one-page file whose only font is a Type0 font with the given CMap body; the page shows `shown` (a hex string). */
+/** A one-page file whose only font is a Type0 font with the given CMap body; the page shows `shown` (a hex string).
+ *  @param {string} cmap
+ *  @param {string} shown
+ *  @returns {Promise<Read>} */
 async function read(cmap, shown) {
+  /** @type {Objects} */
   const o = {
     1: "<< /Type /Catalog /Pages 2 0 R >>", 2: "<< /Type /Pages /Kids [100 0 R] /Count 1 >>", 10: TYPE0, 13: CID,
     11: { data: `/CIDInit /ProcSet findresource begin ${cmap} end` },
     100: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 10 0 R >> >> /Contents 101 0 R >>",
     101: { data: `BT /F1 12 Tf 40 700 Td ${shown} Tj ET` },
   };
-  const r = await extractPdfStructure(build(o));
-  return { text: r.text.pages[0].text, marks: r.text.undetermined.map((u) => `${u.reason}:${u.codes}`), r };
+  const r = readingOf(await extractPdfStructure(build(o)));
+  return { text: must(r.text.pages[0], "page 0").text, marks: r.text.undetermined.map((u) => `${u.reason}:${u.codes}`), r };
 }
 
 const FOUR = "1 begincodespacerange <00000000> <FFFFFFFF> endcodespacerange";
@@ -53,7 +86,6 @@ test("R12: a code is unsigned whatever its width (a 4-byte code at or above 0x80
 
 test("R12: a bfrange of more codes than the bound is looked up arithmetically, and the text is exactly what expansion gives", async () => {
   const cap = boundOf("pdf", "bfrange_codes");
-  const hexN = (n) => n.toString(16).padStart(8, "0").toUpperCase();
   const heap0 = process.memoryUsage().heapUsed;
   const big = await read(`${FOUR} 1 beginbfrange <00000000> <00FFFFFF> <0041> endbfrange`, "<00000000000000190000FFFF>");
   assert.equal(big.text, "AZ" + String.fromCharCode(0x41 + 0xffff));
@@ -71,7 +103,6 @@ test("R12: a bfrange of more codes than the bound is looked up arithmetically, a
 
 test("R12: sections apply in the order the CMap states them: a later range replaces an earlier entry, a later entry replaces a larger range", async () => {
   const cap = boundOf("pdf", "bfrange_codes");
-  const hexN = (n) => n.toString(16).padStart(8, "0").toUpperCase();
   const last = hexN(cap + 100);
   /* bfchar sections are applied before bfrange sections (as full expansion has always done), so the range replaces the entry in it */
   const a = await read(`${FOUR} 1 beginbfchar <00000005> <005A> endbfchar 1 beginbfrange <00000000> <${last}> <0041> endbfrange`, "<00000005>");
