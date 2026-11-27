@@ -155,23 +155,17 @@ print(json.dumps(out))
 `;
 
 /**
- * What VERIFY_PY, this probe's own script, prints: the probe's own channel.
- * @typedef {object} VerifyOut
- * @property {string} verdict
- */
-/**
  * @param {string} pdfPath
  * @param {number} pageIdx
  * @param {string} minePath
  * @param {string} kind
- * @returns {VerifyOut}
  */
 function independentVerify(pdfPath, pageIdx, minePath, kind) {
   const script = join(WORK, "verify.py");
   writeFileSync(script, VERIFY_PY);
   const out = execFileSync("python3", [script, pdfPath, String(pageIdx), minePath, kind],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  return /** @type {VerifyOut} */ (JSON.parse(out));
+  return JSON.parse(out);
 }
 
 /* ── the corpus ───────────────────────────────────────────────────────────── */
@@ -311,10 +305,8 @@ async function census(docs) {
 /** @param {CensusRow[]} rows */
 function reportCensus(rows) {
   let pages = 0, imageOnly = 0, singleImage = 0, multi = 0, textPages = 0, vectorOnly = 0;
-  /** @type {Map<string, number>} */
-  const filterTally = new Map();
-  /** @type {Map<string, number>} */
-  const rotTally = new Map();
+    const filterTally = new Map(/** @type {[string, number][]} */ ([]));
+    const rotTally = new Map(/** @type {[string, number][]} */ ([]));
   for (const r of rows) {
     for (const p of r.per || []) {
       if (p.unreadable) continue;
@@ -364,8 +356,7 @@ async function verifyRendering(docs, py) {
   console.log(`  independent decoder: ${py.tool}`);
 
   let checked = 0, exact = 0, differ = 0, refused = 0;
-  /** @type {Map<string, number>} */
-  const refusalTally = new Map();
+    const refusalTally = new Map(/** @type {[string, number][]} */ ([]));
   for (const d of docs) {
     const doc = await loadPdf(d.bytes);
     if (!doc) continue;
@@ -567,11 +558,9 @@ const { data } = await w.recognize(process.argv[2]);
 await w.terminate();
 process.stdout.write(JSON.stringify({ text: data.text, confidence: data.confidence }));
 `);
-  /** What run.mjs, this probe's own script, prints: the probe's own channel.
-   * @type {{ text: string, confidence: number }} */
   let out;
   try {
-    out = /** @type {{ text: string, confidence: number }} */ (JSON.parse(execFileSync(process.execPath, [runner, img], { cwd: dir, encoding: "utf8", maxBuffer: 64e6, timeout: 600000 })));
+    out = JSON.parse(execFileSync(process.execPath, [runner, img], { cwd: dir, encoding: "utf8", maxBuffer: 64e6, timeout: 600000 }));
   } catch (e) {
     console.log(`  NO NUMBER: the engine did not run (${String(e.message).split("\n")[0]})`);
     return null;
@@ -641,6 +630,7 @@ for (const d of docs.slice(0, 4)) console.log(`  ${d.id}  ${d.size.toLocaleStrin
 const rows = await census(docs);
 const c = reportCensus(rows);
 
+/** @type {{ checked: number } | null} */
 let verified = null;
 if (!argv.has("--corpus-only")) verified = await verifyRendering(docs, py);
 if (argv.has("--workerd")) await armWorkerd(docs);
@@ -651,8 +641,7 @@ const blankOk = argv.has("--arm-blank") ? await armBlank(py) : true;
 const armsOk = selfcheckOk && blankOk;
 
 console.log(`\nFIDELITY LEDGER — ${FIDELITY.length} reading(s), every one gated on independent provenance`);
-/** @type {Map<string, number>} */
-const byVerdict = new Map();
+const byVerdict = new Map(/** @type {[string, number][]} */ ([]));
 for (const f of FIDELITY) byVerdict.set(f.verdict, (byVerdict.get(f.verdict) || 0) + 1);
 for (const [v, n] of byVerdict) console.log(`  ${String(n).padStart(5)}  ${v}`);
 if (FIDELITY.length === 0) console.log(`  (none — NO FIGURE IS CLAIMED)`);

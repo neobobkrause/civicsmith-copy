@@ -129,8 +129,10 @@ console.log("\n--- R16: a page that shows text ---");
   /** @param {string} ops @param {string} [res] */
   const withOps = (ops, res = "") => onePage({ box: [0, 0, 3, 2], res: `/XObject << /Im 5 0 R ${res} >> ${FONT}`,
     ops: `q 3 0 0 2 0 0 cm /Im Do Q ${ops}`, more: [GREY_IMG, helv, content("BT /F1 1 Tf (x) Tj ET").replace("<<", "<< /Type /XObject /Subtype /Form /BBox [0 0 3 2] /Resources << /Font << /F1 6 0 R >> >>")] });
-  for (const [label, ops] of [["Tj", "BT /F1 1 Tf (a) Tj ET"], ["TJ", "BT /F1 1 Tf [(a) 5 (b)] TJ ET"],
-    ["'", "BT /F1 1 Tf 1 TL (a) ' ET"], ['"', 'BT /F1 1 Tf 1 TL 0 0 (a) " ET'], ["a Form XObject's Tj", "/Fm Do"]]) {
+  /** @type {[string, string][]} */
+  const textOps = [["Tj", "BT /F1 1 Tf (a) Tj ET"], ["TJ", "BT /F1 1 Tf [(a) 5 (b)] TJ ET"],
+    ["'", "BT /F1 1 Tf 1 TL (a) ' ET"], ['"', 'BT /F1 1 Tf 1 TL 0 0 (a) " ET'], ["a Form XObject's Tj", "/Fm Do"]];
+  for (const [label, ops] of textOps) {
     const r = await render(withOps(ops, "/Fm 7 0 R"), 0);
     t(`R16 ${label}: PAGE_HAS_TEXT_LAYER with imageCount`, fields(r, "ok", "reason", "imageCount"), [false, "PAGE_HAS_TEXT_LAYER", 1]);
   }
@@ -143,8 +145,10 @@ console.log("\n--- R16: a page that shows text ---");
     t("R16 a scan with a text line is refused PAGE_HAS_TEXT_LAYER without the option", [refused.ok, refused.reason], [false, "PAGE_HAS_TEXT_LAYER"]);
     t("R16 a scan with a text line is rendered with allowTextPage: its scan, its text noted", [allowedFolio.ok, allowedFolio.page_marks?.hasTextOps, allowedFolio.upright], [true, true, true]);
   }
-  for (const [label, ops] of [["a bare BT … ET", "BT ET"], ["BT with only a font set", "BT /F1 1 Tf ET"],
-    ["Tj spelled inside a string", "/Span << /ActualText (a note Tj about it) >> BDC EMC"]]) {
+  /** @type {[string, string][]} */
+  const notTextOps = [["a bare BT … ET", "BT ET"], ["BT with only a font set", "BT /F1 1 Tf ET"],
+    ["Tj spelled inside a string", "/Span << /ActualText (a note Tj about it) >> BDC EMC"]];
+  for (const [label, ops] of notTextOps) {
     const r = await render(withOps(ops), 0);
     t(`R16 ${label} is not text: the page renders`, [r.ok ? "ok" : r.reason, r.page_marks?.hasTextOps], ["ok", false]);
   }
@@ -153,12 +157,14 @@ console.log("\n--- R16: a page that shows text ---");
 console.log("\n--- R17: no image on the page ---");
 {
   const page = (/** @type {string} */ ops) => onePage({ ops, box: [0, 0, 8, 8] });
-  for (const [label, ops, reason] of [
+  /** @type {[string, string, string][]} */
+  const noImageOps = [
     ["nothing painted", "q Q", "NO_IMAGE_ON_PAGE"], ["a clip alone", "0 0 8 8 re W n", "NO_IMAGE_ON_PAGE"],
     ["a stroke", "0 0 m 8 8 l S", "NOT_IMAGE_ONLY"], ["a fill", "0 0 8 8 re f", "NOT_IMAGE_ONLY"],
     ["an even-odd fill", "0 0 8 8 re f*", "NOT_IMAGE_ONLY"], ["fill and stroke", "0 0 8 8 re B", "NOT_IMAGE_ONLY"],
     ["a close-and-stroke", "0 0 m 8 8 l s", "NOT_IMAGE_ONLY"], ["a shading", "/Sh0 sh", "NOT_IMAGE_ONLY"],
-  ]) {
+  ];
+  for (const [label, ops, reason] of noImageOps) {
     const r = await render(page(ops), 0);
     t(`R17 ${label}: ${reason}`, [r.ok, r.reason], [false, reason]);
   }
@@ -277,13 +283,15 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
      and an all-0 mask with /Decode [1 0] white (checked 2026-09-26, D-622). */
   const bits = Uint8Array.from([0b10110011, 0b01000000, 0b00001111, 0b11000000, 0b11111111, 0b00000000]);
   const pad = (/** @type {Uint8Array} */ u) => Uint8Array.from(u, (b, i) => (i % 2 ? b & 0b11000000 : b));
-  for (const [label, extra, want] of [
+  /** @type {[string, string, Uint8Array][]} */
+  const oneBitCases = [
     ["1-bpc grey", "/ColorSpace /DeviceGray /BitsPerComponent 1", pad(bits)],
     ["1-bpc grey with the default /Decode [0 1]", "/ColorSpace /DeviceGray /BitsPerComponent 1 /Decode [0 1]", pad(bits)],
     ["an /ImageMask", "/ImageMask true", pad(bits)],
     ["an /ImageMask, FlateDecode", "/ImageMask true /Filter /FlateDecode", pad(bits)],
     ["an /ImageMask with the default /Decode [0 1]", "/ImageMask true /Decode [0 1]", pad(bits)],
-  ]) {
+  ];
+  for (const [label, extra, want] of oneBitCases) {
     const data = /FlateDecode/.test(extra) ? deflateSync(bits) : bits;
     const r = await render(imagePage(image(10, 3, extra, data), { w: 10, h: 3 }), 0);
     const png = r.ok ? readPng(r.bytes) : {};
@@ -292,12 +300,14 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
     t(`R26 ${label}: pixels_sha256 over the packed samples`, r.pixels_sha256, hex(want));
   }
   const rgb = Uint8Array.from({ length: 3 * 2 * 3 }, (_, i) => (i * 29 + 3) & 0xff);
-  for (const [label, extra, samples, comps, route, colorType] of [
+  /** @type {[string, string, Uint8Array, number, string, number][]} */
+  const eightBitCases = [
     ["8-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 8", G, 1, "raw-samples-grey8", 0],
     ["8-bit grey, FlateDecode", "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", G, 1, "raw-samples-grey8", 0],
     ["8-bit RGB", "/ColorSpace /DeviceRGB /BitsPerComponent 8", rgb, 3, "raw-samples-rgb8", 2],
     ["8-bit RGB, FlateDecode", "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode", rgb, 3, "raw-samples-rgb8", 2],
-  ]) {
+  ];
+  for (const [label, extra, samples, comps, route, colorType] of eightBitCases) {
     for (const deg of [0, 90, 180, 270]) {
       const data = /FlateDecode/.test(extra) ? deflateSync(samples) : samples;
       const r = await render(imagePage(image(3, 2, extra, data), { w: 3, h: 2, pageExtra: `/Rotate ${deg}` }), 0);
@@ -311,14 +321,16 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
       t(`R24 R26 ${label}, /Rotate ${deg}: pixels_sha256 over the samples`, r.pixels_sha256, hex(want));
     }
   }
-  for (const [label, extra, data, reason] of [
+  /** @type {[string, string, Uint8Array, string][]} */
+  const refusedSamples = [
     ["CMYK", "/ColorSpace /DeviceCMYK /BitsPerComponent 8", new Uint8Array(24), "UNSUPPORTED_SAMPLES"],
     ["16-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 16", new Uint8Array(12), "UNSUPPORTED_SAMPLES"],
     ["4-bit grey", "/ColorSpace /DeviceGray /BitsPerComponent 4", new Uint8Array(4), "UNSUPPORTED_SAMPLES"],
     ["an indirect colour space", "/ColorSpace [/Indexed /DeviceRGB 1 <000000ffffff>] /BitsPerComponent 8", new Uint8Array(6), "UNSUPPORTED_SAMPLES"],
     ["data short of the height", "/ColorSpace /DeviceGray /BitsPerComponent 8", new Uint8Array(5), "TRUNCATED_IMAGE_DATA"],
     ["a corrupt Flate stream", "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", new Uint8Array([1, 2, 3, 4, 5, 6]), "IMAGE_UNREADABLE"],
-  ]) {
+  ];
+  for (const [label, extra, data, reason] of refusedSamples) {
     const r = await render(imagePage(image(3, 2, extra, data), { w: 3, h: 2 }), 0);
     t(`R24 ${label}: ${reason}`, [r.ok, r.reason, r.bytes], [false, reason, undefined]);
   }
@@ -342,11 +354,13 @@ console.log("\n--- R21: the page's own /Rotate, inherited, never the caller's --
   ]);
   const want = (/** @type {number} */ deg) => {
     const tr = turn((x, y) => G[y * 3 + x], 3, 2, deg);
+    /** @type {(number | undefined)[]} */
     const out = [];
     for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) out.push(tr.at(X, Y));
     return [deg, tr.W, tr.H, hex(Uint8Array.from(out))];
   };
-  for (const [label, pagesRot, leafRot, deg] of [
+  /** @type {[string, number | null, number | null, number][]} */
+  const rotateCases = [
     ["inherited from the root /Pages, two levels up (D-671)", 90, null, 90],
     ["inherited 180", 180, null, 180],
     ["inherited 270", 270, null, 270],
@@ -355,7 +369,8 @@ console.log("\n--- R21: the page's own /Rotate, inherited, never the caller's --
     ["none anywhere is 0", null, null, 0],
     ["-90 is 270", null, -90, 270],
     ["450 is 90", null, 450, 90],
-  ]) {
+  ];
+  for (const [label, pagesRot, leafRot, deg] of rotateCases) {
     const r = await render(tree(pagesRot, leafRot), 0);
     t(`R21 ${label}`, [r.rotate_deg, r.width, r.height, r.pixels_sha256], want(deg));
     t(`R21 ${label}: page_geometry states it`, r.page_geometry?.rotate, deg);
@@ -386,7 +401,7 @@ console.log("\n--- R22, R40: DCT, every variant through the renderer against Pil
   t("R22 (the variant corpus: 12 decodable, 4 refused)", [ok.length, no.length], [12, 4]);
   /* Each variant is the one image of a page whose /Rotate is the variant's turn;
      a variant's width and height are Pillow's, after that turn. */
-  const variantPage = (v, cs) => {
+  const variantPage = (v, /** @type {string} */ cs) => {
     const [w, h] = v.rotate === 90 || v.rotate === 270 ? [v.height, v.width] : [v.width ?? 63, v.height ?? 47];
     return imagePage(image(w, h, `/ColorSpace ${cs} /BitsPerComponent 8 /Filter /DCTDecode`, jpeg(v.name)),
       { w, h, pageExtra: `/Rotate ${v.rotate}` });
@@ -422,9 +437,11 @@ console.log("\n--- R22: DCT through the renderer ---");
 
   const up = await render(imagePage(image(63, 47, "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode", jpeg("rgb-444")), { w: 63, h: 47 }), 0);
   t("R22 pass-through at /Rotate 0 is upright", [up.route, up.upright], ["passthrough-dct", true]);
+  /** @param {string} extra @param {Uint8Array} [data] @param {string} [cs] */
   const dct = (extra, data = jpeg("rgb-444"), cs = "/DeviceRGB") =>
     imagePage(image(63, 47, `/ColorSpace ${cs} /BitsPerComponent 8 ${extra}`, data), { w: 63, h: 47 });
-  for (const [label, bytes, reason, detail] of [
+  /** @type {[string, Uint8Array, string, string | undefined][]} */
+  const dctRefusals = [
     ["progressive", dct("/Filter /DCTDecode", jpeg("refuse-progressive")), "UNSUPPORTED_JPEG_PROCESS", "progressive-huffman"],
     ["arithmetic-coded", dct("/Filter /DCTDecode", jpeg("refuse-arithmetic")), "UNSUPPORTED_JPEG_PROCESS", "extended-sequential-arithmetic"],
     ["truncated", dct("/Filter /DCTDecode", jpeg("refuse-truncated")), "TRUNCATED_IMAGE_DATA", undefined],
@@ -432,7 +449,8 @@ console.log("\n--- R22: DCT through the renderer ---");
     ["a component count the colour space contradicts", dct("/Filter /DCTDecode", jpeg("rgb-444"), "/DeviceGray"), "UNSUPPORTED_SAMPLES", undefined],
     ["a /ColorTransform the markers contradict", dct("/Filter /DCTDecode /DecodeParms << /ColorTransform 0 >>"), "UNSUPPORTED_SAMPLES", undefined],
     ["a stream with no SOI", dct("/Filter /DCTDecode", new Uint8Array(64).fill(7)), "DECODE_FAILED", undefined],
-  ]) {
+  ];
+  for (const [label, bytes, reason, detail] of dctRefusals) {
     const r2 = await render(bytes, 0, { decodeDct: true });
     t(`R22 decodeDct, ${label}: ${reason}`, [r2.ok, r2.reason, r2.process, r2.bytes], [false, reason, detail, undefined]);
   }
@@ -448,7 +466,9 @@ console.log("\n--- R25: JBIG2 and JPX are jbig2.test.mjs's and jpx.test.mjs's; h
 {
   /* Eight zero bytes: to JBIG2 a segment header that runs out; to JPEG 2000
      neither a codestream nor a JP2 file. */
-  for (const [f, reason] of [["JBIG2Decode", "TRUNCATED_IMAGE_DATA"], ["JPXDecode", "DECODE_FAILED"]]) {
+  /** @type {[string, string][]} */
+  const neitherCases = [["JBIG2Decode", "TRUNCATED_IMAGE_DATA"], ["JPXDecode", "DECODE_FAILED"]];
+  for (const [f, reason] of neitherCases) {
     const r = await render(imagePage(image(8, 8, `/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /${f}`, new Uint8Array(8))), 0);
     t(`R25 ${f} over eight zero bytes: ${reason}, no bytes`, fields(r, "ok", "reason", "bytes"), [false, reason, undefined]);
   }
@@ -457,8 +477,10 @@ console.log("\n--- R25: JBIG2 and JPX are jbig2.test.mjs's and jpx.test.mjs's; h
 console.log("\n--- R40: pure per call ---");
 {
   const key = (r) => JSON.stringify({ ...r, bytes: r.bytes ? hex(r.bytes) : null });
-  for (const [label, bytes, opts] of [["the CCITT scan", SCAN, {}], ["the DCT scan, decoded", DCT_SCAN, { decodeDct: true }],
-    ["a refusal", new Uint8Array(4), {}]]) {
+  /** @type {[string, Uint8Array, object][]} */
+  const pureCases = [["the CCITT scan", SCAN, {}], ["the DCT scan, decoded", DCT_SCAN, { decodeDct: true }],
+    ["a refusal", new Uint8Array(4), {}]];
+  for (const [label, bytes, opts] of pureCases) {
     const a = await render(bytes, 0, opts), b = await render(bytes, 0, opts);
     t(`R40 ${label}: the same answer twice`, key(a) === key(b), true);
   }
@@ -496,7 +518,9 @@ export default { async fetch(req) {
       const jd = await (await mf.dispatchFetch("http://x/?dct=1", { method: "POST", body: DCT_SCAN })).json();
       t("R40 workerd: the DCT page decoded, Pillow's pixels", [jd.ok, jd.route, jd.pixels_sha256], [true, "decoded-dct", DCT_UPRIGHT_SHA]);
       const PV = JSON.parse(Buffer.from(F("fixtures/picture-variants.json")).toString("utf8")).variants;
-      for (const [name, edge] of [["photo-4032x3024-o6", 1568], ["orient-7", 10], ["png-rgba", 30]]) {
+      /** @type {[string, number][]} */
+      const workerdPictures = [["photo-4032x3024-o6", 1568], ["orient-7", 10], ["png-rgba", 30]];
+      for (const [name, edge] of workerdPictures) {
         const v = PV.find((x) => x.name === name), e = v.expect.find((x) => x.max_edge === edge && x.grey);
         const jp = await (await mf.dispatchFetch(`http://x/?edge=${edge}`, { method: "POST", body: Buffer.from(v.b64, "base64") })).json();
         t(`R40 R42 workerd: the picture ${name}, Pillow's pixels`, [jp.ok, jp.route, jp.width, jp.height, jp.pixels_sha256], [true, "decoded-picture", e.width, e.height, e.pillow_sha256]);
@@ -513,9 +537,14 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
      never this module's own output (R40). */
   const PV = JSON.parse(Buffer.from(F("fixtures/picture-variants.json")).toString("utf8"));
   t("R42 (the reference is Pillow 12.3.0)", PV.pillow, "12.3.0");
-  const pic = (name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
-  const picture = async (...a) => { const r = await renderPictureToPixels(...a); answers.push(r); return r; };
-  const chunks = (png) => { const b = Buffer.from(png), out = []; for (let o = 8; o < b.length; o += 12 + b.readUInt32BE(o)) out.push(b.toString("latin1", o + 4, o + 8)); return out; };
+  const pic = (/** @type {string} */ name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
+  /**
+   * @param {unknown} bytes
+   * @param {unknown} page
+   * @param {object} [opts]
+   */
+  const picture = async (bytes, page, opts) => { const r = await renderPictureToPixels(bytes, page, opts); answers.push(r); return r; };
+  const chunks = (/** @type {Uint8Array} */ png) => { const b = Buffer.from(png), out = /** @type {string[]} */ ([]); for (let o = 8; o < b.length; o += 12 + b.readUInt32BE(o)) out.push(b.toString("latin1", o + 4, o + 8)); return out; };
 
   for (const v of PV.variants.filter((x) => x.expect.length && !x.name.startsWith("photo"))) {
     for (const e of v.expect) {
@@ -567,10 +596,12 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
        an Exif orientation inserted; the bytes are checked against the script's
        digest before any picture is, and every expected picture is Pillow's. */
     const P = PV.photo48, seed = Buffer.from(P.seed_b64, "base64");
-    const seq = (i) => (5 * i + Math.floor(i / P.seed_rows)) % P.seed_rows;
+    const seq = (/** @type {number} */ i) => (5 * i + Math.floor(i / P.seed_rows)) % P.seed_rows;
     let p = 2;
     for (;;) { const m = seed[p + 1]; p += 2 + seed.readUInt16BE(p + 2); if (m === 0xda) break; }
-    const header = Buffer.from(seed.subarray(0, p)), runs = [];
+    const header = Buffer.from(seed.subarray(0, p));
+    /** @type {Buffer[]} */
+    const runs = [];
     for (let q = p, start = p; ; q++) {
       if (seed[q] === 0xff && ((seed[q + 1] >= 0xd0 && seed[q + 1] <= 0xd7) || seed[q + 1] === 0xd9)) {
         runs.push(seed.subarray(start, q));
@@ -579,9 +610,9 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
       }
     }
     header.writeUInt16BE(P.height, header.indexOf(Buffer.from([0xff, 0xc0])) + 5);
-    const exif = (o) => { const b = Buffer.alloc(32); b.write("Exif\0\0II", 0, "latin1"); b.writeUInt16LE(42, 8); b.writeUInt32LE(8, 10);
+    const exif = (/** @type {number} */ o) => { const b = Buffer.alloc(32); b.write("Exif\0\0II", 0, "latin1"); b.writeUInt16LE(42, 8); b.writeUInt32LE(8, 10);
       b.writeUInt16LE(1, 14); b.writeUInt16LE(0x0112, 16); b.writeUInt16LE(3, 18); b.writeUInt32LE(1, 20); b.writeUInt16LE(o, 24); return b; };
-    const assemble = (o) => {
+    const assemble = (/** @type {number} */ o) => {
       const n = Math.ceil(P.height / 16), parts = [header.subarray(0, 2), Buffer.from([0xff, 0xe1, 0, 34]), exif(o), header.subarray(2)];
       for (let i = 0; i < n; i++) { parts.push(runs[seq(i)]); if (i < n - 1) parts.push(Buffer.from([0xff, 0xd0 + (i & 7)])); }
       parts.push(Buffer.from([0xff, 0xd9]));
@@ -609,9 +640,11 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
   t("R42 (control) a JPEG as a Uint8Array renders", ok.ok, true);
   t("R42 (control) the same JPEG as an ArrayBuffer renders the same picture",
     (await picture(SMALL.slice().buffer, 0, { maxEdge: 64, grey: true })).pixels_sha256, ok.pixels_sha256);
-  for (const [label, bytes] of [["a PDF", imagePage(GREY_IMG, { w: 3, h: 2 })], ["a GIF", new TextEncoder().encode("GIF89a\x01\x00\x01\x00")],
+  /** @type {[string, unknown][]} */
+  const notPictures = [["a PDF", imagePage(GREY_IMG, { w: 3, h: 2 })], ["a GIF", new TextEncoder().encode("GIF89a\x01\x00\x01\x00")],
     ["no bytes", new Uint8Array(0)], ["null", null], ["a string", "\xff\xd8\xff"], ["two bytes of a JPEG signature", Uint8Array.from([0xff, 0xd8, 0x00, 0xe0])],
-    ["seven bytes of a PNG signature", Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x00])]]) {
+    ["seven bytes of a PNG signature", Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x00])]];
+  for (const [label, bytes] of notPictures) {
     const r = await picture(bytes, 0, { maxEdge: 64, grey: true });
     t(`R42 ${label}: NOT_A_PICTURE, no bytes`, fields(r, "ok", "reason", "bytes"), [false, "NOT_A_PICTURE", undefined]);
   }
@@ -623,12 +656,15 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
      over it is refused although its data could not even be decoded, and one
      exactly at it gets past the bound to the decoder's own refusal. */
   const sof = (() => { for (let p = 2; ; ) { if (SMALL[p + 1] === 0xc0) return p; p += 2 + ((SMALL[p + 2] << 8) | SMALL[p + 3]); } })();
+  /** @param {number} w @param {number} h */
   const jpegSized = (w, h) => { const b = SMALL.slice(); b[sof + 5] = h >> 8; b[sof + 6] = h & 255; b[sof + 7] = w >> 8; b[sof + 8] = w & 255; return b; };
   /* T44: a JPEG is decoded while reduced, so its header's full frame is judged
      against PICTURE_SOURCE_MAX and its reduced frame against PICTURE_FRAME_MAX. */
   const [SW, SH] = [Math.floor(PICTURE_SOURCE_MAX / 3 / 8064), 8064];
+  /** @type {[number, number][]} */
+  const phoneFrames = [[8000, 6000], [6000, 8000], [8064, 6048], [6048, 8064], [16320, 12240], [12240, 16320]];
   t("R42 (the source bound admits the 48 MP phone frames, in colour, either way up, and the 200 MP ones)",
-    [[8000, 6000], [6000, 8000], [8064, 6048], [6048, 8064], [16320, 12240], [12240, 16320]].every(([w, h]) => w * h * 3 <= PICTURE_SOURCE_MAX), true);
+    phoneFrames.every(([w, h]) => w * h * 3 <= PICTURE_SOURCE_MAX), true);
   const over = await picture(jpegSized(SW + 1, SH), 0, { maxEdge: 1568, grey: true });
   t("R42 a JPEG header past PICTURE_SOURCE_MAX: IMAGE_TOO_LARGE before any decode, naming the bound",
     fields(over, "ok", "reason", "width", "height", "comps", "samples", "bound", "bound_name"),
@@ -648,19 +684,24 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
   const eq = await picture(jpegSized(4097, 3072), 0, { maxEdge: 1568, grey: true });
   t("R42 (control) a JPEG header the size of the PNG refused below (4097×3072 colour) is not refused for size: it reaches the decoder",
     [eq.ok, eq.reason], [false, "TRUNCATED_IMAGE_DATA"]);
+  /** @param {number} w @param {number} h @param {number} ct */
   const ihdr = (w, h, ct) => {
     const b = Buffer.alloc(33); Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b);
     b.writeUInt32BE(13, 8); b.write("IHDR", 12, "latin1"); b.writeUInt32BE(w, 16); b.writeUInt32BE(h, 20); b[24] = 8; b[25] = ct;
     return new Uint8Array(b);
   };
-  for (const [label, w, h, ct, n] of [["an RGB PNG", 4097, 3072, 2, 3], ["an RGBA PNG (four channels)", 3600, 3000, 6, 4]]) {
+  /** @type {[string, number, number, number, number][]} */
+  const pngHeaders = [["an RGB PNG", 4097, 3072, 2, 3], ["an RGBA PNG (four channels)", 3600, 3000, 6, 4]];
+  for (const [label, w, h, ct, n] of pngHeaders) {
     const r = await picture(ihdr(w, h, ct), 0, { maxEdge: 64, grey: true });
     t(`R42 ${label} header over PICTURE_FRAME_MAX (a PNG is judged on its full frame): IMAGE_TOO_LARGE before any decode`,
       fields(r, "ok", "reason", "samples", "bound", "bound_name"), [false, "IMAGE_TOO_LARGE", w * h * n, PICTURE_FRAME_MAX, "PICTURE_FRAME_MAX"]);
   }
   const atPng = await picture(ihdr(4096, 3072, 2), 0, { maxEdge: 64, grey: true });
   t("R42 (control) a PNG header at the bound reaches the decoder", [atPng.ok, atPng.reason !== "IMAGE_TOO_LARGE"], [false, true]);
-  for (const [name, reason] of [["refuse-progressive", "UNSUPPORTED_JPEG_PROCESS"], ["refuse-cmyk", "UNSUPPORTED_SAMPLES"], ["refuse-truncated", "TRUNCATED_IMAGE_DATA"]]) {
+  /** @type {[string, string][]} */
+  const jpegRefusals = [["refuse-progressive", "UNSUPPORTED_JPEG_PROCESS"], ["refuse-cmyk", "UNSUPPORTED_SAMPLES"], ["refuse-truncated", "TRUNCATED_IMAGE_DATA"]];
+  for (const [name, reason] of jpegRefusals) {
     const r = await picture(pic(name), 0, { maxEdge: 64, grey: true });
     t(`R42 the JPEG codec's refusal, mapped as R22 maps it: ${name} is ${reason}, no bytes`, fields(r, "ok", "reason", "page", "bytes"), [false, reason, 0, undefined]);
   }
@@ -668,9 +709,10 @@ console.log("\n--- R42, R43: a picture file, against Pillow 12.3.0 ---");
      beside the untouched file, which renders. */
   const PNG = Buffer.from(pic("png-rgb"));
   t("R42 (control) the untouched PNG renders", (await picture(new Uint8Array(PNG), 0, { maxEdge: 64, grey: true })).ok, true);
-  const crcOf = (b) => { let c = -1; for (const x of b) { c ^= x; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ -1) >>> 0; };
+  const crcOf = (/** @type {Uint8Array} */ b) => { let c = -1; for (const x of b) { c ^= x; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; } return (c ^ -1) >>> 0; };
+  /** @param {string} type @param {Uint8Array | readonly number[]} data */
   const chunk = (type, data) => { const b = Buffer.alloc(12 + data.length); b.writeUInt32BE(data.length, 0); b.write(type, 4, "latin1"); Buffer.from(data).copy(b, 8); b.writeUInt32BE(crcOf(b.subarray(4, 8 + data.length)), 8 + data.length); return b; };
-  const afterIhdr = (extra) => new Uint8Array(Buffer.concat([PNG.subarray(0, 33), extra, PNG.subarray(33)]));
+  const afterIhdr = (/** @type {Uint8Array} */ extra) => new Uint8Array(Buffer.concat([PNG.subarray(0, 33), extra, PNG.subarray(33)]));
   const interlaced = Buffer.from(PNG); interlaced[28] = 1; interlaced.writeUInt32BE(crcOf(interlaced.subarray(12, 29)), 29);
   const badCrc = Buffer.from(PNG); badCrc[40] ^= 0xff;
   for (const [label, bytes, reason] of [
@@ -710,8 +752,8 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
      written here from their definitions, not by the subject. */
   const PV = JSON.parse(Buffer.from(F("fixtures/picture-variants.json")).toString("utf8"));
   const PAGES = Object.fromEntries(PV.pages.map((p) => [p.name, p]));
-  const bytesOf = (name) => new Uint8Array(Buffer.from(PAGES[name].b64, "base64"));
-  const variant = (name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
+  const bytesOf = (/** @type {string} */ name) => new Uint8Array(Buffer.from(PAGES[name].b64, "base64"));
+  const variant = (/** @type {string} */ name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
   const FLOOR = 0.9;
   /* C18 (T51 fix round 2): the walk's hard photograph is a whole page of small print, blurred. `page-hard` is its twin
      (231 words, 110 dpi, a 2.4 degree tilt, perspective, noise, blur 1.0): measured through the engine, unprepared 2
@@ -725,16 +767,17 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   const { createOCREngine } = await import(pathToFileURL(ocrPkg.resolve("tesseract-wasm")).href);
   const engineWasm = readFileSync(ocrPkg.resolve("tesseract-wasm").replace(/lib\.js$/, "tesseract-core.wasm"));
   const engineModel = new Uint8Array(readFileSync(fileURLToPath(new URL("../../ocr-worker/assets/eng.traineddata", import.meta.url))));
-  const words = (s) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+  const words = (/** @type {string} */ s) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+  /** @param {string} truth @param {string} got */
   const shareRead = (truth, got) => {
-    const left = new Map();
+    const left = new Map(/** @type {[string, number][]} */ ([]));
     for (const w of words(got)) left.set(w, (left.get(w) || 0) + 1);
     const want = words(truth);
     let hit = 0;
     for (const w of want) if (left.get(w) > 0) { hit++; left.set(w, left.get(w) - 1); }
     return want.length ? hit / want.length : 0;
   };
-  const readByEngine = async (png) => {
+  const readByEngine = async (/** @type {Uint8Array} */ png) => {
     const p = readPng(png), rgba = new Uint8ClampedArray(p.width * p.height * 4);
     for (let i = 0; i < p.width * p.height; i++) rgba.fill(p.samples[i], i * 4, i * 4 + 3), rgba[i * 4 + 3] = 255;
     const engine = await createOCREngine({ wasmBinary: engineWasm });
@@ -744,15 +787,18 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
       return (engine.getTextBoxes("line") || []).map((b) => b.text).join(" ");
     } finally { engine.destroy(); }
   };
+  /** @param {string} name @param {object} [opts] */
   const photo = async (name, opts = {}) => { const r = await renderPictureToPixels(bytesOf(name), 0, { maxEdge: 4096, grey: true, ...opts }); answers.push(r); return r; };
   /* The tilt of the lines in grey samples, in degrees (positive when they rise to the right): the angle, over a
      tenth-degree sweep, at which the ink's rows are most unevenly filled. */
-  const tiltOf = (png) => {
-    const p = readPng(png), pts = [];
+  const tiltOf = (/** @type {Uint8Array} */ png) => {
+    const p = readPng(png);
+    /** @type {[number, number][]} */
+    const pts = [];
     for (let y = 0; y < p.height; y++) for (let x = (y % 3); x < p.width; x += 3) if (p.samples[y * p.width + x] < 100) pts.push([x, y]);
     let best = 0, bestScore = -1;
     for (let a = -6; a <= 6.0001; a += 0.1) {
-      const sl = Math.tan((a * Math.PI) / 180), rows = new Map();
+      const sl = Math.tan((a * Math.PI) / 180), rows = new Map(/** @type {[number, number][]} */ ([]));
       for (const [x, y] of pts) { const k = Math.round(y + x * sl); rows.set(k, (rows.get(k) || 0) + 1); }
       let sq = 0; for (const c of rows.values()) sq += c * c;
       if (sq > bestScore) { bestScore = sq; best = a; }
@@ -760,7 +806,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
     return best;
   };
   /* The text lines of grey samples: the runs of rows holding ink, and the median one's height in pixels. */
-  const lineHeight = (png) => {
+  const lineHeight = (/** @type {Uint8Array} */ png) => {
     const p = readPng(png), runs = [];
     let run = 0;
     for (let y = 0; y <= p.height; y++) {
@@ -772,7 +818,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
     return runs.length ? runs[runs.length >> 1] : 0;
   };
   /* The light: the mean of the brighter half of the pixels in each third of the width, and the darkest half percent. */
-  const light = (png) => {
+  const light = (/** @type {Uint8Array} */ png) => {
     const p = readPng(png), mean = [];
     for (let i = 0; i < 3; i++) {
       const v = [];
@@ -790,6 +836,7 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
     ["page-tilt-2.4", "page-110dpi", "page-noise-shade", "page-combined-a", "page-combined-b", "page-big-text", "page-blank"].every((n) => PAGES[n]), true);
 
   const READ_PAGES = PV.pages.filter((p) => p.words);
+  /** @type {{ [name: string]: { prepared: number, raw: number } }} */
   const shares = {};
   for (const pg of READ_PAGES) {
     const prepared = await photo(pg.name, { prepare: true });
@@ -851,10 +898,11 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   {
     /* The ink of a page however little of it there is: the darkest twentieth of the pixels under 128 (the 0.5th percentile
        of all the pixels, `light().ink`, is paper on a page whose ink is under half a percent). */
-    const inkLevel = (png) => {
+    const inkLevel = (/** @type {Uint8Array} */ png) => {
       const v = Array.from(readPng(png).samples).filter((x) => x < 128).sort((a, b) => a - b);
       return v.length ? v[Math.floor(v.length * 0.05)] : 255;
     };
+    /** @param {object} recipe @param {object} [opts] */
     const sparse = async (recipe, opts = {}) => {
       const g = generate({ kind: "png", seed: "rw9-A-7", size: { pages: 1, lines: 3 }, ...recipe });
       const r = await renderPictureToPixels(await g.bytes(), 0, { maxEdge: 4096, grey: true, prepare: true, ...opts });
@@ -885,13 +933,16 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
   {
     const g = generate({ kind: "png", seed: "rw9-A-7", size: { pages: 1, lines: 3 } });
     const base = readPng((await renderPictureToPixels(await g.bytes(), 0, { maxEdge: 4096, grey: true })).bytes);
+    /** @param {number} inkAt @param {number} paperAt @param {boolean} [blank] */
     const faint = async (inkAt, paperAt, blank = false) => {
       const px = base.samples.map((v) => blank ? paperAt : Math.round(inkAt + (v * (paperAt - inkAt)) / 255));
       const r = await renderPictureToPixels(await encodePng8(px, base.width, base.height, 1), 0, { maxEdge: 4096, prepare: true });
       answers.push(r);
       return r;
     };
-    for (const [ink, paper] of [[200, 240], [205, 240]]) {
+    /** @type {[number, number][]} */
+    const faintPrints = [[200, 240], [205, 240]];
+    for (const [ink, paper] of faintPrints) {
       const r = await faint(ink, paper);
       t(`R44 faint print: ink ${ink} on paper ${paper} is found to hold text, the lines 15 to 30 px, the paper light`,
         [r.ok, r.prepared.text_found, r.prepared.line_px >= 15 && r.prepared.line_px <= 30, light(r.bytes).paper >= 243], [true, true, true, true]);
@@ -919,8 +970,10 @@ console.log("\n--- R44: a photographed page, made ready for the engine ---");
 
 console.log("\n--- the published fixtures: pixelRefusal, pageRefusal, renderedPage give the module's own real answers ---");
 {
-  for (const [reason, extra] of [["NOT_A_PDF", {}], ["PAGE_HAS_TEXT_LAYER", { imageCount: 1 }], ["MULTIPLE_IMAGES_ON_PAGE", { imageCount: 2 }],
-    ["UNSUPPORTED_FILTER", { filters: ["LZWDecode"] }], ["PIXELS_UNDETERMINED", { detail: "decode_array" }]]) {
+  /** @type {[string, { imageCount?: number, filters?: string[], detail?: string }][]} */
+  const fixtureRefusals = [["NOT_A_PDF", {}], ["PAGE_HAS_TEXT_LAYER", { imageCount: 1 }], ["MULTIPLE_IMAGES_ON_PAGE", { imageCount: 2 }],
+    ["UNSUPPORTED_FILTER", { filters: ["LZWDecode"] }], ["PIXELS_UNDETERMINED", { detail: "decode_array" }]];
+  for (const [reason, extra] of fixtureRefusals) {
     const r = await pixelRefusal(reason);
     t(`fixtures pixelRefusal(${reason}) is the renderer's refusal, its why that reason's own text`, [r.ok, r.reason, r.why, r.bytes, ...Object.keys(extra).map((k) => r[k])],
       [false, reason, REFUSALS[reason], undefined, ...Object.values(extra)]);
@@ -942,11 +995,13 @@ console.log("\n--- the published fixtures: pixelRefusal, pageRefusal, renderedPa
 
 console.log("\n--- R45: wrong pixels are never ok:true ---");
 {
+  /** @param {string} label @param {Uint8Array} bytes @param {string} detail @param {object} [opts] */
   const undetermined = async (label, bytes, detail, opts = {}) => {
     const r = await render(bytes, 0, opts);
     t(`R45 ${label}: PIXELS_UNDETERMINED, ${detail}, no bytes`, [r.ok, r.reason, r.detail, r.bytes], [false, "PIXELS_UNDETERMINED", detail, undefined]);
     return r;
   };
+  /** @param {string} extra @param {Uint8Array} [data] */
   const grey = (extra, data = G) => imagePage(image(3, 2, `/ColorSpace /DeviceGray /BitsPerComponent 8 ${extra}`, data), { w: 3, h: 2 });
   const bits1 = Uint8Array.from([0b10110011, 0b01000000, 0b00001111, 0b11000000, 0b11111111, 0b00000000]);
   const rgb = Uint8Array.from({ length: 18 }, (_, i) => (i * 29 + 3) & 0xff);
@@ -964,6 +1019,7 @@ console.log("\n--- R45: wrong pixels are never ok:true ---");
     (await render(imagePage(image(3, 2, "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Decode [0 1 0 1 0 1]", rgb), { w: 3, h: 2 }), 0)).pixels_sha256, hex(rgb));
 
   /* /SMask and /Mask (R24) */
+  /** @param {string} extra @param {PdfBody} obj */
   const withObj = (extra, obj) => onePage({ box: [0, 0, 3, 2], res: "/XObject << /Im 5 0 R >>", ops: "q 3 0 0 2 0 0 cm /Im Do Q",
     more: [image(3, 2, `/ColorSpace /DeviceGray /BitsPerComponent 8 ${extra}`, G), obj] });
   const alpha = image(3, 2, "/ColorSpace /DeviceGray /BitsPerComponent 8", new Uint8Array(6).fill(128));
@@ -973,6 +1029,7 @@ console.log("\n--- R45: wrong pixels are never ok:true ---");
   t("R45 (control) the same page with neither is rendered", (await render(withObj("", "<< >>"), 0)).pixels_sha256, hex(G));
 
   /* a TIFF predictor (R24) */
+  /** @param {string} extra @param {Uint8Array} data */
   const flate = (extra, data) => imagePage(image(3, 2, `/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode ${extra}`, deflateSync(data)), { w: 3, h: 2 });
   await undetermined("FlateDecode with /Predictor 2", flate("/DecodeParms << /Predictor 2 /Colors 1 /BitsPerComponent 8 /Columns 3 >>", G), "tiff_predictor");
   t("R45 (control) FlateDecode with /Predictor 1 is rendered", (await render(flate("/DecodeParms << /Predictor 1 >>", G), 0)).pixels_sha256, hex(G));
@@ -981,7 +1038,7 @@ console.log("\n--- R45: wrong pixels are never ok:true ---");
     (await render(flate("/DecodeParms << /Predictor 15 /Colors 1 /BitsPerComponent 8 /Columns 3 >>", png15), 0)).pixels_sha256, hex(G));
 
   /* CCITT /Columns against /Width (R23) */
-  const ccitt = (parms) => imagePage(image(3300, 2550, `/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /CCITTFaxDecode /DecodeParms ${parms}`, CCITT), { w: 792, h: 612, pageExtra: "/Rotate 270" });
+  const ccitt = (/** @type {string} */ parms) => imagePage(image(3300, 2550, `/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /CCITTFaxDecode /DecodeParms ${parms}`, CCITT), { w: 792, h: 612, pageExtra: "/Rotate 270" });
   const cc = await undetermined("CCITT /Columns 3000 on a 3300-wide image", ccitt("<< /K -1 /Columns 3000 /Rows 2550 >>"), "ccitt_columns");
   t("R45 ...naming both figures", [cc.columns, cc.width], [3000, 3300]);
   await undetermined("CCITT with no /Columns (1,728) on a 3300-wide image", ccitt("<< /K -1 /Rows 2550 >>"), "ccitt_columns");
@@ -989,6 +1046,7 @@ console.log("\n--- R45: wrong pixels are never ok:true ---");
     (await render(ccitt("<< /K -1 /Columns 3300 /Rows 2550 >>"), 0)).pixels_sha256, IND_UPRIGHT_SHA);
 
   /* the DCT pass-through is examined (R22) */
+  /** @param {number} w @param {number} h @param {string} cs @param {Uint8Array} [data] */
   const dctPage = (w, h, cs, data = jpeg("rgb-444")) => imagePage(image(w, h, `/ColorSpace ${cs} /BitsPerComponent 8 /Filter /DCTDecode`, data), { w: 63, h: 47 });
   await undetermined("a pass-through whose JPEG is 63 wide under a dictionary that says 64", dctPage(64, 47, "/DeviceRGB"), "dct_unexamined");
   await undetermined("a pass-through whose JPEG is 47 high under a dictionary that says 48", dctPage(63, 48, "/DeviceRGB"), "dct_unexamined");
@@ -1005,7 +1063,9 @@ console.log("\n--- R45: wrong pixels are never ok:true ---");
 console.log("\n--- R46: declared sizes are judged before any decode, with the table's figures ---");
 {
   const PIXELS = boundOf("image", "pixels"), EDGE = boundOf("image", "edge");
+  /** @param {number} w @param {number} h @param {string} filter @param {string} parms @param {Uint8Array} data */
   const sized = (w, h, filter, parms, data) => imagePage(image(w, h, `/ColorSpace /DeviceGray /BitsPerComponent 1 ${filter ? `/Filter /${filter}` : ""} ${parms}`, data), { w: 8, h: 8 });
+  /** @param {string} label @param {Uint8Array} bytes */
   const over = async (label, bytes) => {
     const r = await render(bytes, 0);
     t(`R46 ${label}: IMAGE_TOO_LARGE with the declared size and the bounds, no decode, no bytes`,
@@ -1034,8 +1094,9 @@ console.log("\n--- R46: declared sizes are judged before any decode, with the ta
 console.log("\n--- R48: a turned page or picture is turned upright on request ---");
 {
   const rgb = Uint8Array.from({ length: 18 }, (_, i) => (i * 29 + 3) & 0xff);
+  /** @param {number} rot @param {PdfBody} [img] */
   const page = (rot, img = GREY_IMG) => imagePage(img, { w: 3, h: 2, pageExtra: `/Rotate ${rot}` });
-  const wantGrey = (deg) => { const tr = turn((x, y) => G[y * 3 + x], 3, 2, deg); const o = []; for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) o.push(tr.at(X, Y)); return [tr.W, tr.H, hex(Uint8Array.from(o))]; };
+  const wantGrey = (/** @type {number} */ deg) => { const tr = turn((x, y) => G[y * 3 + x], 3, 2, deg); const o = /** @type {(number | undefined)[]} */ ([]); for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) o.push(tr.at(X, Y)); return [tr.W, tr.H, hex(Uint8Array.from(o))]; };
   for (const deg of [0, 90, 180, 270]) {
     const r = await render(page(0), 0, { turn: deg });
     t(`R48 an 8-bit page, turn ${deg}: the samples turned exactly, turned_deg ${deg}, upright`, [r.width, r.height, r.pixels_sha256, r.turned_deg, r.rotate_deg, r.upright], [...wantGrey(deg), deg, 0, true]);
@@ -1053,6 +1114,7 @@ console.log("\n--- R48: a turned page or picture is turned upright on request --
   t("R48 R21 opts.rotate is still ignored", ign.pixels_sha256, wantGrey(90)[2]);
   /* 1-bit: a bit lands on a bit */
   const bits = Uint8Array.from([0b10110011, 0b01000000, 0b00001111, 0b11000000, 0b11111111, 0b00000000]);
+  /** @param {number} x @param {number} y */
   const bitAt = (x, y) => (bits[y * 2 + (x >> 3)] >> (7 - (x & 7))) & 1;
   for (const deg of [90, 180, 270]) {
     const r = await render(imagePage(image(10, 3, "/ImageMask true", bits), { w: 10, h: 3 }), 0, { turn: deg });
@@ -1072,8 +1134,9 @@ console.log("\n--- R48: a turned page or picture is turned upright on request --
 
   /* a picture: after the EXIF orientation, a PNG too */
   const PV = JSON.parse(Buffer.from(F("fixtures/picture-variants.json")).toString("utf8"));
-  const pic = (name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
+  const pic = (/** @type {string} */ name) => new Uint8Array(Buffer.from(PV.variants.find((v) => v.name === name).b64, "base64"));
   const samplesOf = (r) => { const p = readPng(r.bytes); return { w: p.width, h: p.height, s: p.samples, c: p.colorType === 2 ? 3 : 1 }; };
+  /** @param {string} name @param {number} [comps] */
   const check = async (name, comps) => {
     const base = await renderPictureToPixels(pic(name), 0, { maxEdge: 4096, grey: true });
     const b = samplesOf(base);
@@ -1096,21 +1159,26 @@ console.log("\n--- R48: a turned page or picture is turned upright on request --
 
 console.log("\n--- R47: a page is rendered from the page's own bytes ---");
 {
-  const sourceOf = (bytes) => { const log = { reads: 0, bytes: 0 }; return { log, size: bytes.length, readRange: async (o, n) => { log.reads++; const out = bytes.slice(o, o + n); log.bytes += out.length; return out; } }; };
+  /** @param {Uint8Array} bytes */
+  const sourceOf = (bytes) => { const log = { reads: 0, bytes: 0 }; return { log, size: bytes.length, readRange: async (/** @type {number} */ o, /** @type {number} */ n) => { log.reads++; const out = bytes.slice(o, o + n); log.bytes += out.length; return out; } }; };
   const same = (a, b) => JSON.stringify({ ...a, bytes: a.bytes ? hex(a.bytes) : null }) === JSON.stringify({ ...b, bytes: b.bytes ? hex(b.bytes) : null });
   const enc = onePage({ ops: "q 8 0 0 8 0 0 cm /Im Do Q", res: "/XObject << /Im 5 0 R >>", more: [GREY_IMG, "<< /Filter /Standard /V 1 /R 2 /O (owner) /U (user) /P -4 >>"], trailer: "/Encrypt 6 0 R" });
-  for (const [label, bytes, page, opts] of [
+  /** @type {[string, Uint8Array, number, object][]} */
+  const sourceCases = [
     ["the CCITT scan", SCAN, 0, {}], ["the DCT scan decoded", DCT_SCAN, 0, { decodeDct: true }],
     ["a small page", imagePage(GREY_IMG, { w: 3, h: 2 }), 0, {}], ["a page past the end", imagePage(GREY_IMG, { w: 3, h: 2 }), 5, {}],
     ["an encrypted file", enc, 0, {}], ["bytes that are no PDF", new Uint8Array(64).fill(7), 0, {}],
-  ]) {
+  ];
+  for (const [label, bytes, page, opts] of sourceCases) {
     const a = await render(bytes, page, opts), b = await render(sourceOf(bytes), page, opts);
     t(`R47 ${label}: the source answers what the bytes answer`, same(a, b), true);
   }
   /* a many-page scan: one page costs about that page, not the file (needs pdf-reader's pageSource) */
   const file = generatePdf({ kind: "pdf", seed: "r47", size: { pages: 24, lines: 4 }, kinds: ["scan"], scan: { dpi: 150, bits: 1 }, structure: "classic" });
   const whole = await file.bytes();
-  for (const [page, label] of [[19, "page 20"], [0, "page 1"], [23, "the last page"]]) {
+  /** @type {[number, string][]} */
+  const manyPages = [[19, "page 20"], [0, "page 1"], [23, "the last page"]];
+  for (const [page, label] of manyPages) {
     const src = sourceOf(whole);
     const a = await render(whole, page, { decodeDct: true }), b = await render(src, page, { decodeDct: true });
     t(`R47 ${label} of 24, through pdf-reader's pageSource: the same answer as the whole file's`, same(a, b), true);
@@ -1124,11 +1192,12 @@ console.log("\n--- R47: a page is rendered from the page's own bytes ---");
 
 console.log("\n--- R49: no ceiling of the module's own ---");
 {
-  const src = (f) => readFileSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)), "utf8");
-  const code = (f) => src(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  const src = (/** @type {string} */ f) => readFileSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)), "utf8");
+  const code = (/** @type {string} */ f) => src(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
   /* the figures READ_BOUNDS holds for the rows this module quotes, as literals in any spelling */
   const figures = ["image.pixels", "image.edge", "image.picture_frame", "image.picture_source"].map((k) => boundOf(...k.split(".")));
-  const spellings = (n) => [String(n), n.toLocaleString("en-US"), n.toString(16), `0x${n.toString(16)}`];
+  const spellings = (/** @type {number} */ n) => [String(n), n.toLocaleString("en-US"), n.toString(16), `0x${n.toString(16)}`];
+  /** @param {string} f @param {number} n */
   const seen = (f, n) => spellings(n).some((x) => new RegExp(`(^|[^0-9A-Za-z_.])${x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^0-9A-Za-z_.]|$)`).test(code(f)));
   const MINE = ["imagecrop.mjs", "pagepixels-worker.mjs", "pagepixels.mjs", "picturepixels.mjs"];
   t("R49 no figure READ_BOUNDS holds for these rows is written as a literal in the module's code",
@@ -1150,8 +1219,8 @@ console.log("\n--- R41: no place named ---");
   t("R41 no refusal text names a place", texts.filter((s) => PLACES.test(s)), []);
   const told = answers.map((r) => JSON.stringify({ ...r, bytes: undefined })).filter((s) => PLACES.test(s));
   t(`R41 no answer given in this file names a place (${answers.length} answers)`, told, []);
-  const src = (f) => readFileSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)), "utf8");
-  const code = (f) => src(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  const src = (/** @type {string} */ f) => readFileSync(fileURLToPath(new URL(`../src/${f}`, import.meta.url)), "utf8");
+  const code = (/** @type {string} */ f) => src(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
   const MINE = ["imagecrop.mjs", "pagepixels-worker.mjs", "pagepixels.mjs", "picturepixels.mjs"];
   t("R41 (the module's files are all there)", MINE.every((f) => readdirSync(fileURLToPath(new URL("../src", import.meta.url))).includes(f)), true);
   t("R41 no place is named in the module's code", MINE.filter((f) => PLACES.test(code(f))), []);
