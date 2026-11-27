@@ -10,55 +10,115 @@ import { openPdf } from "../../../src/pdfstructure.mjs";
 import { readContainer, readPart, readCoreProperties } from "../../../src/ooxml.mjs";
 import { SECRETS, enc, latin, has, jpeg, jpegCoded, png, pngCoded, gif, jp2, pdf, incremental, objStm, makePdf, makeZip,
   docx, xlsx, pptx, odf, emf, jbig2Segment, jbig2Comment, unzipCopy } from "./fixtures.mjs";
+/** @import { CleanAnswer, CleanCopy, CleanRefused } from "../../../src/doc-clean/index.mjs" */
+/** @import { PdfDoc, PdfObjects, PdfValue, PdfMap, PdfStream, PdfRef, PdfArr } from "../../../src/pdfstructure.mjs" */
+/** @import { ZipEntry } from "../../make-zip.mjs" */
+/** @import { PdfBody } from "../../../../pdf-worker/test/make-pdf.mjs" */
+/** @import { CopiedPart, OdfFlavour } from "./fixtures.mjs" */
 
+/** The codes of this module's own refusals, written out (R3).
+ *  @typedef {"ENCRYPTED" | "EMBEDDED_FILE" | "HTML_EMBEDS_IMAGE" | "ARCHIVE" | "IMAGE_NOT_CLEANABLE" | "EMBEDDED_MEDIA"
+ *    | "NOT_A_CLEANABLE_FORMAT" | "DOCUMENT_TOO_LARGE" | "DOCUMENT_UNREADABLE"} RefusalCode */
+
+/** @param {CleanAnswer} r @param {string} code @param {RegExp} [detail] @returns {CleanRefused} */
 const refused = (r, code, detail) => {
   assert.deepEqual(Object.keys(r).sort(), ["code", "detail", "ok"], "nothing answered but the refusal");
   assert.equal(r.ok, false);
+  if (r.ok) throw new Error("not a refusal");
   assert.equal(r.code, code, r.detail);
   if (detail) assert.match(r.detail, detail);
+  return r;
 };
+/** A refusal's detail, undefined for any other answer.
+ *  @param {CleanAnswer} r @returns {string | undefined} */
+const why = (r) => r.ok ? undefined : r.detail;
+/** The answer as a copy; anything else ends the test.
+ *  @param {CleanAnswer} r @returns {CleanCopy} */
+function copy(r) {
+  if (!r.ok || r.clean) throw new Error(`not a copy: ${r.ok ? "clean" : `${r.code} ${r.detail}`}`);
+  return r;
+}
+/** @template T @param {T | null | undefined} v @param {string} what @returns {T} */
+function must(v, what) {
+  if (v === null || v === undefined) throw new Error(`missing: ${what}`);
+  return v;
+}
+/** @param {Uint8Array} b */
 const secretsIn = (b) => SECRETS.filter((s) => has(b, s));
+/** @param {Uint8Array} b @returns {CopiedPart[]} */
 const partsOf = (b) => unzipCopy(b).parts;
+/** @param {Uint8Array} b @param {string} name @returns {CopiedPart | undefined} */
 const part = (b, name) => partsOf(b).find((p) => p.name === name);
+/** @param {Uint8Array} b @param {string} name @returns {Uint8Array} */
+const partData = (b, name) => must(part(b, name), name).data;
+/** @param {Uint8Array} b */
 const text = (b) => latin(b);
-/** Every indirect object a PDF's bytes define, by number, and those its latest trailer reaches. */
+/** A copied part as an entry written again, unchanged.
+ *  @param {CopiedPart} p @returns {ZipEntry} */
+const entry = (p) => ({ name: p.name, data: p.data });
+/** @param {PdfValue | undefined} v @returns {PdfStream | undefined} */
+const asStream = (v) => v !== null && typeof v === "object" && v.t === "stream" ? v : undefined;
+/** @param {PdfValue | undefined} v @returns {PdfMap | undefined} */
+const asMap = (v) => v !== null && typeof v === "object" && v.t === "dict" ? v.map : undefined;
+/** @param {PdfValue | undefined} v @returns {PdfArr | undefined} */
+const asArr = (v) => v !== null && typeof v === "object" && v.t === "arr" ? v : undefined;
+/** @param {PdfValue | undefined} v @returns {PdfRef | undefined} */
+const asRef = (v) => v !== null && typeof v === "object" && v.t === "ref" ? v : undefined;
+/** A name's or a string's text, as `value?.v` reads it.
+ *  @param {PdfValue | undefined} v @returns {string | undefined} */
+const vOf = (v) => v !== null && typeof v === "object" && (v.t === "name" || v.t === "str") ? v.v : undefined;
+/** Every indirect object a PDF's bytes define, by number, and those its latest trailer reaches.
+ *  @param {Uint8Array} b @returns {Promise<{ doc: PdfDoc, defined: number[], read: PdfObjects }>} */
 async function pdfObjects(b) {
-  const doc = await openPdf(b);
+  const doc = must(await openPdf(b), "an opened PDF");
   const defined = [...latin(b).matchAll(/(?:^|\n)(\d+) 0 obj\b/g)].map((m) => Number(m[1]));
-  return { doc, defined, read: doc.objects() };
+  return { doc, defined, read: must(doc.objects(), "the PDF's objects") };
+}
+/** Every dictionary among a PDF's objects.
+ *  @param {PdfObjects} read @returns {PdfMap[]} */
+function dictsOf(read) {
+  /** @type {PdfMap[]} */
+  const dicts = [];
+  for (const o of read.objects) { const m = asMap(o.value); if (m) dicts.push(m); }
+  return dicts;
 }
 
 // ---- R1 ----
 
 test("R1 the format is judged from the bytes alone: pdf, docx, xlsx, pptx, a macro-enabled twin named by its plain twin, odt, ods, odp, html and text", async () => {
-  const twin = makeZip(partsOf(docx()).map((p) => ({ name: p.name, data: p.name !== "[Content_Types].xml" ? p.data
+  const twin = makeZip(partsOf(docx()).map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, data: p.name !== "[Content_Types].xml" ? p.data
     : latin(p.data).replace("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml", "application/vnd.ms-word.document.macroEnabled.main+xml") })));
+  /** @type {[Uint8Array, string][]} */
   const cases = [[pdf(), "pdf"], [docx(), "docx"], [xlsx(), "xlsx"], [pptx(), "pptx"], [twin, "docx"], [odf("odt"), "odt"], [odf("ods"), "ods"], [odf("odp"), "odp"],
     [enc("<!DOCTYPE html><html><body><p>Agenda</p></body></html>"), "html"], [enc("item,amount\nroads,125\n"), "text"], [enc("Plain minutes.\r\n"), "text"],
     [new Uint8Array([0xff, 0xfe, ...Buffer.from("<html><b>x</b></html>", "utf16le")]), "html"], [new Uint8Array(Buffer.from("caf\xe9, 1\n", "latin1")), "text"],
     [new Uint8Array([0x20, 0x20, ...enc("%PDF-1.4"), ...pdf().subarray(8)]), "pdf"]];
   for (const [bytes, format] of cases) {
     const r = await cleanDocument(bytes);
-    assert.equal(r.ok, true, `${format}: ${r.detail}`);
+    assert.equal(r.ok, true, `${format}: ${why(r)}`);
+    if (!r.ok) throw new Error(format);
     assert.equal(r.format, format);
   }
 });
 
 test("R1 CSV and plain text answer clean:true with nothing else; an HTML document without a data:image URI too", async () => {
-  for (const [s, format] of [["a,b\n1,2\n", "text"], ["just words", "text"], ["", "text"], ["<html><img src=\"photo.jpg\"></html>", "html"]])
+  /** @type {[string, string][]} */
+  const cases = [["a,b\n1,2\n", "text"], ["just words", "text"], ["", "text"], ["<html><img src=\"photo.jpg\"></html>", "html"]];
+  for (const [s, format] of cases)
     assert.deepEqual(await cleanDocument(enc(s)), { ok: true, clean: true, format });
 });
 
 test("R1 a copy answers its bytes, its format and the counts of images stripped and left unchanged", async () => {
-  const plain = makeZip(partsOf(docx()).map((p) => ({ name: p.name, data: p.name.endsWith(".png") ? png({ meta: false }) : p.data })));
-  const r = await cleanDocument(plain);
-  assert.deepEqual(Object.keys(r).sort(), ["bytes", "clean", "format", "images", "ok"]);
+  const plain = makeZip(partsOf(docx()).map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, data: p.name.endsWith(".png") ? png({ meta: false }) : p.data })));
+  const answer = await cleanDocument(plain);
+  assert.deepEqual(Object.keys(answer).sort(), ["bytes", "clean", "format", "images", "ok"]);
+  const r = copy(answer);
   assert.equal(r.clean, false);
   assert.ok(r.bytes instanceof Uint8Array);
   assert.deepEqual(r.images, { stripped: 1, unchanged: 1 });
   const p = await cleanDocument(pdf({ more: [{ dict: "<< /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceGray /BitsPerComponent 8 >>", data: new Uint8Array(4) }],
     ops: "q 1 0 0 1 0 0 cm Q", page: "/Thumb 9 0 R" }));
-  assert.deepEqual(p.images, { stripped: 1, unchanged: 1 });
+  assert.deepEqual(copy(p).images, { stripped: 1, unchanged: 1 });
 });
 
 test("R1 R6 a document carrying neither image metadata nor document metadata answers clean:true: a PDF, a .docx, an ODF package", async () => {
@@ -68,12 +128,13 @@ test("R1 R6 a document carrying neither image metadata nor document metadata ans
     { dict: "<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode >>", data: jpeg({ meta: false }) }]);
   assert.deepEqual(await cleanDocument(bare), { ok: true, clean: true, format: "pdf" });
   assert.deepEqual(await cleanDocument(docx({ meta: false })), { ok: true, clean: true, format: "docx" });
-  const noMeta = makeZip(partsOf(odf("odt")).filter((p) => p.name !== "meta.xml").map((p) => ({ name: p.name, method: p.method,
+  const noMeta = makeZip(partsOf(odf("odt")).filter((p) => p.name !== "meta.xml").map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, method: p.method,
     data: p.name === "content.xml" ? latin(p.data).replace(/<(dc:creator|dc:date|meta:creator-initials)>[^<]*<\/\1>/g, "")
       : p.name.endsWith(".jpg") ? jpeg({ meta: false }) : p.name.endsWith(".png") ? png({ meta: false }) : p.data })));
   assert.deepEqual(await cleanDocument(noMeta), { ok: true, clean: true, format: "odt" });
-  const stamped = makeZip(partsOf(noMeta).map((p) => ({ name: p.name, method: p.method, data: p.data, dosDate: 0x5864, dosTime: 0x6000 })));
-  assert.equal((await cleanDocument(stamped)).clean, false, "a ZIP time is removed by the copy");
+  const stamped = makeZip(partsOf(noMeta).map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, method: p.method, data: p.data, dosDate: 0x5864, dosTime: 0x6000 })));
+  const s = await cleanDocument(stamped);
+  assert.equal(s.ok ? s.clean : undefined, false, "a ZIP time is removed by the copy");
 });
 
 test("R1 never throws: any value, empty, truncated or random bytes answer a refusal", async () => {
@@ -90,13 +151,14 @@ test("R1 never throws: any value, empty, truncated or random bytes answer a refu
 // ---- R2 ----
 
 test("R2 a PDF copy: its JPEG carries no EXIF, XMP or comment, its coded data unchanged, and no image /Metadata", async () => {
-  const r = await cleanDocument(pdf());
-  assert.equal(r.ok, true);
+  const answer = await cleanDocument(pdf());
+  assert.equal(answer.ok, true);
+  const r = copy(answer);
   assert.deepEqual(secretsIn(r.bytes), []);
   const { doc, read } = await pdfObjects(r.bytes);
-  const img = read.objects.find((o) => o.value.t === "stream" && o.value.dict.Subtype?.v === "Image");
-  assert.equal(img.value.dict.Metadata, undefined);
-  const bytes = doc.streamRawBytes(img.value);
+  const img = must(read.objects.map((o) => asStream(o.value)).find((v) => vOf(v?.dict.Subtype) === "Image"), "the image");
+  assert.equal(img.dict.Metadata, undefined);
+  const bytes = must(doc.streamRawBytes(img), "the image's bytes");
   assert.equal(jpegCoded(bytes), jpegCoded(jpeg()));
   assert.ok(!text(bytes).includes("Exif") && !text(bytes).includes("http://ns.adobe.com/xap"));
 });
@@ -104,7 +166,7 @@ test("R2 a PDF copy: its JPEG carries no EXIF, XMP or comment, its coded data un
 test("R2 a PDF copy is the latest revision rewritten whole: an incrementally replaced image is gone, and every object it defines is reachable from its trailer", async () => {
   const updated = incremental(pdf(), jpeg({ meta: false }));
   assert.ok(has(updated, "GPSSECRET"), "the earlier revision still holds the old image");
-  const r = await cleanDocument(updated);
+  const r = copy(await cleanDocument(updated));
   assert.deepEqual(secretsIn(r.bytes), []);
   const { defined, read } = await pdfObjects(r.bytes);
   assert.deepEqual(read.unresolved, []);
@@ -125,53 +187,56 @@ test("R2 a PDF copy expands object streams and strips a page's /Thumb image", as
     { dict: "<< /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode >>", data: jpeg() },
     objStm(7, ["<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"])]);
   for (const b of [src, withStream]) {
-    const r = await cleanDocument(b);
-    assert.equal(r.ok, true, r.detail);
+    const answer = await cleanDocument(b);
+    assert.equal(answer.ok, true, why(answer));
+    const r = copy(answer);
     assert.deepEqual(secretsIn(r.bytes), []);
     assert.ok(!/\/ObjStm|\/XRef/.test(text(r.bytes)));
     const { read } = await pdfObjects(r.bytes);
-    assert.ok(read.objects.some((o) => o.value.t === "dict" && o.value.map.BaseFont?.v === "Helvetica"));
+    assert.ok(read.objects.some((o) => vOf(asMap(o.value)?.BaseFont) === "Helvetica"));
     assert.equal(r.images.stripped, 1);
   }
 });
 
 test("R2 a JPEG 2000 image's xml box is stripped, in a PDF (JPXDecode) and in a package", async () => {
   const withJp2 = await cleanDocument(pdf({ more: [{ dict: "<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /Filter /JPXDecode >>", data: jp2() }], ops: "/Im2 Do", page: "/Resources << /XObject << /Im1 8 0 R /Im2 9 0 R >> /Font << /F1 5 0 R >> >>" }));
-  assert.equal(withJp2.ok, true, withJp2.detail);
-  assert.deepEqual(secretsIn(withJp2.bytes), []);
+  assert.equal(withJp2.ok, true, why(withJp2));
+  assert.deepEqual(secretsIn(copy(withJp2).bytes), []);
   const pkg = await cleanDocument(docx({ extra: [{ name: "word/media/image3.jp2", data: jp2() }] }));
-  assert.equal(pkg.ok, true, pkg.detail);
-  assert.ok(!has(part(pkg.bytes, "word/media/image3.jp2").data, "JP2SECRET"));
+  assert.equal(pkg.ok, true, why(pkg));
+  assert.ok(!has(partData(copy(pkg).bytes, "word/media/image3.jp2"), "JP2SECRET"));
 });
 
 test("R2 a package copy is the same parts in the same order, only image and metadata parts changed, every part at the fixed time with no extra field and no comment", async () => {
   for (const original of [docx({ extra: [{ name: "word/media/image3.gif", data: gif() }] }), xlsx(), pptx(), odf("odt"), odf("ods"), odf("odp")]) {
-    const r = await cleanDocument(original);
-    assert.equal(r.ok, true, r.detail);
+    const answer = await cleanDocument(original);
+    assert.equal(answer.ok, true, why(answer));
+    const r = copy(answer);
     const before = partsOf(original), after = unzipCopy(r.bytes);
     assert.equal(after.comment, 0);
     assert.deepEqual(after.parts.map((p) => p.name), before.map((p) => p.name).filter((n) => n !== "docProps/custom.xml"));
     const metaPart = /^(docProps\/|meta\.xml$|content\.xml$|styles\.xml$|\[Content_Types\]\.xml$|_rels\/\.rels$|word\/|ppt\/comment|xl\/comments|xl\/workbook\.xml$)/;
     for (const p of after.parts) {
       assert.deepEqual([p.time, p.date, p.extra, p.comment], [0, 0x21, 0, 0], p.name);
-      const o = before.find((x) => x.name === p.name);
+      const o = must(before.find((x) => x.name === p.name), p.name);
       assert.equal(p.method, o.method, p.name);
       if (!/\.(jpe?g|png|gif|jp2)$/.test(p.name) && !metaPart.test(p.name)) assert.deepEqual(p.data, o.data, `${p.name} unchanged`);
     }
     assert.deepEqual(secretsIn(r.bytes), []);
     for (const p of after.parts) assert.deepEqual(secretsIn(p.data), [], p.name);
-    const odfMime = after.parts[0];
+    const odfMime = must(after.parts[0], "the first part");
     if (odfMime.name === "mimetype") assert.equal(odfMime.method, 0, "mimetype first and stored");
   }
 });
 
 test("R2 a package's JPEG and PNG keep their coded data byte for byte; an EMZ's gzip header loses its name and time", async () => {
   const named = new Uint8Array([0x1f, 0x8b, 8, 8, 1, 2, 3, 4, 0, 3, ...enc("PATHSECRET.emf"), 0, ...gzipSync(Buffer.from(emf())).subarray(10)]);
-  const r = await cleanDocument(docx({ extra: [{ name: "word/media/image4.emz", data: named }] }));
-  assert.equal(r.ok, true, r.detail);
-  assert.equal(jpegCoded(part(r.bytes, "word/media/image1.jpeg").data), jpegCoded(jpeg()));
-  assert.equal(pngCoded(part(r.bytes, "word/media/image2.png").data), pngCoded(png()));
-  const emz = part(r.bytes, "word/media/image4.emz").data;
+  const answer = await cleanDocument(docx({ extra: [{ name: "word/media/image4.emz", data: named }] }));
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
+  assert.equal(jpegCoded(partData(r.bytes, "word/media/image1.jpeg")), jpegCoded(jpeg()));
+  assert.equal(pngCoded(partData(r.bytes, "word/media/image2.png")), pngCoded(png()));
+  const emz = partData(r.bytes, "word/media/image4.emz");
   assert.deepEqual([...emz.subarray(0, 10)], [0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff]);
   assert.ok(!has(emz, "PATHSECRET"));
   assert.deepEqual(new Uint8Array(gunzipSync(emz)), emf());
@@ -200,9 +265,13 @@ test("R3 EMBEDDED_FILE: a PDF attachment (name tree and annotation), an OOXML em
 });
 
 test("R3 IMAGE_NOT_CLEANABLE: TIFF, HEIC, AVIF and JPEG XL images; EMF and WMF holding a JPEG or PNG; SVG with <image> or <metadata>; a PDF inline JPEG; a BMP with a colour profile", async () => {
+  /** @param {string} brand */
   const ftyp = (brand) => new Uint8Array([0, 0, 0, 24, ...enc("ftyp"), ...enc(brand), 0, 0, 0, 0, ...enc("mif1"), ...enc(brand), 0, 0, 0, 8, ...enc("meta")]);
-  const bmp = (v5cs) => { const b = Buffer.alloc(14 + 124 + 4); b.write("BM", 0, "latin1"); b.writeUInt32LE(b.length, 2); b.writeUInt32LE(138, 10); b.writeUInt32LE(124, 14); b.writeInt32LE(1, 18); b.writeInt32LE(1, 22); b.writeUInt16LE(1, 26); b.writeUInt16LE(24, 28); b.write(v5cs, 14 + 56, "latin1"); return new Uint8Array(b); };
+  /** @param {string} v5cs */
+  const bmp = (v5cs) => { const b = Buffer.alloc(14 + 124 + 4); b.write("BM", 0, 2, "latin1"); b.writeUInt32LE(b.length, 2); b.writeUInt32LE(138, 10); b.writeUInt32LE(124, 14); b.writeInt32LE(1, 18); b.writeInt32LE(1, 22); b.writeUInt16LE(1, 26); b.writeUInt16LE(24, 28); b.write(v5cs, 14 + 56, v5cs.length, "latin1"); return new Uint8Array(b); };
+  /** @param {Uint8Array} inner */
   const wmf = (inner) => new Uint8Array([1, 0, 9, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...inner, 3, 0, 0, 0, 0, 0]);
+  /** @type {[string, Uint8Array, RegExp][]} */
   const cases = [
     ["word/media/a.tif", new Uint8Array([0x49, 0x49, 0x2a, 0, 8, 0, 0, 0, 0, 0]), /a TIFF/],
     ["word/media/a.heic", ftyp("heic"), /HEIC or AVIF/], ["word/media/a.avif", ftyp("avif"), /HEIC or AVIF/],
@@ -216,8 +285,8 @@ test("R3 IMAGE_NOT_CLEANABLE: TIFF, HEIC, AVIF and JPEG XL images; EMF and WMF h
   refused(await cleanDocument(pdf({ ops: "q 8 0 0 8 0 0 cm BI /W 8 /H 8 /CS /G /BPC 8 /F /DCT ID \xff\xd8\xff EI Q" })), "IMAGE_NOT_CLEANABLE", /object 4: an inline JPEG/);
   refused(await cleanDocument(pdf({ ops: "q BI /W 8 /H 8 /CS /G /BPC 8 /Filter [/AHx /DCTDecode] ID 00 EI Q" })), "IMAGE_NOT_CLEANABLE", /inline JPEG/);
   const ok = await cleanDocument(docx({ extra: [{ name: "word/media/c.svg", data: enc('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>') }, { name: "word/media/c.bmp", data: bmp("BGRs") }, { name: "word/media/c.emf", data: emf() }] }));
-  assert.equal(ok.ok, true, ok.detail);
-  assert.equal(ok.images.unchanged, 3);
+  assert.equal(ok.ok, true, why(ok));
+  assert.equal(copy(ok).images.unchanged, 3);
   assert.ok((await cleanDocument(pdf({ ops: "q BI /W 1 /H 1 /CS /G /BPC 8 ID \x01 EI Q" }))).ok, "an inline image of samples is no refusal");
 });
 
@@ -239,7 +308,12 @@ test("R3 DOCUMENT_TOO_LARGE: a file over CLEAN_MAX_BYTES, nothing read; a part d
   big.set(enc("%PDF-1.7"));
   refused(await cleanDocument(big), "DOCUMENT_TOO_LARGE", /16777217 bytes/);
   const parts = partsOf(docx());
-  const z = makeZip(parts.map((p) => ({ name: p.name, data: p.data, ...(p.name === "word/document.xml" ? { central: { uncompressedSize: CLEAN_MAX_PART_BYTES + 1 } } : {}) })));
+  const z = makeZip(parts.map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => {
+    /** @type {ZipEntry} */
+    const e = { name: p.name, data: p.data };
+    if (p.name === "word/document.xml") e.central = { uncompressedSize: CLEAN_MAX_PART_BYTES + 1 };
+    return e;
+  }));
   refused(await cleanDocument(z), "DOCUMENT_TOO_LARGE", /part word\/document\.xml declares/);
 });
 
@@ -248,73 +322,83 @@ test("R3 DOCUMENT_UNREADABLE: a dangling PDF reference, a content stream that ca
   refused(await cleanDocument(makePdf(["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>", "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 9 9] /Contents 4 0 R >>",
     { dict: "<< /Filter /LZWDecode >>", data: new Uint8Array([0x80, 0x0b, 0x60, 0x50]) }])), "DOCUMENT_UNREADABLE", /object 4's content stream/);
   const parts = partsOf(docx());
-  refused(await cleanDocument(makeZip(parts.map((p) => ({ name: p.name, data: p.data, ...(p.name === "word/comments.xml" ? { central: { crc32: 1 }, local: { crc32: 1 } } : {}) })))), "DOCUMENT_UNREADABLE", /word\/comments\.xml/);
-  refused(await cleanDocument(makeZip([...parts.map((p) => ({ name: p.name, data: p.data })), { name: "word/comments.xml", data: "<x/>" }])), "DOCUMENT_UNREADABLE", /appears twice/);
+  refused(await cleanDocument(makeZip(parts.map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => {
+    /** @type {ZipEntry} */
+    const e = { name: p.name, data: p.data };
+    if (p.name === "word/comments.xml") { e.central = { crc32: 1 }; e.local = { crc32: 1 }; }
+    return e;
+  }))), "DOCUMENT_UNREADABLE", /word\/comments\.xml/);
+  refused(await cleanDocument(makeZip([...parts.map(entry), { name: "word/comments.xml", data: "<x/>" }])), "DOCUMENT_UNREADABLE", /appears twice/);
 });
 
 test("R3 each refusal of image-cover's stripMetadata is relayed under its own code, naming the image", async () => {
   const cut = jpeg().subarray(0, 60);
   const r = await cleanDocument(docx({ extra: [{ name: "word/media/cut.jpeg", data: cut }] }));
   assert.equal(r.ok, false);
+  if (r.ok) throw new Error("not a refusal");
   assert.ok(["TRUNCATED_IMAGE_DATA", "IMAGE_DATA_CORRUPT"].includes(r.code), r.code);
   assert.match(r.detail, /part word\/media\/cut\.jpeg: /);
   const anim = new Uint8Array([...gif().subarray(0, gif().length - 1), 0x2c, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 1, 0, 0x3b]);
   refused(await cleanDocument(docx({ extra: [{ name: "word/media/anim.gif", data: anim }] })), "ANIMATED_IMAGE", /part word\/media\/anim\.gif/);
   const p = await cleanDocument(pdf({ more: [{ dict: "<< /Subtype /Image /Width 8 /Height 8 /Filter /DCTDecode >>", data: cut }], ops: "/Im2 Do", page: "/Resources << /XObject << /Im1 8 0 R /Im2 9 0 R >> /Font << /F1 5 0 R >> >>" }));
   assert.equal(p.ok, false);
+  if (p.ok) throw new Error("not a refusal");
   assert.match(p.detail, /^object 9: /);
 });
 
 // ---- R6 ----
 
 test("R6 a PDF copy: no trailer /Info, no catalog XMP, no annotation /T, /M or /CreationDate (a widget's field name kept), no signer's identity, the signature field unsigned", async () => {
-  const r = await cleanDocument(pdf({
+  const answer = await cleanDocument(pdf({
     page: "/Annots [9 0 R 10 0 R << /Type /Annot /Subtype /Text /Rect [0 0 5 5] /T (COMMENTERSECRET) /Contents (Check this) >>]",
     catalog: "/AcroForm << /Fields [10 0 R] /SigFlags 3 >> /Perms << /DocMDP 11 0 R >>",
     more: ["<< /Type /Annot /Subtype /Text /Rect [0 0 10 10] /T (COMMENTERSECRET) /M (D:20190304) /CreationDate (D:20190304) /Contents (Check this figure) >>",
       "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Signature1) /Rect [0 0 10 10] /V 11 0 R /M (D:20190304) >>",
       "<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /Name (SIGNERSECRET) /Location (SIGNERSECRET) /Reason (SIGNERSECRET) /ContactInfo (SIGNERSECRET) /M (D:20190304) /ByteRange [0 1 2 3] /Contents <5349474E45525345435245540000> >>"],
   }));
-  assert.equal(r.ok, true, r.detail);
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
   assert.deepEqual(secretsIn(r.bytes), []);
   const { read } = await pdfObjects(r.bytes);
   assert.equal(read.trailer.Info, undefined);
-  const dicts = read.objects.filter((o) => o.value.t === "dict").map((o) => o.value.map);
-  const catalog = dicts.find((m) => m.Type?.v === "Catalog");
+  const dicts = dictsOf(read);
+  const catalog = must(dicts.find((m) => vOf(m.Type) === "Catalog"), "the catalog");
   assert.equal(catalog.Metadata, undefined);
   assert.equal(catalog.Perms, undefined);
-  const widget = dicts.find((m) => m.Subtype?.v === "Widget");
-  assert.equal(widget.T.v, "Signature1");
+  const widget = must(dicts.find((m) => vOf(m.Subtype) === "Widget"), "the widget");
+  assert.equal(vOf(widget.T), "Signature1");
   assert.equal(widget.V, undefined);
   assert.equal(widget.M, undefined);
-  const notes = dicts.filter((m) => m.Subtype?.v === "Text");
+  const notes = dicts.filter((m) => vOf(m.Subtype) === "Text");
   assert.equal(notes.length, 1);
-  assert.deepEqual(Object.keys(notes[0]).sort(), ["Contents", "Rect", "Subtype", "Type"]);
-  assert.equal(notes[0].Contents.v, "Check this figure", "a comment's own text unchanged");
-  assert.ok(!dicts.some((m) => m.Type?.v === "Sig"), "the signature dictionary is no longer reached");
-  const page = dicts.find((m) => m.Type?.v === "Page");
-  const direct = page.Annots.items.find((a) => a.t === "dict");
-  assert.deepEqual(Object.keys(direct.map).sort(), ["Contents", "Rect", "Subtype", "Type"]);
+  const note = must(notes[0], "the note");
+  assert.deepEqual(Object.keys(note).sort(), ["Contents", "Rect", "Subtype", "Type"]);
+  assert.equal(vOf(note.Contents), "Check this figure", "a comment's own text unchanged");
+  assert.ok(!dicts.some((m) => vOf(m.Type) === "Sig"), "the signature dictionary is no longer reached");
+  const page = must(dicts.find((m) => vOf(m.Type) === "Page"), "the page");
+  const direct = must(must(asArr(page.Annots), "the page's /Annots").items.map((a) => asMap(a)).find((m) => m !== undefined), "the direct annotation");
+  assert.deepEqual(Object.keys(direct).sort(), ["Contents", "Rect", "Subtype", "Type"]);
 });
 
 test("R6 a .docx copy: core and app properties emptied of every named field and still valid, custom.xml removed with its relationship and override, comment and change authors, initials and dates emptied, their text kept", async () => {
   const original = docx();
-  const r = await cleanDocument(original);
+  const r = copy(await cleanDocument(original));
   const c = readContainer(r.bytes);
   assert.equal(c.ok, true);
   const core = await readCoreProperties(r.bytes, c);
+  if (!core.ok) throw new Error(core.why);
   assert.deepEqual([core.ok, core.creator, core.lastModifiedBy, core.revision, core.created, core.modified, core.title], [true, null, null, null, null, null, "Minutes"]);
-  const app = latin(part(r.bytes, "docProps/app.xml").data);
+  const app = latin(partData(r.bytes, "docProps/app.xml"));
   assert.match(app, /^<\?xml[^>]*>\n<Properties xmlns="http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/extended-properties"><\/Properties>$/);
   assert.equal(part(r.bytes, "docProps/custom.xml"), undefined);
-  assert.ok(!latin(part(r.bytes, "_rels/.rels").data).includes("custom"));
-  assert.ok(!latin(part(r.bytes, "[Content_Types].xml").data).includes("custom.xml"));
-  assert.ok(latin(part(r.bytes, "_rels/.rels").data).includes("docProps/core.xml"));
-  const body = latin(part(r.bytes, "word/document.xml").data), comments = latin(part(r.bytes, "word/comments.xml").data);
+  assert.ok(!latin(partData(r.bytes, "_rels/.rels")).includes("custom"));
+  assert.ok(!latin(partData(r.bytes, "[Content_Types].xml")).includes("custom.xml"));
+  assert.ok(latin(partData(r.bytes, "_rels/.rels")).includes("docProps/core.xml"));
+  const body = latin(partData(r.bytes, "word/document.xml")), comments = latin(partData(r.bytes, "word/comments.xml"));
   assert.ok(body.includes('<w:ins w:id="1" w:author="">') && body.includes('<w:del w:id="2" w:author="">'));
   assert.ok(body.includes("<w:t>added</w:t>") && body.includes("<w:delText>removed</w:delText>"), "the changes themselves kept");
   assert.ok(comments.includes('<w:comment w:id="0" w:author="" w:initials="">') && comments.includes("Check this figure"));
-  assert.equal(latin(part(original, "word/document.xml").data).replace(/ w:author="[^"]*"| w:date="[^"]*"/g, ""), body.replace(/ w:author=""/g, ""));
+  assert.equal(latin(partData(original, "word/document.xml")).replace(/ w:author="[^"]*"| w:date="[^"]*"/g, ""), body.replace(/ w:author=""/g, ""));
 });
 
 test("R6 Word's people, settings template, PowerPoint's and Excel's comment authors, Excel's shared-workbook names and folder path are emptied", async () => {
@@ -323,29 +407,33 @@ test("R6 Word's people, settings template, PowerPoint's and Excel's comment auth
     { name: "word/people.xml", data: `<w15:people ${W15}><w15:person w15:author="COMMENTERSECRET"><w15:presenceInfo w15:providerId="AD" w15:userId="COMMENTERSECRET@example.org"/></w15:person></w15:people>` },
     { name: "word/settings.xml", data: '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:attachedTemplate r:id="rId1"/><w:zoom w:percent="100"/></w:settings>' },
     { name: "word/_rels/settings.xml.rels", data: '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate" Target="file:///C:/Users/PATHSECRET/Normal.dotm" TargetMode="External"/></Relationships>' }] }));
-  assert.equal(d.ok, true, d.detail);
-  assert.deepEqual(secretsIn(d.bytes), []);
-  for (const p of partsOf(d.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
-  assert.ok(latin(part(d.bytes, "word/settings.xml").data).includes('<w:zoom w:percent="100"/>'));
+  assert.equal(d.ok, true, why(d));
+  const dc = copy(d);
+  assert.deepEqual(secretsIn(dc.bytes), []);
+  for (const p of partsOf(dc.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
+  assert.ok(latin(partData(dc.bytes, "word/settings.xml")).includes('<w:zoom w:percent="100"/>'));
   const x = await cleanDocument(xlsx({ extra: [
     { name: "xl/persons/person.xml", data: '<personList xmlns="http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments"><person displayName="COMMENTERSECRET" id="{1}" userId="COMMENTERSECRET" providerId="AD"/></personList>' },
     { name: "xl/revisions/userNames.xml", data: '<users xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="1"><userInfo guid="{1}" name="CHANGERSECRET" id="1" dateTime="2020-01-01T00:00:00"/></users>' },
     { name: "xl/revisions/revisionHeaders.xml", data: '<headers xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" guid="{1}"><header guid="{2}" dateTime="2020-01-01T00:00:00" maxSheetId="2" userName="CHANGERSECRET" r:id="rId1" xmlns:r="x"/></headers>' }] }));
-  assert.equal(x.ok, true, x.detail);
-  for (const p of partsOf(x.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
-  assert.ok(latin(part(x.bytes, "xl/comments1.xml").data).includes("<authors><author></author></authors>"));
-  assert.ok(latin(part(x.bytes, "xl/comments1.xml").data).includes("Check the total"));
-  const p = await cleanDocument(pptx());
-  assert.ok(latin(part(p.bytes, "ppt/commentAuthors.xml").data).includes('<p:cmAuthor id="1" name="" initials="" lastIdx="1" clrIdx="0"/>'));
-  assert.ok(latin(part(p.bytes, "ppt/comments/comment1.xml").data).includes('<p:cm authorId="1" idx="1"><p:pos x="10" y="10"/><p:text>Check the slide</p:text></p:cm>'));
+  assert.equal(x.ok, true, why(x));
+  const xc = copy(x);
+  for (const p of partsOf(xc.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
+  assert.ok(latin(partData(xc.bytes, "xl/comments1.xml")).includes("<authors><author></author></authors>"));
+  assert.ok(latin(partData(xc.bytes, "xl/comments1.xml")).includes("Check the total"));
+  const p = copy(await cleanDocument(pptx()));
+  assert.ok(latin(partData(p.bytes, "ppt/commentAuthors.xml")).includes('<p:cmAuthor id="1" name="" initials="" lastIdx="1" clrIdx="0"/>'));
+  assert.ok(latin(partData(p.bytes, "ppt/comments/comment1.xml")).includes('<p:cm authorId="1" idx="1"><p:pos x="10" y="10"/><p:text>Check the slide</p:text></p:cm>'));
 });
 
 test("R6 an ODF copy: meta.xml's named fields removed and the part kept valid, annotations' and tracked changes' creator and date emptied, their text kept", async () => {
-  for (const flavour of ["odt", "ods", "odp"]) {
-    const r = await cleanDocument(odf(flavour));
-    const meta = latin(part(r.bytes, "meta.xml").data);
+  /** @type {OdfFlavour[]} */
+  const flavours = ["odt", "ods", "odp"];
+  for (const flavour of flavours) {
+    const r = copy(await cleanDocument(odf(flavour)));
+    const meta = latin(partData(r.bytes, "meta.xml"));
     assert.match(meta, /<office:meta><dc:title>Minutes<\/dc:title><meta:document-statistic meta:paragraph-count="2"\/><\/office:meta><\/office:document-meta>$/);
-    const content = latin(part(r.bytes, "content.xml").data);
+    const content = latin(partData(r.bytes, "content.xml"));
     assert.ok(content.includes("<dc:creator></dc:creator><dc:date></dc:date>"), flavour);
     assert.ok(/Check th(is figure|e total|e slide)/.test(content));
     if (flavour === "odt") assert.ok(content.includes("<meta:creator-initials></meta:creator-initials>") && content.includes("<office:change-info><dc:creator></dc:creator><dc:date></dc:date></office:change-info>"));
@@ -357,76 +445,84 @@ test("R6 the edits find each namespace by the prefix the part declares, in eithe
   const utf16 = new Uint8Array([0xff, 0xfe, ...Buffer.from(core, "utf16le")]);
   const doc = `<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:q="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><q:p><q:ins q:id='1' q:author='CHANGERSECRET' q:date='2019-03-04'><q:r><q:t>kept w:author="x"</q:t></q:r></q:ins></q:p></w:body></w:document>`;
   const base = partsOf(docx()).filter((p) => !["docProps/core.xml", "word/document.xml"].includes(p.name));
-  const r = await cleanDocument(makeZip([...base.map((p) => ({ name: p.name, data: p.data })), { name: "docProps/core.xml", data: utf16 }, { name: "word/document.xml", data: doc }]));
-  assert.equal(r.ok, true, r.detail);
-  const c = part(r.bytes, "docProps/core.xml").data;
+  const answer = await cleanDocument(makeZip([...base.map(entry), { name: "docProps/core.xml", data: utf16 }, { name: "word/document.xml", data: doc }]));
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
+  const c = partData(r.bytes, "docProps/core.xml");
   assert.deepEqual([...c.subarray(0, 2)], [0xff, 0xfe]);
   assert.equal(Buffer.from(c.subarray(2)).toString("utf16le"), core.replace("<e:creator xml:lang='en'>AUTHORSECRET</e:creator>", "").replace("<k:lastModifiedBy/>", "").replace("<t:modified>2019-03-04</t:modified>", ""));
-  assert.equal(latin(part(r.bytes, "word/document.xml").data), doc.replace("q:author='CHANGERSECRET' q:date='2019-03-04'", "q:author=''"));
+  assert.equal(latin(partData(r.bytes, "word/document.xml")), doc.replace("q:author='CHANGERSECRET' q:date='2019-03-04'", "q:author=''"));
 });
 
 test("R3 EMBEDDED_MEDIA: a video or audio part (MP4, QuickTime, WAV, MP3, Ogg, WebM), a PDF RichMedia, 3D, screen or sound object, each named", async () => {
+  /** @type {[string, Uint8Array][]} */
   const media = [["ppt/media/media1.mp4", new Uint8Array([0, 0, 0, 24, ...enc("ftypisom"), 0, 0, 2, 0, ...enc("isommp41"), 0, 0, 0, 8, ...enc("free")])],
     ["ppt/media/media2.mov", new Uint8Array([0, 0, 0, 20, ...enc("ftypqt  "), 0, 0, 2, 0, ...enc("qt  ")])],
     ["ppt/media/media3.wav", new Uint8Array([...enc("RIFF"), 36, 0, 0, 0, ...enc("WAVEfmt ")])], ["ppt/media/media4.mp3", new Uint8Array([...enc("ID3"), 4, 0, 0, 0, 0, 0, 0])],
     ["ppt/media/media5.ogg", enc("OggS\0\x02")], ["ppt/media/media6.webm", new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81])]];
   for (const [name, data] of media) refused(await cleanDocument(docx({ extra: [{ name, data }] })), "EMBEDDED_MEDIA", new RegExp(`part ${name.replace(/\./g, "\\.")}: `));
-  refused(await cleanDocument(odf("odp", { extra: [{ name: "Media/clip.mp4", data: media[0][1] }] })), "EMBEDDED_MEDIA", /Media\/clip\.mp4/);
-  for (const [annot, more] of [["/Subtype /RichMedia /RichMediaContent << >>", []], ["/Subtype /3D /3DD 10 0 R", [{ dict: "<< /Type /3D /Subtype /U3D >>", data: enc("U3D") }]],
-    ["/Subtype /Screen /A << /S /Rendition >>", []], ["/Subtype /Sound /Sound 10 0 R", [{ dict: "<< /Type /Sound /R 8000 >>", data: new Uint8Array(8) }]]])
+  refused(await cleanDocument(odf("odp", { extra: [{ name: "Media/clip.mp4", data: media[0]?.[1] }] })), "EMBEDDED_MEDIA", /Media\/clip\.mp4/);
+  /** @type {[string, PdfBody[]][]} */
+  const annots = [["/Subtype /RichMedia /RichMediaContent << >>", []], ["/Subtype /3D /3DD 10 0 R", [{ dict: "<< /Type /3D /Subtype /U3D >>", data: enc("U3D") }]],
+    ["/Subtype /Screen /A << /S /Rendition >>", []], ["/Subtype /Sound /Sound 10 0 R", [{ dict: "<< /Type /Sound /R 8000 >>", data: new Uint8Array(8) }]]];
+  for (const [annot, more] of annots)
     refused(await cleanDocument(pdf({ page: "/Annots [9 0 R]", more: [`<< /Type /Annot ${annot} /Rect [0 0 9 9] >>`, ...more] })), "EMBEDDED_MEDIA", /object (9|10): /);
 });
 
 test("R6 K2351 OOXML printer settings and custom XML parts are removed with their relationships, overrides and r:id references", async () => {
-  const x = partsOf(xlsx()).map((p) => ({ name: p.name, data: p.name === "xl/worksheets/sheet1.xml" ? latin(p.data).replace("</sheetData>", '</sheetData><pageSetup orientation="portrait" r:id="rId2"/>')
+  const x = partsOf(xlsx()).map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, data: p.name === "xl/worksheets/sheet1.xml" ? latin(p.data).replace("</sheetData>", '</sheetData><pageSetup orientation="portrait" r:id="rId2"/>')
     : p.name === "xl/worksheets/_rels/sheet1.xml.rels" ? latin(p.data).replace("</Relationships>", '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings" Target="../printerSettings/printerSettings1.bin"/></Relationships>')
     : p.name === "xl/_rels/workbook.xml.rels" ? latin(p.data).replace("</Relationships>", '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"/></Relationships>')
     : p.name === "[Content_Types].xml" ? latin(p.data).replace("</Types>", '<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings"/><Override PartName="/customXml/itemProps1.xml" ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/></Types>')
     : p.data }));
-  const r = await cleanDocument(makeZip([...x, { name: "xl/printerSettings/printerSettings1.bin", data: Buffer.from("\\\\PRINTER\\PATHSECRET\0", "utf16le") },
+  const answer = await cleanDocument(makeZip([...x, { name: "xl/printerSettings/printerSettings1.bin", data: Buffer.from("\\\\PRINTER\\PATHSECRET\0", "utf16le") },
     { name: "customXml/item1.xml", data: "<p:properties xmlns:p='x'><Owner>CUSTOMSECRET</Owner></p:properties>" }, { name: "customXml/itemProps1.xml", data: "<ds:datastoreItem xmlns:ds='y'/>" },
     { name: "customXml/_rels/item1.xml.rels", data: '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="t" Target="itemProps1.xml"/></Relationships>' }]));
-  assert.equal(r.ok, true, r.detail);
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
   const names = partsOf(r.bytes).map((p) => p.name);
   assert.ok(!names.some((n) => /printerSettings|customXml/.test(n)), names.join());
-  assert.ok(!latin(part(r.bytes, "xl/worksheets/_rels/sheet1.xml.rels").data).includes("printerSettings"));
-  assert.ok(latin(part(r.bytes, "xl/worksheets/_rels/sheet1.xml.rels").data).includes("comments1.xml"));
-  assert.ok(latin(part(r.bytes, "xl/worksheets/sheet1.xml").data).includes('<pageSetup orientation="portrait"/>'));
-  assert.ok(!latin(part(r.bytes, "xl/_rels/workbook.xml.rels").data).includes("customXml"));
-  assert.ok(!latin(part(r.bytes, "[Content_Types].xml").data).includes("itemProps1") && latin(part(r.bytes, "[Content_Types].xml").data).includes('Extension="bin"'));
+  assert.ok(!latin(partData(r.bytes, "xl/worksheets/_rels/sheet1.xml.rels")).includes("printerSettings"));
+  assert.ok(latin(partData(r.bytes, "xl/worksheets/_rels/sheet1.xml.rels")).includes("comments1.xml"));
+  assert.ok(latin(partData(r.bytes, "xl/worksheets/sheet1.xml")).includes('<pageSetup orientation="portrait"/>'));
+  assert.ok(!latin(partData(r.bytes, "xl/_rels/workbook.xml.rels")).includes("customXml"));
+  assert.ok(!latin(partData(r.bytes, "[Content_Types].xml")).includes("itemProps1") && latin(partData(r.bytes, "[Content_Types].xml")).includes('Extension="bin"'));
   for (const p of partsOf(r.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
 });
 
 test("R6 K2351 an EMF's description, an SVG's editor-namespace markup and a legacy Excel comment's leading author run are removed; the pictures and the comment's own text kept", async () => {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" inkscape:export-filename="/home/PATHSECRET/a.png" width="2" height="2"><sodipodi:namedview id="n" inkscape:current-layer="l"><inkscape:grid/></sodipodi:namedview><i:pgf>PRIVATESECRET</i:pgf><rect width="1" height="1" inkscape:label="APPSECRET"/></svg>';
-  const r = await cleanDocument(docx({ extra: [{ name: "word/media/d.emf", data: emf(new Uint8Array(0), "APPSECRET 1.0\0PATHSECRET\0\0") }, { name: "word/media/e.svg", data: svg },
+  const answer = await cleanDocument(docx({ extra: [{ name: "word/media/d.emf", data: emf(new Uint8Array(0), "APPSECRET 1.0\0PATHSECRET\0\0") }, { name: "word/media/e.svg", data: svg },
     { name: "word/media/f.emz", data: gzipSync(Buffer.from(emf(new Uint8Array(0), "APPSECRET\0\0"))) }] }));
-  assert.equal(r.ok, true, r.detail);
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
   assert.deepEqual(r.images, { stripped: 5, unchanged: 0 });
-  const e = part(r.bytes, "word/media/d.emf").data;
+  const e = partData(r.bytes, "word/media/d.emf");
   assert.equal(e.length, emf(new Uint8Array(0), "APPSECRET 1.0\0PATHSECRET\0\0").length);
-  assert.deepEqual([...e.subarray(60, 68)], new Array(8).fill(0));
-  assert.equal(latin(part(r.bytes, "word/media/e.svg").data), '<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" width="2" height="2"><rect width="1" height="1"/></svg>');
-  assert.deepEqual([...gunzipSync(part(r.bytes, "word/media/f.emz").data).subarray(60, 68)], new Array(8).fill(0));
+  assert.deepEqual([...e.subarray(60, 68)], Array.from({ length: 8 }, () => 0));
+  assert.equal(latin(partData(r.bytes, "word/media/e.svg")), '<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" width="2" height="2"><rect width="1" height="1"/></svg>');
+  assert.deepEqual([...gunzipSync(partData(r.bytes, "word/media/f.emz")).subarray(60, 68)], Array.from({ length: 8 }, () => 0));
   for (const p of partsOf(r.bytes)) assert.deepEqual(secretsIn(p.data), [], p.name);
-  const x = await cleanDocument(xlsx());
-  assert.ok(latin(part(x.bytes, "xl/comments1.xml").data).includes('<text><r><rPr><sz val="9"/></rPr><t xml:space="preserve">\nCheck the total</t></r></text>'));
-  const kept = await cleanDocument(makeZip(partsOf(xlsx()).map((p) => ({ name: p.name, data: p.name === "xl/comments1.xml" ? latin(p.data).replace("COMMENTERSECRET:</t>", "Note:</t>") : p.data }))));
-  assert.ok(latin(part(kept.bytes, "xl/comments1.xml").data).includes("<b/><sz val=\"9\"/></rPr><t>Note:</t>"), "a bold run that names no author is the comment's own text");
+  const x = copy(await cleanDocument(xlsx()));
+  assert.ok(latin(partData(x.bytes, "xl/comments1.xml")).includes('<text><r><rPr><sz val="9"/></rPr><t xml:space="preserve">\nCheck the total</t></r></text>'));
+  const kept = copy(await cleanDocument(makeZip(partsOf(xlsx()).map(/** @param {CopiedPart} p @returns {ZipEntry} */ (p) => ({ name: p.name, data: p.name === "xl/comments1.xml" ? latin(p.data).replace("COMMENTERSECRET:</t>", "Note:</t>") : p.data })))));
+  assert.ok(latin(partData(kept.bytes, "xl/comments1.xml")).includes("<b/><sz val=\"9\"/></rPr><t>Note:</t>"), "a bold run that names no author is the comment's own text");
 });
 
 test("R6 K2351 a JBIG2 image's and its globals' comment segments are dropped, every other segment kept byte for byte", async () => {
   const info = jbig2Segment(1, 48, [0, 0, 0, 8, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]), end = jbig2Segment(3, 49, []);
   const image = new Uint8Array([...info, ...jbig2Comment(2, "COMSECRET"), ...end]);
   const globals = deflateSync(Buffer.from([...jbig2Comment(0, "XMPSECRET"), ...jbig2Segment(4, 53, [1, 2])]));
-  const r = await cleanDocument(pdf({ more: [{ dict: "<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /BitsPerComponent 1 /ImageMask true /Filter /JBIG2Decode /DecodeParms << /JBIG2Globals 10 0 R >> >>", data: image },
+  const answer = await cleanDocument(pdf({ more: [{ dict: "<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /BitsPerComponent 1 /ImageMask true /Filter /JBIG2Decode /DecodeParms << /JBIG2Globals 10 0 R >> >>", data: image },
     { dict: "<< /Filter /FlateDecode >>", data: globals }], ops: "/Im2 Do", page: "/Resources << /XObject << /Im1 8 0 R /Im2 9 0 R >> /Font << /F1 5 0 R >> >>" }));
-  assert.equal(r.ok, true, r.detail);
+  assert.equal(answer.ok, true, why(answer));
+  const r = copy(answer);
   assert.deepEqual(secretsIn(r.bytes), []);
   const { doc, read } = await pdfObjects(r.bytes);
-  const jb = read.objects.find((o) => o.value.t === "stream" && o.value.dict.Filter?.v === "JBIG2Decode");
-  assert.deepEqual(doc.streamRawBytes(jb.value), new Uint8Array([...info, ...end]));
-  const g = read.objects.find((o) => o.num === jb.value.dict.DecodeParms.map.JBIG2Globals.n).value;
+  const jb = must(read.objects.map((o) => asStream(o.value)).find((v) => vOf(v?.dict.Filter) === "JBIG2Decode"), "the JBIG2 image");
+  assert.deepEqual(doc.streamRawBytes(jb), new Uint8Array([...info, ...end]));
+  const globalsRef = must(asRef(asMap(jb.dict.DecodeParms)?.JBIG2Globals), "the /JBIG2Globals reference");
+  const g = must(asStream(must(read.objects.find((o) => o.num === globalsRef.n), "the globals' object").value), "the globals' stream");
   assert.equal(g.dict.Filter, undefined);
   assert.deepEqual(doc.streamRawBytes(g), jbig2Segment(4, 53, [1, 2]));
   assert.equal(r.images.stripped, 2);
@@ -438,6 +534,7 @@ test("R6 K2351 a JBIG2 image's and its globals' comment segments are dropped, ev
 test("R7 pure and deterministic: the same bytes answer the same bytes, alone, repeated or interleaved, and the input is not changed", async () => {
   const inputs = [pdf(), incremental(pdf(), jpeg()), docx(), xlsx(), pptx(), odf("odt"), odf("ods"), odf("odp")];
   const copies = inputs.map((b) => new Uint8Array(b));
+  /** @type {CleanAnswer[]} */
   const first = [];
   for (const b of inputs) first.push(await cleanDocument(b));
   const again = await Promise.all([...inputs].reverse().map((b) => cleanDocument(b)));
@@ -456,27 +553,31 @@ test("R8 never a partial copy: one image that cannot be stripped among good ones
 
 test("R9 no place is named in any refusal text or the module's exported words", async () => {
   const PLACE = /\b(oakland|alameda|berkeley|california|san francisco|county of|city of|state of)\b/i;
+  /** @type {(string | undefined)[]} */
   const texts = [...Object.values(CLEAN_REFUSALS)];
   for (const b of [enc('<img src="data:image/png;base64,">'), makeZip([{ name: "a", data: "b" }]), enc("{\\rtf1}"), new Uint8Array(CLEAN_MAX_BYTES + 1),
     pdf({ page: "/Annots [40 0 R]" }), pdf({ trailer: "/Encrypt << /Filter /Standard /R 3 >>" }), docx({ extra: [{ name: "word/embeddings/a.bin", data: "x" }] }),
     docx({ extra: [{ name: "word/media/z.tif", data: new Uint8Array([0x4d, 0x4d, 0, 0x2a]) }] }), null])
-    texts.push((await cleanDocument(b)).detail);
+    texts.push(why(await cleanDocument(b)));
   assert.ok(texts.length >= 17);
-  for (const t of texts) { assert.equal(typeof t, "string"); assert.doesNotMatch(t, PLACE); }
+  for (const t of texts) { assert.equal(typeof t, "string"); if (t === undefined) throw new Error("no text"); assert.doesNotMatch(t, PLACE); }
 });
 
 test("K3957 the refusal sentences are read by id, each refusal answering its code and a text: doc-clean.index.an_embedded_image_is_of_a_kind, doc-clean.index.the_document_carries_a_video_audio, doc-clean.index.the_file_is_of_no_format, doc-clean.index.the_document_or_one_of, doc-clean.index.the_document_s_structure_cannot, doc-clean.index.the_document_s_bytes_are_not, doc-clean.index.an_encrypted_office_document_an, doc-clean.index.a_compound_file_a_legacy, doc-clean.index.a_postscript_document_not, doc-clean.package.the_package_s_manifest_lists_encrypted, doc-clean.pdf.the_trailer_s_root_is_not", async () => {
-  for (const k of ["IMAGE_NOT_CLEANABLE", "EMBEDDED_MEDIA", "NOT_A_CLEANABLE_FORMAT", "DOCUMENT_TOO_LARGE", "DOCUMENT_UNREADABLE"])
+  /** @type {RefusalCode[]} */
+  const codes = ["IMAGE_NOT_CLEANABLE", "EMBEDDED_MEDIA", "NOT_A_CLEANABLE_FORMAT", "DOCUMENT_TOO_LARGE", "DOCUMENT_UNREADABLE"];
+  for (const k of codes)
     assert.equal(typeof CLEAN_REFUSALS[k], "string", k);
+  /** @param {string} extra */
   const cfb = (extra) => {
     const b = new Uint8Array(1024);
     b.set([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
     if (extra) b.set(Buffer.from(extra, "utf16le"), 600);
     return b;
   };
+  /** @param {unknown} b @param {string} code */
   const answered = async (b, code) => {
-    const r = await cleanDocument(b);
-    refused(r, code);
+    const r = refused(await cleanDocument(b), code);
     assert.equal(typeof r.detail, "string");
     assert.notEqual(r.detail, "");
   };
@@ -489,9 +590,9 @@ test("K3957 the refusal sentences are read by id, each refusal answering its cod
 });
 
 test("K3964 every member-readable refusal sentence is read by id, each refusal answering its code and a text: doc-clean.index.the_document_is_encrypted, doc-clean.index.the_document_carries_an_embedded, doc-clean.index.the_html_document_embeds_an, doc-clean.index.the_file_is_a_zip_archive, doc-clean.index.a_zip_archive_that_is_neither, doc-clean.index.the_file_is_neither_a_pdf, doc-clean.index.an_rtf_document_not_a_format, doc-clean.index.a_mime_message_not_a, doc-clean.index.an_xml_or_svg_document, doc-clean.images.a_truncated_segment_header, doc-clean.images.a_malformed_referred_to_count, doc-clean.images.a_segment_of_unstated_length, doc-clean.images.a_segment_longer_than_the_stream, doc-clean.images.the_image_could_not_be_stripped, doc-clean.images.where_an_svg_image_with_an, doc-clean.images.where_media_compressed, doc-clean.images.name_tiff, doc-clean.images.name_heif, doc-clean.images.name_jxl, doc-clean.images.name_emf, doc-clean.images.name_wmf, doc-clean.images.name_svm, doc-clean.package.part_cannot_be_read_why, doc-clean.package.part_n_media, doc-clean.pdf.the_pdf_cannot_be_opened, doc-clean.pdf.the_pdf_is_encrypted_a, doc-clean.pdf.the_pdf_has_no_readable, doc-clean.pdf.the_pdf_s_trailer_names_an, doc-clean.pdf.a_number_the_pdf_writer, doc-clean.pdf.a_string_the_pdf_reader, doc-clean.pdf.a_value_the_pdf_writer_cannot", async () => {
+  /** @param {unknown} b @param {string} code */
   const answered = async (b, code) => {
-    const r = await cleanDocument(b);
-    refused(r, code);
+    const r = refused(await cleanDocument(b), code);
     assert.equal(typeof r.detail, "string");
     assert.notEqual(r.detail, "");
   };
@@ -501,6 +602,8 @@ test("K3964 every member-readable refusal sentence is read by id, each refusal a
   await answered(new Uint8Array([0x41, 0x00, 0x01, 0x42]), "NOT_A_CLEANABLE_FORMAT");
   await answered(makeZip([{ name: "a", data: "b" }]), "ARCHIVE");
   await answered(enc('<img src="data:image/png;base64,">'), "HTML_EMBEDS_IMAGE");
-  for (const k of ["ENCRYPTED", "EMBEDDED_FILE", "HTML_EMBEDS_IMAGE", "ARCHIVE", "IMAGE_NOT_CLEANABLE", "EMBEDDED_MEDIA", "NOT_A_CLEANABLE_FORMAT", "DOCUMENT_TOO_LARGE", "DOCUMENT_UNREADABLE"])
+  /** @type {RefusalCode[]} */
+  const codes = ["ENCRYPTED", "EMBEDDED_FILE", "HTML_EMBEDS_IMAGE", "ARCHIVE", "IMAGE_NOT_CLEANABLE", "EMBEDDED_MEDIA", "NOT_A_CLEANABLE_FORMAT", "DOCUMENT_TOO_LARGE", "DOCUMENT_UNREADABLE"];
+  for (const k of codes)
     assert.equal(typeof CLEAN_REFUSALS[k], "string", k);
 });
