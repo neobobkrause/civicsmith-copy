@@ -64,14 +64,24 @@ import { loadPdf, analyzePage } from "../src/pagepixels.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const KNOWN_SCAN_SHA = "591b1615b674"; /* sha256 prefix of scan-ccitt-g4-page.pdf, the positive control */
+/** @param {string[]} args
+ *  @returns {string} */
 const git = (args) => execFileSync("git", args, { cwd: ROOT, maxBuffer: 1 << 30 }).toString();
 
 const DIR = process.argv.includes("--dir") ? process.argv[process.argv.indexOf("--dir") + 1] : null;
+/** @type {[string, string][]} */
 const MAGIC = [["%PDF", "pdf"], ["\x89PNG", "png"], ["\xff\xd8\xff", "jpeg"], ["II*\0", "tiff"], ["MM\0*", "tiff"]];
+/** One blob or file whose first bytes are a PDF's or a picture's.
+ *  @typedef {{ sha: string | null | undefined, kind: string, path: string | undefined, bytes: Uint8Array }} Hit */
+/** The population censused: what was read, and the hits among it.
+ *  @typedef {{ scanned: number, trees: number, hits: Hit[], label: string }} Population */
 const blobs = DIR ? dirPopulation(DIR) : await gitPopulation();
 
+/** @param {string} dir
+ *  @returns {Population} */
 function dirPopulation(dir) {
   const { readdirSync, readFileSync } = require_fs;
+  /** @type {Population} */
   const out = { scanned: 0, trees: 0, hits: [], label: `directory ${dir}` };
   const files = readdirSync(dir).map((f) => ({ path: f, bytes: readFileSync(`${dir}/${f}`) }));
   files.push({ path: "(positive control) pdf-worker/test/fixtures/scan-ccitt-g4-page.pdf",
@@ -85,6 +95,7 @@ function dirPopulation(dir) {
   return out;
 }
 
+/** @returns {Promise<Population>} */
 async function gitPopulation() {
 /* ---- the population: every reachable blob, with a path it was reached by ---- */
 const pathOf = new Map();
@@ -99,8 +110,11 @@ return await new Promise((resolve, reject) => {
   const p = spawn("git", ["cat-file", "--batch"], { cwd: ROOT });
   /* STREAMED, holding one object at a time: the whole store does not fit in memory
      (measured — the first version of this probe was killed buffering it). */
-  const out = { scanned: 0, trees: 0, hits: [] };
-  let pend = Buffer.alloc(0), cur = null;
+  /** @type {Population} */
+  const out = { scanned: 0, trees: 0, hits: [], label: "" };
+  let pend = Buffer.alloc(0);
+  /** @type {{ sha: string | undefined, type: string | undefined, n: number } | null} */
+  let cur = null;
   p.stdout.on("data", (d) => {
     pend = pend.length ? Buffer.concat([pend, d]) : d;
     for (;;) {
@@ -108,7 +122,7 @@ return await new Promise((resolve, reject) => {
         const nl = pend.indexOf(10);
         if (nl < 0) return;
         const [sha, type, size] = pend.subarray(0, nl).toString().split(" ");
-        cur = { sha, type, n: +size };
+        cur = { sha, type, n: Number(size) };
         pend = pend.subarray(nl + 1);
       }
       if (pend.length < cur.n + 1) return;
@@ -133,13 +147,21 @@ return await new Promise((resolve, reject) => {
 console.log(`D-321 census · ${new Date().toISOString()} · HEAD ${git(["rev-parse", "--short", "HEAD"]).trim()}`);
 console.log(`population: ${blobs.label} · ${blobs.scanned} ${DIR ? "files" : "reachable blobs"} (${blobs.trees} trees/commits skipped)`);
 
-let pages = 0, imageOnly = [], rasters = [], pdfs = 0, unreadable = [], encrypted = [];
+let pages = 0, pdfs = 0;
+/** @type {{ path: string | undefined, sha256: string, page: number }[]} */
+const imageOnly = [];
+/** @type {Hit[]} */
+const rasters = [];
+/** @type {(string | undefined)[]} */
+const unreadable = [], encrypted = [];
 for (const h of blobs.hits) {
   const sha256 = createHash("sha256").update(h.bytes).digest("hex");
   if (h.kind !== "pdf") { rasters.push(h); console.log(`  RASTER ${h.kind.padEnd(4)} ${h.path}  ${h.bytes.length} B  (judge by reading it)`); continue; }
   pdfs++;
   let doc;
-  try { doc = await loadPdf(h.bytes); } catch (e) { unreadable.push(h.path); console.log(`  PDF UNREADABLE ${h.path}: ${e.message}`); continue; }
+  try { doc = await loadPdf(h.bytes); } catch (e) { unreadable.push(h.path); console.log(`  PDF UNREADABLE ${h.path}: ${e instanceof Error ? e.message : undefined}`); continue; }
+  /* A file loadPdf does not open (no %PDF-x.y signature) stops the census, as it always did. */
+  if (!doc) throw new TypeError(`${h.path}: not opened as a PDF`);
   /* AN ENCRYPTED FILE IS NOT CENSUSED (D-321 part 2, measured): its content streams are
      ciphertext to `analyzePage`, which then sees no text operator and calls a page with a
      full text layer image-only — the EBMUD agenda report's p0/p3 read that way (2,226
@@ -151,6 +173,8 @@ for (const h of blobs.hits) {
   for (let i = 0; i < n; i++) {
     pages++;
     const a = await analyzePage(doc, i);
+    /* A page analyzePage cannot read stops the census, as it always did. */
+    if (!a) throw new TypeError(`${h.path}: page ${i} could not be analysed`);
     if (a.images.length > 0 && !a.hasTextOps) { io++; imageOnly.push({ path: h.path, sha256, page: i }); }
   }
   console.log(`  PDF  ${h.path}  sha256 ${sha256.slice(0, 12)}  pages ${n}  image-only ${io}`);

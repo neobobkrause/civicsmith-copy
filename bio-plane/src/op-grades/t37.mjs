@@ -13,6 +13,7 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 const TRANSLATION_WORD = "translation-directed: keyed by a language and an interface word; the group's own wording of "
   + "Civicsmith's words, shown to members reading that language; moves no bundle";

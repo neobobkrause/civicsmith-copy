@@ -20,6 +20,7 @@
 
 import { localize } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */

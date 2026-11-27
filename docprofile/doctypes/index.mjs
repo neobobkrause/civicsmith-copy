@@ -128,8 +128,17 @@
  * @typedef {{ readonly key: string, readonly label?: string, readonly version?: number, readonly fallback?: boolean, readonly contract?: string, readonly detect: (ctx: DoctypeContext) => Detection | null | undefined, readonly parse?: ((ctx: DoctypeContext) => object | null | undefined) | undefined, readonly assess?: ((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined) | undefined, readonly connections?: ((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined }} ContentType
  */
 /**
+ * A record of counts by label, as a fact of an entity: an item's vote tally as the clerk recorded it (`{ aye: 3, excused: 1 }`).
+ * @typedef {{ readonly [label: string]: number }} FactCounts
+ * @bound each count: a whole number, zero or more
+ */
+/**
+ * One fact of an entity: a text, a number, a yes or no, a record of counts (a vote tally), or null.
+ * @typedef {string | number | boolean | null | FactCounts} EntityFact
+ */
+/**
  * The facts of an entity whose change might mean something, by name.
- * @typedef {{ [fact: string]: string | number | boolean | null }} EntityFacts
+ * @typedef {{ [fact: string]: EntityFact }} EntityFacts
  */
 /**
  * An entity a content type found in a document (R34): a stable key, its kind, its label, its facts, where it was first read
@@ -177,8 +186,8 @@
  * One fact that moved between two readings of one entity.
  * @typedef {Object} MovedFact
  * @property {string} fact
- * @property {string | number | boolean | null | undefined} was
- * @property {string | number | boolean | null | undefined} now
+ * @property {EntityFact | undefined} was
+ * @property {EntityFact | undefined} now
  */
 /**
  * An entity whose facts moved, with its reading before.

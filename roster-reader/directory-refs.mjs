@@ -13,24 +13,47 @@
 import { readerView } from "../docprofile/registry.mjs";
 import { nameSpans, withoutContacts, titlePatterns, titleSpans, removeSpans } from "./lines.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Entity, ReaderView } from "../docprofile/registry.mjs" */
+/**
+ * A person reference from a directory's entry (R7): keyed by its address, with a name only where exactly one
+ * name-shaped span remains, graded C; otherwise no name, no grade, and why.
+ * @typedef {Object} PersonRef
+ * @property {string} contact_key
+ * @property {string} [name]
+ * @property {string|null} match_grade
+ * @property {string} why
+ * @bound match_grade: "C" when a name is read, null otherwise; never above C
+ */
 
+/** @type {string} the grade of a name read alone (R7) */
 export const NAME_GRADE = "C";
 
+/**
+ * @param {ReadonlyArray<Entity> | null} [entities] a `staff_directory` reading's entities: anything but a list reads as none;
+ *   an entity that is not a contact is passed over; a contact's address is its `key`, the entry's line its fact `line`
+ * @param {ReaderView | null} [view] the view whose staff titles are removed from a line
+ * @returns {PersonRef[]}
+ */
 export function directoryPersonRefs(entities, view) {
+  /** @type {DoctypeContext} */
   const ctx = { view: view && typeof view === "object" ? view : readerView({}) };
   const titles = titlePatterns(ctx);
+  /** @type {PersonRef[]} */
   const out = [];
-  for (const e of Array.isArray(entities) ? entities : []) {
+  for (const e of entities || []) {
     if (!e || e.kind !== "contact" || typeof e.key !== "string" || !e.key) continue;
-    const line = e.facts && typeof e.facts.line === "string" ? e.facts.line : "";
-    const ref = { contact_key: e.key };
-    if (!line.trim()) { out.push({ ...ref, match_grade: null, why: localize("roster-reader.directory-refs.the_entry_carries_no_line", "the entry carries no line to read a name from") }); continue; }
+    const facts = e.facts;
+    const given = facts ? facts.line : undefined;
+    const line = typeof given === "string" ? given : "";
+    const key = e.key;
+    if (!line.trim()) { out.push({ contact_key: key, match_grade: null, why: localize("roster-reader.directory-refs.the_entry_carries_no_line", "the entry carries no line to read a name from") }); continue; }
     const spans = withoutContacts(line).parts.flatMap((part) => nameSpans(removeSpans(part, titleSpans(titles, part))));
-    if (spans.length === 1)
-      out.push({ ...ref, name: spans[0].text, match_grade: NAME_GRADE,
+    const only = spans.length === 1 ? spans[0] : undefined;
+    if (only)
+      out.push({ contact_key: key, name: only.text, match_grade: NAME_GRADE,
                  why: localize("roster-reader.directory-refs.one_name_shaped_span_remains", "one name-shaped span remains on the entry's line once its address, phone numbers and staff titles are removed; a name alone is grade C") });
     else
-      out.push({ ...ref, match_grade: null,
+      out.push({ contact_key: key, match_grade: null,
                  why: spans.length ? localize("roster-reader.directory-refs.length_name_shaped_spans_remain", "{length} name-shaped spans remain on the entry's line, which may hold more than one person's text, so no name is read", { length: String(spans.length) })
                                    : localize("roster-reader.directory-refs.no_name_shaped_span_remains", "no name-shaped span remains on the entry's line once its address, phone numbers and staff titles are removed") });
   }
