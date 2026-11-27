@@ -12,20 +12,32 @@ import { handle } from '../src/handler.mjs';
 import { SAFE_VIEW_PAGES_MAX, SAFE_VIEW_BYTES_MAX } from '../src/limits.mjs';
 import { makePdf, content } from '../../pdf-worker/test/make-pdf.mjs';
 import { memoryBucket, putCapture, rendererImage, depsWith, post, rendererPresent } from './helpers.mjs';
+/** @import { Deps, RequestBody, Answer, AnswerHeaders, ContainerInit, ContainerFetch } from '../src/store.mjs' */
+/** @import { PdfBody } from '../../pdf-worker/test/make-pdf.mjs' */
+
+/** @typedef {{ ok: boolean, code: string, class?: string, message?: string }} Refusal the member's or the image's refusal, as these tests read it */
+/** @typedef {{ max?: number, bytes?: number }} Figures the figures a test asks the image for in place of the table's, by the query's names */
+/** @typedef {{ objects: Map<string, Uint8Array>, calls: [string, string][] }} TestBucket the in-memory bucket, as these tests read it: its objects and its recorded calls */
+/** @typedef {{ status: number, headers: AnswerHeaders }} Headed an answer, as far as its status and headers */
 
 const skip = !rendererPresent && 'LibreOffice and Poppler are not installed';
+/** @param {Deps} deps @param {RequestBody} body @returns {Promise<Answer>} */
 const call = (deps, body) => handle(post('/render', body), deps);
+/** @param {Answer} r @returns {Promise<Uint8Array>} */
 const bytesOf = async (r) => new Uint8Array(await r.arrayBuffer());
+/** @param {Uint8Array} pdf @returns {number} */
 const pageCount = (pdf) => {
   const f = join(mkdtempSync(join(process.env.TMPDIR, 'pc-')), 'v.pdf');
   writeFileSync(f, pdf);
   return Number((/^Pages:\s+(\d+)/m.exec(execFileSync('pdfinfo', [f]).toString()) || [])[1]);
 };
+/** @param {Headed} r @returns {(string | null)[]} */
 const headers = (r) => [r.headers.get('x-pages'), r.headers.get('x-source-pages'), r.headers.get('x-truncated')];
 
-/** A PDF of `n` pages, each with text. */
+/** A PDF of `n` pages, each with text. @param {number} n @returns {Uint8Array} */
 function textPdf(n) {
   const pages = Array.from({ length: n }, (_, i) => 3 + 2 * i);
+  /** @type {PdfBody[]} */
   const bodies = ['<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${pages.map((p) => `${p} 0 R`).join(' ')}] /Count ${n} >>`];
   for (let i = 0; i < n; i++) {
     bodies.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents ${4 + 2 * i} 0 R >>`);
@@ -34,7 +46,8 @@ function textPdf(n) {
   return makePdf(bodies);
 }
 
-/** A Word document with at least `pages` pages (counted by LibreOffice itself, whole), and that count. */
+/** A Word document with at least `pages` pages (counted by LibreOffice itself, whole), and that count.
+ *  @param {number} pages @returns {{ bytes: Buffer, total: number }} */
 function wordDocument(pages) {
   const dir = mkdtempSync(join(process.env.TMPDIR, 'doc-'));
   const opts = [`-env:UserInstallation=file://${join(dir, 'p')}`, '--headless'];
@@ -45,11 +58,12 @@ function wordDocument(pages) {
   return { bytes: readFileSync(join(dir, 'w.docx')), total };
 }
 
-/** The member with its renderer asked for `figures` in place of the table's (the figures are the query's). */
+/** The member with its renderer asked for `figures` in place of the table's (the figures are the query's).
+ *  @param {Figures} [figures] @returns {Promise<{ bucket: TestBucket, deps: Deps, image: { fetch: ContainerFetch } }>} */
 async function rendering(figures = {}) {
   const bucket = memoryBucket();
   const image = await rendererImage();
-  const deps = depsWith({ bucket, renderer: (path, init) => image.fetch(path.replace(/([?&])(max|bytes)=\d+/g, (m, sep, k) => (k in figures ? `${sep}${k}=${figures[k]}` : m)), init) });
+  const deps = depsWith({ bucket, renderer: /** @param {string} path @param {ContainerInit} [init] */ (path, init) => image.fetch(path.replace(/([?&])(max|bytes)=\d+/g, /** @param {string} m @param {string} sep @param {'max' | 'bytes'} k */ (m, sep, k) => (k in figures ? `${sep}${k}=${figures[k]}` : m)), init) });
   return { bucket, deps, image };
 }
 
@@ -74,6 +88,7 @@ test('R7 G136b only the first SAFE_VIEW_PAGES_MAX pages of an office document, a
 
 test('R7 G136b a document of exactly the cap and one shorter than it are whole; one page more than the cap is truncated', { skip }, async () => {
   const doc = wordDocument(4);
+  /** @param {number} max */
   const at = async (max) => {
     const { bucket, deps } = await rendering({ max });
     conversions();
@@ -111,17 +126,19 @@ test('R7 G136b the safe view is cut at the last page that fits SAFE_VIEW_BYTES_M
   assert.equal(r.headers.get('x-derived-sha256'), (await import('node:crypto')).createHash('sha256').update(view).digest('hex'));
   const none = await rendering({ bytes: 1 });
   r = await call(none.deps, { store: 'bio', target: putCapture(none.bucket, textPdf(2)), route: 'pdf' });
-  const refused = await r.json();
+  const refused = /** @type {Refusal} the member's own answer */ (await r.json());
   assert.deepEqual([r.status, refused.code, refused.class, typeof refused.message], [500, 'RENDER_FAILED', 'final', 'string']);
 });
 
 test('R7 the Worker holds the renderer\'s answer to SAFE_VIEW_BYTES_MAX: an answer that declares more is refused, one that streams more ends in an error', async () => {
   const bucket = memoryBucket();
   const pdf = putCapture(bucket, textPdf(1));
+  /** @param {number} chunks @returns {ReadableStream<Uint8Array>} */
   const stream = (chunks) => new ReadableStream({ pull(c) { if (!chunks--) return c.close(); c.enqueue(new Uint8Array(1 << 20)); } });
-  const answer = (headers, chunks) => depsWith({ bucket, renderer: async (path, init) => { await new Response(init.body).arrayBuffer(); return new Response(stream(chunks), { status: 200, headers: { 'content-type': 'application/pdf', ...headers } }); } });
+  /** @param {{ [name: string]: string }} headers @param {number} chunks @returns {Deps} */
+  const answer = (headers, chunks) => depsWith({ bucket, renderer: /** @param {string} path @param {ContainerInit} init */ async (path, init) => { await new Response(init.body).arrayBuffer(); return new Response(stream(chunks), { status: 200, headers: { 'content-type': 'application/pdf', ...headers } }); } });
   const declared = await call(answer({ 'content-length': String(SAFE_VIEW_BYTES_MAX + 1) }, 1), { store: 'bio', target: pdf, route: 'pdf' });
-  assert.deepEqual([declared.status, (await declared.json()).class], [500, 'final']);
+  assert.deepEqual([declared.status, /** @type {Refusal} the member's own answer */ (await declared.json()).class], [500, 'final']);
   const over = await call(answer({}, SAFE_VIEW_BYTES_MAX / (1 << 20) + 1), { store: 'bio', target: pdf, route: 'pdf' });
   assert.equal(over.status, 200);
   await assert.rejects(over.arrayBuffer(), /SAFE_VIEW_BYTES_MAX/);

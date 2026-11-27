@@ -9,13 +9,20 @@ import { handle } from '../src/handler.mjs';
 import { SAFE_VIEW_DPI, SAFE_VIEW_PAGES_MAX, SAFE_VIEW_BYTES_MAX, RENDER_TIME_MS, SCAN_MAX_BYTES, SCAN_LIMITS } from '../src/limits.mjs';
 import { makePdf, content } from '../../pdf-worker/test/make-pdf.mjs';
 import { memoryBucket, putCapture, putDerived, rendererImage, depsWith, post, enc, sha, rendererPresent } from './helpers.mjs';
+/** @import { Deps, RequestBody, Answer, ContainerInit } from '../src/store.mjs' */
+/** @import { PdfBody } from '../../pdf-worker/test/make-pdf.mjs' */
+
+/** @typedef {{ objects: Map<string, Uint8Array>, calls: [string, string][] }} TestBucket the in-memory bucket, as these tests read it: its objects and its recorded calls */
+/** @typedef {{ ok: boolean, code: string, class?: string, message: string }} Refusal the member's refusal, as these tests read it; `message` is read only where a test expects one */
 
 const skip = !rendererPresent && 'LibreOffice and Poppler are not installed';
 const FONT = '/Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>';
 
-/** A PDF of `n` pages, each with text, a link and a form field; the document has a script, an attachment and metadata. */
+/** A PDF of `n` pages, each with text, a link and a form field; the document has a script, an attachment and metadata.
+ *  @param {number} n @returns {Uint8Array} */
 function richPdf(n) {
   const pages = Array.from({ length: n }, (_, i) => 4 + 2 * i);
+  /** @type {PdfBody[]} */
   const bodies = [
     '<< /Type /Catalog /Pages 2 0 R /OpenAction 3 0 R /AcroForm << /Fields [] >> /Names << /EmbeddedFiles << /Names [(a.txt) << /Type /Filespec /F (a.txt) >>] >> >> >>',
     `<< /Type /Pages /Kids [${pages.map((p) => `${p} 0 R`).join(' ')}] /Count ${n} >>`,
@@ -30,15 +37,19 @@ function richPdf(n) {
   return makePdf(bodies, { trailer: `/Info ${bodies.length} 0 R` });
 }
 
+/** @returns {Promise<{ bucket: TestBucket, deps: Deps }>} */
 async function rendering() {
   const bucket = memoryBucket();
   const image = await rendererImage();
   return { bucket, deps: depsWith({ bucket, renderer: image.fetch }) };
 }
+/** @param {Deps} deps @param {RequestBody} body @returns {Promise<Answer>} */
 const call = (deps, body) => handle(post('/render', body), deps);
+/** @param {Answer} r @returns {Promise<Uint8Array>} */
 const bodyOf = async (r) => new Uint8Array(await r.arrayBuffer());
 
-/** Every object of the safe view, by Poppler and by its own bytes: one image per page, no text, nothing else. */
+/** Every object of the safe view, by Poppler and by its own bytes: one image per page, no text, nothing else.
+ *  @param {Uint8Array} pdf @param {number} pages @returns {void} */
 function assertImagesOnly(pdf, pages) {
   const dir = mkdtempSync(join(process.env.TMPDIR, 'check-'));
   writeFileSync(join(dir, 'v.pdf'), pdf);
@@ -87,10 +98,11 @@ test('R7 the office route renders a Word document; R17 the renderer\'s PDF holds
 });
 
 test('R7 pages beyond SAFE_VIEW_PAGES_MAX are not rendered, and the headers say so', { skip }, async () => {
+  /** @type {string[]} */
   const seen = [];
   const image = await rendererImage();
   const bucket = memoryBucket();
-  const deps = depsWith({ bucket, renderer: (path, init) => { seen.push(path); return image.fetch(path.replace(`max=${SAFE_VIEW_PAGES_MAX}`, 'max=2'), init); } });
+  const deps = depsWith({ bucket, renderer: /** @param {string} path @param {ContainerInit} [init] */ (path, init) => { seen.push(path); return image.fetch(path.replace(`max=${SAFE_VIEW_PAGES_MAX}`, 'max=2'), init); } });
   const t = putCapture(bucket, richPdf(4));
   const r = await call(deps, { store: 'bio', target: t, route: 'pdf' });
   assert.equal(seen.length, 1);
@@ -104,7 +116,8 @@ test('R7 pages beyond SAFE_VIEW_PAGES_MAX are not rendered, and the headers say 
 
 test('R7 refusals by name: R1\'s and R2\'s, ENCRYPTED, NOT_RENDERABLE, TIME_LIMIT, RENDER_FAILED', { skip }, async () => {
   const { bucket, deps } = await rendering();
-  const answer = async (body, d = deps) => { const r = await call(d, body); return [r.status, await r.json()]; };
+  /** @param {RequestBody} body @param {Deps} [d] @returns {Promise<[number, Refusal]>} */
+  const answer = async (body, d = deps) => { const r = await call(d, body); return [r.status, /** @type {Refusal} the member's own answer */ (await r.json())]; };
   const pdf = putCapture(bucket, richPdf(1));
   assert.deepEqual(await answer({ store: 'x', target: pdf, route: 'pdf' }), [400, { ok: false, code: 'NAMESPACE_UNKNOWN' }]);
   assert.deepEqual(await answer({ store: 'bio', target: { capture_sha: 'z' }, route: 'pdf' }), [400, { ok: false, code: 'BAD_TARGET' }]);
@@ -164,8 +177,10 @@ test('R14 the render\'s directory is gone when its answer arrives', { skip }, as
 test('R7 R11c a NOT_RENDERABLE refusal of the renderer reaches the answer with its message, at most 300 characters, class final', async () => {
   const bucket = memoryBucket();
   const pdf = putCapture(bucket, enc('%PDF-1.4 stub'));
+  /** @param {string} [message] @returns {Deps} */
   const refusing = (message) => depsWith({ bucket, renderer: async () => new Response(JSON.stringify({ ok: false, code: 'NOT_RENDERABLE', ...(message === undefined ? {} : { message }) }), { status: 422 }) });
-  const answer = async (d) => { const r = await call(d, { store: 'bio', target: pdf, route: 'office' }); return [r.status, await r.json()]; };
+  /** @param {Deps} d @returns {Promise<[number, Refusal]>} */
+  const answer = async (d) => { const r = await call(d, { store: 'bio', target: pdf, route: 'office' }); return [r.status, /** @type {Refusal} the member's own answer */ (await r.json())]; };
   assert.deepEqual(await answer(refusing('the converter produced no PDF')), [422, { ok: false, code: 'NOT_RENDERABLE', class: 'final', message: 'the converter produced no PDF' }]);
   assert.equal((await answer(refusing('x'.repeat(900))))[1].message.length, 300);
   assert.deepEqual(await answer(refusing()), [422, { ok: false, code: 'NOT_RENDERABLE', class: 'final' }], 'a refusal without a message states none');
