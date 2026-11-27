@@ -18,6 +18,7 @@ Rule now: civicsmith moves to the latest Process4 version, now (open jobs restar
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the tenth move)
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the eleventh move; the first in the new Claude account)
 - 27 Nov 2026: "Instruction: move civicsmith to the latest Process4 version, now" (the twelfth move)
+- 27 Nov 2026: "Instruction: move civicsmith to the latest Process4 version, now" (the thirteenth move)
 Shown to the owner: not yet.
 
 ## Slots
