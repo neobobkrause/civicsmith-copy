@@ -11,6 +11,7 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 const STANDARD_THROUGH = "standard-directed: keyed by a standard's version, reached from the standard; records what a "
   + "checked source shows, with who, when and why; moves no bundle";

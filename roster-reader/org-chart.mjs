@@ -30,16 +30,75 @@ import { isName, leadingName, withoutContacts, titlePatterns, titleSpans, remove
          namedAs, eachLine, selfNamingLine, isUnitLine, UNIT_WORDS, wordCount } from "./lines.mjs";
 import { asOfOf, organisationOf, assessRows } from "./staff-roster.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+import { isObj, isList, strField } from "./lines.mjs";
+/** @import { Detection, AsOf, NamedOrganisation, Assessment } from "./staff-roster.mjs" */
+/** @import { Line, SelfLine, Fields } from "./lines.mjs" */
+/** @import { DoctypeContext, EntityFacts, Entity } from "../docprofile/registry.mjs" */
+/** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
+
+/**
+ * A unit's box as its label reads (R3).
+ * @typedef {Object} ChartUnit
+ * @property {string} label
+ * @property {ReadingPosition | null} source
+ */
+/**
+ * A post's box as its label reads (R3), with the name beside it only where one line holds exactly the post and one name.
+ * @typedef {Object} ChartPost
+ * @property {string} label
+ * @property {string} [name]
+ * @property {ReadingPosition | null} source
+ */
+/**
+ * A reporting relation the document states in words (R3), never one read from the drawing.
+ * @typedef {Object} ChartPair
+ * @property {string} from
+ * @property {string} to
+ * @property {ReadingPosition | null} source
+ */
+/**
+ * `org_chart`'s reading (R3).
+ * @typedef {Object} ChartReading
+ * @property {ChartUnit[]} units
+ * @property {ChartPost[]} posts
+ * @property {ChartPair[]} reports_to
+ * @property {string} pairs_why
+ * @property {{units: number, posts: number, named_posts: number, reports_to: number}} counts
+ * @property {AsOf|null} as_of
+ * @property {string|null} as_of_why
+ * @property {NamedOrganisation|null} organisation
+ * @property {string|null} organisation_why
+ * @property {string[]} also_satisfies
+ * @property {string|null} at
+ */
+/**
+ * The `org_chart` content type (R3, R4, R5), for `docprofile`'s registry.
+ * @typedef {Object} ChartType
+ * @property {string} key `org_chart`
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract `docprofile`'s `CONTRACT.MEMBERSHIP`
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => ChartReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => Assessment} assess compares the readings' boxes only
+ * @property {false} [fallback] never the registry's fallback
+ * @property {undefined} [connections] states no connections
+ * @bound detect: allocates at most 32 bytes per byte of text, and holds one line at a time
+ */
 
 /* MEASURED with the first profile's proposed words: the charts carry 23 to 756 box lines (units, posts and
    holders alone), of which 4 to 218 name a unit or a post; the look-alikes past the floor are refused by
    the share. A list of names alone is not a chart, so at least CHART_MIN_LABELS lines must label a box. */
+/** @type {number} */
 export const CHART_FLOOR = 8;
+/** @type {number} */
 export const CHART_MIN_LABELS = 3;
 /* MEASURED: the charts at 0.49 to 0.84 of their lines; the highest look-alike 0.30 (the dated meeting
    schedule, whose rows name a coordinator and a beat). */
+/** @type {number} */
 export const CHART_SHARE = 0.4;
 /* MEASURED: the charts' median line is 2 to 4 words; no look-alike that reaches this rule. */
+/** @type {number} */
 export const CHART_SHORT = 5;
 
 const REPORTS = /^(.+?)\s+(?:reports|report|reporting)\s+(?:directly\s+)?to\s+(?:the\s+)?(.+?)[.;]?$/i;
@@ -47,11 +106,25 @@ const REPORTS = /^(.+?)\s+(?:reports|report|reporting)\s+(?:directly\s+)?to\s+(?
 /* `keep` false (`detect`) holds no line, unit or post: the counts, the numbers of the lines that label a box, a
    histogram of the lines' word counts and the self-naming lines are all it keeps, so the reading of a 20 MB
    text holds one line at a time (R3). */
+/** @param {string} raw @param {DoctypeContext | null | undefined} ctx @param {boolean} [keep] */
 function readBoxes(raw, ctx, keep = true) {
   const titles = titlePatterns(ctx);
   const selfPatterns = keep ? [] : rosterWordPatterns(ctx);
-  const lines = [], units = [], posts = [], pairs = [], self = [];
-  const unitLines = new Set(), postLines = new Set(), wordHist = new Map();
+  /** @type {Line[]} */
+  const lines = [];
+  /** @type {SelfLine[]} */
+  const self = [];
+  /** @type {{label: string, offset: number}[]} builds the ChartUnit of each unit's box */
+  const units = [];
+  /** @type {{label: string, name?: string, offset: number}[]} builds the ChartPost of each post's box */
+  const posts = [];
+  /** @type {{from: string, to: string, offset: number, line: string}[]} builds the ChartPair of each relation stated in words */
+  const pairs = [];
+  /** @type {Set<number>} */
+  const unitLines = new Set();
+  /** @type {Set<number>} */
+  const postLines = new Set();
+  const wordHist = new Map(/** @type {Array<[number, number]>} */ ([]));
   let count = 0, named = 0;
   eachLine(raw, (x) => {
     const at = count++;
@@ -65,13 +138,14 @@ function readBoxes(raw, ctx, keep = true) {
     const { text } = withoutContacts(x.text);
     if (!text) return;
     const rep = keep ? REPORTS.exec(text) : null;
-    if (rep) pairs.push({ from: rep[1].trim(), to: rep[2].trim(), offset: x.offset, line: text });
+    if (rep) pairs.push({ from: (rep[1] ?? "").trim(), to: (rep[2] ?? "").trim(), offset: x.offset, line: text });
     const ts = titleSpans(titles, text);
     if (ts.length) {
       const rest = removeSpans(text, ts);
-      if (ts.length === 1 && isName(rest)) {
+      const only = ts.length === 1 ? ts[0] : undefined;
+      if (only && isName(rest)) {
         postLines.add(at);
-        if (keep) posts.push({ label: ts[0].text.trim(), name: rest, offset: x.offset });
+        if (keep) posts.push({ label: only.text.trim(), name: rest, offset: x.offset });
         return;
       }
       postLines.add(at);
@@ -89,16 +163,18 @@ function readBoxes(raw, ctx, keep = true) {
 }
 
 /** The lower middle of the numbers, given as a map from each number to how often it occurs. */
+/** @param {Map<number, number>} hist @param {number} total @returns {number} */
 function medianOf(hist, total) {
   if (!total) return 0;
   const want = Math.floor((total - 1) / 2);
   let seen = 0;
-  for (const v of [...hist.keys()].sort((a, b) => a - b)) { seen += hist.get(v); if (seen > want) return v; }
+  for (const v of [...hist.keys()].sort((a, b) => a - b)) { seen += hist.get(v) ?? 0; if (seen > want) return v; }
   return 0;
 }
 
-const no = (why) => ({ match: false, confidence: CONFIDENCE.NONE, why });
+const no = /** @param {string} why @returns {Detection} */ (why) => ({ match: false, confidence: CONFIDENCE.NONE, why });
 
+/** @type {ChartType} */
 export default {
   key: "org_chart",
   label: "an organisation chart",
@@ -127,8 +203,9 @@ export default {
       return no(localize("roster-reader.org-chart.it_names_itself_with_the_views", "it names itself, with the view's words, as a roster and not as a chart"));
     const signals = [`${unitLines} unit line(s), ${postLines.size} post line(s), ${named} holder line(s)`,
                      localize("roster-reader.org-chart.round_of_its_lines_are", "{round}% of its lines are box labels; its median line is {mid} word(s)", { round: String(Math.round(share * 100)), mid: String(mid) })];
-    if (self.as.length) {
-      signals.push(localize("roster-reader.org-chart.it_names_itself_a_chart", "it names itself a chart (\"{text}\")", { text: String(self.as[0].text.slice(0, 80)) }));
+    const firstAs = self.as[0];
+    if (firstAs) {
+      signals.push(localize("roster-reader.org-chart.it_names_itself_a_chart", "it names itself a chart (\"{text}\")", { text: String(firstAs.text.slice(0, 80)) }));
       return { match: true, confidence: CONFIDENCE.CERTAIN, signals };
     }
     return { match: true, confidence: CONFIDENCE.LIKELY, signals,
@@ -137,16 +214,28 @@ export default {
 
   parse(ctx) {
     const raw = String((ctx && ctx.text) || "");
-    const locate = ctx && typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx ? ctx.locate : undefined;
+    /** @type {(offset: number) => ReadingPosition | null} */
+    const locate = typeof given === "function" ? given : () => null;
     const { lines, units, posts, pairs } = readBoxes(raw, ctx);
     const self = selfNamingLines(lines, rosterWordPatterns(ctx));
     const asOf = asOfOf(lines, self);
     const org = organisationOf(lines, self, ctx);
-    const place = ({ offset, ...r }) => ({ ...r, source: locate(offset) || null });
+    /* Each box or pair placed where the document says: its `offset` replaced by its `source`. */
     return {
-      units: units.map(place),
-      posts: posts.map(place),
-      reports_to: pairs.map(({ line, ...p }) => place(p)),
+      units: units.map((u) => ({ label: u.label, source: locate(u.offset) || null })),
+      posts: posts.map((p) => {
+        const name = p.name;
+        if (name === undefined) {
+          /** @type {ChartPost} */
+          const box = { label: p.label, source: locate(p.offset) || null };
+          return box;
+        }
+        /** @type {ChartPost} */
+        const post = { label: p.label, name, source: locate(p.offset) || null };
+        return post;
+      }),
+      reports_to: pairs.map((p) => ({ from: p.from, to: p.to, source: locate(p.offset) || null })),
       pairs_why: pairs.length
         ? localize("roster-reader.org-chart.reporting_relation_s_stated_in_words", "{count} reporting relation(s) stated in words; the chart's boxes and connecting lines are a drawing that text does not carry, so no other pair is read", { count: String(pairs.length) })
         : localize("roster-reader.org-chart.no_reporting_relation_is_stated", "no reporting relation is stated in words; the chart's boxes and connecting lines are a drawing that text does not carry, so no other pair is read"),
@@ -167,14 +256,33 @@ export default {
   },
 };
 
+/** A reading's boxes as entities (R5): one per unit and per post, a post's holders its fact.
+ *  @param {object | null | undefined} parsed a reading `parse` handed back, given again
+ *  @returns {Entity[]} */
 function boxEntities(parsed) {
-  const by = new Map();
-  for (const u of (parsed && parsed.units) || []) if (!by.has(`unit:${u.label}`)) by.set(`unit:${u.label}`, { label: u.label, names: new Set() });
-  for (const p of (parsed && parsed.posts) || []) {
-    const k = `post:${p.label}`;
-    const e = by.get(k) || { label: p.label, names: new Set() };
-    if (p.name) e.names.add(p.name);
+  /** @typedef {{ label: string, names: Set<string> }} Gathered */
+  const by = new Map(/** @type {Array<[string, Gathered]>} */ ([]));
+  const units = isObj(parsed) ? parsed.units : undefined;
+  const posts = isObj(parsed) ? parsed.posts : undefined;
+  for (const u of isList(units) ? units : []) {
+    /** @type {Fields} */
+    const f = isObj(u) ? u : {};
+    const label = String(strField(f, "label"));
+    if (!by.has(`unit:${label}`)) by.set(`unit:${label}`, { label, names: new Set(/** @type {string[]} */ ([])) });
+  }
+  for (const p of isList(posts) ? posts : []) {
+    /** @type {Fields} */
+    const f = isObj(p) ? p : {};
+    const label = String(strField(f, "label")), name = strField(f, "name");
+    const k = `post:${label}`;
+    const e = by.get(k) || { label, names: new Set(/** @type {string[]} */ ([])) };
+    if (name) e.names.add(name);
     by.set(k, e);
   }
-  return [...by].map(([k, e]) => entity(k, "box", e.label, k.startsWith("post:") ? { holders: [...e.names].sort().join(" | ") || null } : {}));
+  return [...by].map(([k, e]) => {
+    /** @type {EntityFacts} */
+    const facts = {};
+    if (k.startsWith("post:")) facts.holders = [...e.names].sort().join(" | ") || null;
+    return entity(k, "box", e.label, facts);
+  });
 }

@@ -1,4 +1,4 @@
-/* pdf-worker R8, the envelope: the smallest V8 old space in which the committed bundle reads a PDF's text at tier 2
+/* pdf-worker R8, the envelope: the smallest V8 old space in which the bundle reads a PDF's text at tier 2
  * (`POST /structure`, the real handler) under raw workerd, so `MAX_PDF_BYTES` is measured and not chosen. A probe, not a
  * test (it boots workerd many times):
  *   node envelope-memory.probe.mjs <dir> <file.pdf>...
@@ -6,7 +6,7 @@
  * does (`obj.arrayBuffer()`), and the handler runs with `MAX_PDF_BYTES` high enough that tier 2 is attempted. The smallest
  * `--max-old-space-size` (MB) in which the answer is a tier-2 text is found by bisection; the object's need is that heap
  * plus the file's bytes (held outside old space) under 128 MB. One line per file: bytes, heap, heap + bytes, request ms and
- * the characters read. `PROBE_BUNDLE` names the bundle to measure (default: the committed one). The numbers are recorded in
+ * the characters read. `PROBE_BUNDLE` names the bundle to measure (default: a fresh build of the source, `subject.mjs`, R45). The numbers are recorded in
  * build/jobs/T51/pdf-worker.md. */
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, copyFileSync, statSync, readFileSync } from "node:fs";
@@ -14,12 +14,18 @@ import { fileURLToPath } from "node:url";
 import { join, basename } from "node:path";
 import { createHash } from "node:crypto";
 
+/** The probe's own reply from the worker it writes below (its own channel), as far as the probe reads it.
+ * @typedef {{ ok: unknown, tier: unknown, ms: unknown, chars: unknown, undetermined: unknown }} Reply */
+
+/** @param {string} p @returns {string} */
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
-const [dir, ...files] = process.argv.slice(2);
-if (!dir || !files.length) { console.error("usage: envelope-memory.probe.mjs <dir> <file.pdf>..."); process.exit(2); }
+const [given, ...files] = process.argv.slice(2);
+if (!given || !files.length) { console.error("usage: envelope-memory.probe.mjs <dir> <file.pdf>..."); process.exit(2); }
+/** @type {string} */
+const dir = given;
 const BIN = here("../node_modules/.bin/");
 mkdirSync(join(dir, "pdfs"), { recursive: true });
-copyFileSync(process.env.PROBE_BUNDLE || here("../dist/pdf-worker.bundled.mjs"), join(dir, "pdf-worker.bundled.mjs"));
+copyFileSync(process.env.PROBE_BUNDLE || (await import("./subject.mjs")).BUNDLE, join(dir, "pdf-worker.bundled.mjs"));
 writeFileSync(join(dir, "worker.mjs"), `
 import pdfWorker from "./pdf-worker.bundled.mjs";
 export default { async fetch(req, env) {
@@ -38,6 +44,13 @@ export default { async fetch(req, env) {
     undetermined: j.text?.counts?.undetermined ?? null, notes: j.notes, ms: Date.now() - t });
 } };`);
 
+/** True where the worker's reply is an answer at tier 2 (`r && r.ok && r.tier === 2`).
+ * @param {unknown} r @returns {r is Reply} */
+function isTier2(r) {
+  return typeof r === "object" && r !== null && "ok" in r && Boolean(r.ok) && "tier" in r && r.tier === 2;
+}
+
+/** @param {string} file @param {string} sha @param {number} oldSpaceMB @returns {Promise<Reply | null>} */
 async function run(file, sha, oldSpaceMB) {
   const port = 19000 + Math.floor(Math.random() * 900);
   writeFileSync(join(dir, "config.capnp"), `using Workerd = import "/workerd/workerd.capnp";
@@ -51,11 +64,17 @@ const w :Workerd.Worker = (modules = [(name = "worker", esModule = embed "worker
   const p = spawn(BIN + "workerd", ["serve", join(dir, "config.capnp")], { stdio: "ignore" });
   try {
     let up = false;
-    for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await new Promise((r) => setTimeout(r, 200)); } }
+    for (let i = 0; i < 60 && !up; i++) {
+      try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch {
+        /** @type {Promise<void>} */
+        const pause = new Promise((r) => setTimeout(r, 200));
+        await pause;
+      }
+    }
     if (!up) return null;
-    const r = await fetch(`http://127.0.0.1:${port}/?f=${file}&sha=${sha}`).then((x) => x.json()).catch(() => null);
+    const r = await fetch(`http://127.0.0.1:${port}/?f=${file}&sha=${sha}`).then(async (x) => JSON.parse(await x.text())).catch(() => null);
     if (process.env.PROBE_DEBUG) console.error(oldSpaceMB, JSON.stringify(r));
-    return r && r.ok && r.tier === 2 ? r : null;
+    return isTier2(r) ? r : null;
   } finally { p.kill("SIGKILL"); }
 }
 for (const f of files) {
@@ -64,8 +83,9 @@ for (const f of files) {
   const sha = createHash("sha256").update(readFileSync(f)).digest("hex");
   const mb = statSync(f).size / 1048576;
   let lo = 16, hi = Number(process.env.PROBE_HI || 320);
-  let best = await run(file, sha, hi);
-  if (!best) { console.log(`${file}: ${mb.toFixed(1)} MiB does not read at tier 2 even with ${hi} MB of old space`); continue; }
+  const first = await run(file, sha, hi);
+  if (!first) { console.log(`${file}: ${mb.toFixed(1)} MiB does not read at tier 2 even with ${hi} MB of old space`); continue; }
+  let best = first;
   while (hi - lo > 4) { const mid = (lo + hi) >> 1; const r = await run(file, sha, mid); if (r) { hi = mid; best = r; } else lo = mid; }
   console.log(`${file}: ${mb.toFixed(1)} MiB, tier 2 from ${hi} MB of old space; heap + bytes ~ ${(hi + mb).toFixed(0)} MB (object limit 128); ${best.ms} ms, ${best.chars} chars, ${best.undetermined} undetermined`);
 }

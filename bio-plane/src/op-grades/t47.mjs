@@ -20,9 +20,13 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
+/** @param {string} s */
 const GROUP_SETTING = (s) => `setting: ${s}; an administrator's act, a later one replacing it; moves no bundle`;
+/** @param {string} s */
 const SESSION_OWN = (s) => `session-directed: ${s}; moves no bundle`;
+/** @param {string} s */
 const RESET = (s) => `credential: ${s}; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */

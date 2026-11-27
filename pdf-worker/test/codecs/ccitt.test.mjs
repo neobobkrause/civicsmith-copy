@@ -14,22 +14,48 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { ccittDecode } from "../../src/ccittdecode.mjs";
 
-const FIX = JSON.parse(readFileSync(new URL("fixtures/ccitt-variants.json", import.meta.url), "utf8"));
+/** One stream of `fixtures/ccitt-variants.json` and libtiff's decode of it.
+ *  @typedef {Object} Variant
+ *  @property {string} name
+ *  @property {string} coding "group4", "group3" or "tiff_ccitt"
+ *  @property {number} K
+ *  @property {number} columns
+ *  @property {number} rows
+ *  @property {boolean} byteAlign
+ *  @property {string} data_b64 the stream, base64
+ *  @property {number} rows_expected the rows libtiff decoded
+ *  @property {string} libtiff_sha256 the digest of libtiff's picture, padding bits 0
+ *  @property {number} white the 1-bits in libtiff's picture */
+/** @typedef {Object} CcittFixtures @property {string} provenance @property {Variant[]} variants */
+
+const FIX = /** @type {CcittFixtures} decodes the recorded ccitt-variants.json, written by make-ccitt-fixtures.py */ (JSON.parse(readFileSync(new URL("fixtures/ccitt-variants.json", import.meta.url), "utf8")));
 const V = FIX.variants;
+/** @param {Variant} v @returns {Uint8Array} */
 const bytesOf = (v) => new Uint8Array(Buffer.from(v.data_b64, "base64"));
-const optsOf = (v, extra = {}) => ({ K: v.K, columns: v.columns, rows: v.rows, byteAlign: v.byteAlign, ...extra });
+/** @param {Variant} v @param {{ K?: number, rows?: number }} [extra]
+ *  @returns {{ K?: number | undefined, columns?: number | undefined, rows?: number | undefined, byteAlign?: boolean | undefined }} */
+const optsOf = (v, extra = {}) => ({ K: Object.hasOwn(extra, "K") ? extra.K : v.K, columns: v.columns, rows: Object.hasOwn(extra, "rows") ? extra.rows : v.rows, byteAlign: v.byteAlign });
+/** @param {Uint8Array} b @returns {string} */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
+/** The one fixture `pick` names (none is a broken fixture file). @param {(v: Variant) => boolean} pick @returns {Variant} */
+function variant(pick) {
+  const v = V.find(pick);
+  if (v === undefined) throw new Error("ccitt-variants.json lacks the fixture this test names");
+  return v;
+}
 
 /** The decoder's rows with the bits past the last column cleared: R2 packs rows
- *  to a byte and says nothing of the padding, libtiff's reference pads with 0. */
+ *  to a byte and says nothing of the padding, libtiff's reference pads with 0.
+ *  @param {Uint8Array} packed @param {number} columns @param {number} rows @returns {Uint8Array} */
 function padded0(packed, columns, rows) {
   const rb = Math.ceil(columns / 8), out = Uint8Array.from(packed.subarray(0, rb * rows));
   const keep = columns % 8 ? (0xff << (8 - (columns % 8))) & 0xff : 0xff;
-  for (let y = 0; y < rows; y++) out[y * rb + rb - 1] &= keep;
+  for (let y = 0; y < rows; y++) { const at = y * rb + rb - 1; out[at] = (out[at] ?? NaN) & keep; }
   return out;
 }
 const BITS = Uint8Array.from({ length: 256 }, (_, i) => [...i.toString(2)].filter((c) => c === "1").length);
-const popcount = (b) => b.reduce((n, x) => n + BITS[x], 0);
+/** @param {Uint8Array} b @returns {number} */
+const popcount = (b) => b.reduce((n, x) => n + (BITS[x] ?? NaN), 0);
 
 test("R2 R6 the fixtures: libtiff's decode of every coding R2 names, the scan included", () => {
   assert.match(FIX.provenance, /^libtiff /);
@@ -51,7 +77,9 @@ test("R2 R6 every fixture decodes to libtiff's picture, one packed row per row",
 });
 
 test("R2 Group 4 and Group 3 one-dimensional, each against the same picture", () => {
-  const byPicture = new Map();
+  /** @type {Array<[string, string]>} */
+  const none = [];
+  const byPicture = new Map(none);
   for (const v of V.filter((x) => x.name !== "scan-page-group4")) {
     const k = v.name.replace(/-(group4|group3|tiff_ccitt)$/, "");
     const out = ccittDecode(bytesOf(v), optsOf(v));
@@ -63,7 +91,7 @@ test("R2 Group 4 and Group 3 one-dimensional, each against the same picture", ()
 });
 
 test("R2 mixed mode (K > 0) is refused", () => {
-  const v = V.find((x) => x.coding === "group3");
+  const v = variant((x) => x.coding === "group3");
   for (const K of [1, 2, 4]) assert.throws(() => ccittDecode(bytesOf(v), optsOf(v, { K })), /mixed-mode/);
 });
 
@@ -72,12 +100,12 @@ test("R2 a stream that cannot be read is refused", () => {
    * can finish; the decoder refuses rather than looping or inventing a row. */
   const bits = "0000010".repeat(400);
   const data = new Uint8Array(Math.ceil(bits.length / 8));
-  for (let i = 0; i < bits.length; i++) if (bits[i] === "1") data[i >> 3] |= 0x80 >> (i & 7);
+  for (let i = 0; i < bits.length; i++) if (bits[i] === "1") { const at = i >> 3; data[at] = (data[at] ?? NaN) | (0x80 >> (i & 7)); }
   assert.throws(() => ccittDecode(data, { K: -1, columns: 64, rows: 4 }), /did not terminate/);
 });
 
 test("R2 a stream ending early returns the rows decoded, each libtiff's, and no invented row", () => {
-  const v = V.find((x) => x.name === "scan-page-group4");
+  const v = variant((x) => x.name === "scan-page-group4");
   const whole = ccittDecode(bytesOf(v), optsOf(v));
   const rb = Math.ceil(v.columns / 8);
   for (const cut of [20000, 42398, 84000]) {
@@ -89,7 +117,7 @@ test("R2 a stream ending early returns the rows decoded, each libtiff's, and no 
   const none = ccittDecode(new Uint8Array(0), { K: -1, columns: 100, rows: 10 });
   assert.deepEqual([none.rowsDecoded, none.packed.length], [0, 0]);
   /* One-dimensional data cut mid-row, likewise. */
-  const g3 = V.find((x) => x.name === "text-1728-group3");
+  const g3 = variant((x) => x.name === "text-1728-group3");
   const g3whole = ccittDecode(bytesOf(g3), optsOf(g3));
   const g3cut = ccittDecode(bytesOf(g3).subarray(0, 9000), optsOf(g3));
   assert.ok(g3cut.rowsDecoded < g3.rows);

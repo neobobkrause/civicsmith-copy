@@ -6,7 +6,9 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
+/** @param {string} s */
 const ROSTER_DOOR = (s) => `roster governance: ${s}; the subject is who may join, not a bundle`;
 
 /* ---- the rungs (R19's backing beside each) ---- */
@@ -89,6 +91,19 @@ export const OP_ALIASES = Object.freeze({
   declare: "dutydeclare", filingrecordsent: "filingsent",
 });
 
-/** The alias entries of one table: each alias whose op the table holds, with that op's very value. */
-export const aliased = (table) =>
-  Object.fromEntries(Object.entries(OP_ALIASES).filter(([, op]) => Object.hasOwn(table, op)).map(([a, op]) => [a, table[op]]));
+/**
+ * The alias entries of one table: each alias whose op the table holds, with that op's very value, in `OP_ALIASES` order.
+ * @template T
+ * @param {{ readonly [op: string]: T }} table a grade table keyed by op name
+ * @returns {{ [alias: string]: T }}
+ */
+export const aliased = (table) => {
+  const byOp = new Map(Object.entries(table).map(/** @returns {[string, { value: T }]} */ ([op, value]) => [op, { value }]));
+  /** @type {{ [alias: string]: T }} */
+  const out = {};
+  for (const [a, op] of Object.entries(OP_ALIASES)) {
+    const held = byOp.get(op);
+    if (held) out[a] = held.value;
+  }
+  return out;
+};

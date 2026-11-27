@@ -37,6 +37,61 @@ import { decodePng, PngRefusal, PNG_REFUSES } from "./pngdecode.mjs";
 import { REFUSALS, DCT_TO_REFUSAL, featureReasons, encodePng8, isSource } from "./pagepixels.mjs";
 import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 
+/** @import { RefusalReason, RefusalDetail, PixelRefusal, PageSource } from "./pagepixels.mjs" */
+
+/** An EXIF orientation (R43): 1 as stored, 2–8 the mirrors and turns of it.
+ *  @typedef {1 | 2 | 3 | 4 | 5 | 6 | 7 | 8} Orientation */
+/** What an orientation does to the source's axes: [x becomes X (not Y)?, x reversed?, y reversed?].
+ *  @typedef {[boolean, boolean, boolean]} Axes */
+/** An orientation as the signed permutation it applies to (x, y), a 2×2 matrix row by row.
+ *  @typedef {[number, number, number, number]} Matrix */
+/** A picture's size and its samples' channels, as a header declares them.
+ *  @typedef {{ width: number, height: number, comps: number }} Frame */
+/** The picture file as the answer describes it; a size is null only until a PNG with no readable header is decoded.
+ *  @typedef {{ format: "jpeg" | "png", width: number | null, height: number | null, comps: number | null }} PictureSource */
+/** A grey picture: one 8-bit sample a pixel, row by row.
+ *  @typedef {{ samples: Uint8Array, width: number, height: number }} GreyPicture */
+/** A reduced picture: 8-bit samples interleaved, `comps` to a pixel, row by row.
+ *  @typedef {{ samples: Uint8Array, width: number, height: number, comps: number }} ReducedPicture */
+/** What the preparation (R44) did: whether it found text lines, the turn, the enlargement and the line height after it.
+ *  @typedef {{ text_found: boolean, tilt_deg: number, scale: number, line_px: number }} Preparation */
+/** A grey picture made ready for the engine, with what was done to it.
+ *  @typedef {{ samples: Uint8Array, width: number, height: number, comps: 1, prepared: Preparation }} PreparedPicture */
+/** A levelled picture, the turn its lines need, the picture as it will lie, and its text lines.
+ *  @typedef {{ g: Uint8Array, turn: number, cur: GreyPicture, lines: number, median: number }} Levelled */
+/** The text lines of a picture: how many, and the median height of one in pixels.
+ *  @typedef {{ lines: number, median: number }} TextLines */
+/** How a reducer works: grey or not, the orientation it applies, and the factor it reduces by.
+ *  @typedef {{ grey: boolean, orientation: Orientation, k: number }} ReducerOptions */
+/** A reducer: `rows` takes source rows in order, `done` answers the reduced picture.
+ *  @typedef {{ rows: (strip: Uint8Array, y0: number, count: number) => void, done: () => ReducedPicture }} Reducer */
+/** The facts the answer states besides the picture: the file, its orientation, the reduction and the turn asked.
+ *  @typedef {{ source: PictureSource, orientation: Orientation, k: number, turn: number }} AnswerFacts */
+/** What `renderPictureToPixels` is asked for.
+ *  @typedef {Object} PictureOptions
+ *  @property {number} [maxEdge] the longest edge answered, a positive integer (required: without it the call throws)
+ *  @property {boolean} [grey] make the picture grey
+ *  @property {boolean} [prepare] make the grey picture ready for the engine (R44); implies grey
+ *  @property {number} [turn] a further clockwise turn, 90, 180 or 270; any other value is 0 (R48) */
+/** A picture file as upright PNG pixels (R42).
+ *  @typedef {Object} PicturePixels
+ *  @property {true} ok
+ *  @property {0} page
+ *  @property {"decoded-picture"} route
+ *  @property {"image/png"} mediaType
+ *  @property {Uint8Array} bytes the PNG this module wrote
+ *  @property {number} width
+ *  @property {number} height
+ *  @property {true} upright
+ *  @property {Orientation} orientation the file's own EXIF orientation (1 for a PNG)
+ *  @property {number} turned_deg the further clockwise turn applied
+ *  @property {number} reduced_by the reduction factor
+ *  @property {PictureSource} source
+ *  @property {Preparation} [prepared] present when the preparation was asked for
+ *  @property {string} pixels_sha256 over the answered samples */
+/** A picture's answer: its pixels, or a stated refusal.
+ *  @typedef {PicturePixels | PixelRefusal} PictureAnswer */
+
 /** The largest frame held whole here, as `width × height × components`
  *  (R42): a PNG's full frame, read from its header, and a JPEG's REDUCED frame,
  *  `ceil(width/k) × ceil(height/k) × components`. 4096 × 3072 × 3, a
@@ -57,14 +112,23 @@ export const PICTURE_FRAME_MAX = boundOf("image", "picture_frame");
 export const PICTURE_SOURCE_MAX = boundOf("image", "picture_source");
 const EDGE_MAX = boundOf("image", "edge");
 
+/** @param {RefusalReason} reason
+ *  @param {RefusalDetail} [detail]
+ *  @returns {PixelRefusal} */
 const refuse = (reason, detail = {}) => {
   if (!(reason in REFUSALS)) throw new Error(`undeclared refusal: ${reason}`);
   return { ok: false, reason, why: REFUSALS[reason], ...detail };
 };
 
+/** What a thrown value says, as a refusal's `note`: an error's message, else the value itself, in words.
+ *  @param {unknown} e
+ *  @returns {string} */
+const errorNote = (e) => String(e instanceof Error ? e.message || e : e);
+
 /* R42: a codec's refusal mapped as R22 and R25 map them, total over PNG_REFUSES
  * (every declared feature is UNSUPPORTED_FILTER unless named here). */
 const PNG_FEATURE_REASONS = featureReasons(PNG_REFUSES, {});
+/** @type {{ readonly [code: string]: RefusalReason }} */
 export const PNG_CODE_REASONS = { TRUNCATED: "TRUNCATED_IMAGE_DATA", IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE" };
 /** The `REFUSALS` reason each PNG_REFUSES feature answers, declared so a test
  *  can see the mapping is total. (The memory key is behind `PICTURE_FRAME_MAX`,
@@ -74,7 +138,9 @@ export const PNG_REFUSAL_REASONS = PNG_FEATURE_REASONS;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 /** The picture's format from its first bytes (format-registry R29, R30's
- *  signatures), or null. */
+ *  signatures), or null.
+ *  @param {Uint8Array} b the file's bytes
+ *  @returns {"jpeg" | "png" | null} */
 function sniff(b) {
   if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpeg";
   if (b.length >= 8 && PNG_SIGNATURE.every((v, i) => b[i] === v)) return "png";
@@ -84,12 +150,15 @@ function sniff(b) {
 /** A PNG's IHDR: its size and the channels its colour type declares (a palette
  *  counts as the three it expands to). null when the first chunk is not a
  *  well-formed IHDR, which the decoder then refuses in its own words. */
+/** @type {{ readonly [colourType: number]: number }} */
 const PNG_CHANNELS = { 0: 1, 2: 3, 3: 3, 4: 2, 6: 4 };
+/** @param {Uint8Array} b the file's bytes
+ *  @returns {Frame | null} */
 function pngHeader(b) {
   if (b.length < 33) return null;
   const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
-  if (dv.getUint32(8) !== 13 || String.fromCharCode(b[12], b[13], b[14], b[15]) !== "IHDR") return null;
-  const comps = PNG_CHANNELS[b[25]];
+  if (dv.getUint32(8) !== 13 || String.fromCharCode((b[12] ?? NaN), (b[13] ?? NaN), (b[14] ?? NaN), (b[15] ?? NaN)) !== "IHDR") return null;
+  const comps = PNG_CHANNELS[(b[25] ?? NaN)];
   return comps ? { width: dv.getUint32(16), height: dv.getUint32(20), comps } : null;
 }
 
@@ -98,14 +167,20 @@ function pngHeader(b) {
  * opens "Exif\0\0", its TIFF header (II or MM, 42), IFD0's tag 0x0112, the
  * entry's first value. Anything that cannot be read so — no segment, a cut
  * block, a type that is not an integer, a value outside 1–8 — is 1. */
+/** @type {{ readonly [tiffType: number]: number }} */
 const TIFF_INT = { 1: 1, 3: 2, 4: 4, 8: 2, 9: 4 };   // BYTE, SHORT, LONG, SSHORT, SLONG
+/** The eight orientations, in order.
+ *  @type {Orientation[]} */
+const ORIENTATIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+/** @param {Uint8Array} b a JPEG file's bytes
+ *  @returns {Orientation} */
 export function exifOrientation(b) {
   let p = 2;
   while (p + 4 <= b.length && b[p] === 0xff) {
-    const m = b[p + 1];
+    const m = (b[p + 1] ?? NaN);
     if (m === 0xd8 || (m >= 0xd0 && m <= 0xd7) || m === 0x01) { p += 2; continue; }
     if (m === 0xda || m === 0xd9) break;
-    const len = (b[p + 2] << 8) | b[p + 3];
+    const len = ((b[p + 2] ?? NaN) << 8) | (b[p + 3] ?? NaN);
     const seg = b.subarray(p + 4, Math.min(b.length, p + 2 + len));
     if (m === 0xe1 && seg.length >= 6 && String.fromCharCode(...seg.subarray(0, 6)) === "Exif\0\0") {
       return orientationIn(seg.subarray(6));
@@ -114,12 +189,14 @@ export function exifOrientation(b) {
   }
   return 1;
 }
+/** @param {Uint8Array} t an EXIF block's TIFF header and what follows it
+ *  @returns {Orientation} */
 function orientationIn(t) {
   if (t.length < 8) return 1;
   const le = t[0] === 0x49 && t[1] === 0x49;
   if (!le && !(t[0] === 0x4d && t[1] === 0x4d)) return 1;
   const dv = new DataView(t.buffer, t.byteOffset, t.byteLength);
-  const u16 = (o) => dv.getUint16(o, le), u32 = (o) => dv.getUint32(o, le);
+  const u16 = (/** @type {number} */ o) => dv.getUint16(o, le), u32 = (/** @type {number} */ o) => dv.getUint32(o, le);
   if (u16(2) !== 42) return 1;
   const ifd = u32(4);
   if (ifd + 2 > t.length) return 1;
@@ -132,8 +209,9 @@ function orientationIn(t) {
     if (!size || count < 1) return 1;
     const at = size * count <= 4 ? e + 8 : u32(e + 8);
     if (at + size > t.length) return 1;
-    const v = size === 1 ? t[at] : size === 2 ? u16(at) : u32(at);
-    return v >= 1 && v <= 8 ? v : 1;
+    const v = size === 1 ? (t[at] ?? NaN) : size === 2 ? u16(at) : u32(at);
+    /* v is an integer read from the block, so in 1–8 it is the orientation of that number */
+    return v >= 1 && v <= 8 ? ORIENTATIONS[v - 1] ?? 1 : 1;
   }
   return 1;
 }
@@ -150,6 +228,7 @@ function orientationIn(t) {
  *   orientation: [x becomes X (not Y)?, x reversed?, y reversed?]
  * 1 as stored; 2 mirror; 3 turn 180; 4 flip; 5 transpose; 6 turn 90 clockwise;
  * 7 transverse; 8 turn 270 clockwise. */
+/** @type {[null, Axes, Axes, Axes, Axes, Axes, Axes, Axes, Axes]} */
 const AXES = [null,
   [true, false, false], [true, true, false], [true, true, true], [true, false, true],
   [false, false, false], [false, false, true], [false, true, true], [false, true, false]];
@@ -157,22 +236,35 @@ const AXES = [null,
 /* R43, R48: the orientation that is `o` followed by a clockwise turn of `deg`.
  * Each orientation is the signed permutation it applies to (x, y); a clockwise
  * quarter turn on a picture with y downwards is (x, y) -> (-y, x). */
+/** @param {Orientation} o
+ *  @returns {Matrix} */
 const matrixOf = (o) => {
   const [xToX, xRev, yRev] = AXES[o];
   const sx = xRev ? -1 : 1, sy = yRev ? -1 : 1;
   return xToX ? [sx, 0, 0, sy] : [0, sy, sx, 0];
 };
+/** @param {Orientation} o
+ *  @param {number} deg a clockwise turn, a multiple of 90
+ *  @returns {Orientation} */
 function turnedOrientation(o, deg) {
   let m = matrixOf(o);
   for (let q = deg / 90; q > 0; q--) m = [-m[2], -m[3], m[0], m[1]];
-  for (let c = 1; c <= 8; c++) if (matrixOf(c).every((v, i) => v === m[i])) return c;
+  for (const c of ORIENTATIONS) if (matrixOf(c).every((v, i) => v === m[i])) return c;
   throw new Error(`no orientation for ${o} turned ${deg}`);
 }
 
-/** The orientation's picture size: 5–8 swap the sides. */
+/** The orientation's picture size: 5–8 swap the sides.
+ *  @param {number} w
+ *  @param {number} h
+ *  @param {Orientation} o
+ *  @returns {[number, number]} */
 const orientedSize = (w, h, o) => (AXES[o][0] ? [w, h] : [h, w]);
 
-/** The box each index along a source axis of `len` falls in, for factor k. */
+/** The box each index along a source axis of `len` falls in, for factor k.
+ *  @param {number} len
+ *  @param {number} k
+ *  @param {boolean} reversed
+ *  @returns {Int32Array} */
 function boxMap(len, k, reversed) {
   const m = new Int32Array(len);
   for (let i = 0; i < len; i++) m[i] = Math.floor((reversed ? len - 1 - i : i) / k);
@@ -190,15 +282,26 @@ function boxMap(len, k, reversed) {
  * soon as the rows move on to the next. */
 
 /** Pillow's `division_UINT32(n, 8)`: 2^32 / (256·n) in single precision,
- *  truncated. */
+ *  truncated.
+ *  @param {number} n the pixels in the box
+ *  @returns {number} */
 const multiplier = (n) => Math.trunc(Math.fround(4294967296 / Math.fround(256 * n)));
 
-/** The smallest integer k with ceil(longEdge / k) ≤ maxEdge. */
+/** The smallest integer k with ceil(longEdge / k) ≤ maxEdge.
+ *  @param {number} width
+ *  @param {number} height
+ *  @param {number} maxEdge
+ *  @returns {number} */
 export const reductionFor = (width, height, maxEdge) => Math.max(1, Math.ceil(Math.max(width, height) / maxEdge));
 
 /** A reducer for a source picture of `w × h × comps`, oriented by `orientation`
  *  (R43) and reduced by k: `rows(strip, y0, count)` takes source rows in order,
- *  `done()` answers the reduced picture. */
+ *  `done()` answers the reduced picture.
+ *  @param {number} w
+ *  @param {number} h
+ *  @param {number} comps
+ *  @param {ReducerOptions} options
+ *  @returns {Reducer} */
 function reducer(w, h, comps, { grey, orientation, k }) {
   const [xToX, xRev, yRev] = AXES[orientation];
   const oc = grey && comps === 3 ? 1 : comps;
@@ -216,7 +319,7 @@ function reducer(w, h, comps, { grey, orientation, k }) {
       const mul = bw === k && bh === k && shift ? 0 : multiplier(n);
       const o = (xToX ? band * W + bx : bx * W + band) * oc;
       for (let c = 0; c < oc; c++) {
-        const s = sums[bx * oc + c];
+        const s = (sums[bx * oc + c] ?? NaN);
         out[o + c] = mul ? Math.floor(((s + amend) * mul) / 16777216) : (s + amend) >>> shift;
       }
     }
@@ -229,16 +332,16 @@ function reducer(w, h, comps, { grey, orientation, k }) {
       if (y0 !== seen) throw new Error(`rows out of order: ${y0} after ${seen}`);
       const stride = w * comps;
       for (let r = 0; r < count; r++) {
-        const b = yBox[y0 + r];
+        const b = (yBox[y0 + r] ?? NaN);
         if (b !== band) { if (band >= 0) flush(); band = b; }
         bandRows++;
         let i = r * stride;
         if (toGrey) {
-          for (let x = 0; x < w; x++, i += 3) sums[xBox[x]] += (strip[i] * 19595 + strip[i + 1] * 38470 + strip[i + 2] * 7471 + 0x8000) >>> 16;
+          for (let x = 0; x < w; x++, i += 3) sums[(xBox[x] ?? NaN)] = (sums[(xBox[x] ?? NaN)] ?? NaN) + (((strip[i] ?? NaN) * 19595 + (strip[i + 1] ?? NaN) * 38470 + (strip[i + 2] ?? NaN) * 7471 + 0x8000) >>> 16);
         } else if (oc === 1) {
-          for (let x = 0; x < w; x++) sums[xBox[x]] += strip[i++];
+          for (let x = 0; x < w; x++) sums[(xBox[x] ?? NaN)] = (sums[(xBox[x] ?? NaN)] ?? NaN) + (strip[i++] ?? NaN);
         } else {
-          for (let x = 0; x < w; x++) { const s = xBox[x] * oc; for (let c = 0; c < oc; c++) sums[s + c] += strip[i++]; }
+          for (let x = 0; x < w; x++) { const s = (xBox[x] ?? NaN) * oc; for (let c = 0; c < oc; c++) sums[s + c] = (sums[s + c] ?? NaN) + (strip[i++] ?? NaN); }
         }
       }
       seen += count;
@@ -251,6 +354,8 @@ function reducer(w, h, comps, { grey, orientation, k }) {
   };
 }
 
+/** @param {Uint8Array} u8
+ *  @returns {Promise<string>} the SHA-256 of the bytes, in lowercase hex */
 async function sha256Hex(u8) {
   const d = await crypto.subtle.digest("SHA-256", u8);
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -289,15 +394,19 @@ export const PREPARE_SCALE_MAX = 4;
 export const PREPARE_TILT_FLOOR = 0.1;
 
 /** A [1 2 1]×[1 2 1] blur, edges clamped: takes the grain out of a noisy photograph
- *  before the paper and the ink are told apart. */
+ *  before the paper and the ink are told apart.
+ *  @param {Uint8Array} g the grey samples, w×h
+ *  @param {number} w
+ *  @param {number} h
+ *  @returns {Uint8Array} */
 function smooth(g, w, h) {
   const t = new Uint16Array(w * h), out = new Uint8Array(w * h);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const l = g[y * w + Math.max(0, x - 1)], c = g[y * w + x], r = g[y * w + Math.min(w - 1, x + 1)];
+    const l = (g[y * w + Math.max(0, x - 1)] ?? NaN), c = (g[y * w + x] ?? NaN), r = (g[y * w + Math.min(w - 1, x + 1)] ?? NaN);
     t[y * w + x] = l + 2 * c + r;
   }
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    out[y * w + x] = (t[Math.max(0, y - 1) * w + x] + 2 * t[y * w + x] + t[Math.min(h - 1, y + 1) * w + x] + 8) >> 4;
+    out[y * w + x] = ((t[Math.max(0, y - 1) * w + x] ?? NaN) + 2 * (t[y * w + x] ?? NaN) + (t[Math.min(h - 1, y + 1) * w + x] ?? NaN) + 8) >> 4;
   }
   return out;
 }
@@ -309,7 +418,12 @@ function smooth(g, w, h) {
  *  least INK_FAINT_SHARE of the pixels (a blank photograph holds a hundredth of that, a three-line receipt several times it). */
 const INK_RATIO = 200, INK_RATIO_FAINT = 228, INK_MIN = 32, INK_FAINT_SHARE = 0.001;
 
-/** Levels the light and stretches the contrast in place; returns the grey. */
+/** Levels the light and stretches the contrast in place; returns the grey.
+ *  @param {Uint8Array} g the grey samples, w×h, changed in place
+ *  @param {number} w
+ *  @param {number} h
+ *  @param {boolean} [faint] take ink by the faint share, INK_RATIO_FAINT
+ *  @returns {Uint8Array} */
 function levelLight(g, w, h, faint = false) {
   const cell = Math.max(12, Math.min(64, Math.round(Math.max(w, h) / 60)));
   const cw = Math.ceil(w / cell), ch = Math.ceil(h / cell);
@@ -319,11 +433,11 @@ function levelLight(g, w, h, faint = false) {
     hist.fill(0);
     const x1 = Math.min(w, (cx + 1) * cell), y1 = Math.min(h, (cy + 1) * cell);
     let n = 0;
-    for (let y = cy * cell; y < y1; y++) for (let x = cx * cell; x < x1; x++) { hist[g[y * w + x]]++; n++; }
+    for (let y = cy * cell; y < y1; y++) for (let x = cx * cell; x < x1; x++) { hist[(g[y * w + x] ?? NaN)] = (hist[(g[y * w + x] ?? NaN)] ?? NaN) + 1; n++; }
     /* the mean of the brighter half */
     let need = n >> 1, sum = 0, cnt = 0;
     for (let v = 255; v >= 0 && cnt < (n - need); v--) {
-      const take = Math.min(hist[v], (n - need) - cnt);
+      const take = Math.min((hist[v] ?? NaN), (n - need) - cnt);
       sum += take * v; cnt += take;
     }
     bg[cy * cw + cx] = Math.max(1, sum / Math.max(1, cnt));
@@ -335,7 +449,7 @@ function levelLight(g, w, h, faint = false) {
       let s = 0, c = 0;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         const y = cy + dy, x = cx + dx;
-        if (y >= 0 && y < ch && x >= 0 && x < cw) { s += bg[y * cw + x]; c++; }
+        if (y >= 0 && y < ch && x >= 0 && x < cw) { s += (bg[y * cw + x] ?? NaN); c++; }
       }
       nx[cy * cw + cx] = s / c;
     }
@@ -343,16 +457,19 @@ function levelLight(g, w, h, faint = false) {
   }
   /* ratio per pixel, bilinear on the cell centres; the ink level from a histogram of ratios */
   const half = cell / 2;
+  /** @param {number} x
+   *  @param {number} y
+   *  @returns {number} the paper's brightness at (x, y) */
   const at = (x, y) => {
     const fx = Math.min(cw - 1, Math.max(0, (x - half) / cell)), fy = Math.min(ch - 1, Math.max(0, (y - half) / cell));
     const x0 = Math.floor(fx), y0 = Math.floor(fy), x1 = Math.min(cw - 1, x0 + 1), y1 = Math.min(ch - 1, y0 + 1);
     const tx = fx - x0, ty = fy - y0;
-    return (bg[y0 * cw + x0] * (1 - tx) + bg[y0 * cw + x1] * tx) * (1 - ty) + (bg[y1 * cw + x0] * (1 - tx) + bg[y1 * cw + x1] * tx) * ty;
+    return ((bg[y0 * cw + x0] ?? NaN) * (1 - tx) + (bg[y0 * cw + x1] ?? NaN) * tx) * (1 - ty) + ((bg[y1 * cw + x0] ?? NaN) * (1 - tx) + (bg[y1 * cw + x1] ?? NaN) * tx) * ty;
   };
   const ratio = new Uint8Array(w * h), rh = new Uint32Array(256);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const r = Math.min(255, Math.round(255 * g[y * w + x] / at(x + 0.5, y + 0.5)));
-    ratio[y * w + x] = r; rh[r]++;
+    const r = Math.min(255, Math.round(255 * (g[y * w + x] ?? NaN) / at(x + 0.5, y + 0.5)));
+    ratio[y * w + x] = r; rh[r] = (rh[r] ?? NaN) + 1;
   }
   /* The ink level comes from the ink, not from a fixed share of all the pixels (R44 (a)): a page of three lines holds
    * under half a percent ink, and a level taken there falls among the paper's own greys and turns the page dark. The
@@ -360,34 +477,43 @@ function levelLight(g, w, h, faint = false) {
    * picture with next to no such pixels has no ink to level by: its paper is stretched to 255 and nothing more. */
   const inkRatio = faint ? INK_RATIO_FAINT : INK_RATIO;
   let inkN = 0;
-  for (let v = 0; v < inkRatio; v++) inkN += rh[v];
+  for (let v = 0; v < inkRatio; v++) inkN += (rh[v] ?? NaN);
   let lo = 0;
   if (inkN >= (faint ? Math.max(INK_MIN, w * h * INK_FAINT_SHARE) : INK_MIN)) {
     const target = Math.max(1, Math.round(inkN * 0.05));
     let acc = 0;
-    while (lo < inkRatio - 1 && (acc += rh[lo]) < target) lo++;
+    while (lo < inkRatio - 1 && (acc += (rh[lo] ?? NaN)) < target) lo++;
   }
   const hi = 235;
   const span = Math.max(32, hi - lo);
-  for (let i = 0; i < g.length; i++) g[i] = Math.max(0, Math.min(255, Math.round((ratio[i] - lo) * 255 / span)));
+  for (let i = 0; i < g.length; i++) g[i] = Math.max(0, Math.min(255, Math.round(((ratio[i] ?? NaN) - lo) * 255 / span)));
   return g;
 }
 
 /** The tilt, in degrees (positive = the lines run clockwise down the page), of the
- *  text lines in a levelled grey picture; 0 when there is no ink to tell by. */
+ *  text lines in a levelled grey picture; 0 when there is no ink to tell by.
+ *  @param {Uint8Array} g the levelled grey samples, w×h
+ *  @param {number} w
+ *  @param {number} h
+ *  @returns {number} */
 function skewOf(g, w, h) {
-  const xs = [], ys = [];
+  /** @type {number[]} */
+  const xs = [];
+  /** @type {number[]} */
+  const ys = [];
   const step = Math.max(1, Math.ceil(Math.sqrt((w * h) / 400000)));
-  for (let y = 0; y < h; y += 1) for (let x = (y % step); x < w; x += step) if (g[y * w + x] < 96) { xs.push(x); ys.push(y); }
+  for (let y = 0; y < h; y += 1) for (let x = (y % step); x < w; x += step) if ((g[y * w + x] ?? NaN) < 96) { xs.push(x); ys.push(y); }
   if (xs.length < 200) return 0;
   const cx = w / 2, cy = h / 2, n = xs.length;
   const bins = new Uint32Array(w + h + 8);
+  /** @param {number} deg
+   *  @returns {number} how sharp the row profile is at that angle */
   const score = (deg) => {
     const t = deg * Math.PI / 180, s = Math.sin(t), c = Math.cos(t);
     bins.fill(0);
     const off = (w + h) >> 1;
-    for (let i = 0; i < n; i++) bins[Math.round((ys[i] - cy) * c - (xs[i] - cx) * s + off)]++;
-    let sq = 0; for (let i = 0; i < bins.length; i++) sq += bins[i] * bins[i];
+    for (let i = 0; i < n; i++) { const j = Math.round(((ys[i] ?? NaN) - cy) * c - ((xs[i] ?? NaN) - cx) * s + off); bins[j] = (bins[j] ?? NaN) + 1; }
+    let sq = 0; for (let i = 0; i < bins.length; i++) sq += (bins[i] ?? NaN) * (bins[i] ?? NaN);
     return sq;
   };
   let best = 0, bs = -1;
@@ -398,32 +524,43 @@ function skewOf(g, w, h) {
 }
 
 /** The text lines (runs of rows holding ink) of a deskewed levelled grey picture:
- *  how many, and the median height of one in pixels. */
+ *  how many, and the median height of one in pixels.
+ *  @param {Uint8Array} g the deskewed levelled grey samples, w×h
+ *  @param {number} w
+ *  @param {number} h
+ *  @returns {TextLines} */
 function textLines(g, w, h) {
   const rows = new Uint32Array(h);
-  for (let y = 0; y < h; y++) { let c = 0; for (let x = 0; x < w; x++) if (g[y * w + x] < 96) c++; rows[y] = c; }
+  for (let y = 0; y < h; y++) { let c = 0; for (let x = 0; x < w; x++) if ((g[y * w + x] ?? NaN) < 96) c++; rows[y] = c; }
   const floor = Math.max(2, Math.round(w * 0.004));
+  /** @type {number[]} */
   const runs = [];
   let start = -1, gap = 0;
   for (let y = 0; y <= h; y++) {
-    const ink = y < h && rows[y] >= floor;
+    const ink = y < h && (rows[y] ?? NaN) >= floor;
     if (ink) { if (start < 0) start = y; gap = 0; }
     else if (start >= 0) { gap++; if (gap > 1 || y === h) { runs.push(y - gap - start + 1); start = -1; gap = 0; } }
   }
   const real = runs.filter((r) => r >= 4).sort((a, b) => a - b);
-  return { lines: real.length, median: real.length ? real[real.length >> 1] : 0 };
+  return { lines: real.length, median: real.length ? (real[real.length >> 1] ?? NaN) : 0 };
 }
 
 /** One resampling: the grey `g` (w×h) turned by `deg` and scaled by `s`, bicubic
  *  (Catmull-Rom), paper-white where the source has no pixel; the canvas grows to
- *  hold the turned picture whole. */
+ *  hold the turned picture whole.
+ *  @param {Uint8Array} g the grey samples, w×h
+ *  @param {number} w
+ *  @param {number} h
+ *  @param {number} deg the turn, in degrees
+ *  @param {number} s the scale
+ *  @returns {GreyPicture} */
 function resample(g, w, h, deg, s) {
   const t = deg * Math.PI / 180, cs = Math.cos(t), sn = Math.sin(t);
   const bw = Math.abs(w * cs) + Math.abs(h * sn), bh = Math.abs(w * sn) + Math.abs(h * cs);
   const W = Math.max(1, Math.round(bw * s)), H = Math.max(1, Math.round(bh * s));
   const out = new Uint8Array(W * H);
   const cxs = w / 2, cys = h / 2, cxo = W / 2, cyo = H / 2;
-  const wt = (d) => { const a = Math.abs(d); return a < 1 ? 1.5 * a * a * a - 2.5 * a * a + 1 : a < 2 ? -0.5 * a * a * a + 2.5 * a * a - 4 * a + 2 : 0; };
+  const wt = (/** @type {number} */ d) => { const a = Math.abs(d); return a < 1 ? 1.5 * a * a * a - 2.5 * a * a + 1 : a < 2 ? -0.5 * a * a * a + 2.5 * a * a - 4 * a + 2 : 0; };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const dx = (x + 0.5 - cxo) / s, dy = (y + 0.5 - cyo) / s;
     const sx = dx * cs - dy * sn + cxs - 0.5, sy = dx * sn + dy * cs + cys - 0.5;
@@ -434,7 +571,7 @@ function resample(g, w, h, deg, s) {
       const yy = Math.min(h - 1, Math.max(0, y0 + j)), wy = wt(sy - (y0 + j));
       for (let i = -1; i <= 2; i++) {
         const xx = Math.min(w - 1, Math.max(0, x0 + i)), wx = wt(sx - (x0 + i));
-        acc += g[yy * w + xx] * wx * wy; wsum += wx * wy;
+        acc += (g[yy * w + xx] ?? NaN) * wx * wy; wsum += wx * wy;
       }
     }
     out[y * W + x] = Math.max(0, Math.min(255, Math.round(acc / wsum)));
@@ -445,9 +582,14 @@ function resample(g, w, h, deg, s) {
 /** R44: a grey picture made ready for the engine. `{samples, width, height, comps:1,
  *  prepared:{text_found, tilt_deg, scale, line_px}}` (`line_px`: the median text line's height in the answered picture). A picture with no text lines
  *  in it (no ink, or ink everywhere: noise, a blank wall) is handed on as it is,
- *  `text_found:false`: stretching its noise would make marks for the engine to read. */
+ *  `text_found:false`: stretching its noise would make marks for the engine to read.
+ *  @param {GreyPicture} picture the grey picture
+ *  @param {number} maxEdge the longest edge an enlargement may reach
+ *  @returns {PreparedPicture} */
 export function preparePicture({ samples, width: w, height: h }, maxEdge) {
   const smoothed = smooth(samples, w, h);
+  /** @param {boolean} faint
+   *  @returns {Levelled} */
   const level = (faint) => {
     const g = levelLight(smoothed.slice(), w, h, faint);
     const deskew = skewOf(g, w, h);
@@ -456,7 +598,7 @@ export function preparePicture({ samples, width: w, height: h }, maxEdge) {
     const cur = turn ? resample(g, w, h, turn, 1) : { samples: g, width: w, height: h };
     return { g, turn, cur, ...textLines(cur.samples, cur.width, cur.height) };
   };
-  const noText = (m) => m.lines < 2 || m.median > m.cur.height / 4;
+  const noText = (/** @type {Levelled} */ m) => m.lines < 2 || m.median > m.cur.height / 4;
   let m = level(false);
   if (noText(m)) { const f = level(true); if (!noText(f)) m = f; }
   if (noText(m))
@@ -478,15 +620,19 @@ export function preparePicture({ samples, width: w, height: h }, maxEdge) {
  * reduced_by, source:{format, width, height, comps}, pixels_sha256}`, or a
  * refusal from `REFUSALS`. `maxEdge` (a positive integer) bounds the long edge;
  * `grey` turns the picture grey.
+ * @param {Uint8Array | ArrayBuffer | PageSource} bytes the file's bytes, or a source of them (R47)
+ * @param {number} pageIndex 0, a picture's one page
+ * @param {PictureOptions} [options]
+ * @returns {Promise<PictureAnswer>}
  */
 export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = false, prepare = false, turn: turnAsked = 0 } = {}) {
-  if (!Number.isInteger(maxEdge) || maxEdge < 1) throw new TypeError("renderPictureToPixels: maxEdge must be a positive integer");
+  if (maxEdge === undefined || !Number.isInteger(maxEdge) || maxEdge < 1) throw new TypeError("renderPictureToPixels: maxEdge must be a positive integer");
   if (prepare) grey = true;   /* R44: the preparation works on grey */
   const turn = [90, 180, 270].includes(turnAsked) ? turnAsked : 0;   /* R48 */
-  if (isSource(bytes)) bytes = await bytes.readRange(0, bytes.size);   /* R47: a picture is read whole */
-  const b = bytes instanceof Uint8Array ? bytes : bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : null;
+  const whole = isSource(bytes) ? await bytes.readRange(0, bytes.size) : bytes;   /* R47: a picture is read whole */
+  const b = whole instanceof Uint8Array ? whole : whole instanceof ArrayBuffer ? new Uint8Array(whole) : null;
   const format = b && sniff(b);
-  if (!format) return refuse("NOT_A_PICTURE");
+  if (b === null || !format) return refuse("NOT_A_PICTURE");
   if (pageIndex !== 0) return refuse("NO_SUCH_PAGE", { page: pageIndex, pageCount: 1 });
 
   if (format === "jpeg") {
@@ -501,7 +647,7 @@ export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = 
     /* Decoded while reduced (T44): the decoder hands over a strip of finished
      * rows at a time and only the reduced picture is kept. */
     const red = reducer(source.width, source.height, source.comps, { grey, orientation: applied, k });
-    try { decodeBaselineJpegRows(b, { onRows: (rows, y0, count) => red.rows(rows, y0, count) }); } catch (e) { return jpegRefusal(e); }
+    try { decodeBaselineJpegRows(b, { onRows: (/** @type {Uint8Array} */ rows, /** @type {number} */ y0, /** @type {number} */ count) => red.rows(rows, y0, count) }); } catch (e) { return jpegRefusal(e); }
     return answer(red.done(), { source, orientation, k, turn }, prepare, maxEdge);
   }
 
@@ -509,7 +655,8 @@ export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = 
    * against PICTURE_FRAME_MAX; it is never turned (R43). */
   const hd = pngHeader(b);
   const source = { format, width: hd ? hd.width : null, height: hd ? hd.height : null, comps: hd ? hd.comps : null };
-  const tooBig = hd && (overEdge(source) ?? overBound(source, PICTURE_FRAME_MAX, "PICTURE_FRAME_MAX"));
+  /* judged on the header's own frame, the same sizes `source` holds when there is a header */
+  const tooBig = hd && (overEdge(hd) ?? overBound(hd, PICTURE_FRAME_MAX, "PICTURE_FRAME_MAX"));
   if (tooBig) return tooBig;
   let pic;
   try { pic = await decodePng(b); } catch (e) { return pngRefusal(e); }
@@ -518,10 +665,16 @@ export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = 
   const k = reductionFor(...orientedSize(pic.width, pic.height, applied), maxEdge);
   const red = reducer(pic.width, pic.height, pic.comps, { grey, orientation: applied, k });
   red.rows(pic.samples, 0, pic.height);
-  pic.samples = null;
+  pic = undefined;   /* the full decode is let go before the PNG is written; only the reduced picture is kept */
   return answer(red.done(), { source, orientation: 1, k, turn }, prepare, maxEdge);
 }
 
+/** The answer for a reduced picture: prepared when asked, written as a PNG.
+ *  @param {ReducedPicture} r the reduced picture
+ *  @param {AnswerFacts} facts
+ *  @param {boolean} prepare
+ *  @param {number} maxEdge
+ *  @returns {Promise<PicturePixels>} */
 async function answer(r, { source, orientation, k, turn }, prepare, maxEdge) {
   const prepared = prepare ? preparePicture(r, maxEdge) : null;
   if (prepared) r = prepared;
@@ -535,7 +688,11 @@ async function answer(r, { source, orientation, k, turn }, prepare, maxEdge) {
   };
 }
 
-/** The header's frame against a bound, before any decode. */
+/** The header's frame against a bound, before any decode.
+ *  @param {Frame} frame
+ *  @param {number} bound
+ *  @param {string} name the bound's name
+ *  @returns {PixelRefusal | null} */
 function overBound({ width, height, comps }, bound, name) {
   const samples = width * height * comps;
   return samples > bound
@@ -543,7 +700,9 @@ function overBound({ width, height, comps }, bound, name) {
     : null;
 }
 
-/** Either side of the header's frame against the edge bound (R42, R46). */
+/** Either side of the header's frame against the edge bound (R42, R46).
+ *  @param {Frame} frame
+ *  @returns {PixelRefusal | null} */
 function overEdge({ width, height, comps }) {
   return width > EDGE_MAX || height > EDGE_MAX
     ? refuse("IMAGE_TOO_LARGE", { page: 0, width, height, comps, bound: EDGE_MAX, bound_name: "edge" })
@@ -551,7 +710,10 @@ function overEdge({ width, height, comps }) {
 }
 
 /** A JPEG's reduced frame, `ceil(width/k) × ceil(height/k) × components`,
- *  against PICTURE_FRAME_MAX (T44). */
+ *  against PICTURE_FRAME_MAX (T44).
+ *  @param {Frame} frame
+ *  @param {number} k the reduction factor
+ *  @returns {PixelRefusal | null} */
 function overReduced({ width, height, comps }, k) {
   const samples = Math.ceil(width / k) * Math.ceil(height / k) * comps;
   return samples > PICTURE_FRAME_MAX
@@ -559,14 +721,21 @@ function overReduced({ width, height, comps }, k) {
     : null;
 }
 
+/** The refusal for what the JPEG decoder threw.
+ *  @param {unknown} e
+ *  @returns {PixelRefusal} */
 function jpegRefusal(e) {
-  if (!(e instanceof DctRefusal)) return refuse("DECODE_FAILED", { page: 0, note: String(e && e.message || e) });
+  if (!(e instanceof DctRefusal)) return refuse("DECODE_FAILED", { page: 0, note: errorNote(e) });
   return refuse(DCT_TO_REFUSAL[e.code] || "DECODE_FAILED", { page: 0, jpeg: e.code, ...e.detail });
 }
 
+/** The refusal for what the PNG decoder threw.
+ *  @param {unknown} e
+ *  @returns {PixelRefusal} */
 function pngRefusal(e) {
-  if (!(e instanceof PngRefusal)) return refuse("DECODE_FAILED", { page: 0, note: String(e && e.message || e) });
-  const reason = e.code === "UNSUPPORTED" ? PNG_FEATURE_REASONS[e.detail?.feature] ?? "UNSUPPORTED_FILTER"
+  if (!(e instanceof PngRefusal)) return refuse("DECODE_FAILED", { page: 0, note: errorNote(e) });
+  const feature = e.detail?.feature;
+  const reason = e.code === "UNSUPPORTED" ? (feature === undefined ? undefined : PNG_FEATURE_REASONS[feature]) ?? "UNSUPPORTED_FILTER"
     : PNG_CODE_REASONS[e.code] || "DECODE_FAILED";
   return refuse(reason, { page: 0, png: e.code, ...e.detail });
 }

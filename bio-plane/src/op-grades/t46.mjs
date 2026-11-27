@@ -12,6 +12,7 @@
  * consequence statement or Irreversible weight is added: `words.json` (@ `3f40899950`) holds no consequence sentence for
  * stopping pursuit, which the design stream owes (K2960). */
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
