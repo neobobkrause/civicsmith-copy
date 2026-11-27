@@ -41,6 +41,60 @@ import { CONFIDENCE, CONTRACT, entity, readAgain, diffEntities, FURNITURE_RECURS
 import { eachLine, countLines, lineTable, counted, spend } from "./windows.mjs";
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Entity } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/events.mjs" */
+
+/**
+ * What `detect` answers: whether this is an agenda, how sure, and on what signals.
+ * @typedef {Object} AgendaDetection
+ * @property {boolean} match
+ * @property {string} confidence
+ * @property {string[]} [signals]
+ */
+/**
+ * What `parse` answers: the meeting's own facts, each null where it was not read, and one entity per item.
+ * @typedef {Object} AgendaReading
+ * @property {Entity[]} entities
+ * @property {string | null} body
+ * @property {string | null} body_why
+ * @property {string | null} date
+ * @property {string | null} references_why
+ * @property {string[]} also_satisfies
+ * @property {string | null} at
+ */
+/**
+ * What `assess` answers for two readings: the graded events, whether they mean something, and what was confirmed.
+ * @typedef {Object} AgendaAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {{ entries: number, intact: number } | null} confirmed
+ * @property {string} why
+ */
+/**
+ * The meeting-agenda content type.
+ * @typedef {Object} MeetingAgendaType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => AgendaDetection} detect
+ * @property {(ctx: DoctypeContext) => AgendaReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => AgendaAssessment} assess
+ */
+
+/** Group `i` of a match, which the pattern makes take part whenever it matches.
+ *  @param {ArrayLike<string | undefined>} m @param {number} i @returns {string}
+ *  @throws {TypeError} when the group took no part */
+const agendaGroup = (m, i) => {
+  const g = m[i];
+  if (g === undefined) throw new TypeError(`meeting_agenda: group ${i} of a match took no part`);
+  return g;
+};
+
+/** Whether `v` is a reading of an agenda as far as `assess` reads one: it carries its entities.
+ *  @param {object | null | undefined} v @returns {v is AgendaReading} */
+const isAgendaReading = (v) => v != null && "entities" in v && Array.isArray(v.entities);
 
 /* The legislative record's file number, alone on its line. Its SHAPE is the
    jurisdiction's (Legistar's two-digit-year–dash–serial in the measured instance)
@@ -48,7 +102,9 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
    reader's. Line-anchored on purpose — an inline mention inside a recommendation's
    prose is a cross-reference, not an item on THIS agenda, and the measured document
    carries each item's number on its own line exactly once. */
+/** @param {DoctypeContext} ctx @returns {RegExp[]} */
 const agendaFileLines = (ctx) => vocabPatterns(ctx, "file_numbers", (re) => `^\\s*(${re})\\s*$`);
+/** @param {ReadonlyArray<RegExp>} pats @param {string} line @returns {string | null | undefined} */
 const agendaFileKey = (pats, line) => {
   for (const re of pats) { const m = re.exec(line); if (m) return m[1]; }
   return null;
@@ -77,22 +133,26 @@ const FURNITURE = [
   /^Sponsors:$/i,
   /^[A-Z][a-z]+day, [A-Z][a-z]+ \d{1,2}, \d{4}$/,
 ];
+/** @param {DoctypeContext} ctx @returns {(l: string) => boolean} */
 const agendaFurniture = (ctx) => {
   const local = vocabPatterns(ctx, "furniture");
   return (l) => FURNITURE.some((re) => re.test(l)) || anyMatch(local, l);
 };
 
+/** @type {{ readonly [month: string]: number }} */
 const MONTHS = { january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
                  august: 7, september: 8, october: 9, november: 10, december: 11 };
+/** @param {string | null | undefined} s @returns {string | null} */
 const parseLongDate = (s) => {
   const m = /([A-Za-z]+) (\d{1,2}), (\d{4})/.exec(String(s || ""));
   if (!m) return null;
-  const mo = MONTHS[m[1].toLowerCase()];
+  const mo = MONTHS[agendaGroup(m, 1).toLowerCase()];
   if (mo == null) return null;
-  return new Date(Date.UTC(+m[3], mo, +m[2])).toISOString().slice(0, 10);
+  return new Date(Date.UTC(+agendaGroup(m, 3), mo, +agendaGroup(m, 2))).toISOString().slice(0, 10);
 };
 
-export default counted({
+/** @type {MeetingAgendaType} */
+const meetingAgendaType = {
   key: "meeting_agenda",
   label: "a meeting agenda",
   version: 1,
@@ -131,6 +191,7 @@ export default counted({
    *  agenda names itself once and a fence tighter than its rule is not a safer fence. */
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
     /* Line-anchored file numbers are the definitive signal: HTML never carries
        them alone on a line, and a staff report about ONE file does not list
@@ -196,7 +257,8 @@ export default counted({
     const L = lineTable(raw);
     /* Always a function: `readText` supplies one, and a direct caller that does
        not gets the honest null rather than a TypeError. */
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx.locate;
+    const locate = typeof given === "function" ? given : () => null;
 
     /* The meeting's facts. Date: the first long-form date line (the measured
        document opens with it). Body: the first header-ish line naming a body.
@@ -206,9 +268,10 @@ export default counted({
        body is not read, and `body_why` says so. */
     const bodyEnds = vocabPatterns(ctx, "bodies", LINE_END);
     const memberTitles = vocabPatterns(ctx, "member_titles");
-    let date = null, body = null;
+    /** @type {string | null} */ let date = null;
+    /** @type {string | null} */ let body = null;
     for (let i = 0; i < Math.min(L.length, 60); i++) {
-      const l = L.get(i);
+      const l = L.get(i) ?? "";
       if (!date && /^[A-Za-z]+day, [A-Za-z]+ \d{1,2}, \d{4}$/.test(l)) date = parseLongDate(l);
       if (!body && anyMatch(bodyEnds, l) && !anyMatch(memberTitles, l))
         body = l.replace(/^[*\s]+/, "").trim() || null;
@@ -220,10 +283,14 @@ export default counted({
     const filePats = agendaFileLines(ctx);
     const isFurniture = agendaFurniture(ctx);
 
+    /** @type {Entity[]} */
     const entities = [];
     /* D-454: key -> the entity, so a repeat is recorded as another occurrence (`readAgain`). */
-    const seen = new Map();
-    let pendingSubject = null, pendingFrom = null, expect = null;
+    /** @type {Map<string, Entity>} */
+    const seen = new Map(/** @type {Array<[string, Entity]>} */ ([]));
+    /** @type {string | null} */ let pendingSubject = null;
+    /** @type {string | null} */ let pendingFrom = null;
+    /** @type {string | null} */ let expect = null;
     for (let i = 0; i < L.length; i++) {
       const line = L.get(i);
       if (!line) continue;
@@ -231,12 +298,14 @@ export default counted({
          (measured), or the value rides the label's own line. */
       const lab = /^(Subject|From):\s*(.*)$/.exec(line);
       if (lab) {
-        if (lab[2]) { if (lab[1] === "Subject") pendingSubject = lab[2]; else pendingFrom = lab[2]; expect = null; }
-        else expect = lab[1];
+        const name = agendaGroup(lab, 1), said = agendaGroup(lab, 2);
+        if (said) { if (name === "Subject") pendingSubject = said; else pendingFrom = said; expect = null; }
+        else expect = name;
         continue;
       }
-      if (expect) {
-        if (expect === "Subject") pendingSubject = line; else pendingFrom = line;
+      const wanted = expect;
+      if (wanted) {
+        if (wanted === "Subject") pendingSubject = line; else pendingFrom = line;
         expect = null;
         continue;
       }
@@ -248,7 +317,8 @@ export default counted({
       /* The item number immediately precedes the file line; a section item with
          no Subject block takes its heading from the nearest substantive line
          above the item number. */
-      let item = null, heading = null;
+      /** @type {string | null} */ let item = null;
+      /** @type {string | null} */ let heading = null;
       for (let j = i - 1, hops = 0; j >= 0 && hops < 8; j--) {
         const prev = L.get(j);
         if (!prev) continue;
@@ -260,12 +330,13 @@ export default counted({
         break;
       }
       const label = pendingSubject || heading || `legislation ${key}`;
-      entities.push(entity(key, "legislation", String(label).slice(0, 160), {
+      const made = entity(key, "legislation", String(label).slice(0, 160), {
         subject: pendingSubject || null,
         from: pendingFrom || null,
         item: item || null,
-      }, locate(L.start(i))));
-      seen.set(key, entities[entities.length - 1]);
+      }, locate(L.start(i)));
+      entities.push(made);
+      seen.set(key, made);
       pendingSubject = null; pendingFrom = null;
     }
 
@@ -282,12 +353,18 @@ export default counted({
 
   /** Given two parses of the same agenda address, what happened to the list. */
   assess(a, b) {
-    /* A read that found nothing is a failed reader, never an emptied agenda. */
-    if (!a.entities.length || !b.entities.length)
-      return { meaningful: null, significance: null, events: [], confirmed: null,
-               why: localize("doctypes.meeting-agenda.unread", "the items on this agenda could not be read this time, so nothing is claimed about them either way") };
+    /* A read that found nothing is a failed reader, never an emptied agenda. Each reading is checked where it is
+       first read, so a first reading with no entities answers before the second is looked at. */
+    /** @returns {AgendaAssessment} */
+    const unread = () => ({ meaningful: null, significance: null, events: [], confirmed: null,
+               why: localize("doctypes.meeting-agenda.unread", "the items on this agenda could not be read this time, so nothing is claimed about them either way") });
+    if (!isAgendaReading(a)) throw new TypeError("meeting_agenda: assess was handed no reading of an agenda before");
+    if (!a.entities.length) return unread();
+    if (!isAgendaReading(b)) throw new TypeError("meeting_agenda: assess was handed no reading of an agenda after");
+    if (!b.entities.length) return unread();
 
     const d = diffEntities(a.entities, b.entities);
+    /** @type {EventHead[]} */
     const events = [];
     /* An item REMOVED from a published agenda is the quiet-substitution class:
        the document still answers at the same address and no longer offers what
@@ -318,4 +395,6 @@ export default counted({
         : localize("doctypes.meeting-agenda.unchanged", "all {count} items on this agenda are unchanged", { count: String(b.entities.length) }),
     };
   },
-});
+};
+
+export default counted(meetingAgendaType);

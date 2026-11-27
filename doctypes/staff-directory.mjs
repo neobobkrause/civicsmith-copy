@@ -75,6 +75,88 @@ import { CONFIDENCE, CONTRACT, entity, diffEntities, alsoSatisfies } from "../do
 import { flatCount, firstLines, counted, spend } from "./windows.mjs";
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Detection, Entity, EntityFacts } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/index.mjs" */
+/** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
+/** @import { WordVars } from "../bio-plane/src/setup-words/index.mjs" */
+
+/**
+ * One distinct address read from a document: case-folded, its domain, and the raw offset of its first sighting.
+ * @typedef {Object} SdAddress
+ * @property {string} address
+ * @property {string} domain
+ * @property {number} offset
+ */
+/**
+ * The match the `@` at a place makes: where it starts and ends in the raw text, the address and its domain as written.
+ * @typedef {Object} SdEmailHit
+ * @property {number} start
+ * @property {number} end
+ * @property {string} address
+ * @property {string} domain
+ */
+/**
+ * The addresses in a document: every distinct one in the order read, the commonest domain and how many sit at it, how far
+ * the text was read and whether the bound stopped it.
+ * @typedef {Object} SdAddresses
+ * @property {SdAddress[]} all
+ * @property {string | null} domain
+ * @property {number} atDomain
+ * @property {number} read
+ * @property {boolean} cut
+ */
+/**
+ * The entries verified unchanged between two readings (R16).
+ * @typedef {Object} SdConfirmed
+ * @property {number} entries
+ * @property {number} intact
+ */
+/**
+ * Where the bound on addresses stopped a reading: that it did, the bound, how far the text was read of how much, and why.
+ * @typedef {Object} SdEntriesCut
+ * @property {true} entries_cut
+ * @property {number} entries_limit
+ * @property {number} read_to
+ * @property {number} chars
+ * @property {string} entries_why
+ */
+/**
+ * What `parse` reads from a staff directory: one entry per distinct address, the commonest domain and how many addresses
+ * sit at it, where the bound on addresses stopped the reading when it did, and the title line.
+ * @typedef {Object} StaffDirectoryReading
+ * @property {Entity[]} entities
+ * @property {string | null} domain
+ * @property {number} entries
+ * @property {true} [entries_cut]
+ * @property {number} [entries_limit]
+ * @property {number} [read_to]
+ * @property {number} [chars]
+ * @property {string} [entries_why]
+ * @property {string | null} title
+ * @property {string | null} title_why
+ * @property {string[]} also_satisfies
+ * @property {string | null} at
+ */
+/**
+ * What `assess` answers for two readings of one directory.
+ * @typedef {Object} StaffDirectoryAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {SdConfirmed | null} confirmed
+ * @property {string} why
+ */
+/**
+ * The staff directory content type (docprofile's `ContentType`).
+ * @typedef {Object} StaffDirectoryType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => StaffDirectoryReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => StaffDirectoryAssessment} assess
+ */
 
 /* The smallest number of distinct addresses at one domain that makes contact points the
    BODY of a document rather than a signature block. A staff report names one contact;
@@ -118,27 +200,34 @@ export const LINE_MAX = 600;
 
 /** The match the `@` at `p` makes in `raw`, no earlier than `from`: `{start, end, address, domain}` or null. The start is
  *  the first place in the run of address characters before the `@` that a pattern would start (a letter or digit, after a
- *  word boundary). */
+ *  word boundary).
+ *  @param {string} raw @param {number} p @param {number} from @returns {SdEmailHit | null} */
 function sdEmailAt(raw, p, from) {
   let r0 = p;
-  while (r0 > from && SD_LOCAL.test(raw[r0 - 1])) r0--;
+  /* `String(...)` is what `RegExp.prototype.test` makes of its argument; the indices read are all inside the text. */
+  while (r0 > from && SD_LOCAL.test(String(raw[r0 - 1]))) r0--;
   let s = r0;
   for (; s < p; s++) {
-    if (!SD_ALNUM.test(raw[s])) continue;
-    if (s === 0 || !SD_WORD.test(raw[s - 1])) break;
+    if (!SD_ALNUM.test(String(raw[s]))) continue;
+    if (s === 0 || !SD_WORD.test(String(raw[s - 1]))) break;
   }
   if (s >= p) return null;
   SD_EMAIL_AT.lastIndex = s;
   const m = SD_EMAIL_AT.exec(raw);
   if (!m) return null;
-  return { start: s, end: s + m[0].length, address: m[0], domain: m[1] };
+  /* The domain is the pattern's one group, which every match of it fills. */
+  const domain = m[1];
+  if (domain === undefined) throw new TypeError("staff-directory: an address matched without its domain");
+  return { start: s, end: s + m[0].length, address: m[0], domain };
 }
 
 /** The addresses in a document, by domain. Distinct, case-folded. Read in work linear in the text, as far as the
- *  `ENTRIES_MAX`th distinct address; `read` is how far (the text's end when it is all). */
+ *  `ENTRIES_MAX`th distinct address; `read` is how far (the text's end when it is all).
+ *  @param {string} raw @returns {SdAddresses} */
 function sdAddresses(raw) {
   spend(raw.length);
-  const all = new Map();
+  /** @type {Map<string, SdAddress>} */
+  const all = new Map(/** @type {Array<[string, SdAddress]>} */ ([]));
   let read = raw.length, cut = false;
   for (let from = 0, p = raw.indexOf("@"); p >= 0; p = raw.indexOf("@", from)) {
     const m = sdEmailAt(raw, p, from);
@@ -149,27 +238,45 @@ function sdAddresses(raw) {
     if (all.size >= ENTRIES_MAX) { read = m.start; cut = true; break; }
     all.set(a, { address: a, domain: m.domain.toLowerCase().replace(/\.+$/, ""), offset: m.start });
   }
-  const byDomain = new Map();
+  /** @type {Map<string, number>} */
+  const byDomain = new Map(/** @type {Array<[string, number]>} */ ([]));
   for (const x of all.values()) byDomain.set(x.domain, (byDomain.get(x.domain) || 0) + 1);
-  let domain = null, atDomain = 0;
+  /** @type {string | null} */
+  let domain = null;
+  let atDomain = 0;
   for (const [d, n] of byDomain) if (n > atDomain) { domain = d; atDomain = n; }
   return { all: [...all.values()], domain, atDomain, read, cut };
 }
 
 /** The title line, if the document names itself as this kind in its first lines. A
-    title, not a mention: only the first five non-empty lines are read. */
+    title, not a mention: only the first five non-empty lines are read.
+    @param {string} raw @returns {string | null} */
 function sdTitleLine(raw) {
   return firstLines(raw, 5).find((l) => SD_SELF_NAMING.test(l)) || null;
 }
 
-/** The entries verified unchanged, or null when none was (R16). */
+/** The entries verified unchanged, or null when none was (R16).
+ *  @param {StaffDirectoryReading} a @param {StaffDirectoryReading} b @returns {SdConfirmed | null} */
 function sdConfirmed(a, b) {
   const intact = (a.entities || []).filter((e) =>
     (b.entities || []).some((x) => x.key === e.key && JSON.stringify(x.facts) === JSON.stringify(e.facts))).length;
   return intact ? { entries: (b.entities || []).length, intact } : null;
 }
 
-export default counted({
+/** Is `x` a reading of this type (what `parse` hands back)? Any reading there is: `assess` reads every member through
+ *  `|| []` and so tolerates an object that lacks them, and only a missing reading (null or undefined) is refused, as
+ *  reading its `entities` refused it.
+ *  @param {object | null | undefined} x @returns {x is StaffDirectoryReading} */
+function isStaffDirectoryReading(x) { return x !== null && x !== undefined; }
+/** `x` as a reading of this type, or the `TypeError` reading a member of a missing one raised.
+ *  @param {object | null | undefined} x @returns {StaffDirectoryReading} */
+function sdReading(x) {
+  if (!isStaffDirectoryReading(x)) throw new TypeError(`Cannot read properties of ${x} (reading 'entities')`);
+  return x;
+}
+
+/** @type {StaffDirectoryType} */
+const staffDirectory = {
   key: "staff_directory",
   label: "a staff directory",
   version: 1,
@@ -177,6 +284,7 @@ export default counted({
      still says what it said. Declared on the content type (CONSTRUCTS Step 0 #4). */
   contract: CONTRACT.MEMBERSHIP,
 
+  /** @param {DoctypeContext} ctx @returns {Detection} */
   detect(ctx) {
     const raw = String(ctx.text || "");
     const { all, domain, atDomain, read, cut } = sdAddresses(raw);
@@ -184,6 +292,7 @@ export default counted({
        through it; nothing else can make a directory. */
     if (atDomain < DIRECTORY_FLOOR || atDomain / all.length < ONE_ORGANISATION)
       return { match: false, confidence: CONFIDENCE.NONE };
+    /** @type {WordVars} */
     const vars = { count: String(atDomain), domain: String(domain), percent: String(Math.round((atDomain / all.length) * 100)), total: String(all.length) };
     const signals = [cut
       ? localize("doctypes.staff-directory.addresses_cut", "{count} of the first {total} distinct contact addresses are at one organisation's domain ({domain}), {percent}%; the document lists more, and the rest was not read", vars)
@@ -196,7 +305,8 @@ export default counted({
     if (flatCount(seen, SD_DATE, Math.ceil(floor)) >= floor) return { match: false, confidence: CONFIDENCE.NONE };
     /* R40: one pass, the distinct numbers kept no further than the bound on addresses. */
     spend(seen.length);
-    const phoneSet = new Set();
+    /** @type {Set<string>} */
+    const phoneSet = new Set(/** @type {string[]} */ ([]));
     let morePhones = false;
     for (const p of seen.matchAll(SD_PHONE)) {
       if (phoneSet.size >= ENTRIES_MAX) { morePhones = true; break; }
@@ -222,11 +332,15 @@ export default counted({
    *  that carried its kind read `contact:contact:<address>` there (N404).
    *
    *  FW-17 / IC-86 — each entry carries WHERE it was read, from `ctx.locate` at the
-   *  address's own RAW offset. `rect` is null: tier-1 and tier-2 text carry no geometry. */
+   *  address's own RAW offset. `rect` is null: tier-1 and tier-2 text carry no geometry.
+   *  @param {DoctypeContext} ctx @returns {StaffDirectoryReading} */
   parse(ctx) {
     const raw = String(ctx.text || "");
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx.locate;
+    /** @type {(offset: number) => ReadingPosition | null} */
+    const locate = typeof given === "function" ? given : () => null;
     const { all, domain, atDomain, read, cut } = sdAddresses(raw);
+    /** @type {Entity[]} */
     const entities = [];
     /* The line an address stands on, found once for all the addresses on it (they come in the order of the text). */
     let lineAt = -1, lineEnd = -1;
@@ -242,18 +356,21 @@ export default counted({
       const ws = long ? Math.max(lineAt, Math.min(a.offset - LINE_MAX / 2, lineEnd - LINE_MAX)) : lineAt;
       const line = raw.slice(ws, long ? ws + LINE_MAX : lineEnd).replace(/\s+/g, " ").trim();
       const phones = [...new Set(line.match(SD_PHONE) || [])];
-      entities.push(entity(a.address, "contact", line.slice(0, 160) || a.address,
-        { address: a.address, organisation: a.domain === domain, line, phone: phones.join(", ") || null,
-          ...(long ? { line_cut: true, line_length: lineEnd - lineAt } : {}) },
-        locate(a.offset)));
+      /** @type {EntityFacts} */
+      const facts = { address: a.address, organisation: a.domain === domain, line, phone: phones.join(", ") || null };
+      if (long) { facts.line_cut = true; facts.line_length = lineEnd - lineAt; }
+      entities.push(entity(a.address, "contact", line.slice(0, 160) || a.address, facts, locate(a.offset)));
     }
     const title = sdTitleLine(raw);
+    /* Null where the bound did not stop it: spread, null adds nothing. */
+    /** @type {SdEntriesCut | null} */
+    const stopped = cut ? { entries_cut: true, entries_limit: ENTRIES_MAX, read_to: read, chars: raw.length,
+                  entries_why: localize("doctypes.staff-directory.entries_cut", "this document lists more than {limit} distinct addresses: the first {limit} were read, up to character {read} of {total}, and the rest of it was not", { limit: String(ENTRIES_MAX), read: String(read), total: String(raw.length) }) } : null;
     return {
       entities,
       domain,
       entries: atDomain,
-      ...(cut ? { entries_cut: true, entries_limit: ENTRIES_MAX, read_to: read, chars: raw.length,
-                  entries_why: localize("doctypes.staff-directory.entries_cut", "this document lists more than {limit} distinct addresses: the first {limit} were read, up to character {read} of {total}, and the rest of it was not", { limit: String(ENTRIES_MAX), read: String(read), total: String(raw.length) }) } : {}),
+      ...stopped,
       title,
       title_why: title ? null : localize("doctypes.staff-directory.no_title", "no line among the first five names this document as a directory, staff list, roster or contacts"),
       also_satisfies: alsoSatisfies(ctx, "staff_directory"),
@@ -264,14 +381,18 @@ export default counted({
   /** Given two parses of the same directory's address, who came, who went, and whose
    *  entry now says something else. Graded with the catalogue's list events: an entry
    *  gone is `item_pulled` (the record can no longer say this person is reached here),
-   *  an entry added is `item_added`, an entry whose line moved is `item_changed`. */
-  assess(a, b) {
+   *  an entry added is `item_added`, an entry whose line moved is `item_changed`.
+   *  @param {object | null | undefined} before @param {object | null | undefined} after
+   *  @returns {StaffDirectoryAssessment} */
+  assess(before, after) {
     /* Nothing read on EITHER side is a failed reader (R16, R33), never a directory
        emptied of everyone the other side listed. */
-    if (!(a.entities || []).length || !(b.entities || []).length)
+    if (!(sdReading(before).entities || []).length || !(sdReading(after).entities || []).length)
       return { meaningful: null, significance: null, events: [], confirmed: null,
                why: localize("doctypes.staff-directory.unread", "no entry could be read from this directory this time, so nothing is claimed about it either way") };
+    const a = sdReading(before), b = sdReading(after);
     const d = diffEntities(a.entities || [], b.entities || []);
+    /** @type {EventHead[]} */
     const events = [];
     for (const e of d.gone)
       events.push(event("item_pulled", { key: e.key, label: e.label, why: localize("doctypes.staff-directory.pulled", "this address is no longer listed in the directory") }));
@@ -288,4 +409,5 @@ export default counted({
                          : localize("doctypes.staff-directory.unchanged", "the directory lists the same addresses, each saying what it said"),
     };
   },
-});
+};
+export default counted(staffDirectory);

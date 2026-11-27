@@ -69,6 +69,72 @@ import { CONFIDENCE, CONTRACT, entity, readAgain, diffEntities, flatten, FURNITU
 import { scanFlatMany, flatFirst, countLines, lineTable, counted } from "./windows.mjs";
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Entity } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/events.mjs" */
+
+/**
+ * What `detect` answers: whether this is a set of minutes, how sure, and on what signals.
+ * @typedef {Object} MinutesDetection
+ * @property {boolean} match
+ * @property {string} confidence
+ * @property {string[]} [signals]
+ */
+/**
+ * Who attended, by attendance label (`present`, `excused`, ...): the names line the clerk set above the label.
+ * @typedef {{ [label: string]: string }} MinutesRoster
+ */
+/**
+ * A recorded vote: each tally label with the count the clerk set after it.
+ * @typedef {{ [arm: string]: number }} MinutesVote
+ */
+/**
+ * What `parse` answers: the meeting's own facts, each null where it was not read, and one entity per matter.
+ * @typedef {Object} MinutesReading
+ * @property {Entity[]} entities
+ * @property {string | null} body
+ * @property {string | null} body_why
+ * @property {string | null} date
+ * @property {string | null} convened
+ * @property {string | null} adjourned
+ * @property {string | null} status
+ * @property {string | null} references_why
+ * @property {MinutesRoster | null} attendance
+ * @property {string[]} also_satisfies
+ * @property {string | null} at
+ */
+/**
+ * What `assess` answers for two readings: the graded events, whether they mean something, and what was confirmed.
+ * @typedef {Object} MinutesAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {{ entries: number, intact: number } | null} confirmed
+ * @property {string} why
+ */
+/**
+ * The meeting-minutes content type.
+ * @typedef {Object} MeetingMinutesType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => MinutesDetection} detect
+ * @property {(ctx: DoctypeContext) => MinutesReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => MinutesAssessment} assess
+ */
+
+/** Group `i` of a match, which the pattern makes take part whenever it matches.
+ *  @param {ArrayLike<string | undefined>} m @param {number} i @returns {string}
+ *  @throws {TypeError} when the group took no part */
+const minutesGroup = (m, i) => {
+  const g = m[i];
+  if (g === undefined) throw new TypeError(`meeting_minutes: group ${i} of a match took no part`);
+  return g;
+};
+
+/** Whether `v` is a reading of minutes as far as `assess` reads one: it carries its entities.
+ *  @param {object | null | undefined} v @returns {v is MinutesReading} */
+const isMinutesReading = (v) => v != null && "entities" in v && Array.isArray(v.entities);
 
 /* The masthead, line-anchored. `Meeting Minutes`, `Minutes`, either followed by a
    qualifier the clerk appends (`- DRAFT`, `- FINAL`, `- Approved`). NOT a sentence
@@ -82,7 +148,9 @@ const MINUTES_MASTHEAD = /^(?:Meeting\s+)?Minutes(?:\s*[-–—]\s*\S.*)?$/i;
    (N3). Named differently from the agenda's helpers because the plane's bundle
    (`bio-plane/dist/bio-plane.bundled.mjs`) puts every doctype in ONE scope, and a
    duplicate top-level name there is a runtime collision the bundler refuses. */
+/** @param {DoctypeContext} ctx @returns {RegExp[]} */
 const minutesFileLines = (ctx) => vocabPatterns(ctx, "file_numbers", (re) => `^\\s*(${re})\\s*$`);
+/** @param {ReadonlyArray<RegExp>} pats @param {string} line @returns {string | null | undefined} */
 const minutesFileKey = (pats, line) => {
   for (const re of pats) { const m = re.exec(line); if (m) return m[1]; }
   return null;
@@ -125,23 +193,28 @@ const MINUTES_FURNITURE = [
   /^[A-Z][a-z]+day, [A-Z][a-z]+ \d{1,2}, \d{4}$/,
   /^[A-Z][a-z]+ \d{1,2}, \d{4}$/,
 ];
+/** @param {DoctypeContext} ctx @returns {(l: string) => boolean} */
 const minutesFurniture = (ctx) => {
   const local = vocabPatterns(ctx, "furniture");
   return (l) => MINUTES_FURNITURE.some((re) => re.test(l)) || anyMatch(local, l);
 };
 
+/** @type {{ readonly [month: string]: number }} */
 const MINUTES_MONTHS = { january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
                          august: 7, september: 8, october: 9, november: 10, december: 11 };
+/** @param {string | null | undefined} s @returns {string | null} */
 const minutesLongDate = (s) => {
   const m = /([A-Za-z]+) (\d{1,2}), (\d{4})/.exec(String(s || ""));
   if (!m) return null;
-  const mo = MINUTES_MONTHS[m[1].toLowerCase()];
+  const mo = MINUTES_MONTHS[minutesGroup(m, 1).toLowerCase()];
   if (mo == null) return null;
-  return new Date(Date.UTC(+m[3], mo, +m[2])).toISOString().slice(0, 10);
+  return new Date(Date.UTC(+minutesGroup(m, 3), mo, +minutesGroup(m, 2))).toISOString().slice(0, 10);
 };
-const clockOf = (text, re) => { const h = flatFirst(text, re); return h ? h.m[0] : null; };
+/** @param {string} text @param {RegExp} re @returns {string | null} */
+const clockOf = (text, re) => { const h = flatFirst(text, re); return h ? minutesGroup(h.m, 0) : null; };
 
-export default counted({
+/** @type {MeetingMinutesType} */
+const meetingMinutesType = {
   key: "meeting_minutes",
   label: localize("doctypes.meeting-minutes.label", "a set of meeting minutes"),
   version: 1,
@@ -164,18 +237,20 @@ export default counted({
    *  prose. So NONE of the shared signals appears below, and family (1) is a RATE. */
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
 
     /* R37: the phrases are matched over the flattened text a window at a time (./windows.mjs), never over a whole
        copy of it; the counts and the tests are the whole text's. */
-    let made = false, carried = false, tallies = 0, convened = false, adjourned = false;
+    const hit = { made: false, carried: false, tallies: 0, convened: false, adjourned: false };
     scanFlatMany(t, [
-      { re: MOTION_MADE, on: () => (made = true) },
-      { re: MOTION_RESULT, on: () => (carried = true) },
-      { re: TALLY_LABEL, on: () => { tallies++; } },
-      { re: CONVENED, on: () => (convened = true) },
-      { re: ADJOURNED, on: () => (adjourned = true) },
+      { re: MOTION_MADE, on: () => (hit.made = true) },
+      { re: MOTION_RESULT, on: () => (hit.carried = true) },
+      { re: TALLY_LABEL, on: () => { hit.tallies++; } },
+      { re: CONVENED, on: () => (hit.convened = true) },
+      { re: ADJOURNED, on: () => (hit.adjourned = true) },
     ]);
+    const { made, carried, tallies, convened, adjourned } = hit;
 
     const named = countLines(t, MINUTES_MASTHEAD);
     const furniture = named >= FURNITURE_RECURS;
@@ -237,7 +312,8 @@ export default counted({
     const L = lineTable(raw);
     /* Always a function: `readText` supplies one and a direct caller that does not gets
        the honest null rather than a TypeError. */
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx.locate;
+    const locate = typeof given === "function" ? given : () => null;
     const filePats = minutesFileLines(ctx);
     const isMinutesFurniture = minutesFurniture(ctx);
     const bodyEnds = vocabPatterns(ctx, "bodies", LINE_END);
@@ -245,9 +321,10 @@ export default counted({
 
     /* The meeting's own facts. Every one of them may honestly be null; an unread fact
        is never invented. */
+    /** @type {string | null} */
     let date = null;
     for (let i = 0; i < Math.min(L.length, 80); i++) {
-      const l = L.get(i);
+      const l = L.get(i) ?? "";
       if (/^[A-Za-z]+day, [A-Za-z]+ \d{1,2}, \d{4}$/.test(l)) { date = minutesLongDate(l); break; }
     }
 
@@ -261,11 +338,14 @@ export default counted({
        CONFIDENT WRONG BODY (`and the City Council`, then `Items, Reconsiderations,
        Pull Items Held In Committee`), which is the record naming a public body it
        never read. A null with a reason is worth more than either. */
+    /** @type {string | null} */
     let body = null;
     {
       /* Every line's own recurrence, so both the candidate test and the wrap test
          below can ask the same question. */
-      const recurs = new Map();
+      /** @type {Map<string, boolean>} */
+      const recurs = new Map(/** @type {Array<[string, boolean]>} */ ([]));
+      /** @param {string} l @returns {boolean | undefined} */
       const recursAt = (l) => {
         if (!recurs.has(l)) { let n = 0; for (let k = 0; k < L.length && n < FURNITURE_RECURS; k++) if (L.get(k) === l) n++; recurs.set(l, n >= FURNITURE_RECURS); }
         return recurs.get(l);
@@ -291,9 +371,11 @@ export default counted({
            meeting's date, which is furniture — so that is a whole name. Above `Agency
            and the City Council` sits `Oakland Redevelopment Successor`, recurring 37
            times and not furniture — so that is a tail, and the reader declines. */
+        /** @type {string | null} */
         let prev = null;
-        for (let j = i - 1; j >= 0 && j >= i - 3; j--) if (L.get(j)) { prev = L.get(j); break; }
-        if (prev && !isMinutesFurniture(prev) && recursAt(prev)) continue;
+        for (let j = i - 1; j >= 0 && j >= i - 3; j--) { const pj = L.get(j); if (pj) { prev = pj; break; } }
+        const above = prev;
+        if (above && !isMinutesFurniture(above) && recursAt(above)) continue;
         body = l.replace(/^[*\s]+/, "").trim();
       }
     }
@@ -305,12 +387,14 @@ export default counted({
     const adjourned = clockOf(raw, ADJOURNED);
     /* DRAFT is a first-class fact about the record a member would be citing, not a
        cosmetic label: minutes the body has not yet approved can still change. */
+    /** @type {string | null} */
     let status = null;
     for (let i = 0; i < L.length; i++) {
-      const l = L.get(i);
+      const l = L.get(i) ?? "";
       const m = MINUTES_MASTHEAD.exec(l);
       if (!m) continue;
-      status = /[-–—]\s*(\S.*)$/.exec(l) ? /[-–—]\s*(\S.*)$/.exec(l)[1].trim() : "unqualified";
+      const q = /[-–—]\s*(\S.*)$/.exec(l);
+      status = q ? minutesGroup(q, 1).trim() : "unqualified";
       break;
     }
 
@@ -323,22 +407,28 @@ export default counted({
        attendance as entities would put an unstable key into the record's own diffing,
        which reports a re-spelling as a person leaving the body. So the roster is a
        fact, stated, and who attended stays readable without being addressable. */
+    /** @type {MinutesRoster} */
     const roster = {};
     for (let i = 0; i < L.length; i++) {
-      const lab = ROSTER_LABEL.exec(L.get(i));
+      const lab = ROSTER_LABEL.exec(L.get(i) ?? "");
       if (!lab) continue;
       /* The names sit on the line ABOVE the label (measured in both documents); the
          count sits below it. Neither is assumed present. */
       const above = L.get(i - 1) || "";
       if (!above || isMinutesFurniture(above) || ROSTER_LABEL.test(above)) continue;
-      const key = lab[1].toLowerCase();
+      const key = minutesGroup(lab, 1).toLowerCase();
       if (!roster[key]) roster[key] = above;
     }
 
+    /** @type {Entity[]} */
     const entities = [];
     /* D-454: key -> the entity, so a repeat is recorded as another occurrence (`readAgain`). */
-    const seen = new Map();
-    let pendingSubject = null, pendingFrom = null, pendingItem = null, expect = null;
+    /** @type {Map<string, Entity>} */
+    const seen = new Map(/** @type {Array<[string, Entity]>} */ ([]));
+    /** @type {string | null} */ let pendingSubject = null;
+    /** @type {string | null} */ let pendingFrom = null;
+    /** @type {string | null} */ let pendingItem = null;
+    /** @type {string | null} */ let expect = null;
     for (let i = 0; i < L.length; i++) {
       const line = L.get(i);
       if (!line) continue;
@@ -351,12 +441,14 @@ export default counted({
       if (MINUTES_ITEM_LINE.test(line) && minutesFileKey(filePats, line) == null) { pendingItem = line; continue; }
       const lab = /^(Subject|From):\s*(.*)$/.exec(line);
       if (lab) {
-        if (lab[2]) { if (lab[1] === "Subject") pendingSubject = lab[2]; else pendingFrom = lab[2]; expect = null; }
-        else expect = lab[1];
+        const name = minutesGroup(lab, 1), said = minutesGroup(lab, 2);
+        if (said) { if (name === "Subject") pendingSubject = said; else pendingFrom = said; expect = null; }
+        else expect = name;
         continue;
       }
-      if (expect) {
-        if (expect === "Subject") pendingSubject = line; else pendingFrom = line;
+      const wanted = expect;
+      if (wanted) {
+        if (wanted === "Subject") pendingSubject = line; else pendingFrom = line;
         expect = null;
         continue;
       }
@@ -367,6 +459,7 @@ export default counted({
       /* A section item with no Subject block takes its heading from the nearest
          substantive line above; the item number was carried forward (see above). */
       const item = pendingItem;
+      /** @type {string | null} */
       let heading = null;
       for (let j = i - 1, hops = 0; j >= 0 && hops < 8; j--) {
         const prev = L.get(j);
@@ -388,29 +481,34 @@ export default counted({
          item's result, and the window is read as flattened text because both shapes
          wrap across lines. */
       let end = L.length;
-      for (let j = i + 1; j < L.length; j++) if (minutesFileKey(filePats, L.get(j)) != null) { end = j; break; }
+      for (let j = i + 1; j < L.length; j++) if (minutesFileKey(filePats, L.get(j) ?? "") != null) { end = j; break; }
+      /** @type {string[]} */
       const span = [];
-      for (let j = i + 1; j < end; j++) span.push(L.get(j));
+      for (let j = i + 1; j < end; j++) span.push(L.get(j) ?? "");
       const window = flatten(span.join("\n"));
       /* Shape 1, a motion: who moved, who seconded, what was moved, and whether it
          carried. Shape 2, a disposition: `This <matter kind> be <action>`. */
       const mo = /\bA motion was made by\s+(.+?),\s*seconded by\s+(.+?),\s*that\s+this matter be\s+(.+?)\.\s*The motion\s+(carried|failed)\b/i.exec(window);
       const di = /\bThis\s+([A-Z][\w ]{2,40}?)\s+be\s+([^.]{2,90})\./.exec(window);
-      let outcome = null, moved_by = null, seconded_by = null, result = null;
-      if (mo) { moved_by = mo[1].trim(); seconded_by = mo[2].trim(); outcome = mo[3].trim(); result = mo[4].toLowerCase(); }
-      else if (di) { outcome = `${di[1].trim()} ${di[2].trim()}`.trim(); }
+      /** @type {string | null} */ let outcome = null;
+      /** @type {string | null} */ let moved_by = null;
+      /** @type {string | null} */ let seconded_by = null;
+      /** @type {string | null} */ let result = null;
+      if (mo) { moved_by = minutesGroup(mo, 1).trim(); seconded_by = minutesGroup(mo, 2).trim(); outcome = minutesGroup(mo, 3).trim(); result = minutesGroup(mo, 4).toLowerCase(); }
+      else if (di) { outcome = `${minutesGroup(di, 1).trim()} ${minutesGroup(di, 2).trim()}`.trim(); }
 
       /* The vote as the clerk recorded it: each tally label with the count that
          follows it. Never summed, never re-derived — a total this reader computed
          would be a number the document does not contain. */
+      /** @type {MinutesVote} */
       const vote = {};
       for (const m of window.matchAll(/\b(Aye|Ayes|Noe|Noes|No|Abstain|Abstained|Excused|Absent|Recused|NO VOTE)\s*:\s*(.*?)(?=\b(?:Aye|Ayes|Noe|Noes|No|Abstain|Abstained|Excused|Absent|Recused|NO VOTE)\s*:|$)/gi)) {
-        const n = /(\d+)\s*-/.exec(m[2]);
-        if (n) vote[m[1].toLowerCase()] = Number(n[1]);
+        const n = /(\d+)\s*-/.exec(minutesGroup(m, 2));
+        if (n) vote[minutesGroup(m, 1).toLowerCase()] = Number(minutesGroup(n, 1));
       }
 
       const label = pendingSubject || heading || `legislation ${key}`;
-      entities.push(entity(key, "legislation", String(label).slice(0, 160), {
+      const made = entity(key, "legislation", String(label).slice(0, 160), {
         subject: pendingSubject || null,
         from: pendingFrom || null,
         item: item || null,
@@ -421,8 +519,9 @@ export default counted({
         result: result || null,
         moved_by, seconded_by,
         vote: Object.keys(vote).length ? vote : null,
-      }, locate(L.start(i))));
-      seen.set(key, entities[entities.length - 1]);
+      }, locate(L.start(i)));
+      entities.push(made);
+      seen.set(key, made);
       pendingSubject = null; pendingFrom = null; pendingItem = null;
     }
 
@@ -438,12 +537,18 @@ export default counted({
 
   /** Given two parses of the same minutes address, what happened to the record. */
   assess(a, b) {
-    /* A read that found nothing is a failed reader, never an emptied record. */
-    if (!a.entities.length || !b.entities.length)
-      return { meaningful: null, significance: null, events: [], confirmed: null,
-               why: localize("doctypes.meeting-minutes.unread", "the matters in these minutes could not be read this time, so nothing is claimed about them either way") };
+    /* A read that found nothing is a failed reader, never an emptied record. Each reading is checked where it is
+       first read, so a first reading with no entities answers before the second is looked at. */
+    /** @returns {MinutesAssessment} */
+    const unread = () => ({ meaningful: null, significance: null, events: [], confirmed: null,
+               why: localize("doctypes.meeting-minutes.unread", "the matters in these minutes could not be read this time, so nothing is claimed about them either way") });
+    if (!isMinutesReading(a)) throw new TypeError("meeting_minutes: assess was handed no reading of minutes before");
+    if (!a.entities.length) return unread();
+    if (!isMinutesReading(b)) throw new TypeError("meeting_minutes: assess was handed no reading of minutes after");
+    if (!b.entities.length) return unread();
 
     const d = diffEntities(a.entities, b.entities);
+    /** @type {EventHead[]} */
     const events = [];
     /* AN OUTCOME OR A VOTE MOVING IS THE SERIOUS ONE, and it is why this type exists
        rather than the agenda type being pointed at a second document. A published
@@ -484,4 +589,6 @@ export default counted({
         : localize("doctypes.meeting-minutes.unchanged", "all {count} matters in these minutes are unchanged", { count: String(b.entities.length) }),
     };
   },
-});
+};
+
+export default counted(meetingMinutesType);

@@ -68,6 +68,90 @@ import { CONFIDENCE, CONTRACT, diffEntities, flatten, alsoSatisfies,
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { eachLine, lineTable, flatPrefix, flatFirst, scanFlatMany, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Detection, Entity, TaggedPattern } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/index.mjs" */
+/** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
+/** @import { FlatHit, ReferencesState } from "./windows.mjs" */
+
+/**
+ * A field of the memorandum header, by its label in lower case.
+ * @typedef {"to" | "from" | "subject" | "date"} MemoField
+ */
+/**
+ * The memorandum header's fields as read, each by its label in lower case: the text up to the next label, or null when
+ * that is empty.
+ * @typedef {{ [label: string]: string | null }} MemoFields
+ */
+/**
+ * The memorandum header block: its fields, how many distinct labels it carries, the span from its first label to the
+ * label that completed it, and the flattened offset it begins at.
+ * @typedef {Object} MemoHeader
+ * @property {MemoFields} fields
+ * @property {number} labels
+ * @property {number} span
+ * @property {number} at
+ */
+/**
+ * A label of the header where it was met: its flattened offset and its name in capitals.
+ * @typedef {Object} MemoLabel
+ * @property {number} i
+ * @property {string} k
+ */
+/**
+ * What was verified unchanged between two readings of a report (R16).
+ * @typedef {Object} ReportConfirmed
+ * @property {number} entries
+ * @property {number} intact
+ * @property {boolean} recommendation_unchanged
+ */
+/**
+ * What `parse` reads from a staff report: the references it points at (with what `referenceBook` did not keep), the
+ * memorandum header's fields, the recommendation (and, where the bound cut it, that it did and its whole length), how
+ * many template sections it carries as headings and whether it is signed off.
+ * @typedef {Object} StaffReportOwn
+ * @property {Entity[]} entities
+ * @property {string | null} to
+ * @property {string | null} from
+ * @property {string | null} subject
+ * @property {string | null} date
+ * @property {string | null} recommendation
+ * @property {true} [recommendation_cut]
+ * @property {number | null} [recommendation_length]
+ * @property {number} sections
+ * @property {boolean} signed_off
+ * @property {string[]} also_satisfies
+ * @property {string | null} at
+ */
+/** @typedef {ReferencesState & StaffReportOwn} StaffReportReading */
+/**
+ * What `assess` answers for two readings of one report.
+ * @typedef {Object} StaffReportAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {ReportConfirmed | null} confirmed
+ * @property {string} why
+ */
+/**
+ * The staff report content type (docprofile's `ContentType`).
+ * @typedef {Object} StaffReportType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => StaffReportReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => StaffReportAssessment} assess
+ */
+
+/** Entry `i` of `xs`, which the code around it has made sure is there; the `TypeError` reading a member of a missing
+ *  one raised, where it is not.
+ *  @template T @param {ArrayLike<T>} xs @param {number} i @returns {T} */
+function nth(xs, i) {
+  const x = xs[i];
+  if (x === undefined) throw new TypeError(`Cannot read properties of undefined (entry ${i} is missing)`);
+  return x;
+}
 
 /* The memorandum header's four labels. Matched over flattened text and as a BLOCK —
    see `memoHeader`. */
@@ -79,7 +163,7 @@ const MEMO_PREFIX = 4096, MEMO_BEYOND = 3000;
    costs, who was consulted and what it asks the body to do, under whatever headings
    its staff use. Each is tested as a HEADING — at the start of a line of its own —
    because the same words inside a sentence are not a section. */
-const reportSectionPatterns = (ctx) => vocabPatterns(ctx, "report_sections");
+const reportSectionPatterns = /** @param {DoctypeContext} ctx @returns {RegExp[]} */ (ctx) => vocabPatterns(ctx, "report_sections");
 /* The heading that opens the recommendation itself, in the language's own word: any
    template names its recommendation so, and it is read only when it is one of the
    jurisdiction's section headings as well. */
@@ -96,7 +180,7 @@ const PREPARED = /\bPrepared\s+by\s*:/i;
 /* Self-naming, on a line of its own, in the titles the jurisdiction's reports carry
    (the view's `report_titles`, N3). Unlike a masthead this appears ONCE, on the title
    page — measured at 1 in the real document — so it is never a rate here. */
-const reportTitlePatterns = (ctx) => vocabPatterns(ctx, "report_titles");
+const reportTitlePatterns = /** @param {DoctypeContext} ctx @returns {RegExp[]} */ (ctx) => vocabPatterns(ctx, "report_titles");
 
 /** The memorandum header as a BLOCK, which is the whole discipline of this family.
  *
@@ -108,31 +192,41 @@ const reportTitlePatterns = (ctx) => vocabPatterns(ctx, "report_titles");
  *  are 116-128 characters beginning at offsets 1,572 to 54,013.
  *
  *  So the test is the span AND the position, never the presence of the labels. Returns
- *  the block's fields when one is found, else null. */
+ *  the block's fields when one is found, else null.
+ *  @param {string} text @returns {MemoHeader | null} */
 function memoHeader(text) {
   /* R37: only the top of the document is read. A header is found within the first 2,500 flattened characters, its
      fields end within 200 of their label, and the only fact about the rest of the text a field's end depends on is
      whether a label stands anywhere past 3,000: so the first 4,096 flattened characters are matched, and the rest
      is asked that one question when it is needed. */
   const flat = flatPrefix(text, MEMO_PREFIX);
+  /** @type {boolean | null} */
   let beyond = null;
   const labelBeyond = () => {
-    if (beyond === null) { beyond = false; scanFlatMany(text, [{ re: MEMO_LABEL, on: () => (beyond = true) }], { fromAbs: MEMO_BEYOND }); }
-    return beyond;
+    const held = beyond;
+    if (held !== null) return held;
+    const scan = { hit: false };
+    scanFlatMany(text, [{ re: MEMO_LABEL, on: () => (scan.hit = true) }], { fromAbs: MEMO_BEYOND });
+    beyond = scan.hit;
+    return scan.hit;
   };
-  const hits = [...flat.matchAll(MEMO_LABEL)].map((m) => ({ i: m.index, k: m[1].toUpperCase() }));
+  /** @type {MemoLabel[]} */
+  const hits = [...flat.matchAll(MEMO_LABEL)].map((m) => ({ i: m.index, k: nth(m, 1).toUpperCase() }));
   for (let a = 0; a < hits.length; a++) {
-    if (hits[a].i > 2500) break;              /* a memorandum header is at the TOP */
-    const seen = new Map();
+    const ha = nth(hits, a);
+    if (ha.i > 2500) break;              /* a memorandum header is at the TOP */
+    /** @type {Map<string, number>} */
+    const seen = new Map(/** @type {Array<[string, number]>} */ ([]));
     for (let b = a; b < hits.length; b++) {
-      if (!seen.has(hits[b].k)) seen.set(hits[b].k, hits[b].i);
+      const hb = nth(hits, b);
+      if (!seen.has(hb.k)) seen.set(hb.k, hb.i);
       if (seen.size < 3) continue;
-      if (hits[b].i - hits[a].i > 250) break; /* one block, not four scattered labels */
+      if (hb.i - ha.i > 250) break; /* one block, not four scattered labels */
       /* Every label of the block, not only the three that reached the threshold: the
          measured document's `DATE:` is the fourth and sat just past it, and stopping
          at three dropped a field the document plainly carries. */
-      for (let c = b + 1; c < hits.length && hits[c].i - hits[a].i <= 250; c++)
-        if (!seen.has(hits[c].k)) seen.set(hits[c].k, hits[c].i);
+      for (let c = b + 1; c < hits.length && nth(hits, c).i - ha.i <= 250; c++)
+        if (!seen.has(nth(hits, c).k)) seen.set(nth(hits, c).k, nth(hits, c).i);
       /* EACH FIELD ENDS WHERE THE NEXT LABEL BEGINS. Taking a fixed 120 characters
          made every field swallow the rest of the header — `to` came back as the whole
          block — which is the record carrying a value that is not the value. */
@@ -143,6 +237,7 @@ function memoHeader(text) {
          Recommends...`. The document's own next label (`Approval Date:`) is the
          boundary it actually has. */
       const all = hits.map((h) => h.i).filter((x) => x < MEMO_BEYOND);
+      /** @type {MemoFields} */
       const at = {};
       for (const [k, i] of seen) {
         const near = all.find((x) => x > i);
@@ -151,20 +246,22 @@ function memoHeader(text) {
           .replace(/^\s*\w+\s*:\s*/, "");
         at[k.toLowerCase()] = rest.trim() || null;
       }
-      return { fields: at, labels: seen.size, span: hits[b].i - hits[a].i, at: hits[a].i };
+      return { fields: at, labels: seen.size, span: hb.i - ha.i, at: ha.i };
     }
   }
   return null;
 }
 
-/** Which of the template's sections appear as HEADINGS in this document. */
+/** Which of the template's sections appear as HEADINGS in this document.
+ *  @param {string} raw @param {ReadonlyArray<RegExp>} sections @returns {number[]} */
 function reportSections(raw, sections) {
+  /** @type {number[]} */
   const found = [];
   eachLine(raw, (line) => {
     const l = line.trim();
     if (!l || l.length > HEADING_MAX) return;
     for (let i = 0; i < sections.length; i++)
-      if (sections[i].test(l) && !found.includes(i)) found.push(i);
+      if (nth(sections, i).test(l) && !found.includes(i)) found.push(i);
   });
   return found;
 }
@@ -176,19 +273,34 @@ function reportSections(raw, sections) {
    AND `match.index` stays a RAW offset — the only coordinate `ctx.locate` understands.
    A file number is NOT line-anchored here: a staff report is about ONE matter and
    cites its number in prose, the opposite of the agenda's item-per-line list. */
-const reportFileRefs = (ctx) => vocabPatterns(ctx, "file_numbers", IN_PROSE, "g").map((re) => ({ re, tag: null }));
+const reportFileRefs = /** @param {DoctypeContext} ctx @returns {TaggedPattern<null>[]} */ (ctx) => vocabPatterns(ctx, "file_numbers", IN_PROSE, "g").map(/** @param {RegExp} re @returns {TaggedPattern<null>} */ (re) => ({ re, tag: null }));
 
 /** What was verified unchanged between two readings of a report, or null when nothing
  *  was (R16): the citations still cited, and the recommendation when it still reads
- *  the same. */
+ *  the same.
+ *  @param {StaffReportReading} a @param {StaffReportReading} b @returns {ReportConfirmed | null} */
 function reportConfirmed(a, b) {
   const intact = (a.entities || []).filter((e) => (b.entities || []).some((x) => x.key === e.key)).length;
-  const recommendation = !!a.recommendation && String(a.recommendation) === String(b.recommendation || "");
+  const was = a.recommendation;
+  const recommendation = !!was && String(was) === String(b.recommendation || "");
   if (!intact && !recommendation) return null;
   return { entries: (b.entities || []).length, intact, recommendation_unchanged: recommendation };
 }
 
-export default counted({
+/** Is `x` a reading of this type (what `parse` hands back)? Any reading there is: `assess` reads every member through
+ *  `|| []`, `|| ""` or `String(...)` and so tolerates an object that lacks them, and only a missing reading (null or
+ *  undefined) is refused, as reading its `entities` refused it.
+ *  @param {object | null | undefined} x @returns {x is StaffReportReading} */
+function isStaffReportReading(x) { return x !== null && x !== undefined; }
+/** `x` as a reading of this type, or the `TypeError` reading a member of a missing one raised.
+ *  @param {object | null | undefined} x @returns {StaffReportReading} */
+function reportReading(x) {
+  if (!isStaffReportReading(x)) throw new TypeError(`Cannot read properties of ${x} (reading 'entities')`);
+  return x;
+}
+
+/** @type {StaffReportType} */
+const staffReport = {
   key: "staff_report",
   label: localize("doctypes.staff-report.label", "a staff report to a public body"),
   version: 1,
@@ -206,9 +318,11 @@ export default counted({
    *  from every other document in this item's pen: a staff report is BOTH addressed as
    *  a memorandum AND sectioned by the template. Neither alone will do — the minutes
    *  and the agenda each produce a memo-shaped label span somewhere, and `RECOMMENDATION`
-   *  appears as a heading in one set of minutes. */
+   *  appears as a heading in one set of minutes.
+   *  @param {DoctypeContext} ctx @returns {Detection} */
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
 
     const memo = memoHeader(t);
@@ -247,12 +361,16 @@ export default counted({
    *  WHAT IT CANNOT PLACE: a citation this producer split mid-word (`R` / `ESOLUTION`
    *  from a drop cap, measured in a real ordinance) is not matched at all, so it is
    *  absent rather than mispositioned — the safe direction, and named here because a
-   *  reference this reader never saw must not read as one the document lacks. */
+   *  reference this reader never saw must not read as one the document lacks.
+   *  @param {DoctypeContext} ctx @returns {StaffReportReading} */
   parse(ctx) {
     const raw = String(ctx.text || "");
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx.locate;
+    /** @type {(offset: number) => ReadingPosition | null} */
+    const locate = typeof given === "function" ? given : () => null;
 
     const memo = memoHeader(raw);
+    /** @type {MemoFields} */
     const f = (memo && memo.fields) || {};
     const sections = reportSectionPatterns(ctx);
     const secs = reportSections(raw, sections);
@@ -267,12 +385,18 @@ export default counted({
        Or from the `Staff Recommends That` sentence where the house style has no
        heading. Null is first-class and means this reader could not find one, never
        that the report recommends nothing. */
-    let recommendation = null, recommendationLength = null, recommendationCut = false;
+    /** @type {string | null} */
+    let recommendation = null;
+    /** @type {number | null} */
+    let recommendationLength = null;
+    let recommendationCut = false;
     {
       const lines = lineTable(raw);
       for (let i = 0; i < lines.length; i++) {
         const h = lines.get(i);
-        if (!RECOMMENDATION_HEADING.test(h) || h.length > HEADING_MAX || !sections.some((re) => re.test(h))) continue;
+        /* A line past the last is no heading, as `test` found the text "undefined" none. */
+        if (h === undefined || !RECOMMENDATION_HEADING.test(h) || h.length > HEADING_MAX || !sections.some((re) => re.test(h))) continue;
+        /** @type {string[]} */
         const body = [];
         let kept = 0, total = 0;
         for (let j = i + 1; j < lines.length; j++) {
@@ -293,13 +417,17 @@ export default counted({
       /* Where the house style has no heading: the sentence opened by the words the
          jurisdiction's reports open a recommendation with (`recommendation_openers`). */
       if (!recommendation) {
+        /** @type {FlatHit | null} */
         let best = null;
         for (const e of vocabulary(ctx, "recommendation_openers")) {
-          const re = vocabRegex(e.pattern, (s) => `(?<![A-Za-z0-9])(?:${s})(?![A-Za-z0-9])[^.]{0,500}\\.`);
+          /* An entry with no pattern compiles to none, as `vocabRegex` of a missing pattern did. */
+          const re = vocabRegex("pattern" in e ? e.pattern : undefined, (s) => `(?<![A-Za-z0-9])(?:${s})(?![A-Za-z0-9])[^.]{0,500}\\.`);
           const m = re && flatFirst(raw, re);
-          if (m && (!best || m.abs < best.abs)) best = m;
+          const held = best;
+          if (m && (!held || m.abs < held.abs)) best = m;
         }
-        if (best) recommendation = best.m[0].trim();
+        const found = best;
+        if (found) recommendation = nth(found.m, 0).trim();
       }
     }
 
@@ -316,17 +444,25 @@ export default counted({
        and with the overlap rule `allMatches` gives over all of it, so 400,000 citations are never a list of 400,000
        matches. */
     rawMergedHits(raw, enactmentPatterns(ctx), ({ m, tag }) => {
-      const n = enactmentNumber(tag.forms, m.groups && m.groups.num);
+      const groups = m.groups;
+      const n = enactmentNumber(tag.forms, groups && groups.num);
       if (!n) return;
-      take(`${tag.kind}:${n}`, "instrument", `${tag.kind[0].toUpperCase()}${tag.kind.slice(1)} No. ${n}`,
+      take(`${tag.kind}:${n}`, "instrument", `${nth(tag.kind, 0).toUpperCase()}${tag.kind.slice(1)} No. ${n}`,
            { instrument: tag.kind, number: n }, m.index);
     });
+    /* Group 1 is `IN_PROSE`'s, around the whole of the number's pattern, so every match fills it. */
     rawMergedHits(raw, reportFileRefs(ctx), ({ m }) => {
-      take(`file:${m[1]}`, "legislation", `legislation ${m[1]}`, { file: m[1] }, m.index);
+      const file = nth(m, 1);
+      take(`file:${file}`, "legislation", `legislation ${file}`, { file }, m.index);
     });
+    /* `sec` is the group `codePatterns` closes every pattern with, so every match fills it. */
     rawMergedHits(raw, codePatterns(ctx), ({ m, tag }) => {
-      take(`${tag.key}:${m.groups.sec}`, "code_section", `${tag.label} ${m.groups.sec}`,
-           { code: tag.key, section: m.groups.sec }, m.index);
+      const groups = m.groups;
+      if (!groups) throw new TypeError("Cannot read properties of undefined (reading 'sec')");
+      const sec = groups.sec;
+      if (sec === undefined) throw new TypeError("staff-report: a code section matched without its group `sec`");
+      take(`${tag.key}:${sec}`, "code_section", `${tag.label} ${sec}`,
+           { code: tag.key, section: sec }, m.index);
     });
 
     return {
@@ -345,16 +481,23 @@ export default counted({
     };
   },
 
-  /** Given two parses of the same report address, what happened to it. */
-  assess(a, b) {
+  /** Given two parses of the same report address, what happened to it.
+   *  @param {object | null | undefined} before @param {object | null | undefined} after
+   *  @returns {StaffReportAssessment} */
+  assess(before, after) {
     /* A read that found no recommendation AND no references, on EITHER side, is a failed
        reader, never a report that says nothing — and never the ground for reporting
        everything the other side read as gone (R33). */
-    const readNothing = (x) => !(x.entities || []).length && !x.recommendation;
-    if (readNothing(a) || readNothing(b))
+    const readNothing = /** @param {object | null | undefined} given @returns {boolean} */ (given) => {
+      const x = reportReading(given);
+      return !(x.entities || []).length && !x.recommendation;
+    };
+    if (readNothing(before) || readNothing(after))
       return { meaningful: null, significance: null, events: [], confirmed: null,
                why: localize("doctypes.staff-report.unread_either", "nothing could be read from this report this time, so nothing is claimed about it either way") };
+    const a = reportReading(before), b = reportReading(after);
 
+    /** @type {EventHead[]} */
     const events = [];
     /* THE RECOMMENDATION MOVING IS THE SERIOUS ONE. A staff report is the document a
        member cites for what staff advised a body to do; that advice changing after
@@ -364,7 +507,9 @@ export default counted({
         was: a.recommendation || null, now: b.recommendation || null,
         why: localize("doctypes.staff-report.recommendation_changed", "what this report recommends the body do is not what it recommended before") }));
     /* The memorandum header moving is worth showing and is not the same fact. */
-    for (const k of ["to", "from", "subject", "date"])
+    /** @type {ReadonlyArray<MemoField>} */
+    const fields = ["to", "from", "subject", "date"];
+    for (const k of fields)
       if (String(a[k] || "") !== String(b[k] || ""))
         events.push(event("item_changed", { key: k, label: k, moved: [{ fact: k, was: a[k], now: b[k] }],
           why: localize("doctypes.staff-report.field_changed", "this report's {field} changed", { field: k }) }));
@@ -388,4 +533,5 @@ export default counted({
         : localize("doctypes.staff-report.unchanged", "this report says what it said, and points at the same instruments"),
     };
   },
-});
+};
+export default counted(staffReport);
