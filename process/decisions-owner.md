@@ -21,9 +21,10 @@ Rule now: civicsmith moves to the latest Process4 version, now (open jobs restar
 Shown to the owner: not yet.
 
 ## Slots
-Rule now: the slot number is 8.
+Rule now: the slot number is 4, for now.
 - 22 Nov 2026: "Instruction: set the slot number to zero until PROCESS reports back"
 - 22 Nov 2026: "Instruction: set the slot number to 8"
+- 27 Nov 2026: "Instruction: reduce job slots to 4 for now"
 Shown to the owner: not yet.
 
 ## The paused tranche T53
