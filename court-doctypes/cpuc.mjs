@@ -12,25 +12,39 @@
  *
  * The APEX layout is the publishing system's own and stays in code; the address and the number forms are
  * the view's (R15). Nothing is followed. */
-import { CONTRACT, TAG, written, element, elements, linksIn, sourceAt,
-  proceedingNumber, row, reading, assessRegister, detectAnswer } from "./common.mjs";
+import { CONTRACT, TAG, fieldsAsWritten, written, element, elements, linksIn, sourceAt,
+  proceedingNumber, row, reading, assessHeld, detectAnswer } from "./common.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext } from "../docprofile/doctypes/index.mjs" */
+/** @import { FoundElement, Pagination, Party, Proceeding, ProceedingWhy, RegisterDetection, RegisterReading, RegisterRow, RegisterType, RowLink } from "./common.mjs" */
+
+/**
+ * A labelled field of the card: its value as written, its markup, and where its element opens.
+ * @typedef {Object} CardField
+ * @property {string | null} value
+ * @property {string} html
+ * @property {number} at
+ */
 
 const KEY = "cpuc_proceeding";
 const LABEL = localize("court-doctypes.cpuc.label", "a CPUC proceeding card or documents report");
 const CARD_FIELD = /\bid\s*=\s*["']P[0-9]+_(FILED_BY|FILING_DATE|CATEGORY|STATUS|DESCRIPTION|STAFF|INDUSTRY)["']/gi;
 const REPORT_COLUMNS = ["FILING_DATE", "DOCUMENT_TYPE", "FILED_BY", "DESCRIPTION"];
 
+/** @param {string} html @returns {boolean} */
 function hasReport(html) {
   return REPORT_COLUMNS.every((c) => new RegExp(`<th\\b${TAG}\\bid\\s*=\\s*["']${c}["']`, "i").test(html));
 }
+/** @param {string} html @returns {number} */
 function cardFieldCount(html) {
-  return new Set([...html.matchAll(CARD_FIELD)].map((m) => m[1].toUpperCase())).size;
+  return new Set([...html.matchAll(CARD_FIELD)].map((m) => (m[1] ?? "").toUpperCase())).size;
 }
 
+/** @param {DoctypeContext} ctx @returns {RegisterDetection} */
 function detect(ctx) {
   const html = String((ctx && ctx.text) || "");
   const card = cardFieldCount(html) >= 3, report = hasReport(html);
+  /** @type {string[]} */
   const signals = [];
   if (card) signals.push("the proceeding card's fields");
   if (report) signals.push(localize("court-doctypes.cpuc.the_documents_report_filing", "the documents report (Filing Date, Document Type, Filed By, Description)"));
@@ -38,17 +52,19 @@ function detect(ctx) {
     structure: card || report, structureSignals: signals });
 }
 
-/** The card's labelled fields: label → `{value, html, at}`, each as written. */
+/** The card's labelled fields: label → `{value, html, at}`, each as written.
+ *  @param {string} html
+ *  @returns {Map<string, CardField>} */
 function cardFields(html) {
-  const out = new Map();
+  const out = new Map(/** @type {Array<[string, CardField]>} */ ([]));
   const re = new RegExp(`<label\\b(${TAG})>([\\s\\S]*?)<\\/label\\s*>`, "gi");
   for (const m of html.matchAll(re)) {
     /* Only the application's own page items (P<page>_<NAME>), never a report control's label. */
-    const id = /\bfor\s*=\s*["'](P[0-9]+_[A-Z0-9_]+)["']/i.exec(m[1]);
+    const id = /\bfor\s*=\s*["'](P[0-9]+_[A-Z0-9_]+)["']/i.exec(m[1] ?? "");
     if (!id) continue;
     const label = written(m[2]);
     if (!label) continue;
-    const at = html.indexOf(`id="${id[1]}"`, m.index + m[0].length);
+    const at = html.indexOf(`id="${id[1]}"`, (m.index ?? 0) + m[0].length);
     if (at < 0) continue;
     const open = html.lastIndexOf("<", at);
     const e = element(html, open);
@@ -58,47 +74,53 @@ function cardFields(html) {
   return out;
 }
 
+/** @param {DoctypeContext} ctx @returns {RegisterReading} */
 function parse(ctx) {
   const html = String((ctx && ctx.text) || "");
   const h1 = /<h1\b[^>]*>([\s\S]*?)<\/h1\s*>/i.exec(html);
   const heading = h1 ? written(h1[1]) : null;
   const hm = heading ? /^(\S+)\s+-\s+\S/.exec(heading) : null;
-  const numberWritten = hm ? hm[1] : null;
+  const numberWritten = hm ? hm[1] ?? null : null;
   const fields = cardFields(html);
-  const value = (k) => (fields.has(k) ? fields.get(k).value : null);
+  const value = (/** @type {string} */ k) => fields.get(k)?.value ?? null;
   const n = proceedingNumber(ctx, numberWritten);
   const card = cardFieldCount(html) >= 3;
+  /** @type {Proceeding} */
   const proceeding = {
     number: n.number, number_as_written: numberWritten, caption: value("Description"),
     forum_as_written: null, kind_as_written: value("Category"), status_as_written: value("Current Status"),
     filed: value("Filing Date"), source: h1 ? sourceAt(ctx, h1.index) : null,
-    fields_as_written: Object.fromEntries([...fields].map(([k, v]) => [k, v.value])),
+    fields_as_written: fieldsAsWritten(fields),
   };
+  /** @type {ProceedingWhy} */
   const why = { forum_as_written: localize("court-doctypes.cpuc.the_page_names_no_forum", "the page names no forum in its text (only its banner image does), so none is given") };
   if (n.why) why.number = n.why;
   if (!card) {
-    why.caption = why.status_as_written = why.kind_as_written = why.filed =
-      localize("court-doctypes.cpuc.the_documents_report_states_only", "the documents report states only the proceeding's number; its caption, status, category and filing date are the card's");
+    const cardOnly = localize("court-doctypes.cpuc.the_documents_report_states_only", "the documents report states only the proceeding's number; its caption, status, category and filing date are the card's");
+    why.caption = cardOnly; why.status_as_written = cardOnly; why.kind_as_written = cardOnly; why.filed = cardOnly;
   }
   proceeding.why = why;
 
+  /** @type {Party[]} */
   const parties = [];
-  if (fields.has("Filed By")) {
-    const f = fields.get("Filed By");
-    if (f.value) parties.push({ name: f.value, role_as_written: "Filed By", source: sourceAt(ctx, f.at) });
+  const filedBy = fields.get("Filed By");
+  if (filedBy) {
+    const name = filedBy.value;
+    if (name) parties.push({ name, role_as_written: "Filed By", source: sourceAt(ctx, filedBy.at) });
   }
-  if (fields.has("Staff")) {
-    const f = fields.get("Staff");
-    for (const line of f.html.split(/<br\s*\/?>/i).map(written).filter(Boolean)) {
+  const staff = fields.get("Staff");
+  if (staff) {
+    for (const line of staff.html.split(/<br\s*\/?>/i).flatMap((x) => { const w = written(x); return w ? [w] : []; })) {
       const m = /^([^:]+):\s*(.+?)(?:\s*\(Assigned\s+([^)]+)\))?$/.exec(line);
-      parties.push(m
-        ? { name: m[2], role_as_written: m[1], assigned_as_written: m[3] || null, source: sourceAt(ctx, f.at) }
-        : { name: line, role_as_written: null, source: sourceAt(ctx, f.at) });
+      if (m) parties.push({ name: m[2] ?? "", role_as_written: m[1] ?? null, assigned_as_written: m[3] || null, source: sourceAt(ctx, staff.at) });
+      else parties.push({ name: line, role_as_written: null, source: sourceAt(ctx, staff.at) });
     }
   }
 
   const report = hasReport(html);
+  /** @type {RegisterRow[]} */
   const rows = [];
+  /** @type {Pagination} */
   let pagination = { page: { n: null, of: null, may_continue: false }, complete: false,
     complete_why: localize("court-doctypes.cpuc.the_page_holds_no_documents", "the page holds no documents report, so it lists no register rows") };
   if (report) {
@@ -107,15 +129,17 @@ function parse(ctx) {
     const scope = t ? t.inner : "";
     const base = t ? t.innerStart : 0;
     for (const tr of elements(scope, new RegExp(`<tr\\b${TAG}>`, "gi"))) {
-      const cells = {};
+      const cells = new Map(/** @type {Array<[string, FoundElement]>} */ ([]));
       for (const td of elements(tr.inner, new RegExp(`<td\\b${TAG}>`, "gi"))) {
         const h = /\bheaders\s*=\s*["']([A-Z_]+)["']/i.exec(td.match[0]);
-        if (h) cells[h[1].toUpperCase()] = td;
+        if (h) cells.set((h[1] ?? "").toUpperCase(), td);
       }
-      if (!REPORT_COLUMNS.some((c) => cells[c])) continue;
-      const v = (c) => (cells[c] ? written(cells[c].inner) : null);
-      const links = cells.DOCUMENT_TYPE ? linksIn(cells.DOCUMENT_TYPE.inner).filter((l) => l.label)
-        .map((l) => ({ document: null, description: null, label: l.label, href: l.href, fee: false })) : [];
+      if (!REPORT_COLUMNS.some((c) => cells.get(c))) continue;
+      const v = (/** @type {string} */ c) => { const cell = cells.get(c); return cell ? written(cell.inner) : null; };
+      const typeCell = cells.get("DOCUMENT_TYPE");
+      /** @type {RowLink[]} */
+      const links = typeCell ? linksIn(typeCell.inner)
+        .flatMap((l) => { const label = l.label; return label ? [{ document: null, description: null, label, href: l.href, fee: false }] : []; }) : [];
       const date = v("FILING_DATE"), kind = v("DOCUMENT_TYPE"), filer = v("FILED_BY"), text = v("DESCRIPTION");
       rows.push(row({
         key: [date, kind, filer, text, links.length ? links.map((l) => l.href).join(" ") : "-"].map((x) => x ?? "").join("|"),
@@ -124,7 +148,7 @@ function parse(ctx) {
     }
     const pl = /a-IRR-pagination-label[^>]*>\s*([0-9,]+)\s*-\s*([0-9,]+)\s+of\s+([0-9,]+)/i.exec(html);
     if (pl) {
-      const [first, last, total] = pl.slice(1).map((x) => Number(x.replace(/,/g, "")));
+      const [first = 0, last = 0, total = 0] = pl.slice(1).map((x) => Number(x.replace(/,/g, "")));
       const size = last - first + 1;
       const complete = first === 1 && rows.length === total;
       pagination = { page: { n: Math.floor((first - 1) / size) + 1, of: Math.ceil(total / size), may_continue: last < total },
@@ -143,9 +167,11 @@ function parse(ctx) {
   });
 }
 
-export default {
+/** @type {RegisterType} */
+const cpucProceeding = {
   key: KEY, label: LABEL, version: 1,
   contract: CONTRACT.MEMBERSHIP,
   detect, parse,
-  assess(before, after) { return assessRegister(before, after); },
+  assess(before, after) { return assessHeld(before, after); },
 };
+export default cpucProceeding;
