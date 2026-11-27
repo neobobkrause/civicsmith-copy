@@ -25,9 +25,13 @@ import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+/** @type {string} the member's folder, the modules' root */
 export const MEMBER_DIR = fileURLToPath(new URL("..", import.meta.url));
+/** @type {string} the built bundle's path (R32) */
 export const BUNDLE = fileURLToPath(new URL("../dist/ocr-worker.bundled.mjs", import.meta.url));
+/** @type {string} the engine core's path */
 export const WASM = fileURLToPath(new URL("../assets/tesseract-core.wasm", import.meta.url));
+/** @type {string} the language model's path */
 export const MODEL = fileURLToPath(new URL("../assets/eng.traineddata", import.meta.url));
 const BUILD = fileURLToPath(new URL("../scripts/build.mjs", import.meta.url));
 
@@ -43,21 +47,45 @@ export function buildBundle() {
   built = true;
 }
 
+/**
+ * One upload part of the member, as miniflare takes it: the bundle (`ESModule`, its text), the engine core
+ * (`CompiledWasm`) or the language model (`Data`), each under the specifier the bundle imports.
+ * @typedef {Object} OcrModule
+ * @property {"ESModule" | "CompiledWasm" | "Data"} type
+ * @property {string} path
+ * @property {string | Uint8Array} contents
+ */
+/**
+ * The miniflare worker definition `ocrWorkerDef` answers.
+ * @typedef {Object} OcrWorkerDef
+ * @property {string} name
+ * @property {string} modulesRoot
+ * @property {OcrModule[]} modules
+ * @property {string} compatibilityDate
+ * @property {string[]} [r2Buckets] `["CAPTURES"]`, unless the caller asked for none
+ * @property {{ VERSION: string }} bindings `VERSION` and every binding the caller asked for
+ */
+/**
+ * What a caller of `ocrWorkerDef` may ask for.
+ * @typedef {Object} OcrWorkerOptions
+ * @property {string} [name] the worker's name, `"ocr-worker"` unless given
+ * @property {{ [binding: string]: string }} [bindings] folded over `VERSION: "test"`
+ * @property {boolean} [r2] whether the worker has its `CAPTURES` bucket, `true` unless given
+ */
+
 /** The miniflare worker definition for this member, booting the freshly built
  *  bundle (R32). `extra` folds in bindings a caller wants (a confidence floor, a
- *  version string) without a second recipe. */
+ *  version string) without a second recipe.
+ *  @param {OcrWorkerOptions} [options]
+ *  @returns {OcrWorkerDef} */
 export function ocrWorkerDef({ name = "ocr-worker", bindings = {}, r2 = true } = {}) {
   buildBundle();
-  return {
-    name,
-    modulesRoot: MEMBER_DIR,
-    modules: [
-      { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
-      { type: "CompiledWasm", path: WASM, contents: readFileSync(WASM) },
-      { type: "Data", path: MODEL, contents: readFileSync(MODEL) },
-    ],
-    compatibilityDate: "2026-07-01",
-    ...(r2 ? { r2Buckets: ["CAPTURES"] } : {}),
-    bindings: { VERSION: "test", ...bindings },
-  };
+  /** @type {OcrModule[]} */
+  const modules = [
+    { type: "ESModule", path: BUNDLE, contents: readFileSync(BUNDLE, "utf8") },
+    { type: "CompiledWasm", path: WASM, contents: readFileSync(WASM) },
+    { type: "Data", path: MODEL, contents: readFileSync(MODEL) },
+  ];
+  if (r2) return { name, modulesRoot: MEMBER_DIR, modules, compatibilityDate: "2026-07-01", r2Buckets: ["CAPTURES"], bindings: { VERSION: "test", ...bindings } };
+  return { name, modulesRoot: MEMBER_DIR, modules, compatibilityDate: "2026-07-01", bindings: { VERSION: "test", ...bindings } };
 }

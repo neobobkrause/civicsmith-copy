@@ -22,13 +22,29 @@ import { fileURLToPath } from "node:url";
 import { makeMember } from "../src/member.mjs";
 import { ocrWorkerDef } from "./memberworker.mjs";
 import { generate } from "../../bio-plane/test/imggen.mjs";
+/** @import { Miniflare } from 'miniflare' */
+/** @import { MemberEngine, EngineFailure, WireRefusal, CaptureBucket, MemberRequest, MemberEnv } from '../src/member.mjs' */
+/** @import { FrameRead, FrameOptions } from '../src/frame.mjs' */
+/** @import { OcrWorkerDef } from './memberworker.mjs' */
 
 const SCAN = new Uint8Array(readFileSync(fileURLToPath(new URL("../../pdf-worker/test/fixtures/scan-ccitt-g4-page.pdf", import.meta.url))));
+/** @param {Uint8Array} b @returns {string} */
 const hex = (b) => createHash("sha256").update(b).digest("hex");
 
-/** One request to a member, as the door asks it: `bytes` stored under their digest in an in-memory `CAPTURES`. */
+/**
+ * A member as `ask` asks it: `makeMember`'s `fetch`.
+ * @typedef {Readonly<{ fetch: (req: MemberRequest, env?: MemberEnv) => Promise<MemberResponse> }>} AskedMember
+ */
+/**
+ * The member's answer as `ask` reads it: the member's own wire answer, a refusal for every request these fixtures make.
+ * @typedef {Readonly<{ json: () => Promise<WireRefusal> }>} MemberResponse
+ */
+
+/** One request to a member, as the door asks it: `bytes` stored under their digest in an in-memory `CAPTURES`.
+ *  @param {AskedMember} member @param {Uint8Array} bytes @param {number} [page] @returns {Promise<WireRefusal>} */
 async function ask(member, bytes, page = 0) {
   const sha = hex(bytes), key = `scratch/captures/${sha}`;
+  /** @type {CaptureBucket} */
   const bucket = { get: async (k, o) => {
     if (k !== key) return null;
     const r = o && o.range, part = r ? bytes.subarray(r.offset, Math.min(bytes.length, r.offset + r.length)) : bytes;
@@ -39,10 +55,13 @@ async function ask(member, bytes, page = 0) {
   return await res.json();
 }
 
+/** @param {(rgba: Uint8Array, width: number, height: number, opts: FrameOptions) => Promise<FrameRead | EngineFailure>} transcribeFrame @returns {MemberEngine} */
 const engineOf = (transcribeFrame) => ({ name: "tesseract-wasm", version: "0.11.0", model: "tessdata_fast/eng", check: () => null, transcribeFrame });
+/** @returns {FrameRead} */
 const SEEN = () => ({ ok: true, regions: [{ text: "word word word", rect: [0, 0, 10, 10], confidence: 0.1 }], grain: "line", boxCount: 1,
                       words: [{ confidence: 0.1 }, { confidence: 0.1 }, { confidence: 0.1 }], orientation: { rotation: 0 } });
 
+/** @param {string} reason @returns {Promise<WireRefusal>} */
 export async function memberRefusal(reason) {
   switch (reason) {
     case "PAGE_NOT_LEGIBLE":   /* a real page, an engine that rates none of its words as read */
@@ -59,6 +78,7 @@ export async function memberRefusal(reason) {
   }
 }
 
+/** @param {{ renderReason?: string }} [options] @returns {Promise<WireRefusal>} */
 export async function pageNotRenderable({ renderReason = "NOT_A_PDF" } = {}) {
   const bytes = renderReason === "EMPTY_FILE" ? new Uint8Array(0) : new TextEncoder().encode("this file is not a PDF and not a picture");
   /* the engine is never reached: the real page renderer refuses these bytes first */
@@ -95,12 +115,42 @@ export default { async fetch(req, env) {
 } };`;
 
 const UNRENDERABLE = new TextEncoder().encode("this file is not a PDF and not a picture");
+/** @type {string} the digest of the bytes the real member cannot render, stored by `prepare(mf)` */
 export const UNRENDERABLE_SHA = hex(UNRENDERABLE);
 const REAL = "ocr-real";
 
+/**
+ * The front `memberWorker` puts before the real member.
+ * @typedef {Object} FrontDef
+ * @property {string} name
+ * @property {true} modules
+ * @property {string} script
+ * @property {string} compatibilityDate
+ * @property {{ REAL: string }} serviceBindings
+ * @property {{ MODE: string, UNRENDERABLE_SHA: string }} bindings
+ */
+/**
+ * What `memberWorker` answers.
+ * @typedef {Object} MemberWorkerFixture
+ * @property {(FrontDef | OcrWorkerDef)[]} workers the front and the real member, for Miniflare
+ * @property {string} realName the real member's worker name, whose `CAPTURES` bucket a test stores into
+ * @property {{ sha: string, bytes: Uint8Array }} readable a one-page picture the real member reads
+ * @property {(mf: Miniflare) => Promise<void>} prepare stores the bytes the front reads
+ * @property {(mf: Miniflare) => Promise<number[][]>} log the page lists the front was asked
+ */
+/**
+ * What a caller of `memberWorker` may ask for.
+ * @typedef {Object} MemberWorkerOptions
+ * @property {string} [mode] `"ok"` unless given
+ * @property {string} [name] the front's name, `"ocr-worker"` unless given
+ * @property {string} [store] `"scratch"` unless given
+ */
+
+/** @param {MemberWorkerOptions} [options] @returns {Promise<MemberWorkerFixture>} */
 export async function memberWorker({ mode = "ok", name = "ocr-worker", store = "scratch" } = {}) {
   const bytes = await readable.bytes();
   const real = ocrWorkerDef({ name: REAL });
+  /** @type {FrontDef} */
   const front = { name, modules: true, script: FRONT, compatibilityDate: "2026-07-01",
     serviceBindings: { REAL },
     bindings: { MODE: mode, UNRENDERABLE_SHA } };

@@ -7,15 +7,18 @@ import { Miniflare } from "miniflare";
 import { memberRefusal, pageNotRenderable, memberWorker } from "./fixtures.mjs";
 
 // memberRefusal's real answers (extraction imports it directly: ocr-worker is earlier in the order; K4990)
-for (const reason of ["PAGE_NOT_LEGIBLE", "PIXELS_UNREADABLE", "ENGINE_FAILED", "UNEXPECTED_FAILURE"]) {
-  test(`fixture memberRefusal(${reason}): the real member answers 200 ok:false with that reason`, async () => {
-    const a = await memberRefusal(reason);
-    assert.equal(a.ok, false);
-    assert.equal(a.reason, reason);
-    assert.ok(a.refusal && a.refusal.reason === reason, JSON.stringify(a).slice(0, 300));
-    assert.ok(Array.isArray(a.deferred) && Array.isArray(a.notes));
-  });
-}
+/** the real member answers 200 ok:false with `reason` @param {string} reason */
+const refusesWith = async (reason) => {
+  const a = await memberRefusal(reason);
+  assert.equal(a.ok, false);
+  assert.equal(a.reason, reason);
+  assert.ok(a.refusal && a.refusal.reason === reason, JSON.stringify(a).slice(0, 300));
+  assert.ok(Array.isArray(a.deferred) && Array.isArray(a.notes));
+};
+test("fixture memberRefusal(PAGE_NOT_LEGIBLE): the real member answers 200 ok:false with that reason", async () => { await refusesWith("PAGE_NOT_LEGIBLE"); });
+test("fixture memberRefusal(PIXELS_UNREADABLE): the real member answers 200 ok:false with that reason", async () => { await refusesWith("PIXELS_UNREADABLE"); });
+test("fixture memberRefusal(ENGINE_FAILED): the real member answers 200 ok:false with that reason", async () => { await refusesWith("ENGINE_FAILED"); });
+test("fixture memberRefusal(UNEXPECTED_FAILURE): the real member answers 200 ok:false with that reason", async () => { await refusesWith("UNEXPECTED_FAILURE"); });
 
 test("fixture memberRefusal: a reason the member does not give is refused by the fixture", async () => {
   await assert.rejects(() => memberRefusal("busy"), /no such reason/);
@@ -30,12 +33,15 @@ test("fixture pageNotRenderable: the real member's PAGE_NOT_RENDERABLE with the 
     assert.equal(a.page, 0);
     assert.deepEqual(a.deferred, []);
     assert.ok(Array.isArray(a.notes));
-    assert.ok(a.refusal && a.refusal.render && typeof a.refusal.render.reason === "string" && a.refusal.render.detail !== undefined, JSON.stringify(a.refusal).slice(0, 300));
+    const refusal = a.refusal;
+    const render = refusal && refusal.render;
+    assert.ok(render && typeof render.reason === "string" && render.detail !== undefined, JSON.stringify(a.refusal).slice(0, 300));
   }
 });
 
 // memberWorker's real answers (reading-pipeline imports it directly: ocr-worker is earlier in the order; K4990)
 test("fixture memberWorker: the real member behind a front that logs the pages asked and applies one deviation to its real answers", { timeout: 600_000 }, async () => {
+  /** @param {Miniflare} mf @param {string} name @param {string} sha @param {number[]} pages */
   const askPage = async (mf, name, sha, pages) => await (await (await mf.getWorker(name)).fetch("http://f/transcribe", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ capture_sha: sha, store: "scratch", pages }) })).json();
   const results = {};
