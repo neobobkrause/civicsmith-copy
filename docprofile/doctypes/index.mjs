@@ -27,6 +27,220 @@
  * type owns.
  */
 
+/** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
+/** @import { View, ViewSpaces, ViewVocabulary, ViewPractice, Form } from "../../jurisdictions/index.mjs" */
+/** @import { Tagged, VocabularyPattern, CodeEntry, FileNumber, AmendingEntry, MeetingMarkerEntry, BodyVariant, RosterWord, RosterHeader, BudgetHeader, VoteValue, ResponseStatus, MemberType, PolicyHeader } from "../../jurisdictions/types.mjs" */
+
+/**
+ * A view without a profile's identity (R30): the empty view a reader falls back to where no profile combines, or a caller's
+ * view of only the sections it supplies.
+ * @typedef {{ readonly spaces?: ViewSpaces, readonly vocabulary?: ViewVocabulary, readonly practice?: ViewPractice }} PartialView
+ */
+/**
+ * The view a reader reads (R30): `jurisdictions.combine`'s view, or a view without a profile's identity.
+ * @typedef {View | PartialView} ReaderView
+ */
+/**
+ * One entry of one key of the view's vocabulary, as `jurisdictions` defines that key's entries.
+ * @typedef {Tagged<VocabularyPattern> | Tagged<CodeEntry> | Tagged<FileNumber> | Tagged<AmendingEntry> | Tagged<MeetingMarkerEntry> | Tagged<BodyVariant> | Tagged<RosterWord> | Tagged<RosterHeader> | Tagged<BudgetHeader> | Tagged<VoteValue> | Tagged<ResponseStatus> | Tagged<MemberType> | Tagged<PolicyHeader>} VocabularyEntry
+ */
+/**
+ * One page of interface I2's text shape (R23, R37, R38): its 0-based index and its text.
+ * @typedef {{ readonly page?: number, readonly text?: string }} SuppliedPage
+ */
+/**
+ * One paragraph of interface I2's pageless text shape (R23): its 0-based index, the producer's own reference and its text.
+ * @typedef {{ readonly para?: number, readonly ref?: string, readonly text?: string }} SuppliedParagraph
+ */
+/**
+ * One sheet of a sheet container's text (R39): its text.
+ * @typedef {{ readonly text?: string }} SuppliedSheet
+ */
+/**
+ * A marker naming what a producer could not decode (R18, R24): how many regions or code points, and why. A size refusal
+ * names `over_size_bound` and the size and the limit, on itself or in its `guard`.
+ * @typedef {{ readonly count?: number, readonly reason?: string, readonly why?: string, readonly size?: number, readonly bound?: number, readonly guard?: SizeGuard }} UndeterminedMarker
+ */
+/**
+ * A size guard's answer inside a marker (R18): the size and the limit.
+ * @typedef {{ readonly size?: number, readonly bound?: number }} SizeGuard
+ */
+/**
+ * Interface I2's text shape as a producer emits it (R21 to R24, R37): the document's text, its pages or paragraphs, what
+ * could not be decoded, the counts, and a sheet container's sheets.
+ * @typedef {{ readonly document?: string, readonly pages?: Array<SuppliedPage | null>, readonly paragraphs?: Array<SuppliedParagraph | null>, readonly undetermined?: Array<UndeterminedMarker | null>, readonly counts?: SuppliedCounts, readonly sheets?: Array<SuppliedSheet | null> }} SuppliedText
+ */
+/**
+ * A producer's stated counts (R24).
+ * @typedef {{ readonly chars?: number, readonly undetermined?: number }} SuppliedCounts
+ */
+/**
+ * Which part of the text a content type's `detect` is handed (R40): characters `from` to `to` of a text of `of` characters.
+ * @typedef {Object} ClassifyWindow
+ * @property {number} from
+ * @property {number} to
+ * @property {number} of
+ */
+/**
+ * The work budget one classification's detects share (R40): the characters they have examined, and the limit past which no
+ * further type is asked.
+ * @typedef {Object} ClassifyWork
+ * @property {number} chars
+ * @property {number} limit
+ */
+/**
+ * What a content type is handed (R19, R20, R37, R38, R40): what the caller knows about the document, with the text, and what
+ * this module adds for the type (the locator, the other types the text satisfies, the supplied structure, the window and the
+ * work budget).
+ * @typedef {{ readonly text?: string, readonly headers?: object | null, readonly locator?: string | null, readonly content_type?: string | null, readonly handler?: object | null, readonly kind?: string | null, readonly view?: ReaderView | null, readonly at?: string | null | undefined, readonly now?: string | null, readonly pages?: Array<SuppliedPage | null>, readonly sheets?: Array<SuppliedSheet | null>, readonly locate?: (offset: number) => ReadingPosition | null, readonly alsoSatisfies?: (selfKey?: string) => string[], readonly supplied?: SuppliedText | null, readonly window?: ClassifyWindow, readonly work?: ClassifyWork, readonly events?: ReadonlyArray<object> }} DoctypeContext
+ */
+/**
+ * What a content type's `detect` answers: whether the document is that kind, how sure, and on what signals.
+ * @typedef {Object} Detection
+ * @property {boolean} match
+ * @property {string} [confidence]
+ * @property {string[]} [signals]
+ */
+/**
+ * A content type's judgement of two readings (R13 to R16): the graded events, whether it could say, why, and what it
+ * confirmed unchanged.
+ * @typedef {Object} TypeAssessment
+ * @property {boolean | null} [meaningful]
+ * @property {object[]} [events]
+ * @property {string} [why]
+ * @property {object | null} [confirmed]
+ */
+/**
+ * A content type registered through the seam (R4, R36; doctypes R1): its key, label and version, whether it is the
+ * fallback, its watching contract (R29), and its four answers. A type's reading is its own.
+ * @typedef {Object} ContentType
+ * @property {string} key
+ * @property {string} [label]
+ * @property {number} [version]
+ * @property {boolean} [fallback]
+ * @property {string} [contract]
+ * @property {(ctx: DoctypeContext) => Detection | null | undefined} detect
+ * @property {(ctx: DoctypeContext) => object | null | undefined} [parse]
+ * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => TypeAssessment | null | undefined} [assess]
+ * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined} [connections]
+ */
+/**
+ * The facts of an entity whose change might mean something, by name.
+ * @typedef {{ [fact: string]: string | number | boolean | null }} EntityFacts
+ */
+/**
+ * An entity a content type found in a document (R34): a stable key, its kind, its label, its facts, where it was first read
+ * and, once read again, every place it was read.
+ * @typedef {Object} Entity
+ * @property {string} key
+ * @property {string} kind
+ * @property {string} label
+ * @property {EntityFacts} facts
+ * @property {ReadingPosition} [source]
+ * @property {Array<ReadingPosition | null>} [occurrences]
+ */
+/**
+ * A referential connection (R15): two documents about each other.
+ * @typedef {Object} ReferentialConnection
+ * @property {"referential"} connection
+ * @property {string} from
+ * @property {string} to
+ * @property {string} relation
+ * @property {string} why
+ */
+/**
+ * A temporal connection (R15): one thing after another, `expected_by` dating an absence.
+ * @typedef {Object} TemporalConnection
+ * @property {"temporal"} connection
+ * @property {string} from
+ * @property {string} to
+ * @property {string} relation
+ * @property {string | null} at
+ * @property {string | null} expected_by
+ * @property {string | undefined} why
+ */
+/**
+ * A connection, referential or temporal, never collapsed into one shape (R15).
+ * @typedef {ReferentialConnection | TemporalConnection} Connection
+ */
+/**
+ * A temporal connection's time, due date and reason.
+ * @typedef {Object} TemporalWhen
+ * @property {string | null} [at]
+ * @property {string | null} [expected_by]
+ * @property {string} [why]
+ */
+/**
+ * One fact that moved between two readings of one entity.
+ * @typedef {Object} MovedFact
+ * @property {string} fact
+ * @property {string | number | boolean | null | undefined} was
+ * @property {string | number | boolean | null | undefined} now
+ */
+/**
+ * An entity whose facts moved, with its reading before.
+ * @typedef {Object} AlteredEntity
+ * @property {Entity} entity
+ * @property {Entity} was
+ * @property {MovedFact[]} moved
+ */
+/**
+ * Two entity sets diffed by key.
+ * @typedef {Object} EntityDiff
+ * @property {Entity[]} gone
+ * @property {Entity[]} appeared
+ * @property {AlteredEntity[]} altered
+ * @property {number} before_count
+ * @property {number} after_count
+ */
+/**
+ * A compiled pattern with what its entry says about it, for `allMatches`.
+ * @typedef {Object} TaggedPattern
+ * @property {RegExp | null} re
+ * @property {object} tag
+ */
+/**
+ * A match of `allMatches`: the match and its pattern's tag.
+ * @typedef {Object} TaggedMatch
+ * @property {RegExpExecArray} m
+ * @property {object} tag
+ */
+/**
+ * An enactment kind's recogniser: the kind in lower case, and the space's forms its number is normalised by.
+ * @typedef {Object} EnactmentTag
+ * @property {string} kind
+ * @property {Tagged<Form>[]} forms
+ */
+/**
+ * A code of law's citation recogniser's tag: the code's key and label.
+ * @typedef {Object} CodeTag
+ * @property {string} key
+ * @property {string} label
+ */
+/**
+ * An enactment recogniser (`enactmentPatterns`), the number in its named group `num`.
+ * @typedef {Object} EnactmentPattern
+ * @property {RegExp} re
+ * @property {EnactmentTag} tag
+ */
+/**
+ * A code citation recogniser (`codePatterns`), the part cited in its named group `sec`.
+ * @typedef {Object} CodePattern
+ * @property {RegExp} re
+ * @property {CodeTag} tag
+ */
+/**
+ * A pattern as a profile writes it (jurisdictions R2), or as a reader composes one: its source and flags.
+ * @typedef {{ readonly re?: string, readonly flags?: string | undefined }} PatternSource
+ */
+/**
+ * A practice value of the view (`practiceValue`): the value, its basis and the unit it is counted in.
+ * @typedef {Object} PracticeValue
+ * @property {number} value
+ * @property {string | null} basis
+ * @property {string | null} count
+ */
+
 /* The content-type axis uses the ONE confidence ladder, re-exported here so content
    types can pull it alongside entity/connection. TYPE_CONFIDENCE is gone: it was
    CONFIDENCE duplicated because this axis was split off after the stack axis already
@@ -64,7 +278,9 @@ export const CONTRACT = { SUBSTANCE: "substance", MEMBERSHIP: "membership", UNMO
  *  matcher that cannot see one.
  *
  *  So: PHRASES are matched over this normalisation, and LINE ANCHORING is kept
- *  only where the principle is genuinely about a line (see `selfNaming`). */
+ *  only where the principle is genuinely about a line (see `selfNaming`).
+ *  @param {unknown} text
+ *  @returns {string} */
 export function flatten(text) {
   return String(text || "").replace(/\s+/g, " ");
 }
@@ -102,7 +318,10 @@ export function flatten(text) {
  *  ONE-PAGE document of any of these kinds names itself ONCE and is
  *  indistinguishable by this test from a one-line reference. Every type here
  *  therefore keeps a path that reaches `likely` on other evidence alone, and none
- *  of them refuses a document for naming itself only once. */
+ *  of them refuses a document for naming itself only once.
+ *  @param {unknown} text
+ *  @param {RegExp} re
+ *  @returns {number} */
 export function selfNaming(text, re) {
   let n = 0;
   for (const line of String(text || "").split(/\r?\n/)) if (re.test(line.trim())) n++;
@@ -133,9 +352,13 @@ export const FURNITURE_RECURS = 3;
  *  `alsoSatisfies(ctx, self)` returns the keys of the other registered types whose
  *  own `detect` matches this same text, so a reader's facts can carry it. It is
  *  wired by the registry, which is the only place that knows every type; a reader
- *  called directly gets an honest empty list rather than a TypeError. */
+ *  called directly gets an honest empty list rather than a TypeError.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {string} selfKey
+ *  @returns {string[]} */
 export function alsoSatisfies(ctx, selfKey) {
-  const f = ctx && typeof ctx.alsoSatisfies === "function" ? ctx.alsoSatisfies : null;
+  const given = ctx ? ctx.alsoSatisfies : undefined;
+  const f = typeof given === "function" ? given : null;
   if (!f) return [];
   try { return f(selfKey) || []; } catch { return []; }
 }
@@ -171,57 +394,83 @@ import { combine as jurisdictionsCombine, list as jurisdictionsList } from "../.
  * such a profile upstream, and a reader must not fail on one that slipped through.
  * ------------------------------------------------------------------------- */
 
+/** @type {ReaderView | null} */
 let LEGACY_VIEW = null;
+/** The combination of every non-test held profile, or the empty view where it cannot be made.
+ *  @returns {ReaderView} */
+function legacyView() {
+  try {
+    /* `typeof`, because the UI's flattened copy of this package carries no
+       `jurisdictions`, and there the fallback is an empty view, not a crash. */
+    if (typeof jurisdictionsCombine === "function" && typeof jurisdictionsList === "function") {
+      const r = jurisdictionsCombine(jurisdictionsList().filter((x) => !x.test).map((x) => x.id));
+      if (r && r.ok && r.view) return r.view;
+    }
+  } catch { return {}; }
+  return {};
+}
 /** The view a reader uses: the caller's, or for a caller that gives none (K39), the
- *  combination of every non-test held profile, computed once. */
+ *  combination of every non-test held profile, computed once.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @returns {ReaderView} */
 export function readerView(ctx) {
   const v = ctx && ctx.view;
   if (v && typeof v === "object") return v;
-  if (LEGACY_VIEW === null) {
-    LEGACY_VIEW = {};
-    try {
-      /* `typeof`, because the UI's flattened copy of this package carries no
-         `jurisdictions`, and there the fallback is an empty view, not a crash. */
-      if (typeof jurisdictionsCombine === "function" && typeof jurisdictionsList === "function") {
-        const r = jurisdictionsCombine(jurisdictionsList().filter((x) => !x.test).map((x) => x.id));
-        if (r && r.ok && r.view) LEGACY_VIEW = r.view;
-      }
-    } catch { LEGACY_VIEW = {}; }
-  }
-  return LEGACY_VIEW;
+  const held = LEGACY_VIEW ?? (LEGACY_VIEW = legacyView());
+  return held;
 }
 
-const VOCAB_REGEX_CACHE = new Map();
+/** @type {Map<string, RegExp | null>} */
+const VOCAB_REGEX_CACHE = new Map(/** @type {Array<[string, RegExp | null]>} */ ([]));
 
 /** Compile one profile pattern `{re, flags}`, `wrap` turning its source into the
  *  expression a reader needs (anchored to a line, bounded by words) and `extra`
  *  adding reader-side flags (`g`, `m`). The profile's own flags are kept and only
- *  `i`/`u` are honoured (jurisdictions R2). Returns null when it cannot compile. */
+ *  `i`/`u` are honoured (jurisdictions R2). Returns null when it cannot compile.
+ *  @param {PatternSource | null | undefined} p
+ *  @param {((source: string) => string) | null} [wrap]
+ *  @param {string} [extra]
+ *  @returns {RegExp | null} */
 export function vocabRegex(p, wrap, extra) {
-  if (!p || typeof p.re !== "string" || !p.re.length) return null;
+  const given = p ? p.re : undefined;
+  if (!p || typeof given !== "string" || !given.length) return null;
   const own = String(p.flags || "").replace(/[^iu]/g, "");
   const flags = [...new Set((own + (extra || "")).split(""))].join("");
-  const src = typeof wrap === "function" ? wrap(p.re) : p.re;
+  const src = typeof wrap === "function" ? wrap(given) : given;
   const k = src + "\u0000" + flags;
-  if (VOCAB_REGEX_CACHE.has(k)) return VOCAB_REGEX_CACHE.get(k);
+  if (VOCAB_REGEX_CACHE.has(k)) return VOCAB_REGEX_CACHE.get(k) ?? null;
+  /** @type {RegExp | null} */
   let re = null;
   try { re = new RegExp(src, flags); } catch { re = null; }
   VOCAB_REGEX_CACHE.set(k, re);
   return re;
 }
 
-/** The entries of one `vocabulary` key in the view, or an empty list. */
+/** The entries of one `vocabulary` key in the view, or an empty list.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {keyof ViewVocabulary} key
+ *  @returns {VocabularyEntry[]} */
 export function vocabulary(ctx, key) {
   const v = readerView(ctx).vocabulary;
   const list = v && typeof v === "object" ? v[key] : null;
-  return Array.isArray(list) ? list.filter((e) => e && typeof e === "object") : [];
+  if (!Array.isArray(list)) return [];
+  /** @type {VocabularyEntry[]} */
+  const out = [];
+  for (const e of list) if (e && typeof e === "object") out.push(e);
+  return out;
 }
 
-/** The compiled patterns of one vocabulary key, each wrapped the same way. */
+/** The compiled patterns of one vocabulary key, each wrapped the same way.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {keyof ViewVocabulary} key
+ *  @param {((source: string) => string) | null} [wrap]
+ *  @param {string} [extra]
+ *  @returns {RegExp[]} */
 export function vocabPatterns(ctx, key, wrap, extra) {
+  /** @type {RegExp[]} */
   const out = [];
   for (const e of vocabulary(ctx, key)) {
-    const re = vocabRegex(e.pattern, wrap, extra);
+    const re = vocabRegex("pattern" in e ? e.pattern : null, wrap, extra);
     if (re) out.push(re);
   }
   return out;
@@ -229,10 +478,13 @@ export function vocabPatterns(ctx, key, wrap, extra) {
 
 /** Wrappers for the positions a reader supplies: a body's name ending a line, or a
  *  reference bounded by non-letters inside prose. */
-export const LINE_END = (re) => `(?:${re})\\s*$`;
-export const IN_PROSE = (re) => `(?<![A-Za-z0-9])(${re})(?![A-Za-z0-9])`;
+export const LINE_END = /** @param {string} re @returns {string} */ (re) => `(?:${re})\\s*$`;
+export const IN_PROSE = /** @param {string} re @returns {string} */ (re) => `(?<![A-Za-z0-9])(${re})(?![A-Za-z0-9])`;
 
-/** Does any of these compiled patterns match this string? */
+/** Does any of these compiled patterns match this string?
+ *  @param {ReadonlyArray<RegExp>} patterns
+ *  @param {string} s
+ *  @returns {boolean} */
 export function anyMatch(patterns, s) {
   for (const re of patterns) { re.lastIndex = 0; if (re.test(s)) return true; }
   return false;
@@ -240,8 +492,12 @@ export function anyMatch(patterns, s) {
 
 /** Every match of several global patterns over one string, merged in reading
  *  order, overlaps dropped (the earlier, then longer, match is kept). `tag` is
- *  carried from the pattern's own entry so a reader knows WHICH fact matched. */
+ *  carried from the pattern's own entry so a reader knows WHICH fact matched.
+ *  @param {ReadonlyArray<TaggedPattern>} tagged
+ *  @param {string} s
+ *  @returns {TaggedMatch[]} */
 export function allMatches(tagged, s) {
+  /** @type {TaggedMatch[]} */
   const hits = [];
   for (const { re, tag } of tagged) {
     if (!re || !re.global) continue;
@@ -249,6 +505,7 @@ export function allMatches(tagged, s) {
     for (const m of s.matchAll(re)) if (m[0].length) hits.push({ m, tag });
   }
   hits.sort((a, b) => a.m.index - b.m.index || b.m[0].length - a.m[0].length);
+  /** @type {TaggedMatch[]} */
   const out = [];
   let end = -1;
   for (const h of hits) {
@@ -260,7 +517,9 @@ export function allMatches(tagged, s) {
 }
 
 /** A pattern's source as a piece of a larger expression: its own `^`/`$` anchors
- *  removed, since a form written to match a whole value is embedded here in prose. */
+ *  removed, since a form written to match a whole value is embedded here in prose.
+ *  @param {string} re
+ *  @returns {string} */
 function vocabPiece(re) {
   return String(re).replace(/^\^/, "").replace(/(?<!\\)\$$/, "");
 }
@@ -270,22 +529,28 @@ function vocabPiece(re) {
  *  number in one of the space's forms, followed by any series marker the view's
  *  `enactment_markers` hold. `number` is optional when `blankNumber` is set, for a
  *  proposed instrument's own caption (`ORDINANCE NO. ____`). Each result is
- *  `{re, tag: {kind}}` with the number in the named group `num`. */
+ *  `{re, tag: {kind}}` with the number in the named group `num`.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {{ blankNumber?: boolean }} [opts]
+ *  @returns {EnactmentPattern[]} */
 export function enactmentPatterns(ctx, { blankNumber = false } = {}) {
   const v = readerView(ctx);
-  const sp = v.spaces && v.spaces.enactment;
+  const spaces = v.spaces;
+  const sp = spaces && spaces.enactment;
   if (!sp || typeof sp !== "object") return [];
   const formList = (Array.isArray(sp.forms) ? sp.forms : [])
     .filter((f) => f && f.pattern && typeof f.pattern.re === "string" && vocabRegex(f.pattern));
   const forms = formList.map((f) => vocabPiece(f.pattern.re));
   const markers = vocabulary(ctx, "enactment_markers")
-    .map((e) => e.pattern && typeof e.pattern.re === "string" ? e.pattern.re : null)
+    .map((e) => "pattern" in e && e.pattern && typeof e.pattern.re === "string" ? e.pattern.re : null)
     .filter((s) => s && vocabRegex({ re: s }));
   if (!forms.length && !blankNumber) return [];
   const num = forms.length ? `(?<num>${forms.map((s) => `(?:${s})`).join("|")})` : "(?<num>(?!))";
   const tail = markers.length ? `(?:\\s*(?:${markers.map((s) => `(?:${s})`).join("|")}))?` : "";
+  /** @type {EnactmentPattern[]} */
   const out = [];
-  for (const k of Array.isArray(sp.kinds) ? sp.kinds : []) {
+  const kinds = sp.kinds;
+  for (const k of Array.isArray(kinds) ? kinds : []) {
     if (!k || typeof k.kind !== "string" || !k.prefix || typeof k.prefix.re !== "string") continue;
     const body = blankNumber
       /* A caption, not the kind's word in a sentence: after the kind's words comes
@@ -303,18 +568,22 @@ export function enactmentPatterns(ctx, { blankNumber = false } = {}) {
 /** An instrument's number as the space's own form normalises it (jurisdictions R3):
  *  the matched text is cleaned as the form says, matched by the form AS WRITTEN, and
  *  composed from its `normal` parts. A form never changes a digit; a text no form
- *  recognises gives null, and the reference is not read rather than read wrongly. */
+ *  recognises gives null, and the reference is not read rather than read wrongly.
+ *  @param {ReadonlyArray<Form> | null | undefined} forms
+ *  @param {unknown} text
+ *  @returns {string | null} */
 export function enactmentNumber(forms, text) {
   if (typeof text !== "string" || !text.trim()) return null;
   for (const f of forms || []) {
     let t = text.trim();
     const c = f.clean || {};
-    for (const s of Array.isArray(c.strip) ? c.strip : []) {
+    const strip = c.strip, spaces = c.spaces;
+    for (const s of Array.isArray(strip) ? strip : []) {
       const re = vocabRegex(s, (x) => `^(?:${x})`);
       if (re) t = t.replace(re, "");
     }
-    if (c.spaces === "remove") t = t.replace(/\s+/g, "");
-    else if (c.spaces === "collapse") t = t.replace(/\s+/g, " ");
+    if (spaces === "remove") t = t.replace(/\s+/g, "");
+    else if (spaces === "collapse") t = t.replace(/\s+/g, " ");
     if (c.upper === true) t = t.toUpperCase();
     const re = vocabRegex(f.pattern);
     const m = re && re.exec(t);
@@ -323,8 +592,8 @@ export function enactmentNumber(forms, text) {
     for (const part of Array.isArray(f.normal) ? f.normal : []) {
       if (typeof part === "string") { out += part; continue; }
       if (!part || !Number.isInteger(part.group)) continue;
-      let g = m[part.group];
-      if (g == null) g = typeof part.default === "string" ? part.default : "";
+      const found = m[part.group], fallback = part.default;
+      let g = found == null ? (typeof fallback === "string" ? fallback : "") : found;
       if (part.unpad) g = g.replace(/^0+(?=.)/, "");
       if (part.upper) g = g.toUpperCase();
       out += g;
@@ -338,11 +607,14 @@ export function enactmentNumber(forms, text) {
  *  for a citation of one of its parts: the code's name or abbreviation, then the
  *  words any code is cited by (`Section`, `Chapter`), then the part's number in
  *  the named group `sec`. The tag carries the code's own `key` and `label`, which
- *  prefix the reference's key and show it. */
+ *  prefix the reference's key and show it.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @returns {CodePattern[]} */
 export function codePatterns(ctx) {
+  /** @type {CodePattern[]} */
   const out = [];
   for (const c of vocabulary(ctx, "codes")) {
-    if (typeof c.key !== "string" || !c.key) continue;
+    if (!("key" in c) || typeof c.key !== "string" || !c.key) continue;
     const re = vocabRegex(c.pattern,
       (s) => `(?<![A-Za-z0-9])(?:${vocabPiece(s)})\\s+(?:Section|Chapter|Sec\\.)\\s+(?<sec>\\d[\\d.]*[\\w.]*)`, "g");
     if (re) out.push({ re, tag: { key: c.key, label: typeof c.label === "string" && c.label ? c.label : c.key } });
@@ -353,12 +625,16 @@ export function codePatterns(ctx) {
 /** The view's `practice` value for `name`, or null when no profile supplies it (or
  *  profiles disagreed and it was withheld, jurisdictions R15). `count` is the unit the
  *  profile counts it in (`business`, `calendar`) when it states one, else null: a reader
- *  must never count business days as calendar days (OMC 2.20.160; K1519). */
+ *  must never count business days as calendar days (OMC 2.20.160; K1519).
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {keyof ViewPractice} name
+ *  @returns {PracticeValue | null} */
 export function practiceValue(ctx, name) {
   const p = readerView(ctx).practice;
   const v = p && p[name];
+  const count = v ? v.count : undefined;
   return v && Number.isInteger(v.value) && v.value > 0
-    ? { value: v.value, basis: v.basis || null, count: typeof v.count === "string" && v.count ? v.count : null }
+    ? { value: v.value, basis: v.basis || null, count: typeof count === "string" && count ? count : null }
     : null;
 }
 
@@ -384,8 +660,15 @@ export function practiceValue(ctx, name) {
  *  ruling of 2026-09-14 (5.3) is that a citation naming no part means the whole
  *  document, and that is a MEMBER'S act of citation; it is not a reader's
  *  silence. Collapsing the two would let a reader's shortcoming read as a
- *  member's choice, which is the record claiming more than it holds. */
+ *  member's choice, which is the record claiming more than it holds.
+ *  @param {unknown} key
+ *  @param {string} kind
+ *  @param {string} label
+ *  @param {EntityFacts | null} [facts]
+ *  @param {ReadingPosition | null} [source]
+ *  @returns {Entity} */
 export function entity(key, kind, label, facts, source) {
+  /** @type {Entity} */
   const e = { key: String(key), kind, label, facts: facts || {} };
   /* Carried only when the locator actually answered — an explicit `source: null`
      and an absent `source` mean the same thing and the shape says so once. */
@@ -402,11 +685,15 @@ export function entity(key, kind, label, facts, source) {
  *  is null where the locator could not say. It is carried only once a second sighting
  *  exists, so a reference read once has the shape it always had. `source` stays the first
  *  sighting's, unchanged. The same rule as `source` binds each entry: only `ctx.locate`
- *  may produce it. */
+ *  may produce it.
+ *  @param {Entity | null | undefined} e
+ *  @param {ReadingPosition | null} [source]
+ *  @returns {Entity | null | undefined} */
 export function readAgain(e, source) {
   if (!e) return e;
-  if (!Array.isArray(e.occurrences)) e.occurrences = [e.source || null];
-  e.occurrences.push(source || null);
+  const had = e.occurrences;
+  const seen = Array.isArray(had) ? had : (e.occurrences = [e.source || null]);
+  seen.push(source || null);
   return e;
 }
 
@@ -428,12 +715,19 @@ export function readAgain(e, source) {
  *
  *  People reason about these differently and so do their assistants, so they are
  *  emitted as different kinds and the UI shows them apart. */
+/** @type {{ REFERENTIAL: "referential", TEMPORAL: "temporal" }} */
 export const CONNECTION = { REFERENTIAL: "referential", TEMPORAL: "temporal" };
 
+/** @param {string} from @param {string} to @param {string} relation @param {string} why @returns {ReferentialConnection} */
 export function referential(from, to, relation, why) {
   return { connection: CONNECTION.REFERENTIAL, from, to, relation, why };
 }
-/** `expected_by` turns an absence into a fact with a date on it. */
+/** `expected_by` turns an absence into a fact with a date on it.
+ *  @param {string} from
+ *  @param {string} to
+ *  @param {string} relation
+ *  @param {TemporalWhen} [when]
+ *  @returns {TemporalConnection} */
 export function temporal(from, to, relation, { at, expected_by, why } = {}) {
   return { connection: CONNECTION.TEMPORAL, from, to, relation, at: at || null,
            expected_by: expected_by || null, why };
@@ -441,14 +735,23 @@ export function temporal(from, to, relation, { at, expected_by, why } = {}) {
 
 /** Diff two entity sets by key, reporting which FACTS moved rather than that the
  *  entity differs. A content type decides what each moved fact means; this only
- *  finds them. */
+ *  finds them.
+ *  @param {ReadonlyArray<Entity>} before
+ *  @param {ReadonlyArray<Entity>} after
+ *  @returns {EntityDiff} */
 export function diffEntities(before, after) {
-  const b = new Map(before.map((e) => [e.key, e]));
-  const a = new Map(after.map((e) => [e.key, e]));
-  const gone = [], appeared = [], altered = [];
+  const b = new Map(before.map((e) => /** @type {[string, Entity]} */ ([e.key, e])));
+  const a = new Map(after.map((e) => /** @type {[string, Entity]} */ ([e.key, e])));
+  /** @type {Entity[]} */
+  const gone = [];
+  /** @type {Entity[]} */
+  const appeared = [];
+  /** @type {AlteredEntity[]} */
+  const altered = [];
   for (const [k, was] of b) {
     const now = a.get(k);
     if (!now) { gone.push(was); continue; }
+    /** @type {MovedFact[]} */
     const moved = [];
     for (const f of new Set([...Object.keys(was.facts), ...Object.keys(now.facts)]))
       if (String(was.facts[f]) !== String(now.facts[f]))

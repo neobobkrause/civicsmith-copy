@@ -4,15 +4,68 @@
  * `readText`; `readtext.mjs` re-exports these names unchanged. */
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/**
+ * A stretch of a text: characters `from` to `to` (exclusive).
+ * @typedef {Object} Span
+ * @property {number} from
+ * @property {number} to
+ */
+/**
+ * One segment of a segment map: the stretch `start` to `end` (exclusive) of the flat text, and the container part it is.
+ * @template S
+ * @typedef {Object} Segment
+ * @property {number} start
+ * @property {number} end
+ * @property {S} source
+ */
+/**
+ * The bounds of a classification view (R39), each in characters but `windows`, a count.
+ * @typedef {Object} ClassifyLimits
+ * @property {number} view
+ * @property {number} head
+ * @property {number} slack
+ * @property {number} windows
+ * @property {number} window
+ * @property {number} sheetHeads
+ * @property {number} sheetHead
+ */
+/**
+ * What a text was classified from when it was over the bound (R19, R39): the characters of the view and of the text, the
+ * head's, the windows and the sheets' heads, and whether the sheets' boundaries were used.
+ * @typedef {Object} ClassifiedOver
+ * @property {number} chars
+ * @property {number} of
+ * @property {number} head_chars
+ * @property {Span[]} windows
+ * @property {Span[]} sheet_heads
+ * @property {boolean} heads_used
+ */
+/**
+ * A classification view (R39): the view's text, and what it holds.
+ * @typedef {ClassifiedOver & { view: string }} ClassificationView
+ */
+/**
+ * A sheet of a sheet container, read for its text (R39).
+ * @typedef {{ readonly text?: string }} ViewSheet
+ */
+
 /** The segment map of an itemised array over a `document` string it is compared with,
  *  or null when the array's own join (joinItemised's) is not that string byte for byte.
  *  The comparison walks the document in place and builds no joined copy (R38): the
- *  answer is the one `joinItemised(...).text === document` gives, at no whole-text cost. */
+ *  answer is the one `joinItemised(...).text === document` gives, at no whole-text cost.
+ *  @template T, S
+ *  @param {string} document
+ *  @param {ReadonlyArray<T>} items
+ *  @param {(item: T | undefined) => string} textOf
+ *  @param {(item: T | undefined, i: number) => S | null} sourceOf
+ *  @returns {Segment<S>[] | null} */
 export function segmentsOver(document, items, textOf, sourceOf) {
+  /** @type {Segment<S>[]} */
   const segments = [];
   let pos = 0;
   for (let i = 0; i < items.length; i++) {
-    const t = textOf(items[i]);
+    const item = items[i];
+    const t = textOf(item);
     if (!t || !t.length) continue;
     if (pos) {
       if (document.charCodeAt(pos) !== 10) return null;
@@ -21,7 +74,7 @@ export function segmentsOver(document, items, textOf, sourceOf) {
     if (!document.startsWith(t, pos)) return null;
     const start = pos;
     pos += t.length;
-    const source = sourceOf(items[i], i);
+    const source = sourceOf(item, i);
     if (source) segments.push({ start, end: pos, source });
   }
   return pos === document.length ? segments : null;
@@ -51,25 +104,36 @@ const LIMITS = {
   window: CLASSIFY_WINDOW_CHARS, sheetHeads: CLASSIFY_SHEET_HEADS_MAX_CHARS, sheetHead: CLASSIFY_SHEET_HEAD_CHARS,
 };
 
-const isHigh = (c) => c >= 0xD800 && c <= 0xDBFF;
-const isLow = (c) => c >= 0xDC00 && c <= 0xDFFF;
+const isHigh = /** @param {number} c */ (c) => c >= 0xD800 && c <= 0xDBFF;
+const isLow = /** @param {number} c */ (c) => c >= 0xDC00 && c <= 0xDFFF;
 /* A cut at `at` (the boundary between at-1 and at) that does not split a surrogate pair: an END moves back, a START forward. */
-const endCut = (t, at) => (at > 0 && at < t.length && isHigh(t.charCodeAt(at - 1)) && isLow(t.charCodeAt(at)) ? at - 1 : at);
-const startCut = (t, at) => (at > 0 && at < t.length && isHigh(t.charCodeAt(at - 1)) && isLow(t.charCodeAt(at)) ? at + 1 : at);
+const endCut = /** @param {string} t @param {number} at @returns {number} */ (t, at) => (at > 0 && at < t.length && isHigh(t.charCodeAt(at - 1)) && isLow(t.charCodeAt(at)) ? at - 1 : at);
+const startCut = /** @param {string} t @param {number} at @returns {number} */ (t, at) => (at > 0 && at < t.length && isHigh(t.charCodeAt(at - 1)) && isLow(t.charCodeAt(at)) ? at + 1 : at);
 /* The end (exclusive) of the whole lines of t[from, to): at the last newline in the range, else `to` itself (a line longer
    than the range is cut at its size). */
+/** @param {string} t @param {number} from @param {number} to @returns {number} */
 function lineEndBefore(t, from, to) {
   if (to >= t.length || t.charCodeAt(to) === 10) return to;
   const nl = t.lastIndexOf("\n", to - 1);
   return nl > from ? nl : endCut(t, to);
 }
 
+/* A sheet's text, or "" where it carries none. */
+const sheetText = /** @param {ViewSheet | null | undefined} x @returns {string} */ (x) => {
+  const t = x ? x.text : undefined;
+  return typeof t === "string" ? t : "";
+};
+
 /** The view a sheet over the bound is classified from, and what it holds (offsets are into `text`): the sheets' first lines
  *  (`sheet_heads`, under one budget), the first `head` characters cut forward to a line end, then `windows` windows of whole
  *  lines spread evenly over the rest, the last ending at the text's end; the pieces joined by one newline and never over
  *  `view` characters. `sheets` is the supplied `sheets` array: its boundaries are used only when its non-empty texts joined
  *  by a newline are `text` (as `segmentsOver` checks), else `heads_used` is false. When the pieces would pass `view`, the
- *  sheet heads are dropped first (`heads_used` false), then the earliest windows, never the last, then the head is cut back. */
+ *  sheet heads are dropped first (`heads_used` false), then the earliest windows, never the last, then the head is cut back.
+ *  @param {string} text
+ *  @param {Array<ViewSheet | null> | null} [sheets]
+ *  @param {ClassifyLimits} [limits]
+ *  @returns {ClassificationView} */
 export function classificationView(text, sheets = null, limits = LIMITS) {
   const n = text.length;
   let headEnd = Math.min(n, limits.head);
@@ -77,6 +141,7 @@ export function classificationView(text, sheets = null, limits = LIMITS) {
     const nl = text.indexOf("\n", headEnd);
     headEnd = nl >= 0 && nl - headEnd <= limits.slack ? nl : endCut(text, headEnd);
   }
+  /** @type {Span[]} */
   const windows = [];
   const S = limits.window, W = Math.max(1, limits.windows), rest = n - headEnd;
   let prev = headEnd;
@@ -95,8 +160,10 @@ export function classificationView(text, sheets = null, limits = LIMITS) {
     prev = to;
   }
   const segs = Array.isArray(sheets) && sheets.length
-    ? segmentsOver(text, sheets, (x) => (x && typeof x.text === "string" ? x.text : ""), (x, i) => ({ i })) : null;
-  let headsUsed = segs !== null, heads = [];
+    ? segmentsOver(text, sheets, sheetText, (x, i) => ({ i })) : null;
+  let headsUsed = segs !== null;
+  /** @type {Span[]} */
+  let heads = [];
   if (segs) {
     const covered = [{ from: 0, to: headEnd }, ...windows];
     let budget = limits.sheetHeads;
@@ -124,7 +191,9 @@ export function classificationView(text, sheets = null, limits = LIMITS) {
   return { view, of: n, chars: view.length, head_chars: headEnd, windows, sheet_heads: heads, heads_used: headsUsed };
 }
 
-/** The sentence `readText` appends to `why` when it classified a text from a view; code-origin words (K3930). */
+/** The sentence `readText` appends to `why` when it classified a text from a view; code-origin words (K3930).
+ *  @param {ClassifiedOver} co
+ *  @returns {string} */
 export function classifiedWhy(co) {
   return localize("docprofile.readtext.the_text_is_over_the_bound_so_its_type_was_judged_from_a_view",
     "the text is over {bound} characters, so its type was judged from {chars} of its {of} characters, the first {head} and {n} windows spread across it; the stack and the reading of it are from all of it",

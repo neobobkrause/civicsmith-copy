@@ -41,9 +41,54 @@ import { identify, compare, profileRecord, isMeaningful, worstSignificance } fro
 import { doctypeFor } from "./doctypes/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
+/** @import { DoctypeContext, Connection } from "./doctypes/index.mjs" */
+
+/**
+ * What `assess` is handed beside the two captures (R11): what the caller knows about the address, the hash function the byte
+ * layers need, and when each capture was made.
+ * @typedef {DoctypeContext & { readonly sha256?: (bytes: Uint8Array) => Promise<string> | string, readonly before_at?: string | null | undefined, readonly after_at?: string | null | undefined }} AssessContext
+ */
+/**
+ * What one layer said, beside its name (R11): the layer's own details.
+ * @typedef {Object} TrailDetail
+ * @property {*} [handler]
+ * @property {*} [confidence]
+ * @property {*} [signals]
+ * @property {string} [before]
+ * @property {string} [after]
+ * @property {*} [normalised]
+ * @property {string} [type]
+ * @property {number} [events]
+ * @property {boolean} [meaningful]
+ */
+/**
+ * One entry of the trail (R11): the layer reached, what it said, and its details.
+ * @typedef {TrailDetail & { layer: string, said: string | undefined }} TrailEntry
+ */
+/**
+ * A layer's verdict (R12 to R17), before the trail, the profile and where reasoning stopped are added.
+ * @typedef {Object} LayerVerdict
+ * @property {"unwatchable" | "identical" | "unchanged" | "restyled" | "undetermined" | "changed" | "routine"} verdict
+ * @property {boolean | null} meaningful
+ * @property {*} [significance]
+ * @property {object[]} events
+ * @property {ReadonlyArray<Connection>} connections
+ * @property {string} [content_type]
+ * @property {object | null} [confirmation]
+ * @property {string | undefined} why
+ */
+/**
+ * What `assess` answers (R11 to R17): the verdict, the trail, the profile (site-profiles' `profileRecord`) and the last layer
+ * reached.
+ * @typedef {LayerVerdict & { trail: TrailEntry[], profile: *, stopped_at: string }} Assessment
+ */
+
+/* What a thrown error says: an Error's message, else the thrown value as text. */
+const said = /** @param {unknown} e @returns {string} */ (e) => String((e instanceof Error && e.message) || e);
+
 /* Decode bytes as the reader sees them; anything that is not bytes reads as no text. */
-const pipelineText = (bytes) => {
-  try { return new TextDecoder("utf-8", { fatal: false }).decode(bytes); } catch { return ""; }
+const pipelineText = /** @param {Uint8Array} bytes @returns {string} */ (bytes) => {
+  try { return new TextDecoder().decode(bytes); } catch { return ""; }
 };
 
 export const LAYER = {
@@ -58,10 +103,16 @@ export const LAYER = {
  *  reason about time, which a calendar and an agenda both need.
  *
  *  Always returns a result with `stopped_at`, so a reader can see how far the
- *  reasoning got and why. A verdict whose depth is invisible cannot be audited. */
+ *  reasoning got and why. A verdict whose depth is invisible cannot be audited.
+ *  @param {Uint8Array} before
+ *  @param {Uint8Array} after
+ *  @param {AssessContext} ctx
+ *  @returns {Promise<Assessment>} */
 export async function assess(before, after, ctx) {
+  /** @type {TrailEntry[]} */
   const trail = [];
-  const note = (layer, said, detail) => { trail.push({ layer, said, ...(detail || {}) }); };
+  const note = /** @param {string} layer @param {string | undefined} said @param {TrailDetail} [detail] */
+    (layer, said, detail) => { trail.push({ layer, said, ...(detail || {}) }); };
 
   /* ---- L1: which stack ---- */
   const text = pipelineText(after);
@@ -69,7 +120,10 @@ export async function assess(before, after, ctx) {
   note(LAYER.STACK, `${id.handler.label} (${id.confidence})`,
        { handler: id.handler.key, confidence: id.confidence, signals: id.signals });
   const profile = profileRecord(id, ctx);
-  const out = (v) => ({ ...v, trail, profile, stopped_at: trail[trail.length - 1].layer });
+  const out = /** @param {LayerVerdict} v @returns {Assessment} */ (v) => {
+    const end = trail[trail.length - 1];
+    return { ...v, trail, profile, stopped_at: end ? end.layer : LAYER.STACK };
+  };
 
   /* A shell is settled here and nothing below applies: its bytes are stable and
      its substance is absent, so every layer beneath would answer a question about
@@ -93,7 +147,7 @@ export async function assess(before, after, ctx) {
        answer is that nothing could be compared, never a guess in either direction. */
     note(LAYER.BYTES, localize("docprofile.pipeline.the_two_captures_could_not_be_compared", "the two captures could not be compared"));
     return out({ verdict: "undetermined", meaningful: null, events: [], connections: [],
-                 why: localize("docprofile.pipeline.the_two_captures_could_not", "the two captures could not be compared ({String}), so nothing is claimed", { String: String(String((e && e.message) || e)) }) });
+                 why: localize("docprofile.pipeline.the_two_captures_could_not", "the two captures could not be compared ({String}), so nothing is claimed", { String: String(said(e)) }) });
   }
   const da = cmp.digests.before, db = cmp.digests.after;
 
@@ -142,49 +196,52 @@ export async function assess(before, after, ctx) {
   catch (e) {
     note(LAYER.CONTENT_TYPE, localize("docprofile.pipeline.no_content_type_could_be_decided", "no content type could be decided"));
     return out({ verdict: "changed", meaningful: null, events: [], connections: [],
-                 why: localize("docprofile.pipeline.the_substance_differs_and_which", "the substance differs, and which kind of document this is could not be decided ({String}), so what changed is not described", { String: String(String((e && e.message) || e)) }) });
+                 why: localize("docprofile.pipeline.the_substance_differs_and_which", "the substance differs, and which kind of document this is could not be decided ({String}), so what changed is not described", { String: String(said(e)) }) });
   }
-  note(LAYER.CONTENT_TYPE, dt.type.label,
-       { type: dt.type.key, confidence: dt.confidence, signals: dt.signals });
-  const content_type = dt.type.key;
+  const type = dt.type;
+  note(LAYER.CONTENT_TYPE, type.label,
+       { type: type.key, confidence: dt.confidence, signals: dt.signals });
+  const content_type = type.key;
 
   /* A content type that cannot read, or cannot judge, this document: the substance
      differs (L3 said so) and nothing is claimed about what changed, in either
      direction (R13). `routine` would be a judgment nobody made. */
-  const unread = (why) => {
+  const unread = /** @param {unknown} why @returns {Assessment} */ (why) => {
     note(LAYER.MEANING, localize("docprofile.pipeline.nothing_is_claimed_about_the", "nothing is claimed about the content: {why}", { why: String(why) }));
     return out({ verdict: "changed", meaningful: null, events: [], connections: [], content_type,
                  why: localize("docprofile.pipeline.the_substance_differs_and_why", "the substance differs and {why}, so what changed is not described", { why: String(why) }) });
   };
 
   /* ---- L5: is the change meaningful FOR THAT TYPE ---- */
-  if (typeof dt.type.parse !== "function" || typeof dt.type.assess !== "function")
+  if (typeof type.parse !== "function" || typeof type.assess !== "function")
     return unread(localize("docprofile.pipeline.the_content_type_content_type", "the {content_type} content type declares no reader", { content_type: String(content_type) }));
   const textBefore = pipelineText(before);
-  const read = (t, at) => dt.type.parse({ ...ctx, text: t, handler: id.handler, at });
   let a, b, m;
   try {
-    a = read(textBefore, ctx.before_at); b = read(text, ctx.after_at);
+    a = type.parse({ ...ctx, text: textBefore, handler: id.handler, at: ctx.before_at });
+    b = type.parse({ ...ctx, text, handler: id.handler, at: ctx.after_at });
   } catch (e) {
-    return unread(localize("docprofile.pipeline.its_contents_could_not_be", "its contents could not be read this time ({String})", { String: String(String((e && e.message) || e)) }));
+    return unread(localize("docprofile.pipeline.its_contents_could_not_be", "its contents could not be read this time ({String})", { String: String(said(e)) }));
   }
-  try { m = dt.type.assess(a, b, { ...ctx, handler: id.handler }); }
+  try { m = type.assess(a, b, { ...ctx, handler: id.handler }); }
   catch (e) {
-    return unread(localize("docprofile.pipeline.the_content_type_reader_could", "the {content_type} reader could not compare the two readings ({String})", { content_type: String(content_type), String: String(String((e && e.message) || e)) }));
+    return unread(localize("docprofile.pipeline.the_content_type_reader_could", "the {content_type} reader could not compare the two readings ({String})", { content_type: String(content_type), String: String(said(e)) }));
   }
-  if (!m || m.meaningful === null || m.meaningful === undefined || !Array.isArray(m.events))
+  const graded = m ? m.events : undefined, judged = m ? m.meaningful : undefined;
+  if (!m || judged === null || judged === undefined || !Array.isArray(graded))
     return unread((m && m.why) || localize("docprofile.pipeline.the_content_type_reader_could_2", "the {content_type} reader could not say", { content_type: String(content_type) }));
   /* `meaningful` is DERIVED from the graded events here, never taken as a second fact
      a type carries beside them (R14). */
-  const events = m.events;
+  const events = graded;
   const meaningful = isMeaningful(events);
   note(LAYER.MEANING, m.why, { events: events.length, meaningful });
 
   /* ---- L6: connections ---- */
+  /** @type {ReadonlyArray<Connection>} */
   let connections = [];
   try {
-    connections = typeof dt.type.connections === "function"
-      ? dt.type.connections(a, b, { ...ctx, events }) || [] : [];
+    connections = typeof type.connections === "function"
+      ? type.connections(a, b, { ...ctx, events }) || [] : [];
   } catch (e) {
     note(LAYER.CONNECTIONS, localize("docprofile.pipeline.none_stated_the_content_type", "none stated: the {content_type} reader failed to derive them", { content_type: String(content_type) }));
     connections = [];
