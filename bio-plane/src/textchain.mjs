@@ -113,6 +113,140 @@ import { BASIS_GRADES, EARNED_CAPTURE_CEILING, isMachineIdentity, canonicalJson 
 import { word, localize } from "./setup-words/index.mjs";
 
 /* ------------------------------------------------------------------ *
+ * The kinds this module takes and hands back (S4)
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a step kind declares (R1-R3, R91). `tier` may be missing: a kind that declares none is named in
+ * `tiersEvidenced`'s `unclassified` (R34).
+ * @typedef {Object} StepKind
+ * @property {"derivation" | "verification"} role
+ * @property {string} label
+ * @property {number | "step" | null} [tier]
+ * @property {true} [machine]
+ * @property {readonly StepNamed[]} [names] the fields `checkChain` requires non-empty on a step of the kind
+ * @property {"undetermined"} [unmeasured]
+ * @property {"calibrated" | "never"} [letter]
+ */
+/**
+ * A field a step kind may require named (R3, R8).
+ * @typedef {"engine" | "format" | "member"} StepNamed
+ */
+/**
+ * The step kinds (R1).
+ * @typedef {Object} StepKinds
+ * @property {StepKind} layer
+ * @property {StepKind} pixels
+ * @property {StepKind} ocr
+ * @property {StepKind} ai
+ * @property {StepKind} ai_transcription
+ * @property {StepKind} attested
+ * @property {StepKind} convert
+ * @property {StepKind} typed
+ */
+/**
+ * The pages a derivation step covers (D-252, R22): 0-based, and, where two parts of one chain share a page, the
+ * part's index. Absent on a step, the step covers the whole document.
+ * @typedef {Object} PagesExtent
+ * @property {"pages"} kind
+ * @property {number[]} pages
+ * @property {number} [part]
+ */
+/**
+ * The image-region anchor a machine reading carries (I2's IC-1 shape, R47).
+ * @typedef {Object} Anchor
+ * @property {"pdf-page"} kind
+ * @property {string} [ref]
+ * @property {number} page
+ * @property {number[]} rect
+ * @property {string | null} [space]
+ */
+/**
+ * What an attestation is scoped to (R51).
+ * @typedef {{ kind: "document" } | { kind: "page", page: number } | { kind: "region", source: Anchor }} AttestedExtent
+ */
+/**
+ * One step of a chain (R4-R11): its kind, and the fields the kinds read. A step a caller built may carry more;
+ * they are copied with it.
+ * @typedef {Object} Step
+ * @property {string} step a key of `STEP_KINDS`
+ * @property {string} [engine]
+ * @property {string} [version]
+ * @property {string} [format]
+ * @property {string} [member]
+ * @property {string} [at]
+ * @property {string} [text_sha256]
+ * @property {number | null} [tier]
+ * @property {string | null} [container]
+ * @property {string | null} [cap] a `BASIS_GRADES` letter
+ * @property {string | null} [measured_by]
+ * @property {string | null} [calibration]
+ * @property {PagesExtent | AttestedExtent} [extent]
+ */
+/**
+ * A chain: one or more steps, in the order they happened (R4).
+ * @typedef {Step[]} Chain
+ */
+/**
+ * The codes of this module's refusals (C-35, R4-R51).
+ * @typedef {"TEXT_CHAIN_COLLAPSED" | "TEXT_CHAIN_EMPTY" | "TEXT_CHAIN_STEP_SHAPE" | "TEXT_CHAIN_STEP_UNKNOWN" | "TEXT_CHAIN_STEP_UNNAMED" | "TEXT_CHAIN_STRENGTHENS" | "TEXT_CONFIDENCE_PSEUDO" | "TEXT_CONFIDENCE_SHAPE" | "TEXT_ANCHOR_MISSING" | "TEXT_ATTEST_MACHINE" | "TEXT_ATTEST_EXTENT" | "TEXT_CHAIN_CAL_REF" | "TEXT_CHAIN_LETTER_UNCALIBRATED" | "TEXT_CHAIN_LETTER_ON_PERSON"} TextChainCode
+ */
+/**
+ * One row of `TEXT_CHAIN_CHECKS`.
+ * @typedef {Object} CheckRow
+ * @property {string} check
+ * @property {string} where
+ * @property {string} translation
+ */
+/**
+ * The family C-35, by code.
+ * @typedef {Object} TextChainChecks
+ * @property {CheckRow} TEXT_CHAIN_COLLAPSED
+ * @property {CheckRow} TEXT_CHAIN_EMPTY
+ * @property {CheckRow} TEXT_CHAIN_STEP_SHAPE
+ * @property {CheckRow} TEXT_CHAIN_STEP_UNKNOWN
+ * @property {CheckRow} TEXT_CHAIN_STEP_UNNAMED
+ * @property {CheckRow} TEXT_CHAIN_STRENGTHENS
+ * @property {CheckRow} TEXT_CONFIDENCE_PSEUDO
+ * @property {CheckRow} TEXT_CONFIDENCE_SHAPE
+ * @property {CheckRow} TEXT_ANCHOR_MISSING
+ * @property {CheckRow} TEXT_ATTEST_MACHINE
+ * @property {CheckRow} TEXT_ATTEST_EXTENT
+ * @property {CheckRow} TEXT_CHAIN_CAL_REF
+ * @property {CheckRow} TEXT_CHAIN_LETTER_UNCALIBRATED
+ * @property {CheckRow} TEXT_CHAIN_LETTER_ON_PERSON
+ */
+/**
+ * A refusal (every check function's "no").
+ * @typedef {Object} Refusal
+ * @property {false} ok
+ * @property {TextChainCode} code
+ * @property {string} check
+ * @property {string} translation
+ * @property {string} detail
+ */
+/**
+ * A value whose members this module reads one by one, each as any value.
+ * @typedef {{ readonly [key: string]: unknown }} Fields
+ */
+/**
+ * A list whose entries this module reads one by one, each as any value.
+ * @typedef {readonly unknown[]} Entries
+ */
+
+/**
+ * An empty map of the kinds its declared place names.
+ * @template K, V
+ * @param {readonly (readonly [K, V])[]} entries
+ * @returns {Map<K, V>}
+ */
+const mapOf = (entries) => new Map(entries);
+/** @param {unknown} o @returns {o is Fields} */
+const isFields = (o) => o != null && typeof o === "object";
+/** @param {unknown} x @returns {x is Entries} */
+const isList = (x) => Array.isArray(x);
+
+/* ------------------------------------------------------------------ *
  * The vocabulary
  * ------------------------------------------------------------------ */
 
@@ -123,7 +257,8 @@ import { word, localize } from "./setup-words/index.mjs";
  *  A new step kind is added HERE and every rule below follows it. Nothing in
  *  this module tests a step name against a literal; `STEP_KINDS[k].role` is
  *  the question everything asks, so a step nobody classified cannot slip
- *  through as a derivation OR as a verification — it is refused as unknown. */
+ *  through as a derivation OR as a verification — it is refused as unknown.
+ *  @type {StepKinds} */
 export const STEP_KINDS = {
   /* The document's own text layer, decoded through the file's own /ToUnicode
      map. NOT a strong step and never was: a text layer is ITSELF an unverified
@@ -255,8 +390,30 @@ export const STEP_KINDS = {
  *  (`machine: true` in `STEP_KINDS`), which a reader labelling machine-read text treats `mixed` as
  *  containing (content R14, DEC-4). Derived from the declaration, never a list of spellings, so a kind
  *  added with `machine: true` joins it without an edit here; `query-language` re-exports it. */
-export const MACHINE_READ_KINDS = Object.freeze(
-  Object.keys(STEP_KINDS).filter((k) => STEP_KINDS[k].machine === true));
+/** The kind a step names, read as a property key is read (`String`), from `STEP_KINDS` as it stands; undefined for a
+ *  name that is not one of its keys.
+ *  @param {unknown} name @returns {StepKind | undefined} */
+function kindOf(name) {
+  switch (String(name)) {
+    case "layer": return STEP_KINDS.layer;
+    case "pixels": return STEP_KINDS.pixels;
+    case "ocr": return STEP_KINDS.ocr;
+    case "ai": return STEP_KINDS.ai;
+    case "ai_transcription": return STEP_KINDS.ai_transcription;
+    case "attested": return STEP_KINDS.attested;
+    case "convert": return STEP_KINDS.convert;
+    case "typed": return STEP_KINDS.typed;
+    default: return undefined;
+  }
+}
+/** The keys of `STEP_KINDS`, in its order. @type {readonly string[]} */
+const KIND_NAMES = Object.keys(STEP_KINDS);
+
+/** @type {readonly string[]} */
+export const MACHINE_READ_KINDS = Object.freeze(KIND_NAMES.filter((k) => kindOf(k)?.machine === true));
+/** Whether `k`, read as a property key is read, is an own key of `o`.
+ *  @param {object} o @param {unknown} k @returns {boolean} */
+const hasKey = (o, k) => Object.prototype.hasOwnProperty.call(o, String(k));
 
 /** The BASES a per-region confidence number may have, and this enum IS the
  *  pseudo-confidence fence. `engine` means a classic decoder computed it from
@@ -265,10 +422,12 @@ export const MACHINE_READ_KINDS = Object.freeze(
  *  a number. There is deliberately no third value: a model's self-report has
  *  no basis to name, which is the point — it is refused because it cannot say
  *  where its number came from. */
+/** @type {{ engine: number, none: number }} */
 export const CONFIDENCE_BASES = { engine: 1, none: 1 };
 
 /** The extent kinds an attestation may be scoped to, narrowest first. Internal (N416): `checkAttestation` (R51) and
  *  `extentCovers` (R55) read it, and no other module does. */
+/** @type {{ region: number, page: number, document: number }} */
 const EXTENT_KINDS = { region: 1, page: 1, document: 1 };
 
 /* ===================================================================== *
@@ -324,15 +483,17 @@ const EXTENT_KINDS = { region: 1, page: 1, document: 1 };
 
 /** What a derivation step covers: the string "all", the string "unreadable", or
  *  an array of 0-based page numbers. Never throws and never guesses. */
+/** @typedef {"all" | "unreadable" | number[]} Covers what a step covers: every page, none this module can name, or those pages */
+/** @param {Step} step @returns {Covers} */
 function extentOf(step) {
   const e = step.extent;
   if (e == null) return "all";
-  if (e && typeof e === "object" && !Array.isArray(e) && e.kind === "pages"
-      && Array.isArray(e.pages) && e.pages.length
-      && e.pages.every((p) => Number.isInteger(p) && p >= 0)
+  if (!e || typeof e !== "object" || Array.isArray(e) || e.kind !== "pages") return "unreadable";
+  const pages = e.pages, part = e.part;
+  if (Array.isArray(pages) && pages.length && pages.every((p) => Number.isInteger(p) && p >= 0)
       /* D-723: a `part` that is present must be a readable index, or the extent is unreadable. */
-      && (e.part === undefined || (Number.isInteger(e.part) && e.part >= 0)))
-    return e.pages;
+      && (part === undefined || (Number.isInteger(part) && part >= 0)))
+    return pages;
   return "unreadable";
 }
 
@@ -341,16 +502,20 @@ function extentOf(step) {
    OCR transcription over the same pages), and may even list the same pages exactly; `mergedChain`
    then stamps each part's index as `extent.part`, and a part is named by that index. A partitioned
    chain carries no `part` and is named by its pages, as before. */
-function partKeyOf(step) {
+/** @param {Step} step a scoped step @param {readonly number[]} pages its pages (`extentOf`) @returns {string} */
+function partKeyOf(step, pages) {
   const e = step.extent;
-  return Number.isInteger(e && e.part) ? `#${e.part}` : extentOf(step).join(",");
+  const part = e && e.kind === "pages" ? e.part : undefined;
+  return Number.isInteger(part) ? `#${String(part)}` : pages.join(",");
 }
 
 /** "page 4" / "pages 1-3" / "pages 1-2, 5" — contiguous runs collapsed, because
  *  a scanned exhibit is a RUN of pages and a chain sentence listing forty of
  *  them individually is one nobody reads. The stored numbers are 0-based; the
  *  SENTENCE spells them as a reader counts (R39, G141): stored 0 reads "page 1". */
+/** @param {readonly number[]} pages @returns {string} */
 function pageList(pages) {
+  /** @type {[number, number][]} */
   const runs = [];
   for (const p of pages) {
     const last = runs[runs.length - 1];
@@ -363,12 +528,13 @@ function pageList(pages) {
 /** Does this step cover this page? An unscoped step covers every page; an
  *  unreadable extent covers none. Exported because the wire and the suite both
  *  need to ask it, and a second implementation of it would be D-164's lesson. */
+/** @param {unknown} step @param {unknown} page @returns {boolean} */
 export function stepCovers(step, page) {
-  if (!step || typeof step !== "object") return false;
+  if (!step || !isStep(step)) return false;
   const ext = extentOf(step);
   if (ext === "all") return true;
   if (ext === "unreadable") return false;
-  return Number.isInteger(page) && ext.includes(page);
+  return Number.isInteger(page) && typeof page === "number" && ext.includes(page);
 }
 
 /** Build a document's chain from the chains of its PARTS.
@@ -395,36 +561,53 @@ export function stepCovers(step, page) {
  *
  *  A refusal from `checkChain` is returned as-is, so a malformed part cannot
  *  become half a chain. */
+/** @param {unknown} parts `[{chain, pages}]` @returns {Chain | Refusal | null} */
 export function mergedChain(parts) {
-  if (!Array.isArray(parts) || parts.length === 0) return null;
+  if (!isList(parts) || parts.length === 0) return null;
+  /* Each part's chain, `part && part.chain`, and its pages, deduplicated and sorted. */
+  const chains = parts.map((part) => (!part ? part : isFields(part) ? part.chain : undefined));
   if (parts.length === 1) {
-    const bad = checkedChain(parts[0] && parts[0].chain);
-    return bad || remember(parts[0].chain);
+    const only = chains[0];
+    const bad = isKnownChain(only) ? null : checkChain(only);
+    if (bad) return bad;
+    return isChecked(only) ? remember(only) : null;
   }
+  const pageLists = parts.map((part) => {
+    if (!isFields(part)) return [];
+    const listed = part.pages;
+    return isList(listed)
+      ? [...new Set(listed.flatMap((p) => (Number.isInteger(p) && typeof p === "number" && p >= 0 ? [p] : [])))].sort((a, b) => a - b)
+      : [];
+  });
+  /** @type {Chain} */
   const out = [];
-  const pagesOf = (part) => (part && Array.isArray(part.pages)
-    ? [...new Set(part.pages.filter((p) => Number.isInteger(p) && p >= 0))].sort((a, b) => a - b)
-    : []);
   /* D-723: do any two parts share a page? Only then is each part's index stamped (`partKeyOf`). */
+  /** @type {Set<number>} */
   const seen = new Set();
   let overlap = false;
-  for (const part of parts)
-    for (const p of pagesOf(part)) { if (seen.has(p)) overlap = true; seen.add(p); }
-  for (const [index, part] of parts.entries()) {
-    const bad = checkedChain(part && part.chain);
+  for (const pages of pageLists)
+    for (const p of pages) { if (seen.has(p)) overlap = true; seen.add(p); }
+  for (let index = 0; index < chains.length; index++) {
+    const chain = chains[index];
+    const bad = isKnownChain(chain) ? null : checkChain(chain);
     if (bad) return bad;
-    const pages = pagesOf(part);
-    for (const step of part.chain) {
+    if (!isChecked(chain)) return null;
+    const pages = pageLists[index] ?? [];
+    for (const step of chain) {
       /* A VERIFICATION step is copied through UNSCOPED. Attestation carries its
          own extent, checked by `extentCovers`, and stamping a second one on it
          would give one fact two homes that can disagree. */
-      out.push(STEP_KINDS[step.step].role === "derivation"
-        ? { ...step, extent: overlap ? { kind: "pages", pages, part: index } : { kind: "pages", pages } }
+      out.push(kindOf(step.step)?.role === "derivation"
+        ? { ...step, extent: overlap ? partExtent(pages, index) : pagesExtent(pages) }
         : { ...step });
     }
   }
   return remember(out);
 }
+/** @param {number[]} pages @returns {PagesExtent} */
+const pagesExtent = (pages) => ({ kind: "pages", pages });
+/** @param {number[]} pages @param {number} part @returns {PagesExtent} */
+const partExtent = (pages, part) => ({ kind: "pages", pages, part });
 
 /* =========================================================================
  * CPDF-10 — THE TRANSCRIPTION PROVENANCE CHAIN'S REFUSALS (C-35, DEC-49).
@@ -449,6 +632,7 @@ export function mergedChain(parts) {
  * because seven items collided on a hand-measured id in one day and every one
  * of them was right when it looked.
  * ========================================================================= */
+/** @type {TextChainChecks} */
 export const TEXT_CHAIN_CHECKS = {
   /* RULE 1. The condition this family exists for. `text_source: "ocr"` is what
      a careful author writes and it is still a loss: the engine is gone, and an
@@ -560,6 +744,7 @@ export const TEXT_CHAIN_CHECKS = {
  * STRING LITERAL at its site, so the guard can see it.
  * ------------------------------------------------------------------ */
 
+/** @param {TextChainCode} key @param {string} detail @returns {Refusal} */
 function refusal(key, detail) {
   const row = TEXT_CHAIN_CHECKS[key];
   return { ok: false, code: key, check: row.check, translation: row.translation, detail };
@@ -568,15 +753,17 @@ function refusal(key, detail) {
 /* Rank helpers. A grade's STRENGTH is its position in BASIS_GRADES (A strongest
    at index 0), so "weaker" is a HIGHER index. Read from the imported array
    rather than written down, so the letters have exactly one home. */
+/** @param {unknown} letter @returns {number | null} */
 function rank(letter) {
-  const i = BASIS_GRADES.indexOf(letter);
+  const i = typeof letter === "string" ? BASIS_GRADES.indexOf(letter) : -1;
   return i < 0 ? null : i;
 }
 /** The weaker of two grade letters, or null if either is unknown. Undetermined
  *  is first-class: an unknown letter does NOT silently become the other one. */
+/** @param {unknown} a @param {unknown} b @returns {string | null} a `BASIS_GRADES` letter */
 export function weaker(a, b) {
   const ra = rank(a), rb = rank(b);
-  if (ra == null || rb == null) return null;
+  if (ra == null || rb == null || typeof a !== "string" || typeof b !== "string") return null;
   return ra >= rb ? a : b;
 }
 
@@ -588,6 +775,7 @@ export function weaker(a, b) {
  *  naming a known kind. A STRING is the case rule 1 exists for and is called
  *  out by name in the refusal, because "text_source: 'ocr'" is exactly what a
  *  well-meaning caller writes. */
+/** @param {unknown} chain @returns {Refusal | null} */
 export function checkChain(chain) {
   /* DEC-49 REGION is-text-chain-shape
      Rule 1. The order matters: the collapsed case is judged BEFORE the generic
@@ -596,28 +784,32 @@ export function checkChain(chain) {
   if (typeof chain === "string")
     return refusal("TEXT_CHAIN_COLLAPSED",
       localize("text-chain.textchain.text_source_is_chain_a", "text_source is '{chain}', a single label. A transcription's provenance is a CHAIN — each step naming what performed it — because 'ocr' does not say which engine, and an engine is what a re-run and a calibration are OF", { chain: String(chain) }));
-  if (!Array.isArray(chain) || chain.length === 0)
+  if (!isList(chain) || chain.length === 0)
     return refusal("TEXT_CHAIN_EMPTY",
       localize("text-chain.textchain.a_transcription_must_name_at", "a transcription must name at least one step that produced it; {v1} was given, and text with no stated provenance is indistinguishable from text a publisher typed", { v1: String(chain == null ? "nothing" : "an empty chain") }));
-  for (const [i, step] of chain.entries()) {
-    if (!step || typeof step !== "object" || Array.isArray(step))
+  for (let i = 0; i < chain.length; i++) {
+    const step = chain[i];
+    if (!step || !isFields(step) || Array.isArray(step))
       return refusal("TEXT_CHAIN_STEP_SHAPE", localize("text-chain.textchain.step_i_is_not_an", "step {i} is not an object", { i: String(i) }));
-    if (!Object.prototype.hasOwnProperty.call(STEP_KINDS, step.step))
+    const name = step.step;
+    const kind = kindOf(name);
+    if (!kind)
       return refusal("TEXT_CHAIN_STEP_UNKNOWN",
-        localize("text-chain.textchain.step_i_is_v1_which", "step {i} is '{v1}', which is not one of {keys}. A step nobody classified is neither a derivation nor a verification, and this record will not guess which", { i: String(i), v1: String(step.step == null ? "(absent)" : String(step.step)), keys: String(Object.keys(STEP_KINDS).join(", ")) }));
+        localize("text-chain.textchain.step_i_is_v1_which", "step {i} is '{v1}', which is not one of {keys}. A step nobody classified is neither a derivation nor a verification, and this record will not guess which", { i: String(i), v1: String(name == null ? "(absent)" : String(name)), keys: String(Object.keys(STEP_KINDS).join(", ")) }));
     /* An OCR or AI step that does not name what performed it is the collapse of
        rule 1 arriving one level down: the chain is an array, and one of its
        entries is still just a label. */
-    if ((step.step === "ocr" || step.step === "ai") && !(typeof step.engine === "string" && step.engine))
+    const engine = step.engine;
+    if ((name === "ocr" || name === "ai") && !(typeof engine === "string" && engine))
       return refusal("TEXT_CHAIN_STEP_UNNAMED",
-        localize("text-chain.textchain.the_step_step_names_no", "the {step} step names no engine. What performed a derivation is the fact the chain exists to carry — a calibration is OF an engine and a version, and neither can be recovered from the word '{step_2}'", { step: String(step.step), step_2: String(step.step) }));
+        localize("text-chain.textchain.the_step_step_names_no", "the {step} step names no engine. What performed a derivation is the fact the chain exists to carry — a calibration is OF an engine and a version, and neither can be recovered from the word '{step_2}'", { step: String(name), step_2: String(name) }));
     /* CAP-10 / IC-122: a kind that DECLARES the fields it must name. Read from
        `STEP_KINDS`, so the rule follows the kind rather than a spelling. */
-    const mustName = STEP_KINDS[step.step].names || [];
-    const unnamed = mustName.filter((f) => !(typeof step[f] === "string" && step[f].trim()));
+    const mustName = kind.names || [];
+    const unnamed = mustName.filter((f) => { const v = step[f]; return !(typeof v === "string" && v.trim()); });
     if (unnamed.length)
       return refusal("TEXT_CHAIN_STEP_UNNAMED",
-        localize("text-chain.textchain.the_step_step_does_not", "the {step} step does not name its {unnamed}. Who performed a derivation, and what it produced, are the facts the chain exists to carry — a calibration is OF a named producer and format, and neither can be recovered from the word '{step_2}'", { step: String(step.step), unnamed: String(unnamed.join(" or ")), step_2: String(step.step) }));
+        localize("text-chain.textchain.the_step_step_does_not", "the {step} step does not name its {unnamed}. Who performed a derivation, and what it produced, are the facts the chain exists to carry — a calibration is OF a named producer and format, and neither can be recovered from the word '{step_2}'", { step: String(name), unnamed: String(unnamed.join(" or ")), step_2: String(name) }));
     /* CPDF-13 / D-253 — THE CALIBRATION REFERENCE. Optional, and read the
        comment on `TEXT_CHAIN_CAL_REF` above for why it is optional rather than
        required: every chain written before this rule existed carries a `cap`
@@ -626,30 +818,37 @@ export function checkChain(chain) {
        unresolvable pointer looks like a binding and joins to nothing — which is
        strictly worse than the honest absence `measured_by`'s free string
        already is. */
-    if (step.calibration != null
-        && !(typeof step.calibration === "string" && step.calibration.trim()))
+    const calibration = step.calibration;
+    const calibrated = typeof calibration === "string" && calibration.trim();
+    if (calibration != null && !calibrated)
       return refusal("TEXT_CHAIN_CAL_REF",
-        localize("text-chain.textchain.step_i_names_a_calibration", "step {i} names a calibration that is not a readable identifier ({stringify}). A transcription names the MEASUREMENT its grade rests on so a superseded measurement can name exactly the transcriptions resting on it; a pointer nothing can resolve breaks that join while looking like it works", { i: String(i), stringify: String(JSON.stringify(step.calibration)) }));
+        localize("text-chain.textchain.step_i_names_a_calibration", "step {i} names a calibration that is not a readable identifier ({stringify}). A transcription names the MEASUREMENT its grade rests on so a superseded measurement can name exactly the transcriptions resting on it; a pointer nothing can resolve breaks that join while looking like it works", { i: String(i), stringify: String(JSON.stringify(calibration)) }));
     /* CAP-10 / DEC-75: a kind whose letter must be CALIBRATED may carry one only
        beside the calibration it rests on. An unmeasured step may not claim a
        letter — the move Bob's 5.8 forbids is a letter now, lowered later under
        authored legs; the permitted one is undetermined now, raised later by a
        calibration row without a migration. */
-    if (STEP_KINDS[step.step].letter === "calibrated" && step.cap != null
-        && !(typeof step.calibration === "string" && step.calibration.trim()))
+    const cap = step.cap;
+    if (kind.letter === "calibrated" && cap != null && !calibrated)
       return refusal("TEXT_CHAIN_LETTER_UNCALIBRATED",
-        localize("text-chain.textchain.the_step_step_claims_fidelity", "the {step} step claims fidelity {stringify} and names no calibration. A {step_2} step's cap is UNDETERMINED until a measurement of it exists, and a letter written here without one would be the record claiming a fidelity nobody measured", { step: String(step.step), stringify: String(JSON.stringify(step.cap)), step_2: String(step.step) }));
+        localize("text-chain.textchain.the_step_step_claims_fidelity", "the {step} step claims fidelity {stringify} and names no calibration. A {step_2} step's cap is UNDETERMINED until a measurement of it exists, and a letter written here without one would be the record claiming a fidelity nobody measured", { step: String(name), stringify: String(JSON.stringify(cap)), step_2: String(name) }));
     /* REC-87 / IC-127: a kind whose letter is NEVER a caller's to write (`member`).
        A person's typing has no calibration, so a letter here could only be the
        transcriber grading their own act — the equality that costs nothing, one
        altitude below the attestation fence that refuses the same thing by name. */
-    if (STEP_KINDS[step.step].letter === "never" && step.cap != null)
+    if (kind.letter === "never" && cap != null)
       return refusal("TEXT_CHAIN_LETTER_ON_PERSON",
-        localize("text-chain.textchain.the_step_step_claims_fidelity_2", "the {step} step claims fidelity {stringify}. What a member typed is UNDETERMINED until a SECOND member attests it against the page; a letter on the step itself would be the typist grading their own work", { step: String(step.step), stringify: String(JSON.stringify(step.cap)) }));
+        localize("text-chain.textchain.the_step_step_claims_fidelity_2", "the {step} step claims fidelity {stringify}. What a member typed is UNDETERMINED until a SECOND member attests it against the page; a letter on the step itself would be the typist grading their own work", { step: String(name), stringify: String(JSON.stringify(cap)) }));
   }
   /* END DEC-49 REGION is-text-chain-shape */
   return null;
 }
+/** A non-empty list, which `checkChain` has just cleared (R4-R11): read as this module's chain.
+ *  @param {unknown} x @returns {x is Chain} */
+const isChecked = (x) => isList(x) && x.length > 0;
+/** A plain object, which `checkChain` has just cleared as a step (R7-R11) or a caller hands over as one: read as this
+ *  module's step. @param {unknown} x @returns {x is Step} */
+const isStep = (x) => isFields(x);
 
 /* R106 — A CHAIN THIS MODULE RETURNED IS KNOWN WELL-FORMED, and what is known of it is remembered, so that
    appending to it does work in the new step alone. `KNOWN` maps a returned array to `{len, last, acc}`: its length
@@ -659,18 +858,26 @@ export function checkChain(chain) {
    down a line of appends, each advancing it in place; a chain that is no longer the tip of its line (a second append
    to an older chain) finds `acc.len` differs from its own length and rebuilds, so a branch is answered exactly as a
    whole check would answer it. A chain built by hand is in no map and is checked whole, as before. */
+/** @typedef {{ len: number, last: unknown, acc: CapAcc | null }} Known what is remembered of a returned chain */
+/** @type {WeakMap<object, Known>} */
 const KNOWN = new WeakMap();
+/** @param {Chain} chain @returns {Known | undefined} */
 function known(chain) {
-  const k = Array.isArray(chain) ? KNOWN.get(chain) : undefined;
+  const k = KNOWN.get(chain);
   return k && k.len === chain.length && k.last === chain[chain.length - 1] ? k : undefined;
 }
+/** A chain this module returned and nobody has since pushed to or truncated: known well-formed, so `checkChain` is
+ *  not asked again (`checkChain`, except that a chain this module returned is not walked again).
+ *  @param {unknown} x @returns {x is Chain} */
+function isKnownChain(x) {
+  if (!isList(x)) return false;
+  const k = KNOWN.get(x);
+  return !!k && k.len === x.length && k.last === x[x.length - 1];
+}
+/** @param {Chain} chain @param {CapAcc | null} [acc] @returns {Chain} */
 function remember(chain, acc = null) {
   KNOWN.set(chain, { len: chain.length, last: chain[chain.length - 1], acc });
   return chain;
-}
-/* `checkChain`, except that a chain this module returned is not walked again. */
-function checkedChain(chain) {
-  return known(chain) ? null : checkChain(chain);
 }
 
 /** Append a step, enforcing rule 2. Returns the NEW chain, or a refusal.
@@ -681,15 +888,18 @@ function checkedChain(chain) {
  *
  *  LINEAR OVER A CHAIN'S LIFE (R106): see `KNOWN`. A chain this module returned is not re-checked and its cap
  *  is not re-derived from every earlier step; the refusals and results are the whole check's. */
+/** @param {unknown} chain @param {unknown} step @returns {Chain | Refusal} */
 export function appendStep(chain, step) {
-  const bad = checkedChain(chain);
+  const bad = isKnownChain(chain) ? null : checkChain(chain);
   if (bad) return bad;
-  const one = checkChain([step]);
-  if (one) return one;
-  const role = STEP_KINDS[step.step].role;
-  const k = known(chain);
-  let acc = k && k.acc && k.acc.len === chain.length ? k.acc : null;
-  if (!acc) { acc = newCapAcc(); for (const s of chain) foldCap(acc, s); if (k) k.acc = acc; }
+  const refused = checkChain([step]);
+  if (refused) return refused;
+  if (!isChecked(chain) || !isStep(step)) return refusal("TEXT_CHAIN_EMPTY", "");
+  const have = chain, one = step;
+  const role = kindOf(one.step)?.role;
+  const k = known(have);
+  const ka = k ? k.acc : null;
+  const acc = ka && ka.len === have.length ? ka : foldedAcc(have, k);
   if (role === "derivation") {
     /* DEC-49 REGION is-text-chain-monotone
        RULE 2, and it is computed rather than trusted. The incoming step's cap
@@ -698,14 +908,16 @@ export function appendStep(chain, step) {
        plausible mistake here is not malice — it is an author who genuinely
        believes their clean-up improved the text. It did. It improved the
        READABILITY. Reliability is bounded by the worst thing that touched it. */
-    const have = capOf(acc);
-    if (step.cap != null && have != null && rank(step.cap) != null && rank(step.cap) < rank(have))
+    const held = capOf(acc);
+    const cap = one.cap, claimed = rank(cap), against = rank(held);
+    if (cap != null && held != null && claimed != null && against != null && claimed < against)
       return refusal("TEXT_CHAIN_STRENGTHENS",
-        localize("text-chain.textchain.this_step_step_claims_fidelity", "this {step} step claims fidelity {cap}, stronger than the {have} the chain already carries. A derivation can only weaken what it received: text that was cleaned is more READABLE, not more RELIABLE, and the hazard of this whole capability is output that looks better than its input", { step: String(step.step), cap: String(step.cap), have: String(have) }));
+        localize("text-chain.textchain.this_step_step_claims_fidelity", "this {step} step claims fidelity {cap}, stronger than the {have} the chain already carries. A derivation can only weaken what it received: text that was cleaned is more READABLE, not more RELIABLE, and the hazard of this whole capability is output that looks better than its input", { step: String(one.step), cap: String(cap), have: String(held) }));
     /* END DEC-49 REGION is-text-chain-monotone */
   }
-  const copy = { ...step };
-  const out = [...chain, copy];
+  const copy = { ...one };
+  /** @type {Chain} */
+  const out = [...have, copy];
   foldCap(acc, copy);
   return remember(out, acc);
 }
@@ -713,10 +925,22 @@ export function appendStep(chain, step) {
 /** The chain a document's OWN text layer produces (FW-15's case, restated as a
  *  chain). `cap` is the measured fidelity a text layer supports and arrives
  *  from the caller for the reason in the header — it is a measurement. */
+/**
+ * What a text-layer decode's chain carries (R15); each absent is null.
+ * @typedef {Object} LayerArgs
+ * @property {number | null} [tier]
+ * @property {string | null} [container]
+ * @property {string | null} [cap]
+ * @property {string | null} [measured_by]
+ * @property {string | null} [calibration]
+ */
+/** @param {LayerArgs | null} [args] @returns {Chain} */
 export function layerChain(args) {
   /* Never throws (R83): a `null` or non-object argument is every default, not a TypeError. */
+  /** @type {LayerArgs} */
+  const none = {};
   const { tier = null, container = null, cap = null, measured_by = null, calibration = null } =
-    args && typeof args === "object" ? args : {};
+    args && typeof args === "object" ? args : none;
   return remember([{ step: "layer", tier, container, cap, measured_by, calibration }]);
 }
 
@@ -739,17 +963,20 @@ export function layerChain(args) {
  *  whole document, and a mixed chain's parts (D-252) keep their own extents.
  *  Neither input is mutated. A refusal is returned as-is, so a caller never
  *  holds half a chain. */
+/** @param {unknown} step a `convert` step @param {unknown} chain @returns {Chain | Refusal} */
 export function convertedChain(step, chain) {
-  const one = checkChain([step]);
-  if (one) return one;
-  const bad = checkedChain(chain);
+  const refused = checkChain([step]);
+  if (refused) return refused;
+  const bad = isKnownChain(chain) ? null : checkChain(chain);
   if (bad) return bad;
-  for (const s of chain) {
-    if (STEP_KINDS[s.step].role !== "derivation") continue;
-    const r = appendStep([step], s);
-    if (!Array.isArray(r)) return r;
+  if (!isStep(step) || !isChecked(chain)) return refusal("TEXT_CHAIN_EMPTY", "");
+  const one = step, have = chain;
+  for (const s of have) {
+    if (kindOf(s.step)?.role !== "derivation") continue;
+    const r = appendStep([one], s);
+    if (!isList(r)) return r;
   }
-  return remember([{ ...step }, ...chain.map((s) => ({ ...s }))]);
+  return remember([{ ...one }, ...have.map((s) => ({ ...s }))]);
 }
 
 /* ------------------------------------------------------------------ *
@@ -775,12 +1002,16 @@ export function convertedChain(step, chain) {
  *  A MALFORMED CHAIN ANSWERS THE EMPTY SET rather than throwing, on
  *  `derivationCap`'s precedent — a reader asking what a broken chain rests on
  *  should get "nothing this record can name", which is true. */
+/** @param {unknown} chain @returns {string[]} */
 export function calibrationsOf(chain) {
-  if (checkChain(chain)) return [];
+  if (checkChain(chain) || !isChecked(chain)) return [];
+  const checked = chain;
+  /** @type {string[]} */
   const out = [];
-  for (const s of chain)
-    if (typeof s.calibration === "string" && s.calibration.trim() && !out.includes(s.calibration))
-      out.push(s.calibration);
+  for (const s of checked) {
+    const c = s.calibration;
+    if (typeof c === "string" && c.trim() && !out.includes(c)) out.push(c);
+  }
   return out;
 }
 
@@ -789,42 +1020,69 @@ export function calibrationsOf(chain) {
  * ------------------------------------------------------------------ */
 
 /* `derivationCap`'s measured letter of a step, or null. */
-const measuredCap = (s) => (s.cap != null && rank(s.cap) != null ? s.cap : null);
+/** @param {Step} s @returns {string | null} */
+const measuredCap = (s) => { const cap = s.cap; return cap != null && rank(cap) != null ? cap : null; };
 
 /* The whole-document question of `derivationCap`, as a running state a step is folded into once (R106). `cap` is
    the weakest measured letter of the unscoped steps; `parts` each scoped part's own weakest (null while it has
    none), `nullParts` the parts still at null and `weakest` the weakest letter over the parts; `unreadable` an extent
    nobody could read or an unmeasured head conversion; `len` the number of steps folded. */
+/**
+ * @typedef {Object} CapAcc
+ * @property {string | null} cap
+ * @property {boolean} unreadable
+ * @property {Map<string, string | null>} parts
+ * @property {number} nullParts
+ * @property {string | null} weakest
+ * @property {number} len
+ */
+/** @returns {CapAcc} */
 function newCapAcc() {
-  return { cap: null, unreadable: false, parts: new Map(), nullParts: 0, weakest: null, len: 0 };
+  /** @type {Map<string, string | null>} */
+  const parts = mapOf([]);
+  return { cap: null, unreadable: false, parts, nullParts: 0, weakest: null, len: 0 };
 }
+/** A fresh state over every step of `chain`, kept on what is remembered of it (R106).
+ *  @param {Chain} chain @param {Known | undefined} k @returns {CapAcc} */
+function foldedAcc(chain, k) {
+  const acc = newCapAcc();
+  for (const s of chain) foldCap(acc, s);
+  if (k) k.acc = acc;
+  return acc;
+}
+/** @param {CapAcc} acc @param {Step} step @returns {void} */
 function foldCap(acc, step) {
   acc.len++;
-  if (STEP_KINDS[step.step].role !== "derivation") return;
+  const kind = kindOf(step.step);
+  if (kind?.role !== "derivation") return;
   const ext = extentOf(step);
   if (ext === "unreadable") { acc.unreadable = true; return; }
   const m = measuredCap(step);
   /* CAP-10 / DEC-75: the kind that declares `unmeasured: "undetermined"` — see `derivationCap`. */
-  if (STEP_KINDS[step.step].unmeasured === "undetermined" && m == null) acc.unreadable = true;
+  if (kind.unmeasured === "undetermined" && m == null) acc.unreadable = true;
   if (ext === "all") {
-    if (m) acc.cap = acc.cap == null ? m : weaker(acc.cap, m);
+    const was = acc.cap;
+    if (m) acc.cap = was == null ? m : weaker(was, m);
     return;
   }
-  const key = partKeyOf(step);
+  const key = partKeyOf(step, ext);
   if (!acc.parts.has(key)) { acc.parts.set(key, null); acc.nullParts++; }
   if (m) {
     const was = acc.parts.get(key);
     const now = was == null ? m : weaker(was, m);
     acc.parts.set(key, now);
     if (was == null) acc.nullParts--;
-    acc.weakest = acc.weakest == null ? now : weaker(acc.weakest, now);
+    const weakest = acc.weakest;
+    acc.weakest = weakest == null ? now : weaker(weakest, now);
   }
 }
 /* The answer for the whole document: an unreadable extent, or a part with no measured cap, is undetermined. */
+/** @param {CapAcc} acc @returns {string | null} */
 function capOf(acc) {
   if (acc.unreadable || acc.nullParts) return null;
-  if (acc.weakest == null) return acc.cap;
-  return acc.cap == null ? acc.weakest : weaker(acc.cap, acc.weakest);
+  const cap = acc.cap, weakest = acc.weakest;
+  if (weakest == null) return cap;
+  return cap == null ? weakest : weaker(cap, weakest);
 }
 
 /** The strongest transcription fidelity the DERIVATION steps support: the
@@ -833,9 +1091,13 @@ function capOf(acc) {
  *
  *  A verification step is skipped deliberately and that is rule 2 holding: see
  *  the header. `gradeCeiling` is where an attestation is allowed to matter. */
+/** @param {unknown} chain @param {unknown} [target] `{page}` @returns {string | null} a `BASIS_GRADES` letter */
 export function derivationCap(chain, target = null) {
-  if (checkedChain(chain)) return null;
-  const page = target && Number.isInteger(target.page) && target.page >= 0 ? target.page : null;
+  const bad = isKnownChain(chain) ? null : checkChain(chain);
+  if (bad || !isChecked(chain)) return null;
+  const checked = chain;
+  const asked = target && isFields(target) ? target.page : undefined;
+  const page = typeof asked === "number" && isIndex(asked) ? asked : null;
   if (page == null) {
     /* THE WHOLE DOCUMENT: the weakest over the unscoped steps and the parts, and a part with NO measured cap
        makes the whole undetermined — a text layer's `null` is never resolved into an OCR pass's letter (see the
@@ -843,12 +1105,15 @@ export function derivationCap(chain, target = null) {
        nothing else measured; and CAP-10: an unmeasured head conversion, whose later steps measured only its
        output, bounds nothing — the flag is shared because the answer is the same sentence. */
     const acc = newCapAcc();
-    for (const step of chain) foldCap(acc, step);
+    for (const step of checked) foldCap(acc, step);
     return capOf(acc);
   }
-  let cap = null, unreadable = false;
-  for (const step of chain) {
-    if (STEP_KINDS[step.step].role !== "derivation") continue;
+  /** @type {string | null} */
+  let cap = null;
+  let unreadable = false;
+  for (const step of checked) {
+    const kind = kindOf(step.step);
+    if (kind?.role !== "derivation") continue;
     const ext = extentOf(step);
     if (ext === "unreadable") { unreadable = true; continue; }
     /* CAP-10 / DEC-75 — A KIND THAT DECLARES `unmeasured: "undetermined"`, and
@@ -863,7 +1128,7 @@ export function derivationCap(chain, target = null) {
        measurement lets a calibration row raise it. Today the `layer` step's
        own cap is null too, so this changes no value the record holds; it is
        what keeps the answer honest the day a text-layer letter is measured. */
-    if (STEP_KINDS[step.step].unmeasured === "undetermined" && measuredCap(step) == null
+    if (kind.unmeasured === "undetermined" && measuredCap(step) == null
         && (ext === "all" || ext.includes(page)))
       unreadable = true;
     /* ASKING ABOUT ONE PAGE. Only a step that covers it bounds it — which is
@@ -872,7 +1137,9 @@ export function derivationCap(chain, target = null) {
        report answers undetermined, each about itself. */
     if (ext !== "all" && !ext.includes(page)) continue;
     const m = measuredCap(step);
-    if (m) cap = cap == null ? m : weaker(cap, m);
+    /** @type {string | null} */
+    const was = cap;
+    if (m) cap = was == null ? m : weaker(was, m);
   }
   return unreadable ? null : cap;
 }
@@ -882,8 +1149,9 @@ export function derivationCap(chain, target = null) {
  *  a text layer too, and that is the point: `pdfstructure.mjs` decodes through
  *  the FILE'S OWN /ToUnicode map, so a text layer is somebody else's
  *  transcription that we have been reading as authored text. */
+/** @param {unknown} chain @returns {boolean} */
 export function isTranscribed(chain) {
-  return !checkChain(chain) && chain.some((s) => STEP_KINDS[s.step].role === "derivation");
+  return !checkChain(chain) && isChecked(chain) && chain.some((s) => kindOf(s.step)?.role === "derivation");
 }
 
 /** REC-94 — WHICH EXTRACTION TIERS DOES THIS CHAIN EVIDENCE, AND OVER WHAT?
@@ -924,12 +1192,22 @@ export function isTranscribed(chain) {
  *  document. A malformed chain answers the empty set on `derivationCap`'s
  *  precedent, because a reader asking what a broken chain evidences should get
  *  "nothing this record can name", which is true. */
+/**
+ * One tier a chain evidences (R33): its number (`null` where a step that names its own did not), the steps that
+ * ran it, and what they covered together.
+ * @typedef {{ tier: number | null | undefined, steps: string[], covers: Covers }} TierEvidence
+ */
+/** @param {unknown} chain @returns {{ tiers: TierEvidence[], unclassified: string[] }} */
 export function tiersEvidenced(chain) {
-  if (checkChain(chain)) return { tiers: [], unclassified: [] };
-  const byTier = new Map();
+  if (checkChain(chain) || !isChecked(chain)) return { tiers: [], unclassified: [] };
+  const checked = chain;
+  /** @type {Map<number | "unrecorded", TierEvidence>} */
+  const byTier = mapOf([]);
+  /** @type {string[]} */
   const unclassified = [];
-  for (const s of chain) {
-    const kind = STEP_KINDS[s.step];
+  for (const s of checked) {
+    const kind = kindOf(s.step);
+    if (!kind) continue;
     /* The KEY's presence is the declaration; its VALUE is the answer. `null` is
        a declared answer and `undefined` is no answer at all, and collapsing the
        two is how a kind nobody classified would read as a kind deliberately off
@@ -938,10 +1216,12 @@ export function tiersEvidenced(chain) {
       if (!unclassified.includes(s.step)) unclassified.push(s.step);
       continue;
     }
-    if (kind.tier === null) continue;
-    const t = kind.tier === "step"
-      ? (Number.isInteger(s.tier) ? s.tier : null)
-      : kind.tier;
+    const declared = kind.tier;
+    if (declared === null) continue;
+    const own = s.tier;
+    const t = declared === "step"
+      ? (Number.isInteger(own) && typeof own === "number" ? own : null)
+      : declared;
     /* A `layer` step whose own `tier` is absent is a tier THIS RECORD DID NOT
        RECORD, and it is carried as `null` rather than dropped: the extraction
        happened and the rung it happened on is undetermined, which is a fact to
@@ -971,6 +1251,7 @@ export function tiersEvidenced(chain) {
    everything; `unreadable` absorbs a page list, because an extent this record
    cannot parse must never narrow to the part of it that happened to parse —
    `extentCovers`' default-to-not-covering rule pointed the other way. */
+/** @param {Covers} a @param {Covers} b @returns {Covers} */
 function unionExtent(a, b) {
   if (a === "all" || b === "all") return "all";
   if (a === "unreadable" || b === "unreadable") return "unreadable";
@@ -980,8 +1261,11 @@ function unionExtent(a, b) {
 /** Was a machine the last thing to touch this text? The question a projection
  *  asks to keep an OCR'd document distinguishable from a published text layer
  *  at a glance, without re-deriving the chain everywhere. */
+/** @param {unknown} chain @returns {string | null} */
 export function terminalStep(chain) {
-  return checkChain(chain) ? null : chain[chain.length - 1].step;
+  if (checkChain(chain) || !isChecked(chain)) return null;
+  const last = chain[chain.length - 1];
+  return last ? last.step : null;
 }
 
 /** The word a page read in MORE THAN ONE way answers (BOB #35 09:35Z, BOB #36 11:05Z, D-723). Not a
@@ -999,49 +1283,60 @@ export const CHAIN_KIND_MIXED = "mixed";
  *  never the answer. UNDETERMINED (`null`), stated, for a malformed chain, a target with no page, a
  *  page no derivation step covers, or any step whose extent this module cannot read (R30's rule: it
  *  could be a part covering this page). `terminalStep` is unchanged and stays document-level. */
+/** @param {unknown} chain @param {unknown} target `{page}` or a page number @returns {string | null} a step kind, or `"mixed"` */
 export function chainKindFor(chain, target) {
-  if (checkChain(chain)) return null;
-  const want = Number.isInteger(target) ? target : target && target.page;
-  if (!Number.isInteger(want) || want < 0) return null;
-  const derivations = chain.filter((s) => STEP_KINDS[s.step].role === "derivation");
+  if (checkChain(chain) || !isChecked(chain)) return null;
+  const checked = chain;
+  const want = Number.isInteger(target) ? target : target && isFields(target) ? target.page : undefined;
+  if (typeof want !== "number" || !isIndex(want)) return null;
+  const derivations = checked.filter((s) => kindOf(s.step)?.role === "derivation");
   if (derivations.some((s) => extentOf(s) === "unreadable")) return null;
-  const byPart = new Map();
+  /** @type {Map<string, string>} */
+  const byPart = mapOf([]);
   for (let i = derivations.length - 1; i >= 0; i--) {
-    const ext = extentOf(derivations[i]);
+    const d = derivations[i];
+    if (!d) continue;
+    const ext = extentOf(d);
     if (ext === "all") {
-      if (!byPart.size) return derivations[i].step;
+      if (!byPart.size) return d.step;
       break;
     }
-    const key = partKeyOf(derivations[i]);
-    if (ext.includes(want) && !byPart.has(key)) byPart.set(key, derivations[i].step);
+    if (ext === "unreadable") continue;
+    const key = partKeyOf(d, ext);
+    if (ext.includes(want) && !byPart.has(key)) byPart.set(key, d.step);
   }
   if (!byPart.size) return null;
-  const kinds = new Set(byPart.values());
-  return kinds.size === 1 ? [...kinds][0] : CHAIN_KIND_MIXED;
+  const kinds = [...new Set(byPart.values())];
+  const only = kinds[0];
+  return kinds.length === 1 && only !== undefined ? only : CHAIN_KIND_MIXED;
 }
 
 /** A one-line human sentence for the whole chain. Composed FROM the chain, so
  *  it cannot describe a chain other than the one it was given — the drift that
  *  a hand-written summary beside a structured field always eventually has. */
+/** @param {unknown} chain @returns {string} */
 export function describeChain(chain) {
-  if (checkChain(chain)) return word("textchain.text.text_provenance_recorded");
-  return chain.map((s) => {
-    const base = STEP_KINDS[s.step].label;
+  if (checkChain(chain) || !isChecked(chain)) return word("textchain.text.text_provenance_recorded");
+  const checked = chain;
+  return checked.map((s) => {
+    const kind = kindOf(s.step);
+    const base = kind ? kind.label : "";
     /* CAP-10: a kind that declares a `format` says what it produced, beside who
        produced it — "(google-export to odt)". Every other kind's sentence is the
        sentence it was. */
-    const into = (STEP_KINDS[s.step].names || []).includes("format") && s.format ? ` to ${s.format}` : "";
-    const who = s.engine ? ` (${s.engine}${s.version ? ` ${s.version}` : ""}${into})` : "";
+    const format = s.format, engine = s.engine, version = s.version, member = s.member, at = s.at;
+    const into = ((kind && kind.names) || []).includes("format") && format ? ` to ${format}` : "";
+    const who = engine ? ` (${engine}${version ? ` ${version}` : ""}${into})` : "";
     /* REC-87: a `typed` step says WHO typed, beside the label, as `attested` does. */
-    const by = (s.step === "attested" || s.step === "typed") && s.member
-      ? ` (${s.member}${s.at ? `, ${s.at}` : ""})` : "";
+    const by = (s.step === "attested" || s.step === "typed") && member
+      ? ` (${member}${at ? `, ${at}` : ""})` : "";
     /* D-252: a SCOPED step says which pages it covers, and it has to. Without
        it a mixed document's chain reads as a sequence — "the text layer was
        turned into pixels and OCR'd" — which is not what happened to any page
        in it. An unscoped step says nothing extra, so every sentence written
        before this rule is the sentence it was. */
     const ext = extentOf(s);
-    const over = STEP_KINDS[s.step].role === "derivation" && ext !== "all"
+    const over = kind && kind.role === "derivation" && ext !== "all"
       ? (ext === "unreadable" ? " (over an extent this record cannot read)" : ` (${pageList(ext)})`)
       : "";
     return base + who + by + over;
@@ -1059,20 +1354,23 @@ export function describeChain(chain) {
  *  THE FENCE IS ON `basis`, NOT ON `value`, and that is the whole design: a
  *  self-reported 0.99 and a computed 0.99 are the same bytes. Only who
  *  produced it tells them apart, so only that is checked. */
+/** @param {unknown} confidence @returns {Refusal | null} */
 export function checkConfidence(confidence) {
   /* DEC-49 REGION is-text-region-confidence */
   if (confidence === "none") return null;
-  if (!confidence || typeof confidence !== "object")
+  if (!confidence || !isFields(confidence))
     return refusal("TEXT_CONFIDENCE_SHAPE",
       localize("text-chain.textchain.a_region_confidence_is_either", "a region's confidence is either the stated string 'none' or {value, basis}; an absent confidence is not the same claim as a stated absent one"));
-  if (!Object.prototype.hasOwnProperty.call(CONFIDENCE_BASES, confidence.basis))
+  const basis = confidence.basis;
+  if (!hasKey(CONFIDENCE_BASES, basis))
     return refusal("TEXT_CONFIDENCE_PSEUDO",
-      localize("text-chain.textchain.confidence_basis_v1_is_not", "confidence basis '{v1}' is not {keys}. A number a model reported about itself is not a calibrated confidence and may not be thresholded as one — it costs nothing to produce, which is exactly what makes it worthless as evidence", { v1: String(confidence.basis == null ? "(absent)" : String(confidence.basis)), keys: String(Object.keys(CONFIDENCE_BASES).join(" or ")) }));
-  if (confidence.basis === "engine"
-      && !(typeof confidence.value === "number" && confidence.value >= 0 && confidence.value <= 1))
+      localize("text-chain.textchain.confidence_basis_v1_is_not", "confidence basis '{v1}' is not {keys}. A number a model reported about itself is not a calibrated confidence and may not be thresholded as one — it costs nothing to produce, which is exactly what makes it worthless as evidence", { v1: String(basis == null ? "(absent)" : String(basis)), keys: String(Object.keys(CONFIDENCE_BASES).join(" or ")) }));
+  const value = confidence.value;
+  if (basis === "engine"
+      && !(typeof value === "number" && value >= 0 && value <= 1))
     return refusal("TEXT_CONFIDENCE_SHAPE",
       `an engine-computed confidence carries a value in 0..1; got `
-      + `${confidence.value == null ? "nothing" : JSON.stringify(confidence.value)}`);
+      + `${value == null ? "nothing" : String(JSON.stringify(value))}`);
   /* END DEC-49 REGION is-text-region-confidence */
   return null;
 }
@@ -1097,11 +1395,30 @@ export function checkConfidence(confidence) {
  *  Returns { regions, floored, undetermined } — `floored` counted so a caller
  *  can state the shortfall on a reading's basis rather than implying a clean
  *  read (FW-15's partial-decode honesty rule, applied one layer up). */
+/**
+ * A region's confidence (R40-R43): the stated "none", or a number and who produced it.
+ * @typedef {"none" | { basis: "engine" | "none", value?: number }} Confidence
+ */
+/**
+ * One region of a reading (R44-R46), with whatever else it carries, which is kept.
+ * @typedef {Object} Region
+ * @property {string | null} [text]
+ * @property {Confidence} [confidence]
+ * @property {Anchor} [source]
+ * @property {true} [undetermined]
+ * @property {string} [why]
+ */
+/** @param {unknown} regions @param {unknown} floor @returns {{ regions: Region[], floored: number, undetermined: number }} */
 export function applyConfidenceFloor(regions, floor) {
-  const out = [], list = Array.isArray(regions) ? regions : [];
+  /** @type {Region[]} */
+  const out = [];
   let floored = 0, undetermined = 0;
-  for (const r of list) {
-    const region = r && typeof r === "object" ? r : {};
+  if (!isList(regions)) return { regions: out, floored, undetermined };
+  for (let i = 0; i < regions.length; i++) {
+    const r = regions[i];
+    /** @type {Region} */
+    const none = {};
+    const region = r && isRegion(r) ? r : none;
     const bad = checkConfidence(region.confidence);
     if (bad) {
       out.push(undeterminedRegion(region, bad.detail));
@@ -1109,7 +1426,7 @@ export function applyConfidenceFloor(regions, floor) {
       continue;
     }
     const c = region.confidence;
-    if (c !== "none" && typeof floor === "number" && c.value < floor) {
+    if (c && c !== "none" && typeof floor === "number" && Number(c.value) < floor) {
       out.push(undeterminedRegion(region,
         word("textchain.undetermined_region.region_decoded_against", { value: String(c.value), floor: String(floor) })));
       floored++; undetermined++;
@@ -1124,8 +1441,14 @@ export function applyConfidenceFloor(regions, floor) {
    KEPT, and keeping it is the useful half: a reader or an attester can still
    be pointed at the exact pixels nobody could read, which is what makes an
    undetermined region actionable rather than merely absent. */
+/** A plain object, read as a region (R44). @param {unknown} x @returns {x is Region} */
+const isRegion = (x) => isFields(x);
+/** @param {Region} region @param {string} why @returns {Region} */
 function undeterminedRegion(region, why) {
-  const { text, confidence, ...rest } = region;
+  /** @type {Region} */
+  const rest = { ...region };
+  delete rest.text;
+  delete rest.confidence;
   return { ...rest, text: null, undetermined: true, why, confidence: "none" };
 }
 
@@ -1140,18 +1463,20 @@ function undeterminedRegion(region, why) {
  *  — an element reference into a page — and D-164's lesson is that solving one
  *  problem twice produces two answers that disagree. So this validates I2's
  *  shape rather than defining a rival. */
+/** @param {unknown} source @returns {Refusal | null} */
 export function checkAnchor(source) {
   /* DEC-49 REGION is-text-anchor */
-  if (!source || typeof source !== "object")
+  if (!source || !isFields(source))
     return refusal("TEXT_ANCHOR_MISSING",
       localize("text-chain.textchain.a_machine_reading_carries_its_anchor", "text produced by a machine carries the image region a reader can check it against; without one, nothing in the record can be verified against the pixels it came from"));
   if (source.kind !== "pdf-page")
     return refusal("TEXT_ANCHOR_MISSING",
       localize("text-chain.textchain.the_anchor_names_kind_string", "the anchor names kind '{String}'; a transcription's anchor is a pdf-page reference (I2 IC-1), because that is the arm carrying page and rect", { String: String(String(source.kind)) }));
-  if (!Number.isInteger(source.page) || source.page < 0)
+  const page = source.page, rect = source.rect;
+  if (!Number.isInteger(page) || typeof page !== "number" || page < 0)
     return refusal("TEXT_ANCHOR_MISSING", localize("text-chain.textchain.the_anchor_names_no_page", "the anchor names no page (0-based integer required)"));
-  if (!Array.isArray(source.rect) || source.rect.length !== 4
-      || !source.rect.every((n) => typeof n === "number" && Number.isFinite(n)))
+  if (!isList(rect) || rect.length !== 4
+      || !rect.every((n) => typeof n === "number" && Number.isFinite(n)))
     return refusal("TEXT_ANCHOR_MISSING",
       localize("text-chain.textchain.the_anchor_names_no_rect", "the anchor names no rect; a page alone is not a region a reader can be pointed at"));
   /* END DEC-49 REGION is-text-anchor */
@@ -1177,25 +1502,32 @@ export function checkAnchor(source) {
  *      must be one this module can evaluate. An attestation with no extent
  *      would be read as covering the document — the generous direction, which
  *      this project treats as the worse one. */
+/** @param {unknown} att `{member, at, extent}` @returns {Refusal | null} */
 export function checkAttestation(att) {
-  const a = att && typeof att === "object" ? att : {};
+  const member = isFields(att) ? att.member : undefined;
   /* DEC-49 REGION is-text-attestation
      (a) FIRST. Who is asking is judged before what they asked for, so a
      machine credential is refused for BEING a machine rather than for the
      shape of an extent it should never have been composing. */
-  if (isMachineIdentity(a.member))
+  if (isMachineIdentity(member))
     return refusal("TEXT_ATTEST_MACHINE",
-      localize("text-chain.textchain.string_is_a_machine_credential", "'{String}' is a machine credential. Attesting is a person saying they checked this text against the image — an act with a name behind it. A machine cannot perform it, and recording one would put a claim on the record that nobody holds", { String: String(String(a.member)) }));
-  if (!(typeof a.member === "string" && a.member.trim()))
+      localize("text-chain.textchain.string_is_a_machine_credential", "'{String}' is a machine credential. Attesting is a person saying they checked this text against the image — an act with a name behind it. A machine cannot perform it, and recording one would put a claim on the record that nobody holds", { String: String(String(member)) }));
+  if (!(typeof member === "string" && member.trim()))
     return refusal("TEXT_ATTEST_MACHINE",
       localize("text-chain.textchain.an_attestation_names_no_member", "an attestation names no member. Nobody said this, and unattributed is not the same as attested"));
-  if (!(typeof a.at === "string" && a.at.trim()))
+  /* A member was read from it, so it is an object. */
+  if (!isFields(att))
+    return refusal("TEXT_ATTEST_MACHINE",
+      localize("text-chain.textchain.an_attestation_names_no_member", "an attestation names no member. Nobody said this, and unattributed is not the same as attested"));
+  const at = att.at;
+  if (!(typeof at === "string" && at.trim()))
     return refusal("TEXT_ATTEST_EXTENT", localize("text-chain.textchain.an_attestation_carries_the_date", "an attestation carries the date it was made"));
-  const e = a.extent;
-  if (!e || typeof e !== "object" || !Object.prototype.hasOwnProperty.call(EXTENT_KINDS, e.kind))
+  const e = att.extent;
+  if (!e || !isFields(e) || !hasKey(EXTENT_KINDS, e.kind))
     return refusal("TEXT_ATTEST_EXTENT",
       localize("text-chain.textchain.an_attestation_is_scoped_to", "an attestation is scoped to what was actually checked — one of {keys}. An unscoped attestation would be read as covering the whole document, which is the generous reading of a claim nobody made", { keys: String(Object.keys(EXTENT_KINDS).join(", ")) }));
-  if (e.kind === "page" && !(Number.isInteger(e.page) && e.page >= 0))
+  const page = e.page;
+  if (e.kind === "page" && !(Number.isInteger(page) && typeof page === "number" && page >= 0))
     return refusal("TEXT_ATTEST_EXTENT", localize("text-chain.textchain.a_page_extent_names_which_page", "a page extent names which page (0-based)"));
   if (e.kind === "region") {
     const bad = checkAnchor(e.source);
@@ -1213,25 +1545,29 @@ export function checkAttestation(att) {
  *  because the failure that matters is an extent nobody could evaluate quietly
  *  reading as "all of it", which is how a member's careful check of one
  *  paragraph would come to underwrite a whole scanned budget book. */
+/** @param {unknown} extent an attestation's extent @param {unknown} target `{page, rect?}` @returns {boolean} */
 export function extentCovers(extent, target) {
-  if (!extent || typeof extent !== "object") return false;
-  if (!target || typeof target !== "object") return false;
-  if (!Object.prototype.hasOwnProperty.call(EXTENT_KINDS, extent.kind)) return false;
+  if (!extent || !isFields(extent)) return false;
+  if (!target || !isFields(target)) return false;
+  if (!hasKey(EXTENT_KINDS, extent.kind)) return false;
   if (extent.kind === "document") return true;
-  if (!Number.isInteger(target.page) || target.page < 0) return false;
-  if (extent.kind === "page") return extent.page === target.page;
+  const page = target.page;
+  if (!Number.isInteger(page) || typeof page !== "number" || page < 0) return false;
+  if (extent.kind === "page") return extent.page === page;
   /* region: the target must sit INSIDE the attested rect, on the same page.
      A target with no rect at all is not covered — "somewhere on that page" is
      not what the member checked. */
   const src = extent.source;
-  if (!src || src.page !== target.page) return false;
-  if (!Array.isArray(target.rect) || target.rect.length !== 4) return false;
+  if (!src || !isFields(src) || src.page !== page) return false;
+  const rect = target.rect;
+  if (!isList(rect) || rect.length !== 4) return false;
   /* D-670: A RECT IS FOUR NUMBERS IN A SPACE. An OCR anchor is in the pixels of the frame that was
      read (`space: "image-px"`) and a leg's rect in PDF user space; across two spaces "inside" is a
      numeric accident, so the answer is the default one — no. */
   if (!sameSpace(src, target)) return false;
-  const [ax0, ay0, ax1, ay1] = normRect(src.rect);
-  const [bx0, by0, bx1, by1] = normRect(target.rect);
+  /* The attested rect is read as it stands: a region whose source names no rect has nothing to read. */
+  const [ax0, ay0, ax1, ay1] = normRect(/** @type {Iterable<unknown, unknown, unknown>} */ (src.rect));
+  const [bx0, by0, bx1, by1] = normRect(rect);
   return bx0 >= ax0 && by0 >= ay0 && bx1 <= ax1 && by1 <= ay1;
 }
 
@@ -1240,9 +1576,11 @@ export function extentCovers(extent, target) {
    inside it. Normalising is not tidiness: an inverted attested rect would have
    made a member's real attestation cover nothing, which fails SAFE but fails
    silently, and a member would have had no way to tell. */
+/** @param {Iterable<unknown, unknown, unknown>} r @returns {[number, number, number, number]} */
 function normRect(r) {
   const [x0, y0, x1, y1] = r;
-  return [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
+  const nx0 = Number(x0), ny0 = Number(y0), nx1 = Number(x1), ny1 = Number(y1);
+  return [Math.min(nx0, nx1), Math.min(ny0, ny1), Math.max(nx0, nx1), Math.max(ny0, ny1)];
 }
 
 /** D-670 — the coordinate space a rect is stated in, and the one every rect written before D-670 was:
@@ -1252,11 +1590,13 @@ export const RECT_USER_SPACE = "user";
 /** The space of the rect on `holder` (`.space`): absent or `null` reads as `RECT_USER_SPACE`, a
  *  non-empty string is that space, and anything else is `null` — a space nobody can read, which is
  *  comparable to nothing, never read as user space. */
+/** @param {unknown} holder @returns {string | null} */
 export function rectSpace(holder) {
-  const v = holder && typeof holder === "object" ? holder.space : undefined;
+  const v = holder && isFields(holder) ? holder.space : undefined;
   if (v === undefined || v === null) return RECT_USER_SPACE;
   return typeof v === "string" && v.trim() ? v : null;
 }
+/** @param {unknown} a @param {unknown} b @returns {boolean} */
 const sameSpace = (a, b) => { const x = rectSpace(a); return x !== null && x === rectSpace(b); };
 
 /** What a leg citing `target` may claim on the TRANSCRIPTION axis.
@@ -1265,12 +1605,23 @@ const sameSpace = (a, b) => { const x = rectSpace(a); return x !== null && x ===
  *  as record": an attestation covering the target supersedes the derivation
  *  cap; nothing else does. The chain is unchanged either way — this function
  *  reads, and writes nothing. */
+/**
+ * What a leg citing a target may claim on the transcription axis (R56, R57).
+ * @typedef {{ ceiling: string | null, determinant: "attestation" | "derivation", by: string[], why: string }} Ceiling
+ */
+/** @param {unknown} chain @param {unknown} target `{page, rect?}` @param {unknown} [attestations] @returns {Ceiling} */
 export function gradeCeiling(chain, target, attestations = []) {
-  const covering = (Array.isArray(attestations) ? attestations : [])
-    .filter((a) => !checkAttestation(a) && extentCovers(a.extent, target));
-  if (covering.length) {
+  /* The members of the attestations `checkAttestation` accepts and whose extent covers the target. */
+  const by = isList(attestations)
+    ? attestations.flatMap((a) => {
+      if (checkAttestation(a) || !isFields(a) || !extentCovers(a.extent, target)) return [];
+      const member = a.member;
+      return typeof member === "string" ? [member] : [];
+    })
+    : [];
+  if (by.length) {
     return { ceiling: EARNED_CAPTURE_CEILING, determinant: "attestation",
-             by: covering.map((a) => a.member),
+             by,
              why: word("textchain.why.member_checked_text") };
   }
   /* D-252: the cap is asked ABOUT THE TARGET, not about the document. On an
@@ -1280,9 +1631,10 @@ export function gradeCeiling(chain, target, attestations = []) {
      (undetermined) — and answering either one with the document's cap would
      hand one of them a ceiling nobody measured for it. */
   const cap = derivationCap(chain, target);
+  const asked = target && isFields(target) ? target.page : undefined;
   return { ceiling: cap, determinant: "derivation", by: [],
            why: cap == null
-             ? word("textchain.why.step_text_provenance", { page: String(target && Number.isInteger(target.page) ? ` for page ${target.page + 1}` : "") })
+             ? word("textchain.why.step_text_provenance", { page: String(Number.isInteger(asked) && typeof asked === "number" ? ` for page ${asked + 1}` : "") })
              : word("textchain.why.bounded_weakest_step", { chain: String(describeChain(chain)) }) };
 }
 
@@ -1299,6 +1651,7 @@ export function gradeCeiling(chain, target, attestations = []) {
  *  argument shape here that returns something stronger than the byte
  *  provenance it was handed, which is checked by the suite rather than left to
  *  reading. */
+/** @param {unknown} chain @param {string | null} [byteGrade] a `BASIS_GRADES` letter @returns {string | null} */
 export function captureBound(chain, byteGrade = EARNED_CAPTURE_CEILING) {
   if (!isTranscribed(chain)) return byteGrade;
   const cap = derivationCap(chain);
@@ -1324,14 +1677,27 @@ export function captureBound(chain, byteGrade = EARNED_CAPTURE_CEILING) {
  *  column with no writer, one level
  *  up at the vocabulary instead of at the column. When CONTENT-HTML produces
  *  it, the arm is added HERE and nowhere else. */
+/** @type {{ "pdf-page": number, "sheet-cell": number, "slide-shape": number, "doc-para": number }} */
 export const READING_POSITION_KINDS = { "pdf-page": 1, "sheet-cell": 1, "slide-shape": 1, "doc-para": 1 };
 
 /** The arm named in IC-1 that deliberately has no producer, kept as a constant
  *  so a refusal can NAME it rather than lumping it in with a typo. */
 export const READING_POSITION_UNPRODUCED = "dom";
 
+/** @param {unknown} s @returns {boolean} */
 const isNonEmptyString = (s) => typeof s === "string" && s.trim().length > 0;
-const isIndex = (n) => Number.isInteger(n) && n >= 0;
+/**
+ * The arms of IC-1 a reading may carry (R61).
+ * @typedef {"pdf-page" | "sheet-cell" | "slide-shape" | "doc-para"} PositionKind
+ */
+/** A key of `READING_POSITION_KINDS`, read as an arm. @param {unknown} k @returns {k is PositionKind} */
+const isPositionKind = (k) => hasKey(READING_POSITION_KINDS, k);
+/**
+ * Where a reference was read, in IC-1's canonical key order (R61-R65, R87).
+ * @typedef {{ kind: "pdf-page", ref: string, page: number, rect: number[], space: string } | { kind: "pdf-page", ref: string, page: number, rect: number[] | null } | { kind: "doc-para", ref: string, para: number, run: number | null } | { kind: "sheet-cell", ref: string, sheet: string, cell: string } | { kind: "slide-shape", ref: string, slide: number, shape: number }} ReadingPosition
+ */
+/** @param {unknown} n @returns {boolean} */
+const isIndex = (n) => Number.isInteger(n) && typeof n === "number" && n >= 0;
 
 /** Normalise a reader's `source` to the canonical IC-1 shape, or null.
  *
@@ -1353,15 +1719,18 @@ const isIndex = (n) => Number.isInteger(n) && n >= 0;
  *  columns and compare equal without a parse. Spreading the caller's object
  *  would make the serialisation depend on the order the reader happened to
  *  write its literal in. */
+/** @param {unknown} source @returns {ReadingPosition | null} */
 export function readingSource(source) {
-  if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+  if (!source || !isFields(source) || Array.isArray(source)) return null;
   const kind = source.kind;
   if (!isNonEmptyString(kind)) return null;
-  if (!Object.prototype.hasOwnProperty.call(READING_POSITION_KINDS, kind)) return null;
-  if (!isNonEmptyString(source.ref)) return null;
-  const ref = String(source.ref).slice(0, 200);
+  if (!isPositionKind(kind)) return null;
+  const given = source.ref;
+  if (!isNonEmptyString(given)) return null;
+  const ref = String(given).slice(0, 200);
   if (kind === "pdf-page") {
-    if (!isIndex(source.page)) return null;
+    const page = source.page;
+    if (typeof page !== "number" || !isIndex(page)) return null;
     /* rect is OPTIONAL and normally absent: Tier-1 and Tier-2 text is a flat
        per-page string with no geometry, so the page is the honest maximum a
        reading can carry. A malformed rect drops to null rather than refusing
@@ -1372,29 +1741,34 @@ export function readingSource(source) {
        and an explicit `space: "user"` is the unstated spelling. A space nobody can read drops the
        rect, as a malformed rect does: the page is still true, the rect is not placeable. */
     const space = rectSpace(source);
-    const rect = space !== null && Array.isArray(source.rect) && source.rect.length === 4
-      && source.rect.every((n) => typeof n === "number" && Number.isFinite(n))
-      ? source.rect.map(Number) : null;
-    return rect && space !== RECT_USER_SPACE
-      ? { kind, ref, page: source.page, rect, space: space.slice(0, 40) }
-      : { kind, ref, page: source.page, rect };
+    const given = source.rect;
+    const rect = space !== null && isList(given) && given.length === 4
+      && given.every((n) => typeof n === "number" && Number.isFinite(n))
+      ? given.map((n) => Number(n)) : null;
+    return rect && space !== null && space !== RECT_USER_SPACE
+      ? { kind, ref, page, rect, space: space.slice(0, 40) }
+      : { kind, ref, page, rect };
   }
   if (kind === "doc-para") {
-    if (!isIndex(source.para)) return null;
-    return { kind, ref, para: source.para, run: isIndex(source.run) ? source.run : null };
+    const para = source.para, run = source.run;
+    if (typeof para !== "number" || !isIndex(para)) return null;
+    return { kind, ref, para, run: typeof run === "number" && isIndex(run) ? run : null };
   }
   if (kind === "sheet-cell") {
-    if (!isNonEmptyString(source.sheet) || !isNonEmptyString(source.cell)) return null;
-    return { kind, ref, sheet: String(source.sheet).slice(0, 200), cell: String(source.cell).slice(0, 64) };
+    const sheet = source.sheet, cell = source.cell;
+    if (!isNonEmptyString(sheet) || !isNonEmptyString(cell)) return null;
+    return { kind, ref, sheet: String(sheet).slice(0, 200), cell: String(cell).slice(0, 64) };
   }
   /* slide-shape */
-  if (!isIndex(source.slide) || !isIndex(source.shape)) return null;
-  return { kind, ref, slide: source.slide, shape: source.shape };
+  const slide = source.slide, shape = source.shape;
+  if (typeof slide !== "number" || !isIndex(slide) || typeof shape !== "number" || !isIndex(shape)) return null;
+  return { kind, ref, slide, shape };
 }
 
 /** The canonical JSON for a reading position's per-arm fields — everything but
  *  kind and ref, which the projection stores in their own columns. Null in,
  *  null out. */
+/** @param {unknown} source @returns {string | null} */
 export function readingSourceJson(source) {
   const s = readingSource(source);
   if (!s) return null;
@@ -1411,6 +1785,7 @@ export function readingSourceJson(source) {
  *  (`pos_ref`) is NOT part of it: two reads of one place are one place however it is
  *  spelled. Every unplaced read of a reference is ONE occurrence — the record cannot tell
  *  two reads it cannot place apart, and claiming it could would be inventing a distinction. */
+/** @param {unknown} source @returns {string} */
 export function readingOccurrenceKey(source) {
   const s = readingSource(source);
   return s ? `${s.kind}:${readingSourceJson(s)}` : "";
@@ -1418,12 +1793,16 @@ export function readingOccurrenceKey(source) {
 
 /** Rebuild a reading position from the three projected columns. The inverse of
  *  the writer, kept beside it so the two cannot drift. */
+/** @param {unknown} posKind @param {unknown} pos @param {unknown} posRef @returns {ReadingPosition | null} */
 export function readingSourceFromColumns(posKind, pos, posRef) {
   if (!isNonEmptyString(posKind) || !isNonEmptyString(posRef) || typeof pos !== "string") return null;
-  let fields;
-  try { fields = JSON.parse(pos); } catch { return null; }
-  if (!fields || typeof fields !== "object") return null;
-  return readingSource({ kind: posKind, ref: posRef, ...fields });
+  /* A parse failure answers null, as a parsed value that is not an object does. */
+  try {
+    /** @type {unknown} */
+    const fields = JSON.parse(pos);
+    if (!fields || !isFields(fields)) return null;
+    return readingSource({ kind: posKind, ref: posRef, ...fields });
+  } catch { return null; }
 }
 
 /** Does a CONTENT ROW's extent contain the place a reference was READ?
@@ -1450,63 +1829,76 @@ export function readingSourceFromColumns(posKind, pos, posRef) {
  *  NOT inside a region-grained extent: "somewhere on that page" is not "inside
  *  that rectangle", and answering true would let a member's careful citation of
  *  one paragraph earn from a reference read anywhere on the sheet. */
+/** @param {unknown} position @param {unknown} extentKind @param {unknown} extent @returns {boolean} */
 export function readingPositionInExtent(position, extentKind, extent) {
   const p = readingSource(position);
   if (!p) return false;
   if (!isNonEmptyString(extentKind)) return false;
   if (extentKind === "document") return true;
+  /* The extent's per-arm fields, read only from a plain object (anything else is the honest no). */
+  const isObject = !!extent && isFields(extent) && !Array.isArray(extent);
   /* D-416 — A CELL READING INSIDE A `sheet-range` EXTENT (EXTRACTION-BREADTH-DESIGN §3.2: `{sheet,
      range}`, A1-style). The one arm pair where a finer READING sits inside a coarser EXTENT of a
      different kind: a range is a set of cells. Same sheet, and the cell within the range's bounds,
      both parsed; anything unparseable is the honest no. */
   if (extentKind === "sheet-range") {
-    const e = extent && typeof extent === "object" && !Array.isArray(extent) ? extent : null;
-    if (p.kind !== "sheet-cell" || !e || !isNonEmptyString(e.sheet) || e.sheet !== p.sheet) return false;
-    const cell = a1Cell(p.cell), box = a1Range(e.range);
+    if (p.kind !== "sheet-cell" || !isObject || !isFields(extent)) return false;
+    const sheet = extent.sheet;
+    if (!isNonEmptyString(sheet) || sheet !== p.sheet) return false;
+    const cell = a1Cell(p.cell), box = a1Range(extent.range);
     return !!(cell && box && cell.col >= box.c0 && cell.col <= box.c1 && cell.row >= box.r0 && cell.row <= box.r1);
   }
   if (extentKind !== p.kind) return false;
-  const e = extent && typeof extent === "object" && !Array.isArray(extent) ? extent : null;
-  if (!e) return false;
+  if (!isObject || !isFields(extent)) return false;
   if (p.kind === "pdf-page") {
-    if (!isIndex(e.page) || e.page !== p.page) return false;
+    const page = extent.page;
+    if (!isIndex(page) || page !== p.page) return false;
     /* No rect on the extent: the whole page is the extent and the page matched. */
-    if (!Array.isArray(e.rect) || e.rect.length !== 4) return true;
+    const rect = extent.rect;
+    if (!isList(rect) || rect.length !== 4) return true;
     /* A rect on the extent and none on the reading: NOT established to be
        inside it. The honest no. */
-    if (!Array.isArray(p.rect) || p.rect.length !== 4) return false;
+    const own = p.rect;
+    if (!Array.isArray(own) || own.length !== 4) return false;
     /* D-670: two rects in two spaces are not comparable — `extentCovers`' rule. */
-    if (!sameSpace(p, e)) return false;
-    const [ax0, ay0, ax1, ay1] = normRect(e.rect);
-    const [bx0, by0, bx1, by1] = normRect(p.rect);
+    if (!sameSpace(p, extent)) return false;
+    const [ax0, ay0, ax1, ay1] = normRect(rect);
+    const [bx0, by0, bx1, by1] = normRect(own);
     return bx0 >= ax0 && by0 >= ay0 && bx1 <= ax1 && by1 <= ay1;
   }
   if (p.kind === "doc-para") {
-    if (!isIndex(e.para) || e.para !== p.para) return false;
+    const para = extent.para, run = extent.run;
+    if (!isIndex(para) || para !== p.para) return false;
     /* A run-grained extent needs a run-grained reading, the rect rule again. */
-    if (!isIndex(e.run)) return true;
-    return isIndex(p.run) && e.run === p.run;
+    if (!isIndex(run)) return true;
+    return isIndex(p.run) && run === p.run;
   }
-  if (p.kind === "sheet-cell")
-    return isNonEmptyString(e.sheet) && isNonEmptyString(e.cell)
-        && e.sheet === p.sheet && e.cell === p.cell;
+  if (p.kind === "sheet-cell") {
+    const sheet = extent.sheet, cell = extent.cell;
+    return isNonEmptyString(sheet) && isNonEmptyString(cell)
+        && sheet === p.sheet && cell === p.cell;
+  }
   /* slide-shape */
-  if (!isIndex(e.slide) || e.slide !== p.slide) return false;
-  if (!isIndex(e.shape)) return true;
-  return e.shape === p.shape;
+  const slide = extent.slide, shape = extent.shape;
+  if (!isIndex(slide) || slide !== p.slide) return false;
+  if (!isIndex(shape)) return true;
+  return shape === p.shape;
 }
 
 /* A1 notation, read strictly: `B3` or `$B$3` as a cell; `A1:D20`, a single cell, a whole-column
    span `A:C` or a whole-row span `2:5` as a range (either corner order). Columns and rows are
    1-based. Anything else answers null, never a guess. */
+/** @param {string} letters @returns {number} */
 const A1_COL = (letters) => [...letters.toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
 /* One cell is the extent algebra's cell (R93, R94), read after a trim. */
+/** @param {unknown} s @returns {{ col: number, row: number } | null} */
 function a1Cell(s) {
   return typeof s === "string" && CONTENT_EXTENT_A1_RE.test(s.trim()) ? a1ToRowCol(s.trim()) : null;
 }
+/** @param {unknown} s @returns {{ c0: number, c1: number, r0: number, r1: number } | null} */
 function a1Range(s) {
   if (typeof s !== "string" || !s.trim()) return null;
-  const [a, b, extra] = s.trim().split(":");
+  const [a = "", b, extra] = s.trim().split(":");
   if (extra !== undefined) return null;
   const end = b === undefined ? a : b;
   const ca = a1Cell(a), cb = a1Cell(end);
@@ -1515,7 +1907,7 @@ function a1Range(s) {
   if (b === undefined) return null;
   const col = /^\$?([A-Za-z]{1,3})$/, row = /^\$?([1-9][0-9]{0,6})$/;
   const [xa, xb] = [col.exec(a), col.exec(b)];
-  if (xa && xb) { const [p, q] = [A1_COL(xa[1]), A1_COL(xb[1])];
+  if (xa && xb) { const [p, q] = [A1_COL(xa[1] ?? ""), A1_COL(xb[1] ?? "")];
     return { c0: Math.min(p, q), c1: Math.max(p, q), r0: 1, r1: Infinity }; }
   const [ya, yb] = [row.exec(a), row.exec(b)];
   if (ya && yb) { const [p, q] = [Number(ya[1]), Number(yb[1])];
@@ -1544,6 +1936,13 @@ function a1Range(s) {
  *  item's width. `image` is a REFERENCE rather than an arm of IC-1's text union, and is here because a row's
  *  `extent_kind` is the one vocabulary a row is addressed in; what sets it apart is `cited_as`
  *  (`contentCitedAs`). */
+/**
+ * One kind of `CONTENT_EXTENT_KINDS` (R92).
+ * @typedef {{ landed: boolean, human: string }} ExtentKind
+ */
+/**
+ * @type {{ document: ExtentKind, "pdf-page": ExtentKind, "sheet-cell": ExtentKind, "slide-shape": ExtentKind, "doc-para": ExtentKind, "sheet-range": ExtentKind, "doc-table": ExtentKind, image: ExtentKind }}
+ */
 export const CONTENT_EXTENT_KINDS = {
   document:      { landed: true,  human: word("content.why.whole_document") },
   "pdf-page":    { landed: true,  human: "a page of a PDF" },
@@ -1558,14 +1957,17 @@ export const CONTENT_EXTENT_KINDS = {
 /** A CELL IN A1 NOTATION (R93), as the container emits it and as a member may paste it. `$` markers and
  *  either case are admitted and normalised away by `canonicalExtent`: `B14`, `$B$14` and `b14` are one cell.
  *  Three letters and seven digits is a SHAPE bound, not one spreadsheet's ceiling. */
+/** @type {RegExp} */
 export const CONTENT_EXTENT_A1_RE = /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}$/;
 
 /** A RANGE IN A1:A1 NOTATION, or one cell standing for a one-cell range (R93). */
+/** @type {RegExp} */
 export const CONTENT_EXTENT_RANGE_RE =
   /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}(:\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6})?$/;
 
 /* `String(x == null ? "" : x)`, made total (R83): a value with no string form (an object with no prototype, a
    throwing `toString`) reads as "", which no pattern here matches. */
+/** @param {unknown} x @returns {string} */
 function asString(x) {
   if (x == null) return "";
   try { return String(x); } catch { return ""; }
@@ -1573,21 +1975,23 @@ function asString(x) {
 
 /** A1 -> `{ col, row }`, both 1-BASED (R94). The column is bijective base 26 (A..Z, AA..AZ, ...), with no
  *  zero digit: getting that wrong puts AA at 26 and refuses the last column of every wide sheet. */
+/** @param {unknown} cell @returns {{ col: number, row: number } | null} */
 export function a1ToRowCol(cell) {
   const t = asString(cell).replace(/\$/g, "").toUpperCase();
   const m = /^([A-Z]{1,3})([1-9][0-9]{0,6})$/.exec(t);
   if (!m) return null;
   let col = 0;
-  for (const ch of m[1]) col = col * 26 + (ch.charCodeAt(0) - 64);
-  return { col, row: parseInt(m[2], 10) };
+  for (const ch of m[1] ?? "") col = col * 26 + (ch.charCodeAt(0) - 64);
+  return { col, row: parseInt(m[2] ?? "", 10) };
 }
 
 /** A range's two corners, ORDERED (top-left first), 1-based, or null (R95). A range spelled bottom-right
  *  first names the same cells, so it is reordered rather than refused — `normRect`'s rule, in a grid. */
+/** @param {unknown} range @returns {{ r0: number, c0: number, r1: number, c1: number } | null} */
 export function rangeCorners(range) {
   const t = asString(range).trim();
   if (!CONTENT_EXTENT_RANGE_RE.test(t)) return null;
-  const [a, b = a] = t.split(":");
+  const [a = "", b = a] = t.split(":");
   const p = a1ToRowCol(a), q = a1ToRowCol(b);
   if (!p || !q) return null;
   return { r0: Math.min(p.row, q.row), c0: Math.min(p.col, q.col),
@@ -1595,6 +1999,7 @@ export function rangeCorners(range) {
 }
 
 /* 1-based column number -> A1 letters (bijective base 26: 27 -> AA). */
+/** @param {number} n @returns {string} */
 function a1Letters(n) {
   let out = "";
   for (let c = n; c > 0; c = Math.floor((c - 1) / 26)) out = String.fromCharCode(65 + ((c - 1) % 26)) + out;
@@ -1603,6 +2008,7 @@ function a1Letters(n) {
 
 /** The canonical spelling of a range (R95): ordered corners, no `$`, upper case, and ALWAYS two corners —
  *  `B3` and `B3:B3` are one range. */
+/** @param {unknown} range @returns {string | null} */
 export function canonicalRange(range) {
   const k = rangeCorners(range);
   if (!k) return null;
@@ -1613,23 +2019,31 @@ export function canonicalRange(range) {
  *  is bytes, with no chain and no derivation cap, and that null is a fact about what is cited, not an
  *  undetermined transcription. The default is the kind's own meaning (`bytes` for an image, `text` for every
  *  other kind); anything stated is returned unchanged, for content's checker to refuse by name. */
+/** @param {unknown} extent @returns {{}} the stated `cited_as`, any value but absent, null or "", else its kind's default */
 export function contentCitedAs(extent) {
-  const e = extent && typeof extent === "object" ? extent : {};
-  const v = e.cited_as;
-  if (v === undefined || v === null || v === "") return e.kind === "image" ? "bytes" : "text";
+  const v = extent && isFields(extent) ? extent.cited_as : undefined;
+  const kind = extent && isFields(extent) ? extent.kind : undefined;
+  if (v === undefined || v === null || v === "") return kind === "image" ? "bytes" : "text";
   return v;
 }
 
-const isFourFinite = (r) => Array.isArray(r) && r.length === 4
-  && r.every((n) => typeof n === "number" && Number.isFinite(n));
-const minMaxRect = (r) => [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])];
+/** @param {readonly number[]} nums a rect's finite numbers @returns {number[] | null} the rect min/max-normalised, or null unless there are four */
+const normalRect = (nums) => {
+  const [x0, y0, x1, y1] = nums;
+  if (nums.length !== 4 || x0 === undefined || y0 === undefined || x1 === undefined || y1 === undefined) return null;
+  return [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
+};
+/** @param {unknown} s @returns {string | null} */
 const trimmedOrNull = (s) => (typeof s === "string" && s.trim() ? s.trim() : null);
+/** @param {unknown} c @returns {string | null} */
 const canonicalCell = (c) => (typeof c === "string" && CONTENT_EXTENT_A1_RE.test(c.trim())
   ? c.trim().replace(/\$/g, "").toUpperCase() : null);
-const intOrNull = (n) => (Number.isInteger(n) ? n : null);
+/** @param {unknown} n @returns {number | null} */
+const intOrNull = (n) => (Number.isInteger(n) && typeof n === "number" ? n : null);
 /* A chunk's own address (R97, K4913): `run` joins a unit's address only when it is an integer, so an extent with none
    keeps the bytes it always had and every content id already minted stays. */
-const runOf = (e) => (Number.isInteger(e.run) ? { run: e.run } : {});
+/** @param {unknown} run @returns {boolean} */
+const isRun = (run) => Number.isInteger(run);
 
 /** The CANONICAL form of an extent — the bytes the content address is taken over (R97). Two members who mean
  *  the same passage must produce the same string, or dedup-by-construction is a claim rather than a
@@ -1638,31 +2052,42 @@ const runOf = (e) => (Number.isInteger(e.run) ? { run: e.run } : {});
  *  The sheet NAME is kept as the container spelled it: this module has no warrant to decide two of a
  *  workbook's names are one. `cited_as` is in the IMAGE's address only, so every older arm's address is
  *  unchanged. An extent nobody can evaluate still gets a form (the function is total); nothing mints one. */
+/** @param {unknown} extent @returns {string} */
 export function canonicalExtent(extent) {
-  const e = extent && typeof extent === "object" ? extent : {};
-  if (e.kind === "document") return canonicalJson({ kind: "document" });
-  if (e.kind === "pdf-page")
-    return canonicalJson({ kind: "pdf-page", page: intOrNull(e.page), rect: isFourFinite(e.rect) ? minMaxRect(e.rect) : null, ...runOf(e) });
-  if (e.kind === "sheet-cell")
+  /* A non-object reads as `{}`: a kind nobody can name, with no fields. */
+  if (!extent || !isFields(extent)) return canonicalJson({ kind: null, fields: null });
+  const e = extent;
+  const kind = e.kind, run = e.run, rect = e.rect;
+  /* A rect is four finite numbers, or none. */
+  const finite = isList(rect) && rect.length === 4
+    ? rect.flatMap((n) => (typeof n === "number" && Number.isFinite(n) ? [n] : [])) : [];
+  if (kind === "document") return canonicalJson({ kind: "document" });
+  if (kind === "pdf-page")
+    return canonicalJson({ kind: "pdf-page", page: intOrNull(e.page), rect: normalRect(finite), ...(isRun(run) && typeof run === "number" ? { run } : {}) });
+  if (kind === "sheet-cell")
     return canonicalJson({ kind: "sheet-cell", sheet: trimmedOrNull(e.sheet), cell: canonicalCell(e.cell) });
-  if (e.kind === "slide-shape")
-    return canonicalJson({ kind: "slide-shape", slide: intOrNull(e.slide), shape: intOrNull(e.shape), ...runOf(e) });
-  if (e.kind === "doc-para")
+  if (kind === "slide-shape")
+    return canonicalJson({ kind: "slide-shape", slide: intOrNull(e.slide), shape: intOrNull(e.shape), ...(isRun(run) && typeof run === "number" ? { run } : {}) });
+  if (kind === "doc-para")
     return canonicalJson({ kind: "doc-para", para: intOrNull(e.para), run: intOrNull(e.run) });
-  if (e.kind === "sheet-range")
+  if (kind === "sheet-range") {
+    const range = e.range;
     return canonicalJson({ kind: "sheet-range", sheet: trimmedOrNull(e.sheet),
-      range: typeof e.range === "string" ? canonicalRange(e.range) : null, ...runOf(e) });
-  if (e.kind === "doc-table")
+      range: typeof range === "string" ? canonicalRange(range) : null, ...(isRun(run) && typeof run === "number" ? { run } : {}) });
+  }
+  if (kind === "doc-table")
     return canonicalJson({ kind: "doc-table", table: intOrNull(e.table), cell: canonicalCell(e.cell) });
-  if (e.kind === "image")
+  if (kind === "image") {
+    const part = e.part;
     return canonicalJson({ kind: "image", cited_as: contentCitedAs(e),
-      part: typeof e.part === "string" ? e.part.trim().toLowerCase() : null,
-      page: intOrNull(e.page), rect: isFourFinite(e.rect) ? minMaxRect(e.rect) : null });
+      part: typeof part === "string" ? part.trim().toLowerCase() : null,
+      page: intOrNull(e.page), rect: normalRect(finite) });
+  }
   /* A non-body part of a document (a footnote, a header, a comment; `reading-pipeline` R47): the package part and the
      element reference are its address, so every part has its own. */
-  if (e.kind === "doc-part")
+  if (kind === "doc-part")
     return canonicalJson({ kind: "doc-part", part: trimmedOrNull(e.part), ref: trimmedOrNull(e.ref) });
-  return canonicalJson({ kind: e.kind ?? null, fields: e.fields ?? null });
+  return canonicalJson({ kind: kind ?? null, fields: e.fields ?? null });
 }
 
 /** The human form IC-1 requires, DERIVED when the member authored none (R98) — composed FROM the extent, so
@@ -1670,47 +2095,73 @@ export function canonicalExtent(extent) {
  *  for the same address (`Sheet1!B14`, `¶12`, `slide 7`); pages, paragraphs and tables are shown 1-based.
  *  `run` and `shape` are in the address and not in the sentence: two rows citing two shapes of one slide
  *  describe alike and address apart — under-describing, never over-claiming. */
+/** @param {unknown} extent @returns {string} */
 export function describeExtent(extent) {
-  const e = extent && typeof extent === "object" ? extent : {};
+  /* A non-object reads as `{}`, a part of the document nobody can name. */
+  if (!extent || !isFields(extent)) return word("textchain.text.part_document_record");
+  const e = extent;
+  const kind = e.kind;
   /* A part's `ref` is its element reference, an address field and no authored sentence (R97), so it is read before the
      authored-`ref` rule. */
-  if (e.kind === "doc-part") {
+  if (kind === "doc-part") {
     const ref = trimmedOrNull(e.ref);
     return ref ? localize("text-chain.textchain.part_ref", "part {ref}", { ref }) : word("textchain.text.part_document_record");
   }
-  if (typeof e.ref === "string" && e.ref.trim()) return e.ref.trim();
-  if (e.kind === "document") return word("content.why.whole_document");
-  if (e.kind === "pdf-page") {
-    if (!Number.isInteger(e.page)) return word("textchain.text.page_document");
-    return Array.isArray(e.rect) && e.rect.length === 4 ? word("textchain.text.page_region", { page: String(e.page + 1) }) : `page ${e.page + 1}`;
+  const authored = e.ref;
+  if (typeof authored === "string" && authored.trim()) return authored.trim();
+  if (kind === "document") return word("content.why.whole_document");
+  if (kind === "pdf-page") {
+    const page = e.page, rect = e.rect;
+    if (!Number.isInteger(page) || typeof page !== "number") return word("textchain.text.page_document");
+    return isList(rect) && rect.length === 4 ? word("textchain.text.page_region", { page: String(page + 1) }) : `page ${page + 1}`;
   }
-  if (e.kind === "sheet-cell") {
+  if (kind === "sheet-cell") {
     const sheet = trimmedOrNull(e.sheet), cell = trimmedOrNull(e.cell);
     return sheet && cell ? `${sheet}!${cell}` : word("textchain.text.cell_spreadsheet");
   }
-  if (e.kind === "doc-para")
-    return Number.isInteger(e.para) ? `¶${e.para + 1}` : word("textchain.text.paragraph_document");
-  if (e.kind === "slide-shape")
-    return Number.isInteger(e.slide) ? `slide ${e.slide}` : word("textchain.text.shape_deck");
-  if (e.kind === "sheet-range") {
-    const sheet = trimmedOrNull(e.sheet);
-    const range = typeof e.range === "string" ? canonicalRange(e.range) : null;
+  if (kind === "doc-para") {
+    const para = e.para;
+    return Number.isInteger(para) && typeof para === "number" ? `¶${para + 1}` : word("textchain.text.paragraph_document");
+  }
+  if (kind === "slide-shape") {
+    const slide = e.slide;
+    return Number.isInteger(slide) && typeof slide === "number" ? `slide ${slide}` : word("textchain.text.shape_deck");
+  }
+  if (kind === "sheet-range") {
+    const sheet = trimmedOrNull(e.sheet), given = e.range;
+    const range = typeof given === "string" ? canonicalRange(given) : null;
     return sheet && range ? `${sheet}!${range}` : word("textchain.text.range_cells_spreadsheet");
   }
-  if (e.kind === "doc-table") {
-    if (!Number.isInteger(e.table)) return word("textchain.text.table_document");
-    const cell = typeof e.cell === "string" && e.cell.trim() ? e.cell.trim().replace(/\$/g, "").toUpperCase() : null;
-    return `table ${e.table + 1}${cell ? `, ${cell}` : ""}`;
+  if (kind === "doc-table") {
+    const table = e.table, given = e.cell;
+    if (!Number.isInteger(table) || typeof table !== "number") return word("textchain.text.table_document");
+    const cell = typeof given === "string" && given.trim() ? given.trim().replace(/\$/g, "").toUpperCase() : null;
+    return `table ${table + 1}${cell ? `, ${cell}` : ""}`;
   }
-  if (e.kind === "image") {
-    if (typeof e.part === "string" && e.part.trim()) return `image ${e.part.trim().toLowerCase().slice(0, 12)}`;
-    if (Number.isInteger(e.page)) return word("pdfstructure.image_page", { page: String(e.page + 1) });
+  if (kind === "image") {
+    const part = e.part, page = e.page;
+    if (typeof part === "string" && part.trim()) return `image ${part.trim().toLowerCase().slice(0, 12)}`;
+    if (Number.isInteger(page) && typeof page === "number") return word("pdfstructure.image_page", { page: String(page + 1) });
     return word("textchain.text.image_document");
   }
   /* Own keys only: a kind such as `constructor` is not a kind, and reads as one nobody can name. */
-  const row = typeof e.kind === "string" && Object.prototype.hasOwnProperty.call(CONTENT_EXTENT_KINDS, e.kind)
-    ? CONTENT_EXTENT_KINDS[e.kind] : null;
+  const row = typeof kind === "string" ? extentKindOf(kind) : undefined;
   return row ? row.human : word("textchain.text.part_document_record");
+}
+/** The row of `CONTENT_EXTENT_KINDS` a kind names, as it stands; undefined for a name that is not one of its keys.
+ *  @param {string} kind @returns {ExtentKind | undefined} */
+function extentKindOf(kind) {
+  switch (kind) {
+    case "document": return CONTENT_EXTENT_KINDS.document;
+    case "pdf-page": return CONTENT_EXTENT_KINDS["pdf-page"];
+    case "sheet-cell": return CONTENT_EXTENT_KINDS["sheet-cell"];
+    case "slide-shape": return CONTENT_EXTENT_KINDS["slide-shape"];
+    case "doc-para": return CONTENT_EXTENT_KINDS["doc-para"];
+    case "sheet-range": return CONTENT_EXTENT_KINDS["sheet-range"];
+    case "doc-table": return CONTENT_EXTENT_KINDS["doc-table"];
+    case "image": return CONTENT_EXTENT_KINDS.image;
+    default: return undefined;
+  }
 }
 
 /*__CPDF20_PER_PAGE_START__*/
@@ -1811,12 +2262,37 @@ export function describeExtent(extent) {
 
 /** The rule in one sentence, so the probe, the suite and any report quote ONE
  *  spelling of it rather than three that drift. */
+/** @type {string} */
 export const TIER_RULE = word("textchain.tier_rule");
 
-const undeterminedChars = (page) =>
-  (page && Array.isArray(page.undetermined))
-    ? page.undetermined.reduce((n, m) => n + (m && Number.isFinite(m.count) ? m.count : 0), 0)
-    : 0;
+/**
+ * One marker of what a decode could not read on a page (R74-R77, R90).
+ * @typedef {Object} TierMarker
+ * @property {number} [count]
+ * @property {string} [reason]
+ * @property {number[] | null} [rect]
+ */
+/**
+ * One page of a decode (R74-R78), with whatever else it carries, which the merge keeps (an `image_content_*` field
+ * among them, R77).
+ * @typedef {Object} TierPage
+ * @property {number | null | undefined} [page] a page with no integer number is kept as it came (R105)
+ * @property {string | null} [text]
+ * @property {TierMarker[]} [undetermined]
+ * @property {1 | 2} [tier]
+ */
+/**
+ * A decode of a document's text layer (R74-R78).
+ * @typedef {Object} TierText
+ * @property {string | null} [document]
+ * @property {TierPage[]} [pages]
+ * @property {TierMarker[]} [undetermined]
+ * @property {{ chars?: number, undetermined?: number }} [counts]
+ */
+/**
+ * What `mergeTier2Text` answers (R74-R79, R105).
+ * @typedef {{ ok: false, why: string, replaced: (number | null)[], kept: (number | null)[], perPageTier: null } | { ok: true, text: TierText | null | undefined, wholesale: true, perPageTier: null, replaced: (number | null)[], kept: (number | null)[] } | { ok: true, text: TierText, wholesale: false, replaced: (number | null)[], kept: (number | null)[], perPageTier: { tier1: (number | null)[], tier2: (number | null)[] } }} TierMerge
+ */
 
 /* D-501 — THE AWARD COUNTS GLYPHS, AND `text.length` IS NOT A COUNT OF GLYPHS.
  *
@@ -1851,7 +2327,7 @@ const undeterminedChars = (page) =>
  * pages), so that half of this counter is exercised by a synthetic arm in the
  * suite and by nothing in the wild — stated rather than implied.
  *
- * WHAT THIS DOES NOT TOUCH. `undeterminedChars` reads counts the decoder
+ * WHAT THIS DOES NOT TOUCH. The undetermined sum in `perPageTierWinner` reads counts the decoder
  * reported and is not a length at all. `counts.chars` — the figure I2 REPORTS —
  * is deliberately left as the raw character count: it is a reported quantity
  * rather than an award, and moving it is an interface change.
@@ -1884,6 +2360,7 @@ const undeterminedChars = (page) =>
  * fact, and the two disagree by exactly the whitespace. */
 /* The whitespace `\s` matches above U+00A0, spelled out so the count needs no per-character regexp (G48):
    U+00A0, 1680, 2000-200A, 2028, 2029, 202F, 205F, 3000, FEFF (R73). */
+/** @param {number} c @returns {boolean} */
 const isWideSpace = (c) =>
   c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 ||
   c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
@@ -1928,21 +2405,39 @@ export function glyphCount(s) {
    same counter; this wrapper keeps the page shape the award is written against,
    and keeps `decodedChars` unexported, which is what lets the suite spell the
    rule independently. */
-const decodedChars = (page) =>
-  (page && typeof page.text === "string") ? glyphCount(page.text) : 0;
+/** @param {object} page @returns {number} */
+const decodedChars = (page) => {
+  const text = isFields(page) ? page.text : undefined;
+  return typeof text === "string" ? glyphCount(text) : 0;
+};
 
 /**
  * Which tier wins ONE page. The whole rule, isolated so it can be driven
  * directly and inverted by a control without touching the merge around it.
  *
- * @param {object} p1  tier 1's page: {page, text, undetermined:[{count}]}
- * @param {object} p2  tier 2's page, same shape
+ * @param {object | null | undefined} p1  tier 1's page: {page, text, undetermined:[{count}]}; absent when tier 1 has none
+ * @param {object | null | undefined} p2  tier 2's page, same shape; absent when tier 2 offers none
  * @returns {"tier1"|"tier2"}
  */
 export function perPageTierWinner(p1, p2) {
   if (!p2) return "tier1";                       // nothing offered, nothing to weigh
   if (!p1) return "tier2";                       // tier 1 has no page here at all
-  const u1 = undeterminedChars(p1), u2 = undeterminedChars(p2);
+  /* The undetermined characters each tier reports on the page (summed `.undetermined[].count`). */
+  let u1 = 0, u2 = 0;
+  if (isFields(p1)) {
+    const list = p1.undetermined;
+    if (isList(list)) u1 = list.reduce((/** @type {number} */ n, m) => {
+      const count = isFields(m) ? m.count : undefined;
+      return n + (m && typeof count === "number" && Number.isFinite(count) ? count : 0);
+    }, 0);
+  }
+  if (isFields(p2)) {
+    const list = p2.undetermined;
+    if (isList(list)) u2 = list.reduce((/** @type {number} */ n, m) => {
+      const count = isFields(m) ? m.count : undefined;
+      return n + (m && typeof count === "number" && Number.isFinite(count) ? count : 0);
+    }, 0);
+  }
   const c1 = decodedChars(p1), c2 = decodedChars(p2);
   /* (1) tier 1's own admission, and (2) the fact about the text in hand. Both,
      or the page stays where it is. */
@@ -1960,10 +2455,14 @@ export function perPageTierWinner(p1, p2) {
  * accepting costs an overwritten one. Only the second makes the record claim
  * more than it can support.
  */
+/** @param {TierText | null} [base] tier 1's decode @param {TierText | null} [t2] tier 2's @returns {TierMerge} */
 export function mergeTier2Text(base, t2) {
-  const basePages = (base && Array.isArray(base.pages)) ? base.pages : [];
+  const bp = base ? base.pages : undefined, tp = t2 ? t2.pages : undefined;
+  /** @type {TierPage[]} */
+  const basePages = Array.isArray(bp) ? bp : [];
   const usable = basePages.filter((p) => p && Number.isInteger(p.page));
-  const t2Pages = (t2 && Array.isArray(t2.pages)) ? t2.pages : [];
+  /** @type {TierPage[]} */
+  const t2Pages = Array.isArray(tp) ? tp : [];
 
   if (!usable.length) {
     /* D-514 — WHAT THE BASE HOLDS IS COUNTED IN GLYPHS, AND READ OFF THE TEXT IN
@@ -1982,9 +2481,12 @@ export function mergeTier2Text(base, t2) {
        is not a licence to replace what it may be describing. No producer in this
        plane reaches that branch (`tier2-wire.test.mjs` §8 measured it), so it is
        a guard, named rather than dressed up as behaviour. */
-    const baseText = (typeof (base && base.document) === "string") ? base.document : null;
+    const doc = base ? base.document : base;
+    const baseText = typeof doc === "string" ? doc : null;
     const baseGlyphs = baseText === null ? null : glyphCount(baseText);
-    const reported = (base && base.counts && Number.isFinite(base.counts.chars)) ? base.counts.chars : 0;
+    const counts = base ? base.counts : undefined;
+    const chars = counts ? counts.chars : undefined;
+    const reported = typeof chars === "number" && Number.isFinite(chars) ? chars : 0;
     if (baseGlyphs === null ? reported > 0 : baseGlyphs > 0)
       return { ok: false, replaced: [], kept: [], perPageTier: null,
                why: word("textchain.why.document_tier_reading", { held: baseGlyphs === null
@@ -1993,32 +2495,45 @@ export function mergeTier2Text(base, t2) {
     /* Nothing to lose — the wholly-unread document. Tier 2 takes it whole, and
        the per-page statement says so honestly rather than inventing pages. */
     return { ok: true, text: t2, wholesale: true, perPageTier: null,
-             replaced: t2Pages.map((p) => p.page).filter(Number.isInteger), kept: [] };
+             replaced: t2Pages.flatMap((p) => { const n = p.page; return typeof n === "number" && Number.isInteger(n) ? [n] : []; }), kept: [] };
   }
 
-  const byPage = new Map();
-  for (const p of t2Pages) if (p && Number.isInteger(p.page)) byPage.set(p.page, p);
+  /** @type {Map<number, TierPage>} */
+  const byPage = mapOf([]);
+  for (const p of t2Pages) { const n = p ? p.page : undefined; if (typeof n === "number" && Number.isInteger(n)) byPage.set(n, p); }
 
   /* D-633 / D-665 / D-697: what tier 2 says of a page it wins, and what is carried onto it. */
-  const isImage = (u) => u && typeof u.reason === "string" && u.reason.startsWith("image_content_");
-  const sameMark = (x, y) => x && y && x.reason === y.reason
-    && JSON.stringify(x.rect ?? null) === JSON.stringify(y.rect ?? null);
-  const textOf = (c) => (typeof c.text === "string" ? c.text : "");
+  /** @param {TierMarker | null | undefined} u @returns {boolean} */
+  const isImage = (u) => { const reason = u ? u.reason : undefined; return typeof reason === "string" && reason.startsWith("image_content_"); };
+  /** @param {TierMarker | null | undefined} x @param {TierMarker | null | undefined} y @returns {boolean} */
+  const sameMark = (x, y) => !!(x && y && x.reason === y.reason
+    && JSON.stringify(x.rect ?? null) === JSON.stringify(y.rect ?? null));
+  /** @param {TierPage} c @returns {string} */
+  const textOf = (c) => { const text = c.text; return typeof text === "string" ? text : ""; };
 
-  const pages = [], replaced = [], kept = [];
+  /** @type {TierPage[]} */
+  const pages = [];
+  /** @type {(number | null)[]} */
+  const replaced = [];
+  /** @type {(number | null)[]} */
+  const kept = [];
   for (const b of usable) {
-    const cand = byPage.get(b.page) || null;
+    const at = b.page ?? null;
+    const cand = (at !== null && byPage.get(at)) || null;
     const winner = perPageTierWinner(b, cand);
     if (winner === "tier2" && cand) {
-      replaced.push(b.page);
+      replaced.push(at);
       /* D-633 — THE PAGE KEEPS WHAT TIER 1 SAID ABOUT ITS IMAGES. `pdf-reader`'s `image_content_*`
          markers (R26) are facts about the images the page paints and its box, not about which decode
          won, and tier 2 reads no image: taking tier 2's markers alone dropped `image_content_unread`,
          so a page tier 2 won routed nowhere. They are carried unchanged after tier 2's own markers,
          unless tier 2 already states one; they count 0 undetermined characters, so no award moves.
          A field so named on the page itself is carried too. */
-      const own = Array.isArray(cand.undetermined) ? cand.undetermined : [];
-      const had = Array.isArray(b.undetermined) ? b.undetermined : [];
+      const cu = cand.undetermined, bu = b.undetermined;
+      /** @type {TierMarker[]} */
+      const own = Array.isArray(cu) ? cu : [];
+      /** @type {TierMarker[]} */
+      const had = Array.isArray(bu) ? bu : [];
       /* D-665 / D-697 (N102) — AND WHAT IT SAID ABOUT EACH IMAGE IT COULD NOT READ. `image_unread`
          (one marker per painted image, `pdf-reader`) is as true after tier 2 as before, since tier 2
          reads no image. Each is carried after tier 2's own markers unless tier 2 states the same
@@ -2027,11 +2542,11 @@ export function mergeTier2Text(base, t2) {
       const images = had.filter((u) => (isImage(u) && !tier2Images)
         || (u && u.reason === "image_unread" && !own.some((o) => sameMark(o, u))));
       const fields = Object.fromEntries(Object.entries(b).filter(([k]) => k.startsWith("image_content_")));
-      pages.push({ ...fields, page: b.page, text: textOf(cand),
+      pages.push({ ...fields, page: at, text: textOf(cand),
                    undetermined: images.length ? [...own, ...images] : own,
                    tier: 2 });
     } else {
-      kept.push(b.page);
+      kept.push(at);
       pages.push({ ...b, tier: 1 });
     }
   }
@@ -2042,11 +2557,12 @@ export function mergeTier2Text(base, t2) {
      (listed in `replaced`); tier 2 reads what tier 1 did not, so nothing is owed to compare it with. Of two
      tier-2 pages with one number the later is the page (the map above). A tier-2 page with no integer `page`
      is adopted after the numbered pages, in its own order, listed in `replaced` as `null`. */
-  const adopt = (c) => ({ page: c.page, text: textOf(c), undetermined: Array.isArray(c.undetermined) ? c.undetermined : [], tier: 2 });
+  /** @param {TierPage} c @returns {TierPage} */
+  const adopt = (c) => { const u = c.undetermined; return { page: c.page, text: textOf(c), undetermined: Array.isArray(u) ? u : [], tier: 2 }; };
   const held = new Set(usable.map((b) => b.page));
   for (const [number, c] of [...byPage].sort((x, y) => x[0] - y[0])) {
     if (held.has(number)) continue;
-    const at = pages.findIndex((q) => q.page > number);
+    const at = pages.findIndex((q) => Number(q.page) > number);
     pages.splice(at < 0 ? pages.length : at, 0, adopt(c));
     replaced.push(number);
   }
@@ -2057,6 +2573,7 @@ export function mergeTier2Text(base, t2) {
     pages.push(adopt(c)); replaced.push(null);
   }
 
+  /** @type {TierMarker[]} */
   const undetermined = [];
   for (const p of pages) for (const u of p.undetermined || []) undetermined.push(u);
   const document = pages.map((p) => p.text).filter((t) => typeof t === "string" && t.length).join("\n");
@@ -2072,9 +2589,15 @@ export function mergeTier2Text(base, t2) {
  * did — three findings kept apart because collapsing them loses the one a
  * reader needs (D-252's rule, applied here).
  */
+/**
+ * What `tier2Note` reads of a merge (R79, R80): a refusal's `why`, or the pages each tier produced.
+ * @typedef {{ ok: false, why?: string | null } | { ok: true, wholesale: true } | { ok: true, wholesale?: false, replaced: readonly (number | null)[], kept: readonly (number | null)[] }} TierNoted
+ */
+/** @param {TierNoted | null} [m] @returns {string | null} */
 export function tier2Note(m) {
-  if (!m || !m.ok) return m && m.why ? m.why : null;
+  if (!m || !m.ok) { const why = m ? m.why : undefined; return why ? why : null; }
   if (m.wholesale) return null;
+  /** @type {string[]} */
   const say = [];
   if (m.replaced.length)
     say.push(word("textchain.say.push.page_re_read", { replaced: String(m.replaced.length), kept: String(m.kept.length) }));
