@@ -4,7 +4,9 @@
  * The file is the record the bounded types must reproduce; it is not regenerated afterwards. */
 import fs from "node:fs";
 import { fixtureReadings, answerOf } from "./r37-readings.mjs";
+/** @import { ReadingAnswer } from "./r37-readings.mjs" */
 
+/** @type {{ note: string, taken_at: string, readings: { [id: string]: ReadingAnswer } }} */
 const out = { note: "each type's detect, and the registry's verdict with the winner's parse, as digests, before R37 (doctypes R37)",
               taken_at: "2026-10-22", readings: {} };
 for (const r of fixtureReadings()) out.readings[r.id] = answerOf(r);

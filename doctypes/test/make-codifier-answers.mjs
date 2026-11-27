@@ -17,9 +17,19 @@ import fs from "node:fs";
 import { servedDocuments, answersOf, textOf } from "./codifier.mjs";
 import { regulation } from "../index.mjs";
 import { HELD } from "./fixtures.mjs";
+/** @import { CodifierAnswers } from "./codifier.mjs" */
+
+/** `x`, which the codifier's markup always gives; a `TypeError` where it does not, as reading a member of it would have.
+ *  @template T
+ *  @param {T | undefined} x @param {string} what @returns {T} */
+const must = (x, what) => {
+  if (x === undefined) throw new TypeError(`no ${what}`);
+  return x;
+};
 
 /* Where the markup's indentation is not what was printed, the member's reading (the
    subsection paths, relative to the section). */
+/** @type {{ [number: string]: (paths: string[][]) => string[][] }} */
 const CORRECTED = {
   /* Printed: B. … 3. then "4.", "5.", "6." with their items; the markup indents "4." at the
      section's top level, so "5." and "6." hang off a top-level "4". All three are B's. */
@@ -29,11 +39,12 @@ const CORRECTED = {
      and B's "2."/"3." under its "1.". Each is read as printed. */
   "8.22.090": (paths) => paths.map((p) => {
     if (p[0] === "A" || p[0] === "B") {
-      if (p[0] === "B" && p[1] === "1" && (p[2] === "2" || p[2] === "3")) return ["B", p[2]];
+      const third = p[2];
+      if (p[0] === "B" && p[1] === "1" && (third === "2" || third === "3")) return ["B", third];
       return p;
     }
     let q = ["A", ...p];
-    if (q[1] === "1" && q[2] === "m" && q.length === 4) q = ["A", "1", q[3]];
+    if (q[1] === "1" && q[2] === "m" && q.length === 4) q = ["A", "1", ...q.slice(3)];
     if (q[1] === "3" && q[2] === "4") q = ["A", "4", ...q.slice(3)];
     if (q[1] === "3" && q[2] === "5") q = ["A", "5", ...q.slice(3)];
     return q;
@@ -53,25 +64,29 @@ const REVIEWED = [
   "8.22.020: the exceptive passage inside \"CPI Rent Adjustment\" is listed (\"except as\" …).",
 ];
 
+/** @type {CodifierAnswers} */
 const out = { note: "What a member reads in each codifier capture (doctypes R17); see make-codifier-answers.mjs.",
               reviewed: REVIEWED, documents: {} };
 const VIEW = HELD;
 for (const { doc } of servedDocuments()) {
   const a = answersOf(doc);
-  const num = a.sections[0].number;
-  const holderOf = (para) => [...a.sections].reverse().find((s) => s.para <= para).number;
+  const num = must(a.sections[0], "section").number;
+  /** @param {number} para @returns {string} */
+  const holderOf = (para) => must([...a.sections].reverse().find((s) => s.para <= para), "section holding it").number;
   let subs = a.markers.map((m) => m.path);
-  if (CORRECTED[num]) subs = CORRECTED[num](subs);
+  const fix = CORRECTED[num];
+  if (fix) subs = fix(subs);
   const secs = a.markers.map((m) => holderOf(m.para));
   const text = textOf(doc).document;
   const r = regulation.parse({ text, view: VIEW });
+  /** @param {{ readonly start: number, readonly end: number }} x @returns {string} */
   const opens = (x) => text.slice(x.start, x.end).split(/\s+/).slice(0, 6).join(" ");
   out.documents[doc.Id] = {
     title: doc.Title,
     sections: a.sections.map((s) => ({ number: s.number, heading: s.heading, para: s.para })),
     subsections: subs.map((p, i) => `${secs[Math.min(i, secs.length - 1)]}|${p.join(".")}`),
-    definitions: r.definitions.map((d) => ({ term: d.term, section: d.section && d.section.join(".") })),
-    exceptions: r.exceptions.map((e) => ({ opens: opens(e), section: e.section && e.section.join("."), cites: e.cites })),
+    definitions: r.definitions.map((d) => { const sec = d.section; return { term: d.term, section: sec && sec.join(".") }; }),
+    exceptions: r.exceptions.map((e) => { const sec = e.section; return { opens: opens(e), section: sec && sec.join("."), cites: e.cites }; }),
   };
 }
 fs.writeFileSync(new URL("./fixtures/codifier-answers.json", import.meta.url), JSON.stringify(out, null, 1) + "\n");

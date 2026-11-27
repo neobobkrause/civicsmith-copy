@@ -3,17 +3,29 @@
  * `make-r38-answers.mjs`). Nothing here is the module under test. */
 import { DOCTYPES } from "../index.mjs";
 import { flattenText, makeLocator } from "../../docprofile/readtext.mjs";
-import { sha } from "./r37-readings.mjs";
+import { sha, thrownText, parseWith } from "./r37-readings.mjs";
+/** @import { Reading } from "./r37-readings.mjs" */
 
-/** The parse of `policy` and of `regulation` over one reading, each as a digest (a parse that throws is its message). */
+/**
+ * A parse's answer as a digest, or the message of what it threw.
+ * @typedef {string | { threw: string }} ParseDigest
+ */
+/**
+ * The parse of `policy` and of `regulation` over one reading.
+ * @typedef {{ [key: string]: ParseDigest }} Parses
+ */
+
+/** The parse of `policy` and of `regulation` over one reading, each as a digest (a parse that throws is its message).
+ *  @param {Reading} reading @returns {Parses} */
 export function parsesOf(reading) {
   const flat = flattenText(reading.supplied);
   const locate = makeLocator(flat.segments);
+  /** @type {Parses} */
   const out = {};
   for (const key of ["policy", "regulation"]) {
     const t = DOCTYPES.find((x) => x.key === key);
-    try { out[key] = sha(t.parse({ ...reading.ctx, text: flat.text, at: null, locate, alsoSatisfies: () => [] })); }
-    catch (e) { out[key] = { threw: String(e && e.message) }; }
+    try { out[key] = sha(parseWith(t, { ...reading.ctx, text: flat.text, at: null, locate, alsoSatisfies: () => [] })); }
+    catch (e) { out[key] = { threw: thrownText(e) }; }
   }
   return out;
 }

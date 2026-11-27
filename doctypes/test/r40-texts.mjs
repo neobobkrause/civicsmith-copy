@@ -21,10 +21,13 @@ const FRAGMENTS = [
   "the", "of", "and", "word", " ", "  ", "\n", "\n", "\r\n", ".", ";", ". ", "Mr. ", "etc. ", "\t",
 ];
 
-/** `count` seeded texts of phrases and white space. */
+/** `count` seeded texts of phrases and white space.
+ *  @param {number} count
+ *  @returns {string[]} */
 export function randomTexts(count) {
   let seed = 4040;
-  const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  const rnd = /** @param {number} n @returns {number} */ (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  /** @type {string[]} */
   const out = [];
   for (let i = 0; i < count; i++) {
     let t = "";
@@ -34,46 +37,57 @@ export function randomTexts(count) {
   return out;
 }
 
+/** `unit` repeated to exactly `chars` characters.
+ *  @param {string} unit @param {number} chars @returns {string} */
 export const repeated = (unit, chars) => unit.repeat(Math.ceil(chars / unit.length)).slice(0, chars);
 
-/** A text of `n` addresses at one domain, each with a name and a number, joined by `sep`. */
+/** A text of `n` addresses at one domain, each with a name and a number, joined by `sep`.
+ *  @param {number} n @param {string} sep @returns {string} */
 export function addresses(n, sep) {
+  /** @type {string[]} */
   const parts = [];
   for (let i = 0; i < n; i++) parts.push(`Person ${i} <user${i}@city.gov> (510) 555-${String(1000 + (i % 9000))}`);
   return parts.join(sep);
 }
 
 /** About `chars` characters of lines of distinct addresses at one domain, as a spreadsheet exported to text. The lines are
- *  written into a buffer, which the heap does not hold, so the text is the only large thing the heap holds. */
+ *  written into a buffer, which the heap does not hold, so the text is the only large thing the heap holds. Only the
+ *  characters written are read back, so the buffer's first contents never reach the text.
+ *  @param {number} chars @returns {string} */
 export function csvOfAddresses(chars) {
-  const buf = Buffer.allocUnsafe(chars + 200);
+  const buf = Buffer.alloc(chars + 200);
   let n = 0;
-  for (let i = 0; n < chars; i++) n += buf.write(`Person ${i},user${i}@city.gov,555-01${String(i % 100).padStart(2, "0")}\n`, n, "latin1");
+  for (let i = 0; n < chars; i++) n += buf.write(`Person ${i},user${i}@city.gov,555-01${String(i % 100).padStart(2, "0")}\n`, n, undefined, "latin1");
   return buf.toString("latin1", 0, n);
 }
 
-/** `n` definitions, one to a line, under a heading the regulation type reads as an instrument. */
+/** `n` definitions, one to a line, under a heading the regulation type reads as an instrument.
+ *  @param {number} n @returns {string} */
 export function definitions(n) {
   const parts = ["The City Council does hereby ordain as follows:", "SECTION 1. Definitions."];
   for (let i = 0; i < n; i++) parts.push(`"Term ${i}" means a thing numbered ${i} in this chapter.`);
   return parts.join("\n");
 }
 
-/** `n` exceptions, one to a line (`oneLine` false) or all on one line, under the same heading. */
+/** `n` exceptions, one to a line (`oneLine` false) or all on one line, under the same heading.
+ *  @param {number} n @param {boolean} oneLine @returns {string} */
 export function exceptions(n, oneLine) {
+  /** @type {string[]} */
   const parts = [];
   for (let i = 0; i < n; i++) parts.push(`Except as provided in Section ${i % 30}, this shall not apply.`);
   return "The City Council does hereby ordain as follows:\nSECTION 1. Title.\n" + parts.join(oneLine ? " " : "\n");
 }
 
 /** `n` citations of fifty instruments, one to a line (`n` a multiple of fifty), behind the formula that makes the text an
- *  instrument. */
+ *  instrument.
+ *  @param {number} n @returns {string} */
 export function citations(n) {
   const block = Array.from({ length: 50 }, (_, i) => `See Ordinance No. ${13000 + i} C.M.S.`).join("\n") + "\n";
   return "The City Council does hereby ordain as follows:\n" + block.repeat(Math.ceil(n / 50)).slice(0, -1);
 }
 
-/** A calendar page of `n` dates in one table cell. */
+/** A calendar page of `n` dates in one table cell.
+ *  @param {number} n @returns {string} */
 export function datesPage(n) {
   return `<html><body><a href="MeetingDetail.aspx?ID=1">Meeting details</a> Date Range Dropdown <main><table><tr><td>${"1/2/2026 ".repeat(n)}</td></tr></table></main></body></html>`;
 }
