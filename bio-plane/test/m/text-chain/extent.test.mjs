@@ -11,14 +11,25 @@ import {
 import { canonicalJson } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
 
+/** The eight landed kinds, by name. @typedef {"document" | "pdf-page" | "sheet-cell" | "slide-shape" | "doc-para" | "sheet-range" | "doc-table" | "image"} KindName */
+/** A value whose members this suite reads one by one, each as any value. @typedef {{ readonly [key: string]: Input }} Bag */
+/** Any input the suite drives: an object of fields, or junk of any other kind. @typedef {undefined | null | number | string | boolean | symbol | (() => number) | number[] | Bag} Input */
+
+/** @type {readonly KindName[]} */
 const KINDS = ["document", "pdf-page", "sheet-cell", "slide-shape", "doc-para", "sheet-range", "doc-table", "image"];
-const JUNK = [undefined, null, 0, 1, -1, 1.5, NaN, "", " ", "x", true, [], {}, [1, 2], Symbol.for("s"), () => 1,
-  Object.create(null)];
+/** @type {readonly Input[]} */
+const JUNK = [undefined, null, 0, 1, -1, 1.5, NaN, "", " ", "x", true, [], {}, [1, 2], Symbol("s"), () => 1,
+  { __proto__: null }];
 /* A message for any input, a prototype-less object and a symbol included. */
+/** @param {unknown} x @returns {string} */
 const label = (x) => { try { return typeof x === "symbol" ? "symbol" : JSON.stringify(x) ?? String(x); } catch { return "(no string form)"; } };
+/* The object an input is, its members read one by one; null for any other input. An array is read as no object:
+   it holds none of the fields an extent names, so it reads exactly as `{}` does. */
+/** @param {Input} x @returns {Bag | null} */
+const bagOf = (x) => (typeof x === "object" && x !== null && !Array.isArray(x) ? x : null);
 
 test("R92: CONTENT_EXTENT_KINDS is the eight landed kinds, in order, each with its human phrase; dom is not one", () => {
-  assert.equal(Object.getPrototypeOf(CONTENT_EXTENT_KINDS), Object.prototype);
+  assert.equal(Reflect.getPrototypeOf(CONTENT_EXTENT_KINDS), Object.prototype);
   assert.deepEqual(Object.keys(CONTENT_EXTENT_KINDS), KINDS);
   assert.deepEqual(CONTENT_EXTENT_KINDS, {
     document: { landed: true, human: word("content.why.whole_document") },
@@ -47,13 +58,16 @@ test("R93: the A1 cell and range patterns match exactly the stated shapes", () =
 });
 
 test("R94: a1ToRowCol answers 1-based {col,row}, the column bijective base 26, $ dropped and case folded; null otherwise", () => {
-  const want = { A1: [1, 1], Z1: [26, 1], AA1: [27, 1], AZ1: [52, 1], BA1: [53, 1], ZZ1: [702, 1], AAA1: [703, 1],
-    XFD1048576: [16384, 1048576], ZZZ9999999: [18278, 9999999], b14: [2, 14], "$B$14": [2, 14] };
-  for (const [cell, [col, row]] of Object.entries(want)) assert.deepEqual(a1ToRowCol(cell), { col, row }, cell);
+  /** @type {readonly (readonly [string, number, number])[]} */
+  const want = [["A1", 1, 1], ["Z1", 26, 1], ["AA1", 27, 1], ["AZ1", 52, 1], ["BA1", 53, 1], ["ZZ1", 702, 1], ["AAA1", 703, 1],
+    ["XFD1048576", 16384, 1048576], ["ZZZ9999999", 18278, 9999999], ["b14", 2, 14], ["$B$14", 2, 14]];
+  for (const [cell, col, row] of want) assert.deepEqual(a1ToRowCol(cell), { col, row }, cell);
+  /** The column of a cell this test expects to read. @param {string} cell @returns {number} */
+  const colOf = (cell) => { const p = a1ToRowCol(cell); assert.ok(p, cell); return p.col; };
   /* Every column of one and two letters, against an independent count. */
   let n = 0;
-  for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(a1ToRowCol(`${b}1`).col, ++n);
-  for (const a of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(a1ToRowCol(`${a}${b}1`).col, ++n);
+  for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(colOf(`${b}1`), ++n);
+  for (const a of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") for (const b of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") assert.equal(colOf(`${a}${b}1`), ++n);
   for (const x of [...JUNK, "A0", "A01", "AAAA1", "1A", "A1:B2", " A1", "A 1"]) assert.equal(a1ToRowCol(x), null, label(x));
 });
 
@@ -85,6 +99,7 @@ test("R96: contentCitedAs is the stated value unchanged, else bytes for an image
 });
 
 test("R97: canonicalExtent is canonicalJson of each arm's fixed fields, absent as null, every spelling of one address one string", () => {
+  /** @param {unknown} o @returns {string} */
   const C = (o) => canonicalJson(o);
   assert.equal(canonicalExtent({ kind: "document", page: 3, ref: "x" }), C({ kind: "document" }));
   assert.equal(canonicalExtent({ kind: "pdf-page", page: 2, rect: [10, 20, 1, 2], ref: "a" }), C({ kind: "pdf-page", page: 2, rect: [1, 2, 10, 20] }));
@@ -112,8 +127,15 @@ test("R97: canonicalExtent is canonicalJson of each arm's fixed fields, absent a
   for (const kind of KINDS) assert.equal(canonicalExtent({ kind, page: 0, ref: "one" }), canonicalExtent({ kind, page: 0, ref: "two" }));
 });
 
+/** A field the sweeps vary. @typedef {"page" | "rect" | "sheet" | "cell" | "slide" | "shape" | "para" | "run" | "range" | "table" | "part" | "cited_as" | "ref" | "fields"} Field */
+
+/** `o` with field `f` set to `v`. @param {Bag} o @param {Field} f @param {Input} v @returns {Bag} */
+const withField = (o, f, v) => ({ ...o, [f]: v });
+
 /* The inputs the R97 and R98 sweeps drive: every kind with each of its fields valid, missing and malformed. */
+/** @returns {Generator<Input, void, undefined>} */
 function* extents() {
+  /** @type {{ page: readonly Input[], rect: readonly Input[], sheet: readonly Input[], cell: readonly Input[], slide: readonly Input[], shape: readonly Input[], para: readonly Input[], run: readonly Input[], range: readonly Input[], table: readonly Input[], part: readonly Input[], cited_as: readonly Input[], ref: readonly Input[], fields: readonly Input[] }} */
   const vals = {
     page: [undefined, 0, 3, -1, 1.5, "2"], rect: [undefined, [0, 0, 10, 10], [10, 10, 0, 0], [1, 2, 3], [1, 2, 3, NaN]],
     sheet: [undefined, "Sheet1", " S ", "", 3], cell: [undefined, "B14", "$b$14", " c3 ", "B0", "A1:B2", 5],
@@ -122,14 +144,17 @@ function* extents() {
     part: [undefined, "word/media/image1.png", " PPT/Media/X.JPEG ", "", 7, "word/footnotes.xml"], cited_as: [undefined, null, "", "text", "bytes", "x"],
     ref: [undefined, "", "  ", " authored ", 4], fields: [undefined, { a: 1 }],
   };
-  const arms = {
-    document: [], "pdf-page": ["page", "rect", "run"], "sheet-cell": ["sheet", "cell"], "slide-shape": ["slide", "shape", "run"],
-    "doc-para": ["para", "run"], "sheet-range": ["sheet", "range", "run"], "doc-part": ["part", "ref"], "doc-table": ["table", "cell"],
-    image: ["part", "page", "rect", "cited_as"], dom: ["fields"], constructor: [], toString: [], "": [],
-  };
-  for (const [kind, fields] of Object.entries(arms)) {
-    const combos = fields.reduce((acc, f) => acc.flatMap((o) => vals[f].map((v) => (v === undefined ? o : { ...o, [f]: v }))), [{ kind }]);
-    for (const c of combos) { yield c; for (const ref of vals.ref.slice(1)) yield { ...c, ref }; }
+  /** @type {readonly (readonly [string, readonly Field[]])[]} */
+  const arms = [
+    ["document", []], ["pdf-page", ["page", "rect", "run"]], ["sheet-cell", ["sheet", "cell"]], ["slide-shape", ["slide", "shape", "run"]],
+    ["doc-para", ["para", "run"]], ["sheet-range", ["sheet", "range", "run"]], ["doc-part", ["part", "ref"]], ["doc-table", ["table", "cell"]],
+    ["image", ["part", "page", "rect", "cited_as"]], ["dom", ["fields"]], ["constructor", []], ["toString", []], ["", []],
+  ];
+  for (const [kind, fields] of arms) {
+    /** @type {Bag[]} */
+    const start = [{ kind }];
+    const combos = fields.reduce((acc, f) => acc.flatMap((o) => vals[f].map((v) => (v === undefined ? o : withField(o, f, v)))), start);
+    for (const c of combos) { yield c; for (const ref of vals.ref.slice(1)) yield withField(c, "ref", ref); }
   }
   yield* JUNK;
   yield { cited_as: "bytes" };
@@ -137,16 +162,26 @@ function* extents() {
 }
 
 /* R97, spelled from the requirement: each arm's fixed fields, absent ones null, `ref` never among them. */
-const isObj = (x) => x !== null && typeof x === "object";
+/** @param {unknown} n @returns {unknown} */
 const int = (n) => (Number.isInteger(n) ? n : null);
-const rect4 = (r) => (Array.isArray(r) && r.length === 4 && r.every((n) => typeof n === "number" && Number.isFinite(n))
-  ? [Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.max(r[0], r[2]), Math.max(r[1], r[3])] : null);
+/** @param {Input} r @returns {number[] | null} */
+const rect4 = (r) => {
+  if (!Array.isArray(r) || r.length !== 4) return null;
+  const [a, b, c, d] = r;
+  if (typeof a !== "number" || typeof b !== "number" || typeof c !== "number" || typeof d !== "number") return null;
+  if (![a, b, c, d].every((n) => Number.isFinite(n))) return null;
+  return [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)];
+};
+/** @param {Bag} e @returns {object} */
 const run = (e) => (Number.isInteger(e.run) ? { run: e.run } : {});
+/** @param {unknown} s @returns {string | null} */
 const sheetOf = (s) => (typeof s === "string" && s.trim() !== "" ? s.trim() : null);
+/** @param {unknown} c @returns {string | null} */
 const cellOf = (c) => (typeof c === "string" && /^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}$/.test(c.trim())
   ? c.trim().split("$").join("").toUpperCase() : null);
+/** @param {Input} x @returns {object} */
 function r97(x) {
-  const e = isObj(x) ? x : {};
+  const e = bagOf(x) ?? {};
   switch (e.kind) {
     case "document": return { kind: "document" };
     case "pdf-page": return { kind: "pdf-page", page: int(e.page), rect: rect4(e.rect), ...run(e) };
@@ -156,8 +191,11 @@ function r97(x) {
     case "sheet-range": return { kind: "sheet-range", sheet: sheetOf(e.sheet), range: canonicalRange(e.range), ...run(e) };
     case "doc-part": return { kind: "doc-part", part: sheetOf(e.part), ref: sheetOf(e.ref) };
     case "doc-table": return { kind: "doc-table", table: int(e.table), cell: cellOf(e.cell) };
-    case "image": return { kind: "image", cited_as: contentCitedAs(e),
-      part: typeof e.part === "string" ? e.part.trim().toLowerCase() : null, page: int(e.page), rect: rect4(e.rect) };
+    case "image": {
+      const part = e.part;
+      return { kind: "image", cited_as: contentCitedAs(e),
+        part: typeof part === "string" ? part.trim().toLowerCase() : null, page: int(e.page), rect: rect4(e.rect) };
+    }
     default: return { kind: e.kind ?? null, fields: e.fields ?? null };
   }
 }
@@ -166,19 +204,23 @@ test("R97: canonicalExtent answers R97's form over every kind, field and malform
   let n = 0;
   for (const e of extents()) {
     assert.equal(canonicalExtent(e), canonicalJson(r97(e)), label(e));
-    if (isObj(e) && Object.hasOwn(e, "ref") && e.kind !== "doc-part") {
-      const { ref, ...bare } = e;
+    const b = bagOf(e);
+    if (b && Object.hasOwn(b, "ref") && b.kind !== "doc-part") {
+      const { ref, ...bare } = b;
       assert.equal(canonicalExtent(e), canonicalExtent(bare), label(e));
     }
     n++;
   }
   assert.ok(n > 2000, `${n} inputs`);
   /* The address never depends on the order a caller wrote its fields in. */
-  for (const e of extents()) if (isObj(e) && !Array.isArray(e) && typeof e !== "function")
-    assert.equal(canonicalExtent(Object.fromEntries(Object.entries(e).reverse())), canonicalExtent(e), label(e));
+  for (const e of extents()) {
+    const b = bagOf(e);
+    if (b && typeof b !== "function") assert.equal(canonicalExtent(Object.fromEntries(Object.entries(b).reverse())), canonicalExtent(b), label(b));
+  }
 });
 
 test("R98: describeExtent is the authored ref, else the derived form per arm, else the kind's phrase or the unnamed sentence", () => {
+  /** @type {readonly (readonly [object, string])[]} */
   const cases = [
     [{ kind: "pdf-page", page: 3, ref: "  printed p. 4 " }, "printed p. 4"],
     [{ kind: "pdf-page", page: 3, ref: "   " }, "page 4"],
@@ -218,33 +260,53 @@ test("R98: describeExtent is the authored ref, else the derived form per arm, el
 });
 
 /* R98, spelled from the requirement: the authored ref, else each arm's derived form or fallback phrase, else the
-   kind's own phrase (own keys only), else the unnamed sentence. Pages, paragraphs and tables shown 1-based. */
+   kind's own phrase (own keys only), else the unnamed sentence. Pages, paragraphs and tables shown 1-based.
+   CONTENT_EXTENT_KINDS' own keys are KINDS, as R92's test proves. */
+/** @param {Input} x @returns {string} */
 function r98(x) {
-  const e = isObj(x) ? x : {};
-  if (e.kind !== "doc-part" && typeof e.ref === "string" && e.ref.trim() !== "") return e.ref.trim();
+  const e = bagOf(x) ?? {};
+  const ref = e.ref;
+  if (e.kind !== "doc-part" && typeof ref === "string" && ref.trim() !== "") return ref.trim();
   const sheet = sheetOf(e.sheet);
   switch (e.kind) {
     case "doc-part": return sheetOf(e.ref) ? `part ${sheetOf(e.ref)}` : word("textchain.text.part_document_record");
     case "document": return word("content.why.whole_document");
-    case "pdf-page": return !Number.isInteger(e.page) ? word("textchain.text.page_document")
-      : `page ${e.page + 1}${Array.isArray(e.rect) && e.rect.length === 4 ? ", a region of it" : ""}`;
+    case "pdf-page": {
+      const page = e.page;
+      const rect = e.rect;
+      return typeof page !== "number" || !Number.isInteger(page) ? word("textchain.text.page_document")
+        : `page ${page + 1}${Array.isArray(rect) && rect.length === 4 ? ", a region of it" : ""}`;
+    }
     case "sheet-cell": return sheet && sheetOf(e.cell) ? `${sheet}!${sheetOf(e.cell)}` : word("textchain.text.cell_spreadsheet");
-    case "doc-para": return Number.isInteger(e.para) ? `¶${e.para + 1}` : word("textchain.text.paragraph_document");
-    case "slide-shape": return Number.isInteger(e.slide) ? `slide ${e.slide}` : word("textchain.text.shape_deck");
+    case "doc-para": {
+      const para = e.para;
+      return typeof para === "number" && Number.isInteger(para) ? `¶${para + 1}` : word("textchain.text.paragraph_document");
+    }
+    case "slide-shape": {
+      const slide = e.slide;
+      return typeof slide === "number" && Number.isInteger(slide) ? `slide ${slide}` : word("textchain.text.shape_deck");
+    }
     case "sheet-range": {
-      const range = typeof e.range === "string" ? canonicalRange(e.range) : null;
+      const r = e.range;
+      const range = typeof r === "string" ? canonicalRange(r) : null;
       return sheet && range ? `${sheet}!${range}` : word("textchain.text.range_cells_spreadsheet");
     }
     case "doc-table": {
-      if (!Number.isInteger(e.table)) return word("textchain.text.table_document");
+      const table = e.table;
+      if (typeof table !== "number" || !Number.isInteger(table)) return word("textchain.text.table_document");
       const cell = sheetOf(e.cell);
-      return `table ${e.table + 1}${cell ? `, ${cell.split("$").join("").toUpperCase()}` : ""}`;
+      return `table ${table + 1}${cell ? `, ${cell.split("$").join("").toUpperCase()}` : ""}`;
     }
-    case "image":
-      if (sheetOf(e.part)) return `image ${e.part.trim().toLowerCase().slice(0, 12)}`;
-      return Number.isInteger(e.page) ? `an image on page ${e.page + 1}` : word("textchain.text.image_document");
-    default: return typeof e.kind === "string" && Object.hasOwn(CONTENT_EXTENT_KINDS, e.kind)
-      ? CONTENT_EXTENT_KINDS[e.kind].human : word("textchain.text.part_document_record");
+    case "image": {
+      const part = sheetOf(e.part);
+      if (part) return `image ${part.toLowerCase().slice(0, 12)}`;
+      const page = e.page;
+      return typeof page === "number" && Number.isInteger(page) ? `an image on page ${page + 1}` : word("textchain.text.image_document");
+    }
+    default: {
+      const kind = KINDS.find((k) => k === e.kind);
+      return kind ? CONTENT_EXTENT_KINDS[kind].human : word("textchain.text.part_document_record");
+    }
   }
 }
 
@@ -256,9 +318,11 @@ test("R97: each chunk of a unit has its own address (a run joins pdf-page, slide
     /* No run, or one that is no integer: byte-identical to the form before runs existed. */
     for (const run of [undefined, null, "1", 1.5, NaN, -0.5]) assert.equal(canonicalExtent({ ...a, run }), bare, `${a.kind} ${String(run)}`);
     const seen = new Set([bare]);
+    const parsed = JSON.parse(bare);
+    assert.ok(typeof parsed === "object" && parsed !== null, bare);
     for (const run of [0, 1, 2, 17]) {
       const c = canonicalExtent({ ...a, run });
-      assert.equal(c, canonicalJson({ ...JSON.parse(bare), run }), `${a.kind} run ${run}`);
+      assert.equal(c, canonicalJson({ ...parsed, run }), `${a.kind} run ${run}`);
       assert.ok(!seen.has(c), `${a.kind} run ${run} collides`);
       seen.add(c);
     }
