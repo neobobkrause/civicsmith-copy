@@ -85,7 +85,8 @@ export const calcInputPath = (calc, inputSha) => CG.caseFilePath("calculation", 
 export function calcRow(over = {}) {
   const inputs = { pay: CALC_INPUT_SHA };
   const key = resultKey(CALC_RECIPE, inputs, { methodVersion: CALC_METHOD });
-  const result = evaluate(CALC_RECIPE, { pay: JSON.parse(CALC_INPUT) }).result;
+  const ev = evaluate(CALC_RECIPE, { pay: JSON.parse(CALC_INPUT) });
+  const result = "result" in ev ? ev.result : undefined;
   return { calc: CALC, recipe: CALC_RECIPE, inputs, method_version: CALC_METHOD, results: { [key]: result }, result_key: key,
            recompute: "agrees", disclosed: null, ...over };
 }

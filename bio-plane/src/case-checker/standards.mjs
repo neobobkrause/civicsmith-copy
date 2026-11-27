@@ -44,6 +44,7 @@ export const STANDARDS_USE_KEYS = Object.freeze(STANDARDS_USE_CODES.map((c) => `
 /** R26: a departure with the words it is read by: `says.key` is `refusal.<code>`, `says.vars` the departure's own fields. */
 const withSays = (r) => { const { code, ...vars } = r; return { ...r, says: { key: `refusal.${code}`, vars } }; };
 
+/** @param {unknown} v @returns {v is {[key: string]: unknown}} a plain object, not a list */
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const str = (v) => (typeof v === "string" && v !== "" ? v : null);
 const shaKey = (v) => (typeof v === "string" ? v.trim().toLowerCase() : null);
@@ -83,7 +84,8 @@ function judge(args) {
     fm = isObj(p.data) ? p.data : null;
     if (!fm) malformed.push("text");
   }
-  if (malformed.length) return { ok: false, refusals: [...new Set(malformed)].map((field) => withSays({ code: "MALFORMED", field })) };
+  /* a null `fm` has already named "text" as malformed, so `!fm` only lets the checker see that it is not null below */
+  if (malformed.length || !fm) return { ok: false, refusals: [...new Set(malformed)].map((field) => withSays({ code: "MALFORMED", field })) };
 
   const refusals = [];
   const seen = new Set();
@@ -116,7 +118,7 @@ function judge(args) {
   /* BENCHMARK_CALLED_NONCONFORMING: a member finding resting only on benchmarks, named in the words K1723 forbids. */
   const members = Array.isArray(fm.case_findings) ? fm.case_findings.map(String) : [];
   const legs = gradingFactsOf(fm) || {};
-  const conclusions = Array.isArray(fm.case_conclusions) ? fm.case_conclusions.filter(isObj) : [];
+  const conclusions = Array.isArray(fm.case_conclusions) ? fm.case_conclusions.filter((r) => isObj(r)) : [];
   const completeness = isObj(fm.completeness) ? fm.completeness : {};
   const rowOf = (list, finding) => list.find((x) => String(x.target ?? "") === finding) || {};
   const caseWords = wordsIn([fm.case_scope, completeness.statement]);

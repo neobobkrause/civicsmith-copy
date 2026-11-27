@@ -78,6 +78,7 @@ const td = new TextDecoder("utf-8", { fatal: false });
 /* ============================================================ small pure helpers */
 
 const HEX64 = /^[0-9a-f]{64}$/;
+/** @param {unknown} v @returns {v is {[key: string]: unknown}} a plain object, not a list */
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const str = (v) => (typeof v === "string" ? v : null);
 const shaOf = (bytes) => createSha256().update(bytes).hex();
@@ -155,8 +156,8 @@ function readParts(parts) {
   }
   const manifestAt = departures.length;     /* the manifest's own departures are named here, once the files are read */
   const m = manifest || {};
-  const listedParts = Array.isArray(m.parts) ? m.parts.filter(isObj) : [];
-  const files = (Array.isArray(m.files) ? m.files.filter(isObj) : []).map((f) => {
+  const listedParts = Array.isArray(m.parts) ? m.parts.filter((r) => isObj(r)) : [];
+  const files = (Array.isArray(m.files) ? m.files.filter((r) => isObj(r)) : []).map((f) => {
     const e = entryOf(f.path) || {};
     return { path: str(f.path) || "", kind: str(f.kind) || "", sha256: str(f.sha256) || "",
              bytes: Number.isSafeInteger(f.bytes) ? f.bytes : null, content: null, state: "missing",
@@ -217,9 +218,9 @@ const lowerSha = (v) => (typeof v === "string" ? v.toLowerCase() : null);
 function carriedMaterials(files) {
   const doc = files.find((f) => f.kind === "case_document" && f.content);
   if (!doc) return null;
-  const p = parseFrontmatter(textOf(doc.content));
+  const p = parseFrontmatter(textOf(doc.content) ?? "");
   const read = isObj(p.data) ? materialsOf(p.data) : null;
-  return isObj(read) && Array.isArray(read.materials) ? read.materials.filter(isObj) : null;
+  return isObj(read) && Array.isArray(read.materials) ? read.materials.filter((r) => isObj(r)) : null;
 }
 
 /** R8 (`case-grammar` R12's `obscured`): the copy a material row travels as, `{copy, label}`, or null. */
@@ -345,18 +346,18 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
 
   const method = fm ? methodOf(fm) : null;
   const materialsRead = fm ? materialsOf(fm) : null;
-  const materials = isObj(materialsRead) && Array.isArray(materialsRead.materials) ? materialsRead.materials.filter(isObj) : [];
-  const attestations = isObj(materialsRead) && Array.isArray(materialsRead.attestations) ? materialsRead.attestations.filter(isObj) : [];
+  const materials = isObj(materialsRead) && Array.isArray(materialsRead.materials) ? materialsRead.materials.filter((r) => isObj(r)) : [];
+  const attestations = isObj(materialsRead) && Array.isArray(materialsRead.attestations) ? materialsRead.attestations.filter((r) => isObj(r)) : [];
   const grading = gradingContextOf(fm);
   const { acceptedRows } = grading;
 
   /* The roster and its roles, as the signed document states them. */
   const roster = fm && Array.isArray(fm.case_findings) ? fm.case_findings.map(String) : [];
-  const roleRows = fm && Array.isArray(fm.case_roles) ? fm.case_roles.filter(isObj) : [];
+  const roleRows = fm && Array.isArray(fm.case_roles) ? fm.case_roles.filter((r) => isObj(r)) : [];
   const roleOf = new Map(roleRows.map((r) => [String(r.target ?? ""), r]));
 
   /* ---------------------------------------------------------- R3: signatures */
-  const manifestKeys = (Array.isArray(m.keys) ? m.keys : []).filter(isObj).map((k) => ({ key: normalizeKey(k.key), fingerprint: str(k.fingerprint) }));
+  const manifestKeys = (Array.isArray(m.keys) ? m.keys : []).filter((r) => isObj(r)).map((k) => ({ key: normalizeKey(k.key), fingerprint: str(k.fingerprint) }));
   for (const k of manifestKeys) if (k.key && k.fingerprint && keyFingerprint(k.key) !== k.fingerprint)
     caseLevel.differs.push(entry("signature", "signing keys", localize("case-checker.check.key_fingerprint_differs", "the case file lists a key whose fingerprint is {fingerprint}, beside the fingerprint {listed}", { fingerprint: String(keyFingerprint(k.key)), listed: k.fingerprint })));
   const allowed = manifestKeys.map((k) => k.key).filter(Boolean);
@@ -370,7 +371,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     : word("case-checker.text.read_signature"));
   async function verifyOver(armored, message) {
     const v = await verifySshsig(armored, message, NS_RATIFY, allowed);
-    const key = v.keyB64 || embedded(armored);
+    const key = ("keyB64" in v ? v.keyB64 : undefined) || embedded(armored);
     const pubOk = published && key ? published.includes(key) : true;
     return { verified: v.ok === true && pubOk, reason: v.ok ? (pubOk ? null : "NOT_PUBLISHED_KEY") : v.reason, ...keyFacts(key),
              words: v.ok && !pubOk ? localize("case-checker.check.not_published_key", "was made with a key that is not among the team's published keys") : sigWords(v) };
@@ -417,7 +418,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
       if (fileLegs === undefined) factsDiffer.add(id);
     } else fx = fileLegs === undefined ? undefined : fileLegs === null ? null : { legs: fileLegs };
     facts.set(id, fx);
-    for (const leg of fx ? fx.legs.filter(isObj) : []) {
+    for (const leg of fx ? fx.legs.filter((r) => isObj(r)) : []) {
       const target = str(leg.target);
       if (leg.kind === "inquiry" && target) {
         addFinding(target);
@@ -441,7 +442,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     seen.add(id);
     const out = { mats: [], refs: [], unlisted: [], calcs: [] };
     const fx = facts.get(id);
-    for (const leg of fx ? fx.legs.filter(isObj) : []) {
+    for (const leg of fx ? fx.legs.filter((r) => isObj(r)) : []) {
       if (leg.kind === "imported") { out.refs.push({ from: id, leg }); continue; }   /* R18: not followed past */
       if (leg.kind === "inquiry") { const c = chainOf(String(leg.target ?? ""), seen); out.mats.push(...c.mats); out.refs.push(...c.refs); out.unlisted.push(...c.unlisted); out.calcs.push(...c.calcs); continue; }
       if (leg.kind === "calculation") { const t = String(leg.target ?? ""); if (!out.calcs.includes(t)) out.calcs.push(t); continue; }   /* R20 */
@@ -455,7 +456,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
   }
 
   /* ---------------------------------------------------------- R3: the attestations, by kind */
-  const accountRows = fm && Array.isArray(fm.capture_accounts) ? fm.capture_accounts.filter(isObj) : [];
+  const accountRows = fm && Array.isArray(fm.capture_accounts) ? fm.capture_accounts.filter((r) => isObj(r)) : [];
   const attestationAnswers = [];
   /* R3 (G47): a row that states a capture's `sha` is joined to that capture's material and keyed by (ref, sha), so with
      several captures of one source a failure of one is reported against it alone; a row without `sha` (an earlier
@@ -543,11 +544,12 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     const rb = typeof rendered === "string" ? te.encode(rendered) : asBytes(rendered && rendered.bytes !== undefined ? rendered.bytes : rendered);
     if (!rb) { complete_edition.detail = word("case-checker.detail.checker_render_complete"); caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail)); }
     else {
-      complete_edition.rendered_sha256 = shaOf(rb);
+      const renderedSha = shaOf(rb);
+      complete_edition.rendered_sha256 = renderedSha;
       complete_edition.equal = complete_edition.rendered_sha256 === shaOf(ceFile.content);
       complete_edition.detail = complete_edition.equal ? word("case-checker.text.carried_complete_edition")
         : localize("case-checker.check.complete_edition_differs", "the carried complete edition (SHA-256 {sha}) is not the edition the rest of the case file renders (SHA-256 {rendered})",
-                   { sha: complete_edition.sha256, rendered: complete_edition.rendered_sha256 });
+                   { sha: complete_edition.sha256, rendered: renderedSha });
       if (!complete_edition.equal) caseLevel.differs.push(entry("complete_edition", ceFile.path, complete_edition.detail));
     }
   }
@@ -582,7 +584,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
   /* ---------------------------------------------------------- per finding */
   const bar = fm && isObj(fm.required_strength) ? fm.required_strength : null;
   const { version } = grading;
-  const strengthRows = fm && Array.isArray(fm.case_strength) ? fm.case_strength.filter(isObj) : [];
+  const strengthRows = fm && Array.isArray(fm.case_strength) ? fm.case_strength.filter((r) => isObj(r)) : [];
   const findingSigs = [];
   const findingsOut = [];
   const recomputeLegs = grading.recompute;
@@ -624,7 +626,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
     if (signedPassages && pf && pf.content && (fileRows === null || !sameRows(fileRows, rows, PASSAGE_FIELDS)))
       differs.push(entry("passage", id, localize("case-checker.check.carried_passages_differ", "finding {id}'s carried passages are not the passages the signed case document states", { id })));
     else if (rows === null) differs.push(entry("passage", id, localize("case-checker.check.passages_unreadable", "finding {id}'s passages cannot be read", { id })));
-    for (const row of (rows || []).filter(isObj)) {
+    for (const row of (rows || []).filter((r) => isObj(r))) {
       const cap = str(row.capture_sha) || "";
       const mat = materials.find((x) => x.sha === cap) || null;
       const where = word("case-checker.where", { document: cap || word("case-checker.text.unnamed_document"), id });
@@ -706,7 +708,7 @@ async function check({ parts, documents = [], keys = null, lens: lensArg = undef
         const f = files.find((x) => x.kind === "obscured" && x.ref === mat.ref && ownsCapture(x, mat.sha) && x.sha256 === ob.copy) || null;
         if (f && f.entry) differs.push(f.entry);
         else if (!f || !f.content)
-          missing.push(entry(lb ? "presentability" : "integrity", id, localize("case-checker.check.copy_not_carried_fetch", "the copy of {what} carried in its place (a photo with its marked areas obscured, or a member document cleaned) is not carried; fetch the file whose SHA-256 is {sha}", { what, sha: ob.copy }), { sha256: ob.copy, copy: ob.copy }));
+          missing.push(entry(lb ? "presentability" : "integrity", id, localize("case-checker.check.copy_not_carried_fetch", "the copy of {what} carried in its place (a photo with its marked areas obscured, or a member document cleaned) is not carried; fetch the file whose SHA-256 is {sha}", { what, sha: String(ob.copy) }), { sha256: ob.copy, copy: ob.copy }));
         for (const e of attestationsOf(attestationFails, mat)) differs.push({ ...e, about: id });
         for (const e of attestationsOf(attestationGaps, mat)) missing.push({ ...e, about: id });
         continue;
@@ -804,9 +806,9 @@ function gradingContextOf(fm) {
   const method = fm ? methodOf(fm) : null;
   const version = method && typeof method.grading === "string" ? method.grading : null;
   const accepted = fm ? acceptedWorkOf(fm) : null;
-  const acceptedRows = isObj(accepted) && Array.isArray(accepted.rows) ? accepted.rows.filter(isObj) : [];
+  const acceptedRows = isObj(accepted) && Array.isArray(accepted.rows) ? accepted.rows.filter((r) => isObj(r)) : [];
   const levels = {};
-  for (const r of fm && Array.isArray(fm.observation_attributions) ? fm.observation_attributions.filter(isObj) : []) {
+  for (const r of fm && Array.isArray(fm.observation_attributions) ? fm.observation_attributions.filter((r) => isObj(r)) : []) {
     const k = str(r.observation) || str(r.capture);
     if (k && typeof r.level === "string") levels[k] = r.level;
   }
@@ -846,7 +848,7 @@ export function reweigh(args) {
       for (const g of files.filter((f) => f.state === "missing" && f.sha256 === h)) { g.state = "supplied"; g.content = b; }
     }
     const docFile = files.find((f) => f.kind === "case_document" && f.content) || null;
-    const p = docFile ? parseFrontmatter(textOf(docFile.content)) : null;
+    const p = docFile ? parseFrontmatter(textOf(docFile.content) ?? "") : null;
     const fm = p && isObj(p.data) ? p.data : null;
     if (!fm) { out.lens.departure = word("case-checker.departure.case_document_carried"); for (const f of out.findings) { f.pair = null; f.bar_met = null; } return out; }
     const grading = gradingContextOf(fm);
@@ -936,10 +938,10 @@ function accountUseOf({ fm, files, facts, materials, signedPassages, fileOfMater
   const rows = accountOf(fm);
   if (!Array.isArray(rows)) return null;
   const cited = [], lacking = new Set();
-  const conclRows = Array.isArray(fm.case_conclusions) ? fm.case_conclusions.filter(isObj) : [];
+  const conclRows = Array.isArray(fm.case_conclusions) ? fm.case_conclusions.filter((r) => isObj(r)) : [];
   for (const c of conclRows) if (str(c.target))
     cited.push({ ref: c.target, text: String((c.claim_state === "adopted" ? c.claim : c.claim_detail ?? c.claim) ?? "") });
-  const legsOf = (id) => { const fx = facts.get(id); return fx && Array.isArray(fx.legs) ? fx.legs.filter(isObj) : []; };
+  const legsOf = (id) => { const fx = facts.get(id); return fx && Array.isArray(fx.legs) ? fx.legs.filter((r) => isObj(r)) : []; };
   for (const id of facts.keys()) legsOf(id).forEach((leg, k) => {
     const ord = Number.isInteger(leg.ord) ? leg.ord : k;
     cited.push({ ref: `${id}#${ord}`, text: [leg.target, leg.ground].filter((x) => typeof x === "string" && x).join(" "),
@@ -947,13 +949,13 @@ function accountUseOf({ fm, files, facts, materials, signedPassages, fileOfMater
   });
   const passageRows = isObj(signedPassages) ? Object.values(signedPassages).flat()
     : files.filter((x) => x.kind === "passages" && x.content).flatMap((x) => { const v = jsonOf(x.content); return Array.isArray(v) ? v : isObj(v) && Array.isArray(v.passages) ? v.passages : []; });
-  for (const p of passageRows.filter(isObj)) if (str(p.content_id)) cited.push({ ref: p.content_id, text: String(p.quoted ?? "") });
+  for (const p of passageRows.filter((r) => isObj(r))) if (str(p.content_id)) cited.push({ ref: p.content_id, text: String(p.quoted ?? "") });
   for (const mat of materials) {
     const tf = fileOfMaterial(mat.kind === "observation" ? "observation" : "extracted_text", mat);
     let text = null;
     if (tf && tf.content) {
       if (mat.kind === "observation") text = textOf(tf.content);
-      else { try { const u = JSON.parse(textOf(tf.content)); text = Array.isArray(u) ? u.filter(isObj).map((x) => String(x.text ?? "")).join("\n") : null; } catch { text = null; } }
+      else { try { const u = JSON.parse(textOf(tf.content)); text = Array.isArray(u) ? u.filter((r) => isObj(r)).map((x) => String(x.text ?? "")).join("\n") : null; } catch { text = null; } }
     }
     for (const ref of [str(mat.ref), str(mat.sha)].filter(Boolean)) { if (text === null) lacking.add(ref); else cited.push({ ref, text }); }
   }
@@ -964,7 +966,7 @@ function accountUseOf({ fm, files, facts, materials, signedPassages, fileOfMater
   const judged = [], not_judged = [];
   rows.forEach((r, i) => {
     const gone = (isObj(r) ? listOfField(r.cites) : []).map(citeOf).filter((c) => c && lacking.has(c.key));
-    const ord = isObj(r) && Number.isInteger(r.ord) ? r.ord : i;
+    const ord = isObj(r) && typeof r.ord === "number" && Number.isInteger(r.ord) ? r.ord : i;
     if (gone.length) not_judged.push({ ord, cites: gone.map((c) => c.key),
       detail: localize("case-checker.check.account_cites_not_carried", "account sentence {ord} cites {cites}, whose text this case file does not carry, so it is not judged; fetch it to judge it", { ord, cites: gone.map((c) => c.words).join(", ") }) });
     else judged.push(isObj(r) && !Number.isInteger(r.ord) ? { ...r, ord: i } : r);
@@ -1052,10 +1054,13 @@ function recomputeCalculations(fm, files, supplied = []) {
     let r;
     try { r = evaluate(recipe, bound); } catch (e) { r = { refused: "EVALUATE_FAILED", why: String(e && e.message ? e.message : e).slice(0, 200) }; }
     const stated = isObj(row.results) && typeof row.result_key === "string" ? row.results[row.result_key] : undefined;
-    if (r && typeof r.refused === "string")
-      differs.push(entry("calculation", calc, localize("case-checker.check.evaluator_refuses", "calculation {calc} does not recompute: the evaluator refuses it ({refused}: {why})", { calc, refused: r.refused, why: String(r.why) }), { calc, result: row.result_key ?? null, stated: stated ?? null, recomputed: null }));
-    else if (stated === undefined || canonicalJson(stated) !== canonicalJson(r.result))
-      differs.push(entry("calculation", calc, localize("case-checker.check.result_differs", "calculation {calc}'s result is stated as {stated}, and it recomputes to {recomputed}", { calc, stated: stated === undefined ? NOTHING() : canonicalJson(stated), recomputed: canonicalJson(r.result) }), { calc, result: row.result_key ?? null, stated: stated ?? null, recomputed: r.result }));
+    /* `calc-grammar`'s answer is an evaluation (`result`) or a refusal by name (`refused`, `why`) */
+    const refusal = r && "refused" in r && typeof r.refused === "string" ? r : null;
+    const got = r && "result" in r ? r.result : undefined;
+    if (refusal)
+      differs.push(entry("calculation", calc, localize("case-checker.check.evaluator_refuses", "calculation {calc} does not recompute: the evaluator refuses it ({refused}: {why})", { calc, refused: refusal.refused, why: String(refusal.why) }), { calc, result: row.result_key ?? null, stated: stated ?? null, recomputed: null }));
+    else if (stated === undefined || canonicalJson(stated) !== canonicalJson(got))
+      differs.push(entry("calculation", calc, localize("case-checker.check.result_differs", "calculation {calc}'s result is stated as {stated}, and it recomputes to {recomputed}", { calc, stated: stated === undefined ? NOTHING() : canonicalJson(stated), recomputed: canonicalJson(got) }), { calc, result: row.result_key ?? null, stated: stated ?? null, recomputed: got }));
     out.push(settle(a, disclosed));
   }
   return out;
