@@ -7,9 +7,12 @@ import assert from "node:assert/strict";
 import { xlsxEntry, a1Corner, rangeUnitFor, usedSheetRange } from "../../../src/formats-xlsx.mjs";
 import * as F from "./fixtures.mjs";
 
+/** @param {number} n */
 const letters = (n) => { let s = ""; for (let c = n; c > 0; c = Math.floor((c - 1) / 26)) s = String.fromCharCode(65 + ((c - 1) % 26)) + s; return s; };
 const XLSX_GRID = { rows: 1048576, cols: 16384 };
+/** @param {string} sheet @param {string} range */
 const unit = (sheet, range) => ({ kind: "sheet-range", ref: `${sheet}!${range}`, sheet, range });
+/** @type {unknown[]} */
 const ODD = [undefined, null, 0, 1, -1, 1.5, NaN, "", "A1", {}, [], true, Symbol("s"), () => 1, new Uint8Array(2), { col: 1 }, { row: 1 }];
 
 /* ------------------------------------------------------------------ R26 */
@@ -58,7 +61,9 @@ test("R27 rangeUnitFor: two corners on a sheet of the workbook give the sheet-ra
 
 test("R27 rangeUnitFor: the unit is the one builder's (usedSheetRange's shape and spelling for every A1-anchored rectangle)", () => {
   for (let c = 1; c <= 800; c += 7) for (const r of [1, 2, 99, 1048576]) {
-    assert.deepEqual(rangeUnitFor("S", { col: 1, row: 1 }, { col: c, row: r }, ["S"], XLSX_GRID).unit, usedSheetRange("S", r, c));
+    const made = rangeUnitFor("S", { col: 1, row: 1 }, { col: c, row: r }, ["S"], XLSX_GRID);
+    assert.ok("unit" in made);
+    assert.deepEqual(made.unit, usedSheetRange("S", r, c));
   }
 });
 
@@ -71,7 +76,9 @@ test("R27 rangeUnitFor: a sheet name matches exactly, else without case when exa
   assert.deepEqual(rangeUnitFor("Data", a, a, [], XLSX_GRID), { why: "no_such_sheet" });
   assert.deepEqual(rangeUnitFor("null", a, a, ["Data"], XLSX_GRID), { why: "no_such_sheet" });
   for (const bad of [null, undefined, 1, {}, ["Data"]]) assert.deepEqual(rangeUnitFor(bad, a, a, ["Data", "null", "1"], XLSX_GRID), { why: "no_such_sheet" }, String(bad));
-  for (const bad of [null, undefined, "Data", { Data: 1 }, 5]) assert.deepEqual(rangeUnitFor("Data", a, a, bad, XLSX_GRID), { why: "no_such_sheet" }, String(bad));
+  /** @type {unknown[]} */
+  const badSheets = [null, undefined, "Data", { Data: 1 }, 5];
+  for (const bad of badSheets) assert.deepEqual(rangeUnitFor("Data", a, a, bad, XLSX_GRID), { why: "no_such_sheet" }, String(bad));
 });
 
 test("R27 rangeUnitFor: with a grid, a rectangle past it on either axis is outside_grid and one at its edge is a unit; with none, nothing is outside", () => {
@@ -86,6 +93,7 @@ test("R27 rangeUnitFor: with a grid, a rectangle past it on either axis is outsi
 
 test("R27 rangeUnitFor: a corner that is not one (as a1Corner's null, or any other value) is not_a_range_reference; nothing throws", () => {
   const a = { col: 1, row: 1 };
+  /** @type {unknown[]} */
   const badCorners = [null, undefined, {}, { col: 0, row: 1 }, { col: 1, row: 0 }, { col: 1.5, row: 1 }, { col: 1, row: -2 }, { col: "1", row: "1" }, { col: NaN, row: 1 }, "A1", 1, [1, 1]];
   for (const bad of badCorners) {
     assert.deepEqual(rangeUnitFor("S", bad, a, ["S"], XLSX_GRID), { why: "not_a_range_reference" }, JSON.stringify(bad));
@@ -102,6 +110,9 @@ test("R27 rangeUnitFor: a corner that is not one (as a1Corner's null, or any oth
 
 test("R11 xlsx used range: a cell whose reference is no A1 corner does not reach usedCols (a1Corner's reading, the one there is)", async () => {
   const t = await xlsxEntry.text(F.xlsx({ sheets: [{ name: "S", data: { rows: [{ r: 2, cells: [{ r: "B2", t: "inlineStr", is: "x" }, { r: "Z0", t: "inlineStr", is: "y" }, { r: "$C$2", t: "inlineStr", is: "z" }] }] } }] }));
-  assert.equal(t.sheets[0].usedCols, 3);
-  assert.equal(t.sheets[0].usedRows, 2);
+  assert.ok(t.ok);
+  const sheet0 = t.sheets[0];
+  assert.ok(sheet0);
+  assert.equal(sheet0.usedCols, 3);
+  assert.equal(sheet0.usedRows, 2);
 });

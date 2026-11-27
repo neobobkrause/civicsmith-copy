@@ -3,6 +3,8 @@
    unpacked parts they came from are all still held. Two parts: the answer is what it always was (the control), and the read's
    peak, measured in a child, is a small multiple of the document it makes. The whole case at the platform's shape (150,000 rows
    against `capFor(128)`) is plane's `g41-shape.test.mjs`, whose xlsx case carries the 85 % margin. */
+/** @import { R46Report } from "./r46-peak-child.mjs" */
+/** @import { SheetRecipe } from "../../sheetgen.mjs" */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -15,8 +17,16 @@ import * as F from "./fixtures.mjs";
 import { xlsxEntry } from "../../../src/formats-xlsx.mjs";
 import { generate } from "../../sheetgen.mjs";
 
+/** @type {(file: string, args: string[], options?: {maxBuffer?: number, timeout?: number}) => Promise<{stdout: string, stderr: string}>} */
 const run = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
+/** The `i`th of `list`, which the case reads as there.
+ * @template T
+ * @param {ReadonlyArray<T>} list
+ * @param {number} i
+ * @returns {T} */
+const nth = (list, i) => { const x = list[i]; assert(x !== undefined, `no item ${i}`); return x; };
+/** @param {string[][]} rows @returns {string} */
 const sheetOf = (rows) => F.sheetXml({ rows: rows.map((cells, i) => ({ r: i + 1, cells: cells.map((is, j) => ({ r: `${"ABC"[j]}${i + 1}`, t: "inlineStr", is })) })) });
 
 test("R46 control: a workbook of several sheets answers the same text: each sheet's own lines, the document the non-empty sheets' texts joined by a newline, every character exact", async () => {
@@ -31,20 +41,25 @@ test("R46 control: a workbook of several sheets answers the same text: each shee
   assert.equal(t.ok, true);
   const want = [one.map((r) => r.join("\t").replace("a&amp;b", "a&b")).join("\n"), "", three.map((r) => r.join("\t")).join("\n")];
   assert.deepEqual(t.sheets.map((s) => s.text), want);
-  assert.equal(t.document, `${want[0]}\n${want[2]}`);
-  assert.equal(t.counts.chars, t.document.length);
+  const document = t.document;
+  assert.equal(document, `${want[0]}\n${want[2]}`);
+  assert.equal(t.counts.chars, document.length);
   assert.deepEqual(t.sheets.map((s) => s.lineRows), [[1, 2, 3], [], [1, 2]]);
   /* the text is the sheet's own whatever the options are */
   const held = await xlsxEntry.text(bytes, { inlineCellsMax: 0 });
-  assert.equal(held.document, t.document);
+  assert(held.ok);
+  assert.equal(held.document, document);
   assert.deepEqual(held.sheets.map((s) => s.text), want);
 });
 
 test("R46 control: a workbook of one sheet gives that sheet's text as its document; no sheet with text gives the empty document", async () => {
   const solo = await xlsxEntry.text(F.xlsx({ sheets: [{ name: "Solo", xml: sheetOf([["only", "row"]]) }] }));
-  assert.equal(solo.document, "only\trow");
-  assert.equal(solo.sheets[0].text, solo.document);
+  assert(solo.ok);
+  const soloDocument = solo.document;
+  assert.equal(soloDocument, "only\trow");
+  assert.equal(nth(solo.sheets, 0).text, soloDocument);
   const none = await xlsxEntry.text(F.xlsx({ sheets: [{ name: "A", data: { rows: [] } }, { name: "B", data: { rows: [] } }] }));
+  assert(none.ok);
   assert.equal(none.document, "");
   assert.deepEqual(none.sheets.map((s) => s.text), ["", ""]);
   assert.equal(none.counts.chars, 0);
@@ -59,26 +74,31 @@ test("R46 control: a sheet that cannot be read to its end gives none of its line
   ] });
   const t = await xlsxEntry.text(bytes);
   assert.equal(t.ok, true);
-  assert.equal(t.sheets[1].text, "");
-  assert.deepEqual(t.sheets[1].lineRows, undefined);
-  assert.equal(t.sheets[1].cells, null);
+  assert.equal(nth(t.sheets, 1).text, "");
+  assert.deepEqual(nth(t.sheets, 1).lineRows, undefined);
+  assert.equal(nth(t.sheets, 1).cells, null);
+  /** @param {string[][]} rows */
   const text = (rows) => rows.map((r) => r.join("\t")).join("\n");
-  assert.equal(t.sheets[0].text, text(before));
-  assert.equal(t.sheets[2].text, text(after));
-  assert.equal(t.document, `${text(before)}\n${text(after)}`);
-  assert.ok(!t.document.includes("never") && !t.document.includes("lost"), "none of the unreadable sheet's rows is in the document");
+  assert.equal(nth(t.sheets, 0).text, text(before));
+  assert.equal(nth(t.sheets, 2).text, text(after));
+  const document = t.document;
+  assert.equal(document, `${text(before)}\n${text(after)}`);
+  assert.ok(!document.includes("never") && !document.includes("lost"), "none of the unreadable sheet's rows is in the document");
 });
 
 test("R46 a 150,000-row workbook of 3 cells a row (the platform's shape) is read holding at most 6.5 bytes for each character of the document above its idle, while the unpacked parts are streamed and the text is made once", async (t) => {
+  /** @type {SheetRecipe} */
   const recipe = { kind: "xlsx", seed: "hx150000", size: { rows: 150_000, cols: 3 }, header: "one", types: ["text", "integer", "text"] };
+  /** @type {Buffer[]} */
   const chunks = [];
   for await (const c of generate(recipe).chunks()) chunks.push(Buffer.from(c));
   const dir = mkdtempSync(join(tmpdir(), "r46-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const file = join(dir, "table.xlsx");
   writeFileSync(file, Buffer.concat(chunks));
-  const child = async () => JSON.parse((await run(process.execPath, ["--expose-gc", "--max-old-space-size=202", "--max-semi-space-size=2",
-    join(HERE, "r46-peak-child.mjs"), file], { maxBuffer: 1 << 26 })).stdout);
+  /** @returns {Promise<R46Report>} */
+  const child = async () => /** @type {R46Report} */ (JSON.parse((await run(process.execPath, ["--expose-gc", "--max-old-space-size=202", "--max-semi-space-size=2",
+    join(HERE, "r46-peak-child.mjs"), file], { maxBuffer: 1 << 26 })).stdout));
   /* the least of three: a collector that runs late shows in one run, not in all */
   const runs = [await child(), await child(), await child()];
   const best = runs.reduce((a, b) => (b.aboveIdleMB < a.aboveIdleMB ? b : a));

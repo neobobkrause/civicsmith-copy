@@ -5,6 +5,7 @@ import * as F from "./fixtures.mjs";
 import { xlsxEntry } from "../../../src/formats-xlsx.mjs";
 
 const NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+/** @type {(rows: string) => string} */
 const sheetXml = (rows) => `<?xml version="1.0"?><worksheet ${NS}><sheetData>${rows}</sheetData></worksheet>`;
 
 test("R11 lineRows: one 1-based row number per line of sheet.text, empty and skipped rows leaving gaps, in the order of the lines", async () => {
@@ -21,9 +22,12 @@ test("R11 lineRows: one 1-based row number per line of sheet.text, empty and ski
     + `<row r="6"><c r="B6"><v>6</v></c></row>`
     + `<row><c r="A7"><v>next</v></c></row>`);
   const t = await xlsxEntry.text(F.xlsx({ sheets: [{ name: "S", xml }, { name: "E", data: {} }] }));
-  const s = t.sheets[0];
-  assert.equal(s.text, "head\th2\n5\n9\n6\nnext");
-  assert.deepEqual(s.lineRows, [1, 5, 9, 6, 7]);
-  assert.equal(s.lineRows.length, s.text.split("\n").length);
-  assert.deepEqual(t.sheets[1].lineRows, []);
+  if (!t.ok) assert.fail(`the workbook is refused: ${t.reason}`);
+  const [s, empty] = t.sheets;
+  if (s === undefined || empty === undefined) assert.fail("the workbook has its two sheets");
+  const { text, lineRows } = s;
+  assert.equal(text, "head\th2\n5\n9\n6\nnext");
+  assert.deepEqual(lineRows, [1, 5, 9, 6, 7]);
+  assert.equal(lineRows.length, text.split("\n").length);
+  assert.deepEqual(empty.lineRows, []);
 });
