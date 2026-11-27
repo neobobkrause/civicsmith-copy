@@ -44,8 +44,31 @@ import { createHash } from "node:crypto";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIX = join(HERE, "../../bio-plane/test/fixtures/cpdf20");
 const RUNS = Number((process.argv.find((a, i) => process.argv[i - 1] === "--runs")) ?? 5);
+/**
+ * @param {string} v
+ * @returns {string}
+ */
 const sha = (v) => createHash("sha256").update(v).digest("hex");
 
+/** @import { FoundTable } from './table-candidate.mjs' */
+/** @import { PageTables } from './table-recognition-worker.mjs' */
+/**
+ * A hand-read ground-truth table.
+ * @typedef {Object} TruthTable
+ * @property {string} what
+ * @property {string[][]} cells
+ */
+/**
+ * What the probe's own workerd entry answers (`table-recognition-worker.mjs`).
+ * @typedef {{ ok: true, items: number, tables: FoundTable[] } | { ok: false, reason: string, message: string }} WorkerReply
+ */
+/**
+ * @typedef {Object} WorkerdRuns
+ * @property {Set<string>} digests
+ * @property {number[]} wall
+ * @property {{ ok: true, items: number, tables: FoundTable[] } | null} last
+ */
+/** @type {Record<string, TruthTable[]>} */
 const GT_TABLES = {
   "legistar-73450.pdf#2": [{
     what: "Table 1: P.R.I.M.E. Alliance Grant Funding — UNRULED, 2 columns",
@@ -68,22 +91,65 @@ const GT_NONE = ["legistar-73450.pdf#0", "legistar-73450.pdf#1",
   "legistar-73550.pdf#0", "legistar-73550.pdf#2", "legistar-73618.pdf#0", "legistar-73618.pdf#1"];
 const PAGES = [...Object.keys(GT_TABLES), ...GT_NONE];
 
+/**
+ * @param {string} s
+ * @returns {string}
+ */
 const n = (s) => s.replace(/\s+/g, " ").trim();
+/**
+ * @param {FoundTable[]} tables
+ * @returns {string}
+ */
 const digest = (tables) => sha(JSON.stringify(tables));
+/**
+ * The entry of a map the probe filled for every page before reading it.
+ * @template T
+ * @param {Record<string, T>} map
+ * @param {string} key
+ * @returns {T}
+ */
+const filled = (map, key) => {
+  const v = map[key];
+  if (v === undefined) throw new TypeError(`Cannot read properties of undefined (page ${key})`);
+  return v;
+};
+/**
+ * The element at an index the caller knows is in range.
+ * @template T
+ * @param {readonly T[]} list
+ * @param {number} i
+ * @returns {T}
+ */
+const at = (list, i) => {
+  const v = list[i];
+  if (v === undefined) throw new TypeError(`Cannot read properties of undefined (index ${i})`);
+  return v;
+};
 
 /* ── node arm ── */
-if (typeof Math.sumPrecise !== "function") Math.sumPrecise = (v) => { let s = 0; for (const x of v) s += x; return s; };
+/** @type {Math & { sumPrecise?: (values: readonly number[]) => number }} the runtime's Math, which may lack sumPrecise */
+const runtimeMath = Math;
+if (typeof runtimeMath.sumPrecise !== "function") runtimeMath.sumPrecise = (v) => { let s = 0; for (const x of v) s += x; return s; };
 const { tablesOnPage } = await import("./table-recognition-worker.mjs");
 const { CANDIDATE } = await import("./table-candidate.mjs");
-const bytesOf = (key) => new Uint8Array(readFileSync(join(FIX, key.split("#")[0])));
+/**
+ * @param {string} key
+ * @returns {Uint8Array}
+ */
+const bytesOf = (key) => new Uint8Array(readFileSync(join(FIX, at(key.split("#"), 0))));
+/** @type {Record<string, PageTables>} */
 const nodeRes = {};
 for (const key of PAGES) nodeRes[key] = await tablesOnPage(bytesOf(key), Number(key.split("#")[1]));
 
 /* ── workerd arm ── */
-const { Miniflare } = await import("miniflare").catch(() =>
+/** @type {typeof import("miniflare")} */
+const miniflareModule = await import("miniflare").catch(() =>
   import(join(HERE, "../../bio-plane/node_modules/miniflare/dist/src/index.js")));
-const { build } = await import("esbuild").catch(() =>
+const { Miniflare } = miniflareModule;
+/** @type {typeof import("esbuild")} */
+const esbuildModule = await import("esbuild").catch(() =>
   import(join(HERE, "../../bio-plane/node_modules/esbuild/lib/main.js")));
+const { build } = esbuildModule;
 const WORK = mkdtempSync(join(tmpdir(), "cpdf18-tables-"));
 const bundle = join(WORK, "tables.bundled.mjs");
 await build({ entryPoints: [join(HERE, "table-recognition-worker.mjs")], bundle: true, format: "esm",
@@ -91,17 +157,21 @@ await build({ entryPoints: [join(HERE, "table-recognition-worker.mjs")], bundle:
 const mf = new Miniflare({ modules: true, modulesRoot: "/", scriptPath: bundle,
   script: readFileSync(bundle, "utf8"), compatibilityDate: "2026-07-01", compatibilityFlags: ["nodejs_compat"] });
 
+/** @type {Record<string, WorkerdRuns>} */
 const wd = {};
 for (const key of PAGES) {
-  wd[key] = { digests: new Set(), wall: [], last: null };
+  /** @type {WorkerdRuns} */
+  const runs = { digests: new Set(), wall: [], last: null };
+  wd[key] = runs;
   for (let r = 0; r < RUNS; r++) {
     const t0 = performance.now();
     const res = await mf.dispatchFetch(`http://x/tables?page=${key.split("#")[1]}`, { method: "POST", body: bytesOf(key) });
-    const j = await res.json();
-    wd[key].wall.push(performance.now() - t0);
-    if (!j.ok) { wd[key].digests.add(`THREW:${j.message}`); continue; }
-    wd[key].digests.add(digest(j.tables));
-    wd[key].last = j;
+    /* decodes the probe's own workerd entry's answer (R2, R16) */
+    const j = /** @type {WorkerReply} */ (await res.json());
+    runs.wall.push(performance.now() - t0);
+    if (!j.ok) { runs.digests.add(`THREW:${j.message}`); continue; }
+    runs.digests.add(digest(j.tables));
+    runs.last = j;
   }
 }
 await mf.dispose();
@@ -112,29 +182,38 @@ console.log(`CANDIDATE ${CANDIDATE.name} ${CANDIDATE.version} ${JSON.stringify(C
 console.log(`RUNS ${RUNS} workerd runs per page + 1 node run; ${PAGES.length} pages ` +
   `(${Object.keys(GT_TABLES).length} with a ground-truth table, ${GT_NONE.length} without)\n`);
 let R = true, A = true, F = true;
+/** @type {number[]} */
 const walls = [];
 for (const key of PAGES) {
-  const w = wd[key];
-  const nd = digest(nodeRes[key].tables);
+  const w = filled(wd, key);
+  const nodePage = filled(nodeRes, key);
+  const nd = digest(nodePage.tables);
   const reproducible = w.digests.size === 1 && w.digests.has(nd);
   if (!reproducible) R = false;
   walls.push(...w.wall);
-  const got = w.last ? w.last.tables : nodeRes[key].tables;
-  const med = [...w.wall].sort((a, b) => a - b)[Math.floor(w.wall.length / 2)];
-  console.log(`${key.padEnd(22)} items ${String(nodeRes[key].items).padStart(4)}  workerd digests ${w.digests.size}` +
+  const last = w.last;
+  const got = last ? last.tables : nodePage.tables;
+  const med = at([...w.wall].sort((a, b) => a - b), Math.floor(w.wall.length / 2));
+  console.log(`${key.padEnd(22)} items ${String(nodePage.items).padStart(4)}  workerd digests ${w.digests.size}` +
     `  = node ${w.digests.has(nd) ? "yes" : "NO"}  tables ${got.length}  wall median ${med.toFixed(0)} ms`);
   for (const t of got) console.log(`      found ${t.rows}x${t.cols} at [${t.rect.join(", ")}]  ${JSON.stringify(t.cells).slice(0, 220)}`);
   if (GT_NONE.includes(key) && got.length) { F = false; console.log(`      FALSE TABLE(S): ${got.length} on a page whose ground truth has none`); }
   for (const gt of GT_TABLES[key] || []) {
-    const rows = gt.cells.length, cols = gt.cells[0].length;
+    const rows = gt.cells.length, cols = at(gt.cells, 0).length;
     const all = gt.cells.flat().map(n);
-    let best = null;
+    /** @type {{ t: FoundTable, exact: number } | null} */
+    let bestSoFar = null;
     for (const t of got) {
       let exact = 0;
-      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-        if (t.cells[r] && t.cells[r][c] != null && n(t.cells[r][c]) === n(gt.cells[r][c])) exact++;
-      if (!best || exact > best.exact) best = { t, exact };
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const row = t.cells[r];
+        const cell = row ? row[c] : undefined;
+        if (row && cell != null && n(cell) === n(at(at(gt.cells, r), c))) exact++;
+      }
+      const prior = bestSoFar;
+      if (!prior || exact > prior.exact) bestSoFar = { t, exact };
     }
+    const best = bestSoFar;
     const dims = best ? `${best.t.rows}x${best.t.cols}` : "none";
     const rate = best ? best.exact / all.length : 0;
     const okT = best && best.t.rows === rows && best.t.cols === cols && rate >= 0.95;
@@ -144,8 +223,8 @@ for (const key of PAGES) {
   }
 }
 walls.sort((a, b) => a - b);
-console.log(`\nCOST  harness wall per page per run: median ${walls[Math.floor(walls.length / 2)].toFixed(0)} ms, ` +
-  `max ${walls[walls.length - 1].toFixed(0)} ms over ${walls.length} calls — WALL in the miniflare harness, ` +
+console.log(`\nCOST  harness wall per page per run: median ${at(walls, Math.floor(walls.length / 2)).toFixed(0)} ms, ` +
+  `max ${at(walls, walls.length - 1).toFixed(0)} ms over ${walls.length} calls — WALL in the miniflare harness, ` +
   `whole document parsed per call, NOT a Worker CPU figure (a Worker cannot time itself, D-56)`);
 console.log(`\n(R) reproducible across ${RUNS} workerd runs and node: ${R ? "YES" : "NO"}`);
 console.log(`(A) every ground-truth table exact in shape and >=95% of cells: ${A ? "YES" : "NO"}`);
