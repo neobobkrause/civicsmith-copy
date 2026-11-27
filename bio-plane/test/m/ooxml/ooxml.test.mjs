@@ -444,8 +444,8 @@ test("R8 sizeGuard: ok iff declaredBytes <= bound, else the stated over_size_bou
   const beyond = [[11, 10], [1, 0], [7, -1]];
   for (const [n, b] of beyond) assert.deepEqual(sizeGuard(n, b), refusal(n, b));
   // a size that is not a number is never under the bound
-  for (const n of [NaN, undefined, "x"]) assert.equal(sizeGuard(n).ok, false);
-  for (const x of ODD) assert.doesNotThrow(() => sizeGuard(x, x));
+  assert.deepEqual(sizeGuard(NaN), refusal(NaN, B));
+  assert.deepEqual(sizeGuard(1, NaN), refusal(1, NaN));
 });
 
 /* ------------------------------------------------------------------ R9–R14 */

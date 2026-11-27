@@ -63,8 +63,9 @@ test("R35 textPlan: whole at or under the 20 MiB bound, pieces over it up to the
   }
   const over = textPlan(CEIL + 1);
   assert.equal(over.read, "none");
-  assert.deepEqual(over.guard, { ...sizeGuard(CEIL + 1, CEIL), boundName: "STREAMED_TEXT_BOUND_BYTES", final: true });
-  assert.deepEqual(over.guard, { ok: false, text: "undetermined", why: "over_size_bound", size: CEIL + 1, bound: CEIL,
+  const guard = over.read === "none" ? over.guard : null;
+  assert.deepEqual(guard, { ...sizeGuard(CEIL + 1, CEIL), boundName: "STREAMED_TEXT_BOUND_BYTES", final: true });
+  assert.deepEqual(guard, { ok: false, text: "undetermined", why: "over_size_bound", size: CEIL + 1, bound: CEIL,
     boundName: "STREAMED_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes", final: true });
   for (const odd of [undefined, null, NaN, "big", {}]) assert.equal(textPlan(odd).read, "none", String(odd));
 });

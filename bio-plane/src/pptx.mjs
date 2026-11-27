@@ -126,6 +126,7 @@ import { mceSkipper, withMetadata, activeContent, withActive, detectByContentTyp
 import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, collectElements, TAG_MAX, memberIdentities, addressParts, countObjects, precountFloor, owned,
+  statedWhy,
 } from "./office-xml.mjs";
 /** @import { Attrs, PartialNote, PartFailure, ObjectsExceeded, TextUnit, AddressedUnit } from "./office-xml.mjs" */
 /** @import { BytesInput, Link, LinkCounts, UrlTarget, IntraTarget, UndeterminedTarget, Undetermined, FailureBody, WalkExceeded, CorePropertiesItem, Evidentiary, ActiveItem, ActiveCarried, MetadataCarried, DetectAnswer, ReadFailure, ReadOptions } from "./docx.mjs" */
@@ -723,11 +724,11 @@ function resolveRelTarget(relsPart, target) {
 async function pptxParts(bytes) {
   const b = toBytes(bytes);
   const d = await discriminate(b);
-  if (!d.ok) return { ok: false, why: d.why, signals: d.signals };
+  if (!d.ok) return { ok: false, why: statedWhy(d.why), signals: d.signals };
   if (d.format !== "pptx") {
     return {
       ok: false,
-      why: d.format === "undetermined" ? d.why : `not_pptx:${d.format}`,
+      why: d.format === "undetermined" ? statedWhy(d.why) : `not_pptx:${d.format}`,
       signals: d.signals,
     };
   }
@@ -1513,6 +1514,10 @@ export const pptxEntry = {
     /* FW-19 / IC-124: `images` under ppt/media/, exhaustive or NULL. */
     /* parts that failed answer the refusal, which `withMetadata` and `withActive` carry unchanged */
     if (!parts || !parts.ok) return withContainerImages(readRefused(parts), parts, "ppt/media/");
-    return withContainerImages(withActive(withMetadata(await pptxText(parts, opts), parts, true), parts), parts, "ppt/media/");
+    const read = await withActive(withMetadata(await pptxText(parts, opts), parts, true), parts);
+    if (!read.ok) return read;
+    /* ooxml adds `images` to every successful read of a package it holds, which a successful parts() always is */
+    const imaged = await withContainerImages(read, parts, "ppt/media/");
+    return "images" in imaged ? imaged : { ...imaged, images: null };
   },
 };
