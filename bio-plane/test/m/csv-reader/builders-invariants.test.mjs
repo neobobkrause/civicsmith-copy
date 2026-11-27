@@ -97,6 +97,24 @@ test("R13 never throws: odd arguments to every slot of the entry, and to the bui
   }
 });
 
+test("R13 never throws: R10's and R11's builders take a symbol or a value with no text form as a sheet name or cell, and still hand back their reference", () => {
+  /** @type {unknown[]} */
+  const textless = [Symbol("s"), Symbol(), Object.create(null), { toString() { throw new Error("no text form"); } }];
+  for (const x of textless) {
+    for (const build of [() => sheetCellRef(asText(x), "A1"), () => sheetCellRef("S", asText(x)), () => sheetRangeRef(asText(x), "A1:B2"),
+      () => sheetRangeRef("S", asText(x)), () => usedSheetRange(asText(x), 2, 3)]) {
+      assert.doesNotThrow(build);
+      const r = build();
+      assert.ok(r !== null);
+      assert.equal(typeof r.ref, "string");
+    }
+    assert.equal(usedSheetRange(asText(x), 0, 3), null, "an unmeasured range is still null");
+  }
+  /* a name the builders could always write is written exactly as before */
+  assert.equal(sheetCellRef("Q3 Budget", "B7").ref, "Q3 Budget!B7");
+  assert.equal(usedSheetRange("csv", 2, 28)?.ref, "csv!A1:AB2");
+});
+
 test("R13 never throws: randomly corrupted bodies, and every failure is a returned ok:false or a carried undetermined", async () => {
   let seed = 7;
   const rnd = () => (seed = (seed * 1103515245 + 12345) >>> 0) / 2 ** 32;
