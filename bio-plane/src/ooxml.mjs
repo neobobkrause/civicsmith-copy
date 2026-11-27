@@ -351,7 +351,7 @@ const INFLATE_WINDOW = 1 << 20;
  * @property {false} ok
  * @property {"undetermined"} text
  * @property {"over_size_bound"} why
- * @property {unknown} size the size the caller gave, as given
+ * @property {number} size the size the caller gave, as given
  * @property {number} bound
  * @property {"STREAMED_TEXT_BOUND_BYTES"} boundName
  * @property {"declared_uncompressed_text_part_bytes"} metric
@@ -359,10 +359,12 @@ const INFLATE_WINDOW = 1 << 20;
  */
 /** @typedef {{ read: "whole" } | { read: "pieces", piecewise: Piecewise } | { read: "none", guard: TextRefusal }} TextPlan */
 /**
- * @param {unknown} declaredBytes a value that is not a number is never under a bound
+ * @param {number} declaredBytes the summed declared uncompressed text-part bytes; NaN is never under a bound
  * @returns {TextPlan}
  */
 export function textPlan(declaredBytes) {
+  /* A plain JavaScript caller may still hand in something that is not a
+   * number; it is never shown to be under a bound, as before. */
   const number = typeof declaredBytes === "number";
   if (number && declaredBytes <= MEASURED_OOXML_TEXT_BOUND_BYTES) return { read: "whole" };
   if (number && declaredBytes <= STREAMED_TEXT_BOUND_BYTES) {
