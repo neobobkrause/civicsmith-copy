@@ -168,6 +168,15 @@ const nth = (xs, i, what) => {
   if (x === undefined) throw new Error(`${what}[${i}] is missing`);
   return x;
 };
+/** A value that must be there; a thrown failure naming `what` when it is undefined.
+ *  @template T
+ *  @param {T | undefined} x
+ *  @param {string} what
+ *  @returns {T} */
+const must = (x, what) => {
+  if (x === undefined) throw new Error(`${what} is missing`);
+  return x;
+};
 /** A link's source; a thrown failure when it has none.
  *  @param {LinkRecord} l
  *  @returns {LinkSource | LinkPlace} */
@@ -296,7 +305,7 @@ console.log("\n--- an internal /GoTo /Dest is an anchor with the target page res
   t("the target is the SECOND page, 0-based index 1", pageOf(l), 1);
   t("the source is the FIRST page, index 0", sourceOf(l).page, 0);
   t("the wrapper is byte-identical to linkWrapper.anchor of the fragment",
-    l.wrapper, linkWrapper.anchor(fragmentOf(l)));
+    l.wrapper, linkWrapper.anchor(must(fragmentOf(l), "the fragment")));
   t("the fragment is the 1-based page open-parameter", fragmentOf(l), "#page=2");
   // A bare /Dest on the annotation (no /A) resolves the same way.
   const bare = pdf([
@@ -361,7 +370,7 @@ console.log("\n--- an embedded file attachment is intra, content-addressed ---")
   t("one link", out.links.length, 1);
   const l = nth(out.links, 0, "links");
   t("partition intra", l.partition, "intra");
-  t("the wrapper is byte-identical to linkWrapper.intra of the sha", l.wrapper, linkWrapper.intra(shaOf(l)));
+  t("the wrapper is byte-identical to linkWrapper.intra of the sha", l.wrapper, linkWrapper.intra(must(shaOf(l), "the sha")));
   // The sha must be SHA-256 of the DECODED embedded bytes, computed independently here.
   const wantHex = createHash("sha256").update(fileBytes).digest("hex");
   t("the sha is SHA-256 of the decoded file bytes", shaOf(l), wantHex);
