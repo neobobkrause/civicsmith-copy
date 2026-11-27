@@ -13,8 +13,7 @@ import { fileURLToPath } from "node:url";
 import { extractPdfStructure } from "../../../src/pdfstructure.mjs";
 import { build, FONT_OBJS, FONTS, bytesOf } from "./pdf.mjs";
 /** @import { PdfStructureAnswer, PdfStructure, LinkRecord, IntraLink } from "../../../src/pdfstructure.mjs" */
-/** @import { StreamBody } from "./pdf.mjs" */
-/** @import { EmbeddedFile } from "./memory-child.mjs" */
+/** @import { StreamBody, Objects } from "./pdf.mjs" */
 
 /** `x`; a thrown failure naming `what` when it is undefined or null.
  *  @template T
@@ -26,6 +25,17 @@ const must = (x, what) => { if (x === undefined || x === null) throw new Error(`
  *  @param {PdfStructureAnswer} a
  *  @returns {PdfStructure} */
 const reading = (a) => { if (!a.ok) throw new Error(`expected a reading, got ${a.reason}`); return a; };
+/** `base` with `changes` laid over it, as a new table (the object numbers in the order JavaScript gives integer keys).
+ *  @param {Objects} base
+ *  @param {Objects} changes
+ *  @returns {Objects} */
+const over = (base, changes) => {
+  /** @type {Objects} */
+  const all = {};
+  for (const [k, v] of Object.entries(base)) all[k] = v;
+  for (const [k, v] of Object.entries(changes)) all[k] = v;
+  return all;
+};
 /** A link that is an `intra` record; a thrown failure naming `what` when it is absent or another partition.
  *  @param {LinkRecord | undefined} l
  *  @param {string} what
@@ -40,31 +50,22 @@ const whyOf = (l) => (l.partition === "undetermined" ? l.target.why : undefined)
 /** @typedef {{ label: string, stream: StreamBody, ok: boolean }} ReadCase */
 /** What the child process ended with.
  *  @typedef {{ code: number | null, signal: string | null, out: string, err: string }} ChildEnd */
-/** The members of `embedded`'s message this test reads.
- *  @typedef {{ ok: boolean, intra: EmbeddedFile[], peakMB: number }} EmbeddedReport */
+/** The members of `embedded`'s message this test reads: `intra` as printed (the files, each `EmbeddedFile`).
+ *  @typedef {{ ok: boolean, intra: unknown, peakMB: number }} EmbeddedReport */
 
-/** One embedded file's record, decoded from the child's message; a thrown failure naming what is wrong. Its members are
- *  exactly `sha` and `bytes`, so the comparison that follows sees what the message held.
- *  @param {unknown} v
- *  @returns {EmbeddedFile} */
-function embeddedFile(v) {
-  if (typeof v !== "object" || v === null) throw new Error("embedded message: an intra entry is not an object");
-  if (!("sha" in v) || !("bytes" in v) || Object.keys(v).length !== 2) throw new Error("embedded message: an intra entry is not { sha, bytes }");
-  const sha = v.sha, bytes = v.bytes;
-  if (typeof sha !== "string" || typeof bytes !== "number") throw new Error("embedded message: an intra entry's sha or bytes is of the wrong kind");
-  return { sha, bytes };
-}
 /** `embedded`'s message as the child printed it, decoded; a thrown failure naming the member that is missing or wrong.
- *  @param {unknown} v
+ *  `intra` is kept as printed, for the comparison with the files expected.
+ *  @param {string} text
  *  @returns {EmbeddedReport} */
-function embeddedReport(v) {
+function embeddedReport(text) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
   if (typeof v !== "object" || v === null) throw new Error("embedded message: not an object");
-  if (!("ok" in v) || typeof v.ok !== "boolean") throw new Error("embedded message: no ok");
-  if (!("intra" in v) || !Array.isArray(v.intra)) throw new Error("embedded message: no intra list");
-  if (!("peakMB" in v) || typeof v.peakMB !== "number") throw new Error("embedded message: no peakMB");
-  /** @type {unknown[]} */
-  const intra = v.intra;
-  return { ok: v.ok, intra: intra.map(embeddedFile), peakMB: v.peakMB };
+  const ok = "ok" in v ? v.ok : undefined;
+  const peakMB = "peakMB" in v ? v.peakMB : undefined;
+  if (typeof ok !== "boolean") throw new Error("embedded message: no ok");
+  if (typeof peakMB !== "number") throw new Error("embedded message: no peakMB");
+  return { ok, intra: "intra" in v ? v.intra : undefined, peakMB };
 }
 
 const CHILD = fileURLToPath(new URL("./memory-child.mjs", import.meta.url));
@@ -87,13 +88,13 @@ const hexOf = (b) => Buffer.from(b).toString("hex").toUpperCase() + ">";
  *  @param {string} [trailing]
  *  @returns {Uint8Array} */
 function withFile(stream, trailing = "") {
-  return build({
-    1: "<< /Type /Catalog /Pages 2 0 R >>", 2: "<< /Type /Pages /Kids [100 0 R] /Count 1 >>", ...FONT_OBJS,
+  return build(over(FONT_OBJS, {
+    1: "<< /Type /Catalog /Pages 2 0 R >>", 2: "<< /Type /Pages /Kids [100 0 R] /Count 1 >>",
     100: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << ${FONTS} >> /Contents 101 0 R /Annots [402 0 R] >>`,
     101: { data: "BT /F1 12 Tf 40 700 Td (page) Tj ET" },
     400: stream, 401: "<< /Type /Filespec /F (a.bin) /EF << /F 400 0 R >> >>",
     402: "<< /Type /Annot /Subtype /FileAttachment /Rect [0 0 1 1] /Contents (a.bin) /FS 401 0 R >>",
-  }, { trailer: trailing });
+  }), { trailer: trailing });
 }
 /** The reading's intra records and the records of embedded files it could not decode.
  *  @param {PdfStructure} r
@@ -186,7 +187,7 @@ test("R22: a 60 MiB embedded file is hashed without being held: heap + array buf
     writeFileSync(file, withFile({ dict: "/Type /EmbeddedFile /Filter /FlateDecode", data: new Uint8Array(deflateSync(big, { level: 9 })) }));
     const r = await child(file);
     assert.equal(r.code, 0, r.err.slice(-400));
-    const m = embeddedReport(JSON.parse(r.out));
+    const m = embeddedReport(r.out);
     assert.equal(m.ok, true);
     assert.deepEqual(m.intra, [{ sha: want, bytes: big.length }]);
     assert.ok(m.peakMB < 24, `peak ${m.peakMB.toFixed(1)} MB above the baseline for a 60 MiB embedded file`);

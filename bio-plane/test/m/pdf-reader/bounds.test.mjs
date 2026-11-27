@@ -8,7 +8,7 @@ import { extractPdfStructure, extractPdfRange, openPdf } from "../../../src/pdfs
 import { boundOf } from "../../../src/read-bounds.mjs";
 import { build, doc, FONT_OBJS, FONTS, flate } from "./pdf.mjs";
 /** @import { PdfStructureAnswer, PdfStructure, PdfRefusal, PdfRange, PdfDoc, PdfValue, Marker } from "../../../src/pdfstructure.mjs" */
-/** @import { Objects, StreamBody } from "./pdf.mjs" */
+/** @import { Objects, StreamBody, Page } from "./pdf.mjs" */
 
 /** `x`; a thrown failure naming `what` when it is undefined or null.
  *  @template T
@@ -28,6 +28,17 @@ const rangeOf = (a) => { if (!a.ok) throw new Error(`expected a range, got ${a.r
  *  @param {Uint8Array} bytes
  *  @returns {Promise<PdfDoc>} */
 const opened = async (bytes) => must(await openPdf(bytes), "openPdf");
+/** `base` with `changes` laid over it, as a new table (the object numbers in the order JavaScript gives integer keys).
+ *  @param {Objects} base
+ *  @param {Objects} changes
+ *  @returns {Objects} */
+const over = (base, changes) => {
+  /** @type {Objects} */
+  const all = {};
+  for (const [k, v] of Object.entries(base)) all[k] = v;
+  for (const [k, v] of Object.entries(changes)) all[k] = v;
+  return all;
+};
 /** The array a value is; a thrown failure naming `what` when it is not one.
  *  @param {PdfValue} v
  *  @param {string} what
@@ -46,7 +57,7 @@ const bomb = (mb, fill = 0x20) => new Uint8Array(deflateSync(Buffer.alloc(mb * 1
 const PAGE_CONTENT = boundOf("pdf", "page_content");
 
 test("R41, R22: a page whose decoded content passes the page bound is stated with its figures and the other pages are read (a 200 KB stream that inflates to 200 MB as page 3 of 10)", async () => {
-  const pages = Array.from({ length: 10 }, (_, i) => ({ content: i === 2 ? { dict: "/Filter /FlateDecode", data: bomb(200) } : T(`P${i + 1}`) }));
+  const pages = Array.from({ length: 10 }, /** @param {unknown} _ @param {number} i @returns {Page} */ (_, i) => ({ content: i === 2 ? { dict: "/Filter /FlateDecode", data: bomb(200) } : T(`P${i + 1}`) }));
   const bytes = doc(pages);
   assert.ok(bytes.length < 400 * 1024, "the file is small");
   const rss0 = process.memoryUsage().rss;
@@ -86,26 +97,25 @@ test("R22: a stream under 128 KiB compressed is held to the same cap as a larger
 
 test("R22: an object stream, a ToUnicode CMap and an embedded file are each held to the cap of their kind, stated as stream_over_bound:<kind>", async () => {
   const tooBigCmap = bomb(2); // 2 MiB decoded, past the 1 MiB CMap cap
-  /** @type {Objects} */
-  const o = { 1: "<< /Type /Catalog /Pages 2 0 R >>", 2: "<< /Type /Pages /Kids [100 0 R] /Count 1 >>", ...FONT_OBJS,
+  const o = over(FONT_OBJS, { 1: "<< /Type /Catalog /Pages 2 0 R >>", 2: "<< /Type /Pages /Kids [100 0 R] /Count 1 >>",
     11: { dict: "/Filter /FlateDecode", data: tooBigCmap },
-    100: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << ${FONTS} >> /Contents 101 0 R >>`, 101: { data: T("kept") } };
+    100: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << ${FONTS} >> /Contents 101 0 R >>`, 101: { data: T("kept") } });
   const r = reading(await extractPdfStructure(build(o)));
   assert.ok(r.notes.includes("stream_over_bound:cmap"), JSON.stringify(r.notes));
   assert.ok(r.text.undetermined.some((u) => u.reason === "no_tounicode"), "no character is guessed from a CMap that was not read");
   /* an object stream past its cap: its objects are unread and that is stated both ways */
   /** @type {StreamBody} */
   const stm = { dict: `/Type /ObjStm /N 1 /First 4 /Filter /FlateDecode`, data: bomb(boundOf("pdf", "object_stream") / 1048576 + 1) };
-  const r2 = reading(await extractPdfStructure(build({ ...o, 11: { data: "" }, 900: stm })));
+  const r2 = reading(await extractPdfStructure(build(over(o, { 11: { data: "" }, 900: stm }))));
   assert.ok(r2.notes.includes("stream_over_bound:object_stream"));
   assert.ok(r2.notes.includes("objstm_undecodable"));
   assert.equal(r2.ok, true);
   /* an embedded file past its cap is an undetermined record naming why, never a file read in part */
   /** @type {StreamBody} */
   const big = { dict: "/Type /EmbeddedFile /Filter /FlateDecode", data: bomb(boundOf("pdf", "embedded_file") / 1048576 + 1) };
-  const withFile = build({ ...o, 11: { data: "" }, 400: big, 401: "<< /Type /Filespec /F (big.bin) /EF << /F 400 0 R >> >>",
+  const withFile = build(over(o, { 11: { data: "" }, 400: big, 401: "<< /Type /Filespec /F (big.bin) /EF << /F 400 0 R >> >>",
     100: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << ${FONTS} >> /Contents 101 0 R /Annots [402 0 R] >>`,
-    402: "<< /Type /Annot /Subtype /FileAttachment /Rect [0 0 1 1] /Contents (big) /FS 401 0 R >>" });
+    402: "<< /Type /Annot /Subtype /FileAttachment /Rect [0 0 1 1] /Contents (big) /FS 401 0 R >>" }));
   const r3 = reading(await extractPdfStructure(withFile));
   assert.ok(r3.notes.includes("stream_over_bound:embedded_file"), JSON.stringify(r3.notes));
   assert.ok(r3.links.some((l) => l.partition === "undetermined" && l.target.why === "embedded_stream_undecodable"));
@@ -188,7 +198,7 @@ test("R47: a direct object past the bound is absent and stated, and an input of 
   const parts = [head];
   /** @type {string[]} */
   const chunk = [];
-  for (let n = 3; n < omax + 100; n++) { chunk.push(`${n} 0 obj\n1\nendobj\n`); if (chunk.length === 100000) { parts.push(Buffer.from(chunk.join(""), "latin1")); chunk.splice(0, chunk.length); } }
+  for (let n = 3; n < omax + 100; n++) { chunk.push(`${n} 0 obj\n1\nendobj\n`); if (chunk.length === 100000) { parts.push(Buffer.from(chunk.join(""), "latin1")); chunk.splice(0); } }
   parts.push(Buffer.from(chunk.join("") + "trailer\n<< /Root 1 0 R >>\n%%EOF\n", "latin1"));
   const big = new Uint8Array(Buffer.concat(parts));
   const res = reading(await extractPdfStructure(big));

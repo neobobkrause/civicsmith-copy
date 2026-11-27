@@ -12,14 +12,17 @@ import { join } from "node:path";
 import { densePdf } from "./dense.mjs";
 /** @import { DenseOptions } from "./dense.mjs" */
 
-/** What the worker answers: `ok`, and whether the reading answered (its `ok`), as the probe reads them.
- *  @typedef {{ ok: unknown, answered: unknown }} ProbeAnswer */
-/** The worker's answer, decoded to the two members the probe reads; a thrown failure when it is no object.
- *  @param {unknown} v
+/** What the worker answered (`raw`, as parsed), and its `ok` and `answered` (whether the reading answered) where it is an
+ *  object that has them.
+ *  @typedef {{ raw: unknown, ok: unknown, answered: unknown }} ProbeAnswer */
+/** The worker's answer, read from its text.
+ *  @param {string} text
  *  @returns {ProbeAnswer} */
-function probeAnswer(v) {
-  if (typeof v !== "object" || v === null) throw new Error("the worker answered no object");
-  return { ok: "ok" in v ? v.ok : undefined, answered: "answered" in v ? v.answered : undefined };
+function probeAnswer(text) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
+  if (typeof v !== "object" || v === null) return { raw: v, ok: undefined, answered: undefined };
+  return { raw: v, ok: "ok" in v ? v.ok : undefined, answered: "answered" in v ? v.answered : undefined };
 }
 
 /** @param {string} p
@@ -66,11 +69,9 @@ const w :Workerd.Worker = (modules = [(name = "worker", esModule = embed "worker
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await pause(200); } }
     if (!up) return false;
-    /** @type {unknown} */
-    const raw = await fetch(`http://127.0.0.1:${port}/?f=${file}`).then((x) => x.json()).catch(() => null);
-    if (process.env.PROBE_DEBUG) console.error(oldSpaceMB, JSON.stringify(raw));
-    const r = raw === null ? null : probeAnswer(raw);
-    return !!(r && r.ok && r.answered !== undefined);
+    const r = await fetch(`http://127.0.0.1:${port}/?f=${file}`).then((x) => x.text()).then(probeAnswer).catch(() => null);
+    if (process.env.PROBE_DEBUG) console.error(oldSpaceMB, JSON.stringify(r === null ? null : r.raw));
+    return !!(r && r.raw && r.ok && r.answered !== undefined);
   } finally { p.kill("SIGKILL"); }
 }
 for (const spec of specs) {

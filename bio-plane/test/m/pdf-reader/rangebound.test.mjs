@@ -50,12 +50,13 @@ test("R46: every range answer carries the document's metadata and page boxes, th
   const bytes = file();
   const whole = reading(await extractPdfStructure(bytes));
   const r = rangeOf(await extractPdfRange(bytes, { from: 1, count: 3 }));
+  const metadata = r.metadata, images = r.images;
   assert.deepEqual(r.metadata, whole.metadata);
-  assert.equal(must(r.metadata, "metadata").title, "Range Title");
+  assert.equal(must(metadata, "metadata").title, "Range Title");
   assert.deepEqual(r.pageBoxes, whole.pageBoxes, "the boxes of the whole document, whichever pages the range is");
   assert.deepEqual(r.images, must(whole.images, "images").filter((im) => im.page >= 1 && im.page < 4));
-  assert.equal(must(r.images, "images").length, 1);
-  assert.equal(must(must(r.images, "images")[0], "images[0]").page, 2);
+  assert.equal(must(images, "images").length, 1);
+  assert.equal(must(must(images, "images")[0], "images[0]").page, 2);
   assert.equal(r.text_glyphs, "beta pagegamma page heredelta".replace(/\s/g, "").length);
   assert.equal(r.words_total, 2 + 3 + 1);
   assert.ok(!("metadata" in r.text) && !("images" in r.text), "in their own members and not inside text");

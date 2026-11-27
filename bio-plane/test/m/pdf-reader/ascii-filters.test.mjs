@@ -81,7 +81,7 @@ test("R22 R11: a content stream under [/ASCII85Decode /FlateDecode] is read, and
   assert.equal(r.ok, true);
   for (const w of WORDS) assert.ok(texts(r).includes(w), `${JSON.stringify(texts(r))} lacks ${w}`);
   assert.ok(!r.notes.includes("content_stream_undecodable"));
-  assert.deepEqual(page0(r).undetermined.map((m) => m.reason).filter((x) => x === "content_stream_undecodable"), []);
+  assert.deepEqual(page0(r).undetermined.map((m) => m.reason).filter(/** @param {string} x @returns {boolean} */ (x) => x === "content_stream_undecodable"), []);
 });
 
 test("R22 R11: the other ways a producer chains the ASCII filters are read the same way", async () => {

@@ -17,11 +17,14 @@ function numberOrNone(v, what) {
   if (v !== undefined && typeof v !== "number") throw new Error(`${what}: not a number`);
   return v;
 }
-/** The worker's answer, decoded; a thrown failure naming what is wrong.
- *  @param {unknown} v
+/** The worker's answer, read from its text (`ok` false where it is not an object); a thrown failure naming a member that is
+ *  not a number.
+ *  @param {string} text
  *  @returns {ProbeAnswer} */
-function probeAnswer(v) {
-  if (typeof v !== "object" || v === null) throw new Error("the worker answered no object");
+function probeAnswer(text) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
+  if (typeof v !== "object" || v === null) return { ok: false, pages: undefined, chars: undefined, calls: undefined, slowest: undefined };
   return { ok: "ok" in v ? !!v.ok : false, pages: numberOrNone("pages" in v ? v.pages : undefined, "pages"), chars: numberOrNone("chars" in v ? v.chars : undefined, "chars"),
     calls: numberOrNone("calls" in v ? v.calls : undefined, "calls"), slowest: numberOrNone("slowest" in v ? v.slowest : undefined, "slowest") };
 }
@@ -78,7 +81,7 @@ const w :Workerd.Worker = (modules = [(name = "worker", esModule = embed "worker
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await pause(200); } }
     if (!up) return null;
-    return await fetch(`http://127.0.0.1:${port}/?f=${file}&n=${n}`).then((x) => x.json()).then(probeAnswer).catch(() => null);
+    return await fetch(`http://127.0.0.1:${port}/?f=${file}&n=${n}`).then((x) => x.text()).then(probeAnswer).catch(() => null);
   } finally { p.kill("SIGKILL"); }
 }
 let lo = 16, hi = Number(process.env.PROBE_HI || 320);

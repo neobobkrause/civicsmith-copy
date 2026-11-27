@@ -203,9 +203,10 @@ test("R42: a text-dense PDF of 3,500 pages under 24 MiB is refused as final, sta
   assert.equal(got.failure, "final");
   assert.equal(got.reason, "TOO_LARGE_TO_READ");
   assert.equal(got.pages, 3500);
+  const need = got.need_mb, limit = got.limit_mb;
   assert.equal(got.bytes, bytes.length);
   assert.equal(got.limit_mb, 100);
-  assert.ok(got.need_mb > got.limit_mb, `need ${got.need_mb} MB is over the ${got.limit_mb} MB limit`);
+  assert.ok(need > limit, `need ${need} MB is over the ${limit} MB limit`);
   assert.equal("text" in got ? got.text : undefined, undefined, "no page's text was built");
   assert.equal("links" in got ? got.links : undefined, undefined);
 });

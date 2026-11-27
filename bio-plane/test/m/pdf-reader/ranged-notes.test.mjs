@@ -110,7 +110,7 @@ test("R50: an encrypted document's range carries the open's notes and encrypted,
   const r1 = rangeOf(await opened.range({ from: 0, count: 1 }));
   const r2 = rangeOf(await opened.range({ from: 0, count: 1 }));
   assert.ok(r1.notes.includes("encrypted"));
-  assert.equal(r1.notes.filter((n) => n === "encrypted").length, 1);
+  assert.equal(r1.notes.filter(/** @param {string} n @returns {boolean} */ (n) => n === "encrypted").length, 1);
   assert.deepEqual(r2.notes, r1.notes);
   for (const n of opened.notes) assert.ok(r1.notes.includes(n));
 });

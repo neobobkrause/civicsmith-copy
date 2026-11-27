@@ -13,7 +13,7 @@ import { pageSource, extractPdfStructure } from "../../../src/pdfstructure.mjs";
 import { generate } from "../../pdfgen.mjs";
 import { indexed } from "./indexed.mjs";
 import { bytesOf } from "./pdf.mjs";
-/** @import { PdfStructureAnswer, PdfStructure, PageSourceAnswer, RangeSource, ImagePlacement, PageBox } from "../../../src/pdfstructure.mjs" */
+/** @import { PdfStructureAnswer, PdfStructure, PageSourceAnswer, RangeSource, ImagePlacement, PageBox, Marker } from "../../../src/pdfstructure.mjs" */
 /** @import { PdfRecipe, PdfSize, PdfScan } from "../../pdfgen.mjs" */
 /** @import { IndexedObjects, IndexedOptions } from "./indexed.mjs" */
 
@@ -98,12 +98,32 @@ function sourceOf(file) {
  *  @param {string} structure
  *  @param {RecipeChange} [extra]
  *  @returns {PdfRecipe} */
-const recipe = (structure, extra = {}) => ({ kind: "pdf", seed: "page-source", size: { pages: 40, lines: 30 },
-  kinds: ["text", "scan", "mixed"], fonts: ["winansi", "macroman", "differences", "type0"], structure, compress: true, ...extra });
+const recipe = (structure, extra = {}) => {
+  /** @type {PdfRecipe} */
+  const r = { kind: "pdf", seed: "page-source", size: extra.size ?? { pages: 40, lines: 30 },
+    kinds: extra.kinds ?? ["text", "scan", "mixed"], fonts: ["winansi", "macroman", "differences", "type0"], structure, compress: true };
+  if (extra.scan !== undefined) r.scan = extra.scan;
+  return r;
+};
 /** @param {ImagePlacement} i
  *  @returns {PlacementSeen} */
 const placement = (i) => ({ mime: i.mime, name: i.name, width: i.width, height: i.height, filters: i.filters, rect: i.rect, inline: i.inline, axis_aligned: i.axis_aligned });
 
+/** A marker as if it were on page 0.
+ *  @param {Marker} u
+ *  @returns {Marker} */
+const atPage0 = (u) => ({ ...u, page: 0 });
+/** `base` with `changes` laid over it, as a new table (the object numbers in the order JavaScript gives integer keys).
+ *  @param {IndexedObjects} base
+ *  @param {IndexedObjects} changes
+ *  @returns {IndexedObjects} */
+const over = (base, changes) => {
+  /** @type {IndexedObjects} */
+  const all = {};
+  for (const [k, v] of Object.entries(base)) all[k] = v;
+  for (const [k, v] of Object.entries(changes)) all[k] = v;
+  return all;
+};
 /** The box of page `i` of a reading: undefined where the page has no box.
  *  @param {PdfStructure} r
  *  @param {number} i
@@ -119,7 +139,7 @@ async function same(whole, one, i, label) {
   const onePage = must(one.text.pages[0], `${label}: page 0`), wholePage = must(whole.text.pages[i], `${label}: page ${i}`);
   assert.equal(one.pages, 1, `${label}: one page`);
   assert.equal(onePage.text, wholePage.text, `${label}: the page's text`);
-  assert.deepEqual(onePage.undetermined.map((u) => ({ ...u, page: 0 })), wholePage.undetermined.map((u) => ({ ...u, page: 0 })), `${label}: the markers`);
+  assert.deepEqual(onePage.undetermined.map(atPage0), wholePage.undetermined.map(atPage0), `${label}: the markers`);
   assert.deepEqual((one.images ?? []).map(placement), (whole.images ?? []).filter((m) => m.page === i).map(placement), `${label}: the images placed`);
   assert.deepEqual(boxOf(one, 0), boxOf(whole, i), `${label}: the page box`);
 }
@@ -314,16 +334,16 @@ test("R49: no usable cross-reference, a trailer with /Encrypt, a damaged object,
   await fb(bytesOf("%PDF-1.7\n" + text(file).slice(9).replace(/xref\n/g, "xrof\n")), "no table");
   /* /Encrypt in the trailer, direct and by reference, in a table and in a cross-reference stream */
   await fb(indexed(TREE, { trailer: "/Root 1 0 R /Encrypt << /Filter /Standard /R 3 /V 2 /O (x) /U (y) /P -4 >>" }), "direct /Encrypt, table");
-  await fb(indexed({ ...TREE, 50: "<< /Filter /Standard /R 3 /V 2 /O (x) /U (y) /P -4 >>" }, { trailer: "/Root 1 0 R /Encrypt 50 0 R", xref: "stream" }), "indirect /Encrypt, stream");
+  await fb(indexed(over(TREE, { 50: "<< /Filter /Standard /R 3 /V 2 /O (x) /U (y) /P -4 >>" }), { trailer: "/Root 1 0 R /Encrypt 50 0 R", xref: "stream" }), "indirect /Encrypt, stream");
   /* the page's object does not open where the table says it does (its header names another number) */
   await fb(replace(file, "3 0 obj", "7 0 obj"), "an object whose header is not its number");
   /* a content stream whose /Length is not where endstream follows */
   const len = FIRST_CONTENT.length;
   await fb(replace(file, `/Length ${len}`, `/Length ${len - 9}`), "a lying /Length");
   /* a count that does not reach the page; a tree that points back at its parent */
-  await fb(indexed({ ...TREE, 2: TREE_ROOT.replace("/Kids [3 0 R 4 0 R 8 0 R] /Count 5", "/Kids [3 0 R 4 0 R 8 0 R] /Count 0") }), "/Count 0");
-  await fb(indexed({ ...TREE, 3: "<< /Type /Pages /Parent 2 0 R /Kids [2 0 R] /Count 1 >>" }), "a tree in a loop");
-  await fb(indexed({ ...TREE, 2: TREE_ROOT.replace("/MediaBox [0 0 300 400] ", ""), 3: "<< /Type /Page /Parent 2 0 R /Contents 30 0 R >>" }), "no MediaBox anywhere");
+  await fb(indexed(over(TREE, { 2: TREE_ROOT.replace("/Kids [3 0 R 4 0 R 8 0 R] /Count 5", "/Kids [3 0 R 4 0 R 8 0 R] /Count 0") })), "/Count 0");
+  await fb(indexed(over(TREE, { 3: "<< /Type /Pages /Parent 2 0 R /Kids [2 0 R] /Count 1 >>" })), "a tree in a loop");
+  await fb(indexed(over(TREE, { 2: TREE_ROOT.replace("/MediaBox [0 0 300 400] ", ""), 3: "<< /Type /Page /Parent 2 0 R /Contents 30 0 R >>" })), "no MediaBox anywhere");
 });
 
 test("R49: the module reads through readRange alone and takes the same answer from a source that returns slices of one buffer or copies", async () => {
