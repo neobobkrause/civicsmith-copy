@@ -6,14 +6,31 @@ import assert from "node:assert/strict";
 import { docxEntry, DOCX_CONTENT_TYPE } from "../../../src/docx.mjs";
 import { pptxEntry, PPTX_CONTENT_TYPE } from "../../../src/pptx.mjs";
 import { xlsxEntry, XLSX_CONTENT_TYPE } from "../../../src/formats-xlsx.mjs";
+import { CSV_CONTENT_TYPE } from "../../../src/csv.mjs";
+import { CORE_PROPERTIES_PART } from "../../../src/ooxml.mjs";
 import * as F from "./fixtures.mjs";
+/** @import { DocxEntry } from "../../../src/docx.mjs" */
+/** @import { PptxEntry } from "../../../src/pptx.mjs" */
+/** @import { XlsxEntry } from "../../../src/formats-xlsx.mjs" */
+/** @import { Flavour } from "./fixtures.mjs" */
 
+/**
+ * One OOXML flavour as these tests drive it: its entry, format, registered type, a package of it and its main part.
+ * @typedef {Object} Flavoured
+ * @property {DocxEntry | PptxEntry | XlsxEntry} entry
+ * @property {Flavour} format
+ * @property {string} type
+ * @property {() => Uint8Array} build
+ * @property {string} main
+ */
+
+/** @type {Flavoured[]} */
 const OOXML = [
   { entry: docxEntry, format: "docx", type: DOCX_CONTENT_TYPE, build: () => F.docx(), main: "word/document.xml" },
   { entry: pptxEntry, format: "pptx", type: PPTX_CONTENT_TYPE, build: () => F.pptx(), main: "ppt/presentation.xml" },
   { entry: xlsxEntry, format: "xlsx", type: XLSX_CONTENT_TYPE, build: () => F.xlsx(), main: "xl/workbook.xml" },
 ];
-const ALL_TYPES = [DOCX_CONTENT_TYPE, PPTX_CONTENT_TYPE, XLSX_CONTENT_TYPE, "text/csv", "application/zip",
+const ALL_TYPES = [DOCX_CONTENT_TYPE, PPTX_CONTENT_TYPE, XLSX_CONTENT_TYPE, CSV_CONTENT_TYPE, "application/zip",
   "application/octet-stream", "text/plain", "application/vnd.oasis.opendocument.text", "", null, undefined];
 
 /* ------------------------------------------------------------------ R1 */
@@ -22,8 +39,10 @@ test("R1 each entry's format is docx, pptx or xlsx", () => {
   assert.equal(docxEntry.format, "docx");
   assert.equal(pptxEntry.format, "pptx");
   assert.equal(xlsxEntry.format, "xlsx");
+  /** @type {("detect" | "parts" | "structure" | "text")[]} */
+  const slots = ["detect", "parts", "structure", "text"];
   for (const e of [docxEntry, pptxEntry, xlsxEntry]) {
-    for (const slot of ["detect", "parts", "structure", "text"]) assert.equal(typeof e[slot], "function", `${e.format}.${slot}`);
+    for (const slot of slots) assert.equal(typeof e[slot], "function", `${e.format}.${slot}`);
   }
 });
 
@@ -45,11 +64,12 @@ test("R2 docx/pptx/xlsx detect: null without ZIP magic, null on a magic-only pre
 test("R2 docx/pptx/xlsx detect: a readable central directory naming [Content_Types].xml AND the main part is likely, never certain", () => {
   for (const { entry, format, build, main } of OOXML) {
     const d = entry.detect(build(), null);
+    if (d === null) assert.fail(`${format} is detected`);
     assert.equal(d.format, format);
     assert.equal(d.confidence, "likely");
     assert.ok(Array.isArray(d.signals) && d.signals.length > 0);
     // with a content type that disagrees, the bytes still answer (and still only "likely")
-    assert.equal(entry.detect(build(), "text/plain").confidence, "likely");
+    assert.equal(entry.detect(build(), "text/plain")?.confidence, "likely");
     // missing the content-type map, or missing the main part: null
     const noTypes = F.zip([{ name: main, data: "<x/>" }, { name: "_rels/.rels", data: "<Relationships/>" }]);
     assert.equal(entry.detect(noTypes, null), null, `${format} without [Content_Types].xml`);
@@ -65,6 +85,7 @@ test("R2 docx/pptx/xlsx detect(null, contentType): likely exactly for the format
     for (const ct of ALL_TYPES) {
       const d = entry.detect(null, ct);
       if (ct === type) {
+        if (d === null) assert.fail(`${format} on its own type is detected`);
         assert.equal(d.format, format);
         assert.equal(d.confidence, "likely");
         assert.ok(d.signals.length > 0);
@@ -87,7 +108,7 @@ test("R4 docx parts: an unreadable word/document.xml does not fail the read; the
   const t = await docxEntry.text(b);
   assert.equal(t.ok, true);
   assert.equal(t.document, null);
-  assert.equal(t.undetermined[0].part, "word/document.xml");
+  assert.equal(t.undetermined[0]?.part, "word/document.xml");
   const s = await docxEntry.structure(b);
   assert.equal(s.ok, true);
   assert.equal(s.paragraphs, null);
@@ -100,14 +121,18 @@ test("R4 pptx parts: an unreadable ppt/presentation.xml does not fail the read; 
   assert.equal(p.order, null);
   assert.ok(p.undetermined.some((u) => u.part === "ppt/presentation.xml" && u.why === "crc_mismatch"));
   const s = await pptxEntry.structure(b);
+  if (!s.ok) assert.fail(`the deck's structure is refused: ${s.reason}`);
   assert.ok(s.notes.some((n) => /unnumbered/i.test(n)));
   const t = await pptxEntry.text(b);
+  if (!t.ok) assert.fail(`the deck's text is refused: ${t.reason}`);
   assert.deepEqual(t.slides.map((x) => [x.slide, x.text]), [[null, "One"], [null, "Two"]]);
   assert.equal(t.deckLength, null);
 });
 
 test("R4 docx/pptx parts: ok:false only when the bytes are not this format or the ZIP cannot be read", async () => {
-  for (const [entry, own, others] of [[docxEntry, F.docx(), [F.pptx(), F.xlsx()]], [pptxEntry, F.pptx(), [F.docx(), F.xlsx()]]]) {
+  /** @type {[DocxEntry | PptxEntry, Uint8Array, Uint8Array[]][]} */
+  const cases = [[docxEntry, F.docx(), [F.pptx(), F.xlsx()]], [pptxEntry, F.pptx(), [F.docx(), F.xlsx()]]];
+  for (const [entry, own, others] of cases) {
     assert.equal((await entry.parts(own)).ok, true);
     for (const o of others) {
       const p = await entry.parts(o);
@@ -147,7 +172,7 @@ test("R5 xlsx parts: an unreadable sheet, sharedStrings or core part is carried 
   assert.equal(p.ok, true);
   assert.ok(p.undetermined.some((u) => u.part === "xl/worksheets/sheet1.xml" && u.why === "crc_mismatch"));
   assert.ok(p.undetermined.some((u) => u.part === "xl/sharedStrings.xml" && u.why === "crc_mismatch"));
-  const withBadCore = await xlsxEntry.parts(F.xlsx({ extra: [{ name: "docProps/core.xml", data: F.core({ creator: "x" }), cd: F.CORRUPT }] }));
+  const withBadCore = await xlsxEntry.parts(F.xlsx({ extra: [{ name: CORE_PROPERTIES_PART, data: F.core({ creator: "x" }), cd: F.CORRUPT }] }));
   assert.equal(withBadCore.ok, true);
-  assert.ok(withBadCore.undetermined.some((u) => u.part === "docProps/core.xml" && u.why === "crc_mismatch"));
+  assert.ok(withBadCore.undetermined.some((u) => u.part === /** @copyof ooxml:CORE_PROPERTIES_PART */ ("docProps/core.xml") && u.why === "crc_mismatch"));
 });
