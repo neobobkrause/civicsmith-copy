@@ -10,21 +10,64 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { openPdfRange, extractPdfRange } from "../../../src/pdfstructure.mjs";
 import { densePdf } from "./dense.mjs";
+/** @import { OpenedRange, PdfRefusal, PdfRange, PdfRangeArgs } from "../../../src/pdfstructure.mjs" */
 
+/** A value that is there; a thrown failure naming `what` when it is undefined or null.
+ *  @template T
+ *  @param {T | undefined | null} v
+ *  @param {string} what
+ *  @returns {T} */
+function must(v, what) {
+  if (v === undefined || v === null) throw new Error(`${what}: none`);
+  return v;
+}
+/** An opened document; a thrown failure naming `what` when the opening is a refusal.
+ *  @param {OpenedRange | PdfRefusal} r
+ *  @param {string} what
+ *  @returns {OpenedRange} */
+function openedOf(r, what) {
+  if (!r.ok) throw new Error(`${what}: the opening answered ${r.reason}`);
+  return r;
+}
+
+/** A turn of the event loop.
+ *  @returns {Promise<void>} */
 const later = () => new Promise((r) => setImmediate(r));
+/** What `stretches` gives: the `yieldNow`, the start and end marks, and what they counted.
+ *  @typedef {Object} Stretches
+ *  @property {() => Promise<void>} yieldNow
+ *  @property {() => void} mark
+ *  @property {() => void} end
+ *  @property {number} calls
+ *  @property {number} longest
+ */
+/** A `yieldNow` that counts its calls and takes, with the test's own clock outside the call, the longest stretch between
+ *  `mark()`, its yields and `end()`.
+ *  @returns {Stretches} */
 function stretches() {
   let last = 0, longest = 0, calls = 0;
   const lap = () => { const t = performance.now(); longest = Math.max(longest, t - last); last = t; };
   return { yieldNow: async () => { calls++; lap(); await later(); last = performance.now(); },
     mark: () => { last = performance.now(); longest = 0; }, end: lap, get calls() { return calls; }, get longest() { return longest; } };
 }
+/** What `counted` gives: a `yieldNow` and how many times it was called.
+ *  @typedef {Object} Counted
+ *  @property {() => Promise<void>} yieldNow
+ *  @property {number} n
+ */
+/** @returns {Counted} */
 const counted = () => { let n = 0; return { yieldNow: async () => { n++; }, get n() { return n; } }; };
+/** @param {PdfRange | PdfRefusal} v
+ *  @returns {string} */
 const json = (v) => JSON.stringify(v);
+/** @param {PdfRangeArgs} args
+ *  @returns {string} */
+const jsonArgs = (args) => JSON.stringify(args);
 
 test("R45 amended: a range awaits yieldNow within its compute, more work giving more awaits, counted and never timed", async () => {
   const bytes = densePdf({ pages: 300, linesPerPage: 120 });
   const c = counted();
-  const open = await openPdfRange(bytes, { yieldNow: c.yieldNow });
+  const open = openedOf(await openPdfRange(bytes, { yieldNow: c.yieldNow }), "300 pages");
   const afterOpen = c.n;
   await open.range({ from: 0, count: 10 });
   const ten = c.n - afterOpen;
@@ -37,39 +80,53 @@ test("R45 amended: a range awaits yieldNow within its compute, more work giving 
   /* one page that is a region of its own: its token walk and its glyph and word count yield inside the page */
   const heavy = densePdf({ pages: 1, linesPerPage: 30000 });
   const h = counted();
-  const ho = await openPdfRange(heavy, { yieldNow: h.yieldNow });
+  const ho = openedOf(await openPdfRange(heavy, { yieldNow: h.yieldNow }), "one heavy page");
   const hb = h.n;
   await ho.range({ from: 0, count: 1 });
   assert.ok(h.n - hb >= 20, `${h.n - hb} awaits for one page of 30,000 lines`);
   /* a page that paints and shows nothing the text walk reads: the image walk's own loop */
   const scan = densePdf({ pages: 40, scan: true });
   const s = counted();
-  const so = await openPdfRange(scan, { yieldNow: s.yieldNow });
-  assert.equal((await so.range({ from: 0, count: 40 })).images.length, 40);
+  const so = openedOf(await openPdfRange(scan, { yieldNow: s.yieldNow }), "40 scanned pages");
+  assert.equal(must((await so.range({ from: 0, count: 40 })).images, "images").length, 40);
   /* no function: no await at all, as R44 */
-  const none = await openPdfRange(bytes);
+  const none = openedOf(await openPdfRange(bytes), "300 pages without yieldNow");
   assert.equal(json(await none.range({ from: 0, count: 100 })), json(await extractPdfRange(bytes, { from: 0, count: 100 })));
 });
 
 test("R45 amended: every range answers the same with yieldNow as without, whatever yieldNow does", async () => {
-  const docs = {
-    "text pages": densePdf({ pages: 120, linesPerPage: 80 }),
-    "one heavy page": densePdf({ pages: 3, linesPerPage: 9000 }),
-    "scanned pages": densePdf({ pages: 30, scan: true }),
-    "an encrypted file": densePdf({ pages: 5, linesPerPage: 3, encrypted: true }),
-  };
-  const variants = {
-    "a timer turn": async () => later(),
-    "a plain function": () => {},
-    "one that throws": () => { throw new Error("no"); },
-    "one that rejects": () => Promise.reject(new Error("no")),
-  };
-  for (const [dname, bytes] of Object.entries(docs)) {
-    const plain = await openPdfRange(bytes);
-    for (const [vname, yieldNow] of Object.entries(variants)) {
-      const y = await openPdfRange(bytes, { yieldNow });
-      for (const args of [{ from: 0, count: 100 }, { from: 1, count: 2 }, { from: 0, count: 100, maxBytes: 200_000 }, { from: 2, count: 1 }, { from: 500, count: 3 }]) {
-        assert.equal(json(await y.range(args)), json(await plain.range(args)), `${dname} ${vname} ${json(args)}`);
+  /** One document read, and its name.
+   *  @typedef {Object} Doc
+   *  @property {string} dname
+   *  @property {Uint8Array} bytes
+   */
+  /** @type {Doc[]} */
+  const docs = [
+    { dname: "text pages", bytes: densePdf({ pages: 120, linesPerPage: 80 }) },
+    { dname: "one heavy page", bytes: densePdf({ pages: 3, linesPerPage: 9000 }) },
+    { dname: "scanned pages", bytes: densePdf({ pages: 30, scan: true }) },
+    { dname: "an encrypted file", bytes: densePdf({ pages: 5, linesPerPage: 3, encrypted: true }) },
+  ];
+  /** One `yieldNow` the opening is given, and its name.
+   *  @typedef {Object} Variant
+   *  @property {string} vname
+   *  @property {() => (void | Promise<void>)} yieldNow
+   */
+  /** @type {Variant[]} */
+  const variants = [
+    { vname: "a timer turn", yieldNow: async () => later() },
+    { vname: "a plain function", yieldNow: () => {} },
+    { vname: "one that throws", yieldNow: () => { throw new Error("no"); } },
+    { vname: "one that rejects", yieldNow: () => Promise.reject(new Error("no")) },
+  ];
+  /** @type {PdfRangeArgs[]} */
+  const cuts = [{ from: 0, count: 100 }, { from: 1, count: 2 }, { from: 0, count: 100, maxBytes: 200_000 }, { from: 2, count: 1 }, { from: 500, count: 3 }];
+  for (const { dname, bytes } of docs) {
+    const plain = openedOf(await openPdfRange(bytes), dname);
+    for (const { vname, yieldNow } of variants) {
+      const y = openedOf(await openPdfRange(bytes, { yieldNow }), `${dname} ${vname}`);
+      for (const args of cuts) {
+        assert.equal(json(await y.range(args)), json(await plain.range(args)), `${dname} ${vname} ${jsonArgs(args)}`);
       }
     }
   }
@@ -77,9 +134,9 @@ test("R45 amended: every range answers the same with yieldNow as without, whatev
 
 test("R45 amended: no stretch of a range is as long as the range, judged against the same run's unsliced call", { timeout: 300_000 }, async () => {
   const bytes = densePdf({ pages: 200, linesPerPage: 120 });
-  const plain = await openPdfRange(bytes);
+  const plain = openedOf(await openPdfRange(bytes), "200 pages");
   const s = stretches();
-  const y = await openPdfRange(bytes, { yieldNow: s.yieldNow });
+  const y = openedOf(await openPdfRange(bytes, { yieldNow: s.yieldNow }), "200 pages with yieldNow");
   await plain.range({ from: 150, count: 10 });   // warm both
   await y.range({ from: 150, count: 10 });
   const t0 = performance.now();
