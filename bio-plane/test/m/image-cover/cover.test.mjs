@@ -10,13 +10,46 @@ import { word } from "../../../src/setup-words/index.mjs";
 import { pngDeclaring } from "./hostile.mjs";
 import { CASES, fixture, jpegSegments, pngChunks, tiffIfd0, decodeJpegAnswer, decodePngAnswer, judge } from "./answers.mjs";
 
+/** @import { Covered, Refused } from "../../../src/image-cover/index.mjs" */
+/** @import { CoverCase, Ifd0 } from "./answers.mjs" */
+
+/** @param {Uint8Array} b */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-const answers = new Map();
+/**
+ * The answer, which must be a covered photo.
+ * @param {Covered | Refused} a
+ * @param {string} why
+ * @returns {Covered}
+ */
+const covered = (a, why) => {
+  if (!a.ok) assert.fail(`${why}: ${a.code} ${a.detail}`);
+  return a;
+};
+/** @type {Map<string, Covered | Refused>} */
+const answers = new Map([]);
+/** @param {CoverCase} c @returns {Promise<Covered>} */
 async function answer(c) {
-  if (!answers.has(c.file)) answers.set(c.file, await coverAreas(fixture(c.file), { areas: c.areas }));
-  return answers.get(c.file);
+  const had = answers.get(c.file);
+  if (had) return covered(had, c.file);
+  const a = await coverAreas(fixture(c.file), { areas: c.areas });
+  answers.set(c.file, a);
+  return covered(a, c.file);
 }
+/** The first case `which` picks. @param {(c: CoverCase) => boolean} which */
+const caseWhere = (which) => {
+  const c = CASES.cases.find(which);
+  assert.ok(c, "the fixture is among the cases");
+  return c;
+};
+/** @param {CoverCase} c @param {Covered} a */
 const decode = (c, a) => (c.format === "jpeg" ? decodeJpegAnswer(a.bytes) : decodePngAnswer(a.bytes));
+/** The Orientation tag an IFD0 holds. @param {Ifd0} ifd */
+const orientationTag = (ifd) => {
+  const t = ifd.tags[0x0112];
+  assert.ok(t, "an Orientation tag");
+  return t.value;
+};
+/** @param {CoverCase} c */
 const orientationOf = (c) => {
   const d = fixture(c.file);
   if (c.format === "png") {
@@ -24,15 +57,30 @@ const orientationOf = (c) => {
     return ex ? tiffIfd0(ex.body).tags[0x0112]?.value ?? 1 : 1;
   }
   const app1 = jpegSegments(d).segs.find((s) => s.marker === 0xe1 && String.fromCharCode(...s.body.subarray(0, 4)) === "Exif");
-  return app1 ? tiffIfd0(app1.body.subarray(6)).tags[0x0112].value : 1;
+  return app1 ? orientationTag(tiffIfd0(app1.body.subarray(6))) : 1;
 };
+/** @type {Array<"jpeg" | "png">} */
+const FORMATS = ["jpeg", "png"];
+/**
+ * Each answer must be a refusal by `code` and nothing else.
+ * @param {Covered | Refused} r @param {string} code @param {string} why @param {Set<string>} reached
+ */
+function refusedAs(r, code, why, reached) {
+  assert.deepEqual(Object.keys(r).sort(), ["code", "detail", "ok"], why);
+  if (r.ok) assert.fail(`${why}: answered, not refused`);
+  assert.equal(r.code, code, `${why}: ${r.detail}`);
+  assert.equal(typeof r.detail, "string");
+  reached.add(r.code);
+}
+/** The refusal's words. @param {Covered | Refused} r */
+const detailOf = (r) => (r.ok ? assert.fail("answered, not refused") : r.detail);
 
 test("R1 R5 every fixture: the answer's decode equals the reference's decode of the original outside the cover, and is the cover colour inside it; the size is as displayed and `covered` counts the blocks or pixels the reference computed", async () => {
   assert.ok(CASES.cases.length >= 18);
+  /** @type {{jpeg: Set<number>, png: Set<number>}} */
   const seen = { jpeg: new Set(), png: new Set() };
   for (const c of CASES.cases) {
     const a = await answer(c);
-    assert.equal(a.ok, true, `${c.file}: ${a.code} ${a.detail}`);
     assert.deepEqual([a.format, a.width, a.height, a.covered], [c.format, c.width, c.height, c.covered], c.file);
     const j = judge(decode(c, a), c);
     assert.deepEqual([j.width, j.height], [c.width, c.height], c.file);
@@ -42,7 +90,7 @@ test("R1 R5 every fixture: the answer's decode equals the reference's decode of 
     seen[c.format].add(orientationOf(c));
   }
   /* every EXIF orientation, in both formats, met by at least one fixture */
-  for (const f of ["jpeg", "png"]) for (let o = 1; o <= 8; o++) if (f === "jpeg" || [1, 2, 4, 6, 7].includes(o)) assert.ok(seen[f].has(o), `${f} orientation ${o}`);
+  for (const f of FORMATS) for (let o = 1; o <= 8; o++) if (f === "jpeg" || [1, 2, 4, 6, 7].includes(o)) assert.ok(seen[f].has(o), `${f} orientation ${o}`);
 });
 
 test("R1 the cover is snapped outward, never inward: every pixel of every area is inside a covered rectangle, and the JPEG cover is whole MCUs", async () => {
@@ -63,7 +111,7 @@ test("R1 the cover is snapped outward, never inward: every pixel of every area i
 });
 
 test("R1 an empty `areas` answers a copy with nothing covered: the whole decode equals the reference's", async () => {
-  const c = CASES.cases.find((x) => x.areas.length === 0);
+  const c = caseWhere((x) => x.areas.length === 0);
   const a = await answer(c);
   assert.equal(a.covered, 0);
   assert.equal(judge(decode(c, a), c).outside_sha256, c.outside_sha256);
@@ -88,7 +136,7 @@ test("R2 a JPEG answer holds SOI, at most a bare JFIF APP0 or Adobe APP14, at mo
         assert.deepEqual(Object.keys(ifd.tags).map(Number), [0x0112]);
         assert.equal(ifd.next, 0, "no IFD1, so no thumbnail");
         assert.equal(s.body.length, 6 + 26);
-        assert.equal(ifd.tags[0x0112].value, orientationOf(c), "the orientation is kept");
+        assert.equal(orientationTag(ifd), orientationOf(c), "the orientation is kept");
       }
     }
     if (orientationOf(c) === 1) assert.ok(!kinds.includes(0xe1));
@@ -96,17 +144,19 @@ test("R2 a JPEG answer holds SOI, at most a bare JFIF APP0 or Adobe APP14, at mo
 });
 
 test("R2 the phone JPEG: its EXIF (make, GPS, sub-IFD), IFD1 thumbnail, XMP, ICC profile, comment, MPF index, the second image after EOI and the trailing bytes are all gone, and no byte run of any of them is in the answer", async () => {
-  const c = CASES.cases.find((x) => x.file === "phone-420-o6.jpg");
+  const c = caseWhere((x) => x.file === "phone-420-o6.jpg");
   const orig = fixture(c.file), a = (await answer(c)).bytes;
   const { segs, after } = jpegSegments(orig);
   assert.ok(after.length > 1000, "the fixture carries a second image and a trailer after EOI");
+  /** @param {string} needle */
   const has = (needle) => Buffer.from(a).includes(Buffer.from(needle));
   for (const s of ["TestCam", "Phone One", "PhoneOS", "2026:10:08", "http://ns.adobe.com", "PersonInImage", "ICC_PROFILE", "MPF\0", "taken by member", "SEFH", "face-region"])
     assert.ok(!has(s), `the answer holds "${s}"`);
   /* the thumbnail, the second image and the ICC profile: no 64-byte run of any of them survives */
   const thumbAt = Buffer.from(orig).indexOf(Buffer.from([0xff, 0xd8, 0xff]), 4);
-  const runs = [orig.subarray(thumbAt + 200, thumbAt + 264), after.subarray(300, 364),
-    segs.find((s) => s.marker === 0xe2).body.subarray(100, 164)];
+  const icc = segs.find((s) => s.marker === 0xe2);
+  assert.ok(icc, "the fixture carries an ICC profile");
+  const runs = [orig.subarray(thumbAt + 200, thumbAt + 264), after.subarray(300, 364), icc.body.subarray(100, 164)];
   for (const r of runs) assert.ok(!Buffer.from(a).includes(Buffer.from(r)));
   assert.ok(jpegSegments(a).segs.every((s) => s.marker !== 0xe2 && s.marker !== 0xfe));
 });
@@ -125,10 +175,10 @@ test("R2 a PNG answer holds IHDR, at most an eXIf with Orientation alone, the pa
       const ifd = tiffIfd0(ex.body);
       assert.deepEqual(Object.keys(ifd.tags).map(Number), [0x0112]);
       assert.equal(ifd.next, 0);
-      assert.equal(ifd.tags[0x0112].value, orientationOf(c));
+      assert.equal(orientationTag(ifd), orientationOf(c));
     } else assert.equal(orientationOf(c), 1);
   }
-  const c = CASES.cases.find((x) => x.file === "screenshot-rgba-o6.png");
+  const c = caseWhere((x) => x.file === "screenshot-rgba-o6.png");
   const orig = pngChunks(fixture(c.file));
   assert.ok(["tEXt", "zTXt", "iTXt", "iCCP", "acTL", "fdAT"].every((t) => orig.chunks.some((k) => k.type === t)) && orig.after.length > 100,
     "the fixture carries text, XMP, ICC, a second frame and trailing bytes");
@@ -137,14 +187,10 @@ test("R2 a PNG answer holds IHDR, at most an eXIf with Orientation alone, the pa
 });
 
 test("R3 every refusal by name, nothing answered but the refusal: each code is reached, and each answer is {ok:false, code, detail} alone", async () => {
+  /** @type {Set<string>} */
   const reached = new Set();
-  const check = (r, code, why) => {
-    assert.deepEqual(Object.keys(r).sort(), ["code", "detail", "ok"], why);
-    assert.equal(r.ok, false, why);
-    assert.equal(r.code, code, `${why}: ${r.detail}`);
-    assert.equal(typeof r.detail, "string");
-    reached.add(r.code);
-  };
+  /** @param {Covered | Refused} r @param {string} code @param {string} why */
+  const check = (r, code, why) => refusedAs(r, code, why, reached);
   for (const f of CASES.refusals) check(await coverAreas(fixture(f.file), { areas: f.areas }), f.code, f.file);
   const jpg = fixture("444-o3.jpg");
   for (const areas of [undefined, "x", [[0, 0, 10]], [[0, 0, 10, 10, 1]], [[0, 0, 0, 10]], [[5, 0, 4, 10]], [[0, 9, 10, 9]], [[0, 0, 1.5, 10]], [[0, 0, "10", 10]], [null], [[0, 0, 10, 10], [1, 2, 3]]])
@@ -162,6 +208,7 @@ test("R3 every refusal by name, nothing answered but the refusal: each code is r
   /* damaged data: a Huffman code that cannot be, a CRC that does not match (in the fixtures), a restart out of order */
   const phone = fixture("phone-420-o6.jpg");
   const sos = jpegSegments(phone).segs.find((s) => s.marker === 0xda);
+  assert.ok(sos, "the photo has a scan");
   const scanAt = sos.body.byteOffset - phone.byteOffset + sos.body.length;     // the main image's data (not the thumbnail's)
   const bad = Uint8Array.from(phone); bad.fill(0xff, scanAt + 40, scanAt + 41); bad.fill(0xfe, scanAt + 41, scanAt + 42);
   check(await coverAreas(bad, { areas: [] }), "TRUNCATED_IMAGE_DATA", "a marker inside the scan's data: the data ends there");
@@ -170,18 +217,22 @@ test("R3 every refusal by name, nothing answered but the refusal: each code is r
   check(await coverAreas(rst, { areas: [] }), "IMAGE_DATA_CORRUPT", "RST3 where RST0 belongs");
   /* a PNG whose IDAT is not zlib data, its CRC correct */
   const png = fixture("grey.png"), chunks = pngChunks(png).chunks, idat = chunks.find((k) => k.type === "IDAT");
+  assert.ok(idat, "the PNG has IDAT");
   const at = idat.body.byteOffset - png.byteOffset, junk = Uint8Array.from(png);
   junk.fill(0x5a, at, at + idat.body.length);
   new DataView(junk.buffer).setUint32(at + idat.body.length, crc32(junk.subarray(at - 4, at + idat.body.length)));
   check(await coverAreas(junk, { areas: [] }), "IMAGE_DATA_CORRUPT", "IDAT not zlib");
   /* COVER_MAX_PIXELS: decided from the header, before anything is decoded; at the limit the photo is read */
+  /** @param {number} w @param {number} h @param {string} kind */
   const sized = (w, h, kind) => {
     if (kind === "png") {
       const b = Uint8Array.from(png), dv = new DataView(b.buffer);
       dv.setUint32(16, w); dv.setUint32(20, h); dv.setUint32(29, crc32(b.subarray(12, 29)));
       return b;
     }
-    const sof = jpegSegments(jpg).segs.find((x) => x.marker === 0xc0), o = sof.body.byteOffset - jpg.byteOffset;  // the image's, not the thumbnail's
+    const sof = jpegSegments(jpg).segs.find((x) => x.marker === 0xc0);
+    assert.ok(sof, "the photo has a frame");
+    const o = sof.body.byteOffset - jpg.byteOffset;  // the image's, not the thumbnail's
     const b = Uint8Array.from(jpg);
     b[o + 1] = h >> 8; b[o + 2] = h & 255; b[o + 3] = w >> 8; b[o + 4] = w & 255;
     return b;
@@ -199,31 +250,32 @@ test("R3 every refusal by name, nothing answered but the refusal: each code is r
 test("R6 pure: the same bytes and areas answer the same bytes, alone, repeated, or interleaved with other calls; the input is not changed", async () => {
   for (const c of CASES.cases) {
     const input = fixture(c.file), before = sha(input);
-    const [x, y] = await Promise.all([coverAreas(input, { areas: c.areas }), coverAreas(input, { areas: c.areas })]);
-    const z = await coverAreas(fixture(c.file), { areas: c.areas });
+    const [x, y] = (await Promise.all([coverAreas(input, { areas: c.areas }), coverAreas(input, { areas: c.areas })])).map((a) => covered(a, c.file));
+    const z = covered(await coverAreas(fixture(c.file), { areas: c.areas }), c.file);
+    assert.ok(x && y, c.file);
     assert.equal(sha(x.bytes), sha(y.bytes), c.file);
     assert.equal(sha(x.bytes), sha(z.bytes), c.file);
     assert.equal(sha(input), before, `${c.file}: the input was changed`);
   }
   /* interleaving many different calls changes no answer */
-  const first = await Promise.all(CASES.cases.map((c) => coverAreas(fixture(c.file), { areas: c.areas })));
-  const again = await Promise.all([...CASES.cases].reverse().map((c) => coverAreas(fixture(c.file), { areas: c.areas })));
+  const first = await Promise.all(CASES.cases.map(async (c) => covered(await coverAreas(fixture(c.file), { areas: c.areas }), c.file)));
+  const again = await Promise.all([...CASES.cases].reverse().map(async (c) => covered(await coverAreas(fixture(c.file), { areas: c.areas }), c.file)));
   again.reverse();
-  first.forEach((a, i) => assert.equal(sha(a.bytes), sha(again[i].bytes)));
+  first.forEach((a, i) => { const b = again[i]; assert.ok(b); assert.equal(sha(a.bytes), sha(b.bytes)); });
 });
 
 test("R7 no place is named in any refusal text or the module's exported words", async () => {
   const PLACE = /\b(oakland|alameda|berkeley|california|san francisco|county of|city of|state of)\b/i;
   const texts = [...Object.values(COVER_REFUSALS)];
-  for (const f of CASES.refusals) texts.push((await coverAreas(fixture(f.file), { areas: f.areas })).detail);
-  texts.push((await coverAreas(fixture("444-o3.jpg"), { areas: [[0, 0, 1]] })).detail);
-  texts.push((await coverAreas(new Uint8Array(COVER_MAX_BYTES + 1), { areas: [] })).detail);
+  for (const f of CASES.refusals) texts.push(detailOf(await coverAreas(fixture(f.file), { areas: f.areas })));
+  texts.push(detailOf(await coverAreas(fixture("444-o3.jpg"), { areas: [[0, 0, 1]] })));
+  texts.push(detailOf(await coverAreas(new Uint8Array(COVER_MAX_BYTES + 1), { areas: [] })));
   assert.ok(texts.length >= 18);
   for (const t of texts) { assert.equal(typeof t, "string"); assert.doesNotMatch(t, PLACE); }
 });
 
 test("R3 words: each refusal code's English is the design's row for it, read by word, never a sentence held here", () => {
-  for (const code of Object.keys(COVER_REFUSALS).filter((c) => c !== "IMAGE_TOO_LARGE")) assert.equal(COVER_REFUSALS[code], word(`refusal.${code}`), code);
+  for (const [code, words] of Object.entries(COVER_REFUSALS).filter(([c]) => c !== "IMAGE_TOO_LARGE")) assert.equal(words, word(`refusal.${code}`), code);
   /* the held row of IMAGE_TOO_LARGE speaks of a page to transcribe: this module's stand-in is its own until the design's row (owed) lands */
   assert.ok(COVER_REFUSALS.IMAGE_TOO_LARGE.length > 0);
 });
