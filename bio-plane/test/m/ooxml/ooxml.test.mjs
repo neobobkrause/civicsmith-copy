@@ -21,6 +21,7 @@ const {
 } = M;
 
 /** @typedef {import("../../../src/ooxml.mjs").ZipEntry} ZipEntry */
+/** @import { ZipEntry as MadeEntry } from "../../make-zip.mjs" */
 /** @typedef {import("../../../src/ooxml.mjs").Discrimination} Discrimination */
 /** @typedef {import("../../../src/ooxml.mjs").CutResult} CutResult */
 /** @typedef {import("../../../src/ooxml.mjs").ImageRef} ImageRef */
@@ -197,7 +198,7 @@ test("R3 readContainer reads ZIP64: the end record's and each record's 64-bit va
   assert.deepEqual(await readPart(z, c, "b.bin"), { ok: true, bytes: data });
   assert.deepEqual(await readPart(z, c, "c"), { ok: true, bytes: enc("s") });
   // the end record's values are used, not the EOCD's sentinels
-  const many = makeZip(Array.from({ length: 70 }, (_, i) => ({ name: `${i}`, data: `${i}` })), { zip64: true });
+  const many = makeZip(Array.from({ length: 70 }, (_, i) => /** @type {MadeEntry} */ ({ name: `${i}`, data: `${i}` })), { zip64: true });
   const manyC = readContainer(many);
   assert.ok(manyC.ok);
   assert.equal(manyC.count, 70);
@@ -344,7 +345,7 @@ test("R5 readPart's named refusals, each carrying the normalized name", async ()
 /* ------------------------------------------------------------------ R31 */
 
 test("R31 every part readPart inflates is capped before inflation: MEMBER_MAX, then the file's ARCHIVE_TOTAL_MAX", async () => {
-  /** @type {(name: string, n: number, data?: string | Uint8Array) => { name: string, data: string | Uint8Array, local: { uncompressedSize: number }, central: { uncompressedSize: number } }} */
+  /** @type {(name: string, n: number, data?: string | Uint8Array) => MadeEntry} */
   const declared = (name, n, data = "x") => ({ name, data, local: { uncompressedSize: n }, central: { uncompressedSize: n } });
   /** @type {string[]} */
   const inflated = [];
@@ -378,7 +379,7 @@ test("R31 every part readPart inflates is capped before inflation: MEMBER_MAX, t
   assert.equal(oddRead.why, "MEMBER_MAX");
 
   // every caller states the refusal as it states any other readPart refusal
-  /** @type {(name: string, data?: string | Uint8Array) => { name: string, data: string | Uint8Array, local: { uncompressedSize: number }, central: { uncompressedSize: number } }} */
+  /** @type {(name: string, data?: string | Uint8Array) => MadeEntry} */
   const huge = (name, data = "x") => declared(name, MEMBER_MAX + 1, data);
   const ct = makeZip([huge("[Content_Types].xml", contentTypes({ "/word/document.xml": TYPES.docx })), { name: "word/document.xml", data: "<d/>" }]);
   assert.equal((await discriminate(ct)).why, "content_types_unreadable:MEMBER_MAX");

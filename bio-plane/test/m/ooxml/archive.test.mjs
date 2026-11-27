@@ -25,31 +25,7 @@ import { buildZip } from "./zip.mjs";
 /** @typedef {import("../../../src/ooxml.mjs").ArchiveListing} ArchiveListing */
 /** @typedef {import("../../../src/ooxml.mjs").CutResult} CutResult */
 /** @typedef {import("../../../src/ooxml.mjs").Cut} Cut */
-/**
- * What test-support's `makeZip` may be told a header says instead of the bytes (its R12).
- * @typedef {Object} HeaderLie
- * @property {string} [name]
- * @property {number} [method]
- * @property {number} [flags]
- * @property {number} [crc32]
- * @property {number} [compressedSize]
- * @property {number} [uncompressedSize]
- * @property {number} [localOffset]
- * @property {boolean} [signature]
- */
-/**
- * An entry as test-support's `makeZip` takes it (its R10–R12).
- * @typedef {Object} ZipSpec
- * @property {string | Uint8Array} name
- * @property {string | Uint8Array} [data]
- * @property {number} [method]
- * @property {"directory" | "traditional" | "strong" | "aes"} [encrypted]
- * @property {boolean} [dataDescriptor]
- * @property {boolean} [zip64]
- * @property {HeaderLie} [local]
- * @property {HeaderLie} [central]
- * @property {HeaderLie} [descriptor]
- */
+/** @import { ZipEntry, ZipOptions, RecordOverride, DescriptorOverride } from "../../make-zip.mjs" */
 
 /** @type {(s: string) => Uint8Array} */
 const enc = (s) => new TextEncoder().encode(s);
@@ -202,6 +178,7 @@ function rowOf(listing, i) {
 
 test("R27 listArchive: one row per central-directory entry, every field as the archive states it", async () => {
   const big = new Uint8Array(200000).map((_, i) => (i * 31) & 255);
+  /** @type {ZipEntry[]} */
   const entries = [
     { name: "a.txt", data: "alpha alpha alpha", dosDate: (44 << 9) | (2 << 5) | 29, dosTime: (23 << 11) | (59 << 5) | 29 },
     { name: "dir/", data: "", method: 0 },
@@ -231,7 +208,7 @@ test("R27 listArchive: one row per central-directory entry, every field as the a
     assert.ok(e);
     const name = e.name;
     const nameBytes = typeof name === "string" ? enc(name) : name;
-    const raw = e.data;
+    const raw = e.data ?? "";
     const data = typeof raw === "string" ? enc(raw) : raw;
     const comp = (e.method ?? 8) === 8 ? deflate(data) : data;
     assert.deepEqual(Object.keys(row), keys, `row ${i}`);
@@ -264,7 +241,7 @@ test("R27 listArchive: one row per central-directory entry, every field as the a
 
   // the oracles read the same archive the same way (names, offsets, methods, CRCs, sizes, times, bytes)
   /** @type {Uint8Array} */
-  const plain = makeZip(entries.filter((e) => { const name = e.name; return typeof name === "string" && !name.includes("\0"); }).map((e) => ({ ...e, dosDate: undefined, dosTime: undefined })));
+  const plain = makeZip(entries.filter((e) => { const name = e.name; return typeof name === "string" && !name.includes("\0"); }).map((e) => /** @type {ZipEntry} */ ({ ...e, dosDate: undefined, dosTime: undefined })));
   const pl = await listArchive(plain);
   if (HAVE_UNZIP) assert.equal(unzipT(plain), 0);
   if (HAVE_PYTHON) {
@@ -314,7 +291,7 @@ test("R27 listArchive: names, encryption, ZIP64 and the totals", async () => {
   if (HAVE_PYTHON) assert.deepEqual(rowsOf(l).map((r) => r.local_offset), pythonList(z).map((p) => p.offset));
   // ARCHIVE_TOTAL_MAX: listed in full, verdict and figure stated, no member cut
   const over = Math.floor(ARCHIVE_TOTAL_MAX / 2) + 1;
-  /** @type {(name: string) => ZipSpec} */
+  /** @type {(name: string) => ZipEntry} */
   const huge = (name) => ({ name, data: "x", local: { uncompressedSize: over }, central: { uncompressedSize: over } });
   const t = await listArchive(makeZip([huge("h1"), huge("h2")]));
   assert.equal(t.ok, true);
@@ -417,7 +394,7 @@ test("R28 listArchive refuses unreadable archives by R3's names and ARCHIVE_ENTR
   // more entries declared than the limit: refused before the directory is walked
   const many = makeZip([{ name: "a", data: "a" }], { eocd: { entries: ARCHIVE_ENTRIES_MAX + 1, diskEntries: ARCHIVE_ENTRIES_MAX + 1, cdSize: 0 } });
   assert.deepEqual(await listArchive(many), R("ARCHIVE_ENTRIES_MAX", { limit: ARCHIVE_ENTRIES_MAX, final: true }));
-  const exactly = makeZip(Array.from({ length: ARCHIVE_ENTRIES_MAX }, (_, i) => ({ name: `${i}`, data: "", method: 0 })));
+  const exactly = makeZip(Array.from({ length: ARCHIVE_ENTRIES_MAX }, (_, i) => /** @type {ZipEntry} */ ({ name: `${i}`, data: "", method: 0 })));
   const ex = await listArchive(exactly);
   assert.equal(ex.ok, true); assert.equal(ex.count, ARCHIVE_ENTRIES_MAX);
 });
@@ -445,12 +422,14 @@ test("R28 listArchive refuses an ambiguous archive as ARCHIVE_AMBIGUOUS with its
   assert.deepEqual(pick(gapped), A("directory_disagrees_with_eocd"));
   assert.deepEqual(rowsOf(gapped).map((r) => [r.name, r.verdict]), [["a", "ok"]]);
   // entry_out_of_range: a local header, data or data descriptor past the archive or into the directory
-  for (const spec of [
-    { central: { localOffset: 10000 } },
-    { central: { compressedSize: 500 }, local: { compressedSize: 500 } },
-    { dataDescriptor: true, descriptor: { compressedSize: 500 }, central: { compressedSize: 500 } },
-  ]) {
-    const r = await listArchive(makeZip([{ name: "a", data: "hello", ...spec }]));
+  /** @type {ZipEntry[]} */
+  const outOfRange = [
+    { name: "a", data: "hello", central: { localOffset: 10000 } },
+    { name: "a", data: "hello", central: { compressedSize: 500 }, local: { compressedSize: 500 } },
+    { name: "a", data: "hello", dataDescriptor: true, descriptor: { compressedSize: 500 }, central: { compressedSize: 500 } },
+  ];
+  for (const spec of outOfRange) {
+    const r = await listArchive(makeZip([spec]));
     assert.deepEqual(pick(r), A("entry_out_of_range"), JSON.stringify(spec));
     assert.equal(rowsOf(r).length, 1);
   }
@@ -470,7 +449,7 @@ test("R28 listArchive refuses an ambiguous archive as ARCHIVE_AMBIGUOUS with its
 });
 
 test("R28 each row's verdict is the first that applies; a duplicate or unsafe name changes none", async () => {
-  /** @type {(e: ZipSpec, opts?: { zip64?: boolean }) => Promise<string | null>} */
+  /** @type {(e: ZipEntry, opts?: ZipOptions) => Promise<string | null>} */
   const one = async (e, opts) => rowOf(await listArchive(makeZip([e], opts)), 0).verdict;
   assert.equal(await one({ name: "d/", data: "", method: 0 }), "directory");
   assert.equal(await one({ name: "d/", data: "x", encrypted: "traditional", method: 12 }), "directory");
@@ -482,13 +461,13 @@ test("R28 each row's verdict is the first that applies; a duplicate or unsafe na
     assert.equal(await one({ name: "m", data: "x", method, local: { crc32: 0 } }), "MEMBER_METHOD_UNSUPPORTED", `method ${method}`);
   }
   // MEMBER_AMBIGUOUS: the local header disagrees on the name bytes, the method or the flags ...
-  /** @type {HeaderLie[]} */
+  /** @type {RecordOverride[]} */
   const locals = [{ name: "b" }, { name: "A" }, { method: 0 }, { flags: 0x0800 }, { flags: 0x0002 }, { crc32: 1 }, { compressedSize: 1 }, { uncompressedSize: 99 }];
   for (const local of locals) {
     assert.equal(await one({ name: "a", data: "hello", local }), "MEMBER_AMBIGUOUS", JSON.stringify(local));
   }
   // ... a central-directory value the local header does not repeat
-  /** @type {HeaderLie[]} */
+  /** @type {RecordOverride[]} */
   const centrals = [{ crc32: 5 }, { uncompressedSize: 4 }, { compressedSize: 3 }];
   for (const central of centrals) {
     assert.equal(await one({ name: "a", data: "hello", central }), "MEMBER_AMBIGUOUS", JSON.stringify(central));
@@ -502,7 +481,7 @@ test("R28 each row's verdict is the first that applies; a duplicate or unsafe na
   assert.equal(await one({ name: "a", data: "hello", dataDescriptor: true, descriptor: { signature: false } }), "ok");
   assert.equal(await one({ name: "a", data: "hello", dataDescriptor: true, zip64: true }, { zip64: true }), "ok");
   assert.equal(await one({ name: "a", data: "hello", dataDescriptor: true, local: { crc32: 3 } }), "ok");
-  /** @type {HeaderLie[]} */
+  /** @type {DescriptorOverride[]} */
   const descriptors = [{ crc32: 1 }, { compressedSize: 1 }, { uncompressedSize: 1 }];
   for (const descriptor of descriptors) {
     assert.equal(await one({ name: "a", data: "hello", dataDescriptor: true, descriptor }), "MEMBER_AMBIGUOUS", JSON.stringify(descriptor));
@@ -511,7 +490,7 @@ test("R28 each row's verdict is the first that applies; a duplicate or unsafe na
   const noHeader = makeZip([{ name: "a", data: "a".repeat(40), method: 0 }, { name: "b", data: "b", central: { localOffset: 31 } }]);
   assert.equal(rowOf(await listArchive(noHeader), 1).verdict, "MEMBER_AMBIGUOUS");
   // MEMBER_MAX, then ARCHIVE_RATIO_MAX (a zero compressed size with data declared included)
-  /** @type {(n: number, extra?: HeaderLie) => ZipSpec} */
+  /** @type {(n: number, extra?: RecordOverride) => ZipEntry} */
   const declared = (n, extra = {}) => ({ name: "big", data: "x", local: { uncompressedSize: n, ...extra }, central: { uncompressedSize: n, ...extra } });
   const mm = rowOf(await listArchive(makeZip([declared(MEMBER_MAX + 1)])), 0);
   assert.deepEqual([mm.verdict, mm.limit], ["MEMBER_MAX", MEMBER_MAX]);
@@ -631,9 +610,9 @@ test("R29 streamMember: MEMBER_CORRUPT by detail, source_unreadable, and done ne
   /** @param {string} detail */
   const C = (detail) => ({ ok: false, why: "MEMBER_CORRUPT", detail, index: 0 });
   const data = enc("the member's true bytes ".repeat(40));
-  /** @type {(fields: HeaderLie) => Uint8Array} */
+  /** @type {(fields: RecordOverride) => Uint8Array} */
   const lie = (fields) => makeZip([{ name: "a", data, local: fields, central: fields }]);
-  /** @type {(fields: HeaderLie) => Uint8Array} */
+  /** @type {(fields: RecordOverride) => Uint8Array} */
   const lieStored = (fields) => makeZip([{ name: "a", data, method: 0, local: fields, central: fields }]);
   // over_declared_size: inflation stops at the declared size + 1, never run to its end
   assert.deepEqual(await corrupt(lie({ uncompressedSize: 10 })), C("over_declared_size"));
@@ -779,9 +758,9 @@ test("R30 the limits, each exported by its name, and together as the frozen ARCH
   const entriesMax = await listArchive(makeZip([], { eocd: { entries: 10001, diskEntries: 10001 } }));
   assert.deepEqual([entriesMax.why, entriesMax.limit, entriesMax.final], ["ARCHIVE_ENTRIES_MAX", ARCHIVE_ENTRIES_MAX, true]);
   const half = ARCHIVE_TOTAL_MAX / 2;
-  const total = await listArchive(makeZip([0, 1, 2].map((i) => ({ name: `${i}`, data: "x", method: 0, local: { uncompressedSize: half }, central: { uncompressedSize: half } }))));
+  const total = await listArchive(makeZip([0, 1, 2].map((i) => /** @type {ZipEntry} */ ({ name: `${i}`, data: "x", method: 0, local: { uncompressedSize: half }, central: { uncompressedSize: half } }))));
   assert.deepEqual([total.verdict, total.limit, total.final], ["ARCHIVE_TOTAL_MAX", ARCHIVE_TOTAL_MAX, true]);
-  const exact = await listArchive(makeZip([0, 1].map((i) => ({ name: `${i}`, data: "x", method: 0, local: { uncompressedSize: half }, central: { uncompressedSize: half } }))));
+  const exact = await listArchive(makeZip([0, 1].map((i) => /** @type {ZipEntry} */ ({ name: `${i}`, data: "x", method: 0, local: { uncompressedSize: half }, central: { uncompressedSize: half } }))));
   assert.equal(exact.declared_total, ARCHIVE_TOTAL_MAX);
   assert.equal(exact.verdict, "ok");
   assert.equal("limit" in exact, false);

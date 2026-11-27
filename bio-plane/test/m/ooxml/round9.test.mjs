@@ -38,7 +38,7 @@ const {
  */
 /** @typedef {{ mimetype?: string, manifest?: boolean, content?: boolean, extra?: ZipMember[] }} OdfOptions */
 /** @typedef {"ARCHIVE_ENTRIES_MAX" | "ARCHIVE_TOTAL_MAX" | "MEMBER_MAX" | "OFFICE_ENTRIES_MAX" | "ARCHIVE_DIRECTORY_MAX" | "ARCHIVE_NAME_MAX" | "ARCHIVE_RATIO_MAX" | "ARCHIVE_DEPTH_MAX" | "ARCHIVE_TREE_TOTAL_MAX" | "ARCHIVE_TREE_ENTRIES_MAX"} LimitName */
-/** @typedef {{ name: string, data: string, local: { uncompressedSize: number }, central: { uncompressedSize: number } }} DeclaredMember a member test-support's `makeZip` writes with declared sizes */
+/** @import { ZipEntry as DeclaredMember } from "../../make-zip.mjs" */
 
 const MIB = 1024 * 1024;
 /** @type {(d: Uint8Array) => Uint8Array} */
@@ -103,7 +103,7 @@ test("R3 readContainer refuses a count, a directory and a name over their limits
   assert.equal(atName.ok, true);
   // the same entries really present: 100,000 are read, 100,001 are not
   /** @type {(count: number) => Uint8Array} */
-  const many = (count) => makeZip(Array.from({ length: count }, (_, i) => ({ name: `e${i}`, data: "", method: 0 })), { zip64: true });
+  const many = (count) => makeZip(Array.from({ length: count }, (_, i) => /** @type {DeclaredMember} */ ({ name: `e${i}`, data: "", method: 0 })), { zip64: true });
   const atLimit = readContainer(many(OFFICE_ENTRIES_MAX));
   assert.equal(atLimit.ok, true);
   assert.equal(atLimit.count, OFFICE_ENTRIES_MAX);

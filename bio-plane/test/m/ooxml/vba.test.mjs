@@ -20,7 +20,8 @@ import { makeCfb, makeVbaProject, ovbaCompress, vbaDir } from "./cfb.mjs";
 /** @typedef {import("./cfb.mjs").VbaModuleSpec} VbaModuleSpec */
 /** @typedef {import("../../../src/ooxml.mjs").VbaResult} VbaResult */
 /** @typedef {{ stream: string, autoRun: string[], suspicious: string[] }} OlevbaModule what the olevba script prints for a module */
-/** @typedef {{ local?: { uncompressedSize: number }, central?: { crc32?: number, uncompressedSize?: number } }} EntryOverrides */
+/** @import { RecordOverride } from "../../make-zip.mjs" */
+/** @typedef {{ local?: RecordOverride, central?: RecordOverride }} EntryOverrides */
 /** @typedef {import("./cfb.mjs").CfbTree} CfbTree */
 /** @typedef {{ project?: string, codePage?: number, modules?: VbaModuleSpec[], dir?: Uint8Array, streams?: { [name: string]: Uint8Array | undefined }, extra?: CfbTree }} ProjectSpec makeVbaProject's argument */
 
@@ -57,7 +58,7 @@ print(json.dumps(out))`;
 
 /* An office file carrying the project at `word/vbaProject.bin`. */
 /** @param {Uint8Array} bin @param {EntryOverrides} [extra] @returns {Uint8Array} */
-const inDocx = (bin, extra = {}) => makeZip([{ name: "word/document.xml", data: "<w/>" }, { name: "word/vbaProject.bin", data: bin, ...extra }]);
+const inDocx = (bin, extra = {}) => makeZip([{ name: "word/document.xml", data: "<w/>" }, { name: "word/vbaProject.bin", data: bin, local: extra.local, central: extra.central }]);
 /** @param {Uint8Array} z @param {string} [part] @returns {Promise<VbaResult>} */
 const read = async (z, part = "word/vbaProject.bin") => readVbaProject(z, readContainer(z), part);
 /** @param {ProjectSpec} spec @returns {Uint8Array} */
