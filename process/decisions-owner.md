@@ -51,10 +51,11 @@ Rule now: a lane is opened for the plane module's scope, for the owner to unders
 Shown to the owner: not yet.
 
 ## Halting development
-Rule now: the halt is lifted once ARCH has opened the refactoring tranche with its scope written in the round record. Until then the stop record stands; when ARCH reports the scope written, the coordinator clears the stop record and tells ARCH.
+Rule now: civicsmith development is halted. The stop record stands until the owner lifts it.
 - 23 Nov 2026: "Instruction: halt civicsmith development"
 - 24 Nov 2026: "Decision: left the half" (the coordinator asked what he meant; the next line is his answer)
 - 24 Nov 2026: "Instruction: lift the halt once ARCH has opened the refactoring tranche with its scope"
+- 27 Nov 2026: "Instruction: halt development"
 Shown to the owner: not yet.
 
 ## Dropping tranche t1
