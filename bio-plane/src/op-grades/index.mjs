@@ -47,6 +47,7 @@ import { T50_RUNGS, T50_RUNG_ABSENT, T50_NON_ACTS } from "./t50.mjs";
 import { T51_NON_ACTS, T51_RUNGS, T51_RUNG_ABSENT, T51_ACT_NON_ACTS } from "./t51.mjs";
 /* R49, R50 (T51 fix round; K4168): the owners' op declarations, taken into the tables above (`registerDeclaredOps`). */
 import { createDeclaredOps } from "./declared.mjs";
+/** @import { Absence, DeclaredOwners, Registration } from "./declared.mjs" */
 import { word, localize } from "../setup-words/index.mjs";
 export { OP_ALIASES, aliased } from "./t34.mjs";
 /* R42 (T48): the design's weight for each rungless act a registered screen lists; it grades nothing. */
@@ -296,6 +297,11 @@ export const RUNG_ABSENCE_GROUNDS = {
  * `setup-words` `word(key, vars)` (`consequence.<op>` for the eight DEC-258 minted; `screen.person.expunge.statement`, whose
  * `{date}` and `{member}` the surface fills, and `screen.open-file.warn.ends`, the design's own). Each sentence says only
  * what the owning module enforces; their look is the redesign's. */
+/**
+ * @param {string} friction
+ * @param {string} key
+ * @returns {Readonly<{ friction: string, key: string }>}
+ */
 const ENTRY = (friction, key) => Object.freeze({ friction, key });
 export const CONSEQUENCE_STATEMENTS = Object.freeze({
   attribute:    ENTRY("dialog", "consequence.attribute"),
@@ -330,6 +336,7 @@ export const LARGER_SCREEN_ACTS = Object.freeze([
  * it, and every backing is driven by `affordances`' R19 tests (`test/m/affordances/`,
  * each act called without its account at its own module's interface) — a rung with
  * no backing is a promise to a member that nothing keeps. */
+/** @type {{ [op: string]: string }} */
 const RUNGS_DATA = {
   /* ---- irreversible. (R14; DEC-147) The two that set when a signed case edition goes public: the set time is weighed
      as publishing itself, and moving it sets again. (R37, T47) `op=publish` no longer stands here: it prepares (below). */
@@ -652,6 +659,7 @@ const RUNGS_DATA = {
  * exists to make impossible.
  *
  * The one-liners say what this op is; the WHY is on the ground above. */
+/** @type {{ [op: string]: Absence }} */
 const RUNG_ABSENT_DATA = {
   /* ---- substrate: how a chosen act lands, or how the store maintains itself. */
   promote:              { ground: "substrate", is: "the one write path every act rides" },
@@ -867,6 +875,7 @@ const RUNG_ABSENT_DATA = {
  * name, and so does an entry the store no longer answers. `withdrawconclusion` enters `conclude()` after its machine
  * fence and answers conclude's code. NOT here, because the store refuses no machine at them:
  * `retire`, `dispose`, `cite`, `sever`, `reinstate`. */
+/** @type {{ [op: string]: string }} */
 const MACHINE_REFUSALS_DATA = {
   release:            "MACHINE_CANNOT_RELEASE",
   conclude:           "MACHINE_CANNOT_CONCLUDE",
@@ -935,6 +944,7 @@ const MACHINE_REFUSALS_DATA = {
  * the totality check can tell "deliberately not an affordance" from "someone
  * added an op and forgot the publication", which is the drift this op exists
  * to close. Grouped by the reason, keyed by op. */
+/** @type {{ [op: string]: string }} */
 const NON_ACTS_DATA = {
   /* The write substrate. These are how any act lands, not acts on an object:
      a surface never renders a "promote" button beside a bundle. */
@@ -1608,17 +1618,32 @@ const declared = createDeclaredOps({
   ladder: RUNG_LADDER, grounds: RUNG_ABSENCE_GROUNDS, rungs: RUNGS_DATA, absent: RUNG_ABSENT_DATA, nonActs: NON_ACTS_DATA,
   machine: MACHINE_REFUSALS_DATA, refusals: JUSTIFICATION_REFUSALS,
 });
+/** @type {Readonly<{ [op: string]: string }>} each op's rung (R1) */
 export const RUNGS = declared.guard(RUNGS_DATA);
+/** @type {Readonly<{ [op: string]: Absence }>} each op stated absent, with its ground (R2) */
 export const RUNG_ABSENT = declared.guard(RUNG_ABSENT_DATA);
+/** @type {Readonly<{ [op: string]: string }>} each act refused to a machine, with its code (R5) */
 export const MACHINE_REFUSALS = declared.guard(MACHINE_REFUSALS_DATA);
+/** @type {Readonly<{ [op: string]: string }>} every other gated op's reason (R5) */
 export const NON_ACTS = declared.guard(NON_ACTS_DATA);
+/** @type {(owners: DeclaredOwners) => Registration} */
 export const registerDeclaredOps = declared.register;
 
 /* fix round 3 (C64; `entities` R63; K4356, K4364): THE ACTS A MEMBER WHO DOES NOT ADMINISTER MAY DO ON ONE SCREEN ONLY. An office named from a
  * request is a member's act on `request` and on no other screen: `entitycreate` keeps its grade (Reasoned) and is admitted there to
  * a member; on another screen it is as it was. `memberMayDo(op, screen)` answers whether `screen` is one of the op's. Data only. */
 export const MEMBER_SCREEN_ACTS = Object.freeze({ entitycreate: Object.freeze(["request"]) });
-export const memberMayDo = (op, screen) => Object.hasOwn(MEMBER_SCREEN_ACTS, op) && MEMBER_SCREEN_ACTS[op].includes(screen);
+/** @type {Readonly<{ [op: string]: readonly string[] }>} the same table, read by an op's name */
+const SCREENS_OF = MEMBER_SCREEN_ACTS;
+/**
+ * @param {string} op
+ * @param {string} screen
+ * @returns {boolean}
+ */
+export const memberMayDo = (op, screen) => {
+  const screens = Object.hasOwn(SCREENS_OF, op) ? SCREENS_OF[op] : undefined;
+  return screens !== undefined && screens.includes(screen);
+};
 
 /* R18 (DEC-122 (1); K1363 B5): the advisory phone flag — false at the rungs `terminal`, `attested` and `irreversible`,
  * for an absence on the `credential` ground, (T37; DEC-181) for every op in `IRREVERSIBLE_WEIGHT`, read from that set at
@@ -1627,10 +1652,19 @@ export const memberMayDo = (op, screen) => Object.hasOwn(MEMBER_SCREEN_ACTS, op)
  * alias answers as its op (R17): both sets name ops, so `filingrecordsent` is kept for a larger screen as `filingsent`
  * is. */
 const NOT_ON_PHONE_RUNGS = new Set(["terminal", "attested", "irreversible"]);
+/** @type {Readonly<{ [alias: string]: string }>} the alias table (R17), read by an alias */
+const OP_OF_ALIAS = OP_ALIASES;
+/**
+ * @param {string} id an op, or an alias of one
+ * @returns {boolean}
+ */
 export function phoneOf(id) {
-  const op = Object.hasOwn(OP_ALIASES, id) ? OP_ALIASES[id] : id;
-  if (Object.hasOwn(RUNGS, op) && NOT_ON_PHONE_RUNGS.has(RUNGS[op])) return false;
-  if (Object.hasOwn(RUNG_ABSENT, op) && RUNG_ABSENT[op].ground === "credential") return false;
+  const alias = Object.hasOwn(OP_OF_ALIAS, id) ? OP_OF_ALIAS[id] : undefined;
+  const op = alias !== undefined ? alias : id;
+  const rung = Object.hasOwn(RUNGS, op) ? RUNGS[op] : undefined;
+  if (rung !== undefined && NOT_ON_PHONE_RUNGS.has(rung)) return false;
+  const absence = Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op] : undefined;
+  if (absence !== undefined && absence.ground === "credential") return false;
   if (IRREVERSIBLE_WEIGHT.includes(op)) return false;
   return !LARGER_SCREEN_ACTS.includes(op);
 }
