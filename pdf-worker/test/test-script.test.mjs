@@ -9,11 +9,16 @@ import { runner } from "./make-pdf.mjs";
 const { t, finish } = runner("test-script");
 const root = fileURLToPath(new URL("..", import.meta.url));
 
+/** The `*.test.mjs` files under `dir`, as paths from the module's folder.
+ *  @param {string} dir @returns {string[]} */
 const found = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
   e.isDirectory() ? found(`${dir}/${e.name}`) : /\.test\.mjs$/.test(e.name) ? [`${dir}/${e.name}`] : []);
 
-const script = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.test;
+/** @type {{ scripts: { test: string } }} this module's own package.json */
+const pkg = /** @type {{ scripts: { test: string } }} */ (JSON.parse(readFileSync(join(root, "package.json"), "utf8")));
+const script = pkg.scripts.test;
 const words = script.split(/\s+&&\s+|\s+/).filter((w) => /\.test\.mjs$/.test(w));
+/** @param {string} w @returns {string[]} */
 const expand = (w) => {
   if (!w.includes("*")) return [w];
   const slash = w.lastIndexOf("/");

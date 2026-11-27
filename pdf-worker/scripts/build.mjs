@@ -31,10 +31,11 @@ import { discoverMembers, writeMember } from "../../bio-plane/scripts/fleet-bund
 
 const member = discoverMembers().find((m) => m.name === "pdf-worker");
 if (!member) throw new Error("pdf-worker declares no fleet-member.json — it cannot be discovered");
-if (!member.bundle) throw new Error("pdf-worker/fleet-member.json declares no `bundle` block");
+const bundle = member.bundle;
+if (!bundle) throw new Error("pdf-worker/fleet-member.json declares no `bundle` block");
 
 const { built, manifest } = await writeMember(member);
-console.log(`pdf-worker: built ${member.bundle.outfile}`
+console.log(`pdf-worker: built ${bundle.outfile}`
   + ` — ${built.bytes.length} B, sha256 ${built.sha256}`);
-console.log(`pdf-worker: wrote ${member.bundle.manifest}`
+console.log(`pdf-worker: wrote ${bundle.manifest}`
   + ` — ${manifest.inputs.length} first-party input(s), ${manifest.vendoredInputs.length} vendored`);
