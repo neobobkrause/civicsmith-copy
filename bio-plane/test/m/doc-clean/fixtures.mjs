@@ -5,13 +5,30 @@ import { deflateSync, inflateRawSync } from "node:zlib";
 import { makeZip } from "../../make-zip.mjs";
 import { makePdf } from "../../../../pdf-worker/test/make-pdf.mjs";
 import { cleanDocument } from "../../../src/doc-clean/index.mjs";
+/** @import { ZipEntry } from "../../make-zip.mjs" */
+/** @import { PdfBody, StreamBody } from "../../../../pdf-worker/test/make-pdf.mjs" */
+/** @import { CleanAnswer } from "../../../src/doc-clean/index.mjs" */
+
+/** What `pdf` writes in place of its defaults.
+ *  @typedef {{ catalog?: string, page?: string, trailer?: string, more?: PdfBody[], ops?: string }} PdfFixture */
+/** One relationship: id, type (under the OOXML schemas' address), target, and whether the target is external.
+ *  @typedef {[string, string, string] | [string, string, string, boolean]} Rel */
+/** @typedef {"odt" | "ods" | "odp"} OdfFlavour */
+/** One part of a ZIP the module wrote, as `unzipCopy` reads it back.
+ *  @typedef {{ name: string, method: number, flags: number, time: number, date: number, extra: number, comment: number, data: Uint8Array }} CopiedPart */
 
 export { makeZip, makePdf };
+/** @param {string} s @returns {Uint8Array} */
 export const enc = (s) => new TextEncoder().encode(s);
+/** @param {Uint8Array} b @returns {string} */
 export const latin = (b) => Buffer.from(b).toString("latin1");
+/** @param {Uint8Array} b @param {string} s @returns {boolean} */
 export const has = (b, s) => Buffer.from(b).includes(Buffer.from(s, "latin1"));
+/** @param {...Uint8Array} parts */
 const cat = (...parts) => new Uint8Array(Buffer.concat(parts.map((p) => Buffer.from(p))));
+/** @param {number} v @returns {number[]} */
 const be16 = (v) => [v >> 8, v & 255];
+/** @param {number} v @returns {number[]} */
 const be32 = (v) => [v >>> 24, (v >> 16) & 255, (v >> 8) & 255, v & 255];
 
 /** The strings an image's or a document's metadata carries in these fixtures; none may survive in a copy. */
@@ -19,9 +36,11 @@ export const SECRETS = ["GPSSECRET", "XMPSECRET", "COMSECRET", "PNGSECRET", "AUT
   "MANAGERSECRET", "TEMPLATESECRET", "APPSECRET", "CUSTOMSECRET", "COMMENTERSECRET", "CHANGERSECRET", "SIGNERSECRET",
   "PRIVATESECRET", "JP2SECRET", "GIFSECRET", "PATHSECRET", "2019-03-04"];
 
+/** @param {number} marker @param {number[]} body @returns {number[]} */
 const segment = (marker, body) => [0xff, marker, ...be16(body.length + 2), ...body];
 
 /** A minimal EXIF block: IFD0 with one GPS IFD pointer, whose IFD holds GPSProcessingMethod = "GPSSECRET". */
+/** @returns {number[]} */
 function exifBody() {
   const t = [0x4d, 0x4d, 0, 42, ...be32(8), ...be16(1), ...be16(0x8825), ...be16(4), ...be32(1), ...be32(26), ...be32(0),
     ...be16(1), ...be16(0x001b), ...be16(7), ...be32(9), ...be32(44), ...be32(0), ...enc("GPSSECRET")];
@@ -29,11 +48,12 @@ function exifBody() {
 }
 
 /** An 8x8 grey baseline JPEG (one DC-only block, one-code Huffman tables), with `meta` its EXIF (GPS), XMP and
- *  comment segments; `coded` is everything that decides its pixels, for comparing a copy's with the original's. */
+ *  comment segments; `coded` is everything that decides its pixels, for comparing a copy's with the original's.
+ *  @param {{ meta?: boolean }} [options] @returns {Uint8Array} */
 export function jpeg({ meta = true } = {}) {
-  const dqt = segment(0xdb, [0, ...new Array(64).fill(1)]);
+  const dqt = segment(0xdb, [0, ...Array.from({ length: 64 }, () => 1)]);
   const sof = segment(0xc0, [8, 0, 8, 0, 8, 1, 1, 0x11, 0]);
-  const dht = [...segment(0xc4, [0x00, 1, ...new Array(15).fill(0), 0]), ...segment(0xc4, [0x10, 1, ...new Array(15).fill(0), 0])];
+  const dht = [...segment(0xc4, [0x00, 1, ...Array.from({ length: 15 }, () => 0), 0]), ...segment(0xc4, [0x10, 1, ...Array.from({ length: 15 }, () => 0), 0])];
   const sos = segment(0xda, [1, 1, 0x00, 0, 63, 0]);
   const coded = [...dqt, ...sof, ...dht, ...sos, 0x3f, 0xff, 0xd9];
   const app0 = segment(0xe0, [...enc("JFIF\0"), 1, 1, 0, 0, 1, 0, 1, 0, 0]);
@@ -41,32 +61,40 @@ export function jpeg({ meta = true } = {}) {
     ...segment(0xfe, [...enc("COMSECRET")])] : [];
   return new Uint8Array([0xff, 0xd8, ...app0, ...extra, ...coded]);
 }
+/** @param {Uint8Array} d @returns {string} */
 export const jpegCoded = (d) => latin(d).slice(latin(d).indexOf("\xff\xdb"));
 
+/** @param {string} type @param {Uint8Array | number[]} body @returns {number[]} */
 function chunk(type, body) {
   const b = Buffer.from(body), t = Buffer.from(type, "latin1");
   return [...be32(b.length), ...t, ...b, ...be32(crc(Buffer.concat([t, b])))];
 }
+/** @param {Uint8Array} b */
 function crc(b) {
   let c = ~0;
   for (const x of b) { c ^= x; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; }
   return ~c >>> 0;
 }
-/** A 2x2 grey PNG with a tEXt chunk ("PNGSECRET") when `meta`. */
+/** A 2x2 grey PNG with a tEXt chunk ("PNGSECRET") when `meta`.
+ *  @param {{ meta?: boolean }} [options] @returns {Uint8Array} */
 export function png({ meta = true } = {}) {
   const ihdr = chunk("IHDR", [...be32(2), ...be32(2), 8, 0, 0, 0, 0]);
   const idat = chunk("IDAT", deflateSync(Buffer.from([0, 10, 20, 0, 30, 40])));
   const text = meta ? chunk("tEXt", enc("Author\0PNGSECRET")) : [];
   return new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...ihdr, ...text, ...idat, ...chunk("IEND", [])]);
 }
+/** @param {Uint8Array} d @returns {string} */
 export const pngCoded = (d) => { const s = latin(d); return s.slice(s.indexOf("IDAT") - 4, s.indexOf("IEND") - 4); };
 
-/** A 1x1 GIF with a comment extension ("GIFSECRET"). */
+/** A 1x1 GIF with a comment extension ("GIFSECRET").
+ *  @returns {Uint8Array} */
 export const gif = () => new Uint8Array([...enc("GIF89a"), 1, 0, 1, 0, 0x80, 0, 0, 0, 0, 0, 255, 255, 255,
   0x21, 0xfe, 9, ...enc("GIFSECRET"), 0, 0x2c, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 0x44, 1, 0, 0x3b]);
 
 /** A JP2 whose header box is followed by an `xml ` box ("JP2SECRET"), around a minimal one-tile J2K codestream. */
+/** @returns {Uint8Array} */
 export function jp2() {
+  /** @param {string} type @param {number[]} body @returns {number[]} */
   const box = (type, body) => [...be32(8 + body.length), ...enc(type), ...body];
   const siz = segment(0x51, [0, 0, ...be32(1), ...be32(1), ...be32(0), ...be32(0), ...be32(1), ...be32(1), ...be32(0), ...be32(0), ...be16(1), 7, 1, 1]);
   const cod = segment(0x52, [0, 0, ...be16(1), 0, 0, 4, 4, 0, 0]);
@@ -79,13 +107,15 @@ export function jp2() {
 }
 
 /** A minimal EMF: its header record (with `description`, UTF-16, when given) and EOF, holding `inner` (raw bytes
- *  in a comment record) when given. */
+ *  in a comment record) when given.
+ *  @param {Uint8Array} [inner] @param {string} [description] @returns {Uint8Array} */
 export function emf(inner = new Uint8Array(0), description = "") {
   const pad = (inner.length + 3) & ~3;
+  /** @param {number} type @param {Uint8Array} body */
   const rec = (type, body) => { const b = Buffer.alloc(8 + body.length); b.writeUInt32LE(type, 0); b.writeUInt32LE(8 + body.length, 4); Buffer.from(body).copy(b, 8); return b; };
   const desc = Buffer.from(description, "utf16le");
   const head = Buffer.alloc(80 + ((desc.length + 3) & ~3));
-  head.write(" EMF", 32, "latin1");
+  head.write(" EMF", 32, 4, "latin1");
   head.writeUInt32LE(0x10000, 36);
   if (desc.length) { head.writeUInt32LE(description.length, 52); head.writeUInt32LE(88, 56); desc.copy(head, 80); }
   const comment = Buffer.alloc(4 + pad); comment.writeUInt32LE(inner.length, 0); Buffer.from(inner).copy(comment, 4);
@@ -95,17 +125,22 @@ export function emf(inner = new Uint8Array(0), description = "") {
   return new Uint8Array(all);
 }
 
-/** A JBIG2 segment: number, type, data (no referred-to segments, a one-byte page association). */
-export const jbig2Segment = (num, type, data) => new Uint8Array([...be32(num), type, 0, 1, ...be32(data.length), ...data]);
-/** An extension segment holding an ASCII comment. */
+/** A JBIG2 segment: number, type, data (no referred-to segments, a one-byte page association).
+ *  @param {number} num @param {number} type @param {Uint8Array | number[]} data @returns {Uint8Array} */
+export const jbig2Segment = (num, type, data) => { const body = [...data]; return new Uint8Array([...be32(num), type, 0, 1, ...be32(body.length), ...body]); };
+/** An extension segment holding an ASCII comment.
+ *  @param {number} num @param {string} text @returns {Uint8Array} */
 export const jbig2Comment = (num, text) => jbig2Segment(num, 62, [0x20, 0, 0, 0, ...enc(text), 0]);
 
 // ---- PDFs ----
 
+/** @param {string} ops @returns {StreamBody} */
 const content = (ops) => ({ dict: "<< >>", data: enc(ops) });
+/** @param {Uint8Array} bytes @param {string} [extra] @returns {StreamBody} */
 const imageObj = (bytes, extra = "") => ({ dict: `<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode ${extra} >>`, data: bytes });
 
-/** A one-page PDF showing "Hello" and painting a JPEG with EXIF; `more` replaces or adds bodies from object 8. */
+/** A one-page PDF showing "Hello" and painting a JPEG with EXIF; `more` replaces or adds bodies from object 8.
+ *  @param {PdfFixture} [options] @returns {Uint8Array} */
 export function pdf({ catalog = "", page = "", trailer = "/Info 6 0 R", more = [], ops = "" } = {}) {
   return makePdf([
     `<< /Type /Catalog /Pages 2 0 R /Metadata 7 0 R ${catalog} >>`,
@@ -121,14 +156,18 @@ export function pdf({ catalog = "", page = "", trailer = "/Info 6 0 R", more = [
 }
 
 /** The real answer doc-clean gives an encrypted file: a PDF whose trailer names an /Encrypt dictionary (a Standard
- *  security handler). Made by `cleanDocument` at call time, never stored (K4990, K4993): `{ok: false, code: "ENCRYPTED"}`. */
+ *  security handler). Made by `cleanDocument` at call time, never stored (K4990, K4993): `{ok: false, code: "ENCRYPTED"}`.
+ *  @returns {Promise<CleanAnswer>} */
 export const encryptedRefusal = () =>
   cleanDocument(pdf({ more: ["<< /Filter /Standard /V 2 /R 3 /O <00> /U <00> /P -4 >>"], trailer: "/Encrypt 9 0 R" }));
 
-/** `base` with an incremental update appended: object 8 (the image) redefined, the old one left behind. */
+/** `base` with an incremental update appended: object 8 (the image) redefined, the old one left behind.
+ *  @param {Uint8Array} base @param {Uint8Array} newImage @returns {Uint8Array} */
 export function incremental(base, newImage) {
   const s = latin(base);
-  const prev = Number(/startxref\s+(\d+)/.exec(s.slice(s.lastIndexOf("startxref")))[1]);
+  const last = /startxref\s+(\d+)/.exec(s.slice(s.lastIndexOf("startxref")));
+  if (!last) throw new Error("the base PDF has no startxref");
+  const prev = Number(last[1]);
   const head = Buffer.from(`8 0 obj\n<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /DCTDecode /Length ${newImage.length} >>\nstream\n`, "latin1");
   const obj = Buffer.concat([head, Buffer.from(newImage), Buffer.from("\nendstream\nendobj\n", "latin1")]);
   const at = base.length;
@@ -136,7 +175,8 @@ export function incremental(base, newImage) {
   return cat(base, obj, Buffer.from(xref, "latin1"));
 }
 
-/** Objects in a compressed object stream: `bodies` (dictionaries) numbered from `first`. */
+/** Objects in a compressed object stream: `bodies` (dictionaries) numbered from `first`.
+ *  @param {number} first @param {string[]} bodies @returns {StreamBody} */
 export function objStm(first, bodies) {
   let head = "", body = "";
   bodies.forEach((b, i) => { head += `${first + i} ${body.length} `; body += b + "\n"; });
@@ -148,45 +188,59 @@ export function objStm(first, bodies) {
 
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 const CORE = `${XML}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Minutes</dc:title><dc:creator>AUTHORSECRET</dc:creator><cp:lastModifiedBy>EDITORSECRET</cp:lastModifiedBy><cp:revision>7</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">2019-03-04T00:00:00Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2019-03-04T01:00:00Z</dcterms:modified></cp:coreProperties>`;
+/** @param {string} app */
 const APP = (app) => `${XML}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Template>TEMPLATESECRET.dotm</Template><TotalTime>42</TotalTime><Application>APPSECRET ${app}</Application><Company>COMPANYSECRET</Company><Manager>MANAGERSECRET</Manager><AppVersion>16.0000</AppVersion></Properties>`;
 const CUSTOM = `${XML}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Owner"><vt:lpwstr>CUSTOMSECRET</vt:lpwstr></property></Properties>`;
+/** @param {Rel[]} rels */
 const RELS = (rels) => `${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.map(([id, type, target, ext]) =>
   `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/${type}" Target="${target}"${ext ? ' TargetMode="External"' : ""}/>`).join("")}</Relationships>`;
+/** @param {string} main @param {boolean} custom */
 const ROOT_RELS = (main, custom) => RELS([["rId1", "officeDocument/2006/relationships/officeDocument", main],
   ["rId2", "package/2006/relationships/metadata/core-properties", "docProps/core.xml"], ["rId3", "officeDocument/2006/relationships/extended-properties", "docProps/app.xml"],
-  ...(custom ? [["rId4", "officeDocument/2006/relationships/custom-properties", "docProps/custom.xml"]] : [])]);
+  ...(custom ? [rel("rId4", "officeDocument/2006/relationships/custom-properties", "docProps/custom.xml")] : [])]);
+/** @param {string} id @param {string} type @param {string} target @returns {Rel} */
+const rel = (id, type, target) => [id, type, target];
+/** @param {[string, string][]} overrides */
 const TYPES = (overrides) => `${XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/>${
   [...overrides, ["/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml"], ["/docProps/app.xml", "application/vnd.openxmlformats-officedocument.extended-properties+xml"],
     ["/docProps/custom.xml", "application/vnd.openxmlformats-officedocument.custom-properties+xml"]].map(([p, t]) => `<Override PartName="${p}" ContentType="${t}"/>`).join("")}</Types>`;
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
 const DRAWING = 'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+/** @param {string} rid */
 const picture = (rid) => `<w:r><w:drawing><wp:inline><wp:extent cx="381000" cy="381000"/><wp:docPr id="1" name="Picture 1"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="p.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="381000" cy="381000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
 
+/** @param {string} xml */
 const unnamed = (xml) => xml.replace(/ w:(author|initials)="[^"]*"/g, ' w:$1=""').replace(/ w:date="[^"]*"/g, "");
 
 /** A .docx (`meta: false`, its parts carrying no metadata): two paragraphs (one with a tracked insertion and a deletion, one with a comment), a JPEG and a PNG
- *  with metadata, every metadata part R6 names, and `extra` entries appended. */
+ *  with metadata, every metadata part R6 names, and `extra` entries appended.
+ *  @param {{ extra?: ZipEntry[], images?: boolean, meta?: boolean }} [options] @returns {Uint8Array} */
 export function docx({ extra = [], images = true, meta = true } = {}) {
   const body = `${XML}<w:document ${W} ${DRAWING}><w:body><w:p><w:r><w:t xml:space="preserve">Budget item one </w:t></w:r><w:ins w:id="1" w:author="CHANGERSECRET" w:date="2019-03-04T00:00:00Z"><w:r><w:t>added</w:t></w:r></w:ins><w:del w:id="2" w:author="CHANGERSECRET" w:date="2019-03-04T00:00:00Z"><w:r><w:delText>removed</w:delText></w:r></w:del></w:p><w:p><w:commentRangeStart w:id="0"/><w:r><w:t>Second paragraph</w:t></w:r><w:commentRangeEnd w:id="0"/><w:r><w:commentReference w:id="0"/></w:r></w:p>${
     images ? `<w:p>${picture("rId2")}${picture("rId3")}</w:p>` : ""}</w:body></w:document>`;
   const comments = `${XML}<w:comments ${W}><w:comment w:id="0" w:author="COMMENTERSECRET" w:date="2019-03-04T00:00:00Z" w:initials="CS"><w:p><w:r><w:t>Check this figure</w:t></w:r></w:p></w:comment></w:comments>`;
   const docRels = RELS([["rId1", "officeDocument/2006/relationships/comments", "comments.xml"],
-    ...(images ? [["rId2", "officeDocument/2006/relationships/image", "media/image1.jpeg"], ["rId3", "officeDocument/2006/relationships/image", "media/image2.png"]] : [])]);
+    ...(images ? [rel("rId2", "officeDocument/2006/relationships/image", "media/image1.jpeg"), rel("rId3", "officeDocument/2006/relationships/image", "media/image2.png")] : [])]);
+  /** @type {ZipEntry[]} */
+  const imageParts = images ? [{ name: "word/media/image1.jpeg", data: jpeg({ meta }), method: 0 }, { name: "word/media/image2.png", data: png({ meta }) }] : [];
+  /** @type {ZipEntry[]} */
+  const customPart = meta ? [{ name: "docProps/custom.xml", data: CUSTOM }] : [];
   return makeZip([
     { name: "[Content_Types].xml", data: TYPES([["/word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"], ["/word/comments.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"]]) },
     { name: "_rels/.rels", data: ROOT_RELS("word/document.xml", meta) },
     { name: "word/document.xml", data: meta ? body : unnamed(body) },
     { name: "word/_rels/document.xml.rels", data: docRels },
     { name: "word/comments.xml", data: meta ? comments : unnamed(comments) },
-    ...(images ? [{ name: "word/media/image1.jpeg", data: jpeg({ meta }), method: 0 }, { name: "word/media/image2.png", data: png({ meta }) }] : []),
+    ...imageParts,
     { name: "docProps/core.xml", data: meta ? CORE : CORE.replace(/<dc:creator>.*<\/dcterms:modified>/, "") },
     { name: "docProps/app.xml", data: meta ? APP("Word") : `${XML}<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Pages>1</Pages></Properties>` },
-    ...(meta ? [{ name: "docProps/custom.xml", data: CUSTOM }] : []),
+    ...customPart,
     ...extra,
   ]);
 }
 
-/** A .xlsx: one sheet with two text cells and a legacy comment by "COMMENTERSECRET", and a JPEG in xl/media. */
+/** A .xlsx: one sheet with two text cells and a legacy comment by "COMMENTERSECRET", and a JPEG in xl/media.
+ *  @param {{ extra?: ZipEntry[] }} [options] @returns {Uint8Array} */
 export function xlsx({ extra = [] } = {}) {
   const X = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
   return makeZip([
@@ -205,13 +259,16 @@ export function xlsx({ extra = [] } = {}) {
   ]);
 }
 
-/** A .pptx: one slide with a title and a picture, a comment by "COMMENTERSECRET". */
+/** A .pptx: one slide with a title and a picture, a comment by "COMMENTERSECRET".
+ *  @returns {Uint8Array} */
 export function pptx() {
   const P = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
+  /** @param {string} inner */
   const tree = (inner) => `<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${inner}</p:spTree></p:cSld>`;
   const title = '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="4000000" cy="800000"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:p><a:r><a:t>Council budget</a:t></a:r></a:p></p:txBody></p:sp>';
   const pic = '<p:pic><p:nvPicPr><p:cNvPr id="3" name="Picture"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="0" y="900000"/><a:ext cx="800000" cy="800000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>';
   const theme = `${XML}<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="T"><a:themeElements><a:clrScheme name="C">${["dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"].map((c) => `<a:${c}><a:srgbClr val="000000"/></a:${c}>`).join("")}</a:clrScheme><a:fontScheme name="F"><a:majorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Arial"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="S"><a:fillStyleLst>${'<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'.repeat(3)}</a:fillStyleLst><a:lnStyleLst>${'<a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>'.repeat(3)}</a:lnStyleLst><a:effectStyleLst>${"<a:effectStyle><a:effectLst/></a:effectStyle>".repeat(3)}</a:effectStyleLst><a:bgFillStyleLst>${'<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'.repeat(3)}</a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
+  /** @param {string} p @param {string} t @returns {[string, string]} */
   const ct = (p, t) => [p, `application/vnd.openxmlformats-officedocument.presentationml.${t}+xml`];
   return makeZip([
     { name: "[Content_Types].xml", data: TYPES([ct("/ppt/presentation.xml", "presentation.main"), ct("/ppt/slides/slide1.xml", "slide"), ct("/ppt/slideLayouts/slideLayout1.xml", "slideLayout"), ct("/ppt/slideMasters/slideMaster1.xml", "slideMaster"), ["/ppt/theme/theme1.xml", "application/vnd.openxmlformats-officedocument.theme+xml"], ct("/ppt/commentAuthors.xml", "commentAuthors"), ct("/ppt/comments/comment1.xml", "comments")]) },
@@ -236,6 +293,7 @@ export function pptx() {
 
 const ODF_NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" office:version="1.3"';
 const ODF_META = `${XML}<office:document-meta ${ODF_NS}><office:meta><meta:initial-creator>AUTHORSECRET</meta:initial-creator><dc:creator>EDITORSECRET</dc:creator><meta:generator>APPSECRET/7.6</meta:generator><meta:template xlink:type="simple" xlink:href="TEMPLATESECRET.ott" xlink:title="TEMPLATESECRET"/><meta:creation-date>2019-03-04T00:00:00</meta:creation-date><dc:date>2019-03-04T01:00:00</dc:date><meta:editing-cycles>7</meta:editing-cycles><meta:editing-duration>PT42M</meta:editing-duration><meta:printed-by>EDITORSECRET</meta:printed-by><meta:user-defined meta:name="Owner">CUSTOMSECRET</meta:user-defined><dc:title>Minutes</dc:title><meta:document-statistic meta:paragraph-count="2"/></office:meta></office:document-meta>`;
+/** @param {string} [w] */
 const pic = (w = "1cm") => `<draw:frame draw:name="P" svg:width="${w}" svg:height="${w}"><draw:image xlink:href="Pictures/image1.jpg" xlink:type="simple"/></draw:frame>`;
 const ODF_BODY = {
   odt: `<office:text><text:tracked-changes><text:changed-region text:id="c1"><text:insertion><office:change-info><dc:creator>CHANGERSECRET</dc:creator><dc:date>2019-03-04T00:00:00</dc:date></office:change-info></text:insertion></text:changed-region></text:tracked-changes><text:p>Budget item one <text:change-start text:change-id="c1"/>added<text:change-end text:change-id="c1"/></text:p><text:p><office:annotation><dc:creator>COMMENTERSECRET</dc:creator><dc:date>2019-03-04T00:00:00</dc:date><meta:creator-initials>CS</meta:creator-initials><text:p>Check this figure</text:p></office:annotation>Second paragraph</text:p><text:p>${pic()}</text:p></office:text>`,
@@ -245,9 +303,11 @@ const ODF_BODY = {
 const MIME = { odt: "text", ods: "spreadsheet", odp: "presentation" };
 
 /** An ODF package of `flavour` with every R6 field in meta.xml, an annotation (and in odt a tracked change), a JPEG
- *  in Pictures/ and a PNG thumbnail, each with metadata; `extra` entries and `manifest` lines appended. */
+ *  in Pictures/ and a PNG thumbnail, each with metadata; `extra` entries and `manifest` lines appended.
+ *  @param {OdfFlavour} flavour @param {{ extra?: ZipEntry[], manifest?: string }} [options] @returns {Uint8Array} */
 export function odf(flavour, { extra = [], manifest = "" } = {}) {
   const mime = `application/vnd.oasis.opendocument.${MIME[flavour]}`;
+  /** @type {[string, string][]} */
   const files = [["/", mime], ["content.xml", "text/xml"], ["styles.xml", "text/xml"], ["meta.xml", "text/xml"], ["Pictures/image1.jpg", "image/jpeg"], ["Thumbnails/thumbnail.png", "image/png"]];
   return makeZip([
     { name: "mimetype", data: mime, method: 0 },
@@ -262,13 +322,15 @@ export function odf(flavour, { extra = [], manifest = "" } = {}) {
 }
 
 /** Every part of a ZIP the module wrote, read by a walk of its own: `{name, method, flags, time, date, extra, data}`
- *  (data inflated), with the archive comment's length. */
+ *  (data inflated), with the archive comment's length.
+ *  @param {Uint8Array} z @returns {{ parts: CopiedPart[], comment: number }} */
 export function unzipCopy(z) {
   const b = Buffer.from(z);
   const e = b.length - 22;
   if (b.readUInt32LE(e) !== 0x06054b50) throw new Error("no end record at the end");
   const n = b.readUInt16LE(e + 10);
   let c = b.readUInt32LE(e + 16);
+  /** @type {CopiedPart[]} */
   const parts = [];
   for (let i = 0; i < n; i++) {
     const nameLen = b.readUInt16LE(c + 28), extraLen = b.readUInt16LE(c + 30), commentLen = b.readUInt16LE(c + 32);
