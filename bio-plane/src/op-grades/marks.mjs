@@ -49,7 +49,10 @@ const SOURCES = {
   read: localize("op-grades.marks.k4259_read_mark", "K4259, a ruling: a read asks no reason, so it takes a read's mark, Reversible, not the kit's default"),
 };
 
+/** @typedef {"kit" | "default" | "dec300" | "read"} MarkSource a key of `SOURCES` */
+
 /* [op, weight name, source key], in the op's name order */
+/** @type {ReadonlyArray<readonly [string, string, MarkSource]>} */
 const ROWS = [
   ["accountdrafts", "Reversible", "read"],
   ["accountreferenceremove", "Terminal", "kit"],
@@ -236,5 +239,7 @@ const ROWS = [
   ["writinghelp", "Reversible", "read"],
 ];
 
-export const MARKS = Object.freeze(Object.fromEntries(ROWS.map(([op, weight]) => [op, weight])));
-export const MARK_SOURCES = Object.freeze(Object.fromEntries(ROWS.map(([op, , source]) => [op, SOURCES[source]])));
+/** @type {Readonly<{ [op: string]: string }>} each rungless act's weight name */
+export const MARKS = Object.freeze(Object.fromEntries(ROWS.map(/** @returns {[string, string]} */ ([op, weight]) => [op, weight])));
+/** @type {Readonly<{ [op: string]: string }>} each entry's source, in words */
+export const MARK_SOURCES = Object.freeze(Object.fromEntries(ROWS.map(/** @returns {[string, string]} */ ([op, , source]) => [op, SOURCES[source]])));

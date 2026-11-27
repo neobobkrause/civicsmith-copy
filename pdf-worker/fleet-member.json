@@ -8,7 +8,7 @@
     "outfile": "dist/pdf-worker.bundled.mjs",
     "manifest": "dist/pdf-worker.bundle.json",
     "external": ["cloudflare:workers", "node:*"],
-    "note": "FL-9's GUARD (BOB, 2026-09-10). This member has committed a bundle since 2026-07-31 and had NOTHING asserting the bundle matched its source — DIST measured that gap. The recipe lives in bio-plane/scripts/fleet-bundle.mjs, the committed manifest beside the artifact states its sha256 and the sha256 of every input, and bio-plane/test/system/fleetbundles.test.mjs FAILS on a stale artifact rather than letting it ship. THREE of this member's six build inputs are ../bio-plane/src/* (pdfstructure, subresources, cpu), so a change to the PLANE stales this artifact."
+    "note": "The bundle and its manifest are never committed (R45): scripts/build.mjs builds them into dist/ by the recipe in bio-plane/scripts/fleet-bundle.mjs whenever a test, a deployment or a release needs them; the manifest states the artifact's sha256 and the sha256 of every input. THREE of this member's six build inputs are ../bio-plane/src/* (pdfstructure, subresources, cpu), so a change to the PLANE stales this artifact."
   },
   "note": "The fleet-member marker. bio-plane/scripts/fleet-bundle.mjs discovers a fleet member by this file and builds and verifies its `bundle`; the suites in `testDir` are run by the package's own `npm test`. `surface` names the member's declared surface table in `entry` (fleet rule 2: no surface op may declare `mutating: true`). The fleet-coverage instrument that read it (scripts/coverage.mjs, D-117) is retired (K739); the member's own suite now holds both routes and refuses every other."
 }
