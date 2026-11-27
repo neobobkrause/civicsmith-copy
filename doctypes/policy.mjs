@@ -264,7 +264,13 @@ function nextOf(k, v) {
 /** Whether `b` comes after `a` in a kind's sequence.
  *  @param {OutlineKind} k @param {string} a @param {string | undefined} b @returns {boolean} */
 function order(k, a, b) {
-  for (let v = nextOf(k, a), i = 0; v !== null && i < 40; v = nextOf(k, v), i++) if (v === b) return true;
+  let v = nextOf(k, a);
+  for (let i = 0; i < 40; i++) {
+    const at = v;
+    if (at === null) break;
+    if (at === b) return true;
+    v = nextOf(k, at);
+  }
   return false;
 }
 
@@ -298,9 +304,10 @@ export function readOutline(raw, from, skip, locate) {
     let placed = null;
     /* "A - 1." under the open lettered part it names. */
     for (const { rank, k, m } of hits) {
-      if (k.kind !== "dashed") continue;
+      const kind = k.kind;
+      if (kind !== "dashed") continue;
       const d = open.findIndex((o) => o.kind === "upper" && o.value === m[1]);
-      if (d >= 0) placed = { depth: d + 1, kind: k.kind, rank, value: group(m, 2), rest: m[3] };
+      if (d >= 0) placed = { depth: d + 1, kind, rank, value: group(m, 2), rest: m[3] };
     }
     /* A sibling continuing an open level's sequence, deepest first, of any kind the line could be ("I." after "H."
        is a letter). */
@@ -481,8 +488,9 @@ export function readResponsibilities(raw, sections, from, locate) {
   }
   /* A running header or footer (a line printed three times or more that ends no sentence) is page furniture, never a
      party. Only the lines a table holds can be taken for one, so only those are counted, in one pass over the text. */
-  /** @type {Map<string, number>} */
-  const recurs = new Map();
+  /** @type {[string, number][]} */
+  const none = [];
+  const recurs = new Map(none);
   if (tables.length) {
     for (const { i, stop } of tables)
       for (let j = i + 1; j < lines.length && lineStart(j) < stop; j++) {
@@ -649,7 +657,8 @@ export function readPolicy(ctx, raw, locate = () => null) {
   const applicability = readApplicability(raw, sections, from, locate);
   const timeframes = readTimeframes(raw, sections, from, locate);
   /** @type {SectionDigests} */
-  const digests = Object.fromEntries(sections.map((s) => [s.path.join("/"), textDigest(raw, s.start, s.end)]));
+  const digests = {};
+  for (const s of sections) digests[s.path.join("/")] = textDigest(raw, s.start, s.end);
   /** @type {PolicyCounts} */
   const counts = {
     sections: sections.length,
@@ -769,13 +778,14 @@ const POLICY = {
         ? localize("doctypes.policy.sections_one_side", "only one of the readings gave sections, so nothing is said about sections: {why}", { why: String(why) })
         : localize("doctypes.policy.sections_neither", "neither reading gave sections, so nothing is said about sections: {why}", { why: String(why) });
     }
-    if (headerWhy && sectionsWhy)
-      return { meaningful: null, significance: null, events: [], confirmed: null, header_why: headerWhy, sections_why: sectionsWhy,
+    const hw = headerWhy, sw = sectionsWhy;
+    if (hw && sw)
+      return { meaningful: null, significance: null, events: [], confirmed: null, header_why: hw, sections_why: sw,
                why: localize("doctypes.policy.unread", "nothing could be read from this policy on one side or the other, so nothing is claimed about it either way") };
     bySeverity(events);
     return {
       meaningful: isMeaningful(events), significance: worstSignificance(events), events, confirmed: null,
-      header_compared: !headerWhy, header_why: headerWhy, sections_compared: !sectionsWhy, sections_why: sectionsWhy,
+      header_compared: !hw, header_why: hw, sections_compared: !sw, sections_why: sw,
       why: events.length ? localize("doctypes.policy.changes", "{count} change(s) between two readings of a policy at the same address", { count: String(events.length) })
         : localize("doctypes.policy.unchanged", "this policy reads as it read: the same header and the same sections"),
     };

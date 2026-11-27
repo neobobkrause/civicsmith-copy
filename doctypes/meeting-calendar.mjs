@@ -34,8 +34,9 @@ import { evaluateRule, localDay, reasonText } from "../bio-plane/src/civil-time/
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { counted, spend } from "./windows.mjs";
 
-/** @import { DoctypeContext, Detection, Entity, Connection } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Detection, Entity, Connection, PracticeValue, ReaderView } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
+/** @import { RuleDue, RuleUndetermined, Refusal } from "../bio-plane/src/civil-time/kinds.mjs" */
 
 /**
  * The window a calendar shows (R41): the range control's own name for it, whether it moves, and the first and last
@@ -57,6 +58,10 @@ import { counted, spend } from "./windows.mjs";
  * When minutes of a meeting are due (`minutesDue`): the day, its unit, the period and the zone it was counted in, or
  * no day and why.
  * @typedef {{ due: string, unit: string, amount: number, zone: string } | { due: null, unit?: string, why: string }} MinutesDue
+ */
+/**
+ * civil-time's answer to the count of minutes due, or what the count threw.
+ * @typedef {{ ok: true, answer: RuleDue | RuleUndetermined | Refusal } | { ok: false, thrown: unknown }} DueCount
  */
 /**
  * What `assess` confirmed unchanged: of how many meetings, how many are intact, the window's name, and how many
@@ -101,6 +106,21 @@ import { counted, spend } from "./windows.mjs";
  *  from the meeting's day in the profile's time zone.
  *  `{due, unit}`, or `{due: null, why}` when no profile states the practice or the count
  *  cannot be made (no weekend stated, a year the closures do not cover), never a guess. */
+/** civil-time's count of the practice's period from `day`, or what the count threw. A rule's `closures` left undefined
+ *  is a rule without one: civil-time reads the member and nothing else of it.
+ *  @param {PracticeValue} p @param {string} count @param {string | null} closures @param {string} day @param {string} zone
+ *  @param {ReaderView} view
+ *  @returns {DueCount} */
+function countDue(p, count, closures, day, zone, view) {
+  try {
+    return { ok: true, answer: evaluateRule({ rule: { rule: "minutes_due_days", units: "days", amount: p.value, count,
+                                                      direction: "forward", basis: p.basis || null, starts: "act",
+                                                      closures: closures || undefined },
+                                              anchor: { value: day, precision: "day", zone }, view }) };
+  }
+  catch (e) { return { ok: false, thrown: e }; }
+}
+
 /** @param {DoctypeContext} ctx @param {string} day @returns {MinutesDue} */
 function minutesDue(ctx, day) {
   const view = readerView(ctx);
@@ -113,20 +133,16 @@ function minutesDue(ctx, day) {
   const named = entry ? entry.closures : undefined;
   const closures = entry && typeof named === "string" ? named : null;
   const count = p.count === "business" ? "business" : "calendar";
-  const tz = "time_zone" in view ? view.time_zone : undefined;
+  const full = "time_zone" in view ? view : null;   // a view without the member reads it as absent
+  const tz = full ? full.time_zone : undefined;
   const tzValue = tz ? tz.value : undefined;
   const zone = tz && typeof tzValue === "string" ? tzValue : "UTC";
   /* The closures a business count skips are the profile's own: the list the practice names
      (`closures`) when it names one, else the office calendar (civil-time R9). */
-  let r;
-  try {
-    r = evaluateRule({ rule: { rule: "minutes_due_days", units: "days", amount: p.value, count, direction: "forward",
-                               basis: p.basis || null, starts: "act", ...(closures ? { closures } : {}) },
-                       anchor: { value: day, precision: "day", zone }, view });
-  }
-  catch (e) { return { due: null, why: localize("doctypes.meeting-calendar.period_uncounted", "the period could not be counted: {reason}", { reason: String((e instanceof Error && e.message) || e) }) }; }
+  const tried = countDue(p, count, closures, day, zone, view);
+  if (!tried.ok) { const e = tried.thrown; return { due: null, why: localize("doctypes.meeting-calendar.period_uncounted", "the period could not be counted: {reason}", { reason: String((e instanceof Error && e.message) || e) }) }; }
   const unit = count === "business" ? "business days" : "days";
-  const answer = r;
+  const answer = tried.answer;
   /* Each member read as the old `r.refused`, `r.undetermined`, `r.due` and `r.why` read it: undefined where absent. */
   const refused = "refused" in answer ? answer.refused : undefined;
   const undetermined = "undetermined" in answer ? answer.undetermined : undefined;
@@ -159,7 +175,7 @@ function insideMain(raw) {
 /** The table rows of the text, `<tr ...>` to the next `</tr>`, one at a time (R40: no list of all of them, and no tag
  *  that never closes tried against the rest of the text). */
 /** The first match `it` yields that starts at or after `at`, or null when none is left.
- *  @param {Iterator<RegExpExecArray>} it @param {number} at @returns {RegExpExecArray | null} */
+ *  @param {Iterator<RegExpExecArray, unknown, undefined>} it @param {number} at @returns {RegExpExecArray | null} */
 function firstFrom(it, at) {
   for (;;) {
     const n = it.next();
@@ -199,6 +215,8 @@ const parseDate = (s) => {
 const iso = (t) => (t == null ? null : new Date(t).toISOString().slice(0, 10));
 /** A document link's type code, upper-cased, and the document it is. */
 const DOCUMENT_KINDS = new Map([["A", "agenda"], ["M", "minutes"], ["AADA", "agenda"], ["MADA", "minutes"], ["IC", "packet"]]);
+/** A row's documents before any is read: none. @type {ReadonlyArray<[string, string | undefined]>} */
+const NO_DOCS = Object.freeze([]);
 
 /* What reading a member of a reading that is not there throws, word for word as the old reads threw it: `assess` read
    `a.entities.length`, `connections` iterated `b.entities`. */
@@ -330,7 +348,7 @@ const meetingCalendar = {
       if (!id) continue;
       const flat = row.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       /** @type {Map<string, string | undefined>} */
-      const docs = new Map();
+      const docs = new Map(NO_DOCS);
       for (const d of row.match(/View\.ashx\?M=([A-Za-z]+)&ID=(\d+)[^"'\s]*/gi) || []) {
         const c = /M=([A-Za-z]+)&ID=(\d+)/i.exec(d);
         if (!c) throw new TypeError("Cannot read properties of null (reading '1')");

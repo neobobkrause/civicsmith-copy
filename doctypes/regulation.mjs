@@ -57,7 +57,7 @@ import { CONFIDENCE, CONTRACT, diffEntities, alsoSatisfies,
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { codeHeadingsIn, readSections, readDefinitions, readExceptions, textDigest } from "./sections.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-import { scanFlatMany, mergedHits, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
+import { flatHas, mergedHits, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
 /** @import { DoctypeContext, Detection, Entity, EnactmentPattern } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { Section, Definition, Exception, Locate, CodeHeadings } from "./sections.mjs" */
@@ -359,12 +359,13 @@ const regulationType = {
    *  no enacting formula at all. */
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
 
     /* R37: one pass over the flattened text, a window at a time; the counts are the whole text's. */
-    let enacting = false, caption = false, codeCites = 0;
-    scanFlatMany(t, [{ re: ENACTING, on: () => (enacting = true) }]);
-    mergedHits(t, regCaptions(ctx), () => (caption = true));
+    let codeCites = 0;
+    const enacting = flatHas(t, ENACTING);
+    const caption = mergedHits(t, regCaptions(ctx), () => true);
     mergedHits(t, codePatterns(ctx), () => { codeCites++; });
     if (enacting) signals.push(localize("doctypes.regulation.enacting", "an enacting formula in the operative voice"));
     const recitals = countIn(t, RECITAL);
@@ -425,10 +426,10 @@ const regulationType = {
     /** @type {Locate} */
     const locate = typeof given === "function" ? given : () => null;
 
-    let enacts = false;
-    scanFlatMany(raw, [{ re: ENACTING, on: () => (enacts = true) }]);
+    const enacts = flatHas(raw, ENACTING);
     const cap = ownCaption(raw, regCaptions(ctx), regBodyEnds(ctx), 2500);
-    const number = cap && cap.number ? cap.number : null;
+    const capNumber = cap ? cap.number : null;
+    const number = capNumber ? capNumber : null;
     const instrument = cap ? cap.kind : (/\bORDAIN/i.test(raw) ? "ordinance" : null);
 
     /* The caption's TITLE — the capitalised sentence that says what the instrument
