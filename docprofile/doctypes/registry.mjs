@@ -25,6 +25,7 @@ import { classificationView, CLASSIFY_WHOLE_MAX_CHARS } from "../classify-view.m
 
 /** @import { ContentType, DoctypeContext, Detection, ClassifyWork, SuppliedSheet } from "./index.mjs" */
 /** @import { ClassifiedOver, ClassificationView } from "../classify-view.mjs" */
+/** @import { Registry } from "../../site-profiles/index.mjs" */
 
 /**
  * The answer that names no type (NO_TYPE): it detects, reads and judges nothing.
@@ -105,6 +106,7 @@ const said = /** @param {unknown} e @returns {string} */ (e) => String((e instan
    axis. */
 /** @type {ContentType[]} */
 const members = [];
+/** @type {Registry<DoctypeContext, ContentType>} the content axis's registry: a content type is its recogniser */
 let types = makeRegistry();
 const rebuild = () => { types = makeRegistry(); for (const m of members) types.register(m); };
 
