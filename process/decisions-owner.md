@@ -96,3 +96,8 @@ Rule now: the stop for the account switch is lifted; the stop record is cleared.
 - 26 Nov 2026: "Instruction: continue the halt" (typed moments later, interrupting the lift)
 - 26 Nov 2026: "Instruction: lift the stop" (typed in the new Claude account, after the switch)
 Shown to the owner: not yet.
+
+## Tranche t3 is housekeeping
+Rule now: tranche t3 holds module conversions only, no new features. ARCH names no walk area for a conversion; a round in which no area is named has no walk and no deployment.
+- 27 Nov 2026: "Decision: this tranche is housekeeping: module conversions only, no new features. A conversion changes no behaviour, so ARCH names no walk area for it; a round in which no area is named has no walk and no deployment."
+Shown to the owner: not yet.
