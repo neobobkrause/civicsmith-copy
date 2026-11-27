@@ -7,6 +7,7 @@ import { READINGS, registerCorpusTypes } from "./g48-readings.mjs";
 import { readText } from "../registry.mjs";
 
 registerCorpusTypes();
+/** @type {{ note: string, taken_at: string, readings: { [id: string]: unknown } }} */
 const out = { note: "readText over each reading of g48-readings.mjs, before G48 (docprofile R5, R19, R38)", taken_at: "2026-10-23", readings: {} };
 for (const [id, supplied, ctx] of READINGS) out.readings[id] = JSON.parse(JSON.stringify(readText(supplied, ctx)));
 fs.mkdirSync(new URL("./fixtures/", import.meta.url), { recursive: true });

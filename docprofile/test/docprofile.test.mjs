@@ -18,6 +18,11 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { PORT_ALDER, LAKEMONT, view, EMPTY, HELD, PA_ITEMS, PA_ITEMS_PAGES, calendarHtml, shellHtml } from "./fixtures.mjs";
 import { registerStubs, stubMeetings, stubItems, stubFallback } from "./stubs.mjs";
 
+/** @import { DoctypeContext, ContentType, TypeAssessment, Connection, AssessContext, Assessment, ReadTextAnswer, ReadingDone, SuppliedText, Detection } from "../registry.mjs" */
+/** @import { StubReading } from "./stubs.mjs" */
+/** @import { View } from "../../jurisdictions/index.mjs" */
+/** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
+
 const {
   identify, doctypeFor, assess, readText, flattenText, makeLocator, registerDoctype,
   profileRecord, CONFIDENCE, CONTRACT, EVENTS, event, worstSignificance, doctypes,
@@ -27,20 +32,54 @@ for (const r of registerStubs(registerDoctype)) assert.equal(r.ok, true);
 
 const PA = view(PORT_ALDER);
 const LK = view(LAKEMONT);
-const enc = (s) => new TextEncoder().encode(s);
-const sha256 = async (b) => createHash("sha256").update(b).digest("hex");
-const LADDER = new Set(Object.values(CONFIDENCE));
-const keys = (r) => r.entities.map((e) => e.key);
+const enc = /** @param {string} s */ (s) => new TextEncoder().encode(s);
+const sha256 = /** @param {Uint8Array} b */ async (b) => createHash("sha256").update(b).digest("hex");
+/** @type {Set<string | null | undefined>} */
+const LADDER = new Set([CONFIDENCE.CERTAIN, CONFIDENCE.LIKELY, CONFIDENCE.POSSIBLE, CONFIDENCE.NONE]);
+const keys = /** @param {StubReading} r */ (r) => r.entities.map((e) => e.key);
 const NOW = "2026-03-20T12:00:00Z";
+/** @type {[string, string, string]} */
 const ROW = ["1", "Harbor Commission", "3/3/2026"];
 const CAL = calendarHtml([ROW]);
 const ITEMS_LIKELY = "ITEMS for the week\nfile PA-104";
+
+/* Each helper below fails the test exactly where the original expression would have thrown or failed its assertion. */
+/** A value that is there, or the test fails.
+ *  @template T @param {T | null | undefined} x @param {string} what @returns {T} */
+const must = (x, what) => (x === null || x === undefined ? assert.fail(`no ${what}`) : x);
+/** Entry `i` of a list, or the test fails.
+ *  @template T @param {ReadonlyArray<T>} xs @param {number} i @returns {T} */
+const nth = (xs, i) => { const x = xs[i]; return x !== undefined ? x : assert.fail(`no entry ${i}`); };
+/** A stated reason, or the test fails as `assert.match` would on none.
+ *  @param {string | null | undefined} s @returns {string} */
+const stated = (s) => (typeof s === "string" ? s : assert.fail(`no reason stated: ${s}`));
+/** The page a position names (undefined where it names none, as reading `.page` was).
+ *  @param {ReadingPosition | null | undefined} p */
+const pageOf = (p) => { const q = must(p, "position"); return "page" in q ? q.page : undefined; };
+/** `readText`'s answer where it read, or the test fails.
+ *  @param {ReadTextAnswer} a @returns {ReadingDone} */
+const done = (a) => (a.determined ? a : assert.fail(`no reading: ${a.why}`));
+/** Is this a stub's reading (./stubs.mjs: this module's own test readers)?
+ *  @param {object | null | undefined} p @returns {p is StubReading} */
+const isReading = (p) => !!p && "entities" in p && Array.isArray(p.entities);
+/** A stub's reading, or the test fails.
+ *  @param {object | null | undefined} p @returns {StubReading} */
+const readingOf = (p) => (isReading(p) ? p : assert.fail("no reading"));
+/** A ctx of a text and, where one is given, a view.
+ *  @param {string} text @param {View} [v] @returns {DoctypeContext} */
+const ctxOf = (text, v) => { if (v) return { text, view: v }; return { text }; };
+/** What a type's `detect` answers, or the test fails.
+ *  @param {ContentType} type @param {DoctypeContext} ctx @returns {Detection} */
+const detected = (type, ctx) => must(type.detect(ctx), `${type.key} detection`);
+const parseItems = must(stubItems.parse, "stub_items reader");
+const parseMeetings = must(stubMeetings.parse, "stub_meetings reader");
+const meetingConnections = must(stubMeetings.connections, "stub_meetings connections");
 
 /* ----------------------------------------------------------------- doctypeFor */
 
 test("R4 doctypeFor returns the first CERTAIN type in registration order, else the highest match, else the registered fallback at NONE", () => {
   assert.deepEqual(doctypes().map((t) => t.key), ["stub_meetings", "stub_items", "stub_fallback"]);
-  const cert = (text, v) => doctypeFor({ text, view: v });
+  const cert = /** @param {string} text @param {View} [v] */ (text, v) => doctypeFor(ctxOf(text, v));
   assert.deepEqual([cert(CAL).type, cert(CAL).confidence], [stubMeetings, CONFIDENCE.CERTAIN]);
   assert.deepEqual([cert(PA_ITEMS, PA).type, cert(PA_ITEMS, PA).confidence], [stubItems, CONFIDENCE.CERTAIN]);
   // no CERTAIN: the likely match wins (Lakemont's view names no Port Alder masthead)
@@ -56,10 +95,12 @@ test("R4 doctypeFor returns the first CERTAIN type in registration order, else t
   assert.deepEqual([g.type, g.confidence, g.signals], [stubFallback, CONFIDENCE.NONE, []]);
   assert.equal(g.why, localize("docprofile.registry.no_registered_content_type_recognised", "no registered content type recognised this document, so it is read as a document of no recognised type: any substantive difference is reported and not described"));
   // every confidence the content-type axis answers is on site-profiles' one ladder (R4's "its R3, R4")
-  for (const [t, v] of [[CAL], [PA_ITEMS, PA], [ITEMS_LIKELY, PA], ["plain"], [CAL + PA_ITEMS, PA]]) {
+  /** @type {Array<[string, View?]>} */
+  const texts = [[CAL], [PA_ITEMS, PA], [ITEMS_LIKELY, PA], ["plain"], [CAL + PA_ITEMS, PA]];
+  for (const [t, v] of texts) {
     const dt = cert(t, v);
     assert.ok(LADDER.has(dt.confidence), `type confidence ${dt.confidence}`);
-    for (const c of [...dt.considered, ...dt.also.filter((x) => !x.error)]) assert.ok(LADDER.has(c.confidence));
+    for (const c of [...dt.considered, ...dt.also.filter((x) => !("error" in x && x.error))]) assert.ok(LADDER.has(c.confidence));
   }
 });
 
@@ -68,60 +109,65 @@ test("R5 also names every other non-fallback type that matches, and a throwing d
   const r = doctypeFor({ text, view: PA });
   assert.deepEqual(r.also, [{ key: "stub_items", confidence: CONFIDENCE.CERTAIN, signals: ["masthead ×3"] }]);
   // exactly the types whose own detect matches: never the winner, never the fallback
-  for (const [t, v] of [[text, PA], [ITEMS_LIKELY, PA], [CAL], ["plain"]]) {
-    const d = doctypeFor({ text: t, view: v });
-    const want = doctypes().filter((x) => x !== d.type && !x.fallback && x.detect({ text: t, view: v }).match).map((x) => x.key);
+  /** @type {Array<[string, View?]>} */
+  const texts = [[text, PA], [ITEMS_LIKELY, PA], [CAL], ["plain"]];
+  for (const [t, v] of texts) {
+    const d = doctypeFor(ctxOf(t, v));
+    const want = doctypes().filter((x) => x !== d.type && !x.fallback && detected(x, ctxOf(t, v)).match).map((x) => x.key);
     assert.deepEqual(d.also.map((x) => x.key), want);
   }
   // a detect that throws during the also pass: reported, never dropped, never propagated.
   // `text` answers the first read (stub_meetings', CERTAIN, which stops the first pass) and throws after.
   let reads = 0;
+  /** @type {DoctypeContext} */
   const ctx = { view: PA, get text() { if (reads++ === 0) return CAL; throw new Error("unreadable"); } };
   const t = doctypeFor(ctx);
   assert.equal(t.type, stubMeetings);
   assert.deepEqual(t.also, [{ key: "stub_items", confidence: null, signals: [], error: "unreadable" }]);
   // the reader is handed the same list (readText's ctx.alsoSatisfies), and alsoSatisfies reads it
   assert.equal(registerDoctype({ ...stubItems, key: "stub_also_probe",
-    detect: (c) => (String(c.text).includes("ALSOSEE") ? { match: true, confidence: CONFIDENCE.CERTAIN } : { match: false }),
-    parse: (c) => ({ entities: [], facts: { handed: c.alsoSatisfies(), read: dp.alsoSatisfies(c, "stub_also_probe") } }) }).ok, true);
-  const probe = readText("ALSOSEE\n" + ITEMS_LIKELY, { view: PA });
+    detect: (c) => { if (String(c.text).includes("ALSOSEE")) return { match: true, confidence: CONFIDENCE.CERTAIN }; return { match: false }; },
+    parse: (c) => ({ entities: [], facts: { handed: c.alsoSatisfies?.(), read: dp.alsoSatisfies(c, "stub_also_probe") } }) }).ok, true);
+  const probe = done(readText("ALSOSEE\n" + ITEMS_LIKELY, { view: PA }));
   assert.equal(probe.doctype.type.key, "stub_also_probe");
-  assert.deepEqual(probe.parsed.facts, { handed: ["stub_items"], read: ["stub_items"] });
+  assert.deepEqual(readingOf(probe.parsed).facts, { handed: ["stub_items"], read: ["stub_items"] });
   assert.deepEqual(dp.alsoSatisfies({}, "x"), [], "a reader called directly gets an honest empty list");
 });
 
 /* --------------------------------------------------------------------- assess */
 
-const calCtx = (extra) => ({ sha256, locator: "https://r.test/Calendar.aspx", now: NOW, view: PA, ...extra });
-const likelyStack = (s) => `<html><body><main><p>${s}</p><a href="/x">x</a></main></body></html>`;
+const calCtx = /** @param {AssessContext} [extra] @returns {AssessContext} */
+  (extra) => ({ sha256, locator: "https://r.test/Calendar.aspx", now: NOW, view: PA, ...extra });
+const likelyStack = /** @param {string} s */ (s) => `<html><body><main><p>${s}</p><a href="/x">x</a></main></body></html>`;
 
 test("R11 assess runs L1 to L6 in order, stops when one decides, and carries stopped_at and the trail", async () => {
   const order = ["L1_stack", "L2_bytes", "L3_noteworthy", "L4_content_type", "L5_meaning", "L6_connections"];
-  const idx = (l) => order.indexOf(l);
+  const idx = /** @param {string} l */ (l) => order.indexOf(l);
   const same = enc(CAL);
-  const runs = {
-    identical: await assess(same, same, calCtx()),
-    unchanged: await assess(enc(calendarHtml([ROW], { state: "a" })), enc(calendarHtml([ROW], { state: "b" })), calCtx()),
-    restyled: await assess(enc(CAL.replace("site header", "new header")), same, calCtx()),
-    undetermined: await assess(enc(likelyStack("a")), enc(likelyStack("b")), { sha256, headers: { "x-powered-by": "ASP.NET" } }),
-    unread: await assess(same, enc(calendarHtml([])), calCtx()),
-    whole: await assess(same, enc(calendarHtml([ROW, ["2", "Select Board", "3/9/2026"]])), calCtx()),
-    shell: await assess(enc(shellHtml("1")), enc(shellHtml("2")), { sha256 }),
-  };
-  const stops = Object.fromEntries(Object.entries(runs).map(([k, r]) => [k, r.stopped_at]));
+  const identical = await assess(same, same, calCtx());
+  const unchanged = await assess(enc(calendarHtml([ROW], { state: "a" })), enc(calendarHtml([ROW], { state: "b" })), calCtx());
+  const restyled = await assess(enc(CAL.replace("site header", "new header")), same, calCtx());
+  const undetermined = await assess(enc(likelyStack("a")), enc(likelyStack("b")), { sha256, headers: { "x-powered-by": "ASP.NET" } });
+  const unread = await assess(same, enc(calendarHtml([])), calCtx());
+  const whole = await assess(same, enc(calendarHtml([ROW, ["2", "Select Board", "3/9/2026"]])), calCtx());
+  const shell = await assess(enc(shellHtml("1")), enc(shellHtml("2")), { sha256 });
+  /** @type {Array<[string, Assessment]>} */
+  const runs = [["identical", identical], ["unchanged", unchanged], ["restyled", restyled], ["undetermined", undetermined],
+                ["unread", unread], ["whole", whole], ["shell", shell]];
+  const stops = Object.fromEntries(runs.map(([k, r]) => [k, r.stopped_at]));
   assert.deepEqual(stops, { identical: "L2_bytes", unchanged: "L3_noteworthy", restyled: "L3_noteworthy",
                             undetermined: "L3_noteworthy", unread: "L5_meaning", whole: "L6_connections", shell: "L1_stack" });
-  for (const r of Object.values(runs)) {
-    assert.equal(r.trail[r.trail.length - 1].layer, r.stopped_at);
-    for (let i = 1; i < r.trail.length; i++) assert.ok(idx(r.trail[i].layer) > idx(r.trail[i - 1].layer), "in order");
+  for (const [, r] of runs) {
+    assert.equal(nth(r.trail, r.trail.length - 1).layer, r.stopped_at);
+    for (let i = 1; i < r.trail.length; i++) assert.ok(idx(nth(r.trail, i).layer) > idx(nth(r.trail, i - 1).layer), "in order");
     for (const t of r.trail) assert.equal(typeof t.said, "string");
   }
-  assert.deepEqual(runs.whole.trail.map((t) => t.layer), order);
-  assert.equal(runs.shell.trail.length, 1);
+  assert.deepEqual(whole.trail.map((t) => t.layer), order);
+  assert.equal(shell.trail.length, 1);
 });
 
 test("R12 the verdict is one of the seven, each reached exactly as defined", async () => {
-  const V = async (a, b, ctx) => (await assess(enc(a), enc(b), ctx)).verdict;
+  const V = /** @param {string} a @param {string} b @param {AssessContext} ctx */ async (a, b, ctx) => (await assess(enc(a), enc(b), ctx)).verdict;
   assert.equal(await V(shellHtml("1"), shellHtml("2"), { sha256 }), "unwatchable");
   assert.equal(await V(CAL, CAL, calCtx()), "identical");
   assert.equal(await V(calendarHtml([ROW], { state: "a" }), calendarHtml([ROW], { state: "b" }), calCtx()), "unchanged");
@@ -135,7 +181,7 @@ test("R12 the verdict is one of the seven, each reached exactly as defined", asy
 });
 
 test("R13 meaningful is true only for changed, false for the settled verdicts, null where nothing may be claimed", async () => {
-  const M = async (a, b, ctx) => { const r = await assess(enc(a), enc(b), ctx); return [r.verdict, r.meaningful]; };
+  const M = /** @param {string} a @param {string} b @param {AssessContext} ctx */ async (a, b, ctx) => { const r = await assess(enc(a), enc(b), ctx); return [r.verdict, r.meaningful]; };
   assert.deepEqual(await M(CAL, CAL, calCtx()), ["identical", false]);
   assert.deepEqual(await M(calendarHtml([ROW], { state: "a" }), calendarHtml([ROW], { state: "b" }), calCtx()), ["unchanged", false]);
   assert.deepEqual(await M(CAL.replace("site header", "h2"), CAL, calCtx()), ["restyled", false]);
@@ -147,29 +193,31 @@ test("R13 meaningful is true only for changed, false for the settled verdicts, n
   const r = await assess(enc(CAL), enc(calendarHtml([])), calCtx());
   assert.deepEqual([r.content_type, r.verdict, r.meaningful, r.events], ["stub_meetings", "changed", null, []]);
   // a type whose parse or assess throws, or that answers no judgment: caught, null, the reason stated
-  const broken = (over) => ({ ...stubMeetings, key: "stub_broken", detect: (c) => (String(c.text).includes("BROKEN")
-    ? { match: true, confidence: CONFIDENCE.CERTAIN } : { match: false }), ...over });
+  /** @type {ContentType} */
+  const broken = { ...stubMeetings, key: "stub_broken",
+    detect: (c) => { if (String(c.text).includes("BROKEN")) return { match: true, confidence: CONFIDENCE.CERTAIN }; return { match: false }; } };
+  /** @type {Array<[ContentType, RegExp]>} */
   const cases = [
-    [{ parse: () => { throw new Error("no parse"); } }, /could not be read this time \(no parse\)/],
-    [{ assess: () => { throw new Error("no compare"); } }, /could not compare the two readings \(no compare\)/],
-    [{ assess: () => ({ meaningful: null, events: [], why: "it could not say" }) }, /it could not say/],
-    [{ assess: () => undefined }, /reader could not say/],
-    [{ parse: undefined }, /declares no reader/],
+    [{ ...broken, parse: () => { throw new Error("no parse"); } }, /could not be read this time \(no parse\)/],
+    [{ ...broken, assess: () => { throw new Error("no compare"); } }, /could not compare the two readings \(no compare\)/],
+    [{ ...broken, assess: () => ({ meaningful: null, events: [], why: "it could not say" }) }, /it could not say/],
+    [{ ...broken, assess: () => undefined }, /reader could not say/],
+    [{ ...broken, parse: undefined }, /declares no reader/],
   ];
-  for (const [over, why] of cases) {
-    assert.equal(registerDoctype(broken(over)).ok, true);
+  for (const [type, why] of cases) {
+    assert.equal(registerDoctype(type).ok, true);
     const b = await assess(enc("<p>BROKEN a</p>"), enc("<p>BROKEN b</p>"), { sha256 });
     assert.deepEqual([b.content_type, b.verdict, b.meaningful, b.events], ["stub_broken", "changed", null, []]);
-    assert.match(b.why, why);
+    assert.match(stated(b.why), why);
   }
   // and a type whose connections throw: the meaning stands, no connection is stated
-  assert.equal(registerDoctype(broken({ connections: () => { throw new Error("x"); },
-    assess: () => ({ meaningful: false, events: [event("item_added")], why: "added" }) })).ok, true);
+  assert.equal(registerDoctype({ ...broken, connections: () => { throw new Error("x"); },
+    assess: () => ({ meaningful: false, events: [event("item_added")], why: "added" }) }).ok, true);
   const c = await assess(enc("<p>BROKEN a</p>"), enc("<p>BROKEN b</p>"), { sha256 });
   assert.deepEqual([c.verdict, c.meaningful, c.connections], ["routine", false, []]);
-  assert.match(c.trail.at(-1).said, /failed to derive them/);
+  assert.match(stated(c.trail.at(-1)?.said), /failed to derive them/);
   // a type that says meaningful while emitting no event: meaningful is the events', not its claim (R14)
-  assert.equal(registerDoctype(broken({ assess: () => ({ meaningful: true, events: [], why: "claimed" }) })).ok, true);
+  assert.equal(registerDoctype({ ...broken, assess: () => ({ meaningful: true, events: [], why: "claimed" }) }).ok, true);
   const d = await assess(enc("<p>BROKEN a</p>"), enc("<p>BROKEN b</p>"), { sha256 });
   assert.deepEqual([d.verdict, d.meaningful], ["routine", false]);
 });
@@ -180,7 +228,9 @@ test("R14 events come from the one graded catalogue and meaningful is always wor
     assert.ok(["event", "notice", "routine"].includes(spec.significance), k);
     assert.equal(event(k).significance, spec.significance);
   }
+  /** @type {[string, string, string, null, string]} */
   const row = [...ROW, null, "11"];
+  /** @type {Array<[string, string]>} */
   const pairs = [
     [calendarHtml([row]), calendarHtml([[...ROW, "CANCELLED", "11"]])],
     [calendarHtml([row]), calendarHtml([row, ["2", "S", "3/9/2026"]])],
@@ -189,6 +239,7 @@ test("R14 events come from the one graded catalogue and meaningful is always wor
     [calendarHtml([row]), calendarHtml([["9", "S", "3/9/2026"]])],
     ["<p>one</p>", "<p>two</p>"],  // the fallback under the conservative stack
   ];
+  /** @type {Set<unknown>} */
   const seen = new Set();
   for (const [a, b] of pairs) {
     const r = await assess(enc(a), enc(b), calCtx());
@@ -222,24 +273,30 @@ test("R15 connections are referential or temporal, each in its own shape", async
 });
 
 test("R16 confirmation states what was verified unchanged, even beside events, null when nothing was; a read that found nothing is a failed reader", async () => {
+  /** @type {[string[], string[]]} */
   const rows = [ROW, ["2", "Select Board", "3/4/2026"]];
   const cancelled = [[...rows[0], "CANCELLED"], rows[1]];
   const r = await assess(enc(calendarHtml(rows)), enc(calendarHtml(cancelled)), calCtx());
   assert.equal(r.verdict, "changed");
-  assert.deepEqual({ entries: r.confirmation.entries, intact: r.confirmation.intact }, { entries: 2, intact: 1 });
+  const conf = must(r.confirmation, "confirmation");
+  assert.deepEqual({ entries: "entries" in conf ? conf.entries : undefined, intact: "intact" in conf ? conf.intact : undefined }, { entries: 2, intact: 1 });
   const same = await assess(enc(calendarHtml(rows)), enc(calendarHtml(rows)), calCtx());
-  assert.equal(same.confirmation.kind, "identical_bytes");
+  const sameConf = must(same.confirmation, "confirmation");
+  assert.equal("kind" in sameConf ? sameConf.kind : undefined, "identical_bytes");
   const mech = await assess(enc(calendarHtml(rows, { state: "a" })), enc(calendarHtml(rows, { state: "b" })), calCtx());
-  assert.equal(mech.confirmation.kind, "same_substance");
+  const mechConf = must(mech.confirmation, "confirmation");
+  assert.equal("kind" in mechConf ? mechConf.kind : undefined, "same_substance");
   // nothing verified unchanged: every meeting altered
   const all = [[...rows[0], "CANCELLED"], [...rows[1], "CANCELLED"]];
   const none = await assess(enc(calendarHtml(rows)), enc(calendarHtml(all)), calCtx());
   assert.equal(none.confirmation, null);
   // a read that found nothing on either side: failed reader, stated
-  for (const [a, b] of [[rows, []], [[], rows]]) {
+  /** @type {Array<[string[][], string[][]]>} */
+  const sides = [[rows, []], [[], rows]];
+  for (const [a, b] of sides) {
     const f = await assess(enc(calendarHtml(a)), enc(calendarHtml(b)), calCtx());
     assert.equal(f.meaningful, null);
-    assert.match(f.why, /could not be read/);
+    assert.match(stated(f.why), /could not be read/);
     assert.deepEqual(f.events, []);
   }
 });
@@ -265,7 +322,9 @@ test("R18 readText refuses when no honest reading may be produced, and says whic
   const none = readText("", { view: PA });
   assert.deepEqual([none.determined, none.partial], [false, false]);
   assert.equal(none.why, localize("docprofile.readtext.no_text_was_supplied_so_no", "no text was supplied, so no reading was attempted"));
-  for (const x of [undefined, null, 7, {}]) assert.equal(readText(x).determined, false);
+  /** @type {Array<SuppliedText | number | null | undefined>} */
+  const notText = [undefined, null, 7, {}];
+  for (const x of notText) assert.equal(readText(x).determined, false);
   const undecoded = readText({ pages: [], undetermined: [{ reason: "no_tounicode", count: 40 }] }, { view: PA });
   assert.equal(undecoded.determined, false);
   assert.match(undecoded.why, /undetermined .*no_tounicode/);
@@ -277,52 +336,57 @@ test("R18 readText refuses when no honest reading may be produced, and says whic
 });
 
 test("R19 a determined reading carries partial, text_from, stack, doctype, parsed or parse_error, and position facts", () => {
-  const r = readText({ document: PA_ITEMS, pages: PA_ITEMS_PAGES }, { view: PA, at: "2026-03-03T00:00:00Z" });
+  const r = done(readText({ document: PA_ITEMS, pages: PA_ITEMS_PAGES }, { view: PA, at: "2026-03-03T00:00:00Z" }));
   assert.deepEqual([r.determined, r.partial, r.text_from, r.parse_error], [true, false, "document", null]);
   assert.equal(r.doctype.type, stubItems);
   assert.deepEqual(r.doctype, doctypeFor({ text: PA_ITEMS, view: PA, at: "2026-03-03T00:00:00Z",
                                            handler: r.stack.handler, kind: r.stack.kind }));
   assert.deepEqual(r.stack, identify({ text: PA_ITEMS, view: PA, at: "2026-03-03T00:00:00Z" }));
-  assert.deepEqual(keys(r.parsed), ["PA-101", "PA-102", "PA-103"]);
+  assert.deepEqual(keys(readingOf(r.parsed)), ["PA-101", "PA-102", "PA-103"]);
   assert.deepEqual([r.position_parts, r.position_why], [3, null]);
   const part = readText({ document: PA_ITEMS, counts: { undetermined: 3 } }, { view: PA });
   assert.equal(part.partial, true);
   assert.match(part.why, /PARTIAL/);
-  const s = readText("plain words", {});
+  const s = done(readText("plain words", {}));
   assert.deepEqual([s.text_from, s.position_parts, s.doctype.type, s.parsed], ["string", 0, stubFallback, { entities: [], facts: {} }]);
-  assert.match(s.position_why, /bare string/);
-  const pages = readText({ pages: PA_ITEMS_PAGES }, { view: PA });
+  assert.match(stated(s.position_why), /bare string/);
+  const pages = done(readText({ pages: PA_ITEMS_PAGES }, { view: PA }));
   assert.deepEqual([pages.text_from, pages.position_parts], ["pages", 3]);
   // a reader whose parse throws: no reading, the reason stated (never thrown)
-  assert.equal(registerDoctype({ ...stubItems, key: "stub_throws", detect: (c) => (String(c.text).includes("THROWS")
-    ? { match: true, confidence: CONFIDENCE.CERTAIN } : { match: false }), parse: () => { throw new Error("bad page"); } }).ok, true);
-  const t = readText("THROWS here", {});
+  assert.equal(registerDoctype({ ...stubItems, key: "stub_throws", detect: (c) => {
+    if (String(c.text).includes("THROWS")) return { match: true, confidence: CONFIDENCE.CERTAIN }; return { match: false }; },
+    parse: () => { throw new Error("bad page"); } }).ok, true);
+  const t = done(readText("THROWS here", {}));
   assert.deepEqual([t.determined, t.parsed, t.parse_error], [true, null, "bad page"]);
 });
 
 test("R20 the reader is handed a total locate built from the supplied segment map, and places references only there", () => {
+  /** @type {((offset: number) => ReadingPosition | null) | null | undefined} */
   let handed = null;
+  const got = () => must(handed, "locate handed");
   assert.equal(registerDoctype({ ...stubItems, key: "stub_locate_probe",
-    detect: (c) => (String(c.text).includes("PROBE") ? { match: true, confidence: CONFIDENCE.CERTAIN } : { match: false }),
-    parse: (c) => { handed = c.locate; return stubItems.parse(c); } }).ok, true);
+    detect: (c) => { if (String(c.text).includes("PROBE")) return { match: true, confidence: CONFIDENCE.CERTAIN }; return { match: false }; },
+    parse: (c) => { handed = c.locate; return parseItems(c); } }).ok, true);
+  /** @type {SuppliedText} */
   const supplied = { pages: [{ page: 0, text: "PROBE PA-101" }, { page: 1, text: "" }, { page: 2, text: "PA-102 PA-101" }] };
-  const r = readText(supplied, { view: PA });
+  const r = done(readText(supplied, { view: PA }));
   const flat = flattenText(supplied);
   const own = makeLocator(flat.segments);
-  for (let i = -2; i < flat.text.length + 3; i++) assert.deepEqual(handed(i), own(i), `offset ${i}`);
-  for (const x of [undefined, null, "1", NaN, Infinity]) assert.equal(handed(x), null);
+  for (let i = -2; i < flat.text.length + 3; i++) assert.deepEqual(got()(i), own(i), `offset ${i}`);
+  for (const x of [undefined, null, "1", NaN, Infinity]) assert.equal(got()(x), null);
   // what the reader placed is what locate gave for the offsets it read at
-  const first = r.parsed.entities.find((e) => e.key === "PA-101");
+  const read = readingOf(r.parsed);
+  const first = must(read.entities.find((e) => e.key === "PA-101"), "PA-101");
   assert.deepEqual(first.source, { kind: "pdf-page", ref: "p.1", page: 0, rect: null });
-  assert.deepEqual(first.occurrences.map((s) => s.ref), ["p.1", "p.3"]);
-  assert.equal(r.parsed.entities.find((e) => e.key === "PA-102").source.ref, "p.3");
+  assert.deepEqual(must(first.occurrences, "occurrences").map((s) => must(s, "occurrence").ref), ["p.1", "p.3"]);
+  assert.equal(must(must(read.entities.find((e) => e.key === "PA-102"), "PA-102").source, "source").ref, "p.3");
   // a bare string: locate is still a function, and answers null everywhere
   readText("PROBE PA-101", { view: PA });
-  assert.equal(typeof handed, "function");
-  assert.equal(handed(0), null);
+  assert.equal(typeof got(), "function");
+  assert.equal(got()(0), null);
   // a caller's own locate never stands in for the text's
   readText(supplied, { view: PA, locate: () => ({ forged: true }) });
-  assert.deepEqual(handed(0), own(0));
+  assert.deepEqual(got()(0), own(0));
 });
 
 /* ---------------------------------------------------------------- flattenText */
@@ -331,23 +395,23 @@ test("R21 a bare string flattens to itself with no segments and a stated positio
   for (const s of ["  Harbor notes \n two ", ""]) {
     const f = flattenText(s);
     assert.deepEqual([f.text, f.source, f.segments, f.undetermined, f.reasons], [s, "string", [], 0, []]);
-    assert.match(f.position_why, /bare string/);
+    assert.match(stated(f.position_why), /bare string/);
   }
 });
 
 test("R22 document is preferred, and a segment map is laid over it only when the items join to it byte for byte", () => {
   const ok = flattenText({ document: "a\nb", pages: [{ page: 0, text: "a" }, { page: 1, text: "" }, { page: 2, text: "b" }] });
   assert.deepEqual([ok.text, ok.source], ["a\nb", "document"]);
-  assert.deepEqual(ok.segments.map((s) => [s.start, s.end, s.source.page]), [[0, 1, 0], [2, 3, 2]]);
+  assert.deepEqual(ok.segments.map((s) => [s.start, s.end, pageOf(s.source)]), [[0, 1, 0], [2, 3, 2]]);
   const bad = flattenText({ document: "a b", pages: [{ page: 0, text: "a" }, { page: 1, text: "b" }] });
   assert.deepEqual([bad.text, bad.segments], ["a b", []]);
-  assert.match(bad.position_why, /not its pages joined/);
+  assert.match(stated(bad.position_why), /not its pages joined/);
   const paras = flattenText({ document: "x\ny", paragraphs: [{ para: 0, text: "x" }, { para: 1, text: "z" }] });
   assert.deepEqual(paras.segments, []);
-  assert.match(paras.position_why, /not its paragraphs joined/);
+  assert.match(stated(paras.position_why), /not its paragraphs joined/);
   const parasOk = flattenText({ document: "x\ny", paragraphs: [{ para: 0, text: "x" }, { para: 1, text: "y" }] });
   assert.deepEqual(parasOk.segments.map((s) => s.source.ref), ["¶1", "¶2"]);
-  assert.match(flattenText({ document: "only" }).position_why, /no itemised pages or paragraphs/);
+  assert.match(stated(flattenText({ document: "only" }).position_why), /no itemised pages or paragraphs/);
 });
 
 test("R23 with no document, pages or paragraphs flatten to their non-empty items, newline-joined, one segment each", () => {
@@ -361,7 +425,7 @@ test("R23 with no document, pages or paragraphs flatten to their non-empty items
     { kind: "doc-para", ref: "¶1", para: 0, run: null }, { kind: "doc-para", ref: "¶5", para: 4, run: null }]);
   const unnamed = flattenText({ pages: [{ text: "a" }] });
   assert.deepEqual(unnamed.segments, []);
-  assert.match(unnamed.position_why, /carry no part index/);
+  assert.match(stated(unnamed.position_why), /carry no part index/);
 });
 
 test("R24 undetermined is the producer's stated count, else summed from its markers, never invented", () => {
@@ -369,21 +433,25 @@ test("R24 undetermined is the producer's stated count, else summed from its mark
   assert.equal(flattenText({ document: "a", undetermined: [{ count: 3 }, {}, { count: 2, reason: "r" }] }).undetermined, 6);
   assert.equal(flattenText({ document: "aaaa" }).undetermined, 0);
   assert.deepEqual(flattenText({ document: "a", undetermined: [{ reason: "x" }, { reason: "x" }, { reason: "y" }] }).reasons, ["x", "y"]);
-  for (const x of [null, 3, [], {}]) assert.equal(flattenText(x).undetermined, 0);
+  /** @type {Array<SuppliedText | number | never[] | null>} */
+  const notText = [null, 3, [], {}];
+  for (const x of notText) assert.equal(flattenText(x).undetermined, 0);
 });
 
 test("R25 locate is total: a non-number, a negative, or an offset in no segment is null; otherwise the segment's source", () => {
   const segs = flattenText({ pages: [{ page: 0, text: "ab" }, { page: 1, text: "cd" }] }).segments;
   const locate = makeLocator(segs);
   for (const x of [undefined, null, "1", NaN, Infinity, -1, 2, 5, 99]) assert.equal(locate(x), null, String(x));
-  assert.deepEqual([locate(0).page, locate(1).page, locate(3).page, locate(4).page], [0, 0, 1, 1]);
+  assert.deepEqual([pageOf(locate(0)), pageOf(locate(1)), pageOf(locate(3)), pageOf(locate(4))], [0, 0, 1, 1]);
   for (const bad of [null, undefined, "x", {}]) assert.equal(makeLocator(bad)(0), null);
 });
 
 test("R29 CONTRACT declares substance, membership and unmonitorable, and is the module's own export", () => {
   assert.deepEqual({ ...CONTRACT }, { SUBSTANCE: "substance", MEMBERSHIP: "membership", UNMONITORABLE: "unmonitorable" });
   // every registered type's declaration is one of its values; the no-type answer declares SUBSTANCE
-  for (const t of doctypes()) assert.ok(Object.values(CONTRACT).includes(t.contract), t.key);
+  /** @type {ReadonlyArray<string | undefined>} */
+  const contracts = [CONTRACT.SUBSTANCE, CONTRACT.MEMBERSHIP, CONTRACT.UNMONITORABLE];
+  for (const t of doctypes()) assert.ok(contracts.includes(t.contract), t.key);
   assert.equal(dp.NO_TYPE.contract, CONTRACT.SUBSTANCE);
 });
 
@@ -394,30 +462,30 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
           allMatches, anyMatch } = dp;
   // the same text under two views, and none: each helper follows the view
   const cites = "Bylaw No. 2041 T.B.S. amends P.A.C. Section 4.12; Ordinance No. l204 and L.M.C. Section 9.1 apply.";
-  const enact = (v) => allMatches(enactmentPatterns({ view: v }), cites)
-    .map((h) => `${h.tag.kind}:${enactmentNumber(h.tag.forms, h.m.groups.num)}`);
+  const enact = /** @param {View} v */ (v) => allMatches(enactmentPatterns({ view: v }), cites)
+    .map((h) => `${h.tag.kind}:${enactmentNumber(h.tag.forms, h.m.groups?.num)}`);
   assert.deepEqual(enact(PA), ["bylaw:2041"]);
   assert.deepEqual(enact(LK), ["ordinance:L204"], "Lakemont's form normalises its own number");
   assert.deepEqual(enact(EMPTY), []);
-  const codes = (v) => allMatches(codePatterns({ view: v }), cites).map((h) => `${h.tag.key}:${h.m.groups.sec}`);
+  const codes = /** @param {View} v */ (v) => allMatches(codePatterns({ view: v }), cites).map((h) => `${h.tag.key}:${h.m.groups?.sec}`);
   assert.deepEqual(codes(PA), ["pac:4.12"]);
   assert.deepEqual(codes(LK), ["lmc:9.1"]);
   assert.deepEqual(codes(EMPTY), []);
-  assert.deepEqual([practiceValue({ view: PA }, "minutes_due_days").value, practiceValue({ view: LK }, "minutes_due_days").value], [10, 30]);
+  assert.deepEqual([must(practiceValue({ view: PA }, "minutes_due_days"), "practice").value, must(practiceValue({ view: LK }, "minutes_due_days"), "practice").value], [10, 30]);
   assert.equal(practiceValue({ view: EMPTY }, "minutes_due_days"), null);
   assert.equal(anyMatch(vocabPatterns({ view: PA }, "furniture"), "Town of Port Alder"), true);
   assert.equal(anyMatch(vocabPatterns({ view: LK }, "furniture"), "Town of Port Alder"), false);
   assert.deepEqual(vocabulary({ view: EMPTY }, "furniture"), []);
   // a reader through the helpers: Port Alder's items under its view only
-  const items = (v) => keys(stubItems.parse({ text: PA_ITEMS, view: v }));
+  const items = /** @param {View} v */ (v) => keys(readingOf(parseItems({ text: PA_ITEMS, view: v })));
   assert.deepEqual(items(PA), ["PA-101", "PA-102", "PA-103"]);
   assert.deepEqual([items(LK), items(EMPTY)], [[], []]);
-  assert.match(stubItems.parse({ text: PA_ITEMS, view: EMPTY }).references_why, /no active jurisdiction profile/);
+  assert.match(stated(readingOf(parseItems({ text: PA_ITEMS, view: EMPTY })).references_why), /no active jurisdiction profile/);
   // K39 (permanent, K880): no view reads with every NON-TEST held profile, never a test one
   assert.deepEqual(readerView({}), HELD);
   assert.deepEqual(readerView(undefined), HELD);
   assert.equal(readerView({ view: EMPTY }), EMPTY, "an empty view is a view");
-  assert.ok(!vocabulary({}, "file_numbers").some((e) => /PA-/.test(e.pattern.re)), "a test profile is never the fallback");
+  assert.ok(!vocabulary({}, "file_numbers").some((e) => ("pattern" in e ? /PA-/.test(e.pattern.re) : assert.fail("an entry with no pattern"))), "a test profile is never the fallback");
   // a pattern a profile wrote that does not compile is skipped, never thrown
   const broken = { vocabulary: { furniture: [{ pattern: { re: "(" } }, { pattern: { re: "^ok$" } }] } };
   assert.equal(vocabPatterns({ view: broken }, "furniture").length, 1);
@@ -428,30 +496,35 @@ test("R31 the same bytes and the same ctx give the same answer", async () => {
   const a = enc(calendarHtml([["1", "Harbor Commission", "3/2/2026"]]));
   const b = enc(calendarHtml([["1", "Harbor Commission", "3/2/2026"], ["2", "S", "3/9/2026"]]));
   assert.deepEqual(await assess(a, b, ctx), await assess(a, b, ctx));
-  for (const t of [PA_ITEMS, CAL, "plain", { document: PA_ITEMS, pages: PA_ITEMS_PAGES }]) {
+  /** @type {Array<SuppliedText | string>} */
+  const supplied = [PA_ITEMS, CAL, "plain", { document: PA_ITEMS, pages: PA_ITEMS_PAGES }];
+  for (const t of supplied) {
     const once = JSON.stringify(readText(t, { view: PA, at: NOW }));
     assert.equal(JSON.stringify(readText(t, { view: PA, at: NOW })), once);
-    assert.deepEqual(doctypeFor({ text: String(t.document || t), view: PA }), doctypeFor({ text: String(t.document || t), view: PA }));
+    const text = typeof t === "string" ? t : String(t.document || t);
+    assert.deepEqual(doctypeFor({ text, view: PA }), doctypeFor({ text, view: PA }));
   }
 });
 
 test("R32 an unrecognised document is never assumed decorated, and a recogniser without CERTAIN never says unchanged", async () => {
   // unrecognised: any byte difference, even in what looks like navigation, is reported
-  const plain = (nav) => `<html><body><nav>${nav}</nav><p>The harbor.</p><a href="/">h</a></body></html>`;
+  const plain = /** @param {string} nav */ (nav) => `<html><body><nav>${nav}</nav><p>The harbor.</p><a href="/">h</a></body></html>`;
   const r = await assess(enc(plain("Home")), enc(plain("Home | News")), { sha256 });
   assert.deepEqual([r.profile.handler, r.verdict], ["conservative", "changed"]);
   // conservative normalises only what is per-response by definition (a nonce)
-  const n = (v) => `<html><body><script nonce="${v}"></script><p>x</p><a href="/">h</a></body></html>`;
+  const n = /** @param {string} v */ (v) => `<html><body><script nonce="${v}"></script><p>x</p><a href="/">h</a></body></html>`;
   assert.equal((await assess(enc(n("aaa")), enc(n("bbb")), { sha256 })).verdict, "unchanged");
   // a LIKELY stack: only viewstate would differ, yet it says undetermined, never unchanged
-  const likely = (v) => `<html><body><input name="__EVENTTARGET" value="${v}"><p>x</p><a href="/">h</a></body></html>`;
+  const likely = /** @param {string} v */ (v) => `<html><body><input name="__EVENTTARGET" value="${v}"><p>x</p><a href="/">h</a></body></html>`;
   const l = await assess(enc(likely("1")), enc(likely("2")), { sha256, headers: { "x-powered-by": "ASP.NET" } });
   assert.equal(l.verdict, "undetermined");
 });
 
 test("R33 a read that found nothing is a failed reader, and a mass removal is never reported from it", async () => {
   const rows = [ROW, ["2", "Select Board", "3/4/2026"], ["3", "Harbor Commission", "3/9/2026"]];
-  for (const [a, b] of [[rows, []], [[], rows]]) {
+  /** @type {Array<[string[][], string[][]]>} */
+  const sides = [[rows, []], [[], rows]];
+  for (const [a, b] of sides) {
     const r = await assess(enc(calendarHtml(a)), enc(calendarHtml(b)), calCtx());
     assert.deepEqual([r.verdict, r.meaningful, r.events, r.connections], ["changed", null, [], []]);
     assert.ok(!r.events.some((e) => e.type === "delisted"), "no removal from a failed read");
@@ -464,22 +537,24 @@ test("R33 a read that found nothing is a failed reader, and a mass removal is ne
 
 test("R34 a position is only what locate returned for the offset read, one entity per reference with every occurrence, absent with no structure", () => {
   // a bare string: no structure, so no entity carries a source and every occurrence is null
-  const bare = readText(PA_ITEMS, { view: PA }).parsed;
+  const bare = readingOf(done(readText(PA_ITEMS, { view: PA })).parsed);
   for (const e of bare.entities) { assert.ok(!("source" in e)); for (const o of e.occurrences || []) assert.equal(o, null); }
   // pages: every source carried is one the producer's own map gives, at the offset the reference was read at
+  /** @type {SuppliedText} */
   const supplied = { document: PA_ITEMS, pages: PA_ITEMS_PAGES };
   const flat = flattenText(supplied);
   const locate = makeLocator(flat.segments);
-  const placed = readText(supplied, { view: PA }).parsed;
+  const placed = readingOf(done(readText(supplied, { view: PA })).parsed);
   for (const e of placed.entities) {
     const at = flat.text.indexOf(e.key);
     assert.deepEqual(e.source, locate(at), e.key);
-    assert.ok(flat.text.slice(flat.segments.find((s) => s.source.page === e.source.page).start).startsWith("MEMO"));
+    assert.ok(flat.text.slice(must(flat.segments.find((s) => pageOf(s.source) === pageOf(e.source)), "segment").start).startsWith("MEMO"));
   }
   // a reference read again: one entity, source the first sighting's, occurrences every one in reading order
   const e101 = placed.entities.filter((e) => e.key === "PA-101");
   assert.equal(e101.length, 1);
-  assert.deepEqual([e101[0].source.ref, e101[0].occurrences.map((s) => s.ref)], ["p.1", ["p.1", "p.3"]]);
+  const once = nth(e101, 0);
+  assert.deepEqual([must(once.source, "source").ref, must(once.occurrences, "occurrences").map((s) => must(s, "occurrence").ref)], ["p.1", ["p.1", "p.3"]]);
   assert.ok(placed.entities.filter((e) => e.key !== "PA-101").every((e) => !("occurrences" in e)), "read once: no occurrences");
   // the helpers: entity carries a source only when one was given; readAgain keeps the first and appends
   const e = dp.entity("k", "item", "k", {}, null);
@@ -493,16 +568,17 @@ test("R35 every no says which no and why", async () => {
   assert.equal(doctypeFor({ text: "plain" }).why, localize("docprofile.registry.no_registered_content_type_recognised", "no registered content type recognised this document, so it is read as a document of no recognised type: any substantive difference is reported and not described"));
   assert.match(readText("").why, /./);
   assert.match(readText({ document: "x", counts: { undetermined: 9 } }).why, /./);
-  assert.match(flattenText("x").position_why, /./);
-  assert.match(flattenText(null).position_why, /no text was supplied/);
+  assert.match(stated(flattenText("x").position_why), /./);
+  assert.match(stated(flattenText(null).position_why), /no text was supplied/);
   const u = await assess(enc("<p>a</p>"), enc("<p>b</p>"), { sha256, headers: { "x-powered-by": "ASP.NET" } });
   assert.equal(u.verdict, "undetermined");
   assert.equal(u.why, localize("docprofile.pipeline.the_document_differs_and_this", "the document differs and this kind of document is not recognised well enough to say whether the difference matters"));
   const nohash = await assess(enc("<p>a</p>"), enc("<p>b</p>"), {});
-  assert.match(nohash.why, /could not be compared/);
+  assert.match(stated(nohash.why), /could not be compared/);
   // a stub's connection with no practice in the view says why it set no date
-  const p = stubMeetings.parse({ text: calendarHtml([["7", "Harbor Commission", "3/2/2026"]]) });
-  const c = stubMeetings.connections(p, p, { now: NOW, view: EMPTY }).find((x) => x.relation === "minutes_not_yet_published");
+  const p = parseMeetings({ text: calendarHtml([["7", "Harbor Commission", "3/2/2026"]]) });
+  const found = must(meetingConnections(p, p, { now: NOW, view: EMPTY }), "connections").find((x) => x.relation === "minutes_not_yet_published");
+  const c = found && found.connection === "temporal" ? found : assert.fail("no temporal minutes_not_yet_published");
   assert.deepEqual([c.expected_by], [null]);
-  assert.match(c.why, /not known/);
+  assert.match(stated(c.why), /not known/);
 });
