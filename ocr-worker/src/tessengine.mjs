@@ -28,6 +28,7 @@ import MODEL from "../assets/eng.traineddata";
 import { createOCREngine } from "./tesslib.mjs";
 import { readFrame, REGION_GRAIN } from "./frame.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { FrameOptions, FrameReading } from './frame.mjs' */
 
 /** The engine, named exactly. "tesseract" is not a version, and the chain step
  *  this member produces carries both because a calibration is OF a pair and a
@@ -46,16 +47,20 @@ export const MODEL_NAME = "tessdata_fast/eng";
 export const WASM_BYTES = 1839004;
 export const MODEL_BYTES = 4113088;
 
+/** emscripten's `instantiateWasm` hook: the imports it hands, and the call that receives the instance.
+ *  @param {object} info @param {(instance: object, module: object) => void} receive */
 const instantiateWasm = (info, receive) => {
   const instance = new WebAssembly.Instance(wasmModule, info);
   receive(instance, wasmModule);
   return instance.exports;
 };
+/** @param {string} path @returns {string} */
 const locateFile = (path) => path;
 
 /** Is the engine this member was built with actually here, and is it the one the
  *  measurement was taken on? Cheap, and it runs before any page is read.
- *  Returns null when everything agrees, or a REASON string. */
+ *  Returns null when everything agrees, or a REASON string.
+ *  @returns {string | null} */
 export function engineCheck() {
   if (!(wasmModule instanceof WebAssembly.Module))
     return "the wasm core did not arrive as a compiled module — a one-part upload cannot carry it, "
@@ -68,7 +73,12 @@ export function engineCheck() {
 export { REGION_GRAIN };
 
 /** Transcribe ONE RGBA frame (the core is `frame.mjs`'s `readFrame`; this is it over the compiled core and the model this
- *  build carries). */
+ *  build carries).
+ *  @param {Uint8Array} rgba
+ *  @param {number} width
+ *  @param {number} height
+ *  @param {FrameOptions} [opts]
+ *  @returns {Promise<FrameReading>} */
 export const transcribeFrame = (rgba, width, height, opts) =>
   readFrame(() => createOCREngine({ instantiateWasm, locateFile }), MODEL, rgba, width, height, opts);
 

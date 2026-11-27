@@ -45,11 +45,228 @@ import { renderPictureToPixels } from "../../pdf-worker/src/picturepixels.mjs";
 import { CAP, MEASURED_BY, MAX_FRAME_BYTES, NAMESPACES, PICTURE_MAX_EDGE, REFUSALS, LEGIBLE_CONFIDENCE, LEGIBLE_NOTE_BELOW, LEGIBLE_REFUSE_BELOW, chooseChunk, declaredPictureFrame, frameBytesOf, isPicture, psmFrom, sourceOfBytes, turnToUpright, QUARTER_TURNS } from "./contract.mjs";
 import { statement } from "../../bio-plane/src/read-bounds.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { CaptureSource } from './contract.mjs' */
+/** @import { FrameRead, FrameOptions } from './frame.mjs' */
+/** @import { PngRefusal } from './pngsamples.mjs' */
+
+/**
+ * The engine `makeMember` is made over (`tessengine.mjs`'s `TESSERACT`, or a stand-in).
+ * @typedef {Readonly<{
+ *   name: string,
+ *   version: string,
+ *   model: string,
+ *   check: () => string | null,
+ *   transcribeFrame: (rgba: Uint8Array, width: number, height: number, opts: FrameOptions) => Promise<FrameRead | EngineFailure>
+ * }>} MemberEngine
+ */
+/**
+ * An engine's failure on a frame, as the member states it.
+ * @typedef {Readonly<{ ok: false, error: string, name: string | undefined }>} EngineFailure
+ */
+/**
+ * The step of a call in progress (R28), written by the steps as they start and read by the call's guard.
+ * @typedef {Object} Stage
+ * @property {string} [stage]
+ */
+/**
+ * @typedef {Object} PageOptions
+ * @property {string | null} [psm] the engine's page-segmentation mode (R29), when the instance sets one
+ * @property {number | null} [confidenceFloor] the instance's confidence floor, when it sets one (R8)
+ * @property {Stage} [at] where the step in progress is written
+ */
+/** @typedef {[number, number, number, number]} Rect */
+/**
+ * A region's confidence: the engine's own number, or the STATED string `none`.
+ * @typedef {{ value: number, basis: "engine" } | "none"} RegionConfidence
+ */
+/**
+ * @typedef {Object} JudgedRegion
+ * @property {string} text
+ * @property {Rect} rect
+ * @property {RegionConfidence} confidence
+ */
+/**
+ * R25 · How much of its text the engine rated as read.
+ * @typedef {Object} Legibility
+ * @property {number} words
+ * @property {number} confident_words
+ * @property {number} share
+ */
+/**
+ * What one reading of a frame holds (`judge`).
+ * @typedef {Object} Judged
+ * @property {JudgedRegion[]} regions
+ * @property {number} unanchored
+ * @property {number} blank
+ * @property {number} unrated
+ * @property {number} boxes
+ * @property {Legibility | null} legibility
+ * @property {number} rating
+ */
+/**
+ * What the renderer said of the frame the engine read. The members the renderer gives (`route` to `turned_deg`) are
+ * pdf-pixels' answer, handed on as it gives them: their kind is the renderer's to state.
+ * @typedef {Object} FrameMeta
+ * @property {number} width
+ * @property {number} height
+ * @property {number} frame_bytes
+ * @property {unknown} route
+ * @property {unknown} upright
+ * @property {unknown} rotate_deg
+ * @property {unknown} dpi
+ * @property {unknown} pixels_sha256
+ * @property {unknown} turned_deg
+ */
+/**
+ * The frame image a region's source names (members as `FrameMeta`'s).
+ * @typedef {Object} RegionImage
+ * @property {number} width
+ * @property {number} height
+ * @property {unknown} route
+ * @property {unknown} upright
+ * @property {unknown} rotate_deg
+ * @property {unknown} pixels_sha256
+ */
+/**
+ * @typedef {Object} RegionSource
+ * @property {"pdf-page"} kind
+ * @property {string} ref
+ * @property {number} page
+ * @property {Rect} rect
+ * @property {"image-px"} space
+ * @property {RegionImage} image
+ */
+/**
+ * @typedef {Object} WireRegion
+ * @property {string} text
+ * @property {RegionSource} source
+ * @property {RegionConfidence} confidence
+ */
+/**
+ * A page this member did not read, and why: a STATED refusal. Each member past `detail` is present only on the refusals
+ * that state it.
+ * @typedef {Object} Refusal
+ * @property {false} ok
+ * @property {string} reason
+ * @property {string} detail
+ * @property {number | null} [page]
+ * @property {string} [why]
+ * @property {string[]} [notes]
+ * @property {string | undefined} [stage] R28
+ * @property {string} [error_name] R28
+ * @property {string} [error] R28
+ * @property {number} [width]
+ * @property {number} [height]
+ * @property {number} [frame_bytes]
+ * @property {number} [bound_bytes]
+ * @property {number} [boxes]
+ * @property {number} [blank]
+ * @property {number} [unanchored]
+ * @property {number} [page_count]
+ * @property {Legibility} [legibility]
+ * @property {string | undefined} [engine_error]
+ * @property {string | undefined} [engine_error_name]
+ * @property {PngRefusal} [png]
+ * @property {unknown} [route] the renderer's (pdf-pixels)
+ * @property {unknown} [mediaType] the renderer's (pdf-pixels)
+ * @property {RenderRefusal | null} [render]
+ */
+/**
+ * The renderer's refusal, handed on as pdf-pixels gives it.
+ * @typedef {Object} RenderRefusal
+ * @property {unknown} reason
+ * @property {unknown} why
+ * @property {unknown} detail
+ */
+/**
+ * One page read (`transcribeOnePage`).
+ * @typedef {Object} PageReading
+ * @property {true} ok
+ * @property {number} page
+ * @property {WireRegion[]} regions
+ * @property {number} unanchored
+ * @property {number} blank
+ * @property {number} unrated
+ * @property {string} grain
+ * @property {string[]} notes
+ * @property {FrameMeta} image
+ * @property {number | null} confidence_floor
+ * @property {Legibility} [legibility]
+ * @property {"picture" | "page"} capture_kind
+ */
+/**
+ * The frame of one render read back (`readFrameOf`): a refusal, or what the renderer and the engine said of it.
+ * @typedef {{ refusal: Refusal } | { refusal?: undefined, meta: FrameMeta, out: FrameRead }} FrameOf
+ */
+/**
+ * A request that names no page this member can take (R4).
+ * @typedef {Object} BadPages
+ * @property {false} ok
+ * @property {string} reason
+ * @property {string} detail
+ */
+/**
+ * The wire answer for a page not read: the page's refusal, and the pages deferred (R6).
+ * @typedef {Object} WireRefusal
+ * @property {false} ok
+ * @property {string} reason
+ * @property {string} detail
+ * @property {number | null} page
+ * @property {string | undefined} [stage]
+ * @property {string | undefined} [error_name]
+ * @property {number[]} deferred
+ * @property {string[]} notes
+ * @property {Refusal} refusal
+ */
+/**
+ * @typedef {Object} WirePage
+ * @property {number} page
+ * @property {WireRegion[]} regions
+ */
+/**
+ * The wire answer for a page read.
+ * @typedef {Object} WireReading
+ * @property {true} ok
+ * @property {string} engine
+ * @property {string} version
+ * @property {string} model
+ * @property {string} cap
+ * @property {string} measured_by
+ * @property {number | null} confidence_floor
+ * @property {WirePage[]} pages
+ * @property {string} grain
+ * @property {number[]} deferred
+ * @property {FrameMeta} image
+ * @property {Legibility} [legibility]
+ * @property {string[]} notes
+ */
+/** @typedef {BadPages | WireRefusal | WireReading} WireAnswer */
+/**
+ * The options a ranged read of the capture asks R2 for.
+ * @typedef {Readonly<{ range: Readonly<{ offset: number, length: number }> }>} CaptureRange
+ */
+/**
+ * What R2 answers for a capture: its whole size, and its bytes (of the range asked).
+ * @typedef {Readonly<{ size: number, arrayBuffer: () => Promise<ArrayBuffer> }>} CaptureObject
+ */
+/**
+ * The `CAPTURES` read binding, as far as this member uses it: `.get` and nothing else.
+ * @typedef {Readonly<{ get: (key: string, options?: CaptureRange) => Promise<CaptureObject | null> }>} CaptureBucket
+ */
+/**
+ * The instance's bindings and settings this member reads.
+ * @typedef {Readonly<{ CAPTURES?: CaptureBucket, VERSION?: string, OCR_PSM?: unknown, OCR_CONFIDENCE_FLOOR?: unknown }>} MemberEnv
+ */
+/**
+ * The request as this member reads it: its address, its method and its body.
+ * @typedef {Readonly<{ url: string, method: string, json: () => Promise<unknown> }>} MemberRequest
+ */
 
 /* The namespace set (R16) and the plane ops this member calls (none) are declared in `contract.mjs`, which imports
    no engine, so the plane's control-plane can pin both against its own gate and op table. */
 export { NAMESPACES };
 
+/** @param {object} obj @param {number} [status] */
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
@@ -61,6 +278,7 @@ const json = (obj, status = 200) =>
  * omission. Inventing a cutoff would put a threshold nobody measured behind the engine's number. It is settable per
  * instance (`env.OCR_CONFIDENCE_FLOOR`) so a group that HAS measured one can apply it; the discard itself is the
  * caller's (`applyConfidenceFloor`, `bio-plane/src/textchain.mjs`) and must not be copied here. */
+/** @param {Readonly<{ OCR_CONFIDENCE_FLOOR?: unknown }> | null | undefined} env @returns {number | null} */
 export function floorFrom(env) {
   const raw = env && env.OCR_CONFIDENCE_FLOOR;
   if (raw == null || raw === "") return null;
@@ -77,13 +295,22 @@ export function floorFrom(env) {
  * `renderPictureToPixels`'s (R23), the renderer of a JPEG or PNG capture; it defaults to that function.
  *
  * Returns `{ fetch, transcribeRequest, transcribeOnePage }`.
+ *
+ * @param {MemberEngine} engine
+ * @param {{ render?: typeof renderPageToPixels, renderPicture?: typeof renderPictureToPixels }} [renderers]
  */
 export function makeMember(engine, { render = renderPageToPixels, renderPicture = renderPictureToPixels } = {}) {
 
   /** The frame of one render, read back to the samples the engine takes: `{refusal}` when a step of R7 refuses it, else
    *  `{meta, out}` (what the renderer said of the frame, and what the engine said of it). `turn` is the degrees clockwise
    *  the renderer is asked to turn the page by (R26); the pixels themselves go out of scope here, so a second read of the
-   *  same page never holds two frames. `at.stage` names the step in progress for R28. */
+   *  same page never holds two frames. `at.stage` names the step in progress for R28.
+   *  @param {Uint8Array | CaptureSource} input
+   *  @param {number} page
+   *  @param {boolean} picture
+   *  @param {number | null} turn
+   *  @param {{ psm: string | null, at: Stage }} options
+   *  @returns {Promise<FrameOf>} */
   async function readFrameOf(input, page, picture, turn, { psm, at }) {
     at.stage = turn ? "render_turned" : "render";
     const rendered = picture
@@ -133,14 +360,16 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
       turned_deg: rendered.turned_deg ?? 0,   /* what the renderer says it did (pdf-pixels R48), never what it was asked */
     };
     at.stage = "engine";
-    let out;
+    /** @type {FrameRead | EngineFailure} */
+    let answered;
     try {
-      out = await engine.transcribeFrame(rgba, samples.width, samples.height, { psm });
+      answered = await engine.transcribeFrame(rgba, samples.width, samples.height, { psm });
     } catch (e) {
       /* The real engine reports its own failures; an engine that THROWS instead is the same finding, and is
          stated rather than turned into a 500 that reads as "the member could not be reached". */
-      out = { ok: false, error: String((e && e.message) || e), name: e && e.name };
+      answered = { ok: false, error: String((e instanceof Error && e.message) || e), name: e instanceof Error ? e.name : undefined };
     }
+    const out = answered;
     if (!out || !out.ok)
       return { refusal: { ok: false, reason: "ENGINE_FAILED", detail: REFUSALS.ENGINE_FAILED, page,
                frame_bytes: frame, engine_error: out ? out.error : "the engine answered nothing",
@@ -148,7 +377,8 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     return { meta, out };
   }
 
-  /** R7.4: the refusal of a frame over the measured bound; the sentence is the row's (`statement`). */
+  /** R7.4: the refusal of a frame over the measured bound; the sentence is the row's (`statement`).
+   *  @param {number} page @param {number} width @param {number} height @param {number} frame @returns {Refusal} */
   function frameRefusal(page, width, height, frame) {
     const st = statement("ocr", "frame_bytes", frame);
     return { ok: false, reason: "FRAME_OVER_MEASURED_BOUND", detail: REFUSALS.FRAME_OVER_MEASURED_BOUND,
@@ -157,14 +387,17 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
   }
 
   /** What one reading of a frame holds: the regions the engine boxed and could anchor, the counts of those it dropped, and
-   *  (R25) how legible the words were by the engine's own rating of each. */
+   *  (R25) how legible the words were by the engine's own rating of each.
+   *  @param {FrameRead} out @returns {Judged} */
   function judge(out) {
+    /** @type {JudgedRegion[]} */
     const regions = [];
     let unanchored = 0, blank = 0, unrated = 0;
     for (const w of out.regions || []) {
       const text = w && w.text;
       if (!(typeof text === "string" && text.trim().length)) { blank++; continue; }
-      const rect = Array.isArray(w.rect) && w.rect.length === 4 ? w.rect : null;
+      const boxed = w.rect;
+      const rect = Array.isArray(boxed) && boxed.length === 4 ? boxed : null;
       if (!rect || !rect.every((n) => typeof n === "number" && Number.isFinite(n))) { unanchored++; continue; }
       /* CONFIDENCE: the fence is on the BASIS. `engine` is truthful only where the classic decoder computed the
          number; anything outside 0..1, or no number at all, is the STATED string "none" — never a substituted or
@@ -177,35 +410,46 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     const boxes = Number.isInteger(out.boxCount) ? out.boxCount : (out.regions || []).length;
     /* R25: how much of its text the engine rated as read, by the engine's own rating of each word (`out.words`), for a
        picture and for a PDF page alike; an engine that gave no words states nothing. */
+    /** @type {Legibility | null} */
     let legibility = null;
     if (regions.length && Array.isArray(out.words) && out.words.length) {
       const words = out.words.length;
-      const confident = out.words.filter((w) => typeof w.confidence === "number" && w.confidence >= LEGIBLE_CONFIDENCE).length;
+      const confident = out.words.filter((w) => { const c = w.confidence; return typeof c === "number" && c >= LEGIBLE_CONFIDENCE; }).length;
       legibility = { words, confident_words: confident, share: Math.round((confident / words) * 100) / 100 };
     }
     /* the mean of the engine's own ratings of the words, which tells two readings of one share apart (R26's choice) */
     const rated = Array.isArray(out.words) ? out.words.filter((w) => typeof w.confidence === "number") : [];
-    const rating = rated.length ? rated.reduce((a, w) => a + w.confidence, 0) / rated.length : 0;
+    /* every word kept above has a number, so `?? 0` never applies */
+    const rating = rated.length ? rated.reduce((a, w) => a + (w.confidence ?? 0), 0) / rated.length : 0;
     return { regions, unanchored, blank, unrated, boxes, legibility, rating };
   }
 
   /** R26: do the lines the engine boxed run up the frame (a page turned a quarter turn)? The median of their widths over
-   *  their heights, over the lines of three characters or more, is under one. */
+   *  their heights, over the lines of three characters or more, is under one.
+   *  @param {JudgedRegion[]} regions @returns {boolean} */
   function linesRunUp(regions) {
     const aspects = regions.filter((r) => r.text.trim().length >= 3).map((r) => (r.rect[2] - r.rect[0]) / (r.rect[3] - r.rect[1]))
       .filter(Number.isFinite).sort((a, b) => a - b);
-    return aspects.length > 0 && aspects[aspects.length >> 1] < 1;
+    /* `aspects.length > 0`, so the median is always there and `?? 1` never applies */
+    return aspects.length > 0 && (aspects[aspects.length >> 1] ?? 1) < 1;
   }
 
   /** R26: how well a reading reads, for choosing between two of the one page: its share of words rated as read; a
    *  reading with text and no ratings scores 0, one with no text -1. */
-  const refusable = (j) => !j.regions.length || (j.legibility != null && j.legibility.share < LEGIBLE_REFUSE_BELOW);
-  const scoreOf = (j) => (j.legibility ? j.legibility.share : j.regions.length ? 0 : -1);
-  /** R26: is reading `a` better than reading `b`? A larger share of words rated as read; at an equal share, a higher mean rating. */
+  /** @param {Judged} j @returns {boolean} */
+  const refusable = (j) => { const l = j.legibility; return !j.regions.length || (l != null && l.share < LEGIBLE_REFUSE_BELOW); };
+  /** @param {Judged} j @returns {number} */
+  const scoreOf = (j) => { const l = j.legibility; return (l ? l.share : j.regions.length ? 0 : -1); };
+  /** R26: is reading `a` better than reading `b`? A larger share of words rated as read; at an equal share, a higher mean rating.
+   *  @param {Judged} a @param {Judged} b @returns {boolean} */
   const readsBetter = (a, b) => scoreOf(a) > scoreOf(b) || (scoreOf(a) === scoreOf(b) && a.rating > b.rating);
 
   /** Transcribe ONE page of one capture: a pure function of the bytes, the page and the options. `bytes` is the capture
-   *  whole, or (R27) a source `{size, readRange(offset, length)}` that reads only what the page needs. */
+   *  whole, or (R27) a source `{size, readRange(offset, length)}` that reads only what the page needs.
+   *  @param {Uint8Array | CaptureSource} bytes
+   *  @param {number} page
+   *  @param {PageOptions} [options]
+   *  @returns {Promise<Refusal | PageReading>} */
   async function transcribeOnePage(bytes, page, { psm = null, confidenceFloor = null, at = {} } = {}) {
     at.stage = "engine_check";
     const engineWhy = engine.check();
@@ -242,6 +486,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     const first = await readFrameOf(input, page, picture, 0, { psm, at });
     if (first.refusal) return first.refusal;
     let chosen = { ...first, judged: judge(first.out) };
+    /** @type {string[]} */
     const notes = [];
 
     /* R26: THE ORIENTATION. The engine was asked its orientation before it read this frame's text. A frame it cannot
@@ -253,12 +498,14 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
        with its lines across it; and it is kept when reading the turned page rates at least as many of its words as read,
        the engine's claim breaking the tie. */
     const claim = first.out.orientation;
+    /** @type {Set<number | null>} */
     const tried = new Set([0]);   /* the turns this call has read the page at */
     if (!claim || !QUARTER_TURNS.includes(claim.rotation)) {
       notes.push(localize("ocr-worker.member.the_orientation_of_this_page_could_not_be_determined", "the engine could not tell which way up this page is, so it was read as it lies; if it is turned, the reading below is of a turned page."));
     } else if (claim.rotation !== 0) {
       const j = chosen.judged;
-      const unclear = !j.regions.length || (j.legibility != null && j.legibility.share < LEGIBLE_NOTE_BELOW);
+      const jl = j.legibility;
+      const unclear = !j.regions.length || (jl != null && jl.share < LEGIBLE_NOTE_BELOW);
       const sideways = claim.rotation !== 180 && linesRunUp(j.regions);
       if (unclear || sideways) {
         const turn = turnToUpright(claim.rotation);
@@ -317,18 +564,23 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
                route: meta.route, upright: meta.upright, rotate_deg: meta.rotate_deg,
                dpi: meta.dpi, pixels_sha256: meta.pixels_sha256, turned_deg: meta.turned_deg },
       confidence_floor: confidenceFloor,
-      ...(legibility ? { legibility } : {}),
+      ...(legibility ? { legibility } : undefined),
       capture_kind: picture ? "picture" : "page",
     };
   }
 
-  /** The 200 answer for a throw inside a call (R28): never a 5xx, never a thrown error; a document-level finding. */
+  /** The 200 answer for a throw inside a call (R28): never a 5xx, never a thrown error; a document-level finding.
+   *  @param {unknown} e @param {string | undefined} stage @param {number | null} page @returns {Refusal} */
   function unexpected(e, stage, page) {
-    const error_name = String((e && e.name) || "Error"), error = String((e && e.message) || e).slice(0, 200);
+    const error_name = String((e instanceof Error && e.name) || "Error"), error = String((e instanceof Error && e.message) || e).slice(0, 200);
     return { ok: false, reason: "UNEXPECTED_FAILURE", detail: REFUSALS.UNEXPECTED_FAILURE, page, stage, error_name, error };
   }
 
-  /** The whole wire answer for one request, with the CHUNK RULE applied. */
+  /** The whole wire answer for one request, with the CHUNK RULE applied.
+   *  @param {Uint8Array | CaptureSource} bytes
+   *  @param {unknown} pages as `chooseChunk` takes them
+   *  @param {PageOptions} [opts] an `at` given is not used: the call writes its own
+   *  @returns {Promise<WireAnswer>} */
   async function transcribeRequest(bytes, pages, opts = {}) {
     const { take, deferred } = chooseChunk(pages);
     if (take == null)
@@ -337,21 +589,27 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     /* R28: whatever throws inside the call once the request has been accepted (the renderer, the picture renderer, the
        PNG reader, the inflater) is the finding "something failed here", answered like every other: 200, ok:false, a named
        reason, the step it happened in and the error's name. */
+    /** @type {Stage} */
     const at = { stage: "start" };
-    let one;
+    /** @type {Refusal | PageReading} */
+    let read;
     try {
-      one = await transcribeOnePage(bytes, take, { ...opts, at });
+      read = await transcribeOnePage(bytes, take, { ...opts, at });
     } catch (e) {
-      one = unexpected(e, at.stage, take);
+      read = unexpected(e, at.stage, take);
     }
+    const one = read;
+    /** @type {string[]} */
     const notes = [];
     if (deferred.length)
       notes.push(localize("ocr-worker.member.this_member_transcribes_one_page", "this member transcribes ONE PAGE PER INVOCATION and {length} further page(s) ({deferred}) were NOT transcribed by this call. The bound is MEMORY and it was measured by refusal: a 61.3 MB RGBA frame completes and a 75.7 MB frame is killed (CPDF-15). Whole-document invocation is UNMEASURED, so it is refused rather than assumed — call again per page. Those pages keep their markers and stay honestly unread.", { length: String(deferred.length), deferred: String(deferred.join(", ")) }));
 
-    if (!one.ok)
+    if (!one.ok) {
+      const why = one.why;
       return { ok: false, reason: one.reason, detail: one.detail, page: take,
-               ...(one.reason === "UNEXPECTED_FAILURE" ? { stage: one.stage, error_name: one.error_name } : {}),
-               deferred, notes: notes.concat(one.notes || [], one.why ? [one.why] : []), refusal: one };
+               ...(one.reason === "UNEXPECTED_FAILURE" ? { stage: one.stage, error_name: one.error_name } : undefined),
+               deferred, notes: notes.concat(one.notes || [], why ? [why] : []), refusal: one };
+    }
 
     notes.push(...one.notes);
     if (one.unanchored)
@@ -359,10 +617,11 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     if (one.unrated)
       notes.push(localize("ocr-worker.member.unrated_region_s_came_back", "{unrated} region(s) came back with no engine-computed confidence and are stated as 'none' rather than given a number this member would have had to invent.", { unrated: String(one.unrated) }));
 
-    if (one.legibility && one.legibility.share < LEGIBLE_NOTE_BELOW)
+    const legibility = one.legibility;
+    if (legibility && legibility.share < LEGIBLE_NOTE_BELOW)
       notes.push(one.capture_kind === "picture"
-        ? localize("ocr-worker.member.the_picture_is_only_partly_legible", "the engine rated {confident} of the {words} words it read in this picture as read; the rest may be wrong or missing, so this reading is partial.", { confident: String(one.legibility.confident_words), words: String(one.legibility.words) })
-        : localize("ocr-worker.member.this_page_is_only_partly_legible", "the engine rated {confident} of the {words} words it read on this page as read; the rest may be wrong or missing, so this reading is only partly legible.", { confident: String(one.legibility.confident_words), words: String(one.legibility.words) }));
+        ? localize("ocr-worker.member.the_picture_is_only_partly_legible", "the engine rated {confident} of the {words} words it read in this picture as read; the rest may be wrong or missing, so this reading is partial.", { confident: String(legibility.confident_words), words: String(legibility.words) })
+        : localize("ocr-worker.member.this_page_is_only_partly_legible", "the engine rated {confident} of the {words} words it read on this page as read; the rest may be wrong or missing, so this reading is only partly legible.", { confident: String(legibility.confident_words), words: String(legibility.words) }));
 
     return {
       ok: true,
@@ -378,24 +637,28 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
       grain: one.grain,
       deferred,
       image: one.image,
-      ...(one.legibility ? { legibility: one.legibility } : {}),
+      ...(legibility ? { legibility } : undefined),
       notes,
     };
   }
 
   /** R27: the captured object as the renderers take it, a source that asks R2 for the ranges the page needs and for
    *  nothing else. The first ranged read learns the object's size (`size` is the whole object's, whatever range was asked)
-   *  and holds the start of the file, which the sniff of what the capture is reads from. */
+   *  and holds the start of the file, which the sniff of what the capture is reads from.
+   *  @param {CaptureBucket} CAPTURES @param {string} key @returns {Promise<CaptureSource | null>} */
   async function openCapture(CAPTURES, key) {
     const HEAD = 16;
-    let first;
+    /** @type {CaptureObject | null} */
+    let got;
     try {
-      first = await CAPTURES.get(key, { range: { offset: 0, length: HEAD } });
+      got = await CAPTURES.get(key, { range: { offset: 0, length: HEAD } });
     } catch (e) {
       /* a ranged read of an object with nothing in it is refused by R2; the plain read then tells empty from absent */
-      first = await CAPTURES.get(key);
-      if (first && first.size !== 0) throw e;
+      const plain = await CAPTURES.get(key);
+      got = plain;
+      if (plain && plain.size !== 0) throw e;
     }
+    const first = got;
     if (!first) return null;
     const size = first.size;
     const head = size === 0 ? new Uint8Array(0) : new Uint8Array(await first.arrayBuffer());
@@ -412,8 +675,10 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     };
   }
 
+  /** @param {MemberRequest} req @param {MemberEnv} [env] */
   async function handleTranscribe(req, env) {
-    if (typeof env?.CAPTURES?.get !== "function")
+    const captures = env?.CAPTURES;
+    if (typeof captures?.get !== "function")
       return json({ ok: false, reason: "R2_NOT_CONFIGURED", detail: REFUSALS.R2_NOT_CONFIGURED }, 503);
     /* R29: an OCR_PSM that is set and is no page-segmentation mode is refused on every call, with R5, before the body. */
     const psm = psmFrom(env);
@@ -421,33 +686,40 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
       return json({ ok: false, reason: "BAD_PSM", detail: REFUSALS.BAD_PSM, value: psm.value }, 503);
 
     const body = await req.json().catch(() => null);
-    const sha = typeof body?.capture_sha === "string" ? body.capture_sha.toLowerCase() : "";
+    /* R2: the body is this member's own channel, read here member by member; a body that is no object names nothing. */
+    const named = typeof body === "object" && body !== null ? body : null;
+    const capture_sha = named && "capture_sha" in named ? named.capture_sha : undefined;
+    const sha = typeof capture_sha === "string" ? capture_sha.toLowerCase() : "";
     if (!/^[0-9a-f]{64}$/.test(sha))
       return json({ ok: false, reason: "BAD_SHA", detail: REFUSALS.BAD_SHA }, 400);
-    if (typeof body?.store !== "string")
+    const named_store = named && "store" in named ? named.store : undefined;
+    if (typeof named_store !== "string")
       return json({ ok: false, reason: "BAD_STORE", detail: REFUSALS.BAD_STORE }, 400);
-    const store = body.store;
+    const store = named_store;
     /* D-478: a NAMED namespace that is not exactly one of NAMESPACES is refused by name, and R2 is never touched. */
     if (!NAMESPACES.includes(store))
       return json({ ok: false, reason: "NAMESPACE_UNKNOWN", detail: REFUSALS.NAMESPACE_UNKNOWN,
                     asked: store.slice(0, 80), namespaces: [...NAMESPACES] }, 400);
-    const pages = Array.isArray(body?.pages) ? body.pages : null;
+    const named_pages = named && "pages" in named ? named.pages : undefined;
+    const pages = isList(named_pages) ? named_pages : null;
     if (!pages || !pages.length)
       return json({ ok: false, reason: "BAD_PAGES", detail: REFUSALS.BAD_PAGES }, 400);
 
-    let out;
+    /** @type {WireAnswer} */
+    let answered;
     try {
       // I1 §2: the R2 key shape `pdf-worker` reads too. READ ONLY, and (R27) only the ranges the page needs.
-      const source = await openCapture(env.CAPTURES, `${store}/captures/${sha}`);
+      const source = await openCapture(captures, `${store}/captures/${sha}`);
       if (!source) return json({ ok: false, reason: "NOT_FOUND", detail: REFUSALS.NOT_FOUND, capture_sha: sha, store }, 404);
-      out = await transcribeRequest(source, pages, { confidenceFloor: floorFrom(env), psm: psm.mode });
+      answered = await transcribeRequest(source, pages, { confidenceFloor: floorFrom(env), psm: psm.mode });
     } catch (e) {
       /* R28: the read of R2 itself, the one step outside `transcribeRequest`'s own guard. */
       const { take, deferred } = chooseChunk(pages);
       const one = unexpected(e, "read", take);
-      out = { ok: false, reason: one.reason, detail: one.detail, page: take, stage: one.stage, error_name: one.error_name,
+      answered = { ok: false, reason: one.reason, detail: one.detail, page: take, stage: one.stage, error_name: one.error_name,
               deferred, notes: [], refusal: one };
     }
+    const out = answered;
     /* A pages array naming no page this member can take is a MALFORMED REQUEST (R4), and is answered as one. */
     if (!out.ok && out.reason === "BAD_PAGES") return json(out, 400);
     /* Every other refusal is a 200 carrying `ok:false`: the member ANSWERED. The plane reads the STATUS before the
@@ -458,6 +730,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
   /* Fleet rule 4, plus the ENGINE: this member's output is graded, so which engine answered is part of which build
      answered. `engine_loaded` is asked rather than assumed — a member deployed WITHOUT its wasm part looks healthy
      until the first page. */
+  /** @param {MemberEnv} [env] */
   function handleVersion(env) {
     const why = engine.check();
     return json({ ok: true, name: "ocr-worker", version: env?.VERSION || "0.0.0",
@@ -465,6 +738,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
                   engine_loaded: why == null, ...(why ? { engine_unavailable: why } : {}) });
   }
 
+  /** @param {MemberRequest} req @param {MemberEnv} [env] */
   async function fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname.replace(/^\/+/, "");
@@ -476,3 +750,10 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
 
   return { fetch, transcribeRequest, transcribeOnePage };
 }
+
+/** A list whose entries are still to be judged one by one (the body's `pages`, judged by `chooseChunk`).
+ *  @typedef {ReadonlyArray<unknown>} UnjudgedList */
+/** Whether `v` is a list (`Array.isArray`).
+ *  @param {unknown} v
+ *  @returns {v is UnjudgedList} */
+const isList = (v) => Array.isArray(v);

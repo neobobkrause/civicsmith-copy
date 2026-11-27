@@ -47,12 +47,13 @@ if (rendered == null) {
 
 const member = discoverMembers().find((m) => m.name === "ocr-worker");
 if (!member) throw new Error("ocr-worker declares no fleet-member.json — it cannot be discovered");
-if (!member.bundle) throw new Error("ocr-worker/fleet-member.json declares no `bundle` block");
+const bundle = member.bundle;
+if (!bundle) throw new Error("ocr-worker/fleet-member.json declares no `bundle` block");
 
 const { built, manifest } = await writeMember(member);
-console.log(`ocr-worker: built ${member.bundle.outfile}`
+console.log(`ocr-worker: built ${bundle.outfile}`
   + ` — ${built.bytes.length} B, sha256 ${built.sha256}`);
-console.log(`ocr-worker: wrote ${member.bundle.manifest}`
+console.log(`ocr-worker: wrote ${bundle.manifest}`
   + ` — ${manifest.inputs.length} first-party input(s), ${manifest.vendoredInputs.length} vendored,`
   + ` ${(manifest.assets || []).length} upload asset(s)`);
 for (const a of manifest.assets || [])

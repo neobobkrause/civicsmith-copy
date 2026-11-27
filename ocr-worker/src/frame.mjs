@@ -7,6 +7,65 @@
  */
 import { QUARTER_TURNS } from "./contract.mjs";
 
+/**
+ * The engine as `readFrame` drives it: the methods of tesseract-wasm's low-level `OCREngine` this module calls.
+ * @typedef {Object} FrameEngine
+ * @property {(model: Uint8Array) => void} loadModel
+ * @property {(name: string, value: string) => void} setVariable
+ * @property {(image: { data: Uint8Array, width: number, height: number }) => void} loadImage
+ * @property {() => EngineOrientation | null | undefined} getOrientation
+ * @property {(unit: "line" | "word") => ReadonlyArray<EngineBox> | null | undefined} getTextBoxes
+ * @property {() => void} destroy
+ */
+/**
+ * What the engine says of the frame's orientation: `rotation` is the degrees clockwise it lies turned from upright.
+ * @typedef {Readonly<{ rotation: number }>} EngineOrientation
+ */
+/**
+ * One box the engine read: its text, its rectangle in pixels of the frame, and its own 0..1 confidence.
+ * @typedef {Readonly<{ text: string, rect: Readonly<{ left: number, top: number, right: number, bottom: number }>, confidence: number }>} EngineBox
+ */
+/**
+ * @typedef {Object} FrameOptions
+ * @property {string | null} [psm] the page-segmentation mode the engine is set to, when one is set (R29)
+ */
+/**
+ * One line the engine boxed: `rect` is `[x0, y0, x1, y1]` in pixels of the frame, `confidence` the engine's own or `null`.
+ * @typedef {Object} FrameRegion
+ * @property {string} text
+ * @property {[number, number, number, number]} rect
+ * @property {number | null} confidence
+ */
+/**
+ * One word the engine read, by its own rating (R25).
+ * @typedef {Object} FrameWord
+ * @property {number | null} confidence
+ */
+/**
+ * @typedef {Object} FrameOrientation
+ * @property {number} rotation a quarter turn, the degrees clockwise the frame lies turned from upright (R26)
+ */
+/**
+ * A frame read (`readFrame`).
+ * @typedef {Object} FrameRead
+ * @property {true} ok
+ * @property {FrameRegion[]} regions
+ * @property {string} grain the region grain, `REGION_GRAIN`
+ * @property {number} boxCount every box the engine gave, those dropped for no geometry included
+ * @property {FrameWord[]} words
+ * @property {FrameOrientation | null} orientation `null` where the engine could not tell
+ */
+/**
+ * A frame the engine refused or failed on, stated with its size.
+ * @typedef {Object} FrameFailure
+ * @property {false} ok
+ * @property {"ENGINE_FAILED"} reason
+ * @property {string} error
+ * @property {string | undefined} name the error's name
+ * @property {number} frame_bytes
+ */
+/** @typedef {FrameRead | FrameFailure} FrameReading */
+
 /** THE REGION GRAIN, AND IT IS `line` FOR A MEASURED REASON RATHER THAN A
  *  PREFERENCE — the one design decision in this member that a reader would
  *  otherwise have to guess at.
@@ -49,11 +108,21 @@ export const REGION_GRAIN = "line";
  *  `getTextBoxes`, NOT `getTextItems` — the low-level engine API and the
  *  worker-thread client API do not share method names, and only the low-level
  *  one exists inside an isolate. CPDF-15's first box arm DID NOT ARM for
- *  exactly that reason and said so. */
+ *  exactly that reason and said so.
+ *
+ *  @param {() => Promise<FrameEngine>} makeEngine
+ *  @param {ArrayBuffer | Uint8Array} model the language model's bytes
+ *  @param {Uint8Array} rgba
+ *  @param {number} width
+ *  @param {number} height
+ *  @param {FrameOptions} [options]
+ *  @returns {Promise<FrameReading>} */
 export async function readFrame(makeEngine, model, rgba, width, height, { psm = null } = {}) {
-  let engine = null;
+  /** @type {FrameEngine | null} the engine made, for `finally` to destroy */
+  let made = null;
   try {
-    engine = await makeEngine();
+    const engine = await makeEngine();
+    made = engine;
     engine.loadModel(new Uint8Array(model));
     if (psm) engine.setVariable("tessedit_pageseg_mode", String(psm));
     engine.loadImage({ data: rgba, width, height });
@@ -63,12 +132,14 @@ export async function readFrame(makeEngine, model, rgba, width, height, { psm = 
        answer is dependable on a full 300-dpi page and often wrong on a smaller frame, and its `confidence` is 1 whatever it
        saw, so only the rotation is passed on, never a confidence; the member turns a page only when reading it turned
        reads better than reading it as it lies. */
+    /** @type {FrameOrientation | null} */
     let orientation = null;
     try {
       const o = engine.getOrientation();
       if (o && QUARTER_TURNS.includes(o.rotation)) orientation = { rotation: o.rotation };
     } catch { /* an engine that cannot tell is a finding, not a failure */ }
     const boxes = engine.getTextBoxes(REGION_GRAIN) || [];
+    /** @type {FrameRegion[]} */
     const regions = [];
     for (const b of boxes) {
       const text = typeof b.text === "string" ? b.text : "";
@@ -88,10 +159,10 @@ export async function readFrame(makeEngine, model, rgba, width, height, { psm = 
     /* A refusal is a measurement (CPDF-15's posture). It comes back as one, with
        the frame size beside it, rather than as an opaque throw — the caller
        turns it into a STATED refusal and the document stays honestly unread. */
-    return { ok: false, reason: "ENGINE_FAILED", error: String((e && e.message) || e),
-             name: e && e.name, frame_bytes: width * height * 4 };
+    return { ok: false, reason: "ENGINE_FAILED", error: String((e instanceof Error && e.message) || e),
+             name: e instanceof Error ? e.name : undefined, frame_bytes: width * height * 4 };
   } finally {
-    try { if (engine) engine.destroy(); } catch { /* the isolate is going anyway */ }
+    try { const engine = made; if (engine) engine.destroy(); } catch { /* the isolate is going anyway */ }
   }
 }
 
