@@ -9,53 +9,95 @@
 import "../../bio-plane/test/sandbox.mjs";
 
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import { pdfWork } from "../../bio-plane/src/pdfstructure.mjs";
 import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
 import { generate } from "../../bio-plane/test/pdfgen.mjs";
 import worker, { tier2Work } from "../src/index.mjs";
 import { runner, hex } from "./make-pdf.mjs";
 import { BUNDLE } from "./subject.mjs";
+import { createRequire } from "node:module";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
+/* miniflare from this member's own install, else from the plane's (the required run installs none). */
 const { Miniflare } = await (async () => {
   try { return await import("miniflare"); } catch { /* fall through */ }
   const planePkg = fileURLToPath(new URL("../../bio-plane/package.json", import.meta.url));
   return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
 })();
-const here = (p) => fileURLToPath(new URL(p, import.meta.url));
+/** @import { PdfWork } from '../../bio-plane/src/pdfstructure.mjs' */
+/** @import { PdfRecipe, PdfTruth, PdfPageTruth } from '../../bio-plane/test/pdfgen.mjs' */
+/** @import { WorkerEnv, CaptureBucket, WorkerText, StructureBody } from '../src/index.mjs' */
+
+/** A stand-in for a stored body, which states a length.
+ *  @typedef {{ readonly length: number, slice: (start?: number, end?: number) => Uint8Array }} StandIn */
+/** The work counts tier 2 keeps (`tier2Work()`).
+ *  @typedef {{ opens: number, pagesDecoded: number }} Tier2Work */
+/** R8's refusal as the answer states it.
+ *  @typedef {{ size: number, bound: number, key: string, detail: string }} Refusal */
+/** This member's answer to `POST /structure`, as the suite reads it: at 200, or a refusal with its reason.
+ *  @typedef {{ ok: boolean, reason: string, tier: number, pages: number, from: number, count: number, failure: string,
+ *    notes: string[], text: WorkerText, refusal: Refusal }} Answer */
+
 const { t, finish } = runner("range");
 
-const make = async (recipe) => { const g = generate({ kind: "pdf", seed: "rg", ...recipe }); return { bytes: await g.bytes(), truth: g.truth }; };
-const delta = (a, b) => Object.fromEntries(Object.keys(b).map((k) => [k, b[k] - a[k]]));
+/** @param {PdfRecipe} recipe @returns {Promise<{ bytes: Uint8Array, truth: PdfTruth }>} */
+const make = async (recipe) => { const g = generate({ seed: "rg", ...recipe }); return { bytes: await g.bytes(), truth: g.truth }; };
+/** @param {PdfWork} a @param {PdfWork} b @returns {PdfWork} */
+const pdfDelta = (a, b) => ({ scans: b.scans - a.scans, objectStreamLoads: b.objectStreamLoads - a.objectStreamLoads, innerDecodes: b.innerDecodes - a.innerDecodes });
+/** @param {Tier2Work} a @param {Tier2Work} b @returns {Tier2Work} */
+const tier2Delta = (a, b) => ({ opens: b.opens - a.opens, pagesDecoded: b.pagesDecoded - a.pagesDecoded });
+/** Item `i` of `items`, which the suite expects to be there (a missing one stops the run, as reading through it did).
+ *  @template T @param {readonly T[]} items @param {number} i @returns {T} */
+const nth = (items, i) => { const v = items[i]; if (v === undefined) throw new TypeError(`no item ${i}`); return v; };
+/** Page `p` of a document's truth, which the suite expects to be there.
+ *  @param {PdfTruth} truth @param {number} p @returns {PdfPageTruth} */
+const pageOf = (truth, p) => { const pg = truth.page(p); if (pg === undefined) throw new TypeError(`no page ${p}`); return pg; };
 
 /* A node env over a map of objects: `stated` gives the object a `size` (as R2's has), and every body read is counted. */
+/** @param {Record<string, Uint8Array | StandIn>} objects
+ *  @param {{ stated?: boolean, CAPTURES?: CaptureBucket, MAX_PDF_BYTES?: string, VERSION?: string }} [options]
+ *  @returns {{ env: WorkerEnv, log: { gets: string[], reads: number } }} */
 function envOf(objects, { stated = true, ...extra } = {}) {
+  /** @type {{ gets: string[], reads: number }} */
   const log = { gets: [], reads: 0 };
   const CAPTURES = {
+    /** @param {string} key */
     get: async (key) => {
       log.gets.push(key);
       const b = objects[key];
-      return b ? { ...(stated ? { size: b.length } : {}), arrayBuffer: async () => { log.reads++; return b.slice().buffer; } } : null;
+      return b ? { ...(stated ? { size: b.length } : {}), arrayBuffer: async () => {
+        log.reads++;
+        const buffer = b.slice().buffer;
+        if (!(buffer instanceof ArrayBuffer)) throw new TypeError("a stored body is over an ArrayBuffer");
+        return buffer;
+      } } : null;
     },
   };
   return { env: { CAPTURES, ...extra }, log };
 }
+/** The answer read back from this member's own response, whose body the host types `unknown` (or leaves untyped).
+ *  @param {unknown} body @returns {Answer} */
+const answerOf = (body) => /** @type {Answer} */ (body);
+/** @param {WorkerEnv} env @param {StructureBody} body @returns {Promise<[number, Answer]>} */
 const call = async (env, body) => {
   const res = await worker.fetch(new Request("http://pdf-worker/structure", { method: "POST", body: JSON.stringify(body) }), env);
-  return [res.status, await res.json()];
+  return [res.status, answerOf(await res.json())];
 };
+/** @template T @param {() => Promise<T>} fn @returns {Promise<{ out: T, pdf: PdfWork, tier2: Tier2Work }>} */
 const counted = async (fn) => {
   const p0 = pdfWork(), w0 = tier2Work();
   const out = await fn();
-  return { out, pdf: delta(p0, pdfWork()), tier2: delta(w0, tier2Work()) };
+  return { out, pdf: pdfDelta(p0, pdfWork()), tier2: tier2Delta(w0, tier2Work()) };
 };
 
-const TEN = await make({ size: { pages: 10, lines: 4 } });
+const TEN = await make({ kind: "pdf", size: { pages: 10, lines: 4 } });
 const TEN_SHA = hex(TEN.bytes);
-const line = (truth, p, l) => truth.page(p).lines[l - 1];
+/** @param {PdfTruth} truth @param {number} p @param {number} l @returns {string} (as `includes` reads a missing line) */
+const line = (truth, p, l) => String(pageOf(truth, p).lines[l - 1]);
+/** @param {number} p */
 const mark = (p) => `rg-p${p}-l1`;
 const objects = { [`bio/captures/${TEN_SHA}`]: TEN.bytes };
+/** @param {StructureBody} [extra] @returns {StructureBody} */
 const ask = (extra = {}) => ({ capture_sha: TEN_SHA, store: "bio", ...extra });
 
 console.log("\n--- R42: the range asked ---");
@@ -89,11 +131,13 @@ console.log("\n--- R42: the range asked ---");
   const zero = await counted(() => call(env, ask({ from: 2, count: 0 })));
   t("R42 count 0 is a valid range of no pages", [zero.out[0], zero.out[1].count, zero.tier2.pagesDecoded], [200, 0, 0]);
 
-  for (const [label, extra] of [
+  /** @type {[string, StructureBody][]} */
+  const badRanges = [
     ["from -1", { from: -1 }], ["from 1.5", { from: 1.5 }], ["from a string", { from: "2" }], ["from null", { from: null }],
     ["count -1", { count: -1 }], ["count 2.5", { count: 2.5 }], ["count a string", { count: "3" }], ["count null", { count: null }],
     ["count true", { count: true }], ["count an array", { count: [1] }],
-  ]) {
+  ];
+  for (const [label, extra] of badRanges) {
     const e = envOf(objects);
     const [bst, bout] = await call(e.env, ask(extra));
     t(`R42 ${label}: 400 BAD_RANGE, before the capture is read`, [bst, bout.ok, bout.reason, e.log.gets], [400, false, "BAD_RANGE", []]);
@@ -117,11 +161,11 @@ console.log("\n--- R42 under workerd: the same range through the built member --
   });
   await (await mf.getR2Bucket("CAPTURES")).put(`bio/captures/${TEN_SHA}`, TEN.bytes);
   const res = await mf.dispatchFetch("http://pdf-worker/structure", { method: "POST", body: JSON.stringify(ask({ from: 3, count: 3 })) });
-  const out = await res.json();
+  const out = answerOf(await res.json());
   t("R42 workerd: 3 pages [3, 4, 5] of 10 at tier 2, with their words",
     [res.status, out.tier, out.pages, out.text.pages.map((p) => p.page), out.text.document.includes(line(TEN.truth, 5, 2))], [200, 2, 10, [3, 4, 5], true]);
   const bad = await mf.dispatchFetch("http://pdf-worker/structure", { method: "POST", body: JSON.stringify(ask({ from: -1 })) });
-  t("R42 workerd: BAD_RANGE", [bad.status, (await bad.json()).reason], [400, "BAD_RANGE"]);
+  t("R42 workerd: BAD_RANGE", [bad.status, answerOf(await bad.json()).reason], [400, "BAD_RANGE"]);
   await mf.dispose();
 }
 
@@ -145,7 +189,7 @@ console.log("\n--- R6 and R8: the envelope is judged before any parse ---");
   const NOT_PDF = new TextEncoder().encode("this is not a pdf at all, and it is over the envelope");
   const np = envOf({ [`bio/captures/${hex(NOT_PDF)}`]: NOT_PDF }, { MAX_PDF_BYTES: "10" });
   const [nst, nout] = await call(np.env, { capture_sha: hex(NOT_PDF), store: "bio" });
-  t("R6 (a file over the envelope is answered by R8 without being opened, even if it is not a PDF)", [nst, nout.tier, nout.text.undetermined[0].reason], [200, 1, "over_envelope"]);
+  t("R6 (a file over the envelope is answered by R8 without being opened, even if it is not a PDF)", [nst, nout.tier, nth(nout.text.undetermined, 0).reason], [200, 1, "over_envelope"]);
 
   const at = envOf(objects, { MAX_PDF_BYTES: String(TEN.bytes.length) });
   t("R8 exactly the envelope is within it", (await call(at.env, ask()))[1].tier, 2);
@@ -155,19 +199,20 @@ console.log("\n--- R8 and R44: the default envelope is the table's ---");
 {
   const bound = boundOf("pdf", "worker_bytes");
   /* the store states a size one over the table's figure: nothing is allocated, nothing parsed */
+  /** @type {StandIn} */
   const big = { length: bound + 1, slice() { throw new Error("the body must not be read"); } };
   const sha = "b".repeat(64);
   const { env, log } = envOf({ [`bio/captures/${sha}`]: big });
   const r = await counted(() => call(env, { capture_sha: sha, store: "bio" }));
   const [st, out] = r.out;
   t("R8 one byte over boundOf('pdf', 'worker_bytes'): declined with the size and that figure",
-    [st, out.tier, out.refusal.size, out.refusal.bound, out.refusal.key, out.text.undetermined[0].limit], [200, 1, bound + 1, bound, "limit.pdf.worker_bytes", bound]);
+    [st, out.tier, out.refusal.size, out.refusal.bound, out.refusal.key, nth(out.text.undetermined, 0).limit], [200, 1, bound + 1, bound, "limit.pdf.worker_bytes", bound]);
   t("R8 (nothing was read or parsed)", [log.reads, r.pdf.scans, r.tier2.opens], [0, 0, 0]);
   t("R8 the figure is 64 MiB, the alpha column's", bound, 64 * 1024 * 1024);
 
   /* R44: no numeric literal of the module's own is a ceiling it keeps */
-  const code = readFileSync(here("../src/index.mjs"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
-  const literals = [...code.matchAll(/(?<![\w.$"'-])(\d[\d_]*(?:\.\d+)?(?:e\d+)?)(?![\w"'])/gi)].map((m) => Number(m[1].replace(/_/g, ""))).filter((n) => n >= 1000);
+  const code = readFileSync(new URL("../src/index.mjs", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  const literals = [...code.matchAll(/(?<![\w.$"'-])(\d[\d_]*(?:\.\d+)?(?:e\d+)?)(?![\w"'])/gi)].map((m) => Number(nth(m, 1).replace(/_/g, ""))).filter((n) => n >= 1000);
   t("R44 no numeric literal of 1,000 or more in src/index.mjs", literals, []);
   t("R44 the envelope constant is read from the table by its row", /DEFAULT_MAX_PDF_BYTES\s*=\s*boundOf\(\s*"pdf"\s*,\s*"worker_bytes"\s*\)/.test(code), true);
   t("R44 the member imports the table from runtime-limits' file", /from\s+"\.\.\/\.\.\/bio-plane\/src\/read-bounds\.mjs"/.test(code), true);
@@ -175,7 +220,7 @@ console.log("\n--- R8 and R44: the default envelope is the table's ---");
 
 console.log("\n--- R9: the range at tier 2, in fonts tier 1 cannot decode, and encrypted documents ---");
 {
-  const FONTS = await make({ size: { pages: 6, lines: 5 }, fonts: ["winansi", "macroman"] });
+  const FONTS = await make({ kind: "pdf", size: { pages: 6, lines: 5 }, fonts: ["winansi", "macroman"] });
   const sha = hex(FONTS.bytes);
   const { env } = envOf({ [`bio/captures/${sha}`]: FONTS.bytes });
   const r = await counted(() => call(env, { capture_sha: sha, store: "bio", from: 2, count: 3 }));
@@ -183,17 +228,19 @@ console.log("\n--- R9: the range at tier 2, in fonts tier 1 cannot decode, and e
   t("R9 WinAnsi and MacRoman pages with no ToUnicode: the 3 pages of the range, tier 2", [st, out.tier, out.text.pages.map((p) => p.page)], [200, 2, [2, 3, 4]]);
   /* (pdf.js reads the ligature letters `ﬁ` and `ﬂ` as the two letters they stand for) */
   t("R9 every line of those pages is read, none of the others'",
-    [[3, 4, 5].every((p) => FONTS.truth.page(p).lines.every((l) => out.text.document.includes(l.normalize("NFKC")))), [1, 2, 6].some((p) => out.text.document.includes(`rg-p${p}-l`))], [true, false]);
+    [[3, 4, 5].every((p) => pageOf(FONTS.truth, p).lines.every((l) => out.text.document.includes(l.normalize("NFKC")))), [1, 2, 6].some((p) => out.text.document.includes(`rg-p${p}-l`))], [true, false]);
   t("R9 only those 3 pages were decoded", r.tier2.pagesDecoded, 3);
 
-  for (const method of ["rc4", "aes"]) {
-    const OPEN = await make({ size: { pages: 3, lines: 4 }, encryption: { method, user: "" } });
+  /** @type {string[]} */
+  const methods = ["rc4", "aes"];
+  for (const method of methods) {
+    const OPEN = await make({ kind: "pdf", size: { pages: 3, lines: 4 }, encryption: { method, user: "" } });
     const s1 = hex(OPEN.bytes);
     const o = await call(envOf({ [`bio/captures/${s1}`]: OPEN.bytes }).env, { capture_sha: s1, store: "bio" });
     t(`R9 ${method}: a document whose password is empty is decrypted and its pages read`,
-      [o[0], o[1].tier, o[1].text.pages.length, [1, 2, 3].every((p) => OPEN.truth.page(p).lines.every((l) => o[1].text.document.includes(l)))], [200, 2, 3, true]);
+      [o[0], o[1].tier, o[1].text.pages.length, [1, 2, 3].every((p) => pageOf(OPEN.truth, p).lines.every((l) => o[1].text.document.includes(l)))], [200, 2, 3, true]);
 
-    const LOCKED = await make({ size: { pages: 3, lines: 4 }, encryption: { method, user: "secret" } });
+    const LOCKED = await make({ kind: "pdf", size: { pages: 3, lines: 4 }, encryption: { method, user: "secret" } });
     const s2 = hex(LOCKED.bytes);
     const l = await call(envOf({ [`bio/captures/${s2}`]: LOCKED.bytes }).env, { capture_sha: s2, store: "bio" });
     t(`R9 ${method}: a document that needs a user password is stated, tier 1, nothing invented`,

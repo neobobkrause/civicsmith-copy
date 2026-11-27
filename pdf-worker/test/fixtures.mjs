@@ -8,14 +8,19 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { hex } from "./make-pdf.mjs";
+/** @import { StructureAnswer, WorkerEnv } from "../src/index.mjs" */
+/** @typedef {typeof import("../src/index.mjs").default} PdfWorker */
 
 const MIXED = fileURLToPath(new URL("../../bio-plane/test/fixtures/cpdf20/legistar-73545.pdf", import.meta.url));
 
+/** @returns {Promise<StructureAnswer>} */
 export async function tier2Answer() {
   const { BUNDLE } = await import("./subject.mjs");
+  /** @type {PdfWorker} the built member's Worker */
   const worker = (await import(pathToFileURL(BUNDLE).href)).default;
   const bytes = new Uint8Array(readFileSync(MIXED));
   const sha = hex(bytes);
+  /** @type {WorkerEnv} */
   const env = { CAPTURES: { get: async (key) => (key === `bio/captures/${sha}` ? { size: bytes.length, arrayBuffer: async () => bytes.slice().buffer } : null) } };
   const res = await worker.fetch(new Request("http://pdf-worker/structure", { method: "POST", body: JSON.stringify({ capture_sha: sha, store: "bio" }) }), env);
   return await res.json();

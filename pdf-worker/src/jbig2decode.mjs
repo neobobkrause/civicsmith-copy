@@ -41,15 +41,38 @@ import { MqDecoder, mqContexts } from "./mq.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { READ_BOUNDS, boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
 
+/** @typedef {"UNSUPPORTED" | "TRUNCATED" | "CORRUPT" | "IMAGE_TOO_LARGE"} Jbig2Code a refusal's code */
+/**
+ * What a refusal carries besides its code: the feature or the note, the declared size and its bound where the size is
+ * refused, and the segment the refusal arose in.
+ * @typedef {Object} Jbig2Detail
+ * @property {string} [feature] the feature an UNSUPPORTED refusal names (a key of JBIG2_REFUSES)
+ * @property {string} [note] what the data does wrong
+ * @property {number} [extension] the extension type of a necessary extension segment
+ * @property {string} [bound_name] the bound an IMAGE_TOO_LARGE refusal was judged against
+ * @property {number} [size] the declared size
+ * @property {number} [bound] the bound's active figure
+ * @property {string} [key] the bound row's key
+ * @property {number} [width] the bitmap's declared width
+ * @property {number} [height] the bitmap's declared height
+ * @property {number} [segmentType] the type of the segment the refusal arose in
+ * @property {number} [segment] the number of that segment
+ */
+
 export class Jbig2Refusal extends Error {
+  /** @param {Jbig2Code} code @param {Jbig2Detail} [detail] */
   constructor(code, detail = {}) {
-    super(`${code}${detail.feature ? `: ${detail.feature}` : detail.note ? `: ${detail.note}` : ""}`);
-    this.code = code;
-    this.detail = detail;
+    const { feature, note } = detail;
+    super(`${code}${feature ? `: ${feature}` : note ? `: ${note}` : ""}`);
+    /** @type {Jbig2Code} */ this.code = code;
+    /** @type {Jbig2Detail} */ this.detail = detail;
   }
 }
+/** @param {string} feature @param {Jbig2Detail} [extra] @returns {Jbig2Refusal} */
 const unsupported = (feature, extra = {}) => new Jbig2Refusal("UNSUPPORTED", { feature, ...extra });
+/** @param {string} note @param {Jbig2Detail} [extra] @returns {Jbig2Refusal} */
 const corrupt = (note, extra = {}) => new Jbig2Refusal("CORRUPT", { note, ...extra });
+/** @param {string} note @param {Jbig2Detail} [extra] @returns {Jbig2Refusal} */
 const truncated = (note, extra = {}) => new Jbig2Refusal("TRUNCATED", { note, ...extra });
 
 /** What this decoder refuses, by name — every `feature` an UNSUPPORTED refusal
@@ -71,18 +94,30 @@ const PIXELS_MAX = boundOf("image", "pixels");
 const EDGE_MAX = boundOf("image", "edge");
 /* the symbols of a dictionary and the patterns of a pattern dictionary are retained objects, one bitmap each: the table's
  * retained-objects bound (250,000; `image.retained_objects`, the row JPX counts its precincts against, see jpxdecode.mjs; K4858) */
-const OBJECTS_ROW = Object.hasOwn(READ_BOUNDS.image, "retained_objects") ? ["image", "retained_objects"] : ["office", "retained_objects"];
+/* (`boundOf("image", ...)` above has already refused a table with no image rows, so the `?? {}` is never taken) */
+/** @type {[string, string]} */
+const OBJECTS_ROW = Object.hasOwn(READ_BOUNDS.image ?? {}, "retained_objects") ? ["image", "retained_objects"] : ["office", "retained_objects"];
 const OBJECTS_MAX = boundOf(...OBJECTS_ROW);
-/** IMAGE_TOO_LARGE: final and deterministic, with the declared size, the bound it was judged against and the sentence's key. */
-const tooLarge = (kind, name, size, note, extra) => new Jbig2Refusal("IMAGE_TOO_LARGE", { note, bound_name: name, ...statement(kind, name, size), ...extra });
+/** IMAGE_TOO_LARGE: final and deterministic, with the declared size, the bound it was judged against and the sentence's key.
+ *  @param {string} kind @param {string} name @param {number} size @param {string} note @param {Jbig2Detail} extra @returns {Jbig2Refusal} */
+const tooLarge = (kind, name, size, note, extra) => {
+  const st = statement(kind, name, size);
+  return new Jbig2Refusal("IMAGE_TOO_LARGE", { note, bound_name: name, size: st.size, bound: st.bound, key: st.key, ...extra });
+};
+/** @param {number} w @param {number} h @returns {Jbig2Refusal} */
 const tooWide = (w, h) => tooLarge("image", "edge", Math.max(w, h),
   localize("image-codecs.jbig2decode.the_bitmap_is_w_by_h", "the bitmap is {w} by {h}, and the decoder reads an edge of at most {bound}", { w: String(w), h: String(h), bound: String(EDGE_MAX) }), { width: w, height: h });
+/** @param {number} n @param {string} note @returns {Jbig2Refusal} */
 const tooManyObjects = (n, note) => tooLarge(...OBJECTS_ROW, n, note, { bound_name: "objects" });
+/** @param {number} w @param {number} h @returns {Jbig2Refusal} */
 const tooMany = (w, h) => tooLarge("image", "pixels", w * h,
   localize("image-codecs.jbig2decode.the_bitmap_is_w_by_h_2", "the bitmap is {w} by {h}, past the {bound} pixels the decoder reads", { w: String(w), h: String(h), bound: String(PIXELS_MAX) }), { width: w, height: h });
 
 /* ── bitmaps ──────────────────────────────────────────────────────────────── */
 
+/** A bitmap held a byte a pixel, row by row: 1 = black. @typedef {{ w: number, h: number, d: Uint8Array }} Bitmap */
+
+/** @param {number} w @param {number} h @param {number} [fill] @returns {Bitmap} @throws {Jbig2Refusal} */
 const bitmap = (w, h, fill = 0) => {
   if (!(Number.isInteger(w) && Number.isInteger(h)) || w < 0 || h < 0) throw corrupt(`bitmap size ${w}x${h}`);
   if (Math.max(w, h) > EDGE_MAX) throw tooWide(w, h);
@@ -93,7 +128,9 @@ const bitmap = (w, h, fill = 0) => {
 };
 
 /** Draw `src` into `dst` at (x, y) with combination operator `op`
- *  (0 OR, 1 AND, 2 XOR, 3 XNOR, 4 REPLACE), clipped to `dst`. */
+ *  (0 OR, 1 AND, 2 XOR, 3 XNOR, 4 REPLACE), clipped to `dst`.
+ *  @param {Bitmap} dst @param {Bitmap} src @param {number} x @param {number} y @param {number} op @returns {void}
+ *  @throws {Jbig2Refusal} */
 function compose(dst, src, x, y, op) {
   const x0 = Math.max(0, x), y0 = Math.max(0, y);
   const x1 = Math.min(dst.w, x + src.w), y1 = Math.min(dst.h, y + src.h);
@@ -103,11 +140,11 @@ function compose(dst, src, x, y, op) {
     let di = yy * dst.w + x0, si = (yy - y) * src.w + (x0 - x);
     const de = yy * dst.w + x1;
     switch (op) {
-      case 0: for (; di < de; di++, si++) D[di] |= S[si]; break;
-      case 1: for (; di < de; di++, si++) D[di] &= S[si]; break;
-      case 2: for (; di < de; di++, si++) D[di] ^= S[si]; break;
-      case 3: for (; di < de; di++, si++) D[di] = 1 - (D[di] ^ S[si]); break;
-      case 4: for (; di < de; di++, si++) D[di] = S[si]; break;
+      case 0: for (; di < de; di++, si++) D[di] = (D[di] ?? 0) | (S[si] ?? 0); break;
+      case 1: for (; di < de; di++, si++) D[di] = (D[di] ?? 0) & (S[si] ?? 0); break;
+      case 2: for (; di < de; di++, si++) D[di] = (D[di] ?? 0) ^ (S[si] ?? 0); break;
+      case 3: for (; di < de; di++, si++) D[di] = 1 - ((D[di] ?? 0) ^ (S[si] ?? 0)); break;
+      case 4: for (; di < de; di++, si++) D[di] = S[si] ?? 0; break;
       default: throw corrupt(`combination operator ${op}`);
     }
   }
@@ -116,30 +153,47 @@ function compose(dst, src, x, y, op) {
 /* ── the byte reader ──────────────────────────────────────────────────────── */
 
 class Reader {
-  constructor(d, p = 0, end = d.length) { this.d = d; this.p = p; this.end = end; }
+  /** @param {Uint8Array} d @param {number} [p] @param {number} [end] */
+  constructor(d, p = 0, end = d.length) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.p = p;
+    /** @type {number} */ this.end = end;
+  }
+  /** @param {number} n @param {string} what @returns {void} @throws {Jbig2Refusal} TRUNCATED */
   need(n, what) { if (this.p + n > this.end) throw truncated(localize("image-codecs.jbig2decode.what_n_bytes_needed_v1", "{what}: {n} bytes needed, {v1} left", { what: String(what), n: String(n), v1: String(this.end - this.p) })); }
-  u8(what = "a byte") { this.need(1, what); return this.d[this.p++]; }
-  u16(what = "a 16-bit field") { this.need(2, what); const v = (this.d[this.p] << 8) | this.d[this.p + 1]; this.p += 2; return v; }
-  u32(what = "a 32-bit field") { this.need(4, what); const d = this.d, p = this.p; this.p += 4; return ((d[p] << 24) | (d[p + 1] << 16) | (d[p + 2] << 8) | d[p + 3]) >>> 0; }
+  /* (each read is within `need`'s bound, so its `?? 0` is never taken) */
+  /** @param {string} [what] @returns {number} */
+  u8(what = "a byte") { this.need(1, what); return this.d[this.p++] ?? 0; }
+  /** @param {string} [what] @returns {number} */
+  u16(what = "a 16-bit field") { this.need(2, what); const v = ((this.d[this.p] ?? 0) << 8) | (this.d[this.p + 1] ?? 0); this.p += 2; return v; }
+  /** @param {string} [what] @returns {number} */
+  u32(what = "a 32-bit field") { this.need(4, what); const d = this.d, p = this.p; this.p += 4; return (((d[p] ?? 0) << 24) | ((d[p + 1] ?? 0) << 16) | ((d[p + 2] ?? 0) << 8) | (d[p + 3] ?? 0)) >>> 0; }
+  /** @param {string} [what] @returns {number} */
   i32(what) { return this.u32(what) | 0; }
+  /** @param {string} [what] @returns {number} */
   i8(what) { const v = this.u8(what); return v > 127 ? v - 256 : v; }
 }
 
 /* ── integer arithmetic decoding (T.88 Annex A) ───────────────────────────── */
 
 const OOB = null;
+/** @returns {Uint8Array} */
 const iaCtx = () => mqContexts(512);
 
-/** IAx: a signed integer or OOB (Annex A.2). */
+/** IAx: a signed integer or OOB (Annex A.2). @param {MqDecoder} mq @param {Uint8Array} ctx @returns {number | null} */
 function iaDecode(mq, ctx) {
   let prev = 1;
+  /** @returns {number} */
   const bit = () => {
     const b = mq.decode(ctx, prev);
     prev = prev < 256 ? (prev << 1) | b : (((prev << 1) | b) & 511) | 256;
     return b;
   };
   const s = bit();
-  let n, off;
+  /** @type {number} */
+  let n;
+  /** @type {number} */
+  let off;
   if (!bit()) { n = 2; off = 0; }
   else if (!bit()) { n = 4; off = 4; }
   else if (!bit()) { n = 6; off = 20; }
@@ -153,13 +207,14 @@ function iaDecode(mq, ctx) {
   return s ? -v : v;
 }
 
-/** IAID: an unsigned `len`-bit symbol id (Annex A.3). */
+/** IAID: an unsigned `len`-bit symbol id (Annex A.3). @param {MqDecoder} mq @param {Uint8Array} ctx @param {number} len @returns {number} */
 function iaidDecode(mq, ctx, len) {
   let prev = 1;
   for (let i = 0; i < len; i++) prev = (prev << 1) | mq.decode(ctx, prev);
   return prev - (1 << len);
 }
 
+/** @param {number | null} v @param {string} what @returns {number} @throws {Jbig2Refusal} CORRUPT on OOB */
 const intOrThrow = (v, what) => { if (v === OOB) throw corrupt(localize("image-codecs.jbig2decode.oob_where_what_is_required", "OOB where {what} is required", { what: String(what) })); return v; };
 
 /* ── Huffman tables (T.88 Annex B) ────────────────────────────────────────── */
@@ -167,6 +222,12 @@ const intOrThrow = (v, what) => { if (v === OOB) throw corrupt(localize("image-c
 /* Each standard table as [PREFLEN, RANGELEN, RANGELOW, kind] lines, in the
  * standard's order; kind is "" for an ordinary line, "low" and "high" for the
  * lower and upper range lines, and "oob". Tables B.1–B.15. */
+/** @typedef {"" | "low" | "high" | "oob"} LineKind */
+/** A table line: [PREFLEN, RANGELEN, RANGELOW, kind]. @typedef {[number, number, number, LineKind]} Line */
+/** A table's codes, by (length, code): `byLen` keyed `length * 2^32 + code`. @typedef {{ maxLen: number, byLen: Map<number, Line> }} HuffTable */
+/** The number of a standard table (B.1–B.15), as the key it is in STANDARD_TABLES.
+ *  @typedef {"1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15"} StdTableNo */
+/** @param {number} p @param {number} r @param {number} low @param {LineKind} [kind] @returns {Line} */
 const L = (p, r, low, kind = "") => [p, r, low, kind];
 const STANDARD_TABLES = {
   1: [L(1, 4, 0), L(2, 8, 16), L(3, 16, 272), L(3, 32, 65808, "high")],
@@ -206,37 +267,49 @@ const STANDARD_TABLES = {
 
 /** Assign the prefix codes (B.3: FIRSTCODE[len] = (FIRSTCODE[len-1] +
  *  LENCOUNT[len-1]) * 2, lines of one length taking consecutive codes in the
- *  table's order) and index them by (length, code). */
+ *  table's order) and index them by (length, code).
+ *  @param {Line[]} lines @returns {HuffTable} */
 function table(lines) {
   const maxLen = Math.max(0, ...lines.map((l) => l[0]));
-  const count = new Array(maxLen + 1).fill(0);
-  for (const l of lines) if (l[0]) count[l[0]]++;
-  const byLen = new Map();
+  const count = Array.from({ length: maxLen + 1 }, () => 0);
+  for (const l of lines) if (l[0]) count[l[0]] = (count[l[0]] ?? NaN) + 1;
+  /** @type {Map<number, Line>} */
+  const byLen = new Map([]);
   let first = 0;
   for (let len = 1; len <= maxLen; len++) {
-    first = (first + count[len - 1]) * 2;
+    first = (first + (count[len - 1] ?? NaN)) * 2;
     let code = first;
     for (const l of lines) if (l[0] === len) byLen.set(len * 0x100000000 + code++, l);
   }
   return { maxLen, byLen };
 }
+/** @type {{ [n: string]: HuffTable }} */
 const STD = {};
+/** @param {StdTableNo} n @returns {HuffTable} */
 const standardTable = (n) => (STD[n] ||= table(STANDARD_TABLES[n]));
 
 /** An MSB-first bit reader over a segment's data, for the Huffman-coded paths. */
 class Bits {
-  constructor(d, p, end) { this.d = d; this.p = p; this.end = end; this.bit = 0; }
+  /** @param {Uint8Array} d @param {number} p @param {number} end */
+  constructor(d, p, end) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.p = p;
+    /** @type {number} */ this.end = end;
+    /** @type {number} */ this.bit = 0;
+  }
+  /** @param {number} n @returns {number} @throws {Jbig2Refusal} TRUNCATED */
   read(n) {
     let v = 0;
     for (let i = 0; i < n; i++) {
       if (this.p >= this.end) throw truncated(localize("image-codecs.jbig2decode.huffman_coded_data_ends_early", "Huffman-coded data ends early"));
-      v = v * 2 + ((this.d[this.p] >> (7 - this.bit)) & 1);
+      v = v * 2 + (((this.d[this.p] ?? 0) >> (7 - this.bit)) & 1);
       if (++this.bit === 8) { this.bit = 0; this.p++; }
     }
     return v;
   }
+  /** @returns {void} */
   align() { if (this.bit) { this.bit = 0; this.p++; } }
-  /** Decode one value with table `t` (B.4). OOB is `null`. */
+  /** Decode one value with table `t` (B.4). OOB is `null`. @param {HuffTable} t @returns {number | null} @throws {Jbig2Refusal} */
   huff(t) {
     let code = 0;
     for (let len = 1; len <= t.maxLen; len++) {
@@ -252,13 +325,14 @@ class Bits {
   }
 }
 
-/** A table segment (7.4.13) → a table. */
+/** A table segment (7.4.13) → a table. @param {Uint8Array} data @returns {HuffTable} @throws {Jbig2Refusal} */
 function parseTableSegment(data) {
   const r = new Reader(data);
   const flags = r.u8("table flags");
   const htoob = flags & 1, htps = ((flags >> 1) & 7) + 1, htrs = ((flags >> 4) & 7) + 1;
   const low = r.i32("HTLOW"), high = r.i32("HTHIGH");
   const b = new Bits(data, r.p, data.length);
+  /** @type {Line[]} */
   const lines = [];
   let cur = low;
   while (cur < high) {
@@ -285,19 +359,24 @@ const TPGD_CONTEXT = [0x9b25, 0x0795, 0x00e5, 0x0195];
  * `skip`, when given, is a bitmap whose set pixels are not coded (read as 0).
  * `ctx` is the region's GB statistics, shared by the caller where the standard
  * shares them (a symbol dictionary's symbols).
+ * @param {MqDecoder} mq @param {Uint8Array} ctx @param {number} w @param {number} h @param {number} template
+ * @param {number} tpgdon @param {number[]} at @param {Bitmap | null} [skip] @returns {Bitmap} @throws {Jbig2Refusal}
  */
 function decodeGenericArith(mq, ctx, w, h, template, tpgdon, at, skip = null) {
   const bm = bitmap(w, h);
   const D = bm.d;
   const nat = template === 0 ? 4 : 1;
+  /* A pixel `at` does not hold reads as NaN, as the `undefined` it is did (and is never one of the template's own). */
   for (let i = 0; i < nat; i++) {
-    const ax = at[2 * i], ay = at[2 * i + 1];
+    const ax = at[2 * i] ?? NaN, ay = at[2 * i + 1] ?? NaN;
     if (ay > 0 || (ay === 0 && ax >= 0)) throw corrupt(localize("image-codecs.jbig2decode.adaptive_template_pixel_ax_ay", "adaptive template pixel ({ax},{ay}) is not yet decoded", { ax: String(ax), ay: String(ay) }));
   }
-  const px = (x, y) => (x < 0 || x >= w || y < 0 ? 0 : D[y * w + x]);
+  /** @param {number} x @param {number} y @returns {number} */
+  const px = (x, y) => (x < 0 || x >= w || y < 0 ? 0 : D[y * w + x] ?? 0);
   let ltp = 0;
-  const sltp = TPGD_CONTEXT[template];
-  const [a1x, a1y, a2x, a2y, a3x, a3y, a4x, a4y] = at;
+  const sltp = TPGD_CONTEXT[template] ?? NaN;
+  const a1x = at[0] ?? NaN, a1y = at[1] ?? NaN, a2x = at[2] ?? NaN, a2y = at[3] ?? NaN;
+  const a3x = at[4] ?? NaN, a3y = at[5] ?? NaN, a4x = at[6] ?? NaN, a4y = at[7] ?? NaN;
   for (let y = 0; y < h; y++) {
     if (tpgdon) {
       ltp ^= mq.decode(ctx, sltp);
@@ -308,14 +387,20 @@ function decodeGenericArith(mq, ctx, w, h, template, tpgdon, at, skip = null) {
     }
     const r0 = y * w, r1 = r0 - w, r2 = r1 - w;
     const has1 = y >= 1, has2 = y >= 2;
-    const p1 = (x) => (has1 && x >= 0 && x < w ? D[r1 + x] : 0);
-    const p2 = (x) => (has2 && x >= 0 && x < w ? D[r2 + x] : 0);
+    /** @param {number} x @returns {number} */
+    const p1 = (x) => (has1 && x >= 0 && x < w ? D[r1 + x] ?? 0 : 0);
+    /** @param {number} x @returns {number} */
+    const p2 = (x) => (has2 && x >= 0 && x < w ? D[r2 + x] ?? 0 : 0);
     /* Sliding windows over the fixed template pixels: `c0` the current row's
      * pixels left of x, `c1`/`c2` the two rows above. Each window holds its
      * RIGHTMOST pixel in bit 0, which is exactly the order of its field in the
      * context word (e.g. template 0's bits 5..9 are pixels x+2, x+1, x, x-1, x-2
      * of the row above), so a field is its window shifted into place. */
-    let c0 = 0, c1, c2;
+    let c0 = 0;
+    /** @type {number} */
+    let c1;
+    /** @type {number} */
+    let c2;
     if (template === 0) { c1 = (p1(-2) << 4) | (p1(-1) << 3) | (p1(0) << 2) | (p1(1) << 1) | p1(2); c2 = (p2(-1) << 2) | (p2(0) << 1) | p2(1); }
     else if (template === 1) { c1 = (p1(-2) << 4) | (p1(-1) << 3) | (p1(0) << 2) | (p1(1) << 1) | p1(2); c2 = (p2(-1) << 3) | (p2(0) << 2) | (p2(1) << 1) | p2(2); }
     else if (template === 2) { c1 = (p1(-2) << 3) | (p1(-1) << 2) | (p1(0) << 1) | p1(1); c2 = (p2(-1) << 2) | (p2(0) << 1) | p2(1); }
@@ -323,6 +408,7 @@ function decodeGenericArith(mq, ctx, w, h, template, tpgdon, at, skip = null) {
     for (let x = 0; x < w; x++) {
       let bit = 0;
       if (!(skip && skip.d[y * w + x])) {
+        /** @type {number} */
         let cx;
         if (template === 0) {
           cx = c0 | (px(x + a1x, y + a1y) << 4) | (c1 << 5) | (px(x + a2x, y + a2y) << 10)
@@ -349,12 +435,16 @@ function decodeGenericArith(mq, ctx, w, h, template, tpgdon, at, skip = null) {
 
 /* ── MMR (6.2.6: T.6 two-dimensional coding, EOFB-terminated) ────────────── */
 
+/** An MMR mode code: [bits, code, mode, delta]. @typedef {[number, number, "V" | "H" | "P", number]} Mode */
+/** A T.4 run code: [bits, code, run]. @typedef {[number, number, number]} RunCode */
+/** @type {Mode[]} */
 const MODES = [
   // [bits, code, mode, delta]
   [1, 0b1, "V", 0], [3, 0b011, "V", 1], [3, 0b010, "V", -1], [3, 0b001, "H", 0], [4, 0b0001, "P", 0],
   [6, 0b000011, "V", 2], [6, 0b000010, "V", -2], [7, 0b0000011, "V", 3], [7, 0b0000010, "V", -3],
 ];
 /* T.4 terminating and make-up codes as [bits, code, run]. */
+/** @type {RunCode[]} */
 const WHITE = [
   [8, 0x35, 0], [6, 0x7, 1], [4, 0x7, 2], [4, 0x8, 3], [4, 0xb, 4], [4, 0xc, 5], [4, 0xe, 6], [4, 0xf, 7],
   [5, 0x13, 8], [5, 0x14, 9], [5, 0x7, 10], [5, 0x8, 11], [6, 0x8, 12], [6, 0x3, 13], [6, 0x34, 14],
@@ -371,6 +461,7 @@ const WHITE = [
   [9, 0xd8, 1216], [9, 0xd9, 1280], [9, 0xda, 1344], [9, 0xdb, 1408], [9, 0x98, 1472], [9, 0x99, 1536],
   [9, 0x9a, 1600], [6, 0x18, 1664], [9, 0x9b, 1728],
 ];
+/** @type {RunCode[]} */
 const BLACK = [
   [10, 0x37, 0], [3, 0x2, 1], [2, 0x3, 2], [2, 0x2, 3], [3, 0x3, 4], [4, 0x3, 5], [4, 0x2, 6], [5, 0x3, 7],
   [6, 0x5, 8], [6, 0x4, 9], [7, 0x4, 10], [7, 0x5, 11], [7, 0x7, 12], [8, 0x4, 13], [8, 0x7, 14],
@@ -388,12 +479,14 @@ const BLACK = [
   [13, 0x76, 1152], [13, 0x77, 1216], [13, 0x52, 1280], [13, 0x53, 1344], [13, 0x54, 1408],
   [13, 0x55, 1472], [13, 0x5a, 1536], [13, 0x5b, 1600], [13, 0x64, 1664], [13, 0x65, 1728],
 ];
+/** @type {RunCode[]} */
 const EXT = [
   [11, 0x8, 1792], [11, 0xc, 1856], [11, 0xd, 1920], [12, 0x12, 1984], [12, 0x13, 2048], [12, 0x14, 2112],
   [12, 0x15, 2176], [12, 0x16, 2240], [12, 0x17, 2304], [12, 0x1c, 2368], [12, 0x1d, 2432], [12, 0x1e, 2496],
   [12, 0x1f, 2560],
 ];
 /* 13-bit lookup: the code's bits, left-aligned, → (length << 16) | run + 1. */
+/** @param {RunCode[]} codes @returns {Int32Array} */
 function runLookup(codes) {
   const t = new Int32Array(1 << 13);
   for (const [n, code, run] of [...codes, ...EXT]) {
@@ -405,23 +498,34 @@ function runLookup(codes) {
 const WHITE_LUT = runLookup(WHITE), BLACK_LUT = runLookup(BLACK);
 
 class MmrBits {
-  constructor(d, p, end) { this.d = d; this.p0 = p; this.pos = p * 8; this.endBit = end * 8; }
+  /** @param {Uint8Array} d @param {number} p @param {number} end */
+  constructor(d, p, end) {
+    /** @type {Uint8Array} */ this.d = d;
+    /** @type {number} */ this.p0 = p;
+    /** @type {number} */ this.pos = p * 8;
+    /** @type {number} */ this.endBit = end * 8;
+  }
+  /** @param {number} n @returns {number} */
   peek(n) {
     let v = 0;
     for (let i = 0; i < n; i++) {
       const b = this.pos + i;
-      v = (v << 1) | (b < this.endBit ? (this.d[b >> 3] >> (7 - (b & 7))) & 1 : 0);
+      v = (v << 1) | (b < this.endBit ? ((this.d[b >> 3] ?? 0) >> (7 - (b & 7))) & 1 : 0);
     }
     return v;
   }
+  /** @param {number} n @returns {void} */
   skip(n) { this.pos += n; }
+  /** @returns {number} */
   get left() { return this.endBit - this.pos; }
 }
 
+/** One run (make-up codes and its terminating code), or -1 where the data ends or breaks.
+ *  @param {MmrBits} br @param {Int32Array} lut @returns {number} */
 function mmrRun(br, lut) {
   let total = 0;
   for (;;) {
-    const e = lut[br.peek(13)];
+    const e = lut[br.peek(13)] ?? 0;
     if (!e || (e >> 16) > br.left) return -1;
     br.skip(e >> 16);
     const run = (e & 0xffff) - 1;
@@ -436,6 +540,8 @@ function mmrRun(br, lut) {
  * A row the data does not finish, or an EOFB before the last row, is refused
  * TRUNCATED: jbig2dec pads the rest with white, and a page of invented white
  * reads downstream like a page with nothing on it.
+ * @param {Uint8Array} d @param {number} p @param {number} end @param {number} w @param {number} h
+ * @returns {{ bm: Bitmap, end: number }} @throws {Jbig2Refusal}
  */
 function decodeMmr(d, p, end, w, h) {
   const bm = bitmap(w, h);
@@ -443,26 +549,32 @@ function decodeMmr(d, p, end, w, h) {
   let ref = [w, w];
   for (let y = 0; y < h; y++) {
     if (br.peek(24) === 0x001001 && br.left >= 24) throw truncated(localize("image-codecs.jbig2decode.mmr_data_ends_eofb_after", "MMR data ends (EOFB) after {y} of {h} rows", { y: String(y), h: String(h) }));
+    /** @type {number[]} */
     const cur = [];
     let a0 = -1, colour = 0;
+    /* (each `ref[i]` is read below `ref.length`, so its `?? 0` is never taken) */
+    /** @returns {number} */
     const b1 = () => {
       let i = 0;
-      while (i < ref.length && ref[i] <= a0) i++;
+      while (i < ref.length && (ref[i] ?? 0) <= a0) i++;
       if (a0 < 0) i = 0;
       while (i < ref.length && (i & 1) !== colour) i++;
-      return i < ref.length ? ref[i] : w;
+      return i < ref.length ? ref[i] ?? 0 : w;
     };
+    /** @returns {number} */
     const b1Index = () => {
       let i = 0;
-      while (i < ref.length && (a0 >= 0 ? ref[i] <= a0 : false)) i++;
+      while (i < ref.length && (a0 >= 0 ? (ref[i] ?? 0) <= a0 : false)) i++;
       while (i < ref.length && (i & 1) !== colour) i++;
       return i;
     };
     let guard = 0;
     while (a0 < w) {
       if (++guard > 4 * w + 16) throw corrupt("an MMR row that does not end");
-      let hit = null;
-      for (const m of MODES) if (br.left >= m[0] && br.peek(m[0]) === m[1]) { hit = m; break; }
+      /** @type {Mode | null} */
+      let found = null;
+      for (const m of MODES) if (br.left >= m[0] && br.peek(m[0]) === m[1]) { found = m; break; }
+      const hit = found;
       if (!hit) throw truncated(localize("image-codecs.jbig2decode.mmr_data_ends_or_breaks", "MMR data ends or breaks in row {y} of {h}", { y: String(y), h: String(h) }));
       br.skip(hit[0]);
       if (hit[2] === "H") {
@@ -475,7 +587,7 @@ function decodeMmr(d, p, end, w, h) {
         a0 = m2;
       } else if (hit[2] === "P") {
         const i = b1Index();
-        a0 = i + 1 < ref.length ? ref[i + 1] : w;
+        a0 = i + 1 < ref.length ? ref[i + 1] ?? 0 : w;
       } else {
         const a1 = Math.max(0, Math.min(w, b1() + hit[3]));
         if (a1 < a0) throw corrupt(localize("image-codecs.jbig2decode.mmr_row_y_runs_backwards", "MMR row {y} runs backwards", { y: String(y) }));
@@ -499,21 +611,33 @@ function decodeMmr(d, p, end, w, h) {
 
 /* ── generic refinement region decoding (6.3) ─────────────────────────────── */
 
+/**
+ * Decode a generic refinement region of `ref`, offset by (dx, dy). `at` is the
+ * adaptive template's [x0,y0,x1,y1] (template 0 only).
+ * @param {MqDecoder} mq @param {Uint8Array} ctx @param {number} w @param {number} h @param {number} template
+ * @param {Bitmap} ref @param {number} dx @param {number} dy @param {boolean | number} tpgron @param {number[]} at
+ * @returns {Bitmap} @throws {Jbig2Refusal}
+ */
 function decodeRefinement(mq, ctx, w, h, template, ref, dx, dy, tpgron, at) {
   const bm = bitmap(w, h);
   const D = bm.d, R = ref.d, rw = ref.w, rh = ref.h;
+  /* A pixel `at` does not hold reads as NaN, as the `undefined` it is did (`at` always holds four). */
+  const at0 = at[0] ?? NaN, at1 = at[1] ?? NaN, at2 = at[2] ?? NaN, at3 = at[3] ?? NaN;
   if (template === 0) {
-    if (at[1] > 0 || (at[1] === 0 && at[0] >= 0)) throw corrupt(localize("image-codecs.jbig2decode.refinement_adaptive_pixel_is_not", "refinement adaptive pixel is not yet decoded"));
+    if (at1 > 0 || (at1 === 0 && at0 >= 0)) throw corrupt(localize("image-codecs.jbig2decode.refinement_adaptive_pixel_is_not", "refinement adaptive pixel is not yet decoded"));
   }
-  const g = (x, y) => (x < 0 || x >= w || y < 0 || y >= h ? 0 : D[y * w + x]);
-  const r = (x, y) => (x < 0 || x >= rw || y < 0 || y >= rh ? 0 : R[y * rw + x]);
+  /** @param {number} x @param {number} y @returns {number} */
+  const g = (x, y) => (x < 0 || x >= w || y < 0 || y >= h ? 0 : D[y * w + x] ?? 0);
+  /** @param {number} x @param {number} y @returns {number} */
+  const r = (x, y) => (x < 0 || x >= rw || y < 0 || y >= rh ? 0 : R[y * rw + x] ?? 0);
+  /** @type {(x: number, y: number) => number} */
   const ctxOf = template === 0
     ? (x, y) => {
         const i = x - dx, j = y - dy;
-        return g(x - 1, y) | (g(x + 1, y - 1) << 1) | (g(x, y - 1) << 2) | (g(x + at[0], y + at[1]) << 3)
+        return g(x - 1, y) | (g(x + 1, y - 1) << 1) | (g(x, y - 1) << 2) | (g(x + at0, y + at1) << 3)
           | (r(i + 1, j + 1) << 4) | (r(i, j + 1) << 5) | (r(i - 1, j + 1) << 6) | (r(i + 1, j) << 7)
           | (r(i, j) << 8) | (r(i - 1, j) << 9) | (r(i + 1, j - 1) << 10) | (r(i, j - 1) << 11)
-          | (r(i + at[2], j + at[3]) << 12);
+          | (r(i + at2, j + at3) << 12);
       }
     : (x, y) => {
         const i = x - dx, j = y - dy;
@@ -548,13 +672,36 @@ function decodeRefinement(mq, ctx, w, h, template, ref, dx, dy, tpgron, at) {
 const CORNER = { BOTTOMLEFT: 0, TOPLEFT: 1, BOTTOMRIGHT: 2, TOPRIGHT: 3 };
 
 /**
+ * A text region's parameters (Table 9 of T.88).
+ * @typedef {Object} TextParams
+ * @property {number} w
+ * @property {number} h
+ * @property {number} numInstances
+ * @property {number} strips
+ * @property {number} logStrips
+ * @property {number} refine
+ * @property {number} defPixel
+ * @property {number} combOp
+ * @property {number} transposed
+ * @property {number} refCorner
+ * @property {number} dsOffset
+ * @property {number} rTemplate
+ * @property {number[]} rAt
+ */
+/** The integer contexts a text region decodes with. @typedef {{ DT: Uint8Array, FS: Uint8Array, DS: Uint8Array, IT: Uint8Array, RI: Uint8Array, RDW: Uint8Array, RDH: Uint8Array, RDX: Uint8Array, RDY: Uint8Array, ID: Uint8Array }} TextIa */
+/** A text region's arithmetic decoding. @typedef {{ mq: MqDecoder, ia: TextIa, idLen: number, gr: Uint8Array }} TextArith */
+/** A text region's Huffman decoding. @typedef {{ bits: Bits, tables: { FS: HuffTable, DS: HuffTable, DT: HuffTable }, symCodes: HuffTable }} TextHuffman */
+
+/**
  * `p` holds the region's parameters (Table 9 of T.88); `dec` is either
  * `{mq, ia:{DT,FS,DS,IT,ID,RI,RDW,RDH,RDX,RDY}, idLen, gr}` (arithmetic) or
  * `{bits, tables:{FS,DS,DT,...}, symCodes}` (Huffman).
+ * @param {TextParams} p @param {Bitmap[]} syms @param {TextArith | TextHuffman} dec @returns {Bitmap} @throws {Jbig2Refusal}
  */
 function decodeTextRegion(p, syms, dec) {
   const reg = bitmap(p.w, p.h, p.defPixel);
-  const huff = !!dec.bits;
+  const huff = "bits" in dec;
+  /** @param {"DT" | "FS" | "DS"} name @returns {number | null} */
   const num = (name) => {
     if (huff) return dec.bits.huff(dec.tables[name]);
     return iaDecode(dec.mq, dec.ia[name]);
@@ -578,10 +725,12 @@ function decodeTextRegion(p, syms, dec) {
       if (p.strips !== 1) curt = huff ? dec.bits.read(p.logStrips) : intOrThrow(iaDecode(dec.mq, dec.ia.IT), "a symbol's T");
       const t = stript + curt;
       const id = huff ? intOrThrow(dec.bits.huff(dec.symCodes), "a symbol id") : iaidDecode(dec.mq, dec.ia.ID, dec.idLen);
-      if (id < 0 || id >= syms.length || !syms[id]) throw corrupt(localize("image-codecs.jbig2decode.symbol_id_id_of_length", "symbol id {id} of {length}", { id: String(id), length: String(syms.length) }));
-      let ib = syms[id];
+      const sym = syms[id];
+      if (id < 0 || id >= syms.length || !sym) throw corrupt(localize("image-codecs.jbig2decode.symbol_id_id_of_length", "symbol id {id} of {length}", { id: String(id), length: String(syms.length) }));
+      let ib = sym;
       const ri = p.refine ? (huff ? dec.bits.read(1) : intOrThrow(iaDecode(dec.mq, dec.ia.RI), "a refinement flag")) : 0;
-      if (ri) {
+      /* (a Huffman-coded region that refines is refused before it gets here, so `!huff` holds wherever `ri` is set) */
+      if (ri && !huff) {
         const rdw = intOrThrow(iaDecode(dec.mq, dec.ia.RDW), "RDW"), rdh = intOrThrow(iaDecode(dec.mq, dec.ia.RDH), "RDH");
         const rdx = intOrThrow(iaDecode(dec.mq, dec.ia.RDX), "RDX"), rdy = intOrThrow(iaDecode(dec.mq, dec.ia.RDY), "RDY");
         if (ib.w + rdw < 0 || ib.h + rdh < 0) throw corrupt(localize("image-codecs.jbig2decode.a_refined_symbol_of_negative", "a refined symbol of negative size"));
@@ -591,7 +740,10 @@ function decodeTextRegion(p, syms, dec) {
       if (!p.transposed && p.refCorner > 1) curs += ib.w - 1;
       else if (p.transposed && !(p.refCorner & 1)) curs += ib.h - 1;
       const s = curs;
-      let x, y;
+      /** @type {number} */
+      let x;
+      /** @type {number} */
+      let y;
       const [u, v] = p.transposed ? [t, s] : [s, t];
       switch (p.refCorner) {
         case CORNER.TOPLEFT: x = u; y = v; break;
@@ -610,18 +762,21 @@ function decodeTextRegion(p, syms, dec) {
 }
 
 /** The text region's symbol-id Huffman table, coded at the start of its data
- *  (7.4.3.1.7). */
+ *  (7.4.3.1.7). @param {Bits} bits @param {number} numSyms @returns {HuffTable} @throws {Jbig2Refusal} */
 function readSymbolIdTable(bits, numSyms) {
+  /** @type {Line[]} */
   const runLines = [];
   for (let i = 0; i < 35; i++) runLines.push(L(bits.read(4), 0, i));
   const runTable = table(runLines);
+  /** @type {number[]} */
   const lens = [];
   while (lens.length < numSyms) {
     const code = bits.huff(runTable);
     if (code === OOB || code > 34) throw corrupt(localize("image-codecs.jbig2decode.a_symbol_id_length_code", "a symbol-id length code outside the run table"));
     if (code < 32) lens.push(code);
     else {
-      const [rep, val] = code === 32 ? [3 + bits.read(2), lens.length ? lens[lens.length - 1] : -1]
+      /** @type {[number, number]} */
+      const [rep, val] = code === 32 ? [3 + bits.read(2), lens.length ? lens[lens.length - 1] ?? -1 : -1]
         : code === 33 ? [3 + bits.read(3), 0] : [11 + bits.read(7), 0];
       if (val < 0) throw corrupt(localize("image-codecs.jbig2decode.a_repeated_symbol_id_length", "a repeated symbol-id length with nothing before it"));
       for (let i = 0; i < rep; i++) lens.push(val);
@@ -634,6 +789,23 @@ function readSymbolIdTable(bits, numSyms) {
 
 /* ── the segments ─────────────────────────────────────────────────────────── */
 
+/** A segment of the stream, with its data. @typedef {{ number: number, type: number, refs: number[], page: number, data: Uint8Array }} Segment */
+/** A region's information field (7.4.1). @typedef {{ w: number, h: number, x: number, y: number, op: number }} RegionInfo */
+/** A symbol dictionary's exported symbols. @typedef {{ kind: "symbols", exported: Bitmap[] }} SymbolsResult */
+/** An intermediate region. @typedef {{ kind: "region", bm: Bitmap, info: RegionInfo }} RegionResult */
+/** A pattern dictionary's patterns. @typedef {{ kind: "patterns", patterns: Bitmap[] }} PatternsResult */
+/** What a segment leaves for later segments to refer to. @typedef {SymbolsResult | RegionResult | PatternsResult} SegmentResult */
+/** The page information segment's fields. @typedef {{ w: number, h: number, unknownHeight: boolean, defPixel: number, op: number, maxStripe: number }} PageInfo */
+/**
+ * A decoded JBIG2 image.
+ * @typedef {Object} Jbig2Image
+ * @property {number} width
+ * @property {number} height
+ * @property {Uint8Array} packed 1-bit rows, MSB first, set bit = black
+ * @property {{ segments: number, global_segments: number, decoded: string[] }} detail what was decoded
+ */
+
+/** @param {Reader} r @returns {RegionInfo} @throws {Jbig2Refusal} */
 function regionInfo(r) {
   const w = r.u32("region width"), h = r.u32("region height"), x = r.u32("region x"), y = r.u32("region y");
   const flags = r.u8("region flags");
@@ -641,13 +813,16 @@ function regionInfo(r) {
   return { w, h, x, y, op: flags & 7 };
 }
 
+/** @param {Reader} r @param {number} n @returns {number[]} @throws {Jbig2Refusal} */
 function readAt(r, n) {
+  /** @type {number[]} */
   const at = [];
   for (let i = 0; i < n; i++) at.push(r.i8("an adaptive-template x"), r.i8("an adaptive-template y"));
   return at;
 }
 
-/** The segment headers of an embedded (PDF) stream, each with its data. */
+/** The segment headers of an embedded (PDF) stream, each with its data.
+ *  @param {Uint8Array} d @param {Segment[]} into @param {number} [limit] @returns {void} @throws {Jbig2Refusal} */
 function readSegments(d, into, limit = d.length) {
   const r = new Reader(d, 0, limit);
   while (r.p < limit) {
@@ -664,6 +839,7 @@ function readSegments(d, into, limit = d.length) {
       r.p += bytes;
     } else if (count > 4) throw corrupt(`referred-to count ${count}`);
     const refSize = number <= 256 ? 1 : number <= 65536 ? 2 : 4;
+    /** @type {number[]} */
     const refs = [];
     for (let i = 0; i < count; i++) refs.push(refSize === 1 ? r.u8("a referred-to segment") : refSize === 2 ? r.u16("a referred-to segment") : r.u32("a referred-to segment"));
     const page = pageAssoc4 ? r.u32("a page association") : r.u8("a page association");
@@ -681,11 +857,12 @@ function readSegments(d, into, limit = d.length) {
 }
 
 /** An immediate generic region of unknown length (7.2.7): its data ends with
- *  0xFFAC (arithmetic) or 0x0000 (MMR), then a 32-bit row count. */
+ *  0xFFAC (arithmetic) or 0x0000 (MMR), then a 32-bit row count.
+ *  @param {Uint8Array} d @param {number} start @param {number} limit @returns {number} @throws {Jbig2Refusal} TRUNCATED */
 function unknownLengthGeneric(d, start, limit) {
   if (start + 18 > limit) throw truncated("a generic region's header");
-  const mmr = d[start + 17] & 1;
-  const hdr = 18 + (mmr ? 0 : (((d[start + 17] >> 1) & 3) === 0 ? 8 : 2));
+  const mmr = (d[start + 17] ?? 0) & 1;
+  const hdr = 18 + (mmr ? 0 : ((((d[start + 17] ?? 0) >> 1) & 3) === 0 ? 8 : 2));
   for (let i = start + hdr; i + 6 <= limit; i++) {
     if (mmr ? d[i] === 0 && d[i + 1] === 0 : d[i] === 0xff && d[i + 1] === 0xac) return i + 6 - start;
   }
@@ -697,20 +874,28 @@ function unknownLengthGeneric(d, start, limit) {
  * `/JBIG2Globals` stream's bytes or null. Returns
  * `{ width, height, packed, detail }` where `packed` holds 1-bit rows, MSB
  * first, SET BIT = BLACK (JBIG2's sense), and `detail` names what was decoded.
+ * @param {Uint8Array} data @param {Uint8Array | null} [globals] @returns {Jbig2Image}
+ * @throws {Jbig2Refusal} UNSUPPORTED, TRUNCATED, CORRUPT or IMAGE_TOO_LARGE
  */
 export function decodeJbig2(data, globals = null) {
+  /** @type {Segment[]} */
   const segs = [];
   if (globals) readSegments(globals, segs);
   const nGlobal = segs.length;
   readSegments(data, segs);
 
-  const results = new Map();            // segment number → {kind, ...}
-  const tables = new Map();
-  let page = null, pageInfo = null;
+  /** @type {Map<number, SegmentResult>} */
+  const results = new Map([]);          // segment number → {kind, ...}
+  /** @type {Map<number, HuffTable>} */
+  const tables = new Map([]);
+  /** @type {Bitmap | null} */
+  let page = null;
+  /** @type {PageInfo | null} */
+  let pageInfo = null;
+  /** @type {Set<string>} */
   const used = new Set();
 
-  for (let si = 0; si < segs.length; si++) {
-    const seg = segs[si];
+  for (const seg of segs) {
     try {
       page = decodeSegment(seg, page);
     } catch (e) {
@@ -719,6 +904,7 @@ export function decodeJbig2(data, globals = null) {
       throw e;
     }
   }
+  /** @param {Segment} seg @param {Bitmap | null} page @returns {Bitmap | null} @throws {Jbig2Refusal} */
   function decodeSegment(seg, page) {
     const r = new Reader(seg.data);
     const t = seg.type;
@@ -731,16 +917,19 @@ export function decodeJbig2(data, globals = null) {
         const striping = r.u16("page striping");
         const unknownHeight = h === 0xffffffff;
         if (unknownHeight && !(striping & 0x8000)) throw corrupt(localize("image-codecs.jbig2decode.a_page_of_unknown_height", "a page of unknown height that is not striped"));
-        pageInfo = { w, h: unknownHeight ? 0 : h, unknownHeight, defPixel: (flags >> 2) & 1, op: (flags >> 3) & 3,
+        const pi = { w, h: unknownHeight ? 0 : h, unknownHeight, defPixel: (flags >> 2) & 1, op: (flags >> 3) & 3,
                      maxStripe: striping & 0x7fff };
-        page = bitmap(w, unknownHeight ? 0 : h, pageInfo.defPixel);
+        pageInfo = pi;
+        page = bitmap(w, unknownHeight ? 0 : h, pi.defPixel);
         used.add("page information");
         break;
       }
       case 49: case 51: case 52: break;              // end of page, end of file, profiles
       case 50: {                                     // end of stripe
         const endRow = r.u32("end of stripe row");
-        if (pageInfo?.unknownHeight && endRow + 1 > page.h) page = grow(page, endRow + 1, pageInfo.defPixel);
+        /* (the page and its information are set together, so `cur` is set wherever `pi` is) */
+        const pi = pageInfo, cur = page;
+        if (pi?.unknownHeight && cur && endRow + 1 > cur.h) page = grow(cur, endRow + 1, pi.defPixel);
         break;
       }
       case 53: {
@@ -761,18 +950,23 @@ export function decodeJbig2(data, globals = null) {
       case 20: case 22: case 23:
       case 36: case 38: case 39:
       case 40: case 42: case 43: {
-        if (!page) throw unsupported("no page");
+        const cur = page;
+        if (!cur) throw unsupported("no page");
         const info = regionInfo(r);
+        /** @type {Bitmap} */
         let reg;
         if (t <= 7) reg = decodeTextSegment(seg, r, info, results, tables, used);
         else if (t <= 23) reg = decodeHalftoneSegment(seg, r, info, results, used);
         else if (t <= 39) reg = decodeGenericSegment(seg, r, info, used);
-        else reg = decodeRefinementSegment(seg, r, info, results, page, used);
+        else reg = decodeRefinementSegment(seg, r, info, results, cur, used);
         if (t === 4 || t === 20 || t === 36 || t === 40) {
           results.set(seg.number, { kind: "region", bm: reg, info });
         } else {
-          if (pageInfo.unknownHeight && info.y + info.h > page.h) page = grow(page, info.y + info.h, pageInfo.defPixel);
-          compose(page, reg, info.x, info.y, info.op);
+          /* (the page and its information are set together, so `pi` is set wherever `cur` is) */
+          const pi = pageInfo;
+          const into = pi && pi.unknownHeight && info.y + info.h > cur.h ? grow(cur, info.y + info.h, pi.defPixel) : cur;
+          page = into;
+          compose(into, reg, info.x, info.y, info.op);
         }
         break;
       }
@@ -785,25 +979,29 @@ export function decodeJbig2(data, globals = null) {
     }
     return page;
   }
-  if (!page) throw unsupported("no page");
-  const rowBytes = Math.ceil(page.w / 8);
-  const packed = new Uint8Array(rowBytes * page.h);
-  for (let y = 0; y < page.h; y++) {
-    const row = y * page.w, o = y * rowBytes;
-    for (let x = 0; x < page.w; x++) if (page.d[row + x]) packed[o + (x >> 3)] |= 0x80 >> (x & 7);
+  const done = page;
+  if (!done) throw unsupported("no page");
+  const rowBytes = Math.ceil(done.w / 8);
+  const packed = new Uint8Array(rowBytes * done.h);
+  for (let y = 0; y < done.h; y++) {
+    const row = y * done.w, o = y * rowBytes;
+    for (let x = 0; x < done.w; x++) if (done.d[row + x]) { const i = o + (x >> 3); packed[i] = (packed[i] ?? 0) | (0x80 >> (x & 7)); }
   }
-  return { width: page.w, height: page.h, packed, detail: { segments: segs.length, global_segments: nGlobal,
+  return { width: done.w, height: done.h, packed, detail: { segments: segs.length, global_segments: nGlobal,
     decoded: [...used].sort() } };
 }
 
+/** The page grown to `h` rows (an unknown-height page, 7.4.8). @param {Bitmap} bm @param {number} h @param {number} fill @returns {Bitmap} @throws {Jbig2Refusal} */
 function grow(bm, h, fill) {
   const nb = bitmap(bm.w, h, fill);
   nb.d.set(bm.d.subarray(0, Math.min(bm.d.length, nb.d.length)));
   return nb;
 }
 
-/** Symbols from every symbol dictionary a segment refers to, in order. */
+/** Symbols from every symbol dictionary a segment refers to, in order.
+ *  @param {Segment} seg @param {Map<number, SegmentResult>} results @returns {Bitmap[]} */
 function referredSymbols(seg, results) {
+  /** @type {Bitmap[]} */
   const out = [];
   for (const n of seg.refs) {
     const s = results.get(n);
@@ -811,10 +1009,18 @@ function referredSymbols(seg, results) {
   }
   return out;
 }
+/** The custom tables a segment refers to, in order. @param {Segment} seg @param {Map<number, HuffTable>} tables @returns {HuffTable[]} */
 function referredTables(seg, tables) {
-  return seg.refs.filter((n) => tables.has(n)).map((n) => tables.get(n));
+  /** @type {HuffTable[]} */
+  const out = [];
+  for (const n of seg.refs) {
+    const t = tables.get(n);
+    if (t) out.push(t);
+  }
+  return out;
 }
 
+/** @param {Segment} seg @param {Reader} r @param {RegionInfo} info @param {Set<string>} used @returns {Bitmap} @throws {Jbig2Refusal} */
 function decodeGenericSegment(seg, r, info, used) {
   const flags = r.u8("generic region flags");
   const mmr = flags & 1, template = (flags >> 1) & 3, tpgdon = (flags >> 3) & 1;
@@ -834,12 +1040,15 @@ function decodeGenericSegment(seg, r, info, used) {
   return bm;
 }
 
+/** @param {Segment} seg @param {Reader} r @param {RegionInfo} info @param {Map<number, SegmentResult>} results
+ *  @param {Bitmap} page @param {Set<string>} used @returns {Bitmap} @throws {Jbig2Refusal} */
 function decodeRefinementSegment(seg, r, info, results, page, used) {
   const flags = r.u8("refinement region flags");
   const template = flags & 1, tpgron = (flags >> 1) & 1;
   const at = template === 0 ? readAt(r, 2) : [0, 0, 0, 0];
+  /** @type {Bitmap} */
   let ref;
-  const inter = seg.refs.map((n) => results.get(n)).find((s) => s && s.kind === "region");
+  const inter = seg.refs.map((n) => results.get(n)).find((s) => s !== undefined && s.kind === "region");
   if (inter) { ref = inter.bm; }
   else {
     /* No intermediate region referred to: the reference is the page's region
@@ -856,6 +1065,9 @@ function decodeRefinementSegment(seg, r, info, results, page, used) {
   return bm;
 }
 
+/** The symbol tables a Huffman-coded symbol dictionary decodes with. @typedef {{ DH: HuffTable, DW: HuffTable, BM: HuffTable }} SymbolTables */
+/** @param {Segment} seg @param {Reader} r @param {Map<number, SegmentResult>} results @param {Map<number, HuffTable>} tables
+ *  @param {Set<string>} used @returns {{ exported: Bitmap[] }} @throws {Jbig2Refusal} */
 function decodeSymbolDict(seg, r, results, tables, used) {
   const flags = r.u16("symbol dictionary flags");
   const huff = flags & 1, refagg = (flags >> 1) & 1;
@@ -870,47 +1082,55 @@ function decodeSymbolDict(seg, r, results, tables, used) {
   const inSyms = referredSymbols(seg, results);
   const custom = referredTables(seg, tables);
   let ci = 0;
+  /* (`custom` and `std` hold no holes and `ci`, `sel` are never negative, so a read past the end is the only undefined) */
+  /** @param {number} sel @param {StdTableNo[]} std @returns {HuffTable} */
   const pick = (sel, std) => {
     if (sel === 3 || (std.length === 1 && sel === 1)) {
-      if (ci >= custom.length) throw corrupt(localize("image-codecs.jbig2decode.a_custom_huffman_table_the", "a custom Huffman table the segment does not refer to"));
-      return custom[ci++];
+      const t = custom[ci];
+      if (t === undefined) throw corrupt(localize("image-codecs.jbig2decode.a_custom_huffman_table_the", "a custom Huffman table the segment does not refer to"));
+      ci++;
+      return t;
     }
-    if (sel >= std.length) throw corrupt(localize("image-codecs.jbig2decode.huffman_table_selection_sel", "Huffman table selection {sel}", { sel: String(sel) }));
-    return standardTable(std[sel]);
+    const n = std[sel];
+    if (n === undefined) throw corrupt(localize("image-codecs.jbig2decode.huffman_table_selection_sel", "Huffman table selection {sel}", { sel: String(sel) }));
+    return standardTable(n);
   };
-  let tDH, tDW, tBM;
-  if (huff) {
-    tDH = pick(selDH, [4, 5]); tDW = pick(selDW, [2, 3]); tBM = pick(selBM, [1]);
-    pick(selAI, [1]);   // AGGINST: unused with refinement refused, but it takes its custom table in turn
-  }
+  /** @type {SymbolTables | null} */
+  const picked = huff ? { DH: pick(selDH, ["4", "5"]), DW: pick(selDW, ["2", "3"]), BM: pick(selBM, ["1"]) } : null;
+  if (picked) pick(selAI, ["1"]);   // AGGINST: unused with refinement refused, but it takes its custom table in turn
   used.add(`symbol dictionary, ${huff ? "Huffman" : "arithmetic"}${refagg ? ", refinement/aggregate" : ""}`);
   const total = inSyms.length + numNew;
   if (total > OBJECTS_MAX) throw tooManyObjects(total, localize("image-codecs.jbig2decode.the_symbol_dictionary_declares_n", "the symbol dictionary declares {n} symbols, past the {bound} the decoder holds", { n: String(total), bound: String(OBJECTS_MAX) }));
   let idLen = 0;
   while (2 ** idLen < total) idLen++;
+  /** @type {Bitmap[]} */
   const newSyms = [];
   const d = seg.data;
-  let mq = null, bits = null;
   const gb = mqContexts(1 << 16), gr = mqContexts(1 << 13);
   const ia = { DH: iaCtx(), DW: iaCtx(), EX: iaCtx(), AI: iaCtx(), DT: iaCtx(), FS: iaCtx(), DS: iaCtx(), IT: iaCtx(),
                RI: iaCtx(), RDW: iaCtx(), RDH: iaCtx(), RDX: iaCtx(), RDY: iaCtx(), ID: mqContexts(1 << (idLen + 1)) };
-  if (huff) bits = new Bits(d, r.p, d.length);
-  else mq = new MqDecoder(d, r.p, d.length, { onShort: (m) => { throw truncated(localize("image-codecs.jbig2decode.the_symbol_dictionarys_arithmetic_data", "the symbol dictionary's arithmetic data ran out ({overrun} bytes short)", { overrun: String(m.overrun) })); } });
-  const num = (name, tbl) => (huff ? bits.huff(tbl) : iaDecode(mq, ia[name]));
+  /* the coder: Huffman (`picked` is set exactly when `huff` is) or arithmetic */
+  /** @type {{ huff: true, bits: Bits, t: SymbolTables } | { huff: false, mq: MqDecoder }} */
+  const c = picked ? { huff: true, bits: new Bits(d, r.p, d.length), t: picked }
+    : { huff: false, mq: new MqDecoder(d, r.p, d.length, { onShort: (m) => { throw truncated(localize("image-codecs.jbig2decode.the_symbol_dictionarys_arithmetic_data", "the symbol dictionary's arithmetic data ran out ({overrun} bytes short)", { overrun: String(m.overrun) })); } }) };
+  /** @param {"DH" | "DW"} name @returns {number | null} */
+  const num = (name) => (c.huff ? c.bits.huff(c.t[name]) : iaDecode(c.mq, ia[name]));
   let hcHeight = 0;
   while (newSyms.length < numNew) {
-    hcHeight += intOrThrow(num("DH", tDH), "a height-class delta");
+    hcHeight += intOrThrow(num("DH"), "a height-class delta");
     if (hcHeight < 0) throw corrupt("a negative height class");
     let symWidth = 0, totWidth = 0;
+    /** @type {number[]} */
     const widths = [];
     for (;;) {
-      const dw = num("DW", tDW);
+      const dw = num("DW");
       if (dw === OOB) break;
       if (newSyms.length + widths.length >= numNew && !huff) throw corrupt("more symbols than SDNUMNEWSYMS");
       symWidth += dw;
       if (symWidth < 0) throw corrupt("a negative symbol width");
       totWidth += symWidth;
-      if (huff) { widths.push(symWidth); continue; }
+      if (c.huff) { widths.push(symWidth); continue; }
+      const mq = c.mq;
       if (!refagg) {
         newSyms.push(decodeGenericArith(mq, gb, symWidth, hcHeight, template, 0, at));
         continue;
@@ -925,21 +1145,25 @@ function decodeSymbolDict(seg, r, results, tables, used) {
       } else {
         const id = iaidDecode(mq, ia.ID, idLen);
         const rdx = intOrThrow(iaDecode(mq, ia.RDX), "RDX"), rdy = intOrThrow(iaDecode(mq, ia.RDY), "RDY");
-        if (id >= syms.length) throw corrupt(localize("image-codecs.jbig2decode.refinement_of_symbol_id_of", "refinement of symbol {id} of {length}", { id: String(id), length: String(syms.length) }));
-        newSyms.push(decodeRefinement(mq, gr, symWidth, hcHeight, rTemplate, syms[id], rdx, rdy, false, rAt));
+        /* (`syms` holds no holes and `id` is never negative, so `sym` is undefined exactly when `id >= syms.length`) */
+        const sym = syms[id];
+        if (sym === undefined) throw corrupt(localize("image-codecs.jbig2decode.refinement_of_symbol_id_of", "refinement of symbol {id} of {length}", { id: String(id), length: String(syms.length) }));
+        newSyms.push(decodeRefinement(mq, gr, symWidth, hcHeight, rTemplate, sym, rdx, rdy, false, rAt));
       }
     }
-    if (huff) {
+    if (c.huff) {
       /* The height class's collective bitmap (6.5.9). */
-      const bmSize = intOrThrow(bits.huff(tBM), "BMSIZE");
+      const bits = c.bits;
+      const bmSize = intOrThrow(bits.huff(c.t.BM), "BMSIZE");
       bits.align();
+      /** @type {Bitmap} */
       let coll;
       if (bmSize === 0) {
         const stride = Math.ceil(totWidth / 8);
         if (bits.p + stride * hcHeight > d.length) throw truncated("an uncompressed collective bitmap");
         coll = bitmap(totWidth, hcHeight);
         for (let y = 0; y < hcHeight; y++) for (let x = 0; x < totWidth; x++)
-          coll.d[y * totWidth + x] = (d[bits.p + y * stride + (x >> 3)] >> (7 - (x & 7))) & 1;
+          coll.d[y * totWidth + x] = ((d[bits.p + y * stride + (x >> 3)] ?? 0) >> (7 - (x & 7))) & 1;
         bits.p += stride * hcHeight;
       } else {
         if (bits.p + bmSize > d.length) throw truncated("an MMR collective bitmap");
@@ -957,10 +1181,11 @@ function decodeSymbolDict(seg, r, results, tables, used) {
   }
   /* The export flags (6.5.10). */
   const all = [...inSyms, ...newSyms];
+  /** @type {Bitmap[]} */
   const exported = [];
   let exFlag = 0, i = 0;
   while (i < all.length) {
-    const run = intOrThrow(huff ? bits.huff(standardTable(1)) : iaDecode(mq, ia.EX), "an export run");
+    const run = intOrThrow(c.huff ? c.bits.huff(standardTable("1")) : iaDecode(c.mq, ia.EX), "an export run");
     if (run < 0 || i + run > all.length) throw corrupt(localize("image-codecs.jbig2decode.an_export_run_past_the", "an export run past the symbols"));
     if (exFlag) exported.push(...all.slice(i, i + run));
     i += run;
@@ -970,6 +1195,8 @@ function decodeSymbolDict(seg, r, results, tables, used) {
   return { exported };
 }
 
+/** @param {Segment} seg @param {Reader} r @param {RegionInfo} info @param {Map<number, SegmentResult>} results
+ *  @param {Map<number, HuffTable>} tables @param {Set<string>} used @returns {Bitmap} @throws {Jbig2Refusal} */
 function decodeTextSegment(seg, r, info, results, tables, used) {
   const flags = r.u16("text region flags");
   const huff = flags & 1, refine = (flags >> 1) & 1, logStrips = (flags >> 2) & 3, refCorner = (flags >> 4) & 3;
@@ -990,19 +1217,24 @@ function decodeTextSegment(seg, r, info, results, tables, used) {
   if (huff) {
     const custom = referredTables(seg, tables);
     let ci = 0;
+    /* (`custom` and `std` hold no holes and `ci`, `sel` are never negative, so a read past the end is the only undefined) */
+    /** @param {number} sel @param {StdTableNo[]} std @returns {HuffTable} */
     const pick = (sel, std) => {
-      if (sel === 3) { if (ci >= custom.length) throw corrupt(localize("image-codecs.jbig2decode.a_custom_huffman_table_the", "a custom Huffman table the segment does not refer to")); return custom[ci++]; }
-      if (sel >= std.length) throw corrupt(localize("image-codecs.jbig2decode.huffman_table_selection_sel_2", "Huffman table selection {sel}", { sel: String(sel) }));
-      return standardTable(std[sel]);
+      if (sel === 3) { const t = custom[ci]; if (t === undefined) throw corrupt(localize("image-codecs.jbig2decode.a_custom_huffman_table_the", "a custom Huffman table the segment does not refer to")); ci++; return t; }
+      const n = std[sel];
+      if (n === undefined) throw corrupt(localize("image-codecs.jbig2decode.huffman_table_selection_sel_2", "Huffman table selection {sel}", { sel: String(sel) }));
+      return standardTable(n);
     };
     const tbl = {
-      FS: pick(hflags & 3, [6, 7]), DS: pick((hflags >> 2) & 3, [8, 9, 10]), DT: pick((hflags >> 4) & 3, [11, 12, 13]),
+      FS: pick(hflags & 3, ["6", "7"]), DS: pick((hflags >> 2) & 3, ["8", "9", "10"]), DT: pick((hflags >> 4) & 3, ["11", "12", "13"]),
     };
     /* The refinement tables (RDW..RSIZE) are selected by the same flags; with
      * refinement refused above they are read here only to consume their custom
      * tables in order, as 7.4.3.1.6 lays them out. */
-    for (const [sh, std] of [[6, [14, 15]], [8, [14, 15]], [10, [14, 15]], [12, [14, 15]]]) if (((hflags >> sh) & 3) === 3) pick(3, std);
-    if ((hflags >> 14) & 1) pick(3, [1]);
+    /** @type {[number, StdTableNo[]][]} */
+    const refinementTables = [[6, ["14", "15"]], [8, ["14", "15"]], [10, ["14", "15"]], [12, ["14", "15"]]];
+    for (const [sh, std] of refinementTables) if (((hflags >> sh) & 3) === 3) pick(3, std);
+    if ((hflags >> 14) & 1) pick(3, ["1"]);
     const bits = new Bits(d, r.p, d.length);
     const symCodes = readSymbolIdTable(bits, syms.length);
     return decodeTextRegion(p, syms, { bits, tables: tbl, symCodes });
@@ -1016,6 +1248,7 @@ function decodeTextSegment(seg, r, info, results, tables, used) {
   return reg;
 }
 
+/** @param {Segment} seg @param {Reader} r @param {Set<string>} used @returns {Bitmap[]} @throws {Jbig2Refusal} */
 function decodePatternDict(seg, r, used) {
   const flags = r.u8("pattern dictionary flags");
   const mmr = flags & 1, template = (flags >> 1) & 3;
@@ -1024,6 +1257,7 @@ function decodePatternDict(seg, r, used) {
   if (grayMax + 1 > OBJECTS_MAX) throw tooManyObjects(grayMax + 1, localize("image-codecs.jbig2decode.the_pattern_dictionary_declares_n", "the pattern dictionary declares {n} patterns, past the {bound} the decoder holds", { n: String(grayMax + 1), bound: String(OBJECTS_MAX) }));
   const w = (grayMax + 1) * pw;
   used.add(`pattern dictionary, ${mmr ? "MMR" : `arithmetic, template ${template}`}`);
+  /** @type {Bitmap} */
   let coll;
   if (mmr) coll = decodeMmr(seg.data, r.p, seg.data.length, w, ph).bm;
   else {
@@ -1031,6 +1265,7 @@ function decodePatternDict(seg, r, used) {
     const mq = new MqDecoder(seg.data, r.p, seg.data.length, { onShort: () => { throw truncated(localize("image-codecs.jbig2decode.the_pattern_dictionary_s_arithmetic", "the pattern dictionary's arithmetic data ran out")); } });
     coll = decodeGenericArith(mq, mqContexts(1 << 16), w, ph, template, 0, at);
   }
+  /** @type {Bitmap[]} */
   const pats = [];
   for (let g = 0; g <= grayMax; g++) {
     const p = bitmap(pw, ph);
@@ -1040,22 +1275,26 @@ function decodePatternDict(seg, r, used) {
   return pats;
 }
 
+/** @param {Segment} seg @param {Reader} r @param {RegionInfo} info @param {Map<number, SegmentResult>} results
+ *  @param {Set<string>} used @returns {Bitmap} @throws {Jbig2Refusal} */
 function decodeHalftoneSegment(seg, r, info, results, used) {
   const flags = r.u8("halftone region flags");
   const mmr = flags & 1, template = (flags >> 1) & 3, enableSkip = (flags >> 3) & 1;
   const combOp = (flags >> 4) & 7, defPixel = (flags >> 7) & 1;
   const gw = r.u32("HGW"), gh = r.u32("HGH"), gx = r.i32("HGX"), gy = r.i32("HGY");
   const rx = r.u16("HRX"), ry = r.u16("HRY");
-  const dict = seg.refs.map((n) => results.get(n)).find((s) => s && s.kind === "patterns");
-  if (!dict) throw corrupt(localize("image-codecs.jbig2decode.a_halftone_region_with_no", "a halftone region with no pattern dictionary"));
+  const dict = seg.refs.map((n) => results.get(n)).find((s) => s !== undefined && s.kind === "patterns");
+  /* (a pattern dictionary holds GRAYMAX + 1 patterns, never none, so `pat0` is set wherever `dict` is) */
+  const pat0 = dict ? dict.patterns[0] : undefined;
+  if (!dict || !pat0) throw corrupt(localize("image-codecs.jbig2decode.a_halftone_region_with_no", "a halftone region with no pattern dictionary"));
   const pats = dict.patterns;
-  const pw = pats[0].w, ph = pats[0].h;
+  const pw = pat0.w, ph = pat0.h;
   used.add(`halftone region, ${mmr ? "MMR" : `arithmetic, template ${template}`}`);
   const reg = bitmap(info.w, info.h, defPixel);
+  /** @param {number} m @param {number} n @returns {[number, number]} */
   const place = (m, n) => [Math.floor((gx + m * ry + n * rx) / 256), Math.floor((gy + m * rx - n * ry) / 256)];
-  let skip = null;
-  if (enableSkip) {
-    skip = bitmap(gw, gh);
+  const skip = enableSkip ? bitmap(gw, gh) : null;
+  if (skip) {
     for (let m = 0; m < gh; m++) for (let n = 0; n < gw; n++) {
       const [x, y] = place(m, n);
       if (x + pw <= 0 || x >= info.w || y + ph <= 0 || y >= info.h) skip.d[m * gw + n] = 1;
@@ -1063,23 +1302,35 @@ function decodeHalftoneSegment(seg, r, info, results, used) {
   }
   let bpp = 0;
   while (2 ** bpp < pats.length) bpp++;
-  /* The grey-scale image, bitplane by bitplane, most significant first (C.5). */
-  const planes = new Array(bpp);
+  /* The grey-scale image, bitplane by bitplane, most significant first (C.5): `planes[k]` is bitplane bpp - 1 - k. */
+  /** @type {Bitmap[]} */
+  const planes = [];
   const at = [template <= 1 ? 3 : 2, -1, -3, -1, 2, -2, -2, -2];
   const d = seg.data;
-  let mq = null, gb = null, p = r.p;
-  if (!mmr) { mq = new MqDecoder(d, p, d.length, { onShort: () => { throw truncated(localize("image-codecs.jbig2decode.the_halftone_region_s_arithmetic", "the halftone region's arithmetic data ran out")); } }); gb = mqContexts(1 << 16); }
+  let p = r.p;
+  /* (the coder and its contexts are set exactly when the planes are not MMR-coded) */
+  const mq = mmr ? null : new MqDecoder(d, p, d.length, { onShort: () => { throw truncated(localize("image-codecs.jbig2decode.the_halftone_region_s_arithmetic", "the halftone region's arithmetic data ran out")); } });
+  const gb = mmr ? null : mqContexts(1 << 16);
+  /** @type {Bitmap | null} */
+  let above = null;
   for (let j = bpp - 1; j >= 0; j--) {
-    if (mmr) { const o = decodeMmr(d, p, d.length, gw, gh); planes[j] = o.bm; p = o.end; }
-    else planes[j] = decodeGenericArith(mq, gb, gw, gh, template, 0, at, skip);
-    if (j < bpp - 1) for (let i = 0; i < planes[j].d.length; i++) planes[j].d[i] ^= planes[j + 1].d[i];
+    /** @type {Bitmap} */
+    let plane;
+    if (!mq || !gb) { const o = decodeMmr(d, p, d.length, gw, gh); plane = o.bm; p = o.end; }
+    else plane = decodeGenericArith(mq, gb, gw, gh, template, 0, at, skip);
+    planes.push(plane);
+    /* (`above` is the plane decoded before this one, set exactly when j < bpp - 1) */
+    const prev = above;
+    if (prev) for (let i = 0; i < plane.d.length; i++) plane.d[i] = (plane.d[i] ?? 0) ^ (prev.d[i] ?? 0);
+    above = plane;
   }
   for (let m = 0; m < gh; m++) for (let n = 0; n < gw; n++) {
     let g = 0;
-    for (let j = bpp - 1; j >= 0; j--) g = (g << 1) | planes[j].d[m * gw + n];
+    for (let k = 0; k < bpp; k++) g = (g << 1) | (planes[k]?.d[m * gw + n] ?? 0);
     if (g >= pats.length) g = pats.length - 1;
     const [x, y] = place(m, n);
-    compose(reg, pats[g], x, y, combOp);
+    /* (`g` is within `pats` here, so the `?? pat0` is never taken) */
+    compose(reg, pats[g] ?? pat0, x, y, combOp);
   }
   return reg;
 }

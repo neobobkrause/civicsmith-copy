@@ -35,6 +35,7 @@
 const MARKER_FEEDS = 4;
 
 /* [Qe, NMPS, NLPS, SWITCH] — T.88 Table E.1 / T.800 Table C.2. */
+/** @type {[number, number, number, number][]} */
 const QE = [
   [0x5601, 1, 1, 1], [0x3401, 2, 6, 0], [0x1801, 3, 9, 0], [0x0ac1, 4, 12, 0],
   [0x0521, 5, 29, 0], [0x0221, 38, 33, 0], [0x5601, 7, 6, 1], [0x5401, 8, 14, 0],
@@ -55,30 +56,36 @@ const Q_NLPS = Uint8Array.from(QE, (r) => r[2]);
 const Q_SWITCH = Uint8Array.from(QE, (r) => r[3]);
 
 /** Probability states for `n` contexts, each `(index << 1) | mps`, all zero:
- *  index 0, MPS 0, the initial state both standards give every context. */
+ *  index 0, MPS 0, the initial state both standards give every context.
+ *  @param {number} n @returns {Uint8Array} */
 export const mqContexts = (n) => new Uint8Array(n);
 
 export class MqDecoder {
-  /** Decode `data[start, end)`. `onShort(decoder)`, if given, is called each time the data is found short. */
+  /** Decode `data[start, end)`. `onShort(decoder)`, if given, is called each time the data is found short.
+   *  @param {Uint8Array} data @param {number} [start] @param {number} [end]
+   *  @param {{ onShort?: ((decoder: MqDecoder) => void) | null }} [options] */
   constructor(data, start = 0, end = data.length, { onShort = null } = {}) {
-    this.d = data;
-    this.bp = start;
-    this.end = end;
-    this.overrun = 0;
-    this.fed = 0;
-    this.onShort = onShort;
-    this.C = (start < end ? data[start] : 0xff) * 65536;
+    /** @type {Uint8Array} */ this.d = data;
+    /** @type {number} */ this.bp = start;
+    /** @type {number} */ this.end = end;
+    /** @type {number} */ this.overrun = 0;
+    /** @type {number} */ this.fed = 0;
+    /** @type {((decoder: MqDecoder) => void) | null} */ this.onShort = onShort;
+    /* A byte past the array reads as NaN, as the `undefined` it is did. */
+    /** @type {number} */ this.C = (start < end ? data[start] ?? NaN : 0xff) * 65536;
+    /** @type {number} */ this.ct = 0;   // set by byteIn() below
     this.byteIn();
     this.C = (this.C << 7) >>> 0;
     this.ct -= 7;
-    this.A = 0x8000;
+    /** @type {number} */ this.A = 0x8000;
   }
 
+  /** BYTEIN: the next byte into C (T.800 C.3.4). @returns {void} */
   byteIn() {
     const d = this.d, bp = this.bp;
-    const b = bp < this.end ? d[bp] : 0xff;
+    const b = bp < this.end ? d[bp] ?? 0 : 0xff;
     if (b === 0xff) {
-      const b1 = bp + 1 < this.end ? d[bp + 1] : 0xff;
+      const b1 = bp + 1 < this.end ? d[bp + 1] ?? 0 : 0xff;
       if (b1 > 0x8f) {                 // a marker: 1-bits, and the pointer stays
         this.C += 0xff00;
         this.ct = 8;
@@ -90,34 +97,37 @@ export class MqDecoder {
       }
     } else {
       this.bp = bp + 1;
-      if (bp + 1 < this.end) this.C += d[bp + 1] << 8;
+      if (bp + 1 < this.end) this.C += (d[bp + 1] ?? 0) << 8;
       else { this.C += 0xff00; this.short(); }
       this.ct = 8;
     }
   }
 
-  /** The data is short by a byte: count it, and let the caller stop the decode here. */
+  /** The data is short by a byte: count it, and let the caller stop the decode here. @returns {void} */
   short() {
     this.overrun++;
-    if (this.onShort) this.onShort(this);
+    const onShort = this.onShort;
+    if (onShort) onShort(this);
   }
 
-  /** One binary decision in context `cx` of `ctx` (a `mqContexts` array). */
+  /** One binary decision in context `cx` of `ctx` (a `mqContexts` array).
+   *  @param {Uint8Array} ctx @param {number} cx @returns {number} */
   decode(ctx, cx) {
-    const s = ctx[cx];
+    const s = ctx[cx] ?? 0;
     let i = s >> 1, mps = s & 1;
-    const qe = Q_E[i];
+    const qe = Q_E[i] ?? NaN;
     let a = this.A - qe;
+    /** @type {number} */
     let d;
     if (this.C / 65536 < qe) {
       /* LPS sub-interval, with the conditional exchange. */
-      if (a < qe) { a = qe; d = mps; i = Q_NMPS[i]; }
-      else { a = qe; d = 1 - mps; if (Q_SWITCH[i]) mps = d; i = Q_NLPS[i]; }
+      if (a < qe) { a = qe; d = mps; i = Q_NMPS[i] ?? 0; }
+      else { a = qe; d = 1 - mps; if (Q_SWITCH[i]) mps = d; i = Q_NLPS[i] ?? 0; }
     } else {
       this.C -= qe * 65536;
       if (a & 0x8000) { this.A = a; return mps; }
-      if (a < qe) { d = 1 - mps; if (Q_SWITCH[i]) mps = d; i = Q_NLPS[i]; }
-      else { d = mps; i = Q_NMPS[i]; }
+      if (a < qe) { d = 1 - mps; if (Q_SWITCH[i]) mps = d; i = Q_NLPS[i] ?? 0; }
+      else { d = mps; i = Q_NMPS[i] ?? 0; }
     }
     do {
       if (this.ct === 0) this.byteIn();

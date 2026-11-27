@@ -44,14 +44,38 @@
 // node. Guarded so it only defines the function where the runtime lacks it; on
 // workerd (where this Worker actually runs) the native one is used. This
 // neutralises the runtime artifact the CPDF-5 heed named, in either runtime.
-if (typeof Math.sumPrecise !== "function") {
-  Math.sumPrecise = (values) => { let s = 0; for (const v of values) s += v; return s; };
+/** @type {Math & { sumPrecise?: (values: readonly number[]) => number }} the runtime's Math, which may lack sumPrecise */
+const runtimeMath = Math;
+if (typeof runtimeMath.sumPrecise !== "function") {
+  runtimeMath.sumPrecise = (values) => { let s = 0; for (const v of values) s += v; return s; };
 }
 
-import { getDocumentProxy, extractText } from "unpdf";
+import { getDocumentProxy } from "unpdf";
 import { openPdfRange } from "../../bio-plane/src/pdfstructure.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
+/** @import { PdfRange, PdfRangeArgs } from "../../bio-plane/src/pdfstructure.mjs" */
+
+/** One place tier 2 could not read: `page` 0-based, or null for the document; R8's `bytes` and `limit` ride on its own marker.
+ *  @typedef {{ page: number | null, reason: string, font: null, codes: string, count: number, bytes?: number, limit?: number }} WorkerMarker */
+/** One page's tier-2 text and its markers (R9).
+ *  @typedef {{ page: number, text: string, undetermined: WorkerMarker[] }} WorkerPage */
+/** The `.text` this member hands back (R8 to R10).
+ *  @typedef {{ document: string, pages: WorkerPage[], undetermined: WorkerMarker[], counts: { chars: number, undetermined: number } }} WorkerText */
+/** One request's answer to `POST /structure` at 200: pdf-reader's range with this member's text, tier and notes (R7).
+ *  @typedef {PdfRange & { text: WorkerText, tier: 1 | 2, partial?: true }} StructureAnswer */
+/** An object read from `CAPTURES` (R5, R6): its stated size, and its bytes.
+ *  @typedef {{ size?: number, arrayBuffer: () => Promise<ArrayBuffer> }} CapturedObject */
+/** The R2 read binding: `.get` only (R37).
+ *  @typedef {{ get?: (key: string) => Promise<CapturedObject | null> }} CaptureBucket */
+/** The Worker's bindings and vars this member reads (R1, R8, R11).
+ *  @typedef {{ CAPTURES?: CaptureBucket, MAX_PDF_BYTES?: string, VERSION?: string }} WorkerEnv */
+/** A request as this member reads it.
+ *  @typedef {{ method: string, url: string, json: () => Promise<unknown> }} WorkerRequest */
+/** The body `POST /structure` reads (R2 to R4, R42), any member of which may be missing or of any kind.
+ *  @typedef {{ capture_sha?: unknown, store?: unknown, from?: unknown, count?: unknown }} StructureBody */
+/** One route of the member's declared surface (R35).
+ *  @typedef {{ method: "POST" | "GET", mutating: false }} SurfaceRoute */
 
 /* The member's surface, declared: hand it a capture, get back the I2
  * structure+text shape, and ask it which build is answering. `fleet-member.json`
@@ -61,6 +85,7 @@ import { boundOf, statement } from "../../bio-plane/src/read-bounds.mjs";
  *
  * `mutating` is FALSE on every row (fleet rule 2: a member ASSERTS nothing).
  * `version` is a GET that reads one env var, so it could not be anything else. */
+/** @type {{ structure: SurfaceRoute, version: SurfaceRoute }} */
 export const SURFACE = {
   structure: { method: "POST", mutating: false },
   version:   { method: "GET",  mutating: false },
@@ -102,27 +127,33 @@ const DEFAULT_MAX_PDF_BYTES = boundOf("pdf", "worker_bytes");
  * NAMESPACE_UNKNOWN with the rest, which is the same line `agent-worker` draws. */
 const NAMESPACES = Object.freeze(["bio", "scratch"]);
 
+/** @param {unknown} obj @param {number} [status] */
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
     headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
   });
 
+/** @param {number} bytes @param {number} limit @returns {WorkerText} */
 function overEnvelopeText(bytes, limit) {
+  /** @type {WorkerMarker} */
   const marker = { page: null, reason: "over_envelope", font: null, codes: "", count: 0, bytes, limit };
   return { document: "", pages: [], undetermined: [marker], counts: { chars: 0, undetermined: 1 } };
 }
 
 /* What tier 2 has done, as counts (R-CLOCK): documents opened by pdf.js and pages decoded. The answer never depends on it. */
 const WORK = { opens: 0, pagesDecoded: 0 };
+/** @returns {{ opens: number, pagesDecoded: number }} */
 export function tier2Work() { return { ...WORK }; }
 
 /* R10 (fix round 10, cause 8): a file cut before its trailer. pdf.js throws `InvalidPDFException` on it (no trailer names
  * the catalog, so the objects it indexed have no root), and tier 1 cannot decode a font with no ToUnicode, so the whole file
  * answered nothing. The repaired view is the bytes up to the last complete object, with a trailer naming the last catalog
  * found: the objects that are there, without the cross-reference that is not. */
+/** @param {string} s */
 const bytesOf = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
 const ENDOBJ = bytesOf("endobj"), CATALOG = bytesOf("/Catalog"), STARTXREF = bytesOf("startxref"), PAGES = bytesOf("/Pages");
+/** @param {Uint8Array} bytes @param {Uint8Array} pat @param {number} [from] @param {number} [to] */
 function indexOfBytes(bytes, pat, from = 0, to = bytes.length) {
   for (let i = from, last = Math.min(to, bytes.length) - pat.length; i <= last; i++) {
     let k = 0;
@@ -131,6 +162,7 @@ function indexOfBytes(bytes, pat, from = 0, to = bytes.length) {
   }
   return -1;
 }
+/** @param {Uint8Array} bytes @param {Uint8Array} pat */
 function lastIndexOfBytes(bytes, pat) {
   for (let i = bytes.length - pat.length; i >= 0; i--) {
     let k = 0;
@@ -139,25 +171,30 @@ function lastIndexOfBytes(bytes, pat) {
   }
   return -1;
 }
+/** @param {Uint8Array} bytes @param {number} from @param {number} to */
 function latin1(bytes, from, to) {
   let out = "";
   for (let i = Math.max(0, from); i < Math.min(to, bytes.length); i += 512) out += String.fromCharCode(...bytes.subarray(i, Math.min(i + 512, to, bytes.length)));
   return out;
 }
 /* A file with a trailer ends with `startxref` and its offset, within pdf.js's own search of the file's last two blocks of 512. */
+/** @param {Uint8Array} bytes */
 const lacksStartxref = (bytes) => indexOfBytes(bytes, STARTXREF, Math.max(0, bytes.length - 2 * 512)) < 0;
 
+/** @param {Uint8Array} bytes */
 function repairedView(bytes) {
   const end = lastIndexOfBytes(bytes, ENDOBJ);
   if (end < 0) return null;
   const cutAt = end + ENDOBJ.length;
+  /** @type {string | null} */
   let root = null;
   for (let at = indexOfBytes(bytes, CATALOG, 0, cutAt); at >= 0; at = indexOfBytes(bytes, CATALOG, at + 1, cutAt)) {
     const m = /(\d+)\s+(\d+)\s+obj\s*<<(?:(?!\bobj\b)[^])*$/.exec(latin1(bytes, at - 256, at));
     if (m) root = `${m[1]} ${m[2]}`;
   }
-  if (!root) return null;
-  const trailer = bytesOf(`\ntrailer\n<< /Root ${root} R >>\n%%EOF\n`);
+  const rootRef = root;
+  if (!rootRef) return null;
+  const trailer = bytesOf(`\ntrailer\n<< /Root ${rootRef} R >>\n%%EOF\n`);
   const view = new Uint8Array(cutAt + trailer.length);
   view.set(bytes.subarray(0, cutAt));
   view.set(trailer, cutAt);
@@ -166,7 +203,9 @@ function repairedView(bytes) {
 
 /* The page count the page tree's root declares (its `/Count`), which a cut file may no longer hold the pages of; null when
  * no root states one in the bytes that are there. */
+/** @param {Uint8Array} view */
 function declaredPages(view) {
+  /** @type {number | null} */
   let best = null;
   for (let at = indexOfBytes(view, PAGES, 0); at >= 0; at = indexOfBytes(view, PAGES, at + 1)) {
     const from = lastIndexOfBytes(view.subarray(0, at), bytesOf(" obj"));
@@ -180,13 +219,14 @@ function declaredPages(view) {
 }
 
 /* pdf.js opens the bytes it is handed and detaches them, so a file that may be cut keeps a copy for the repaired view. */
+/** @param {Uint8Array} bytes */
 async function openDocument(bytes) {
   const mayBeCut = lacksStartxref(bytes);
   const spare = mayBeCut ? bytes.slice() : null;
   try {
     return { pdf: await getDocumentProxy(bytes), repaired: null };
   } catch (e) {
-    if (!spare || !e || e.name !== "InvalidPDFException") throw e;
+    if (!spare || !e || nameOf(e) !== "InvalidPDFException") throw e;
     const r = repairedView(spare);
     if (!r) throw e;
     const declared = declaredPages(r.view);
@@ -203,8 +243,12 @@ async function openDocument(bytes) {
  * [from, from + count) are decoded (R9, R42); pdf.js opens the document lazily,
  * so the bytes it decodes are the range's. `open` is false for a range with no page in it.
  * On a file cut before its trailer (R10) the pages that cannot be read are named `truncated`, and `partial` is true. */
+/** @param {Uint8Array} bytes @param {number} from @param {number} count @param {boolean} open
+ *  @returns {Promise<{ text: WorkerText, partial: boolean }>} */
 async function tier2Text(bytes, from, count, open) {
+  /** @type {WorkerPage[]} */
   const pages = [];
+  /** @type {WorkerMarker[]} */
   const undetermined = [];
   let partial = false;
   if (open) {
@@ -214,27 +258,36 @@ async function tier2Text(bytes, from, count, open) {
     const last = Math.min(repaired ? total : pdf.numPages, from + count);
     for (let i = from; i < last; i++) {
       WORK.pagesDecoded++;
-      let content = null;
+      /** @type {string | null} the page's text, null where its content could not be read */
+      let pageText = null;
       try {
-        content = await (await pdf.getPage(i + 1)).getTextContent();
+        const content = await (await pdf.getPage(i + 1)).getTextContent();
+        if (content) {
+          let read = "";
+          for (const item of content.items) if ("str" in item && item.str != null) read += item.str + (item.hasEOL ? "\n" : "");
+          pageText = read;
+        }
       } catch (e) {
         if (!repaired) throw e;
       }
-      if (!content) {
+      const text = pageText;
+      if (text === null) {
+        /** @type {WorkerMarker} */
         const marker = { page: i, reason: "truncated", font: null, codes: "", count: 0 };
         undetermined.push(marker);
         pages.push({ page: i, text: "", undetermined: [marker] });
         partial = true;
         continue;
       }
-      const pageText = content.items.filter((item) => item.str != null).map((item) => item.str + (item.hasEOL ? "\n" : "")).join("");
+      /** @type {WorkerMarker[]} */
       const u = [];
-      if (pageText.trim().length === 0) {
+      if (text.trim().length === 0) {
+        /** @type {WorkerMarker} */
         const marker = { page: i, reason: "no_text_layer", font: null, codes: "", count: 0 };
         u.push(marker);
         undetermined.push(marker);
       }
-      pages.push({ page: i, text: pageText, undetermined: u });
+      pages.push({ page: i, text, undetermined: u });
     }
     if (repaired) partial = true;
   }
@@ -242,8 +295,17 @@ async function tier2Text(bytes, from, count, open) {
   return { text: { document, pages, undetermined, counts: { chars: document.length, undetermined: undetermined.length } }, partial };
 }
 
+/** The `.text` of a tier-2 pass that read nothing, with its one document-level marker (R9, R10).
+ *  @param {string} reason @returns {WorkerText} */
+function unreadText(reason) {
+  /** @type {WorkerMarker} */
+  const marker = { page: null, reason, font: null, codes: "", count: 0 };
+  return { document: "", pages: [], undetermined: [marker], counts: { chars: 0, undetermined: 1 } };
+}
+
 /* R8 (G124a): the answer for a file over the envelope, made before any parse: tier 1, no text, the size and the limit
  * stated, and final (a retry reads the same file). The sentence is a stand-in keyed through `localize`; its row is owed. */
+/** @param {number} size @param {number} max */
 function overEnvelopeAnswer(size, max) {
   const { key } = statement("pdf", "worker_bytes", size);
   return json({
@@ -258,18 +320,35 @@ function overEnvelopeAnswer(size, max) {
 }
 
 /* R42: `from` and `count`, when named, are non-negative integers. */
-const wholeNumber = (v) => Number.isSafeInteger(v) && v >= 0;
+/** @param {unknown} v */
+const wholeNumber = (v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 
+/** The `name` a thrown value carries, read as `e.name` reads it; undefined where it carries none.
+ *  @param {unknown} e */
+function nameOf(e) {
+  return (typeof e === "object" || typeof e === "function") && e !== null && "name" in e ? e.name : undefined;
+}
+/** The `message` a thrown value carries, read as `e.message` reads it; undefined where it carries none.
+ *  @param {unknown} e */
+function messageOf(e) {
+  return (typeof e === "object" || typeof e === "function") && e !== null && "message" in e ? e.message : undefined;
+}
+
+/** @param {WorkerRequest} req @param {WorkerEnv} env */
 async function handleStructure(req, env) {
-  if (typeof env.CAPTURES?.get !== "function")
+  const captures = env.CAPTURES;
+  const get = captures?.get;
+  if (typeof get !== "function")
     return json({ ok: false, reason: "R2_NOT_CONFIGURED" }, 503);
 
-  const body = await req.json().catch(() => null);
-  const sha = typeof body?.capture_sha === "string" ? body.capture_sha.toLowerCase() : "";
-  const store = typeof body?.store === "string" ? body.store : "";
+  /** @type {StructureBody | null} the request's own body, read as JSON: any shape, or null where it did not parse */
+  const body = /** @type {StructureBody | null} */ (await req.json().catch(() => null));
+  const askedSha = body?.capture_sha, askedStore = body?.store;
+  const sha = typeof askedSha === "string" ? askedSha.toLowerCase() : "";
+  const store = typeof askedStore === "string" ? askedStore : "";
   if (!/^[0-9a-f]{64}$/.test(sha))
     return json({ ok: false, reason: "BAD_SHA", detail: "capture_sha must be 64 lowercase hex" }, 400);
-  if (typeof body?.store !== "string")
+  if (typeof askedStore !== "string")
     return json({ ok: false, reason: "BAD_STORE",
                   detail: localize("pdf-worker.index.a_capture_lives_inside_one", "a capture lives inside one namespace and this member guesses none: the caller must say which. A default namespace here would read the real record for a caller who believed it was reading a scratch one.") }, 400);
   /* D-478: a NAMED namespace that is not exactly one of NAMESPACES — `biosmoke`, `Scratch`, the empty string — is
@@ -282,60 +361,58 @@ async function handleStructure(req, env) {
                   asked: store.slice(0, 80), namespaces: [...NAMESPACES] }, 400);
 
   /* R42: the range asked, checked after R4 and before R5. */
-  if ((body.from !== undefined && !wholeNumber(body.from)) || (body.count !== undefined && !wholeNumber(body.count)))
+  const askedFrom = body?.from, askedCount = body?.count;
+  if ((askedFrom !== undefined && !wholeNumber(askedFrom)) || (askedCount !== undefined && !wholeNumber(askedCount)))
     return json({ ok: false, reason: "BAD_RANGE", detail: localize("pdf-worker.index.from_and_count_are_whole", "the range asked is two whole numbers, the page to start at and how many pages, neither below zero.") }, 400);
-  const from = body.from ?? 0;
+  const from = typeof askedFrom === "number" ? askedFrom : 0;
+  const count = typeof askedCount === "number" ? askedCount : undefined;
 
   // I1 §2: the R2 key shape, promoted here from documentation to a load-bearing
   // dependency with a second consumer. READ ONLY — never head/put/delete.
-  const obj = await env.CAPTURES.get(`${store}/captures/${sha}`);
+  const obj = await get.call(captures, `${store}/captures/${sha}`);
   if (!obj) return json({ ok: false, reason: "NOT_FOUND", capture_sha: sha, store }, 404);
 
   /* R6, R8: the size is judged before any parse, and before the body is read when the object states its size. */
   const max = Number(env.MAX_PDF_BYTES) || DEFAULT_MAX_PDF_BYTES;
-  if (Number.isFinite(obj.size) && obj.size > max) return overEnvelopeAnswer(obj.size, max);
+  const statedSize = obj.size;
+  if (typeof statedSize === "number" && Number.isFinite(statedSize) && statedSize > max) return overEnvelopeAnswer(statedSize, max);
   const bytes = new Uint8Array(await obj.arrayBuffer());
   if (bytes.length > max) return overEnvelopeAnswer(bytes.length, max);
 
   /* R6: pdf-reader opens the file once and reads the range asked: no whole-file tier-1 parse beside the tier-2 pass. */
   const opened = await openPdfRange(bytes);
   if (!opened.ok) return json(opened, 422); // NOT_A_PDF / NOT_BYTES — stated, not faked.
-  const structure = await opened.range({ from, ...(body.count !== undefined ? { count: body.count } : {}) });
-  structure.notes = [...(structure.notes ?? [])]; // pdf-reader's own notes for the range, kept; this member's are appended
-  const asked = body.count ?? Infinity;
+  /** @type {PdfRangeArgs} */
+  const rangeArgs = count !== undefined ? { from, count } : { from };
+  const range = await opened.range(rangeArgs);
+  /* pdf-reader's own notes for the range, kept; this member's are appended. The answer keeps pdf-reader's members in their
+   * order; `tier`, then `partial`, follow them (R7). */
+  const notes = [...(range.notes ?? [])];
+  const asked = count ?? Infinity;
   /* a range with no page in it opens nothing; a document tier 1 found no page in is still opened, for pdf.js may find them */
   const open = opened.pages === 0 || Math.min(asked, opened.pages - from) > 0;
 
   try {
     const read = await tier2Text(bytes, from, asked, open);
-    structure.text = read.text;
-    structure.tier = 2;
-    if (read.partial) {
-      structure.partial = true;
-      structure.notes = [...structure.notes, "pdf_truncated"];
-    }
+    /** @type {StructureAnswer} */
+    const answer = read.partial
+      ? { ...range, notes: [...notes, "pdf_truncated"], text: read.text, tier: 2, partial: true }
+      : { ...range, notes, text: read.text, tier: 2 };
+    return json(answer);
   } catch (e) {
-    if (e && e.name === "PasswordException") {
+    if (nameOf(e) === "PasswordException") {
       /* R9: a document that needs a user password is not a tier-2 failure; nothing is invented. */
-      structure.text = {
-        document: "", pages: [],
-        undetermined: [{ page: null, reason: "password_required", font: null, codes: "", count: 0 }],
-        counts: { chars: 0, undetermined: 1 },
-      };
-      structure.tier = 1;
-      return json(structure);
+      /** @type {StructureAnswer} */
+      const answer = { ...range, notes, text: unreadText("password_required"), tier: 1 };
+      return json(answer);
     }
     // Tier 2 itself failed (corruption, a runtime artifact): SAY so, keep the
     // structure, do not crash and do not invent text.
-    structure.text = {
-      document: "", pages: [],
-      undetermined: [{ page: null, reason: "tier2_extraction_error", font: null, codes: "", count: 0 }],
-      counts: { chars: 0, undetermined: 1 },
-    };
-    structure.tier = 1;
-    structure.notes = [...structure.notes, `tier2_error:${String(e && e.message || e).slice(0, 80)}`];
+    /** @type {StructureAnswer} */
+    const answer = { ...range, notes: [...notes, `tier2_error:${String((e && messageOf(e)) || e).slice(0, 80)}`],
+      text: unreadText("tier2_extraction_error"), tier: 1 };
+    return json(answer);
   }
-  return json(structure);
 }
 
 /* Fleet rule 4: each member versions and rolls out on its own, so "a deploy
@@ -347,10 +424,12 @@ async function handleStructure(req, env) {
    is how a rollout gate learns to special-case its fleet.
    The value comes from `env.VERSION` (wrangler.jsonc `vars`), so what it reports
    is the build that is RUNNING and never a constant compiled in beside it. */
+/** @param {WorkerEnv} env */
 function handleVersion(env) {
   return json({ ok: true, name: "pdf-worker", version: env.VERSION || "0.0.0" });
 }
 
+/** @type {{ fetch: (req: WorkerRequest, env: WorkerEnv) => Promise<Response> }} */
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);

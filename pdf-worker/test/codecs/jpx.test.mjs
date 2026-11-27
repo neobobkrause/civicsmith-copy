@@ -27,41 +27,91 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { decodeJpx, JPX_REFUSES, JpxRefusal } from "../../src/jpxdecode.mjs";
 import { READ_BOUNDS, boundOf } from "../../../bio-plane/src/read-bounds.mjs";
+/** @import { JpxCode } from "../../src/jpxdecode.mjs" */
 
-const FIX = JSON.parse(readFileSync(new URL("../fixtures/jpx-variants.json", import.meta.url), "utf8"));
+/** A fixture OpenJPEG decodes, and its decode.
+ *  @typedef {Object} DecodedVariant
+ *  @property {string} name @property {string[]} features opj_compress's arguments @property {"ok"} expect
+ *  @property {string} data_b64 the file, base64 @property {"j2k" | "jp2"} container
+ *  @property {number} width @property {number} height @property {number} comps
+ *  @property {string} opj_sha256 the digest of opj_decompress's interleaved samples */
+/** A fixture the codec refuses.
+ *  @typedef {Object} RefusedVariant
+ *  @property {string} name @property {string[]} features @property {JpxCode} expect the code it is refused with
+ *  @property {string} data_b64 @property {"j2k" | "jp2"} container @property {string} opj_decompress what opj_decompress made of it */
+/** @typedef {DecodedVariant | RefusedVariant} JpxVariant */
+/** @typedef {Object} JpxFixtures @property {string} provenance @property {JpxVariant[]} variants */
+/** A page past the whole-plane working set.
+ *  @typedef {Object} JpxPage
+ *  @property {string} name @property {string[]} args opj_compress's arguments @property {number} width @property {number} height
+ *  @property {number} comps @property {string} data_b64 the codestream, base64 @property {string} opj_sha256 */
+/** @typedef {Object} JpxPages @property {string} provenance @property {JpxPage[]} pages */
+
+const FIX = /** @type {JpxFixtures} decodes the recorded jpx-variants.json, written by make-jpx-fixtures.py */ (JSON.parse(readFileSync(new URL("../fixtures/jpx-variants.json", import.meta.url), "utf8")));
 const V = FIX.variants;
+/** @param {JpxVariant} v @returns {Uint8Array} */
 const bytesOf = (v) => new Uint8Array(Buffer.from(v.data_b64, "base64"));
+/** @param {Uint8Array} b @returns {string} */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-const WORKING_ROW = Object.hasOwn(READ_BOUNDS.image, "working_set") ? ["image", "working_set"] : ["ocr", "frame_bytes"];   // K4858
+const IMAGE_ROWS = READ_BOUNDS.image;
+if (IMAGE_ROWS === undefined) throw new TypeError("READ_BOUNDS has no image rows");   // as `Object.hasOwn` of them threw
+/** @type {[string, string]} */
+const WORKING_ROW = Object.hasOwn(IMAGE_ROWS, "working_set") ? ["image", "working_set"] : ["ocr", "frame_bytes"];   // K4858
 const WORKING = boundOf(...WORKING_ROW);
 
+/** The refusal `fn` throws, always a JpxRefusal; null when it throws none.
+ *  @param {() => unknown} fn @returns {JpxRefusal | null} */
 function refusal(fn) {
   try { fn(); } catch (e) {
-    assert.ok(e instanceof JpxRefusal, `a JpxRefusal, not ${e && e.constructor && e.constructor.name}: ${e && e.message}`);
-    return e;
+    const err = e;
+    assert.ok(err instanceof JpxRefusal, `a JpxRefusal, not ${err instanceof Error ? err.name : typeof err}: ${err instanceof Error ? err.message : String(err)}`);
+    return err;
   }
   return null;
 }
+/** The refusal `fn` must throw (none is a TypeError, as reading its code was).
+ *  @param {() => unknown} fn @returns {JpxRefusal} */
+function refused(fn) {
+  const e = refusal(fn);
+  if (e === null) throw new TypeError("no refusal");
+  return e;
+}
+/** A member the refusal's types do not state, read as `o.transient` reads it. @param {object} o @returns {unknown} */
+const transientOf = (o) => "transient" in o ? o.transient : undefined;
 
-/** A bare codestream's SIZ with its geometry re-declared. */
+/** A bare codestream's SIZ with its geometry re-declared.
+ *  @param {JpxVariant} v @param {{ X: number, Y: number, XT?: number, YT?: number }} geometry @returns {Uint8Array} */
 function withSiz(v, { X, Y, XT = X, YT = Y }) {
   const d = bytesOf(v);
   let p = 2;
   while (!(d[p] === 0xff && d[p + 1] === 0x51)) p++;
+  /** @param {number} at @param {number} n */
   const put = (at, n) => { d[at] = n >>> 24; d[at + 1] = (n >>> 16) & 0xff; d[at + 2] = (n >>> 8) & 0xff; d[at + 3] = n & 0xff; };
   put(p + 6, X); put(p + 10, Y); put(p + 14, 0); put(p + 18, 0); put(p + 22, XT); put(p + 26, YT); put(p + 30, 0); put(p + 34, 0);
   return d;
 }
-const bare = (comps) => V.find((v) => v.expect === "ok" && v.container === "j2k" && v.comps === comps);
-const named = (name) => V.find((v) => v.name === name);
-/** A bare codestream with its COD's code-block size re-declared (exponents). */
+/** The first decodable bare codestream of `comps` components (none is a TypeError, as reading it was).
+ *  @param {number} comps @returns {JpxVariant} */
+const bare = (comps) => {
+  const v = V.find((x) => x.expect === "ok" && x.container === "j2k" && x.comps === comps);
+  if (v === undefined) throw new TypeError(`jpx-variants.json has no bare codestream of ${comps} components`);
+  return v;
+};
+/** The fixture named `name` (none is a TypeError, as reading it was). @param {string} name @returns {JpxVariant} */
+const named = (name) => {
+  const v = V.find((x) => x.name === name);
+  if (v === undefined) throw new TypeError(`jpx-variants.json has no variant ${name}`);
+  return v;
+};
+/** A bare codestream with its COD's code-block size re-declared (exponents).
+ *  @param {Uint8Array} d @param {number} xcb @param {number} ycb @returns {Uint8Array} */
 function withBlocks(d, xcb, ycb) {
   let p = 2;
   while (!(d[p] === 0xff && d[p + 1] === 0x52)) p++;
   d[p + 10] = xcb - 2; d[p + 11] = ycb - 2;
   return d;
 }
-const PAGES = JSON.parse(readFileSync(new URL("./fixtures/jpx-pages.json", import.meta.url), "utf8"));
+const PAGES = /** @type {JpxPages} decodes the recorded jpx-pages.json, written by make-jpx-pages.py */ (JSON.parse(readFileSync(new URL("./fixtures/jpx-pages.json", import.meta.url), "utf8")));
 
 test("R4 R6 the fixtures: OpenJPEG's decode of 114 images and 13 refusals", () => {
   assert.match(FIX.provenance, /OpenJPEG 2\.5\.0/);
@@ -80,6 +130,7 @@ test("R4 R6 every decodable fixture: OpenJPEG's samples, to the bit", () => {
 });
 
 test("R4 both wavelets, both colour transforms, every progression, tiles: what the corpus decodes", () => {
+  /** @type {{ transform: Set<string | null>, progression: Set<string | number>, tiled: boolean, mct: Set<string>, container: Set<string> }} */
   const seen = { transform: new Set(), progression: new Set(), tiled: false, mct: new Set(), container: new Set() };
   for (const v of V.filter((x) => x.expect === "ok")) {
     const { detail } = decodeJpx(bytesOf(v));
@@ -95,6 +146,7 @@ test("R4 both wavelets, both colour transforms, every progression, tiles: what t
 });
 
 test("R4 what it cannot decode is a JpxRefusal; an UNSUPPORTED one names its feature, a key of JPX_REFUSES", () => {
+  /** @type {Set<string>} */
   const driven = new Set();
   for (const v of V.filter((x) => x.expect !== "ok")) {
     const e = refusal(() => decodeJpx(bytesOf(v)));
@@ -102,9 +154,10 @@ test("R4 what it cannot decode is a JpxRefusal; an UNSUPPORTED one names its fea
     assert.equal(e.code, v.expect, v.name);
     assert.ok(["UNSUPPORTED", "UNSUPPORTED_SAMPLES", "TRUNCATED", "CORRUPT"].includes(e.code), v.name);   // IMAGE_TOO_LARGE is driven in bounds.test.mjs and below
     if (e.code === "UNSUPPORTED") {
-      assert.ok(e.detail.feature in JPX_REFUSES, `${v.name}: '${e.detail.feature}' is declared`);
-      assert.equal(e.detail.feature, v.name.slice("UNSUPPORTED:".length), v.name);
-      driven.add(e.detail.feature);
+      const feature = e.detail.feature;
+      assert.ok(feature !== undefined && feature in JPX_REFUSES, `${v.name}: '${feature}' is declared`);
+      assert.equal(feature, v.name.slice("UNSUPPORTED:".length), v.name);
+      driven.add(feature);
     }
   }
   assert.deepEqual([...driven].sort(), Object.keys(JPX_REFUSES).sort(), "every declared refusal is driven");
@@ -123,18 +176,19 @@ test("R4 R6 N75 pages past the whole-plane working set decode, to OpenJPEG's bit
 });
 
 test("R4 R12 N34 a decode past the memory bound is refused IMAGE_TOO_LARGE, from the header, before any sample", () => {
-  const e = refusal(() => decodeJpx(withSiz(bare(3), { X: 5000, Y: 5000 })));
+  const e = refused(() => decodeJpx(withSiz(bare(3), { X: 5000, Y: 5000 })));
   assert.equal(e.code, "IMAGE_TOO_LARGE");
   assert.equal(e.detail.bound_name, "working_set");
   assert.deepEqual([e.detail.width, e.detail.height, e.detail.components], [5000, 5000, 3]);
-  assert.ok(e.detail.working_set_bytes > 5000 * 5000 * 3, "the output, and the decode's buffers beside it");
+  const declared = e.detail.working_set_bytes;
+  assert.ok(declared !== undefined && declared > 5000 * 5000 * 3, "the output, and the decode's buffers beside it");
   assert.equal(e.detail.bound_bytes, WORKING);
   assert.deepEqual([e.detail.size, e.detail.bound, e.detail.key], [e.detail.working_set_bytes, WORKING, `limit.${WORKING_ROW.join(".")}`]);
-  assert.ok(e.detail.transient === undefined && e.transient === undefined, "final, never retried");
+  assert.ok(transientOf(e.detail) === undefined && transientOf(e) === undefined, "final, never retried");
   assert.ok(!("image-past-memory-bound" in JPX_REFUSES), "the UNSUPPORTED key is retired by IMAGE_TOO_LARGE (R4, R7)");
   /* A declaration far past any memory is refused just as fast: nothing is allocated. */
   const t0 = performance.now();
-  const huge = refusal(() => decodeJpx(withSiz(bare(1), { X: 60000, Y: 60000 })));
+  const huge = refused(() => decodeJpx(withSiz(bare(1), { X: 60000, Y: 60000 })));
   assert.equal(huge.code, "IMAGE_TOO_LARGE");
   assert.equal(huge.detail.bound_name, "pixels");
   assert.equal(huge.detail.size, 60000 * 60000);
@@ -143,27 +197,31 @@ test("R4 R12 N34 a decode past the memory bound is refused IMAGE_TOO_LARGE, from
 
 test("N34 N75 the working set is what the bound counts: the output, and one code-block row of every band beside it", () => {
   const bound = WORKING;
+  /** @param {Uint8Array} d @returns {number | undefined} the working set a refusal for memory declares, else 0 */
   const memory = (d) => { const e = refusal(() => decodeJpx(d)); return e && e.code === "IMAGE_TOO_LARGE" && e.detail.bound_name === "working_set" ? e.detail.working_set_bytes : 0; };
   const grey = () => withSiz(named("9-7-levels-5-grey"), { X: 7800, Y: 7850 });
   /* Grey, one tile, 64x64 code-blocks. The output alone decides the far side. */
-  assert.ok(memory(withSiz(named("9-7-levels-5-grey"), { X: 7900, Y: 7800 })) > 7900 * 7800, "61.6 MB of output: refused");
+  const far = memory(withSiz(named("9-7-levels-5-grey"), { X: 7900, Y: 7800 }));
+  assert.ok(far !== undefined && far > 7900 * 7800, "61.6 MB of output: refused");
   /* 61.2 MB of output, inside the bound; the buffers beside it take it past. */
   assert.ok(7800 * 7850 < bound);
   const ws = memory(grey());
-  assert.ok(ws > bound, "the output and the buffers: refused");
+  assert.ok(ws !== undefined && ws > bound, "the output and the buffers: refused");
   /* The buffers are a strip of rows per band, not a plane: a page's are a few MB. */
   assert.ok(ws - 7800 * 7850 < 7800 * 7850 / 8, `buffers of ${ws - 7800 * 7850} bytes`);
   assert.equal(memory(withSiz(named("9-7-levels-5-grey"), { X: 7000, Y: 7000 })), 0, "49 MB of output and its buffers: not refused for memory");
   /* The strip is the code-block's height: 16x256 blocks hold four times the rows of 64x64 ones. */
   const tall = memory(withBlocks(withSiz(named("9-7-levels-5-grey"), { X: 7800, Y: 7850 }), 4, 8));
-  assert.ok(tall > ws, "taller code-blocks, larger strips");
-  assert.equal(memory(withBlocks(withSiz(named("9-7-levels-5-grey"), { X: 5000, Y: 5000 }), 2, 10)) > 0, true,
+  assert.ok(tall !== undefined && tall > ws, "taller code-blocks, larger strips");
+  const strips = memory(withBlocks(withSiz(named("9-7-levels-5-grey"), { X: 5000, Y: 5000 }), 2, 10));
+  assert.equal(strips !== undefined && strips > 0, true,
     "4x1024 code-blocks: 25 MB of output, and 1024-row strips of every band, refused");
   assert.equal(memory(withSiz(named("9-7-levels-5-grey"), { X: 5000, Y: 5000 })), 0, "the same page in 64x64 code-blocks is not");
   /* A single-tile colour page the whole-plane decode refused (101 MB of planes) is no longer refused. */
   assert.equal(memory(withSiz(bare(3), { X: 2550, Y: 3300 })), 0, "one tile, 25.2 MB of output");
   /* Tiles do not escape the bound: the output alone can pass it. */
-  assert.ok(memory(withSiz(bare(3), { X: 4600, Y: 4600, XT: 256, YT: 256 })) > 4600 * 4600 * 3, "tiled, 63.5 MB of output");
+  const tiled = memory(withSiz(bare(3), { X: 4600, Y: 4600, XT: 256, YT: 256 }));
+  assert.ok(tiled !== undefined && tiled > 4600 * 4600 * 3, "tiled, 63.5 MB of output");
   /* The largest tile is the one counted, wherever the tile grid's edges fall. */
   assert.equal(memory(withSiz(bare(1), { X: 7000, Y: 7000, XT: 9000, YT: 9000 })), 0, "a tile larger than the image is clipped to it");
 });
