@@ -5,7 +5,7 @@ session (Process4 design part 7, section 4, act 8), as its brief directs; the co
 is its writer. The dated lines are the owner's exact words, never edited.
 
 ## Process version
-Rule now: civicsmith moves to the latest Process4 version.
+Rule now: civicsmith moves to the latest Process4 version, now (open jobs restart from their branches on it).
 - 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
 - 22 Nov 2026: "Instruction: move civicsmith to the latest Process4 version"
 - 23 Nov 2026: "1. Instruction: move civicsmith to the latest Process4 version"
@@ -17,6 +17,7 @@ Rule now: civicsmith moves to the latest Process4 version.
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the ninth move, after the first eight conversions stopped for his review)
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the tenth move)
 - 26 Nov 2026: "Instruction: move civicsmith to the latest Process4 version" (the eleventh move; the first in the new Claude account)
+- 27 Nov 2026: "Instruction: move civicsmith to the latest Process4 version, now" (the twelfth move)
 Shown to the owner: not yet.
 
 ## Slots
