@@ -126,6 +126,328 @@ import { word, localize } from "../setup-words/index.mjs";
 import { boundOf } from "../read-bounds.mjs";
 
 /* ------------------------------------------------------------------ *
+ * The kinds this module takes and hands back (S4)
+ * ------------------------------------------------------------------ */
+
+/** @typedef {{kind: "sheet-cell", ref: string, sheet: string, cell: string}} SheetCellRef IC-1's sheet-cell reference (R10) */
+/** @typedef {{kind: "sheet-range", ref: string, sheet: string, range: string}} SheetRangeRef IC-124's sheet-range reference (R11) */
+/** @typedef {ArrayBuffer | ArrayBufferView} BytesView bytes as a buffer or any typed-array view */
+/** @typedef {BytesView | ArrayLike<number> | null | undefined} BytesInput bytes, or an array of byte values; anything else reads as no bytes */
+/** @typedef {"comma" | "semicolon" | "tab" | "pipe"} DelimiterName the candidate delimiters' names (R7) */
+/** @typedef {"delimiter_undetermined_too_few_lines" | "delimiter_undetermined_tied" | "delimiter_undetermined_none_consistent"} DelimiterUndetermined why no delimiter was decided (R7) */
+/**
+ * One window's (or a text's) delimiter decision (R7).
+ * @typedef {Object} DelimiterDecision
+ * @property {string | null} delimiter the delimiter character, or null when none was decided
+ * @property {DelimiterName | null} name
+ * @property {"certain" | "none"} confidence
+ * @property {number} lines the complete records examined
+ * @property {number} [modalLines] the records on which the decided delimiter's most common count holds
+ * @property {string[]} signals
+ * @property {DelimiterUndetermined | null} undetermined
+ * @property {DelimiterName[]} tied the candidates still equal, when tied
+ */
+/**
+ * The file's delimiter decision (R7): the chosen window's decision, `lines` summed over every window, `records` the chosen
+ * window's own count of complete records.
+ * @typedef {Object} FileDelimiter
+ * @property {string | null} delimiter
+ * @property {DelimiterName | null} name
+ * @property {"certain" | "none"} confidence
+ * @property {number} lines
+ * @property {number} [modalLines]
+ * @property {string[]} signals
+ * @property {DelimiterUndetermined | null} undetermined
+ * @property {DelimiterName[]} tied
+ * @property {number} records
+ */
+/**
+ * The file's encoding decision (R7).
+ * @typedef {Object} EncodingDecision
+ * @property {string | null} encoding
+ * @property {"certain" | "likely" | "none"} confidence
+ * @property {number} bomBytes
+ * @property {boolean} assumed true when no BOM or declaration decided it
+ * @property {string[]} signals
+ * @property {"encoding_undetermined" | null} undetermined
+ */
+/**
+ * The dialect as the entry states it (R7): `structure()`'s and `text()`'s `dialect`, and the `dialect` slot's answer.
+ * @typedef {Object} Dialect
+ * @property {string | null} encoding
+ * @property {"certain" | "likely" | "none"} encodingConfidence
+ * @property {string[]} encodingSignals
+ * @property {DelimiterName | null} delimiter
+ * @property {"certain" | "none"} delimiterConfidence
+ * @property {string[]} delimiterSignals
+ * @property {boolean} assumed
+ * @property {number[]} disagree the byte offsets of the windows whose decision differs from the file's
+ * @property {string[]} undetermined
+ */
+/** @typedef {{encoding: string, bomBytes: number, signal: string}} Bom a byte-order mark read */
+/**
+ * One window's bytes, scanned once (header §2).
+ * @typedef {Object} ByteScan
+ * @property {boolean} high a byte >= 0x80 is among them
+ * @property {number} valid complete multi-byte UTF-8 sequences
+ * @property {number} bad bytes that are not valid UTF-8
+ * @property {number} nul NUL bytes
+ * @property {number} undef bytes windows-1252 leaves undefined
+ */
+/**
+ * One read window and its decisions (header §2, §3): `at`/`end` its byte span, `enc` its own encoding decision, `delim`
+ * its own delimiter decision, `used` the delimiter it is read under, `readEnc` the encoding it is read under.
+ * @typedef {Object} CsvWindow
+ * @property {number} at
+ * @property {number} end
+ * @property {boolean} high
+ * @property {string | null} enc
+ * @property {string | null} delim
+ * @property {DelimiterDecision} dec
+ * @property {string | null} used
+ * @property {string | null} readEnc
+ * @property {ByteScan} [scan] absent for a UTF-16 body
+ */
+/** @typedef {{col: number, chars: number}} OpenQuote a quote still open at the end of the text: its column and the characters it covers */
+/**
+ * What the record walk says of each record it completes (`createRecordWalk`).
+ * @typedef {Object} RecordInfo
+ * @property {number} end the characters consumed up to and including the record's terminator
+ * @property {boolean} skipLF a CR ended the record at the end of a piece: a LF that follows is its own
+ * @property {number} cols the record's field count
+ * @property {Array<[number, number]> | null} over the `[column, length]` of each field longer than the cell bound
+ * @property {OpenQuote | null} open
+ * @property {number} wide the most fields under any one candidate delimiter while none is decided, else 0
+ */
+/** @typedef {(record: string[], info: RecordInfo) => void} RecordSink called with each record the walk completes */
+/** @typedef {{maxColumns?: number}} WalkLimits `maxColumns` stops a record keeping fields past it */
+/**
+ * The record walk fed in pieces (`createRecordWalk`).
+ * @typedef {Object} RecordWalk
+ * @property {(d: string | null | undefined) => void} setDelimiter
+ * @property {() => void} resumeAfterCR
+ * @property {(text: string) => void} feed
+ * @property {() => void} end
+ */
+/** @typedef {{at: number, row: number, skipLF: boolean}} AccessPoint a byte a walk may resume at, and the row it follows */
+/**
+ * The marker a body over a bound is refused with (R6, R22).
+ * @typedef {Object} BoundMarker
+ * @property {false} ok
+ * @property {"undetermined"} text
+ * @property {"over_size_bound"} why
+ * @property {number} size
+ * @property {number} bound
+ * @property {string} boundName
+ * @property {"body_bytes" | "rows" | "columns"} metric
+ * @property {true} final
+ */
+/**
+ * The marker a UTF-16 body over a bound is refused with (R6, R22): `BoundMarker`'s members and the encoding.
+ * @typedef {Object} Utf16BoundMarker
+ * @property {false} ok
+ * @property {"undetermined"} text
+ * @property {"over_size_bound"} why
+ * @property {number} size
+ * @property {number} bound
+ * @property {string} boundName
+ * @property {"body_bytes" | "rows" | "columns"} metric
+ * @property {true} final
+ * @property {string} encoding
+ */
+/** @typedef {BoundMarker | Utf16BoundMarker} SizeMarker */
+/**
+ * The optional second argument of `parts`, `structure` and `dialect` (R3, R20).
+ * @typedef {Object} ReadOptions
+ * @property {number | undefined} [windowBytes] an integer of at least 16: a scaled read window
+ * @property {string | undefined} [declared] a legacy charset the source declared
+ * @property {(() => unknown) | undefined} [yieldNow] awaited between windows
+ */
+/**
+ * `text()`'s optional second argument (R3, R17, R20).
+ * @typedef {Object} TextOptions
+ * @property {number | undefined} [windowBytes]
+ * @property {string | undefined} [declared]
+ * @property {(() => unknown) | undefined} [yieldNow]
+ * @property {number | undefined} [inlineCellsMax] bytes of cells' JSON a sheet lists before it holds them
+ */
+/**
+ * `parts()` refused: an empty body, or a BOM whose encoding the runtime cannot decode.
+ * @typedef {Object} PartsRefusal
+ * @property {false} ok
+ * @property {string} why
+ * @property {{encoding: string}} [encoding]
+ */
+/**
+ * `parts()`'s answer for a body it read: what `structure()`, `text()` and `cellsIn()` project.
+ * @typedef {Object} CsvParts
+ * @property {true} ok
+ * @property {"csv"} format
+ * @property {Uint8Array} bytes
+ * @property {number} bomBytes
+ * @property {number} bodyBytes
+ * @property {EncodingDecision} encoding
+ * @property {FileDelimiter} delimiter
+ * @property {number[]} disagree
+ * @property {SizeMarker | null} guard the marker when the body is over a bound
+ * @property {string[][] | null} records the records of a body that fits one window's first 64 KiB, else null
+ * @property {Map<number, RecordInfo> | null} recInfo the walk's information on the kept records that have any to give
+ * @property {number[] | null} recWindow the window each kept record ended in
+ * @property {boolean} transport
+ * @property {boolean} invalidUtf16
+ * @property {boolean} windowed
+ * @property {string | null} utf16
+ * @property {number} W the window's bytes
+ * @property {CsvWindow[]} windows
+ * @property {AccessPoint[]} accessPoints
+ * @property {number} rows
+ */
+/** @typedef {CsvParts | PartsRefusal} PartsResult `parts()`'s answer */
+/** @typedef {PartsResult | BytesView | null | undefined} PartsOrBytes what `structure`, `text` and `cellsIn` accept */
+/** @typedef {{format: "csv", confidence: "likely", signals: string[]}} Detection `detect()`'s claim from a declared type (R2) */
+/** @typedef {{sheet: number, name: string, sheetId: null, state: "visible", hidden: boolean}} StructureSheet */
+/** @typedef {{anchor: number, intra: number, deferred: number, refused: number, undetermined: number}} LinkCounts */
+/** @typedef {{part: string, why: "over_size_bound", guard: SizeMarker}} GuardEntry */
+/**
+ * The IC-2 evidentiary envelope (R4): always empty of kinds and items.
+ * @typedef {Object} Evidentiary
+ * @property {"csv"} container
+ * @property {never[]} kinds
+ * @property {never[]} items
+ * @property {GuardEntry[]} undetermined
+ * @property {{[kind: string]: number}} counts
+ */
+/**
+ * `structure()`'s answer for a body read (R4).
+ * @typedef {Object} StructureDone
+ * @property {true} ok
+ * @property {"csv"} container
+ * @property {StructureSheet[]} sheets
+ * @property {never[]} links
+ * @property {LinkCounts} counts
+ * @property {Evidentiary} evidentiary
+ * @property {Dialect} dialect
+ * @property {never[]} active
+ * @property {string[]} notes
+ */
+/** @typedef {{ok: false, container: "csv", reason: string}} ReadRefusal `structure()`'s or `text()`'s answer when `parts` failed */
+/** @typedef {StructureDone | ReadRefusal} StructureResult */
+/**
+ * One typed cell (R8).
+ * @typedef {Object} TypedCell
+ * @property {SheetCellRef} source
+ * @property {string | null} value null for a field the encoding could not read
+ * @property {"text"} type
+ * @property {null} declared
+ * @property {null} cached
+ * @property {null} formula
+ */
+/** @typedef {"encoding_undetermined" | "not_us_ascii" | "invalid_utf8" | "invalid_utf16"} UnreadReason why a field has no text (R5) */
+/** @typedef {{sheet: 0, cell: string, reason: UnreadReason}} UnreadEntry a cell the encoding could not read (R5) */
+/** @typedef {{sheet: 0, cell: string, reason: "unterminated_quote", row: number, bytes: number}} OpenQuoteEntry a quote left open: the row it opened on, the bytes it covers (R23) */
+/** @typedef {{sheet: 0, cell: string, reason: "over_cell_bound", length: number}} OverBoundEntry a cell over the cell bound, and its length (R22) */
+/** @typedef {UnreadEntry | OpenQuoteEntry | OverBoundEntry} UndeterminedCell an unreadable or over-long cell, named by its own reference */
+/**
+ * The one sheet of `text()` whose cells are listed (R5, R8, R16).
+ * @typedef {Object} ListedSheet
+ * @property {number} sheet
+ * @property {string} name
+ * @property {boolean} hidden
+ * @property {null} rows
+ * @property {null} cols
+ * @property {number} usedRows
+ * @property {number} usedCols
+ * @property {SheetRangeRef | null} range
+ * @property {string} text
+ * @property {number[]} lineRows
+ * @property {TypedCell[] | null} cells
+ * @property {UndeterminedCell[]} undetermined
+ */
+/**
+ * The one sheet of `text()` past `inlineCellsMax` (R17): `cells` is null and `cells_held` true.
+ * @typedef {Object} HeldSheet
+ * @property {number} sheet
+ * @property {string} name
+ * @property {boolean} hidden
+ * @property {null} rows
+ * @property {null} cols
+ * @property {number} usedRows
+ * @property {number} usedCols
+ * @property {SheetRangeRef | null} range
+ * @property {string} text
+ * @property {number[]} lineRows
+ * @property {TypedCell[] | null} cells
+ * @property {true} cells_held
+ * @property {UndeterminedCell[]} undetermined
+ */
+/** @typedef {ListedSheet | HeldSheet} TextSheet */
+/** @typedef {{chars: number, cells: number, formulas: number, undetermined: number, replaced: number}} TextCounts `text()`'s counts for a body read */
+/** @typedef {{chars: number, cells: number, formulas: number, undetermined: number}} BoundCounts `text()`'s counts for a body over a bound */
+/**
+ * `text()`'s answer for a body read (R5, R8).
+ * @typedef {Object} TextDone
+ * @property {true} ok
+ * @property {"csv"} container
+ * @property {never[]} images
+ * @property {null} metadata
+ * @property {never[]} active
+ * @property {Dialect} dialect
+ * @property {string} document
+ * @property {TextSheet[]} sheets
+ * @property {UndeterminedCell[]} undetermined
+ * @property {TextCounts} counts
+ */
+/**
+ * `text()`'s answer for a body over a bound (R6): no sheet, the marker carried.
+ * @typedef {Object} TextOverBound
+ * @property {true} ok
+ * @property {"csv"} container
+ * @property {never[]} images
+ * @property {null} metadata
+ * @property {never[]} active
+ * @property {Dialect} dialect
+ * @property {null} document
+ * @property {never[]} sheets
+ * @property {SizeMarker[]} undetermined
+ * @property {BoundCounts} counts
+ */
+/** @typedef {TextDone | TextOverBound | ReadRefusal} TextResult */
+/**
+ * `cellsIn`'s query (R18), with `parts`'s options for a call on bytes.
+ * @typedef {Object} CellsQuery
+ * @property {number | string | null | undefined} [sheet] absent, 0 or "csv"
+ * @property {number | undefined} [fromRow]
+ * @property {number | undefined} [toRow]
+ * @property {number | undefined} [fromCol]
+ * @property {number | undefined} [toCol]
+ * @property {number | undefined} [maxCells]
+ * @property {number | undefined} [windowBytes]
+ * @property {string | undefined} [declared]
+ * @property {(() => unknown) | undefined} [yieldNow] awaited between windows of a call on bytes
+ */
+/**
+ * `cellsIn`'s answer for a range read (R18).
+ * @typedef {Object} CellsDone
+ * @property {true} ok
+ * @property {TypedCell[]} cells
+ * @property {{from: number, to: number}} rows
+ * @property {number} [next_row]
+ */
+/** @typedef {{ok: false, why: string}} CellsRefusal */
+/** @typedef {CellsDone | CellsRefusal | SizeMarker} CellsResult */
+/**
+ * The I7 registry entry (R1 to R5, R7, R18).
+ * @typedef {Object} CsvEntry
+ * @property {"csv"} format
+ * @property {(bytes: unknown, contentType: unknown) => Detection | null} detect
+ * @property {(bytes: BytesInput, opts?: ReadOptions) => Promise<PartsResult>} parts
+ * @property {(bytes: BytesInput, opts?: ReadOptions) => Dialect | null} dialect
+ * @property {(partsOrBytes: PartsOrBytes, opts?: ReadOptions) => Promise<StructureResult>} structure
+ * @property {(partsOrBytes: PartsOrBytes, opts?: TextOptions) => Promise<TextResult>} text
+ * @property {(partsOrBytes: PartsOrBytes, query?: CellsQuery) => Promise<CellsResult>} cellsIn
+ */
+
+/* ------------------------------------------------------------------ *
  * The reference builders (R10, R11) — moved here from formats-xlsx.mjs
  * so that office-readers may use this module and not the reverse (the
  * module order; build/plan/draft-split-csv-reader.md, section 0).
@@ -142,6 +464,11 @@ import { boundOf } from "../read-bounds.mjs";
  * same argument that made `linkWrapper` imported rather than re-derived.
  * Behaviour here is untouched; the over-strictness arm proves this entry's
  * outputs are byte-identical across the change. */
+/**
+ * @param {string} sheet
+ * @param {string} cell
+ * @returns {SheetCellRef}
+ */
 export function sheetCellRef(sheet, cell) {
   return { kind: "sheet-cell", ref: `${sheet}!${cell}`, sheet, cell };
 }
@@ -152,12 +479,20 @@ export function sheetCellRef(sheet, cell) {
  *  notation with the top-left corner first. EXPORTED for `odf.mjs`'s `.ods`
  *  entry — one builder per arm (COFF-10's rule, which is why `sheetCellRef`
  *  above is exported too). */
+/**
+ * @param {string} sheet
+ * @param {string} range
+ * @returns {SheetRangeRef}
+ */
 export function sheetRangeRef(sheet, range) {
   return { kind: "sheet-range", ref: `${sheet}!${range}`, sheet, range };
 }
 
 /** A 1-based column number -> its A1 letters (1 -> A, 27 -> AA). Bijective
- *  base 26 — there is no zero digit, which is the mistake available here. */
+ *  base 26 — there is no zero digit, which is the mistake available here.
+ * @param {number} n
+ * @returns {string}
+ */
 export function columnLetters(n) {
   let out = "";
   for (let c = n; c > 0; c = Math.floor((c - 1) / 26)) out = String.fromCharCode(65 + ((c - 1) % 26)) + out;
@@ -169,21 +504,30 @@ export function columnLetters(n) {
  *  empty. The used range and not the grid, deliberately and unlike the
  *  `sheet-cell` BOUND: this is a UNIT a reader is shown ("the sheet"), and a
  *  unit of a million blank rows is not what anybody means by the sheet. The
- *  bound a citation is REFUSED against stays the grid (`rows`/`cols`). */
+ *  bound a citation is REFUSED against stays the grid (`rows`/`cols`).
+ * @param {string} name
+ * @param {unknown} usedRows
+ * @param {unknown} usedCols
+ * @returns {SheetRangeRef | null}
+ */
 export function usedSheetRange(name, usedRows, usedCols) {
-  if (!(Number.isInteger(usedRows) && usedRows > 0 && Number.isInteger(usedCols) && usedCols > 0)) return null;
+  if (!(typeof usedRows === "number" && Number.isInteger(usedRows) && usedRows > 0
+    && typeof usedCols === "number" && Number.isInteger(usedCols) && usedCols > 0)) return null;
   return sheetRangeRef(name, `A1:${columnLetters(usedCols)}${usedRows}`);
 }
 
 /* Bytes as a Uint8Array, an ArrayBuffer, any typed-array view or an array of
  * byte values; anything else reads as no bytes, so a wrong argument is a
  * named refusal downstream, never a throw (R21; ooxml.mjs's own policy). */
+/**
+ * @param {BytesInput} x
+ * @returns {Uint8Array}
+ */
 function toBytes(x) {
   if (x instanceof Uint8Array) return x;
   if (ArrayBuffer.isView(x)) return new Uint8Array(x.buffer, x.byteOffset, x.byteLength);
-  try { return new Uint8Array(x ?? 0); } catch { return new Uint8Array(0); }
+  try { return x == null ? new Uint8Array(0) : new Uint8Array(x); } catch { return new Uint8Array(0); }
 }
-const isBytes = (x) => x instanceof ArrayBuffer || ArrayBuffer.isView(x);
 
 /* The declared types this entry answers to outright, folded for case because RFC 2045 makes a media type
    case-insensitive. MEASURED: all 166 corpus keys were served `text/csv` exactly. The older synonyms are the same media
@@ -225,7 +569,8 @@ const LOOKAHEAD_WINDOWS = 4;
  *  many bytes from its start, so that a window too small to hold two records is not a window with no delimiter. */
 const DECISION_SPAN_MIN = 16 * 1024;
 
-/* The candidate delimiters — §3's list, and its limit is in §3. */
+/** The candidate delimiters — §3's list, and its limit is in §3.
+ *  @type {ReadonlyArray<{ch: string, name: DelimiterName}>} */
 const DELIMITERS = [
   { ch: ",", name: "comma" },
   { ch: ";", name: "semicolon" },
@@ -237,7 +582,9 @@ const DELIMITERS = [
  * The encoding: the BOM, UTF-16 without one, and each window's bytes
  * ------------------------------------------------------------------ */
 
-/** The BOM, or null. Returns `{ encoding, bomBytes, signal }`. */
+/** The BOM, or null. Returns `{ encoding, bomBytes, signal }`.
+ *  @param {Uint8Array} b
+ *  @returns {Bom | null} */
 function readBom(b) {
   if (b.length >= 3 && b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf)
     return { encoding: "utf-8", bomBytes: 3, signal: "BOM: EF BB BF" };
@@ -253,7 +600,9 @@ function readBom(b) {
   return null;
 }
 
-/** UTF-16 with no BOM: the NULs of ASCII text sit at one parity. */
+/** UTF-16 with no BOM: the NULs of ASCII text sit at one parity.
+ *  @param {Uint8Array} head
+ *  @returns {"utf-16le" | "utf-16be" | null} */
 function sniffUtf16(head) {
   const n = Math.min(head.length, 8192) & ~1;
   if (n < 8) return null;
@@ -267,16 +616,25 @@ function sniffUtf16(head) {
 
 /** One window's bytes, scanned once: whether any byte is >= 0x80, how many multi-byte sequences are valid UTF-8 and how
  *  many bytes are not, whether a NUL or a byte windows-1252 leaves undefined is among them. A sequence the window's end
- *  cuts is carried, not invalid; a window that starts inside a character skips its continuation bytes. */
+ *  cuts is carried, not invalid; a window that starts inside a character skips its continuation bytes. A byte past the
+ *  end of `after` reads as 0, as an absent byte's bits do.
+ *  @param {Uint8Array} b
+ *  @param {boolean} first
+ *  @param {Uint8Array} after
+ *  @returns {ByteScan} */
 function scanBytes(b, first, after) {
   const n = b.length;
-  const byteAt = (j) => (j < n ? b[j] : after[j - n]);
+  /** @param {number} j @returns {number} */
+  const byteAt = (j) => (j < n ? b[j] : after[j - n]) ?? 0;
+  /** @param {number} j @returns {number} */
+  const inWindow = (j) => b[j] ?? 0;
   let high = false, valid = 0, bad = 0, nul = 0, undef = 0, i = 0;
-  if (!first) for (let s = 0; i < n && s < 3 && (b[i] & 0xc0) === 0x80; s++) { i++; high = true; }
+  if (!first) for (let s = 0; i < n && s < 3 && ((b[i] ?? 0) & 0xc0) === 0x80; s++) { i++; high = true; }
   while (i < n) {
-    const c = b[i];
+    const c = b[i] ?? 0;
     if (c < 0x80) { if (c === 0) nul++; i++; continue; }
     high = true;
+    /** @type {number} */
     let need;
     if (c >= 0xc2 && c <= 0xdf) need = 1;
     else if (c >= 0xe0 && c <= 0xef) need = 2;
@@ -290,7 +648,7 @@ function scanBytes(b, first, after) {
       if (ok) break;
       bad++; i++; continue;
     }
-    const at = near ? byteAt : (j) => b[j];
+    const at = near ? byteAt : inWindow;
     const c1 = at(i + 1);
     let good = (c1 & 0xc0) === 0x80 && (need < 2 || (at(i + 2) & 0xc0) === 0x80) && (need < 3 || (at(i + 3) & 0xc0) === 0x80);
     if (good) {
@@ -304,7 +662,10 @@ function scanBytes(b, first, after) {
   return { high, valid, bad, nul, undef };
 }
 
-/** A window's own encoding decision (header §2). */
+/** A window's own encoding decision (header §2).
+ *  @param {ByteScan} scan
+ *  @param {string} legacy
+ *  @returns {string | null} */
 function classifyBytes(scan, legacy) {
   /* no complete multi-byte sequence and no invalid byte: only the edge of a character the neighbour window finishes decides nothing */
   if (!scan.high || (scan.valid === 0 && scan.bad === 0)) return "us-ascii";
@@ -313,7 +674,9 @@ function classifyBytes(scan, legacy) {
   return legacy;
 }
 
-/** A legacy charset the caller declared, when the runtime has a decoder for it; else windows-1252. */
+/** A legacy charset the caller declared, when the runtime has a decoder for it; else windows-1252.
+ *  @param {string | undefined} declared
+ *  @returns {string} */
 function legacyLabel(declared) {
   if (typeof declared !== "string") return "windows-1252";
   const label = declared.trim().toLowerCase();
@@ -321,24 +684,39 @@ function legacyLabel(declared) {
   try { new TextDecoder(label); return label; } catch { return "windows-1252"; }
 }
 
-const ASCII_DECODER = new TextDecoder("utf-8");
-const WIDE = new Uint16Array(8192);
+/* the default decoder is utf-8, not fatal, BOM not ignored */
+const ASCII_DECODER = new TextDecoder();
+/** The code units of one piece of the transport, a plain array so `String.fromCharCode.apply` takes it as its arguments. */
+const WIDE = Array.from({ length: 8192 }, () => 0);
+
+/** Whether any byte is >= 0x80.
+ *  @param {Uint8Array} b
+ *  @returns {boolean} */
+function anyHigh(b) {
+  for (let i = 0; i < b.length; i++) if ((b[i] ?? 0) >= 0x80) return true;
+  return false;
+}
 
 /** The bijective byte transport: each byte one code unit U+0000-U+00FF. NOT `TextDecoder("latin1")`, which is
- *  windows-1252 (a byte 0x92 would become U+2019 and lose the byte). A window with no high byte is plain ASCII. */
+ *  windows-1252 (a byte 0x92 would become U+2019 and lose the byte). A window with no high byte is plain ASCII.
+ *  @param {Uint8Array} b
+ *  @param {boolean} [high] whether a byte >= 0x80 is among them; absent, it is looked for
+ *  @returns {string} */
 function transport(b, high) {
-  if (high === undefined) { high = false; for (let i = 0; i < b.length; i++) if (b[i] >= 0x80) { high = true; break; } }
-  if (!high) return ASCII_DECODER.decode(b);
+  const isHigh = high === undefined ? anyHigh(b) : high;
+  if (!isHigh) return ASCII_DECODER.decode(b);
   let out = "";
   for (let i = 0; i < b.length; i += WIDE.length) {
     const n = Math.min(WIDE.length, b.length - i);
-    for (let j = 0; j < n; j++) WIDE[j] = b[i + j];
-    out += String.fromCharCode.apply(null, n === WIDE.length ? WIDE : WIDE.subarray(0, n));
+    for (let j = 0; j < n; j++) WIDE[j] = b[i + j] ?? 0;
+    out += String.fromCharCode.apply(null, n === WIDE.length ? WIDE : WIDE.slice(0, n));
   }
   return out;
 }
 
-/** The bytes a transport string stands for. */
+/** The bytes a transport string stands for.
+ *  @param {string} s
+ *  @returns {Uint8Array} */
 function untransport(s) {
   const out = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
@@ -351,15 +729,22 @@ function untransport(s) {
 
 /** The per-candidate counts of the complete records of `text`, up to `DELIMITER_RECORDS`: a quote opens quote mode only at
  *  the start of a field, a quoted line break stays in its record, CR, LF and CRLF end one, a blank line is no record, and
- *  the last fragment (no terminator) is not complete. A window that does not begin a record skips to the first break. */
+ *  the last fragment (no terminator) is not complete. A window that does not begin a record skips to the first break.
+ *  @param {string} text
+ *  @param {boolean} first
+ *  @returns {Array<[number, number, number, number]>} */
 function recordCounts(text, first) {
-  const n = text.length, recs = [];
+  const n = text.length;
+  /** @type {Array<[number, number, number, number]>} */
+  const recs = [];
   let i = 0;
   if (!first) {
     while (i < n && text.charCodeAt(i) !== 10 && text.charCodeAt(i) !== 13) i++;
     if (i < n) { if (text.charCodeAt(i) === 13 && text.charCodeAt(i + 1) === 10) i++; i++; }
   }
-  let rec = [0, 0, 0, 0], inQuotes = false, atStart = true, any = false;
+  /** @type {[number, number, number, number]} */
+  let rec = [0, 0, 0, 0];
+  let inQuotes = false, atStart = true, any = false;
   for (; i < n && recs.length < DELIMITER_RECORDS; i++) {
     const c = text.charCodeAt(i);
     if (inQuotes) {
@@ -381,7 +766,10 @@ function recordCounts(text, first) {
 }
 
 /** THE DELIMITER DECISION of one window (header §3, R7). Returns
- *  `{ delimiter, name, confidence, lines, signals, undetermined, tied }`. */
+ *  `{ delimiter, name, confidence, lines, signals, undetermined, tied }`.
+ *  @param {string} text
+ *  @param {boolean} first
+ *  @returns {DelimiterDecision} */
 function decideDelimiter(text, first) {
   const recs = recordCounts(text, first);
   const lines = recs.length;
@@ -390,11 +778,15 @@ function decideDelimiter(text, first) {
       signals: [localize("office-readers.csv.length_complete_line_s_in", "{length} complete line(s) in the signature window; a delimiter needs at least 2 to be consistent with anything", { length: String(lines) })],
       undetermined: "delimiter_undetermined_too_few_lines", tied: [] };
   }
+  /** @type {Array<{ch: string, name: DelimiterName, times: number, modalLines: number}>} */
   const consistent = [];
-  const modal = {};
+  /** @type {{comma: number, semicolon: number, tab: number, pipe: number}} each candidate's most common count per line */
+  const modal = { comma: 0, semicolon: 0, tab: 0, pipe: 0 };
   DELIMITERS.forEach((d, j) => {
-    const seen = new Map();
-    for (const r of recs) seen.set(r[j], (seen.get(r[j]) ?? 0) + 1);
+    /** @type {Array<[number, number]>} */
+    const none = [];
+    const seen = new Map(none);
+    for (const r of recs) { const v = r[j] ?? 0; seen.set(v, (seen.get(v) ?? 0) + 1); }
     let best = 0, bestN = 0, present = 0;
     for (const [count, times] of seen) {
       if (count < 1) continue;
@@ -408,10 +800,10 @@ function decideDelimiter(text, first) {
   if (consistent.length > 1) {
     const top = Math.max(...consistent.map((d) => d.modalLines));
     const lead = consistent.filter((d) => d.modalLines === top);
-    if (lead.length === 1) consistent.splice(0, consistent.length, lead[0]);
+    if (lead.length === 1) consistent.splice(0, consistent.length, ...lead);
   }
-  if (consistent.length === 1) {
-    const d = consistent[0];
+  const d = consistent.length === 1 ? consistent[0] : undefined;
+  if (d) {
     return { delimiter: d.ch, name: d.name, confidence: "certain", lines, modalLines: d.modalLines,
       signals: [d.times === lines
         ? localize("office-readers.csv.name_occurs_v1_time_s", "{name} occurs {v1} time(s) outside quotes on every one of the first {length} complete lines", { name: String(d.name), v1: String(modal[d.name]), length: String(lines) })
@@ -428,7 +820,9 @@ function decideDelimiter(text, first) {
     undetermined: "delimiter_undetermined_none_consistent", tied: [] };
 }
 
-/** The delimiter decision of a decoded text (the first window of a body). */
+/** The delimiter decision of a decoded text (the first window of a body).
+ *  @param {string | null | undefined} text
+ *  @returns {DelimiterDecision} */
 export function delimiterSignature(text) {
   return decideDelimiter(String(text ?? ""), true);
 }
@@ -446,8 +840,12 @@ export function delimiterSignature(text) {
  *  CR, an LF or a CRLF outside quotes ends the record. MEASURED against the corpus —
  *  `documents/Oakland-E-scooter-Survey_7-15-Filtered-1.csv` carries 934 LFs
  *  against 867 CRLFs because free-text survey answers hold bare LFs INSIDE
- *  quoted fields, so a line-oriented split would have shredded 67 records. */
+ *  quoted fields, so a line-oriented split would have shredded 67 records.
+ *  @param {string} text
+ *  @param {string | null | undefined} delimiter
+ *  @returns {string[][]} */
 export function walkRecords(text, delimiter) {
+  /** @type {string[][]} */
   const records = [];
   const w = createRecordWalk(delimiter, (record) => records.push(record));
   w.feed(text);
@@ -466,11 +864,20 @@ export function walkRecords(text, delimiter) {
  *  kept to `CELL_KEPT_CHARS`), `open` `{col, chars}` for a quote still open at the end of the text (that field is `""`),
  *  `wide` the most fields the record would have under any one of the four delimiters, counted outside quotes while no delimiter
  *  is decided (`0` when one is), so the column bound (R22) judges a record whose delimiter R7 could not decide.
- *  `limits.maxColumns` stops a record keeping fields past it (`cols` still counts them). */
+ *  `limits.maxColumns` stops a record keeping fields past it (`cols` still counts them).
+ *  @param {string | null | undefined} delimiter
+ *  @param {RecordSink} onRecord
+ *  @param {WalkLimits} [limits]
+ *  @returns {RecordWalk} */
 export function createRecordWalk(delimiter, onRecord, limits = {}) {
   const maxColumns = limits.maxColumns ?? Infinity;
   let delim = delimiter ? delimiter.charCodeAt(0) : -1;
-  let row = [], cols = 0, field = "", fieldLen = 0, over = null;
+  /** @type {string[]} */
+  let row = [];
+  let cols = 0, field = "", fieldLen = 0;
+  /** @type {Array<[number, number]> | null} */
+  let over = null;
+  /** @type {[number, number, number, number]} */
   const candidates = [0, 0, 0, 0];
   let inQuotes = false, atStart = true, started = false;
   /* The last piece ended on a `"` inside quotes: the next character says whether it was one half of a doubled `""`. */
@@ -478,6 +885,7 @@ export function createRecordWalk(delimiter, onRecord, limits = {}) {
   /* The last piece ended on a CR that ended a record: a LF now belongs to it. */
   let skipLF = false;
   let consumed = 0;
+  /** @param {string} s */
   const append = (s) => {
     if (!s) return;
     fieldLen += s.length;
@@ -490,8 +898,14 @@ export function createRecordWalk(delimiter, onRecord, limits = {}) {
     if (cols <= maxColumns) row.push(field);
     field = ""; fieldLen = 0;
   };
+  /**
+   * @param {number} end
+   * @param {boolean} crEnd
+   * @param {OpenQuote | null} [open]
+   */
   const endRecord = (end, crEnd, open) => {
     endField();
+    /** @type {RecordInfo} */
     const info = { end, skipLF: crEnd, cols, over, open: open ?? null, wide: delim < 0 ? Math.max(...candidates) + 1 : 0 };
     const record = row;
     candidates.fill(0);
@@ -528,7 +942,7 @@ export function createRecordWalk(delimiter, onRecord, limits = {}) {
         if (c === 34 && atStart) { inQuotes = true; atStart = false; started = true; run = i + 1; continue; }
         if (delim < 0) {
           const k = c === 44 ? 0 : c === 59 ? 1 : c === 9 ? 2 : c === 124 ? 3 : -1;
-          if (k >= 0) candidates[k]++;
+          if (k !== -1) candidates[k]++;
         }
         if (c === delim) { append(text.slice(run, i)); endField(); run = i + 1; atStart = true; started = true; continue; }
         if (c === 13) {
@@ -546,6 +960,7 @@ export function createRecordWalk(delimiter, onRecord, limits = {}) {
     },
     end() {
       if (quoteOpen) { quoteOpen = false; inQuotes = false; }
+      /** @type {OpenQuote | null} */
       let open = null;
       if (inQuotes) { open = { col: cols + 1, chars: fieldLen }; field = ""; fieldLen = 0; over = null; inQuotes = false; }
       /* A trailing fragment with no terminator is still a record — a producer that
@@ -560,140 +975,222 @@ export function createRecordWalk(delimiter, onRecord, limits = {}) {
  * The windows and the dialect — one decision per window, the file's by majority
  * ------------------------------------------------------------------ */
 
+/**
+ * What a body is read through (`makeContext`): its bytes, BOM, encoding family, window size and count, and the windows
+ * decided so far (`pending`: those a lookahead decided out of order).
+ * @typedef {Object} ReadContext
+ * @property {true} ok
+ * @property {Uint8Array} b
+ * @property {Bom | null} bom
+ * @property {number} bomBytes
+ * @property {number} bodyBytes
+ * @property {string | null} utf16
+ * @property {boolean} sniffed
+ * @property {TextDecoder | null} decoder
+ * @property {number} W
+ * @property {number} nWin
+ * @property {string} legacy
+ * @property {boolean} declared
+ * @property {CsvWindow[]} windows
+ * @property {Map<number, CsvWindow>} pending
+ */
+/** @typedef {{encoding: EncodingDecision, delimiter: FileDelimiter, disagree: number[]}} DialectFields what `dialectOf` states */
+/**
+ * A body's windows decided without a walk (`scanDialect`): its UTF-16 encoding if any, its windows and its dialect.
+ * @typedef {Object} DialectScan
+ * @property {true} ok
+ * @property {string | null} utf16
+ * @property {CsvWindow[]} windows
+ * @property {EncodingDecision} encoding
+ * @property {FileDelimiter} delimiter
+ * @property {number[]} disagree
+ */
+
 /** What a body is read through: its BOM, its encoding family, its windows. `opts.windowBytes` is a test seam (a scaled
- *  window, R-CLOCK's counts), `opts.declared` a legacy charset the source declared. */
+ *  window, R-CLOCK's counts), `opts.declared` a legacy charset the source declared.
+ *  @param {Uint8Array} b
+ *  @param {ReadOptions | undefined} opts
+ *  @returns {ReadContext | PartsRefusal} */
 function makeContext(b, opts) {
   if (!b.length) return { ok: false, why: "empty_body" };
   const bom = readBom(b);
   const bomBytes = bom ? bom.bomBytes : 0;
-  let utf16 = bom && bom.encoding.startsWith("utf-16") ? bom.encoding : null;
-  let sniffed = false;
-  if (!bom && !utf16) {
-    const sniff = sniffUtf16(b.subarray(0, Math.min(b.length, 8192)));
-    if (sniff) { utf16 = sniff; sniffed = true; }
-  }
+  const bomUtf16 = bom && bom.encoding.startsWith("utf-16") ? bom.encoding : null;
+  const sniff = !bom && !bomUtf16 ? sniffUtf16(b.subarray(0, Math.min(b.length, 8192))) : null;
+  const utf16 = bomUtf16 ?? sniff;
+  const sniffed = sniff != null;
+  /** @type {TextDecoder | null} */
   let decoder = null;
   if (utf16) {
     try { decoder = new TextDecoder(utf16, { fatal: false, ignoreBOM: true }); }
     catch { return { ok: false, why: `decoder_unavailable:${utf16}`, encoding: { encoding: utf16 } }; }
   }
-  let W = Number.isInteger(opts?.windowBytes) && opts.windowBytes >= 16 ? opts.windowBytes : CSV_WINDOW_BYTES;
+  const windowBytes = opts?.windowBytes;
+  let W = typeof windowBytes === "number" && Number.isInteger(windowBytes) && windowBytes >= 16 ? windowBytes : CSV_WINDOW_BYTES;
   if (utf16) W &= ~1;
   const bodyBytes = b.length - bomBytes;
+  const declared = opts?.declared;
+  /** @type {Array<[number, CsvWindow]>} */
+  const none = [];
   return { ok: true, b, bom, bomBytes, bodyBytes, utf16, sniffed, decoder, W,
-    nWin: Math.max(1, Math.ceil(bodyBytes / W)), legacy: legacyLabel(opts?.declared), declared: typeof opts?.declared === "string",
-    windows: [], pending: new Map() };
+    nWin: Math.max(1, Math.ceil(bodyBytes / W)), legacy: legacyLabel(declared), declared: typeof declared === "string",
+    windows: [], pending: new Map(none) };
 }
 
+/** @param {ReadContext} ctx @param {number} k @returns {[number, number]} window `k`'s byte span */
 const windowSpan = (ctx, k) => [ctx.bomBytes + k * ctx.W, Math.min(ctx.b.length, ctx.bomBytes + (k + 1) * ctx.W)];
+
+/** Window `k` of a list every window of a body is decided into before it is read.
+ *  @param {readonly CsvWindow[]} windows
+ *  @param {number} k
+ *  @returns {CsvWindow}
+ *  @throws {RangeError} never in this module: a window is read only after it is decided */
+function windowAt(windows, k) {
+  const w = windows[k];
+  if (!w) throw new RangeError(`no window ${k}`);
+  return w;
+}
 
 /** Decide window `k` from its own bytes `sub`: its encoding (ASCII-grid bodies) and its delimiter. Returns the window and
  *  the text the walk runs over. `stream` is false when the window is asked out of order (a UTF-16 window then starts a
- *  decoder of its own, and the text is not the walk's). */
+ *  decoder of its own, and the text is not the walk's).
+ *  @param {ReadContext} ctx
+ *  @param {number} k
+ *  @param {Uint8Array} sub
+ *  @param {boolean} stream
+ *  @returns {{w: CsvWindow, text: string}} */
 function decideWindow(ctx, k, sub, stream) {
   const [lo, hi] = windowSpan(ctx, k);
-  const w = { at: lo, end: hi, high: false, enc: null, delim: null, dec: null, used: null, readEnc: null };
+  const utf16 = ctx.utf16;
+  const decoder = ctx.decoder;
+  const scan = utf16 ? null : scanBytes(sub, k === 0, ctx.b.subarray(hi, hi + 3));
+  /** @type {string} */
   let text;
-  if (ctx.utf16) {
-    w.enc = ctx.utf16;
-    text = stream ? ctx.decoder.decode(sub, { stream: hi < ctx.b.length })
-      : new TextDecoder(ctx.utf16, { fatal: false, ignoreBOM: true }).decode(sub);
+  if (utf16) {
+    text = stream && decoder ? decoder.decode(sub, { stream: hi < ctx.b.length })
+      : new TextDecoder(utf16, { fatal: false, ignoreBOM: true }).decode(sub);
   } else {
-    const scan = scanBytes(sub, k === 0, ctx.b.subarray(hi, hi + 3));
-    w.high = scan.high;
-    w.enc = classifyBytes(scan, ctx.legacy);
-    w.scan = scan;
-    text = transport(sub, scan.high);
+    text = transport(sub, scan ? scan.high : undefined);
   }
-  w.dec = decideDelimiter(text, k === 0);
+  const enc = utf16 ? utf16 : scan ? classifyBytes(scan, ctx.legacy) : null;
+  let dec = decideDelimiter(text, k === 0);
   /* a window too small to hold two records (a scaled window) decides from the bytes after its start instead */
-  if (w.dec.undetermined === "delimiter_undetermined_too_few_lines" && ctx.W < DECISION_SPAN_MIN && hi < ctx.b.length) {
+  if (dec.undetermined === "delimiter_undetermined_too_few_lines" && ctx.W < DECISION_SPAN_MIN && hi < ctx.b.length) {
     const span = ctx.b.subarray(lo, Math.min(ctx.b.length, lo + DECISION_SPAN_MIN));
-    w.dec = decideDelimiter(ctx.utf16 ? new TextDecoder(ctx.utf16, { fatal: false, ignoreBOM: true }).decode(span) : transport(span), k === 0);
+    dec = decideDelimiter(utf16 ? new TextDecoder(utf16, { fatal: false, ignoreBOM: true }).decode(span) : transport(span), k === 0);
   }
-  w.delim = w.dec.delimiter;
+  /** @type {CsvWindow} */
+  const w = { at: lo, end: hi, high: scan ? scan.high : false, enc, delim: dec.delimiter, dec, used: null, readEnc: null };
+  if (scan) w.scan = scan;
   return { w, text };
 }
 
+/** Window `j`, decided out of order by a lookahead and kept until the walk reaches it.
+ *  @param {ReadContext} ctx
+ *  @param {number} j
+ *  @returns {CsvWindow} */
+function lookAhead(ctx, j) {
+  const [lo, hi] = windowSpan(ctx, j);
+  const ahead = decideWindow(ctx, j, ctx.b.subarray(lo, hi), false).w;
+  ctx.pending.set(j, ahead);
+  return ahead;
+}
+
 /** The delimiter window `k` is read under: its own decision, else the last one decided before it, else the first one the
- *  next few windows decide (asked here, out of order, so the first windows are not read as one column). */
+ *  next few windows decide (asked here, out of order, so the first windows are not read as one column).
+ *  @param {ReadContext} ctx
+ *  @param {number} k
+ *  @param {CsvWindow} w
+ *  @param {string | null} lastDecided
+ *  @returns {string | null} */
 function resolveDelimiter(ctx, k, w, lastDecided) {
-  if (w.delim != null) return w.delim;
+  const own = w.delim;
+  if (own != null) return own;
   if (lastDecided != null) return lastDecided;
   for (let j = k + 1; j < Math.min(ctx.nWin, k + 1 + LOOKAHEAD_WINDOWS); j++) {
-    let ahead = ctx.pending.get(j);
-    if (!ahead) {
-      const [lo, hi] = windowSpan(ctx, j);
-      ahead = decideWindow(ctx, j, ctx.b.subarray(lo, hi), false).w;
-      ctx.pending.set(j, ahead);
-    }
-    if (ahead.delim != null) return ahead.delim;
+    const ahead = ctx.pending.get(j) ?? lookAhead(ctx, j);
+    const theirs = ahead.delim;
+    if (theirs != null) return theirs;
   }
   return null;
 }
 
 /** The FILE's dialect from its windows (header §2, §3, R7): the encoding by the majority of the non-ASCII windows, the
- *  delimiter by the majority of the determined ones, and the windows whose decision differs, by byte offset. */
+ *  delimiter by the majority of the determined ones, and the windows whose decision differs, by byte offset.
+ *  @param {ReadContext} ctx
+ *  @returns {{enc: EncodingDecision, delimiter: FileDelimiter, disagree: number[]}} */
 function fileDialect(ctx) {
   const { windows } = ctx;
   const bom = ctx.bom;
+  const utf16 = ctx.utf16;
+  /** @type {EncodingDecision} */
   let enc;
   if (bom) {
     enc = { encoding: bom.encoding, confidence: "certain", bomBytes: bom.bomBytes, assumed: false,
       signals: [bom.signal, localize("office-readers.csv.declared_by_the_producer_in_the_bytes", "declared by the producer in the bytes")], undetermined: null };
-  } else if (ctx.utf16) {
-    enc = { encoding: ctx.utf16, confidence: "likely", bomBytes: 0, assumed: true,
-      signals: ["no BOM", localize("office-readers.csv.the_nul_bytes_of_ascii_text_sit_at_one_parity", "the NUL bytes of ASCII text sit at one parity: {encoding} without a BOM", { encoding: ctx.utf16 })], undetermined: null };
+  } else if (utf16) {
+    enc = { encoding: utf16, confidence: "likely", bomBytes: 0, assumed: true,
+      signals: ["no BOM", localize("office-readers.csv.the_nul_bytes_of_ascii_text_sit_at_one_parity", "the NUL bytes of ASCII text sit at one parity: {encoding} without a BOM", { encoding: utf16 })], undetermined: null };
   } else if (ctx.b.length >= 4 && ctx.b[0] === 0xff && ctx.b[1] === 0xfe && ctx.b[2] === 0 && ctx.b[3] === 0) {
     enc = { encoding: null, confidence: "none", bomBytes: 0, assumed: true,
       signals: ["BOM: FF FE 00 00 (UTF-32LE, not read)"], undetermined: "encoding_undetermined" };
   } else {
-    const tally = new Map();
-    for (const w of windows) if (w.enc !== "us-ascii") tally.set(w.enc, (tally.get(w.enc) ?? 0) + 1);
+    /** @type {Array<[string | null, number]>} */
+    const none = [];
+    const tally = new Map(none);
+    for (const w of windows) { const e = w.enc; if (e !== "us-ascii") tally.set(e, (tally.get(e) ?? 0) + 1); }
     if (!tally.size) {
       const total = windows.reduce((n, w) => n + (w.end - w.at), 0);
       enc = { encoding: "us-ascii", confidence: "likely", bomBytes: 0, assumed: true,
         signals: [`no byte >= 0x80 in the first ${total} bytes`,
           localize("office-readers.csv.us_ascii_not_utf_8_every_8_bit_superset", "us-ascii, not utf-8: every 8-bit superset decodes these bytes identically")], undetermined: null };
     } else {
-      let best = null, bestN = -1;
+      /** @type {string | null} */
+      let best = null;
+      let bestN = -1;
       for (const e of ["utf-8", ctx.legacy, null]) if ((tally.get(e) ?? 0) > bestN) { best = e; bestN = tally.get(e) ?? 0; }
-      if (best == null) {
+      const chosen = best;
+      if (chosen == null) {
         enc = { encoding: null, confidence: "none", bomBytes: 0, assumed: true,
           signals: ["no BOM", "a byte >= 0x80 that is not part of a valid utf-8 sequence and a NUL or a byte no legacy charset defines"],
           undetermined: "encoding_undetermined" };
       } else {
-        const how = best === "utf-8"
+        const how = chosen === "utf-8"
           ? localize("office-readers.csv.every_multi_byte_sequence_in_the_signature_window", "every multi-byte sequence in the signature window is valid utf-8")
-          : localize("office-readers.csv.the_bytes_are_not_utf_8_read_as_the_legacy_charset", "the bytes are not utf-8: read as the legacy charset {encoding}", { encoding: best });
-        enc = { encoding: best, confidence: "likely", bomBytes: 0, assumed: !(ctx.declared && best === ctx.legacy),
+          : localize("office-readers.csv.the_bytes_are_not_utf_8_read_as_the_legacy_charset", "the bytes are not utf-8: read as the legacy charset {encoding}", { encoding: chosen });
+        enc = { encoding: chosen, confidence: "likely", bomBytes: 0, assumed: !(ctx.declared && chosen === ctx.legacy),
           signals: ["no BOM", how, localize("office-readers.csv.likely_not_certain_validity_is_evidence", "likely, not certain: validity is evidence, not the producer's declaration")],
           undetermined: null };
       }
     }
   }
-  const tally = new Map();
-  for (const w of windows) if (w.delim != null) tally.set(w.delim, (tally.get(w.delim) ?? 0) + 1);
+  /** @type {Array<[string, number]>} */
+  const noDelims = [];
+  const tally = new Map(noDelims);
+  for (const w of windows) { const d = w.delim; if (d != null) tally.set(d, (tally.get(d) ?? 0) + 1); }
   /* the most common determined decision (the first window of the most common one on a tie), else the richest window's
      reason for deciding nothing */
-  let pick = windows[0];
+  let pick = windowAt(windows, 0);
   if (tally.size) {
     let bestN = 0;
-    for (const w of windows) if (w.delim != null && tally.get(w.delim) > bestN) { pick = w; bestN = tally.get(w.delim); }
+    for (const w of windows) { const d = w.delim; if (d != null && (tally.get(d) ?? 0) > bestN) { pick = w; bestN = tally.get(d) ?? 0; } }
   } else {
     for (const w of windows) if (w.dec.lines > pick.dec.lines) pick = w;
   }
+  /** @type {FileDelimiter} */
   const delimiter = { ...pick.dec, lines: windows.reduce((n, w) => n + w.dec.lines, 0), records: pick.dec.lines };
   const delim = delimiter.delimiter;
+  /** @type {number[]} */
   const disagree = [];
   for (const w of windows) {
     /* an ASCII-only window reads the same under every ASCII-grid encoding: it never disagrees */
-    const encDiffers = !ctx.utf16 && w.enc !== "us-ascii" && w.enc !== enc.encoding;
-    const delimDiffers = delim != null && w.delim != null && w.delim !== delim;
+    const encDiffers = !utf16 && w.enc !== "us-ascii" && w.enc !== enc.encoding;
+    const own = w.delim;
+    const delimDiffers = delim != null && own != null && own !== delim;
     if (encDiffers || delimDiffers) disagree.push(w.at);
   }
   /* a window is read under its own encoding; one with none to give (ASCII only, or undecodable) under the file's */
-  for (const w of windows) w.readEnc = ctx.utf16 ? ctx.utf16 : (w.enc != null && w.enc !== "us-ascii") ? w.enc : (enc.encoding ?? w.enc);
+  for (const w of windows) { const e = w.enc; w.readEnc = utf16 ? utf16 : (e != null && e !== "us-ascii") ? e : (enc.encoding ?? e); }
   return { enc, delimiter, disagree };
 }
 
@@ -704,9 +1201,14 @@ function fileDialect(ctx) {
  *  IC-283 (I2 2.8.0 proposed, MINOR ADDITIVE) is this key. ITS RESIDUE IS
  *  CLOSED BY REC-218 (BOB #33, 2026-09-24 21:55Z, option (b)): the acquire
  *  wire keeps it as `reading.dialect`, a key of its own, through the
- *  registry's `readingDialect` projection (formats.mjs). */
+ *  registry's `readingDialect` projection (formats.mjs).
+ *  @param {DialectFields} parts
+ *  @returns {Dialect} */
 function dialectOf(parts) {
   const disagree = parts.disagree;
+  /** @type {string[]} */
+  const undetermined = [];
+  for (const u of [parts.encoding.undetermined, parts.delimiter.undetermined, disagree.length ? "windows_disagree" : null]) if (u) undetermined.push(u);
   return {
     encoding: parts.encoding.encoding,
     encodingConfidence: parts.encoding.confidence,
@@ -716,34 +1218,43 @@ function dialectOf(parts) {
     delimiterSignals: parts.delimiter.signals,
     assumed: parts.encoding.assumed === true,
     disagree: [...disagree],
-    undetermined: [parts.encoding.undetermined, parts.delimiter.undetermined, disagree.length ? "windows_disagree" : null].filter(Boolean),
+    undetermined,
   };
 }
 
 /** The windows a dialect is decided over: all of a body within the byte bound, the first of a body over it (its dialect
  *  is read from the head, R6). Pure and synchronous: the decisions `csvParts` makes while it walks, made without walking,
- *  so a dialect read at intake and one read from a full parse of the same bytes cannot differ. */
+ *  so a dialect read at intake and one read from a full parse of the same bytes cannot differ.
+ *  @param {Uint8Array} b
+ *  @param {ReadOptions | undefined} opts
+ *  @returns {DialectScan | PartsRefusal} */
 function scanDialect(b, opts) {
   const ctx = makeContext(b, opts);
   if (!ctx.ok) return ctx;
   const wins = ctx.bodyBytes > MEASURED_CSV_TEXT_BOUND_BYTES ? 1 : ctx.nWin;
+  /** @type {string | null} */
   let last = null;
   for (let k = 0; k < wins; k++) {
     const [lo, hi] = windowSpan(ctx, k);
     const { w } = windowFor(ctx, k, b.subarray(lo, hi), true);
     ctx.windows.push(w);
     w.used = resolveDelimiter(ctx, k, w, last);
-    if (w.delim != null) last = w.delim;
+    const own = w.delim;
+    if (own != null) last = own;
   }
-  return { ...ctx, ...fileDialectResult(ctx) };
+  const f = fileDialectResult(ctx);
+  return { ok: true, utf16: ctx.utf16, windows: ctx.windows, encoding: f.encoding, delimiter: f.delimiter, disagree: f.disagree };
 }
 
+/** @param {ReadContext} ctx @returns {DialectFields} */
 function fileDialectResult(ctx) {
   const f = fileDialect(ctx);
   return { encoding: f.enc, delimiter: f.delimiter, disagree: f.disagree };
 }
 
-/** THE ENCODING over a body's windows (header §2). `{ encoding, confidence, bomBytes, signals, undetermined, assumed }`. */
+/** THE ENCODING over a body's windows (header §2). `{ encoding, confidence, bomBytes, signals, undetermined, assumed }`.
+ *  @param {BytesInput} bytes
+ *  @returns {EncodingDecision} */
 export function encodingSignature(bytes) {
   const b = toBytes(bytes);
   const s = scanDialect(b, undefined);
@@ -755,28 +1266,47 @@ export function encodingSignature(bytes) {
  * ------------------------------------------------------------------ */
 
 /** R20: let the caller's turn pass. A `yieldNow` that is not a function is no yield; one that throws or rejects is
- *  ignored (R13: this module never throws), so the answer is the same with it or without. */
+ *  ignored (R13: this module never throws), so the answer is the same with it or without.
+ *  @param {(() => unknown) | undefined} yieldNow
+ *  @returns {Promise<void>} */
 async function letPass(yieldNow) {
   if (typeof yieldNow !== "function") return;
   try { await yieldNow(); } catch { /* a yield that fails is no yield */ }
 }
 
-/** The marker a body over a bound is refused with (R6, R22): its size, the figure, the metric. */
-const sizeMarker = (metric, size, bound, boundName, extra) =>
-  ({ ok: false, text: "undetermined", why: "over_size_bound", size, bound, boundName, metric, final: true, ...extra });
+/** The marker a body over a bound is refused with (R6, R22): its size, the figure, the metric, and a UTF-16 body's encoding.
+ *  @param {"body_bytes" | "rows" | "columns"} metric
+ *  @param {number} size
+ *  @param {number} bound
+ *  @param {string} boundName
+ *  @param {string | null} encoding
+ *  @returns {SizeMarker} */
+const sizeMarker = (metric, size, bound, boundName, encoding) => encoding
+  ? { ok: false, text: "undetermined", why: "over_size_bound", size, bound, boundName, metric, final: true, encoding }
+  : { ok: false, text: "undetermined", why: "over_size_bound", size, bound, boundName, metric, final: true };
 
-/** Window `k`'s decision and the text the walk runs over: asked fresh, or taken from the lookahead that already decided it. */
+/** Window `k`'s decision and the text the walk runs over: asked fresh, or taken from the lookahead that already decided it.
+ *  @param {ReadContext} ctx
+ *  @param {number} k
+ *  @param {Uint8Array} sub
+ *  @param {boolean} stream
+ *  @returns {{w: CsvWindow, text: string}} */
 function windowFor(ctx, k, sub, stream) {
   const cached = ctx.pending.get(k);
   if (!cached) return decideWindow(ctx, k, sub, stream);
   ctx.pending.delete(k);
-  const text = ctx.utf16 ? ctx.decoder.decode(sub, { stream: cached.end < ctx.b.length }) : transport(sub, cached.high);
+  const decoder = ctx.decoder;
+  const text = ctx.utf16 && decoder ? decoder.decode(sub, { stream: cached.end < ctx.b.length }) : transport(sub, cached.high);
   return { w: cached, text };
 }
 
-/** Is this UTF-16 body valid, decided in windows so no decoded copy of the body is held? */
-async function validUtf16(ctx, yieldNow) {
-  const decoder = new TextDecoder(ctx.utf16, { fatal: true, ignoreBOM: true });
+/** Is this UTF-16 body valid, decided in windows so no decoded copy of the body is held?
+ *  @param {ReadContext} ctx
+ *  @param {string} utf16 the body's UTF-16 label
+ *  @param {(() => unknown) | undefined} yieldNow
+ *  @returns {Promise<boolean>} */
+async function validUtf16(ctx, utf16, yieldNow) {
+  const decoder = new TextDecoder(utf16, { fatal: true, ignoreBOM: true });
   try {
     for (let k = 0; k < ctx.nWin; k++) {
       if (k > 0) await letPass(yieldNow);
@@ -787,44 +1317,61 @@ async function validUtf16(ctx, yieldNow) {
   } catch { return false; }
 }
 
+/** `parts()`: the body read once, in windows (R3, R6, R9).
+ *  @param {BytesInput} bytes
+ *  @param {ReadOptions | undefined} opts
+ *  @returns {Promise<PartsResult>} */
 async function csvParts(bytes, opts) {
   const b = toBytes(bytes);
   const yieldNow = opts?.yieldNow;
   const ctx = makeContext(b, opts);
   if (!ctx.ok) return ctx;
   const { bodyBytes } = ctx;
-  const unit = ctx.utf16 ? 2 : 1;
-  const encodingOf = ctx.utf16 ? { encoding: ctx.utf16 } : {};
+  const utf16 = ctx.utf16;
+  const unit = utf16 ? 2 : 1;
+  const encodingOf = utf16;
 
   /* THE BOUNDS (R6, R22), on the body's own length and on what the walk counts: over the bytes bound the body is refused
      whole, its dialect read from the head; over the records bound or a record's columns it is refused at the record that
      passes it. A body within them is read in windows and keeps no record list unless it fits one window's first 64 KiB. */
+  /** @type {SizeMarker | null} */
   let guard = bodyBytes > MEASURED_CSV_TEXT_BOUND_BYTES
     ? sizeMarker("body_bytes", bodyBytes, MEASURED_CSV_TEXT_BOUND_BYTES, "MEASURED_CSV_TEXT_BOUND_BYTES", encodingOf)
     : null;
   const windowed = !guard && bodyBytes > SHEET_WINDOW_MIN_BYTES;
+  /** @type {string[][] | null} */
   const records = !guard && !windowed ? [] : null;
-  const recInfo = records ? new Map() : null;
+  /** @type {Array<[number, RecordInfo]>} */
+  const none = [];
+  const recInfo = records ? new Map(none) : null;
   /* the window each kept record ended in: a record is read under the dialect of that window (R24) */
+  /** @type {number[] | null} */
   const recWindow = records ? [] : null;
+  /** @type {AccessPoint[]} */
   const accessPoints = [];
-  let rows = 0, boundary = null, sawReplacement = false, at = 0;
+  /** @type {{boundary: AccessPoint | null}} the access point after the last record the walk completed */
+  const reached = { boundary: null };
+  let rows = 0, sawReplacement = false, at = 0;
+  /** @returns {SizeMarker | null} the guard as the walk has left it */
+  const guardNow = () => guard;
+  /** @type {RecordSink} */
   const onRecord = (record, info) => {
     if (guard) return;
     rows++;
     const columns = Math.max(info.cols, info.wide);
     if (columns > CSV_COLUMNS_MAX) { guard = sizeMarker("columns", columns, CSV_COLUMNS_MAX, "SHEET_COLUMNS_MAX", encodingOf); return; }
     if (rows > CSV_ROWS_MAX) { guard = sizeMarker("rows", rows, CSV_ROWS_MAX, "MEASURED_CSV_ROWS_BOUND", encodingOf); return; }
-    if (records) {
+    if (records && recInfo && recWindow) {
       if (info.over || info.open) recInfo.set(records.length, info);
       records.push(record);
       recWindow.push(at);
     }
-    boundary = { at: ctx.bomBytes + info.end * unit, row: rows, skipLF: info.skipLF };
+    reached.boundary = { at: ctx.bomBytes + info.end * unit, row: rows, skipLF: info.skipLF };
   };
   const walk = createRecordWalk(null, onRecord, { maxColumns: CSV_COLUMNS_MAX });
 
   const wins = guard ? 1 : ctx.nWin;
+  /** @type {string | null} */
   let last = null;
   for (let k = 0; k < wins; k++) {
     if (k > 0) await letPass(yieldNow);
@@ -833,49 +1380,64 @@ async function csvParts(bytes, opts) {
     at = k;
     ctx.windows.push(w);
     w.used = resolveDelimiter(ctx, k, w, last);
-    if (w.delim != null) last = w.delim;
+    const own = w.delim;
+    if (own != null) last = own;
     if (guard) continue;
-    if (ctx.utf16 && !sawReplacement && text.includes("�")) sawReplacement = true;
+    if (utf16 && !sawReplacement && text.includes("�")) sawReplacement = true;
     walk.setDelimiter(w.used);
     walk.feed(text);
-    if (!guard && boundary && (!accessPoints.length || boundary.at > accessPoints.at(-1).at)) accessPoints.push(boundary);
+    const boundary = reached.boundary;
+    const lastPoint = accessPoints.at(-1);
+    if (!guardNow() && boundary && (!lastPoint || boundary.at > lastPoint.at)) accessPoints.push(boundary);
   }
   if (!guard) walk.end();
   ctx.pending.clear();
-  const invalidUtf16 = !!ctx.utf16 && !guard && sawReplacement && !(await validUtf16(ctx, yieldNow));
+  const invalidUtf16 = !!utf16 && !guard && sawReplacement && !(await validUtf16(ctx, utf16, yieldNow));
   const dialect = fileDialect(ctx);
 
   return {
     ok: true, format: "csv", bytes: b, bomBytes: ctx.bomBytes,
     bodyBytes, encoding: dialect.enc, delimiter: dialect.delimiter, disagree: dialect.disagree, guard, records, recInfo, recWindow,
-    transport: !ctx.utf16, invalidUtf16, windowed, utf16: ctx.utf16, W: ctx.W, windows: ctx.windows, accessPoints, rows,
+    transport: !utf16, invalidUtf16, windowed, utf16, W: ctx.W, windows: ctx.windows, accessPoints, rows,
   };
 }
+
+/** @typedef {(record: string[], info: RecordInfo | null, window: CsvWindow) => void} RecordVisitor one record, its walk's information and its window */
 
 /** Every record of the body in order, to `onRecord(fields, info, window)`: the list `parts()` kept for a small body, else a
  *  walk in windows that keeps none, from `from` (an access point: the byte to resume at, the row it follows) or the start.
  *  `stopped()`, asked after each record of a list and each window, ends the walk early; a walk that ends early does not
- *  flush the record it was in the middle of. With `yieldNow` (R20) it awaits it between windows. */
+ *  flush the record it was in the middle of. With `yieldNow` (R20) it awaits it between windows.
+ *  @param {CsvParts} parts
+ *  @param {RecordVisitor} onRecord
+ *  @param {() => boolean} [stopped]
+ *  @param {(() => unknown) | undefined} [yieldNow]
+ *  @param {AccessPoint | null} [from]
+ *  @returns {Promise<void>} */
 async function forEachRecord(parts, onRecord, stopped = () => false, yieldNow, from = null) {
-  if (parts.records) {
-    for (let i = 0; i < parts.records.length; i++) {
+  const records = parts.records;
+  if (records) {
+    const recInfo = parts.recInfo;
+    const recWindow = parts.recWindow;
+    for (let i = 0; i < records.length; i++) {
       if (stopped()) return;
-      onRecord(parts.records[i], parts.recInfo.get(i) ?? null, parts.windows[parts.recWindow[i]]);
+      onRecord(records[i] ?? [], (recInfo ? recInfo.get(i) : undefined) ?? null, windowAt(parts.windows, (recWindow ? recWindow[i] : undefined) ?? -1));
     }
     return;
   }
   const { bytes: b, W, bomBytes } = parts;
-  let current = parts.windows[0];
+  let current = windowAt(parts.windows, 0);
   const walk = createRecordWalk(null, (record, info) => onRecord(record, info, current), { maxColumns: CSV_COLUMNS_MAX });
   if (from?.skipLF) walk.resumeAfterCR();
-  const decoder = parts.utf16 ? new TextDecoder(parts.utf16, { fatal: false, ignoreBOM: true }) : null;
+  const utf16 = parts.utf16;
+  const decoder = utf16 ? new TextDecoder(utf16, { fatal: false, ignoreBOM: true }) : null;
   let at = from ? from.at : bomBytes, firstPiece = true;
   while (at < b.length) {
     if (!firstPiece) await letPass(yieldNow);
     firstPiece = false;
     const k = Math.floor((at - bomBytes) / W);
     const hi = Math.min(b.length, bomBytes + (k + 1) * W);
-    current = parts.windows[k];
+    current = windowAt(parts.windows, k);
     walk.setDelimiter(current.used);
     const sub = b.subarray(at, hi);
     walk.feed(decoder ? decoder.decode(sub, { stream: hi < b.length }) : transport(sub, at === current.at ? current.high : undefined));
@@ -889,6 +1451,7 @@ async function forEachRecord(parts, onRecord, stopped = () => false, yieldNow, f
  * structure(parts) -> the I2 shape (+ the IC-2 evidentiary envelope)
  * ------------------------------------------------------------------ */
 
+/** @param {PartsResult | null | undefined} parts @returns {StructureResult} */
 function csvStructure(parts) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "csv", reason: parts ? parts.why : "PARTS_ABSENT" };
@@ -905,7 +1468,8 @@ function csvStructure(parts) {
     word("csv.notes.csv_format_declares"),
     word("csv.notes.url_cell_text"),
   ];
-  if (parts.guard) notes.push("text_body_over_bound");
+  const guard = parts.guard;
+  if (guard) notes.push("text_body_over_bound");
   return {
     ok: true,
     container: "csv",
@@ -921,7 +1485,7 @@ function csvStructure(parts) {
       container: "csv",
       kinds: [],
       items: [],
-      undetermined: parts.guard ? [{ part: "(body)", why: "over_size_bound", guard: parts.guard }] : [],
+      undetermined: guard ? [{ part: "(body)", why: "over_size_bound", guard }] : [],
       counts: {},
     },
     dialect,
@@ -937,13 +1501,17 @@ function csvStructure(parts) {
 
 /** Is every code unit of this field below 0x80? Under an undetermined
  *  encoding that is the difference between a cell whose characters are known
- *  and one whose characters are not. */
+ *  and one whose characters are not.
+ *  @param {string} s
+ *  @returns {boolean} */
 function asciiClean(s) {
   for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) >= 0x80) return false;
   return true;
 }
 
-/** The bytes of a string's UTF-8 (a lone surrogate counts as the three of its replacement character). */
+/** The bytes of a string's UTF-8 (a lone surrogate counts as the three of its replacement character).
+ *  @param {string} s
+ *  @returns {number} */
 function utf8Length(s) {
   let n = 0;
   for (let i = 0; i < s.length; i++) {
@@ -956,7 +1524,9 @@ function utf8Length(s) {
   return n;
 }
 
-/** The number of `\n` in a string: the lines a record's text adds beyond its first. */
+/** The number of `\n` in a string: the lines a record's text adds beyond its first.
+ *  @param {string} s
+ *  @returns {number} */
 function countLineBreaks(s) {
   let n = 0;
   for (let i = s.indexOf("\n"); i !== -1; i = s.indexOf("\n", i + 1)) n++;
@@ -964,16 +1534,32 @@ function countLineBreaks(s) {
 }
 
 const UTF8_FATAL = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
-const legacyDecoders = new Map();
+/** @type {Array<[string, TextDecoder]>} */
+const NO_DECODERS = [];
+const legacyDecoders = new Map(NO_DECODERS);
+/** @param {string} label @returns {TextDecoder} */
 function legacyDecoder(label) {
-  let d = legacyDecoders.get(label);
-  if (!d) { d = new TextDecoder(label, { ignoreBOM: true }); legacyDecoders.set(label, d); }
+  const known = legacyDecoders.get(label);
+  if (known) return known;
+  const d = new TextDecoder(label, { ignoreBOM: true });
+  legacyDecoders.set(label, d);
   return d;
 }
 
+/** @typedef {{value: string} | {why: UnreadReason}} FieldRead one field's text, or why it has none */
+/** @typedef {{col: number, value: string, over?: number}} ReadCell a field with a value; `over` its length past the cell bound */
+/** @typedef {{col: number, value: null, why: UnreadReason}} UnreadCell a field the encoding could not read */
+/** @typedef {{col: number, value: null, why: "unterminated_quote", open: OpenQuote}} OpenCell a field whose quote never closed */
+/** @typedef {ReadCell | UnreadCell | OpenCell} RecordCell */
+
 /** One field's text, or why it has none. `field` is as the walk made it: byte-transport code units for an ASCII-grid
  *  encoding, else decoded text; `enc` is the encoding of the window the record ended in. A field the walk cut at 1 MiB
- *  (`cut`) may end inside a character: that character is dropped, the rest is the value. */
+ *  (`cut`) may end inside a character: that character is dropped, the rest is the value.
+ *  @param {string} field
+ *  @param {CsvParts} parts
+ *  @param {string | null} enc
+ *  @param {boolean} cut
+ *  @returns {FieldRead} */
 function fieldValue(field, parts, enc, cut) {
   if (!parts.transport) {
     return parts.invalidUtf16 && field.includes("�") ? { why: "invalid_utf16" } : { value: field };
@@ -982,7 +1568,7 @@ function fieldValue(field, parts, enc, cut) {
   if (enc == null) return { why: "encoding_undetermined" };
   /* us-ascii, decided over a window: a byte >= 0x80 is not us-ascii and names no character this reading can state. */
   if (enc === "us-ascii") return { why: "not_us_ascii" };
-  let bytes = untransport(field);
+  const bytes = untransport(field);
   if (enc === "utf-8") {
     for (let drop = 0; drop <= (cut ? 3 : 0); drop++) {
       try { return { value: UTF8_FATAL.decode(drop ? bytes.subarray(0, bytes.length - drop) : bytes) }; } catch { /* try shorter */ }
@@ -994,35 +1580,46 @@ function fieldValue(field, parts, enc, cut) {
 
 /** The cells one record holds, in column order (R5, R8, R22, R23): `{col, value}` for a field with a value, `{col, value:
  *  null, why}` for one the encoding could not read or whose quote never closed, `over` the length of a field past the
- *  cell bound. An empty field is a measured emptiness and has no entry. */
+ *  cell bound. An empty field is a measured emptiness and has no entry.
+ *  @param {string[]} record
+ *  @param {RecordInfo | null} info
+ *  @param {CsvParts} parts
+ *  @param {string | null} enc
+ *  @returns {RecordCell[]} */
 function readRecord(record, info, parts, enc) {
+  /** @type {RecordCell[]} */
   const out = [];
   const overs = info?.over;
   for (let c0 = 0; c0 < record.length; c0++) {
-    const raw = record[c0];
+    const raw = record[c0] ?? "";
     if (raw === "") continue;
     const col = c0 + 1;
     const ov = overs ? overs.find((o) => o[0] === col) : null;
     const cut = !!ov && ov[1] > raw.length;
     const read = fieldValue(raw, parts, enc, cut);
-    if (read.why) out.push({ col, value: null, why: read.why });
+    if ("why" in read) out.push({ col, value: null, why: read.why });
     else {
+      /** @type {ReadCell} */
       const e = { col, value: read.value };
-      if (read.value.length > CELL_CHARS_MAX) e.over = cut ? ov[1] : read.value.length;
+      if (read.value.length > CELL_CHARS_MAX) e.over = cut && ov ? ov[1] : read.value.length;
       out.push(e);
     }
   }
-  if (info?.open) out.push({ col: info.open.col, value: null, why: "unterminated_quote", open: info.open });
+  const open = info?.open;
+  if (open) out.push({ col: open.col, value: null, why: "unterminated_quote", open });
   return out;
 }
 
+/** @type {Set<string>} */
 const REPLACED_REASONS = new Set(["encoding_undetermined", "not_us_ascii", "invalid_utf8", "invalid_utf16"]);
 
+/** @param {PartsResult | null | undefined} parts @param {TextOptions | undefined} opts @returns {Promise<TextResult>} */
 async function csvText(parts, opts) {
   if (!parts || !parts.ok) {
     return { ok: false, container: "csv", reason: parts?.why ?? "PARTS_ABSENT" };
   }
   const dialect = dialectOf(parts);
+  /** @type {{ok: true, container: "csv", images: never[], metadata: null, active: never[], dialect: Dialect}} */
   const base = {
     ok: true, container: "csv",
     /* Exhaustive and EMPTY, not null: the format has no media container to
@@ -1035,21 +1632,24 @@ async function csvText(parts, opts) {
     dialect,
   };
 
-  if (parts.guard) {
+  const guard = parts.guard;
+  if (guard) {
     /* Over a bound: the marker carried VERBATIM (the docx/xlsx pattern),
        never a silent truncation. The dialect still stands — it was taken from
        the head, which is under any bound. */
     return {
       ...base, document: null, sheets: [],
-      undetermined: [parts.guard],
+      undetermined: [guard],
       counts: { chars: 0, cells: 0, formulas: 0, undetermined: 1 },
     };
   }
 
   /* The unreadable cells a sheet lists are the first CSV_STREAMED_UNDETERMINED_MAX; `counts.undetermined` is the whole
      count and `cellsIn` gives the address of any (R9, G129f). */
+  /** @type {UndeterminedCell[]} */
   const undetermined = [];
   let undeterminedCount = 0, replaced = 0;
+  /** @param {UndeterminedCell} entry */
   const note = (entry) => {
     undeterminedCount++;
     if (REPLACED_REASONS.has(entry.reason)) replaced++;
@@ -1057,11 +1657,14 @@ async function csvText(parts, opts) {
   };
   /* The sheet's lines, joined a chunk at a time: a line is a string of its own, so holding all of a large body's lines at
      once is about a quarter again its size beside the text they make; a chunk's lines are garbage once it is joined. */
+  /** @type {string[]} */
   const chunks = [];
+  /** @type {string[]} */
   let lines = [];
   /* One 1-based row number per line of the sheet's text (`lineRows`, G15, K4579): empty records add no line, and a
      quoted line break makes one record several lines, so a line's index is not its row. Same length as the lines
      of `text`, on the whole-file and the streamed path alike. */
+  /** @type {number[]} */
   const lineRows = [];
   /* R30: one typed cell per field holding a value — every csv field is
      `text`, the format declaring no type (`declared` null), and a field the
@@ -1070,34 +1673,38 @@ async function csvText(parts, opts) {
      past it `cells` is null and `cells_held` true, the walk goes on for the text,
      the rows and the counts, and `cellsIn` makes the cells of a range from the
      held body. A caller that passes nothing gets every cell, as before. */
-  const inlineMax = Number.isFinite(opts?.inlineCellsMax) && opts.inlineCellsMax >= 0 ? opts.inlineCellsMax : null;
-  let cells = [];
-  let cellsHeld = false;
-  let cellsBytes = 2;   // "[]"
+  const inlineCellsMax = opts?.inlineCellsMax;
+  const inlineMax = typeof inlineCellsMax === "number" && Number.isFinite(inlineCellsMax) && inlineCellsMax >= 0 ? inlineCellsMax : null;
+  /** @type {{cells: TypedCell[] | null, held: boolean, bytes: number}} the cells listed so far, whether they are held, their JSON's bytes */
+  const listing = { cells: [], held: false, bytes: 2 };   // "[]"
+  /** @param {number} row @param {number} col @param {string | null} value */
   const listCell = (row, col, value) => {
+    const cells = listing.cells;
     if (!cells) return;
     const cell = typedCell(row, col, value);
     cells.push(cell);
     if (inlineMax == null) return;
-    cellsBytes += (cells.length > 1 ? 1 : 0) + utf8Length(JSON.stringify(cell));
-    if (cellsBytes > inlineMax) { cells = null; cellsHeld = true; }
+    listing.bytes += (cells.length > 1 ? 1 : 0) + utf8Length(JSON.stringify(cell));
+    if (listing.bytes > inlineMax) { listing.cells = null; listing.held = true; }
   };
   let cellCount = 0, usedRows = 0, usedCols = 0;
   const unit = parts.utf16 ? 2 : 1;
 
   let r0 = 0;
+  /** @type {RecordVisitor} */
   const addRecord = (record, info, window) => {
     /* ROW 1 IS ROW 1 (BOB #32). No header is consumed, skipped or renamed:
        whether record 1 names the columns is a READING, and this entry makes
        no readings. 1-BASED, because A1 notation is. */
     const row = ++r0;
+    /** @type {string[]} */
     const vals = [];
     let last = -1;
     for (const e of readRecord(record, info, parts, window.readEnc)) {
       const cell = `${columnLetters(e.col)}${row}`;
       if (row > usedRows) usedRows = row;
       if (e.col > usedCols) usedCols = e.col;
-      if (e.why) {
+      if ("why" in e) {
         /* The grid survives an encoding that cannot read these bytes; these
            characters do not. Named per cell with its own reference, never
            mojibake. */
@@ -1111,7 +1718,8 @@ async function csvText(parts, opts) {
       listCell(row, e.col, e.value);
       vals[e.col - 1] = e.value;
       last = e.col - 1;
-      if (e.over != null) note({ sheet: 0, cell, reason: "over_cell_bound", length: e.over });
+      const over = e.over;
+      if (over != null) note({ sheet: 0, cell, reason: "over_cell_bound", length: over });
     }
     /* TAB-joined, which is what `xlsxText` and `odf.mjs` emit for a sheet's row: one text stream shape across every
        spreadsheet container, so a consumer does not learn three. An empty field keeps its column (G131d): the line has a
@@ -1128,17 +1736,21 @@ async function csvText(parts, opts) {
   await forEachRecord(parts, addRecord, undefined, opts?.yieldNow);
 
   if (lines.length) chunks.push(lines.join("\n"));
-  const text = chunks.length === 1 ? chunks[0] : chunks.join("\n");
-  const sheet = {
-    sheet: 0, name: CSV_SHEET_NAME, hidden: false,
-    /* THE BOUND IS NULL — `.ods`'s reason exactly: RFC 4180 fixes no maximum
-       number of rows or columns, so a CSV has no capacity to state, and
-       borrowing OOXML's grid would be this reader inventing a bound the
-       format never fixed. The USED range is measured and emitted beside it. */
-    rows: null, cols: null, usedRows, usedCols,
-    range: usedSheetRange(CSV_SHEET_NAME, usedRows, usedCols),
-    text, lineRows, cells, ...(cellsHeld ? { cells_held: true } : {}), undetermined,
-  };
+  const only = chunks.length === 1 ? chunks[0] : undefined;
+  const text = only ?? chunks.join("\n");
+  const cells = listing.cells;
+  const cellsHeld = listing.held;
+  /* THE BOUND IS NULL — `.ods`'s reason exactly: RFC 4180 fixes no maximum
+     number of rows or columns, so a CSV has no capacity to state, and
+     borrowing OOXML's grid would be this reader inventing a bound the
+     format never fixed. The USED range is measured and emitted beside it. */
+  const range = usedSheetRange(CSV_SHEET_NAME, usedRows, usedCols);
+  /** @type {TextSheet} */
+  const sheet = cellsHeld
+    ? { sheet: 0, name: CSV_SHEET_NAME, hidden: false, rows: null, cols: null, usedRows, usedCols, range,
+      text, lineRows, cells, cells_held: true, undetermined }
+    : { sheet: 0, name: CSV_SHEET_NAME, hidden: false, rows: null, cols: null, usedRows, usedCols, range,
+      text, lineRows, cells, undetermined };
   return {
     ...base,
     document: text,
@@ -1148,7 +1760,11 @@ async function csvText(parts, opts) {
   };
 }
 
-/** One typed cell (R8): every csv field is `text`, the format declaring no type. */
+/** One typed cell (R8): every csv field is `text`, the format declaring no type.
+ *  @param {number} row
+ *  @param {number} col
+ *  @param {string | null} value
+ *  @returns {TypedCell} */
 function typedCell(row, col, value) {
   return { source: csvCellRef(row, col), value, type: "text", declared: null, cached: null, formula: null };
 }
@@ -1158,13 +1774,21 @@ function typedCell(row, col, value) {
  *  (`typedCell` is the one builder; an unreadable field is a cell with a null value). The walk starts at the access point
  *  the whole read left before `fromRow`, so the bytes it reads are bounded by the rows asked for and one window, not by the
  *  offset. It stops after `toRow`; with `maxCells` it stops before the row that would pass it, whole rows only (a first row
- *  alone over `maxCells` is given whole, so every call advances), and `next_row` names that row. Never throws. */
+ *  alone over `maxCells` is given whole, so every call advances), and `next_row` names that row. Never throws.
+ *  @param {PartsOrBytes} partsOrBytes
+ *  @param {CellsQuery | undefined} query
+ *  @returns {Promise<CellsResult>} */
 async function csvCellsIn(partsOrBytes, query) {
-  const given = partsOrBytes && typeof partsOrBytes === "object" && !isBytes(partsOrBytes) && "ok" in partsOrBytes;
-  const parts = given ? partsOrBytes : await csvParts(partsOrBytes, query);
+  /* parts() output is an object that is not bytes and has `ok`; anything else is read as bytes */
+  const parts = !partsOrBytes || typeof partsOrBytes !== "object" || partsOrBytes instanceof ArrayBuffer
+    || ArrayBuffer.isView(partsOrBytes) || !("ok" in partsOrBytes)
+    ? await csvParts(partsOrBytes, query) : partsOrBytes;
   if (!parts.ok) return { ok: false, why: parts.why };
+  /** @type {CellsQuery} */
   const q = query ?? {};
-  if (!(q.sheet == null || q.sheet === 0 || q.sheet === CSV_SHEET_NAME)) return { ok: false, why: "no_such_sheet" };
+  const sheet = q.sheet;
+  if (!(sheet == null || sheet === 0 || sheet === CSV_SHEET_NAME)) return { ok: false, why: "no_such_sheet" };
+  /** @param {number} n @param {number} min @returns {boolean} */
   const whole = (n, min) => Number.isInteger(n) && n >= min;
   const fromRow = q.fromRow ?? 1, fromCol = q.fromCol ?? 1;
   const toRow = q.toRow ?? Infinity, toCol = q.toCol ?? Infinity;
@@ -1173,33 +1797,44 @@ async function csvCellsIn(partsOrBytes, query) {
     || !(toCol === Infinity || whole(toCol, fromCol)) || !(maxCells === Infinity || whole(maxCells, 1))) {
     return { ok: false, why: "bad_range" };
   }
-  if (parts.guard) return { ...parts.guard };
+  const guard = parts.guard;
+  if (guard) return { ...guard };
 
-  let from = null;
-  if (!parts.records) for (const ap of parts.accessPoints) { if (ap.row < fromRow) from = ap; else break; }
+  /** @type {AccessPoint | null} */
+  let point = null;
+  if (!parts.records) for (const ap of parts.accessPoints) { if (ap.row < fromRow) point = ap; else break; }
+  const from = point;
 
+  /** @type {TypedCell[]} */
   const cells = [];
-  let row = from ? from.row : 0, nextRow = null, done = false;
+  /** @type {{next: number | null}} the row the walk stopped before, when `maxCells` stopped it */
+  const stop = { next: null };
+  let row = from ? from.row : 0, done = false;
   await forEachRecord(parts, (record, info, window) => {
     if (done) return;
     row++;
     if (row < fromRow) return;
     if (row > toRow) { done = true; return; }
+    /** @type {TypedCell[]} */
     const rowCells = [];
     for (const e of readRecord(record, info, parts, window.readEnc)) {
       if (e.col >= fromCol && e.col <= toCol) rowCells.push(typedCell(row, e.col, e.value));
     }
-    if (cells.length > 0 && cells.length + rowCells.length > maxCells) { nextRow = row; done = true; return; }
+    if (cells.length > 0 && cells.length + rowCells.length > maxCells) { stop.next = row; done = true; return; }
     for (const cell of rowCells) cells.push(cell);
     if (row >= toRow) done = true;
   }, () => done, undefined, from);
+  const nextRow = stop.next;
   const to = nextRow != null ? nextRow - 1 : Math.min(toRow, row);
   return { ok: true, cells, rows: { from: fromRow, to }, ...(nextRow != null ? { next_row: nextRow } : {}) };
 }
 
 /** The `sheet-cell` reference for a 1-based row and column of THE one sheet.
  *  Built on this module's `sheetCellRef` (R10) rather than a fourth copy of
- *  two lines (COFF-10's rule). */
+ *  two lines (COFF-10's rule).
+ *  @param {number} row
+ *  @param {number} col
+ *  @returns {SheetCellRef} */
 export function csvCellRef(row, col) {
   return sheetCellRef(CSV_SHEET_NAME, `${columnLetters(col)}${row}`);
 }
@@ -1208,9 +1843,11 @@ export function csvCellRef(row, col) {
  * isDelimitedText (R21, G130b): the one judgement of whether bytes are a CSV or TSV
  * ------------------------------------------------------------------ */
 
+/** @type {Set<string>} */
 const DELIMITED_TYPES = new Set([CSV_CONTENT_TYPE, ...CSV_CONTENT_TYPE_SYNONYMS, TSV_CONTENT_TYPE, "text/plain", "application/vnd.ms-excel", "application/octet-stream"]);
 const DELIMITED_EXTENSIONS = [".csv", ".tsv", ".tab", ".txt"];
 const HEAD_MAX_BYTES = 1 << 20;
+/** @type {ReadonlyArray<readonly number[]>} */
 const BINARY_SIGNATURES = [
   [0x50, 0x4b, 0x03, 0x04], [0x50, 0x4b, 0x05, 0x06], [0x50, 0x4b, 0x07, 0x08],           // ZIP (and every OOXML / ODF file)
   [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1],                                       // OLE compound file (.xls)
@@ -1218,13 +1855,17 @@ const BINARY_SIGNATURES = [
   [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], [0xff, 0xd8, 0xff], [0x47, 0x49, 0x46, 0x38],   // PNG, JPEG, GIF
   [0x49, 0x49, 0x2a, 0x00], [0x4d, 0x4d, 0x00, 0x2a], [0x1f, 0x8b, 0x08],                 // TIFF, gzip
 ];
+/** @param {Uint8Array} h @returns {boolean} */
 const hasBinarySignature = (h) => BINARY_SIGNATURES.some((sig) => h.length >= sig.length && sig.every((v, i) => h[i] === v))
   || (h.length >= 12 && h[0] === 0x52 && h[1] === 0x49 && h[2] === 0x46 && h[3] === 0x46 && h[8] === 0x57 && h[9] === 0x45 && h[10] === 0x42 && h[11] === 0x50);   // WebP
 
 /** R26: a file declared plain text (type `text/plain` or a `.txt` name) that no declared CSV or TSV (its type, or a `.csv`/`.tsv`
- *  name) overrides: its delimiter must repeat with one count on the majority of its lines, not merely appear on them. */
+ *  name) overrides: its delimiter must repeat with one count on the majority of its lines, not merely appear on them.
+ *  @param {string} lowerName
+ *  @param {string} type
+ *  @returns {boolean} */
 function isDeclaredPlainText(lowerName, type) {
-  const t = type.split(";")[0].trim().toLowerCase();
+  const t = (type.split(";")[0] ?? "").trim().toLowerCase();
   if (t === CSV_CONTENT_TYPE || CSV_CONTENT_TYPE_SYNONYMS.includes(t) || t === TSV_CONTENT_TYPE) return false;
   if (lowerName.endsWith(".csv") || lowerName.endsWith(".tsv")) return false;
   return t === "text/plain" || lowerName.endsWith(".txt");
@@ -1234,7 +1875,10 @@ const PLAIN_TEXT_RECORDS_MIN = 5;
 const PLAIN_TEXT_FIELD_CHARS_MAX = 40;
 
 /** R27: beyond R26, declared plain text is a table only with at least five records whose fields average under 40 characters
- *  (prose lines with equal comma counts are neither). `s` is the dialect scan of `h`, whose delimiter is decided. */
+ *  (prose lines with equal comma counts are neither). `s` is the dialect scan of `h`, whose delimiter is decided.
+ *  @param {Uint8Array} h
+ *  @param {DialectScan} s
+ *  @returns {boolean} */
 function looksTabular(h, s) {
   if (s.delimiter.lines < PLAIN_TEXT_RECORDS_MIN) return false;
   const text = new TextDecoder(s.utf16 || "utf-8").decode(h);
@@ -1247,22 +1891,27 @@ function looksTabular(h, s) {
 
 /** True exactly when `type` names a CSV, TSV or plain or opaque type, `name` ends in `.csv`, `.tsv`, `.tab` or `.txt`, and
  *  `head` (the first bytes of the file, up to 1 MiB) is delimited text: no binary signature, no NUL in an 8-bit head, an
- *  encoding R7 reads and one consistent delimiter. Never throws. */
+ *  encoding R7 reads and one consistent delimiter. Never throws.
+ *  @param {unknown} name
+ *  @param {unknown} type
+ *  @param {unknown} head
+ *  @returns {boolean} */
 export function isDelimitedText(name, type, head) {
   try {
     if (typeof name !== "string" || typeof type !== "string") return false;
-    if (!DELIMITED_TYPES.has(type.split(";")[0].trim().toLowerCase())) return false;
+    if (!DELIMITED_TYPES.has((type.split(";")[0] ?? "").trim().toLowerCase())) return false;
     const lower = name.trim().toLowerCase();
     if (!DELIMITED_EXTENSIONS.some((ext) => lower.endsWith(ext))) return false;
-    if (!isBytes(head)) return false;
+    if (!(head instanceof ArrayBuffer || ArrayBuffer.isView(head))) return false;
     let h = toBytes(head);
     if (!h.length) return false;
     if (h.length > HEAD_MAX_BYTES) h = h.subarray(0, HEAD_MAX_BYTES);
     if (hasBinarySignature(h)) return false;
     const s = scanDialect(h, undefined);
     if (!s.ok || s.encoding.encoding == null || s.delimiter.delimiter == null) return false;
-    if (isDeclaredPlainText(lower, type) && !(s.delimiter.modalLines * 2 > s.delimiter.records && looksTabular(h, s))) return false;
-    if (!s.utf16 && s.windows.some((w) => w.scan && w.scan.nul > 0)) return false;
+    /* a decided delimiter always has its modal count; an absent one would compare false either way */
+    if (isDeclaredPlainText(lower, type) && !((s.delimiter.modalLines ?? 0) * 2 > s.delimiter.records && looksTabular(h, s))) return false;
+    if (!s.utf16 && s.windows.some((w) => (w.scan?.nul ?? 0) > 0)) return false;
     return true;
   } catch {
     return false;
@@ -1274,6 +1923,7 @@ export function isDelimitedText(name, type, head) {
  * and nothing anywhere else; that is the D-70 property)
  * ------------------------------------------------------------------ */
 
+/** @type {CsvEntry} the entry formats.mjs registers */
 export const csvEntry = {
   format: "csv",
   detect(bytes, contentType) {
@@ -1318,7 +1968,7 @@ export const csvEntry = {
      do, so detect->structure works uniformly at the registry seam while a
      caller that already paid for parts() does not pay twice. */
   structure: async (partsOrBytes, opts) => {
-    const parts = isBytes(partsOrBytes)
+    const parts = partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes)
       ? await csvParts(partsOrBytes, opts)
       : partsOrBytes;
     return csvStructure(parts);
@@ -1327,7 +1977,7 @@ export const csvEntry = {
      sheet's cells back: without it every cell is listed, as before. `opts.yieldNow` (R20) is awaited between the
      1 MiB windows of a long read, and changes nothing in the answer. */
   text: async (partsOrBytes, opts) => {
-    const parts = isBytes(partsOrBytes)
+    const parts = partsOrBytes instanceof ArrayBuffer || ArrayBuffer.isView(partsOrBytes)
       ? await csvParts(partsOrBytes, opts)
       : partsOrBytes;
     return await csvText(parts, opts);

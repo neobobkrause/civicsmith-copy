@@ -8,6 +8,7 @@ import { enc } from "./fixtures.mjs";
 
 const CSV = enc("id,name,amount\n1,Ann,10\n2,Bo,20\n3,Cy,30\n4,Di,40\n5,Ed,50\n");
 const TSV = enc("id\tname\tamount\n1\tAnn\t10\n2\tBo\t20\n3\tCy\t30\n4\tDi\t40\n5\tEd\t50\n");
+/** UTF-16LE bytes of a string, with a BOM. @param {string} s @returns {Uint8Array} */
 const u16le = (s) => { const out = [0xff, 0xfe]; for (const c of s) { const n = c.charCodeAt(0); out.push(n & 255, n >> 8); } return new Uint8Array(out); };
 const TYPES = ["text/csv", "application/csv", "text/comma-separated-values", "text/tab-separated-values", "text/plain", "application/vnd.ms-excel", "application/octet-stream"];
 
@@ -43,12 +44,13 @@ test("R21 false when the type, the extension or the head fails: a plain note wit
 
 test("R21 bytes never override a binary format: a ZIP, OLE, PDF or picture signature, or a NUL in an 8-bit head, is false whatever the name and type say", () => {
   const body = [...CSV];
-  const sigs = {
-    zip: [0x50, 0x4b, 0x03, 0x04], zipEmpty: [0x50, 0x4b, 0x05, 0x06], ole: [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1], pdf: [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31],
-    png: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], jpeg: [0xff, 0xd8, 0xff, 0xe0], gif: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61], gzip: [0x1f, 0x8b, 0x08],
-    webp: [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50],
-  };
-  for (const [name, sig] of Object.entries(sigs)) {
+  /** @type {[string, number[]][]} */
+  const sigs = [
+    ["zip", [0x50, 0x4b, 0x03, 0x04]], ["zipEmpty", [0x50, 0x4b, 0x05, 0x06]], ["ole", [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]], ["pdf", [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]],
+    ["png", [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]], ["jpeg", [0xff, 0xd8, 0xff, 0xe0]], ["gif", [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]], ["gzip", [0x1f, 0x8b, 0x08]],
+    ["webp", [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]],
+  ];
+  for (const [name, sig] of sigs) {
     for (const type of ["text/csv", "application/vnd.ms-excel", "application/octet-stream"]) {
       assert.equal(isDelimitedText("x.csv", type, new Uint8Array([...sig, ...body])), false, `${name} ${type}`);
     }
@@ -67,16 +69,18 @@ test("R21 the head is the first bytes, up to 1 MiB, and a character cut at its e
   assert.equal(isDelimitedText("x.csv", "text/csv", cut.subarray(0, 14)), true);
 });
 
-test("R21 never throws and is false for an empty head or arguments of the wrong kind", () => {
-  for (const [name, type, head] of [
+test("R21 never throws and is false for an empty head or arguments of the wrong kind", (t) => {
+  /** @type {[unknown, unknown, unknown][]} */
+  const calls = [
     ["x.csv", "text/csv", new Uint8Array(0)], ["x.csv", "text/csv", null], ["x.csv", "text/csv", undefined], ["x.csv", "text/csv", "a,b\n1,2\n"], ["x.csv", "text/csv", 42],
     [null, "text/csv", CSV], [42, "text/csv", CSV], [{}, "text/csv", CSV], ["x.csv", null, CSV], ["x.csv", 42, CSV], ["x.csv", undefined, CSV], [undefined, undefined, undefined],
-  ]) {
+  ];
+  for (const [name, type, head] of calls) {
     assert.equal(isDelimitedText(name, type, head), false, JSON.stringify([name, type]));
   }
-  const Real = globalThis.TextDecoder;
-  globalThis.TextDecoder = class { constructor() { throw new Error("none"); } };
-  try { assert.equal(typeof isDelimitedText("x.csv", "text/csv", CSV), "boolean"); } finally { globalThis.TextDecoder = Real; }
+  /* a host whose TextDecoder cannot be made: the runner's mock replaces it for this test alone */
+  t.mock.property(globalThis, "TextDecoder", class { constructor() { throw new Error("none"); } });
+  try { assert.equal(typeof isDelimitedText("x.csv", "text/csv", CSV), "boolean"); } finally { t.mock.restoreAll(); }
 });
 
 /* csv-reader R26 (K5157; walk-T51-final 06 §6): a file declared plain text must repeat the delimiter's count on the majority of its
@@ -120,6 +124,7 @@ const WALK_C_MINUTES = enc([
   "",
 ].join("\n"));
 const SIX_ROWS = enc("id,name,amount\n1,Ann,10\n2,Bo,20\n3,Cy,30\n4,Di,40\n5,Ed,50\n");
+/** @param {number} n the records */
 const LONG_FIELDS = (n) => enc(Array.from({ length: n }, (_, i) => `${"x".repeat(45)}${i},${"y".repeat(45)},${"z".repeat(45)}`).join("\n") + "\n");
 
 test("R27 the walker's three lines of minutes with equal comma counts, declared plain text, are not delimited", () => {

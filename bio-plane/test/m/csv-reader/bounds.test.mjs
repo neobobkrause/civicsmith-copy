@@ -13,13 +13,17 @@ const SOURCE = readFileSync(new URL("../../../src/csv-reader/index.mjs", import.
 
 test("R6 the bytes ceiling is the csv bytes row of READ_BOUNDS at its active figure: the standard's, since the light kinds take it (K4834)", () => {
   assert.equal(MEASURED_CSV_TEXT_BOUND_BYTES, boundOf("csv", "bytes"));
-  assert.equal(MEASURED_CSV_TEXT_BOUND_BYTES, READ_BOUNDS.csv.bytes.standard);
-  assert.ok(MEASURED_CSV_TEXT_BOUND_BYTES > READ_BOUNDS.csv.bytes.alpha, "no longer the alpha figure of 17 MiB");
+  const row = READ_BOUNDS.csv?.bytes;
+  if (!row) assert.fail("READ_BOUNDS has no csv/bytes row");
+  assert.equal(MEASURED_CSV_TEXT_BOUND_BYTES, row.standard);
+  assert.ok(MEASURED_CSV_TEXT_BOUND_BYTES > row.alpha, "no longer the alpha figure of 17 MiB");
 });
 
 test("R6 R22 the module declares its ceilings through boundOf and holds no numeric literal for one", () => {
-  for (const [name, kind, row] of [["MEASURED_CSV_TEXT_BOUND_BYTES", "csv", "bytes"], ["CSV_ROWS_MAX", "csv", "rows"], ["CSV_COLUMNS_MAX", "sheet", "columns"],
-    ["CELL_CHARS_MAX", "sheet", "cell_chars"], ["CELL_KEPT_CHARS", "sheet", "cell_kept_chars"]]) {
+  /** @type {[string, string, string][]} each constant's name, and the kind and row it resolves to */
+  const ceilings = [["MEASURED_CSV_TEXT_BOUND_BYTES", "csv", "bytes"], ["CSV_ROWS_MAX", "csv", "rows"], ["CSV_COLUMNS_MAX", "sheet", "columns"],
+    ["CELL_CHARS_MAX", "sheet", "cell_chars"], ["CELL_KEPT_CHARS", "sheet", "cell_kept_chars"]];
+  for (const [name, kind, row] of ceilings) {
     assert.match(SOURCE, new RegExp(`const ${name} = boundOf\\("${kind}", "${row}"\\)`), `${name} resolves to the ${kind}.${row} row`);
   }
   for (const literal of [/\b17\s*\*\s*1024/, /\b20\s*\*\s*1024/, /\b24\s*\*\s*1024/, /\b32\s*\*\s*1024/, /\b50\s*\*\s*1024/, /\b50000000\b/, /\b52428800\b/, /\b1048576\b/, /\b16384\b/, /\b32767\b/]) {

@@ -11,7 +11,9 @@ const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreads
 
 test("R1 the entry's format is csv, and it carries the registry's slots including dialect", () => {
   assert.equal(csvEntry.format, "csv");
-  for (const slot of ["detect", "parts", "structure", "text", "dialect"]) assert.equal(typeof csvEntry[slot], "function", `csv.${slot}`);
+  /** @type {[string, unknown][]} each slot by its name */
+  const slots = [["detect", csvEntry.detect], ["parts", csvEntry.parts], ["structure", csvEntry.structure], ["text", csvEntry.text], ["dialect", csvEntry.dialect]];
+  for (const [slot, fn] of slots) assert.equal(typeof fn, "function", `csv.${slot}`);
 });
 
 /* ------------------------------------------------------------------ R2 */
@@ -28,15 +30,17 @@ test("R2 csv detect(bytes, _) is null for every bytes value, whatever the conten
 test("R2 csv detect(null, contentType): likely for text/csv, its two older synonyms and text/tab-separated-values, case-folded; null otherwise (text/plain, ms-excel and octet-stream are R21's)", () => {
   for (const ct of ["text/csv", "TEXT/CSV", "Text/Csv", "application/csv", "APPLICATION/CSV", "text/comma-separated-values", "Text/Comma-Separated-Values",
     "text/tab-separated-values", "TEXT/TAB-SEPARATED-VALUES"]) {
-    const d = csvEntry.detect(null, ct);
+    const d = F.known(csvEntry.detect(null, ct), ct);
     assert.equal(d.format, "csv", ct);
     assert.equal(d.confidence, "likely");
     assert.ok(d.signals.length > 0);
     assert.deepEqual(csvEntry.detect(undefined, ct), d);
   }
-  for (const ct of ["text/plain", "application/vnd.ms-excel", "application/octet-stream", XLSX_CONTENT_TYPE, "text/csvx", "csv", "", null, undefined, 42, {}]) {
+  for (const ct of ["text/plain", "application/vnd.ms-excel", "application/octet-stream", XLSX_CONTENT_TYPE, "text/csvx", "csv", "", null, undefined]) {
     assert.equal(csvEntry.detect(null, ct), null, String(ct));
   }
+  /* a content type that is not text at all */
+  for (const ct of [42, {}]) assert.equal(csvEntry.detect(null, ct), null, String(ct));
 });
 
 /* ------------------------------------------------------------------ R3 */
@@ -48,18 +52,18 @@ test("R3 csv parts: empty_body for zero-length bytes", async () => {
   assert.deepEqual(await csvEntry.text(new Uint8Array(0)), { ok: false, container: "csv", reason: "empty_body" });
 });
 
-test("R3 csv parts: decoder_unavailable:<encoding> when the BOM declares an encoding the runtime cannot decode", async () => {
-  const Real = globalThis.TextDecoder;
-  globalThis.TextDecoder = class extends Real {
-    constructor(label, o) { if (/utf-16/i.test(String(label))) throw new RangeError("no decoder"); super(label, o); }
-  };
-  try {
-    const le = await csvEntry.parts(new Uint8Array([0xff, 0xfe, 0x61, 0x00, 0x2c, 0x00]));
-    assert.equal(le.ok, false);
-    assert.equal(le.why, "decoder_unavailable:utf-16le");
-    const be = await csvEntry.parts(new Uint8Array([0xfe, 0xff, 0x00, 0x61]));
-    assert.equal(be.why, "decoder_unavailable:utf-16be");
-  } finally { globalThis.TextDecoder = Real; }
+test("R3 csv parts: decoder_unavailable:<encoding> when the BOM declares an encoding the runtime cannot decode", async (t) => {
+  const Real = TextDecoder;
+  /* the runner's mock, undone when the test ends: a runtime with no UTF-16 decoder */
+  t.mock.method(globalThis, "TextDecoder", /** @param {string} [label] @param {{ fatal?: boolean, ignoreBOM?: boolean }} [o] */ function (label, o) {
+    if (/utf-16/i.test(String(label))) throw new RangeError("no decoder");
+    return new Real(label, o);
+  });
+  const le = await csvEntry.parts(new Uint8Array([0xff, 0xfe, 0x61, 0x00, 0x2c, 0x00]));
+  assert.equal(le.ok, false);
+  assert.equal(F.partsRefused(le).why, "decoder_unavailable:utf-16le");
+  const be = await csvEntry.parts(new Uint8Array([0xfe, 0xff, 0x00, 0x61]));
+  assert.equal(F.partsRefused(be).why, "decoder_unavailable:utf-16be");
 });
 
 test("R3 csv parts: ok:true for every non-empty decodable body, whatever the dialect could determine", async () => {
@@ -72,8 +76,8 @@ test("R3 csv parts: ok:true for every non-empty decodable body, whatever the dia
   /* a byte no legacy charset defines (0x81) leaves the encoding undetermined; 0x96 is windows-1252's en dash, assumed (R7) */
   const undetermined = await csvEntry.parts(new Uint8Array([0x61, 0x81, 0x2c, 0x62, 0x0a]));
   assert.equal(undetermined.ok, true);
-  assert.equal(undetermined.encoding.encoding, null);
-  const assumed = await csvEntry.parts(new Uint8Array([0x61, 0x96, 0x2c, 0x62, 0x0a]));
+  assert.equal(F.partsRead(undetermined).encoding.encoding, null);
+  const assumed = F.partsRead(await csvEntry.parts(new Uint8Array([0x61, 0x96, 0x2c, 0x62, 0x0a])));
   assert.equal(assumed.encoding.encoding, "windows-1252");
   assert.equal(assumed.encoding.assumed, true);
 });
