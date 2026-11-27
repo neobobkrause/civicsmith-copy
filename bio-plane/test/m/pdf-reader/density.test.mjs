@@ -4,8 +4,18 @@
  * 1,500 pages of 200 lines, 11.6 MB, need 113 MB, where the page rule says 83. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-const { extractPdfStructure } = await import(process.env.BIO_PDFSTRUCTURE_SRC || "../../../src/pdfstructure.mjs");
+import { extractPdfStructure } from "../../../src/pdfstructure.mjs";
 import { densePdf } from "./dense.mjs";
+
+/** A value that is there; a thrown failure naming `what` when it is undefined or null.
+ *  @template T
+ *  @param {T | undefined | null} v
+ *  @param {string} what
+ *  @returns {T} */
+function must(v, what) {
+  if (v === undefined || v === null) throw new Error(`${what}: none`);
+  return v;
+}
 
 test("R42: 1,500 pages of 200 lines of text, 11.6 MB, are refused as final with their pages: they need 113 MB and the page rule alone said 83", { timeout: 600_000 }, async () => {
   const bytes = densePdf({ pages: 1500, linesPerPage: 200 });
@@ -18,13 +28,13 @@ test("R42: 1,500 pages of 200 lines of text, 11.6 MB, are refused as final with 
   assert.equal(got.bytes, bytes.length);
   assert.equal(got.limit_mb, 100);
   assert.ok(got.need_mb > 100 && got.need_mb < 125, `need ${got.need_mb} MB (measured 113)`);
-  assert.equal(got.text, undefined);
-  assert.equal(got.links, undefined);
+  assert.equal("text" in got ? got.text : undefined, undefined);
+  assert.equal("links" in got ? got.links : undefined, undefined);
 });
 
 test("R42: the density term decides on the characters, not the pages: 1,000 pages of 120 lines are read, 1,500 of 200 lines are not, 3,000 of 80 are refused by the page rule as before", { timeout: 600_000 }, async () => {
   const read = await extractPdfStructure(densePdf({ pages: 1000, linesPerPage: 120 }));
-  assert.equal(read.ok, true, `${read.reason} ${read.need_mb}`);
+  assert.equal(read.ok, true, `${"reason" in read ? read.reason : undefined} ${"need_mb" in read ? read.need_mb : undefined}`);
   assert.equal(read.text.pages.length, 1000);
   const before = await extractPdfStructure(densePdf({ pages: 3000, linesPerPage: 80 }));
   assert.equal(before.ok, false);
@@ -40,6 +50,7 @@ test("R42 (control): the sample leaves the answer as it was: notes, text and mar
     assert.deepEqual(r.notes, []);
     assert.equal(r.text.undetermined.length, 0);
   }
+  if (!a.ok) throw new Error(`refused as ${a.reason}`);
   assert.equal(a.text.pages.length, 200);
-  assert.ok(a.text.pages[0].text.length > 1000);
+  assert.ok(must(a.text.pages[0], "page 0").text.length > 1000);
 });
