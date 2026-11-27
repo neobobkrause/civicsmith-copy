@@ -11,8 +11,7 @@ test("R1: the published fixture notAPdf answers NOT_A_PDF, from the module's rea
 
 test("R50: the published fixture rangedNotes answers what the module answers (damaged, cut and intact)", async () => {
   const got = await rangedNotes();
-  for (const name of ["intact", "damaged", "cut"]) {
-    const g = got[name];
+  for (const g of [got.intact, got.damaged, got.cut]) {
     assert.deepEqual(g.open, g.whole.filter((n) => n !== "content_stream_undecodable"));
     for (const ranges of [...g.ranges, g.direct]) assert.deepEqual(ranges, g.open);
   }
