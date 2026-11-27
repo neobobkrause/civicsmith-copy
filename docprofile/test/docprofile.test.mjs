@@ -576,6 +576,9 @@ test("R34 a position is only what locate returned for the offset read, one entit
   assert.ok(!("source" in e));
   dp.readAgain(e, null);
   assert.deepEqual(e.occurrences, [null, null]);
+  // an entity's facts are carried as the reader handed them, a record of counts (an item's vote tally) among them
+  const facts = { vote: { aye: 3, excused: 1 }, outcome: "adopted", heard: 2, consent: false, seconded_by: null };
+  assert.deepEqual(dp.entity("item:1", "item", "Item 1", facts, null).facts, { vote: { aye: 3, excused: 1 }, outcome: "adopted", heard: 2, consent: false, seconded_by: null });
 });
 
 test("R35 every no says which no and why", async () => {
