@@ -16,11 +16,49 @@ import {
   MEMBER_DIR, MODULE, ON, SHA, WASM_FILE, bucket, call, fixture, makeEngine, makeMember, post, realEngine,
   recomputeVia, spied,
 } from "./helpers.mjs";
+/** @import { Engine } from '../src/enginecore.mjs' */
+/** @import { Bounds, CaptureBucket, Member, Recomputed, WorkerEnv } from '../src/member.mjs' */
+/** @import { Answer } from './helpers.mjs' */
+/** @import { Cell, DefinedName, ZipFiles } from './xlsx.mjs' */
+/** @import { EngineFacts } from '../scripts/build-engine.mjs' */
+
+/**
+ * @typedef {Object} WorkbookExtra what a fixture adds to its sheets: the members of `workbook`'s spec but `sheets`
+ * @property {readonly DefinedName[]} [definedNames]
+ * @property {string} [calcPr]
+ * @property {ZipFiles} [extra]
+ * @property {{ readonly [part: string]: string }} [overrides]
+ * @property {boolean} [vba]
+ * @property {boolean} [deflate]
+ */
+/** @typedef {{ sha256: string, assets: Array<{ path: string, bytes: number, sha256: string }> }} BundleManifest the member's own bundle manifest */
+/**
+ * @typedef {Object} WranglerConfig the member's own committed configuration, as these tests read it
+ * @property {{ readonly SHEET_RECOMPUTE?: unknown }} vars
+ * @property {Array<{ binding: string }>} r2_buckets
+ * @property {{ readonly cpu_ms: number, readonly [name: string]: number }} limits
+ * @property {unknown} [durable_objects]
+ * @property {unknown} [kv_namespaces]
+ * @property {unknown} [d1_databases]
+ * @property {unknown} [queues]
+ * @property {unknown} [services]
+ * @property {unknown} [migrations]
+ */
+/** @typedef {{ readonly [key: string]: unknown, readonly [key: symbol]: unknown, CAPTURES: CaptureBucket, SHEET_RECOMPUTE: string, VERSION: string }} ProbedEnv an env whose every read the R12 test records */
 
 const { MAX_CELLS, MAX_UNZIPPED_BYTES, TIME_BUDGET_MS, NAMESPACES, PLANE_OPS, REFUSALS, NOT_RECOMPUTED } = contract;
+/** @param {{ bounds?: Bounds, now?: () => number, turn?: () => Promise<unknown> }} [opts] @returns {Member} */
 const member = (opts) => makeMember(realEngine(), opts);
+/** @param {readonly Cell[]} cells @param {WorkbookExtra} [extra] @returns {Uint8Array} */
 const small = (cells, extra = {}) => workbook({ sheets: [{ name: "S", cells }], ...extra });
+/** @param {Uint8Array} b @returns {string} */
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+/** The settings `ON` names, as the member's env. @type {WorkerEnv} */
+const ON_ENV = { SHEET_RECOMPUTE: ON.SHEET_RECOMPUTE, VERSION: ON.VERSION };
+/** `ON` with the CAPTURES binding. @param {CaptureBucket} captures @returns {WorkerEnv} */
+const onWith = (captures) => ({ SHEET_RECOMPUTE: ON.SHEET_RECOMPUTE, VERSION: ON.VERSION, CAPTURES: captures });
+/** The member's committed wrangler.jsonc, read as its own configuration. @returns {WranglerConfig} */
+const wranglerConfig = () => /** @type {WranglerConfig} */ (parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc"));
 
 /* ---- R1: request checks ------------------------------------------------------------------------------------- */
 
@@ -29,12 +67,12 @@ test("R1: capture_sha must be exactly 64 hex characters, lower-cased, else BAD_S
   for (const body of [{}, { capture_sha: 7, store: "bio" }, { capture_sha: "ab".repeat(31), store: "bio" },
     { capture_sha: "ab".repeat(32) + "a", store: "bio" }, { capture_sha: "zz".repeat(32), store: "bio" }, "not json", "null"]) {
     const r2 = bucket();
-    const r = await call(m, post(body), { ...ON, CAPTURES: r2.binding });
+    const r = await call(m, post(body), onWith(r2.binding));
     assert.equal(r.status, 400); assert.equal(r.body.reason, "BAD_SHA"); assert.equal(r.body.ok, false);
     assert.deepEqual(r2.calls, []);
   }
   const r2 = bucket({ [`bio/captures/${SHA}`]: small([{ r: "A1", f: "1+1", v: 2 }]) });
-  const r = await call(m, post({ capture_sha: SHA.toUpperCase(), store: "bio" }), { ...ON, CAPTURES: r2.binding });
+  const r = await call(m, post({ capture_sha: SHA.toUpperCase(), store: "bio" }), onWith(r2.binding));
   assert.equal(r.status, 200); assert.equal(r.body.ok, true);
   assert.deepEqual(r2.calls, [["get", `bio/captures/${SHA}`]]);
 });
@@ -43,30 +81,33 @@ test("R1: store must be a string (BAD_STORE, 400) and exactly \"bio\" or \"scrat
   const m = member();
   for (const store of [undefined, null, 3, ["bio"], {}]) {
     const r2 = bucket();
-    const r = await call(m, post({ capture_sha: SHA, store }), { ...ON, CAPTURES: r2.binding });
+    const r = await call(m, post({ capture_sha: SHA, store }), onWith(r2.binding));
     assert.equal(r.status, 400); assert.equal(r.body.reason, "BAD_STORE"); assert.deepEqual(r2.calls, []);
   }
   for (const store of ["", "Bio", "BIO", "scratch ", "biosmoke", "bio/x"]) {
     const r2 = bucket();
-    const r = await call(m, post({ capture_sha: SHA, store }), { ...ON, CAPTURES: r2.binding });
+    const r = await call(m, post({ capture_sha: SHA, store }), onWith(r2.binding));
     assert.equal(r.status, 400); assert.equal(r.body.reason, "NAMESPACE_UNKNOWN");
     assert.deepEqual(r.body.namespaces, ["bio", "scratch"]); assert.deepEqual(r2.calls, []);
   }
   for (const store of ["bio", "scratch"]) {
     const r2 = bucket({ [`${store}/captures/${SHA}`]: small([{ r: "A1", f: "1+1", v: 2 }]) });
-    const r = await call(m, post({ capture_sha: SHA, store }), { ...ON, CAPTURES: r2.binding });
+    const r = await call(m, post({ capture_sha: SHA, store }), onWith(r2.binding));
     assert.equal(r.body.ok, true, store);
   }
 });
 
 test("R1: no CAPTURES binding gives R2_NOT_CONFIGURED (503); no bytes at `${store}/captures/${sha}` gives NOT_FOUND (404)", async () => {
   const m = member();
-  for (const env of [{ ...ON }, { ...ON, CAPTURES: {} }, { ...ON, CAPTURES: null }]) {
+  /* a binding that is absent, empty or null: the empty and null ones are deliberately not a CaptureBucket */
+  /** @type {WorkerEnv[]} */
+  const envs = [ON_ENV, onWith(/** @type {CaptureBucket} */ ({})), onWith(/** @type {CaptureBucket} */ (/** @type {unknown} */ (null)))];
+  for (const env of envs) {
     const r = await call(m, post({ capture_sha: SHA, store: "bio" }), env);
     assert.equal(r.status, 503); assert.equal(r.body.reason, "R2_NOT_CONFIGURED");
   }
   const r2 = bucket({ [`scratch/captures/${SHA}`]: small([]) });
-  const r = await call(m, post({ capture_sha: SHA, store: "bio" }), { ...ON, CAPTURES: r2.binding });
+  const r = await call(m, post({ capture_sha: SHA, store: "bio" }), onWith(r2.binding));
   assert.equal(r.status, 404); assert.equal(r.body.reason, "NOT_FOUND");
   assert.deepEqual(r2.calls, [["get", `bio/captures/${SHA}`]]);
 });
@@ -78,7 +119,10 @@ test("R2: unless SHEET_RECOMPUTE is exactly \"on\", every well-formed request is
   const m = makeMember(engine);
   for (const value of [undefined, "", "off", "ON", "On", "on ", "true", "1", true]) {
     const r2 = bucket({ [`bio/captures/${SHA}`]: small([{ r: "A1", f: "1", v: 1 }]) });
-    const env = { CAPTURES: r2.binding, ...(value === undefined ? {} : { SHEET_RECOMPUTE: value }) };
+    /* `true` is deliberately not a string setting */
+    /** @type {WorkerEnv} */
+    const env = { CAPTURES: r2.binding };
+    if (value !== undefined) env.SHEET_RECOMPUTE = /** @type {string} */ (value);
     const r = await call(m, post({ capture_sha: SHA, store: "bio" }), env);
     assert.equal(r.status, 200); assert.equal(r.body.ok, false); assert.equal(r.body.reason, "NOT_ENABLED");
     assert.equal(r.body.not_recomputed, NOT_RECOMPUTED);
@@ -88,25 +132,29 @@ test("R2: unless SHEET_RECOMPUTE is exactly \"on\", every well-formed request is
   /* a malformed request is still refused as malformed, not as NOT_ENABLED */
   assert.equal((await call(m, post({ capture_sha: "x", store: "bio" }), {})).body.reason, "BAD_SHA");
   /* the committed configuration sets it off */
-  const cfg = parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc");
+  const cfg = wranglerConfig();
   assert.equal(cfg.vars.SHEET_RECOMPUTE, "off");
   assert.equal(contract.enabledIn(cfg.vars), false);
 });
 
 /* ---- R3: refusals, in order --------------------------------------------------------------------------------- */
 
+/** @param {Answer} body @param {string} reason */
 const refusedAs = (body, reason) => {
   assert.equal(body.ok, false); assert.equal(body.reason, reason);
-  assert.equal(body.not_recomputed, NOT_RECOMPUTED); assert.equal(typeof body.why, "string"); assert.ok(body.why.length);
+  assert.equal(body.not_recomputed, NOT_RECOMPUTED); assert.equal(typeof body.why, "string"); assert.ok(body.why?.length);
   assert.equal(body.cells, undefined, "a refused workbook is never partly recomputed");
 };
 
 /** A wasm module that compiles but is not the engine; and the engine's own bytes with its section doctored. */
+/** @type {unknown} */
 const EMPTY_MODULE = new WebAssembly.Module(new Uint8Array([0, 0x61, 0x73, 0x6d, 1, 0, 0, 0]));
-const SECTION = JSON.parse(Buffer.from(WebAssembly.Module.customSections(MODULE, contract.ENGINE_SECTION)[0]).toString());
+const SECTION = /** @type {EngineFacts} */ (JSON.parse(Buffer.from(WebAssembly.Module.customSections(MODULE, contract.ENGINE_SECTION)[0]).toString()));
+/** @param {{ commit?: string, engine?: string, code_bytes?: number }} facts @returns {unknown} */
 const doctored = (facts) => new WebAssembly.Module(withEngineSection(WASM_FILE.subarray(0, SECTION.code_bytes), { ...SECTION, ...facts }));
 
 test("R3 (1) / R13: ENGINE_ABSENT when the wasm did not load as the pinned build, checked before anything else", async () => {
+  /** @type {unknown[]} */
   const bogus = [undefined, null, "wasm", WASM_FILE, EMPTY_MODULE, doctored({ commit: "0".repeat(40) }),
     doctored({ engine: "other" }), doctored({ code_bytes: 1 })];
   for (const mod of bogus) {
@@ -141,6 +189,7 @@ test("R3 (2): NOT_A_WORKBOOK when the bytes are not an OOXML spreadsheet contain
 });
 
 /** A deflated workbook of `n` numeric cells, small zipped and large unzipped. */
+/** @param {number} n @param {WorkbookExtra} [extra] @returns {Uint8Array} */
 const wideWorkbook = (n, extra = {}) =>
   workbook({ sheets: [{ name: "S", cells: Array.from({ length: n }, (_, i) => ({ r: `A${i + 1}`, v: i })) }], deflate: true, ...extra });
 
@@ -153,8 +202,9 @@ test("R3 (3) / R14: OVER_BOUND when the unzipped size exceeds MAX_UNZIPPED_BYTES
   let r = await recomputeVia(m, big);
   refusedAs(r.body, "OVER_BOUND");
   assert.equal(r.body.measure, "unzipped_bytes"); assert.equal(r.body.bound, MAX_UNZIPPED_BYTES);
-  assert.ok(r.body.measured > MAX_UNZIPPED_BYTES); assert.equal(r.body.measured_is, "at_least");
-  assert.ok(r.body.why.includes(String(MAX_UNZIPPED_BYTES)) && r.body.why.includes(String(r.body.measured)));
+  assert.ok((r.body.measured ?? 0) > MAX_UNZIPPED_BYTES); assert.equal(r.body.measured_is, "at_least");
+  const why = r.body.why;
+  assert.ok(why?.includes(String(MAX_UNZIPPED_BYTES)) && why?.includes(String(r.body.measured)));
   /* over the real cell bound, under the unzipped one: cells written compactly (`<c/>` carries no value) */
   const n = MAX_CELLS + 1;
   const sheet = `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1">${"<c/>".repeat(n)}</row></sheetData></worksheet>`;
@@ -171,6 +221,7 @@ test("R3 (3) / R14: OVER_BOUND when the unzipped size exceeds MAX_UNZIPPED_BYTES
   refusedAs(r.body, "OVER_BOUND");
 });
 
+/** @type {WorkbookExtra} */
 const EXTERNAL_PART = {
   extra: {
     "xl/externalLinks/externalLink1.xml": '<externalLink xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><externalBook/></externalLink>',
@@ -181,6 +232,7 @@ const EXTERNAL_PART = {
 test("R3 (4): EXTERNAL_LINKS for an external-link part, or a formula or defined name that refers to another workbook, naming how many, before the engine loads", async () => {
   const { engine, calls } = spied(realEngine());
   const m = makeMember(engine);
+  /** @type {Array<[Uint8Array, { parts: number, formulas: number, defined_names: number }]>} */
   const cases = [
     [small([{ r: "A1", v: 1 }], EXTERNAL_PART), { parts: 1, formulas: 0, defined_names: 0 }],
     [small([{ r: "A1", f: "[1]Other!A1", v: 1 }, { r: "A2", f: "SUM('[2]My Sheet'!B1:B3)", v: 2 }, { r: "A3", f: "A1", v: 1 }]),
@@ -205,7 +257,9 @@ test("R3: the first refusal that applies is the one reported (order 1-6)", async
   assert.equal((await recomputeVia(member(), both)).body.reason, "OVER_BOUND");
   assert.equal((await recomputeVia(makeMember(makeEngine(EMPTY_MODULE)), both)).body.reason, "ENGINE_ABSENT");
   /* external links before the engine's own failure: a workbook part the engine cannot read, with an external part */
-  const broken = small([{ r: "A1", v: 1 }], { ...EXTERNAL_PART, extra: { ...EXTERNAL_PART.extra, "xl/workbook.xml": "<workbook" } });
+  /** @type {ZipFiles} */
+  const brokenParts = { ...EXTERNAL_PART.extra, "xl/workbook.xml": "<workbook" };
+  const broken = small([{ r: "A1", v: 1 }], { ...EXTERNAL_PART, extra: brokenParts });
   assert.equal((await recomputeVia(member(), broken)).body.reason, "EXTERNAL_LINKS");
   /* the engine's failure before the time limit: a load that fails is never timed */
   let reads = 0;
@@ -216,31 +270,33 @@ test("R3: the first refusal that applies is the one reported (order 1-6)", async
 test("R3 (5): ENGINE_FAILED when the engine refuses or throws while loading or evaluating, with the engine's own message", async () => {
   const r = await recomputeVia(member(), small([{ r: "A1", v: 1 }], { extra: { "xl/workbook.xml": "<workbook><sheets>" } }));
   refusedAs(r.body, "ENGINE_FAILED");
-  assert.equal(r.body.stage, "load"); assert.equal(typeof r.body.engine_error, "string"); assert.ok(r.body.engine_error.length);
+  assert.equal(r.body.stage, "load"); assert.equal(typeof r.body.engine_error, "string"); assert.ok(r.body.engine_error?.length);
   /* evaluation: an engine that throws there (the real one is driven to that step and its error is passed on verbatim) */
   const real = realEngine();
+  /** @type {Engine} */
   const throwing = { ...real, evaluate: () => { throw new Error("unreachable executed"); } };
   const r2 = await recomputeVia(makeMember(throwing), small([{ r: "A1", f: "1", v: 1 }]));
   refusedAs(r2.body, "ENGINE_FAILED");
   assert.deepEqual([r2.body.stage, r2.body.engine_error], ["evaluate", "unreachable executed"]);
   /* and the next request after a failure is answered on a fresh instance */
   const r3 = await recomputeVia(member(), small([{ r: "A1", f: "2*3", v: 6 }]));
-  assert.equal(r3.body.cells[0].value, 6);
+  assert.equal(r3.body.cells?.[0]?.value, 6);
 });
 
 test("R3 (6): TIME_LIMIT when loading took longer than TIME_BUDGET_MS, so evaluation was not started", async () => {
   const { engine, calls } = spied(realEngine());
   const clock = [1000, 1000 + TIME_BUDGET_MS + 1];
-  const m = makeMember(engine, { now: () => clock.shift() });
+  const m = makeMember(engine, { now: () => clock.shift() ?? NaN });
   const r = await recomputeVia(m, small([{ r: "A1", f: "1+1", v: 2 }]));
   refusedAs(r.body, "TIME_LIMIT");
   assert.deepEqual([r.body.elapsed_ms, r.body.budget_ms], [TIME_BUDGET_MS + 1, TIME_BUDGET_MS]);
   assert.deepEqual([calls.load, calls.evaluate], [1, 0]);
   /* exactly at the budget, evaluation runs */
   const at = [0, TIME_BUDGET_MS];
-  const ok = await recomputeVia(makeMember(realEngine(), { now: () => at.shift() }), small([{ r: "A1", f: "1+1", v: 2 }]));
+  const ok = await recomputeVia(makeMember(realEngine(), { now: () => at.shift() ?? NaN }), small([{ r: "A1", f: "1+1", v: 2 }]));
   assert.equal(ok.body.ok, true);
   /* the time is read after a turn boundary, so a synchronous load is counted (workerd advances its clock only then) */
+  /** @type {string[]} */
   const order = [];
   const timed = makeMember(spied(realEngine()).engine, { now: () => { order.push("now"); return 0; }, turn: async () => { order.push("turn"); } });
   await recomputeVia(timed, small([{ r: "A1", v: 1 }]));
@@ -251,23 +307,27 @@ test("R3 (6): TIME_LIMIT when loading took longer than TIME_BUDGET_MS, so evalua
 
 test("words: the refusal sentences are read by sheet-worker.contract.store_must_be_named_this, sheet-worker.contract.no_capture_with_that_sha_in, sheet-worker.contract.the_engine_did_not_load, sheet-worker.contract.the_workbook_is_larger_than, sheet-worker.contract.the_workbook_refers_to_other, sheet-worker.contract.the_engine_refused_or_failed, sheet-worker.contract.loading_the_workbook_took_longer, sheet-worker.contract.recompute_is_not_enabled_here, sheet-worker.member.the_engine_refused_the_workbook and sheet-worker.member.the_engine_failed_while_evaluating, and each answer carries its sentence", async () => {
   /* contract.mjs: the caller's refusal (BAD_STORE) and the missing capture (NOT_FOUND) are answered with the sentence read by id */
-  const bad = await call(member(), post({ capture_sha: SHA, store: 3 }), ON);
+  const bad = await call(member(), post({ capture_sha: SHA, store: 3 }), ON_ENV);
   assert.equal(bad.body.reason, "BAD_STORE");
-  assert.equal(bad.body.detail, REFUSALS.BAD_STORE); assert.ok(bad.body.detail.length);
-  const missing = await call(member(), post({ capture_sha: SHA, store: "bio" }), { ...ON, CAPTURES: bucket().binding });
+  const badDetail = bad.body.detail;
+  assert.equal(badDetail, REFUSALS.BAD_STORE); assert.ok(badDetail.length);
+  const missing = await call(member(), post({ capture_sha: SHA, store: "bio" }), onWith(bucket().binding));
   assert.equal(missing.body.reason, "NOT_FOUND");
-  assert.equal(missing.body.detail, REFUSALS.NOT_FOUND); assert.ok(missing.body.detail.length);
+  const missingDetail = missing.body.detail;
+  assert.equal(missingDetail, REFUSALS.NOT_FOUND); assert.ok(missingDetail.length);
   /* the instance's setting off: the refusal before any read is the sentence read by id */
   const off = await call(member(), post({ capture_sha: SHA, store: "bio" }), {});
   assert.equal(off.body.reason, "NOT_ENABLED");
-  assert.equal(off.body.detail, REFUSALS.NOT_ENABLED); assert.ok(off.body.detail.length);
+  const offDetail = off.body.detail;
+  assert.equal(offDetail, REFUSALS.NOT_ENABLED); assert.ok(offDetail.length);
   /* member.mjs: the engine's refusal while loading and its failure while evaluating each carry their sentence as `why` */
   const load = await recomputeVia(member(), small([{ r: "A1", v: 1 }], { extra: { "xl/workbook.xml": "<workbook><sheets>" } }));
   assert.equal(load.body.reason, "ENGINE_FAILED"); assert.equal(load.body.stage, "load");
-  assert.equal(load.body.detail, REFUSALS.ENGINE_FAILED); assert.ok(load.body.why.length);
+  assert.equal(load.body.detail, REFUSALS.ENGINE_FAILED); assert.ok(load.body.why?.length);
+  /** @type {Engine} */
   const throwing = { ...realEngine(), evaluate: () => { throw new Error("unreachable executed"); } };
   const evaluate = await recomputeVia(makeMember(throwing), small([{ r: "A1", f: "1", v: 1 }]));
-  assert.equal(evaluate.body.stage, "evaluate"); assert.ok(evaluate.body.why.length);
+  assert.equal(evaluate.body.stage, "evaluate"); assert.ok(evaluate.body.why?.length);
 });
 
 /* ---- R4-R6: the answer -------------------------------------------------------------------------------------- */
@@ -292,32 +352,37 @@ test("R4: ok:true with engine, engine_version, wasm_sha256, macros_present, coun
   assert.equal(body.macros_present, false);
   assert.deepEqual(body.counts, { formula_cells: 4, errors: 0, volatile: 0 });
   assert.ok(Array.isArray(body.notes));
-  assert.deepEqual(body.cells.map((c) => c.source.ref), ["Zed!C1", "Zed!A2", "Zed!B2", "Alpha Beta!A1"]);
-  for (const c of body.cells) {
+  const cells = body.cells;
+  assert.ok(cells);
+  assert.deepEqual(cells.map((c) => c.source.ref), ["Zed!C1", "Zed!A2", "Zed!B2", "Alpha Beta!A1"]);
+  for (const c of cells) {
     assert.deepEqual(Object.keys(c.source), ["kind", "ref", "sheet", "cell"]);
     assert.equal(c.source.kind, "sheet-cell");
     assert.equal(c.source.ref, `${c.source.sheet}!${c.source.cell}`);
     assert.match(c.source.cell, /^[A-Z]+[1-9][0-9]*$/);
     assert.equal(typeof c.formula, "string"); assert.equal(typeof c.volatile, "boolean");
   }
-  assert.deepEqual(body.cells.map((c) => c.value), [3, 2, 1, 9]);
+  assert.deepEqual(cells.map((c) => c.value), [3, 2, 1, 9]);
   /* every cell's fields, and nothing but formula cells */
-  assert.deepEqual(Object.keys(body.cells[0]).sort(), ["formula", "source", "type", "value", "volatile"]);
+  assert.deepEqual(Object.keys(cells[0] ?? {}).sort(), ["formula", "source", "type", "value", "volatile"]);
 });
 
 test("R4: a number is written as the shortest decimal that reads back to the engine's value, never rounded further; text and booleans as themselves", async () => {
-  const res = await member().fetch(post({ capture_sha: SHA, store: "bio" }), { ...ON, CAPTURES: bucket({ [`bio/captures/${SHA}`]: VALUES }).binding });
+  const res = await member().fetch(post({ capture_sha: SHA, store: "bio" }), onWith(bucket({ [`bio/captures/${SHA}`]: VALUES }).binding));
+  /** @type {string} the member's own answer, as written */
   const raw = await res.text();
-  const body = JSON.parse(raw);
+  /** the member's own answer */
+  const body = /** @type {Recomputed} */ (JSON.parse(raw));
   const by = Object.fromEntries(body.cells.map((c) => [c.source.ref, c]));
+  /** @type {{ readonly [ref: string]: number }} */
   const want = { "S!C2": 0.1 + 0.2, "S!A4": 1 / 3, "S!C1": 0.1 * 3, "S!B4": Math.pow(2, 0.5) * 1e300 };
   for (const [ref, n] of Object.entries(want)) {
-    assert.equal(by[ref].type, "number"); assert.equal(by[ref].value, n, ref);
+    assert.equal(by[ref]?.type, "number"); assert.equal(by[ref]?.value, n, ref);
     /* the wire text is the shortest round-trip form */
     assert.ok(raw.includes(`"value":${String(n)}`), `${ref} written as ${String(n)}`);
   }
-  assert.deepEqual([by["S!A3"].type, by["S!A3"].value], ["text", "text!"]);
-  assert.deepEqual([by["S!B3"].type, by["S!B3"].value], ["boolean", true]);
+  assert.deepEqual([by["S!A3"]?.type, by["S!A3"]?.value], ["text", "text!"]);
+  assert.deepEqual([by["S!B3"]?.type, by["S!B3"]?.value], ["boolean", true]);
   for (const c of body.cells) if (c.type === "number") assert.equal(Number(JSON.stringify(c.value)), c.value);
 });
 
@@ -333,7 +398,10 @@ test("R5: an error result has type error, the engine's code and a cause; each is
     { r: "B8", f: "SUMPRODUCT(--(TRIM(C1:C2)=\"a\"))", v: 1 },       // array-lifted TRIM: the engine intersects
   ], { calcPr: '<calcPr iterate="1"/>' });
   const { body } = await recomputeVia(member(), wb);
-  const by = Object.fromEntries(body.cells.map((c) => [c.source.ref, c]));
+  const cells = body.cells;
+  assert.ok(cells);
+  const by = Object.fromEntries(cells.map((c) => [c.source.ref, c]));
+  /** @type {{ readonly [ref: string]: [string, string] }} */
   const want = {
     "S!B1": ["#NAME?", "unsupported_function"], "S!B2": ["#NAME?", "unsupported_function"],
     "S!B3": ["#VALUE!", "implicit_intersection"], "S!B4": ["#CIRC!", "circular"], "S!B5": ["#CIRC!", "circular"],
@@ -341,41 +409,51 @@ test("R5: an error result has type error, the engine's code and a cause; each is
   };
   for (const [ref, [code, cause]] of Object.entries(want)) {
     const c = by[ref];
-    assert.deepEqual([c.type, c.error, c.cause, c.not_recomputed], ["error", code, cause, NOT_RECOMPUTED], ref);
-    assert.ok(contract.CAUSES.includes(c.cause));
+    assert.deepEqual([c?.type, c?.error, c?.cause, c?.not_recomputed], ["error", code, cause, NOT_RECOMPUTED], ref);
+    const named = c?.cause;
+    assert.ok(named !== undefined && contract.CAUSES.includes(named));
   }
-  assert.equal(by["S!B1"].function, "WEBSERVICE"); assert.equal(by["S!B2"].function, "WEBSERVICE");
-  assert.equal(by["S!B2"].via, "S!B1");
-  assert.equal(body.counts.errors, 8);
+  assert.equal(by["S!B1"]?.function, "WEBSERVICE"); assert.equal(by["S!B2"]?.function, "WEBSERVICE");
+  assert.equal(by["S!B2"]?.via, "S!B1");
+  assert.equal(body.counts?.errors, 8);
   assert.ok(!/disagree(s|ment)?\b(?! with the file)/i.test(JSON.stringify(body).replace(/not a disagreement/g, "")));
   /* a non-error cell carries none of the error fields */
-  const fine = (await recomputeVia(member(), small([{ r: "A1", f: "1", v: 1 }]))).body.cells[0];
-  for (const k of ["error", "cause", "not_recomputed", "function"]) assert.equal(fine[k], undefined);
+  const fine = (await recomputeVia(member(), small([{ r: "A1", f: "1", v: 1 }]))).body.cells?.[0];
+  assert.ok(fine);
+  /** @type {Array<"error" | "cause" | "not_recomputed" | "function">} */
+  const errorFields = ["error", "cause", "not_recomputed", "function"];
+  for (const k of errorFields) assert.equal(fine[k], undefined);
 });
 
 test("R6: a cell whose formula calls NOW, TODAY, RAND, RANDBETWEEN, OFFSET, INDIRECT, CELL or INFO is volatile:true; others false", async () => {
+  /** @type {{ readonly [fn: string]: string }} */
   const calls = { NOW: "NOW()", TODAY: "TODAY()", RAND: "RAND()", RANDBETWEEN: "RANDBETWEEN(1,9)", OFFSET: "OFFSET(A1,0,0)",
     INDIRECT: "INDIRECT(\"A1\")", CELL: "CELL(\"row\",A1)", INFO: "INFO(\"numfile\")" };
   assert.deepEqual(Object.keys(calls), [...contract.VOLATILE_FUNCTIONS]);
-  const cells = [{ r: "A1", v: 1 }, ...Object.values(calls).map((f, i) => ({ r: `B${i + 1}`, f: `1+${f}`, v: 0 })),
+  /** @type {Cell[]} */
+  const cells = [{ r: "A1", v: 1 }, ...Object.values(calls).map(/** @param {string} f @param {number} i @returns {Cell} */ (f, i) => ({ r: `B${i + 1}`, f: `1+${f}`, v: 0 })),
     { r: "C1", f: "\"NOW()\"&\"TODAY()\"", v: "" }, { r: "C2", f: "SUM(A1)", v: 1 }, { r: "C3", f: "NOWHERE+1", v: 0 },
     { r: "C4", f: "_xlfn.CONCAT(\"RAND\",\"()\")", v: "" }];
   const { body } = await recomputeVia(member(), small(cells));
-  for (let i = 0; i < 8; i++) assert.equal(body.cells.find((c) => c.source.cell === `B${i + 1}`).volatile, true, `B${i + 1}`);
-  for (const cell of ["C1", "C2", "C3", "C4"]) assert.equal(body.cells.find((c) => c.source.cell === cell).volatile, false, cell);
-  assert.equal(body.counts.volatile, 8);
+  for (let i = 0; i < 8; i++) assert.equal(body.cells?.find((c) => c.source.cell === `B${i + 1}`)?.volatile, true, `B${i + 1}`);
+  for (const cell of ["C1", "C2", "C3", "C4"]) assert.equal(body.cells?.find((c) => c.source.cell === cell)?.volatile, false, cell);
+  assert.equal(body.counts?.volatile, 8);
 });
 
 test("R7: macros are never run; a workbook with a VBA project is recomputed by its formulas alone, macros_present:true with a note", async () => {
+  /** @type {Cell[]} */
   const cells = [{ r: "A1", v: 2 }, { r: "A2", f: "A1*21", v: 42 }];
   const withVba = (await recomputeVia(member(), small(cells, { vba: true }))).body;
   assert.equal(withVba.ok, true); assert.equal(withVba.macros_present, true);
-  assert.equal(withVba.cells[0].value, 42);
-  assert.ok(withVba.notes.some((n) => /VBA/.test(n) && /never run/.test(n)));
+  const vbaCells = withVba.cells;
+  assert.equal(vbaCells?.[0]?.value, 42);
+  assert.ok(withVba.notes?.some((n) => /VBA/.test(n) && /never run/.test(n)));
   const without = (await recomputeVia(member(), small(cells))).body;
   assert.equal(without.macros_present, false);
-  assert.ok(!without.notes.some((n) => /VBA/.test(n)));
-  assert.deepEqual(withVba.cells, without.cells);
+  const withoutNotes = without.notes;
+  assert.ok(withoutNotes);
+  assert.ok(!withoutNotes.some((n) => /VBA/.test(n)));
+  assert.deepEqual(vbaCells, without.cells);
 });
 
 /* ---- R8, R9: version and everything else -------------------------------------------------------------------- */
@@ -400,7 +478,7 @@ test("R9: any other method or path is refused {ok:false, reason:\"UNKNOWN\"} wit
   const m = member();
   for (const [method, path] of [["GET", "/recompute"], ["POST", "/version"], ["GET", "/"], ["POST", "/"], ["PUT", "/recompute"],
     ["DELETE", "/version"], ["POST", "/recompute/x"], ["GET", "/versions"], ["POST", "/transcribe"]]) {
-    const r = await call(m, new Request(`https://sheet-worker${path}`, { method, ...(method === "GET" || method === "DELETE" ? {} : { body: "{}" }) }), ON);
+    const r = await call(m, new Request(`https://sheet-worker${path}`, { method, ...(method === "GET" || method === "DELETE" ? {} : { body: "{}" }) }), ON_ENV);
     assert.equal(r.status, 404, `${method} ${path}`); assert.equal(r.body.ok, false); assert.equal(r.body.reason, "UNKNOWN");
   }
 });
@@ -414,14 +492,16 @@ test("R10: writes nothing — only CAPTURES.get is ever called, the bucket is un
   const m = member();
   for (const body of [{ capture_sha: SHA, store: "bio" }, { capture_sha: SHA, store: "scratch" }, { capture_sha: "cd".repeat(32), store: "bio" },
     { capture_sha: SHA, store: "nope" }])
-    await call(m, post(body), { ...ON, CAPTURES: r2.binding });
-  await call(m, new Request("https://sheet-worker/version"), { ...ON, CAPTURES: r2.binding });
+    await call(m, post(body), onWith(r2.binding));
+  await call(m, new Request("https://sheet-worker/version"), onWith(r2.binding));
   assert.ok(r2.calls.length >= 3);
   assert.deepEqual([...new Set(r2.calls.map((c) => c[0]))], ["get"]);
   assert.deepEqual([...r2.store.entries()].map(([k, v]) => [k, sha256(v)]), before);
-  const cfg = parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc");
+  const cfg = wranglerConfig();
   assert.deepEqual(cfg.r2_buckets.map((b) => b.binding), ["CAPTURES"]);
-  for (const k of ["durable_objects", "kv_namespaces", "d1_databases", "queues", "services", "migrations"]) assert.equal(cfg[k], undefined, k);
+  /** @type {Array<"durable_objects" | "kv_namespaces" | "d1_databases" | "queues" | "services" | "migrations">} */
+  const absentBindings = ["durable_objects", "kv_namespaces", "d1_databases", "queues", "services", "migrations"];
+  for (const k of absentBindings) assert.equal(cfg[k], undefined, k);
   /* and the deployed artifact makes no write call on any binding */
   const bundle = readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`, "utf8");
   assert.equal(/\.(put|delete|createMultipartUpload|resumeMultipartUpload)\s*\(/.test(bundle.replace(/_fmtCache\.\w+\(/g, "")), false);
@@ -436,8 +516,11 @@ test("R11: NAMESPACES is exactly [\"bio\", \"scratch\"], frozen; PLANE_OPS is em
 test("R12: the answer is a function of the bytes, the engine and the settings; no state between calls; only CAPTURES.get is read", async () => {
   const bytes = small([{ r: "A1", v: 3 }, { r: "A2", f: "A1*A1", v: 9 }, { r: "A3", f: "DATE(2024,2,29)+1", v: 0 }]);
   const m = member();
+  /** @type {Set<string>} */
   const seen = new Set();
-  const env = new Proxy({ ...ON, CAPTURES: bucket({ [`bio/captures/${SHA}`]: bytes }).binding, OTHER_SECRET: "x" },
+  /** @type {ProbedEnv} */
+  const probed = { SHEET_RECOMPUTE: ON.SHEET_RECOMPUTE, VERSION: ON.VERSION, CAPTURES: bucket({ [`bio/captures/${SHA}`]: bytes }).binding, OTHER_SECRET: "x" };
+  const env = new Proxy(probed,
     { get(t, k) { if (typeof k === "string") seen.add(k); return t[k]; } });
   const realFetch = globalThis.fetch;
   globalThis.fetch = () => { throw new Error("no network call may be made"); };
@@ -457,28 +540,29 @@ test("R12: the answer is a function of the bytes, the engine and the settings; n
 test("R13: the vendored wasm is the pinned IronCalc build with its xlsx feature, its length and SHA-256 fixed, its bytes pinned by the bundle manifest", () => {
   assert.equal(WASM_FILE.length, contract.WASM_BYTES);
   assert.equal(sha256(WASM_FILE), contract.WASM_SHA256);
-  const facts = JSON.parse(Buffer.from(WebAssembly.Module.customSections(MODULE, contract.ENGINE_SECTION)[0]).toString());
+  const facts = /** @type {EngineFacts} */ (JSON.parse(Buffer.from(WebAssembly.Module.customSections(MODULE, contract.ENGINE_SECTION)[0]).toString()));
   assert.equal(facts.engine, "ironcalc"); assert.equal(facts.commit, contract.ENGINE_VERSION);
   assert.deepEqual(facts.features, ["xlsx"]);
   assert.equal(sha256(WASM_FILE.subarray(0, facts.code_bytes)), facts.code_sha256);
   const cargo = readFileSync(`${MEMBER_DIR}engine/Cargo.toml`, "utf8");
   assert.deepEqual([...cargo.matchAll(/rev = "([0-9a-f]{40})"/g)].map((m) => m[1]), [contract.ENGINE_VERSION, contract.ENGINE_VERSION]);
-  const manifest = JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8"));
+  const manifest = /** @type {BundleManifest} */ (JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8")));
   const asset = manifest.assets.find((a) => a.path === "assets/sheet-engine.wasm");
-  assert.deepEqual([asset.bytes, asset.sha256], [contract.WASM_BYTES, contract.WASM_SHA256]);
+  assert.deepEqual([asset?.bytes, asset?.sha256], [contract.WASM_BYTES, contract.WASM_SHA256]);
   /* it reads XLSX: the engine loads a workbook from its bytes */
   const e = realEngine();
   assert.equal(e.open(), null);
   e.load(small([{ r: "A1", f: "40+2", v: 42 }]));
-  assert.equal(e.evaluate().cells[0].value, 42);
+  assert.equal(e.evaluate().cells[0]?.value, 42);
   e.close();
 });
 
 test("R14: the bounds are fixed positive constants, the configuration declares its CPU limit, and a workbook above a bound is refused whole", () => {
   for (const n of [MAX_UNZIPPED_BYTES, MAX_CELLS, TIME_BUDGET_MS]) assert.ok(Number.isInteger(n) && n > 0);
-  const cfg = parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc");
-  assert.equal(cfg.limits.cpu_ms, 300000);
-  assert.ok(TIME_BUDGET_MS < cfg.limits.cpu_ms);
+  const cfg = wranglerConfig();
+  const cpuMs = cfg.limits.cpu_ms;
+  assert.equal(cpuMs, 300000);
+  assert.ok(TIME_BUDGET_MS < cpuMs);
   /* "refused whole" is asserted on every OVER_BOUND answer above (no `cells`) */
 });
 
@@ -487,7 +571,8 @@ test("R14: the three bounds are the READ_BOUNDS rows of the sheet worker, read t
   assert.deepEqual([MAX_UNZIPPED_BYTES, MAX_CELLS, TIME_BUDGET_MS], [9000000, 250000, 120000]);
   assert.deepEqual([MAX_UNZIPPED_BYTES, MAX_CELLS, TIME_BUDGET_MS],
     [boundOf("sheet_worker", "bytes"), boundOf("sheet_worker", "cells"), boundOf("sheet_worker", "ms")]);
-  assert.ok(Object.hasOwn(READ_BOUNDS.sheet_worker, "bytes") && Object.hasOwn(READ_BOUNDS.sheet_worker, "cells") && Object.hasOwn(READ_BOUNDS.sheet_worker, "ms"));
+  const rows = READ_BOUNDS.sheet_worker ?? {};
+  assert.ok(Object.hasOwn(rows, "bytes") && Object.hasOwn(rows, "cells") && Object.hasOwn(rows, "ms"));
   /* no numeric literal of the three remains in the member's source */
   const forms = [/\b9[_,]?000[_,]?000\b/, /\b250[_,]?000\b/, /\b120[_,]?000\b/];
   for (const f of readdirSync(`${MEMBER_DIR}src/`).filter((x) => x.endsWith(".mjs"))) {
@@ -495,10 +580,12 @@ test("R14: the three bounds are the READ_BOUNDS rows of the sheet worker, read t
     for (const re of forms) assert.ok(!re.test(text), `${f} types a literal matching ${re}`);
   }
   /* /version states them */
-  const r = await call(member(), new Request("https://sheet-worker/version"), ON);
+  const r = await call(member(), new Request("https://sheet-worker/version"), ON_ENV);
   assert.deepEqual(r.body.bounds, { max_unzipped_bytes: boundOf("sheet_worker", "bytes"), max_cells: boundOf("sheet_worker", "cells"), time_budget_ms: boundOf("sheet_worker", "ms") });
   /* control: exactly MAX_CELLS cells is not refused for its cells; one over is */
+  /** @param {number} n @returns {string} */
   const sheetOf = (n) => `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1">${"<c/>".repeat(n)}</row></sheetData></worksheet>`;
+  /** @param {number} n @returns {Uint8Array} */
   const wb = (n) => workbook({ sheets: [{ name: "S", cells: [] }], extra: { "xl/worksheets/sheet1.xml": sheetOf(n) }, deflate: true });
   const m = makeMember(realEngine());
   const atBound = await recomputeVia(m, wb(MAX_CELLS));
@@ -509,29 +596,30 @@ test("R14: the three bounds are the READ_BOUNDS rows of the sheet worker, read t
 });
 
 /** Every distinct limits statement a reader of the bundle's text finds: a quoted `bio-member-limits/1 …` string, read
- *  as installer R20 reads the plane's (any quote, no quote or backslash inside). */
+ *  as installer R20 reads the plane's (any quote, no quote or backslash inside).
+ *  @param {string} text @returns {Array<string | undefined>} */
 const limitsStatements = (text) =>
   [...new Set([...text.matchAll(/(["'`])(bio-member-limits\/1(?: [^"'`\\\n]*)?)\1/g)].map((m) => m[2]))];
 
 test("R17: the member states its limits in its committed bundle as exactly one distinct string bio-member-limits/1 key=n …, keys sorted, equal to its configuration's limits", () => {
-  const cfg = parseJsonc(readFileSync(`${MEMBER_DIR}wrangler.jsonc`, "utf8"), "wrangler.jsonc");
+  const cfg = wranglerConfig();
   assert.ok(cfg.limits && typeof cfg.limits === "object" && Object.keys(cfg.limits).length, "the configuration states limits");
   const keys = Object.keys(cfg.limits).sort();
-  assert.ok(keys.every((k) => Number.isInteger(cfg.limits[k]) && cfg.limits[k] > 0), "each limit is a positive integer");
+  assert.ok(keys.every((k) => Number.isInteger(cfg.limits[k]) && (cfg.limits[k] ?? 0) > 0), "each limit is a positive integer");
   const want = ["bio-member-limits/1", ...keys.map((k) => `${k}=${cfg.limits[k]}`)].join(" ");
   /* the stated forms equal the configuration */
   assert.equal(limits.MEMBER_LIMITS_STATEMENT, want);
   assert.match(limits.MEMBER_LIMITS_STATEMENT, /^bio-member-limits\/1( [a-z_]+=[1-9][0-9]*)+$/);
   assert.deepEqual({ ...limits.MEMBER_LIMITS }, cfg.limits); assert.ok(Object.isFrozen(limits.MEMBER_LIMITS));
   assert.deepEqual(Object.fromEntries(limits.MEMBER_LIMITS_STATEMENT.split(" ").slice(1).map((kv) => kv.split("="))
-    .map(([k, v]) => [k, Number(v)])), { ...limits.MEMBER_LIMITS });
+    .map(/** @param {string[]} kv @returns {[string, number]} */ ([k, v]) => [String(k), Number(v)])), { ...limits.MEMBER_LIMITS });
   /* today's (K1536) */
   assert.equal(want, "bio-member-limits/1 cpu_ms=300000");
   /* the bundle a release signs states it exactly once, as written */
   const bundle = readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`, "utf8");
   assert.deepEqual(limitsStatements(bundle), [want]);
   /* and the manifest pins the bytes that hold it */
-  const manifest = JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8"));
+  const manifest = /** @type {BundleManifest} */ (JSON.parse(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundle.json`, "utf8")));
   assert.equal(manifest.sha256, sha256(readFileSync(`${MEMBER_DIR}dist/sheet-worker.bundled.mjs`)));
   /* negative controls: a second, different statement, or none, is not one distinct string */
   assert.equal(limitsStatements(`${bundle}\nvar b = 'bio-member-limits/1 cpu_ms=30000';`).length, 2);
@@ -549,10 +637,11 @@ test("R16: no place is named; the same bytes and settings give the same answer u
     process.stdout.write(JSON.stringify(await m.recompute(bytes)));`;
   const bytes = small([{ r: "A1", f: "DATE(2024,3,10)+0.5", v: 0 }, { r: "A2", f: "TEXT(A1,\"yyyy-mm-dd hh:mm\")", v: "" },
     { r: "A3", f: "YEAR(A1)&\"-\"&HOUR(A1)", v: "" }, { r: "A4", f: "1234.5*1", v: 1234.5 }]);
+  /** @param {string} TZ @param {string} LANG @returns {string} */
   const run = (TZ, LANG) => execFileSync(process.execPath, ["--input-type=module", "-e", script, Buffer.from(bytes).toString("base64")],
     { env: { ...process.env, TZ, LANG, LC_ALL: LANG }, encoding: "utf8" });
   const a = run("America/Los_Angeles", "en_US.UTF-8"), b = run("Asia/Tokyo", "de_DE.UTF-8"), c = run("UTC", "C");
   assert.equal(a, b); assert.equal(a, c);
-  const out = JSON.parse(a);
-  assert.equal(out.cells.find((x) => x.source.cell === "A2").value, "2024-03-10 12:00");
+  const out = /** @type {Recomputed} */ (JSON.parse(a));
+  assert.equal(out.cells.find((x) => x.source.cell === "A2")?.value, "2024-03-10 12:00");
 });
