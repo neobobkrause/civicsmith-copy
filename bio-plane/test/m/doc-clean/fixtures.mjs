@@ -222,9 +222,11 @@ export function docx({ extra = [], images = true, meta = true } = {}) {
   const docRels = RELS([["rId1", "officeDocument/2006/relationships/comments", "comments.xml"],
     ...(images ? [rel("rId2", "officeDocument/2006/relationships/image", "media/image1.jpeg"), rel("rId3", "officeDocument/2006/relationships/image", "media/image2.png")] : [])]);
   /** @type {ZipEntry[]} */
-  const imageParts = images ? [{ name: "word/media/image1.jpeg", data: jpeg({ meta }), method: 0 }, { name: "word/media/image2.png", data: png({ meta }) }] : [];
+  const imageParts = [];
+  if (images) imageParts.push({ name: "word/media/image1.jpeg", data: jpeg({ meta }), method: 0 }, { name: "word/media/image2.png", data: png({ meta }) });
   /** @type {ZipEntry[]} */
-  const customPart = meta ? [{ name: "docProps/custom.xml", data: CUSTOM }] : [];
+  const customPart = [];
+  if (meta) customPart.push({ name: "docProps/custom.xml", data: CUSTOM });
   return makeZip([
     { name: "[Content_Types].xml", data: TYPES([["/word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"], ["/word/comments.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"]]) },
     { name: "_rels/.rels", data: ROOT_RELS("word/document.xml", meta) },
