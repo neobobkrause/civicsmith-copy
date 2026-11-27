@@ -15,24 +15,56 @@
  * in build/jobs/T44/image-codecs.md. */
 import "../../../bio-plane/test/sandbox.mjs";
 
-import { Worker, isMainThread, workerData, parentPort } from "node:worker_threads";
+import { Worker, workerData, parentPort } from "node:worker_threads";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-if (!isMainThread) {
+/** @typedef {"R1" | "R1 rotate 90" | "R11"} Decoder which decode is measured */
+/**
+ * What this thread hands its worker.
+ * @typedef {Object} ProbeWork
+ * @property {string} file the JPEG's path in the temp folder
+ * @property {Decoder} how
+ */
+/**
+ * The worker's answer once its decode is done.
+ * @typedef {Object} ProbeResult
+ * @property {number} ms the decode's wall time
+ * @property {number} strips the strips handed to `onRows` (R11; 0 otherwise)
+ * @property {number} most the most rows in one strip (R11; 0 otherwise)
+ */
+/** @typedef {{ ready: true } | ProbeResult} ProbeMessage */
+/** @typedef {{ used_heap_size: number, external_memory: number }} HeapFigures */
+
+/** @param {number} ms @returns {Promise<void>} */
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** @type {readonly Decoder[]} */
+const DECODERS = ["R1", "R1 rotate 90", "R11"];
+/** @type {readonly (readonly [string, number])[]} the sampling's name and its components */
+const SAMPLINGS = [["4:2:0", 3], ["4:2:2", 3], ["4:4:4", 3], ["grey", 1]];
+
+const port = parentPort;                           // a MessagePort in a worker, null in the main thread
+if (port !== null) {
   const { decodeBaselineJpeg, decodeBaselineJpegRows } = await import("../../src/dctdecode.mjs");
-  const { file, how } = workerData;
+  /** @type {ProbeWork} */
+  const work = workerData;
+  const { file, how } = work;
   const d = readFileSync(file);                    // a Buffer is a Uint8Array: no second copy
-  await new Promise((r) => setTimeout(r, 50));
-  parentPort.postMessage({ ready: true });
-  await new Promise((r) => setTimeout(r, 50));
+  await pause(50);
+  /** @type {ProbeMessage} */
+  const ready = { ready: true };
+  port.postMessage(ready);
+  await pause(50);
   const t0 = Date.now();
   let strips = 0, most = 0;
   if (how === "R11") decodeBaselineJpegRows(d, { onRows: (rows, y0, count) => { strips++; most = Math.max(most, count); } });
   else decodeBaselineJpeg(d, { rotate: how === "R1 rotate 90" ? 90 : 0 });
-  parentPort.postMessage({ ms: Date.now() - t0, strips, most });
+  /** @type {ProbeMessage} */
+  const done = { ms: Date.now() - t0, strips, most };
+  port.postMessage(done);
 } else {
   const [W, H] = process.argv.length >= 4 ? [Number(process.argv[2]), Number(process.argv[3])] : [4032, 3024];
   const dir = mkdtempSync(join(tmpdir(), "dctmem-"));
@@ -54,27 +86,36 @@ im.convert("L").save(f"{sys.argv[3]}/grey.jpg", "JPEG", quality=90)
   execFileSync("python3", ["-c", py, String(W), String(H), dir]);
   console.log(`${W}x${H} (${(W * H / 1e6).toFixed(1)} MP)`);
   console.log("sampling | decoder | input MB | output MB | live peak above idle MB (heap, external) | bytes a pixel | ms | strips (most rows)");
-  for (const [name, nc] of [["4:2:0", 3], ["4:2:2", 3], ["4:4:4", 3], ["grey", 1]]) {
+  /** @param {number} b bytes @returns {string} megabytes, one decimal */
+  const mb = (b) => (b / 1e6).toFixed(1);
+  for (const [name, nc] of SAMPLINGS) {
     const file = join(dir, `${name.replace(/:/g, "")}.jpg`);
     const input = readFileSync(file).length;
-    for (const how of ["R1", "R1 rotate 90", "R11"]) {
-      const worker = new Worker(new URL(import.meta.url), { workerData: { file, how } });
-      let ready = false, base = null, peak = 0, heap = 0, ext = 0;
+    for (const how of DECODERS) {
+      /** @type {ProbeWork} */
+      const work = { file, how };
+      const worker = new Worker(new URL(import.meta.url), { workerData: work });
+      /** @type {{ base: number | null }} the isolate's level at the first sample once ready; a field, so the timer's write is seen */
+      const idle = { base: null };
+      let ready = false, peak = 0, heap = 0, ext = 0;
       const iv = setInterval(async () => {
         if (!ready) return;
         try {
+          /** @type {HeapFigures} */
           const s = await worker.getHeapStatistics();
           const now = s.used_heap_size + s.external_memory;
-          base ??= now;
+          idle.base ??= now;
           if (now > peak) { peak = now; heap = s.used_heap_size; ext = s.external_memory; }
         } catch { /* the worker has ended */ }
       }, 2);
-      const m = await new Promise((r) => worker.on("message", (x) => { if (x.ready) ready = true; else r(x); }));
+      /** @type {ProbeResult} */
+      const m = await new Promise((r) => worker.on("message", /** @param {ProbeMessage} x */ (x) => { if ("ready" in x) ready = true; else r(x); }));
       clearInterval(iv);
       await worker.terminate();
-      const mb = (b) => (b / 1e6).toFixed(1);
       const out = how === "R11" ? 0 : W * H * nc;
-      console.log(`${name} | ${how} | ${mb(input)} | ${mb(out)} | ${mb(peak - base)} (${mb(heap)}, ${mb(ext)}) | ${((peak - base) / (W * H)).toFixed(2)} | ${m.ms} | ${how === "R11" ? `${m.strips} (${m.most})` : ""}`);
+      const base = idle.base;                      // as `peak - base` did: a null base counts 0
+      const above = peak - (base ?? 0);
+      console.log(`${name} | ${how} | ${mb(input)} | ${mb(out)} | ${mb(above)} (${mb(heap)}, ${mb(ext)}) | ${(above / (W * H)).toFixed(2)} | ${m.ms} | ${how === "R11" ? `${m.strips} (${m.most})` : ""}`);
     }
   }
 }

@@ -14,12 +14,34 @@
  * working set is the 8-bit output and under 2 MB of buffers for these). */
 import "../../../bio-plane/test/sandbox.mjs";
 
-import { Worker, isMainThread, workerData, parentPort } from "node:worker_threads";
+import { Worker, workerData, parentPort } from "node:worker_threads";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+/** @typedef {"L" | "RGB"} Mode Pillow's mode */
+/** @typedef {readonly [number, number, Mode, boolean, number | null]} ProbeImage width, height, mode, irreversible (9/7), tile edge or null */
+/**
+ * The worker's answer once its decode is done.
+ * @typedef {Object} ProbeDecoded
+ * @property {number} ms the decode's wall time
+ * @property {string} decoded "WxHxC", never empty
+ */
+/**
+ * The worker's answer once its decode is refused.
+ * @typedef {Object} ProbeRefused
+ * @property {number} ms the time to the refusal
+ * @property {string | undefined} refused the refusal's feature, else its message
+ * @property {number | undefined} working_set the working set a memory refusal declares
+ */
+/** @typedef {ProbeDecoded | ProbeRefused} ProbeResult */
+/** @typedef {{ used_heap_size: number, external_memory: number }} HeapFigures */
+
+/** @param {number} ms @returns {Promise<void>} */
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** @type {readonly ProbeImage[]} */
 const IMAGES = [
   [1280, 1680, "L", false, null], [1280, 1680, "RGB", true, null], [1700, 2200, "RGB", true, null],
   [2000, 2600, "RGB", true, null], [2550, 3300, "L", false, null], [2550, 3300, "RGB", true, null],
@@ -27,16 +49,26 @@ const IMAGES = [
   [4400, 4600, "RGB", true, null],
 ];
 
-if (!isMainThread) {
-  const { decodeJpx } = await import("../../src/jpxdecode.mjs");
-  const d = readFileSync(workerData);             // a Buffer is a Uint8Array: no second copy
-  await new Promise((r) => setTimeout(r, 50));
+const port = parentPort;                           // a MessagePort in a worker, null in the main thread
+if (port !== null) {
+  const { decodeJpx, JpxRefusal } = await import("../../src/jpxdecode.mjs");
+  /** @type {string} the codestream's path in the temp folder */
+  const file = workerData;
+  const d = readFileSync(file);                    // a Buffer is a Uint8Array: no second copy
+  await pause(50);
   const t0 = Date.now();
   try {
     const o = decodeJpx(d);
-    parentPort.postMessage({ ms: Date.now() - t0, decoded: `${o.width}x${o.height}x${o.comps}` });
+    /** @type {ProbeDecoded} */
+    const done = { ms: Date.now() - t0, decoded: `${o.width}x${o.height}x${o.comps}` };
+    port.postMessage(done);
   } catch (e) {
-    parentPort.postMessage({ ms: Date.now() - t0, refused: e.detail?.feature ?? e.message, working_set: e.detail?.working_set_bytes });
+    const err = e;
+    /** @type {ProbeRefused} */
+    const refused = err instanceof JpxRefusal
+      ? { ms: Date.now() - t0, refused: err.detail.feature ?? err.message, working_set: err.detail.working_set_bytes }
+      : { ms: Date.now() - t0, refused: err instanceof Error ? err.message : undefined, working_set: undefined };   // no detail: its message
+    port.postMessage(refused);
   }
 } else {
   const dir = mkdtempSync(join(tmpdir(), "jpxmem-"));
@@ -56,24 +88,30 @@ for w, h, mode, irr, tile in json.loads(sys.argv[1]):
 `;
   execFileSync("python3", ["-c", py, JSON.stringify(IMAGES), dir]);
   console.log("image | output MB | live peak above idle MB (heap, external) | result");
+  /** @param {number} b bytes @returns {string} megabytes, one decimal */
+  const mb = (b) => (b / 1e6).toFixed(1);
   for (const [w, h, mode, irr, tile] of IMAGES) {
     const f = join(dir, `${w}x${h}-${mode}-${irr ? "97" : "53"}${tile ? `-t${tile}` : ""}.j2k`);
     const nc = mode === "RGB" ? 3 : 1;
     const ws = w * h * nc;
     const worker = new Worker(new URL(import.meta.url), { workerData: f });
-    let base = null, peak = 0, heap = 0, ext = 0;
+    /** @type {{ base: number | null }} the isolate's level at the first sample; a field, so the timer's write is seen */
+    const idle = { base: null };
+    let peak = 0, heap = 0, ext = 0;
     const iv = setInterval(async () => {
       try {
+        /** @type {HeapFigures} */
         const s = await worker.getHeapStatistics();
         const now = s.used_heap_size + s.external_memory;
-        base ??= now;
+        idle.base ??= now;
         if (now > peak) { peak = now; heap = s.used_heap_size; ext = s.external_memory; }
       } catch { /* the worker has ended */ }
     }, 2);
+    /** @type {ProbeResult} */
     const m = await new Promise((r) => worker.once("message", r));
     clearInterval(iv);
     await worker.terminate();
-    const mb = (b) => (b / 1e6).toFixed(1);
-    console.log(`${w}x${h} ${mode} ${irr ? "9/7" : "5/3"}${tile ? ` ${tile}-tiles` : ""} | ${mb(ws)} | ${mb(peak - base)} (${mb(heap)}, ${mb(ext)}) | ${m.decoded ? `decoded in ${m.ms} ms` : `refused: ${m.refused}`}`);
+    const base = idle.base;                        // as `peak - base` did: a null base counts 0
+    console.log(`${w}x${h} ${mode} ${irr ? "9/7" : "5/3"}${tile ? ` ${tile}-tiles` : ""} | ${mb(ws)} | ${mb(peak - (base ?? 0))} (${mb(heap)}, ${mb(ext)}) | ${"decoded" in m ? `decoded in ${m.ms} ms` : `refused: ${m.refused}`}`);
   }
 }
