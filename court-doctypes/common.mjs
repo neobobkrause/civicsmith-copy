@@ -15,8 +15,249 @@ import { CONFIDENCE, CONTRACT, entity, diffEntities, readerView } from "../docpr
 import { event, worstSignificance, isMeaningful, bySeverity } from "../docprofile/registry.mjs";
 import { recognise, systemOf } from "../bio-plane/src/idspaces.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, Entity, EntityFacts, MovedFact } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../docprofile/registry.mjs" */
+/** @import { Recognised } from "../bio-plane/src/idspaces.mjs" */
+/** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
 
 export { CONFIDENCE, CONTRACT };
+
+/**
+ * An element of the page, balanced: where it opens and ends, and its inner markup with where that starts.
+ * @typedef {Object} PageElement
+ * @property {number} start
+ * @property {number} end
+ * @property {number} innerStart
+ * @property {string} inner
+ */
+/**
+ * An element found by a pattern, with the pattern's match at its opening tag.
+ * @typedef {Object} FoundElement
+ * @property {number} start
+ * @property {number} end
+ * @property {number} innerStart
+ * @property {string} inner
+ * @property {RegExpExecArray} match
+ */
+/**
+ * A link in a fragment: its label as written (null for a link with no text), its address, and its offset.
+ * @typedef {Object} PageLink
+ * @property {string | null} label
+ * @property {string} href
+ * @property {number} at
+ */
+/**
+ * A row's document link (R5): the document it belongs to and its description where the register states them, the
+ * link's label as written, its address, and whether following it costs money.
+ * @typedef {Object} RowLink
+ * @property {string | null} document
+ * @property {string | null} description
+ * @property {string} label
+ * @property {string} href
+ * @property {boolean} fee
+ */
+/**
+ * A document a row lists, its label and description as written.
+ * @typedef {Object} RowDocument
+ * @property {string | null} document
+ * @property {string | null} description
+ */
+/**
+ * What a row's text states about a document being sealed (R9).
+ * @typedef {"sealed" | "unsealed" | null} Sealing
+ */
+/**
+ * A register row (R5, R6), every field as written.
+ * @typedef {Object} RegisterRow
+ * @property {string} key
+ * @property {string | null} entry_id
+ * @property {string | null} date
+ * @property {string | null} text
+ * @property {string | null} filer
+ * @property {string | null} kind_as_written
+ * @property {RowLink[]} links
+ * @property {RowDocument[]} documents
+ * @property {Sealing} sealing
+ * @property {ReadingPosition | null} source
+ */
+/**
+ * What `row` is handed: the key and any field the register states.
+ * @typedef {Object} RowArgs
+ * @property {string} key
+ * @property {string | null} [entry_id]
+ * @property {string | null} [date]
+ * @property {string | null} [text]
+ * @property {string | null} [filer]
+ * @property {string | null} [kind_as_written]
+ * @property {RowLink[]} [links]
+ * @property {RowDocument[]} [documents]
+ * @property {ReadingPosition | null} [source]
+ */
+/**
+ * A party, judge, commissioner or staff member the page names (R4), its role only as written.
+ * @typedef {Object} Party
+ * @property {string} name
+ * @property {string | null} role_as_written
+ * @property {string | null} [assigned_as_written]
+ * @property {ReadingPosition | null} source
+ */
+/**
+ * Why a field of the proceeding is null or not recognised, by field.
+ * @typedef {Object} ProceedingWhy
+ * @property {string} [number]
+ * @property {string} [caption]
+ * @property {string} [forum_as_written]
+ * @property {string} [kind_as_written]
+ * @property {string} [status_as_written]
+ * @property {string} [filed]
+ * @property {string} [docket_number_core]
+ */
+/**
+ * The page's labelled fields, by label, each value as written.
+ * @typedef {{ [label: string]: string | null }} FieldsAsWritten
+ */
+/**
+ * The proceeding as the page states it (R3).
+ * @typedef {Object} Proceeding
+ * @property {Recognised | null} number
+ * @property {string | null} number_as_written
+ * @property {string | null} caption
+ * @property {string | null} forum_as_written
+ * @property {string | null} kind_as_written
+ * @property {string | null} status_as_written
+ * @property {string | null} filed
+ * @property {ReadingPosition | null} source
+ * @property {null} [docket_number_core]
+ * @property {FieldsAsWritten} fields_as_written
+ * @property {ProceedingWhy} [why]
+ */
+/**
+ * The register's pagination as it states it (R8).
+ * @typedef {Object} PageOf
+ * @property {number | null} n
+ * @property {number | null} of
+ * @property {boolean} may_continue
+ */
+/**
+ * The pagination and whether the reading is complete, with why not.
+ * @typedef {Object} Pagination
+ * @property {PageOf} page
+ * @property {boolean} complete
+ * @property {string | null} complete_why
+ */
+/**
+ * A register entry that could be given no key, with where and why.
+ * @typedef {Object} Unkeyed
+ * @property {number} at
+ * @property {string} why
+ */
+/**
+ * What a reading notes beside its rows.
+ * @typedef {Object} ReadingNotes
+ * @property {Unkeyed[]} unkeyed
+ */
+/**
+ * A reading of a register (R3 to R8, R12).
+ * @typedef {Object} RegisterReading
+ * @property {string} type
+ * @property {Proceeding} proceeding
+ * @property {Party[]} parties
+ * @property {RegisterRow[]} rows
+ * @property {string} key_basis
+ * @property {boolean} complete
+ * @property {string | null} complete_why
+ * @property {PageOf} page
+ * @property {boolean} provisional
+ * @property {boolean} register
+ * @property {Entity[]} entities
+ * @property {string | null} at
+ * @property {string} [failed]
+ * @property {ReadingNotes} [notes]
+ */
+/**
+ * A reading as `assess` is handed it back: any part of it may be missing.
+ * @typedef {Object} ReadingHeld
+ * @property {string} [type]
+ * @property {Proceeding} [proceeding]
+ * @property {Party[]} [parties]
+ * @property {RegisterRow[]} [rows]
+ * @property {string} [key_basis]
+ * @property {boolean} [complete]
+ * @property {boolean} [register]
+ * @property {Entity[]} [entities]
+ * @property {string} [failed]
+ */
+/**
+ * What `reading` is handed.
+ * @typedef {Object} ReadingArgs
+ * @property {string} type
+ * @property {Proceeding} proceeding
+ * @property {Party[]} parties
+ * @property {RegisterRow[]} rows
+ * @property {string} key_basis
+ * @property {Pagination} pagination
+ * @property {boolean} provisional
+ * @property {boolean} [register]
+ * @property {string | null} [at]
+ * @property {string | null} [failed]
+ * @property {ReadingNotes | null} [notes]
+ */
+/**
+ * A value a moved fact held: a fact as the row's entity holds it, or a row's links or documents.
+ * @typedef {string | number | boolean | null | undefined | Array<RowLink | RowDocument>} FactValue
+ */
+/**
+ * What an event of the register diff carries beside its type and significance (R10, R11).
+ * @typedef {Object} RegisterEventDetail
+ * @property {string} [key]
+ * @property {string | null} [entry_id]
+ * @property {string | null} [date]
+ * @property {string | null} [text]
+ * @property {string} [field]
+ * @property {string} [party]
+ * @property {string | null} [role_as_written]
+ * @property {FactValue} [was]
+ * @property {FactValue} [now]
+ * @property {string} [counterpart]
+ * @property {string} why
+ */
+/**
+ * An event of the register diff: the catalogue's type and significance, and its detail.
+ * @typedef {EventHead & RegisterEventDetail} RegisterEvent
+ */
+/**
+ * What `assess` answers (docprofile's L5 shape, R10 to R12).
+ * @typedef {Object} RegisterAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {RegisterEvent[]} events
+ * @property {{ rows: number, intact: number } | null} confirmed
+ * @property {string} why
+ */
+/**
+ * What `detect` answers (R1, R2, R17).
+ * @typedef {Object} RegisterDetection
+ * @property {boolean} match
+ * @property {string} confidence
+ * @property {string[]} signals
+ * @property {string} [why]
+ */
+/**
+ * One of this module's content types, in docprofile's shape (`ContentType`): its key, label, version and watching
+ * contract, and its three answers.
+ * @typedef {Object} RegisterType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => RegisterDetection} detect
+ * @property {(ctx: DoctypeContext) => RegisterReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => RegisterAssessment} assess
+ */
+/**
+ * Whether a capture's address is the system's, with its name or why not.
+ * @typedef {{ ok: true, name: string } | { ok: false, why: string }} AddressAnswer
+ */
 
 /* ------------------------------------------------------------------ markup, read as text */
 
@@ -24,17 +265,18 @@ export { CONFIDENCE, CONTRACT };
    end it. */
 export const TAG = String.raw`(?:[^>"']|"[^"]*"|'[^']*')*`;
 
-const NAMED = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", shy: "" };
+const NAMED = new Map([["amp", "&"], ["lt", "<"], ["gt", ">"], ["quot", '"'], ["apos", "'"], ["nbsp", " "], ["shy", ""]]);
 
-/** Character references decoded, the numeric ones and the few named ones these pages use. */
+/** Character references decoded, the numeric ones and the few named ones these pages use.
+ *  @param {string | null | undefined} s
+ *  @returns {string} */
 export function decode(s) {
-  return String(s == null ? "" : s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, r) => {
+  return String(s == null ? "" : s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (/** @type {string} */ m, /** @type {string} */ r) => {
     if (r[0] === "#") {
       const n = r[1] === "x" || r[1] === "X" ? parseInt(r.slice(2), 16) : parseInt(r.slice(1), 10);
       return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : m;
     }
-    const k = r.toLowerCase();
-    return Object.hasOwn(NAMED, k) ? NAMED[k] : m;
+    return NAMED.get(r.toLowerCase()) ?? m;
   });
 }
 
@@ -43,17 +285,21 @@ export function decode(s) {
 const BLOCK = /^(?:br|p|div|td|th|tr|li|ul|ol|table|tbody|thead|h[1-6]|dd|dt|dl|section|article|header|footer|form|label)$/i;
 
 /** A fragment of markup as the text a member reads: scripts and styles dropped, tags removed (a block or
- *  a line break reads as a space), references decoded, white space collapsed. */
+ *  a line break reads as a space), references decoded, white space collapsed.
+ *  @param {string | null | undefined} html
+ *  @returns {string} */
 export function textOf(html) {
   const s = String(html == null ? "" : html)
     .replace(/<script\b[\s\S]*?<\/script\s*>/gi, " ")
     .replace(/<style\b[\s\S]*?<\/style\s*>/gi, " ")
     .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(new RegExp(`<\\/?([a-zA-Z][a-zA-Z0-9]*)${TAG}>`, "g"), (m, name) => (BLOCK.test(name) ? " " : ""));
+    .replace(new RegExp(`<\\/?([a-zA-Z][a-zA-Z0-9]*)${TAG}>`, "g"), (/** @type {string} */ m, /** @type {string} */ name) => (BLOCK.test(name) ? " " : ""));
   return decode(s).replace(/\s+/g, " ").trim();
 }
 
-/** A value as written, or null when the page gives no text for it. */
+/** A value as written, or null when the page gives no text for it.
+ *  @param {string | null | undefined} html
+ *  @returns {string | null} */
 export const written = (html) => {
   const t = textOf(html);
   return t ? t : null;
@@ -61,71 +307,100 @@ export const written = (html) => {
 
 /** The element that opens at `start` in `html` (a `<div …>` or any other tag), up to its balancing close
  *  tag, as `{start, end, inner, innerStart}`; null when it is not balanced. Only tags of the same name are
- *  counted, which is all a well-formed page needs. */
+ *  counted, which is all a well-formed page needs.
+ *  @param {string} html
+ *  @param {number} start
+ *  @returns {PageElement | null} */
 export function element(html, start) {
   const open = new RegExp(`<([a-zA-Z][a-zA-Z0-9]*)${TAG}>`, "y");
   open.lastIndex = start;
   const m = open.exec(html);
   if (!m) return null;
-  const name = m[1].toLowerCase();
+  const name = (m[1] ?? "").toLowerCase();
   const innerStart = start + m[0].length;
   const any = new RegExp(`<(\\/?)${name}(?![a-zA-Z0-9])${TAG}>`, "gi");
   any.lastIndex = innerStart;
   let depth = 1;
-  for (let t; (t = any.exec(html));) {
+  for (;;) {
+    const t = any.exec(html);
+    if (!t) return null;
     if (t[0].endsWith("/>")) continue;
     depth += t[1] ? -1 : 1;
     if (depth === 0) return { start, end: t.index + t[0].length, innerStart, inner: html.slice(innerStart, t.index) };
   }
-  return null;
 }
 
-/** Every element opening where `re` (global, matching at a tag's `<`) matches, balanced, in page order. */
+/** Every element opening where `re` (global, matching at a tag's `<`) matches, balanced, in page order.
+ *  @param {string} html
+ *  @param {RegExp} re
+ *  @returns {FoundElement[]} */
 export function elements(html, re) {
+  /** @type {FoundElement[]} */
   const out = [];
   re.lastIndex = 0;
-  for (let m; (m = re.exec(html));) {
+  for (;;) {
+    const m = re.exec(html);
+    if (!m) return out;
     const e = element(html, m.index);
     if (e) { out.push({ ...e, match: m }); re.lastIndex = e.end; }
   }
-  return out;
 }
 
 /** The links in a fragment, each `{label, href}` with its label as written, in order, one per address.
- *  A link with no text (an icon) is kept only when no labelled link to that address is held. */
+ *  A link with no text (an icon) is kept only when no labelled link to that address is held.
+ *  @param {string} html
+ *  @param {number} [base]
+ *  @returns {PageLink[]} */
 export function linksIn(html, base = 0) {
+  /** @type {PageLink[]} */
   const out = [];
-  const seen = new Map();
+  const seen = new Map(/** @type {Array<[string, number]>} */ ([]));
   const re = new RegExp(`<a\\b(${TAG})>([\\s\\S]*?)<\\/a\\s*>`, "gi");
   for (const m of String(html).matchAll(re)) {
-    const href = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(m[1]);
+    const href = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(m[1] ?? "");
     if (!href) continue;
     const url = decode(href[1] ?? href[2]).trim();
     if (!url || url.startsWith("#") || /^javascript:/i.test(url)) continue;
     const label = written(m[2]);
-    if (seen.has(url)) {
-      const held = out[seen.get(url)];
-      if (!held.label && label) held.label = label;
+    const at = seen.get(url);
+    if (at !== undefined) {
+      const held = out[at];
+      if (held && !held.label && label) held.label = label;
       continue;
     }
     seen.set(url, out.length);
-    out.push({ label, href: url, at: base + m.index });
+    out.push({ label, href: url, at: base + (m.index ?? 0) });
   }
   return out;
 }
 
 /** Whether a link's label says following it costs money: a purchase, or a price above zero ("Buy on
- *  PACER ($1.50)", "Purchase ($1.00 per page)"); a link priced at nothing ("$0.00") is not fee-bearing. */
+ *  PACER ($1.50)", "Purchase ($1.00 per page)"); a link priced at nothing ("$0.00") is not fee-bearing.
+ *  @param {string | null | undefined} label
+ *  @returns {boolean} */
 export function feeBearing(label) {
   const t = String(label || "");
   if (/\b(?:buy|purchase)\b/i.test(t)) return true;
-  return [...t.matchAll(/\$\s?([0-9][0-9,]*(?:\.[0-9]+)?)/g)].some((m) => Number(m[1].replace(/,/g, "")) > 0);
+  return [...t.matchAll(/\$\s?([0-9][0-9,]*(?:\.[0-9]+)?)/g)].some((m) => Number((m[1] ?? "").replace(/,/g, "")) > 0);
+}
+
+/** The page's labelled fields, label → value as written, in the order read.
+ *  @param {Map<string, { value: string | null }>} fields
+ *  @returns {FieldsAsWritten} */
+export function fieldsAsWritten(fields) {
+  /** @type {FieldsAsWritten} */
+  const out = {};
+  for (const [k, v] of fields) out[k] = v.value;
+  return out;
 }
 
 /* ------------------------------------------------------------------ where a reading was read (IC-86) */
 
 /** The position a reader may give a part it read at `offset` of `ctx.text`: only what `ctx.locate` says,
- *  never composed (docprofile R34); null when the locator cannot say or none was handed. */
+ *  never composed (docprofile R34); null when the locator cannot say or none was handed.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {number} offset
+ *  @returns {ReadingPosition | null} */
 export function sourceAt(ctx, offset) {
   if (!ctx || typeof ctx.locate !== "function" || !Number.isInteger(offset)) return null;
   try { return ctx.locate(offset) || null; } catch { return null; }
@@ -134,21 +409,38 @@ export function sourceAt(ctx, offset) {
 /* ------------------------------------------------------------------ the address, from the view (R1, R15) */
 
 /** Whether the capture's locator is an address of the publishing system the view names under `key`
- *  (a `systems` entry whose `origin` is the key, matched on host and path by `id-spaces.systemOf`). */
+ *  (a `systems` entry whose `origin` is the key, matched on host and path by `id-spaces.systemOf`).
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {string} key
+ *  @param {string} label
+ *  @returns {AddressAnswer} */
 export function addressOf(ctx, key, label) {
-  const locator = ctx && ctx.locator != null ? String(ctx.locator) : "";
+  const given = ctx ? ctx.locator : null;
+  const locator = given != null ? String(given) : "";
   if (!locator) return { ok: false, why: localize("court-doctypes.common.the_capture_names_no_address", "the capture names no address, so whether it is {label} is not established by its address", { label: String(label) }) };
-  let r;
-  try { r = systemOf(readerView(ctx), [locator]); } catch { r = { origin: null, why: localize("court-doctypes.common.its_address_could_not_be_read", "its address could not be read") }; }
-  if (r && r.origin === key) return { ok: true, name: r.name || key };
-  if (r && r.origin) return { ok: false, why: localize("court-doctypes.common.its_address_is_one_of", "its address is one of {v1}, not an address the active profiles name for {label}", { v1: String(r.name || r.origin), label: String(label) }) };
-  return { ok: false, why: localize("court-doctypes.common.no_active_profile_names_its", "no active profile names its address as {label}'s ({v1})", { label: String(label), v1: String((r && r.why) || "no system matches") }) };
+  const r = systemAt(ctx, locator);
+  if (r.origin === key) return { ok: true, name: r.name || key };
+  if (r.origin) return { ok: false, why: localize("court-doctypes.common.its_address_is_one_of", "its address is one of {v1}, not an address the active profiles name for {label}", { v1: String(r.name || r.origin), label: String(label) }) };
+  const why = r.origin === null ? r.why : null;
+  return { ok: false, why: localize("court-doctypes.common.no_active_profile_names_its", "no active profile names its address as {label}'s ({v1})", { label: String(label), v1: String(why || "no system matches") }) };
+}
+
+/** `id-spaces.systemOf` over the view for one address, or why its address could not be read.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {string} locator
+ *  @returns {{ origin: string, name: string } | { origin: null, why: string }} */
+function systemAt(ctx, locator) {
+  try { return systemOf(readerView(ctx), [locator]); }
+  catch { return { origin: null, why: localize("court-doctypes.common.its_address_could_not_be_read", "its address could not be read") }; }
 }
 
 /* ------------------------------------------------------------------ what a page is when it is not a register */
 
 /** Why a page of the right address is not the register: a sign-in page, a search form, an error page, or
- *  simply a page without the register's structure. Read from the page's own words and forms. */
+ *  simply a page without the register's structure. Read from the page's own words and forms.
+ *  @param {string | null | undefined} html
+ *  @param {string} what
+ *  @returns {string} */
 export function notRegisterWhy(html, what) {
   const t = String(html || "");
   const title = written((/<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(t) || [])[1] || "") || "";
@@ -166,13 +458,23 @@ export function notRegisterWhy(html, what) {
 /* ------------------------------------------------------------------ the proceeding number (R3) */
 
 /** The proceeding's number as `id-spaces.recognise(view, "proceeding", written)` gives it, or null with
- *  why when no form of the view's `proceeding` space matches (R3, R17). */
+ *  why when no form of the view's `proceeding` space matches (R3, R17).
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {string | null} asWritten
+ *  @returns {{ number: Recognised, why: null } | { number: null, why: string }} */
 export function proceedingNumber(ctx, asWritten) {
   if (!asWritten) return { number: null, why: localize("court-doctypes.common.the_page_states_no_proceeding", "the page states no proceeding number") };
-  let r = null;
-  try { r = recognise(readerView(ctx), "proceeding", asWritten); } catch { r = null; }
+  const r = recognisedAt(ctx, asWritten);
   if (r) return { number: r, why: null };
   return { number: null, why: localize("court-doctypes.common.aswritten_has_the_shape_of", "\"{asWritten}\" has the shape of no form of the active profiles' proceeding space, so it is held as written and not recognised", { asWritten: String(asWritten) }) };
+}
+
+/** `id-spaces.recognise` in the view's `proceeding` space, or null where it does not or cannot recognise it.
+ *  @param {DoctypeContext | null | undefined} ctx
+ *  @param {string} asWritten
+ *  @returns {Recognised | null} */
+function recognisedAt(ctx, asWritten) {
+  try { return recognise(readerView(ctx), "proceeding", asWritten); } catch { return null; }
 }
 
 /* ------------------------------------------------------------------ sealing, as the row states it (R9) */
@@ -186,6 +488,9 @@ const SEALED_WORD = /(?<![a-z])sealed\b/i;
 const UNDER_SEAL = /\bunder\s+seal\b/i;
 const A_REQUEST = /^\s*(?:(?:joint|unopposed|consent|emergency|sealed)\s+)*(?:motion|request|application|petition)\b/i;
 
+/** What a row's text states about a document being sealed or unsealed (R9), or null.
+ *  @param {string | null | undefined} text
+ *  @returns {Sealing} */
 export function sealingOf(text) {
   const t = String(text || "");
   if (UNSEALED.test(t)) return "unsealed";
@@ -196,15 +501,19 @@ export function sealingOf(text) {
 
 /* ------------------------------------------------------------------ rows and their keys (R5, R6) */
 
-/** A register row, every field as written. */
+/** A register row, every field as written.
+ *  @param {RowArgs} args
+ *  @returns {RegisterRow} */
 export function row({ key, entry_id = null, date = null, text = null, filer = null, kind_as_written = null, links = [], documents = [], source = null }) {
   return { key, entry_id, date, text, filer, kind_as_written, links, documents, sealing: sealingOf([text, ...documents.map((d) => d.description)].filter(Boolean).join(" ")), source };
 }
 
 /** Rows whose keys collide on one reading (two entries the register writes identically) are told apart
- *  by their order among their twins, so each is still one row; the first keeps its key unmarked. */
+ *  by their order among their twins, so each is still one row; the first keeps its key unmarked.
+ *  @param {RegisterRow[]} rows
+ *  @returns {RegisterRow[]} */
 export function distinctKeys(rows) {
-  const seen = new Map();
+  const seen = new Map(/** @type {Array<[string, number]>} */ ([]));
   for (const r of rows) {
     const n = (seen.get(r.key) || 0) + 1;
     seen.set(r.key, n);
@@ -213,19 +522,26 @@ export function distinctKeys(rows) {
   return rows;
 }
 
-/** The entity a row is for docprofile's diff and for a caller reading `entities` (docprofile `entity`). */
+/** The entity a row is for docprofile's diff and for a caller reading `entities` (docprofile `entity`).
+ *  @param {RegisterRow} r
+ *  @returns {Entity} */
 function rowEntity(r) {
-  return entity(r.key, "register_row", [r.date, r.text].filter(Boolean).join(" · ").slice(0, 160), {
+  /** @type {EntityFacts} builds an EntityFacts */
+  const facts = {
     date: r.date, text: r.text, filer: r.filer, kind: r.kind_as_written,
     links: JSON.stringify((r.links || []).map(({ label, href, fee, document, description }) =>
       ({ document: document ?? null, description: description ?? null, label, href, fee: fee === true }))),
     documents: JSON.stringify((r.documents || []).map(({ document, description }) => ({ document: document ?? null, description: description ?? null }))),
     sealing: r.sealing,
-  }, r.source);
+  };
+  return entity(r.key, "register_row", [r.date, r.text].filter(Boolean).join(" · ").slice(0, 160), facts, r.source);
 }
 
 /** The pagination as the register states it (R8), `{n, of, may_continue}` (nulls when it states none),
- *  and whether the reading is complete: true only when it is the register's one and only page. */
+ *  and whether the reading is complete: true only when it is the register's one and only page.
+ *  @param {number | null} n
+ *  @param {number | null} of
+ *  @returns {Pagination} */
 export function pageOf(n, of) {
   if (n == null || of == null) return { page: { n: null, of: null, may_continue: false }, complete: false,
     complete_why: localize("court-doctypes.common.the_page_states_no_pagination", "the page states no pagination, so whether it holds every row of the register is not established") };
@@ -235,9 +551,12 @@ export function pageOf(n, of) {
 }
 
 /** A reading, assembled: `{proceeding, parties, rows, key_basis, complete, page, provisional}`, with the
- *  rows' entities, and `failed` with why when the page held no register rows (R12, R17). */
+ *  rows' entities, and `failed` with why when the page held no register rows (R12, R17).
+ *  @param {ReadingArgs} args
+ *  @returns {RegisterReading} */
 export function reading({ type, proceeding, parties, rows, key_basis, pagination, provisional, register = true, at = null, failed = null, notes = null }) {
   distinctKeys(rows);
+  /** @type {RegisterReading} */
   const out = {
     type, proceeding, parties, rows, key_basis,
     complete: pagination.complete, complete_why: pagination.complete_why, page: pagination.page,
@@ -251,21 +570,48 @@ export function reading({ type, proceeding, parties, rows, key_basis, pagination
 
 /* ------------------------------------------------------------------ assess: the register row diff (R10–R12) */
 
+/** @type {ReadonlyArray<readonly [string, string]>} */
 const ROW_FIELDS = [["date", "date"], ["text", "text"], ["filer", "filer"], ["kind", "kind_as_written"], ["links", "links"], ["documents", "documents"], ["sealing", "sealing"]];
 const JSON_FACTS = new Set(["links", "documents"]);
+/** @type {ReadonlyArray<"number_as_written" | "forum_as_written" | "kind_as_written" | "filed">} */
 const PROCEEDING_FIELDS = ["number_as_written", "forum_as_written", "kind_as_written", "filed"];
 
+/** An event of the catalogue with its detail (site-profiles' `event`), typed as this module's.
+ *  @param {string} type
+ *  @param {RegisterEventDetail} detail
+ *  @returns {RegisterEvent} */
+function graded(type, detail) {
+  return { ...event(type, detail), ...detail };
+}
+
+/** A moved fact's value as the row held it: a JSON fact (links, documents) read back from the text the entity holds.
+ *  @param {MovedFact} m
+ *  @param {"was" | "now"} side
+ *  @returns {FactValue} */
+function factValue(m, side) {
+  const v = m[side];
+  if (!JSON_FACTS.has(m.fact)) return v;
+  return /** @type {Array<RowLink | RowDocument>} the entity's own JSON fact, written by rowEntity */ (JSON.parse(String(v)));
+}
+
+/** @param {string} why @returns {RegisterAssessment} */
 const failedRead = (why) => ({ meaningful: null, significance: null, events: [], confirmed: null,
   why: localize("court-doctypes.common.why_so_nothing_is_claimed", "{why}, so nothing is claimed about the register either way (a failed read is never a register emptied)", { why: String(why) }) });
 
-/* Under a composite key, the row gone and the row added that are most likely one row with a key field
-   edited: they share the most key fields, at least all but one of them, or the same document link. */
+/** Under a composite key, the row gone and the row added that are most likely one row with a key field
+   edited: they share the most key fields, at least all but one of them, or the same document link.
+ *  @param {ReadonlyArray<RegisterRow>} gone
+ *  @param {ReadonlyArray<RegisterRow>} appeared
+ *  @returns {Map<string, string>} */
 function counterparts(gone, appeared) {
-  const pairs = new Map();
-  const parts = (r) => [r.date, r.kind_as_written, r.filer, r.text, ...(r.links || []).map((l) => l.href)];
+  const pairs = new Map(/** @type {Array<[string, string]>} */ ([]));
+  const parts = (/** @type {RegisterRow} */ r) => [r.date, r.kind_as_written, r.filer, r.text, ...(r.links || []).map((l) => l.href)];
+  /** @type {Set<string>} */
   const used = new Set();
   for (const g of gone) {
-    let best = null, bestScore = 0;
+    /** @type {RegisterRow | null} */
+    let best = null;
+    let bestScore = 0;
     const gp = parts(g);
     for (const a of appeared) {
       if (used.has(a.key)) continue;
@@ -276,60 +622,78 @@ function counterparts(gone, appeared) {
       if (sameLink) score += 4;
       if (score > bestScore && (score >= 3 || sameLink)) { best = a; bestScore = score; }
     }
-    if (best) { pairs.set(g.key, best.key); pairs.set(best.key, g.key); used.add(best.key); }
+    const found = best;
+    if (found) { pairs.set(g.key, found.key); pairs.set(found.key, g.key); used.add(found.key); }
   }
   return pairs;
 }
 
-const partyKey = (p) => `${p.role_as_written ?? ""}\u0000${p.name ?? ""}`;
-const show = (v) => (v == null ? "nothing" : `"${String(v).slice(0, 120)}"`);
+const partyKey = (/** @type {Party} */ p) => `${p.role_as_written ?? ""}\u0000${p.name ?? ""}`;
+const show = (/** @type {string | null | undefined} */ v) => (v == null ? "nothing" : `"${String(v).slice(0, 120)}"`);
 
 /** Compare two readings of one register (R10–R12). The result is docprofile's L5 shape:
- *  `{meaningful, significance, events, confirmed, why}`, `meaningful` derived from the catalogue's events. */
+ *  `{meaningful, significance, events, confirmed, why}`, `meaningful` derived from the catalogue's events.
+ *  @param {ReadingHeld | null | undefined} before
+ *  @param {ReadingHeld | null | undefined} after
+ *  @returns {RegisterAssessment} */
 export function assessRegister(before, after) {
-  const a = before || {}, b = after || {};
-  if (a.failed || b.failed)
-    return failedRead(localize("court-doctypes.common.a_reading_failed_v1", "a reading failed ({v1})", { v1: String(a.failed ? "before: " + a.failed : "after: " + b.failed) }));
-  if (a.type && b.type && a.type !== b.type)
+  /** @type {ReadingHeld} */
+  const a = before || {};
+  /** @type {ReadingHeld} */
+  const b = after || {};
+  const failedA = a.failed, failedB = b.failed;
+  if (failedA || failedB)
+    return failedRead(localize("court-doctypes.common.a_reading_failed_v1", "a reading failed ({v1})", { v1: String(failedA ? "before: " + failedA : "after: " + failedB) }));
+  const typeA = a.type, typeB = b.type;
+  if (typeA && typeB && typeA !== typeB)
     return failedRead(localize("court-doctypes.common.the_two_readings_are_of_kinds", "the two readings are of different kinds of register"));
-  const na = a.proceeding && a.proceeding.number_as_written, nb = b.proceeding && b.proceeding.number_as_written;
+  const pa = a.proceeding, pb = b.proceeding;
+  const na = pa && pa.number_as_written, nb = pb && pb.number_as_written;
   if (na && nb && na !== nb)
     return failedRead(localize("court-doctypes.common.the_two_readings_are_of", "the two readings are of different proceedings ({na} and {nb})", { na: String(na), nb: String(nb) }));
-  const rowsA = Array.isArray(a.rows) ? a.rows : [], rowsB = Array.isArray(b.rows) ? b.rows : [];
+  const heldA = a.rows, heldB = b.rows;
+  const rowsA = Array.isArray(heldA) ? heldA : [], rowsB = Array.isArray(heldB) ? heldB : [];
   const registers = a.register !== false || b.register !== false;
   if (registers && (!rowsA.length || !rowsB.length))
     return failedRead(!rowsA.length && !rowsB.length ? localize("court-doctypes.common.no_register_row_was_read_either", "no register row was read in either reading") : localize("court-doctypes.common.no_register_row_was_read", "no register row was read in the {v1} reading", { v1: String(!rowsA.length ? "earlier" : "later") }));
 
+  /** @type {RegisterEvent[]} */
   const events = [];
   /* The proceeding: its status, its caption and its parties, as written. */
-  const pa = a.proceeding || {}, pb = b.proceeding || {};
-  if ((pa.status_as_written ?? null) !== (pb.status_as_written ?? null))
-    events.push(event("status_changed", { field: "status_as_written", was: pa.status_as_written ?? null, now: pb.status_as_written ?? null,
-      why: localize("court-doctypes.common.the_proceedings_status_as_written", "the proceeding's status as written changed from {show} to {show_2}", { show: String(show(pa.status_as_written)), show_2: String(show(pb.status_as_written)) }) }));
-  if ((pa.caption ?? null) !== (pb.caption ?? null))
-    events.push(event("item_changed", { field: "caption", was: pa.caption ?? null, now: pb.caption ?? null,
+  if ((pa?.status_as_written ?? null) !== (pb?.status_as_written ?? null))
+    events.push(graded("status_changed", { field: "status_as_written", was: pa?.status_as_written ?? null, now: pb?.status_as_written ?? null,
+      why: localize("court-doctypes.common.the_proceedings_status_as_written", "the proceeding's status as written changed from {show} to {show_2}", { show: String(show(pa?.status_as_written)), show_2: String(show(pb?.status_as_written)) }) }));
+  if ((pa?.caption ?? null) !== (pb?.caption ?? null))
+    events.push(graded("item_changed", { field: "caption", was: pa?.caption ?? null, now: pb?.caption ?? null,
       why: localize("court-doctypes.common.the_proceedings_caption_as_written", "the proceeding's caption as written changed") }));
   for (const f of PROCEEDING_FIELDS)
-    if ((pa[f] ?? null) !== (pb[f] ?? null))
-      events.push(event("item_changed", { field: f, was: pa[f] ?? null, now: pb[f] ?? null,
-        why: localize("court-doctypes.common.the_proceedings_replace_as_written", "the proceeding's {replace} as written changed from {show} to {show_2}", { replace: String(f.replace(/_as_written$/, "").replace(/_/g, " ")), show: String(show(pa[f])), show_2: String(show(pb[f])) }) }));
-  const parties = (r) => new Map((Array.isArray(r.parties) ? r.parties : []).map((p) => [partyKey(p), p]));
+    if ((pa?.[f] ?? null) !== (pb?.[f] ?? null))
+      events.push(graded("item_changed", { field: f, was: pa?.[f] ?? null, now: pb?.[f] ?? null,
+        why: localize("court-doctypes.common.the_proceedings_replace_as_written", "the proceeding's {replace} as written changed from {show} to {show_2}", { replace: String(f.replace(/_as_written$/, "").replace(/_/g, " ")), show: String(show(pa?.[f])), show_2: String(show(pb?.[f])) }) }));
+  const parties = (/** @type {ReadingHeld} */ r) => {
+    const held = r.parties;
+    return new Map((Array.isArray(held) ? held : []).map((p) => [partyKey(p), p]));
+  };
   const ptA = parties(a), ptB = parties(b);
-  for (const [k, p] of ptA) if (!ptB.has(k))
-    events.push(event("item_changed", { field: "parties", party: p.name, role_as_written: p.role_as_written, was: p.name, now: null,
-      why: localize("court-doctypes.common.v1_show_is_no_longer", "{v1}{show} is no longer named on the page", { v1: String(p.role_as_written ? p.role_as_written + " " : ""), show: String(show(p.name)) }) }));
-  for (const [k, p] of ptB) if (!ptA.has(k))
-    events.push(event("item_changed", { field: "parties", party: p.name, role_as_written: p.role_as_written, was: null, now: p.name,
-      why: localize("court-doctypes.common.v1_show_is_newly_named", "{v1}{show} is newly named on the page", { v1: String(p.role_as_written ? p.role_as_written + " " : ""), show: String(show(p.name)) }) }));
+  for (const [k, p] of ptA) if (!ptB.has(k)) {
+    const role = p.role_as_written;
+    events.push(graded("item_changed", { field: "parties", party: p.name, role_as_written: role, was: p.name, now: null,
+      why: localize("court-doctypes.common.v1_show_is_no_longer", "{v1}{show} is no longer named on the page", { v1: String(role ? role + " " : ""), show: String(show(p.name)) }) }));
+  }
+  for (const [k, p] of ptB) if (!ptA.has(k)) {
+    const role = p.role_as_written;
+    events.push(graded("item_changed", { field: "parties", party: p.name, role_as_written: role, was: null, now: p.name,
+      why: localize("court-doctypes.common.v1_show_is_newly_named", "{v1}{show} is newly named on the page", { v1: String(role ? role + " " : ""), show: String(show(p.name)) }) }));
+  }
 
   /* The rows, by their key (R6): page order, white space and markup were already read away. */
   const d = diffEntities(a.entities || [], b.entities || []);
   const byKeyA = new Map(rowsA.map((r) => [r.key, r])), byKeyB = new Map(rowsB.map((r) => [r.key, r]));
   const composite = /composite/.test(String(b.key_basis || a.key_basis || ""));
-  const pairs = composite ? counterparts(d.gone.map((e) => byKeyA.get(e.key)), d.appeared.map((e) => byKeyB.get(e.key))) : new Map();
+  const pairs = composite ? counterparts(d.gone.map((e) => rowOf(byKeyA, e.key)), d.appeared.map((e) => rowOf(byKeyB, e.key))) : new Map(/** @type {Array<[string, string]>} */ ([]));
   const bothComplete = a.complete === true && b.complete === true;
   /* R10 and R11: each why is one whole sentence, the counterpart named inside it, never a clause added to another. */
-  const goneWhy = (key) => {
+  const goneWhy = (/** @type {string} */ key) => {
     const counterpart = pairs.get(key);
     if (bothComplete)
       return counterpart === undefined
@@ -341,32 +705,37 @@ export function assessRegister(before, after) {
       : localize("court-doctypes.common.a_row_is_not_in_counterpart", "a row is not in the later reading, and {v1} reading holds the whole register, so whether it was removed or is on a page not read is not established; the row added under key {key} is likely this row with a key field edited, and the two are reported together, never paired silently", { v1, key: String(counterpart) });
   };
   for (const e of d.gone) {
-    const r = byKeyA.get(e.key);
+    const r = rowOf(byKeyA, e.key);
+    /** @type {RegisterEventDetail} */
     const detail = { key: e.key, entry_id: r.entry_id, date: r.date, text: r.text, why: goneWhy(e.key) };
-    if (pairs.has(e.key)) detail.counterpart = pairs.get(e.key);
-    events.push(event(bothComplete ? "delisted" : "possibly_delisted", detail));
+    const counterpart = pairs.get(e.key);
+    if (counterpart !== undefined) detail.counterpart = counterpart;
+    events.push(graded(bothComplete ? "delisted" : "possibly_delisted", detail));
   }
   for (const e of d.appeared) {
-    const r = byKeyB.get(e.key);
+    const r = rowOf(byKeyB, e.key);
     const counterpart = pairs.get(e.key);
+    /** @type {RegisterEventDetail} */
     const detail = { key: e.key, entry_id: r.entry_id, date: r.date, text: r.text,
       why: counterpart === undefined
         ? localize("court-doctypes.common.row_added", "a row was added to the register")
         : localize("court-doctypes.common.row_added_counterpart", "a row was added to the register; it is likely the row no longer listed under key {key} with a key field edited", { key: String(counterpart) }) };
-    if (pairs.has(e.key)) detail.counterpart = counterpart;
-    events.push(event("item_added", detail));
+    if (counterpart !== undefined) detail.counterpart = counterpart;
+    events.push(graded("item_added", detail));
   }
   for (const alt of d.altered) {
     for (const m of alt.moved) {
-      const field = (ROW_FIELDS.find(([f]) => f === m.fact) || [m.fact, m.fact])[1];
+      const hit = ROW_FIELDS.find(([f]) => f === m.fact);
+      const field = hit ? hit[1] : m.fact;
       const r = byKeyB.get(alt.entity.key);
-      events.push(event("outcome_changed", { key: alt.entity.key, entry_id: r ? r.entry_id : null, field,
-        was: JSON_FACTS.has(m.fact) ? JSON.parse(m.was) : m.was, now: JSON_FACTS.has(m.fact) ? JSON.parse(m.now) : m.now,
+      events.push(graded("outcome_changed", { key: alt.entity.key, entry_id: r ? r.entry_id : null, field,
+        was: factValue(m, "was"), now: factValue(m, "now"),
         why: localize("court-doctypes.common.the_row_key_changed_its", "the row {key} changed its {replace}", { key: String(alt.entity.key), replace: String(field.replace(/_as_written$/, "").replace(/_/g, " ")) }) }));
     }
   }
   bySeverity(events);
   const intact = rowsB.length - d.appeared.length - d.altered.length;
+  /** @type {string[]} */
   const parts = [];
   if (d.appeared.length) parts.push(`${d.appeared.length} row(s) added`);
   if (d.gone.length) parts.push(localize("court-doctypes.common.length_row_s_no_longer", "{length} row(s) no longer listed", { length: String(d.gone.length) }));
@@ -381,8 +750,38 @@ export function assessRegister(before, after) {
   };
 }
 
+/** `assessRegister` over two readings as docprofile hands them back to a type's `assess`: each is that type's own
+ *  `parse` answer, which docprofile's `ContentType` states only as an object.
+ *  @param {object | null | undefined} before
+ *  @param {object | null | undefined} after
+ *  @returns {RegisterAssessment} */
+export function assessHeld(before, after) {
+  return assessRegister(heldReading(before), heldReading(after));
+}
+
+/** A reading docprofile hands back, as this module's own: docprofile states a type's reading only as an object.
+ *  @param {object | null | undefined} v
+ *  @returns {ReadingHeld | null | undefined} */
+function heldReading(v) {
+  return /** @type {ReadingHeld | null | undefined} a reading this module's parse made */ (v);
+}
+
+/** The row a reading holds under a key its entities name; a reading whose entities name a row it does not hold is not
+ *  one `reading` assembled, and is refused as the property read on a missing row always was.
+ *  @param {Map<string, RegisterRow>} rows
+ *  @param {string} key
+ *  @returns {RegisterRow}
+ *  @throws {TypeError} when the reading holds no row under the key */
+function rowOf(rows, key) {
+  const r = rows.get(key);
+  if (!r) throw new TypeError(`court-doctypes: the reading's entities name a row ${key} its rows do not hold`);
+  return r;
+}
+
 /** The detect answer for a page: CERTAIN with the address and the structure, LIKELY on the structure
- *  alone (with why), never a match without the structure (R1, R17). */
+ *  alone (with why), never a match without the structure (R1, R17).
+ *  @param {{ ctx: DoctypeContext | null | undefined, key: string, label: string, structure: boolean, structureSignals: string[], what: string }} args
+ *  @returns {RegisterDetection} */
 export function detectAnswer({ ctx, key, label, structure, structureSignals, what }) {
   if (!structure) return { match: false, confidence: CONFIDENCE.NONE, signals: [], why: notRegisterWhy(ctx && ctx.text, what) };
   const addr = addressOf(ctx, key, label);
