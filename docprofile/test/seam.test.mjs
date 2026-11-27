@@ -12,6 +12,9 @@ import { createHash } from "node:crypto";
 import * as dp from "../registry.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
+
 /** @import { ContentType, Detection, DoctypeContext, ReadTextAnswer, ReadingDone, ReaderView, SuppliedText, SuppliedCell } from "../registry.mjs" */
 /** @import { ViewMinutesDue } from "../../jurisdictions/index.mjs" */
 
@@ -77,7 +80,7 @@ test("R36 R4 R5 the seam: registerDoctype appends a new key, replaces a held key
   /** @type {unknown[]} */
   const malformed = [null, 3, {}, { key: "" }, { key: 7, detect() {} }, { key: "x" }, { key: "x", detect: 1 }];
   for (const bad of malformed) {
-    const r = registerDoctype(bad);
+    const r = registerDoctype(asGiven(bad));
     assert.equal(r.ok, false);
     assert.match(r.why, /./);
   }
@@ -171,10 +174,10 @@ test("R37 readText hands the reader the supplied structure as ctx.supplied, unch
   assert.equal(seenCtx().text, "STRUCT-STUB page one");
   assert.equal(typeof seenCtx().locate, "function");
   // a caller's own ctx.supplied never stands in for the text's structure
-  readText(supplied, { supplied: { forged: true } });
+  readText(supplied, { supplied: asGiven({ forged: true }) });
   assert.equal(seenCtx().supplied, supplied);
   // a bare string carries no structure
-  readText("STRUCT-STUB plain", { supplied: { forged: true } });
+  readText("STRUCT-STUB plain", { supplied: asGiven({ forged: true }) });
   assert.equal(seenCtx().supplied, null);
   // a sheet's paragraphs-only shape too
   /** @type {SuppliedText} */
@@ -185,14 +188,14 @@ test("R37 readText hands the reader the supplied structure as ctx.supplied, unch
 
 test("R36 R30 the shared helper practiceValue carries the unit a profile counts in, so no reader counts business days as calendar days", () => {
   const view = /** @param {ViewMinutesDue} fact @returns {ReaderView} */ (fact) => ({ practice: { minutes_due_days: fact } });
-  assert.deepEqual(dp.practiceValue({ view: view({ value: 10, count: "business", basis: "OMC 2.20.160" }) }, "minutes_due_days"),
+  assert.deepEqual(dp.practiceValue({ view: view(asGiven({ value: 10, count: "business", basis: "OMC 2.20.160" })) }, "minutes_due_days"),
                    { value: 10, basis: "OMC 2.20.160", count: "business" });
-  assert.deepEqual(dp.practiceValue({ view: view({ value: 21, basis: "m" }) }, "minutes_due_days"),
+  assert.deepEqual(dp.practiceValue({ view: view(asGiven({ value: 21, basis: "m" })) }, "minutes_due_days"),
                    { value: 21, basis: "m", count: null }, "no stated unit is stated as none, never assumed");
   /* Facts outside the stated kind on purpose: none is a count of days. */
   /** @type {unknown[]} */
   const notDays = [{ value: 0 }, { value: 2.5 }, { value: "10" }, null];
   for (const bad of notDays)
-    assert.equal(dp.practiceValue({ view: view(bad) }, "minutes_due_days"), null);
+    assert.equal(dp.practiceValue({ view: view(asGiven(bad)) }, "minutes_due_days"), null);
   assert.equal(dp.practiceValue({ view: {} }, "minutes_due_days"), null);
 });

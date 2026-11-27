@@ -9,6 +9,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as dp from "../registry.mjs";
 import { registerCorpusTypes } from "./g48-readings.mjs";
+
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
 /** @import { DoctypeContext, ContentType, DoctypeAnswer, YieldOptions } from "../registry.mjs" */
 
 const { doctypeFor, doctypeForYielding, doctypes, registerDoctype, CONFIDENCE, CONTRACT } = dp;
@@ -223,7 +226,7 @@ test("R39 a yieldNow that is missing, not a function, throws or rejects gives th
   const want = doctypeFor({ text });
   const detectsAlone = detects(log);
   /** @type {[string, YieldOptions | undefined][]} */
-  const given = [["undefined", undefined], ["empty", {}], ["a string", { yieldNow: "now" }], ["null", { yieldNow: null }],
+  const given = [["undefined", undefined], ["empty", {}], ["a string", { yieldNow: asGiven("now") }], ["null", { yieldNow: null }],
       ["throws", { yieldNow() { throw new Error("no"); } }],
       ["rejects", { yieldNow: () => Promise.reject(new Error("no")) }],
       ["async throws", { yieldNow: async () => { throw new Error("no"); } }]];
@@ -247,7 +250,7 @@ test("R39 a text at or under 256 KiB never suspends even with a yieldNow, and th
   let yields = 0;
   const yieldNow = async () => { yields++; };
   /** @type {DoctypeContext[]} */
-  const ctxs = [{ text: pad("MARKER-A", AT) }, { text: "short" }, {}, { text: 12345 }, { text: null }];
+  const ctxs = [{ text: pad("MARKER-A", AT) }, { text: "short" }, {}, { text: asGiven(12345) }, { text: asGiven(null) }];
   for (const ctx of ctxs) {
     yields = 0;
     const want = doctypeFor(ctx);

@@ -16,6 +16,9 @@ import * as dp from "../registry.mjs";
 import { PORT_ALDER, view } from "./fixtures.mjs";
 import { registerStubs, stubItems, stubFallback } from "./stubs.mjs";
 
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
+
 /** @import { Entity, ReadTextAnswer, ReadingDone } from "../registry.mjs" */
 /** @import { Segment } from "../classify-view.mjs" */
 /** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
@@ -133,7 +136,7 @@ test("R19 R23 a producer's paragraphs alone are a source of text, read by the sa
 
 test("R18 text nobody decoded is a failed reading naming the producer's reason, and a fragment is refused stating the imbalance", () => {
   const enc = readText({ document: "", pages: [], counts: { chars: 0, undetermined: 1 },
-                         undetermined: [{ page: null, reason: "encrypted", font: null, codes: null, count: 1 }] }, { view: PA });
+                         undetermined: [asGiven({ page: null, reason: "encrypted", font: null, codes: null, count: 1 })] }, { view: PA });
   assert.equal(enc.determined, false);
   assert.match(enc.why, /encrypted/);
   const scrap = readText({ document: "scrap", undetermined: [{ page: 0, reason: "no_tounicode", count: 4000 }],

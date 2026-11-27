@@ -18,6 +18,9 @@ import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { PORT_ALDER, LAKEMONT, view, EMPTY, HELD, PA_ITEMS, PA_ITEMS_PAGES, calendarHtml, shellHtml } from "./fixtures.mjs";
 import { registerStubs, stubMeetings, stubItems, stubFallback } from "./stubs.mjs";
 
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
+
 /** @import { DoctypeContext, ContentType, TypeAssessment, Connection, AssessContext, Assessment, ReadTextAnswer, ReadingDone, SuppliedText, Detection } from "../registry.mjs" */
 /** @import { StubReading } from "./stubs.mjs" */
 /** @import { View } from "../../jurisdictions/index.mjs" */
@@ -313,7 +316,7 @@ test("R17 the result carries the L1 profile always and the content type once L4 
   const bad = await assess(enc("<p>a</p>"), enc("<p>b</p>"), {});
   assert.equal(bad.meaningful, null);
   assert.ok(bad.profile);
-  await assess(null, undefined, { sha256 });
+  await assess(asGiven(null), asGiven(undefined), { sha256 });
 });
 
 /* ------------------------------------------------------------------- readText */
@@ -324,7 +327,7 @@ test("R18 readText refuses when no honest reading may be produced, and says whic
   assert.equal(none.why, localize("docprofile.readtext.no_text_was_supplied_so_no", "no text was supplied, so no reading was attempted"));
   /** @type {Array<SuppliedText | number | null | undefined>} */
   const notText = [undefined, null, 7, {}];
-  for (const x of notText) assert.equal(readText(x).determined, false);
+  for (const x of notText) assert.equal(readText(asGiven(x)).determined, false);
   const undecoded = readText({ pages: [], undetermined: [{ reason: "no_tounicode", count: 40 }] }, { view: PA });
   assert.equal(undecoded.determined, false);
   assert.match(undecoded.why, /undetermined .*no_tounicode/);
@@ -385,7 +388,7 @@ test("R20 the reader is handed a total locate built from the supplied segment ma
   assert.equal(typeof got(), "function");
   assert.equal(got()(0), null);
   // a caller's own locate never stands in for the text's
-  readText(supplied, { view: PA, locate: () => ({ forged: true }) });
+  readText(supplied, { view: PA, locate: asGiven(() => ({ forged: true })) });
   assert.deepEqual(got()(0), own(0));
 });
 
@@ -435,7 +438,7 @@ test("R24 undetermined is the producer's stated count, else summed from its mark
   assert.deepEqual(flattenText({ document: "a", undetermined: [{ reason: "x" }, { reason: "x" }, { reason: "y" }] }).reasons, ["x", "y"]);
   /** @type {Array<SuppliedText | number | never[] | null>} */
   const notText = [null, 3, [], {}];
-  for (const x of notText) assert.equal(flattenText(x).undetermined, 0);
+  for (const x of notText) assert.equal(flattenText(asGiven(x)).undetermined, 0);
 });
 
 test("R25 locate is total: a non-number, a negative, or an offset in no segment is null; otherwise the segment's source", () => {
@@ -443,7 +446,7 @@ test("R25 locate is total: a non-number, a negative, or an offset in no segment 
   const locate = makeLocator(segs);
   for (const x of [undefined, null, "1", NaN, Infinity, -1, 2, 5, 99]) assert.equal(locate(x), null, String(x));
   assert.deepEqual([pageOf(locate(0)), pageOf(locate(1)), pageOf(locate(3)), pageOf(locate(4))], [0, 0, 1, 1]);
-  for (const bad of [null, undefined, "x", {}]) assert.equal(makeLocator(bad)(0), null);
+  for (const bad of [null, undefined, "x", {}]) assert.equal(makeLocator(asGiven(bad))(0), null);
 });
 
 test("R29 CONTRACT declares substance, membership and unmonitorable, and is the module's own export", () => {
@@ -488,7 +491,7 @@ test("R30 R36 the shared helpers take every local fact from the view they are gi
   assert.ok(!vocabulary({}, "file_numbers").some((e) => ("pattern" in e ? /PA-/.test(e.pattern.re) : assert.fail("an entry with no pattern"))), "a test profile is never the fallback");
   // a pattern a profile wrote that does not compile is skipped, never thrown
   const broken = { vocabulary: { furniture: [{ pattern: { re: "(" } }, { pattern: { re: "^ok$" } }] } };
-  assert.equal(vocabPatterns({ view: broken }, "furniture").length, 1);
+  assert.equal(vocabPatterns({ view: asGiven(broken) }, "furniture").length, 1);
 });
 
 test("R31 the same bytes and the same ctx give the same answer", async () => {

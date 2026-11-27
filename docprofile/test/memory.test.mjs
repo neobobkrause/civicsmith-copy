@@ -11,6 +11,9 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { registerStubs, stubItems, stubFallback } from "./stubs.mjs";
 import * as dp from "../registry.mjs";
+
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
 /** @import { SuppliedPage, SuppliedText } from "../registry.mjs" */
 /** @import { ClassifiedOver } from "../classify-view.mjs" */
 /** @import { MeasureMessage, SheetMessage } from "./memory-child.mjs" */
@@ -135,7 +138,7 @@ test("R22 the segment map over document is exactly the join's: blank pages, page
     const docs = [full, full + "\n", full + "x", "\n" + full, full.slice(1), full.slice(0, -1), full.replace(/\n/, " "), "", "zz"];
     for (const d of docs) {
       if (!d.length) continue;
-      const got = dp.flattenText({ document: d, pages });
+      const got = dp.flattenText({ document: d, pages: asGiven(pages) });
       const want = oracle(d, pages);
       assert.deepEqual(got.segments, want ? want.map((s) => ({ start: s.start, end: s.end, source: { kind: "pdf-page", ref: `p.${s.page + 1}`, page: s.page, rect: null } })) : [], JSON.stringify([d, pages]));
       assert.equal(got.text, d);

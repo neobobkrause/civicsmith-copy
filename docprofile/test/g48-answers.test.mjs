@@ -8,6 +8,9 @@ import fs from "node:fs";
 import { READINGS, registerCorpusTypes } from "./g48-readings.mjs";
 import { readText, flattenText, identify, doctypeFor, alsoFor } from "../registry.mjs";
 
+/* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
+const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
+
 /**
  * A recorded readText answer in its JSON form, as far as this test reads it: the glyph count; the rest is compared whole.
  * @typedef {{ chars: number }} AnswerJson
@@ -31,7 +34,7 @@ const recordedOf = /** @param {string} id @returns {AnswerJson} */ (id) => {
 test("R38 R19 readText of every fixture reading equals the answer recorded on the tip, with no classified_over", () => {
   assert.deepEqual(Object.keys(recorded), READINGS.map(([id]) => id));
   for (const [id, supplied, ctx] of READINGS) {
-    const answer = readText(supplied, ctx);
+    const answer = readText(asGiven(supplied), ctx);
     /** @type {unknown} */
     const got = JSON.parse(JSON.stringify(answer));
     // the answer is an object, so its JSON reads back as one: the test is `"classified_over" in got`
@@ -53,7 +56,7 @@ test("R38 R19 readText of every fixture reading equals the answer recorded on th
 test("R5 doctypeFor's also is alsoFor's on every fixture reading, in registration order, errors included", () => {
   let withAlso = 0, withError = 0;
   for (const [id, supplied, ctx] of READINGS) {
-    const flat = flattenText(supplied);
+    const flat = flattenText(asGiven(supplied));
     if (!flat.chars) continue;
     const pages = typeof supplied === "object" && supplied !== null ? supplied.pages : undefined;
     /** @type {DoctypeContext} */
