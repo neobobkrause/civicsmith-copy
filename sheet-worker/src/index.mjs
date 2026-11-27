@@ -7,6 +7,7 @@
 import { makeMember } from "./member.mjs";
 import { SHEET_ENGINE } from "./engine.mjs";
 import { MEMBER_LIMITS, MEMBER_LIMITS_STATEMENT } from "./limits.mjs";
+/** @import { WorkerEnv, WorkerRequest } from './member.mjs' */
 
 /* The member's surface: two routes, neither mutating (a member asserts nothing). `fleet-member.json` names this table. */
 export const SURFACE = {
@@ -19,6 +20,7 @@ const member = makeMember(SHEET_ENGINE);
 /* R17: the handler carries the member's limits, as the plane's door carries its own (installer R20), so bundling keeps
  * the statement as written in the bytes a release signs; the installer reads it from them. workerd takes only handlers
  * as named exports, so it rides on the default one. */
+/** @type {{ fetch: (req: WorkerRequest, env: WorkerEnv) => Promise<Response>, limits: Readonly<{ cpu_ms: number }>, limitsStatement: string }} */
 export default {
   fetch: (req, env) => member.fetch(req, env),
   limits: MEMBER_LIMITS,
