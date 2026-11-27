@@ -53,14 +53,22 @@ const whyOf = (l) => (l.partition === "undetermined" ? l.target.why : undefined)
 /** The members of `embedded`'s message this test reads: `intra` as printed (the files, each `EmbeddedFile`).
  *  @typedef {{ ok: boolean, intra: unknown, peakMB: number }} EmbeddedReport */
 
+/** The JSON object a child printed; a thrown failure naming `what` when it printed none.
+ *  @param {string} text
+ *  @param {string} what
+ *  @returns {object} */
+function printed(text, what) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
+  if (typeof v !== "object" || v === null) throw new Error(`${what}: not an object`);
+  return v;
+}
 /** `embedded`'s message as the child printed it, decoded; a thrown failure naming the member that is missing or wrong.
  *  `intra` is kept as printed, for the comparison with the files expected.
  *  @param {string} text
  *  @returns {EmbeddedReport} */
 function embeddedReport(text) {
-  /** @type {unknown} */
-  const v = JSON.parse(text);
-  if (typeof v !== "object" || v === null) throw new Error("embedded message: not an object");
+  const v = printed(text, "embedded message");
   const ok = "ok" in v ? v.ok : undefined;
   const peakMB = "peakMB" in v ? v.peakMB : undefined;
   if (typeof ok !== "boolean") throw new Error("embedded message: no ok");

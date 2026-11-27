@@ -17,14 +17,21 @@ function numberOrNone(v, what) {
   if (v !== undefined && typeof v !== "number") throw new Error(`${what}: not a number`);
   return v;
 }
+/** The JSON object a text holds, or null where it holds another value.
+ *  @param {string} text
+ *  @returns {object | null} */
+function objectIn(text) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
+  return typeof v === "object" ? v : null;
+}
 /** The worker's answer, read from its text (`ok` false where it is not an object); a thrown failure naming a member that is
  *  not a number.
  *  @param {string} text
  *  @returns {ProbeAnswer} */
 function probeAnswer(text) {
-  /** @type {unknown} */
-  const v = JSON.parse(text);
-  if (typeof v !== "object" || v === null) return { ok: false, pages: undefined, chars: undefined, calls: undefined, slowest: undefined };
+  const v = objectIn(text);
+  if (v === null) return { ok: false, pages: undefined, chars: undefined, calls: undefined, slowest: undefined };
   return { ok: "ok" in v ? !!v.ok : false, pages: numberOrNone("pages" in v ? v.pages : undefined, "pages"), chars: numberOrNone("chars" in v ? v.chars : undefined, "chars"),
     calls: numberOrNone("calls" in v ? v.calls : undefined, "calls"), slowest: numberOrNone("slowest" in v ? v.slowest : undefined, "slowest") };
 }

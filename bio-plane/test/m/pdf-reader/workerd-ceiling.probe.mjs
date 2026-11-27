@@ -20,9 +20,10 @@ import { densePdf } from "./dense.mjs";
  *  @returns {ProbeAnswer} */
 function probeAnswer(text) {
   /** @type {unknown} */
-  const v = JSON.parse(text);
-  if (typeof v !== "object" || v === null) return { raw: v, ok: undefined, answered: undefined };
-  return { raw: v, ok: "ok" in v ? v.ok : undefined, answered: "answered" in v ? v.answered : undefined };
+  const raw = JSON.parse(text);
+  const v = typeof raw === "object" ? raw : null;
+  if (v === null) return { raw, ok: undefined, answered: undefined };
+  return { raw, ok: "ok" in v ? v.ok : undefined, answered: "answered" in v ? v.answered : undefined };
 }
 
 /** @param {string} p

@@ -102,7 +102,8 @@ const recipe = (structure, extra = {}) => {
   /** @type {PdfRecipe} */
   const r = { kind: "pdf", seed: "page-source", size: extra.size ?? { pages: 40, lines: 30 },
     kinds: extra.kinds ?? ["text", "scan", "mixed"], fonts: ["winansi", "macroman", "differences", "type0"], structure, compress: true };
-  if (extra.scan !== undefined) r.scan = extra.scan;
+  const scan = extra.scan;
+  if (scan !== undefined) r.scan = scan;
   return r;
 };
 /** @param {ImagePlacement} i

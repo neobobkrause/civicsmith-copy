@@ -57,7 +57,9 @@ const bomb = (mb, fill = 0x20) => new Uint8Array(deflateSync(Buffer.alloc(mb * 1
 const PAGE_CONTENT = boundOf("pdf", "page_content");
 
 test("R41, R22: a page whose decoded content passes the page bound is stated with its figures and the other pages are read (a 200 KB stream that inflates to 200 MB as page 3 of 10)", async () => {
-  const pages = Array.from({ length: 10 }, /** @param {unknown} _ @param {number} i @returns {Page} */ (_, i) => ({ content: i === 2 ? { dict: "/Filter /FlateDecode", data: bomb(200) } : T(`P${i + 1}`) }));
+  /** @type {StreamBody} */
+  const heavy = { dict: "/Filter /FlateDecode", data: bomb(200) };
+  const pages = Array.from({ length: 10 }, /** @param {unknown} _ @param {number} i @returns {Page} */ (_, i) => ({ content: i === 2 ? heavy : T(`P${i + 1}`) }));
   const bytes = doc(pages);
   assert.ok(bytes.length < 400 * 1024, "the file is small");
   const rss0 = process.memoryUsage().rss;
