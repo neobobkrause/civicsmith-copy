@@ -1,6 +1,6 @@
 {
   "module": "sheet-worker",
-  "written": {"commit":"3a8d0b9cf33ff87c37d3e29b1069c9c9a5e9bdbb","tool":"7916c03f8a826f75aa7e788a18ad16b6e39146a3"},
+  "written": {"commit":"165d48d3ea130e88f4b736eb685603cba0a3b156","tool":"7916c03f8a826f75aa7e788a18ad16b6e39146a3"},
   "providers": ["setup-words","test-support","runtime-limits","bundler"],
   "uses": [
     {"provider":"setup-words","item":"Reason","itemKind":"type","type":"conversion","route":"direct","standard":true,"value":"whole","where":[{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":98,"in":"moduleCheck"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":100,"in":"moduleCheck"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":102,"in":"moduleCheck"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":104,"in":"moduleCheck"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":109,"in":"moduleCheck"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":135,"in":"open"},{"file":"sheet-worker/src/enginecore.mjs","side":"code","line":137,"in":"open"},{"file":"sheet-worker/src/member.mjs","side":"code","line":139,"in":"recompute"},{"file":"sheet-worker/src/member.mjs","side":"code","line":142,"in":"recompute"},{"file":"sheet-worker/src/member.mjs","side":"code","line":147,"in":"recompute"},{"file":"sheet-worker/src/member.mjs","side":"code","line":159,"in":"recompute"},{"file":"sheet-worker/src/member.mjs","side":"code","line":204,"in":"answer"},{"file":"sheet-worker/src/member.mjs","side":"code","line":206,"in":"answer"},{"file":"sheet-worker/src/member.mjs","side":"code","line":208,"in":"answer"}]},
@@ -58,10 +58,8 @@
     {"provider":"bundler","item":"writeMember","itemKind":"function","type":"receive","route":"direct","standard":true,"where":[{"file":"sheet-worker/scripts/build.mjs","side":"code","line":14,"in":"main"}]}
   ],
   "outside": [
-    {"rule":"S4","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":47,"mayRefer":[],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
-    {"rule":"R1","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"R14","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":[],"waitsOn":"ARCH: a boundary module for it","tests":[]},
-    {"rule":"S4","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":["*"],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
+    {"rule":"S4","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":[],"waitsOn":"this module: code the checker accepts under the standard's settings","tests":[]},
     {"rule":"S6","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":["*"],"waitsOn":"this module: a path anchored to its own folder, or the owner's reader","tests":[]},
     {"rule":"S6","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S6","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":49,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
@@ -83,6 +81,7 @@
     {"rule":"S5","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":98,"mayRefer":["test-support"],"waitsOn":"test-support: the item in its interface files","tests":[]},
     {"rule":"R12","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":101,"mayRefer":["civil-time"],"waitsOn":"civil-time: an accessor for the setting","tests":[]},
     {"rule":"R14","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":101,"mayRefer":[],"waitsOn":"ARCH: a boundary module for it","tests":[]},
+    {"rule":"R15","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":101,"mayRefer":["*"],"waitsOn":"this module","tests":[]},
     {"rule":"S5","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":101,"mayRefer":["test-support"],"waitsOn":"test-support: the item in its interface files","tests":[]},
     {"rule":"R14","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":103,"mayRefer":[],"waitsOn":"ARCH: a boundary module for it","tests":[]},
     {"rule":"R14","file":"sheet-worker/scripts/build-engine.mjs","side":"code","line":103,"mayRefer":[],"waitsOn":"ARCH: a boundary module for it","tests":[]},
