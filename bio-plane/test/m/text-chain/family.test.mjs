@@ -5,9 +5,11 @@ import assert from "node:assert/strict";
 import {
   TEXT_CHAIN_CHECKS, checkChain, appendStep, convertedChain, checkConfidence, checkAnchor, checkAttestation,
 } from "../../../src/textchain.mjs";
+/** @import { Chain, Refusal, TextChainCode } from "../../../src/textchain.mjs" */
 
 /* Each C-35 condition driven through the service that refuses it: the row is read off the refusal the code
    path produced, never off the table beside it. */
+/** @type {readonly (readonly [TextChainCode, string, () => Chain | Refusal | null])[]} */
 const DRIVEN = [
   ["TEXT_CHAIN_COLLAPSED", "C-35.1", () => checkChain("ocr")],
   ["TEXT_CHAIN_EMPTY", "C-35.2", () => checkChain([])],
@@ -24,18 +26,26 @@ const DRIVEN = [
   ["TEXT_CHAIN_LETTER_UNCALIBRATED", "C-35.13", () => checkChain([{ step: "convert", engine: "host-export", format: "odt", cap: "B" }])],
   ["TEXT_CHAIN_LETTER_ON_PERSON", "C-35.14", () => checkChain([{ step: "typed", member: "m", cap: "A" }])],
 ];
+/* The family's codes, as DRIVEN names them; the first test proves they are exactly the table's keys. */
+const CODES = DRIVEN.map(([code]) => code);
 /* Which service holds each region, as its row's `where` names it. */
-const REGION_OF = {
-  "is-text-chain-shape": "checkChain", "is-text-chain-monotone": "appendStep", "is-text-region-confidence": "checkConfidence",
-  "is-text-anchor": "checkAnchor", "is-text-attestation": "checkAttestation",
-};
+/** @type {ReadonlyMap<string, string>} */
+const REGION_OF = new Map([
+  ["is-text-chain-shape", "checkChain"], ["is-text-chain-monotone", "appendStep"], ["is-text-region-confidence", "checkConfidence"],
+  ["is-text-anchor", "checkAnchor"], ["is-text-attestation", "checkAttestation"],
+]);
+/** An answer that must be a refusal. @param {Chain | Refusal | null} r @param {string} code @returns {Refusal} */
+const refusalOf = (r, code) => { assert.ok(r !== null && "ok" in r, code); return r; };
+/** The number after a check's dot. @param {string} check @returns {number} */
+const ordinal = (check) => Number(check.split(".")[1]);
 
 test("R86 (Errors summary): the family is exactly the fourteen C-35 rows, C-35.1 to C-35.14, one per code", () => {
-  assert.equal(Object.getPrototypeOf(TEXT_CHAIN_CHECKS), Object.prototype);
-  assert.deepEqual(Object.keys(TEXT_CHAIN_CHECKS).sort(), DRIVEN.map(([code]) => code).sort());
-  assert.deepEqual(Object.values(TEXT_CHAIN_CHECKS).map((r) => r.check).sort((a, b) => a.split(".")[1] - b.split(".")[1]),
+  assert.equal(Reflect.getPrototypeOf(TEXT_CHAIN_CHECKS), Object.prototype);
+  assert.deepEqual(Object.keys(TEXT_CHAIN_CHECKS).sort(), [...CODES].sort());
+  assert.deepEqual(CODES.map((code) => TEXT_CHAIN_CHECKS[code].check).sort((a, b) => ordinal(a) - ordinal(b)),
     Array.from({ length: 14 }, (_, i) => `C-35.${i + 1}`));
-  for (const [code, row] of Object.entries(TEXT_CHAIN_CHECKS)) {
+  for (const code of CODES) {
+    const row = TEXT_CHAIN_CHECKS[code];
     assert.deepEqual(Object.keys(row).sort(), ["check", "translation", "where"], code);
     /* Every code is in the module's refusal namespaces, TEXT_CHAIN_*, TEXT_CONFIDENCE_*, TEXT_ANCHOR_*, TEXT_ATTEST_*. */
     assert.match(code, /^TEXT_(CHAIN|CONFIDENCE|ANCHOR|ATTEST)_[A-Z_]+$/);
@@ -43,27 +53,30 @@ test("R86 (Errors summary): the family is exactly the fourteen C-35 rows, C-35.1
 });
 
 test("R86: every row names the smallest span, a region of this module's service that refuses it, never a whole file", () => {
-  for (const [code, row] of Object.entries(TEXT_CHAIN_CHECKS)) {
+  for (const code of CODES) {
+    const row = TEXT_CHAIN_CHECKS[code];
     const m = /^src\/textchain\.mjs (\w+) > (is-text-[a-z-]+)$/.exec(row.where);
     assert.ok(m, `${code}: ${row.where}`);
-    assert.equal(REGION_OF[m[2]], m[1], `${code}: region ${m[2]} is ${REGION_OF[m[2]]}'s`);
+    const [, service, region = ""] = m;
+    assert.equal(REGION_OF.get(region), service, `${code}: region ${region} is ${REGION_OF.get(region)}'s`);
   }
 });
 
 test("R86: every row carries a member-facing translation that says which kind of no", () => {
-  for (const [code, row] of Object.entries(TEXT_CHAIN_CHECKS)) {
+  for (const code of CODES) {
+    const row = TEXT_CHAIN_CHECKS[code];
     assert.equal(typeof row.translation, "string", code);
     assert.ok(row.translation.trim().length >= 40, code);
     assert.equal(row.translation, row.translation.trim(), code);
   }
   /* Fourteen conditions, fourteen different sentences. */
-  assert.equal(new Set(Object.values(TEXT_CHAIN_CHECKS).map((r) => r.translation)).size, 14);
+  assert.equal(new Set(CODES.map((code) => TEXT_CHAIN_CHECKS[code].translation)).size, 14);
 });
 
 test("R86: each C-35 row is carried by the refusal its own condition produces, every row driven", () => {
   for (const [code, check, drive] of DRIVEN) {
-    const r = drive();
-    assert.equal(r && r.ok, false, code);
+    const r = refusalOf(drive(), code);
+    assert.equal(r.ok, false, code);
     assert.equal(r.code, code);
     assert.equal(r.check, check);
     assert.equal(r.check, TEXT_CHAIN_CHECKS[code].check);
@@ -73,5 +86,6 @@ test("R86: each C-35 row is carried by the refusal its own condition produces, e
     assert.deepEqual(Object.keys(r).sort(), ["check", "code", "detail", "ok", "translation"]);
   }
   /* The same rows reach a refusal relayed through a builder (convertedChain refuses what checkChain refuses, R16). */
-  assert.equal(convertedChain({ step: "convert", engine: "x" }, [{ step: "layer" }]).check, TEXT_CHAIN_CHECKS.TEXT_CHAIN_STEP_UNNAMED.check);
+  assert.equal(refusalOf(convertedChain({ step: "convert", engine: "x" }, [{ step: "layer" }]), "TEXT_CHAIN_STEP_UNNAMED").check,
+    TEXT_CHAIN_CHECKS.TEXT_CHAIN_STEP_UNNAMED.check);
 });

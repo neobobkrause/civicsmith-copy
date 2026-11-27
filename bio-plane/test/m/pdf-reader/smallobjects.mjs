@@ -6,18 +6,36 @@
  * open them. */
 import { bytesOf } from "./pdf.mjs";
 
+/** The two shapes of file: one of many text annotations, or one of a tagged structure tree.
+ *  @typedef {"annots" | "tagged"} SmallObjectsShape */
+/** The body of object `i` of `n`.
+ *  @callback SmallObjectBody
+ *  @param {number} i
+ *  @param {number} n
+ *  @returns {string} */
+/** One body maker for each shape.
+ *  @typedef {Object} SmallObjectBodies
+ *  @property {SmallObjectBody} annots
+ *  @property {SmallObjectBody} tagged
+ */
+
 /** The words on the file's page. */
 export const TEXT_LINE = "BT /F1 12 Tf 40 700 Td (The housing notice was adopted by the council.) Tj ET";
 const TOUNI = "/CIDInit /ProcSet findresource begin 1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfrange <20> <7E> <0020> endbfrange end";
 
+/** The file's size target: 16 MiB less 64 KiB. */
 export const SMALL_OBJECTS_BYTES = 16 * 1024 * 1024 - 64 * 1024;
 
-/** Object `i` (the first after the catalog, page tree, page and list: number 5 and up). */
+/** Object `i` (the first after the catalog, page tree, page and list: number 5 and up).
+ *  @type {SmallObjectBodies} */
 const BODY = {
   annots: (i) => `<< /Type /Annot /Subtype /Text /Rect [0 0 1 1] /K ${i} /T (COMMENT ${i % 997}) >>`,
   tagged: (i, n) => `<< /Type /StructElem /S /P /P ${i ? 5 + ((i - 1) >> 1) : 4} 0 R /Pg 3 0 R /K [${[2 * i + 1, 2 * i + 2].filter((c) => c < n).map((c) => `${5 + c} 0 R`).join(" ")}] >>`,
 };
 
+/** The file of that shape's bytes.
+ *  @param {SmallObjectsShape} [shape] absent is "annots"
+ *  @returns {Uint8Array} */
 export function smallObjectsPdf(shape = "annots") {
   const body = BODY[shape];
   const per = `9999999 0 obj\n${body(999999, 999999)}\nendobj\n0000000000 00000 n \n9999999 0 R `.length;
@@ -31,8 +49,11 @@ export function smallObjectsPdf(shape = "annots") {
   objs.push(`<< /Length ${line.length} >>\nstream\n${line}\nendstream`, `<< /Length 0 >>\nstream\n\nendstream`,
     `<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /ToUnicode ${n + 8} 0 R >>`,
     `<< /Length ${TOUNI.length} >>\nstream\n${TOUNI}\nendstream`);
-  const parts = ["%PDF-1.7\n"], offsets = [];
-  let at = parts[0].length;
+  const head = "%PDF-1.7\n";
+  const parts = [head];
+  /** @type {number[]} */
+  const offsets = [];
+  let at = head.length;
   objs.forEach((o, i) => { const s = `${i + 1} 0 obj\n${o}\nendobj\n`; offsets.push(at); at += s.length; parts.push(s); });
   parts.push(`xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`);
   for (const o of offsets) parts.push(`${String(o).padStart(10, "0")} 00000 n \n`);
