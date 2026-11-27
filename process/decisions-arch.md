@@ -1,4 +1,4 @@
-Length: 151 lines. Last section: "Stated types that claim more than the code hands back".
+Length: 156 lines. Last section: "Host facilities that modules' tests use".
 
 # civicsmith: ARCH's technical decisions
 
@@ -148,4 +148,9 @@ Decided: 26 Nov 2026.
 ## Stated types that claim more than the code hands back
 Decision: when a provider's conversion states its types and `p4 check` then finds a later module's stated type claiming more than its code can hand back, the later module's job corrects it in one of two ways, without waiting for further word from ARCH. Where the module's own code or data guarantees the value, it shows that in its own code (narrow by a check on its own data, or build the value from its own numbers) and leaves its stated type as it is. Where the value can in truth be absent or wider, it widens its own stated type to say so (an optional member, `string | undefined`). That is a change of its means, which the tool finds and tells its users. It invents no default, which would change behaviour. Test places that disagree with a provider's stated types are fixed in the test. A provider export whose stated answer hands out `unknown` (R4) is that provider's flaw, placed against it. First case, odf-reader #9 (PR 1735): `odfRow` narrows `partMap` by its own row check; `PartsFailure.why` and `text()`'s `images` are widened to what the code returns; the `SizeMarker` is built from odf-reader's own declared size and bound, not from `sizeGuard`'s answer. ooxml's `SizeRefusal.size` and `.bound`, stated `unknown` against R4, are placed against ooxml.
 Why: the disagreements were always true of the code. The provider's conversion only made them visible, so stating the truth changes nothing the product does. A user that relied on the stricter claim is found by its own tests when told. Holding each such job for a decision would stop every conversion downstream of a newly typed provider.
+Decided: 27 Nov 2026.
+
+## Host facilities that modules' tests use
+Decision: a module's tests that use a host facility reaching out (reading the module's own fixtures with `node:fs`, starting a child process or worker to measure a bound, sampling memory, `performance.now`, `console`, `node:crypto`, a package such as `esbuild`, `miniflare`, `undici` or `sharp` in a test) keep doing so, and no module becomes a boundary module for its tests. Each such use stays listed as a place under R14, and is not converted. Where a requirement asks for real time or memory to be measured (roster-reader R1 and R3, image-cover R4), the test keeps measuring it, and the R22 place stays listed. Product code's uses are unchanged by this: a reach out made by product code outside a boundary module is still converted or decided here, module by module.
+Why: such a place refers to no product module (`mayRefer` none), so it tells no one and costs nothing; converting it would mean a boundary module for every module's tests, or tests that no longer prove what their requirement asks, for no notice saved. A requirement ranks above the coding standard's form where they meet.
 Decided: 27 Nov 2026.
