@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { zipChunks64, zipChunks64Sized, makeZip } from "../../make-zip.mjs";
 
+/** @param {string} cmd @param {string[]} args @returns {boolean} */
 const has = (cmd, args) => { const r = spawnSync(cmd, args, { encoding: "utf8" }); return !r.error && r.status === 0; };
 const HAS_PYTHON = has("python3", ["-I", "-c", "import zipfile"]);
 const HAS_UNZIP = has("unzip", ["-v"]);
@@ -18,18 +19,27 @@ const NO_ORACLES = (!HAS_PYTHON || !HAS_UNZIP) && `absent on this host: ${[!HAS_
 const NO_PYTHON = !HAS_PYTHON && "python3 is absent on this host";
 const MiB = 1 << 20;
 
+/** @param {AsyncIterable<Uint8Array, void, undefined>} chunks @returns {Promise<string>} */
 async function toFile(chunks) {
   const path = join(mkdtempSync(join(tmpdir(), "z64-")), "a.zip");
   const out = createWriteStream(path);
-  for await (const c of chunks) if (!out.write(c)) await new Promise((r) => out.once("drain", r));
-  await new Promise((r) => out.end(r));
+  for await (const c of chunks) if (!out.write(c)) {
+    /** @type {Promise<void>} */
+    const drained = new Promise((r) => out.once("drain", r));
+    await drained;
+  }
+  /** @type {Promise<void>} */
+  const ended = new Promise((r) => out.end(r));
+  await ended;
   return path;
 }
+/** @param {string} path @param {string} code @returns {unknown} the JSON the child prints */
 const zipfile = (path, code) => {
   const r = spawnSync("python3", ["-I", "-c", `import sys,zipfile,json,hashlib\nz=zipfile.ZipFile(sys.argv[1])\n${code}`, path], { encoding: "utf8", maxBuffer: 256 * MiB });
   assert.equal(r.status, 0, r.stderr);
   return JSON.parse(r.stdout);
 };
+/** @param {Uint8Array} b @returns {string} */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
 
 test("R23 a small archive written lazily opens in both oracles: unzip -t exits 0 and zipfile gives back every member byte for byte, whole, streamed, deflated or stored", { skip: NO_ORACLES }, async () => {
@@ -53,6 +63,7 @@ test("R23 a small archive written lazily opens in both oracles: unzip -t exits 0
 });
 
 test("R23 the classic member (zip64: false) sits with no extra field, so an ODF mimetype is at offset 38", async () => {
+  /** @type {Uint8Array[]} */
   const chunks = [];
   for await (const c of zipChunks64([{ name: "mimetype", method: 0, data: "application/vnd.oasis.opendocument.text", zip64: false }])) chunks.push(c);
   const b = Buffer.concat(chunks);
@@ -78,7 +89,7 @@ test("R23 a member set whose declared unpacked total passes 2 GB (and one member
   const after = process.memoryUsage();
   assert.ok(statSync(path).size < 1000, "the archive is a few hundred bytes");
   assert.ok(after.arrayBuffers - before.arrayBuffers < 16 * MiB, "nothing of the declared size was built");
-  const got = zipfile(path, "print(json.dumps([[i.filename, i.file_size] for i in z.infolist()]))");
+  const got = /** @type {Array<[string, number]>} decodes its own child's output */ (zipfile(path, "print(json.dumps([[i.filename, i.file_size] for i in z.infolist()]))"));
   assert.deepEqual(got, [["a.bin", 1.5 * G], ["b.bin", 5 * G]]);
   assert.ok(got.reduce((s, [, n]) => s + n, 0) > 2 * G);
 });
@@ -87,6 +98,7 @@ test("R23 the standard's 500 MB (500 MiB) member streams through without being h
   const size = 500 * MiB, block = new Uint8Array(MiB).fill(0x41);
   let peak = 0;
   const base = process.memoryUsage().arrayBuffers;
+  /** @param {AsyncIterable<Uint8Array, void, undefined>} src */
   async function* watch(src) { for await (const c of src) { peak = Math.max(peak, process.memoryUsage().arrayBuffers - base); yield c; } }
   const path = await toFile(watch(zipChunks64([{ name: "big.bin", chunks: function* () { for (let i = 0; i < size; i += MiB) yield block; } }])));
   assert.ok(peak < 64 * MiB, `held at most ${peak} bytes beyond the start`);
@@ -100,12 +112,13 @@ test("R23 zipChunks64Sized writes exactly the size asked at a bound minus 2, the
     const path = await toFile(zipChunks64Sized([{ name: "doc.xml", chunks: () => (function* () { yield "<doc/>"; })() }], size));
     assert.equal(statSync(path).size, size);
     assert.equal(spawnSync("unzip", ["-t", path]).status, 0, `unzip -t at ${size}`);
-    const got = zipfile(path, "print(json.dumps([i.filename for i in z.infolist()]))");
+    const got = /** @type {string[]} decodes its own child's output */ (zipfile(path, "print(json.dumps([i.filename for i in z.infolist()]))"));
     assert.equal(got[0], "doc.xml");
   }
 });
 
 test("R23 a spec it cannot write is refused naming the field; makeZip stays the whole-archive writer", async () => {
+  /** @param {AsyncIterable<Uint8Array, void, undefined>} it */
   const drain = async (it) => { for await (const _ of it); };
   await assert.rejects(drain(zipChunks64([{ data: "x" }])), /entries\[0\]\.name/);
   await assert.rejects(drain(zipChunks64([{ name: "a" }])), /entries\[0\]\.data or chunks/);

@@ -15,6 +15,127 @@
 import { zipChunks64, zipChunks64Sized, makeZip } from "./make-zip.mjs";
 import { hash32, VOCAB, LATIN_VOCAB } from "./seeded.mjs";
 
+/** @typedef {"docx"|"pptx"|"odt"|"odp"|"html"|"text"|"json"|"xml"} DocKind a kind of document docgen writes */
+/** @typedef {"body"|"table"|"footnote"|"endnote"|"header"|"footer"|"comment"|"deleted"|"textbox"|"notes"|"master"|"hidden"} DocPart the part of a document a unit sits in */
+/** @typedef {"one-cell-tables"|"empty-paragraphs"|"tiny-paragraphs"|"hyperlinks"|"nested-tables"} DocLadder a ladder of equal-byte rungs */
+/** @typedef {"utf-8"|"utf-8-bom"|"utf-16le-bom"|"utf-16be-bom"|"latin-1"|"windows-1252"|"bad-byte"} DocEncoding the encoding of a plain kind */
+/**
+ * @typedef {Object} DocSize
+ * @property {number} [units] the body units; absent is 6
+ * @property {number} [chars] each unit's length in characters
+ * @property {number} [bytes] the whole file's bytes
+ * @property {number} [partBytes] the main part's bytes (a ladder's rung)
+ */
+/**
+ * @typedef {Object} DocRecipe
+ * @property {DocKind} kind
+ * @property {string|number} seed
+ * @property {DocSize} [size]
+ * @property {DocPart[]} [parts] the extra parts, each with one unit
+ * @property {{rows: number, cols: number}} [table]
+ * @property {DocLadder} [ladder]
+ * @property {"template"|"macro"} [flavour]
+ * @property {string|true} [encryptedMember] a member's name, or true: the main part
+ * @property {DocDeclares} [declares]
+ * @property {DocEncoding} [encoding] absent is utf-8
+ * @property {"meta"|"xml"|"header"|"none"} [charset]
+ * @property {{depth?: number, unterminated?: boolean}} [markup]
+ * @property {boolean} [main] an html body inside `<main>`
+ * @property {boolean} [clientRendered]
+ * @property {number} [bound] the reader's size bound the truth refuses beyond
+ */
+/** @typedef {{member: string, more: number}} DocDeclares a member whose central record declares `more` bytes than it holds */
+/**
+ * @typedef {Object} DocUnit
+ * @property {number} n
+ * @property {string} id
+ * @property {DocPart} part
+ * @property {string} text
+ * @property {number} [row] a table cell's row
+ * @property {number} [col] a table cell's column
+ */
+/** @typedef {{code: "ENCRYPTED"} | {code: "MALFORMED"} | {code: "TOO_LARGE", size: number, bound: number}} DocRefusal */
+/** @typedef {{encryptedMember?: string, declares?: DocDeclares}} DocHostile */
+/**
+ * @typedef {Object} DocTruth
+ * @property {DocKind} kind
+ * @property {DocRecipe} recipe
+ * @property {number} units
+ * @property {(n: number) => DocUnit | undefined} unit
+ * @property {() => Generator<DocUnit, void, undefined>} all
+ * @property {{[part: string]: number[]}} parts each part's unit numbers
+ * @property {{first: string, middle: string, last: string}} marks
+ * @property {{n: number, reason: string}[]} unread
+ * @property {DocRefusal|null} refusal
+ * @property {DocHostile|null} hostile
+ * @property {string} contentType
+ * @property {DocEncoding|null} encoding
+ * @property {{n: number, after: string}|null} badByte
+ * @property {boolean} clientRendered
+ * @property {readonly string[]} oracleOmits
+ * @property {string} ext
+ * @property {number|null} size
+ */
+/**
+ * @typedef {Object} DocFile
+ * @property {DocKind} kind
+ * @property {string} ext
+ * @property {string} type
+ * @property {number|null} size
+ * @property {DocTruth} truth
+ * @property {() => AsyncGenerator<Uint8Array, void, undefined>} chunks
+ * @property {() => Promise<Uint8Array>} bytes
+ */
+/**
+ * @typedef {Object} Plan
+ * @property {DocKind} kind
+ * @property {string} seed
+ * @property {DocSize} size
+ * @property {DocPart[]} parts
+ * @property {DocEncoding} encoding
+ * @property {readonly string[]} vocab
+ * @property {number} body
+ * @property {DocRecipe} recipe
+ * @property {string} ext
+ */
+/** @typedef {{count: number, extra: DocUnit[], unit: (k: number) => DocUnit | undefined}} Units */
+/**
+ * @typedef {Object} Shapes how a main part writes each shape
+ * @property {(u: DocUnit) => string} p
+ * @property {string} empty
+ * @property {(u: DocUnit) => string} link
+ * @property {(rows: string[][]) => string} table
+ * @property {string} [after]
+ */
+/**
+ * @typedef {Object} WholeMember a package member written whole
+ * @property {string} name
+ * @property {string|Uint8Array} data
+ * @property {0|8} [method]
+ * @property {false} [zip64]
+ * @property {boolean} [main]
+ * @property {undefined} [chunks]
+ */
+/**
+ * @typedef {Object} TextMember a main part streamed as text
+ * @property {string} name
+ * @property {() => AsyncGenerator<string, void, undefined>} chunks
+ * @property {boolean} main
+ * @property {undefined} [data]
+ * @property {undefined} [method]
+ */
+/**
+ * @typedef {Object} ByteMember a main part streamed as bytes
+ * @property {string} name
+ * @property {() => AsyncGenerator<Uint8Array, void, undefined>} chunks
+ * @property {boolean} main
+ * @property {undefined} [data]
+ * @property {undefined} [method]
+ */
+/** @typedef {WholeMember | TextMember} PartEntry */
+/** @typedef {WholeMember | ByteMember} DocEntry */
+
+/** @type {readonly DocKind[]} */
 export const KINDS = Object.freeze(["docx", "pptx", "odt", "odp", "html", "text", "json", "xml"]);
 const PACKAGES = ["docx", "pptx", "odt", "odp"];
 const PARTS = {
@@ -31,6 +152,7 @@ const MIME = {
   odt: "application/vnd.oasis.opendocument.text", odp: "application/vnd.oasis.opendocument.presentation",
   html: "text/html", text: "text/plain", json: "application/json", xml: "application/xml",
 };
+/** @type {{[kind: string]: {template?: string, macro?: string}}} */
 const EXT = { docx: { template: "dotx", macro: "docm" }, pptx: { template: "potx", macro: "pptm" }, odt: { template: "ott" }, odp: { template: "otp" } };
 const CHARSET = { "utf-8": "utf-8", "utf-8-bom": "utf-8", "utf-16le-bom": "utf-16le", "utf-16be-bom": "utf-16be", "latin-1": "iso-8859-1", "windows-1252": "windows-1252", "bad-byte": "utf-8" };
 /* The parts LibreOffice's text export (docx, odt) or PDF export (pptx, odp) leaves out: the reader reads them, so they are
@@ -42,11 +164,13 @@ const ORACLE_OMITS = {
   pptx: ["notes", "hidden"], odp: ["notes", "hidden", "master"], html: [], text: [], json: [], xml: [],
 };
 
+/** @param {string|number} s @returns {string} */
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
 /* ---- the plan: every unit, by part ---- */
 
+/** @param {DocRecipe} recipe @returns {Plan} */
 function plan(recipe) {
   const kind = recipe.kind;
   if (!KINDS.includes(kind)) throw new Error(`docgen: kind must be one of ${KINDS.join(", ")}`);
@@ -55,35 +179,46 @@ function plan(recipe) {
   const parts = recipe.parts ?? [];
   for (const p of parts) if (!PARTS[kind].includes(p) || p === "body" || p === "table") throw new Error(`docgen: a ${kind} has no part ${p}`);
   if (recipe.table && !PARTS[kind].includes("table")) throw new Error(`docgen: a ${kind} has no table`);
-  if (recipe.ladder && !LADDERS.includes(recipe.ladder)) throw new Error(`docgen: ladder must be one of ${LADDERS.join(", ")}`);
-  if (recipe.ladder && !["docx", "odt", "html"].includes(kind)) throw new Error("docgen: a ladder is for docx, odt and html");
-  if (recipe.ladder && size.partBytes === undefined) throw new Error("docgen: a ladder needs size.partBytes (its rungs are equal bytes)");
-  if (recipe.flavour && !EXT[kind]?.[recipe.flavour]) throw new Error(`docgen: a ${kind} has no ${recipe.flavour} flavour`);
+  const ladder = recipe.ladder;
+  if (ladder && !LADDERS.includes(ladder)) throw new Error(`docgen: ladder must be one of ${LADDERS.join(", ")}`);
+  if (ladder && !["docx", "odt", "html"].includes(kind)) throw new Error("docgen: a ladder is for docx, odt and html");
+  if (ladder && size.partBytes === undefined) throw new Error("docgen: a ladder needs size.partBytes (its rungs are equal bytes)");
+  const flavour = recipe.flavour;
+  /* the flavour's extension, or for no flavour the kind's own (`txt` for text) */
+  const flavourExt = flavour ? EXT[kind]?.[flavour] : undefined;
+  if (flavour && !flavourExt) throw new Error(`docgen: a ${kind} has no ${flavour} flavour`);
+  const ext = flavourExt ?? (kind === "text" ? "txt" : kind);
   const encoding = recipe.encoding ?? "utf-8";
   if (!ENCODINGS.includes(encoding)) throw new Error(`docgen: encoding must be one of ${ENCODINGS.join(", ")}`);
   if (encoding !== "utf-8" && PACKAGES.includes(kind)) throw new Error("docgen: encoding is for html, text, json and xml");
   const vocab = encoding === "latin-1" || encoding === "windows-1252" ? LATIN_VOCAB : VOCAB;
   const body = recipe.ladder === "empty-paragraphs" ? 2 : size.units ?? 6;
-  return { kind, seed, size, parts, encoding, vocab, body, recipe };
+  return { kind, seed, size, parts, encoding, vocab, body, recipe, ext };
 }
 
-/** Unit text: its id, then words to `chars` characters (at least one word). */
+/** Unit text: its id, then words to `chars` characters (at least one word).
+ *  @param {Plan} pl @param {number} n @param {DocPart} part @returns {DocUnit} */
 function unitText(pl, n, part) {
   const id = `${pl.seed}-u${n}-k${part}`;
+  /** @type {string[]} */
   const words = [];
   let len = id.length;
   for (let k = 0; len < (pl.size.chars ?? 0) || k === 0; k++) {
     const w = pl.vocab[hash32(pl.seed, n, k) % pl.vocab.length];
+    if (w === undefined) throw readOfUndefined("length");
     words.push(w);
     len += 1 + w.length;
   }
   let text = `${id} ${words.join(" ")}`;
-  if (pl.size.chars && text.length > pl.size.chars) text = text.slice(0, Math.max(pl.size.chars, id.length + 2)).trimEnd();
+  const chars = pl.size.chars;
+  if (chars && text.length > chars) text = text.slice(0, Math.max(chars, id.length + 2)).trimEnd();
   return { n, id, part, text };
 }
 
-/** The units in document order: body (n = 1..body), then table cells, then each extra part's one unit. */
+/** The units in document order: body (n = 1..body), then table cells, then each extra part's one unit.
+ *  @param {Plan} pl @returns {Units} */
 function unitsOf(pl) {
+  /** @type {DocUnit[]} */
   const extra = [];
   let n = pl.body;
   const t = pl.recipe.table;
@@ -92,26 +227,65 @@ function unitsOf(pl) {
   return { count: n, extra, unit: (k) => (k <= pl.body ? unitText(pl, k, "body") : extra[k - pl.body - 1]) };
 }
 
+/** The engine's own error for reading `prop` of undefined: what a missing unit, row, chunk or member raised before
+ *  these guards were written, kept so that no path behaves differently (a conversion changes no behaviour).
+ *  @param {string} prop @returns {TypeError} */
+const readOfUndefined = (prop) => new TypeError(`Cannot read properties of undefined (reading '${prop}')`);
+
+/** Unit `n`, which the plan holds (every number from 1 to its count, and the body's); a missing one raises what reading
+ *  its member `reading` raised before.
+ *  @param {Units} U @param {number} n @param {string} reading @returns {DocUnit} */
+function unitAt(U, n, reading) {
+  const u = U.unit(n);
+  if (u === undefined) throw readOfUndefined(reading);
+  return u;
+}
+
+/** The table's or the extra parts' unit at index `i` of `U.extra`, which the plan holds (its text is read).
+ *  @param {Units} U @param {number} i @returns {DocUnit} */
+function extraAt(U, i) {
+  const u = U.extra[i];
+  if (u === undefined) throw readOfUndefined("text");
+  return u;
+}
+
+/** The one unit of an extra part the recipe names (its text is read).
+ *  @param {Units} U @param {DocPart} p @returns {DocUnit} */
+function partUnit(U, p) {
+  const u = U.extra.find((x) => x.part === p);
+  if (u === undefined) throw readOfUndefined("text");
+  return u;
+}
+
 /* ---- DOCX ---- */
 
 const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"';
 const R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+/** @param {string} t @returns {string} */
 const wp = (t) => `<w:p><w:r><w:t xml:space="preserve">${esc(t)}</w:t></w:r></w:p>`;
 
+/** @param {Plan} pl @param {Units} U @returns {PartEntry[]} */
 function docxParts(pl, U) {
+  /** @param {DocPart} p */
   const has = (p) => pl.parts.includes(p);
-  const part = (p) => U.extra.find((u) => u.part === p);
+  /** @param {DocPart} p */
+  const part = (p) => partUnit(U, p);
+  /** @type {PartEntry[]} */
   const files = [];
-  const main = pl.recipe.flavour === "template" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml"
-    : pl.recipe.flavour === "macro" ? "application/vnd.ms-word.document.macroEnabled.main+xml" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
+  const flavour = pl.recipe.flavour;
+  const main = flavour === "template" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml"
+    : flavour === "macro" ? "application/vnd.ms-word.document.macroEnabled.main+xml" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml";
   const ct = [`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="${main}"/>`];
+  /** @type {string[]} */
   const rels = [];
+  /** @param {string} name @param {string} type @param {string} rel @param {string} xml */
   const add = (name, type, rel, xml) => {
     ct.push(`<Override PartName="/word/${name}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${type}+xml"/>`);
     rels.push(`<Relationship Id="rId${rels.length + 1}" Type="${R}/${rel}" Target="${name}"/>`);
     files.push({ name: `word/${name}`, data: XML + xml });
     return `rId${rels.length}`;
   };
+  /** @param {string} tag @param {string} sep @param {DocUnit} u */
   const note = (tag, sep, u) => `<w:${tag}s ${W}><w:${tag} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${tag}><w:${tag} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${tag}><w:${tag} w:id="1">${wp(u.text)}</w:${tag}></w:${tag}s>`;
   if (has("footnote")) add("footnotes.xml", "footnotes", "footnotes", note("footnote", "", part("footnote")));
   if (has("endnote")) add("endnotes.xml", "endnotes", "endnotes", note("endnote", "", part("endnote")));
@@ -152,11 +326,12 @@ function docxParts(pl, U) {
 
 /** The main part's body, in chunks: the body units (or the ladder), then the table. `w` writes each shape. A ladder's
  *  part is padded to exactly `size.partBytes` by a comment (`w.comment`) at its end, so the rungs are equal bytes. */
+/** @param {Plan} pl @param {Units} U @param {Shapes} w @returns {AsyncGenerator<string, void, undefined>} */
 async function* mainBody(pl, U, w) {
   let batch = "";
   const ladder = pl.recipe.ladder;
   for (let n = 1; n <= pl.body; n++) {
-    const u = U.unit(n);
+    const u = unitAt(U, n, "text");
     if (ladder === "one-cell-tables") batch += w.table([[w.p(u)]]) + (w.after ?? "");
     else if (ladder === "hyperlinks") batch += w.link(u);
     else if (ladder === "nested-tables") batch += nest(w, n % 8 + 1, w.p(u));
@@ -166,27 +341,33 @@ async function* mainBody(pl, U, w) {
   }
   const t = pl.recipe.table;
   if (t) {
+    /** @type {string[][]} */
     const rows = [];
-    for (let r = 0; r < t.rows; r++) rows.push(Array.from({ length: t.cols }, (_, c) => w.p(U.extra[r * t.cols + c])));
+    for (let r = 0; r < t.rows; r++) rows.push(Array.from({ length: t.cols }, (_, c) => w.p(extraAt(U, r * t.cols + c))));
     batch += w.table(rows) + (w.after ?? "");
   }
   yield batch;
 }
+/** @type {(w: Shapes, depth: number, inner: string) => string} */
 const nest = (w, depth, inner) => (depth <= 0 ? inner : w.table([[nest(w, depth - 1, inner)]]));
 
 /** A ladder's rung count: as many units as fit `partBytes` (counted from the shape), for every rung but the empty one,
  *  whose count is the empty paragraphs between its two units. */
+/** @param {Plan} pl @param {Shapes} w @returns {number} */
 function ladderCount(pl, w) {
   const each = Buffer.byteLength(w.empty);
-  return Math.max(0, Math.floor((pl.size.partBytes - 4096) / each));
+  /* a ladder always names partBytes (plan); NaN stands where it would be undefined, as the arithmetic gave before */
+  return Math.max(0, Math.floor(((pl.size.partBytes ?? NaN) - 4096) / each));
 }
 
 /* ---- ODT and ODP ---- */
 
 const ODF_NS = 'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:xlink="http://www.w3.org/1999/xlink"';
+/** @param {string} t @returns {string} */
 const tp = (t) => `<text:p>${esc(t)}</text:p>`;
 const GRAPHIC = '<style:style style:name="gr1" style:family="graphic"><style:graphic-properties draw:fill="solid" fo:background-color="#ffffcc"/></style:style><style:style style:name="P1" style:family="paragraph"><style:paragraph-properties/></style:style>';
 
+/** @param {Plan} pl @param {string} mime @param {() => AsyncGenerator<string, void, undefined>} content @param {string} styles @param {boolean} padded @returns {PartEntry[]} */
 function odfPackage(pl, mime, content, styles, padded) {
   const mediaType = pl.recipe.flavour === "template" ? mime.replace(/text$/, "text-template").replace(/presentation$/, "presentation-template") : mime;
   return [
@@ -197,8 +378,18 @@ function odfPackage(pl, mime, content, styles, padded) {
   ];
 }
 
+/** A table's column count: its first row's cells.
+ *  @param {string[][]} rows @returns {number} */
+function columnsOf(rows) {
+  const first = rows[0];
+  if (first === undefined) throw readOfUndefined("length");
+  return first.length;
+}
+
+/** @param {Plan} pl @param {Units} U @returns {PartEntry[]} */
 function odtParts(pl, U) {
-  const has = (p) => pl.parts.includes(p), part = (p) => U.extra.find((u) => u.part === p);
+  /** @param {DocPart} p */
+  const has = (p) => pl.parts.includes(p), part = (/** @type {DocPart} */ p) => partUnit(U, p);
   const content = async function* () {
     yield `${XML}<office:document-content ${ODF_NS} office:version="1.3"><office:automatic-styles>${GRAPHIC}</office:automatic-styles><office:body><office:text>`;
     if (has("deleted")) yield `<text:tracked-changes><text:changed-region text:id="ct1"><text:deletion><office:change-info><dc:creator>bio</dc:creator><dc:date>2026-01-01T00:00:00</dc:date></office:change-info>${tp(part("deleted").text)}</text:deletion></text:changed-region></text:tracked-changes>`;
@@ -206,7 +397,7 @@ function odtParts(pl, U) {
       p: (u) => tp(u.text),
       empty: "<text:p/>",
       link: (u) => `<text:p><text:a xlink:type="simple" xlink:href="#u${u.n}">${esc(u.text)}</text:a></text:p>`,
-      table: (rows) => `<table:table><table:table-column table:number-columns-repeated="${rows[0].length}"/>${rows.map((r) => `<table:table-row>${r.map((c) => `<table:table-cell office:value-type="string">${c}</table:table-cell>`).join("")}</table:table-row>`).join("")}</table:table>`,
+      table: (rows) => `<table:table><table:table-column table:number-columns-repeated="${columnsOf(rows)}"/>${rows.map((r) => `<table:table-row>${r.map((c) => `<table:table-cell office:value-type="string">${c}</table:table-cell>`).join("")}</table:table-row>`).join("")}</table:table>`,
     });
     let tail = "";
     if (has("footnote")) tail += `<text:p>${esc(pl.seed)}<text:note text:id="ftn1" text:note-class="footnote"><text:note-citation>1</text:note-citation><text:note-body>${tp(part("footnote").text)}</text:note-body></text:note></text:p>`;
@@ -216,23 +407,28 @@ function odtParts(pl, U) {
     if (has("textbox")) tail += `<text:p><draw:frame draw:name="f1" draw:style-name="gr1" text:anchor-type="paragraph" svg:width="15cm" svg:height="2cm"><draw:text-box>${tp(part("textbox").text)}</draw:text-box></draw:frame></text:p>`;
     yield `${tail}</office:text></office:body></office:document-content>`;
   };
+  /** @param {string} tag @param {DocPart} p */
   const hf = (tag, p) => (has(p) ? `<style:${tag}>${tp(part(p).text)}</style:${tag}>` : "");
   const styles = `${XML}<office:document-styles ${ODF_NS} office:version="1.3"><office:automatic-styles><style:page-layout style:name="pm1"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/><style:header-style/><style:footer-style/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${hf("header", "header")}${hf("footer", "footer")}</style:master-page></office:master-styles></office:document-styles>`;
   return odfPackage(pl, MIME.odt, content, styles, pl.size.bytes !== undefined);
 }
 
+/** @param {Plan} pl @param {Units} U @returns {PartEntry[]} */
 function odpParts(pl, U) {
-  const has = (p) => pl.parts.includes(p), part = (p) => U.extra.find((u) => u.part === p);
+  /** @param {DocPart} p */
+  const has = (p) => pl.parts.includes(p), part = (/** @type {DocPart} */ p) => partUnit(U, p);
+  /** @param {string} t @param {number} y @param {string} [cls] */
   const frame = (t, y, cls = "") => `<draw:frame${cls} svg:width="24cm" svg:height="3cm" svg:x="2cm" svg:y="${y}cm"><draw:text-box>${tp(t)}</draw:text-box></draw:frame>`;
   const content = async function* () {
     yield `${XML}<office:document-content ${ODF_NS} office:version="1.3"><office:automatic-styles><style:style style:name="dp1" style:family="drawing-page"><style:drawing-page-properties presentation:visibility="hidden"/></style:style></office:automatic-styles><office:body><office:presentation>`;
     let batch = "";
+    /** @param {number} k @param {string} body @param {boolean} [hidden] @param {string} [extra] */
     const page = (k, body, hidden = false, extra = "") => `<draw:page draw:name="p${k}" draw:master-page-name="Default"${hidden ? ' draw:style-name="dp1"' : ""}>${body}${extra}</draw:page>`;
     for (let n = 1; n <= pl.body; n++) {
       let extra = "";
       if (n === 1 && has("notes")) extra = `<presentation:notes>${frame(part("notes").text, 12, ' presentation:class="notes"')}</presentation:notes>`;
       const tb = n === 1 && has("textbox") ? frame(part("textbox").text, 8) : "";
-      batch += page(n, frame(U.unit(n).text, 2) + tb, false, extra);
+      batch += page(n, frame(unitAt(U, n, "text").text, 2) + tb, false, extra);
       if (batch.length > 1 << 18) { yield batch; batch = ""; }
     }
     if (has("hidden")) batch += page(pl.body + 1, frame(part("hidden").text, 2), true);
@@ -249,21 +445,29 @@ function odpParts(pl, U) {
 const P = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 const GROUP = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>';
 /* A body shape is a plain shape; only an inserted text box carries `txBox="1"`, as PowerPoint writes them (K4997). */
+/** @param {number} id @param {string} t @param {number} [y] @param {string} [ph] @param {boolean} [box] @returns {string} */
 const shape = (id, t, y = 457200, ph = "", box = false) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="t${id}"/><p:cNvSpPr${box ? ' txBox="1"' : ""}/><p:nvPr>${ph}</p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="457200" y="${y}"/><a:ext cx="8229600" cy="900000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US"/><a:t>${esc(t)}</a:t></a:r></a:p></p:txBody></p:sp>`;
+/** @param {readonly (readonly [string, string, string])[]} list @returns {string} */
 const relsXml = (list) => `${XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${list.map(([id, type, target]) => `<Relationship Id="${id}" Type="${type}" Target="${target}"/>`).join("")}</Relationships>`;
 const THEME = `${XML}<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="bio"><a:themeElements><a:clrScheme name="bio"><a:dk1><a:srgbClr val="000000"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F497D"/></a:dk2><a:lt2><a:srgbClr val="EEECE1"/></a:lt2><a:accent1><a:srgbClr val="4F81BD"/></a:accent1><a:accent2><a:srgbClr val="C0504D"/></a:accent2><a:accent3><a:srgbClr val="9BBB59"/></a:accent3><a:accent4><a:srgbClr val="8064A2"/></a:accent4><a:accent5><a:srgbClr val="4BACC6"/></a:accent5><a:accent6><a:srgbClr val="F79646"/></a:accent6><a:hlink><a:srgbClr val="0000FF"/></a:hlink><a:folHlink><a:srgbClr val="800080"/></a:folHlink></a:clrScheme><a:fontScheme name="bio"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="bio"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
 
+/** @param {Plan} pl @param {Units} U @returns {PartEntry[]} */
 function pptxParts(pl, U) {
-  const has = (p) => pl.parts.includes(p), part = (p) => U.extra.find((u) => u.part === p);
+  /** @param {DocPart} p */
+  const has = (p) => pl.parts.includes(p), part = (/** @type {DocPart} */ p) => partUnit(U, p);
   const PR = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const slides = pl.body + (has("hidden") ? 1 : 0);
-  const main = pl.recipe.flavour === "template" ? "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
-    : pl.recipe.flavour === "macro" ? "application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml" : "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
+  const flavour = pl.recipe.flavour;
+  const main = flavour === "template" ? "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
+    : flavour === "macro" ? "application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml" : "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
+  /** @param {string} t */
   const pml = (t) => `application/vnd.openxmlformats-officedocument.presentationml.${t}+xml`;
   const ct = [`<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="${main}"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="${pml("slideMaster")}"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="${pml("slideLayout")}"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>`];
+  /** @type {PartEntry[]} */
   const files = [];
   for (let k = 1; k <= slides; k++) ct.push(`<Override PartName="/ppt/slides/slide${k}.xml" ContentType="${pml("slide")}"/>`);
   if (has("notes")) ct.push(`<Override PartName="/ppt/notesSlides/notesSlide1.xml" ContentType="${pml("notesSlide")}"/>`);
+  /** @type {[string, string, string][]} */
   const presRels = [["rId1", `${PR}/slideMaster`, "slideMasters/slideMaster1.xml"], ["rId2", `${PR}/theme`, "theme/theme1.xml"]];
   for (let k = 1; k <= slides; k++) presRels.push([`rId${k + 2}`, `${PR}/slide`, `slides/slide${k}.xml`]);
   if (pl.recipe.flavour === "macro") {
@@ -271,17 +475,19 @@ function pptxParts(pl, U) {
     presRels.push([`rId${slides + 3}`, "http://schemas.microsoft.com/office/2006/relationships/vbaProject", "vbaProject.bin"]);
     files.push({ name: "ppt/vbaProject.bin", data: new Uint8Array(512).fill(0xd0) });
   }
+  /** @param {string} t @param {string} [extra] @param {boolean} [hidden] */
   const slideXml = (t, extra = "", hidden = false) => `${XML}<p:sld ${P}${hidden ? ' show="0"' : ""}><p:cSld><p:spTree>${GROUP}${shape(2, t)}${extra}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`;
   const tableXml = () => {
     const t = pl.recipe.table;
     if (!t) return "";
     let rows = "";
-    for (let r = 0; r < t.rows; r++) rows += `<a:tr h="370840">${Array.from({ length: t.cols }, (_, c) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${esc(U.extra[r * t.cols + c].text)}</a:t></a:r></a:p></a:txBody><a:tcPr/></a:tc>`).join("")}</a:tr>`;
+    for (let r = 0; r < t.rows; r++) rows += `<a:tr h="370840">${Array.from({ length: t.cols }, (_, c) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${esc(extraAt(U, r * t.cols + c).text)}</a:t></a:r></a:p></a:txBody><a:tcPr/></a:tc>`).join("")}</a:tr>`;
     return `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="4" name="tbl"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="457200" y="2500000"/><a:ext cx="8229600" cy="${370840 * t.rows}"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid>${`<a:gridCol w="${Math.floor(8229600 / t.cols)}"/>`.repeat(t.cols)}</a:tblGrid>${rows}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>`;
   };
   for (let k = 1; k <= pl.body; k++) {
     const extra = (k === 1 && has("textbox") ? shape(3, part("textbox").text, 1500000, "", true) : "") + (k === 1 ? tableXml() : "");
-    files.push({ name: `ppt/slides/slide${k}.xml`, data: slideXml(U.unit(k).text, extra) });
+    files.push({ name: `ppt/slides/slide${k}.xml`, data: slideXml(unitAt(U, k, "text").text, extra) });
+    /** @type {[string, string, string][]} */
     const r = [["rId1", `${PR}/slideLayout`, "../slideLayouts/slideLayout1.xml"]];
     if (k === 1 && has("notes")) r.push(["rId2", `${PR}/notesSlide`, "../notesSlides/notesSlide1.xml"]);
     files.push({ name: `ppt/slides/_rels/slide${k}.xml.rels`, data: relsXml(r) });
@@ -311,6 +517,8 @@ function pptxParts(pl, U) {
 
 /* ---- HTML, text, JSON, XML ---- */
 
+/** @typedef {{bom: Uint8Array, enc: (s: string) => Uint8Array, unit: number}} Encoder */
+/** @param {DocEncoding} encoding @returns {Encoder} */
 function encoderOf(encoding) {
   const utf8 = new TextEncoder();
   if (encoding === "utf-8" || encoding === "bad-byte") return { bom: new Uint8Array(0), enc: (s) => utf8.encode(s), unit: 1 };
@@ -326,38 +534,43 @@ function encoderOf(encoding) {
 }
 
 /** The bad byte: one 0xFF written into the middle body unit, after its id (`badByte` in the truth). */
+/** @param {Plan} pl @returns {number} */
 const badUnit = (pl) => Math.ceil(pl.body / 2);
 
+/** @param {Plan} pl @param {Units} U @returns {Generator<string, void, undefined>} */
 function* textChunks(pl, U) {
   const k = pl.kind, depth = pl.recipe.markup?.depth ?? 0, open = !!pl.recipe.markup?.unterminated;
   const cs = pl.recipe.charset ?? (k === "html" ? "meta" : k === "xml" ? "xml" : "none");
   const name = CHARSET[pl.encoding];
+  /** @type {string[]} */
   let batch = [];
   const flush = function* () { if (batch.length) { yield batch.join(""); batch = []; } };
   if (k === "html") {
     const meta = cs === "meta" ? `<meta charset="${name}">` : "";
     yield `<!DOCTYPE html><html><head>${meta}<title>${esc(pl.seed)}</title></head><body>`;
-    if (pl.parts.includes("header")) yield `<header><p>${esc(U.extra.find((u) => u.part === "header").text)}</p></header>`;
+    if (pl.parts.includes("header")) yield `<header><p>${esc(partUnit(U, "header").text)}</p></header>`;
     if (pl.recipe.clientRendered) {
+      /** @type {string[]} */
       const texts = [];
-      for (let n = 1; n <= pl.body; n++) texts.push(U.unit(n).text);
+      for (let n = 1; n <= pl.body; n++) texts.push(unitAt(U, n, "text").text);
       yield `<div id="app"></div><script>document.getElementById("app").innerHTML=${JSON.stringify(texts).replace(/</g, "\\u003c")}.map(function(t){var p=document.createElement("p");p.textContent=t;return p.outerHTML}).join("");</script>`;
     } else {
       if (pl.recipe.main) yield "<main>";
+      /** @type {Shapes} */
       const html = { p: (u) => `${"<div>".repeat(depth)}<p>${esc(u.text)}${open ? "" : "</p>"}${open ? "" : "</div>".repeat(depth)}`, empty: "<p></p>", link: (u) => `<p><a href="#u${u.n}">${esc(u.text)}</a></p>`, table: (rows) => `<table>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</table>` };
       yield* syncBody(pl, U, html);
       if (pl.recipe.main) yield "</main>";
     }
-    if (pl.parts.includes("footer")) yield `<footer><p>${esc(U.extra.find((u) => u.part === "footer").text)}</p></footer>`;
+    if (pl.parts.includes("footer")) yield `<footer><p>${esc(partUnit(U, "footer").text)}</p></footer>`;
     yield "</body></html>";
     return;
   }
   if (k === "xml") yield `${cs === "xml" ? `<?xml version="1.0" encoding="${name}"?>\n` : ""}<doc>`;
   if (k === "json") yield '{"units":[';
   for (let n = 1; n <= pl.body; n++) {
-    const t = U.unit(n).text;
+    const t = unitAt(U, n, "text").text;
     if (k === "text") batch.push(`${t}\n`);
-    else if (k === "json") batch.push(`${n > 1 ? "," : ""}${JSON.stringify({ id: U.unit(n).id, text: t })}`);
+    else if (k === "json") batch.push(`${n > 1 ? "," : ""}${JSON.stringify({ id: unitAt(U, n, "id").id, text: t })}`);
     else batch.push(`${"<div>".repeat(depth)}<unit n="${n}">${esc(t)}${open ? "" : "</unit>"}${"</div>".repeat(depth)}`);
     if (batch.length >= 4096) yield* flush();
   }
@@ -366,12 +579,13 @@ function* textChunks(pl, U) {
   if (k === "xml") yield "</doc>";
 }
 
+/** @param {Plan} pl @param {Units} U @param {Shapes} w @returns {Generator<string, void, undefined>} */
 function* syncBody(pl, U, w) {
   /* mainBody without the async: the same shapes */
   const ladder = pl.recipe.ladder;
   let batch = "";
   for (let n = 1; n <= pl.body; n++) {
-    const u = U.unit(n);
+    const u = unitAt(U, n, "text");
     if (ladder === "one-cell-tables") batch += w.table([[w.p(u)]]);
     else if (ladder === "hyperlinks") batch += w.link(u);
     else if (ladder === "nested-tables") batch += nest(w, n % 8 + 1, w.p(u));
@@ -381,8 +595,9 @@ function* syncBody(pl, U, w) {
   }
   const t = pl.recipe.table;
   if (t) {
+    /** @type {string[][]} */
     const rows = [];
-    for (let r = 0; r < t.rows; r++) rows.push(Array.from({ length: t.cols }, (_, c) => w.p(U.extra[r * t.cols + c])));
+    for (let r = 0; r < t.rows; r++) rows.push(Array.from({ length: t.cols }, (_, c) => w.p(extraAt(U, r * t.cols + c))));
     batch += w.table(rows);
   }
   yield batch;
@@ -392,14 +607,18 @@ function* syncBody(pl, U, w) {
 
 /** A main part's chunks, the ladder's part padded to exactly `size.partBytes` with a trailing comment before its last
  *  closing tag, so a ladder's rungs are equal bytes. */
+/** @param {() => AsyncGenerator<string, void, undefined>} chunks @param {Plan} pl @param {(fill: string) => string} comment
+ *  @returns {AsyncGenerator<string, void, undefined>} */
 async function* sizedPart(chunks, pl, comment) {
   const target = pl.size.partBytes;
   if (target === undefined) { yield* chunks(); return; }
   const enc = new TextEncoder();
   let n = 0;
+  /** @type {string[]} */
   const all = [];
   for await (const c of chunks()) { all.push(c); n += enc.encode(c).length; }
   const last = all.pop();
+  if (last === undefined) throw readOfUndefined("slice");
   const close = last.slice(last.lastIndexOf("</"));
   const before = last.slice(0, last.length - close.length);
   const fill = target - n - comment("").length;
@@ -408,54 +627,77 @@ async function* sizedPart(chunks, pl, comment) {
   yield before + comment(" ".repeat(fill)) + close;
 }
 
+/** @param {Plan} pl @param {Units} U @returns {DocEntry[]} */
 function packageEntries(pl, U) {
-  const entries = pl.kind === "docx" ? docxParts(pl, U) : pl.kind === "pptx" ? pptxParts(pl, U) : pl.kind === "odt" ? odtParts(pl, U) : odpParts(pl, U);
+  const kind = pl.kind;
+  const entries = kind === "docx" ? docxParts(pl, U) : kind === "pptx" ? pptxParts(pl, U) : kind === "odt" ? odtParts(pl, U) : odpParts(pl, U);
   const enc = new TextEncoder();
   return entries.map((e) => {
-    if (!e.chunks) return e;
+    if (e.chunks === undefined) return e;
     const src = e.chunks;
     return { ...e, chunks: async function* () { for await (const c of sizedPart(src, pl, (f) => `<!--${f}-->`)) yield enc.encode(c); } };
   });
 }
 
+/** @param {Plan} pl @param {DocEntry[]} entries @returns {{mainName: string, encrypted: string|null, declares: DocDeclares|null}} */
 function hostileOf(pl, entries) {
-  const mainName = entries.find((e) => e.main).name;
-  const em = pl.recipe.encryptedMember === true ? mainName : pl.recipe.encryptedMember;
+  const main = entries.find((e) => e.main);
+  if (main === undefined) throw readOfUndefined("name");
+  const mainName = main.name;
+  const given = pl.recipe.encryptedMember;
+  const em = given === true ? mainName : given;
   if (em && !entries.some((e) => e.name === em)) throw new Error(`docgen: encryptedMember ${em} is not a member`);
   const d = pl.recipe.declares;
   if (d && !entries.some((e) => e.name === d.member)) throw new Error(`docgen: declares.member ${d.member} is not a member`);
   return { mainName, encrypted: em ?? null, declares: d ?? null };
 }
 
+/** @param {Plan} pl @param {Units} U @returns {AsyncGenerator<Uint8Array, void, undefined>} */
 async function* packageChunks(pl, U) {
   const entries = packageEntries(pl, U);
   const h = hostileOf(pl, entries);
-  if (h.encrypted) {
+  const encrypted = h.encrypted;
+  if (encrypted) {
     /* an encrypted member: the whole archive through makeZip, which writes the flag (the data is not encrypted, R12) */
+    /** @type {{name: string, data: string|Uint8Array, method: 0|8, encrypted?: "traditional"}[]} */
     const list = [];
     for (const e of entries) {
-      let data = e.data;
-      if (e.chunks) { const parts = []; for await (const c of e.chunks()) parts.push(c); data = Buffer.concat(parts); }
-      list.push({ name: e.name, data, method: e.method ?? 8, ...(e.name === h.encrypted ? { encrypted: "traditional" } : {}) });
+      /** @type {string|Uint8Array} */
+      let data;
+      if (e.chunks) {
+        /** @type {Uint8Array[]} */
+        const parts = [];
+        for await (const c of e.chunks()) parts.push(c);
+        data = Buffer.concat(parts);
+      } else data = e.data;
+      const method = e.method ?? 8;
+      if (e.name === encrypted) list.push({ name: e.name, data, method, encrypted: "traditional" });
+      else list.push({ name: e.name, data, method });
     }
     yield makeZip(list);
     return;
   }
-  const list = entries.map((e) => (h.declares && e.name === h.declares.member ? { ...e, central: { uncompressedSize: declaredSize(e, h.declares) } } : e));
-  if (pl.size.bytes !== undefined) yield* zipChunks64Sized(list, pl.size.bytes, { member: pl.kind === "odt" || pl.kind === "odp" });
+  const declares = h.declares;
+  const list = entries.map((e) => (declares && e.name === declares.member ? { ...e, central: { uncompressedSize: declaredSize(e, declares) } } : e));
+  const bytes = pl.size.bytes;
+  const kind = pl.kind;
+  if (bytes !== undefined) yield* zipChunks64Sized(list, bytes, { member: kind === "odt" || kind === "odp" });
   else yield* zipChunks64(list);
 }
 
+/** @param {DocEntry} e @param {DocDeclares} d @returns {number} */
 function declaredSize(e, d) {
-  if (e.data === undefined) throw new Error("docgen: declares.member must be a member written whole");
-  return (typeof e.data === "string" ? Buffer.byteLength(e.data) : e.data.length) + d.more;
+  const data = e.data;
+  if (data === undefined) throw new Error("docgen: declares.member must be a member written whole");
+  return (typeof data === "string" ? Buffer.byteLength(data) : data.length) + d.more;
 }
 
+/** @param {Plan} pl @param {Units} U @returns {AsyncGenerator<Uint8Array, void, undefined>} */
 async function* plainChunks(pl, U) {
   const E = encoderOf(pl.encoding);
   if (E.bom.length) yield E.bom;
   let n = E.bom.length;
-  const bad = pl.encoding === "bad-byte" ? U.unit(badUnit(pl)).id : null;
+  const bad = pl.encoding === "bad-byte" ? unitAt(U, badUnit(pl), "id").id : null;
   for (const c of textChunks(pl, U)) {
     let b = E.enc(c);
     /* after the id where the unit's text has it (the id then a space: in JSON the id field comes first, unspaced) */
@@ -466,53 +708,73 @@ async function* plainChunks(pl, U) {
     n += b.length;
     yield b;
   }
-  if (pl.size.bytes !== undefined) {
-    const left = pl.size.bytes - n;
-    if (left < 0 || left % E.unit) throw new Error(`docgen: the file is ${n} bytes, size.bytes ${pl.size.bytes} cannot be reached`);
+  const bytes = pl.size.bytes;
+  if (bytes !== undefined) {
+    const left = bytes - n;
+    if (left < 0 || left % E.unit) throw new Error(`docgen: the file is ${n} bytes, size.bytes ${bytes} cannot be reached`);
     for (let i = 0; i < left; i += 1 << 20) yield E.enc(" ".repeat(Math.min(1 << 20, left - i) / E.unit));
   }
 }
 
+/** @param {Plan} pl @param {Units} U @param {number|null} size @returns {DocTruth} */
 function truthFrom(pl, U, size) {
+  /** @type {{n: number, reason: string}[]} */
   const unread = [];
-  let refusal = null, hostile = null;
+  /** @type {DocRefusal|null} */
+  let refusal = null;
+  /** @type {DocHostile|null} */
+  let hostile = null;
   if (PACKAGES.includes(pl.kind)) {
+    /** @type {{[kind: string]: string}} */
     const names = { docx: "word/document.xml", pptx: "ppt/presentation.xml", odt: "content.xml", odp: "content.xml" };
-    const em = pl.recipe.encryptedMember === true ? names[pl.kind] : pl.recipe.encryptedMember;
+    const given = pl.recipe.encryptedMember;
+    const em = given === true ? names[pl.kind] : given;
     if (em) {
       hostile = { encryptedMember: em };
       if (em === names[pl.kind]) refusal = { code: "ENCRYPTED" };
       else for (const u of U.extra) if (memberOf(pl.kind, u.part) === em) unread.push({ n: u.n, reason: "ENCRYPTED" });
     }
-    if (pl.recipe.declares) hostile = { ...hostile, declares: pl.recipe.declares };
+    const declares = pl.recipe.declares;
+    if (declares) hostile = { ...hostile, declares };
   }
   if (pl.recipe.markup?.unterminated && pl.kind === "xml") refusal = { code: "MALFORMED" };
-  if (pl.recipe.bound && size > pl.recipe.bound) refusal = { code: "TOO_LARGE", size, bound: pl.recipe.bound };
-  const bodyMarks = { first: U.unit(1).id, middle: U.unit(Math.ceil(pl.body / 2)).id, last: U.unit(pl.body).id };
+  /* `null > bound` is false, as the size check is */
+  const bound = pl.recipe.bound;
+  if (bound && size !== null && size > bound) refusal = { code: "TOO_LARGE", size, bound };
+  const bodyMarks = { first: unitAt(U, 1, "id").id, middle: unitAt(U, Math.ceil(pl.body / 2), "id").id, last: unitAt(U, pl.body, "id").id };
+  /** @type {{[part: string]: number[]}} */
   const byPart = {};
-  for (let n = 1; n <= U.count; n++) (byPart[U.unit(n).part] ??= []).push(n);
+  for (let n = 1; n <= U.count; n++) (byPart[unitAt(U, n, "part").part] ??= []).push(n);
   return {
     kind: pl.kind, recipe: pl.recipe, units: U.count, unit: U.unit,
-    *all() { for (let n = 1; n <= U.count; n++) yield U.unit(n); },
+    *all() { for (let n = 1; n <= U.count; n++) yield unitAt(U, n, "id"); },
     parts: byPart, marks: bodyMarks, unread, refusal, hostile,
     contentType: PACKAGES.includes(pl.kind) ? MIME[pl.kind] : `${MIME[pl.kind]}${(pl.recipe.charset ?? "") === "header" || pl.kind === "text" ? `; charset=${CHARSET[pl.encoding]}` : ""}`,
     encoding: PACKAGES.includes(pl.kind) ? null : pl.encoding,
-    badByte: pl.encoding === "bad-byte" ? { n: badUnit(pl), after: U.unit(badUnit(pl)).id } : null,
+    badByte: pl.encoding === "bad-byte" ? { n: badUnit(pl), after: unitAt(U, badUnit(pl), "id").id } : null,
     clientRendered: !!pl.recipe.clientRendered,
     oracleOmits: ORACLE_OMITS[pl.kind], ext: extOf(pl), size: size ?? null,
   };
 }
 
-const memberOf = (kind, part) => ({
-  docx: { footnote: "word/footnotes.xml", endnote: "word/endnotes.xml", comment: "word/comments.xml", header: "word/header1.xml", footer: "word/footer1.xml" },
-  odt: { header: "styles.xml", footer: "styles.xml" }, odp: { master: "styles.xml" },
-  pptx: { notes: "ppt/notesSlides/notesSlide1.xml", master: "ppt/slideMasters/slideMaster1.xml" },
-}[kind]?.[part]);
+/** @param {DocKind} kind @param {DocPart} part @returns {string|undefined} */
+const memberOf = (kind, part) => {
+  /** @type {{[kind: string]: {[part: string]: string}}} */
+  const members = {
+    docx: { footnote: "word/footnotes.xml", endnote: "word/endnotes.xml", comment: "word/comments.xml", header: "word/header1.xml", footer: "word/footer1.xml" },
+    odt: { header: "styles.xml", footer: "styles.xml" }, odp: { master: "styles.xml" },
+    pptx: { notes: "ppt/notesSlides/notesSlide1.xml", master: "ppt/slideMasters/slideMaster1.xml" },
+  };
+  return members[kind]?.[part];
+};
 
-const extOf = (pl) => (pl.recipe.flavour ? EXT[pl.kind][pl.recipe.flavour] : { text: "txt" }[pl.kind] ?? pl.kind);
+/** The file's extension: the flavour's, or the kind's own (`txt` for text), which plan works out.
+ *  @param {Plan} pl @returns {string} */
+const extOf = (pl) => pl.ext;
 
 /** The document of a recipe (R19, R22): `{kind, ext, type, size, truth, chunks(), bytes()}`; `size` is null for a
- *  package whose size is not named (known once streamed). */
+ *  package whose size is not named (known once streamed).
+ *  @param {DocRecipe} recipe @returns {DocFile} */
 export function generate(recipe) {
   const pl = plan(recipe), U = unitsOf(pl);
   const size = pl.size.bytes ?? null;
@@ -520,11 +782,17 @@ export function generate(recipe) {
   const chunks = () => (PACKAGES.includes(pl.kind) ? packageChunks(pl, U) : plainChunks(pl, U));
   return {
     kind: pl.kind, ext: extOf(pl), type: truth.contentType, size, truth, chunks,
-    bytes: async () => { const parts = []; for await (const c of chunks()) parts.push(c); return new Uint8Array(Buffer.concat(parts)); },
+    bytes: async () => {
+      /** @type {Uint8Array[]} */
+      const parts = [];
+      for await (const c of chunks()) parts.push(c);
+      return new Uint8Array(Buffer.concat(parts));
+    },
   };
 }
 
-/** The truth of a recipe without building its file (R24). */
+/** The truth of a recipe without building its file (R24).
+ *  @param {DocRecipe} recipe @returns {DocTruth} */
 export function truthOf(recipe) {
   const pl = plan(recipe);
   return truthFrom(pl, unitsOf(pl), pl.size.bytes ?? null);

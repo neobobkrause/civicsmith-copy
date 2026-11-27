@@ -41,12 +41,14 @@
 import { createPrivateKey, createPublicKey, sign as cryptoSign, createHash } from "node:crypto";
 
 const te = new TextEncoder();
+/** @param {Uint8Array} bytes @returns {Uint8Array} */
 const wStr = (bytes) => {
   const out = new Uint8Array(4 + bytes.length);
   new DataView(out.buffer).setUint32(0, bytes.length);
   out.set(bytes, 4);
   return out;
 };
+/** @param {...Uint8Array} parts @returns {Uint8Array} */
 const cat = (...parts) => {
   const n = parts.reduce((a, p) => a + p.length, 0);
   const out = new Uint8Array(n);
@@ -55,16 +57,25 @@ const cat = (...parts) => {
   return out;
 };
 
-/** Pull the 32-byte ed25519 seed out of the `BIOKEY-RAW1.<label>.<b64>` envelope. */
+/**
+ * @typedef {Object} ReleaseSeed
+ * @property {string} label
+ * @property {Uint8Array} seed the 32-byte ed25519 seed
+ */
+/** Pull the 32-byte ed25519 seed out of the `BIOKEY-RAW1.<label>.<b64>` envelope.
+ *  @param {unknown} envelope
+ *  @returns {ReleaseSeed}
+ *  @throws {Error} when it is not a BIOKEY-RAW1 envelope of a 32-byte seed */
 export function seedFromEnvelope(envelope) {
   const text = String(envelope || "").trim();
   /* Exactly the envelope the signer page mints: canonical, padded base64 only,
      so a stray character is refused rather than silently skipped by the decoder. */
   const m = /^BIOKEY-RAW1\.([^.]*)\.((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?)$/.exec(text);
-  if (!m || !m[2]) throw new Error("release seed is not a BIOKEY-RAW1 envelope");
-  const seed = Buffer.from(m[2], "base64");
+  const encoded = m ? m[2] : undefined;
+  if (!m || !encoded) throw new Error("release seed is not a BIOKEY-RAW1 envelope");
+  const seed = Buffer.from(encoded, "base64");
   if (seed.length !== 32) throw new Error(`release seed is ${seed.length} bytes, expected 32`);
-  return { label: m[1], seed };
+  return { label: m[1] ?? "", seed };
 }
 
 /* An Ed25519 PKCS#8 private key is a fixed 16-byte prefix and the raw seed.
@@ -73,6 +84,7 @@ export function seedFromEnvelope(envelope) {
    ssh-keygen, which is the only claim that matters. */
 const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 
+/** @param {Uint8Array} seed the 32-byte seed @returns {import("node:crypto").KeyObject} the private key */
 export function keyFromSeed(seed) {
   return createPrivateKey({
     key: Buffer.concat([PKCS8_ED25519_PREFIX, Buffer.from(seed)]),
@@ -80,7 +92,8 @@ export function keyFromSeed(seed) {
   });
 }
 
-/** The raw 32-byte public key, derived from the private one. */
+/** The raw 32-byte public key, derived from the private one.
+ *  @param {import("node:crypto").KeyObject} key @returns {Uint8Array} */
 export function publicFromKey(key) {
   /* A PRIVATE key object cannot export SPKI — `createPublicKey` derives the
      public half first. Measured 2026-09-13: exporting spki straight off the
@@ -89,11 +102,17 @@ export function publicFromKey(key) {
   return new Uint8Array(spki.subarray(spki.length - 32));
 }
 
+/** @param {Uint8Array} bytes @returns {string} */
 const b64 = (bytes) => Buffer.from(bytes).toString("base64");
 
 /**
  * Sign `message` (Uint8Array/Buffer) in `namespace`, returning an armored
  * SSHSIG. Shapes are openssh PROTOCOL.sshsig, the same ones sshsig.mjs parses.
+ * @param {unknown} envelope
+ * @param {Uint8Array} message
+ * @param {string} namespace
+ * @returns {string}
+ * @throws {Error} as seedFromEnvelope
  */
 export function signSshsig(envelope, message, namespace) {
   const { seed } = seedFromEnvelope(envelope);
@@ -125,7 +144,8 @@ export function signSshsig(envelope, message, namespace) {
 }
 
 /** The signer's own public key as an authorized_keys line, for comparison
- *  against ARMED_SIGNERS. Public material only — safe to print. */
+ *  against ARMED_SIGNERS. Public material only — safe to print.
+ *  @param {unknown} envelope @param {string} [comment] @returns {string} @throws {Error} as seedFromEnvelope */
 export function signerPublicLine(envelope, comment = "bio-release") {
   const { seed } = seedFromEnvelope(envelope);
   const pubRaw = publicFromKey(keyFromSeed(seed));

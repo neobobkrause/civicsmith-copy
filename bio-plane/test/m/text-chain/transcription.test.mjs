@@ -9,13 +9,19 @@ import {
   gradeCeiling, tiersEvidenced, describeChain, chainKindFor, isTranscribed, calibrationsOf, layerChain,
 } from "../../../src/textchain.mjs";
 import { BASIS_GRADES, EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
+/** @import { Chain, Refusal } from "../../../src/textchain.mjs" */
 
 const AIT = (x = {}) => ({ step: "ai_transcription", engine: "vision-model", version: "3", ...x });
 const PIX = { step: "pixels" };
+/** @param {string | null} cap @param {{}} [x] */
 const O = (cap, x = {}) => ({ step: "ocr", engine: "eng", cap, ...x });
+/** @param {number[]} ps */
 const pages = (ps) => ({ kind: "pages", pages: ps });
+/** @param {...string} gs @returns {string | undefined} */
 const weakest = (...gs) => BASIS_GRADES[Math.max(...gs.map((g) => BASIS_GRADES.indexOf(g)))];
 const BYTE_GRADES = [...BASIS_GRADES, EARNED_CAPTURE_CEILING];
+/** The refusal a check or an append answered. @param {Chain | Refusal | null} r @returns {Refusal} */
+const refusalOf = (r) => { assert.ok(r !== null && !Array.isArray(r), JSON.stringify(r)); return r; };
 
 test("R104: ai_transcription is a derivation step kind, the AI's reading, a machine reading on tier 4", () => {
   const k = STEP_KINDS.ai_transcription;
@@ -34,7 +40,7 @@ test("R104: ai_transcription is a derivation step kind, the AI's reading, a mach
 
 test("R104: the step names the model that read the page", () => {
   for (const engine of [undefined, null, "", "  ", 5]) {
-    const r = checkChain([AIT({ engine })]);
+    const r = refusalOf(checkChain([AIT({ engine })]));
     assert.equal(r.code, "TEXT_CHAIN_STEP_UNNAMED", JSON.stringify(engine));
     assert.equal(r.check, TEXT_CHAIN_CHECKS.TEXT_CHAIN_STEP_UNNAMED.check);
   }
@@ -81,7 +87,7 @@ test("R104: in a mixed document, only the pages the AI read are undetermined, an
 
 test("R104: a letter comes only from a measurement, its calibration named; once measured it bounds like any step", () => {
   for (const cap of BASIS_GRADES) {
-    const r = checkChain([AIT({ cap })]);
+    const r = refusalOf(checkChain([AIT({ cap })]));
     assert.equal(r.code, "TEXT_CHAIN_LETTER_UNCALIBRATED", cap);
     assert.equal(r.check, TEXT_CHAIN_CHECKS.TEXT_CHAIN_LETTER_UNCALIBRATED.check);
     const measured = [PIX, AIT({ cap, calibration: "CAL-AIT-1" })];
@@ -91,14 +97,14 @@ test("R104: a letter comes only from a measurement, its calibration named; once 
     for (const g of BASIS_GRADES) assert.equal(captureBound(measured, g), weakest(g, cap), `${cap} ${g}`);
   }
   /* The member-facing words (C-35.13, K2428) name both cases the refusal is for: a conversion, and an AI's reading. */
-  const words = checkChain([AIT({ cap: "C" })]).translation;
-  assert.equal(words, checkChain([{ step: "convert", engine: "host-export", format: "odt", cap: "C" }]).translation);
+  const words = refusalOf(checkChain([AIT({ cap: "C" })])).translation;
+  assert.equal(words, refusalOf(checkChain([{ step: "convert", engine: "host-export", format: "odt", cap: "C" }])).translation);
   assert.match(words, /a conversion of the document, or an AI's reading of a page/);
   assert.match(words, /an AI reads a scan/);
   assert.match(words, /"not yet determined"/);
-  assert.match(checkChain([AIT({ cap: "C" })]).detail, /ai_transcription step claims fidelity "C"/);
+  assert.match(refusalOf(checkChain([AIT({ cap: "C" })])).detail, /ai_transcription step claims fidelity "C"/);
   /* Rule 2 holds: a measured reading stronger than the chain it extends is refused. */
-  assert.equal(appendStep([PIX, O("D")], AIT({ cap: "B", calibration: "CAL-AIT-1" })).code, "TEXT_CHAIN_STRENGTHENS");
+  assert.equal(refusalOf(appendStep([PIX, O("D")], AIT({ cap: "B", calibration: "CAL-AIT-1" }))).code, "TEXT_CHAIN_STRENGTHENS");
 });
 
 test("R104: a member who checks a passage against the page raises it through gradeCeiling; the chain stays undetermined", () => {

@@ -7,10 +7,46 @@ import { mkdirSync, writeFileSync, statSync, copyFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join, basename } from "node:path";
 
+/** What the worker answers: whether `ok` is set, and for a reading the pages, characters, calls and the slowest call's milliseconds.
+ *  @typedef {{ ok: boolean, pages: number | undefined, chars: number | undefined, calls: number | undefined, slowest: number | undefined }} ProbeAnswer */
+/** A number the worker answered, or undefined where it answered none; a thrown failure naming `what` for anything else.
+ *  @param {unknown} v
+ *  @param {string} what
+ *  @returns {number | undefined} */
+function numberOrNone(v, what) {
+  if (v !== undefined && typeof v !== "number") throw new Error(`${what}: not a number`);
+  return v;
+}
+/** The JSON object a text holds, or null where it holds another value.
+ *  @param {string} text
+ *  @returns {object | null} */
+function objectIn(text) {
+  /** @type {unknown} */
+  const v = JSON.parse(text);
+  return typeof v === "object" ? v : null;
+}
+/** The worker's answer, read from its text (`ok` false where it is not an object); a thrown failure naming a member that is
+ *  not a number.
+ *  @param {string} text
+ *  @returns {ProbeAnswer} */
+function probeAnswer(text) {
+  const v = objectIn(text);
+  if (v === null) return { ok: false, pages: undefined, chars: undefined, calls: undefined, slowest: undefined };
+  return { ok: "ok" in v ? !!v.ok : false, pages: numberOrNone("pages" in v ? v.pages : undefined, "pages"), chars: numberOrNone("chars" in v ? v.chars : undefined, "chars"),
+    calls: numberOrNone("calls" in v ? v.calls : undefined, "calls"), slowest: numberOrNone("slowest" in v ? v.slowest : undefined, "slowest") };
+}
+
+/** @param {string} p
+ *  @returns {string} */
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
-const [dir, path, n = "100"] = process.argv.slice(2);
-if (!dir || !path) { console.error("usage: workerd-range.probe.mjs <dir> <pdf> [pages per call]"); process.exit(2); }
+const [dirArg, path, n = "100"] = process.argv.slice(2);
+if (!dirArg || !path) { console.error("usage: workerd-range.probe.mjs <dir> <pdf> [pages per call]"); process.exit(2); throw new Error("usage"); }
+const dir = dirArg;
 const BIN = here("../../../node_modules/.bin/");
+/** A pause of `ms` milliseconds while workerd starts.
+ *  @param {number} ms
+ *  @returns {Promise<void>} */
+const pause = (ms) => new Promise((r) => { setTimeout(r, ms); });
 mkdirSync(join(dir, "pdfs"), { recursive: true });
 writeFileSync(join(dir, "worker.mjs"), `
 import { extractPdfRange } from ${JSON.stringify(here("../../../src/pdfstructure.mjs"))};
@@ -34,6 +70,9 @@ execFileSync(BIN + "esbuild", [join(dir, "worker.mjs"), "--bundle", "--format=es
   "--conditions=workerd,worker,import", "--external:node:*", `--outfile=${join(dir, "worker.bundle.mjs")}`, "--log-level=warning"]);
 const file = basename(path);
 copyFileSync(path, join(dir, "pdfs", file));
+/** The worker's answer with `oldSpaceMB` of V8 old space, or null when it did not complete.
+ *  @param {number} oldSpaceMB
+ *  @returns {Promise<ProbeAnswer | null>} */
 async function run(oldSpaceMB) {
   const port = 19000 + Math.floor(Math.random() * 900);
   writeFileSync(join(dir, "config.capnp"), `using Workerd = import "/workerd/workerd.capnp";
@@ -47,9 +86,9 @@ const w :Workerd.Worker = (modules = [(name = "worker", esModule = embed "worker
   const p = spawn(BIN + "workerd", ["serve", join(dir, "config.capnp")], { stdio: "ignore" });
   try {
     let up = false;
-    for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await new Promise((r) => setTimeout(r, 200)); } }
+    for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await pause(200); } }
     if (!up) return null;
-    return await fetch(`http://127.0.0.1:${port}/?f=${file}&n=${n}`).then((x) => x.json()).catch(() => null);
+    return await fetch(`http://127.0.0.1:${port}/?f=${file}&n=${n}`).then((x) => x.text()).then(probeAnswer).catch(() => null);
   } finally { p.kill("SIGKILL"); }
 }
 let lo = 16, hi = Number(process.env.PROBE_HI || 320);
