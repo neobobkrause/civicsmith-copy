@@ -541,8 +541,8 @@ import {
  * @property {"docx"} format
  * @property {(bytes: unknown, contentType?: unknown) => DetectAnswer | null} detect
  * @property {(bytes: BytesInput | null | undefined) => Promise<DocxPartsResult>} parts
- * @property {(partsOrBytes: DocxPartsResult | ArrayBuffer | ArrayBufferView, opts?: ReadOptions) => Promise<(DocxStructure & ActiveCarried) | ReadFailure>} structure
- * @property {(partsOrBytes: DocxPartsResult | ArrayBuffer | ArrayBufferView, opts?: ReadOptions) => Promise<DocxText | ReadFailure>} text
+ * @property {(partsOrBytes: DocxPartsResult | ArrayBuffer | ArrayBufferView | null | undefined, opts?: ReadOptions) => Promise<(DocxStructure & ActiveCarried) | ReadFailure>} structure
+ * @property {(partsOrBytes: DocxPartsResult | ArrayBuffer | ArrayBufferView | null | undefined, opts?: ReadOptions) => Promise<DocxText | ReadFailure>} text
  */
 
 /* R44: what the walk may retain, paragraphs, cells and links together (the table's figure, never a literal here). */

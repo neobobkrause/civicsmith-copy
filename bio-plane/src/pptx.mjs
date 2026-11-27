@@ -310,8 +310,8 @@ import {
  * @property {"pptx"} format
  * @property {(bytes: unknown, contentType?: unknown) => DetectAnswer | null} detect
  * @property {(bytes: BytesInput | null | undefined) => Promise<PptxPartsResult>} parts
- * @property {(partsOrBytes: PptxPartsResult | ArrayBuffer | ArrayBufferView, opts?: ReadOptions) => Promise<(PptxStructure & ActiveCarried) | ReadFailure>} structure
- * @property {(partsOrBytes: PptxPartsResult | ArrayBuffer | ArrayBufferView, opts?: ReadOptions) => Promise<PptxText | ReadFailure>} text
+ * @property {(partsOrBytes: PptxPartsResult | ArrayBuffer | ArrayBufferView | null | undefined, opts?: ReadOptions) => Promise<(PptxStructure & ActiveCarried) | ReadFailure>} structure
+ * @property {(partsOrBytes: PptxPartsResult | ArrayBuffer | ArrayBufferView | null | undefined, opts?: ReadOptions) => Promise<PptxText | ReadFailure>} text
  */
 
 /**
@@ -910,6 +910,13 @@ function deckOf(parts) {
   return seq;
 }
 
+/** An ok parts result as `pptxRenumbering` reads one: `ok` true, `slideXml` a Map, `slideParts` an array.
+ *  @param {unknown} v @returns {v is PptxParts} */
+function isReadParts(v) {
+  if (!v || (typeof v !== "object" && typeof v !== "function")) return false;
+  return "ok" in v && v.ok === true && "slideXml" in v && v.slideXml instanceof Map && "slideParts" in v && Array.isArray(v.slideParts);
+}
+
 /** N439's MIGRATION MAP (R29; K795 (6)) — how a stored pptx reading made
  *  before N439 (every branch of `mc:AlternateContent` walked) is numbered
  *  against one made now (one branch). For extraction's migration of stored
@@ -927,10 +934,10 @@ function deckOf(parts) {
  *  its content was the duplicate of the branch that is. A slide whose part
  *  was not read (unreadable, or over the size guard) held no shape index and
  *  is not listed. Null when `parts` is not an ok parts result (R21).
- *  @param {PptxPartsResult | null | undefined} parts
+ *  @param {unknown} parts
  *  @returns {PptxRenumbering | null} */
 export function pptxRenumbering(parts) {
-  if (!parts || parts.ok !== true || !(parts.slideXml instanceof Map) || !Array.isArray(parts.slideParts)) return null;
+  if (!isReadParts(parts)) return null;
   /** @type {SlideRenumbering[]} */
   const slides = [];
   for (const { part, slide } of deckOf(parts)) {

@@ -670,7 +670,7 @@ import {
  *   | {ok: false, reason: string, size?: number, final?: boolean, name?: string, detail?: string}} CellsInFailure
  */
 /** @typedef {CellsInAnswer | CellsInFailure} CellsInResult */
-/** @typedef {XlsxPartsResult | ArrayBuffer | ArrayBufferView} PartsOrBytes */
+/** @typedef {XlsxPartsResult | ArrayBuffer | ArrayBufferView | null | undefined} PartsOrBytes */
 /**
  * The xlsx registry entry (I7).
  * @typedef {Object} XlsxEntry
@@ -679,7 +679,7 @@ import {
  * @property {(bytes: BytesInput | null | undefined) => Promise<XlsxPartsResult>} parts
  * @property {(partsOrBytes: PartsOrBytes, opts?: ReadOptions) => Promise<(XlsxStructure & ActiveCarried) | ReadFailure>} structure
  * @property {(partsOrBytes: PartsOrBytes, opts?: ReadOptions) => Promise<XlsxText | ReadFailure>} text
- * @property {(partsOrBytes: PartsOrBytes, range: CellsInRange | null | undefined) => Promise<CellsInResult>} cellsIn
+ * @property {(partsOrBytes: PartsOrBytes, range: unknown) => Promise<CellsInResult>} cellsIn a `range` that is not a `CellsInRange` is refused (`invalid_argument`)
  */
 
 /* R44: what the walk may retain, cells and links together (the table's figure, never a literal here). */
@@ -896,8 +896,16 @@ export { sheetCellRef, sheetRangeRef, columnLetters, usedSheetRange };
  * argument they cannot read is a stated reason, like any other.
  */
 
-/** @param {Corner | null | undefined} c @returns {boolean} */
-const isCorner = (c) => c != null && Number.isInteger(c.col) && c.col > 0 && Number.isInteger(c.row) && c.row > 0;
+/** @typedef {readonly unknown[]} AskedList a list handed in by a caller, its members not yet read */
+/** @param {unknown} v @returns {v is AskedList} */
+const isAskedList = (v) => Array.isArray(v);
+/** A corner as `a1Corner` makes one: `col` and `row` positive integers.
+ *  @param {unknown} c @returns {c is Corner} */
+const isCorner = (c) => {
+  if (c == null || (typeof c !== "object" && typeof c !== "function")) return false;
+  const col = "col" in c ? c.col : undefined, row = "row" in c ? c.row : undefined;
+  return typeof col === "number" && Number.isInteger(col) && col > 0 && typeof row === "number" && Number.isInteger(row) && row > 0;
+};
 
 /** One A1 corner (`$B$14`, `b14`) -> {col,row}, both 1-based, or null. The
  *  `$` markers are notation, not address; letters are read without case;
@@ -925,14 +933,17 @@ export function a1Corner(s) {
  *  not: `not_a_range_reference` (a corner is not one), `no_such_sheet`,
  *  `outside_grid`.
  *  @param {unknown} sheetName
- *  @param {Corner | null | undefined} a
- *  @param {Corner | null | undefined} b
- *  @param {string[] | null | undefined} sheets
+ *  @param {unknown} a
+ *  @param {unknown} b
+ *  @param {unknown} sheets
  *  @param {Grid | null} [grid]
  *  @returns {RangeUnitResult} */
 export function rangeUnitFor(sheetName, a, b, sheets, grid = null) {
   if (a == null || b == null || !isCorner(a) || !isCorner(b)) return { why: "not_a_range_reference" };
-  const names = Array.isArray(sheets) ? sheets.filter((s) => typeof s === "string") : [];
+  const listed = isAskedList(sheets) ? sheets : [];
+  /** @type {string[]} */
+  const names = [];
+  for (const s of listed) if (typeof s === "string") names.push(s);
   if (typeof sheetName !== "string") return { why: "no_such_sheet" };
   const exact = names.includes(sheetName) ? sheetName : null;
   const ci = exact == null ? names.filter((s) => s.toLowerCase() === sheetName.toLowerCase()) : [];
@@ -2368,18 +2379,19 @@ async function xlsxText(parts, opts) {
 /** @type {number} */
 export const CELLS_IN_MAX = 20000;
 
-/** @param {CellsInRange | null | undefined} range @returns {CellsInArgs | CellsInInvalid} */
+/** @param {unknown} range @returns {CellsInArgs | CellsInInvalid} */
 function cellsInArguments(range) {
   if (range == null || typeof range !== "object") return { reason: "invalid_argument", argument: "range" };
-  const { sheet, fromRow = 1, toRow = null, fromCol = 1, toCol = null, maxCells = CELLS_IN_MAX } = range;
+  /** @type {{sheet?: unknown, fromRow?: unknown, toRow?: unknown, fromCol?: unknown, toCol?: unknown, maxCells?: unknown}} */
+  const asked = range;
+  const { sheet, fromRow = 1, toRow = null, fromCol = 1, toCol = null, maxCells = CELLS_IN_MAX } = asked;
   if (!((typeof sheet === "string" && sheet !== "") || (typeof sheet === "number" && Number.isInteger(sheet) && sheet >= 0))) return { reason: "invalid_argument", argument: "sheet" };
-  /** @param {number} v @returns {boolean} */
-  const pos = (v) => Number.isInteger(v) && v >= 1;
-  if (!pos(fromRow)) return { reason: "invalid_argument", argument: "fromRow" };
-  if (toRow !== null && !(pos(toRow) && toRow >= fromRow)) return { reason: "invalid_argument", argument: "toRow" };
-  if (!pos(fromCol)) return { reason: "invalid_argument", argument: "fromCol" };
-  if (toCol !== null && !(pos(toCol) && toCol >= fromCol)) return { reason: "invalid_argument", argument: "toCol" };
-  if (!pos(maxCells)) return { reason: "invalid_argument", argument: "maxCells" };
+  /* a whole number of at least 1; `Number.isInteger` holds of numbers only */
+  if (!(typeof fromRow === "number" && Number.isInteger(fromRow) && fromRow >= 1)) return { reason: "invalid_argument", argument: "fromRow" };
+  if (toRow !== null && !(typeof toRow === "number" && Number.isInteger(toRow) && toRow >= 1 && toRow >= fromRow)) return { reason: "invalid_argument", argument: "toRow" };
+  if (!(typeof fromCol === "number" && Number.isInteger(fromCol) && fromCol >= 1)) return { reason: "invalid_argument", argument: "fromCol" };
+  if (toCol !== null && !(typeof toCol === "number" && Number.isInteger(toCol) && toCol >= 1 && toCol >= fromCol)) return { reason: "invalid_argument", argument: "toCol" };
+  if (!(typeof maxCells === "number" && Number.isInteger(maxCells) && maxCells >= 1)) return { reason: "invalid_argument", argument: "maxCells" };
   return { sheet, fromRow, toRow: Math.min(toRow ?? XLSX_GRID_ROWS, XLSX_GRID_ROWS), toRowGiven: toRow !== null, fromCol, toCol: toCol ?? XLSX_GRID_COLS, maxCells };
 }
 
