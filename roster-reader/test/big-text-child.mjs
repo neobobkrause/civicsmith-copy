@@ -3,8 +3,10 @@
  * An out-of-memory abort is the failure; the answers are printed as JSON. */
 import { staffRoster, orgChart } from "../index.mjs";
 import { FIRST } from "./fixtures.mjs";
+/** @import { DoctypeContext } from "../../docprofile/registry.mjs" */
 
 const BLOCKS = 4000, PER = 40;
+/** @type {string[]} */
 const block = [];
 for (let n = 0; n < PER; n++) {
   block.push(n === 0 ? "Section 4.2 Appropriations by Fund and Department for the Fiscal Year"
@@ -14,7 +16,9 @@ for (let n = 0; n < PER; n++) {
 }
 const text = (block.join("\n") + "\n").repeat(BLOCKS);
 const LINES = BLOCKS * PER;
+/** @type {DoctypeContext} */
 const ctx = { text, view: FIRST, locate: () => null };
+/** @type {boolean[]} */
 const answers = [];
 for (const t of [staffRoster, orgChart]) answers.push(t.detect(ctx).match);
 console.log(JSON.stringify({ chars: text.length, lines: LINES, answers }));

@@ -5,11 +5,19 @@ import fs from "node:fs";
 import { flattenText } from "../../docprofile/registry.mjs";
 import { ROSTER_DOCS } from "./fixtures.mjs";
 
-const BUDGET = JSON.parse(fs.readFileSync(new URL("./fixtures/budget-pages.json", import.meta.url), "utf8"));
+/**
+ * The real budget document held here: its pages' text as the producer read them.
+ * @typedef {{ pages: Array<{ page: number, text: string }> }} BudgetPages
+ */
+const BUDGET = /** @type {BudgetPages} */ (JSON.parse(fs.readFileSync(new URL("./fixtures/budget-pages.json", import.meta.url), "utf8")));
 
 /** The text of a budget volume, exactly `bytes` long: tables of figures, headings that read like unit names, lines of
- *  Title Case and running prose, as a 1,300-page budget has them (no roster in it). */
+ *  Title Case and running prose, as a 1,300-page budget has them (no roster in it).
+ * @param {number} bytes
+ * @returns {string}
+ */
 export function budgetVolumeText(bytes) {
+  /** @type {string[]} */
   const block = [];
   for (let n = 0; n < 40; n++) {
     block.push(n === 0 ? "Section 4.2 Appropriations by Fund and Department for the Fiscal Year"
@@ -21,18 +29,26 @@ export function budgetVolumeText(bytes) {
   return one.repeat(Math.ceil(bytes / one.length)).slice(0, bytes);
 }
 
-/** The text of the real budget document held here (the Adopted Policy Budget's nine pages), flattened as `readText` does. */
+/** The text of the real budget document held here (the Adopted Policy Budget's nine pages), flattened as `readText` does.
+ * @returns {string}
+ */
 export function budgetDocumentText() {
   return flattenText(BUDGET.pages.map((p) => p.text).join("\n")).text;
 }
 
 /** A real roster's text behind `lines` lines of preface (a cover, a letter, a table of contents): the title page of a
- *  volume that holds a roster far into it. */
+ *  volume that holds a roster far into it.
+ * @param {string} key a key of ROSTER_DOCS
+ * @param {number} lines
+ * @returns {string}
+ */
 export function prefacedRoster(key, lines) {
+  /** @type {string[]} */
   const preface = [];
   for (let n = 0; n < lines; n++) {
     preface.push(n % 7 === 0 ? `Chapter ${n / 7 + 1}: Policy and Budget Overview for the Fiscal Year`
       : `${n}. Revenue estimates, service levels and the fund balances are described in the schedules that follow this page ${n}.`);
   }
-  return preface.join("\n") + "\n" + flattenText(ROSTER_DOCS.documents[key].text).text;
+  const doc = ROSTER_DOCS.documents[key];
+  return preface.join("\n") + "\n" + flattenText(doc ? doc.text : null).text;
 }
