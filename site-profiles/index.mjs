@@ -75,6 +75,166 @@ import clientRendered from "./handlers/client-rendered.mjs";
 import conservative from "./handlers/conservative.mjs";
 import * as ooxml from "../bio-plane/src/ooxml.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { Confidence, Considered, Registry } from "./recogniser.mjs" */
+/** @import { StackContext, StackHandler, Rule, Part } from "./region.mjs" */
+
+/**
+ * A hash of bytes, as text; the caller's (`digests` hashes nothing itself).
+ * @typedef {(bytes: Uint8Array) => (string | Promise<string>)} Sha256
+ */
+
+/**
+ * What `digests` and `compare` are told: the fetch's context, the hash, and the encoding
+ * and name the caller knows; `compare` reads the handler's confidence from `identify`.
+ * @typedef {Object} DigestExtra
+ * @property {Sha256} sha256
+ * @property {string} [charset] the encoding the caller knows, over the content type's
+ * @property {string} [name] the document's name, for a refusal to decode
+ * @property {Confidence | undefined} [confidence]
+ */
+/** @typedef {StackContext & DigestExtra} DigestContext */
+
+/**
+ * What `digests` reads of a handler: whether it is text, its rules and its boundary.
+ * @typedef {Object} DigestHandler
+ * @property {boolean} [textual]
+ * @property {(ctx: StackContext) => Rule[]} [rules]
+ * @property {(ctx: StackContext) => (RegExp | null)} [boundary]
+ */
+
+/**
+ * What `compare` reads of a handler beside `digests`': its key and whether it is the
+ * conservative one.
+ * @typedef {Object} CompareExtra
+ * @property {string} [key]
+ * @property {boolean} [conservative]
+ */
+/** @typedef {DigestHandler & CompareExtra} CompareHandler */
+
+/**
+ * One rule, or the boundary, that touched a text: how many places and how many characters.
+ * @typedef {Object} Applied
+ * @property {string} rule
+ * @property {string} region
+ * @property {string} label
+ * @property {number} count
+ * @property {number} bytes
+ */
+
+/**
+ * A text after rules or a boundary were applied, with what they touched.
+ * @typedef {Object} Applying
+ * @property {string} text
+ * @property {Applied[]} found
+ * @property {number} bytes
+ * @property {boolean} [missed] a boundary was declared and did not match
+ */
+
+/**
+ * The encoding a textual document was decoded from, as ooxml's `decodeText` reports it.
+ * @typedef {Object} Encoding
+ * @property {string} name
+ * @property {boolean} assumed
+ * @property {number} replaced
+ * @property {number} replaced_ratio
+ * @property {boolean} disagree
+ */
+
+/**
+ * The three digests of one document, and what normalised it.
+ * @typedef {Object} Digests
+ * @property {string} identity
+ * @property {string} rendition
+ * @property {string} evidentiary
+ * @property {Applied[]} applied
+ * @property {boolean} textual
+ * @property {boolean} [boundary_missed]
+ * @property {number} [mechanical_bytes]
+ * @property {number} [presentational_bytes]
+ * @property {Encoding} [encoding]
+ * @property {{ why: string, name: string | null }} [undecodable] a declared encoding that cannot be read
+ * @property {string} [why]
+ */
+
+/**
+ * The byte layers of a change question.
+ * @typedef {Object} Comparison
+ * @property {string} verdict identical, undetermined, changed, restyled or unchanged
+ * @property {boolean | null} evidentiary_change null when undetermined
+ * @property {string} why
+ * @property {string | null} handler
+ * @property {Confidence} confidence
+ * @property {string[]} artifacts
+ * @property {Applied[]} applied
+ * @property {{ before: Digests, after: Digests }} digests
+ */
+
+/**
+ * What `fidelity` reads of a handler.
+ * @typedef {Object} FidelityHandler
+ * @property {(part: Part) => boolean} [ignorable]
+ * @property {(part: Part, ctx?: StackContext) => boolean} [renderCritical]
+ */
+
+/**
+ * The parts a capture names.
+ * @typedef {Object} Manifest
+ * @property {Array<Part | null | undefined>} [subresources]
+ */
+
+/**
+ * Whether a rendition can be shown, and what is missing.
+ * @typedef {Object} Fidelity
+ * @property {string} level faithful, degraded or insufficient
+ * @property {Part[]} missing
+ * @property {Part[]} critical
+ * @property {string} [why]
+ */
+
+/**
+ * The host stack `identify` recognised.
+ * @typedef {Object} Identification
+ * @property {StackHandler} handler
+ * @property {Confidence} confidence
+ * @property {string[]} signals
+ * @property {Considered[]} considered
+ * @property {string} [kind] the handler's own classification of the address
+ * @property {boolean} [shell] a client-rendered shell, matched at CERTAIN
+ * @property {string} [why] why nothing was recognised
+ */
+
+/**
+ * What `profileRecord` reads of a handler.
+ * @typedef {Object} ProfileHandler
+ * @property {string | null} [key]
+ * @property {string | null} [label]
+ * @property {number | null} [version]
+ */
+
+/**
+ * What `profileRecord` reads of an identification.
+ * @typedef {Object} ProfileInput
+ * @property {ProfileHandler | null} [handler]
+ * @property {Confidence | null} [confidence]
+ * @property {string[]} [signals]
+ * @property {string} [kind]
+ * @property {Considered[]} [considered]
+ * @property {string} [why]
+ */
+
+/**
+ * One identification, as the capture's provenance keeps it.
+ * @typedef {Object} ProfileRecord
+ * @property {string | null} handler
+ * @property {string | null} handler_label
+ * @property {number | null} handler_version
+ * @property {Confidence | null} confidence
+ * @property {string[]} signals
+ * @property {string} document_kind
+ * @property {Considered[]} considered
+ * @property {string} at
+ * @property {string | null} note
+ */
 
 /* The module's whole interface is reachable from this file: the ladder and the
    registry (recogniser.mjs), the event catalogue (events.mjs), the regions and the
@@ -86,25 +246,31 @@ export { REGION, aspnetWebforms, wordpress, clientRendered, conservative };
 /** Entity-decode enough to make an href comparable. Deliberately minimal: this is
  *  used to READ keys out of markup, never to rewrite anything the record holds.
  *  One pass, so an escaped entity stays escaped once: `&amp;lt;` reads `&lt;`. */
-const ENTITY = { amp: "&", "#39": "'", quot: '"', lt: "<", gt: ">", nbsp: " " };
+const ENTITY = new Map([["amp", "&"], ["#39", "'"], ["quot", '"'], ["lt", "<"], ["gt", ">"], ["nbsp", " "]]);
+/** @param {unknown} s @returns {string} */
 export function unescapeHtml(s) {
-  return String(s).replace(/&(amp|#39|quot|lt|gt|nbsp);/g, (_, e) => ENTITY[e]);
+  return String(s).replace(/&(amp|#39|quot|lt|gt|nbsp);/g, (/** @type {string} */ whole, /** @type {string} */ e) => ENTITY.get(e) ?? whole);
 }
 
 const PLACEHOLDER = "\u0000BIO-NORMALISED\u0000";
 
 /** Apply a handler's rule set to a copy of the text, reporting what it touched.
  *  Never mutates anything the record holds: normalisation is always on a copy,
- *  so a misclassification is recoverable and can never destroy evidence. */
+ *  so a misclassification is recoverable and can never destroy evidence.
+ *  @param {string} text
+ *  @param {Array<Rule | null | undefined>} rules
+ *  @returns {Applying} */
 export function applyRules(text, rules) {
   let out = String(text);
+  /** @type {Applied[]} */
   const found = [];
   for (const rule of Array.isArray(rules) ? rules : []) {
     if (!rule || !Array.isArray(rule.patterns)) continue;
     let count = 0, bytes = 0;
     for (const re of rule.patterns) {
       if (!(re instanceof RegExp)) continue;
-      out = out.replace(re, (whole, pre, mid, post) => {
+      out = out.replace(re, (/** @type {string} */ whole, /** @type {string | undefined} */ pre,
+                             /** @type {string | undefined} */ mid, /** @type {string | undefined} */ post) => {
         if (!mid || !mid.length) return whole;
         count++; bytes += mid.length;
         return (pre || "") + PLACEHOLDER + (post || "");
@@ -132,12 +298,15 @@ export function applyRules(text, rules) {
  *
  *  If the boundary does not match, NOTHING is normalised and the handler falls
  *  back to treating the whole document as substance, because a boundary that
- *  missed must never be read as a document with no content. */
+ *  missed must never be read as a document with no content.
+ *  @param {string} text
+ *  @param {RegExp | null | undefined} boundary its first group is the document
+ *  @returns {Applying} */
 export function applyBoundary(text, boundary) {
   if (!(boundary instanceof RegExp)) return { text, found: [], bytes: 0 };
   const m = boundary.exec(String(text));
-  if (!m || !m[1]) return { text, found: [], bytes: 0, missed: true };
-  const inner = m[1];
+  const inner = m ? m[1] : undefined;
+  if (!inner) return { text, found: [], bytes: 0, missed: true };
   const outside = String(text).length - inner.length;
   return { text: PLACEHOLDER + inner + PLACEHOLDER,
            found: [{ rule: "outside_the_document", region: REGION.PRESENTATIONAL,
@@ -146,21 +315,29 @@ export function applyBoundary(text, boundary) {
            bytes: outside };
 }
 
-/* The encoding the caller knows: an explicit `ctx.charset`, else the `charset` of the content
-   type the caller passed or of the response's `content-type` header. */
+/** The encoding the caller knows: an explicit `ctx.charset`, else the `charset` of the content
+   type the caller passed or of the response's `content-type` header.
+   @param {DigestContext} ctx @returns {string | undefined} */
 function declaredCharset(ctx) {
-  if (typeof ctx.charset === "string" && ctx.charset) return ctx.charset;
-  const ct = String(ctx.content_type || (ctx.headers && ctx.headers["content-type"]) || "");
+  const charset = ctx.charset, headers = ctx.headers;
+  if (typeof charset === "string" && charset) return charset;
+  const ct = String(ctx.content_type || (headers && headers["content-type"]) || "");
   const m = /;\s*charset\s*=\s*"?([^";\s]+)/i.exec(ct);
   return m ? m[1] : undefined;
 }
 
-/** The three digests for one document, under one handler. */
+/** The three digests for one document, under one handler.
+ *  @param {Uint8Array} bytes
+ *  @param {DigestHandler | null | undefined} handler
+ *  @param {DigestContext} ctx
+ *  @returns {Promise<Digests>}
+ *  @throws {TypeError} when `ctx.sha256` is not a function */
 export async function digests(bytes, handler, ctx) {
   const sha256 = ctx && ctx.sha256;
   /* The one precondition, and the one throw: a digest with no hash function is a
      caller's mistake, not a document's property. */
   if (typeof sha256 !== "function") throw new TypeError("site-profiles: digests() needs ctx.sha256, a hash function");
+  /** @type {DigestHandler} */
   const h = handler || {};
   const identity = await sha256(bytes);
   if (!h.textual) return { identity, rendition: identity, evidentiary: identity, applied: [], textual: false };
@@ -175,6 +352,7 @@ export async function digests(bytes, handler, ctx) {
              undecodable: { why: dec.why, name: dec.name },
              why: localize("site-profiles.index.the_document_is_written_in", "the document is written in an encoding this system cannot read, so it is compared byte for byte") };
   const text = dec.text;
+  /** @type {Rule[]} */
   let rules = [];
   try { rules = (typeof h.rules === "function" ? h.rules(ctx) : null) || []; } catch { rules = []; }
   if (!Array.isArray(rules)) rules = [];
@@ -184,6 +362,7 @@ export async function digests(bytes, handler, ctx) {
   /* Mechanical first, always: a security token can sit inside the document's own
      boundary as easily as outside it, and normalising the boundary first would
      hide the token rather than classify it. */
+  /** @type {RegExp | null} */
   let boundary = null;
   try { boundary = typeof h.boundary === "function" ? h.boundary(ctx) : null; } catch { boundary = null; }
   const b = applyBoundary(r1.text, boundary);
@@ -222,12 +401,20 @@ export async function digests(bytes, handler, ctx) {
  *    unchanged      substance and appearance both the same; only machinery moved
  *    restyled       substance the same, appearance differs (furniture moved)
  *    changed        the substance itself differs
- *    undetermined   no handler could speak with enough confidence to say  */
+ *    undetermined   no handler could speak with enough confidence to say
+ *  @param {Uint8Array} before
+ *  @param {Uint8Array} after
+ *  @param {CompareHandler | null | undefined} handler
+ *  @param {DigestContext} ctx
+ *  @returns {Promise<Comparison>}
+ *  @throws {TypeError} as `digests` */
 export async function compare(before, after, handler, ctx) {
   const a = await digests(before, handler, ctx);
   const b = await digests(after, handler, ctx);
+  /** @type {CompareHandler} */
   const h = handler || {};
-  const base = { handler: h.key == null ? null : h.key, confidence: ctx.confidence || CONFIDENCE.NONE,
+  const key = h.key;
+  const base = { handler: key == null ? null : key, confidence: ctx.confidence || CONFIDENCE.NONE,
                  artifacts: [...new Set(a.applied.concat(b.applied).map((x) => x.label))],
                  applied: a.applied, digests: { before: a, after: b } };
   if (a.identity === b.identity)
@@ -262,15 +449,23 @@ export async function compare(before, after, handler, ctx) {
  *    degraded      only non-critical parts are missing; the evidence renders and
  *                  the shortfall is NAMED on screen rather than hidden
  *    insufficient  something render-critical is missing; the render is refused,
- *                  because showing it would misrepresent the source  */
+ *                  because showing it would misrepresent the source
+ *  @param {Manifest | null | undefined} manifest
+ *  @param {FidelityHandler | null | undefined} handler
+ *  @param {StackContext} [ctx]
+ *  @returns {Fidelity} */
 export function fidelity(manifest, handler, ctx) {
-  const all = manifest && Array.isArray(manifest.subresources) ? manifest.subresources : [];
-  const parts = all.filter((p) => p && typeof p === "object");
+  const listed = manifest ? manifest.subresources : undefined;
+  const all = Array.isArray(listed) ? listed : [];
+  /** @type {Part[]} */
+  const parts = [];
+  for (const p of all) if (p && typeof p === "object") parts.push(p);
+  /** @type {FidelityHandler} */
   const h = handler || {};
   /* A handler that cannot say is answered in the safe direction: a part is not
      ignorable unless the handler says so, and it is critical unless it says not. */
-  const ignorable = (p) => { try { return typeof h.ignorable === "function" && !!h.ignorable(p); } catch { return false; } };
-  const critical_ = (p) => { try { return typeof h.renderCritical === "function" ? !!h.renderCritical(p, ctx) : true; } catch { return true; } };
+  const ignorable = (/** @type {Part} */ p) => { try { return typeof h.ignorable === "function" && !!h.ignorable(p); } catch { return false; } };
+  const critical_ = (/** @type {Part} */ p) => { try { return typeof h.renderCritical === "function" ? !!h.renderCritical(p, ctx) : true; } catch { return true; } };
   const missing = parts.filter((p) => !p.ok && !ignorable(p));
   if (!missing.length) return { level: "faithful", missing: [], critical: [] };
   const critical = missing.filter(critical_);
@@ -285,11 +480,14 @@ export function fidelity(manifest, handler, ctx) {
    The host-stack recognisers live on a `makeRegistry()` instance exactly like the
    content-type axis does, so there is no longer an `identify`-shaped loop written
    twice. The handlers themselves are the recognisers, registered below. */
+/** @type {Registry<StackContext, StackHandler>} */
 const stacks = makeRegistry();
 
 /** Add a handler to the stack registry. Ordered most specific first; the conservative
-   handler carries `fallback: true` and is only ever reached by falling through. */
+   handler carries `fallback: true` and is only ever reached by falling through.
+   @param {StackHandler} handler @returns {StackHandler} */
 export function register(handler) { return stacks.register(handler); }
+/** The stack handlers, in order. @returns {StackHandler[]} */
 export function handlers() { return stacks.all(); }
 
 /* The built-in handlers, in priority order: most specific first, and the conservative
@@ -309,20 +507,25 @@ register(conservative);
  *
  *  A thin wrapper over the shared registry that adds the stack axis's own
  *  extra — the document `kind` its handler reads from the address. Always returns a
- *  handler: an unrecognised document gets the conservative one rather than an error. */
+ *  handler: an unrecognised document gets the conservative one rather than an error.
+ *  @param {unknown} ctx
+ *  @returns {Identification} */
 export function identify(ctx) {
   /* A caller that knows nothing still gets an answer: no context is an empty one. */
-  if (!ctx || typeof ctx !== "object") ctx = {};
-  const r = stacks.recognise(ctx);
-  const handler = r.member;
+  /** @type {StackContext} */
+  const c = ctx && typeof ctx === "object" ? ctx : {};
+  const r = stacks.recognise(c);
+  /* The registry always holds the four registered below, so it always answers a member. */
+  const handler = r.member ?? conservative;
   if (!r.matched)
     return { handler, confidence: CONFIDENCE.NONE, signals: [], considered: r.considered,
              why: localize("site-profiles.index.no_handler_recognised_this_document", "no handler recognised this document, so it is treated conservatively: nothing is assumed to be decoration and any difference is reported") };
+  /** @type {Identification} */
   const out = { handler, confidence: r.confidence, signals: r.signals, considered: r.considered };
   /* `kind` is the handler's own classification, given the confidence it matched at; a
      handler that defines none, or answers none, has none. */
   if (typeof handler.kind === "function") {
-    const kind = handler.kind(ctx, r.confidence);
+    const kind = handler.kind(c, r.confidence);
     if (kind !== undefined) out.kind = kind;
   }
   /* A shell is a `client_rendered` match at CERTAIN and nothing less (R2, G140): the
@@ -335,14 +538,21 @@ export function identify(ctx) {
 /** Everything the record should keep about how a document was profiled. Written
  *  onto the capture, because a later session must be able to see WHICH handler
  *  spoke and how sure it was: a verdict whose author is unnamed cannot be
- *  re-evaluated when the author turns out to have been wrong. */
+ *  re-evaluated when the author turns out to have been wrong.
+ *  @param {ProfileInput | null | undefined} id
+ *  @param {{ now?: string } | null} [ctx]
+ *  @returns {ProfileRecord} */
 export function profileRecord(id, ctx) {
+  /** @type {ProfileInput} */
   const x = id && typeof id === "object" ? id : {};
-  const h = x.handler && typeof x.handler === "object" ? x.handler : {};
+  const held = x.handler;
+  /** @type {ProfileHandler} */
+  const h = held && typeof held === "object" ? held : {};
+  const key = h.key, label = h.label, version = h.version, confidence = x.confidence;
   return {
-    handler: h.key == null ? null : h.key, handler_label: h.label == null ? null : h.label,
-    handler_version: h.version == null ? null : h.version,
-    confidence: x.confidence == null ? null : x.confidence, signals: x.signals || [],
+    handler: key == null ? null : key, handler_label: label == null ? null : label,
+    handler_version: version == null ? null : version,
+    confidence: confidence == null ? null : confidence, signals: x.signals || [],
     document_kind: x.kind || "unknown",
     considered: x.considered || [],
     at: (ctx && ctx.now) || new Date().toISOString().split(".")[0] + "Z",

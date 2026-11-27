@@ -9,6 +9,9 @@ import { createHash } from "node:crypto";
 import * as sp from "../index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { calendarHtml, wordpressArticle, shellHtml, plainHtml } from "./fixtures.mjs";
+/** @import { Confidence, Detection, Recogniser, Registry } from "../recogniser.mjs" */
+/** @import { StackContext, StackHandler, Part } from "../region.mjs" */
+/** @import { CompareHandler, Comparison, DigestContext } from "../index.mjs" */
 
 const {
   identify, CONFIDENCE, confidenceRank, makeRegistry, digests, compare, fidelity, profileRecord,
@@ -16,9 +19,9 @@ const {
   unescapeHtml, REGION, register, handlers, aspnetWebforms, wordpress, clientRendered, conservative,
 } = sp;
 
-const enc = (s) => new TextEncoder().encode(s);
-const sha256 = async (b) => createHash("sha256").update(b).digest("hex");
-const LADDER = new Set(Object.values(CONFIDENCE));
+const enc = (/** @type {string} */ s) => new TextEncoder().encode(s);
+const sha256 = async (/** @type {Uint8Array} */ b) => createHash("sha256").update(b).digest("hex");
+const LADDER = new Set([CONFIDENCE.CERTAIN, CONFIDENCE.LIKELY, CONFIDENCE.POSSIBLE, CONFIDENCE.NONE]);
 const NOW = "2026-03-20T12:00:00Z";
 const CAL = "https://r.test/Calendar.aspx";
 
@@ -27,17 +30,30 @@ const CAL = "https://r.test/Calendar.aspx";
    so it cannot pre-empt any of them. */
 const KINDLESS = register({
   key: "test_kindless", label: "a test stack with no kind", version: 1, textual: true,
-  detect: (ctx) => /X-KINDLESS-STACK/.test(ctx.text || "")
-    ? { match: true, confidence: CONFIDENCE.CERTAIN, signals: ["kindless marker"] } : { match: false },
+  /** @param {StackContext} ctx @returns {Detection} */
+  detect(ctx) {
+    if (/X-KINDLESS-STACK/.test(ctx.text || "")) return { match: true, confidence: CONFIDENCE.CERTAIN, signals: ["kindless marker"] };
+    return { match: false };
+  },
   rules: () => [], renderCritical: () => false, ignorable: () => false,
 });
 
-/* Every input the stack tests below use, for the properties that hold over all of them. */
+/* Every input the stack tests below use, for the properties that hold over all of them;
+   the first four are also named, for R1. */
+/** @type {StackContext} a shell that is also WordPress at CERTAIN */
+const SHELL_AND_WP = { text: shellHtml() + '<link href="/wp-content/a.css"><link href="/wp-includes/b.js">' };
+/** @type {StackContext} ASP.NET LIKELY by its header, over a POSSIBLE shell hint */
+const LIKELY_ASPNET = { text: '<div id="app"></div><p>x</p>', headers: { "x-powered-by": "ASP.NET" } };
+/** @type {StackContext} ASP.NET and WordPress both LIKELY */
+const TIE = { text: '<a href="/wp-content/x.css">x</a>', headers: { "x-powered-by": "ASP.NET" } };
+/** @type {StackContext} nothing recognised */
+const PLAIN = { text: plainHtml() };
+/** @type {StackContext[]} */
 const CTXS = [
-  { text: shellHtml() + '<link href="/wp-content/a.css"><link href="/wp-includes/b.js">' },
-  { text: '<div id="app"></div><p>x</p>', headers: { "x-powered-by": "ASP.NET" } },
-  { text: '<a href="/wp-content/x.css">x</a>', headers: { "x-powered-by": "ASP.NET" } },
-  { text: plainHtml() },
+  SHELL_AND_WP,
+  LIKELY_ASPNET,
+  TIE,
+  PLAIN,
   { text: calendarHtml([["1", "B", "3/3/2026"]]), locator: CAL },
   { text: wordpressArticle(), locator: "https://news.test/2026/03/harbor/" },
   { text: wordpressArticle(), locator: "https://news.test/" },
@@ -55,22 +71,22 @@ test("R1 identify returns the first CERTAIN stack, else the highest match, else 
     ["client_rendered", "aspnet_webforms", "wordpress", "conservative"]);
   assert.deepEqual(handlers().slice(0, 4), [clientRendered, aspnetWebforms, wordpress, conservative]);
   // first CERTAIN wins, in registration order: a shell that is ALSO WordPress (CERTAIN) is a shell
-  const a = identify(CTXS[0]);
+  const a = identify(SHELL_AND_WP);
   assert.equal(a.handler, clientRendered);
   assert.equal(a.confidence, CONFIDENCE.CERTAIN);
-  assert.equal(wordpress.detect(CTXS[0]).confidence, CONFIDENCE.CERTAIN, "the later one was CERTAIN too");
+  assert.equal(wordpress.detect(SHELL_AND_WP).confidence, CONFIDENCE.CERTAIN, "the later one was CERTAIN too");
   // nothing CERTAIN: the highest confidence wins (aspnet LIKELY from a header over a POSSIBLE shell hint)
-  const b = identify(CTXS[1]);
+  const b = identify(LIKELY_ASPNET);
   assert.equal(b.handler, aspnetWebforms);
   assert.equal(b.confidence, CONFIDENCE.LIKELY);
   assert.ok(b.considered.some((c) => c.key === "client_rendered" && c.confidence === CONFIDENCE.POSSIBLE));
   assert.ok(b.considered.some((c) => c.key === "aspnet_webforms" && c.confidence === CONFIDENCE.LIKELY));
   // equal confidence: the earlier-registered wins (aspnet before wordpress, both LIKELY)
-  const c = identify(CTXS[2]);
+  const c = identify(TIE);
   assert.equal(c.handler, aspnetWebforms);
   assert.ok(c.considered.some((x) => x.key === "wordpress" && x.confidence === CONFIDENCE.LIKELY));
   // nothing at all: conservative, NONE, and a stated why
-  for (const ctx of [CTXS[3], {}, null, undefined, "text"]) {
+  for (const ctx of [PLAIN, {}, null, undefined, "text"]) {
     const d = identify(ctx);
     assert.equal(d.handler, conservative);
     assert.equal(d.confidence, CONFIDENCE.NONE);
@@ -115,9 +131,13 @@ test("R3 every confidence identify or a registry returns is one of the ONE ladde
     for (const c of id.considered) assert.ok(LADDER.has(c.confidence));
   }
   // another axis built on the same registry speaks the same ladder
+  /** @type {Registry<{ want?: string }, Recogniser<{ want?: string }>>} */
   const axis = makeRegistry();
-  for (const conf of Object.values(CONFIDENCE).filter((x) => x !== CONFIDENCE.NONE))
-    axis.register({ key: conf, detect: (ctx) => ({ match: ctx.want === conf, confidence: conf }) });
+  for (const conf of [CONFIDENCE.CERTAIN, CONFIDENCE.LIKELY, CONFIDENCE.POSSIBLE])
+    axis.register({ key: conf, detect: (ctx) => {
+      if (ctx.want === conf) return { match: true, confidence: conf };
+      return { match: false, confidence: conf };
+    } });
   axis.register({ key: "floor", fallback: true, detect: () => ({ match: false }) });
   for (const want of ["certain", "likely", "possible", "nothing"]) {
     const r = axis.recognise({ want });
@@ -136,9 +156,20 @@ test("R4 CONFIDENCE is one ladder, ranked CERTAIN, LIKELY, POSSIBLE, NONE; an un
 
 /* ------------------------------------------------------------------ registry */
 
+/** @typedef {{ hits?: string[] }} HitCtx the context the registry tests' members read */
+
 test("R5 makeRegistry: register appends and returns, all in order, recognise always answers a member", () => {
-  const m = (key, conf, extra) => ({ key, label: key, version: 1, ...extra,
-    detect: (ctx) => (ctx.hits || []).includes(key) ? { match: true, confidence: conf, signals: [key + "!"] } : { match: false } });
+  /** @param {string} key @param {Confidence} conf @param {{ fallback?: boolean }} [extra] @returns {Recogniser<HitCtx>} */
+  const m = (key, conf, extra) => {
+    /** @param {HitCtx} ctx @returns {Detection} */
+    const detect = (ctx) => {
+      if ((ctx.hits || []).includes(key)) return { match: true, confidence: conf, signals: [key + "!"] };
+      return { match: false };
+    };
+    if (extra && extra.fallback) return { key, label: key, version: 1, fallback: true, detect };
+    return { key, label: key, version: 1, detect };
+  };
+  /** @type {Registry<HitCtx, Recogniser<HitCtx>>} */
   const reg = makeRegistry();
   const A = m("a", CONFIDENCE.LIKELY), B = m("b", CONFIDENCE.CERTAIN), C = m("c", CONFIDENCE.LIKELY),
         D = m("d", CONFIDENCE.CERTAIN), F = m("f", CONFIDENCE.CERTAIN, { fallback: true }), Z = m("z", CONFIDENCE.POSSIBLE);
@@ -160,6 +191,7 @@ test("R5 makeRegistry: register appends and returns, all in order, recognise alw
   assert.equal(r2.confidence, CONFIDENCE.LIKELY);
   assert.deepEqual(r2.considered.map((c) => c.key), ["a", "c", "z"]);
   // a member that matched with no signals lists [] for them
+  /** @type {Registry<HitCtx, Recogniser<HitCtx>>} */
   const reg2 = makeRegistry();
   reg2.register({ key: "q", detect: () => ({ match: true, confidence: CONFIDENCE.POSSIBLE }) });
   assert.deepEqual(reg2.recognise({}).considered, [{ key: "q", confidence: "possible", signals: [] }]);
@@ -168,16 +200,19 @@ test("R5 makeRegistry: register appends and returns, all in order, recognise alw
   const r3 = reg.recognise({ hits: [] });
   assert.deepEqual(r3, { member: F, confidence: CONFIDENCE.NONE, signals: [], considered: [], matched: false });
   // opts.isFallback names it instead
+  /** @type {Registry<HitCtx, Recogniser<HitCtx>>} */
   const named = makeRegistry({ isFallback: (x) => x.key === "c" });
   for (const x of [A, B, C, F]) named.register(x);
   assert.equal(named.fallbackMember(), C);
   assert.equal(named.recognise({}).member, C);
   // no member carries fallback: the last
+  /** @type {Registry<HitCtx, Recogniser<HitCtx>>} */
   const last = makeRegistry();
   for (const x of [A, B, C]) last.register(x);
   assert.equal(last.fallbackMember(), C);
   assert.equal(last.recognise({}).member, C);
   // a member's detect throwing propagates
+  /** @type {Registry<HitCtx, Recogniser<HitCtx>>} */
   const bad = makeRegistry();
   bad.register({ key: "boom", detect() { throw new RangeError("boom"); } });
   assert.throws(() => bad.recognise({}), RangeError);
@@ -186,10 +221,12 @@ test("R5 makeRegistry: register appends and returns, all in order, recognise alw
 /* ------------------------------------------------------------------- digests */
 
 test("R6 identity is always sha256 of the bytes", async () => {
-  for (const [bytes, h] of [[enc(calendarHtml([["1", "B", "3/3/2026"]])), aspnetWebforms],
+  /** @type {Array<[Uint8Array, CompareHandler | null | undefined]>} */
+  const cases = [[enc(calendarHtml([["1", "B", "3/3/2026"]])), aspnetWebforms],
                             [enc("plain"), conservative], [new Uint8Array([0, 255, 1]), { textual: false }],
                             [enc(shellHtml()), clientRendered], [enc(wordpressArticle()), wordpress],
-                            [new Uint8Array([]), conservative], [enc("x"), null], [enc("x"), undefined]]) {
+                            [new Uint8Array([]), conservative], [enc("x"), null], [enc("x"), undefined]];
+  for (const [bytes, h] of cases) {
     const d = await digests(bytes, h, { sha256 });
     assert.equal(d.identity, await sha256(bytes));
   }
@@ -197,8 +234,10 @@ test("R6 identity is always sha256 of the bytes", async () => {
 
 test("R7 a non-textual handler gives rendition and evidentiary equal to identity and textual false", async () => {
   const bytes = new Uint8Array([37, 80, 68, 70, 0, 1, 2]);
-  for (const h of [{ key: "binary", textual: false }, {}, null,
-                   { textual: false, rules: () => [{ key: "x", region: "mechanical", label: "x", patterns: [/()(.)()/g] }] }]) {
+  /** @type {Array<CompareHandler | null>} */
+  const odd = [{ key: "binary", textual: false }, {}, null,
+               { textual: false, rules: () => [{ key: "x", region: "mechanical", label: "x", patterns: [/()(.)()/g] }] }];
+  for (const h of odd) {
     const d = await digests(bytes, h, { sha256 });
     assert.equal(d.rendition, d.identity);
     assert.equal(d.evidentiary, d.identity);
@@ -216,7 +255,7 @@ test("R8 textual digests: rendition after mechanical rules, evidentiary after th
   assert.equal(a.rendition, b.rendition);
   assert.equal(a.evidentiary, b.evidentiary);
   assert.equal(a.textual, true);
-  assert.ok(a.mechanical_bytes > 0);
+  assert.ok((a.mechanical_bytes ?? 0) > 0);
   assert.ok(a.applied.some((x) => x.rule === "webforms_page_state" && x.region === "mechanical"));
   // outside the boundary is presentational: evidentiary unmoved, rendition moved
   const c = await digests(enc(calendarHtml(row, { header: "one" })), aspnetWebforms, { sha256 });
@@ -229,6 +268,7 @@ test("R8 textual digests: rendition after mechanical rules, evidentiary after th
   const e0 = await digests(enc(calendarHtml([["1", "C", "3/3/2026"]])), aspnetWebforms, { sha256 });
   assert.notEqual(e0.evidentiary, c.evidentiary);
   // no boundary declared: the presentational rules decide
+  /** @type {CompareHandler} */
   const nb = { key: "nb", textual: true,
     rules: () => [{ key: "chrome", region: "presentational", label: "chrome", patterns: [/(<nav>)([\s\S]*?)(<\/nav>)/g] }] };
   const e = await digests(enc("<nav>one</nav><p>body</p>"), nb, { sha256 });
@@ -237,21 +277,23 @@ test("R8 textual digests: rendition after mechanical rules, evidentiary after th
   assert.equal(e.evidentiary, f.evidentiary);
   assert.notEqual(f.evidentiary, g.evidentiary);
   assert.notEqual(e.rendition, f.rendition, "presentational rules do not touch the rendition");
-  assert.ok(e.presentational_bytes > 0);
+  assert.ok((e.presentational_bytes ?? 0) > 0);
   assert.equal(e.rendition, await sha256(enc("<nav>one</nav><p>body</p>")), "no mechanical rule: rendition is the decoded text");
   // a WordPress article: furniture via its <article> boundary
+  /** @type {DigestContext} */
   const ctx = { sha256, locator: "https://news.test/2026/03/harbor/" };
   const w1 = await digests(enc(wordpressArticle({ nav: "Home" })), wordpress, ctx);
   const w2 = await digests(enc(wordpressArticle({ nav: "Home | Sports" })), wordpress, ctx);
   assert.equal(w1.evidentiary, w2.evidentiary);
   // every label reported is one of the three
   for (const x of [...a.applied, ...c.applied, ...e.applied, ...w1.applied])
-    assert.ok(Object.values(REGION).includes(x.region));
+    assert.ok([REGION.EVIDENTIARY, REGION.PRESENTATIONAL, REGION.MECHANICAL].includes(x.region));
 });
 
 test("R9 a declared boundary that misses normalises nothing beyond mechanical and says boundary_missed", async () => {
-  const noArticle = (nav) => `<html><head><meta name="generator" content="WordPress 6.5"></head>`
+  const noArticle = (/** @type {string} */ nav) => `<html><head><meta name="generator" content="WordPress 6.5"></head>`
     + `<body><nav>${nav}</nav><div>The harbor reopened.</div><footer>f</footer></body></html>`;
+  /** @type {DigestContext} */
   const ctx = { sha256, locator: "https://news.test/2026/03/harbor/" };
   const a = await digests(enc(noArticle("Home")), wordpress, ctx);
   const b = await digests(enc(noArticle("Home | Sports")), wordpress, ctx);
@@ -260,6 +302,7 @@ test("R9 a declared boundary that misses normalises nothing beyond mechanical an
   assert.notEqual(a.evidentiary, b.evidentiary, "a change outside the missed boundary is still substance");
   assert.equal(a.evidentiary, a.rendition);
   // the same for a declared boundary with presentational rules beside it: they are not used
+  /** @type {CompareHandler} */
   const both = { textual: true, boundary: () => /<main>([\s\S]*)<\/main>/,
     rules: () => [{ key: "chrome", region: "presentational", label: "chrome", patterns: [/(<nav>)([\s\S]*?)(<\/nav>)/g] }] };
   const m1 = await digests(enc("<nav>one</nav><p>x</p>"), both, { sha256 });
@@ -270,18 +313,22 @@ test("R9 a declared boundary that misses normalises nothing beyond mechanical an
   for (const bad of [{}, { sha256: "x" }, null, undefined])
     await assert.rejects(() => digests(enc("x"), conservative, bad), TypeError);
   // otherwise never throws: odd handlers, odd rules, odd boundaries
-  for (const h of [{ textual: true }, { textual: true, rules() { throw new Error("bad"); } },
-                   { textual: true, rules: () => "nope" }, { textual: true, rules: () => [null, { region: "mechanical" }, { region: "mechanical", patterns: ["x", null] }] },
-                   { textual: true, boundary() { throw new Error("bad"); } }, { textual: true, boundary: () => "<main>" }])
-    await digests(enc("x"), h, { sha256 });
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true }, { sha256 }));
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true, rules() { throw new Error("bad"); } }, { sha256 }));
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true, rules: () => "nope" }, { sha256 }));
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true, rules: () => [null, { region: "mechanical" }, { region: "mechanical", patterns: ["x", null] }] }, { sha256 }));
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true, boundary() { throw new Error("bad"); } }, { sha256 }));
+  await assert.doesNotReject(() => digests(enc("x"), { textual: true, boundary: () => "<main>" }, { sha256 }));
 });
 
 /* ------------------------------------------------------------------- compare */
 
 test("R10 compare: identical, undetermined, changed, restyled, unchanged, each as defined", async () => {
   const row = [["1", "B", "3/3/2026"]];
+  /** @type {DigestContext} */
   const cert = { sha256, confidence: CONFIDENCE.CERTAIN, locator: CAL };
   const base = enc(calendarHtml(row));
+  /** @param {Comparison} r @param {string} verdict @param {boolean | null} change */
   const check = (r, verdict, change) => {
     assert.equal(r.verdict, verdict);
     assert.equal(r.evidentiary_change, change);
@@ -321,9 +368,13 @@ test("R10 compare: identical, undetermined, changed, restyled, unchanged, each a
 /* ------------------------------------------------------------------ fidelity */
 
 test("R11 fidelity is faithful, degraded or insufficient by what is missing and whether it is critical", () => {
+  /** @type {Part} */
   const css = { ok: false, kind: "stylesheet", url: "/a.css" };
+  /** @type {Part} */
   const icon = { ok: false, kind: "image", url: "/i.png" };
+  /** @type {Part} */
   const ad = { ok: false, kind: "script", reason: "THIRD_PARTY" };
+  /** @type {Part} */
   const held = { ok: true, kind: "stylesheet" };
   for (const h of [aspnetWebforms, wordpress, conservative])
     assert.deepEqual(fidelity({ subresources: [held, ad] }, h), { level: "faithful", missing: [], critical: [] });
@@ -338,7 +389,7 @@ test("R11 fidelity is faithful, degraded or insufficient by what is missing and 
   assert.equal(fidelity({ subresources: [ad] }, clientRendered).level, "insufficient", "a shell ignores nothing");
   // never throws, and a handler that cannot say is answered in the safe direction
   assert.equal(fidelity(null, conservative).level, "faithful");
-  assert.equal(fidelity({ subresources: "x" }, null).level, "faithful");
+  assert.doesNotThrow(() => assert.equal(fidelity({ subresources: "x" }, null).level, "faithful"));
   assert.equal(fidelity({ subresources: [icon, null] }, {}).level, "insufficient");
   const thrower = { ignorable() { throw new Error("x"); }, renderCritical() { throw new Error("x"); } };
   assert.equal(fidelity({ subresources: [ad] }, thrower).level, "insufficient");
@@ -360,8 +411,11 @@ test("R12 profileRecord names the handler, its version, the confidence, signals,
   assert.match(none.at, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
   assert.equal(profileRecord(identify({ text: "X-KINDLESS-STACK" }), { now: NOW }).document_kind, "unknown");
   // never throws
-  for (const x of [null, undefined, 3, "x", { handler: 7 }])
+  for (const x of [null, undefined])
     assert.equal(profileRecord(x, { now: NOW }).handler, null);
+  assert.doesNotThrow(() => assert.equal(profileRecord(3, { now: NOW }).handler, null));
+  assert.doesNotThrow(() => assert.equal(profileRecord("x", { now: NOW }).handler, null));
+  assert.doesNotThrow(() => assert.equal(profileRecord({ handler: 7 }, { now: NOW }).handler, null));
   assert.equal(typeof profileRecord(null).at, "string");
 });
 
@@ -369,7 +423,7 @@ test("R12 profileRecord names the handler, its version, the confidence, signals,
 
 test("R13 every event kind is named once in EVENTS with its fixed significance; event() draws it and throws on an unknown type", () => {
   assert.deepEqual(SIGNIFICANCE, { EVENT: "event", NOTICE: "notice", ROUTINE: "routine" });
-  const grades = new Set(Object.values(SIGNIFICANCE));
+  const grades = new Set([SIGNIFICANCE.EVENT, SIGNIFICANCE.NOTICE, SIGNIFICANCE.ROUTINE]);
   assert.ok(Object.keys(EVENTS).length > 0);
   for (const [type, spec] of Object.entries(EVENTS)) {
     assert.ok(grades.has(spec.significance), type);
@@ -389,13 +443,13 @@ test("R14 worstSignificance, isMeaningful and bySeverity", () => {
   const lists = [[r], [n], [e], [r, n], [n, r], [r, e, n], [n, n], [r, r, e], [e, e]];
   for (const list of lists) {
     const ranks = list.map((x) => significanceRank(x.significance));
-    const worst = list.find((x) => significanceRank(x.significance) === Math.max(...ranks)).significance;
+    const worst = list.find((x) => significanceRank(x.significance) === Math.max(...ranks))?.significance;
     assert.equal(worstSignificance(list), worst);
     assert.equal(isMeaningful(list), worstSignificance(list) === "event");
     const copy = list.slice();
     assert.equal(bySeverity(copy), copy, "in place");
     for (let i = 1; i < copy.length; i++)
-      assert.ok(significanceRank(copy[i - 1].significance) >= significanceRank(copy[i].significance));
+      assert.ok(significanceRank(copy[i - 1]?.significance) >= significanceRank(copy[i]?.significance));
   }
   assert.ok(significanceRank("event") > significanceRank("notice") && significanceRank("notice") > significanceRank("routine"));
   // none throws on a list of events, and nothing outside the catalogue is ever the worst
@@ -418,17 +472,14 @@ test("R15 unescapeHtml decodes the six entities and nothing else, once", () => {
 
 /* ----------------------------------------------------------------- invariants */
 
-/* Every string the module answers or holds at its interface: the handlers' words,
-   their rules' labels, every why, every signal, the event catalogue. */
+/** Every string the module answers or holds at its interface: the handlers' words,
+   their rules' labels, every why, every signal, the event catalogue, each value written
+   out whole, its keys and strings among it.
+   @returns {Promise<string[]>} */
 async function outwardText() {
+  /** @type {string[]} */
   const out = [];
-  const walk = (v, seen = new Set()) => {
-    if (typeof v === "string") out.push(v);
-    else if (v && typeof v === "object" && !seen.has(v)) {
-      seen.add(v);
-      for (const [k, x] of Object.entries(v)) { out.push(k); walk(x, seen); }
-    }
-  };
+  const walk = (/** @type {unknown} */ v) => { out.push(JSON.stringify(v) ?? ""); };
   for (const h of handlers()) {
     walk({ key: h.key, label: h.label, warning: h.warning });
     for (const ctx of CTXS) {
@@ -441,18 +492,22 @@ async function outwardText() {
   for (const ctx of CTXS) walk(profileRecord(identify(ctx), { now: NOW }));
   walk({ EVENTS, SIGNIFICANCE, CONFIDENCE, REGION });
   const row = [["1", "B", "3/3/2026"]];
-  for (const [a, b, h, conf] of [[calendarHtml(row), calendarHtml(row), aspnetWebforms, "certain"],
+  /** @type {Array<[string, string, StackHandler, string]>} */
+  const pairs = [[calendarHtml(row), calendarHtml(row), aspnetWebforms, "certain"],
     [calendarHtml(row), calendarHtml(row, { state: "q" }), aspnetWebforms, "likely"],
     [calendarHtml(row), calendarHtml([["2", "B", "3/3/2026"]]), aspnetWebforms, "certain"],
     [calendarHtml(row), calendarHtml(row, { header: "h" }), aspnetWebforms, "certain"],
-    [calendarHtml(row), calendarHtml(row, { state: "q" }), aspnetWebforms, "certain"]]) {
+    [calendarHtml(row), calendarHtml(row, { state: "q" }), aspnetWebforms, "certain"]];
+  for (const [a, b, h, conf] of pairs) {
     const r = await compare(enc(a), enc(b), h, { sha256, confidence: conf });
     walk({ why: r.why, artifacts: r.artifacts, applied: r.applied });
   }
   for (const subs of [[{ ok: false, kind: "stylesheet" }], [{ ok: false, kind: "image" }]])
     walk(fidelity({ subresources: subs }, aspnetWebforms));
-  try { event("nope"); } catch (err) { out.push(err.message); }
-  try { await digests(enc("x"), conservative, {}); } catch (err) { out.push(err.message); }
+  /** @param {unknown} err */
+  const said = (err) => { if (err instanceof Error) out.push(err.message); return true; };
+  assert.throws(() => event("nope"), said);
+  await assert.rejects(() => digests(enc("x"), conservative, {}), said);
   return out;
 }
 
@@ -467,12 +522,12 @@ test("R16 no place is named in what the module answers or holds", async () => {
   assert.equal(identify({ text: shellHtml(), locator: "https://portal.example/" }).handler, clientRendered);
 });
 
-test("R17 deterministic over its inputs, reading no store and no network", async () => {
-  const saved = globalThis.fetch;
-  globalThis.fetch = () => { throw new Error("site-profiles must not reach the network"); };
-  try {
+test("R17 deterministic over its inputs, reading no store and no network", async (t) => {
+  t.mock.method(globalThis, "fetch", () => { throw new Error("site-profiles must not reach the network"); });
+  {
     const row = [["1", "B", "3/3/2026"]];
     const a = enc(calendarHtml(row)), b = enc(calendarHtml(row, { header: "h", state: "s" }));
+    /** @type {DigestContext} */
     const ctx = { sha256, confidence: CONFIDENCE.CERTAIN, locator: CAL };
     for (const c of CTXS) {
       assert.deepEqual(identify(c), identify(c));
@@ -485,13 +540,18 @@ test("R17 deterministic over its inputs, reading no store and no network", async
       assert.deepEqual(fidelity(subs, h), fidelity(subs, h));
     }
     // a fresh registry built the same way answers the same way
-    const build = () => { const r = makeRegistry(); for (const h of handlers()) r.register(h); return r; };
+    const build = () => {
+      /** @type {Registry<StackContext, StackHandler>} */
+      const r = makeRegistry();
+      for (const h of handlers()) r.register(h);
+      return r;
+    };
     for (const c of CTXS.filter((x) => x.text)) {
       const [x, y] = [build().recognise(c), build().recognise(c)];
-      assert.deepEqual({ ...x, member: x.member.key }, { ...y, member: y.member.key });
+      assert.deepEqual({ ...x, member: x.member?.key }, { ...y, member: y.member?.key });
     }
     assert.deepEqual(event("moved", { k: 1 }), event("moved", { k: 1 }));
-  } finally { globalThis.fetch = saved; }
+  }
 });
 
 test("R18 an unrecognised document is never assumed decorated, and a handler without CERTAIN never says unchanged", async () => {
@@ -508,6 +568,7 @@ test("R18 an unrecognised document is never assumed decorated, and a handler wit
   assert.equal((await compare(enc(plainHtml()), enc(plainHtml({ nonce: "z" })), conservative, { sha256 })).verdict, "unchanged");
   // every other handler, at every confidence short of CERTAIN, never says unchanged or restyled
   const row = [["1", "B", "3/3/2026"]];
+  /** @type {Array<[string, string]>} */
   const pairs = [[calendarHtml(row), calendarHtml(row, { state: "q" })], [calendarHtml(row), calendarHtml(row, { header: "h" })],
                  [wordpressArticle(), wordpressArticle({ nav: "x" })], [shellHtml("1"), shellHtml("2")]];
   for (const h of [aspnetWebforms, wordpress, clientRendered])
@@ -538,7 +599,9 @@ test("R19 every no says which no and why", async () => {
     "the document differs and this kind of document is not recognised well enough to say whether the difference matters"));
   // no meaningful change: each settled no says which
   const row = [["1", "B", "3/3/2026"]];
+  /** @type {DigestContext} */
   const cert = { sha256, confidence: CONFIDENCE.CERTAIN };
+  /** @type {Set<string>} */
   const whys = new Set();
   for (const b of [calendarHtml(row), calendarHtml(row, { state: "q" }), calendarHtml(row, { header: "h" })]) {
     const r = await compare(enc(calendarHtml(row)), enc(b), aspnetWebforms, cert);
@@ -554,7 +617,7 @@ test("R19 every no says which no and why", async () => {
   for (const subs of [[{ ok: false, kind: "image" }], [{ ok: false, kind: "stylesheet" }]]) {
     const f = fidelity({ subresources: subs }, aspnetWebforms);
     assert.notEqual(f.level, "faithful");
-    assert.match(f.why, /./);
+    assert.match(f.why ?? "", /./);
   }
   // no significance: null, not "routine"
   assert.equal(worstSignificance([]), null);

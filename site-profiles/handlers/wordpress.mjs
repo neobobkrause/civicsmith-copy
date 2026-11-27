@@ -21,15 +21,20 @@ import { CONFIDENCE } from "../recogniser.mjs";
 import { REGION } from "../region.mjs";
 import { factsOf, hasSingleClass } from "../scan.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { Detection } from "../recogniser.mjs" */
+/** @import { StackContext, StackHandler, Rule, Part } from "../region.mjs" */
 
-export default {
+/** @type {{ kind: (ctx: StackContext) => string, rules: (ctx: StackContext) => Rule[], boundary: (ctx: StackContext) => (RegExp | null), renderCritical: (part: Part) => boolean, ignorable: (part: Part) => boolean } & StackHandler} */
+const handler = {
   key: "wordpress",
   label: localize("site-profiles.wordpress.a_page_published_with_wordpress", "a page published with WordPress"),
   version: 1,
   textual: true,
 
+  /** @param {StackContext} ctx @returns {Detection} */
   detect(ctx) {
     const f = factsOf(ctx);
+    /** @type {string[]} */
     const signals = [];
     /* wp-content and wp-includes are the theme and core asset paths and appear on
        essentially every WordPress page. Two of them together is conclusive; one
@@ -59,6 +64,7 @@ export default {
      the entire document and reported every front page as unchanged forever. A
      listing is recognisable from its address with no ambiguity, so the address is
      asked first and the markup only gets a say when the address is silent. */
+  /** @param {StackContext} ctx @returns {string} */
   kind(ctx) {
     const p = String(ctx.locator || "");
     if (/^https?:\/\/[^/]+\/?(?:\?|#|$)/.test(p)) return "index";
@@ -71,6 +77,7 @@ export default {
     return "page";
   },
 
+  /** @this {{ kind: (ctx: StackContext) => string }} @param {StackContext} ctx @returns {Rule[]} */
   rules(ctx) {
     const kind = this.kind(ctx);
     const rules = [
@@ -119,6 +126,7 @@ export default {
      naming the document is one structural fact, while naming its surroundings is
      an open-ended list of theme guesses. Only ever applied to an article, because
      on a listing the <article> elements are the substance. */
+  /** @this {{ kind: (ctx: StackContext) => string }} @param {StackContext} ctx @returns {RegExp | null} */
   boundary(ctx) {
     if (this.kind(ctx) !== "article") return null;
     return /<article\b[^>]*>([\s\S]*)<\/article>/i;
@@ -132,9 +140,13 @@ export default {
      there, on named facts, not back on the stack handler. The measurement that shaped
      it is preserved in this file's header and in git history. */
 
+  /** @param {Part} part @returns {boolean} */
   renderCritical(part) { return part.kind === "stylesheet"; },
+  /** @param {Part} part @returns {boolean} */
   ignorable(part) {
     return part.reason === "THIRD_PARTY" || part.reason === "OUTSIDE_THE_DOCUMENT"
         || part.reason === "COLLAPSED_SRCSET_FAMILY";
   },
 };
+
+export default handler;

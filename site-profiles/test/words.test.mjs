@@ -11,10 +11,11 @@ import {
   aspnetWebforms, wordpress, clientRendered, conservative,
 } from "../index.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { Rule } from "../region.mjs" */
 
-const enc = (s) => new TextEncoder().encode(s);
-const sha256 = async (b) => createHash("sha256").update(b).digest("hex");
-const ruleLabel = (rules, key) => rules.find((r) => r.key === key).label;
+const enc = (/** @type {string} */ s) => new TextEncoder().encode(s);
+const sha256 = async (/** @type {Uint8Array} */ b) => createHash("sha256").update(b).digest("hex");
+const ruleLabel = (/** @type {Rule[]} */ rules, /** @type {string} */ key) => rules.find((r) => r.key === key)?.label;
 
 test("site-profiles.aspnet-webforms.page_state_this_site_rebuilds is read through localize", () => {
   assert.equal(ruleLabel(aspnetWebforms.rules(), "webforms_page_state"),
@@ -34,7 +35,7 @@ test("site-profiles.client-rendered.an_application_that_builds_its is read throu
 test("site-profiles.client-rendered.no_links_and_no_prose_in_the is read through localize", () => {
   const shell = `<html><body>${"x".repeat(2500)}</body></html>`;
   const d = clientRendered.detect({ text: shell });
-  assert.ok(d.signals.includes(
+  assert.ok((d.signals ?? []).includes(
     localize("site-profiles.client-rendered.no_links_and_no_prose_in_the", "no links and no prose in the body")));
 });
 
@@ -57,7 +58,7 @@ test("site-profiles.wordpress.an_advertising_or_analytics is read through locali
 
 test("site-profiles.index.everything_around_the_document_itself is read through localize", () => {
   const b = applyBoundary("<nav>menu</nav><main>body</main>", /<main>([\s\S]*)<\/main>/);
-  assert.equal(b.found[0].label,
+  assert.equal(b.found[0]?.label,
     localize("site-profiles.index.everything_around_the_document_itself", "everything around the document itself, such as navigation and footers"));
 });
 

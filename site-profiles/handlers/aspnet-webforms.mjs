@@ -24,19 +24,25 @@ import { CONFIDENCE } from "../recogniser.mjs";
 import { REGION } from "../region.mjs";
 import { factsOf } from "../scan.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
+/** @import { Detection } from "../recogniser.mjs" */
+/** @import { StackContext, StackHandler, Rule, Part, Headers } from "../region.mjs" */
 
 const VIEWSTATE_FIELDS = "__VIEWSTATE|__VIEWSTATEGENERATOR|__VIEWSTATEENCRYPTED|__EVENTVALIDATION"
                        + "|__PREVIOUSPAGE|__SCROLLPOSITIONX|__SCROLLPOSITIONY|__LASTFOCUS";
 
-export default {
+/** @type {{ kind: (ctx: StackContext) => string, rules: () => Rule[], boundary: () => RegExp, renderCritical: (part: Part) => boolean, ignorable: (part: Part) => boolean } & StackHandler} */
+const handler = {
   key: "aspnet_webforms",
   label: "a page built with ASP.NET WebForms",
   version: 1,
   textual: true,
 
+  /** @param {StackContext} ctx @returns {Detection} */
   detect(ctx) {
+    /** @type {Headers} */
     const h = ctx.headers || {};
     const f = factsOf(ctx);
+    /** @type {string[]} */
     const signals = [];
     /* The hidden field is the definitive signal: nothing but WebForms emits it,
        and it is present on every WebForms page by construction. Linear in the text
@@ -65,6 +71,7 @@ export default {
      a detail page (LegislationDetail.aspx, MeetingDetail.aspx) is a record of one
      thing and should be stable. The distinction matters for update management: a
      changed index is expected and a changed record is worth a member's attention. */
+  /** @param {StackContext} ctx @returns {string} */
   kind(ctx) {
     const p = String(ctx.locator || "").toLowerCase();
     if (/detail\.aspx/.test(p)) return "record";
@@ -73,6 +80,7 @@ export default {
     return "unknown";
   },
 
+  /** @returns {Rule[]} */
   rules() {
     return [
       { key: "webforms_page_state", region: REGION.MECHANICAL,
@@ -111,6 +119,7 @@ export default {
      role="main">, which is the document. Naming the boundary is both simpler and
      safer than cataloguing the furniture: everything outside it is furniture in
      one stroke, and a theme change cannot quietly reclassify substance. */
+  /** @returns {RegExp} */
   boundary() {
     return /<main\b[^>]*>([\s\S]*)<\/main>/i;
   },
@@ -127,11 +136,15 @@ export default {
      missing one makes the rendition unfaithful. An icon or a background image does
      not. Fonts sit on the line and are treated as non-critical: a page in a
      fallback face is still, in Bob's terms, meaningfully the same document. */
+  /** @param {Part} part @returns {boolean} */
   renderCritical(part) {
     return part.kind === "stylesheet" || part.kind === "css-asset" && /\.css($|\?)/i.test(part.url || "");
   },
+  /** @param {Part} part @returns {boolean} */
   ignorable(part) {
     return part.reason === "THIRD_PARTY" || part.reason === "OUTSIDE_THE_DOCUMENT"
         || part.reason === "COLLAPSED_SRCSET_FAMILY";
   },
 };
+
+export default handler;
