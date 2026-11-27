@@ -4,6 +4,11 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 const m = JSON.parse(readFileSync("build/modules.json", "utf8"));
 const mods = Array.isArray(m) ? m : m.modules;
+/**
+ * The test files at a module's test path: the file itself, or a directory's, read recursively.
+ * @param {string} p
+ * @returns {string[]}
+ */
 const files = (p) => {
   if (!existsSync(p)) return [];
   if (statSync(p).isFile()) return p.endsWith(".test.mjs") || p.endsWith(".test.js") ? [p] : [];
@@ -11,6 +16,7 @@ const files = (p) => {
 };
 // The platform's SQLite limits in every test process: a bound value or row over 2,098,176 B is refused (test-support; G41, K4666).
 const preload = resolve("bio-plane/test/platform-sqlite.mjs");
+/** @type {string[]} */
 const failed = [];
 for (const mod of mods) {
   const list = [...new Set((mod.tests || []).flatMap(files))].sort();

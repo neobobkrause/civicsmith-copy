@@ -7,13 +7,20 @@ import {
   readingPositionInExtent, extentCovers, gradeCeiling,
 } from "../../../src/textchain.mjs";
 import { EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
+/** @import { ReadingPosition } from "../../../src/textchain.mjs" */
 
+/** A pdf-page source on page 0, with the given fields over it. @param {object} [x] */
 const pdf = (x = {}) => ({ kind: "pdf-page", ref: "p. 1", page: 0, ...x });
+/** @type {readonly unknown[]} */
 const UNREADABLE = ["", "  ", 3, 0, false, true, {}, [], ["image-px"]];
+/** A reading this test expects. @param {ReadingPosition | null} p @returns {ReadingPosition} */
+const read1 = (p) => { assert.ok(p, "a reading"); return p; };
 
 test("R87: rectSpace reads absent/null as user space, a non-empty string as itself, anything else as unreadable", () => {
   assert.equal(RECT_USER_SPACE, "user");
-  for (const h of [{}, { space: undefined }, { space: null }, pdf(), null, undefined, 5, "x"]) assert.equal(rectSpace(h), "user", JSON.stringify(h));
+  /** @type {readonly unknown[]} */
+  const users = [{}, { space: undefined }, { space: null }, pdf(), null, undefined, 5, "x"];
+  for (const h of users) assert.equal(rectSpace(h), "user", JSON.stringify(h));
   for (const s of ["user", "image-px", "x"]) assert.equal(rectSpace({ space: s }), s);
   for (const s of UNREADABLE) assert.equal(rectSpace({ space: s }), null, JSON.stringify(s));
 });
@@ -22,7 +29,7 @@ test("R87: readingSource carries a non-user space beside a valid rect, never bes
   const rect = [1, 2, 3, 4];
   assert.deepEqual(readingSource(pdf({ rect, space: "image-px" })), { kind: "pdf-page", ref: "p. 1", page: 0, rect, space: "image-px" });
   /* Key-ordered: space last, whatever the caller's order. */
-  assert.deepEqual(Object.keys(readingSource({ space: "image-px", rect, ...pdf() })), ["kind", "ref", "page", "rect", "space"]);
+  assert.deepEqual(Object.keys(read1(readingSource({ space: "image-px", rect, ...pdf() }))), ["kind", "ref", "page", "rect", "space"]);
   /* User space, stated or not, is the pre-D-670 shape byte for byte. */
   for (const x of [{}, { space: null }, { space: "user" }]) {
     assert.deepEqual(readingSource(pdf({ rect, ...x })), { kind: "pdf-page", ref: "p. 1", page: 0, rect });
@@ -35,7 +42,9 @@ test("R87: readingSource carries a non-user space beside a valid rect, never bes
   for (const space of UNREADABLE)
     assert.deepEqual(readingSource(pdf({ rect, space })), { kind: "pdf-page", ref: "p. 1", page: 0, rect: null }, JSON.stringify(space));
   /* Truncated to 40 characters. */
-  assert.equal(readingSource(pdf({ rect, space: "s".repeat(90) })).space, "s".repeat(40));
+  const long = readingSource(pdf({ rect, space: "s".repeat(90) }));
+  assert.ok(long && long.kind === "pdf-page" && "space" in long, JSON.stringify(long));
+  assert.equal(long.space, "s".repeat(40));
   /* Other arms carry no space. */
   assert.deepEqual(readingSource({ kind: "doc-para", ref: "¶", para: 1, space: "image-px" }), { kind: "doc-para", ref: "¶", para: 1, run: null });
 });
@@ -48,14 +57,17 @@ test("R87: the space rides readingSourceJson, readingOccurrenceKey and readingSo
   assert.notEqual(readingOccurrenceKey(px), readingOccurrenceKey(user), "two spaces are two places");
   assert.equal(readingOccurrenceKey(user), readingOccurrenceKey({ ...user, space: "user" }));
   for (const s of [px, user]) {
-    const n = readingSource(s);
+    const n = read1(readingSource(s));
     assert.deepEqual(readingSourceFromColumns(n.kind, readingSourceJson(n), n.ref), n);
   }
 });
 
 test("R88: a region extent covers a target only when both rects are in the same readable space", () => {
+  /** @param {object} [x] */
   const region = (x = {}) => ({ kind: "region", source: { kind: "pdf-page", ref: "p", page: 0, rect: [0, 0, 1700, 2200], ...x } });
+  /** @param {object} [x] */
   const leg = (x = {}) => ({ page: 0, rect: [100, 150, 500, 190], ...x });
+  /** @type {readonly (readonly [object, object, boolean])[]} */
   const pairs = [
     [{}, {}, true], [{ space: "user" }, {}, true], [{}, { space: "user" }, true], [{ space: null }, { space: "user" }, true],
     [{ space: "image-px" }, { space: "image-px" }, true],
@@ -78,8 +90,11 @@ test("R88: a region extent covers a target only when both rects are in the same 
 });
 
 test("R89: a pdf-page reading with a rect is inside a rect extent only in the same readable space", () => {
+  /** @param {object} [x] */
   const read = (x = {}) => pdf({ rect: [100, 150, 500, 190], ...x });
+  /** @param {object} [x] */
   const ext = (x = {}) => ({ page: 0, rect: [0, 0, 1700, 2200], ...x });
+  /** @type {readonly (readonly [object, object, boolean])[]} */
   const pairs = [
     [{}, {}, true], [{ space: "user" }, {}, true], [{}, { space: "user" }, true],
     [{ space: "image-px" }, { space: "image-px" }, true],
