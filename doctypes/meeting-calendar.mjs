@@ -34,7 +34,7 @@ import { evaluateRule, localDay, reasonText } from "../bio-plane/src/civil-time/
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { counted, spend } from "./windows.mjs";
 
-/** @import { DoctypeContext, Detection, Entity, Connection, PracticeValue, ReaderView } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Detection, Entity, EntityFact, Connection, PracticeValue, ReaderView } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { RuleDue, RuleUndetermined, Refusal } from "../bio-plane/src/civil-time/kinds.mjs" */
 
@@ -395,7 +395,7 @@ const meetingCalendar = {
     /** @type {EventHead[]} */
     const events = [];
     const w = b.window;
-    /** @param {string | number | boolean | null | undefined} dateIso @returns {boolean | null} */
+    /** @param {EntityFact | undefined} dateIso @returns {boolean | null} */
     const inWindow = (dateIso) => {
       const from = w.from, to = w.to;
       if (!dateIso || from == null || to == null) return null;

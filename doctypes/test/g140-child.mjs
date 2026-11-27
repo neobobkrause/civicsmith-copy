@@ -9,7 +9,7 @@
 import { staffDirectory, staffReport, regulation } from "../index.mjs";
 import { HELD } from "./fixtures.mjs";
 import { addresses, csvOfAddresses, citations, repeated } from "./r40-texts.mjs";
-/** @import { DoctypeContext, Entity } from "../../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Entity, EntityFact } from "../../docprofile/doctypes/index.mjs" */
 /** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
 
 const [mode, name] = process.argv.slice(2);
@@ -19,7 +19,7 @@ const mb = () => process.memoryUsage().heapUsed / 1048576;
 const settle = () => { if (global.gc) { global.gc(); global.gc(); } };
 /** The length of an entry's `line` fact, as `line.length` read it: absent where it is not text (and `Math.max` then
  *  answers NaN), the `TypeError` reading it raised where there is none.
- *  @param {string | number | boolean | null | undefined} line @returns {number} @throws {TypeError} where there is no line */
+ *  @param {EntityFact | undefined} line @returns {number} @throws {TypeError} where there is no line */
 const lineLength = (line) => {
   if (line === null || line === undefined) throw new TypeError(`Cannot read properties of ${line} (reading 'length')`);
   return typeof line === "string" ? line.length : NaN;
