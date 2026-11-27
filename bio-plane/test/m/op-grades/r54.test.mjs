@@ -7,29 +7,48 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { hasWord, word, WORD_ROWS } from "../../../src/setup-words/index.mjs";
 
-let n = 0;
-const load = () => import(`../../../src/op-grades/index.mjs?r54=${n++}`);
-const twins = async () => [await load(), await load()];
+/** @import { DeclaredRow } from "../../../src/op-grades/declared.mjs" */
+/** @typedef {typeof import("../../../src/op-grades/index.mjs")} OpGrades */
 
-const KEY_A = WORD_ROWS[0][0];
+const FIRST_ROW = WORD_ROWS[0];
+assert.ok(FIRST_ROW, "the word list holds a row");
+const KEY_A = FIRST_ROW[0];
 const SENTENCE = "a fixture sentence that no list holds";
 
+/**
+ * @param {string} weight
+ * @param {string | undefined} description
+ * @param {DeclaredRow} [extra]
+ */
 const row = (weight, description, extra = {}) => ({
   classes: ["member"], mutating: weight !== "read", weight, description, fields: { accepts: [], requires: [] }, ...extra,
 });
 
-/** The four tables and the family list as plain data (this reads them). */
-const state = (m) => JSON.parse(JSON.stringify({
-  RUNGS: m.RUNGS, RUNG_ABSENT: m.RUNG_ABSENT, NON_ACTS: m.NON_ACTS, MACHINE_REFUSALS: m.MACHINE_REFUSALS, JUSTIFICATION_REFUSALS: m.JUSTIFICATION_REFUSALS,
-}));
-const refused = (code, op) => (e) => e.code === code && e.message.includes(op);
+/**
+ * The four tables and the family list as plain data (this reads them).
+ * @param {OpGrades} m
+ * @returns {unknown}
+ */
+const state = (m) => {
+  /** @type {unknown} */
+  const plain = JSON.parse(JSON.stringify({
+    RUNGS: m.RUNGS, RUNG_ABSENT: m.RUNG_ABSENT, NON_ACTS: m.NON_ACTS, MACHINE_REFUSALS: m.MACHINE_REFUSALS, JUSTIFICATION_REFUSALS: m.JUSTIFICATION_REFUSALS,
+  }));
+  return plain;
+};
+/**
+ * @param {string} code
+ * @param {string} op
+ */
+const refused = (code, op) => ({ name: "Error", code, message: new RegExp(op) });
 
 test("the fixture key is real (the owner rows below take their words from the hand rows, and this one only as a control)", () => {
   assert.ok(hasWord(KEY_A));
 });
 
 test("R54: an owner row weighted irreversible, for an op whose hand row is irreversible, registers and changes nothing", async () => {
-  const [m, ref] = await twins();
+  const m = await import("../../../src/op-grades/index.mjs?r54=1m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=1ref");
   const answer = m.registerDeclaredOps({
     "publish-schedule": { publishatmove: row("irreversible", ref.NON_ACTS.publishatmove) },
   });
@@ -39,7 +58,8 @@ test("R54: an owner row weighted irreversible, for an op whose hand row is irrev
 });
 
 test("R54: publishat (ratification's hand row, also irreversible) is accepted in agreement the same way", async () => {
-  const [m, ref] = await twins();
+  const m = await import("../../../src/op-grades/index.mjs?r54=2m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=2ref");
   const answer = m.registerDeclaredOps({
     ratification: { publishat: row("irreversible", ref.NON_ACTS.publishat) },
   });
@@ -48,14 +68,16 @@ test("R54: publishat (ratification's hand row, also irreversible) is accepted in
 });
 
 test("R54: an irreversible row for an op with no hand row in RUNGS stays refused, naming it, and nothing changes", async () => {
-  const [m, ref] = await twins();
+  const m = await import("../../../src/op-grades/index.mjs?r54=3m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=3ref");
   assert.throws(() => m.registerDeclaredOps({ fixture: { fxirreversible: row("irreversible", KEY_A) } }),
     refused("DECLARED_OP_BAD_WEIGHT", "fxirreversible"));
   assert.deepEqual(state(m), state(ref), "a refused registration changes nothing");
 });
 
 test("R54: an irreversible row for a hand row that holds an absence or a read (not a RUNGS irreversible) stays refused", async () => {
-  const [m, ref] = await twins();
+  const m = await import("../../../src/op-grades/index.mjs?r54=4m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=4ref");
   assert.equal(Object.hasOwn(ref.RUNGS, "holdsdue"), false, "control: holdsdue is a read, held only in NON_ACTS");
   assert.throws(() => m.registerDeclaredOps({ fixture: { holdsdue: row("irreversible", ref.NON_ACTS.holdsdue) } }),
     refused("DECLARED_OP_BAD_WEIGHT", "holdsdue"));
@@ -63,7 +85,8 @@ test("R54: an irreversible row for a hand row that holds an absence or a read (n
 });
 
 test("R54: control: a reasoned hand row declared irreversible is refused DECLARED_OP_DISAGREES, naming it, and nothing changes", async () => {
-  const [m, ref] = await twins();
+  const m = await import("../../../src/op-grades/index.mjs?r54=5m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=5ref");
   assert.equal(ref.RUNGS.standardinforcethrough, "reasoned", "control: the hand row is reasoned");
   assert.throws(() => m.registerDeclaredOps({
     standards: { standardinforcethrough: row("irreversible", ref.NON_ACTS.standardinforcethrough) },
@@ -71,9 +94,9 @@ test("R54: control: a reasoned hand row declared irreversible is refused DECLARE
   assert.deepEqual(state(m), state(ref), "a disagreeing registration changes nothing");
 });
 
-test("R54: control: a reversible hand row declared irreversible is refused DECLARED_OP_DISAGREES, and a registration that is "
-   + "refused whole adds none of its other rows", async () => {
-  const [m, ref] = await twins();
+test("R54: control: a reversible hand row declared irreversible is refused DECLARED_OP_DISAGREES, and a registration that is refused whole adds none of its other rows", async () => {
+  const m = await import("../../../src/op-grades/index.mjs?r54=6m");
+  const ref = await import("../../../src/op-grades/index.mjs?r54=6ref");
   assert.equal(ref.RUNGS.cite, "reversible", "control: the hand row is reversible");
   assert.throws(() => m.registerDeclaredOps({
     fixture: { fxother: row("reversible", KEY_A), fxextra: row("reversible", KEY_A) },

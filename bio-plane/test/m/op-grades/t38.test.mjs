@@ -9,15 +9,13 @@ import { T38_RUNGS, T38_NON_ACTS } from "../../../src/op-grades/t38.mjs";
 import * as T38 from "../../../src/op-grades/t38.mjs";
 import { declaredSentence } from "./declared.mjs";
 
-const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
+/** @param {string} op */
+const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op]?.ground : null;
 const R28_WRITES = { obscuremarkwithdraw: "reasoned", obscuremark: "reversible" };
 const WITHDRAW = declaredSentence("case-carriage", "obscuremarkwithdraw");
 const MARK = declaredSentence("case-carriage", "obscuremark");
 
-test("R28: obscuremarkwithdraw `reasoned`, backed by case-carriage R14's WITHDRAW_NO_REASON (C-141.10) in "
-   + "JUSTIFICATION_REFUSALS, with R28's photo-directed reason; obscuremark leaves RUNG_ABSENT for `reversible`, taken "
-   + "back by the withdrawal; neither a machine refusal (case-carriage refuses MACHINE_CANNOT_WITHDRAW_MARK itself); both "
-   + "phone acts; no statement, weight or larger-screen entry added", () => {
+test("R28: obscuremarkwithdraw `reasoned`, backed by case-carriage R14's WITHDRAW_NO_REASON (C-141.10) in JUSTIFICATION_REFUSALS, with R28's photo-directed reason; obscuremark leaves RUNG_ABSENT for `reversible`, taken back by the withdrawal; neither a machine refusal (case-carriage refuses MACHINE_CANNOT_WITHDRAW_MARK itself); both phone acts; no statement, weight or larger-screen entry added", () => {
   const got = Object.fromEntries(Object.keys(R28_WRITES).map((op) => [op, gradeOf(op)]));
   assert.deepEqual(got, R28_WRITES);
   assert.ok(!Object.hasOwn(RUNG_ABSENT, "obscuremark"));
@@ -30,7 +28,7 @@ test("R28: obscuremarkwithdraw `reasoned`, backed by case-carriage R14's WITHDRA
   /* the reasons */
   assert.equal(NON_ACTS.obscuremarkwithdraw, WITHDRAW);
   assert.equal(NON_ACTS.obscuremark, MARK);
-  for (const op of Object.keys(R28_WRITES)) assert.ok(!NON_ACTS[op].startsWith("capture-directed:"), op);
+  for (const op of Object.keys(R28_WRITES)) assert.ok(NON_ACTS[op]?.startsWith("capture-directed:") === false, op);
   /* the machine is refused by case-carriage's own code, never through MACHINE_REFUSALS */
   assert.deepEqual(Object.keys(R28_WRITES).filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)), []);
   assert.ok(!Object.values(MACHINE_REFUSALS).includes("MACHINE_CANNOT_WITHDRAW_MARK"));

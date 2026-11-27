@@ -10,11 +10,18 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, JUSTIFICATION_REFUSALS,
 import * as T46 from "../../../src/op-grades/t46.mjs";
 import { declaredSentence } from "./declared.mjs";
 
-const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
-const isRead = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("read: ")
-  && /writes nothing$/.test(NON_ACTS[op]) && NON_ACTS[op].length > 30;
-const isDraft = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("draft: ")
-  && /writes nothing of the record/.test(NON_ACTS[op]);
+/** @param {string} op */
+const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op]?.ground : null;
+/** @param {string} op */
+const isRead = (op) => {
+  const why = NON_ACTS[op];
+  return typeof why === "string" && why.startsWith("read: ") && /writes nothing$/.test(why) && why.length > 30;
+};
+/** @param {string} op */
+const isDraft = (op) => {
+  const why = NON_ACTS[op];
+  return typeof why === "string" && why.startsWith("draft: ") && /writes nothing of the record/.test(why);
+};
 
 /* R33's writes, op by op, each read from its owner */
 const R33_WRITES = { infolevelset: "caller-owned", escalationstoppursuing: "reasoned", escalationreopen: "reasoned",
@@ -25,12 +32,11 @@ const R33_DRAFTS = ["statusreportassist", "textcheck"];
 const R33_ACTS = ["escalationstoppursuing", "escalationreopen"];
 const ALL = [...Object.keys(R33_WRITES), ...R33_READS, ...R33_DRAFTS];
 
-test("R33: infolevelset `caller-owned` as memberlanguageset, with its personal-state sentence; infolevel a read of the "
-   + "viewer's own level", () => {
+test("R33: infolevelset `caller-owned` as memberlanguageset, with its personal-state sentence; infolevel a read of the viewer's own level", () => {
   assert.equal(gradeOf("infolevelset"), "caller-owned");
   assert.equal(gradeOf("infolevelset"), gradeOf("memberlanguageset"), "as memberlanguageset");
   assert.ok(!Object.hasOwn(RUNGS, "infolevelset"));
-  assert.match(RUNG_ABSENT.infolevelset.is, /\(instance-setup R79\)$/);
+  assert.match(RUNG_ABSENT.infolevelset?.is ?? "", /\(instance-setup R79\)$/);
   assert.equal(NON_ACTS.infolevelset, declaredSentence("instance-setup", "infolevelset"));
   assert.ok(isRead("infolevel"));
   assert.equal(gradeOf("infolevel"), null, "a read takes no grade");
@@ -39,20 +45,18 @@ test("R33: infolevelset `caller-owned` as memberlanguageset, with its personal-s
   assert.ok(!isRead("infolevelset"));
 });
 
-test("R33: statusreportassist writes nothing and takes no rung; its sentence a draft, as statusreportdraft's, naming the "
-   + "sourced items, the plane's draft door and that the report kept is the member's", () => {
+test("R33: statusreportassist writes nothing and takes no rung; its sentence a draft, as statusreportdraft's, naming the sourced items, the plane's draft door and that the report kept is the member's", () => {
   assert.equal(gradeOf("statusreportassist"), null);
   assert.ok(isDraft("statusreportassist"));
-  assert.ok(NON_ACTS.statusreportdraft.startsWith("draft: "), "as statusreportdraft's");
+  assert.ok(NON_ACTS.statusreportdraft?.startsWith("draft: "), "as statusreportdraft's");
   for (const re of [/the items, each with its source/, /a plan's status report/, /through the plane's draft door/,
-    /the report kept is the member's$/]) assert.match(NON_ACTS.statusreportassist, re);
+    /the report kept is the member's$/]) assert.match(NON_ACTS.statusreportassist ?? "", re);
   assert.notEqual(NON_ACTS.statusreportassist, NON_ACTS.statusreportdraft, "apart from statusreportdraft");
   /* negative control */
   assert.ok(!isRead("statusreportassist"));
 });
 
-test("R33: escalationstoppursuing and escalationreopen `reasoned`, backed by ESCALATION_NO_REASON already in the family; "
-   + "ACTS rows (affordances R52), so no NON_ACTS row, and MACHINE_REFUSALS gains both with MACHINE_CANNOT_STOP", () => {
+test("R33: escalationstoppursuing and escalationreopen `reasoned`, backed by ESCALATION_NO_REASON already in the family; ACTS rows (affordances R52), so no NON_ACTS row, and MACHINE_REFUSALS gains both with MACHINE_CANNOT_STOP", () => {
   for (const op of R33_ACTS) {
     assert.equal(RUNGS[op], "reasoned", op);
     assert.ok(!Object.hasOwn(RUNG_ABSENT, op), op);
@@ -67,11 +71,10 @@ test("R33: escalationstoppursuing and escalationreopen `reasoned`, backed by ESC
   assert.equal(RUNGS.escalationend, "terminal");
 });
 
-test("R33: the member-run door's op, airundispatch, stated absent `undetermined` on R3's rule, run-directed, not a machine "
-   + "refusal, a phone act", () => {
+test("R33: the member-run door's op, airundispatch, stated absent `undetermined` on R3's rule, run-directed, not a machine refusal, a phone act", () => {
   assert.equal(gradeOf("airundispatch"), "undetermined");
   assert.ok(!Object.hasOwn(RUNGS, "airundispatch"));
-  assert.match(RUNG_ABSENT.airundispatch.is, /\(ai-runs R18\)$/);
+  assert.match(RUNG_ABSENT.airundispatch?.is ?? "", /\(ai-runs R18\)$/);
   assert.equal(NON_ACTS.airundispatch, "run-directed: keyed by a run the caller opened on her own sign-in; starts its next "
     + "segment for her only; moves no bundle");
   assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "airundispatch"));
@@ -81,44 +84,41 @@ test("R33: the member-run door's op, airundispatch, stated absent `undetermined`
   assert.ok(!NON_ACTS.airundispatch.startsWith("capture-directed:"));
 });
 
-test("R33: joindoors and clockproposals are reads, each `read: …` writing nothing and ungraded: an administrator's, never "
-   + "a door's secret; the standing proposals clockadopt adopts", () => {
+test("R33: joindoors and clockproposals are reads, each `read: …` writing nothing and ungraded: an administrator's, never a door's secret; the standing proposals clockadopt adopts", () => {
   for (const op of ["joindoors", "clockproposals"]) { assert.ok(isRead(op), op); assert.equal(gradeOf(op), null, op); }
-  assert.match(NON_ACTS.joindoors, /to an administrator, never a door's secret/);
-  assert.match(NON_ACTS.clockproposals, /standing clock proposals on an action the viewer may see, which clockadopt adopts/);
+  assert.match(NON_ACTS.joindoors ?? "", /to an administrator, never a door's secret/);
+  assert.match(NON_ACTS.clockproposals ?? "", /standing clock proposals on an action the viewer may see, which clockadopt adopts/);
   /* negative control: the act it names stays graded */
   assert.equal(gradeOf("clockadopt"), "undetermined");
 });
 
-test("R33: textcheck writes nothing and takes no rung; its sentence a draft naming the four readings, a labeled proposal "
-   + "for the member, never rewriting the text", () => {
+test("R33: textcheck writes nothing and takes no rung; its sentence a draft naming the four readings, a labeled proposal for the member, never rewriting the text", () => {
   assert.equal(gradeOf("textcheck"), null);
   assert.ok(isDraft("textcheck"));
   for (const re of [/sentences of a prepared outward text/, /an assertion, a position, an own-benefit ask or a staff member named/,
-    /labeled proposal for the member/, /never rewrites the text/]) assert.match(NON_ACTS.textcheck, re);
+    /labeled proposal for the member/, /never rewrites the text/]) assert.match(NON_ACTS.textcheck ?? "", re);
   assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "textcheck"));
   /* negative control */
   assert.ok(!isRead("textcheck"));
 });
 
-test("R33 R5 R18 R21 R4: of T46's ops MACHINE_REFUSALS holds exactly the two escalation acts; every one is a phone act; "
-   + "no consequence statement (escalationstoppursuing's is owed by the design stream, K2960), Irreversible weight, "
-   + "larger-screen entry or alias is added", () => {
+test("R33 R5 R18 R21 R4: of T46's ops MACHINE_REFUSALS holds exactly the two escalation acts; every one is a phone act; no consequence statement (escalationstoppursuing's is owed by the design stream, K2960), Irreversible weight, larger-screen entry or alias is added", () => {
   assert.deepEqual(ALL.filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)).sort(), [...R33_ACTS].sort());
   assert.deepEqual(ALL.filter((op) => !phoneOf(op)), []);
+  /** @type {readonly string[]} */
+  const aliasTargets = Object.values(OP_ALIASES);
   for (const op of ALL) {
     assert.ok(!Object.hasOwn(CONSEQUENCE_STATEMENTS, op), op);
     assert.ok(!IRREVERSIBLE_WEIGHT.includes(op), op);
     assert.ok(!LARGER_SCREEN_ACTS.includes(op), op);
-    assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), op);
+    assert.ok(!Object.hasOwn(OP_ALIASES, op) && !aliasTargets.includes(op), op);
     assert.ok(!(NON_ACTS[op] ?? "").startsWith("capture-directed:"), op);
   }
   /* negative control: a credential ground is off the phone */
   assert.equal(phoneOf("projectkeyset"), false);
 });
 
-test("R33: T46's tables hold exactly these ops, the module's tables carrying those very entries; none both graded and "
-   + "stated absent", () => {
+test("R33: T46's tables hold exactly these ops, the module's tables carrying those very entries; none both graded and stated absent", () => {
   assert.deepEqual(Object.keys(T46).sort(), ["T46_NON_ACTS", "T46_RUNGS", "T46_RUNG_ABSENT"]);
   assert.deepEqual([...Object.keys(T46.T46_RUNGS), ...Object.keys(T46.T46_RUNG_ABSENT)].sort(),
     Object.keys(R33_WRITES).sort());
@@ -134,8 +134,11 @@ test("R33: T46's tables hold exactly these ops, the module's tables carrying tho
 
 /* `unaccounted`'s two totalities over a stand-in of op-declarations R50's and R51's rows (t45.test.mjs' shape): each write
    mutating, each read and draft not, every op gated by a NEEDS row; the two escalation acts are ACTS rows */
+/** @typedef {{ op: string, mutating: boolean, gated: boolean }} StandInRow */
+/** @type {StandInRow[]} */
 const STAND_IN = [...Object.keys(R33_WRITES).map((op) => ({ op, mutating: true, gated: true })),
   ...[...R33_READS, ...R33_DRAFTS].map((op) => ({ op, mutating: false, gated: true }))];
+/** @param {StandInRow[]} rows @param {string[]} [acts] */
 const unaccountedOver = (rows, acts = R33_ACTS) => {
   const mutating = new Set(rows.filter((r) => r.mutating).map((r) => r.op));
   const gated = new Set(rows.filter((r) => r.gated).map((r) => r.op));
@@ -146,8 +149,7 @@ const unaccountedOver = (rows, acts = R33_ACTS) => {
       || Object.hasOwn(RUNG_ABSENT, op)) || !gated.has(op) && Object.hasOwn(NON_ACTS, op)).sort(),
   };
 };
-test("R33: affordances R12's totality holds over a stand-in of op-declarations R50's and R51's rows — none unpublished, "
-   + "unranked or stale", () => {
+test("R33: affordances R12's totality holds over a stand-in of op-declarations R50's and R51's rows — none unpublished, unranked or stale", () => {
   assert.deepEqual(unaccountedOver(STAND_IN), { unpublished: [], unranked: [], stale: [] });
   /* negative controls: without affordances' ACTS rows (T46-45) the escalation acts read unpublished; an ungraded new op
      is unranked; a draft carried as a write is unranked, a write carried as a read stale */
@@ -160,11 +162,10 @@ test("R33: affordances R12's totality holds over a stand-in of op-declarations R
     ["infolevelset"]);
 });
 
-test("R33 (K2998): clockadopt is an ACTS row on an action (affordances R52) — it leaves NON_ACTS, MACHINE_REFUSALS gains "
-   + "it with MACHINE_CANNOT_ADOPT_CLOCK, and its `undetermined` absence stands", () => {
+test("R33 (K2998): clockadopt is an ACTS row on an action (affordances R52) — it leaves NON_ACTS, MACHINE_REFUSALS gains it with MACHINE_CANNOT_ADOPT_CLOCK, and its `undetermined` absence stands", () => {
   assert.ok(!Object.hasOwn(NON_ACTS, "clockadopt"), "an act, never a non-act too");
   assert.equal(MACHINE_REFUSALS.clockadopt, "MACHINE_CANNOT_ADOPT_CLOCK");
-  assert.equal(RUNG_ABSENT.clockadopt.ground, "undetermined");
+  assert.equal(RUNG_ABSENT.clockadopt?.ground, "undetermined");
   assert.ok(!Object.hasOwn(RUNGS, "clockadopt"));
   assert.equal(phoneOf("clockadopt"), true);
   /* negative controls: its proposal (clockpropose) stays a non-act with no machine refusal; the read beside it too */
@@ -175,16 +176,14 @@ test("R33 (K2998): clockadopt is an ACTS row on an action (affordances R52) — 
 });
 
 /* ---- R34 ----------------------------------------------------------------------------------------------------------- */
-test("R34: handlechange stays where R29 puts it (`caller-owned`, no rung, phone true) and its sentences state the refusal "
-   + "it now is — NON_ACTS word for word, its absence naming membership R129 and never R124; neither says a handle is "
-   + "changeable or shown as formerly; handlecheck unchanged", () => {
+test("R34: handlechange stays where R29 puts it (`caller-owned`, no rung, phone true) and its sentences state the refusal it now is — NON_ACTS word for word, its absence naming membership R129 and never R124; neither says a handle is changeable or shown as formerly; handlecheck unchanged", () => {
   assert.equal(gradeOf("handlechange"), "caller-owned");
   assert.ok(!Object.hasOwn(RUNGS, "handlechange"));
   assert.equal(phoneOf("handlechange"), true);
   assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "handlechange"));
   assert.equal(NON_ACTS.handlechange, "member-directed: a handle is fixed at joining; this act refuses every change, "
     + "`HANDLE_FIXED`, and writes nothing");
-  const is = RUNG_ABSENT.handlechange.is;
+  const is = RUNG_ABSENT.handlechange?.is ?? "";
   assert.match(is, /membership R129/);
   assert.doesNotMatch(is, /R124/);
   for (const s of [NON_ACTS.handlechange, is]) {

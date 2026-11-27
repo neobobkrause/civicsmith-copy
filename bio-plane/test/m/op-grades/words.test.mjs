@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import * as G from "../../../src/op-grades/index.mjs";
 import { CONSEQUENCE_STATEMENTS, IRREVERSIBLE_CORRECTION_KEY, IRREVERSIBLE_WEIGHT, RUNGS } from "../../../src/op-grades/index.mjs";
 import { word, hasWord } from "../../../src/setup-words/index.mjs";
+/** @import { WordVars } from "../../../src/setup-words/index.mjs" */
 
 const READS = JSON.parse(readFileSync(fileURLToPath(
   new URL("../../../../docs/development/ux-substrate/screens/words-reads.json", import.meta.url)), "utf8")).modules["op-grades"].reads;
@@ -16,6 +17,10 @@ const KEYS = [...Object.values(CONSEQUENCE_STATEMENTS).map((e) => e.key), IRREVE
 /* every string the module's maps hold: a consequence entry holds its key, a rung or a non-act its sentence (K3268: the
    test reads the list, never a written count, so the list may grow as its owners draw more words) */
 const LEAVES = new Set([IRREVERSIBLE_CORRECTION_KEY]);
+/**
+ * @param {unknown} v
+ * @returns {void}
+ */
 const walk = (v) => { if (typeof v === "string") LEAVES.add(v); else if (v && typeof v === "object") Object.values(v).forEach(walk); };
 Object.values(G).forEach(walk);
 
@@ -33,9 +38,10 @@ test("R44: the keys this module publishes are exactly its `reads` list, each ass
   assert.equal(hasWord("Publishing makes this edition permanent and public."), false);
 });
 
-test("R44: what a consequence entry draws for each of its keys equals word(key, vars): a plain key unchanged, personexpunge's "
-   + "{date} and {member} filled by the surface", () => {
-  const vars = { date: "2026-10-14", member: "a member" };
+test("R44: what a consequence entry draws for each of its keys equals word(key, vars): a plain key unchanged, personexpunge's {date} and {member} filled by the surface", () => {
+  const date = "2026-10-14", member = "a member";
+  /** @type {WordVars} */
+  const vars = { date, member };
   for (const [op, e] of Object.entries(CONSEQUENCE_STATEMENTS)) {
     const drawn = word(e.key, vars);
     assert.equal(typeof drawn, "string", op);
@@ -45,11 +51,11 @@ test("R44: what a consequence entry draws for each of its keys equals word(key, 
   assert.equal(word(IRREVERSIBLE_CORRECTION_KEY), word("screen.ceremony.permanent"));
   /* the two placeholders of the expunge sentence are the surface's to fill */
   const filled = word(CONSEQUENCE_STATEMENTS.personexpunge.key, vars);
-  assert.ok(filled.includes(vars.date) && filled.includes(vars.member));
+  assert.ok(filled.includes(date) && filled.includes(member));
   assert.doesNotMatch(filled, /\{date\}|\{member\}/);
   /* controls: a missing placeholder and an unknown key each throw their code, never a fallback */
-  assert.throws(() => word(CONSEQUENCE_STATEMENTS.personexpunge.key, {}), (e) => /WORD_VAR_MISSING/.test(`${e.code} ${e.message}`));
-  assert.throws(() => word("consequence.nosuchop"), (e) => /UNKNOWN_WORD/.test(`${e.code} ${e.message}`));
+  assert.throws(() => word(CONSEQUENCE_STATEMENTS.personexpunge.key, {}), /** @param {unknown} e */ (e) => e instanceof Error && /WORD_VAR_MISSING/.test(`${"code" in e ? e.code : undefined} ${e.message}`));
+  assert.throws(() => word("consequence.nosuchop"), /** @param {unknown} e */ (e) => e instanceof Error && /UNKNOWN_WORD/.test(`${"code" in e ? e.code : undefined} ${e.message}`));
 });
 
 test("R44: every op that carries a consequence entry keeps its rung or ground, and the Irreversible weight names ops, never keys", () => {

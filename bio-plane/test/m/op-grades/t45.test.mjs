@@ -9,11 +9,18 @@ import { RUNGS, RUNG_ABSENT, NON_ACTS, MACHINE_REFUSALS, JUSTIFICATION_REFUSALS,
 import * as T45 from "../../../src/op-grades/t45.mjs";
 import { reqText, between, ticked, readRows, asksNotTheAccount } from "./declared.mjs";
 
-const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op].ground : null;
-const isRead = (op) => typeof NON_ACTS[op] === "string" && NON_ACTS[op].startsWith("read: ") && /writes nothing$/.test(NON_ACTS[op]);
+/** @param {string} op @returns {string | null | undefined} */
+const gradeOf = (op) => Object.hasOwn(RUNGS, op) ? RUNGS[op] : Object.hasOwn(RUNG_ABSENT, op) ? RUNG_ABSENT[op]?.ground : null;
+/** @param {string} op */
+const isRead = (op) => {
+  const sentence = NON_ACTS[op];
+  return typeof sentence === "string" && sentence.startsWith("read: ") && /writes nothing$/.test(sentence);
+};
+/** @param {{ [op: string]: string }} ops */
 const grades = (ops) => Object.fromEntries(Object.keys(ops).map((op) => [op, gradeOf(op)]));
 
 /* R32's grades, op by op, each read from its owner */
+/** @type {{ [op: string]: string }} */
 const R32_WRITES = {
   /* action-plans R39, R40 */
   scenariosetaside: "reasoned", scenariorestore: "reasoned", planpause: "reasoned", planresume: "reasoned",
@@ -53,6 +60,7 @@ const R32_WRITES = {
   advocacycheck: "undetermined",
 };
 /* the code each `reasoned` op's owner refuses an absent reason with */
+/** @type {{ [op: string]: string }} */
 const R32_CODES = {
   scenariosetaside: "PLAN_NO_REASON", scenariorestore: "PLAN_NO_REASON", planpause: "PLAN_NO_REASON",
   planresume: "PLAN_NO_REASON", actionscope: "SCOPE_NO_REASON", projectscopeset: "NO_REASON",
@@ -60,6 +68,7 @@ const R32_CODES = {
   ruledraft: "RULE_NO_REASON", rulewithdraw: "RULE_NO_REASON",
 };
 /* each `reversible` op and the owner's published act that takes it back (R3) */
+/** @type {{ [op: string]: string }} */
 const TAKEN_BACK_BY = {
   followend: "followend", actionpromise: "actionpromise", actionreplybearing: "actionreplybearing",
   actionbearingpropose: "actionbearingpropose", curelink: "cureunlink", matteroutcomeset: "matteroutcomeset",
@@ -79,9 +88,7 @@ const R32_MACHINE = { holdnoticesent: "MACHINE_CANNOT_SEND", actionreceipt: "MAC
   actionreplybearing: "MACHINE_CANNOT_RECORD_BEARING", arosefrom: "MACHINE_CANNOT_LINK",
   clockstate: "MACHINE_CANNOT_STATE_CLOCK", itemtakeup: "MACHINE_CANNOT_PLAN" };
 
-test("R32 (K2881): every write T45's owners serve carries R32's grade — the reasoned ones backed by their owner's code in "
-   + "JUSTIFICATION_REFUSALS, each reversible one taken back by a graded act of its owner, following's and answers' as R32 "
-   + "names them — each non-act with a NON_ACTS reason that is no read and no capture act, each act with none", () => {
+test("R32 (K2881): every write T45's owners serve carries R32's grade — the reasoned ones backed by their owner's code in JUSTIFICATION_REFUSALS, each reversible one taken back by a graded act of its owner, following's and answers' as R32 names them — each non-act with a NON_ACTS reason that is no read and no capture act, each act with none", () => {
   const got = grades(R32_WRITES);
   assert.deepEqual(got, R32_WRITES);
   assert.deepEqual(Object.keys(R32_WRITES).filter((op) => R32_WRITES[op] === "reasoned").sort(), Object.keys(R32_CODES).sort());
@@ -97,12 +104,14 @@ test("R32 (K2881): every write T45's owners serve carries R32's grade — the re
   }
   for (const [op, e] of Object.entries(T45.T45_RUNG_ABSENT)) assert.ok(e.is.length > 60, op);
   /* each beside the precedent R32 reads it by */
-  for (const [op, like] of [["dutyfromresponse", "dutypropose"], ["pressurerecord", "actionpressure"],
+  /** @type {[string, string][]} */
+  const likenesses = [["dutyfromresponse", "dutypropose"], ["pressurerecord", "actionpressure"],
     ["filingsecondapprove", "filingapprove"], ["holdnoticeprepare", "communicationprepare"], ["clockstate", "clockadopt"],
     ["statusreportsave", "reportkeep"], ["prepitemdone", "checkpointrecord"], ["ruleconfirm", "templateapprove"],
     ["plancomment", "reviewcomment"], ["actionbearingpropose", "actionseekspropose"], ["publishcheck", "publish"],
     ["itemtakeup", "reminderset"], ["standingendset", "standingend"], ["declaredstakeset", "coarchiveset"],
-    ["advocacycheck", "captureupload"]])
+    ["advocacycheck", "captureupload"]];
+  for (const [op, like] of likenesses)
     assert.equal(gradeOf(op), gradeOf(like), `${op} as ${like}`);
   /* negative controls: a misgrade is seen, and the grounds class (K1025) is not extended */
   assert.notDeepEqual({ ...got, actionscope: "undetermined" }, R32_WRITES);
@@ -110,28 +119,25 @@ test("R32 (K2881): every write T45's owners serve carries R32's grade — the re
   assert.notEqual(gradeOf("successrecord"), gradeOf("consequencerecord"));
 });
 
-test("R32 (K2881): every other op T45's owners serve is a read, a NON_ACTS row beginning `read: …` that writes nothing and takes "
-   + "no grade; statusreportdraft is a draft, `draft: …`, writing nothing", () => {
+test("R32 (K2881): every other op T45's owners serve is a read, a NON_ACTS row beginning `read: …` that writes nothing and takes no grade; statusreportdraft is a draft, `draft: …`, writing nothing", () => {
   for (const op of R32_READS) {
-    assert.ok(isRead(op) && NON_ACTS[op].length > 30, op);
+    assert.ok(isRead(op) && (NON_ACTS[op] ?? "").length > 30, op);
     assert.equal(gradeOf(op), null, op);
   }
   for (const op of R32_DRAFTS) {
-    assert.ok(NON_ACTS[op].startsWith("draft: ") && /writes nothing of the record/.test(NON_ACTS[op]), op);
+    const sentence = NON_ACTS[op] ?? "";
+    assert.ok(sentence.startsWith("draft: ") && /writes nothing of the record/.test(sentence), op);
     assert.equal(gradeOf(op), null, op);
   }
   /* (T46; K2881) the two record drafts each name what they answer and that a member's own act keeps it */
-  assert.match(NON_ACTS.infractiondraft, /infraction for one audience/);
-  assert.match(NON_ACTS.bearingdraft, /bearing of each claim/);
+  assert.match(NON_ACTS.infractiondraft ?? "", /infraction for one audience/);
+  assert.match(NON_ACTS.bearingdraft ?? "", /bearing of each claim/);
   /* negative control */
   assert.ok(!isRead("successrecord"));
-  assert.ok(!isRead("advocacycheck") && NON_ACTS.advocacycheck.startsWith("project-directed: "));
+  assert.ok(!isRead("advocacycheck") && (NON_ACTS.advocacycheck ?? "").startsWith("project-directed: "));
 });
 
-test("R32 R1 (K2857): JUSTIFICATION_REFUSALS gains the codes T45's owners refuse an absent reason with — "
-   + "SCOPE_NO_REASON, ADDRESSED_NO_REASON (addressedrecord's, in place of NO_REASON), SUCCESS_NO_REASON, RULE_NO_REASON — "
-   + "and the reasons R32 names inside existing acts, CONTRADICTED_HELD, DOCUMENT_FIRST_NO_REASON and OVERRIDE_NO_GROUND, "
-   + "each once; the objects they ask for stay out; no existing rung changes", () => {
+test("R32 R1 (K2857): JUSTIFICATION_REFUSALS gains the codes T45's owners refuse an absent reason with — SCOPE_NO_REASON, ADDRESSED_NO_REASON (addressedrecord's, in place of NO_REASON), SUCCESS_NO_REASON, RULE_NO_REASON — and the reasons R32 names inside existing acts, CONTRADICTED_HELD, DOCUMENT_FIRST_NO_REASON and OVERRIDE_NO_GROUND, each once; the objects they ask for stay out; no existing rung changes", () => {
   for (const c of ["SCOPE_NO_REASON", "ADDRESSED_NO_REASON", "SUCCESS_NO_REASON", "RULE_NO_REASON", "CONTRADICTED_HELD",
     "DOCUMENT_FIRST_NO_REASON", "OVERRIDE_NO_GROUND"])
     assert.equal(JUSTIFICATION_REFUSALS.filter((x) => x === c).length, 1, c);
@@ -140,14 +146,11 @@ test("R32 R1 (K2857): JUSTIFICATION_REFUSALS gains the codes T45's owners refuse
   assert.deepEqual(JUSTIFICATION_REFUSALS.filter(asksNotTheAccount), []);
   for (const c of ["SCOPE_UNCHANGED", "NO_SUCH_SCENARIO", "MACHINE_CANNOT_SET_SCOPE"]) assert.ok(asksNotTheAccount(c), c);
   /* the rungs of the existing acts those reasons sit inside are unchanged (R3's 21 hold optionstart) */
-  assert.deepEqual([RUNGS.filingapprove, RUNG_ABSENT.optionstart.ground, RUNGS.addressedrecord],
+  assert.deepEqual([RUNGS.filingapprove, RUNG_ABSENT.optionstart?.ground, RUNGS.addressedrecord],
     ["terminal", "undetermined", "reasoned"]);
 });
 
-test("R32 R5 R18 R21 R37: of T45's ops MACHINE_REFUSALS holds exactly the eight acts R32 names, each with its owner's "
-   + "code, the two that admit a machine none; phone follows the rung (publishcheck and filingsecondapprove, terminal, "
-   + "off the phone); none carries the Irreversible weight (publishcheck left it with publish at R37); no consequence "
-   + "statement, larger-screen entry or alias is added", () => {
+test("R32 R5 R18 R21 R37: of T45's ops MACHINE_REFUSALS holds exactly the eight acts R32 names, each with its owner's code, the two that admit a machine none; phone follows the rung (publishcheck and filingsecondapprove, terminal, off the phone); none carries the Irreversible weight (publishcheck left it with publish at R37); no consequence statement, larger-screen entry or alias is added", () => {
   assert.deepEqual(Object.fromEntries(ALL.filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)).map((op) => [op, MACHINE_REFUSALS[op]])),
     R32_MACHINE);
   for (const op of ["holdnoticeprepare", "actionbearingpropose"]) assert.ok(!Object.hasOwn(MACHINE_REFUSALS, op), op);
@@ -159,13 +162,12 @@ test("R32 R5 R18 R21 R37: of T45's ops MACHINE_REFUSALS holds exactly the eight 
     assert.ok(!Object.hasOwn(OP_ALIASES, op) && !Object.values(OP_ALIASES).includes(op), op);
   }
   /* B6: an administrator's setting refused NOT_AN_ADMIN, no act and no machine refusal */
-  assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "declaredstakeset") && NON_ACTS.declaredstakeset.startsWith("setting: "));
+  assert.ok(!Object.hasOwn(MACHINE_REFUSALS, "declaredstakeset") && (NON_ACTS.declaredstakeset ?? "").startsWith("setting: "));
   /* negative control: a reasoned T45 op is a phone act */
   assert.equal(phoneOf("actionscope"), true);
 });
 
-test("R32: T45's tables hold exactly these ops, none both graded and stated absent; the assertion resolution is filings' "
-   + "approval (reconciliation R1), no op of its own", () => {
+test("R32: T45's tables hold exactly these ops, none both graded and stated absent; the assertion resolution is filings' approval (reconciliation R1), no op of its own", () => {
   assert.deepEqual(Object.keys(T45).sort(), ["T45_NON_ACTS", "T45_RUNGS", "T45_RUNG_ABSENT"]);
   assert.deepEqual([...Object.keys(T45.T45_RUNGS), ...Object.keys(T45.T45_RUNG_ABSENT)].sort(), Object.keys(R32_WRITES).sort());
   assert.deepEqual(Object.keys(T45.T45_NON_ACTS).sort(), ALL.filter((op) => !R32_ACTS.includes(op)).sort());
@@ -182,6 +184,8 @@ test("R32: T45's tables hold exactly these ops, none both graded and stated abse
    mutating, each read and the draft not, every op gated by a NEEDS row */
 const STAND_IN = [...Object.keys(R32_WRITES).map((op) => ({ op, mutating: true, gated: true })),
   ...[...R32_READS, ...R32_DRAFTS].map((op) => ({ op, mutating: false, gated: true }))];
+/** @typedef {{ op: string, mutating: boolean, gated: boolean }} StandInRow */
+/** @param {StandInRow[]} rows @param {string[]} [acts] */
 const unaccountedOver = (rows, acts = R32_ACTS) => {
   const mutating = new Set(rows.filter((r) => r.mutating).map((r) => r.op));
   const gated = new Set(rows.filter((r) => r.gated).map((r) => r.op));
@@ -192,8 +196,7 @@ const unaccountedOver = (rows, acts = R32_ACTS) => {
       || Object.hasOwn(RUNG_ABSENT, op)) || !gated.has(op) && Object.hasOwn(NON_ACTS, op)).sort(),
   };
 };
-test("R32: affordances R12's totality holds over a stand-in of op-declarations R49's rows — none unpublished, unranked or "
-   + "stale", () => {
+test("R32: affordances R12's totality holds over a stand-in of op-declarations R49's rows — none unpublished, unranked or stale", () => {
   assert.deepEqual(unaccountedOver(STAND_IN), { unpublished: [], unranked: [], stale: [] });
   /* negative control: without affordances' ACTS rows (T45-39), the acts read unpublished */
   assert.deepEqual(unaccountedOver(STAND_IN, []).unpublished, [...R32_ACTS].sort());
@@ -204,14 +207,14 @@ test("R32: affordances R12's totality holds over a stand-in of op-declarations R
 });
 
 /* ---- R32 (T46; K2881, K2996): the five ops op-declarations declared after the T45 merge, each by name ------------- */
-test("R32 (K2881, K2996): grouprules and advocacychecks reads, advocacycheck `undetermined` and project-directed, "
-   + "infractiondraft and bearingdraft drafts with no rung; none an act or a machine refusal; every one a phone act", () => {
+test("R32 (K2881, K2996): grouprules and advocacychecks reads, advocacycheck `undetermined` and project-directed, infractiondraft and bearingdraft drafts with no rung; none an act or a machine refusal; every one a phone act", () => {
   assert.equal(gradeOf("advocacycheck"), "undetermined");
-  assert.match(RUNG_ABSENT.advocacycheck.is, /\(case-account R13\)$/);
-  assert.match(NON_ACTS.advocacycheck, /^project-directed: keyed by the member's own hidden project/);
+  assert.match(RUNG_ABSENT.advocacycheck?.is ?? "", /\(case-account R13\)$/);
+  assert.match(NON_ACTS.advocacycheck ?? "", /^project-directed: keyed by the member's own hidden project/);
   for (const op of ["grouprules", "advocacychecks"]) { assert.ok(isRead(op), op); assert.equal(gradeOf(op), null, op); }
   for (const op of ["infractiondraft", "bearingdraft"]) {
-    assert.ok(NON_ACTS[op].startsWith("draft: ") && /writes nothing of the record/.test(NON_ACTS[op]), op);
+    const sentence = NON_ACTS[op] ?? "";
+    assert.ok(sentence.startsWith("draft: ") && /writes nothing of the record/.test(sentence), op);
     assert.equal(gradeOf(op), null, op);
   }
   /* the five T46 adds to T45's tables beside R32's first lists (K2881, K2996): the last reads and drafts, the check */
@@ -220,7 +223,7 @@ test("R32 (K2881, K2996): grouprules and advocacychecks reads, advocacycheck `un
   assert.deepEqual(FIVE.filter((op) => Object.hasOwn(MACHINE_REFUSALS, op)), []);
   assert.deepEqual(FIVE.map(phoneOf), FIVE.map(() => true));
   /* negative controls: the check is no read and no draft; a draft graded as a write would be seen */
-  assert.ok(!isRead("advocacycheck") && !NON_ACTS.advocacycheck.startsWith("draft: "));
+  assert.ok(!isRead("advocacycheck") && !(NON_ACTS.advocacycheck ?? "").startsWith("draft: "));
   assert.notEqual(gradeOf("advocacycheck"), "caller-owned");
   assert.ok(!Object.hasOwn(RUNGS, "infractiondraft") && !Object.hasOwn(RUNG_ABSENT, "bearingdraft"));
 });
