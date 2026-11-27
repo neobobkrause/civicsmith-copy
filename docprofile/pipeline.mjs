@@ -44,9 +44,14 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
 /** @import { DoctypeContext, Connection } from "./doctypes/index.mjs" */
 
 /**
- * What `assess` is handed beside the two captures (R11): what the caller knows about the address, the hash function the byte
- * layers need, and when each capture was made.
- * @typedef {DoctypeContext & { readonly sha256?: (bytes: Uint8Array) => Promise<string> | string, readonly before_at?: string | null | undefined, readonly after_at?: string | null | undefined }} AssessContext
+ * The response headers of one fetch, each a header's name and its value (R11), as the byte layers read them (site-profiles'
+ * `compare`).
+ * @typedef {{ readonly [name: string]: string }} ResponseHeaders
+ */
+/**
+ * What `assess` is handed beside the two captures (R11): what the caller knows about the address, its response headers, the
+ * hash function the byte layers need, and when each capture was made.
+ * @typedef {DoctypeContext & { readonly headers?: ResponseHeaders | null, readonly sha256?: (bytes: Uint8Array) => Promise<string> | string, readonly before_at?: string | null | undefined, readonly after_at?: string | null | undefined }} AssessContext
  */
 /**
  * What one layer said, beside its name (R11): the layer's own details.
@@ -119,7 +124,9 @@ export async function assess(before, after, ctx) {
   const id = identify({ ...ctx, text });
   note(LAYER.STACK, `${id.handler.label} (${id.confidence})`,
        { handler: id.handler.key, confidence: id.confidence, signals: id.signals });
-  const profile = profileRecord(id, ctx);
+  /* site-profiles' `profileRecord` reads only the caller's `now`, and reads a missing one, an empty one and a null one alike
+     (the wall clock); it is told the caller's `now` only where there is one. */
+  const profile = profileRecord(id, ctx.now ? { now: ctx.now } : null);
   const out = /** @param {LayerVerdict} v @returns {Assessment} */ (v) => {
     const end = trail[trail.length - 1];
     return { ...v, trail, profile, stopped_at: end ? end.layer : LAYER.STACK };
@@ -139,16 +146,23 @@ export async function assess(before, after, ctx) {
      carries its own copy of the digest logic (CONSTRUCTS Step 0 #2). compare() returns
      the verdict AND the two digest objects, so the trail can still report how much was
      normalised and where reasoning stopped. */
-  const dctx = { ...ctx, text, confidence: id.confidence };
-  let cmp;
-  try { cmp = await compare(before, after, id.handler, dctx); }
-  catch (e) {
-    /* Only a caller's missing hash function or a failing one reaches here. The honest
-       answer is that nothing could be compared, never a guess in either direction. */
+  /* What the caller left null, site-profiles reads as absent (`ctx.headers || {}`, `ctx.locator || ...`), so it is told
+     those as absent; everything else the caller knows it is told unchanged. */
+  const { headers, locator, content_type: servedAs, sha256, ...known } = ctx;
+  /* A caller's missing hash function, or a failing one: the honest answer is that nothing could be compared, never a
+     guess in either direction (R35). */
+  const uncompared = /** @param {string} reason @returns {Assessment} */ (reason) => {
     note(LAYER.BYTES, localize("docprofile.pipeline.the_two_captures_could_not_be_compared", "the two captures could not be compared"));
     return out({ verdict: "undetermined", meaningful: null, events: [], connections: [],
-                 why: localize("docprofile.pipeline.the_two_captures_could_not", "the two captures could not be compared ({String}), so nothing is claimed", { String: String(said(e)) }) });
-  }
+                 why: localize("docprofile.pipeline.the_two_captures_could_not", "the two captures could not be compared ({String}), so nothing is claimed", { String: reason }) });
+  };
+  if (typeof sha256 !== "function")
+    return uncompared(localize("docprofile.pipeline.no_hash_function_was_given", "no hash function was given"));
+  const dctx = { ...known, sha256, text, confidence: id.confidence, ...(headers ? { headers } : {}),
+                 ...(locator == null ? {} : { locator }), ...(servedAs == null ? {} : { content_type: servedAs }) };
+  let cmp;
+  try { cmp = await compare(before, after, id.handler, dctx); }
+  catch (e) { return uncompared(said(e)); }
   const da = cmp.digests.before, db = cmp.digests.after;
 
   if (cmp.verdict === "identical") {

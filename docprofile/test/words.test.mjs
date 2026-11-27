@@ -48,6 +48,8 @@ test("words R35 a comparison that could not run says so in the trail, by id", as
   const nohash = await assess(enc("<p>a</p>"), enc("<p>b</p>"), {});
   assert.equal(nohash.verdict, "undetermined");
   assert.equal(nohash.trail.at(-1)?.said, localize("docprofile.pipeline.the_two_captures_could_not_be_compared", "the two captures could not be compared"));
+  assert.equal(nohash.why, localize("docprofile.pipeline.the_two_captures_could_not", "the two captures could not be compared ({String}), so nothing is claimed",
+    { String: localize("docprofile.pipeline.no_hash_function_was_given", "no hash function was given") }));
 });
 
 test("words R4 a document no registered type recognises is stated by id, read as the registered fallback", () => {

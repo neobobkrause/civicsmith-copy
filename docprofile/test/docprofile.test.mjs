@@ -21,7 +21,8 @@ import { registerStubs, stubMeetings, stubItems, stubFallback } from "./stubs.mj
 /* A value a test hands over on purpose outside the stated kind, exactly as given: how the code answers what no caller should send. */
 const asGiven = /** @param {unknown} x @returns {any} */ (x) => x;
 
-/** @import { DoctypeContext, ContentType, TypeAssessment, Connection, AssessContext, Assessment, ReadTextAnswer, ReadingDone, SuppliedText, Detection } from "../registry.mjs" */
+/** @import { DoctypeContext, ContentType, TypeAssessment, Connection, AssessContext, Assessment, ReadTextAnswer, ReadingDone, SuppliedText } from "../registry.mjs" */
+/** @import { Detection } from "../doctypes/index.mjs" */
 /** @import { StubReading } from "./stubs.mjs" */
 /** @import { View } from "../../jurisdictions/index.mjs" */
 /** @import { ReadingPosition } from "../../bio-plane/src/textchain.mjs" */
@@ -304,13 +305,24 @@ test("R16 confirmation states what was verified unchanged, even beside events, n
   }
 });
 
+test("R11 assess reads a caller's null headers, locator, content type and time as absent, and still compares", async () => {
+  const given = await assess(enc(CAL), enc(CAL), { sha256, headers: null, locator: null, content_type: null, now: null });
+  const absent = await assess(enc(CAL), enc(CAL), { sha256 });
+  assert.equal(given.verdict, "identical");
+  assert.equal(given.stopped_at, "L2_bytes");
+  assert.equal(given.profile.handler, absent.profile.handler);
+  assert.match(String(given.profile.at), /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
+  const changed = await assess(enc(CAL), enc(calendarHtml([[...ROW, "CANCELLED"]])), calCtx({ headers: null, content_type: null }));
+  assert.equal(changed.verdict, "changed");
+});
+
 test("R17 the result carries the L1 profile always and the content type once L4 is reached", async () => {
   const same = await assess(enc(CAL), enc(CAL), calCtx());
   assert.equal(same.profile.handler, "aspnet_webforms");
   assert.ok(!("content_type" in same));
   const after = calendarHtml([ROW, ["2", "S", "3/9/2026"]]);
   const ch = await assess(enc(CAL), enc(after), calCtx());
-  assert.deepEqual(ch.profile, profileRecord(identify({ ...calCtx(), text: after }), calCtx()));
+  assert.deepEqual(ch.profile, profileRecord(identify({ ...calCtx(), text: after }), { now: NOW }));
   assert.equal(ch.content_type, "stub_meetings");
   // never throws: a missing hash, bytes that are not bytes
   const bad = await assess(enc("<p>a</p>"), enc("<p>b</p>"), {});
