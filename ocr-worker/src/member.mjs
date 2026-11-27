@@ -367,7 +367,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
     } catch (e) {
       /* The real engine reports its own failures; an engine that THROWS instead is the same finding, and is
          stated rather than turned into a 500 that reads as "the member could not be reached". */
-      answered = { ok: false, error: String((e instanceof Error && e.message) || e), name: e instanceof Error ? e.name : undefined };
+      answered = { ok: false, error: String((e && e.message) || e), name: e && e.name };
     }
     const out = answered;
     if (!out || !out.ok)
@@ -572,7 +572,7 @@ export function makeMember(engine, { render = renderPageToPixels, renderPicture 
   /** The 200 answer for a throw inside a call (R28): never a 5xx, never a thrown error; a document-level finding.
    *  @param {unknown} e @param {string | undefined} stage @param {number | null} page @returns {Refusal} */
   function unexpected(e, stage, page) {
-    const error_name = String((e instanceof Error && e.name) || "Error"), error = String((e instanceof Error && e.message) || e).slice(0, 200);
+    const error_name = String((e && e.name) || "Error"), error = String((e && e.message) || e).slice(0, 200);
     return { ok: false, reason: "UNEXPECTED_FAILURE", detail: REFUSALS.UNEXPECTED_FAILURE, page, stage, error_name, error };
   }
 

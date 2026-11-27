@@ -159,8 +159,8 @@ export async function readFrame(makeEngine, model, rgba, width, height, { psm = 
     /* A refusal is a measurement (CPDF-15's posture). It comes back as one, with
        the frame size beside it, rather than as an opaque throw — the caller
        turns it into a STATED refusal and the document stays honestly unread. */
-    return { ok: false, reason: "ENGINE_FAILED", error: String((e instanceof Error && e.message) || e),
-             name: e instanceof Error ? e.name : undefined, frame_bytes: width * height * 4 };
+    return { ok: false, reason: "ENGINE_FAILED", error: String((e && e.message) || e),
+             name: e && e.name, frame_bytes: width * height * 4 };
   } finally {
     try { const engine = made; if (engine) engine.destroy(); } catch { /* the isolate is going anyway */ }
   }

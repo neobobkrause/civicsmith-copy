@@ -168,7 +168,7 @@ export async function pngToSamples(bytes) {
   }
   /** @type {Uint8Array} */
   let raw;
-  try { raw = await inflateZlib(z); } catch (e) { return refuse("PNG_CORRUPT_DATA", { error: String((e instanceof Error && e.name) || "Error") }); }
+  try { raw = await inflateZlib(z); } catch (e) { return refuse("PNG_CORRUPT_DATA", { error: String((e && e.name) || "Error") }); }
 
   const rowBytes = bitDepth === 1 ? Math.ceil(width / 8) : width * comps;
   if (raw.length < (rowBytes + 1) * height)
