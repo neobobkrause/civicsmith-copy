@@ -4767,14 +4767,14 @@ async function pageImagesOf(doc, pageIdx, sl) {
   return { images, why: null };
 }
 
-/** What `e && e.message` reads of a thrown value: its `message` when it is an object or function that has one (an Error
- *  this walk raised, or one the platform raised), else the value itself when falsy, else undefined.
+/** What `e && e.message` reads of a value the image walk threw: the walk throws only an Error (its own, the platform's, or
+ *  a word's), so its `message`; a falsy value is itself, as `e && …` gives it. (Nothing foreign runs inside the walk: a
+ *  slicer's `yieldNow` is behind `tickOf`, which catches whatever it throws.)
  *  @param {unknown} e
  *  @returns {unknown} */
 function thrownMessage(e) {
-  if (!e) return e;
   if (e instanceof Error) return e.message;
-  return (typeof e === "object" || typeof e === "function") && "message" in e ? e.message : undefined;
+  return e ? undefined : e;
 }
 
 /** Every page's images, or NULL with the reason — never a partial list.
