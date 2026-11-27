@@ -15,8 +15,6 @@
     "bio-plane/test/job-registrar-stub.mjs",
     "bio-plane/test/corpus.mjs",
     "bio-plane/test/seeded.mjs",
-    ".github/scripts/",
-    ".github/workflows/regression.yml",
     ".claude/hooks/",
     "bio-plane/package.json",
     "bio-plane/package-lock.json"
