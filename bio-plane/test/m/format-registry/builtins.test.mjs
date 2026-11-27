@@ -142,7 +142,9 @@ test("R22: pdf parts and text are null; structure(bytes) is extractPdfStructure(
   assert.deepEqual(r, await extractPdfStructure(doc));
   assert.equal(r.ok, true);
   assert.ok("links" in r);
-  assert.equal(r.links[0].target.url, "https://example.gov/a.pdf");
+  const target = r.links[0]?.target;
+  assert.ok(target && "url" in target, "the link's target is a URL");
+  assert.equal(target.url, "https://example.gov/a.pdf");
   // and it is what the registry's detect→structure path reaches
   const reached = entryOf(now(detectFormat(doc, null)).format);
   assert.ok(reached.structure);

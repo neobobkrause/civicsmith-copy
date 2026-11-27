@@ -52,6 +52,7 @@ test("R15: a projection of the named keys only, each string key a non-empty stri
   assert.equal(got(readingDialect(Object.create({ delimiter: "\t" }))).delimiter, "\t");
   // the real csv entry's own dialect projects without loss of any named key
   const d = csvEntry.dialect(new TextEncoder().encode("a;b;c\n1;2;3\n4;5;6\n"));
+  if (!d) throw new Error("the csv entry stated no dialect for a delimited text");
   assert.deepEqual(readingDialect(d), {
     delimiter: d.delimiter, encoding: d.encoding,
     confidence: { delimiter: d.delimiterConfidence, encoding: d.encodingConfidence },
