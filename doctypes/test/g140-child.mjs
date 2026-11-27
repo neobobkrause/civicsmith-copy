@@ -69,8 +69,9 @@ if (mode === "base") {
     const parsed = reader.parse(ctx({ work }));
     const first = parsed.entities[0];
     if (!first) throw new TypeError("Cannot read properties of undefined (reading 'occurrences')");
+    const occurrences = first.occurrences;
     console.log(JSON.stringify({ chars: text.length, entities: parsed.entities.length, cut: parsed.references_cut === true, skipped: parsed.references_skipped || 0,
                                  limit: parsed.references_limit || null, sightingsLimit: parsed.sightings_limit || null, work: work.chars,
-                                 occurrences: first.occurrences ? first.occurrences.length : 0 }));
+                                 occurrences: occurrences ? occurrences.length : 0 }));
   }
 }

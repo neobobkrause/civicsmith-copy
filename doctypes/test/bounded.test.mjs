@@ -231,14 +231,14 @@ test("R37 readText over the three govinfo volumes, every type registered, answer
    `ctx.pages` (its R38); until then the types' own part above is what is measured. */
 /** @returns {Promise<boolean>} */
 async function docprofileHandsPages() {
-  /** @type {ReadonlyArray<SuppliedPage> | null | undefined} */
-  let seen = null;
+  /** The pages the probe's detect was handed, once it has run. @type {Array<ReadonlyArray<SuppliedPage> | undefined>} */
+  const seen = [];
   /** @type {ContentType} */
-  const probe = { key: "r37_probe", label: "probe", version: 1, contract: CONTRACT.SUBSTANCE, detect: (ctx) => { seen = ctx.pages; return { match: false, confidence: CONFIDENCE.NONE }; },
+  const probe = { key: "r37_probe", label: "probe", version: 1, contract: CONTRACT.SUBSTANCE, detect: (ctx) => { seen[0] = ctx.pages; return { match: false, confidence: CONFIDENCE.NONE }; },
                   parse: () => ({}), assess: () => ({}) };
   registerDoctype(probe);
   readText({ document: "a\nb", pages: [{ page: 1, text: "a" }, { page: 2, text: "b" }] });
-  return Array.isArray(seen);
+  return Array.isArray(seen[0]);
 }
 
 test("R37 readText over BUDGET-2024-APP, every type registered, adds under 16 MB (once docprofile R38 hands the types ctx.pages)", async (t) => {

@@ -146,8 +146,9 @@ test("R40 R37 16,000 addresses on one line are read within the bound, each entry
   const got = directoryOf(await capped("oneline"));
   assert.equal(got.match, true);
   assert.equal(got.cut, true);
-  assert.ok(got.limit !== null && got.limit > 0 && got.entities === got.limit, `${got.entities} entries of ${got.limit}`);
-  assert.ok(got.readTo !== null && got.readTo > 0 && got.readTo < got.chars, "the answer names how far it read");
+  const limit = got.limit, readTo = got.readTo;
+  assert.ok(limit !== null && limit > 0 && got.entities === limit, `${got.entities} entries of ${got.limit}`);
+  assert.ok(readTo !== null && readTo > 0 && readTo < got.chars, "the answer names how far it read");
   assert.equal(typeof got.why, "string");
   assert.ok(got.longestLine <= 600, `the longest line is ${got.longestLine}`);
   assert.equal(got.lineCut, got.entities);
@@ -159,7 +160,8 @@ test("R40 R37 a 17 MB spreadsheet of distinct addresses adds under 16 MB, and sa
   assert.equal(got.match, true);
   assert.equal(got.cut, true);
   assert.equal(got.entities, got.limit);
-  assert.ok(got.readTo !== null ? got.readTo < got.chars : 0 < got.chars);
+  const readTo = got.readTo;
+  assert.ok(readTo !== null ? readTo < got.chars : 0 < got.chars);
   assert.ok(got.work > 0 && got.work <= got.chars, `the work counted: ${got.work} of ${got.chars}`);
 });
 
@@ -186,7 +188,7 @@ test("R40 the staff directory finds the addresses a global pattern finds, whatev
   let checked = 0, withAddresses = 0;
   for (const text of randomTexts(600)) {
     /** @type {Map<string, number>} */
-    const want = new Map();
+    const want = new Map(/** @type {Array<[string, number]>} */ ([]));
     for (const m of text.matchAll(SPEC)) {
       const a = m[0].toLowerCase().replace(/\.+$/, "");
       if (!want.has(a)) want.set(a, m[0].length ? m.index : 0);
@@ -282,7 +284,8 @@ test("R40 R37 400,000 citations are read a window at a time: the staff report's 
   assert.equal(got.entities, 50);
   assert.equal(got.cut, true);
   assert.ok(got.skipped > 0 && got.skipped < 400_000);
-  assert.ok(got.limit !== null && got.limit > 0 && got.sightingsLimit !== null && got.sightingsLimit > 0);
+  const limit = got.limit, sightingsLimit = got.sightingsLimit;
+  assert.ok(limit !== null && limit > 0 && sightingsLimit !== null && sightingsLimit > 0);
   assert.ok(got.work > 0 && got.work <= 12 * got.chars, `the work counted: ${got.work} of ${got.chars}`);
 });
 
