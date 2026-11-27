@@ -9,9 +9,13 @@ import { Container, ContainerProxy } from '@cloudflare/containers';
 import member from '../fleet-member.json' with { type: 'json' };
 import { handle, scheduled } from './handler.mjs';
 import { MEMBER_LIMITS_STATEMENT } from './limits.mjs';
+/** @import { Env, Deps, ContainerNamespace, ContainerFetch, ContainerInit, SocketAddress, SocketOptions, Socket } from './store.mjs' */
+/** @import { IncomingRequest } from './handler.mjs' */
+/** @typedef {{ waitUntil: (p: Promise<unknown>) => void }} WorkerContext the invocation's context: what keeps it alive past the answer */
 
 export { ContainerProxy };
 
+/** @param {string} name */
 const classOf = (name) => member.containers.find((c) => c.class_name === name);
 
 /** R6, R12, R34: the request header by which the Worker starts the image's one other instance, the signature updater,
@@ -22,6 +26,7 @@ export class FileScanner extends Container {
   defaultPort = classOf('FileScanner').image.port;
   sleepAfter = '10m';
   enableInternet = false;
+  /** @param {Request} request @returns {Promise<Response>} */
   async fetch(request) {
     this.enableInternet = request.headers.get(UPDATER_HEADER) === '1';
     return this.containerFetch(request, this.defaultPort);
@@ -32,12 +37,16 @@ export class SafeViewRenderer extends Container {
   defaultPort = classOf('SafeViewRenderer').image.port;
   sleepAfter = '5m';
   enableInternet = false;
+  /** @param {Request} request @returns {Promise<Response>} */
   async fetch(request) { return this.containerFetch(request, this.defaultPort); }
 }
 
-/** A class's one instance, as a `(path, init)` fetch. */
+/** A class's one instance, as a `(path, init)` fetch.
+ *  @param {ContainerNamespace | undefined} ns @param {string} name @param {{ [header: string]: string }} [headers]
+ *  @returns {ContainerFetch} */
 function container(ns, name, headers = {}) {
   if (!ns) return async () => { throw new Error('container not bound'); };
+  /** @param {string} path @param {ContainerInit} [init] */
   return (path, init = {}) => {
     const req = new Request(`http://container${path}`, init);
     for (const [k, v] of Object.entries(headers)) req.headers.set(k, v);
@@ -45,11 +54,13 @@ function container(ns, name, headers = {}) {
   };
 }
 
+/** @param {SocketAddress} address @param {SocketOptions} [options] @returns {Promise<Socket>} */
 async function socketConnect(address, options) {
   const { connect } = await import('cloudflare:sockets');
   return connect(address, options);
 }
 
+/** @param {Env} env @param {WorkerContext | undefined} ctx @returns {Deps} */
 function depsOf(env, ctx) {
   return {
     bucket: env.CAPTURES || null, scanner: container(env.SCANNER, 'file-scanner'),
@@ -62,9 +73,11 @@ function depsOf(env, ctx) {
 export default {
   // installer R39: the member's limits, stated in the bundle a release signs.
   limits: MEMBER_LIMITS_STATEMENT,
+  /** @param {IncomingRequest} request @param {Env} env @param {WorkerContext} ctx @returns {Promise<Response>} */
   fetch(request, env, ctx) {
     return handle(request, depsOf(env, ctx));
   },
+  /** @param {unknown} event @param {Env} env @param {WorkerContext} ctx @returns {void} */
   scheduled(event, env, ctx) {
     ctx.waitUntil(scheduled(depsOf(env, ctx)));
   },
