@@ -41,7 +41,7 @@ export const WASM_BINDGEN_VERSION = "0.2.126";
  * @property {number} code_bytes
  * @property {string} code_sha256
  */
-/** @typedef {{ cwd?: string, stdio?: "inherit", env?: NodeJS.ProcessEnv }} RunOptions */
+/** @typedef {{ cwd?: string, stdio?: "inherit", env?: { [name: string]: string | undefined } }} RunOptions */
 
 /** @param {Uint8Array} b @returns {string} */
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
