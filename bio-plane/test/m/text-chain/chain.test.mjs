@@ -9,29 +9,58 @@ import {
 } from "../../../src/textchain.mjs";
 import { BASIS_GRADES } from "../../../src/record-grammar/index.mjs";
 import { word } from "../../../src/setup-words/index.mjs";
+/** @import { Chain, Refusal, Step, PagesExtent, TextChainCode } from "../../../src/textchain.mjs" */
 
-const KINDS = Object.keys(STEP_KINDS);
+/** @typedef {"layer" | "pixels" | "ocr" | "ai" | "ai_transcription" | "attested" | "convert" | "typed"} KindName a key of `STEP_KINDS` */
+/** @type {readonly KindName[]} */
+const KIND_NAMES = ["layer", "pixels", "ocr", "ai", "ai_transcription", "attested", "convert", "typed"];
+/** @param {string} k @returns {k is KindName} */
+const isKindName = (k) => KIND_NAMES.some((n) => n === k);
+/** The keys of `STEP_KINDS`, in its order. @type {KindName[]} */
+const KINDS = Object.keys(STEP_KINDS).filter(isKindName);
+/** @typedef {{ layer: Step, pixels: Step, ocr: Step, ai: Step, attested: Step, convert: Step, typed: Step, ai_transcription: Step }} OkSteps */
 /* A minimal well-formed step of each kind. */
+/** @type {OkSteps} */
 const ok = {
   layer: { step: "layer" }, pixels: { step: "pixels" }, ocr: { step: "ocr", engine: "eng", version: "1" },
   ai: { step: "ai", engine: "model" }, attested: { step: "attested", member: "m1", at: "2026-01-01" },
   convert: { step: "convert", engine: "host-export", format: "odt" }, typed: { step: "typed", member: "m2" },
   ai_transcription: { step: "ai_transcription", engine: "vision-model", version: "3" },
 };
+/** @param {Chain | Refusal | null} r @param {TextChainCode} code @returns {void} */
 const isRefusal = (r, code) => {
-  assert.equal(r && r.ok, false, `expected a refusal ${code}, got ${JSON.stringify(r)}`);
+  assert.ok(r !== null && !Array.isArray(r), `expected a refusal ${code}, got ${JSON.stringify(r)}`);
+  assert.equal(r.ok, false, `expected a refusal ${code}, got ${JSON.stringify(r)}`);
   assert.equal(r.code, code);
   assert.equal(r.check, TEXT_CHAIN_CHECKS[code].check);
   assert.equal(r.translation, TEXT_CHAIN_CHECKS[code].translation);
   assert.equal(typeof r.detail, "string");
   assert.ok(r.detail.length > 0);
 };
-const L = (cap, extra = {}) => ({ step: "layer", cap, ...extra });
-const O = (cap, extra = {}) => ({ step: "ocr", engine: "eng", cap, ...extra });
-const pages = (ps, part) => (part === undefined ? { kind: "pages", pages: ps } : { kind: "pages", pages: ps, part });
+/** @param {Chain | Refusal | null} r @returns {Chain} */
+const chainOf = (r) => { assert.ok(Array.isArray(r), JSON.stringify(r)); return r; };
+/** @typedef {{ extent?: PagesExtent, tier?: number }} Extra */
+/** `step` with `extra`'s members laid on it. @param {Step} step @param {Extra} extra @returns {Step} */
+const withExtra = (step, extra) => {
+  const { extent, tier } = extra;
+  if (extent !== undefined) step.extent = extent;
+  if (tier !== undefined) step.tier = tier;
+  return step;
+};
+/** @param {string | null} cap @param {Extra} [extra] @returns {Step} */
+const L = (cap, extra = {}) => withExtra({ step: "layer", cap }, extra);
+/** @param {string | null} cap @param {Extra} [extra] @returns {Step} */
+const O = (cap, extra = {}) => withExtra({ step: "ocr", engine: "eng", cap }, extra);
+/** @param {number[]} ps @param {number} [part] @returns {PagesExtent} */
+const pages = (ps, part) => {
+  /** @type {PagesExtent} */
+  const extent = { kind: "pages", pages: ps };
+  if (part !== undefined) extent.part = part;
+  return extent;
+};
 
 test("R1: every step kind has role derivation|verification and a label; only attested verifies", () => {
-  assert.deepEqual(KINDS.sort(), ["ai", "ai_transcription", "attested", "convert", "layer", "ocr", "pixels", "typed"]);
+  assert.deepEqual(Object.keys(STEP_KINDS).sort(), ["ai", "ai_transcription", "attested", "convert", "layer", "ocr", "pixels", "typed"]);
   for (const k of KINDS) {
     assert.ok(["derivation", "verification"].includes(STEP_KINDS[k].role), k);
     assert.equal(typeof STEP_KINDS[k].label, "string");
@@ -56,7 +85,9 @@ test("R2: every kind declares tier: an integer, \"step\" or null", () => {
   assert.equal(STEP_KINDS.pixels.tier, 3);
   assert.equal(STEP_KINDS.ocr.tier, 3);
   assert.equal(STEP_KINDS.ai_transcription.tier, 4);
-  for (const k of ["ai", "attested", "typed", "convert"]) assert.equal(STEP_KINDS[k].tier, null);
+  /** @type {readonly KindName[]} */
+  const untiered = ["ai", "attested", "typed", "convert"];
+  for (const k of untiered) assert.equal(STEP_KINDS[k].tier, null);
 });
 
 test("R3: convert, typed and ai_transcription (R104) declare names, unmeasured and letter; no other kind declares them", () => {
@@ -69,13 +100,15 @@ test("R3: convert, typed and ai_transcription (R104) declare names, unmeasured a
   assert.deepEqual(STEP_KINDS.ai_transcription.names, ["engine"]);
   assert.equal(STEP_KINDS.ai_transcription.unmeasured, "undetermined");
   assert.equal(STEP_KINDS.ai_transcription.letter, "calibrated");
+  /** @type {readonly ("names" | "unmeasured" | "letter")[]} */
+  const declared = ["names", "unmeasured", "letter"];
   for (const k of KINDS.filter((x) => !["convert", "typed", "ai_transcription"].includes(x)))
-    for (const f of ["names", "unmeasured", "letter"]) assert.equal(STEP_KINDS[k][f], undefined, `${k}.${f}`);
+    for (const f of declared) assert.equal(STEP_KINDS[k][f], undefined, `${k}.${f}`);
   /* Plain object, never mutated by use. */
   const before = JSON.stringify(STEP_KINDS);
   for (const k of KINDS) { checkChain([ok[k]]); derivationCap([ok[k]]); describeChain([ok[k]]); tiersEvidenced([ok[k]]); }
   assert.equal(JSON.stringify(STEP_KINDS), before);
-  assert.equal(Object.getPrototypeOf(STEP_KINDS), Object.prototype);
+  assert.equal(Reflect.getPrototypeOf(STEP_KINDS), Object.prototype);
 });
 
 test("R4: a non-empty array of step objects each naming a known kind is well-formed", () => {
@@ -101,9 +134,14 @@ test("R7: a non-object step refuses STEP_SHAPE; an unknown .step refuses STEP_UN
 test("R8: ocr/ai without a non-empty engine, or a names-declaring kind missing a named field, refuses STEP_UNNAMED", () => {
   for (const k of ["ocr", "ai"])
     for (const engine of [undefined, null, "", 5, {}]) isRefusal(checkChain([{ step: k, engine }]), "TEXT_CHAIN_STEP_UNNAMED");
-  for (const k of ["convert", "typed", "ai_transcription"])
-    for (const f of STEP_KINDS[k].names)
+  /** @type {readonly KindName[]} */
+  const naming = ["convert", "typed", "ai_transcription"];
+  for (const k of naming) {
+    const names = STEP_KINDS[k].names;
+    assert.ok(names, k);
+    for (const f of names)
       for (const v of [undefined, "", "  ", 3]) isRefusal(checkChain([{ ...ok[k], [f]: v }]), "TEXT_CHAIN_STEP_UNNAMED");
+  }
   /* Kinds that name nothing need nothing. */
   for (const k of ["layer", "pixels", "attested"]) assert.equal(checkChain([{ step: k }]), null);
 });
@@ -117,7 +155,9 @@ test("R9: a present calibration that is not a non-empty string refuses CAL_REF; 
 });
 
 test("R10: a calibrated-letter kind (convert, ai_transcription) with a cap and no calibration refuses LETTER_UNCALIBRATED", () => {
-  for (const k of ["convert", "ai_transcription"]) {
+  /** @type {readonly KindName[]} */
+  const calibrated = ["convert", "ai_transcription"];
+  for (const k of calibrated) {
     for (const cap of [...BASIS_GRADES, "Z"]) {
       isRefusal(checkChain([{ ...ok[k], cap }]), "TEXT_CHAIN_LETTER_UNCALIBRATED");
       assert.equal(checkChain([{ ...ok[k], cap, calibration: "cal-1" }]), null);
@@ -125,7 +165,9 @@ test("R10: a calibrated-letter kind (convert, ai_transcription) with a cap and n
     assert.equal(checkChain([{ ...ok[k], cap: null }]), null);
   }
   /* Other kinds may carry a cap without a calibration. */
-  for (const k of ["layer", "pixels", "ocr", "ai"]) assert.equal(checkChain([{ ...ok[k], cap: "C" }]), null);
+  /** @type {readonly KindName[]} */
+  const others = ["layer", "pixels", "ocr", "ai"];
+  for (const k of others) assert.equal(checkChain([{ ...ok[k], cap: "C" }]), null);
 });
 
 test("R11: a never-letter kind (typed) carrying a cap refuses LETTER_ON_PERSON", () => {
@@ -147,14 +189,17 @@ test("R12: appendStep refuses what checkChain(chain) or checkChain([step]) refus
 test("R13: a derivation step stronger than the chain's cap refuses STRENGTHENS; equal or weaker appends", () => {
   for (const [i, have] of BASIS_GRADES.entries())
     for (const [j, cap] of BASIS_GRADES.entries()) {
-      for (const k of ["ocr", "ai", "layer", "pixels"]) {
+      /** @type {readonly KindName[]} */
+      const derivations = ["ocr", "ai", "layer", "pixels"];
+      for (const k of derivations) {
         const chain = [O(have)], step = { ...ok[k], cap };
         const r = appendStep(chain, step);
         if (j < i) isRefusal(r, "TEXT_CHAIN_STRENGTHENS");
         else {
-          assert.deepEqual(r, [...chain, step]);
-          assert.notEqual(r, chain);
-          assert.notEqual(r[1], step);
+          const appended = chainOf(r);
+          assert.deepEqual(appended, [...chain, step]);
+          assert.notEqual(appended, chain);
+          assert.notEqual(appended[1], step);
         }
       }
     }
@@ -168,21 +213,23 @@ test("R14: a verification step, or an unknown cap on either side, appends uncond
   for (const have of BASIS_GRADES) {
     const r = appendStep([O(have)], { ...ok.attested, cap: "A" });
     assert.equal(Array.isArray(r), true);
-    assert.equal(r.length, 2);
+    assert.equal(chainOf(r).length, 2);
   }
   /* Chain cap unknown (unmeasured) → append. */
-  assert.equal(appendStep([L(null)], O("A")).length, 2);
+  assert.equal(chainOf(appendStep([L(null)], O("A"))).length, 2);
   /* Step cap unknown letter → append. */
-  assert.equal(appendStep([O("D")], O("Z")).length, 2);
-  assert.equal(appendStep([O("D")], O(null)).length, 2);
+  assert.equal(chainOf(appendStep([O("D")], O("Z"))).length, 2);
+  assert.equal(chainOf(appendStep([O("D")], O(null))).length, 2);
 });
 
 test("R15: layerChain returns a one-step layer chain carrying every argument, defaulting to null", () => {
   assert.deepEqual(layerChain(), [{ step: "layer", tier: null, container: null, cap: null, measured_by: null, calibration: null }]);
   assert.deepEqual(layerChain({}), layerChain());
-  for (const x of [null, 3, "cap"]) assert.deepEqual(layerChain(x), layerChain());
-  const args = { tier: 2, container: "pdf", cap: "Q", measured_by: "M-1", calibration: 7 };
-  assert.deepEqual(layerChain(args), [{ step: "layer", ...args }]);
+  for (const x of [null, 3, "cap"]) assert.doesNotThrow(() => assert.deepEqual(layerChain(x), layerChain()));
+  assert.doesNotThrow(() => {
+    const args = { tier: 2, container: "pdf", cap: "Q", measured_by: "M-1", calibration: 7 };
+    assert.deepEqual(layerChain(args), [{ step: "layer", ...args }]);
+  });
   assert.deepEqual(layerChain({ cap: "C" }), [{ step: "layer", tier: null, container: null, cap: "C", measured_by: null, calibration: null }]);
 });
 
@@ -195,6 +242,7 @@ test("R16: convertedChain refuses what checkChain([step]) or checkChain(chain) r
 });
 
 test("R17: convertedChain refuses STRENGTHENS when a derivation step in chain is stronger than the conversion", () => {
+  /** @param {string} cap @returns {Step} */
   const conv = (cap) => ({ ...ok.convert, cap, calibration: "cal" });
   for (const [i, c] of BASIS_GRADES.entries())
     for (const [j, s] of BASIS_GRADES.entries()) {
@@ -210,7 +258,7 @@ test("R17: convertedChain refuses STRENGTHENS when a derivation step in chain is
 test("R18: convertedChain puts copies of step then chain, a new array, neither input mutated", () => {
   const step = { ...ok.convert }, chain = [L(null, { tier: 1 }), O("C")];
   const before = JSON.stringify([step, chain]);
-  const r = convertedChain(step, chain);
+  const r = chainOf(convertedChain(step, chain));
   assert.deepEqual(r, [step, ...chain]);
   assert.notEqual(r[0], step);
   r.slice(1).forEach((s, i) => assert.notEqual(s, chain[i]));
@@ -230,7 +278,7 @@ test("R20: one part answers its chain unscoped and unchanged, or its refusal", (
 
 test("R21: several parts concatenate in order; any refusing part stops the merge with its refusal", () => {
   const a = [L(null)], b = [{ step: "pixels" }, O("C")], c = [{ ...ok.ai, cap: "D" }];
-  const r = mergedChain([{ chain: a, pages: [0] }, { chain: b, pages: [1] }, { chain: c, pages: [2] }]);
+  const r = chainOf(mergedChain([{ chain: a, pages: [0] }, { chain: b, pages: [1] }, { chain: c, pages: [2] }]));
   assert.deepEqual(r.map((s) => s.step), ["layer", "pixels", "ocr", "ai"]);
   isRefusal(mergedChain([{ chain: a, pages: [0] }, { chain: [{ step: "ocr" }], pages: [1] }]), "TEXT_CHAIN_STEP_UNNAMED");
   isRefusal(mergedChain([{ chain: a, pages: [0] }, { chain: [], pages: [1] }]), "TEXT_CHAIN_EMPTY");
@@ -239,11 +287,11 @@ test("R21: several parts concatenate in order; any refusing part stops the merge
 
 test("R22: each part's derivation steps are stamped with its pages (dedup, sorted, non-negative ints; [] otherwise); verification steps unscoped", () => {
   const att = { ...ok.attested, extent: { kind: "document" } };
-  const r = mergedChain([
+  const r = chainOf(mergedChain([
     { chain: [L(null), att], pages: [3, 1, 1, -1, 2.5, "4", 2] },
     { chain: [O("C")], pages: "0-1" },
     { chain: [{ step: "pixels" }], pages: [] },
-  ]);
+  ]));
   assert.deepEqual(r, [
     { step: "layer", cap: null, extent: pages([1, 2, 3]) },
     att,
@@ -257,7 +305,7 @@ test("R22: each part's derivation steps are stamped with its pages (dedup, sorte
   assert.match(describeChain(r), /over an extent this record cannot read/);
   /* Parts that share a page are each stamped with their index as well (so R81 and R28 can tell them apart);
      partitioned parts carry no index. */
-  const shared = mergedChain([{ chain: [L(null)], pages: [0, 1] }, { chain: [{ step: "pixels" }, O("C")], pages: [1, 0] }]);
+  const shared = chainOf(mergedChain([{ chain: [L(null)], pages: [0, 1] }, { chain: [{ step: "pixels" }, O("C")], pages: [1, 0] }]));
   assert.deepEqual(shared.map((s) => s.extent), [pages([0, 1], 0), pages([0, 1], 1), pages([0, 1], 1)]);
 });
 
@@ -363,9 +411,9 @@ test("R33: tiers group by the kind's tier (or the step's own; \"unrecorded\" whe
     unclassified: [],
   });
   /* "all" absorbs everything; "unreadable" absorbs a page list. */
-  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([0]) }, { step: "layer", tier: 1 }]).tiers[0].covers, "all");
-  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([0]) }, { step: "layer", tier: 1, extent: pages([]) }]).tiers[0].covers, "unreadable");
-  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([]) }, { step: "layer", tier: 1 }]).tiers[0].covers, "all");
+  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([0]) }, { step: "layer", tier: 1 }]).tiers[0]?.covers, "all");
+  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([0]) }, { step: "layer", tier: 1, extent: pages([]) }]).tiers[0]?.covers, "unreadable");
+  assert.deepEqual(tiersEvidenced([{ step: "layer", tier: 1, extent: pages([]) }, { step: "layer", tier: 1 }]).tiers[0]?.covers, "all");
 });
 
 test("R34: a kind missing the tier property is named once in unclassified", () => {
@@ -375,7 +423,10 @@ test("R34: a kind missing the tier property is named once in unclassified", () =
     const r = tiersEvidenced([ok.pixels, O("C"), ok.pixels]);
     assert.deepEqual(r.unclassified, ["pixels"]);
     assert.deepEqual(r.tiers, [{ tier: 3, steps: ["ocr"], covers: "all" }]);
-  } finally { STEP_KINDS.pixels.tier = tier; }
+  } finally {
+    if (tier === undefined) delete STEP_KINDS.pixels.tier;
+    else STEP_KINDS.pixels.tier = tier;
+  }
 });
 
 test("R35: a kind declaring tier null is neither a tier entry nor unclassified", () => {
@@ -396,6 +447,7 @@ test("R38: describeChain of a malformed chain is the unrecorded sentence", () =>
 });
 
 test("R39: describeChain joins one sentence per step with ' -> '", () => {
+  /** @param {KindName} k @returns {string} */
   const lab = (k) => STEP_KINDS[k].label;
   assert.equal(describeChain([ok.layer]), lab("layer"));
   assert.equal(describeChain([{ step: "ocr", engine: "eng", version: "5.3" }]), `${lab("ocr")} (eng 5.3)`);
@@ -415,7 +467,7 @@ test("R81: chainKindFor answers the one kind covering a page, mixed when parts o
   for (const k of KINDS.filter((x) => STEP_KINDS[x].role === "derivation"))
     assert.equal(chainKindFor([ok.layer, ok[k], ok.attested], { page: 4 }), k);
   /* A partitioned mixed document: each page its own part's last step; a part's pixels→ocr is one reading, ocr. */
-  const part = mergedChain([{ chain: [L(null)], pages: [0, 2] }, { chain: [ok.pixels, O("C")], pages: [1] }]);
+  const part = chainOf(mergedChain([{ chain: [L(null)], pages: [0, 2] }, { chain: [ok.pixels, O("C")], pages: [1] }]));
   assert.equal(chainKindFor(part, { page: 0 }), "layer");
   assert.equal(chainKindFor(part, 2), "layer");
   assert.equal(chainKindFor(part, { page: 1 }), "ocr");
@@ -446,11 +498,17 @@ test("R81: chainKindFor answers the one kind covering a page, mixed when parts o
 
 test("R91: the machine readings are the kinds declaring machine: true, ocr, ai and ai_transcription only, and MACHINE_READ_KINDS lists them in STEP_KINDS order", () => {
   const kinds = Object.keys(STEP_KINDS);
-  for (const k of kinds) assert.ok([true, undefined].includes(STEP_KINDS[k].machine), k);
-  assert.deepEqual(kinds.filter((k) => STEP_KINDS[k].machine === true), ["ocr", "ai", "ai_transcription"]);
+  for (const k of kinds) {
+    assert.ok(isKindName(k), k);
+    assert.ok([true, undefined].includes(STEP_KINDS[k].machine), k);
+  }
+  assert.deepEqual(kinds.filter((k) => isKindName(k) && STEP_KINDS[k].machine === true), ["ocr", "ai", "ai_transcription"]);
   assert.deepEqual(MACHINE_READ_KINDS, ["ocr", "ai", "ai_transcription"]);
   assert.ok(Object.isFrozen(MACHINE_READ_KINDS));
   assert.throws(() => { "use strict"; MACHINE_READ_KINDS.push("layer"); });
   /* Every one is a derivation: an engine read or rewrote the text. */
-  for (const k of MACHINE_READ_KINDS) assert.equal(STEP_KINDS[k].role, "derivation");
+  for (const k of MACHINE_READ_KINDS) {
+    assert.ok(isKindName(k), k);
+    assert.equal(STEP_KINDS[k].role, "derivation");
+  }
 });
