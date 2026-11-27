@@ -531,9 +531,10 @@ test("R11 every R1 refusal is raised the same way: the same DctRefusal, code, me
   for (const v of REFUSED) codes.add(same(v.name, jpeg(v.name)).e.code);
   for (const [label, d, opts] of OTHER_REFUSALS()) {
     const { e, handed } = same(label, d, opts);
-    codes.add(e.code);
+    const code = e.code;
+    codes.add(code);
     /* A refusal from the header comes before any row is handed over. */
-    if (e.code !== "TRUNCATED" && e.code !== "CORRUPT_DATA") assert.equal(handed, 0, `${label}: nothing handed over`);
+    if (code !== "TRUNCATED" && code !== "CORRUPT_DATA") assert.equal(handed, 0, `${label}: nothing handed over`);
   }
   assert.deepEqual([...codes].sort(), Object.keys(CODES).filter((c) => c !== "UNSUPPORTED_ROTATION").sort(),
     "every code R1 raises, but the rotation R11 never takes");
