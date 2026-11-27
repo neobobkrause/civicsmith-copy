@@ -264,7 +264,7 @@ function ascii85Decode(src) {
   const out = new Uint8Array(Math.ceil(src.length * 4 / 5) + 3 * zs + 4); // a `z` is one character for four bytes
   let o = 0, n = 0, acc = 0;
   for (; i < src.length; i++) {
-    const c = byteAt(src, i);
+    const c = src[i] ?? NaN;
     if (isWhitespace(c)) continue;
     if (c === 0x7e) break; // "~>"
     if (c === 0x7a && n === 0) { o += 4; continue; } // z, the four zero bytes
@@ -281,7 +281,7 @@ function ascii85Decode(src) {
     for (let k = n; k < 5; k++) acc = acc * 85 + 84;
     if (acc > 0xffffffff) return null;
     const four = [acc >>> 24, (acc >>> 16) & 0xff, (acc >>> 8) & 0xff, acc & 0xff];
-    for (let k = 0; k < n - 1; k++) out[o++] = byteAt(four, k);
+    for (let k = 0; k < n - 1; k++) out[o++] = four[k] ?? NaN;
   }
   return out.slice(0, o);
 }
@@ -294,7 +294,7 @@ function asciiHexDecode(src) {
   const out = new Uint8Array((src.length >> 1) + 1);
   let o = 0, hi = -1;
   for (let i = 0; i < src.length; i++) {
-    const c = byteAt(src, i);
+    const c = src[i] ?? NaN;
     if (isWhitespace(c)) continue;
     if (c === 0x3e) break;
     const d = c >= 0x30 && c <= 0x39 ? c - 0x30 : c >= 0x41 && c <= 0x46 ? c - 0x37 : c >= 0x61 && c <= 0x66 ? c - 0x57 : -1;
@@ -366,15 +366,9 @@ function emptySet() {
   return new Set(none);
 }
 
-/** The element at `i` of `a`, or NaN past its end: NaN reads, in arithmetic, a bitwise operation or a comparison with a
- *  number, as the missing element (`undefined`) did.
- *  @param {ArrayLike<number>} a
- *  @param {number} i
- *  @returns {number} */
-function byteAt(a, i) {
-  const v = a[i];
-  return v === undefined ? NaN : v;
-}
+/* An element read by index is read `(a[i] ?? NaN)` where a number is wanted: an element past the end reads as NaN, which in
+   arithmetic, a bitwise operation or a comparison with a number reads as the missing element (`undefined`) did. It is
+   written at each read, not behind a helper, so that each loop keeps its own (monomorphic) element access. */
 
 /** @param {number | undefined} c
  *  @returns {boolean} */
@@ -456,7 +450,7 @@ async function readInflated(u8, format, cap) {
  *  @param {number} total
  *  @returns {Inflated | null} */
 function inflateWithTrailing(u8, chunks, total) {
-  if (u8.length < 6 || (byteAt(u8, 0) & 0x0f) !== 8 || ((byteAt(u8, 0) << 8) | byteAt(u8, 1)) % 31 !== 0) return null;
+  if (u8.length < 6 || ((u8[0] ?? NaN) & 0x0f) !== 8 || (((u8[0] ?? NaN) << 8) | (u8[1] ?? NaN)) % 31 !== 0) return null;
   const data = new Uint8Array(total);
   let off = 0;
   for (const c of chunks) { data.set(c, off); off += c.length; }
@@ -689,7 +683,7 @@ function strValue(raw) {
 function decodePdfText(raw) {
   if (raw[0] === 0xfe && raw[1] === 0xff) {
     let out = "";
-    for (let i = 2; i + 1 < raw.length; i += 2) out += String.fromCharCode((byteAt(raw, i) << 8) | byteAt(raw, i + 1));
+    for (let i = 2; i + 1 < raw.length; i += 2) out += String.fromCharCode(((raw[i] ?? NaN) << 8) | (raw[i + 1] ?? NaN));
     return out;
   }
   return binaryString(raw);
@@ -840,7 +834,7 @@ function objHeaderAt(b, off) {
   if (!Number.isInteger(p) || p < 0 || p >= b.length) return null;
   while (p < b.length && isJsSpaceByte(b[p])) p++;
   /** @returns {number | null} */
-  const digits = () => { const at = p; let v = 0; for (let c = byteAt(b, p); p < b.length && c >= 0x30 && c <= 0x39; c = byteAt(b, p)) { v = v * 10 + c - 0x30; p++; } return p === at ? null : v; };
+  const digits = () => { const at = p; let v = 0; for (let c = b[p] ?? NaN; p < b.length && c >= 0x30 && c <= 0x39; c = (b[p] ?? NaN)) { v = v * 10 + c - 0x30; p++; } return p === at ? null : v; };
   const num = digits();
   if (num === null || !(p < b.length && isJsSpaceByte(b[p]))) return null;
   while (p < b.length && isJsSpaceByte(b[p])) p++;
@@ -1003,7 +997,7 @@ class ObjectTable {
    *  @returns {boolean} */
   has(n) { return this.row(n) >= 0; }
   /** @returns {Generator<number, void, unknown>} */
-  *keys() { for (let i = 0; i < this.n; i++) yield byteAt(this.num, i); }
+  *keys() { for (let i = 0; i < this.n; i++) yield this.num[i] ?? NaN; }
   /** @param {number} n
    *  @returns {number | undefined} */
   gen(n) { const r = this.row(n); return r < 0 ? undefined : this.g[r]; }
@@ -1022,7 +1016,7 @@ class ObjectTable {
     this.slots = new Int32Array(this.slots.length * 2);
     const mask = this.slots.length - 1;
     for (let r = 0; r < this.n; r++) {
-      let i = ObjectTable.hash(byteAt(this.num, r)) & mask;
+      let i = ObjectTable.hash(this.num[r] ?? NaN) & mask;
       while (this.slots[i]) i = (i + 1) & mask;
       this.slots[i] = r + 1;
     }
@@ -1104,9 +1098,9 @@ class ObjectTable {
   /** @param {number} r
    *  @returns {{ value: PdfValue, len: number } | null} */
   parse(r) {
-    const stm = byteAt(this.stm, r);
+    const stm = this.stm[r] ?? NaN;
     const src = stm < 0 ? this.doc._b : this.doc._innerBytes(stm);
-    return src ? parseWindow(src, byteAt(this.p, r), byteAt(this.w, r)) : null;
+    return src ? parseWindow(src, (this.p[r] ?? NaN), this.w[r] ?? NaN) : null;
   }
   /** Object numbers, in order, whose winning definition is of kind `kind` (1 dictionary, 2 stream, 3 either) and, when
    *  given, has the `/Type` name `type`.
@@ -1119,9 +1113,9 @@ class ObjectTable {
     const t = type === undefined ? -1 : this.typeIx.get(type);
     if (t === undefined) return out;
     for (let r = 0; r < this.n; r++) {
-      const k = byteAt(this.fl, r) & 3;
+      const k = (this.fl[r] ?? NaN) & 3;
       if (!(kind === 3 ? k > 0 : k === kind) || (t >= 0 && this.ty[r] !== t)) continue;
-      out.push(byteAt(this.num, r));
+      out.push(this.num[r] ?? NaN);
     }
     return out;
   }
@@ -1130,7 +1124,7 @@ class ObjectTable {
   standard() {
     /** @type {number[]} */
     const out = [];
-    for (let r = 0; r < this.n; r++) if (byteAt(this.fl, r) & 4) out.push(byteAt(this.num, r));
+    for (let r = 0; r < this.n; r++) if ((this.fl[r] ?? NaN) & 4) out.push(this.num[r] ?? NaN);
     return out;
   }
 }
@@ -1209,7 +1203,7 @@ export class PdfDoc {
    *  @returns {PdfMap | null} */
   pageDict(pageIdx) {
     if (!Number.isInteger(pageIdx) || pageIdx < 0 || pageIdx >= this.pageCount) return null;
-    return this.dictOf({ t: "ref", n: byteAt(this._pageOrder, pageIdx), g: 0 });
+    return this.dictOf({ t: "ref", n: (this._pageOrder[pageIdx] ?? NaN), g: 0 });
   }
 
   /** @param {string} msg */
@@ -1662,7 +1656,7 @@ export class PdfDoc {
     const streams = this._objs.nums(2, "ObjStm");
     /** @param {number} n
      *  @returns {number} */
-    const at = (n) => byteAt(this._objs.p, this._objs.row(n));
+    const at = (n) => (this._objs.p[this._objs.row(n)] ?? NaN);
     streams.sort((a, b) => at(a) - at(b));
     const xr = only ? null : this._xr;
     let sinceTick = 0;
@@ -1693,7 +1687,7 @@ export class PdfDoc {
         offs.sort((a, b) => a - b);
         /** @param {number} at
          *  @returns {number} */
-        const nextAbove = (at) => { let lo = 0, hi = offs.length; while (lo < hi) { const m = (lo + hi) >> 1; if (byteAt(offs, m) <= at) lo = m + 1; else hi = m; } return lo < offs.length ? byteAt(offs, lo) : data.length; };
+        const nextAbove = (at) => { let lo = 0, hi = offs.length; while (lo < hi) { const m = (lo + hi) >> 1; if ((offs[m] ?? NaN) <= at) lo = m + 1; else hi = m; } return lo < offs.length ? (offs[lo] ?? NaN) : data.length; };
         let added = 0;
         for (let i = 0; i < n; i++) {
           if (tick && i && i % SLICE_OBJECTS === 0) await tick();
@@ -1705,7 +1699,7 @@ export class PdfDoc {
           const ent = xr ? xr.lookup(objNum) : null;
           /* the chain places the object, or nothing does and the file's own order decides: a top-level definition stands, and
              of two object streams' the later one's */
-          if (ent ? !(ent.type === 2 && ent.stm === stm) : row >= 0 && byteAt(this._objs.stm, row) < 0) continue;
+          if (ent ? !(ent.type === 2 && ent.stm === stm) : row >= 0 && (this._objs.stm[row] ?? NaN) < 0) continue;
           const at = first + off;
           const r = parseWindow(data, at, nextAbove(at) - at + 16);
           if (r) { this._objs.put(objNum, Math.trunc(at), r.len + 64, stm, 0, r.value); added++; }
@@ -2258,7 +2252,7 @@ const HEX = "0123456789abcdef";
  *  @returns {string} */
 function toHex(u8) {
   let out = "";
-  for (let i = 0; i < u8.length; i++) { const b = byteAt(u8, i); out += `${HEX[b >> 4]}${HEX[b & 15]}`; }
+  for (let i = 0; i < u8.length; i++) { const b = u8[i] ?? NaN; out += `${HEX[b >> 4]}${HEX[b & 15]}`; }
   return out;
 }
 /** @param {Uint8Array} u8
@@ -2296,23 +2290,23 @@ class Sha256 {
    *  @param {number} at */
   _compress(b, at) {
     const w = this.w, h = this.h;
-    for (let i = 0; i < 16; i++) { const j = at + i * 4; w[i] = (byteAt(b, j) << 24) | (byteAt(b, j + 1) << 16) | (byteAt(b, j + 2) << 8) | byteAt(b, j + 3); }
+    for (let i = 0; i < 16; i++) { const j = at + i * 4; w[i] = ((b[j] ?? NaN) << 24) | ((b[j + 1] ?? NaN) << 16) | ((b[j + 2] ?? NaN) << 8) | (b[j + 3] ?? NaN); }
     for (let i = 16; i < 64; i++) {
-      const a = byteAt(w, i - 15), c = byteAt(w, i - 2);
+      const a = w[i - 15] ?? NaN, c = w[i - 2] ?? NaN;
       const s0 = ((a >>> 7) | (a << 25)) ^ ((a >>> 18) | (a << 14)) ^ (a >>> 3);
       const s1 = ((c >>> 17) | (c << 15)) ^ ((c >>> 19) | (c << 13)) ^ (c >>> 10);
-      w[i] = (byteAt(w, i - 16) + s0 + byteAt(w, i - 7) + s1) | 0;
+      w[i] = ((w[i - 16] ?? NaN) + s0 + (w[i - 7] ?? NaN) + s1) | 0;
     }
-    let a = byteAt(h, 0), b1 = byteAt(h, 1), c = byteAt(h, 2), d = byteAt(h, 3), e = byteAt(h, 4), f = byteAt(h, 5), g = byteAt(h, 6), hh = byteAt(h, 7);
+    let a = h[0] ?? NaN, b1 = h[1] ?? NaN, c = h[2] ?? NaN, d = h[3] ?? NaN, e = h[4] ?? NaN, f = h[5] ?? NaN, g = h[6] ?? NaN, hh = h[7] ?? NaN;
     for (let i = 0; i < 64; i++) {
       const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
-      const t1 = (hh + S1 + ((e & f) ^ (~e & g)) + byteAt(SHA256_K, i) + byteAt(w, i)) | 0;
+      const t1 = (hh + S1 + ((e & f) ^ (~e & g)) + (SHA256_K[i] ?? NaN) + (w[i] ?? NaN)) | 0;
       const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
       const t2 = (S0 + ((a & b1) ^ (a & c) ^ (b1 & c))) | 0;
       hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b1; b1 = a; a = (t1 + t2) | 0;
     }
-    h[0] = (byteAt(h, 0) + a) | 0; h[1] = (byteAt(h, 1) + b1) | 0; h[2] = (byteAt(h, 2) + c) | 0; h[3] = (byteAt(h, 3) + d) | 0;
-    h[4] = (byteAt(h, 4) + e) | 0; h[5] = (byteAt(h, 5) + f) | 0; h[6] = (byteAt(h, 6) + g) | 0; h[7] = (byteAt(h, 7) + hh) | 0;
+    h[0] = ((h[0] ?? NaN) + a) | 0; h[1] = ((h[1] ?? NaN) + b1) | 0; h[2] = ((h[2] ?? NaN) + c) | 0; h[3] = ((h[3] ?? NaN) + d) | 0;
+    h[4] = ((h[4] ?? NaN) + e) | 0; h[5] = ((h[5] ?? NaN) + f) | 0; h[6] = ((h[6] ?? NaN) + g) | 0; h[7] = ((h[7] ?? NaN) + hh) | 0;
   }
   /** @param {Uint8Array} u8 */
   update(u8) {
@@ -2732,7 +2726,7 @@ function* tokenizeContentBytes(b, opts = {}) {
     }
     if (i > start) {
       let op = "";
-      for (let k = start; k < i; k++) op += String.fromCharCode(byteAt(b, k));
+      for (let k = start; k < i; k++) op += String.fromCharCode(b[k] ?? NaN);
       yield { t: "op", v: op };
       if (skipInline && op === "ID") {
         /* the first `EI` that stands alone after white space (as JavaScript reads `\s`) and before white space, a
@@ -2771,14 +2765,14 @@ function readLiteralBytesU8(b, pos) {
   const bytes = [];
   let depth = 1;
   while (pos < b.length) {
-    const c = byteAt(b, pos);
+    const c = b[pos] ?? NaN;
     if (c === 0x5c) {
       if (pos + 1 >= b.length) { pos++; break; }
-      const nc = byteAt(b, pos + 1);
+      const nc = b[pos + 1] ?? NaN;
       if (nc >= 0x30 && nc <= 0x37) {
         let v = nc - 0x30, p = pos + 2;
         for (let k = 1; k < 3 && p < b.length; k++, p++) {
-          const d = byteAt(b, p);
+          const d = b[p] ?? NaN;
           if (d < 0x30 || d > 0x37) break;
           v = v * 8 + d - 0x30;
         }
@@ -2816,7 +2810,7 @@ function readHexBytesU8(b, pos) {
   /** @type {number[]} */
   const digits = [];
   while (pos < b.length && b[pos] !== 0x3e) {
-    const c = byteAt(b, pos);
+    const c = b[pos] ?? NaN;
     const d = c >= 0x30 && c <= 0x39 ? c - 0x30 : c >= 0x41 && c <= 0x46 ? c - 0x37 : c >= 0x61 && c <= 0x66 ? c - 0x57 : -1;
     if (d >= 0) digits.push(d);
     pos++;
@@ -2824,7 +2818,7 @@ function readHexBytesU8(b, pos) {
   pos++; // >
   if (digits.length % 2) digits.push(0);
   const bytes = newBytes(digits.length / 2);
-  for (let k = 0; k < digits.length; k += 2) bytes[k / 2] = (byteAt(digits, k) << 4) | byteAt(digits, k + 1);
+  for (let k = 0; k < digits.length; k += 2) bytes[k / 2] = ((digits[k] ?? NaN) << 4) | (digits[k + 1] ?? NaN);
   return { bytes, pos };
 }
 
@@ -2835,10 +2829,10 @@ function readContentNameU8(b, pos) {
   pos++; // /
   let out = "";
   while (pos < b.length) {
-    const c = byteAt(b, pos);
+    const c = b[pos] ?? NaN;
     if (isWhitespace(c) || isDelimiter(c)) break;
     if (c === 0x23 && pos + 2 < b.length) {
-      const h = parseInt(String.fromCharCode(byteAt(b, pos + 1), byteAt(b, pos + 2)), 16);
+      const h = parseInt(String.fromCharCode(b[pos + 1] ?? NaN, b[pos + 2] ?? NaN), 16);
       if (!Number.isNaN(h)) { out += String.fromCharCode(h); pos += 3; continue; }
     }
     out += String.fromCharCode(c); pos++;
@@ -2853,12 +2847,12 @@ function readContentNumberU8(b, pos) {
   const start = pos;
   if (b[pos] === 0x2b || b[pos] === 0x2d) pos++;
   while (pos < b.length) {
-    const c = byteAt(b, pos);
+    const c = b[pos] ?? NaN;
     if ((c >= 0x30 && c <= 0x39) || c === 0x2e) pos++;
     else break;
   }
   let t = "";
-  for (let k = start; k < pos; k++) t += String.fromCharCode(byteAt(b, k));
+  for (let k = start; k < pos; k++) t += String.fromCharCode(b[k] ?? NaN);
   const v = parseFloat(t);
   return { v: Number.isNaN(v) ? 0 : v, pos };
 }
@@ -2890,7 +2884,7 @@ function unicodeIncr(hex, off) {
   const units = [];
   for (let i = 0; i + 4 <= hex.length; i += 4) units.push(parseInt(hex.substr(i, 4), 16));
   if (units.length === 0) return String.fromCharCode((parseInt(hex || "0", 16) + off) & 0xffff);
-  units[units.length - 1] = (byteAt(units, units.length - 1) + off) & 0xffff;
+  units[units.length - 1] = ((units[units.length - 1] ?? NaN) + off) & 0xffff;
   return units.map((u) => String.fromCharCode(u)).join("");
 }
 
@@ -3213,7 +3207,7 @@ const HEX_CAP = 64; // cap the bytes echoed into an undetermined marker
 function bytesToHex(bytes, cap = HEX_CAP) {
   const n = Math.min(bytes.length, cap);
   let out = "";
-  for (let i = 0; i < n; i++) { const b = byteAt(bytes, i); out += `${HEX[b >> 4]}${HEX[b & 15]}`; }
+  for (let i = 0; i < n; i++) { const b = bytes[i] ?? NaN; out += `${HEX[b >> 4]}${HEX[b & 15]}`; }
   if (bytes.length > cap) out += "…";
   return out;
 }
@@ -3236,7 +3230,7 @@ function bytesToCodes(bytes, width, spaces = null) {
     const w = Math.max(1, width);
     for (let i = 0; i + w <= bytes.length; i += w) {
       let code = 0;
-      for (let k = 0; k < w; k++) code = code * 256 + byteAt(bytes, i + k);
+      for (let k = 0; k < w; k++) code = code * 256 + (bytes[i + k] ?? NaN);
       codes.push(code); lens.push(w);
     }
     return { codes, lens, leftover: bytes.length % w };
@@ -3247,7 +3241,7 @@ function bytesToCodes(bytes, width, spaces = null) {
     for (const n of spaces.widths) {
       if (i + n > bytes.length) break;
       code = 0;
-      for (let k = 0; k < n; k++) code = code * 256 + byteAt(bytes, i + k);
+      for (let k = 0; k < n; k++) code = code * 256 + (bytes[i + k] ?? NaN);
       const c = code;
       if (spaces.list.some((r) => r.n === n && c >= r.lo && c <= r.hi)) { took = n; break; }
     }
@@ -3255,13 +3249,13 @@ function bytesToCodes(bytes, width, spaces = null) {
       /* the bytes left are the start of a longer code that does not fit: misaligned, as a short final code is */
       const rem = bytes.length - i;
       let prefix = 0;
-      for (let k = 0; k < rem; k++) prefix = prefix * 256 + byteAt(bytes, i + k);
+      for (let k = 0; k < rem; k++) prefix = prefix * 256 + (bytes[i + k] ?? NaN);
       const pre = prefix;
       if (spaces.list.some((r) => r.n > rem && pre >= Math.floor(r.lo / 256 ** (r.n - rem)) && pre <= Math.floor(r.hi / 256 ** (r.n - rem)))) break;
-      const n = byteAt(spaces.widths, 0);
+      const n = spaces.widths[0] ?? NaN;
       if (i + n > bytes.length) break;
       code = 0;
-      for (let k = 0; k < n; k++) code = code * 256 + byteAt(bytes, i + k);
+      for (let k = 0; k < n; k++) code = code * 256 + (bytes[i + k] ?? NaN);
       took = n;
     }
     codes.push(code); lens.push(took); i += took;
@@ -3367,7 +3361,7 @@ function matMul(a, b) {
  *  @param {Matrix} tlm
  *  @param {Matrix} ctm
  *  @returns {number} */
-const baselineOf = (tlm, ctm) => byteAt(tlm, 4) * byteAt(ctm, 1) + byteAt(tlm, 5) * byteAt(ctm, 3) + byteAt(ctm, 5);
+const baselineOf = (tlm, ctm) => (tlm[4] ?? NaN) * (ctm[1] ?? NaN) + (tlm[5] ?? NaN) * (ctm[3] ?? NaN) + (ctm[5] ?? NaN);
 /** Float slack only. Any baseline move a document can SEE is orders above this,
  *  so "any y change breaks the line" survives it; identical inputs through
  *  identical multiplies do not drift, and non-identical paths to one baseline do. */
@@ -3698,7 +3692,7 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
     }
     const { codes, lens, leftover } = bytesToCodes(bytes, font.width, font.spaces);
     for (let ci = 0; ci < codes.length; ci++) {
-      const code = byteAt(codes, ci);
+      const code = codes[ci] ?? NaN;
       const before = wantPlaced && penKnown ? tmat.slice() : null;
       advanceOne(code);
       const box = before && penKnown ? glyphBox(before, tmat) : null;
@@ -3707,7 +3701,7 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
       if (u == null) {
         if (box) undecodedCenters.push(box.c);
         mark("unmapped_code", font.baseFont ?? curFontName ?? null,
-          code.toString(16).padStart(byteAt(lens, ci) * 2, "0"), 1);
+          code.toString(16).padStart((lens[ci] ?? NaN) * 2, "0"), 1);
       } else {
         /* D-502: withdraw an inserted separator the DOCUMENT then supplies
            itself. `softSpace` cannot see what is coming, so the symmetric half
@@ -3862,14 +3856,14 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
   /** Device-space x of a text-space origin under the current CTM.
    *  @param {Matrix} m
    *  @returns {number} */
-  const deviceX = (m) => byteAt(m, 4) * byteAt(ctm, 0) + byteAt(m, 5) * byteAt(ctm, 2) + byteAt(ctm, 4);
+  const deviceX = (m) => (m[4] ?? NaN) * (ctm[0] ?? NaN) + (m[5] ?? NaN) * (ctm[2] ?? NaN) + (ctm[4] ?? NaN);
   /** The device-space length of ONE EM of the current text state. A gap is
    *  judged in ems and never in points, because 4 pt is a word gap at 8 pt and
    *  a kern at 40 pt, and one document holds both. */
   /** @returns {number} */
   const emDevice = () => {
     const m = matMul(tmat, ctm);
-    return Math.abs(tfs) * th * Math.hypot(byteAt(m, 0), byteAt(m, 1));
+    return Math.abs(tfs) * th * Math.hypot(m[0] ?? NaN, m[1] ?? NaN);
   };
   /* R35 — THE INK OF ONE SHOWN CODE, IN THE PAGE'S DEFAULT USER SPACE: the
    * same space and [x0,y0,x1,y1] order as an annotation's /Rect and an image's
@@ -3889,7 +3883,7 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
      *  @param {number} x
      *  @param {number} y
      *  @returns {[number, number]} */
-    const pt = (m, x, y) => [x * byteAt(m, 0) + y * byteAt(m, 2) + byteAt(m, 4), x * byteAt(m, 1) + y * byteAt(m, 3) + byteAt(m, 5)];
+    const pt = (m, x, y) => [x * (m[0] ?? NaN) + y * (m[2] ?? NaN) + (m[4] ?? NaN), x * (m[1] ?? NaN) + y * (m[3] ?? NaN) + (m[5] ?? NaN)];
     const p0 = pt(a, 0, 0), p1 = pt(b, 0, 0), q0 = pt(a, 0, tfs);
     return { c: [(p0[0] + p1[0]) / 2 + 0.35 * (q0[0] - p0[0]), (p0[1] + p1[1]) / 2 + 0.35 * (q0[1] - p0[1])] };
   };
@@ -3985,7 +3979,7 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
         curFontName = fontName;
         curFont = fontName ? await getFont(fontName) : null;
         const sz = numArgs(1); // D-502: `/F1 12 Tf` \u2014 the size is the operand
-        if (sz) tfs = byteAt(sz, 0);
+        if (sz) tfs = sz[0] ?? NaN;
         break;
       }
       case "Tj": {
@@ -4027,7 +4021,7 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
         if (op === '"') {
           // `aw ac (string) "` sets word then character spacing (\u00a79.4.3).
           const a = numArgs(2);
-          if (a) { tw = byteAt(a, 0); tc = byteAt(a, 1); }
+          if (a) { tw = a[0] ?? NaN; tc = a[1] ?? NaN; }
         }
         tlm = matMul([1, 0, 0, 1, 0, -leading], tlm);
         breakLine();
@@ -4060,18 +4054,18 @@ async function extractPageText(doc, pageIdx, pageMap, fontCache, wantPlaced = tr
         break;
       case "TL": {
         const a = numArgs(1);
-        if (a) leading = byteAt(a, 0);
+        if (a) leading = a[0] ?? NaN;
         break;
       }
       /* D-502: the three text-state parameters that enter a glyph's horizontal
          displacement beside the width itself. They change no character. */
-      case "Tc": { const a = numArgs(1); if (a) tc = byteAt(a, 0); break; }
-      case "Tw": { const a = numArgs(1); if (a) tw = byteAt(a, 0); break; }
-      case "Tz": { const a = numArgs(1); if (a) th = byteAt(a, 0) / 100; break; }
+      case "Tc": { const a = numArgs(1); if (a) tc = a[0] ?? NaN; break; }
+      case "Tw": { const a = numArgs(1); if (a) tw = a[0] ?? NaN; break; }
+      case "Tz": { const a = numArgs(1); if (a) th = (a[0] ?? NaN) / 100; break; }
       case "Td": case "TD": {
         const a = numArgs(2);
         if (!a) break;
-        const tx = byteAt(a, 0), ty = byteAt(a, 1);
+        const tx = a[0] ?? NaN, ty = a[1] ?? NaN;
         if (op === "TD") leading = -ty;
         tlm = matMul([1, 0, 0, 1, tx, ty], tlm);
         const ly = lineY;
@@ -4365,11 +4359,11 @@ function anchorOf(placed, source) {
   if (!source || !Array.isArray(rect) || !Number.isInteger(source.page))
     return { text: null, why: "no_rect", tier: 1 };
   if (!placed) return { text: null, why: "text_not_read", tier: 1 };
-  const a = byteAt(rect, 0), b = byteAt(rect, 1), c = byteAt(rect, 2), d = byteAt(rect, 3);
+  const a = rect[0] ?? NaN, b = rect[1] ?? NaN, c = rect[2] ?? NaN, d = rect[3] ?? NaN;
   const x0 = Math.min(a, c), x1 = Math.max(a, c), y0 = Math.min(b, d), y1 = Math.max(b, d);
   /** @param {number[]} pt
    *  @returns {boolean} */
-  const inside = (pt) => byteAt(pt, 0) >= x0 && byteAt(pt, 0) <= x1 && byteAt(pt, 1) >= y0 && byteAt(pt, 1) <= y1;
+  const inside = (pt) => (pt[0] ?? NaN) >= x0 && (pt[0] ?? NaN) <= x1 && (pt[1] ?? NaN) >= y0 && (pt[1] ?? NaN) <= y1;
   let out = "", gap = false;
   for (let i = 0; i < placed.pieces.length; i++) {
     const p = placed.pieces[i], bx = placed.boxes[i];
@@ -4552,8 +4546,8 @@ function placementOf(page, rect, fields) {
  *  @param {Matrix} c
  *  @returns {number[]} */
 function mulMatrix(m, c) {
-  const m0 = byteAt(m, 0), m1 = byteAt(m, 1), m2 = byteAt(m, 2), m3 = byteAt(m, 3), m4 = byteAt(m, 4), m5 = byteAt(m, 5);
-  const c0 = byteAt(c, 0), c1 = byteAt(c, 1), c2 = byteAt(c, 2), c3 = byteAt(c, 3), c4 = byteAt(c, 4), c5 = byteAt(c, 5);
+  const m0 = m[0] ?? NaN, m1 = m[1] ?? NaN, m2 = m[2] ?? NaN, m3 = m[3] ?? NaN, m4 = m[4] ?? NaN, m5 = m[5] ?? NaN;
+  const c0 = c[0] ?? NaN, c1 = c[1] ?? NaN, c2 = c[2] ?? NaN, c3 = c[3] ?? NaN, c4 = c[4] ?? NaN, c5 = c[5] ?? NaN;
   return [
     m0 * c0 + m1 * c2, m0 * c1 + m1 * c3,
     m2 * c0 + m3 * c2, m2 * c1 + m3 * c3,
@@ -4568,8 +4562,8 @@ function unitSquareRect(ctm) {
   /** @type {[number, number][]} */
   const corners = [[0, 0], [1, 0], [0, 1], [1, 1]];
   const pts = corners.map(([x, y]) =>
-    [byteAt(ctm, 0) * x + byteAt(ctm, 2) * y + byteAt(ctm, 4), byteAt(ctm, 1) * x + byteAt(ctm, 3) * y + byteAt(ctm, 5)]);
-  const xs = pts.map((p) => byteAt(p, 0)), ys = pts.map((p) => byteAt(p, 1));
+    [(ctm[0] ?? NaN) * x + (ctm[2] ?? NaN) * y + (ctm[4] ?? NaN), (ctm[1] ?? NaN) * x + (ctm[3] ?? NaN) * y + (ctm[5] ?? NaN)]);
+  const xs = pts.map((p) => (p[0] ?? NaN)), ys = pts.map((p) => (p[1] ?? NaN));
   return [r3(Math.min(...xs)), r3(Math.min(...ys)), r3(Math.max(...xs)), r3(Math.max(...ys))];
 }
 
@@ -4863,7 +4857,7 @@ function inheritedBox(doc, pageMap, key) {
   if (!a || a.items.length !== 4) return null;
   const v = numbersOf(a.items.map((x) => doc.resolve(x)));
   if (!v || !v.every((x) => Number.isFinite(x))) return null;
-  const [x0, y0, x1, y1] = [byteAt(v, 0), byteAt(v, 1), byteAt(v, 2), byteAt(v, 3)];
+  const [x0, y0, x1, y1] = [(v[0] ?? NaN), (v[1] ?? NaN), (v[2] ?? NaN), (v[3] ?? NaN)];
   return [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
 }
 
@@ -4882,25 +4876,25 @@ function pageBox(doc, pageMap) {
 /** @param {number[]} a
  *  @param {number[]} b
  *  @returns {number[]} */
-const clipRect = (a, b) => [Math.max(byteAt(a, 0), byteAt(b, 0)), Math.max(byteAt(a, 1), byteAt(b, 1)), Math.min(byteAt(a, 2), byteAt(b, 2)), Math.min(byteAt(a, 3), byteAt(b, 3))];
+const clipRect = (a, b) => [Math.max(a[0] ?? NaN, b[0] ?? NaN), Math.max(a[1] ?? NaN, b[1] ?? NaN), Math.min(a[2] ?? NaN, b[2] ?? NaN), Math.min(a[3] ?? NaN, b[3] ?? NaN)];
 /** @param {number[]} r
  *  @returns {number} */
-const rectArea = (r) => Math.max(0, byteAt(r, 2) - byteAt(r, 0)) * Math.max(0, byteAt(r, 3) - byteAt(r, 1));
+const rectArea = (r) => Math.max(0, (r[2] ?? NaN) - (r[0] ?? NaN)) * Math.max(0, (r[3] ?? NaN) - (r[1] ?? NaN));
 
 /** The area the union of axis-aligned rectangles covers, each point once.
  *  @param {number[][]} rects
  *  @returns {number} */
 function unionArea(rects) {
   const rs = rects.filter((r) => rectArea(r) > 0);
-  const xs = [...new Set(rs.flatMap((r) => [byteAt(r, 0), byteAt(r, 2)]))].sort((a, b) => a - b);
+  const xs = [...new Set(rs.flatMap((r) => [(r[0] ?? NaN), (r[2] ?? NaN)]))].sort((a, b) => a - b);
   let total = 0;
   for (let i = 0; i + 1 < xs.length; i++) {
-    const x0 = byteAt(xs, i), x1 = byteAt(xs, i + 1);
-    const spans = rs.filter((r) => byteAt(r, 0) <= x0 && byteAt(r, 2) >= x1).map((r) => [byteAt(r, 1), byteAt(r, 3)]).sort((a, b) => byteAt(a, 0) - byteAt(b, 0));
+    const x0 = xs[i] ?? NaN, x1 = xs[i + 1] ?? NaN;
+    const spans = rs.filter((r) => (r[0] ?? NaN) <= x0 && (r[2] ?? NaN) >= x1).map((r) => [(r[1] ?? NaN), (r[3] ?? NaN)]).sort((a, b) => (a[0] ?? NaN) - (b[0] ?? NaN));
     /* `lo` and `hi` are set together: `hi` is a number whenever `lo` is */
     let covered = 0, open = false, lo = 0, hi = 0;
     for (const span of spans) {
-      const a = byteAt(span, 0), b = byteAt(span, 1);
+      const a = span[0] ?? NaN, b = span[1] ?? NaN;
       if (!open || a > hi) { if (open) covered += hi - lo; lo = a; hi = b; open = true; }
       else hi = Math.max(hi, b);
     }
@@ -5037,11 +5031,11 @@ function markImagesUnread(doc, text, images) {
 function pdfPageBox(doc, pageMap) {
   if (!pageMap) return null;
   const box = inheritedBox(doc, pageMap, "MediaBox");
-  if (!box || !(byteAt(box, 2) > byteAt(box, 0) && byteAt(box, 3) > byteAt(box, 1))) return null;
+  if (!box || !((box[2] ?? NaN) > (box[0] ?? NaN) && (box[3] ?? NaN) > (box[1] ?? NaN))) return null;
   const r = inheritedAttr(doc, pageMap, "Rotate");
   const rotate = r === undefined || r === null ? 0
     : typeof r === "number" && Number.isInteger(r) && r % 90 === 0 ? ((r % 360) + 360) % 360 : null;
-  return { media_box: box, w: byteAt(box, 2) - byteAt(box, 0), h: byteAt(box, 3) - byteAt(box, 1), rotate };
+  return { media_box: box, w: (box[2] ?? NaN) - (box[0] ?? NaN), h: (box[3] ?? NaN) - (box[1] ?? NaN), rotate };
 }
 
 /** Every page's box, `{ boxes, of_page }`: `of_page[i]` indexes page i's
@@ -5122,7 +5116,7 @@ function extractActive(doc) {
   /** @type {Map<number, number>} */
   const pageOf = emptyMap();
   for (let idx = 0; idx < doc.pageCount; idx++) {
-    const num = byteAt(doc._pageOrder, idx);
+    const num = doc._pageOrder[idx] ?? NaN;
     if (!pageOf.has(num)) pageOf.set(num, idx);
   }
   for (let idx = 0; idx < doc.pageCount; idx++) {
@@ -5314,16 +5308,16 @@ function decodePdfTextStrict(raw) {
     if (raw.length % 2) return null;
     /** @type {number[]} */
     const units = [];
-    for (let i = 2; i < raw.length; i += 2) units.push((byteAt(raw, i) << 8) | byteAt(raw, i + 1));
+    for (let i = 2; i < raw.length; i += 2) units.push(((raw[i] ?? NaN) << 8) | (raw[i + 1] ?? NaN));
     let out = "";
     for (let i = 0; i < units.length; i++) {
-      const u = byteAt(units, i);
+      const u = units[i] ?? NaN;
       if (u === 0x1b) { // language tag: ESC, code, ESC
         const close = units.indexOf(0x1b, i + 1);
         if (close === -1) return null;
         i = close;
       } else if (u >= 0xd800 && u <= 0xdbff) {
-        const lo = byteAt(units, i + 1);
+        const lo = units[i + 1] ?? NaN;
         if (!(lo >= 0xdc00 && lo <= 0xdfff)) return null;
         out += String.fromCharCode(u, lo); i++;
       } else if (u >= 0xdc00 && u <= 0xdfff) {
@@ -5418,16 +5412,16 @@ const CODE_LENGTH_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2
  *  @returns {Huffman | null} */
 function huffman(lengths) {
   const count = new Int32Array(16);
-  for (const l of lengths) count[l] = byteAt(count, l) + 1;
+  for (const l of lengths) count[l] = (count[l] ?? NaN) + 1;
   let left = 1;
   for (let len = 1; len <= 15; len++) {
-    left = left * 2 - byteAt(count, len);
+    left = left * 2 - (count[len] ?? NaN);
     if (left < 0) return null;
   }
   const offs = new Int32Array(16);
-  for (let len = 1; len < 15; len++) offs[len + 1] = byteAt(offs, len) + byteAt(count, len);
+  for (let len = 1; len < 15; len++) offs[len + 1] = (offs[len] ?? NaN) + (count[len] ?? NaN);
   const symbol = new Int32Array(lengths.length);
-  lengths.forEach((l, s) => { if (l) { const at = byteAt(offs, l); offs[l] = at + 1; symbol[at] = s; } });
+  lengths.forEach((l, s) => { if (l) { const at = offs[l] ?? NaN; offs[l] = at + 1; symbol[at] = s; } });
   return { count, symbol };
 }
 
@@ -5458,7 +5452,7 @@ function fixedTables() {
  *  @param {boolean} [count]
  *  @returns {{ data: Uint8Array | null, len: number, full: boolean, end: number } | null} */
 function inflateSync(src, max, expect, count = false) {
-  const zlibHead = src.length >= 2 && (byteAt(src, 0) & 0x0f) === 8 && ((byteAt(src, 0) << 8) | byteAt(src, 1)) % 31 === 0;
+  const zlibHead = src.length >= 2 && ((src[0] ?? NaN) & 0x0f) === 8 && (((src[0] ?? NaN) << 8) | (src[1] ?? NaN)) % 31 === 0;
   let pos = zlibHead ? 2 : 0, bitBuf = 0, bitCnt = 0;
   /* `count`: no output is kept, only its length; a 64 KiB ring holds the last 32 KiB that a match can reach. */
   const M = count ? 0xffff : -1;
@@ -5506,8 +5500,8 @@ function inflateSync(src, max, expect, count = false) {
       if (type === 0) {
         bitBuf = 0; bitCnt = 0;
         if (pos + 4 > src.length) throw new Error("eof");
-        const len = byteAt(src, pos) | (byteAt(src, pos + 1) << 8);
-        if ((len ^ 0xffff) !== (byteAt(src, pos + 2) | (byteAt(src, pos + 3) << 8))) throw new Error("stored length");
+        const len = (src[pos] ?? NaN) | ((src[pos + 1] ?? NaN) << 8);
+        if ((len ^ 0xffff) !== ((src[pos + 2] ?? NaN) | ((src[pos + 3] ?? NaN) << 8))) throw new Error("stored length");
         pos += 4;
         if (pos + len > src.length) throw new Error("eof");
         const take = Math.min(len, max - o);
@@ -5528,7 +5522,7 @@ function inflateSync(src, max, expect, count = false) {
         const nlen = bits(5) + 257, ndist = bits(5) + 1, ncode = bits(4) + 4;
         if (nlen > 286 || ndist > 30) throw new Error("counts");
         const cl = Array.from({ length: 19 }, () => 0);
-        for (let i = 0; i < ncode; i++) cl[byteAt(CODE_LENGTH_ORDER, i)] = bits(3);
+        for (let i = 0; i < ncode; i++) cl[(CODE_LENGTH_ORDER[i] ?? NaN)] = bits(3);
         const clh = huffman(cl);
         if (!clh) throw new Error("code lengths");
         /** @type {number[]} */
@@ -5538,7 +5532,7 @@ function inflateSync(src, max, expect, count = false) {
           if (sym < 16) lens.push(sym);
           else {
             let rep = 0, val = 0;
-            if (sym === 16) { if (!lens.length) throw new Error("repeat"); val = byteAt(lens, lens.length - 1); rep = 3 + bits(2); }
+            if (sym === 16) { if (!lens.length) throw new Error("repeat"); val = lens[lens.length - 1] ?? NaN; rep = 3 + bits(2); }
             else if (sym === 17) rep = 3 + bits(3);
             else rep = 11 + bits(7);
             if (lens.length + rep > nlen + ndist) throw new Error("repeat");
@@ -5555,10 +5549,10 @@ function inflateSync(src, max, expect, count = false) {
         if (sym === 256) break;
         const li = sym - 257;
         if (li >= 29) throw new Error("length symbol");
-        const len = byteAt(LEN_BASE, li) + bits(byteAt(LEN_EXTRA, li));
+        const len = (LEN_BASE[li] ?? NaN) + bits(LEN_EXTRA[li] ?? NaN);
         const ds = decode(dist);
         if (ds >= 30) throw new Error("distance symbol");
-        const d = byteAt(DIST_BASE, ds) + bits(byteAt(DIST_EXTRA, ds));
+        const d = (DIST_BASE[ds] ?? NaN) + bits(DIST_EXTRA[ds] ?? NaN);
         if (d > o) throw new Error("distance");
         const take = Math.min(len, max - o);
         room(take);
@@ -5596,7 +5590,7 @@ function inflateChecked(src, max, expect) {
  *  @param {number} [expect]
  *  @returns {{ data: Uint8Array } | { over: number } | null} */
 function inflateProved(src, max, expect) {
-  if (!(src.length >= 6 && (byteAt(src, 0) & 0x0f) === 8 && ((byteAt(src, 0) << 8) | byteAt(src, 1)) % 31 === 0 && !(byteAt(src, 1) & 0x20))) return null;
+  if (!(src.length >= 6 && ((src[0] ?? NaN) & 0x0f) === 8 && (((src[0] ?? NaN) << 8) | (src[1] ?? NaN)) % 31 === 0 && !((src[1] ?? NaN) & 0x20))) return null;
   let len = expect;
   if (expect === undefined || !Number.isInteger(expect) || expect < 0) {
     const c = inflateSync(src, max, undefined, true);
@@ -5609,7 +5603,7 @@ function inflateProved(src, max, expect) {
   if (!r.full) return { over: r.len };
   const data = r.data;
   if (!data || data.length !== len || r.end + 4 !== src.length) return null;
-  const want = ((byteAt(src, r.end) << 24) | (byteAt(src, r.end + 1) << 16) | (byteAt(src, r.end + 2) << 8) | byteAt(src, r.end + 3)) >>> 0;
+  const want = (((src[r.end] ?? NaN) << 24) | ((src[r.end + 1] ?? NaN) << 16) | ((src[r.end + 2] ?? NaN) << 8) | (src[r.end + 3] ?? NaN)) >>> 0;
   if (adler32(data) !== want) return null;
   return { data };
 }
@@ -5891,7 +5885,7 @@ class XrefReader {
     /** @param {number} at
      *  @param {number} n
      *  @returns {number} */
-    const field = (at, n) => { let v = 0; for (let k = 0; k < n; k++) v = v * 256 + byteAt(data, at + k); return v; };
+    const field = (at, n) => { let v = 0; for (let k = 0; k < n; k++) v = v * 256 + (data[at + k] ?? NaN); return v; };
     /** @param {number} n
      *  @returns {XrefEntry | null} */
     const entry = (n) => {
@@ -6991,7 +6985,7 @@ class RangeXref {
     /** @param {number} at
      *  @param {number} n
      *  @returns {number} */
-    const field = (at, n) => { let v = 0; for (let k = 0; k < n; k++) v = v * 256 + byteAt(data, at + k); return v; };
+    const field = (at, n) => { let v = 0; for (let k = 0; k < n; k++) v = v * 256 + (data[at + k] ?? NaN); return v; };
     /** @param {number} n
      *  @returns {Promise<XrefEntry | null>} */
     const find = async (n) => {
@@ -7308,7 +7302,7 @@ async function pageOf(source, pageIndex) {
   const values = emptyMap();
   const queue = refsIn({ t: "dict", map: pageMap }, []);
   for (let qi = 0; qi < queue.length; qi++) {
-    const n = byteAt(queue, qi);
+    const n = queue[qi] ?? NaN;
     if (renum.has(n)) continue;
     const v = await x.get(n);
     if (v === undefined) continue;                                     // a reference to nothing reads as null
