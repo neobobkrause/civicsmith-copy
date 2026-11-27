@@ -665,7 +665,7 @@ export async function renderPictureToPixels(bytes, pageIndex, { maxEdge, grey = 
   const k = reductionFor(...orientedSize(pic.width, pic.height, applied), maxEdge);
   const red = reducer(pic.width, pic.height, pic.comps, { grey, orientation: applied, k });
   red.rows(pic.samples, 0, pic.height);
-  pic.samples = null;
+  pic = undefined;   /* the full decode is let go before the PNG is written; only the reduced picture is kept */
   return answer(red.done(), { source, orientation: 1, k, turn }, prepare, maxEdge);
 }
 
@@ -734,7 +734,8 @@ function jpegRefusal(e) {
  *  @returns {PixelRefusal} */
 function pngRefusal(e) {
   if (!(e instanceof PngRefusal)) return refuse("DECODE_FAILED", { page: 0, note: errorNote(e) });
-  const reason = e.code === "UNSUPPORTED" ? PNG_FEATURE_REASONS[e.detail?.feature] ?? "UNSUPPORTED_FILTER"
+  const feature = e.detail?.feature;
+  const reason = e.code === "UNSUPPORTED" ? (feature === undefined ? undefined : PNG_FEATURE_REASONS[feature]) ?? "UNSUPPORTED_FILTER"
     : PNG_CODE_REASONS[e.code] || "DECODE_FAILED";
   return refuse(reason, { page: 0, png: e.code, ...e.detail });
 }

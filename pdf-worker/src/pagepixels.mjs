@@ -80,13 +80,15 @@
 
 import { openPdf, pageShowsText, pdfPageImages, imagePlacementSource } from "../../bio-plane/src/pdfstructure.mjs";
 import * as reader from "../../bio-plane/src/pdfstructure.mjs";
-import { decodeBaselineJpeg, DctRefusal } from "./dctdecode.mjs";
+import { decodeBaselineJpeg, DctRefusal, DCT_CODES } from "./dctdecode.mjs";
 import { decodeJbig2, Jbig2Refusal, JBIG2_REFUSES } from "./jbig2decode.mjs";
 import { decodeJpx, JpxRefusal, JPX_REFUSES } from "./jpxdecode.mjs";
 import { ccittDecode } from "./ccittdecode.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 /** @import { PdfDoc, PdfMap, PdfValue, PdfStream, ImagePlacement } from "../../bio-plane/src/pdfstructure.mjs" */
+/** @import { JpegSource, ColourAnswer } from "./dctdecode.mjs" */
+/** @import { JpxInfo, JpxImage } from "./jpxdecode.mjs" */
 
 /** Every reason this module can refuse with (R39): a key of `REFUSALS`.
  *  @typedef {"NOT_A_PDF" | "NOT_A_PICTURE" | "ENCRYPTED" | "NO_SUCH_PAGE" | "PAGE_UNREADABLE" | "PAGE_HAS_TEXT_LAYER"
@@ -97,15 +99,12 @@ import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
  *  @typedef {"passthrough-dct" | "decoded-dct" | "decoded-ccitt-g4" | "decoded-jbig2" | "decoded-jpx" | "raw-samples-1bit"
  *    | "raw-samples-rgb8" | "raw-samples-grey8"} Route */
 /** What the JPEG decoder states of a decoded DCT image (R22), with its component count and the stream's length.
- *  @typedef {{ width: number, height: number, process: string, sampling: string, restart: number, colour: string,
- *    comps: number, stream_bytes: number }} DctDetail */
+ *  @typedef {JpegSource & { comps: number, stream_bytes: number }} DctDetail */
 /** What the JBIG2 decoder states of a decoded image (R25, K54): its segments and the kinds it decoded, with the lengths
  *  of the globals and the image stream.
  *  @typedef {{ segments: number, global_segments: number, decoded: string[], globals_bytes: number, stream_bytes: number }} Jbig2Detail */
 /** What the JPEG 2000 decoder states of a decoded image (R25, K54), with its component count and the stream's length.
- *  @typedef {{ container: string, colour: { method: string, enumCs?: number } | null, tiles: number, layers: number,
- *    levels: number, transform: string | null, progression: string | number, colour_transform: boolean, comps: number,
- *    stream_bytes: number }} JpxDetail */
+ *  @typedef {JpxInfo & { comps: number, stream_bytes: number }} JpxDetail */
 /** A source of a document's bytes read by range (R47), and not the bytes themselves.
  *  @typedef {Object} PageSource
  *  @property {number} size the whole file's length in bytes
@@ -121,7 +120,7 @@ import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
 /** One image a page paints, as a refusal of several lists it (R18).
  *  @typedef {{ width: number | null, height: number | null, filters: string[] }} PaintedSize */
 /** The evidence a refusal carries beside its reason (R15-R19, R22-R25, R42, R45, R46), and, after a codec's refusal, the
- *  facts that codec stated.
+ *  facts that codec stated, as image-codecs states them (its refusals' details, spread in as they are).
  *  @typedef {Object} RefusalDetail
  *  @property {number} [page] the page asked for
  *  @property {number} [pageCount] the document's pages, when the page is not among them
@@ -131,9 +130,10 @@ import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
  *  @property {boolean} [hasInlineImage] whether the page holds an inline image
  *  @property {PaintedSize[]} [images] each image the page paints
  *  @property {string[]} [filters] the image's filter chain
- *  @property {string} [filter] the filter whose decoder refused
+ *  @property {string | number} [filter] the filter whose decoder refused; after a PNG refusal, the unknown row filter type
  *  @property {string} [detail] which part of R45 leaves the pixels undetermined
- *  @property {DeclaredFrame | DeclaredSize} [declared] the size the image dictionary declares
+ *  @property {DeclaredFrame | DeclaredSize | number} [declared] the size the image dictionary declares; after a JPEG
+ *    refusal, the components the caller expected
  *  @property {JpegFrame | string | null} [jpeg] the JPEG's own frame (R22), or the JPEG decoder's refusal code
  *  @property {number} [columns] a CCITT stream's /Columns
  *  @property {number | null} [width] the width judged
@@ -152,7 +152,40 @@ import { boundOf } from "../../bio-plane/src/read-bounds.mjs";
  *  @property {number} [reduced_by] the reduction factor
  *  @property {string} [jbig2] the JBIG2 decoder's refusal code
  *  @property {string} [jpx] the JPEG 2000 decoder's refusal code
- *  @property {string} [png] the PNG decoder's refusal code */
+ *  @property {string} [png] the PNG decoder's refusal code
+ *  @property {string} [feature] a codec's UNSUPPORTED feature
+ *  @property {string} [chunk] a PNG chunk's type
+ *  @property {number} [at] a PNG chunk's byte offset
+ *  @property {number} [components] a codec's component count
+ *  @property {number} [colour_type] a PNG's IHDR colour type
+ *  @property {number} [bit_depth] a PNG's IHDR bit depth
+ *  @property {number} [size] the size a codec judged against its bound
+ *  @property {string} [key] the bound row's key a codec names
+ *  @property {number} [working_set_bytes] the working set a decode would hold
+ *  @property {number} [bound_bytes] the memory bound
+ *  @property {number} [rows] the rows a PNG decode read
+ *  @property {number} [row] the row a PNG filter type was met in
+ *  @property {number} [index] a palette index past the palette
+ *  @property {number} [entries] the palette's entries
+ *  @property {string} [inflater] the inflater's own words
+ *  @property {number} [row_bytes] a stored row's bytes
+ *  @property {number} [extension] a JBIG2 necessary extension segment's type
+ *  @property {number} [segmentType] the JBIG2 segment type the refusal arose in
+ *  @property {number} [segment] that segment's number
+ *  @property {number} [rsiz] a JPEG 2000 SIZ's Rsiz
+ *  @property {string} [marker] a marker refused
+ *  @property {number} [dx] a sub-sampled component's horizontal factor
+ *  @property {number} [dy] a sub-sampled component's vertical factor
+ *  @property {number | undefined} [precision] the samples' bits
+ *  @property {string} [process] a JPEG's coding process
+ *  @property {number} [class] a JPEG DHT table's class
+ *  @property {number} [id] a JPEG DHT table's id
+ *  @property {string} [table] a JPEG Huffman table
+ *  @property {number | undefined} [component] a JPEG scan component's id
+ *  @property {number | ColourAnswer} [stream] what a JPEG stream says (its components, or its colour transform)
+ *  @property {number} [pdf] the PDF's /ColorTransform a JPEG refusal names
+ *  @property {string} [sampling] a JPEG frame's sampling factors
+ *  @property {number} [rotate] the rotation a JPEG refusal names */
 /** A stated refusal (R39): its reason, that reason's own text, and its evidence.
  *  @typedef {{ ok: false, reason: RefusalReason, why: string } & RefusalDetail} PixelRefusal */
 /** What CCITT decoding states (R23).
@@ -309,6 +342,18 @@ export const featureReasons = (declared, named) =>
   Object.freeze(Object.fromEntries(Object.keys(declared).map((k) => [k, named[k] ?? "UNSUPPORTED_FILTER"])));
 const JBIG2_FEATURE_REASONS = featureReasons(JBIG2_REFUSES, {});
 const JPX_FEATURE_REASONS = featureReasons(JPX_REFUSES, {});
+/** The reason each JBIG2 refusal code other than UNSUPPORTED answers; any other code is DECODE_FAILED.
+ *  @type {{ readonly [code: string]: RefusalReason }} */
+const JBIG2_CODE_REASONS = { TRUNCATED: "TRUNCATED_IMAGE_DATA", IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE" };
+/** The reason each JPEG 2000 refusal code other than UNSUPPORTED answers; any other code is DECODE_FAILED.
+ *  @type {{ readonly [code: string]: RefusalReason }} */
+const JPX_CODE_REASONS = { UNSUPPORTED_SAMPLES: "UNSUPPORTED_SAMPLES", TRUNCATED: "TRUNCATED_IMAGE_DATA", IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE" };
+/** A codec's feature reason for an UNSUPPORTED refusal: the feature's own reason, else UNSUPPORTED_FILTER (also for a
+ *  refusal that names no feature).
+ *  @param {Readonly<{ [feature: string]: RefusalReason }>} reasons
+ *  @param {string | undefined} feature
+ *  @returns {RefusalReason} */
+const reasonOfFeature = (reasons, feature) => (feature === undefined ? undefined : reasons[feature]) ?? "UNSUPPORTED_FILTER";
 
 /** @param {RefusalReason} reason
  *  @param {RefusalDetail} [detail]
@@ -810,8 +855,8 @@ export async function decodeImage(doc, im, opts) {
       out = decodeJbig2(data, globals);
     } catch (e) {
       if (!(e instanceof Jbig2Refusal)) return refuse("DECODE_FAILED", { filters, note: errorNote(e) });
-      const reason = e.code === "UNSUPPORTED" ? JBIG2_FEATURE_REASONS[e.detail.feature] ?? "UNSUPPORTED_FILTER"
-        : { TRUNCATED: "TRUNCATED_IMAGE_DATA", IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE" }[e.code] || "DECODE_FAILED";
+      const reason = e.code === "UNSUPPORTED" ? reasonOfFeature(JBIG2_FEATURE_REASONS, e.detail.feature)
+        : JBIG2_CODE_REASONS[e.code] || "DECODE_FAILED";
       return refuse(reason, { filter: last, filters, jbig2: e.code, ...e.detail });
     }
     if (out.width !== width || out.height > height) {
@@ -851,8 +896,8 @@ export async function decodeImage(doc, im, opts) {
       out = decodeJpx(data);
     } catch (e) {
       if (!(e instanceof JpxRefusal)) return refuse("DECODE_FAILED", { filters, note: errorNote(e) });
-      const reason = e.code === "UNSUPPORTED" ? JPX_FEATURE_REASONS[e.detail.feature] ?? "UNSUPPORTED_FILTER"
-        : { UNSUPPORTED_SAMPLES: "UNSUPPORTED_SAMPLES", TRUNCATED: "TRUNCATED_IMAGE_DATA", IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE" }[e.code] || "DECODE_FAILED";
+      const reason = e.code === "UNSUPPORTED" ? reasonOfFeature(JPX_FEATURE_REASONS, e.detail.feature)
+        : JPX_CODE_REASONS[e.code] || "DECODE_FAILED";
       return refuse(reason, { filter: last, filters, jpx: e.code, ...e.detail });
     }
     if (pdfComps !== null && pdfComps !== out.comps) {
@@ -861,15 +906,15 @@ export async function decodeImage(doc, im, opts) {
     if (out.width !== width || out.height !== height) {
       return refuse("DECODE_FAILED", { filters, note: localize("pdf-pixels.pagepixels.the_jpeg_2000_image_is", "the JPEG 2000 image is {width}x{height}; the PDF declares {width_2}x{height_2}", { width: String(out.width), height: String(out.height), width_2: String(width), height_2: String(height) }) });
     }
-    /* The decoder's samples; null only where it decoded nothing, which throws a TypeError, as reading them always did. */
-    const decoded = out.samples;
-    if (decoded === null) throw new TypeError("the JPEG 2000 decoder handed back no samples");
-    const rot = rotate8(decoded, out.width, out.height, out.comps, opts.rotate || 0);
-    out.samples = null;
+    /* Turned in a helper of its own, so the decoder's full-size samples are let go as it returns, before the PNG is
+     * written (D-320: no second full copy held beside the turned one). */
+    const comps = out.comps, info = out.detail;
+    const rot = turnedJpx(out, opts.rotate || 0);
+    out = undefined;
     return { ok: true, route: "decoded-jpx", mediaType: "image/png", upright: true, width: rot.width, height: rot.height,
              pixelsSha256: await sha256Hex(rot.samples),
-             bytes: await encodePng8(rot.samples, rot.width, rot.height, out.comps),
-             jpx: { ...out.detail, comps: out.comps, stream_bytes: data.length } };
+             bytes: await encodePng8(rot.samples, rot.width, rot.height, comps),
+             jpx: { ...info, comps, stream_bytes: data.length } };
   }
 
   /* FlateDecode or unfiltered raw samples. */
@@ -911,6 +956,12 @@ export async function decodeImage(doc, im, opts) {
 
   return refuse("UNSUPPORTED_FILTER", { filters });
 }
+
+/** A decoded JPEG 2000 image's samples, turned (R25, R48).
+ *  @param {JpxImage} image
+ *  @param {number} rotate
+ *  @returns {Samples8} */
+const turnedJpx = (image, rotate) => rotate8(image.samples, image.width, image.height, image.comps, rotate);
 
 /* R46: width, height and pixel count as the image dictionary declares them,
  * against READ_BOUNDS; null when within them (or not declared: the route's own
@@ -1039,19 +1090,21 @@ function jpxColourComponents(doc, csv) {
  * the page is REFUSED, because an independent decoder fed these bytes would
  * produce a different picture from the one the PDF means, and `pixels_sha256`
  * would then certify something nobody can check. */
+/** The reason each of the JPEG decoder's refusal codes (`DCT_CODES`) answers.
+ *  @type {{ [code: string]: RefusalReason }} */
 export const DCT_TO_REFUSAL = {
-  UNSUPPORTED_PROCESS: "UNSUPPORTED_JPEG_PROCESS",
-  UNSUPPORTED_PRECISION: "UNSUPPORTED_JPEG_PROCESS",
-  UNSUPPORTED_COMPONENTS: "UNSUPPORTED_SAMPLES",
-  COMPONENT_MISMATCH: "UNSUPPORTED_SAMPLES",
-  UNSUPPORTED_SAMPLING: "UNSUPPORTED_SAMPLES",
-  COLOR_TRANSFORM_CONFLICT: "UNSUPPORTED_SAMPLES",
-  UNSUPPORTED_ROTATION: "UNSUPPORTED_SAMPLES",
-  TRUNCATED: "TRUNCATED_IMAGE_DATA",
-  NOT_A_JPEG: "DECODE_FAILED",
-  CORRUPT_DATA: "DECODE_FAILED",
-  UNSUPPORTED_FRAME: "DECODE_FAILED",
-  IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE",
+  [DCT_CODES.UNSUPPORTED_PROCESS]: "UNSUPPORTED_JPEG_PROCESS",
+  [DCT_CODES.UNSUPPORTED_PRECISION]: "UNSUPPORTED_JPEG_PROCESS",
+  [DCT_CODES.UNSUPPORTED_COMPONENTS]: "UNSUPPORTED_SAMPLES",
+  [DCT_CODES.COMPONENT_MISMATCH]: "UNSUPPORTED_SAMPLES",
+  [DCT_CODES.UNSUPPORTED_SAMPLING]: "UNSUPPORTED_SAMPLES",
+  [DCT_CODES.COLOR_TRANSFORM_CONFLICT]: "UNSUPPORTED_SAMPLES",
+  [DCT_CODES.UNSUPPORTED_ROTATION]: "UNSUPPORTED_SAMPLES",
+  [DCT_CODES.TRUNCATED]: "TRUNCATED_IMAGE_DATA",
+  [DCT_CODES.NOT_A_JPEG]: "DECODE_FAILED",
+  [DCT_CODES.CORRUPT_DATA]: "DECODE_FAILED",
+  [DCT_CODES.UNSUPPORTED_FRAME]: "DECODE_FAILED",
+  [DCT_CODES.IMAGE_TOO_LARGE]: "IMAGE_TOO_LARGE",
 };
 
 /** @param {PdfDoc} doc

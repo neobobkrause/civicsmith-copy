@@ -228,7 +228,7 @@ console.log("\n--- R25, R39: what the decoder refuses, by name, and what is cut 
     t(`R25 (a ${label} codestream with ${comps} component${comps > 1 ? "s" : ""} to patch)`, found, [true, comps]);
     const e = codecRefusal(d);
     t(`R25 (the codec refuses the ${size}x${size} ${label} image for memory, its working set past its bound)`,
-      [e?.code, e?.detail.working_set_bytes > e?.detail.bound_bytes], ["IMAGE_TOO_LARGE", true]);
+      [e?.code, (e?.detail.working_set_bytes ?? NaN) > (e?.detail.bound_bytes ?? NaN)], ["IMAGE_TOO_LARGE", true]);
     const r = await render(jpxPage(d, size, size), 0);
     const feature = field(r, "feature");
     if (feature) named.add(feature);
