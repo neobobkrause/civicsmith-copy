@@ -7,17 +7,35 @@ import {
   captureBound, derivationCap, describeChain, convertedChain, layerChain, TEXT_CHAIN_CHECKS,
 } from "../../../src/textchain.mjs";
 import { BASIS_GRADES, EARNED_CAPTURE_CEILING } from "../../../src/record-grammar/index.mjs";
+/** @import { Anchor, Chain, LayerArgs, PagesExtent, Refusal, Step, TextChainCode } from "../../../src/textchain.mjs" */
 
+/** Asserts `r` is the refusal `code`, and hands it back. @param {Refusal | null} r @param {TextChainCode} code @returns {Refusal} */
 const isRefusal = (r, code) => {
-  assert.equal(r && r.ok, false, `expected ${code}, got ${JSON.stringify(r)}`);
+  assert.ok(r !== null, `expected ${code}, got ${JSON.stringify(r)}`);
+  assert.equal(r.ok, false, `expected ${code}, got ${JSON.stringify(r)}`);
   assert.equal(r.code, code);
   assert.equal(r.check, TEXT_CHAIN_CHECKS[code].check);
   assert.equal(r.translation, TEXT_CHAIN_CHECKS[code].translation);
   assert.ok(typeof r.detail === "string" && r.detail.length > 0);
+  return r;
 };
+/** @param {Refusal | null} r @returns {Refusal} */
+const refusalOf = (r) => { assert.ok(r !== null, "expected a refusal"); return r; };
+/** @param {Chain | Refusal} r @returns {Chain} */
+const chainOf = (r) => { assert.ok(Array.isArray(r), JSON.stringify(r)); return r; };
+/** The entry at `i`, asserted present. @template T @param {readonly T[]} xs @param {number} i @returns {T} */
+const nth = (xs, i) => { const x = xs[i]; assert.ok(x !== undefined, `no entry ${i}`); return x; };
+/** @param {number} [page] @param {number[]} [rect] @returns {Anchor} */
 const anchor = (page = 0, rect = [0, 0, 100, 100]) => ({ kind: "pdf-page", ref: "p", page, rect });
+/** @param {unknown} extent @param {unknown} [member] @param {unknown} [at] @returns {{ member: unknown, at: unknown, extent: unknown }} */
 const att = (extent, member = "alice", at = "2026-09-01") => ({ member, at, extent });
-const O = (cap, extent) => ({ step: "ocr", engine: "eng", cap, ...(extent ? { extent } : {}) });
+/** @param {string} cap @param {PagesExtent} [extent] @returns {Step} */
+const O = (cap, extent) => {
+  /** @type {Step} */
+  const s = { step: "ocr", engine: "eng", cap };
+  if (extent) s.extent = extent;
+  return s;
+};
 
 test("R40: the literal string \"none\" is a valid confidence", () => {
   assert.equal(checkConfidence("none"), null);
@@ -51,17 +69,19 @@ test("R44: a refused or below-floor region is replaced by an undetermined one ke
   const before = JSON.stringify(regions);
   const r = applyConfidenceFloor(regions, 0.5);
   assert.equal(JSON.stringify(regions), before);
+  /** @param {{ source: Anchor, id: number }} x */
   const und = (x) => ({ text: null, undetermined: true, confidence: "none" , ...x });
-  assert.deepEqual({ ...r.regions[0], why: undefined }, { ...und({ source: src, id: 1 }), why: undefined });
-  assert.match(r.regions[0].why, /0\.4/);
-  assert.match(r.regions[0].why, /0\.5/);
-  assert.equal(r.regions[1].why, checkConfidence(regions[1].confidence).detail);
-  assert.deepEqual({ ...r.regions[1], why: undefined }, { ...und({ source: src, id: 2 }), why: undefined });
+  const r0 = nth(r.regions, 0), r1 = nth(r.regions, 1), r4 = nth(r.regions, 4);
+  assert.deepEqual({ ...r0, why: undefined }, { ...und({ source: src, id: 1 }), why: undefined });
+  assert.match(r0.why ?? "", /0\.4/);
+  assert.match(r0.why ?? "", /0\.5/);
+  assert.equal(r1.why, refusalOf(checkConfidence(nth(regions, 1).confidence)).detail);
+  assert.deepEqual({ ...r1, why: undefined }, { ...und({ source: src, id: 2 }), why: undefined });
   assert.deepEqual(r.regions[2], regions[2]);
   assert.notEqual(r.regions[2], regions[2]);
   assert.deepEqual(r.regions[3], regions[3]);
-  assert.equal(r.regions[4].why, checkConfidence(undefined).detail);
-  assert.equal(r.regions[4].text, null);
+  assert.equal(r4.why, refusalOf(checkConfidence(undefined)).detail);
+  assert.equal(r4.text, null);
   /* A floor that is not a number floors nothing on value. */
   for (const floor of [undefined, null, "0.9"]) assert.equal(applyConfidenceFloor([regions[0]], floor).floored, 0);
   /* Regions default to [] when not an array; each output region is a new object. */
@@ -117,9 +137,8 @@ test("R51: the extent must be region, page or document; page needs a page; regio
   for (const page of [undefined, -1, 1.2, "1"]) isRefusal(checkAttestation(att({ kind: "page", page })), "TEXT_ATTEST_EXTENT");
   assert.equal(checkAttestation(att({ kind: "region", source: anchor() })), null);
   for (const source of [undefined, { ...anchor(), rect: [0] }, { ...anchor(), kind: "doc-para" }]) {
-    const r = checkAttestation(att({ kind: "region", source }));
-    isRefusal(r, "TEXT_ATTEST_EXTENT");
-    assert.ok(r.detail.includes(checkAnchor(source).detail), "the anchor's refusal is wrapped in the detail");
+    const r = isRefusal(checkAttestation(att({ kind: "region", source })), "TEXT_ATTEST_EXTENT");
+    assert.ok(r.detail.includes(refusalOf(checkAnchor(source)).detail), "the anchor's refusal is wrapped in the detail");
   }
 });
 
@@ -144,6 +163,7 @@ test("R54: a region extent covers a target rect inside it on the same page, both
 });
 
 test("R55: every other case answers false", () => {
+  /** @type {[unknown, unknown][]} */
   const cases = [
     [null, { page: 0 }], ["document", { page: 0 }], [{ kind: "pages" }, { page: 0 }], [{ kind: "document" }, null],
     [{ kind: "page", page: 0 }, {}], [{ kind: "page", page: 0 }, { page: "0" }], [{ kind: "page", page: 0 }, { page: -1 }],
@@ -165,6 +185,7 @@ test("R56: a valid attestation whose extent covers the target sets the ceiling t
 });
 
 test("R57: otherwise the ceiling is derivationCap(chain, target), why naming the page or describing the chain", () => {
+  /** @type {Chain} */
   const chain = [{ step: "layer", cap: null, extent: { kind: "pages", pages: [0] } }, O("C", { kind: "pages", pages: [1] })];
   for (const atts of [undefined, [], "x", [att({ kind: "page", page: 5 })]]) {
     const r0 = gradeCeiling(chain, { page: 0 }, atts);
@@ -196,10 +217,11 @@ test("R59: a host's conversion ahead of a text layer (convert then layer) bounds
   /* The shape a Drive export's reading carries (drive-convert's share, K619): the conversion unmeasured at the head. */
   const convert = { step: "convert", engine: "google-export", format: "odt", cap: null, calibration: null,
     measured_by: "unmeasured: a calibration row raises it" };
+  /** @type {LayerArgs & { step: string }} */
   const layer = { step: "layer", tier: 1, container: "odt" };
   for (const layerCap of [null, ...BASIS_GRADES]) {
     const measuredLayer = layerChain({ ...layer, cap: layerCap, calibration: layerCap ? "CAL-9001" : null });
-    const chain = convertedChain(convert, measuredLayer);
+    const chain = chainOf(convertedChain(convert, measuredLayer));
     assert.deepEqual(chain.map((s) => s.step), ["convert", "layer"]);
     /* R29: the unmeasured head makes the cap undetermined; R59: so the capture axis is bounded to null, for every byte grade. */
     assert.equal(derivationCap(chain), null);

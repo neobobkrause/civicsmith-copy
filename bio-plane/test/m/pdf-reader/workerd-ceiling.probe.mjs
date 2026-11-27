@@ -10,11 +10,33 @@ import { mkdirSync, writeFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { densePdf } from "./dense.mjs";
+/** @import { DenseOptions } from "./dense.mjs" */
 
+/** What the worker answered (`raw`, as parsed), and its `ok` and `answered` (whether the reading answered) where it is an
+ *  object that has them.
+ *  @typedef {{ raw: unknown, ok: unknown, answered: unknown }} ProbeAnswer */
+/** The worker's answer, read from its text.
+ *  @param {string} text
+ *  @returns {ProbeAnswer} */
+function probeAnswer(text) {
+  /** @type {unknown} */
+  const raw = JSON.parse(text);
+  const v = typeof raw === "object" ? raw : null;
+  if (v === null) return { raw, ok: undefined, answered: undefined };
+  return { raw, ok: "ok" in v ? v.ok : undefined, answered: "answered" in v ? v.answered : undefined };
+}
+
+/** @param {string} p
+ *  @returns {string} */
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
-const [dir, ...specs] = process.argv.slice(2);
-if (!dir || !specs.length) { console.error("usage: workerd-ceiling.probe.mjs <dir> <pages>:<lines>:<padTo>..."); process.exit(2); }
+const [dirArg, ...specs] = process.argv.slice(2);
+if (!dirArg || !specs.length) { console.error("usage: workerd-ceiling.probe.mjs <dir> <pages>:<lines>:<padTo>..."); process.exit(2); throw new Error("usage"); }
+const dir = dirArg;
 const BIN = here("../../../node_modules/.bin/");
+/** A pause of `ms` milliseconds while workerd starts.
+ *  @param {number} ms
+ *  @returns {Promise<void>} */
+const pause = (ms) => new Promise((r) => { setTimeout(r, ms); });
 mkdirSync(join(dir, "pdfs"), { recursive: true });
 writeFileSync(join(dir, "worker.mjs"), `
 import { extractPdfStructure } from ${JSON.stringify(here("../../../src/pdfstructure.mjs"))};
@@ -29,6 +51,10 @@ export default { async fetch(req, env) {
 execFileSync(BIN + "esbuild", [join(dir, "worker.mjs"), "--bundle", "--format=esm", "--platform=neutral", "--main-fields=module,main",
   "--conditions=workerd,worker,import", "--external:node:*", `--outfile=${join(dir, "worker.bundle.mjs")}`, "--log-level=warning"]);
 
+/** Whether the reading of `file` completes with `oldSpaceMB` of V8 old space.
+ *  @param {string} file
+ *  @param {number} oldSpaceMB
+ *  @returns {Promise<boolean>} */
 async function survives(file, oldSpaceMB) {
   const port = 19000 + Math.floor(Math.random() * 900);
   writeFileSync(join(dir, "config.capnp"), `using Workerd = import "/workerd/workerd.capnp";
@@ -42,17 +68,21 @@ const w :Workerd.Worker = (modules = [(name = "worker", esModule = embed "worker
   const p = spawn(BIN + "workerd", ["serve", join(dir, "config.capnp")], { stdio: "ignore" });
   try {
     let up = false;
-    for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await new Promise((r) => setTimeout(r, 200)); } }
+    for (let i = 0; i < 60 && !up; i++) { try { up = (await fetch(`http://127.0.0.1:${port}/idle`)).ok; } catch { await pause(200); } }
     if (!up) return false;
-    const r = await fetch(`http://127.0.0.1:${port}/?f=${file}`).then((x) => x.json()).catch(() => null);
-    if (process.env.PROBE_DEBUG) console.error(oldSpaceMB, JSON.stringify(r));
-    return !!(r && r.ok && r.answered !== undefined);
+    const r = await fetch(`http://127.0.0.1:${port}/?f=${file}`).then((x) => x.text()).then(probeAnswer).catch(() => null);
+    if (process.env.PROBE_DEBUG) console.error(oldSpaceMB, JSON.stringify(r === null ? null : r.raw));
+    return !!(r && r.raw && r.ok && r.answered !== undefined);
   } finally { p.kill("SIGKILL"); }
 }
 for (const spec of specs) {
   const [pages, lines, padTo] = spec.split(":").map(Number);
   const file = `p${pages}-${lines}-${padTo || 0}.pdf`;
-  writeFileSync(join(dir, "pdfs", file), densePdf({ pages, linesPerPage: lines, padTo: padTo || 0 }));
+  if (pages === undefined) throw new Error(`${spec}: no page count`);
+  /** @type {DenseOptions} */
+  const options = { pages, padTo: padTo || 0 };
+  if (lines !== undefined) options.linesPerPage = lines;
+  writeFileSync(join(dir, "pdfs", file), densePdf(options));
   let lo = 16, hi = Number(process.env.PROBE_HI || 320);
   if (!(await survives(file, hi))) { console.log(`${file}: does not complete even with ${hi} MB of old space`); continue; }
   while (hi - lo > 4) { const mid = (lo + hi) >> 1; if (await survives(file, mid)) hi = mid; else lo = mid; }

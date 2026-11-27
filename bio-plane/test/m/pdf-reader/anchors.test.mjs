@@ -6,17 +6,59 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { extractPdfStructure } from "../../../src/pdfstructure.mjs";
 import { doc } from "./pdf.mjs";
+/** @import { PdfStructureAnswer, PdfStructure, LinkAnchor, LinkRecord } from "../../../src/pdfstructure.mjs" */
+/** @import { DocOptions, Objects, Page } from "./pdf.mjs" */
+
+/** What a test gives `anchors` beside the content and the rects.
+ *  @typedef {Object} AnchorsOptions
+ *  @property {string} [resources] the page's /Resources entries, absent is the fonts
+ *  @property {Objects} [objs] objects added
+ *  @property {Objects} [extraObjs] more objects added
+ *  @property {DocOptions} [docOpts] more document options
+ */
 
 const URI = "/A << /S /URI /URI (https://example.org/) >>";
-/** The anchors of links laid over one page showing `content`. */
+/** The reading of a PDF; a thrown failure when it is refused.
+ *  @param {PdfStructureAnswer} r
+ *  @returns {PdfStructure} */
+const read = (r) => {
+  if (!r.ok) throw new Error(`the PDF was refused: ${r.reason}`);
+  return r;
+};
+/** The anchors of links laid over one page showing `content`.
+ *  @param {string} content
+ *  @param {(number[] | null)[]} rects
+ *  @param {AnchorsOptions} [options]
+ *  @returns {Promise<(LinkAnchor | undefined)[]>} */
 async function anchors(content, rects, { resources, objs = {}, extraObjs = {}, docOpts = {} } = {}) {
+  /** @type {Objects} */
   const all = { ...objs, ...extraObjs };
   rects.forEach((r, i) => { all[30 + i] = `<< /Type /Annot /Subtype /Link ${r === null ? "" : `/Rect [${r.join(" ")}]`} ${URI} >>`; });
   const refs = rects.map((_, i) => `${30 + i} 0 R`).join(" ");
-  const r = await extractPdfStructure(doc([{ content, resources, extra: `/Annots [${refs}]` }], { objs: all, ...docOpts }));
-  return r.links.map((l) => l.anchor);
+  /** @type {Page} */
+  const page = { content, extra: `/Annots [${refs}]` };
+  if (resources !== undefined) page.resources = resources;
+  /** @type {DocOptions} */
+  const options = { objs: all, ...docOpts };
+  const r = read(await extractPdfStructure(doc([page], options)));
+  return r.links.map((/** @type {LinkRecord} */ l) => l.anchor);
 }
+/** An anchor as tier 1 states it.
+ *  @param {string | null} text
+ *  @param {string | null} [why]
+ *  @returns {LinkAnchor} */
 const a = (text, why = null) => ({ text, why, tier: 1 });
+/** Entry `i` of a list; a thrown failure naming `what` when there is none.
+ *  @template T
+ *  @param {T[]} xs
+ *  @param {number} i
+ *  @param {string} what
+ *  @returns {T} */
+const nth = (xs, i, what) => {
+  const x = xs[i];
+  if (x === undefined) throw new Error(`${what}[${i}] is missing`);
+  return x;
+};
 
 test("R35: an anchor is the text whose ink point lies in the link's rect, in showing order, one space between runs", async () => {
   const content = "BT /F1 10 Tf 100 700 Td (Read the) Tj 0 -20 Td (full report) Tj 0 -20 Td (elsewhere) Tj ET";
@@ -49,10 +91,10 @@ test("R35: no rect, or no text read on the page, is stated: no_rect, text_not_re
   const got = await anchors("BT /F1 10 Tf 0 0 Td (x) Tj ET", [null, [0, 0, 1]]);
   assert.deepEqual(got, [a(null, "no_rect"), a(null, "no_rect")]);
   // a document-level embedded file has no page rect
-  const emb = await extractPdfStructure(doc([{ content: "" }], {
+  const emb = read(await extractPdfStructure(doc([{ content: "" }], {
     catalog: "/Names << /EmbeddedFiles 54 0 R >>",
-    objs: { 52: "<< /Type /Filespec /F (f.txt) /EF << /F 53 0 R >> >>", 53: { data: "plain" }, 54: "<< /Names [(f) 52 0 R] >>" } }));
-  assert.deepEqual(emb.links[0].anchor, a(null, "no_rect"));
+    objs: { 52: "<< /Type /Filespec /F (f.txt) /EF << /F 53 0 R >> >>", 53: { data: "plain" }, 54: "<< /Names [(f) 52 0 R] >>" } })));
+  assert.deepEqual(nth(emb.links, 0, "links").anchor, a(null, "no_rect"));
   // an encrypted document's text is not read, its links still are
   const enc = await anchors("BT /F1 10 Tf 0 0 Td (x) Tj ET", [[0, 0, 100, 100]],
     { extraObjs: { 90: "<< /Filter /Standard /V 1 /R 2 /O (o) /U (u) /P -4 >>" } });
@@ -75,7 +117,7 @@ test("R35: a code under the rect that decodes to nothing makes it undecodable or
   const got = await anchors(content, [[95, 695, 120, 715], [95, 695, 109, 715], [95, 595, 115, 615], [300, 300, 400, 400]]);
   assert.deepEqual(got, [a("ok", "partly_undecodable"), a("ok"), a(null, "undecodable"), a(null, "no_text_in_rect")]);
   // a font with widths and no /ToUnicode: its run is placed and not read
-  const objs = { 13: `<< /Type /Font /Subtype /TrueType /BaseFont /Mute /FirstChar 32 /Widths [${Array(95).fill(500).join(" ")}] >>` };
+  const objs = { 13: `<< /Type /Font /Subtype /TrueType /BaseFont /Mute /FirstChar 32 /Widths [${Array.from({ length: 95 }, () => 500).join(" ")}] >>` };
   const mute = await anchors("BT /M 10 Tf 100 700 Td (abc) Tj ET", [[95, 695, 120, 715], [0, 0, 10, 10]],
     { resources: "/Font << /M 13 0 R >>", objs });
   assert.deepEqual(mute, [a(null, "undecodable"), a(null, "no_text_in_rect")]);
