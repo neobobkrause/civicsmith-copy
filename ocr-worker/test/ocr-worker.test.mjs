@@ -283,7 +283,7 @@ const REAL_ENGINE_NAMES = { name: "tesseract-wasm", version: "0.11.0", model: "t
  *  @param {StubEngineOptions} [options] @returns {StubEngine} */
 function stubEngine({ regions = [], check = null, frame = null, boxCount, words, orientation = { rotation: 0 } } = {}) {
   /** @type {StubEngine} */
-  const e = { ...REAL_ENGINE_NAMES, calls: [], checks: 0,
+  const e = { ...REAL_ENGINE_NAMES, calls: /** @type {EngineCall[]} */ ([]), checks: 0,
     check: () => { e.checks++; return check; },
     transcribeFrame: async (rgba, width, height, opts) => {
       e.calls.push({ length: rgba.length, width, height, rgba: Array.from(rgba.slice(0, 128)), opts });
@@ -329,7 +329,7 @@ const pngPage = (bytes, width, height, extra = {}) => ({
   ...RENDERED, bytes, width, height, pixels_sha256: "f".repeat(64), ...extra });
 
 /** One entry of a recording bucket's log: `["get", key, range]` for a read, `["touch", name]` for a property touched.
- *  @typedef {[kind: string, name: string, range?: { offset: number, length: number } | null]} BucketLogEntry */
+ *  @typedef {[kind: string, name: string, range?: Readonly<{ offset: number, length: number }> | null]} BucketLogEntry */
 /** A bucket that records every property touched on it, and answers `.get` from `objects`.
  *  @param {Map<string, Uint8Array>} [objects] */
 function recordingBucket(objects = new Map(/** @type {[string, Uint8Array][]} */ ([]))) {
@@ -363,7 +363,7 @@ async function post(member, env, body, path = "/transcribe") {
   return out;
 }
 /** The instance settings a test world is given.
- *  @typedef {{ OCR_PSM?: unknown, OCR_CONFIDENCE_FLOOR?: unknown }} WorldEnv */
+ *  @typedef {{ OCR_PSM?: unknown, OCR_CONFIDENCE_FLOOR?: unknown, CAPTURES?: never, VERSION?: never }} WorldEnv */
 /** What a test world is made over, each part a stand-in unless given.
  *  @typedef {{ engine?: StubEngine, render?: Renderer, renderPicture?: Renderer, doc?: Uint8Array, env?: WorldEnv }} WorldOptions */
 /**
@@ -371,7 +371,7 @@ async function post(member, env, body, path = "/transcribe") {
  * @template {MemberEngine} [E=StubEngine]
  * @template {Renderer} [R=StubRender]
  * @template {Renderer} [P=StubRender]
- * @param {{ engine?: E, render?: R, renderPicture?: P, doc?: Uint8Array, env?: WorldEnv }} [options]
+ * @param {{ engine?: E, render?: R | undefined, renderPicture?: P | undefined, doc?: Uint8Array, env?: WorldEnv }} [options]
  */
 function world({ engine: givenEngine, render: givenRender, renderPicture: givenPicture, doc = DOC, env = {} } = {}) {
   const engine = givenEngine === undefined ? stubEngine({ regions: [{ text: "a line", rect: [0, 0, 2, 1], confidence: 0.9 }] }) : givenEngine;
@@ -492,7 +492,7 @@ console.log("\n--- A3 · R4, R6: pages — a non-empty array; ONE page per call,
 console.log("\n--- A4 · R5: the binding, the key, and a capture genuinely absent ---");
 {
   const w = world();
-  let bodyRead = false;
+  let bodyRead = /** @type {boolean} */ (false);
   const req = { method: "POST", url: "http://ocr-worker/transcribe", json: async () => { bodyRead = true; return good(); } };
   for (const [label, env] of [["no CAPTURES", {}], ["CAPTURES without get", { CAPTURES: {} }],
                               ["CAPTURES.get not a function", { CAPTURES: { get: "yes" } }], ["no env at all", undefined]]) {
@@ -721,6 +721,7 @@ console.log("\n--- A7 · R8: the confidence floor is the instance's, or a stated
 
 console.log("\n--- A8 · R11, R12, R13, R14: /version and every other route ---");
 {
+  /** @param {Fetching} member @param {MemberEnv} env @param {string} path @param {string} [method] */
   const get = async (member, env, path, method = "GET") => {
     const r = await member.fetch(new Request(`http://ocr-worker${path}`, { method }), env);
     const body = await r.json(); WIRE.push(body); return { status: r.status, body };
@@ -738,9 +739,11 @@ console.log("\n--- A8 · R11, R12, R13, R14: /version and every other route ---"
     [broken.body.engine_loaded, broken.body.engine_unavailable, e.checks], [false, "the language model is 12 B", 1]);
   t("R13 a member without its engine answers every other route normally",
     (await post(makeMember(e), { CAPTURES: recordingBucket().proxy }, good({ capture_sha: "x" }))).body.reason, "BAD_SHA");
-  for (const [method, path] of [["GET", "/transcribe"], ["POST", "/version"], ["PUT", "/transcribe"], ["GET", "/"],
-                                ["DELETE", "/transcribe"], ["GET", "/other"], ["POST", "/transcribe/more"],
-                                ["POST", "/Transcribe"], ["PATCH", "/"]]) {
+  /** @type {[string, string][]} */
+  const ROUTES = [["GET", "/transcribe"], ["POST", "/version"], ["PUT", "/transcribe"], ["GET", "/"],
+                  ["DELETE", "/transcribe"], ["GET", "/other"], ["POST", "/transcribe/more"],
+                  ["POST", "/Transcribe"], ["PATCH", "/"]];
+  for (const [method, path] of ROUTES) {
     const r = await get(loaded, { CAPTURES: recordingBucket().proxy }, path, method);
     t(`R14 ${method} ${path} -> 404 UNKNOWN`, [r.status, r.body.ok, r.body.reason], [404, false, "UNKNOWN"]);
   }
@@ -882,10 +885,7 @@ console.log("\n--- A11 · R24: a photographed page is prepared before the engine
   /* THE REAL PATH: the real picture renderer, the real engine (the member's own engine code, in node) */
   const realEngine = srcEngine;   /* the member's own engine code over the committed core and model (frame.mjs, tesslib.mjs) */
   /* the words each photograph holds: the page's own text, as drawn (`fixtures/page-words.json`) */
-  /** @typedef {"page-110dpi" | "page-noise-shade" | "page-combined-a" | "page-hard" | "page-hard-blur"} PageName */
-  /** The words each photograph holds, this suite's own fixture, decoded where it is read.
-   *  @typedef {Readonly<{ "page-110dpi": string, "page-noise-shade": string, "page-combined-a": string, "page-hard": string, "page-hard-blur": string }>} PageWords */
-  const TRUTH = /** @type {PageWords} */ (JSON.parse(Buffer.from(F("./fixtures/page-words.json")).toString("utf8")));
+  const TRUTH = JSON.parse(Buffer.from(F("./fixtures/page-words.json")).toString("utf8"));
   /** @param {string} x */
   const words = (x) => x.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
   /** @param {string} truth @param {string} got */
@@ -907,9 +907,7 @@ console.log("\n--- A11 · R24: a photographed page is prepared before the engine
     return post(member, { CAPTURES: bucket.proxy, VERSION: "stub-build" }, { capture_sha: sha, store: "scratch", pages: [0] });
   };
   const got = (a) => (a.body.ok ? a.body.pages[0].regions.map((r) => r.text).join(" ") : "");
-  /** @type {PageName[]} */
-  const PREPARED_PAGES = ["page-noise-shade", "page-combined-a", "page-110dpi"];
-  for (const name of PREPARED_PAGES) {
+  for (const name of ["page-noise-shade", "page-combined-a", "page-110dpi"]) {
     const doc = F(`./fixtures/${name}.jpg`);
     const prep = await realWorld(doc, realRenderPicture);
     const old = await realWorld(doc, unprepared);
@@ -935,9 +933,7 @@ console.log("\n--- A11 · R24: a photographed page is prepared before the engine
   console.log(`        page-hard: prepared ${(hardGain * 100).toFixed(0)} %, unprepared ${(hardWas * 100).toFixed(0)} %`);
   t(`R24 C18 page-hard: the member reads at least ${HARD_FLOOR * 100} percent of the page's words from the prepared picture`, hardGain >= HARD_FLOOR, true);
   t("R24 C18 control: page-hard asked without prepare (the old answer) reads under that floor", hardWas < HARD_FLOOR, true);
-  /** @type {PageName[]} */
-  const RATED_PAGES = ["page-110dpi", "page-noise-shade", "page-combined-a", "page-hard"];
-  for (const name of RATED_PAGES) {
+  for (const name of ["page-110dpi", "page-noise-shade", "page-combined-a", "page-hard"]) {
     const a = await realWorld(F(`./fixtures/${name}.jpg`), realRenderPicture);
     const truly = shareRead(TRUTH[name], got(a));
     t(`R25 ${name}: the legibility the member states (${a.body.legibility && a.body.legibility.share}) is the share truly read (${truly.toFixed(2)}), within a tenth`,
@@ -1049,7 +1045,7 @@ console.log("\n--- A13 · R26: the engine's orientation is asked of every frame;
   /** @type {TurnRegion} */
   const tall = { text: "the upright line", rect: [0, 0, 1, 8], confidence: 0.9 };
   /** @param {TurnRegion} r @returns {FrameWord[]} */
-  const wordsOf = (r) => (r.words ? r.words.map((c) => ({ confidence: c })) : r.text.split(" ").map(() => ({ confidence: r.confidence })));
+  const wordsOf = (r) => { const ratings = r.words; return ratings ? ratings.map((c) => ({ confidence: c })) : r.text.split(" ").map(() => ({ confidence: r.confidence })); };
   /* an engine that reads the sideways frame (4 wide) as `side` and the upright one (3 wide) as `up`, and claims `claim`
      of the sideways frame (the upright frame it calls upright); it records the width of every frame it was given */
   /**
@@ -1067,7 +1063,7 @@ console.log("\n--- A13 · R26: the engine's orientation is asked of every frame;
   /** @param {TurnScript} script @returns {TurnEngine} */
   const turnEngine = ({ claim, side, up }) => {
     /** @type {TurnEngine} */
-    const e = { ...REAL_ENGINE_NAMES, calls: [], check: () => null,
+    const e = { ...REAL_ENGINE_NAMES, calls: /** @type {number[]} */ ([]), check: () => null,
       transcribeFrame: async (rgba, w) => {
         e.calls.push(w);
         const r = w === 4 ? side : up;
@@ -1078,15 +1074,15 @@ console.log("\n--- A13 · R26: the engine's orientation is asked of every frame;
   };
   /* a renderer that turns a page when asked (pdf-pixels R48): the sideways frame as it lies, the upright one turned */
   /** @param {string} route */
-  const turner = (route) => stubRender((page, opts) => (opts.turn
-    ? pngPage(UPRIGHT, 3, 4, { route, pixels_sha256: UP_SHA, turned_deg: opts.turn, prepared: { text_found: true, tilt_deg: 0, scale: 1, line_px: 30 } })
-    : pngPage(GREY4x3, 4, 3, { route, pixels_sha256: SIDE_SHA, prepared: { text_found: true, tilt_deg: 0, scale: 1, line_px: 30 } })));
+  const turner = (route) => stubRender((page, opts) => { const turn = opts.turn; return (turn
+    ? pngPage(UPRIGHT, 3, 4, { route, pixels_sha256: UP_SHA, turned_deg: turn, prepared: { text_found: true, tilt_deg: 0, scale: 1, line_px: 30 } })
+    : pngPage(GREY4x3, 4, 3, { route, pixels_sha256: SIDE_SHA, prepared: { text_found: true, tilt_deg: 0, scale: 1, line_px: 30 } })); });
   /** @param {TurnScript & { kind: string, render?: StubRender }} script */
   const run = async ({ kind, claim, side, up, render }) => {
     const picture = kind === "picture";
     const rend = render || turner(picture ? "decoded-picture" : "stub-route");
     const w = world({ engine: turnEngine({ claim, side, up }), doc: picture ? JPG : DOC,
-                      ...(picture ? { renderPicture: rend } : { render: rend }) });
+                      render: picture ? undefined : rend, renderPicture: picture ? rend : undefined });
     const r = await w.ask({ capture_sha: w.sha, store: "scratch", pages: [0] });
     return { w, r, rend, turns: rend.calls.map((c) => c.opts.turn ?? 0) };
   };
@@ -1196,11 +1192,12 @@ console.log("\n--- A15 · R26 R25 R30: the member over the real engine, with the
   /** @param {typeof renderPageToPixels | typeof realRenderPicture} real */
   const withTurn = (real) => async (/** @type {Uint8Array | CaptureSource} */ bytes, /** @type {number} */ page, /** @type {RenderOpts} */ opts) => {
     const a = await real(bytes, page, opts);
-    if (!a.ok || !opts.turn || a.turned_deg === opts.turn) return a;   /* a renderer that turns (pdf-pixels R48 merged) is not turned twice */
+    const turn = opts.turn;
+    if (!a.ok || !turn || a.turned_deg === turn) return a;   /* a renderer that turns (pdf-pixels R48 merged) is not turned twice */
     const s = await pngToSamples(a.bytes);
-    const f = turnRgba({ rgba: samplesToRgba(s), width: s.width, height: s.height }, opts.turn);
+    const f = turnRgba({ rgba: samplesToRgba(s), width: s.width, height: s.height }, turn);
     const out = encodeGrey(f.rgba, f.width, f.height);
-    return { ...a, bytes: out, width: f.width, height: f.height, turned_deg: opts.turn, pixels_sha256: hex(f.rgba) };
+    return { ...a, bytes: out, width: f.width, height: f.height, turned_deg: turn, pixels_sha256: hex(f.rgba) };
   };
   const memberOf = () => makeMember(srcEngine, { render: withTurn(renderPageToPixels), renderPicture: withTurn(realRenderPicture) });
   const body = async (/** @type {Uint8Array} */ bytes) => (await memberOf().transcribeRequest(bytes, [0], {}));
@@ -1265,16 +1262,20 @@ console.log("\n--- A17 · R25 G137d: one rule for photographs and PDF pages (inv
   const recipes = [["clear", {}], ["inverted", { invert: true }], ["faint", { contrast: true }], ["noisy", { noise: 0.2 }], ["tilted and shaded", { tilt: 3, shade: 0.5 }]];
   const real = makeMember(srcEngine);
   /** @param {WireAnswer} r */
-  const classify = (r) => (!r.ok ? (/NOT_LEGIBLE$/.test(r.reason) ? "illegible" : r.reason)
-    : r.legibility ? (r.legibility.share >= LEGIBLE_NOTE_BELOW ? "clear" : "partial") : "unrated");
+  const classify = (r) => {
+    if (!r.ok) return /NOT_LEGIBLE$/.test(r.reason) ? "illegible" : r.reason;
+    const legibility = r.legibility;
+    return legibility ? (legibility.share >= LEGIBLE_NOTE_BELOW ? "clear" : "partial") : "unrated";
+  };
   /** @param {WireAnswer} r @param {string} kind */
   const consistent = (r, kind) => {
     if (!r.ok) {
       if (!/NOT_LEGIBLE$/.test(r.reason)) return true;        /* another finding (nothing transcribed ...), not a legibility answer */
       return r.reason === (kind === "picture" ? "PICTURE_NOT_LEGIBLE" : "PAGE_NOT_LEGIBLE") && r.refusal.legibility.share < LEGIBLE_REFUSE_BELOW && r.pages === undefined;
     }
-    if (!r.legibility) return true;
-    return r.legibility.share >= LEGIBLE_REFUSE_BELOW && (r.legibility.share < LEGIBLE_NOTE_BELOW) === (r.notes.length > 0);
+    const legibility = r.legibility;
+    if (!legibility) return true;
+    return legibility.share >= LEGIBLE_REFUSE_BELOW && (legibility.share < LEGIBLE_NOTE_BELOW) === (r.notes.length > 0);
   };
   /** @type {[string, string, string][]} */
   const seen = [];
@@ -1290,7 +1291,8 @@ console.log("\n--- A17 · R25 G137d: one rule for photographs and PDF pages (inv
       [consistent(pic, "picture")], [true]);
     t(`R25 G137d ${label}: the PDF page's answer follows the same rule with its own reason`,
       [consistent(page, "page")], [true]);
-    if (page.ok && page.legibility && page.legibility.share < LEGIBLE_NOTE_BELOW)
+    const pageLegibility = page.ok ? page.legibility : undefined;
+    if (page.ok && pageLegibility && pageLegibility.share < LEGIBLE_NOTE_BELOW)
       t(`R25 G137d ${label}: a PDF page partly legible keeps its text and says so in a note`, [page.pages[0].regions.length > 0, page.notes.length > 0], [true, true]);
   }
   console.log("        classes (picture / page): " + seen.map(([l, a, b]) => `${l} ${a}/${b}`).join(", "));
@@ -1317,13 +1319,14 @@ console.log("\n--- A18 · R27: a call reads its page's bytes, not the file's ---
   const gets = () => w.bucket.log.filter(([k]) => k === "get");
   let worst = 0;
   for (let page = 0; page < 24; page++) {
+    const at = page;
     const before = gets().length;
-    const r = await w.ask({ capture_sha: sha, store: "scratch", pages: [page] });
+    const r = await w.ask({ capture_sha: sha, store: "scratch", pages: [at] });
     const mine = gets().slice(before);
     const bytesAsked = mine.reduce((n, [, , range]) => n + (range ? range.length : SIZE), 0);
     worst = Math.max(worst, bytesAsked);
-    if (page === 0 || page === 23)
-      t(`R27 page ${page} of a ${SIZE}-byte capture: answered, every R2 read is a range, and the bytes asked are the page's`,
+    if (at === 0 || at === 23)
+      t(`R27 page ${at} of a ${SIZE}-byte capture: answered, every R2 read is a range, and the bytes asked are the page's`,
         [r.body.ok, mine.every(([, , range]) => range && range.length > 0), bytesAsked < 100 * 1024], [true, true, true]);
   }
   t("R27 across the up to 24 calls of a document no call asked for more than the page's bytes (the largest was a fiftieth of the file)", worst < SIZE / 50, true);
@@ -1388,11 +1391,11 @@ console.log("\n--- A19 · R28: a top-level guard — whatever throws inside a ca
 
 console.log("\n--- A20 · R29: an OCR_PSM that is no page-segmentation mode is refused on every call ---");
 {
-  let bodyRead = false;
+  let bodyRead = /** @type {boolean} */ (false);
   const req = (/** @type {unknown} */ body = good()) => ({ method: "POST", url: "http://ocr-worker/transcribe", json: async () => { bodyRead = true; return body; } });
   for (const value of ["abc", "14", "-1", "3.5", "03", " 3", "3 ", "1e1", "0x6", "13.0", "99", 14, -1, 3.5, true, {}, ["3"], "x".repeat(200)]) {
     const w = world({ env: { OCR_PSM: value } });
-    bodyRead = false;
+    bodyRead = /** @type {boolean} */ (false);
     const r = await w.member.fetch(req(), w.env);
     const b = await r.json(); WIRE.push(b);
     t(`R29 OCR_PSM ${JSON.stringify(value).slice(0, 24)} -> 503 BAD_PSM naming the value, the body never read`,
