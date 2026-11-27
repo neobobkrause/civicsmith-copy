@@ -22,7 +22,7 @@ import { readDefinitions, textDigest } from "./sections.mjs";
 import { readHeader, headerAnchored, policySeries, headerLabels, HEADER_FIELDS } from "./policy-header.mjs";
 import { lineIndex, counted, spend } from "./windows.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { DoctypeContext, Entity } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Connection, Entity } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
 /** @import { Section, Definition } from "./sections.mjs" */
@@ -190,6 +190,8 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {(ctx: DoctypeContext) => PolicyDetection} detect
  * @property {(ctx: DoctypeContext) => PolicyReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => PolicyAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
  */
 
 /** A value just found present (an index inside its list, an entry the pattern always fills); a missing one throws, as

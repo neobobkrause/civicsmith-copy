@@ -68,7 +68,7 @@ import { CONFIDENCE, CONTRACT, diffEntities, flatten, alsoSatisfies,
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { eachLine, lineTable, flatPrefix, flatFirst, scanFlatMany, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { DoctypeContext, Detection, Entity, TaggedPattern } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Connection, Detection, Entity, TaggedPattern } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
 /** @import { FlatHit, ReferencesState } from "./windows.mjs" */
@@ -142,6 +142,8 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {(ctx: DoctypeContext) => Detection} detect
  * @property {(ctx: DoctypeContext) => StaffReportReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined) => StaffReportAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
  */
 
 /** Entry `i` of `xs`, which the code around it has made sure is there; the `TypeError` reading a member of a missing

@@ -87,6 +87,7 @@ import { counted, spend } from "./windows.mjs";
  * @property {string} key
  * @property {string} label
  * @property {number} version
+ * @property {boolean} [fallback] never present: this type is not the fallback
  * @property {string} contract
  * @property {(ctx: DoctypeContext) => Detection} detect
  * @property {(ctx: DoctypeContext) => MeetingCalendarReading} parse

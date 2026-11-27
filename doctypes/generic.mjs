@@ -10,7 +10,7 @@ import { CONFIDENCE, CONTRACT } from "../docprofile/doctypes/index.mjs";
 import { event, worstSignificance, isMeaningful } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-/** @import { DoctypeContext, Detection, Entity, EntityFacts } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Detection, Entity, EntityFacts, Connection } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 
 /**
@@ -39,6 +39,8 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {(ctx: DoctypeContext) => Detection} detect
  * @property {(ctx: DoctypeContext) => GenericReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => GenericAssessment} assess
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections]
+ *   never present: the generic type implies no connections
  */
 
 /** @type {GenericType} */

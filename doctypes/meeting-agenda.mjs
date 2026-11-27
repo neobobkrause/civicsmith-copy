@@ -41,7 +41,7 @@ import { CONFIDENCE, CONTRACT, entity, readAgain, diffEntities, FURNITURE_RECURS
 import { eachLine, countLines, lineTable, counted, spend } from "./windows.mjs";
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { DoctypeContext, Entity } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Connection, Entity } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/events.mjs" */
 
 /**
@@ -81,6 +81,8 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {(ctx: DoctypeContext) => AgendaDetection} detect
  * @property {(ctx: DoctypeContext) => AgendaReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined) => AgendaAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
  */
 
 /** Group `i` of a match, which the pattern makes take part whenever it matches.

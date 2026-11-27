@@ -75,7 +75,7 @@ import { CONFIDENCE, CONTRACT, entity, diffEntities, alsoSatisfies } from "../do
 import { flatCount, firstLines, counted, spend } from "./windows.mjs";
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-/** @import { DoctypeContext, Detection, Entity, EntityFacts } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Connection, Detection, Entity, EntityFacts } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { ReadingPosition } from "../bio-plane/src/textchain.mjs" */
 /** @import { WordVars } from "../bio-plane/src/setup-words/index.mjs" */
@@ -156,6 +156,8 @@ import { localize } from "../bio-plane/src/setup-words/index.mjs";
  * @property {(ctx: DoctypeContext) => Detection} detect
  * @property {(ctx: DoctypeContext) => StaffDirectoryReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined) => StaffDirectoryAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
  */
 
 /* The smallest number of distinct addresses at one domain that makes contact points the

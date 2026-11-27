@@ -58,7 +58,7 @@ import { event, worstSignificance, isMeaningful, bySeverity } from "../site-prof
 import { codeHeadingsIn, readSections, readDefinitions, readExceptions, textDigest } from "./sections.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { flatHas, mergedHits, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
-/** @import { DoctypeContext, Detection, Entity, EnactmentPattern } from "../docprofile/doctypes/index.mjs" */
+/** @import { DoctypeContext, Connection, Detection, Entity, EnactmentPattern } from "../docprofile/doctypes/index.mjs" */
 /** @import { EventHead } from "../site-profiles/index.mjs" */
 /** @import { Section, Definition, Exception, Locate, CodeHeadings } from "./sections.mjs" */
 /** @import { ReferencesState } from "./windows.mjs" */
@@ -153,6 +153,8 @@ import { flatHas, mergedHits, rawMergedHits, referenceBook, counted, spend } fro
  * @property {(ctx: DoctypeContext) => Detection} detect
  * @property {(ctx: DoctypeContext) => RegulationReading} parse
  * @property {(before: object | null | undefined, after: object | null | undefined) => RegulationAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
  */
 /**
  * One of the instrument's own facts, compared between two readings.
