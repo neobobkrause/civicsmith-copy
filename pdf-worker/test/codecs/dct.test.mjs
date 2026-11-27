@@ -25,12 +25,57 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { decodeBaselineJpeg, decodeBaselineJpegRows, readJpegHeader, colourTransformOf, DctRefusal } from "../../src/dctdecode.mjs";
+/** @import { ColourEvidence, DecodeOptions, HuffmanTable, HuffmanTables, JpegInfo } from "../../src/dctdecode.mjs" */
 
-const FIX = JSON.parse(readFileSync(new URL("../fixtures/dct-variants.json", import.meta.url), "utf8"));
+/** Every code a DctRefusal carries.
+ *  @typedef {"UNSUPPORTED_PROCESS" | "UNSUPPORTED_PRECISION" | "UNSUPPORTED_COMPONENTS" | "COMPONENT_MISMATCH" | "UNSUPPORTED_SAMPLING"
+ *    | "COLOR_TRANSFORM_CONFLICT" | "UNSUPPORTED_ROTATION" | "TRUNCATED" | "NOT_A_JPEG" | "CORRUPT_DATA" | "UNSUPPORTED_FRAME"} DctCode */
+/** A fixture libjpeg-turbo decodes, and its decode.
+ *  @typedef {Object} DecodedVariant
+ *  @property {string} name @property {number} rotate degrees clockwise @property {"ok"} expect
+ *  @property {string} mode Pillow's mode, "L" or "RGB" @property {number} width @property {number} height
+ *  @property {string} pillow_sha256 the digest of Pillow's samples @property {string} jpeg_b64 the file, base64 */
+/** A fixture the codec refuses.
+ *  @typedef {Object} RefusedVariant
+ *  @property {string} name @property {number} rotate @property {DctCode} expect the code it is refused with
+ *  @property {string} jpeg_b64 the file, base64 */
+/** @typedef {DecodedVariant | RefusedVariant} DctVariant */
+/** @typedef {Object} DctFixtures @property {string} provenance @property {DctVariant[]} variants */
+/** An edge fixture, every one decoded.
+ *  @typedef {Object} EdgeVariant
+ *  @property {string} name @property {string} mode @property {number} width @property {number} height
+ *  @property {string} pillow_sha256 @property {string} jpeg_b64 */
+/** The options a test asks of the decoders: R1's, and never R11's sink, which is the test's own.
+ *  @typedef {Object} AskedOptions
+ *  @property {number | undefined} [rotate] @property {number | null | undefined} [expectComps]
+ *  @property {number | null | undefined} [colorTransform] @property {undefined} [onRows] never asked */
+/** @typedef {Object} EdgeFixtures @property {string} provenance @property {EdgeVariant[]} variants */
+
+const FIX = /** @type {DctFixtures} decodes the recorded dct-variants.json, written by make-dct-fixtures.py */ (JSON.parse(readFileSync(new URL("../fixtures/dct-variants.json", import.meta.url), "utf8")));
 const V = FIX.variants;
-const jpeg = (name) => new Uint8Array(Buffer.from(V.find((v) => v.name === name).jpeg_b64, "base64"));
+/** The fixture named `name` (none is a TypeError, as reading it was). @param {string} name @returns {DctVariant} */
+function variant(name) {
+  const v = V.find((x) => x.name === name);
+  if (v === undefined) throw new TypeError(`dct-variants.json has no variant ${name}`);
+  return v;
+}
+/** The decoded fixture named `name` (none, or a refused one, is a broken fixture file). @param {string} name @returns {DecodedVariant} */
+function decodedVariant(name) {
+  const v = variant(name);
+  if (v.expect !== "ok") throw new TypeError(`dct-variants.json has no decoded variant ${name}`);
+  return v;
+}
+/** The fixtures libjpeg-turbo decodes, in the file's order. @type {DecodedVariant[]} */
+const DECODED = [];
+/** The fixtures the codec refuses, in the file's order. @type {RefusedVariant[]} */
+const REFUSED = [];
+for (const v of V) { if (v.expect === "ok") DECODED.push(v); else REFUSED.push(v); }
+/** @param {string} name @returns {Uint8Array} */
+const jpeg = (name) => new Uint8Array(Buffer.from(variant(name).jpeg_b64, "base64"));
+/** @param {Uint8Array} b @returns {string} */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
-const EDGES = JSON.parse(readFileSync(new URL("fixtures/dct-edges.json", import.meta.url), "utf8"));
+const EDGES = /** @type {EdgeFixtures} decodes the recorded dct-edges.json, written by make-dct-edges.py */ (JSON.parse(readFileSync(new URL("./fixtures/dct-edges.json", import.meta.url), "utf8")));
+/** @param {EdgeVariant} v @returns {Uint8Array} */
 const edge = (v) => new Uint8Array(Buffer.from(v.jpeg_b64, "base64"));
 
 /** Every code a DctRefusal carries, and the REFUSALS reason R1 says it answers as. */
@@ -41,39 +86,43 @@ const CODES = {
   NOT_A_JPEG: "DECODE_FAILED", CORRUPT_DATA: "DECODE_FAILED", UNSUPPORTED_FRAME: "DECODE_FAILED",
 };
 
-/** The refusal `fn` throws: always a DctRefusal, its code one of CODES. */
+/** The refusal `fn` throws: always a DctRefusal, its code one of CODES.
+ *  @param {() => unknown} fn @returns {DctRefusal} */
 function refusal(fn) {
   try { fn(); } catch (e) {
-    assert.ok(e instanceof DctRefusal, `a DctRefusal, not ${e && e.constructor && e.constructor.name}: ${e && e.message}`);
-    assert.ok(e.code in CODES, `code ${e.code} is one R1 names`);
-    assert.ok(e.detail && typeof e.detail === "object" && Object.keys(e.detail).length > 0, `${e.code}: a detail that says why`);
-    return e;
+    const err = e;
+    assert.ok(err instanceof DctRefusal, `a DctRefusal, not ${err instanceof Error ? err.name : typeof err}: ${err instanceof Error ? err.message : String(err)}`);
+    assert.ok(err.code in CODES, `code ${err.code} is one R1 names`);
+    assert.ok(err.detail && typeof err.detail === "object" && Object.keys(err.detail).length > 0, `${err.code}: a detail that says why`);
+    return err;
   }
   assert.fail("no refusal");
 }
 
-/** The byte offset of the segment for marker `m` (just past its length field). */
+/** The byte offset of the segment for marker `m` (just past its length field); a byte past the end reads as 0, as before.
+ *  @param {Uint8Array} d @param {number} m @returns {number} */
 function segmentAt(d, m) {
   for (let p = 2; p + 4 <= d.length;) {
     if (d[p] !== 0xff) { p++; continue; }
     if (d[p + 1] === m) return p + 4;
     if (d[p + 1] === 0xda) break;
-    p += 2 + ((d[p + 2] << 8) | d[p + 3]);
+    p += 2 + (((d[p + 2] ?? NaN) << 8) | (d[p + 3] ?? NaN));
   }
   throw new Error(`no marker 0x${m.toString(16)}`);
 }
+/** @param {string} name @param {number} m @param {number} off @param {number} value @returns {Uint8Array} */
 const patched = (name, m, off, value) => { const d = jpeg(name); d[segmentAt(d, m) + off] = value; return d; };
 
 test("R1 R6 the fixtures: libjpeg-turbo's decode of baseline and extended-sequential files, grey and colour", () => {
   assert.match(FIX.provenance, /libjpeg-turbo/);
-  const ok = V.filter((v) => v.expect === "ok");
+  const ok = DECODED;
   assert.equal(ok.length, 12);
   for (const v of ok) assert.match(v.pillow_sha256, /^[0-9a-f]{64}$/, v.name);
   assert.deepEqual([...new Set(ok.map((v) => v.rotate))].sort((a, b) => a - b), [0, 90, 180, 270]);
 });
 
 test("R1 R6 every decodable fixture: libjpeg's samples, to the bit, rotated as asked", () => {
-  for (const v of V.filter((x) => x.expect === "ok")) {
+  for (const v of DECODED) {
     const out = decodeBaselineJpeg(jpeg(v.name), { rotate: v.rotate });
     assert.deepEqual([out.width, out.height, out.comps], [v.width, v.height, v.mode === "L" ? 1 : 3], v.name);
     assert.equal(out.samples.length, v.width * v.height * out.comps, v.name);
@@ -82,8 +131,9 @@ test("R1 R6 every decodable fixture: libjpeg's samples, to the bit, rotated as a
 });
 
 test("R1 each sampling libjpeg upsamples fancily: 4:4:4, 4:2:2, 4:2:0 and h1v2, with restart intervals", () => {
+  /** @type {Set<string>} */
   const seen = new Set();
-  for (const v of V.filter((x) => x.expect === "ok" && x.mode === "RGB")) {
+  for (const v of DECODED.filter((x) => x.mode === "RGB")) {
     const out = decodeBaselineJpeg(jpeg(v.name), { rotate: v.rotate });
     seen.add(out.source.sampling);
     if (v.name.includes("restart")) assert.ok(out.source.restart > 0, v.name);
@@ -97,26 +147,29 @@ test("R1 readJpegHeader and colourTransformOf: libjpeg's colour-transform rule, 
   assert.deepEqual(colourTransformOf(h), { ycc: true, why: "JFIF" });
   const adobe = readJpegHeader(jpeg("rgb-adobe-no-transform"));
   assert.deepEqual(colourTransformOf(adobe), { ycc: false, why: "Adobe APP14 transform=0" });
+  /** @param {number[]} ids @returns {ColourEvidence} */
   const comps = (ids) => ({ frame: { comps: ids.map((id) => ({ id })) }, jfif: false, adobe: null });
   assert.deepEqual(colourTransformOf(comps([82, 71, 66])), { ycc: false, why: "component ids R,G,B" });
   assert.deepEqual(colourTransformOf(comps([1, 2, 3])), { ycc: true, why: localize("image-codecs.dctdecode.libjpeg_s_default_for_three", "libjpeg's default for three components") });
   assert.equal(colourTransformOf({ ...comps([82, 71, 66]), jfif: true }).ycc, true, "JFIF wins over the ids");
   assert.equal(colourTransformOf({ ...comps([1, 2, 3]), adobe: { transform: 1 } }).ycc, true);
   /* The rule is what decoding follows: the Adobe file decodes untransformed, and matches libjpeg. */
-  const v = V.find((x) => x.name === "rgb-adobe-no-transform");
+  const v = decodedVariant("rgb-adobe-no-transform");
   assert.equal(sha(decodeBaselineJpeg(jpeg(v.name)).samples), v.pillow_sha256);
 });
 
 test("R1 the fixtures' refusals: progressive, arithmetic-coded, four components, cut short", () => {
-  for (const v of V.filter((x) => x.expect !== "ok")) {
+  for (const v of REFUSED) {
     const e = refusal(() => decodeBaselineJpeg(jpeg(v.name), { rotate: v.rotate }));
     assert.equal(e.code, v.expect, v.name);
   }
 });
 
+/** A refusal as [label, bytes, options, code]. @typedef {[string, unknown, AskedOptions, DctCode]} RefusalCase */
 /** Every refusal no fixture carries, as [label, bytes, options, code]: each made
  *  from a fixture by the one change its label names. R1 and R11 are driven over
- *  the same table. */
+ *  the same table.
+ *  @returns {RefusalCase[]} */
 const OTHER_REFUSALS = () => [
   ["not a JPEG", Uint8Array.from([1, 2, 3, 4, 5]), {}, "NOT_A_JPEG"],
   ["not even bytes", "\xff\xd8\xff", {}, "NOT_A_JPEG"],
@@ -141,27 +194,29 @@ const OTHER_REFUSALS = () => [
 ];
 
 test("R1 every other refusal, each as the bytes require", () => {
+  /** @type {Array<[string, () => unknown, DctCode]>} */
   const cases = [
-    ...OTHER_REFUSALS().map(([label, d, opts, code]) => [label, () => decodeBaselineJpeg(d, opts), code]),
+    ...OTHER_REFUSALS().map(/** @param {RefusalCase} c @returns {[string, () => unknown, DctCode]} */ ([label, d, opts, code]) => [label, () => decodeBaselineJpeg(d, opts), code]),
     ["not even bytes, to the header", () => readJpegHeader("\xff\xd8\xff"), "NOT_A_JPEG"],
     ["a quarter turn that is not one", () => decodeBaselineJpeg(jpeg("grey-baseline"), { rotate: 45 }), "UNSUPPORTED_ROTATION"],
   ];
+  /** @type {Set<string>} */
   const seen = new Set();
   for (const [label, fn, code] of cases) {
-    const e = refusal(fn);
-    assert.equal(e.code, code, label);
-    seen.add(e.code);
+    const got = refusal(fn).code;
+    assert.equal(got, code, label);
+    seen.add(got);
   }
-  for (const v of V.filter((x) => x.expect !== "ok")) seen.add(v.expect);
+  for (const v of REFUSED) seen.add(v.expect);
   assert.deepEqual([...seen].sort(), Object.keys(CODES).sort(), "every code R1's refusals take is driven");
   /* A rotation that is not a quarter turn is judged after the data: damaged data answers as damaged. */
   assert.equal(refusal(() => decodeBaselineJpeg(jpeg("rgb-420-h2v2").subarray(0, 600), { rotate: 45 })).code, "TRUNCATED");
 });
 
 test("R1 the options agree with the file: expectComps and a matching /ColorTransform decode as without them", () => {
-  const v = V.find((x) => x.name === "rgb-444");
+  const v = decodedVariant("rgb-444");
   assert.equal(sha(decodeBaselineJpeg(jpeg(v.name), { expectComps: 3, colorTransform: 1 }).samples), v.pillow_sha256);
-  const g = V.find((x) => x.name === "grey-baseline");
+  const g = decodedVariant("grey-baseline");
   assert.equal(sha(decodeBaselineJpeg(jpeg(g.name), { expectComps: 1, colorTransform: 0 }).samples), g.pillow_sha256);
 });
 
@@ -172,21 +227,29 @@ test("R1 the options agree with the file: expectComps and a matching /ColorTrans
  * the last) and Annex F.2.2.3's decoder tables, so a change to any field's type,
  * length or content is a change this test sees. */
 const SHAPE = ["maxcode", "valptr", "mincode", "symbols", "fast", "FAST"];
+/** A field of a HuffmanTable that is an array. @typedef {"maxcode" | "valptr" | "mincode" | "symbols" | "fast"} TableArray */
+/** The table the test derives from the DHT bytes, each array as plain numbers.
+ *  @typedef {Object} ExpectedTable
+ *  @property {number[]} maxcode @property {number[]} valptr @property {number[]} mincode
+ *  @property {number[]} symbols @property {number[]} fast @property {number} FAST */
+/** A DHT table as the file holds it: [class, id, counts, symbols]. @typedef {[number, number, number[], number[]]} DhtTable */
 const FAST_BITS = 9;
 
-/** Every DHT table before the SOS, in order, as [class, id, counts, symbols]. */
+/** Every DHT table before the SOS, in order, as [class, id, counts, symbols]; a byte past the end reads as 0, as before.
+ *  @param {Uint8Array} d @returns {DhtTable[]} */
 function dhtTables(d) {
+  /** @type {DhtTable[]} */
   const out = [];
   for (let p = 2; p + 4 <= d.length;) {
     if (d[p] !== 0xff) { p++; continue; }
     const m = d[p + 1];
     if (m === 0xff) { p++; continue; }
     if (m === 0xda) break;
-    const len = (d[p + 2] << 8) | d[p + 3];
+    const len = ((d[p + 2] ?? NaN) << 8) | (d[p + 3] ?? NaN);
     if (m === 0xc4) {
       for (let q = p + 4; q < p + 2 + len;) {
         const counts = [...d.subarray(q + 1, q + 17)], total = counts.reduce((a, n) => a + n, 0);
-        out.push([d[q] >> 4, d[q] & 15, counts, [...d.subarray(q + 17, q + 17 + total)]]);
+        out.push([(d[q] ?? NaN) >> 4, (d[q] ?? NaN) & 15, counts, [...d.subarray(q + 17, q + 17 + total)]]);
         q += 17 + total;
       }
     }
@@ -195,15 +258,16 @@ function dhtTables(d) {
   return out;
 }
 
-/** The table R1's decoding reads, from a DHT table's counts and symbols. */
+/** The table R1's decoding reads, from a DHT table's counts and symbols (a count or symbol past the end reads as none, as before).
+ *  @param {number[]} counts @param {number[]} symbols @returns {ExpectedTable} */
 function expectedTable(counts, symbols) {
-  const maxcode = Array(18).fill(-1), valptr = Array(17).fill(0), mincode = Array(17).fill(0);
-  const fast = Array(1 << FAST_BITS).fill(-1);
+  const maxcode = Array.from({ length: 18 }, () => -1), valptr = Array.from({ length: 17 }, () => 0), mincode = Array.from({ length: 17 }, () => 0);
+  const fast = Array.from({ length: 1 << FAST_BITS }, () => -1);
   let code = 0, k = 0;
   for (let l = 1; l <= 16; l++) {
     valptr[l] = k; mincode[l] = code;
-    for (let i = 0; i < counts[l - 1]; i++, k++, code++) {
-      if (l <= FAST_BITS) for (let j = 0; j < 1 << (FAST_BITS - l); j++) fast[(code << (FAST_BITS - l)) | j] = (l << 8) | symbols[k];
+    for (let i = 0; i < (counts[l - 1] ?? NaN); i++, k++, code++) {
+      if (l <= FAST_BITS) for (let j = 0; j < 1 << (FAST_BITS - l); j++) fast[(code << (FAST_BITS - l)) | j] = (l << 8) | (symbols[k] ?? NaN);
     }
     if (counts[l - 1]) maxcode[l] = code - 1;
     code <<= 1;
@@ -212,33 +276,53 @@ function expectedTable(counts, symbols) {
   return { maxcode, valptr, mincode, symbols, fast, FAST: FAST_BITS };
 }
 
-/** One table of `readJpegHeader`'s answer, checked whole against the DHT's. */
+/** One table of `readJpegHeader`'s answer, checked whole against the DHT's.
+ *  @param {HuffmanTable | undefined} t @param {number[]} counts @param {number[]} symbols @param {string} what */
 function assertTable(t, counts, symbols, what) {
   assert.ok(t && typeof t === "object", `${what}: a table`);
   assert.deepEqual(Object.keys(t).sort(), [...SHAPE].sort(), `${what}: exactly R1's six fields`);
   const want = expectedTable(counts, symbols);
-  for (const [field, type, length] of [["maxcode", Int32Array, 18], ["valptr", Int32Array, 17], ["mincode", Int32Array, 17],
-    ["symbols", Uint8Array, symbols.length], ["fast", Int32Array, 1 << FAST_BITS]]) {
-    assert.equal(Object.getPrototypeOf(t[field]), type.prototype, `${what}.${field}: a ${type.name}`);
-    assert.equal(t[field].length, length, `${what}.${field}: length ${length}`);
-    assert.deepEqual([...t[field]], want[field], `${what}.${field}: its content`);
+  /** Each array field, its type's prototype, that type's name, and its length. @type {Array<[TableArray, object, string, number]>} */
+  const fields = [["maxcode", Int32Array.prototype, "Int32Array", 18], ["valptr", Int32Array.prototype, "Int32Array", 17], ["mincode", Int32Array.prototype, "Int32Array", 17],
+    ["symbols", Uint8Array.prototype, "Uint8Array", symbols.length], ["fast", Int32Array.prototype, "Int32Array", 1 << FAST_BITS]];
+  for (const [field, prototype, typeName, length] of fields) {
+    /** @type {ArrayLike<number>} */
+    const array = t[field];
+    assert.equal(Reflect.getPrototypeOf(array), prototype, `${what}.${field}: a ${typeName}`);
+    assert.equal(array.length, length, `${what}.${field}: length ${length}`);
+    assert.deepEqual(Array.from(array), want[field], `${what}.${field}: its content`);
   }
   assert.equal(t.FAST, FAST_BITS, `${what}.FAST: the fast table's width in bits`);
 }
 
-/** `hts` against every DHT of `d`: one table per class and id, the last definition winning, nothing else. */
+/** The table at id `i` of `list` (none is a TypeError, as reading it was). @param {HuffmanTable[]} list @param {number} i @returns {HuffmanTable} */
+function tableAt(list, i) {
+  const t = list[i];
+  if (t === undefined) throw new TypeError(`no table ${i}`);
+  return t;
+}
+
+/** `hts` against every DHT of `d`: one table per class and id, the last definition winning, nothing else.
+ *  @param {Uint8Array} d @param {string} what @returns {HuffmanTables} */
 function assertHuffmanTables(d, what) {
   const { hts } = readJpegHeader(d);
   assert.deepEqual(Object.keys(hts).sort(), ["ac", "dc"], `${what}: hts holds dc and ac`);
   assert.ok(Array.isArray(hts.dc) && Array.isArray(hts.ac), `${what}: each an array indexed by table id`);
-  const last = new Map();
+  /** @type {Map<string, [number[], number[]]>} */
+  const last = new Map([]);
   for (const [tc, th, counts, symbols] of dhtTables(d)) last.set(`${tc}:${th}`, [counts, symbols]);
   assert.ok(last.size > 0, `${what}: the file defines Huffman tables`);
-  for (const [cls, list] of [[0, hts.dc], [1, hts.ac]]) {
+  /** @type {Array<[number, HuffmanTable[]]>} */
+  const classes = [[0, hts.dc], [1, hts.ac]];
+  for (const [cls, list] of classes) {
     const ids = Object.keys(list).map(Number);
     assert.deepEqual(ids, [...last.keys()].filter((k) => k.startsWith(`${cls}:`)).map((k) => Number(k.slice(2))).sort((a, b) => a - b),
       `${what}: ${cls ? "ac" : "dc"} holds exactly the ids the file defines`);
-    for (const i of ids) assertTable(list[i], ...last.get(`${cls}:${i}`), `${what} ${cls ? "ac" : "dc"}[${i}]`);
+    for (const i of ids) {
+      const defined = last.get(`${cls}:${i}`);
+      if (defined === undefined) throw new TypeError(`${what}: no DHT defines ${cls}:${i}`);
+      assertTable(list[i], ...defined, `${what} ${cls ? "ac" : "dc"}[${i}]`);
+    }
   }
   return hts;
 }
@@ -254,6 +338,7 @@ test("R1 readJpegHeader's Huffman tables: hts.dc[i] and hts.ac[i], each {maxcode
    * DHT; codes longer than the fast table, which only maxcode, valptr and mincode
    * decode; a table redefined, the later one answered. The header ends at its SOS,
    * so these markers need no scan data. */
+  /** @param {...DhtTable} ts @returns {number[]} */
   const dht = (...ts) => {
     const body = ts.flatMap(([tc, th, counts, symbols]) => [(tc << 4) | th, ...counts, ...symbols]);
     return [0xff, 0xc4, (body.length + 2) >> 8, (body.length + 2) & 0xff, ...body];
@@ -265,14 +350,14 @@ test("R1 readJpegHeader's Huffman tables: hts.dc[i] and hts.ac[i], each {maxcode
     0xff, 0xd8,
     ...dht([0, 3, short, [7, 8, 9]], [1, 2, long, longSyms]),
     ...dht([0, 3, [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [5]]),
-    0xff, 0xdb, 0x00, 0x43, 0x00, ...Array(64).fill(1),
+    0xff, 0xdb, 0x00, 0x43, 0x00, ...Array.from({ length: 64 }, () => 1),
     0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x08, 0x00, 0x08, 0x01, 0x01, 0x11, 0x00,
     0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x32, 0x00, 0x3f, 0x00,
   ]);
   const hts = assertHuffmanTables(header, "constructed header");
   assert.deepEqual([Object.keys(hts.dc), Object.keys(hts.ac)], [["3"], ["2"]]);
-  assert.deepEqual([...hts.dc[3].symbols], [5], "the later DHT's dc[3]");
-  assert.equal(hts.ac[2].fast.filter((f) => f >= 0).length, (1 << 7) + (1 << 6) + (1 << 5) + (1 << 4) + (1 << 3) + (1 << 2) + (1 << 1) + 1,
+  assert.deepEqual([...tableAt(hts.dc, 3).symbols], [5], "the later DHT's dc[3]");
+  assert.equal(tableAt(hts.ac, 2).fast.filter((f) => f >= 0).length, (1 << 7) + (1 << 6) + (1 << 5) + (1 << 4) + (1 << 3) + (1 << 2) + (1 << 1) + 1,
     "codes of 2..9 bits fill the fast table; longer ones are left to maxcode, valptr and mincode");
 });
 
@@ -285,27 +370,32 @@ test("R1 readJpegHeader's Huffman tables: hts.dc[i] and hts.ac[i], each {maxcode
  * symbols, or counts that run past the DHT; it decodes past a bogus table the
  * scan does not use. */
 test("R1 a Huffman table libjpeg refuses is a CORRUPT_DATA refusal naming the table; one the scan does not use is no refusal", () => {
+  /** @param {{ [length: number]: number }} byLength @returns {number[]} */
   const counts = (byLength) => Array.from({ length: 16 }, (_, i) => byLength[i + 1] ?? 0);
+  /** @param {number[]} body @returns {number[]} */
   const dht = (body) => [0xff, 0xc4, (body.length + 2) >> 8, (body.length + 2) & 0xff, ...body];
+  /** @param {number} tc @param {number} th @param {{ [length: number]: number }} byLength @param {number[]} symbols @returns {number[]} */
   const table = (tc, th, byLength, symbols) => dht([(tc << 4) | th, ...counts(byLength), ...symbols]);
+  /** @param {string} name @param {...number[]} segs @returns {Uint8Array} */
   const spliced = (name, ...segs) => {
     const d = jpeg(name);
     let sos = 2;
     while (!(d[sos] === 0xff && d[sos + 1] === 0xda)) sos++;
     return Uint8Array.from([...d.subarray(0, sos), ...segs.flat(), ...d.subarray(sos)]);
   };
+  /** @type {Array<[string, Uint8Array, string | null]>} */
   const refused = [
     ["three codes of 1 bit (dc 0, used)", spliced("grey-baseline", table(0, 0, { 1: 3 }, [0, 1, 2])), "dc 0"],
     ["the all-ones code of 1 bit (dc 0, used)", spliced("grey-baseline", table(0, 0, { 1: 2 }, [0, 1])), "dc 0"],
     ["the all-ones code of 2 bits (dc 0, used)", spliced("grey-baseline", table(0, 0, { 1: 1, 2: 2 }, [0, 1, 2])), "dc 0"],
-    ["the all-ones code of 16 bits (ac 0, used)", spliced("grey-baseline", table(1, 0, { ...Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1, 1])), 16: 2 },
+    ["the all-ones code of 16 bits (ac 0, used)", spliced("grey-baseline", table(1, 0, { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1, 11: 1, 12: 1, 13: 1, 14: 1, 15: 1, 16: 2 },
       Array.from({ length: 17 }, (_, i) => i))), "ac 0"],
     ["a DC symbol of 16 (dc 0, used)", spliced("grey-baseline", table(0, 0, { 2: 3 }, [0, 16, 2])), "dc 0"],
     ["the colour file's chroma AC table (ac 1, used)", spliced("rgb-444", table(1, 1, { 1: 2 }, [0, 1])), "ac 1"],
     ["a used table redefined bogus after a good one", spliced("grey-baseline", table(0, 0, { 1: 1 }, [0]), table(0, 0, { 1: 3 }, [0, 1, 2])), "dc 0"],
     ["an id past 3, unused", spliced("grey-baseline", dht([0x04, ...counts({ 1: 1 }), 0])), null],
     ["a class past AC, unused", spliced("grey-baseline", dht([0x20, ...counts({ 1: 1 }), 0])), null],
-    ["257 symbols, unused", spliced("grey-baseline", dht([0x13, ...counts({ 8: 255, 9: 2 }), ...Array(257).fill(0)])), "ac 3"],
+    ["257 symbols, unused", spliced("grey-baseline", dht([0x13, ...counts({ 8: 255, 9: 2 }), ...Array.from({ length: 257 }, () => 0)])), "ac 3"],
     ["counts that run past the DHT, unused", spliced("grey-baseline", dht([0x13, ...counts({ 2: 5 }), 0, 0])), "ac 3"],
     ["a DHT cut inside its counts, unused", spliced("grey-baseline", dht([0x13, 0, 0, 0])), "ac 3"],
   ];
@@ -315,19 +405,27 @@ test("R1 a Huffman table libjpeg refuses is a CORRUPT_DATA refusal naming the ta
       assert.equal(e.code, "CORRUPT_DATA", label);
       if (named) assert.equal(e.detail.table, named, `${label}: the detail names the table`);
       else assert.ok(Number.isInteger(e.detail.id) && Number.isInteger(e.detail.class), `${label}: the detail names the class and id`);
-      assert.match(e.detail.note, /Huffman table/, label);
+      assert.match(String(e.detail.note), /Huffman table/, label);
     }
   }
   /* A bogus table the scan does not use: libjpeg decodes the picture, and so does R1. */
-  const g = V.find((x) => x.name === "grey-baseline"), c = V.find((x) => x.name === "rgb-444");
-  const [, , dc0Counts, dc0Symbols] = dhtTables(jpeg("grey-baseline")).find(([tc, th]) => tc === 0 && th === 0);
-  const dc0 = [Object.fromEntries(dc0Counts.map((n, i) => [i + 1, n])), dc0Symbols];
-  for (const [label, d, v] of [
+  const g = decodedVariant("grey-baseline"), c = decodedVariant("rgb-444");
+  const dc0Table = dhtTables(jpeg("grey-baseline")).find(([tc, th]) => tc === 0 && th === 0);
+  if (dc0Table === undefined) throw new TypeError("grey-baseline defines no dc 0");
+  const [, , dc0Counts, dc0Symbols] = dc0Table;
+  /** @type {{ [length: number]: number }} */
+  const dc0ByLength = {};
+  dc0Counts.forEach((n, i) => { dc0ByLength[i + 1] = n; });
+  /** @type {[{ [length: number]: number }, number[]]} */
+  const dc0 = [dc0ByLength, dc0Symbols];
+  /** @type {Array<[string, Uint8Array, DecodedVariant]>} */
+  const unused = [
     ["dc 3, unused", spliced("grey-baseline", table(0, 3, { 1: 3 }, [0, 1, 2])), g],
     ["ac 1, unused by a grey scan", spliced("grey-baseline", table(1, 1, { 1: 2 }, [0, 1])), g],
     ["dc 2 with a symbol of 16, unused", spliced("rgb-444", table(0, 2, { 2: 1 }, [16])), c],
     ["a used table bogus, then redefined good", spliced("grey-baseline", table(0, 0, { 1: 3 }, [0, 1, 2]), table(0, 0, ...dc0)), g],
-  ]) {
+  ];
+  for (const [label, d, v] of unused) {
     assert.equal(sha(decodeBaselineJpeg(d).samples), v.pillow_sha256, `${label}: libjpeg-turbo's picture`);
     const { hts } = readJpegHeader(d);
     for (const list of [hts.dc, hts.ac]) for (const t of Object.values(list)) assert.ok(t.fast.length === 512 && t.maxcode[17] === 0x7fffffff, label);
@@ -338,6 +436,7 @@ test("R1 a Huffman table libjpeg refuses is a CORRUPT_DATA refusal naming the ta
 
 test("R1 R6 the edge fixtures: libjpeg-turbo's samples one or two chroma samples wide, one row tall, ending inside an MCU row, restarting every block", () => {
   assert.match(EDGES.provenance, /^Pillow 12\.3\.0 \(libjpeg-turbo /);
+  /** @type {Set<string>} */
   const samplings = new Set();
   let narrow = 0, ragged = 0;
   for (const v of EDGES.variants) {
@@ -354,8 +453,13 @@ test("R1 R6 the edge fixtures: libjpeg-turbo's samples one or two chroma samples
   assert.ok(EDGES.variants.some((v) => v.name.includes("restart-1-block")));
 });
 
-/** R11's answer: the rows `onRows` was handed, checked for order as they come, and what it returned. */
+/** A strip `onRows` was handed, its rows copied. @typedef {Object} Strip @property {Uint8Array} rows @property {number} y0 @property {number} count */
+/** @typedef {Object} RowsAnswer @property {JpegInfo} info @property {Strip[]} calls @property {Buffer} joined */
+
+/** R11's answer: the rows `onRows` was handed, checked for order as they come, and what it returned.
+ *  @param {Uint8Array} d @param {AskedOptions} [opts] @returns {RowsAnswer} */
 function rowsOf(d, opts = {}) {
+  /** @type {Strip[]} */
   const calls = [];
   let next = 0;
   const info = decodeBaselineJpegRows(d, { ...opts, onRows(rows, y0, count) {
@@ -368,28 +472,31 @@ function rowsOf(d, opts = {}) {
   return { info, calls, joined: Buffer.concat(calls.map((c) => c.rows)) };
 }
 
-/** Every fixture R1 decodes, as [name, bytes]: the DCT variants and the edges. */
+/** Every fixture R1 decodes, as [name, bytes]: the DCT variants and the edges. @type {Array<[string, Uint8Array]>} */
 const DECODABLE = [
-  ...V.filter((v) => v.expect === "ok").map((v) => [v.name, jpeg(v.name)]),
-  ...EDGES.variants.map((v) => [`edges ${v.name}`, edge(v)]),
+  ...DECODED.map(/** @param {DecodedVariant} v @returns {[string, Uint8Array]} */ (v) => [v.name, jpeg(v.name)]),
+  ...EDGES.variants.map(/** @param {EdgeVariant} v @returns {[string, Uint8Array]} */ (v) => [`edges ${v.name}`, edge(v)]),
 ];
 
 test("R11 decodeBaselineJpegRows: its rows joined are R1's rotate-0 samples, byte for byte, for every fixture of every sampling (grey, 4:4:4, 4:2:2, 4:2:0, h1v2, restarts)", () => {
+  /** @type {Set<string>} */
   const samplings = new Set();
   for (const [name, d] of DECODABLE) {
     const whole = decodeBaselineJpeg(d, { rotate: 0 });
     const { info, calls, joined } = rowsOf(d);
     assert.deepEqual(info, { width: whole.width, height: whole.height, comps: whole.comps, source: whole.source }, `${name}: R1's answer without its samples`);
-    assert.equal(calls.at(-1).y0 + calls.at(-1).count, whole.height, `${name}: every row, and no more`);
+    const lastStrip = calls.at(-1);
+    if (lastStrip === undefined) throw new TypeError(`${name}: no strip handed over`);
+    assert.equal(lastStrip.y0 + lastStrip.count, whole.height, `${name}: every row, and no more`);
     for (const c of calls) assert.equal(c.rows.length, c.count * whole.width * whole.comps, `${name}: rows of width x comps bytes`);
     assert.ok(Buffer.from(whole.samples).equals(joined), `${name}: R1's samples, byte for byte`);
     samplings.add(whole.source.sampling);
   }
   for (const s of ["1x1", "1x1,1x1,1x1", "2x1,1x1,1x1", "2x2,1x1,1x1", "1x2,1x1,1x1"]) assert.ok(samplings.has(s), `sampling ${s}`);
   /* And so libjpeg-turbo's, wherever a fixture's digest is of the unrotated picture. */
-  for (const v of V.filter((x) => x.expect === "ok" && x.rotate === 0)) assert.equal(sha(rowsOf(jpeg(v.name)).joined), v.pillow_sha256, v.name);
+  for (const v of DECODED.filter((x) => x.rotate === 0)) assert.equal(sha(rowsOf(jpeg(v.name)).joined), v.pillow_sha256, v.name);
   /* The options agree with the file: the same rows as without them. */
-  assert.equal(sha(rowsOf(jpeg("rgb-444"), { expectComps: 3, colorTransform: 1 }).joined), V.find((x) => x.name === "rgb-444").pillow_sha256);
+  assert.equal(sha(rowsOf(jpeg("rgb-444"), { expectComps: 3, colorTransform: 1 }).joined), decodedVariant("rgb-444").pillow_sha256);
 });
 
 test("R11 one MCU row at a time: no strip holds more than an MCU row's output rows (8 x vmax), and a tall image is handed over in many strips", () => {
@@ -405,17 +512,23 @@ test("R11 one MCU row at a time: no strip holds more than an MCU row's output ro
 });
 
 test("R11 every R1 refusal is raised the same way: the same DctRefusal, code, message and detail (control: a baseline fixture decodes)", () => {
+  /** @param {string} label @param {unknown} d @param {AskedOptions} [opts] @returns {{ e: DctRefusal, handed: number }} */
   const same = (label, d, opts = {}) => {
-    let r1, r11, handed = 0;
+    /** @type {unknown} */ let r1;
+    /** @type {unknown} */ let r11;
+    let handed = 0;
     try { decodeBaselineJpeg(d, opts); } catch (e) { r1 = e; }
     try { decodeBaselineJpegRows(d, { ...opts, onRows: () => { handed++; } }); } catch (e) { r11 = e; }
-    assert.ok(r1, `${label}: R1 refuses`);
-    assert.ok(r11 instanceof DctRefusal, `${label}: R11 refuses with a DctRefusal`);
-    assert.deepEqual([r11.code, r11.message, r11.detail], [r1.code, r1.message, r1.detail], `${label}: as R1 does`);
-    return { e: r11, handed };
+    const first = r1, second = r11;
+    assert.ok(first, `${label}: R1 refuses`);
+    assert.ok(second instanceof DctRefusal, `${label}: R11 refuses with a DctRefusal`);
+    assert.deepEqual([second.code, second.message, second.detail],
+      first instanceof DctRefusal ? [first.code, first.message, first.detail] : [undefined, undefined, undefined], `${label}: as R1 does`);
+    return { e: second, handed };
   };
+  /** @type {Set<string>} */
   const codes = new Set();
-  for (const v of V.filter((x) => x.expect !== "ok")) codes.add(same(v.name, jpeg(v.name)).e.code);
+  for (const v of REFUSED) codes.add(same(v.name, jpeg(v.name)).e.code);
   for (const [label, d, opts] of OTHER_REFUSALS()) {
     const { e, handed } = same(label, d, opts);
     codes.add(e.code);
@@ -425,7 +538,7 @@ test("R11 every R1 refusal is raised the same way: the same DctRefusal, code, me
   assert.deepEqual([...codes].sort(), Object.keys(CODES).filter((c) => c !== "UNSUPPORTED_ROTATION").sort(),
     "every code R1 raises, but the rotation R11 never takes");
   /* The control: a baseline fixture decodes, its rows handed over. */
-  const g = V.find((x) => x.name === "grey-baseline");
+  const g = decodedVariant("grey-baseline");
   assert.equal(sha(rowsOf(jpeg(g.name)).joined), g.pillow_sha256);
   /* R11 takes no rotation: one asked of it is not read. */
   assert.equal(sha(rowsOf(jpeg(g.name), { rotate: 90 }).joined), g.pillow_sha256);
@@ -435,10 +548,12 @@ test("R11 data that runs out: the rows above the break are the picture's, and no
   const whole = decodeBaselineJpeg(jpeg("rgb-420-h2v2"));
   const rowBytes = whole.width * 3;
   for (const cut of [400, 600, 800, 1200]) {
+    /** @type {Uint8Array[]} */
     const got = [];
-    let e;
+    /** @type {unknown} */ let e;
     try { decodeBaselineJpegRows(jpeg("rgb-420-h2v2").subarray(0, cut), { onRows: (rows) => got.push(rows.slice()) }); } catch (x) { e = x; }
-    assert.ok(e instanceof DctRefusal && e.code === "TRUNCATED", `cut at ${cut}: refused TRUNCATED`);
+    const err = e;
+    assert.ok(err instanceof DctRefusal && err.code === "TRUNCATED", `cut at ${cut}: refused TRUNCATED`);
     const handed = Buffer.concat(got);
     assert.ok(handed.length < whole.samples.length, `cut at ${cut}: not the whole picture`);
     assert.equal(handed.length % rowBytes, 0);
@@ -456,13 +571,13 @@ test("R11 the strip's shape (K2737): rows a Uint8Array of count rows of width x 
     const whole = decodeBaselineJpeg(d, { rotate: 0 });
     const rowBytes = whole.width * whole.comps;
     decodeBaselineJpegRows(d, { onRows(rows, y0, count) {
-      assert.equal(Object.getPrototypeOf(rows), Uint8Array.prototype, `${name}: a Uint8Array`);
+      assert.equal(Reflect.getPrototypeOf(rows), Uint8Array.prototype, `${name}: a Uint8Array`);
       assert.equal(rows.length, count * rowBytes, `${name}: count rows of width x comps bytes`);
       assert.ok(Buffer.from(whole.samples.subarray(y0 * rowBytes, (y0 + count) * rowBytes)).equals(rows), `${name}: rows ${y0}..${y0 + count - 1} of R1's rotate-0 samples`);
     } });
   }
   /* A rotated fixture's strips are its unrotated frame's: y0 counts the stored rows. */
-  const v = V.find((x) => x.name === "rgb-420-rotate90");
+  const v = decodedVariant("rgb-420-rotate90");
   const h = readJpegHeader(jpeg(v.name)).frame;
   let last = 0;
   decodeBaselineJpegRows(jpeg(v.name), { onRows(rows, y0, count) { assert.equal(rows.length, count * h.width * 3); last = y0 + count; } });
