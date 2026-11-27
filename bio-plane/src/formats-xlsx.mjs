@@ -1391,6 +1391,7 @@ const TEXT_ENC = new TextEncoder();
 async function deflateText(s) {
   const cs = new CompressionStream("deflate-raw");
   const writing = (async () => { const w = cs.writable.getWriter(); await w.write(TEXT_ENC.encode(s)); await w.close(); })();
+  /** @type {Uint8Array[]} */
   const chunks = [];
   let size = 0;
   const reader = cs.readable.getReader();
@@ -1400,7 +1401,8 @@ async function deflateText(s) {
     chunks.push(value); size += value.length;
   }
   await writing;
-  if (chunks.length === 1) return chunks[0];
+  const only = chunks[0];
+  if (chunks.length === 1 && only) return only;
   const out = new Uint8Array(size);
   let at = 0;
   for (const c of chunks) { out.set(c, at); at += c.length; }
