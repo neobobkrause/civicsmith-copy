@@ -375,11 +375,12 @@ import {
  * @property {string} [title]
  */
 /**
- * A core part present but unreadable (R31), for `undetermined`.
+ * A core part present but unreadable (R31), for `undetermined`: `why` the core part's statement's own (null only
+ * where that statement carries none).
  * @typedef {Object} MetadataMarker
  * @property {"metadata_unreadable"} reason
  * @property {string} part
- * @property {string} why
+ * @property {string | null} why
  */
 /**
  * What `coreMetadata` answers.
@@ -388,10 +389,24 @@ import {
  * @property {MetadataMarker | null} marker
  */
 /**
- * What `coreMetadata` reads of the parts.
+ * A statement of the parts as `coreMetadata` reads it: the part it names and why it was not read.
+ * @typedef {Object} PartWhy
+ * @property {string} part
+ * @property {string | null} why
+ */
+/**
+ * What `coreMetadata` reads of the parts: an entry's statements, of its own kind `S`, each read for `part` and `why`.
+ * @template {PartWhy} [S=Undetermined]
  * @typedef {Object} MetadataSource
  * @property {any} core ooxml `readCoreProperties`' answer, or null (ooxml states no kind for it yet)
- * @property {Undetermined[]} undetermined
+ * @property {S[]} undetermined
+ */
+/**
+ * An ok text() answer as `withMetadata` reads it: its statements, of whatever kinds its entry states, and their count.
+ * @typedef {Object} StatedAnswer
+ * @property {true} ok
+ * @property {readonly object[]} undetermined
+ * @property {{undetermined: number}} counts
  */
 /**
  * What `withMetadata` carries onto an answer.
@@ -2151,7 +2166,8 @@ async function docxText(parts, opts) {
  *  its marker for `text().undetermined`; an ABSENT part yields none, because
  *  absence is normal OPC (ooxml R19). This states, never asserts an act (R24).
  *  Shared by the three OOXML entries — one builder, so they cannot drift.
- *  @param {MetadataSource | null | undefined} parts
+ *  @template {PartWhy} S
+ *  @param {MetadataSource<S> | null | undefined} parts
  *  @param {boolean} [withTitle]
  *  @returns {CoreMetadata} */
 export function coreMetadata(parts, withTitle = false) {
@@ -2173,9 +2189,10 @@ export function coreMetadata(parts, withTitle = false) {
 
 /** Carry `metadata` onto an ok text() result; a marker joins `undetermined`
  *  and its count.
- *  @template {{ok: true, undetermined: readonly Undetermined[], counts: {undetermined: number}}} T
+ *  @template {StatedAnswer} T
+ *  @template {PartWhy} S
  *  @param {T | ReadFailure} out
- *  @param {MetadataSource | null | undefined} parts
+ *  @param {MetadataSource<S> | null | undefined} parts
  *  @param {boolean} [withTitle]
  *  @returns {(T & MetadataCarried) | ReadFailure} */
 export function withMetadata(out, parts, withTitle = false) {
