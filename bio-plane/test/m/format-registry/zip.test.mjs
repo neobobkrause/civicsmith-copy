@@ -57,8 +57,8 @@ const CONTAINERS = [
     /** @type {[string, Uint8Array]} */
     const named = [`${("variant" in f ? f.variant : undefined) ?? f.flavour} (${f.partMap ?? "opc"})`,
       (f.partMap ?? "opc") === "odf"
-        ? ("mimetype" in f ? odfZip(f.mimetype) : missing("mimetype"))
-        : ("mainContentType" in f ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"))];
+        ? (f.mimetype !== undefined ? odfZip(f.mimetype) : missing("mimetype"))
+        : (f.mainContentType !== undefined ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"))];
     return named;
   }),
   ["html", enc("<!doctype html><html></html>")],
@@ -127,8 +127,8 @@ test("R28: an office or OpenDocument file never detects as zip, and the registry
     assert.ok(f);
     const variant = "variant" in f ? f.variant : undefined;
     const bytes = (f.partMap ?? "opc") === "odf"
-      ? ("mimetype" in f ? odfZip(f.mimetype) : missing("mimetype"))
-      : ("mainContentType" in f ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"));
+      ? (f.mimetype !== undefined ? odfZip(f.mimetype) : missing("mimetype"))
+      : (f.mainContentType !== undefined ? officeZip(f.mainContentType, f.conventionalMainPart) : missing("mainContentType"));
     assert.equal(zip.detect(bytes, null), null, variant ?? f.flavour);
     const r = now(detectFormat(bytes, "application/zip"));
     assert.equal(r.format, f.flavour, `${variant ?? f.flavour} wins over zip and over its declared type`);
@@ -174,6 +174,7 @@ test("R28: zip parts(bytes) is ooxml.listArchive(bytes)'s own result, unchanged;
   const listed = await zip.parts(PLAIN);
   assert.deepEqual(listed, await ooxml.listArchive(PLAIN));
   assert.equal(listed.ok, true);
+  if (!listed.entries) throw new Error("a plain archive listed no entries");
   assert.deepEqual(listed.entries.map((e) => e.name), ["minutes/2026-01.txt", "minutes/", "budget.csv"]);
   // and it is what the registry's detect→parts path reaches
   const reached = entryOf(now(detectFormat(PLAIN, null)).format);
