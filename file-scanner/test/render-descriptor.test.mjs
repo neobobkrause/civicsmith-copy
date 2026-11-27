@@ -14,24 +14,32 @@ import { buildFixture } from '../../bio-plane/test/corpus.mjs';
 import { officeInfo, plainPackage } from '../container/renderer.mjs';
 import { zipDirectory } from '../container/common.mjs';
 import { memoryBucket, putCapture, rendererImage, depsWith, post, rendererPresent } from './helpers.mjs';
+/** @import { Deps, RequestBody, Answer } from '../src/store.mjs' */
+/** @import { FileHandle, ZipEntry } from '../container/common.mjs' */
+
+/** @typedef {{ objects: Map<string, Uint8Array>, calls: [string, string][] }} TestBucket the in-memory bucket, as these tests read it: its objects and its recorded calls */
+/** @typedef {Answer & { clone: () => Answer }} CloneableAnswer the member's answer, which a test may also read a copy of */
+/** @typedef {'docx' | 'pptx' | 'odt'} GeneratedKind a kind of package these tests have the generators write */
 
 const skip = !rendererPresent && 'LibreOffice and Poppler are not installed';
+/** @param {Deps} deps @param {RequestBody} body @returns {Promise<CloneableAnswer>} */
 const call = (deps, body) => handle(post('/render', body), deps);
 const FIGURES = { entries: 10000, directory: 16 * 1024 * 1024 };
 
-/** Whether the package ends with a ZIP64 locator: the form the stand-in for 7.4.7 cannot load. */
+/** Whether the package ends with a ZIP64 locator: the form the stand-in for 7.4.7 cannot load. @param {Buffer} buf @returns {boolean} */
 const zip64 = (buf) => buf.readUInt32LE(buf.length - 42) === 0x07064b50;
 
+/** @returns {Promise<{ bucket: TestBucket, deps: Deps }>} */
 async function rendering() {
   const bucket = memoryBucket();
   const image = await rendererImage();
   return { bucket, deps: depsWith({ bucket, renderer: image.fetch }) };
 }
 
-/** A package of the generators for `kind`, built by their real code. */
+/** A package of the generators for `kind`, built by their real code. @param {GeneratedKind} kind @returns {Promise<Buffer>} */
 const generated = async (kind) => readFileSync((await buildFixture({ kind, size: 10, seed: 1 })).path);
 
-/** A Word document made by the real LibreOffice, a plain ZIP. */
+/** A Word document made by the real LibreOffice, a plain ZIP. @returns {Buffer} */
 function plainDocx() {
   const dir = mkdtempSync(join(process.env.TMPDIR, 'plain-'));
   writeFileSync(join(dir, 'w.txt'), 'A plain document\n');
@@ -39,7 +47,7 @@ function plainDocx() {
   return readFileSync(join(dir, 'w.docx'));
 }
 
-for (const kind of ['docx', 'pptx']) {
+for (const kind of /** @type {GeneratedKind[]} */ (['docx', 'pptx'])) {
   test(`R7 F-B14 a generated ${kind} (a ZIP64 package) is rendered by the 7.4.7 converter`, { skip }, async () => {
     const bytes = await generated(kind);
     assert.ok(zip64(bytes), `the generator's ${kind} is a ZIP64 package, the case that failed`);
@@ -62,16 +70,19 @@ test('R7 F-B14 a plain package is rendered as before', { skip }, async () => {
 
 test('R7 F-B14 the plain package holds the same entries, byte for byte once inflated, in the same order', async () => {
   const dir = mkdtempSync(join(process.env.TMPDIR || '/tmp', 'plain-'));
-  for (const kind of ['docx', 'pptx', 'odt']) {
+  for (const kind of /** @type {GeneratedKind[]} */ (['docx', 'pptx', 'odt'])) {
     const from = join(dir, `s.${kind}`);
     writeFileSync(from, await generated(kind));
+    /** @type {FileHandle} */
     const a = await open(from, 'r');
     const size = (await a.stat()).size;
     const info = await officeInfo(a, size, 'zip', FIGURES);
     assert.ok(await plainPackage(from, size, info.entries, join(dir, `p.${kind}`)), kind);
+    /** @type {FileHandle} */
     const b = await open(join(dir, `p.${kind}`), 'r');
     const plain = await zipDirectory(b, (await b.stat()).size, { maxEntries: 10000, maxBytes: 1 << 24 });
     assert.deepEqual(plain.entries.map((e) => e.name), info.entries.map((e) => e.name), `${kind}: the same entries in the same order`);
+    /** @param {FileHandle} fh @param {ZipEntry} e @returns {Promise<Buffer>} */
     const inflated = async (fh, e) => {
       const lh = Buffer.alloc(30);
       await fh.read(lh, 0, 30, e.at);
@@ -92,6 +103,7 @@ test('R7 F-B14 the plain package holds the same entries, byte for byte once infl
 test('R7 F-B14 the directory states a ZIP64 entry\'s real sizes and offset, not 0xFFFFFFFF', async () => {
   const from = join(mkdtempSync(join(process.env.TMPDIR || '/tmp', 'plain-')), 's.docx');
   writeFileSync(from, await generated('docx'));
+  /** @type {FileHandle} */
   const fh = await open(from, 'r');
   const d = await zipDirectory(fh, (await fh.stat()).size, { maxEntries: 10000, maxBytes: 1 << 24 });
   assert.ok(d.entries.length > 1);
@@ -105,6 +117,7 @@ test('R7 F-B14 a package whose values do not fit a plain ZIP is left as it is', 
   const dir = mkdtempSync(join(process.env.TMPDIR || '/tmp', 'plain-'));
   const from = join(dir, 's.docx');
   writeFileSync(from, await generated('docx'));
+  /** @type {FileHandle} */
   const fh = await open(from, 'r');
   const size = (await fh.stat()).size;
   const info = await officeInfo(fh, size, 'zip', FIGURES);

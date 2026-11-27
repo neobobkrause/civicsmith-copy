@@ -6,6 +6,102 @@
 import { validateDescriptor, normaliseFamily } from './descriptor.mjs';
 import { hostPart } from './net.mjs';
 import { localize } from '../../../bio-plane/src/setup-words/index.mjs';
+/** @import { Descriptor, ConfigEntry, Hosts, ModeRequired, TestProbe, ConfigValue, ConfigItem, Verdict } from './descriptor.mjs' */
+
+/**
+ * @typedef {Object} HandlingStatement a handling statement as the catalogue writes it: `Handling`, with `never_sends`
+ *   and `sub_processors` defaulted by descriptor()
+ * @property {boolean} on_own
+ * @property {string[] | 'not stated'} sends
+ * @property {readonly string[] | 'not stated'} [never_sends]
+ * @property {string} recipient
+ * @property {readonly string[] | 'not stated'} [sub_processors]
+ * @property {string} region
+ * @property {string} file_retention
+ * @property {string} result_retention
+ * @property {string} sample_sharing
+ */
+/**
+ * @typedef {Object} DescriptorStatement a descriptor as the catalogue writes it, before descriptor() completes it
+ * @property {string} provider_id
+ * @property {string} vendor
+ * @property {string} product
+ * @property {readonly string[]} kinds
+ * @property {string} transport
+ * @property {string} reach
+ * @property {Hosts} hosts
+ * @property {readonly string[]} engine_family
+ * @property {readonly string[]} [credentials] absent is none
+ * @property {readonly ConfigEntry[]} [config] absent is none
+ * @property {TestProbe} test_probe
+ * @property {HandlingStatement} handling
+ * @property {ModeRequired | null} [mode_required] absent is null
+ * @property {string | null} [mode_check] absent is null
+ * @property {string} licence_note
+ * @property {readonly string[]} source_urls
+ * @property {string} [read_on] absent is the catalogue's date
+ * @property {number} [max_bytes]
+ * @property {true} [template]
+ * @property {true} [host_from_spec]
+ * @property {true} [per_engine]
+ */
+/** @typedef {{provider_id: string, reason: string}} RefusedProvider a tool refused by name, with R19's code or NOT_OFFERED */
+/** @typedef {{provider_id: string, missing: string}} HeldProvider a tool held until its vendor states what is missing */
+/** @typedef {{ok: true, descriptor: Descriptor} | {ok: false, code: string, field?: string}} Resolution */
+/**
+ * @typedef {Object} TemplateConfig the administrator's statement completing a template (K2175), as the spec's `config`
+ *   carries it
+ * @property {ConfigValue} [engine_family]
+ * @property {{readonly [field: string]: ConfigItem}} [handling]
+ * @property {ConfigValue} [source_urls]
+ */
+/**
+ * @typedef {Object} TemplateResolution a template completed by the administrator's statement, before R19 checks it
+ * @property {string} provider_id
+ * @property {string} vendor
+ * @property {string} product
+ * @property {readonly string[]} kinds
+ * @property {string} transport
+ * @property {string} reach
+ * @property {string[]} hosts
+ * @property {ConfigValue | readonly string[] | undefined} engine_family as stated; R19 refuses one not a list
+ * @property {readonly string[]} credentials
+ * @property {readonly ConfigEntry[]} config
+ * @property {TestProbe} test_probe
+ * @property {object} handling the template's, with the administrator's statement over it
+ * @property {ModeRequired | null} mode_required
+ * @property {string | null} mode_check
+ * @property {string} licence_note
+ * @property {ConfigValue | readonly string[]} source_urls as stated
+ * @property {string} read_on
+ * @property {number} [max_bytes]
+ * @property {undefined} [template]
+ * @property {true} [host_from_spec]
+ * @property {true} [per_engine]
+ */
+/**
+ * @typedef {Object} SharedStatement the fields two of the catalogue's descriptors share (Sophos Intelix's scan and
+ *   sandbox)
+ * @property {string} vendor
+ * @property {string} product
+ * @property {string} transport
+ * @property {string} reach
+ * @property {Hosts} hosts
+ * @property {readonly string[]} engine_family
+ * @property {readonly string[]} credentials
+ * @property {readonly ConfigEntry[]} config
+ * @property {HandlingStatement} handling
+ * @property {ModeRequired | null} [mode_required]
+ * @property {string | null} [mode_check]
+ * @property {string} licence_note
+ * @property {readonly string[]} source_urls
+ * @property {string} [read_on]
+ * @property {number} [max_bytes]
+ * @property {true} [template]
+ * @property {true} [host_from_spec]
+ * @property {true} [per_engine]
+ */
+/** @typedef {{host?: string, config?: TemplateConfig}} TemplateSpec the parts of a tool spec a template is completed by */
 
 const READ_ON = '2026-10-07';
 const NEVER = Object.freeze(['file_name', 'member_identity', 'ip_address']);
@@ -16,6 +112,7 @@ const NO_FILE = localize('file-scanner.catalogue.no_file_is_sent', 'no file is s
 const WHERE_IT_RUNS = localize('file-scanner.catalogue.where_it_runs', 'where it runs');
 const ORG_LICENCE = localize('file-scanner.catalogue.the_organizations_own_licence', 'the organization\'s own licence');
 
+/** @param {DescriptorStatement} d @returns {Descriptor} the statement, completed and frozen */
 const descriptor = (d) => Object.freeze({
   mode_required: null, mode_check: null, credentials: [], read_on: READ_ON, ...d,
   config: Object.freeze((d.config || []).map((f) => Object.freeze(f === REGION
@@ -25,13 +122,16 @@ const descriptor = (d) => Object.freeze({
 
 // R19 (N777): the settings each adapter reads from the spec's `config`, by name, so a settings page asks each one; a
 // value that is not one text says its shape (`structured`, T38), so the page asks it field by field.
+/** @param {string} name @param {string} label @param {boolean} required @param {string} [structured] @returns {ConfigEntry} */
 const field = (name, label, required, structured) => ({ name, label, required, ...(structured ? { structured } : {}) });
 // R19 (T38; N791, K2239): the address an adapter needs that `hosts` does not give, and the region `hosts` is keyed by.
 // Both stand for the spec's own `host` and `region` (R21), which a settings page sends under these names.
+/** @param {string} label @returns {ConfigEntry} */
 const HOST = (label) => field('host', label, true);
 // Its label names the regions, filled from the descriptor's own `hosts` (descriptor(), below).
 const REGION = Object.freeze({ name: 'region', label: null, required: true });
 // A template's own statement (K2175): its engine family and its handling, both required, as the tool's maker states them.
+/** @param {string} host @returns {ConfigEntry[]} */
 const TEMPLATE_CONFIG = (host) => [
   HOST(host),
   field('engine_family', localize('file-scanner.catalogue.the_engines_the_tool_runs', 'The engines the tool runs, as its maker names them'), true, 'list'),
@@ -53,6 +153,7 @@ const MD_PRIVATE = Object.freeze({
 const MD_CHECK = localize('file-scanner.catalogue.metadefender_get_v4_apikey_before_each', 'GET /v4/apikey/ before each send: the key\'s licence is paid and private processing is on');
 const MD_URLS = ['https://www.opswat.com/docs/mdcloud/operation/private-scanning-with-metadefender-cloud-apis',
   'https://www.opswat.com/docs/mdcloud/metadefender-cloud-api-v4', 'https://www.opswat.com/legal/terms-of-service'];
+/** @type {SharedStatement} */
 const INTELIX = {
   vendor: 'Sophos Ltd', product: 'SophosLabs Intelix', transport: 'https', reach: 'public',
   hosts: { us: ['us.api.labs.sophos.com', 'api.labs.sophos.com'], de: ['de.api.labs.sophos.com', 'api.labs.sophos.com'],
@@ -66,7 +167,8 @@ const INTELIX = {
   source_urls: ['https://www.sophos.com/en-us/legal/product-privacy-information/sophoslabs-intelix'],
 };
 
-/** R20: the descriptors offered, frozen, keyed by `provider_id` in the catalogue's order. */
+/** R20: the descriptors offered, frozen, keyed by `provider_id` in the catalogue's order.
+ * @type {readonly Descriptor[]} */
 export const PROVIDERS = Object.freeze([
   // ── scan
   descriptor({ provider_id: 'scanii', vendor: 'Uva Software, LLC', product: 'Scanii', kinds: ['scan'],
@@ -264,62 +366,77 @@ export const PROVIDERS = Object.freeze([
     licence_note: localize('file-scanner.catalogue.https_webhook_the_organizations_own_endpoint', 'the organization\'s own endpoint'), source_urls: [] }),
 ]);
 
-/** R20: refused by name, with R19's code or NOT_OFFERED (DEC-168 S10–S12). */
-export const REFUSED_PROVIDERS = Object.freeze([
+/** R20: refused by name, with R19's code or NOT_OFFERED (DEC-168 S10–S12).
+ * @type {readonly RefusedProvider[]} */
+export const REFUSED_PROVIDERS = Object.freeze(/** @type {[string, string][]} */ ([
   ['virustotal-upload', 'PROVIDER_SHARES_SAMPLES'], ['jotti', 'PROVIDER_SHARES_SAMPLES'],
   ['hybrid-analysis', 'PROVIDER_SHARES_SAMPLES'], ['joe-sandbox-basic', 'PROVIDER_SHARES_SAMPLES'],
   ['urlscan-io', 'PROVIDER_SHARES_SAMPLES'], ['any-run', 'NOT_OFFERED'],
   ['virustotal-url-submit', 'ADDRESS_WOULD_LEAVE'], ['google-web-risk-lookup', 'ADDRESS_WOULD_LEAVE'],
   ['sophos-intelix-url', 'ADDRESS_WOULD_LEAVE'], ['metadefender-url', 'ADDRESS_WOULD_LEAVE'],
   ['cloudflare-url-scanner', 'NOT_OFFERED'], ['cloudflare-logpush', 'NOT_OFFERED'],
-].map(([provider_id, reason]) => Object.freeze({ provider_id, reason })));
+]).map(([provider_id, reason]) => Object.freeze({ provider_id, reason })));
 
-/** R20: held until the vendor states its handling (K1949). */
+/** R20: held until the vendor states its handling (K1949).
+ * @type {readonly HeldProvider[]} */
 export const HELD_PROVIDERS = Object.freeze(['trend-vision-one', 'votiro', 'checkpoint-threat-extraction']
   .map((provider_id) => Object.freeze({ provider_id, missing: 'HANDLING_NOT_STATED' })));
 
+/** @type {readonly string[]} the generic templates' ids */
 export const GENERIC = Object.freeze(PROVIDERS.filter((d) => d.template).map((d) => d.provider_id));
+/** @type {string} */
 export const CATALOGUE_READ_ON = READ_ON;
 
 const BY_ID = new Map(PROVIDERS.map((d) => [d.provider_id, d]));
+/** @param {string} id @returns {Descriptor | null} */
 export const providerById = (id) => BY_ID.get(id) || null;
 
 /** The descriptor a call works under: a template completed by the administrator's statement and the spec's host,
- *  validated by R19; any other descriptor as catalogued. `{ok:true, descriptor}` or `{ok:false, code, field?}`. */
+ *  validated by R19; any other descriptor as catalogued. `{ok:true, descriptor}` or `{ok:false, code, field?}`.
+ * @param {Descriptor} d @param {unknown} spec the call's tool spec (R21) @returns {Resolution} */
 export function resolveDescriptor(d, spec) {
   if (!d.template) return { ok: true, descriptor: d };
-  const config = (spec && spec.config) || {};
-  const host = spec && spec.host;
+  const given = /** @type {TemplateSpec | null | undefined} the spec's host and the administrator's statement */ (spec);
+  const config = (given && given.config) || {};
+  const host = given && given.host;
   // A statement that is not a list is left as given, so R19 refuses it by name rather than this throwing.
+  /** @param {ConfigValue | readonly string[] | undefined} v */
   const family = (v) => (Array.isArray(v) ? normaliseFamily(v) : v);
+  /** @type {TemplateResolution} */
   const resolved = { ...d, template: undefined, hosts: host ? [hostPart(host)] : [],
     engine_family: d.kinds.includes('scan') ? family(config.engine_family) : family(config.engine_family || d.engine_family),
     handling: { ...d.handling, ...(config.handling || {}) }, source_urls: config.source_urls || [] };
   delete resolved.template;
   resolved.host_from_spec = true;
   const v = validateDescriptor(resolved);
-  return v.ok ? { ok: true, descriptor: Object.freeze(resolved) } : v;
+  return v.ok ? { ok: true, descriptor: Object.freeze(/** @type {Descriptor} decoded: R19 found every field as it states */ (/** @type {unknown} */ (resolved))) } : v;
 }
 
-/** R31: a provider's engine family; `clamav`'s is `["clamav"]`; null for an id not offered. */
+/** R31: a provider's engine family; `clamav`'s is `["clamav"]`; null for an id not offered.
+ * @param {string} providerId @returns {string[] | null} */
 export function engineFamily(providerId) {
   if (providerId === 'clamav') return ['clamav'];
   const d = BY_ID.get(providerId);
   return d ? normaliseFamily(d.engine_family) : null;
 }
 
+/** @param {Verdict | null | undefined} v @returns {string[]} */
 function verdictFamily(v) {
-  if (!v || typeof v !== 'object' || typeof v.engine !== 'string' || !v.engine) return [];
+  if (!v || typeof v !== 'object') return [];
+  const engine = v.engine;
+  if (typeof engine !== 'string' || !engine) return [];
   const d = BY_ID.get(v.tool);
   // A per-engine tool's verdict, and a template's (whose engine is the administrator's statement), are their engine's.
-  if (v.tool === 'clamav' || !d || d.template || d.per_engine) return normaliseFamily([v.engine]);
+  if (v.tool === 'clamav' || !d || d.template || d.per_engine) return normaliseFamily([engine]);
   return normaliseFamily(d.engine_family);
 }
 
-/** R31: true exactly when two verdicts' engine families share no name. Pure; never throws. */
+/** R31: true exactly when two verdicts' engine families share no name. Pure; never throws.
+ * @param {unknown} a @param {unknown} b @returns {boolean} */
 export function differentEngine(a, b) {
   try {
-    const fa = verdictFamily(a), fb = verdictFamily(b);
+    // Each decoded as a verdict (the module's own terms); verdictFamily checks its engine before reading it.
+    const fa = verdictFamily(/** @type {Verdict | null | undefined} */ (a)), fb = verdictFamily(/** @type {Verdict | null | undefined} */ (b));
     return fa.length > 0 && fb.length > 0 && !fa.some((n) => fb.includes(n));
   } catch { return false; }
 }
@@ -327,5 +444,5 @@ export function differentEngine(a, b) {
 // Every offered descriptor passes R19 when the module loads; a catalogue that does not is a build fault.
 for (const d of PROVIDERS) {
   const v = validateDescriptor(d);
-  if (!v.ok) throw new Error(`catalogue: ${d.provider_id} fails R19 (${v.code}${v.field ? ` ${v.field}` : ''})`);
+  if (!v.ok) { const field = v.field; throw new Error(`catalogue: ${d.provider_id} fails R19 (${v.code}${field ? ` ${field}` : ''})`); }
 }

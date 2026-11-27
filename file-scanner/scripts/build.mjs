@@ -9,9 +9,10 @@ import { discoverMembers, writeMember } from "../../bio-plane/scripts/fleet-bund
 
 const member = discoverMembers().find((m) => m.name === "file-scanner");
 if (!member) throw new Error("file-scanner declares no fleet-member.json — it cannot be discovered");
-if (!member.bundle) throw new Error("file-scanner/fleet-member.json declares no `bundle` block");
+const bundle = member.bundle;
+if (!bundle) throw new Error("file-scanner/fleet-member.json declares no `bundle` block");
 
 const { built, manifest } = await writeMember(member);
-console.log(`file-scanner: built ${member.bundle.outfile} — ${built.bytes.length} B, sha256 ${built.sha256}`);
-console.log(`file-scanner: wrote ${member.bundle.manifest} — ${manifest.inputs.length} first-party input(s), `
+console.log(`file-scanner: built ${bundle.outfile} — ${built.bytes.length} B, sha256 ${built.sha256}`);
+console.log(`file-scanner: wrote ${bundle.manifest} — ${manifest.inputs.length} first-party input(s), `
   + `${manifest.vendoredInputs.length} vendored`);

@@ -9,6 +9,7 @@ import { boundOf, READ_BOUNDS } from '../../bio-plane/src/read-bounds.mjs';
 
 /** R15: the stores a request may name, as sheet-worker R11; and no plane op of its own. */
 export const NAMESPACES = Object.freeze(['bio', 'scratch']);
+/** @type {readonly string[]} */
 export const PLANE_OPS = Object.freeze([]);
 
 /** R16: the named bounds. */
@@ -43,18 +44,21 @@ export const SCAN_LIMITS = Object.freeze({
   zip_directory: boundOf('archive', 'directory'),
 });
 
-/** R16, R8: each read bound by its name, with the table row it is quoted from. */
-const READ_BOUND_ROWS = Object.freeze({
+/** @typedef {{ readonly [name: string]: readonly [string, string] }} BoundRows each read bound's name, with its table row's kind and name */
+/** R16, R8: each read bound by its name, with the table row it is quoted from.
+ * @type {BoundRows} */
+const READ_BOUND_ROW_LIST = {
   SCAN_MAX_BYTES: ['scan', 'max_bytes'], SCAN_TIME_MS: ['scan', 'time_ms'], SAFE_VIEW_PAGES_MAX: ['render', 'safe_view_pages'],
   SAFE_VIEW_BYTES_MAX: ['render', 'safe_view_bytes'], SCAN_MAX_SCANSIZE: ['archive', 'unpacked_bytes'],
   SCAN_MAX_FILES: ['archive', 'members'], SCAN_MAX_RECURSION: ['archive', 'depth'], SCAN_EMBEDDED_PE: ['scan', 'embedded_pe'],
   SCAN_HTML_NORMALIZE: ['scan', 'html_normalize'], SCAN_SCRIPT_NORMALIZE: ['scan', 'script_normalize'],
   SCAN_ZIP_TYPE_RCG: ['scan', 'zip_type_rcg'], SCAN_PARTITIONS: ['scan', 'partitions'], SCAN_ICONS_PE: ['scan', 'icons_pe'],
   SCAN_ZIP_DIRECTORY: ['archive', 'directory'],
-});
+};
+const READ_BOUND_ROWS = Object.freeze(READ_BOUND_ROW_LIST);
 const READ_BOUND_STATED = Object.freeze(Object.fromEntries(Object.entries(READ_BOUND_ROWS).map(([name, [kind, row]]) => {
   const value = boundOf(kind, row);
-  return [name, Object.freeze({ value, source: READ_BOUNDS[kind][row].alpha === value ? 'alpha' : 'standard' })];
+  return [name, Object.freeze({ value, source: READ_BOUNDS[kind]?.[row]?.alpha === value ? 'alpha' : 'standard' })];
 })));
 
 /** The configuration's `limits`, parsed; and its statement (installer R39). A test pins both to `wrangler.jsonc`. */
