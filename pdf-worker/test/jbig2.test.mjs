@@ -141,10 +141,10 @@ console.log("\n--- R20, R25, R26, R40: the scanned page, a symbol dictionary in 
   let black = 0;
   for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) black += 1 - (((png.samples[y * png.rowBytes + (x >> 3)] ?? NaN) >> (7 - (x & 7))) & 1);
   t("R25 R40 the black-pixel count is jbig2dec's", black, want.black);
-  const jb = r.jbig2 ?? {};
-  t("R25 the decoder names what it decoded", jb.decoded,
+  const jb = r.jbig2;
+  t("R25 the decoder names what it decoded", jb?.decoded,
     ["page information", "symbol dictionary, arithmetic", "text region, arithmetic"]);
-  t("R25 and the globals were read", [jb.global_segments, Number(jb.globals_bytes) > 0], [1, true]);
+  t("R25 and the globals were read", [jb?.global_segments, Number(jb?.globals_bytes) > 0], [1, true]);
 }
 
 console.log("\n--- R24, R25: 1-bit samples, /Decode and /ImageMask ---");
