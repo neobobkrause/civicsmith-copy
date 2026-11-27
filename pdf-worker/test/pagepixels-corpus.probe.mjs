@@ -53,6 +53,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const UA = "CivicOS/0.55.0 (+https://github.com/believeinoakland/bio; instance biosmoke7; acquire)";
 const CACHE = join(tmpdir(), "cpdf12-corpus");
 const WORK = mkdtempSync(join(tmpdir(), "cpdf12-"));
+/** @param {Uint8Array} b */
 const sha = (b) => createHash("sha256").update(b).digest("hex");
 const argv = new Set(process.argv.slice(2));
 
@@ -61,8 +62,18 @@ const argv = new Set(process.argv.slice(2));
 /** The ONLY provenances a fidelity figure may carry. A reading produced by the
  *  subject about itself is not on this list, and cannot be added by a flag. */
 const INDEPENDENT_DECODERS = new Set(["pillow+pypdf"]);
+/**
+ * @typedef {object} FidelityReading
+ * @property {string} label
+ * @property {string} provenance
+ * @property {string} tool
+ * @property {string} verdict
+ * @property {unknown} detail
+ */
+/** @type {FidelityReading[]} */
 const FIDELITY = [];
 
+/** @param {FidelityReading} reading */
 function recordFidelity({ label, provenance, tool, verdict, detail }) {
   if (!INDEPENDENT_DECODERS.has(provenance)) {
     throw new Error(
@@ -79,6 +90,10 @@ function recordFidelity({ label, provenance, tool, verdict, detail }) {
 
 /* ── the independent decoder ──────────────────────────────────────────────── */
 
+/**
+ * @typedef {{ ok: true, tool: string } | { ok: false, why: string | undefined }} PythonProbe
+ */
+/** @returns {PythonProbe} */
 function pythonProbe() {
   try {
     const out = execFileSync("python3", ["-c",
@@ -139,16 +154,29 @@ else:
 print(json.dumps(out))
 `;
 
+/**
+ * What VERIFY_PY, this probe's own script, prints: the probe's own channel.
+ * @typedef {object} VerifyOut
+ * @property {string} verdict
+ */
+/**
+ * @param {string} pdfPath
+ * @param {number} pageIdx
+ * @param {string} minePath
+ * @param {string} kind
+ * @returns {VerifyOut}
+ */
 function independentVerify(pdfPath, pageIdx, minePath, kind) {
   const script = join(WORK, "verify.py");
   writeFileSync(script, VERIFY_PY);
   const out = execFileSync("python3", [script, pdfPath, String(pageIdx), minePath, kind],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  return JSON.parse(out);
+  return /** @type {VerifyOut} */ (JSON.parse(out));
 }
 
 /* ── the corpus ───────────────────────────────────────────────────────────── */
 
+/** @param {string} url */
 async function fetchBytes(url) {
   const r = await fetch(url, { headers: { "user-agent": UA }, redirect: "follow" });
   if (!r.ok) throw new Error(`${r.status} ${url}`);
@@ -159,8 +187,26 @@ async function fetchBytes(url) {
  *  matters, which is where the scanned class actually lives, plus the two
  *  image-only documents CPDF-5 already identified by name so the census can be
  *  compared with a measurement that exists. */
+/**
+ * @typedef {object} Wanted
+ * @property {string} id
+ * @property {string} url
+ */
+/**
+ * @typedef {object} CorpusDoc
+ * @property {string} id
+ * @property {string} url
+ * @property {string} path
+ * @property {Uint8Array} bytes
+ * @property {number} size
+ */
+/**
+ * @param {number} limit
+ * @returns {Promise<CorpusDoc[]>}
+ */
 async function buildCorpus(limit) {
   mkdirSync(CACHE, { recursive: true });
+  /** @type {Wanted[]} */
   const wanted = [
     { id: "legistar-attach-15721260", url: "https://oakland.legistar.com/View.ashx?M=F&ID=15721260&GUID=8F04A287-4A49-44DC-83B7-29FAD97140C2" },
     { id: "budget-2pager", url: "https://cao-94612.s3.us-west-2.amazonaws.com/documents/v1-fy25-27-2-pager-oakland-budget-basics-fy-3.pdf" },
@@ -187,6 +233,7 @@ async function buildCorpus(limit) {
     console.log(`  ! Legistar matter listing unavailable (${e.message}); census runs on the named documents only`);
   }
 
+  /** @type {CorpusDoc[]} */
   const docs = [];
   for (const w of wanted) {
     const path = join(CACHE, `${w.id}.pdf`);
@@ -202,7 +249,38 @@ async function buildCorpus(limit) {
 
 /* ── the census ───────────────────────────────────────────────────────────── */
 
+/**
+ * @typedef {object} PageRowUnreadable
+ * @property {number} page
+ * @property {true} unreadable
+ */
+/**
+ * @typedef {object} PageRowRead
+ * @property {number} page
+ * @property {never} [unreadable]
+ * @property {boolean} hasText
+ * @property {boolean} hasVector
+ * @property {number} images
+ * @property {string[]} filters
+ * @property {number} rotate
+ * @property {boolean} full
+ */
+/** @typedef {PageRowUnreadable | PageRowRead} PageRow */
+/**
+ * @typedef {object} CensusRow
+ * @property {string} id
+ * @property {number} pages
+ * @property {true} [unreadable]
+ * @property {number} [size]
+ * @property {boolean} [encrypted]
+ * @property {PageRow[]} [per]
+ */
+/**
+ * @param {CorpusDoc[]} docs
+ * @returns {Promise<CensusRow[]>}
+ */
 async function census(docs) {
+  /** @type {CensusRow[]} */
   const rows = [];
   for (const d of docs) {
     let doc;
@@ -210,6 +288,7 @@ async function census(docs) {
     if (!doc) { rows.push({ id: d.id, pages: 0, unreadable: true }); continue; }
     const enc = doc.isEncrypted();
     const pages = doc.pageCount;
+    /** @type {PageRow[]} */
     const per = [];
     for (let p = 0; p < pages; p++) {
       const a = await analyzePage(doc, p);
@@ -229,9 +308,12 @@ async function census(docs) {
   return rows;
 }
 
+/** @param {CensusRow[]} rows */
 function reportCensus(rows) {
   let pages = 0, imageOnly = 0, singleImage = 0, multi = 0, textPages = 0, vectorOnly = 0;
+  /** @type {Map<string, number>} */
   const filterTally = new Map();
+  /** @type {Map<string, number>} */
   const rotTally = new Map();
   for (const r of rows) {
     for (const p of r.per || []) {
@@ -268,6 +350,10 @@ function reportCensus(rows) {
 
 /* ── the rendering + fidelity arm ─────────────────────────────────────────── */
 
+/**
+ * @param {CorpusDoc[]} docs
+ * @param {PythonProbe} py
+ */
 async function verifyRendering(docs, py) {
   console.log(`\nRENDER + INDEPENDENT VERIFICATION`);
   if (!py.ok) {
@@ -278,6 +364,7 @@ async function verifyRendering(docs, py) {
   console.log(`  independent decoder: ${py.tool}`);
 
   let checked = 0, exact = 0, differ = 0, refused = 0;
+  /** @type {Map<string, number>} */
   const refusalTally = new Map();
   for (const d of docs) {
     const doc = await loadPdf(d.bytes);
@@ -332,6 +419,7 @@ function armSelfcheck() {
   }
 }
 
+/** @param {PythonProbe} py */
 async function armBlank(py) {
   console.log(`\nCONTROL ARM — a blank page must render as blank, and must be SEEN to be blank`);
   /* A minimal one-page PDF whose only image is an all-white 64x64 bilevel raw
@@ -342,7 +430,7 @@ async function armBlank(py) {
   const white = new Uint8Array(rowBytes * h).fill(0x00);   // 0 = black in DeviceGray
   const ink = new Uint8Array(rowBytes * h).fill(0x00);
   ink.fill(0xff, 0, rowBytes * 8);                          // 8 rows of white on black
-  const mk = (samples) => buildTinyPdf(samples, w, h, rowBytes);
+  const mk = (/** @type {Uint8Array} */ samples) => buildTinyPdf(samples, w, h, rowBytes);
   const rBlank = await renderPageToPixels(mk(white), 0);
   const rInk = await renderPageToPixels(mk(ink), 0);
   if (!rBlank.ok || !rInk.ok) {
@@ -357,6 +445,12 @@ async function armBlank(py) {
 
 /** The smallest PDF that carries one raw-sample bilevel image, written by hand
  *  so the arm depends on no fixture file and no writer library. */
+/**
+ * @param {Uint8Array} samples
+ * @param {number} w
+ * @param {number} h
+ * @param {number} rowBytes
+ */
 function buildTinyPdf(samples, w, h, rowBytes) {
   const enc = new TextEncoder();
   const head = `%PDF-1.4
@@ -381,6 +475,7 @@ trailer << /Root 1 0 R >>
 
 /* ── workerd ──────────────────────────────────────────────────────────────── */
 
+/** @param {CorpusDoc[]} docs */
 async function armWorkerd(docs) {
   console.log(`\nWORKERD — does the renderer run in the runtime the placement question is about?`);
   let Miniflare;
@@ -446,6 +541,7 @@ async function armWorkerd(docs) {
 
 /* ── end to end: pixels into OCR ──────────────────────────────────────────── */
 
+/** @param {CorpusDoc[]} docs */
 async function armOcr(docs) {
   console.log(`\nEND TO END — pagepixels' pixels into an OCR engine, scored against CPDF-9's ground truth`);
   const target = docs.find((d) => d.id === "legistar-attach-15721260");
@@ -471,9 +567,11 @@ const { data } = await w.recognize(process.argv[2]);
 await w.terminate();
 process.stdout.write(JSON.stringify({ text: data.text, confidence: data.confidence }));
 `);
+  /** What run.mjs, this probe's own script, prints: the probe's own channel.
+   * @type {{ text: string, confidence: number }} */
   let out;
   try {
-    out = JSON.parse(execFileSync(process.execPath, [runner, img], { cwd: dir, encoding: "utf8", maxBuffer: 64e6, timeout: 600000 }));
+    out = /** @type {{ text: string, confidence: number }} */ (JSON.parse(execFileSync(process.execPath, [runner, img], { cwd: dir, encoding: "utf8", maxBuffer: 64e6, timeout: 600000 })));
   } catch (e) {
     console.log(`  NO NUMBER: the engine did not run (${String(e.message).split("\n")[0]})`);
     return null;
@@ -497,8 +595,12 @@ process.stdout.write(JSON.stringify({ text: data.text, confidence: data.confiden
   return s;
 }
 
-const norm = (x) => x.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
+const norm = (/** @type {string} */ x) => x.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim();
 
+/**
+ * @param {string} gtRaw
+ * @param {string} ocrRaw
+ */
 function score(gtRaw, ocrRaw) {
   const a = norm(gtRaw), b = norm(ocrRaw);
   const n = a.length, m = b.length;
@@ -544,11 +646,12 @@ if (!argv.has("--corpus-only")) verified = await verifyRendering(docs, py);
 if (argv.has("--workerd")) await armWorkerd(docs);
 if (argv.has("--ocr")) await armOcr(docs);
 
-let armsOk = true;
-if (argv.has("--arm-selfcheck")) armsOk = armSelfcheck() && armsOk;
-if (argv.has("--arm-blank")) armsOk = (await armBlank(py)) && armsOk;
+const selfcheckOk = argv.has("--arm-selfcheck") ? armSelfcheck() : true;
+const blankOk = argv.has("--arm-blank") ? await armBlank(py) : true;
+const armsOk = selfcheckOk && blankOk;
 
 console.log(`\nFIDELITY LEDGER — ${FIDELITY.length} reading(s), every one gated on independent provenance`);
+/** @type {Map<string, number>} */
 const byVerdict = new Map();
 for (const f of FIDELITY) byVerdict.set(f.verdict, (byVerdict.get(f.verdict) || 0) + 1);
 for (const [v, n] of byVerdict) console.log(`  ${String(n).padStart(5)}  ${v}`);

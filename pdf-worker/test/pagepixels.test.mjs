@@ -31,6 +31,7 @@ import { generate } from "../../bio-plane/test/imggen.mjs";
 import { pixelRefusal, pageRefusal, renderedPage } from "./pdf-pixels-fixtures.mjs";
 import { cropImage } from "../src/imagecrop.mjs";
 import { makePdf, onePage, content, image, readPng, turn, hex, deflateSync, runner } from "./make-pdf.mjs";
+/** @import { PdfBody } from "./make-pdf.mjs" */
 
 const { Miniflare } = await (async () => {
   try { return await import("miniflare"); } catch { /* fall through */ }
@@ -38,12 +39,18 @@ const { Miniflare } = await (async () => {
   return await import(pathToFileURL(createRequire(planePkg).resolve("miniflare")).href);
 })();
 
+/** @param {string} p */
 const F = (p) => new Uint8Array(readFileSync(fileURLToPath(new URL(p, import.meta.url))));
 const { t, finish } = runner("pagepixels");
 
 /* Every answer is kept, so R39 can be checked over all of them at the end. */
 const answers = [];
-const render = async (...a) => { const r = await renderPageToPixels(...a); answers.push(r); return r; };
+/**
+ * @param {unknown} bytes
+ * @param {number} page
+ * @param {object} [opts]
+ */
+const render = async (bytes, page, opts) => { const r = await renderPageToPixels(bytes, page, opts); answers.push(r); return r; };
 const fields = (r, ...k) => k.map((x) => r[x]);
 
 const IND_UNROTATED_SHA = "e54f07066bcf32a7b105cf43bb331e29c95dafa05e1cf0176c2164811f3417ef";
@@ -65,10 +72,15 @@ const CCITT = await (async () => {
 })();
 
 /* A page painting one image named /Im at the full page box. */
+/**
+ * @param {PdfBody} img
+ * @param {{ w?: number, h?: number, pageExtra?: string, pagesExtra?: string, ops?: string }} [opts]
+ */
 const imagePage = (img, { w = 8, h = 8, pageExtra = "", pagesExtra = "", ops } = {}) => onePage({
   box: [0, 0, w, h], res: "/XObject << /Im 5 0 R >>", pageExtra, pagesExtra,
   ops: ops ?? `q ${w} 0 0 ${h} 0 0 cm /Im Do Q`, more: [img],
 });
+/** @param {number} w @param {number} h */
 const gray8 = (w, h) => Uint8Array.from({ length: w * h }, (_, i) => (i * 37 + 11) & 0xff);
 const G = gray8(3, 2);
 const GREY_IMG = image(3, 2, "/ColorSpace /DeviceGray /BitsPerComponent 8", G);
@@ -114,6 +126,7 @@ console.log("\n--- R16: a page that shows text ---");
 {
   const FONT = "/Font << /F1 6 0 R >>";
   const helv = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+  /** @param {string} ops @param {string} [res] */
   const withOps = (ops, res = "") => onePage({ box: [0, 0, 3, 2], res: `/XObject << /Im 5 0 R ${res} >> ${FONT}`,
     ops: `q 3 0 0 2 0 0 cm /Im Do Q ${ops}`, more: [GREY_IMG, helv, content("BT /F1 1 Tf (x) Tj ET").replace("<<", "<< /Type /XObject /Subtype /Form /BBox [0 0 3 2] /Resources << /Font << /F1 6 0 R >> >>")] });
   for (const [label, ops] of [["Tj", "BT /F1 1 Tf (a) Tj ET"], ["TJ", "BT /F1 1 Tf [(a) 5 (b)] TJ ET"],
@@ -139,7 +152,7 @@ console.log("\n--- R16: a page that shows text ---");
 
 console.log("\n--- R17: no image on the page ---");
 {
-  const page = (ops) => onePage({ ops, box: [0, 0, 8, 8] });
+  const page = (/** @type {string} */ ops) => onePage({ ops, box: [0, 0, 8, 8] });
   for (const [label, ops, reason] of [
     ["nothing painted", "q Q", "NO_IMAGE_ON_PAGE"], ["a clip alone", "0 0 8 8 re W n", "NO_IMAGE_ON_PAGE"],
     ["a stroke", "0 0 m 8 8 l S", "NOT_IMAGE_ONLY"], ["a fill", "0 0 8 8 re f", "NOT_IMAGE_ONLY"],
@@ -165,7 +178,7 @@ console.log("\n--- R17, R18: images are counted from what the page paints (K27) 
 {
   const A = image(3, 2, "/ColorSpace /DeviceGray /BitsPerComponent 8", G);
   const B = image(3, 2, "/ColorSpace /DeviceGray /BitsPerComponent 8", G.map((v) => 255 - v));
-  const shared = (ops) => makePdf([
+  const shared = (/** @type {string} */ ops) => makePdf([
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 /Resources << /XObject << /A 5 0 R /B 6 0 R /Fm 7 0 R >> >> >>",
     "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 3 2] /Contents 4 0 R >>",
@@ -220,6 +233,7 @@ console.log("\n--- R20, R23, R40: the scanned CCITT page against an independent 
   /* The rotation apart from the decode: turned back by an independent walk, the
      picture matches the independent decoder's un-rotated one. */
   const rb = png.rowBytes, W0 = 3300, H0 = 2550, rb0 = Math.ceil(W0 / 8);
+  /** @param {number} x @param {number} y */
   const bit = (x, y) => (png.samples[y * rb + (x >> 3)] >> (7 - (x & 7))) & 1;
   const back = new Uint8Array(rb0 * H0);
   let white = 0;
@@ -233,6 +247,7 @@ console.log("\n--- R20, R23, R40: the scanned CCITT page against an independent 
 
 console.log("\n--- R23: the CCITT filter chain, K and truncation ---");
 {
+  /** @param {string} filter @param {string} parms @param {Uint8Array} data */
   const ccittPage = (filter, parms, data) => imagePage(image(3300, 2550,
     `/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter ${filter} /DecodeParms ${parms}`, data),
     { w: 792, h: 612, pageExtra: "/Rotate 270" });
@@ -261,7 +276,7 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
      so the PNG holds the samples too; MuPDF 1.28.2 renders an all-0 mask black
      and an all-0 mask with /Decode [1 0] white (checked 2026-09-26, D-622). */
   const bits = Uint8Array.from([0b10110011, 0b01000000, 0b00001111, 0b11000000, 0b11111111, 0b00000000]);
-  const pad = (u) => Uint8Array.from(u, (b, i) => (i % 2 ? b & 0b11000000 : b));
+  const pad = (/** @type {Uint8Array} */ u) => Uint8Array.from(u, (b, i) => (i % 2 ? b & 0b11000000 : b));
   for (const [label, extra, want] of [
     ["1-bpc grey", "/ColorSpace /DeviceGray /BitsPerComponent 1", pad(bits)],
     ["1-bpc grey with the default /Decode [0 1]", "/ColorSpace /DeviceGray /BitsPerComponent 1 /Decode [0 1]", pad(bits)],
@@ -316,6 +331,7 @@ console.log("\n--- R24: raw samples, no filter or FlateDecode ---");
 
 console.log("\n--- R21: the page's own /Rotate, inherited, never the caller's ---");
 {
+  /** @param {number | null} pagesRot @param {number | null} leafRot */
   const tree = (pagesRot, leafRot) => makePdf([
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [3 0 R] /Count 1 ${pagesRot == null ? "" : `/Rotate ${pagesRot}`} >>`,
@@ -324,7 +340,7 @@ console.log("\n--- R21: the page's own /Rotate, inherited, never the caller's --
     content("q 3 0 0 2 0 0 cm /Im Do Q"),
     GREY_IMG,
   ]);
-  const want = (deg) => {
+  const want = (/** @type {number} */ deg) => {
     const tr = turn((x, y) => G[y * 3 + x], 3, 2, deg);
     const out = [];
     for (let Y = 0; Y < tr.H; Y++) for (let X = 0; X < tr.W; X++) out.push(tr.at(X, Y));
