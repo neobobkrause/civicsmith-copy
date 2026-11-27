@@ -43,7 +43,7 @@ import { buildZip } from "./zip.mjs";
  * @property {string | Uint8Array} name
  * @property {string | Uint8Array} [data]
  * @property {number} [method]
- * @property {string} [encrypted]
+ * @property {"directory" | "traditional" | "strong" | "aes"} [encrypted]
  * @property {boolean} [dataDescriptor]
  * @property {boolean} [zip64]
  * @property {HeaderLie} [local]
@@ -296,7 +296,7 @@ test("R27 listArchive: names, encryption, ZIP64 and the totals", async () => {
   const badUnsafe = await listArchive(makeZip([{ name: Uint8Array.of(0x2e, 0x2e, 0x2f, 0xff), data: "x", utf8: true }]));
   assert.equal(rowOf(badUnsafe, 0).path_unsafe, true);
   // encrypted when bit 0, 6 or 13 is set, or the method is 99
-  for (const kind of ["traditional", "strong", "aes", "directory"]) {
+  for (const kind of /** @type {const} */ (["traditional", "strong", "aes", "directory"])) {
     const row = rowOf(await listArchive(makeZip([{ name: "e", data: "secret", encrypted: kind }])), 0);
     assert.equal(row.encrypted, true, kind);
     assert.equal(row.method, kind === "aes" ? 99 : 8);
@@ -475,7 +475,7 @@ test("R28 each row's verdict is the first that applies; a duplicate or unsafe na
   assert.equal(await one({ name: "d/", data: "", method: 0 }), "directory");
   assert.equal(await one({ name: "d/", data: "x", encrypted: "traditional", method: 12 }), "directory");
   assert.equal(rowOf(await listArchive(asUnix(makeZip([{ name: "l", data: "t", encrypted: "aes" }]), 0, 0o120777)), 0).verdict, "symlink");
-  for (const kind of ["traditional", "strong", "aes", "directory"]) {
+  for (const kind of /** @type {const} */ (["traditional", "strong", "aes", "directory"])) {
     assert.equal(await one({ name: "e", data: "x", encrypted: kind, method: 12 }), "MEMBER_ENCRYPTED", kind);
   }
   for (const method of [1, 9, 12, 14, 93, 95]) {

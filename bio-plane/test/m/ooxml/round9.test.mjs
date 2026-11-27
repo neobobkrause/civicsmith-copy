@@ -162,7 +162,7 @@ test("R5 an encrypted member (ZipCrypto bit 0, 6 or 13, or AES method 99) is sta
   const aes = buildZip([{ name: "a.xml", data: "payload", cd: { method: 99 } }]);
   assert.deepEqual(await readPart(aes, readContainer(aes), "a.xml"), { ok: false, why: "MEMBER_ENCRYPTED", name: "a.xml" });
   // the writers of test-support: the traditional, strong and AES forms
-  for (const encrypted of ["traditional", "strong", "aes"]) {
+  for (const encrypted of /** @type {const} */ (["traditional", "strong", "aes"])) {
     const z = makeZip([{ name: "e.xml", data: "payload", encrypted }]);
     assert.deepEqual(await readPart(z, readContainer(z), "e.xml"), { ok: false, why: "MEMBER_ENCRYPTED", name: "e.xml" }, encrypted);
   }
