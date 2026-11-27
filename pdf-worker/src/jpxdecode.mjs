@@ -1153,7 +1153,7 @@ class BandRows {
     const { x, B, irr, w, buf } = this;
     this.strip = s;
     this.top = Math.max(0, (this.s0 + s) * this.g - B.y0);
-    buf.fill(0);
+    if (buf instanceof Float32Array) buf.fill(0); else buf.fill(0);   // one call per strip, on the buffer's own kind
     const half = f32(0.5 * B.stepsize), tmp = this.t1.tmp;
     for (const cb of this.strips.get(s) || []) {
       const cw = cb.x1 - cb.x0, ch = cb.y1 - cb.y0;
@@ -1243,11 +1243,11 @@ class LevelRows {
       const o = (k % R) * rw;
       if (rh === 1) {                                // a one-sample column: `idwt97` leaves it, `idwt53` halves a high-pass one
         if (!irr && casy) for (let i = 0; i < rw; i++) buf[o + i] = Math.trunc((line[i] ?? NaN) / 2);
-        else buf.set(line, o);
+        else if (buf instanceof Float32Array) buf.set(line, o); else buf.set(line, o);
       } else if (irr) {
         const g = low ? K : TWO_INVK;
         for (let i = 0; i < rw; i++) buf[o + i] = f32((line[i] ?? NaN) * g);
-      } else buf.set(line, o);
+      } else if (buf instanceof Float32Array) buf.set(line, o); else buf.set(line, o);
     }
     if (rh < 2) return;
     for (let s = 1; s <= S; s++) {

@@ -213,12 +213,32 @@ const IMAGE_BOUNDS = READ_BOUNDS.image;
 const ROWS_ROW = IMAGE_BOUNDS !== undefined && Object.hasOwn(IMAGE_BOUNDS, "rows_pixels") ? "rows_pixels" : "pixels";
 const ROWS_PIXELS_MAX = boundOf("image", ROWS_ROW);
 
+/**
+ * The refusal codes a `DctRefusal` carries (R1), each written out once, so a caller compares the code by import.
+ * @typedef {"NOT_A_JPEG" | "TRUNCATED" | "CORRUPT_DATA" | "UNSUPPORTED_PROCESS" | "UNSUPPORTED_PRECISION" | "UNSUPPORTED_FRAME" | "UNSUPPORTED_ROTATION" | "UNSUPPORTED_COMPONENTS" | "UNSUPPORTED_SAMPLING" | "COMPONENT_MISMATCH" | "COLOR_TRANSFORM_CONFLICT" | "IMAGE_TOO_LARGE"} DctCode
+ */
+/** Each `DctCode`, by its own name (R1). */
+export const DCT_CODES = Object.freeze({
+  NOT_A_JPEG: "NOT_A_JPEG",
+  TRUNCATED: "TRUNCATED",
+  CORRUPT_DATA: "CORRUPT_DATA",
+  UNSUPPORTED_PROCESS: "UNSUPPORTED_PROCESS",
+  UNSUPPORTED_PRECISION: "UNSUPPORTED_PRECISION",
+  UNSUPPORTED_FRAME: "UNSUPPORTED_FRAME",
+  UNSUPPORTED_ROTATION: "UNSUPPORTED_ROTATION",
+  UNSUPPORTED_COMPONENTS: "UNSUPPORTED_COMPONENTS",
+  UNSUPPORTED_SAMPLING: "UNSUPPORTED_SAMPLING",
+  COMPONENT_MISMATCH: "COMPONENT_MISMATCH",
+  COLOR_TRANSFORM_CONFLICT: "COLOR_TRANSFORM_CONFLICT",
+  IMAGE_TOO_LARGE: "IMAGE_TOO_LARGE",
+});
+
 export class DctRefusal extends Error {
-  /** @param {string} code @param {DctDetail} [detail] */
+  /** @param {DctCode} code @param {DctDetail} [detail] */
   constructor(code, detail = {}) {
     const note = detail.note;
     super(`${code}${note ? `: ${note}` : ""}`);
-    /** @type {string} */
+    /** @type {DctCode} */
     this.code = code;
     /** @type {DctDetail} */
     this.detail = detail;
