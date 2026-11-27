@@ -39,7 +39,8 @@ const SCAN = /** @param {string} key @param {string} marker @param {string} conf
     const work = ctx.work;
     handed.push({ key, len: text.length, text, window: ctx.window, work });
     if (work) work.chars += text.length; // a pass over the whole window, charged as the contract says
-    return text.includes(marker) ? { match: true, confidence, signals: [marker] } : { match: false };
+    if (text.includes(marker)) return { match: true, confidence, signals: [marker] };
+    return { match: false };
   },
   parse: (ctx) => ({ entities: [], facts: { read_by: key, text_len: textOf(ctx).length, paragraphs: (textOf(ctx).match(/<p>/g) || []).length } }),
 });
@@ -54,12 +55,7 @@ const done = /** @param {ReadTextAnswer} r @returns {ReadingDone} */ (r) => {
   return r;
 };
 /** A reading's facts, as this suite's readers wrote them (R36: the reading is the reader's own, stated as an object). */
-const isR9Facts = /** @param {unknown} v @returns {v is R9Facts} */ (v) => typeof v === "object" && v !== null && "read_by" in v;
-const factsOf = /** @param {object | null} parsed @returns {R9Facts} */ (parsed) => {
-  const facts = parsed && "facts" in parsed ? parsed.facts : undefined;
-  if (!isR9Facts(facts)) assert.fail("the reading carries no facts of this suite's readers");
-  return facts;
-};
+const factsOf = /** @param {object | null} parsed @returns {R9Facts} */ (parsed) => /** @type {{ facts: R9Facts }} */ (parsed).facts;
 /** Whether a registration replaced a held key; a refusal replaced nothing. */
 const replaced = /** @param {Registration} r */ (r) => (r.ok ? r.replaced : undefined);
 for (const t of [SCAN("r9_a", "R9-A", CONFIDENCE.CERTAIN), SCAN("r9_page", "SERVERTEXT-29", CONFIDENCE.CERTAIN), FALLBACK])
@@ -167,7 +163,12 @@ test("R18 a marker's why is read as its reason, and a size refusal is worded as 
 });
 
 /** A text of about `n` characters of numbered whole lines. */
-const lines = /** @param {number} n */ (n) => { /** @type {string[]} */ const rows = []; for (let c = 0, i = 0; c < n; i++) { const r = `line ${i} of the record ${"w".repeat(30 + (i % 7))}`; rows.push(r); c += r.length + 1; } return rows.join("\n"); };
+const lines = /** @param {number} n */ (n) => {
+  /** @type {string[]} */
+  const rows = [];
+  for (let c = 0, i = 0; c < n; i++) { const r = `line ${i} of the record ${"w".repeat(30 + (i % 7))}`; rows.push(r); c += r.length + 1; }
+  return rows.join("\n");
+};
 
 test("R39 every kind of text over the bound is classified from the stated view: string, pages, paragraphs, document; at the bound, whole", async () => {
   const big = lines(4 * MB) + "\nR9-A at the end";
@@ -196,7 +197,7 @@ test("R39 every kind of text over the bound is classified from the stated view: 
   // doctypeFor bounds every caller, not only readText: the answer carries the view and the twin answers the same
   /** @type {DoctypeContext} */
   const ctx = { text: big };
-  const sync = doctypeFor(ctx), twin = await doctypeForYielding(ctx, { yieldNow: () => new Promise((go) => setImmediate(go)) });
+  const sync = doctypeFor(ctx), twin = await doctypeForYielding(ctx, { yieldNow: /** @returns {Promise<void>} */ () => new Promise((go) => setImmediate(go)) });
   assert.deepEqual(twin, sync);
   assert.equal(sync.classified_over?.of, big.length);
   assert.equal(ctx.text, big, "the caller's ctx is not changed");
@@ -218,7 +219,8 @@ test("R40 each detect is handed the view's window and one shared work count, and
     const r = doctypeFor({ text });
     const co = r.classified_over;
     const view = co ? co.chars : text.length;
-    assert.equal(handed.length, 4, `${name}: the four types were asked`);
+    const asked = handed.length;
+    assert.equal(asked, 4, `${name}: the four types were asked`);
     for (const h of handed) {
       assert.equal(h.len, view, `${name}: handed the view`);
       assert.deepEqual(h.window, { from: 0, to: view, of: text.length }, name);
@@ -226,7 +228,7 @@ test("R40 each detect is handed the view's window and one shared work count, and
     }
     assert.equal(dp.CLASSIFY_WORK_FACTOR, 4);
     assert.equal(r.work.limit, 4 * view * registered, `${name}: four views for each registered type`);
-    assert.equal(r.work.chars, handed.length * view, `${name}: the count is what the detects charged`);
+    assert.equal(r.work.chars, asked * view, `${name}: the count is what the detects charged`);
     assert.ok(r.work.chars <= r.work.limit, name);
     assert.equal(r.work.stopped_before, null, name);
   }

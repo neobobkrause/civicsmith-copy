@@ -12,7 +12,7 @@ import { createHash } from "node:crypto";
 import * as dp from "../registry.mjs";
 import { localize } from "../../bio-plane/src/setup-words/index.mjs";
 
-/** @import { ContentType, DoctypeContext, ReadTextAnswer, ReadingDone, ReaderView, SuppliedText, SuppliedCell } from "../registry.mjs" */
+/** @import { ContentType, Detection, DoctypeContext, ReadTextAnswer, ReadingDone, ReaderView, SuppliedText, SuppliedCell } from "../registry.mjs" */
 /** @import { ViewMinutesDue } from "../../jurisdictions/index.mjs" */
 
 const { doctypeFor, doctypes, registerDoctype, readText, assess, NO_TYPE, CONFIDENCE, CONTRACT } = dp;
@@ -25,15 +25,15 @@ const sha256 = /** @param {Uint8Array} b */ async (b) => createHash("sha256").up
 /* A stub type: `confidence` on its marker word (CERTAIN by default). */
 const stub = /** @param {string} key @param {string} marker @param {StubExtra | null} [extra] @param {string} [confidence] @returns {ContentType} */
   (key, marker, extra, confidence = CONFIDENCE.CERTAIN) => {
-    /** @type {ContentType} */
-    const own = {
-      key, label: `stub ${key}`, version: 1, contract: CONTRACT.SUBSTANCE,
-      detect: (ctx) => (String(ctx.text || "").includes(marker)
-        ? { match: true, confidence, signals: [marker] } : { match: false }),
-      parse: () => ({ entities: [], facts: { read_by: key } }),
-      assess: () => ({ meaningful: false, events: [], confirmed: null, why: "stub" }),
+    const detect = /** @param {DoctypeContext} ctx @returns {Detection} */ (ctx) => {
+      if (String(ctx.text || "").includes(marker)) return { match: true, confidence, signals: [marker] };
+      return { match: false };
     };
-    return extra ? { ...own, ...extra } : own;
+    const parse = (extra ? extra.parse : undefined) || (() => ({ entities: [], facts: { read_by: key } }));
+    const assess = () => ({ meaningful: false, events: [], confirmed: null, why: "stub" });
+    const fallback = extra ? extra.fallback : undefined;
+    if (fallback !== undefined) return { key, label: `stub ${key}`, version: 1, contract: CONTRACT.SUBSTANCE, detect, parse, assess, fallback };
+    return { key, label: `stub ${key}`, version: 1, contract: CONTRACT.SUBSTANCE, detect, parse, assess };
   };
 
 /** The determined reading; a refused one fails the test, as reading its members did. */
@@ -189,7 +189,10 @@ test("R36 R30 the shared helper practiceValue carries the unit a profile counts 
                    { value: 10, basis: "OMC 2.20.160", count: "business" });
   assert.deepEqual(dp.practiceValue({ view: view({ value: 21, basis: "m" }) }, "minutes_due_days"),
                    { value: 21, basis: "m", count: null }, "no stated unit is stated as none, never assumed");
-  for (const bad of [{ value: 0 }, { value: 2.5 }, { value: "10" }, null])
+  /* Facts outside the stated kind on purpose: none is a count of days. */
+  /** @type {unknown[]} */
+  const notDays = [{ value: 0 }, { value: 2.5 }, { value: "10" }, null];
+  for (const bad of notDays)
     assert.equal(dp.practiceValue({ view: view(bad) }, "minutes_due_days"), null);
   assert.equal(dp.practiceValue({ view: {} }, "minutes_due_days"), null);
 });

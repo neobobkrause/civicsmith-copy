@@ -17,22 +17,31 @@ import { readText, flattenText, identify, doctypeFor, alsoFor } from "../registr
  * @typedef {{ readings: { [id: string]: AnswerJson } }} RecordedAnswers
  */
 
+/** @import { DoctypeContext } from "../registry.mjs" */
+
 registerCorpusTypes();
 const recorded = /** @type {RecordedAnswers} */ (JSON.parse(fs.readFileSync(new URL("./fixtures/g48-answers.json", import.meta.url), "utf8"))).readings;
+/* The answer recorded for reading `id`; a reading with none fails as destructuring it would. */
+const recordedOf = /** @param {string} id @returns {AnswerJson} */ (id) => {
+  const r = recorded[id];
+  if (r === undefined) throw new TypeError(`no answer is recorded for ${id}`);
+  return r;
+};
 
 test("R38 R19 readText of every fixture reading equals the answer recorded on the tip, with no classified_over", () => {
   assert.deepEqual(Object.keys(recorded), READINGS.map(([id]) => id));
   for (const [id, supplied, ctx] of READINGS) {
     const answer = readText(supplied, ctx);
-    /** @type {object} */
+    /** @type {unknown} */
     const got = JSON.parse(JSON.stringify(answer));
-    assert.equal("classified_over" in got, false, id);
+    // the answer is an object, so its JSON reads back as one: the test is `"classified_over" in got`
+    assert.equal(typeof got === "object" && got !== null && "classified_over" in got, false, id);
     // fix round 9: `chars` counts glyphs (R18) and the doctype answer carries its `work` (R40); every other field is the tip's.
     // The answer's members are read as answered and compared in their JSON form, as the record holds them.
     const gotDoctype = answer.determined ? answer.doctype : undefined;
     const { work, ...doctype } = gotDoctype || { work: undefined };
     if (gotDoctype) assert.equal(gotDoctype.work.stopped_before, null, id);
-    const { chars, ...rest } = answer, { chars: was, ...wasRest } = recorded[id];
+    const { chars, ...rest } = answer, { chars: was, ...wasRest } = recordedOf(id);
     // `why` states the same count (glyphs): read it back as the recorded trimmed length
     /** @type {unknown} */
     const compared = JSON.parse(JSON.stringify({ ...rest, ...(gotDoctype ? { doctype } : {}), why: rest.why.replace(`(${chars} characters)`, `(${was} characters)`).replace(`beside ${chars} decoded`, `beside ${was} decoded`) }));
@@ -46,7 +55,9 @@ test("R5 doctypeFor's also is alsoFor's on every fixture reading, in registratio
   for (const [id, supplied, ctx] of READINGS) {
     const flat = flattenText(supplied);
     if (!flat.chars) continue;
-    const dctx = { ...ctx, text: flat.text, pages: Array.isArray(supplied && supplied.pages) ? supplied.pages : [] };
+    const pages = typeof supplied === "object" && supplied !== null ? supplied.pages : undefined;
+    /** @type {DoctypeContext} */
+    const dctx = { ...ctx, text: flat.text, pages: Array.isArray(pages) ? pages : [] };
     const stack = identify(dctx);
     const d = doctypeFor({ ...dctx, handler: stack.handler, kind: stack.kind });
     assert.deepEqual(d.also, alsoFor({ ...dctx, handler: stack.handler, kind: stack.kind }, d.type.key), id);

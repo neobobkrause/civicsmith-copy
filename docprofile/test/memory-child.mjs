@@ -104,8 +104,9 @@ if (isMainThread) {
   /** @type {ChildData} */
   const data = { mode, pages: Number(pages), per: Number(per) };
   const file = fileURLToPath(import.meta.url);
-  const w = mode === "sheet" ? new Worker(file, { workerData: data, resourceLimits: { maxYoungGenerationSizeMb: 2 } })
-                             : new Worker(file, { workerData: data });
+  /* `sheet` runs under a 2 MB young generation, as the plane's isolate does. */
+  const sheetOptions = { workerData: data, resourceLimits: { maxYoungGenerationSizeMb: 2 } };
+  const w = mode === "sheet" ? new Worker(file, sheetOptions) : new Worker(file, { workerData: data });
   let base = 0, peak = 0, samples = 0, stop = false;
   /** @returns {Promise<number>} */
   const heap = async () => { const h = await w.getHeapStatistics(); return h.used_heap_size + h.external_memory; };
@@ -126,12 +127,13 @@ if (isMainThread) {
   w.on("error", (e) => { console.error(e); process.exit(1); });
 } else {
   const { CONFIDENCE, CONTRACT, registerDoctype, readText, doctypeForYielding } = await import("../registry.mjs");
+  /** @returns {number} */
   const used = () => { const m = process.memoryUsage(); return m.heapUsed + m.arrayBuffers; };
   const { mode, pages: N, per: PER } = /** @type {ChildData} */ (workerData);
   const port = parentPort || (() => { throw new Error("memory-child: a worker with no parent port"); })();
   /* A full collection: `--expose-gc` gives it, and calling it without that fails as calling `global.gc` did. */
   const gc = () => {
-    const collect = global.gc;
+    const collect = globalThis.gc;
     if (!collect) throw new TypeError("global.gc is not a function");
     collect();
   };
@@ -187,18 +189,19 @@ if (isMainThread) {
   const document = pages.map((p) => p.text).join("\n");
   /** @type {SuppliedText} */
   const supplied = { document, pages, undetermined: [], counts: { chars: 0, undetermined: 0 } };
-  /** @type {SuppliedPage[] | null | undefined} */
-  let seenPages = null;
+  /** @type {{ pages: SuppliedPage[] | null | undefined }} */
+  const seen = { pages: null };
   let scanned = 0, sawText = 0;
   registerDoctype({
     key: "scans_pages", label: "stand-in: scans page by page", version: 1, contract: CONTRACT.SUBSTANCE,
     detect(ctx) {
-      seenPages = ctx.pages;
+      seen.pages = ctx.pages;
       sawText = there(ctx.text, "text").length;
       let n = 0;
       for (const p of there(ctx.pages, "pages")) if (/Resolution 2024-001/.test(String(p.text))) n++;
       scanned = n;
-      return n ? { match: true, confidence: CONFIDENCE.CERTAIN, signals: ["pages"] } : { match: false };
+      if (n) return { match: true, confidence: CONFIDENCE.CERTAIN, signals: ["pages"] };
+      return { match: false };
     },
     parse(ctx) { return { entities: [], facts: { pages: there(ctx.pages, "pages").length } }; },
   });
@@ -225,7 +228,7 @@ if (isMainThread) {
   const result = { endMB: Math.max(0, used() - base) / MB, ms, chars: document.length,
     answers: { determined: r.determined, type: r.doctype.type.key, confidence: r.doctype.confidence, also: r.doctype.also,
                parsed: r.parsed, positionParts: r.position_parts, textFrom: r.text_from,
-               typeSawPages: seenPages === pages, scanned, sawText, classifiedOver: r.doctype.classified_over || null } };
+               typeSawPages: seen.pages === pages, scanned, sawText, classifiedOver: r.doctype.classified_over || null } };
   port.postMessage(result);
   }
 }

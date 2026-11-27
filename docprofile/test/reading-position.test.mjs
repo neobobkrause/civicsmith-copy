@@ -31,12 +31,7 @@ const done = /** @param {ReadTextAnswer} r @returns {ReadingDone} */ (r) => {
 };
 /** A reading's entities: `stub_items` and `stub_fallback` read a list of this module's `entity`s (R36: the reading is the
  *  reader's own, stated as an object). */
-const isEntities = /** @param {unknown} v @returns {v is Entity[]} */ (v) => Array.isArray(v);
-const entitiesOf = /** @param {object | null} parsed @returns {Entity[]} */ (parsed) => {
-  const list = parsed && "entities" in parsed ? parsed.entities : undefined;
-  if (!isEntities(list)) assert.fail("the reading carries no entities");
-  return list;
-};
+const entitiesOf = /** @param {object | null} parsed @returns {Entity[]} */ (parsed) => /** @type {{ entities: Entity[] }} */ (parsed).entities;
 /** The page and the rectangle of a position on a page; any other position has neither. */
 const pageOf = /** @param {ReadingPosition | null | undefined} p */ (p) => (p && p.kind === "pdf-page" ? p.page : undefined);
 const rectOf = /** @param {ReadingPosition | null | undefined} p */ (p) => (p && p.kind === "pdf-page" ? p.rect : undefined);
@@ -62,9 +57,10 @@ test("R22 R23 the segment map: one segment per non-empty part, earned over docum
   assert.match(off.position_why ?? "", /not its pages joined/);
   // a blank page adds no segment and no separator, and the page after it is still placed
   const blank = flattenText({ pages: [{ page: 0, text: "first" }, { page: 1, text: "" }, { page: 2, text: "third" }] });
-  assert.equal(blank.text, "first\nthird");
+  const blankText = blank.text;
+  assert.equal(blankText, "first\nthird");
   assert.deepEqual(blank.segments.map((s) => pageOf(s.source)), [0, 2]);
-  assert.equal(pageOf(makeLocator(blank.segments)(blank.text.indexOf("third"))), 2);
+  assert.equal(pageOf(makeLocator(blank.segments)(blankText.indexOf("third"))), 2);
   // paragraphs keep the producer's own human form
   const paras = flattenText({ paragraphs: [{ para: 0, ref: "¶1", text: "The agreement" },
                                            { para: 141, ref: "¶142", text: "Ordinance 13579 applies" }] });

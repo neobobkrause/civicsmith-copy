@@ -29,7 +29,10 @@ const events = () => log.filter((e) => e !== "yield-end");
  *  @returns {ContentType} */
 const stub = (key, marker, confidence) => ({
   key, label: `g88 ${key}`, version: 1, contract: CONTRACT.SUBSTANCE,
-  detect: (ctx) => (String(ctx.text || "").includes(marker) ? { match: true, confidence, signals: [marker] } : { match: false }),
+  detect: (ctx) => {
+    if (String(ctx.text || "").includes(marker)) return { match: true, confidence, signals: [marker] };
+    return { match: false };
+  },
   parse: () => ({ entities: [], facts: {} }),
 });
 /** Re-register every held type wrapped, same key, same slot. */
@@ -84,8 +87,9 @@ function assertInterleaved(l, what) {
 }
 /** @param {Both} a @param {Both} b @param {string} what */
 const same = (a, b, what) => {
-  assert.equal(a.syncErr === undefined, a.twinErr === undefined, `${what}: both throw or neither`);
-  if (a.syncErr) assert.equal(String(a.twinErr && messageOf(a.twinErr)), String(messageOf(a.syncErr)), what);
+  const { syncErr, twinErr } = a;
+  assert.equal(syncErr === undefined, twinErr === undefined, `${what}: both throw or neither`);
+  if (syncErr) assert.equal(String(twinErr && messageOf(twinErr)), String(messageOf(syncErr)), what);
   else assert.deepEqual(a.twin, a.sync, what);
 };
 
@@ -188,9 +192,10 @@ test("R39 R4 R5 the answer deep-equals doctypeFor's, over a long and a short tex
 test("R39 R5 a throwing detect: in the main walk it propagates from both; in the also pass it is recorded, never thrown", async () => {
   setup();
   const main = await both({ text: pad("BOOM", AT + 1) });
+  const { twinErr } = main;
   assert.ok(main.syncErr && main.twinErr, "both throw");
   same(main, main, "throw in the main walk");
-  assert.match(String(messageOf(main.twinErr)), /g48 boom/);
+  assert.match(String(messageOf(twinErr)), /g48 boom/);
   const also = await both({ text: pad("MARKER-A and BOOM", AT + 1) });
   assert.equal(also.syncErr, undefined);
   assert.equal(also.twinErr, undefined);

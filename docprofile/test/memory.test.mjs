@@ -108,7 +108,8 @@ const oracle = (document, pages) => {
   /** @type {{ start: number, end: number, page: number }[]} */
   const segs = []; let text = "";
   for (const p of pages) {
-    const t = p && typeof p.text === "string" ? p.text : "";
+    const given = p ? p.text : undefined;
+    const t = typeof given === "string" ? given : "";
     if (!t) continue;
     if (text.length) text += "\n";
     const start = text.length; text += t;
@@ -130,7 +131,7 @@ test("R22 the segment map over document is exactly the join's: blank pages, page
     [P(0, "ab"), P(1, "ab")],
   ];
   for (const pages of shapes) {
-    const full = pages.map((p) => (p && typeof p.text === "string" ? p.text : "")).filter(Boolean).join("\n");
+    const full = pages.map((p) => { const t = p ? p.text : undefined; return typeof t === "string" ? t : ""; }).filter(Boolean).join("\n");
     const docs = [full, full + "\n", full + "x", "\n" + full, full.slice(1), full.slice(0, -1), full.replace(/\n/, " "), "", "zz"];
     for (const d of docs) {
       if (!d.length) continue;
