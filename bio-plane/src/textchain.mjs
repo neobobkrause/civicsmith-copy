@@ -2591,7 +2591,7 @@ export function mergeTier2Text(base, t2) {
  */
 /**
  * What `tier2Note` reads of a merge (R79, R80): a refusal's `why`, or the pages each tier produced.
- * @typedef {{ ok: false, why?: string | null } | { ok: true, wholesale: true } | { ok: true, wholesale?: false, replaced: readonly (number | null)[], kept: readonly (number | null)[] }} TierNoted
+ * @typedef {{ ok: false, why?: string | null } | { ok: true, wholesale: true, replaced?: readonly (number | null)[], kept?: readonly (number | null)[] } | { ok: true, wholesale?: false, replaced: readonly (number | null)[], kept: readonly (number | null)[] }} TierNoted
  */
 /** @param {TierNoted | null} [m] @returns {string | null} */
 export function tier2Note(m) {
