@@ -19,16 +19,53 @@ const {
   ARCHIVE_TREE_TOTAL_MAX, ARCHIVE_TREE_ENTRIES_MAX, STRUCTURAL_PART_MAX, ARCHIVE_LIMITS,
 } = M;
 
+/** @typedef {import("../../../src/ooxml.mjs").Discrimination} Discrimination */
+/** @typedef {import("../../../src/ooxml.mjs").ZipEntry} ZipEntry */
+/** @typedef {import("./zip.mjs").ZipMember} ZipMember */
+/** @typedef {import("./zip.mjs").OpcFlavour} OpcFlavour */
+/**
+ * A discrimination without its signals.
+ * @typedef {Object} DiscriminationBody
+ * @property {boolean} ok
+ * @property {string} [format]
+ * @property {string} [why]
+ * @property {string | null} [variant]
+ * @property {string} [mainPart]
+ * @property {"high"} [confidence]
+ * @property {string} [flavourDeclared]
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+/** @typedef {{ mimetype?: string, manifest?: boolean, content?: boolean, extra?: ZipMember[] }} OdfOptions */
+/** @typedef {"ARCHIVE_ENTRIES_MAX" | "ARCHIVE_TOTAL_MAX" | "MEMBER_MAX" | "OFFICE_ENTRIES_MAX" | "ARCHIVE_DIRECTORY_MAX" | "ARCHIVE_NAME_MAX" | "ARCHIVE_RATIO_MAX" | "ARCHIVE_DEPTH_MAX" | "ARCHIVE_TREE_TOTAL_MAX" | "ARCHIVE_TREE_ENTRIES_MAX"} LimitName */
+/** @import { ZipEntry as DeclaredMember } from "../../make-zip.mjs" */
+
 const MIB = 1024 * 1024;
+/** @type {(d: Uint8Array) => Uint8Array} */
+const deflate = (d) => new Uint8Array(deflateRawSync(d));
+/** @type {(s: string) => Uint8Array} */
 const enc = (s) => new TextEncoder().encode(s);
+/** @type {(d: Discrimination) => DiscriminationBody} */
 const withoutSignals = ({ signals, ...rest }) => rest;
+/** @type {(s: string, bom?: boolean) => Uint8Array} */
 const u16le = (s, bom = true) => { const b = new Uint8Array((s.length + (bom ? 1 : 0)) * 2); const v = new DataView(b.buffer); let at = 0; if (bom) { v.setUint16(0, 0xfeff, true); at = 2; } for (let i = 0; i < s.length; i++) v.setUint16(at + 2 * i, s.charCodeAt(i), true); return b; };
+/** @type {(s: string, bom?: boolean) => Uint8Array} */
 const u16be = (s, bom = true) => { const b = new Uint8Array((s.length + (bom ? 1 : 0)) * 2); const v = new DataView(b.buffer); let at = 0; if (bom) { v.setUint16(0, 0xfeff, false); at = 2; } for (let i = 0; i < s.length; i++) v.setUint16(at + 2 * i, s.charCodeAt(i), false); return b; };
+/** @type {(s: string) => Uint8Array} */
 const latin1 = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
 const CREDIT = "<cp:coreProperties xmlns:cp=\"x\" xmlns:dc=\"y\"><dc:creator>Zoë</dc:creator></cp:coreProperties>";
 
-/* A range source over `bytes` that records every read. */
+/** @typedef {{ size: number, read: (offset: number, length: number) => Promise<Uint8Array> }} RangedSource */
+/** @typedef {{ reads: [number, number][], source: RangedSource }} Ranged */
+
+/**
+ * A range source over `bytes` that records every read.
+ * @param {Uint8Array} bytes
+ * @param {{ fail?: (offset: number, length: number) => boolean }} [options]
+ * @returns {Ranged}
+ */
 function ranged(bytes, { fail = () => false } = {}) {
+  /** @type {[number, number][]} */
   const reads = [];
   return {
     reads,
@@ -65,7 +102,8 @@ test("R3 readContainer refuses a count, a directory and a name over their limits
   const atName = readContainer(buildZip([{ name: "n".repeat(ARCHIVE_NAME_MAX), data: "x" }]));
   assert.equal(atName.ok, true);
   // the same entries really present: 100,000 are read, 100,001 are not
-  const many = (count) => makeZip(Array.from({ length: count }, (_, i) => ({ name: `e${i}`, data: "", method: 0 })), { zip64: true });
+  /** @type {(count: number) => Uint8Array} */
+  const many = (count) => makeZip(Array.from({ length: count }, (_, i) => /** @type {DeclaredMember} */ ({ name: `e${i}`, data: "", method: 0 })), { zip64: true });
   const atLimit = readContainer(many(OFFICE_ENTRIES_MAX));
   assert.equal(atLimit.ok, true);
   assert.equal(atLimit.count, OFFICE_ENTRIES_MAX);
@@ -81,17 +119,18 @@ test("R3 the refusals on a limit reach discriminate as the container's own, with
 });
 
 test("R30 the limits are the READ_BOUNDS rows' active figures, taken through boundOf, and a refusal on one is final", () => {
-  const rows = {
-    ARCHIVE_ENTRIES_MAX: ["archive", "members"], ARCHIVE_TOTAL_MAX: ["archive", "unpacked_bytes"], MEMBER_MAX: ["archive", "member_bytes"],
-    OFFICE_ENTRIES_MAX: ["office", "entries"], ARCHIVE_DIRECTORY_MAX: ["archive", "directory"], ARCHIVE_NAME_MAX: ["archive", "name"],
-    ARCHIVE_RATIO_MAX: ["archive", "ratio"], ARCHIVE_DEPTH_MAX: ["archive", "depth"], ARCHIVE_TREE_TOTAL_MAX: ["archive", "unpacked_bytes"],
-    ARCHIVE_TREE_ENTRIES_MAX: ["archive", "members"],
-  };
-  for (const [name, [kind, row]] of Object.entries(rows)) {
+  /** @type {[LimitName, [string, string]][]} */
+  const rows = [
+    ["ARCHIVE_ENTRIES_MAX", ["archive", "members"]], ["ARCHIVE_TOTAL_MAX", ["archive", "unpacked_bytes"]], ["MEMBER_MAX", ["archive", "member_bytes"]],
+    ["OFFICE_ENTRIES_MAX", ["office", "entries"]], ["ARCHIVE_DIRECTORY_MAX", ["archive", "directory"]], ["ARCHIVE_NAME_MAX", ["archive", "name"]],
+    ["ARCHIVE_RATIO_MAX", ["archive", "ratio"]], ["ARCHIVE_DEPTH_MAX", ["archive", "depth"]], ["ARCHIVE_TREE_TOTAL_MAX", ["archive", "unpacked_bytes"]],
+    ["ARCHIVE_TREE_ENTRIES_MAX", ["archive", "members"]],
+  ];
+  for (const [name, [kind, row]] of rows) {
     assert.equal(M[name], boundOf(kind, row), name);
     assert.equal(ARCHIVE_LIMITS[name], boundOf(kind, row), name);
   }
-  assert.deepEqual(Object.keys(ARCHIVE_LIMITS), Object.keys(rows));
+  assert.deepEqual(Object.keys(ARCHIVE_LIMITS), rows.map(([name]) => name));
   assert.equal(STRUCTURAL_PART_MAX, boundOf("office", "structural_part_bytes"));
   assert.equal(ARCHIVE_DEPTH_MAX, 3);
   assert.equal(ARCHIVE_TREE_TOTAL_MAX, ARCHIVE_TOTAL_MAX);
@@ -105,7 +144,9 @@ test("R6 and R35 the 20 MiB text bound and the 32 MiB ceiling are the office row
   assert.equal(MEASURED_OOXML_TEXT_BOUND_BYTES, 20971520);
   assert.equal(STREAMED_TEXT_BOUND_BYTES, boundOf("office", "streamed_text_bytes"));
   assert.equal(STREAMED_TEXT_BOUND_BYTES, 33554432);
-  assert.deepEqual(sizeGuard(MEASURED_OOXML_TEXT_BOUND_BYTES + 1).bound, boundOf("office", "text_bytes"));
+  const guard = sizeGuard(MEASURED_OOXML_TEXT_BOUND_BYTES + 1);
+  assert.equal(guard.ok, false);
+  assert.deepEqual(guard.bound, boundOf("office", "text_bytes"));
 });
 
 /* --------------------------------------------------------------------- R5 */
@@ -121,7 +162,7 @@ test("R5 an encrypted member (ZipCrypto bit 0, 6 or 13, or AES method 99) is sta
   const aes = buildZip([{ name: "a.xml", data: "payload", cd: { method: 99 } }]);
   assert.deepEqual(await readPart(aes, readContainer(aes), "a.xml"), { ok: false, why: "MEMBER_ENCRYPTED", name: "a.xml" });
   // the writers of test-support: the traditional, strong and AES forms
-  for (const encrypted of ["traditional", "strong", "aes"]) {
+  for (const encrypted of /** @type {const} */ (["traditional", "strong", "aes"])) {
     const z = makeZip([{ name: "e.xml", data: "payload", encrypted }]);
     assert.deepEqual(await readPart(z, readContainer(z), "e.xml"), { ok: false, why: "MEMBER_ENCRYPTED", name: "e.xml" }, encrypted);
   }
@@ -131,7 +172,10 @@ test("R5 an encrypted member (ZipCrypto bit 0, 6 or 13, or AES method 99) is sta
   // an entry of a hand-made container that carries no flags is judged by its local header's
   const local = buildZip([{ name: "h.xml", data: "payload", flags: 0x0001, cd: { flags: 0 } }]);
   const handMade = readContainer(local);
-  const bare = { ...handMade, entries: handMade.entries.map((e) => ({ ...e })), byName: new Map() };
+  assert.ok(handMade.ok);
+  /** @type {Map<string, ZipEntry>} */
+  const noNames = new Map(null);
+  const bare = { ...handMade, entries: handMade.entries.map((e) => ({ ...e })), byName: noNames };
   bare.byName = new Map(bare.entries.map((e) => [e.name, e]));
   assert.deepEqual(await readPart(local, bare, "h.xml"), { ok: false, why: "MEMBER_ENCRYPTED", name: "h.xml" });
   // every caller states it as any other readPart refusal
@@ -144,11 +188,12 @@ test("R5 an encrypted member (ZipCrypto bit 0, 6 or 13, or AES method 99) is sta
 /* -------------------------------------------------------------------- R31 */
 
 test("R31 a member declared over its compressed size times ARCHIVE_RATIO_MAX is refused before any inflation, with its figures, final", async () => {
+  /** @type {string[]} */
   const inflated = [];
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { constructor(f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {"gzip" | "deflate" | "deflate-raw"} */ f) { inflated.push(f); super(f); } };
   try {
-    const kernel = deflateRawSync(enc("x"));
+    const kernel = deflate(enc("x"));
     // declared one over the ratio's reach; at the reach exactly the member is read (and then judged by its size)
     const reach = kernel.length * ARCHIVE_RATIO_MAX;
     const over = buildZip([{ name: "a.xml", data: "x", cd: { usize: reach + 1 } }]);
@@ -156,10 +201,14 @@ test("R31 a member declared over its compressed size times ARCHIVE_RATIO_MAX is 
       { ok: false, why: "ARCHIVE_RATIO_MAX", name: "a.xml", declared: reach + 1, limit: ARCHIVE_RATIO_MAX, final: true });
     assert.deepEqual(inflated, []);
     const at = buildZip([{ name: "a.xml", data: "x", cd: { usize: reach } }]);
-    assert.equal((await readPart(at, readContainer(at), "a.xml")).why, "size_mismatch");
+    const atRead = await readPart(at, readContainer(at), "a.xml");
+    assert.equal(atRead.ok, false);
+    assert.equal(atRead.why, "size_mismatch");
     // a zero compressed size with a non-zero declared one
     const zero = buildZip([{ name: "z.xml", data: "", method: 0, cd: { usize: 5 } }]);
-    assert.equal((await readPart(zero, readContainer(zero), "z.xml")).why, "ARCHIVE_RATIO_MAX");
+    const zeroRead = await readPart(zero, readContainer(zero), "z.xml");
+    assert.equal(zeroRead.ok, false);
+    assert.equal(zeroRead.why, "ARCHIVE_RATIO_MAX");
     // empty and honest members are read; a stored member's ratio is 1
     const honest = buildZip([{ name: "e", data: "" }, { name: "s", data: "stored", method: 0 }, { name: "r", data: "ab".repeat(5000) }]);
     const c = readContainer(honest);
@@ -171,19 +220,25 @@ test("R31 a member declared over its compressed size times ARCHIVE_RATIO_MAX is 
   }
   // every caller states it as any other readPart refusal
   const core = buildZip([{ name: "docProps/core.xml", data: CREDIT, cd: { usize: 1000000 } }]);
-  assert.equal((await readCoreProperties(core, readContainer(core))).why, "ARCHIVE_RATIO_MAX");
+  const coreRead = await readCoreProperties(core, readContainer(core));
+  assert.equal(coreRead.ok, false);
+  assert.equal(coreRead.why, "ARCHIVE_RATIO_MAX");
   const media = buildZip([{ name: "m/a.png", data: "x", cd: { usize: 1000000 } }]);
   const out = await M.withContainerImages({ ok: true }, { ok: true, bytes: media, container: readContainer(media) }, "m/");
+  assert.ok("imagesWhy" in out);
   assert.equal(out.imagesWhy, "media_part_unreadable:m/a.png:ARCHIVE_RATIO_MAX");
 });
 
 test("R31 the XML parts the module decodes itself are refused above STRUCTURAL_PART_MAX declared, before inflation, final; at it they are read", async () => {
+  /** @type {(head: string, tail: string, size: number) => string} */
   const spaces = (head, tail, size) => head + " ".repeat(size - head.length - tail.length) + tail;
+  /** @type {string[]} */
   const inflated = [];
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { constructor(f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {"gzip" | "deflate" | "deflate-raw"} */ f) { inflated.push(f); super(f); } };
   try {
     const over = STRUCTURAL_PART_MAX + 1;
+    /** @type {(name: string) => object} */
     const refusal = (name) => ({ ok: false, why: "STRUCTURAL_PART_MAX", name, declared: over, limit: STRUCTURAL_PART_MAX, final: true });
     // a 100 MiB-class .rels and a [Content_Types].xml of zeros, at a ratio the ratio check passes
     const zeros = new Uint8Array(over);
@@ -203,12 +258,15 @@ test("R31 the XML parts the module decodes itself are refused above STRUCTURAL_P
   }
   // at the limit exactly, a part is read
   const at = buildZip([{ name: "docProps/core.xml", data: spaces("<cp:coreProperties xmlns:cp=\"x\" xmlns:dc=\"y\"><dc:creator>Ann</dc:creator>", "</cp:coreProperties>", STRUCTURAL_PART_MAX) }]);
-  assert.equal((await readCoreProperties(at, readContainer(at))).creator, "Ann");
+  const atCore = await readCoreProperties(at, readContainer(at));
+  assert.ok(atCore.ok);
+  assert.equal(atCore.creator, "Ann");
   assert.ok(inflated.length >= 1);
 });
 
 /* --------------------------------------------------------------- R10, R11 */
 
+/** @type {[OpcFlavour, string, string][]} */
 const TEMPLATES = [
   ["docx", "dotx", "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml"],
   ["pptx", "potx", "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"],
@@ -230,11 +288,17 @@ test("R10 and R11 a template or a show (dotx, potx, ppsx) is read as its twin, w
   const names = M.CONTAINER_FLAVOURS.map((f) => f.variant ?? f.flavour);
   assert.deepEqual(names.slice(12, 15), ["dotx", "potx", "ppsx"]);
   assert.deepEqual(names.slice(15), ["odt", "ods", "odp"]);
-  for (const f of ["docx", "xlsx", "pptx"]) assert.equal((await discriminate(buildZip(opc(f)))).variant, null);
+  /** @type {OpcFlavour[]} */
+  const plain = ["docx", "xlsx", "pptx"];
+  for (const f of plain) assert.equal((await discriminate(buildZip(opc(f)))).variant, null);
 });
 
-/* The five archives a range source must answer as the bytes do. */
+/**
+ * The five archives a range source must answer as the bytes do.
+ * @returns {Record<string, Uint8Array>}
+ */
 function discriminateCases() {
+  /** @type {(name: string, size: number) => ZipMember} */
   const stored = (name, size) => ({ name, data: new Uint8Array(size).map((_, i) => (i * 7919) & 255), method: 0 });
   return {
     docx: buildZip(opc("docx")),
@@ -246,7 +310,7 @@ function discriminateCases() {
     "opc, no flavour": buildZip([{ name: "[Content_Types].xml", data: contentTypes({ "/x.xml": "application/x" }) }, { name: "x.xml", data: "<x/>" }]),
     "declared part absent": buildZip(opc("docx").filter((m) => m.name !== MAIN.docx)),
     "unparseable types": buildZip([{ name: "[Content_Types].xml", data: "nope" }]),
-    "odf not first": buildZip((() => { const m = odf("odt"); m.unshift(m.splice(1, 1)[0]); return m; })()),
+    "odf not first": buildZip((() => { const m = odf("odt"); m.unshift(...m.splice(1, 1)); return m; })()),
     "corrupt directory": buildZip([{ name: "a", data: "a" }], { eocd: { cdSize: 999 } }),
     "zip64 sentinel": buildZip([{ name: "a", data: "a" }], { eocd: { cdOffset: 0xffffffff } }),
     "not a zip": enc("%PDF-1.7 and more text than four bytes"),
@@ -278,7 +342,11 @@ test("R11 a file of any size is judged from its end record, its central director
   assert.ok(reads.every(([offset, length]) => offset + length <= z.length));
   // the same for a stored-first ODF and for an 8 MiB - 1 / 8 MiB + 1 file: no size changes the answer
   for (const size of [8 * MIB - 1, 8 * MIB + 1, 20 * MIB + 1]) {
-    const big = buildZip(odf("ods", [{ name: "Pictures/p.bin", data: new Uint8Array(size).fill(7), method: 0 }].length ? { extra: [{ name: "Pictures/p.bin", data: new Uint8Array(size).fill(7), method: 0 }] } : {}));
+    /** @type {OdfOptions} */
+    const withExtra = { extra: [{ name: "Pictures/p.bin", data: new Uint8Array(size).fill(7), method: 0 }] };
+    /** @type {OdfOptions} */
+    const none = {};
+    const big = buildZip(odf("ods", [{ name: "Pictures/p.bin", data: new Uint8Array(size).fill(7), method: 0 }].length ? withExtra : none));
     const got = ranged(big);
     assert.equal((await discriminate(got.source)).format, "ods", `${size}`);
     assert.ok(got.reads.reduce((n, [, length]) => n + length, 0) < 256 * 1024);
@@ -288,7 +356,7 @@ test("R11 a file of any size is judged from its end record, its central director
 test("R11 a range source that cannot be read answers source_unreadable and never throws", async () => {
   const z = buildZip(opc("docx"));
   assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: () => true }).source)), { ok: false, why: "source_unreadable" });
-  assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: (o) => o === 0 }).source)), { ok: false, why: "source_unreadable" });
+  assert.deepEqual(withoutSignals(await discriminate(ranged(z, { fail: /** @returns {boolean} */ (o) => o === 0 }).source)), { ok: false, why: "source_unreadable" });
   for (const size of [-1, 1.5, NaN, "9", undefined]) {
     assert.deepEqual(withoutSignals(await discriminate({ size, read: async () => z })), { ok: false, why: "source_unreadable" });
   }
@@ -296,7 +364,9 @@ test("R11 a range source that cannot be read answers source_unreadable and never
   // a part read through a range source answers as the bytes do
   const c = readContainer(z);
   assert.deepEqual(await readPart(ranged(z).source, c, "word/document.xml"), await readPart(z, c, "word/document.xml"));
-  assert.equal((await readPart(ranged(z, { fail: () => true }).source, c, "word/document.xml")).why, "source_unreadable");
+  const failed = await readPart(ranged(z, { fail: () => true }).source, c, "word/document.xml");
+  assert.equal(failed.ok, false);
+  assert.equal(failed.why, "source_unreadable");
 });
 
 /* ---------------------------------------------------------------- R36 */
@@ -308,24 +378,39 @@ test("R36 decodeText reads UTF-8 with or without a BOM, UTF-16 with or without a
   assert.deepEqual(plain, { ok: true, text: CAFE, encoding: "utf-8", assumed: true, replaced: 0, replaced_ratio: 0, disagree: [] });
   const bom = decodeText(new Uint8Array([0xef, 0xbb, 0xbf, ...enc(CAFE)]), { name: "t.txt" });
   assert.deepEqual(bom, { ok: true, text: CAFE, encoding: "utf-8", assumed: false, replaced: 0, replaced_ratio: 0, disagree: [] });
-  for (const [label, bytes, encoding] of [
+  /** @type {[string, Uint8Array, string][]} */
+  const marked = [
     ["UTF-16LE BOM", u16le(CAFE), "utf-16le"], ["UTF-16BE BOM", u16be(CAFE), "utf-16be"],
-  ]) {
+  ];
+  for (const [label, bytes, encoding] of marked) {
     assert.deepEqual(decodeText(bytes, { name: "t.txt" }), { ok: true, text: CAFE, encoding, assumed: false, replaced: 0, replaced_ratio: 0, disagree: [] }, label);
   }
   // without a mark: text laid out as UTF-16 is read as UTF-16
   const ascii = "plain ascii text of a UTF-16 file, nothing else";
-  assert.equal(decodeText(u16le(ascii, false), {}).text, ascii);
-  assert.equal(decodeText(u16le(ascii, false), {}).encoding, "utf-16le");
-  assert.equal(decodeText(u16be(ascii, false), {}).text, ascii);
-  assert.equal(decodeText(u16be(ascii, false), {}).encoding, "utf-16be");
-  for (const bytes of [u16le(ascii, false), u16be(ascii, false)]) assert.ok(!decodeText(bytes, {}).text.includes("\u0000"));
+  const got1 = decodeText(u16le(ascii, false), {});
+  assert.ok(got1.ok);
+  assert.equal(got1.text, ascii);
+  const got2 = decodeText(u16le(ascii, false), {});
+  assert.ok(got2.ok);
+  assert.equal(got2.encoding, "utf-16le");
+  const got3 = decodeText(u16be(ascii, false), {});
+  assert.ok(got3.ok);
+  assert.equal(got3.text, ascii);
+  const got4 = decodeText(u16be(ascii, false), {});
+  assert.ok(got4.ok);
+  assert.equal(got4.encoding, "utf-16be");
+  for (const bytes of [u16le(ascii, false), u16be(ascii, false)]) {
+    const unmarked = decodeText(bytes, {});
+    assert.ok(unmarked.ok);
+    assert.ok(!unmarked.text.includes("\u0000"));
+  }
   // empty is a real, assumed UTF-8 zero
   assert.deepEqual(decodeText(new Uint8Array(0), {}), { ok: true, text: "", encoding: "utf-8", assumed: true, replaced: 0, replaced_ratio: 0, disagree: [] });
 });
 
 test("R36 decodeText keeps undeclared UTF-8 with stray bytes as UTF-8 when its valid sequences number at least four times its invalid bytes, and reads real Latin-1 as windows-1252 (G169)", () => {
   const body = "L'œuvre de l'été: résumé, naïve, café, Zoë";
+  /** @type {(at: number, byte: number) => Uint8Array} */
   const stray = (at, byte) => { const b = enc(body); return Uint8Array.from([...b.subarray(0, at), byte, ...b.subarray(at)]); };
   // one stray byte in the middle: UTF-8, assumed, one replacement, every other character true
   const mid = decodeText(stray(20, 0xff), { name: "u.txt" });
@@ -338,23 +423,35 @@ test("R36 decodeText keeps undeclared UTF-8 with stray bytes as UTF-8 when its v
   // a character cut off at the end is one invalid run: still UTF-8
   const cut = Uint8Array.from([...enc(body), 0xc3]);
   const tail = decodeText(cut, {});
+  assert.ok(tail.ok);
   assert.equal(tail.encoding, "utf-8");
   assert.equal(tail.assumed, true);
   assert.equal(tail.replaced, 1);
   assert.ok(tail.text.startsWith(body));
   // the boundary: exactly four valid sequences against one invalid byte is UTF-8; three is not
   const four = Uint8Array.from([...enc("éééé"), 0xff]);
-  assert.equal(decodeText(four, {}).encoding, "utf-8");
-  assert.equal(decodeText(Uint8Array.from([...enc("ééé"), 0xff]), {}).encoding, "windows-1252");
+  const got5 = decodeText(four, {});
+  assert.ok(got5.ok);
+  assert.equal(got5.encoding, "utf-8");
+  const got6 = decodeText(Uint8Array.from([...enc("ééé"), 0xff]), {});
+  assert.ok(got6.ok);
+  assert.equal(got6.encoding, "windows-1252");
   // controls: real Latin-1 (no valid sequence), and one valid against one invalid, stay windows-1252
   const latin = decodeText(latin1("Caf\xe9 r\xe9sum\xe9 na\xefve"), {});
+  assert.ok(latin.ok);
   assert.equal(latin.encoding, "windows-1252");
   assert.equal(latin.assumed, true);
   assert.equal(latin.replaced, 0);
-  assert.equal(decodeText(Uint8Array.from([...enc("é"), 0xff]), {}).encoding, "windows-1252");
+  const got7 = decodeText(Uint8Array.from([...enc("é"), 0xff]), {});
+  assert.ok(got7.ok);
+  assert.equal(got7.encoding, "windows-1252");
   // a declared encoding is unchanged
-  assert.equal(decodeText(stray(20, 0xff), { declared: "windows-1252" }).encoding, "windows-1252");
-  assert.equal(decodeText(stray(20, 0xff), { declared: "utf-8" }).encoding, "utf-8");
+  const got8 = decodeText(stray(20, 0xff), { declared: "windows-1252" });
+  assert.ok(got8.ok);
+  assert.equal(got8.encoding, "windows-1252");
+  const got9 = decodeText(stray(20, 0xff), { declared: "utf-8" });
+  assert.ok(got9.ok);
+  assert.equal(got9.encoding, "utf-8");
 });
 
 test("R36 decodeText reads windows-1252 and ISO-8859-x by declaration or by detection, and never leaves a replacement character for what its declared encoding decodes", () => {
@@ -365,11 +462,13 @@ test("R36 decodeText reads windows-1252 and ISO-8859-x by declaration or by dete
   assert.deepEqual([detected.encoding, detected.assumed, detected.replaced, detected.replaced_ratio], ["windows-1252", true, 0, 0]);
   for (const declared of ["windows-1252", "WINDOWS-1252", "iso-8859-1", "latin1", "cp1252", "us-ascii"]) {
     const r = decodeText(cp1252, { declared, name: "l.txt" });
+    assert.ok(r.ok);
     assert.equal(r.text, "Café résumé € “q”", declared);
     assert.deepEqual([r.encoding, r.assumed], ["windows-1252", false], declared);
   }
   // ISO-8859-2: byte 0xB1 is ą, not the Latin-1 ±
   const latin2 = decodeText(Uint8Array.from([0x7a, 0xb1, 0x62]), { declared: "ISO-8859-2" });
+  assert.ok(latin2.ok);
   assert.deepEqual([latin2.text, latin2.encoding, latin2.assumed], ["ząb", "iso-8859-2", false]);
   const all = Uint8Array.from({ length: 256 }, (_, i) => i);
   for (const declared of ["windows-1252", "iso-8859-1", "iso-8859-2", "iso-8859-15"]) {
@@ -380,10 +479,12 @@ test("R36 decodeText reads windows-1252 and ISO-8859-x by declaration or by dete
   // a declared UTF-8 that the bytes are not: what cannot be decoded is counted, not hidden
   const bad = new Uint8Array([...enc("ab"), 0xff, ...enc("cd"), 0xc3]);
   const r = decodeText(bad, { declared: "utf-8" });
+  assert.ok(r.ok);
   assert.equal(r.text, "ab�cd�");
   assert.deepEqual([r.replaced, r.replaced_ratio, r.assumed], [2, 2 / 6, false]);
   // characters, not UTF-16 units: an astral character counts once
   const astral = decodeText(enc("😀😀�"), {});
+  assert.ok(astral.ok);
   assert.deepEqual([astral.replaced, astral.replaced_ratio], [1, 1 / 3]);
 });
 
@@ -393,38 +494,61 @@ test("R36 decodeText answers ENCODING_UNSUPPORTED with the source's name for a d
   }
   assert.deepEqual(decodeText(enc("<?xml version=\"1.0\" encoding=\"Shift_JIS\"?><a/>"), { kind: "xml", name: "p.xml" }), { ok: false, why: "ENCODING_UNSUPPORTED", name: "p.xml" });
   assert.deepEqual(decodeText(enc("<meta charset=\"big5\">"), { kind: "html", name: "p.html" }), { ok: false, why: "ENCODING_UNSUPPORTED", name: "p.html" });
-  assert.equal(decodeText(enc("abc"), { declared: "klingon" }).name, null);
+  const got10 = decodeText(enc("abc"), { declared: "klingon" });
+  assert.equal(got10.ok, false);
+  assert.equal(got10.name, null);
 });
 
 test("R36 decodeText takes the declaration from the text itself by kind, a header's declaration over the text's, and a mark over both", () => {
+  /** @type {(label: string, body: string) => Uint8Array} */
   const prolog = (label, body) => latin1(`<?xml version="1.0" encoding="${label}"?><a>${body}</a>`);
-  assert.equal(decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "xml" }).text.endsWith("café</a>"), true);
-  assert.deepEqual(((r) => [r.encoding, r.assumed])(decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "xml" })), ["windows-1252", false]);
-  assert.deepEqual(((r) => [r.encoding, r.assumed])(decodeText(prolog("UTF-8", "caf\xc3\xa9"), { kind: "xml" })), ["utf-8", false]);
+  const got11 = decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "xml" });
+  assert.ok(got11.ok);
+  assert.equal(got11.text.endsWith("café</a>"), true);
+  const latinProlog = decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "xml" });
+  assert.ok(latinProlog.ok);
+  assert.deepEqual(((r) => [r.encoding, r.assumed])(latinProlog), ["windows-1252", false]);
+  const utf8Prolog = decodeText(prolog("UTF-8", "caf\xc3\xa9"), { kind: "xml" });
+  assert.ok(utf8Prolog.ok);
+  assert.deepEqual(((r) => [r.encoding, r.assumed])(utf8Prolog), ["utf-8", false]);
   // another kind does not read the prolog
-  assert.equal(decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "text" }).assumed, true);
+  const got12 = decodeText(prolog("ISO-8859-1", "caf\xe9"), { kind: "text" });
+  assert.ok(got12.ok);
+  assert.equal(got12.assumed, true);
+  /** @type {(head: string) => Uint8Array} */
   const html = (head) => latin1(`<html><head>${head}</head><body>caf\xe9</body></html>`);
-  assert.equal(decodeText(html("<meta charset=windows-1252>"), { kind: "html" }).text.includes("café"), true);
-  assert.equal(decodeText(html("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">"), { kind: "html" }).text.includes("café"), true);
+  const got13 = decodeText(html("<meta charset=windows-1252>"), { kind: "html" });
+  assert.ok(got13.ok);
+  assert.equal(got13.text.includes("café"), true);
+  const got14 = decodeText(html("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">"), { kind: "html" });
+  assert.ok(got14.ok);
+  assert.equal(got14.text.includes("café"), true);
   // the header wins over the meta (H5)
   const conflict = decodeText(html("<meta charset=\"utf-8\">"), { kind: "html", declared: "windows-1252" });
+  assert.ok(conflict.ok);
   assert.equal(conflict.text.includes("café"), true);
   assert.deepEqual([conflict.encoding, conflict.assumed], ["windows-1252", false]);
   // a byte-order mark wins over a header
   const marked = decodeText(new Uint8Array([0xef, 0xbb, 0xbf, ...enc("café")]), { declared: "windows-1252" });
+  assert.ok(marked.ok);
   assert.deepEqual([marked.text, marked.encoding], ["café", "utf-8"]);
   // UTF-16 named by a text that is plainly 8-bit is not UTF-16
-  assert.equal(decodeText(prolog("UTF-16", "abc"), { kind: "xml" }).text.endsWith("abc</a>"), true);
+  const got15 = decodeText(prolog("UTF-16", "abc"), { kind: "xml" });
+  assert.ok(got15.ok);
+  assert.equal(got15.text.endsWith("abc</a>"), true);
   // a prolog in UTF-16 without a mark is found by its layout and is not assumed
   const u16xml = u16le("<?xml version=\"1.0\" encoding=\"UTF-16\"?><a>é</a>", false);
   const r = decodeText(u16xml, { kind: "xml" });
+  assert.ok(r.ok);
   assert.deepEqual([r.text.endsWith("<a>é</a>"), r.encoding, r.assumed], [true, "utf-16le", false]);
 });
 
 test("R36 decodeText lists the windows whose detected encoding differs from the file's, and [] for a text decoded in one piece", () => {
   const WINDOW = 65536;
+  /** @type {(n: number) => string} */
   const line = (n) => `line ${n} café\n`;
   // a Latin-1 file with a stretch of UTF-8 in the middle window
+  /** @type {string[]} */
   const parts = [];
   for (let i = 0; parts.join("").length < 3 * WINDOW; i++) parts.push(line(i));
   const latin = latin1(parts.join("").replaceAll("café", "caf\xe9"));
@@ -433,21 +557,29 @@ test("R36 decodeText lists the windows whose detected encoding differs from the 
   assert.equal(utf8Window.length, WINDOW);
   mixed.set(utf8Window, WINDOW);
   const r = decodeText(mixed, { name: "m.txt" });
+  assert.ok(r.ok);
   assert.equal(r.encoding, "windows-1252");
   assert.deepEqual(r.disagree, [WINDOW]);
-  assert.deepEqual(decodeText(latin, { name: "m.txt" }).disagree, []);
+  const got16 = decodeText(latin, { name: "m.txt" });
+  assert.ok(got16.ok);
+  assert.deepEqual(got16.disagree, []);
   // a UTF-8 file with a Latin-1 stretch is not valid UTF-8 as a whole: it is read as the legacy charset it is
   // declared UTF-8, the stretch is a disagreeing window
   const utf8 = enc(parts.join(""));
   const withLatin = utf8.slice();
   withLatin.set(latin1("caf\xe9 ".repeat(1000)), 2 * WINDOW + 50);
   const d = decodeText(withLatin, { declared: "utf-8" });
+  assert.ok(d.ok);
   assert.equal(d.encoding, "utf-8");
   assert.deepEqual(d.disagree, [2 * WINDOW]);
   assert.ok(d.replaced > 0);
   // a text of one piece, and UTF-16, have nothing to disagree
-  assert.deepEqual(decodeText(utf8.subarray(0, 1000), {}).disagree, []);
-  assert.deepEqual(decodeText(u16le(parts.join("")), {}).disagree, []);
+  const got17 = decodeText(utf8.subarray(0, 1000), {});
+  assert.ok(got17.ok);
+  assert.deepEqual(got17.disagree, []);
+  const got18 = decodeText(u16le(parts.join("")), {});
+  assert.ok(got18.ok);
+  assert.deepEqual(got18.disagree, []);
 });
 
 test("R36 decodeText is pure, never throws on odd arguments, and its answer for the same bytes is the same", () => {
@@ -461,9 +593,15 @@ test("R36 decodeText is pure, never throws on odd arguments, and its answer for 
     const r = decodeText(x, x);
     assert.equal(typeof r.ok, "boolean");
   }
-  assert.equal(decodeText(bytes.buffer, undefined).text, CAFE);
-  assert.equal(decodeText(Array.from(bytes), null).text, CAFE);
-  assert.equal(decodeText(bytes, { declared: "" }).assumed, true);
+  const got19 = decodeText(bytes.buffer, undefined);
+  assert.ok(got19.ok);
+  assert.equal(got19.text, CAFE);
+  const got20 = decodeText(Array.from(bytes), null);
+  assert.ok(got20.ok);
+  assert.equal(got20.text, CAFE);
+  const got21 = decodeText(bytes, { declared: "" });
+  assert.ok(got21.ok);
+  assert.equal(got21.assumed, true);
 });
 
 test("R36 every part the module decodes to text goes through decodeText: a UTF-16 part is read, not found empty", async () => {
@@ -476,14 +614,18 @@ test("R36 every part the module decodes to text goes through decodeText: a UTF-1
   const c = readContainer(z);
   assert.equal((await discriminate(z)).format, "docx");
   assert.equal((await walkRels(z, c)).outbound.length, 1);
-  assert.equal((await readCoreProperties(z, c)).creator, "Zoë");
+  const zCore = await readCoreProperties(z, c);
+  assert.ok(zCore.ok);
+  assert.equal(zCore.creator, "Zoë");
   // the same parts in Latin-1 under their prolog
   const legacy = buildZip([
     { name: "docProps/core.xml", data: latin1("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><cp:coreProperties xmlns:cp=\"x\" xmlns:dc=\"y\"><dc:creator>Zo\xeb</dc:creator></cp:coreProperties>") },
     { name: "_rels/.rels", data: latin1("<?xml version=\"1.0\" encoding=\"Shift_JIS\"?><Relationships/>") },
   ]);
   const lc = readContainer(legacy);
-  assert.equal((await readCoreProperties(legacy, lc)).creator, "Zoë");
+  const legacyCore = await readCoreProperties(legacy, lc);
+  assert.ok(legacyCore.ok);
+  assert.equal(legacyCore.creator, "Zoë");
   // a declaration it cannot decode is the part's own unparseable refusal
   assert.deepEqual((await walkRels(legacy, lc)).undetermined, [{ part: "_rels/.rels", why: "rels_unparseable" }]);
   // an ODF mimetype in UTF-16 is the media type it spells
@@ -529,7 +671,8 @@ test("R37 a rels target holding a lone surrogate is refused, and a reference to 
   assert.equal(ok.ok, true);
   assert.equal(ok.creator, "ABC😀\u{10FFFF}\u0001&😀");
   const rels = parseRels(`<Relationships><Relationship Id="r" Target="a&#x20;b" TargetMode="External"/></Relationships>`);
-  assert.equal(rels.relationships[0].target, "a b");
+  assert.ok(rels.ok);
+  assert.equal(rels.relationships[0]?.target, "a b");
   // the old refusals are unchanged and are not final
   assert.deepEqual(parseRels("<nothing/>"), { ok: false, why: "rels_unparseable" });
   assert.deepEqual(parseCoreProperties("<nothing/>"), { ok: false, why: "core_properties_unparseable" });
@@ -550,6 +693,11 @@ test("R37 a part of unterminated tags is read in one pass, not once per tag", ()
 
 /* The parts a source that fetches a file in parts of PART bytes would fetch: a read that falls in a part other than
  * the last one read costs a fetch. */
+/**
+ * @param {[number, number][]} reads
+ * @param {number} PART
+ * @returns {number}
+ */
 function fetches(reads, PART) {
   let last = -1, count = 0;
   for (const [offset, length] of reads) {
@@ -560,11 +708,17 @@ function fetches(reads, PART) {
   return count;
 }
 
+/**
+ * @param {number} count
+ * @param {number} size
+ * @returns {ZipMember[]}
+ */
 function entriesOf(count, size) {
   const r = prng(38);
   return Array.from({ length: count }, (_, i) => ({ name: `member-${i}.bin`, data: Uint8Array.from({ length: size }, () => Math.floor(r() * 256)), method: 0 }));
 }
-const shuffled = (n, seed) => { const r = prng(seed); const order = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } return order; };
+/** @type {(n: number, seed: number) => number[]} */
+const shuffled = (n, seed) => { const r = prng(seed); const order = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const a = order[i], b = order[j]; assert.ok(a !== undefined && b !== undefined); order[i] = b; order[j] = a; } return order; };
 
 test("R38 a shuffled central directory is listed with at most twice the part reads of the same archive in physical order, and the same rows", async () => {
   const members = entriesOf(2000, 2048);
@@ -583,9 +737,18 @@ test("R38 a shuffled central directory is listed with at most twice the part rea
   assert.deepEqual(headerReads, headerReads.toSorted((x, y) => x - y));
   // R27's answer is unchanged: the rows are the directory's, in its order, equal to the whole-bytes answer
   assert.deepEqual(listB, await listArchive(shuffledZip));
-  assert.deepEqual(listB.entries.map((r) => r.index), listB.entries.map((_, i) => i));
-  assert.deepEqual(listB.entries.map((r) => r.name), order.map((i) => members[i].name));
-  const byName = (list) => Object.fromEntries(list.entries.map(({ index, ...row }) => [row.name, row]));
+  const rowsB = listB.entries;
+  assert.ok(rowsB);
+  assert.deepEqual(rowsB.map((r) => r.index), rowsB.map((_, i) => i));
+  assert.deepEqual(rowsB.map((r) => r.name), order.map((i) => members[i]?.name));
+  /** @type {(list: import("../../../src/ooxml.mjs").ArchiveListing) => object} */
+  const byName = (list) => {
+    const rows = list.entries;
+    assert.ok(rows);
+    /** @type {(r: import("../../../src/ooxml.mjs").ArchiveRow) => [string, object]} */
+    const keyed = ({ index, ...row }) => [String(row.name), row];
+    return Object.fromEntries(rows.map(keyed));
+  };
   assert.deepEqual(byName(listB), byName(listA));
 });
 
@@ -596,7 +759,9 @@ test("R38 10,000 entries are listed whatever the directory's order, and 10,001 a
   const listing = await listArchive(source);
   assert.equal(listing.ok, true);
   assert.equal(listing.count, ARCHIVE_ENTRIES_MAX);
-  assert.ok(listing.entries.every((r) => r.verdict === "ok"));
+  const rows = listing.entries;
+  assert.ok(rows);
+  assert.ok(rows.every((r) => r.verdict === "ok"));
   assert.ok(fetches(reads, 1024 * 1024) <= 2 * (Math.ceil(z.length / (1024 * 1024)) + 2));
   const over = buildZip(entriesOf(ARCHIVE_ENTRIES_MAX + 1, 1));
   assert.deepEqual(await listArchive(over), { ok: false, why: "ARCHIVE_ENTRIES_MAX", limit: ARCHIVE_ENTRIES_MAX, final: true, entries: null });
@@ -615,8 +780,14 @@ test("R38 the listing refuses a directory over ARCHIVE_DIRECTORY_MAX and a name 
 
 /* ------------------------------------------------- R35, R36 in pieces */
 
+/**
+ * @param {Uint8Array} bytes
+ * @param {string} name
+ * @returns {Promise<{ r: import("../../../src/ooxml.mjs").PiecesRead, text: string }>}
+ */
 async function piecesOf(bytes, name) {
   const c = readContainer(bytes);
+  /** @type {string[]} */
   const got = [];
   const r = await readPartPieces(bytes, c, name, cutAfterTag, (p) => got.push(p));
   return { r, text: got.join("") };
@@ -624,7 +795,9 @@ async function piecesOf(bytes, name) {
 
 test("R35 readPartPieces decodes a member by its own encoding: UTF-16 by its BOM, its layout or its declaration, a legacy charset by its prolog", async () => {
   const body = "<a x=\"é€\">" + "word ".repeat(300000) + "</a>";
-  for (const [label, data] of [["LE BOM", u16le(body)], ["BE BOM", u16be(body)], ["LE no BOM", u16le(body, false)], ["BE no BOM", u16be(body, false)], ["UTF-8 BOM", new Uint8Array([0xef, 0xbb, 0xbf, ...enc(body)])]]) {
+  /** @type {[string, Uint8Array][]} */
+  const encoded = [["LE BOM", u16le(body)], ["BE BOM", u16be(body)], ["LE no BOM", u16le(body, false)], ["BE no BOM", u16be(body, false)], ["UTF-8 BOM", new Uint8Array([0xef, 0xbb, 0xbf, ...enc(body)])]];
+  for (const [label, data] of encoded) {
     for (const method of [0, 8]) {
       const z = buildZip([{ name: "p.xml", data, method }]);
       const { r, text } = await piecesOf(z, "p.xml");
@@ -647,22 +820,27 @@ test("R35 readPartPieces decodes a member by its own encoding: UTF-16 by its BOM
 /* ---------------------------------------------------------------- R7 (G126d) */
 
 test("R7 the declared unpacked size of a container small on disk is large for every container kind, and a lying directory counts as large (G126d audit)", () => {
+  /** @type {(name: string, n: number) => DeclaredMember} */
   const declared = (name, n) => ({ name, data: "x", local: { uncompressedSize: n }, central: { uncompressedSize: n } });
+  /** @type {Record<string, DeclaredMember[]>} */
   const kinds = {
     xlsx: [declared("xl/worksheets/sheet1.xml", 20 * MIB + 1)], docx: [declared("word/document.xml", 20 * MIB + 1)],
     pptx: [declared("ppt/slides/slide1.xml", 20 * MIB + 1)], odt: [declared("content.xml", 20 * MIB + 1)],
     zip: [declared("data/big.txt", 20 * MIB + 1)],
   };
   for (const [kind, members] of Object.entries(kinds)) {
+    /** @type {Uint8Array} */
     const z = makeZip(members);
     assert.ok(z.length < 3 * MIB, kind);
     const c = readContainer(z);
-    const { total } = declaredTextBytes(c, (n) => /\.(xml|txt)$/.test(n));
+    const { total } = declaredTextBytes(c, (/** @type {string} */ n) => /\.(xml|txt)$/.test(n));
     assert.equal(total, 20 * MIB + 1, kind);
     assert.equal(sizeGuard(total).ok, false, kind);
   }
   // a directory whose sizes are not numbers is never shown to be small
-  const lying = { entries: [{ name: "content.xml", uncompressedSize: NaN }, { name: "a.xml", uncompressedSize: undefined }], byName: new Map() };
+  /** @type {Map<string, unknown>} */
+  const noNames = new Map(null);
+  const lying = { entries: [{ name: "content.xml", uncompressedSize: NaN }, { name: "a.xml", uncompressedSize: undefined }], byName: noNames };
   assert.equal(sizeGuard(declaredTextBytes(lying, () => true).total).ok, false);
   assert.equal(M.textPlan(declaredTextBytes(lying, () => true).total).read, "none");
 });

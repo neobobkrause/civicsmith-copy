@@ -5,14 +5,42 @@
  * the module under test; olevba reads what it writes (the suite checks that
  * where oletools is installed). Deterministic: no clock, no randomness. */
 
+/**
+ * A module of a project, as the writer takes it.
+ * @typedef {Object} VbaModuleSpec
+ * @property {string} name
+ * @property {string | Uint8Array} [source]
+ * @property {string | null} [stream] null writes no stream and no stream records
+ * @property {Uint8Array} [cache] the performance cache before the compressed source
+ * @property {boolean} [document]
+ * @property {boolean} [unicodeName] false writes no MODULENAMEUNICODE record
+ * @property {number | null} [offset] null writes no MODULEOFFSET record
+ */
+/** @typedef {{ [name: string]: Uint8Array | CfbTree | undefined }} CfbTree a Uint8Array is a stream, an object a storage */
+/** @typedef {{ bytes: Uint8Array, fatOffset: number, dirSector: number, entries: string[] }} CfbFile */
+
 const ENDOFCHAIN = 0xfffffffe, FREESECT = 0xffffffff, FATSECT = 0xfffffffd, NOSTREAM = 0xffffffff;
 
+/** A directory entry as makeCfb lays it out: type 5 the root, 1 a storage,
+ *  2 a stream (`data` and `start` are read for streams only).
+ * @typedef {{ name: string, type: number, data: Uint8Array, children: number[], start: number }} CfbEntry */
+
 class Out {
-  constructor() { this.parts = []; this.length = 0; }
+  constructor() {
+    /** @type {Uint8Array[]} */
+    this.parts = [];
+    /** @type {number} */
+    this.length = 0;
+  }
+  /** @param {Uint8Array} b @returns {Out} */
   bytes(b) { this.parts.push(b); this.length += b.length; return this; }
+  /** @param {number} v @returns {Out} */
   u8(v) { return this.bytes(Uint8Array.of(v)); }
+  /** @param {number} v @returns {Out} */
   u16(v) { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, v, true); return this.bytes(b); }
+  /** @param {number} v @returns {Out} */
   u32(v) { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v >>> 0, true); return this.bytes(b); }
+  /** @returns {Uint8Array} */
   done() {
     const out = new Uint8Array(this.length);
     let at = 0;
@@ -20,14 +48,22 @@ class Out {
     return out;
   }
 }
+/** @param {string} s @returns {Uint8Array} */
 const utf16 = (s) => { const b = new Uint8Array(s.length * 2); for (let i = 0; i < s.length; i++) { b[2 * i] = s.charCodeAt(i) & 255; b[2 * i + 1] = s.charCodeAt(i) >> 8; } return b; };
-const latin1 = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
+/** @param {string} s @returns {Uint8Array} */
+const latin1 = (s) => Uint8Array.from(s, (/** @type {string} */ c) => c.charCodeAt(0));
+/** @param {Uint8Array} b @param {number} unit @returns {Uint8Array} */
 const pad = (b, unit) => { const out = new Uint8Array(Math.ceil(b.length / unit) * unit); out.set(b); return out; };
 
 /** MS-OVBA §2.4.1.3.6: a CompressedContainer over `data`. Each 4,096-byte
  *  chunk is compressed with the longest match the copy token's split allows;
  *  a full chunk that would not shrink is written raw (flag 0), as Office does.
  *  `literalOnly` writes no copy token at all. */
+/**
+ * @param {Uint8Array} data
+ * @param {{ literalOnly?: boolean }} [o]
+ * @returns {Uint8Array}
+ */
 export function ovbaCompress(data, { literalOnly = false } = {}) {
   const out = new Out().u8(0x01);
   for (let start = 0; start < data.length; start += 4096) {
@@ -55,7 +91,7 @@ export function ovbaCompress(data, { literalOnly = false } = {}) {
           flags |= 1 << bit;
           p += best;
         } else {
-          tokens.u8(data[p++]);
+          tokens.u8(data[p++] ?? 0);
         }
       }
       body.u8(flags).bytes(tokens.done());
@@ -73,21 +109,38 @@ export function ovbaCompress(data, { literalOnly = false } = {}) {
 /** An MS-CFB file holding `tree` (an object: a Uint8Array is a stream, an
  *  object a storage). Answers the bytes and where the FAT and directory lie,
  *  so a test can break a chain. */
+/**
+ * @param {CfbTree} tree
+ * @returns {CfbFile}
+ */
 export function makeCfb(tree) {
-  const entries = [{ name: "Root Entry", type: 5, children: [] }];
+  /** @type {CfbEntry} */
+  const root = { name: "Root Entry", type: 5, data: new Uint8Array(0), children: [], start: 0 };
+  /** @type {CfbEntry[]} */
+  const entries = [root];
+  /** @param {CfbTree} obj @param {CfbEntry} parent */
   const add = (obj, parent) => {
     for (const [name, v] of Object.entries(obj)) {
-      const e = v instanceof Uint8Array ? { name, type: 2, data: v, children: [] } : { name, type: 1, children: [] };
-      entries.push(e);
-      entries[parent].children.push(entries.length - 1);
-      if (e.type === 1) add(v, entries.length - 1);
+      if (v instanceof Uint8Array) {
+        entries.push({ name, type: 2, data: v, children: [], start: 0 });
+        parent.children.push(entries.length - 1);
+      } else {
+        /** @type {CfbEntry} */
+        const e = { name, type: 1, data: new Uint8Array(0), children: [], start: 0 };
+        entries.push(e);
+        parent.children.push(entries.length - 1);
+        if (v === undefined) throw new TypeError(`makeCfb: ${name} is neither a stream nor a storage`);
+        add(v, e);
+      }
     }
   };
-  add(tree, 0);
+  add(tree, root);
   const streams = entries.filter((e) => e.type === 2);
 
   // The mini stream: every stream under 4,096 bytes, in 64-byte mini sectors.
+  /** @type {number[]} */
   const miniFat = [];
+  /** @type {Uint8Array[]} */
   const miniParts = [];
   for (const e of streams.filter((s) => s.data.length > 0 && s.data.length < 4096)) {
     const n = Math.ceil(e.data.length / 64);
@@ -112,11 +165,12 @@ export function makeCfb(tree) {
   const fat = new Uint32Array(fatSecs * 128).fill(FREESECT);
   for (let i = 0; i < fatSecs; i++) fat[i] = FATSECT;
   let next = fatSecs;
+  /** @param {number} n @returns {number} */
   const run = (n) => { const start = n ? next : ENDOFCHAIN; for (let k = 0; k < n; k++) fat[next + k] = k < n - 1 ? next + k + 1 : ENDOFCHAIN; next += n; return start; };
   const dirStart = run(dirSecs);
   const miniFatStart = run(miniFatSecs);
   const miniStart = run(miniSecs);
-  big.forEach((s, i) => { s.start = run(bigSecs[i]); });
+  big.forEach((s, i) => { s.start = run(bigSecs[i] ?? 0); });
 
   // The directory: each storage's children chained by right siblings.
   const dir = new Out();
@@ -124,8 +178,9 @@ export function makeCfb(tree) {
     const name = new Uint8Array(64);
     name.set(utf16(e.name).subarray(0, 62));
     dir.bytes(name).u16((Math.min(e.name.length, 31) + 1) * 2).u8(e.type).u8(1);
-    const parentOf = entries.findIndex((p) => p.children.includes(i));
-    const siblings = parentOf < 0 ? [] : entries[parentOf].children;
+    const parent = entries.find((p) => p.children.includes(i));
+    /** @type {number[]} */
+    const siblings = parent === undefined ? [] : parent.children;
     const right = siblings[siblings.indexOf(i) + 1] ?? NOSTREAM;
     dir.u32(NOSTREAM).u32(right).u32(e.children[0] ?? NOSTREAM);
     dir.bytes(new Uint8Array(16)).u32(0).bytes(new Uint8Array(16));
@@ -152,12 +207,19 @@ export function makeCfb(tree) {
   return { bytes: file.done(), fatOffset: 512, dirSector: dirStart, entries: entries.map((e) => e.name) };
 }
 
+/** @param {Out} out @param {number} id @param {Uint8Array} data @returns {Out} */
 const rec = (out, id, data) => out.u16(id).u32(data.length).bytes(data);
+/** @param {number} v @returns {Uint8Array} */
 const u16le = (v) => Uint8Array.of(v & 255, v >> 8);
+/** @param {number} v @returns {Uint8Array} */
 const u32le = (v) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v, true); return b; };
 
 /** The decompressed `dir` stream (MS-OVBA §2.3.4.2) for a project and its
  *  modules, every record a real project carries, a reference included. */
+/**
+ * @param {{ project?: string | undefined, codePage?: number | undefined, modules?: VbaModuleSpec[] }} o
+ * @returns {Uint8Array}
+ */
 export function vbaDir({ project = "VBAProject", codePage = 1252, modules = [] }) {
   const d = new Out();
   rec(d, 0x0001, u32le(1)); // SYSKIND: Win32
@@ -180,9 +242,11 @@ export function vbaDir({ project = "VBAProject", codePage = 1252, modules = [] }
   for (const m of modules) {
     rec(d, 0x0019, latin1(m.name));
     if (m.unicodeName !== false) rec(d, 0x0047, utf16(m.name));
-    if (m.stream !== null) { rec(d, 0x001a, latin1(m.stream ?? m.name)); rec(d, 0x0032, utf16(m.stream ?? m.name)); }
+    const stream = m.stream;
+    if (stream !== null) { rec(d, 0x001a, latin1(stream ?? m.name)); rec(d, 0x0032, utf16(stream ?? m.name)); }
     rec(d, 0x001c, new Uint8Array(0)); rec(d, 0x0048, new Uint8Array(0)); // DOCSTRING
-    if (m.offset !== null) rec(d, 0x0031, u32le(m.offset ?? m.cache?.length ?? 0)); // OFFSET
+    const offset = m.offset;
+    if (offset !== null) rec(d, 0x0031, u32le(offset ?? m.cache?.length ?? 0)); // OFFSET
     rec(d, 0x001e, u32le(0)); // HELPCONTEXT
     rec(d, 0x002c, u16le(0xffff)); // COOKIE
     rec(d, m.document ? 0x0022 : 0x0021, new Uint8Array(0)); // TYPE
@@ -196,18 +260,28 @@ export function vbaDir({ project = "VBAProject", codePage = 1252, modules = [] }
  *  document?}]`; `cache` is the performance cache before the compressed
  *  source (its length is the module's offset). `dir` replaces the compressed
  *  dir stream; `streams` replaces or adds VBA-storage streams by name. */
+/**
+ * @param {{ project?: string, codePage?: number, modules?: VbaModuleSpec[], dir?: Uint8Array, streams?: Record<string, Uint8Array | undefined>, extra?: CfbTree }} [o]
+ * @returns {CfbFile}
+ */
 export function makeVbaProject({ project, codePage, modules = [], dir, streams = {}, extra = {} } = {}) {
-  const vba = {
-    _VBA_PROJECT: Uint8Array.of(0xcc, 0x61, 0xff, 0xff, 0x00, 0x00, 0x00),
-    dir: dir ?? ovbaCompress(vbaDir({ project, codePage, modules })),
-  };
+  // The VBA storage's streams in the order an object would hold them; one
+  // set to undefined in `streams` is left out.
+  /** @type {Map<string, Uint8Array | undefined>} */
+  const named = new Map(null);
+  named.set("_VBA_PROJECT", Uint8Array.of(0xcc, 0x61, 0xff, 0xff, 0x00, 0x00, 0x00));
+  named.set("dir", dir ?? ovbaCompress(vbaDir({ project, codePage, modules })));
   for (const m of modules) {
-    if (m.stream === null) continue;
+    const stream = m.stream;
+    if (stream === null) continue;
     const cache = m.cache ?? new Uint8Array(0);
-    const src = typeof m.source === "string" ? latin1(m.source) : m.source;
-    vba[m.stream ?? m.name] = new Out().bytes(cache).bytes(ovbaCompress(src)).done();
+    const source = m.source;
+    const src = typeof source === "string" ? latin1(source) : source;
+    if (src === undefined) throw new TypeError(`makeVbaProject: module ${m.name} has no source`);
+    named.set(stream ?? m.name, new Out().bytes(cache).bytes(ovbaCompress(src)).done());
   }
-  Object.assign(vba, streams);
-  for (const [k, v] of Object.entries(vba)) if (v === undefined) delete vba[k];
+  for (const [k, v] of Object.entries(streams)) named.set(k, v);
+  /** @type {CfbTree} */
+  const vba = Object.fromEntries([...named].filter(([, v]) => v !== undefined));
   return makeCfb({ PROJECT: latin1(`ID="{00000000-0000-0000-0000-000000000000}"\r\n`), VBA: vba, ...extra });
 }

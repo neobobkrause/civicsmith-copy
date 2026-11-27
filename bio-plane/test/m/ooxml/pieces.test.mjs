@@ -14,16 +14,36 @@ const MIB = 1024 * 1024;
 const BOUND = MEASURED_OOXML_TEXT_BOUND_BYTES;
 const CEIL = STREAMED_TEXT_BOUND_BYTES;
 
-/** All the pieces of member `name`, and the answer. */
+/** @typedef {import("../../../src/ooxml.mjs").PiecesRead} PiecesRead */
+/** @typedef {import("../../../src/ooxml.mjs").PartRefusal} PartRefusal */
+/** @typedef {import("./zip.mjs").ZipMember} ZipMember */
+
+/* node:zlib's raw deflate (no description here), kept to this one line. */
+/** @param {string} s @returns {Uint8Array} */
+const deflateRaw = (s) => deflateRawSync(Buffer.from(s));
+
+/** A timer's wait of `ms` milliseconds. */
+/** @param {number} ms @returns {Promise<void>} */
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * All the pieces of member `name`, and the answer.
+ * @param {Uint8Array} bytes
+ * @param {string} name
+ * @param {(buf: string) => number} [cut]
+ * @returns {Promise<{ r: PiecesRead, got: string[] }>}
+ */
 async function pieces(bytes, name, cut = cutAfterTag) {
   const container = readContainer(bytes);
   assert.equal(container.ok, true);
+  /** @type {string[]} */
   const got = [];
   const r = await readPartPieces(bytes, container, name, cut, (p) => got.push(p));
   return { r, got };
 }
 
 /** `n` characters of markup with a `>` every 40, and a few multi-byte characters. */
+/** @param {number} n @returns {string} */
 function markup(n) {
   const unit = "<a x=\"é€😀\">abcdefghijklmnopqrstu</a>"; // 31 chars, bytes differ (multi-byte)
   let s = "";
@@ -58,6 +78,7 @@ test("R35 readPartPieces: a deflated member of 6 MiB comes back in pieces that j
   assert.equal(got.join(""), text);
   for (const p of got.slice(0, -1)) assert.ok(p.endsWith(">"), "a piece ends after a >");
   const whole = await readPart(bytes, readContainer(bytes), "p.xml");
+  assert.ok(whole.ok);
   assert.equal(new TextDecoder().decode(whole.bytes), got.join(""));
 });
 
@@ -85,6 +106,7 @@ test("R35 readPartPieces: the member is never held — a 60 MiB member comes in 
 });
 
 test("R35 readPartPieces: cutBefore ends a piece before the last element start in the buffer", async () => {
+  /** @type {(i: number) => string} */
   const row = (i) => `<row r="${i}"><c><v>${"9".repeat(60)}</v></c></row>`;
   let xml = "<s>";
   for (let i = 1; xml.length < 3 * MIB; i++) xml += row(i);
@@ -99,14 +121,17 @@ test("R35 readPartPieces: cutBefore ends a piece before the last element start i
 
 test("R35 readPartPieces: the refusals are readPart's, each carrying the name; verification comes as the member ends", async () => {
   const text = markup(2 * MIB);
-  const good = [{ name: "p.xml", data: text }];
+  /** @type {ZipMember} */
+  const member = { name: "p.xml", data: text };
+  const good = [member];
+  /** @type {[string, Uint8Array][]} */
   const cases = [
-    ["crc_mismatch", buildZip([{ ...good[0], cd: { crc: 0x12345678 } }])],
-    ["size_mismatch", buildZip([{ ...good[0], cd: { usize: text.length - 1000 } }])],
-    ["size_mismatch", buildZip([{ ...good[0], cd: { usize: text.length + 1000 } }])],
-    ["member_truncated", buildZip([{ ...good[0], cd: { csize: 1e8 } }])],
-    ["unsupported_compression_method", buildZip([{ ...good[0], cd: { method: 12 }, local: { method: 12 } }])],
-    ["inflate_failed", buildZip([{ ...good[0], compressed: new Uint8Array(5000).fill(0xff) }])],
+    ["crc_mismatch", buildZip([{ ...member, cd: { crc: 0x12345678 } }])],
+    ["size_mismatch", buildZip([{ ...member, cd: { usize: text.length - 1000 } }])],
+    ["size_mismatch", buildZip([{ ...member, cd: { usize: text.length + 1000 } }])],
+    ["member_truncated", buildZip([{ ...member, cd: { csize: 1e8 } }])],
+    ["unsupported_compression_method", buildZip([{ ...member, cd: { method: 12 }, local: { method: 12 } }])],
+    ["inflate_failed", buildZip([{ ...member, compressed: new Uint8Array(5000).fill(0xff) }])],
   ];
   for (const [why, bytes] of cases) {
     const { r } = await pieces(bytes, "p.xml");
@@ -114,14 +139,15 @@ test("R35 readPartPieces: the refusals are readPart's, each carrying the name; v
     assert.equal(r.why, why);
     assert.equal(r.name, "p.xml");
     const whole = await readPart(bytes, readContainer(bytes), "p.xml");
-    assert.equal(whole.why, why, `readPart refuses it the same way`);
+    assert.equal(whole.ok ? undefined : whole.why, why, `readPart refuses it the same way`);
   }
   const absent = await pieces(buildZip(good), "nope.xml");
   assert.deepEqual(absent.r, { ok: false, why: "part_absent", name: "nope.xml" });
-  const bomb = await pieces(buildZip([{ ...good[0], cd: { usize: MEMBER_MAX + 1 } }]), "p.xml");
+  const bomb = await pieces(buildZip([{ ...member, cd: { usize: MEMBER_MAX + 1 } }]), "p.xml");
   assert.deepEqual(bomb.r, { ok: false, why: "MEMBER_MAX", name: "p.xml", declared: MEMBER_MAX + 1, limit: MEMBER_MAX, final: true });
-  const total = await pieces(buildZip([good[0], { name: "other.xml", data: "x", cd: { usize: ARCHIVE_TOTAL_MAX } }]), "p.xml");
-  assert.equal(total.r.why, "ARCHIVE_TOTAL_MAX");
+  const total = await pieces(buildZip([member, { name: "other.xml", data: "x", cd: { usize: ARCHIVE_TOTAL_MAX } }]), "p.xml");
+  const totalRead = total.r;
+  assert.equal(totalRead.ok ? undefined : totalRead.why, "ARCHIVE_TOTAL_MAX");
 });
 
 test("R35 readPartPieces: a member of 9 MiB with no place to end a piece is stated with its size, final", async () => {
@@ -143,44 +169,53 @@ test("R35 readPartPieces: bytes the caller passes as an ArrayBuffer or a view re
   const text = markup(2 * MIB);
   const bytes = buildZip([{ name: "p.xml", data: text }]);
   const container = readContainer(bytes);
+  /** @type {string[]} */
   const viaBuffer = [];
   const r = await readPartPieces(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), container, "p.xml", cutAfterTag, (p) => viaBuffer.push(p));
   assert.equal(r.ok, true);
   assert.equal(viaBuffer.join(""), text);
-  const raw = deflateRawSync(Buffer.from(text));
+  const raw = deflateRaw(text);
   assert.ok(raw.length > 0);
 });
 
 test("R35 pieceWhy: a member with no place to end a piece is over_size_bound with its size and final; any other refusal as it is", () => {
-  assert.deepEqual(pieceWhy({ ok: false, why: "piece_unbounded", name: "p.xml", size: 99, final: true }),
+  /** @type {PartRefusal} */
+  const unbounded = { ok: false, why: "piece_unbounded", name: "p.xml", size: 99, final: true };
+  assert.deepEqual(pieceWhy(unbounded),
     { why: "over_size_bound", detail: "piece_unbounded", size: 99, final: true });
-  assert.deepEqual(pieceWhy({ ok: false, why: "crc_mismatch", name: "p.xml" }), { why: "crc_mismatch" });
+  /** @type {PartRefusal} */
+  const crc = { ok: false, why: "crc_mismatch", name: "p.xml" };
+  assert.deepEqual(pieceWhy(crc), { why: "crc_mismatch" });
   assert.deepEqual(pieceWhy(undefined), { why: undefined });
 });
 
 test("R35 readPartPieces awaits the promise onPiece returns before it makes the next piece, so a reader can yield between pieces (K4858)", async () => {
   const bytes = buildZip([{ name: "p.xml", data: markup(5 * MIB) }]);
   const container = readContainer(bytes);
+  /** @type {string[]} */
   const events = [];
+  /** @param {string} piece @returns {Promise<number>} */
   const handler = async (piece) => {
     events.push("piece");
-    await new Promise((resolve) => setTimeout(resolve, 3));
+    await wait(3);
     events.push("yielded");
     return piece.length;
   };
   const r = await readPartPieces(bytes, container, "p.xml", cutAfterTag, handler);
   assert.equal(r.ok, true);
-  assert.ok(events.filter((e) => e === "piece").length >= 4, events.join());
+  assert.ok(events.filter(/** @returns {boolean} */ (e) => e === "piece").length >= 4, events.join());
   // never two pieces without the handler's own yield between them
   for (let i = 0; i < events.length; i += 2) assert.deepEqual(events.slice(i, i + 2), ["piece", "yielded"]);
   // a timer that fires while the handler waits runs between two pieces
+  /** @type {string[]} */
   const order = [];
   const timer = setInterval(() => order.push("tick"), 1);
-  await readPartPieces(bytes, container, "p.xml", cutAfterTag, async () => { order.push("piece"); await new Promise((resolve) => setTimeout(resolve, 5)); });
+  await readPartPieces(bytes, container, "p.xml", cutAfterTag, async () => { order.push("piece"); await wait(5); });
   clearInterval(timer);
   const firstTwo = order.slice(order.indexOf("piece") + 1, order.indexOf("piece", order.indexOf("piece") + 1));
   assert.ok(firstTwo.includes("tick"), order.join());
   // a handler that returns nothing behaves as before, and a promise that rejects is reader_failed
+  /** @type {string[]} */
   const plain = [];
   assert.equal((await readPartPieces(bytes, container, "p.xml", cutAfterTag, (p) => { plain.push(p); })).ok, true);
   assert.equal(plain.join("").length, 5 * MIB);

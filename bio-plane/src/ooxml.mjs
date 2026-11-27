@@ -66,27 +66,125 @@
 
 import { boundOf } from "./read-bounds.mjs";
 
+/**
+ * One central-directory record, as `readContainer` states it (R3). `flags`, the
+ * general-purpose flags, is held on the entry but out of its published shape
+ * (not enumerable); an entry a caller builds by hand may carry none.
+ * @typedef {Object} ZipEntry
+ * @property {string} name
+ * @property {number} method
+ * @property {number} crc32
+ * @property {number} compressedSize
+ * @property {number} uncompressedSize
+ * @property {number} localHeaderOffset
+ * @property {number} [flags]
+ */
+/**
+ * A container `readContainer` read (R3): every central-directory record in file
+ * order, the first record of each name, and the count.
+ * @typedef {Object} Container
+ * @property {true} ok
+ * @property {ZipEntry[]} entries
+ * @property {Map<string, ZipEntry>} byName
+ * @property {number} count
+ */
+/**
+ * A named refusal. A refusal on a limit carries the limit's figure and is final
+ * (R30).
+ * @typedef {Object} Refusal
+ * @property {false} ok
+ * @property {string} why
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+/** @typedef {Container | Refusal} ContainerResult */
+/**
+ * A refusal on a limit (R30, R31): its name, its figure, final; for a part, the
+ * part's name and the declared size judged.
+ * @typedef {Object} LimitRefusal
+ * @property {false} ok
+ * @property {string} why
+ * @property {number} limit
+ * @property {true} final
+ * @property {string} [name]
+ * @property {number} [declared]
+ */
+/**
+ * A range source (R11, R27): the archive's size, and a reader of `length` bytes
+ * at `offset`, which may answer a promise.
+ * @typedef {Object} RangeSource
+ * @property {unknown} [size]
+ * @property {(offset: number, length: number) => unknown} read
+ */
+/**
+ * The module's own reading of a caller's source: its size and a reader that
+ * answers exactly `length` bytes or throws `Unreadable`.
+ * @typedef {Object} Source
+ * @property {number} size
+ * @property {(offset: number, length: number) => Promise<Uint8Array>} read
+ * @property {Uint8Array} [whole]
+ */
+/**
+ * What the module reads of a caller's container: its records and the map of
+ * their first names, where the caller's value holds them.
+ * @typedef {Object} View
+ * @property {ZipEntry[]} entries
+ * @property {Map<string, ZipEntry> | null} byName
+ */
+/** @typedef {{ entries: ZipEntry[] }} HoldsEntries */
+/** @typedef {{ byName: Map<string, ZipEntry> }} HoldsByName */
+
+/** @type {TextDecoder} */
 const UTF8 = new TextDecoder("utf-8", { fatal: false });
+/** @type {TextDecoder} */
 const LATIN1 = new TextDecoder("latin1");
 
 /* Every service takes bytes as a Uint8Array, an ArrayBuffer, any typed-array
  * view or an array of byte values. Anything else reads as no bytes at all, so
  * a caller's wrong argument is a named refusal downstream, never a throw. */
+/**
+ * @param {unknown} x
+ * @returns {Uint8Array}
+ */
 function toBytes(x) {
   if (x instanceof Uint8Array) return x;
   if (ArrayBuffer.isView(x)) return new Uint8Array(x.buffer, x.byteOffset, x.byteLength);
-  try { return new Uint8Array(x ?? 0); } catch { return new Uint8Array(0); }
+  try { return new Uint8Array(/** @type {ArrayLike<number>} the host's own coercion decides */ (x ?? 0)); } catch { return new Uint8Array(0); }
 }
 
 /* A container as `readContainer` returns it, or an empty one when the caller
- * passes something else: an unusable container holds no member. */
-function entriesOf(container) {
-  return Array.isArray(container?.entries) ? container.entries : [];
+ * passes something else: an unusable container holds no member. Each service
+ * that takes a container reads it through these two checks, on its own
+ * argument, and `viewOf`. */
+/**
+ * @param {unknown} x
+ * @returns {x is HoldsEntries}
+ */
+function holdsEntries(x) {
+  return x !== null && (typeof x === "object" || typeof x === "function") && "entries" in x && Array.isArray(x.entries);
 }
-function findEntry(container, want) {
-  const byName = container?.byName;
-  return (byName instanceof Map ? byName.get(want) : undefined)
-    ?? entriesOf(container).find((e) => normalizePartName(e?.name) === want);
+/**
+ * @param {unknown} x
+ * @returns {x is HoldsByName}
+ */
+function holdsByName(x) {
+  return x !== null && (typeof x === "object" || typeof x === "function") && "byName" in x && x.byName instanceof Map;
+}
+/**
+ * @param {ZipEntry[] | null} entries
+ * @param {Map<string, ZipEntry> | null} byName
+ * @returns {View}
+ */
+const viewOf = (entries, byName) => ({ entries: entries ?? [], byName });
+/**
+ * @param {View} view
+ * @param {string} want
+ * @returns {ZipEntry | undefined}
+ */
+function findEntry(view, want) {
+  const byName = view.byName;
+  return (byName ? byName.get(want) : undefined)
+    ?? view.entries.find((e) => normalizePartName(e?.name) === want);
 }
 
 /* ------------------------------------------------------------------ *
@@ -120,11 +218,28 @@ export const MEASURED_OOXML_TEXT_BOUND_BYTES = boundOf("office", "text_bytes"); 
  *  predicate over normalized part names) straight from the central directory —
  *  BEFORE any inflation, per the COFF-6 metric. Returns `{ total, parts }` so
  *  an over-bound refusal can name what it measured. */
+/**
+ * @typedef {Object} DeclaredText
+ * @property {number} total
+ * @property {{ name: string, declared: number }[]} parts
+ */
+/** @typedef {(name: string) => unknown} PartTest */
+/**
+ * @param {unknown} x
+ * @returns {x is PartTest}
+ */
+const isPartTest = (x) => typeof x === "function";
+/**
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @param {unknown} isTextPart a predicate over normalized part names; anything else matches none
+ * @returns {DeclaredText}
+ */
 export function declaredTextBytes(container, isTextPart) {
   let total = 0;
+  /** @type {{ name: string, declared: number }[]} */
   const parts = [];
-  if (typeof isTextPart !== "function") return { total, parts };
-  for (const e of entriesOf(container)) {
+  if (!isPartTest(isTextPart)) return { total, parts };
+  for (const e of (holdsEntries(container) ? container.entries : [])) {
     const name = normalizePartName(e.name);
     if (!isTextPart(name)) continue;
     total += e.uncompressedSize;
@@ -140,11 +255,28 @@ export function declaredTextBytes(container, isTextPart) {
  *  `{ ok:true }` under the bound; over it, a stated undetermined marker
  *  carrying WHY, the sizes, the metric and the bound's name — shaped so a
  *  format entry can carry it into its I2 text output verbatim. */
+/**
+ * @typedef {Object} SizeRefusal
+ * @property {false} ok
+ * @property {"undetermined"} text
+ * @property {"over_size_bound"} why
+ * @property {unknown} size the size the caller gave, as given
+ * @property {unknown} bound the bound the caller gave, as given
+ * @property {string} boundName
+ * @property {"declared_uncompressed_text_part_bytes"} metric
+ * @property {true} [final]
+ */
+/** @typedef {{ ok: true } | SizeRefusal} SizeVerdict */
+/**
+ * @param {unknown} declaredBytes the summed declared uncompressed text-part bytes; a value that is not a number is never under the bound
+ * @param {unknown} [bound]
+ * @returns {SizeVerdict}
+ */
 export function sizeGuard(declaredBytes, bound = MEASURED_OOXML_TEXT_BOUND_BYTES) {
   /* `<=`, not `!(>)`: a size that is not a number is never shown to be under
    * the bound, so it is refused rather than waved through. */
   let under = false;
-  try { under = declaredBytes <= bound; } catch { /* not comparable: not under */ }
+  try { under = /** @type {number} compared as given */ (declaredBytes) <= /** @type {number} */ (bound); } catch { /* not comparable: not under */ }
   if (under) return { ok: true };
   return {
     ok: false,
@@ -207,6 +339,29 @@ const INFLATE_WINDOW = 1 << 20;
  *  (`declared`, `bound`, `boundName`, `metric`); `guard` is `sizeGuard`'s
  *  marker for the streamed ceiling, with `final: true`. A size that is not a
  *  number is never shown to be under a bound. Never throws. */
+/**
+ * @typedef {Object} Piecewise
+ * @property {number} declared
+ * @property {number} bound
+ * @property {"MEASURED_OOXML_TEXT_BOUND_BYTES"} boundName
+ * @property {"declared_uncompressed_text_part_bytes"} metric
+ */
+/**
+ * @typedef {Object} TextRefusal what a text not read for its size states (R35)
+ * @property {false} ok
+ * @property {"undetermined"} text
+ * @property {"over_size_bound"} why
+ * @property {unknown} size the size the caller gave, as given
+ * @property {number} bound
+ * @property {"STREAMED_TEXT_BOUND_BYTES"} boundName
+ * @property {"declared_uncompressed_text_part_bytes"} metric
+ * @property {true} final
+ */
+/** @typedef {{ read: "whole" } | { read: "pieces", piecewise: Piecewise } | { read: "none", guard: TextRefusal }} TextPlan */
+/**
+ * @param {unknown} declaredBytes a value that is not a number is never under a bound
+ * @returns {TextPlan}
+ */
 export function textPlan(declaredBytes) {
   const number = typeof declaredBytes === "number";
   if (number && declaredBytes <= MEASURED_OOXML_TEXT_BOUND_BYTES) return { read: "whole" };
@@ -225,16 +380,23 @@ export function textPlan(declaredBytes) {
 /** A cut for `readPartPieces`: the position after the last `>` in the buffer,
  *  for a reader that tokenises its own markup and carries an unfinished tag
  *  into the next piece. 0 when there is none. */
+/** @type {(buf: string) => number} */
 export const cutAfterTag = (buf) => buf.lastIndexOf(">") + 1;
 
 /** A cut for `readPartPieces`: the position of the last match of `re` (a
  *  global expression for the START of an element the reader takes whole), so a
  *  piece ends between two such elements. 0 when there is none. */
+/**
+ * @param {RegExp} re
+ * @returns {(buf: string) => number}
+ */
 export function cutBefore(re) {
   return (buf) => {
     re.lastIndex = 0;
-    let at = 0, m;
-    while ((m = re.exec(buf)) !== null) {
+    let at = 0;
+    for (;;) {
+      const m = re.exec(buf);
+      if (m === null) break;
       if (m.index > 0) at = m.index;
       if (m[0].length === 0) re.lastIndex++;
     }
@@ -247,6 +409,11 @@ export function cutBefore(re) {
  *  always used for a text it did not read for its size, `over_size_bound`, with
  *  that size, `final: true` and the mechanism in `detail`; any other refusal is
  *  stated as it is. */
+/** @typedef {{ why: string | undefined } | { why: "over_size_bound", detail: "piece_unbounded", size: number | undefined, final: true }} PieceWhy */
+/**
+ * @param {{ why?: string, size?: number } | null | undefined} read a refusal of `readPartPieces`
+ * @returns {PieceWhy}
+ */
 export function pieceWhy(read) {
   if (read?.why !== "piece_unbounded") return { why: read?.why };
   return { why: "over_size_bound", detail: "piece_unbounded", size: read.size, final: true };
@@ -292,20 +459,30 @@ export const ARCHIVE_LIMITS = Object.freeze({
 export const STRUCTURAL_PART_MAX = boundOf("office", "structural_part_bytes");
 
 /* A refusal on a limit: it names the limit, carries its figure and is final. */
+/**
+ * @param {string} why
+ * @param {number} limit
+ * @param {{ name?: string, declared?: number }} [extra]
+ * @returns {LimitRefusal}
+ */
 const overLimit = (why, limit, extra = {}) => ({ ok: false, why, ...extra, limit, final: true });
 
 /* The declared uncompressed total of a container's entries, the per-file
  * total every part read counts against (F18). Remembered per entries array,
  * so a walk over thousands of parts sums once. */
+/** @type {WeakMap<ZipEntry[], number>} */
 const DECLARED_TOTALS = new WeakMap();
-function declaredTotal(container) {
-  const entries = entriesOf(container);
-  let total = DECLARED_TOTALS.get(entries);
-  if (total === undefined) {
-    total = 0;
-    for (const e of entries) total += e?.uncompressedSize;
-    DECLARED_TOTALS.set(entries, total);
-  }
+/**
+ * @param {View} view
+ * @returns {number}
+ */
+function declaredTotal(view) {
+  const entries = view.entries;
+  const known = DECLARED_TOTALS.get(entries);
+  if (known !== undefined) return known;
+  let total = 0;
+  for (const e of entries) total += e?.uncompressedSize;
+  DECLARED_TOTALS.set(entries, total);
   return total;
 }
 
@@ -317,9 +494,12 @@ function declaredTotal(container) {
  * evaluating the module computes no derived table, because the plane's global
  * scope carries every module's import-time work against its start-up budget
  * (bundler R31, K3147). */
+/** @type {Uint32Array | null} */
 let crcTable = null;
+/** @returns {Uint32Array} */
 function crcTableOf() {
-  if (crcTable) return crcTable;
+  const known = crcTable;
+  if (known) return known;
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
     let c = n;
@@ -331,12 +511,21 @@ function crcTableOf() {
 
 /* The running register, so a streamed member is checked as it passes:
  * start at 0xffffffff, feed each chunk, finish with `^ 0xffffffff`. */
+/**
+ * @param {number} c
+ * @param {Uint8Array} u8
+ * @returns {number}
+ */
 function crcUpdate(c, u8) {
   const t = crcTableOf();
-  for (let i = 0; i < u8.length; i++) c = t[(c ^ u8[i]) & 0xff] ^ (c >>> 8);
+  for (let i = 0; i < u8.length; i++) c = (t[(c ^ (u8[i] ?? 0)) & 0xff] ?? 0) ^ (c >>> 8);
   return c;
 }
 
+/**
+ * @param {unknown} bytes the bytes, as every service takes them; anything else is no bytes
+ * @returns {number} the unsigned 32-bit CRC-32
+ */
 export function crc32(bytes) {
   return (crcUpdate(0xffffffff, toBytes(bytes)) ^ 0xffffffff) >>> 0;
 }
@@ -345,11 +534,16 @@ export function crc32(bytes) {
  * The central-directory walk
  * ------------------------------------------------------------------ */
 
-const u16 = (b, p) => b[p] | (b[p + 1] << 8);
-const u32 = (b, p) => (b[p] | (b[p + 1] << 8) | (b[p + 2] << 16) | (b[p + 3] << 24)) >>> 0;
+/* A byte past the end reads as 0 here, as it did when it was `undefined` in
+ * the arithmetic. */
+/** @type {(b: Uint8Array, p: number) => number} */
+const u16 = (b, p) => (b[p] ?? 0) | ((b[p + 1] ?? 0) << 8);
+/** @type {(b: Uint8Array, p: number) => number} */
+const u32 = (b, p) => ((b[p] ?? 0) | ((b[p + 1] ?? 0) << 8) | ((b[p + 2] ?? 0) << 16) | ((b[p + 3] ?? 0) << 24)) >>> 0;
 
 /* A 64-bit little-endian field as a Number, or NaN when it would not be one
  * exactly (above 2^53 - 1): a value the module cannot hold is never rounded. */
+/** @type {(b: Uint8Array, p: number) => number} */
 const u64 = (b, p) => {
   const hi = u32(b, p + 4);
   return hi >= 0x200000 ? NaN : hi * 0x100000000 + u32(b, p);
@@ -362,15 +556,29 @@ const SIG_ZIP64_EOCD = 0x06064b50; // PK\x06\x06
 const SIG_ZIP64_LOCATOR = 0x07064b50; // PK\x06\x07
 const SIG_DESCRIPTOR = 0x08074b50; // PK\x07\x08
 
+/** @typedef {{ diskEntries: number, totalEntries: number, cdSize: number, cdOffset: number }} EndCounts */
+/** @typedef {{ diskEntries: number, totalEntries: number, cdSize: number, cdOffset: number, commentLen: number }} Eocd */
+/** @typedef {{ recordOffset: number, diskEntries: number, totalEntries: number, cdSize: number, cdOffset: number }} Zip64End */
+
 /* The end-of-central-directory record's fields (APPNOTE §4.3.16). */
+/**
+ * @param {Uint8Array} b
+ * @param {number} p
+ * @returns {Eocd}
+ */
 function parseEocd(b, p) {
   return {
     diskEntries: u16(b, p + 8), totalEntries: u16(b, p + 10),
     cdSize: u32(b, p + 12), cdOffset: u32(b, p + 16), commentLen: u16(b, p + 20),
   };
 }
+/** @type {EndCounts} */
 const ZIP64_SENTINELS = { diskEntries: 0xffff, totalEntries: 0xffff, cdSize: 0xffffffff, cdOffset: 0xffffffff };
-const needsZip64 = (e) => Object.keys(ZIP64_SENTINELS).some((k) => e[k] === ZIP64_SENTINELS[k]);
+/* The sentinels' fields, in their order. */
+/** @type {readonly ("diskEntries" | "totalEntries" | "cdSize" | "cdOffset")[]} */
+const ZIP64_FIELDS = ["diskEntries", "totalEntries", "cdSize", "cdOffset"];
+/** @type {(e: EndCounts) => boolean} */
+const needsZip64 = (e) => ZIP64_FIELDS.some((k) => e[k] === ZIP64_SENTINELS[k]);
 
 /* ZIP64 (APPNOTE §4.3.14, §4.3.15). `loc` is the 20-byte locator read directly
  * before the EOCD, `rec` the first 56 bytes at the offset it names. Answers the
@@ -378,6 +586,13 @@ const needsZip64 = (e) => Object.keys(ZIP64_SENTINELS).some((k) => e[k] === ZIP6
  * range: the locator must name disk 0 of at most one disk, and the end record
  * (its own declared size included) must end exactly where the locator starts,
  * so nothing unread lies between them. */
+/**
+ * @param {Uint8Array | null} loc
+ * @param {number} locOffset
+ * @param {Uint8Array | null} rec
+ * @param {number} recOffset
+ * @returns {Zip64End | null}
+ */
 function zip64End(loc, locOffset, rec, recOffset) {
   if (!loc || loc.length < 20 || u32(loc, 0) !== SIG_ZIP64_LOCATOR) return null;
   if (u32(loc, 4) !== 0 || u32(loc, 16) > 1 || u64(loc, 8) !== recOffset) return null;
@@ -392,6 +607,7 @@ function zip64End(loc, locOffset, rec, recOffset) {
   return [z.diskEntries, z.totalEntries, z.cdSize, z.cdOffset].every(Number.isFinite) ? z : null;
 }
 /* The locator's offset field, or NaN: where the end record should be read. */
+/** @type {(loc: Uint8Array | null) => number} */
 const zip64RecordOffset = (loc) =>
   (loc && loc.length >= 20 && u32(loc, 0) === SIG_ZIP64_LOCATOR ? u64(loc, 8) : NaN);
 
@@ -399,20 +615,31 @@ const zip64RecordOffset = (loc) =>
  * of exactly the fields its fixed record holds as sentinels, in APPNOTE's
  * order (uncompressed, compressed, local-header offset, disk). `want` names
  * which; null when the field is absent, short or holds a value over 2^53. */
+/** @typedef {{ uncompressed?: boolean, compressed?: boolean, offset?: boolean, disk?: boolean }} Zip64Want */
+/** @typedef {{ uncompressed?: number, compressed?: number, offset?: number }} Zip64Values */
+/** @type {readonly ("uncompressed" | "compressed" | "offset")[]} */
+const ZIP64_EXTRA_FIELDS = ["uncompressed", "compressed", "offset"];
+/**
+ * @param {Uint8Array} extra
+ * @param {Zip64Want} want
+ * @returns {Zip64Values | null}
+ */
 function zip64Extra(extra, want) {
   for (let p = 0; p + 4 <= extra.length;) {
     const id = u16(extra, p);
     const size = u16(extra, p + 2);
     if (p + 4 + size > extra.length) return null;
     if (id === 0x0001) {
+      /** @type {Zip64Values} */
       const out = {};
       let q = p + 4;
       const end = q + size;
-      for (const k of ["uncompressed", "compressed", "offset"]) {
+      for (const k of ZIP64_EXTRA_FIELDS) {
         if (!want[k]) continue;
         if (q + 8 > end) return null;
-        out[k] = u64(extra, q);
-        if (!Number.isFinite(out[k])) return null;
+        const value = u64(extra, q);
+        out[k] = value;
+        if (!Number.isFinite(value)) return null;
         q += 8;
       }
       if (want.disk && q + 4 > end) return null;
@@ -426,6 +653,13 @@ function zip64Extra(extra, want) {
 /* One central-directory record's 64-bit values: its 32-bit fields, or, where
  * a field holds 0xffffffff (the disk number 0xffff), the ZIP64 extra field's.
  * null when a sentinel's value is missing from that field (R3). */
+/** @typedef {{ compressed: number, uncompressed: number, offset: number }} CentralValues */
+/**
+ * @param {Uint8Array} b
+ * @param {number} p
+ * @param {Uint8Array} extra
+ * @returns {CentralValues | null}
+ */
 function centralValues(b, p, extra) {
   const v = { compressed: u32(b, p + 20), uncompressed: u32(b, p + 24), offset: u32(b, p + 42) };
   const want = {
@@ -441,6 +675,10 @@ function centralValues(b, p, extra) {
  *  FIRST discriminator (I7: magic bytes first, content type second). An empty
  *  ZIP (bare EOCD) does not carry it and cannot be an OOXML package anyway,
  *  since OOXML requires parts. */
+/**
+ * @param {unknown} bytes the bytes, as every service takes them; anything else is no bytes
+ * @returns {boolean}
+ */
 export function hasZipMagic(bytes) {
   const b = toBytes(bytes);
   return b.length >= 4 && u32(b, 0) === SIG_LOCAL;
@@ -448,6 +686,10 @@ export function hasZipMagic(bytes) {
 
 /* OPC part names in [Content_Types].xml overrides start with "/", ZIP entry
  * names do not. One normal form so the two always meet. */
+/**
+ * @param {unknown} name null and undefined are ""; anything else is read as text
+ * @returns {string}
+ */
 export function normalizePartName(name) {
   try { return String(name ?? "").replace(/^\/+/, ""); } catch { return ""; }
 }
@@ -458,28 +700,48 @@ export function normalizePartName(name) {
  * buffer the caller holds (`readContainer`, `readPart`), `runAsync` ranges of
  * a range source (R11, G130c: a file of any size is judged from its end
  * record, its central directory and the small parts it names). */
+/**
+ * @template R
+ * @param {Generator<[number, number], R, Uint8Array>} walk
+ * @param {Uint8Array} b
+ * @returns {R}
+ */
 function runSync(walk, b) {
-  let step = walk.next();
-  while (!step.done) {
-    const [at, length] = step.value;
+  for (let step = walk.next(); ;) {
+    const s = step;
+    if (s.done) return s.value;
+    const [at, length] = s.value;
     step = walk.next(b.subarray(at, at + length));
   }
-  return step.value;
 }
+/**
+ * @template R
+ * @param {Generator<[number, number], R, Uint8Array>} walk
+ * @param {Source} src
+ * @returns {Promise<R>}
+ */
 async function runAsync(walk, src) {
-  let step = walk.next();
-  while (!step.done) {
-    const [at, length] = step.value;
+  for (let step = walk.next(); ;) {
+    const s = step;
+    if (s.done) return s.value;
+    const [at, length] = s.value;
     step = walk.next(await src.read(at, length));
   }
-  return step.value;
 }
 
 /** `bytes` of a ZIP given as a range source `{size, read(offset, length)}`
  *  (R27) rather than as bytes. */
-const isRangeSource = (x) => !!x && typeof x === "object" && typeof x.read === "function"
+/**
+ * @param {unknown} x
+ * @returns {x is RangeSource}
+ */
+const isRangeSource = (x) => !!x && typeof x === "object" && "read" in x && typeof x.read === "function"
   && !ArrayBuffer.isView(x) && !(x instanceof ArrayBuffer);
 
+/**
+ * @param {number} size
+ * @returns {Generator<[number, number], ContainerResult, Uint8Array>}
+ */
 function* walkContainer(size) {
   if (size < 22) return { ok: false, why: "too_short_for_zip" };
 
@@ -518,8 +780,10 @@ function* walkContainer(size) {
   if (cdOffset + cdSize > directoryEnd) return { ok: false, why: "central_directory_truncated" };
 
   const cd = yield [cdOffset, cdSize];
+  /** @type {ZipEntry[]} */
   const entries = [];
-  const byName = new Map();
+  /** @type {Map<string, ZipEntry>} */
+  const byName = new Map(null);
   let p = 0;
   for (let i = 0; i < totalEntries; i++) {
     if (p + 46 > cd.length || u32(cd, p) !== SIG_CENTRAL) {
@@ -544,6 +808,7 @@ function* walkContainer(size) {
      * cp437 itself; K1903 (3); OOXML part names are
      * ASCII, where the two agree exactly). */
     const name = (flags & 0x0800) ? UTF8.decode(nameBytes) : LATIN1.decode(nameBytes);
+    /** @type {ZipEntry} */
     const entry = { name, method, crc32: crc, compressedSize, uncompressedSize, localHeaderOffset };
     /* The general-purpose flags decide whether the member is encrypted (R5);
      * they are not part of the entry's published shape. */
@@ -569,12 +834,20 @@ function* walkContainer(size) {
  *  `zip64_record_invalid`. A count, a directory or a name over its limit
  *  (R30) is refused by that limit's name, final, before the directory is
  *  walked or the name kept. */
+/**
+ * @param {unknown} bytes the bytes, as every service takes them; anything else is no bytes
+ * @returns {ContainerResult}
+ */
 export function readContainer(bytes) {
   const b = toBytes(bytes);
   return runSync(walkContainer(b.length), b);
 }
 
 /* The same walk over a range source (already `sourceOf`-wrapped). */
+/**
+ * @param {Source} src
+ * @returns {Promise<ContainerResult>}
+ */
 function readContainerFrom(src) {
   return runAsync(walkContainer(src.size), src);
 }
@@ -588,10 +861,17 @@ function readContainerFrom(src) {
  * stops there rather than running a compression bomb to completion before
  * the length check refuses it. Returns `{ bytes }`, `{ over: n }` (stopped
  * after n bytes, n > limit) or null (the deflate stream did not complete). */
+/** @typedef {{ bytes: Uint8Array, over?: undefined } | { over: number, bytes?: undefined }} Inflated */
+/**
+ * @param {Uint8Array} u8
+ * @param {number} limit
+ * @returns {Promise<Inflated | null>}
+ */
 async function inflateRaw(u8, limit) {
   try {
     const reader = new Blob([u8]).stream()
       .pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+    /** @type {Uint8Array[]} */
     const chunks = [];
     let total = 0;
     for (;;) {
@@ -618,26 +898,57 @@ async function inflateRaw(u8, limit) {
  * header. `{ ok:true, entry, raw }` or the named refusal `readPart` and
  * `readPartPieces` both answer. `structural` is a part this module decodes to
  * text itself (R5, `STRUCTURAL_PART_MAX`). */
-function* locate(size, container, want, structural) {
-  const entry = findEntry(container, want);
+/**
+ * A refusal of `readPart` (R5, R31): every one carries the normalized name.
+ * @typedef {Object} PartRefusal
+ * @property {false} ok
+ * @property {string} why
+ * @property {string} name
+ * @property {number} [method]
+ * @property {number} [expected]
+ * @property {number} [got]
+ * @property {number} [declared]
+ * @property {number} [limit]
+ * @property {true} [final]
+ * @property {number} [size]
+ */
+/** @typedef {{ ok: true, bytes: Uint8Array } | PartRefusal} PartRead */
+/** @typedef {{ ok: true, entry: ZipEntry, raw: Uint8Array } | PartRefusal} Located */
+/* A part's refusal on a limit: `overLimit`'s, with the part's name. */
+/**
+ * @param {string} why
+ * @param {number} limit
+ * @param {string} name
+ * @param {number} declared
+ * @returns {PartRefusal}
+ */
+const partOverLimit = (why, limit, name, declared) => ({ ok: false, why, name, declared, limit, final: true });
+/**
+ * @param {number} size
+ * @param {View} view
+ * @param {string} want
+ * @param {boolean} structural
+ * @returns {Generator<[number, number], Located, Uint8Array>}
+ */
+function* locate(size, view, want, structural) {
+  const entry = findEntry(view, want);
   if (!entry) return { ok: false, why: "part_absent", name: want };
 
   /* F18 (K1881): capped BEFORE any inflation, on the central directory's
    * declared sizes: this member, then everything the file declares. A size
    * that is not a number is never shown to be under a limit. */
   const declared = entry.uncompressedSize;
-  const name = { name: want };
-  if (!(declared <= MEMBER_MAX)) return overLimit("MEMBER_MAX", MEMBER_MAX, { ...name, declared });
-  const total = declaredTotal(container);
-  if (!(total <= ARCHIVE_TOTAL_MAX)) return overLimit("ARCHIVE_TOTAL_MAX", ARCHIVE_TOTAL_MAX, { ...name, declared: total });
+  if (!(declared <= MEMBER_MAX)) return partOverLimit("MEMBER_MAX", MEMBER_MAX, want, declared);
+  const total = declaredTotal(view);
+  if (!(total <= ARCHIVE_TOTAL_MAX)) return partOverLimit("ARCHIVE_TOTAL_MAX", ARCHIVE_TOTAL_MAX, want, total);
   /* G125d: a declared size over the ratio's reach of the compressed one is
    * malformed, not large; a zero compressed size with a non-zero declared
    * one included. */
   if (!(declared <= entry.compressedSize * ARCHIVE_RATIO_MAX)) {
-    return overLimit("ARCHIVE_RATIO_MAX", ARCHIVE_RATIO_MAX, { ...name, declared });
+    return partOverLimit("ARCHIVE_RATIO_MAX", ARCHIVE_RATIO_MAX, want, declared);
   }
   if (structural && !(declared <= STRUCTURAL_PART_MAX)) {
-    return overLimit("STRUCTURAL_PART_MAX", STRUCTURAL_PART_MAX, { ...name, declared });
+    return partOverLimit("STRUCTURAL_PART_MAX", STRUCTURAL_PART_MAX, want, declared);
   }
 
   const lh = entry.localHeaderOffset;
@@ -662,16 +973,26 @@ function* locate(size, container, want, structural) {
 }
 
 /* `locate` over the bytes or the range source the caller gave. A range
- * source that cannot be read is `source_unreadable`, never a throw. */
-async function locatePart(source, container, want, structural) {
-  if (!isRangeSource(source)) {
-    const b = toBytes(source);
-    return runSync(locate(b.length, container, want, structural), b);
+ * source that cannot be read is `source_unreadable`, never a throw. Each
+ * service reads its caller's `bytes` as a range source where it is one, else
+ * through `toBytes`. */
+/** @typedef {RangeSource | Uint8Array} Input */
+/**
+ * @param {Input} source
+ * @param {View} view
+ * @param {string} want
+ * @param {boolean} structural
+ * @returns {Promise<Located>}
+ */
+async function locatePart(source, view, want, structural) {
+  if (source instanceof Uint8Array) {
+    const b = source;
+    return runSync(locate(b.length, view, want, structural), b);
   }
   const src = sourceOf(source);
   if (!src) return { ok: false, why: "source_unreadable", name: want };
   try {
-    return await runAsync(locate(src.size, container, want, structural), src);
+    return await runAsync(locate(src.size, view, want, structural), src);
   } catch {
     return { ok: false, why: "source_unreadable", name: want };
   }
@@ -687,16 +1008,31 @@ async function locatePart(source, container, want, structural) {
  *  A success is `{ ok:true, bytes }` and the bytes are PROVEN to be the whole
  *  member (length AND CRC-32 against the central directory) — a partial
  *  inflate can never pass as whole. */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @param {unknown} name the part's name, normalized
+ * @returns {Promise<PartRead>}
+ */
 export function readPart(bytes, container, name) {
-  return readPartOf(bytes, container, name, false);
+  const want = normalizePartName(name);
+  const input = isRangeSource(bytes) ? bytes : toBytes(bytes);
+  return readPartOf(input, viewOf(holdsEntries(container) ? container.entries : null, holdsByName(container) ? container.byName : null), want, false);
 }
 
-async function readPartOf(source, container, name, structural) {
-  const want = normalizePartName(name);
-  const found = await locatePart(source, container, want, structural);
+/**
+ * @param {Input} source
+ * @param {View} view
+ * @param {string} want the normalized name
+ * @param {boolean} structural
+ * @returns {Promise<PartRead>}
+ */
+async function readPartOf(source, view, want, structural) {
+  const found = await locatePart(source, view, want, structural);
   if (!found.ok) return found;
   const { entry, raw } = found;
 
+  /** @type {Uint8Array} */
   let out;
   if (entry.method === 0) {
     out = raw.slice();
@@ -739,26 +1075,41 @@ async function readPartOf(source, container, name, structural) {
  *  `{ ok:true, size }`. Async; never throws (`onPiece` throwing, or returning
  *  a promise that rejects, is `{ ok:false, why:"reader_failed" }`; a promise it
  *  returns is awaited before the next piece is made). */
+/** @typedef {{ ok: true, size: number } | PartRefusal} PiecesRead */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @param {unknown} name the part's name, normalized
+ * @param {(buf: string) => number} cut where a piece may end in the buffer, 0 when nowhere yet
+ * @param {(text: string) => unknown} onPiece handed each piece in order; a promise it answers is awaited
+ * @returns {Promise<PiecesRead>}
+ */
 export async function readPartPieces(bytes, container, name, cut, onPiece) {
   const want = normalizePartName(name);
-  const found = await locatePart(bytes, container, want, false);
+  const input = isRangeSource(bytes) ? bytes : toBytes(bytes);
+  const found = await locatePart(input, viewOf(holdsEntries(container) ? container.entries : null, holdsByName(container) ? container.byName : null), want, false);
   if (!found.ok) return found;
   const { entry, raw } = found;
   const declared = entry.uncompressedSize;
 
-  let decoder = null;
-  let head = [], headLen = 0;
+  /* The decoder, once the encoding is read, and the refusal a step answers
+   * false with: set by the steps below, read after them. */
+  /** @type {{ decoder: TextDecoder | null, failure: PartRefusal | null }} */
+  const st = { decoder: null, failure: null };
+  /** @type {Uint8Array[]} */
+  let head = [];
+  let headLen = 0;
   let crc = 0xffffffff, size = 0, buf = "";
-  let failure = null;
 
   /* One decoded chunk in; pieces out. Returns false to stop the member. */
-  const text = async (chunk) => {
-    buf += decoder.decode(chunk, { stream: true });
+  /** @type {(d: TextDecoder, chunk: Uint8Array) => Promise<boolean>} */
+  const text = async (d, chunk) => {
+    buf += d.decode(chunk, { stream: true });
     while (buf.length >= TEXT_PIECE_CHARS) {
       const at = cut(buf);
       if (!(at > 0)) {
         if (buf.length > TEXT_PIECE_MAX_CHARS) {
-          failure = { ok: false, why: "piece_unbounded", name: want, size: declared, final: true };
+          st.failure = { ok: false, why: "piece_unbounded", name: want, size: declared, final: true };
           return false;
         }
         break;
@@ -770,32 +1121,45 @@ export async function readPartPieces(bytes, container, name, cut, onPiece) {
     return true;
   };
   /* The encoding is read from the member's first bytes, once. */
+  /** @type {() => Promise<boolean>} */
   const open = async () => {
     const all = new Uint8Array(headLen);
     let at = 0;
     for (const c of head) { all.set(c, at); at += c.length; }
     head = [];
     const seen = sniffEncoding(all, { declared: null, kind: "xml", detect: false });
-    if (!seen.ok) { failure = { ok: false, why: "ENCODING_UNSUPPORTED", name: want }; return false; }
-    decoder = new TextDecoder(seen.encoding, { fatal: false });
-    return await text(all);
+    if (!seen.ok) { st.failure = { ok: false, why: "ENCODING_UNSUPPORTED", name: want }; return false; }
+    /** @type {TextDecoder} */
+    const d = new TextDecoder(seen.encoding, { fatal: false });
+    st.decoder = d;
+    return await text(d, all);
   };
+  /** @type {(chunk: Uint8Array) => Promise<boolean>} */
   const take = async (chunk) => {
     size += chunk.length;
-    if (size > declared) { failure = { ok: false, why: "size_mismatch", name: want, expected: declared, got: size }; return false; }
+    if (size > declared) { st.failure = { ok: false, why: "size_mismatch", name: want, expected: declared, got: size }; return false; }
     crc = crcUpdate(crc, chunk);
-    if (decoder) return await text(chunk);
+    const d = st.decoder;
+    if (d) return await text(d, chunk);
     head.push(chunk);
     headLen += chunk.length;
     return headLen >= SNIFF_BYTES ? await open() : true;
   };
   /* The caller may return a promise (a reader that yields between pieces): it
    * is awaited before the next piece is made (fix round 9, K4858). */
+  /** @type {(piece: string) => Promise<boolean>} */
   const give = async (piece) => {
     try { await onPiece(piece); return true; } catch {
-      failure = { ok: false, why: "reader_failed", name: want };
+      st.failure = { ok: false, why: "reader_failed", name: want };
       return false;
     }
+  };
+  /* The refusal a step set, else `why` (where no step answers false). */
+  /** @type {(why: string) => PartRefusal} */
+  const failed = (why) => {
+    const f = st.failure;
+    if (f) return f;
+    return { ok: false, why, name: want };
   };
 
   try {
@@ -806,6 +1170,7 @@ export async function readPartPieces(bytes, container, name, cut, onPiece) {
     } else {
       let at = 0;
       const source = new ReadableStream({
+        /** @param {{ close(): void, enqueue(chunk: Uint8Array): void }} controller */
         pull(controller) {
           if (at >= raw.length) { controller.close(); return; }
           controller.enqueue(raw.subarray(at, at + INFLATE_WINDOW));
@@ -820,15 +1185,17 @@ export async function readPartPieces(bytes, container, name, cut, onPiece) {
           if (!(await take(value))) { reader.cancel().catch(() => {}); break; }
         }
       } catch {
-        return failure ?? { ok: false, why: "inflate_failed", name: want };
+        return failed("inflate_failed");
       }
     }
-    if (failure) return failure;
-    if (!decoder && headLen && !(await open())) return failure;
-    if (decoder) buf += decoder.decode();
-    if (buf.length && !(await give(buf))) return failure;
+    const f = st.failure;
+    if (f) return f;
+    if (!st.decoder && headLen && !(await open())) return failed("reader_failed");
+    const d = st.decoder;
+    if (d) buf += d.decode();
+    if (buf.length && !(await give(buf))) return failed("reader_failed");
   } catch {
-    return failure ?? { ok: false, why: "reader_failed", name: want };
+    return failed("reader_failed");
   }
   if (size !== declared) return { ok: false, why: "size_mismatch", name: want, expected: declared, got: size };
   if (((crc ^ 0xffffffff) >>> 0) !== entry.crc32) return { ok: false, why: "crc_mismatch", name: want };
@@ -860,13 +1227,22 @@ const DETECT_WINDOW = 65536;
 const ENCODING_LABEL = /^(?:utf-?8|unicode-1-1-utf-8|utf-?16(?:le|be)?|ucs-?2|unicode|us-ascii|ascii|iso[-_ ]?8859[-_ ]?\d{1,2}|latin[1-9]|l[1-9]|(?:windows|cp|x-cp)[-_ ]?125[0-8])$/;
 
 /* The host's canonical name for a label this module reads, or null. */
+/**
+ * @param {unknown} label
+ * @returns {string | null}
+ */
 function canonicalEncoding(label) {
+  /** @type {string} */
   let l;
   try { l = String(label ?? "").trim().toLowerCase(); } catch { return null; }
   if (!ENCODING_LABEL.test(l)) return null;
   try { return new TextDecoder(l).encoding; } catch { return null; }
 }
 
+/**
+ * @param {Uint8Array} b
+ * @returns {string | null}
+ */
 function bomOf(b) {
   if (b.length >= 3 && b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf) return "utf-8";
   if (b.length >= 2 && b[0] === 0xff && b[1] === 0xfe) return "utf-16le";
@@ -876,6 +1252,10 @@ function bomOf(b) {
 
 /* Text laid out as UTF-16 without a mark: one byte of each pair NUL, as the
  * ASCII range of UTF-16 is. "utf-16le", "utf-16be" or null. */
+/**
+ * @param {Uint8Array} b
+ * @returns {string | null}
+ */
 function utf16Layout(b) {
   const n = Math.min(b.length, PARITY_SAMPLE) & ~1;
   if (n < 2) return null;
@@ -890,13 +1270,22 @@ function utf16Layout(b) {
 /* Whether `b[from, to)` is valid UTF-8 (RFC 3629: no overlong form, no
  * surrogate, nothing above U+10FFFF); `multi` is whether it holds any
  * non-ASCII character. */
+/**
+ * @param {Uint8Array} b
+ * @param {number} [from]
+ * @param {number} [to] at most `b.length`
+ * @returns {{ valid: boolean, multi: boolean }}
+ */
 function utf8Check(b, from = 0, to = b.length) {
   let multi = false;
   for (let i = from; i < to;) {
-    const c = b[i];
+    const c = b[i] ?? 0;
     if (c < 0x80) { i++; continue; }
     multi = true;
-    let need, min;
+    /** @type {number} */
+    let need;
+    /** @type {number} */
+    let min;
     if (c >= 0xc2 && c <= 0xdf) { need = 1; min = 0x80; }
     else if (c >= 0xe0 && c <= 0xef) { need = 2; min = 0x800; }
     else if (c >= 0xf0 && c <= 0xf4) { need = 3; min = 0x10000; }
@@ -904,7 +1293,7 @@ function utf8Check(b, from = 0, to = b.length) {
     if (i + need >= to) return { valid: false, multi };
     let cp = c & (0x3f >> need);
     for (let k = 1; k <= need; k++) {
-      const x = b[i + k];
+      const x = b[i + k] ?? 0;
       if ((x & 0xc0) !== 0x80) return { valid: false, multi };
       cp = (cp << 6) | (x & 0x3f);
     }
@@ -918,12 +1307,19 @@ function utf8Check(b, from = 0, to = b.length) {
  * G169): its well-formed multi-byte sequences number at least four times its
  * invalid bytes (each byte that does not belong to a well-formed sequence counts
  * one, a sequence cut off at the end included). Real Latin-1 holds almost no valid sequence. */
+/**
+ * @param {Uint8Array} b
+ * @returns {boolean}
+ */
 function mostlyUtf8(b) {
   let valid = 0, invalid = 0;
   for (let i = 0; i < b.length;) {
-    const c = b[i];
+    const c = b[i] ?? 0;
     if (c < 0x80) { i++; continue; }
-    let need, min;
+    /** @type {number} */
+    let need;
+    /** @type {number} */
+    let min;
     if (c >= 0xc2 && c <= 0xdf) { need = 1; min = 0x80; }
     else if (c >= 0xe0 && c <= 0xef) { need = 2; min = 0x800; }
     else if (c >= 0xf0 && c <= 0xf4) { need = 3; min = 0x10000; }
@@ -931,7 +1327,7 @@ function mostlyUtf8(b) {
     let ok = i + need < b.length;
     let cp = c & (0x3f >> need);
     for (let k = 1; ok && k <= need; k++) {
-      const x = b[i + k];
+      const x = b[i + k] ?? 0;
       if ((x & 0xc0) !== 0x80) ok = false;
       else cp = (cp << 6) | (x & 0x3f);
     }
@@ -943,20 +1339,32 @@ function mostlyUtf8(b) {
 
 /* The encoding a text declares of itself: the XML prolog's `encoding`, an
  * HTML `meta` charset. null when it declares none. */
+/**
+ * @param {Uint8Array} b
+ * @param {unknown} kind
+ * @returns {string | null}
+ */
 function declaredInText(b, kind) {
   if (kind !== "xml" && kind !== "html") return null;
+  /** @type {string} */
   let head;
   try { head = LATIN1.decode(b.subarray(0, kind === "xml" ? SNIFF_BYTES : 4 * SNIFF_BYTES)); } catch { return null; }
   const m = kind === "xml"
     ? head.match(/^\s*<\?xml[^>]*?\bencoding\s*=\s*["']([^"']+)["']/i)
     : head.match(/<meta\b[^>]*?\bcharset\s*=\s*["']?\s*([^\s"';>/]+)/i);
-  return m ? m[1] : null;
+  return m ? m[1] ?? null : null;
 }
 
 /* The encoding of `b`: `{ ok:true, encoding, assumed }` or `{ ok:false }` for
  * a declaration this module cannot decode. `detect` false leaves the text
  * itself out of the evidence (a member read in pieces is not held to be
  * judged whole: UTF-8 is then what nothing else declares). */
+/** @typedef {{ ok: true, encoding: string, assumed: boolean } | { ok: false }} Sniffed */
+/**
+ * @param {Uint8Array} b
+ * @param {{ declared: unknown, kind: unknown, detect: boolean }} how
+ * @returns {Sniffed}
+ */
 function sniffEncoding(b, { declared, kind, detect }) {
   const bom = bomOf(b);
   if (bom) return { ok: true, encoding: bom, assumed: false };
@@ -982,16 +1390,22 @@ function sniffEncoding(b, { declared, kind, detect }) {
  * the file's: a window that is not UTF-8 in a file read as UTF-8, a window
  * that is UTF-8 with non-ASCII characters in a file read as a legacy charset.
  * A window cut inside a character is judged without the cut ends. */
+/**
+ * @param {Uint8Array} b
+ * @param {string} encoding
+ * @returns {number[]}
+ */
 function disagreeing(b, encoding) {
+  /** @type {number[]} */
   const out = [];
   if (b.length <= DETECT_WINDOW || encoding.startsWith("utf-16")) return out;
   const asUtf8 = encoding === "utf-8";
   for (let at = 0; at < b.length; at += DETECT_WINDOW) {
     let from = at, to = Math.min(b.length, at + DETECT_WINDOW);
-    if (at > 0) for (let k = 0; k < 3 && from < to && (b[from] & 0xc0) === 0x80; k++) from++;
+    if (at > 0) for (let k = 0; k < 3 && from < to && ((b[from] ?? 0) & 0xc0) === 0x80; k++) from++;
     if (to < b.length) {
       for (let k = 1; k <= 3 && to - k >= from; k++) {
-        const x = b[to - k];
+        const x = b[to - k] ?? 0;
         if ((x & 0xc0) === 0x80) continue;
         if (x >= 0xc0 && ((x >= 0xf0 ? 4 : x >= 0xe0 ? 3 : 2) > k)) to -= k;
         break;
@@ -1006,9 +1420,33 @@ function disagreeing(b, encoding) {
 /** The one decode of bytes to text (R36). Synchronous and pure; never throws.
  *  `{ ok:true, text, encoding, assumed, replaced, replaced_ratio, disagree }`
  *  or `{ ok:false, why:"ENCODING_UNSUPPORTED", name }`. */
+/**
+ * @typedef {Object} DecodeOptions
+ * @property {string | null | undefined} [declared] the encoding the caller knows (a header's `charset`)
+ * @property {string | null | undefined} [name] the source's name, for the refusal
+ * @property {string | null | undefined} [kind] where a declaration may be found: "xml" (the prolog) or "html" (a `meta`)
+ */
+/**
+ * @typedef {Object} DecodedText
+ * @property {true} ok
+ * @property {string} text
+ * @property {string} encoding
+ * @property {boolean} assumed
+ * @property {number} replaced
+ * @property {number} replaced_ratio
+ * @property {number[]} disagree
+ */
+/** @typedef {DecodedText | { ok: false, why: "ENCODING_UNSUPPORTED", name: string | null }} DecodeResult */
+/**
+ * @param {unknown} bytes the bytes, as every service takes them; anything else is no bytes
+ * @param {DecodeOptions | null | undefined} [options]
+ * @returns {DecodeResult}
+ */
 export function decodeText(bytes, options) {
+  /** @type {DecodeOptions} */
   const o = options && typeof options === "object" ? options : {};
   const name = o.name ?? null;
+  /** @type {DecodeResult} */
   const unsupported = { ok: false, why: "ENCODING_UNSUPPORTED", name };
   try {
     const b = toBytes(bytes);
@@ -1038,6 +1476,7 @@ export function decodeText(bytes, options) {
 
 /* A numeric character reference is a complete `&#nn;` or `&#xhh;` naming a
  * Unicode scalar value: not U+0000, not a surrogate, not above U+10FFFF. */
+/** @type {(code: number) => boolean} */
 const scalar = (code) => code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff);
 const NUMERIC_REFERENCE = /&#(?:x([0-9a-fA-F]+)|([0-9]+));/y;
 const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
@@ -1047,29 +1486,45 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
  * that do not parse), or a lone surrogate. Such a part is not read: no value
  * is made of it, so nothing downstream (`String.fromCodePoint`,
  * `encodeURIComponent`) can throw on it. One pass, linear in the part. */
+/**
+ * @param {string} xml
+ * @returns {boolean}
+ */
 function malformedReferences(xml) {
   if (LONE_SURROGATE.test(xml)) return true;
   for (let at = xml.indexOf("&#"); at >= 0; at = xml.indexOf("&#", at + 2)) {
     NUMERIC_REFERENCE.lastIndex = at;
     const m = NUMERIC_REFERENCE.exec(xml);
-    if (!m || !scalar(m[1] !== undefined ? parseInt(m[1], 16) : parseInt(m[2], 10))) return true;
+    if (!m || !scalar(m[1] !== undefined ? parseInt(m[1], 16) : parseInt(m[2] ?? "", 10))) return true;
   }
   return false;
 }
 
+/** @type {Record<string, string>} */
+const XML_ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+/**
+ * @param {string} s
+ * @returns {string}
+ */
 function decodeXmlEntities(s) {
-  return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => {
+  return s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, /** @type {(m: string, e: string) => string} */ (m, e) => {
     if (e[0] === "#") {
       const code = e[1] === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
       return scalar(code) ? String.fromCodePoint(code) : m;
     }
-    return { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[e] ?? m;
+    return XML_ENTITIES[e] ?? m;
   });
 }
 
 /* Every element whose LOCAL name matches (any namespace prefix), with its
  * attributes decoded. Attribute lookup is by local name too. */
+/**
+ * @param {string} xml
+ * @param {string} localName
+ * @returns {Record<string, string>[]}
+ */
 function xmlElements(xml, localName) {
+  /** @type {Record<string, string>[]} */
   const out = [];
   /* The tag's end is found once per element (`indexOf`), so a part of
    * unterminated tags costs one pass, not one pass per tag. */
@@ -1079,9 +1534,11 @@ function xmlElements(xml, localName) {
     if (end < 0) break;
     const body = xml.slice(re.lastIndex, end);
     re.lastIndex = end + 1;
+    /** @type {Record<string, string>} */
     const attrs = {};
     for (const a of body.matchAll(/([\w.-]+(?::[\w.-]+)?)\s*=\s*("([^"]*)"|'([^']*)')/g)) {
-      const local = a[1].includes(":") ? a[1].split(":").pop() : a[1];
+      const key = a[1] ?? "";
+      const local = key.includes(":") ? key.split(":").pop() ?? "" : key;
       attrs[local] = decodeXmlEntities(a[3] ?? a[4] ?? "");
     }
     out.push(attrs);
@@ -1092,6 +1549,11 @@ function xmlElements(xml, localName) {
 /* The text content of the FIRST element with this local name, entity-decoded;
  * null when the element is absent or empty-by-self-closing. Absence is
  * absence, never invented into a value. */
+/**
+ * @param {string} xml
+ * @param {string} localName
+ * @returns {string | null}
+ */
 function xmlElementText(xml, localName) {
   const re = new RegExp(
     `<((?:[\\w.-]+:)?${localName})\\b[^>]*?(/)?>(?:([\\s\\S]*?)</\\1>)?`,
@@ -1111,13 +1573,26 @@ export const CONTENT_TYPES_PART = "[Content_Types].xml";
  *  `{ ok:true, defaults: Map(lowercased extension → content type),
  *              overrides: Map(normalized part name → content type) }`
  *  or `{ ok:false, why:"content_types_unparseable" }`. */
+/**
+ * @typedef {Object} ContentTypes
+ * @property {true} ok
+ * @property {Map<string, string>} defaults lowercased extension to content type
+ * @property {Map<string, string>} overrides normalized part name to content type
+ */
+/** @typedef {ContentTypes | { ok: false, why: "content_types_unparseable", final?: true }} ContentTypesResult */
+/**
+ * @param {unknown} xml the part's text; anything else is unparseable
+ * @returns {ContentTypesResult}
+ */
 export function parseContentTypes(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?Types\b/.test(xml)) {
     return { ok: false, why: "content_types_unparseable" };
   }
   if (malformedReferences(xml)) return { ok: false, why: "content_types_unparseable", final: true };
-  const defaults = new Map();
-  const overrides = new Map();
+  /** @type {Map<string, string>} */
+  const defaults = new Map(null);
+  /** @type {Map<string, string>} */
+  const overrides = new Map(null);
   for (const d of xmlElements(xml, "Default")) {
     if (d.Extension && d.ContentType) defaults.set(d.Extension.toLowerCase(), d.ContentType);
   }
@@ -1129,6 +1604,11 @@ export function parseContentTypes(xml) {
 
 /** The content type of a part under a parsed map: Override first, Default by
  *  extension second, null when neither speaks (null, not a guess). */
+/**
+ * @param {unknown} name the part's name, normalized
+ * @param {ContentTypes} types a map `parseContentTypes` read
+ * @returns {string | null}
+ */
 export function partContentType(name, types) {
   const norm = normalizePartName(name);
   const o = types.overrides.get(norm);
@@ -1164,6 +1644,20 @@ export function partContentType(name, types) {
  * defaults to. Keeping them separate is what lets a caller ask a narrower
  * question (and lets the suite prove the pre-item OOXML outcomes are
  * reproducible byte-for-byte by passing `OOXML_FLAVOURS` explicitly). */
+/**
+ * A row of the flavour table (R10). An OPC row (`partMap` "opc", or absent)
+ * names its main part's content type; an ODF row its media type. A plain row
+ * has no `variant`.
+ * @typedef {Object} Flavour
+ * @property {"opc" | "odf"} [partMap]
+ * @property {string} flavour
+ * @property {string} [variant]
+ * @property {string} [mainContentType]
+ * @property {string} [mimetype]
+ * @property {string} conventionalMainPart
+ */
+/** @typedef {Flavour[]} Flavours */
+/** @type {[Flavour, Flavour, Flavour]} */
 export const OOXML_FLAVOURS = [
   {
     partMap: "opc",
@@ -1225,6 +1719,7 @@ export const ODF_MANIFEST_PART = "META-INF/manifest.xml";
  * silently compared. */
 export const ODF_MIMETYPE_MAX_BYTES = 128;
 
+/** @type {[Flavour, Flavour, Flavour]} */
 export const ODF_FLAVOURS = [
   {
     partMap: "odf",
@@ -1263,6 +1758,7 @@ export const ODF_FLAVOURS = [
  *  `discriminate`. Written out row by row, never spread or mapped, so
  *  evaluating the module builds nothing (R34); the plain and ODF rows are the
  *  very objects of `OOXML_FLAVOURS` and `ODF_FLAVOURS`, as they always were. */
+/** @type {Flavour[]} */
 export const CONTAINER_FLAVOURS = [
   OOXML_FLAVOURS[0], OOXML_FLAVOURS[1], OOXML_FLAVOURS[2],
   { partMap: "opc", flavour: "docx", variant: "docm", mainContentType: "application/vnd.ms-word.document.macroEnabled.main+xml", conventionalMainPart: "word/document.xml" },
@@ -1315,9 +1811,38 @@ export const CONTAINER_FLAVOURS = [
  *  would make the record claim LESS than the bytes support and would move a
  *  pinned COFF-2 outcome, so the existing determination stands and the suite
  *  asserts both halves: still `zip`, and never an ODF flavour.) */
+/**
+ * What `discriminate` answers (R11): `ok:false` with `why` for no readable ZIP;
+ * `format` "zip", "undetermined" (with `why`) or a flavour (with `variant`,
+ * `mainPart` and `confidence`); always `signals`.
+ * @typedef {Object} Discrimination
+ * @property {boolean} ok
+ * @property {string} [format]
+ * @property {string} [why]
+ * @property {string | null} [variant]
+ * @property {string} [mainPart]
+ * @property {"high"} [confidence]
+ * @property {string} [flavourDeclared]
+ * @property {number} [limit]
+ * @property {true} [final]
+ * @property {string[]} signals
+ */
+/**
+ * @param {unknown} x
+ * @returns {x is Flavours}
+ */
+const isFlavours = (x) => Array.isArray(x);
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} [contentType] recorded in `signals`, never used
+ * @param {unknown} [flavours] the flavour table; a row that is not an object is passed over
+ * @returns {Promise<Discrimination>}
+ */
 export async function discriminate(bytes, contentType = null, flavours = CONTAINER_FLAVOURS) {
+  /** @type {string[]} */
   const signals = [];
   if (contentType) {
+    /** @type {string} */
     let declared;
     try { declared = String(contentType); } catch { declared = "(not a string)"; }
     signals.push(`declared-content-type:${declared} (not used for the determination)`);
@@ -1328,13 +1853,20 @@ export async function discriminate(bytes, contentType = null, flavours = CONTAIN
   const range = isRangeSource(bytes) ? sourceOf(bytes) : null;
   if (isRangeSource(bytes) && !range) return { ok: false, why: "source_unreadable", signals };
   try {
-    return await judge(range ? bytes : toBytes(bytes), range, signals, flavours);
+    return await judge(range && isRangeSource(bytes) ? bytes : toBytes(bytes), range, signals, isFlavours(flavours) ? flavours : []);
   } catch (e) {
     if (e instanceof Unreadable) return { ok: false, why: "source_unreadable", signals };
     throw e;
   }
 }
 
+/**
+ * @param {Input} bytes
+ * @param {Source | null} range
+ * @param {string[]} signals
+ * @param {Flavours} flavours
+ * @returns {Promise<Discrimination>}
+ */
 async function judge(bytes, range, signals, flavours) {
   const magic = range
     ? range.size >= 4 && u32(await range.read(0, 4), 0) === SIG_LOCAL
@@ -1346,12 +1878,15 @@ async function judge(bytes, range, signals, flavours) {
   signals.push("magic:zip (PK\\x03\\x04)");
 
   const container = range ? await readContainerFrom(range) : readContainer(bytes);
+  const view = viewOf(container.ok ? container.entries : null, container.ok ? container.byName : null);
   if (!container.ok) {
     /* A ZIP whose central directory cannot be read has NO honest flavour:
      * stated undetermined with the container's own reason, never the readable
      * prefix promoted to a verdict. A limit it was refused on is carried. */
     signals.push(`container:${container.why}`);
-    return { ok: false, why: container.why, ...(container.limit !== undefined ? { limit: container.limit, final: true } : {}), signals };
+    const limit = container.limit;
+    if (limit !== undefined) return { ok: false, why: container.why, limit, final: true, signals };
+    return { ok: false, why: container.why, signals };
   }
   signals.push(`container:zip entries=${container.count}`);
 
@@ -1359,9 +1894,11 @@ async function judge(bytes, range, signals, flavours) {
    * sees only OPC rows and the ODF branch only ODF rows, so neither family
    * can borrow the other's evidence. A row with no `partMap` is OPC (the
    * pre-COFF-9 shape). */
+  /** @type {Flavour[]} */
   const opcRows = [];
+  /** @type {Flavour[]} */
   const odfRows = [];
-  for (const f of Array.isArray(flavours) ? flavours : []) {
+  for (const f of flavours) {
     if (f && typeof f === "object") ((f.partMap ?? "opc") === "odf" ? odfRows : opcRows).push(f);
   }
 
@@ -1381,18 +1918,19 @@ async function judge(bytes, range, signals, flavours) {
      * It returns null — pushing NOTHING — for a container with no `mimetype`
      * member at all, so a ZIP with neither part map reaches the plain-ZIP
      * determination below with exactly the result object it always had. */
-    const odf = odfRows.length ? await discriminateOdf(bytes, container, odfRows, signals) : null;
+    const odf = odfRows.length ? await discriminateOdf(bytes, container, view, odfRows, signals) : null;
     if (odf) return odf;
     signals.push(`part:${CONTENT_TYPES_PART} absent → plain ZIP`);
     return { ok: true, format: "zip", signals };
   }
 
-  const ctBytes = await readPartOf(bytes, container, CONTENT_TYPES_PART, true);
+  const ctBytes = await readPartOf(bytes, view, CONTENT_TYPES_PART, true);
   if (!ctBytes.ok) {
     signals.push(`part:${CONTENT_TYPES_PART} unreadable (${ctBytes.why})`);
     return { ok: true, format: "undetermined", why: `content_types_unreadable:${ctBytes.why}`, signals };
   }
   const ctText = decodeText(ctBytes.bytes, { name: CONTENT_TYPES_PART, kind: "xml" });
+  /** @type {ContentTypesResult} */
   const types = ctText.ok ? parseContentTypes(ctText.text) : { ok: false, why: "content_types_unparseable" };
   if (!types.ok) {
     signals.push(`part:${CONTENT_TYPES_PART} present but unparseable`);
@@ -1404,14 +1942,7 @@ async function judge(bytes, range, signals, flavours) {
     /* The declaration half: any part whose computed content type is this
      * flavour's main type. Overrides carry it in practice; defaults are
      * checked too so a default-typed package is not missed. */
-    let declared = null;
-    for (const [part, ct] of types.overrides) {
-      if (ct === f.mainContentType) { declared = part; break; }
-    }
-    if (!declared) {
-      const conv = normalizePartName(f.conventionalMainPart);
-      if (partContentType(conv, types) === f.mainContentType) declared = conv;
-    }
+    const declared = declaredMainPart(types, f);
     if (!declared) continue;
 
     /* The parts half: the declared main part must actually exist. */
@@ -1431,6 +1962,21 @@ async function judge(bytes, range, signals, flavours) {
    * never guessed into a flavour. */
   signals.push("opc:no known main content type");
   return { ok: true, format: "undetermined", why: "opc_main_part_unrecognized", signals };
+}
+
+/* The OPC declaration of a row's main part: the first override naming its
+ * main content type, else its conventional part where the map types it so;
+ * null (or "") when neither does. */
+/**
+ * @param {ContentTypes} types
+ * @param {Flavour} f
+ * @returns {string | null}
+ */
+function declaredMainPart(types, f) {
+  const hit = [...types.overrides].find(([, ct]) => ct === f.mainContentType)?.[0] ?? null;
+  if (hit) return hit;
+  const conv = normalizePartName(f.conventionalMainPart);
+  return partContentType(conv, types) === f.mainContentType ? conv : hit;
 }
 
 /** The ODF half of `discriminate` (COFF-9). Called ONLY where `discriminate`
@@ -1479,7 +2025,15 @@ async function judge(bytes, range, signals, flavours) {
  *  reader knows it is a deliberate gap and not an oversight.
  *  ------------------------------------------------------------------------
  */
-async function discriminateOdf(bytes, container, rows, signals) {
+/**
+ * @param {Input} bytes
+ * @param {Container} container
+ * @param {View} view the same container, as `readPartOf` reads it
+ * @param {Flavour[]} rows
+ * @param {string[]} signals
+ * @returns {Promise<Discrimination | null>}
+ */
+async function discriminateOdf(bytes, container, view, rows, signals) {
   const mimeEntry = container.byName.get(ODF_MIMETYPE_PART)
     ?? container.entries.find((e) => normalizePartName(e.name) === ODF_MIMETYPE_PART);
   if (!mimeEntry) return null; // no ODF evidence at all — not this branch's business
@@ -1506,7 +2060,7 @@ async function discriminateOdf(bytes, container, rows, signals) {
     return { ok: true, format: "undetermined", why: "odf_mimetype_oversized", signals };
   }
 
-  const read = await readPartOf(bytes, container, ODF_MIMETYPE_PART, true);
+  const read = await readPartOf(bytes, view, ODF_MIMETYPE_PART, true);
   if (!read.ok) {
     signals.push(`odf:${ODF_MIMETYPE_PART} unreadable (${read.why})`);
     return { ok: true, format: "undetermined", why: `odf_mimetype_unreadable:${read.why}`, signals };
@@ -1559,6 +2113,10 @@ async function discriminateOdf(bytes, container, rows, signals) {
 /** The conventional .rels part for a part name (OPC): the package root's is
  *  `_rels/.rels`; a part `word/document.xml`'s is
  *  `word/_rels/document.xml.rels`. */
+/**
+ * @param {unknown} [partName] the part's name; null, undefined or "" is the package root
+ * @returns {string}
+ */
 export function relsPartFor(partName = null) {
   if (partName == null || partName === "") return "_rels/.rels";
   const norm = normalizePartName(partName);
@@ -1569,8 +2127,19 @@ export function relsPartFor(partName = null) {
 }
 
 /** Every `_rels/*.rels` part in the container, in central-directory order. */
+/**
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @returns {string[]}
+ */
 export function listRelsParts(container) {
-  return entriesOf(container)
+  return relsPartsOf(viewOf(holdsEntries(container) ? container.entries : null, null));
+}
+/**
+ * @param {View} view
+ * @returns {string[]}
+ */
+function relsPartsOf(view) {
+  return view.entries
     .map((e) => normalizePartName(e.name))
     .filter((n) => /(^|\/)_rels\/[^/]*\.rels$/.test(n)); // [^/]* — the package root's is the bare `_rels/.rels`
 }
@@ -1581,20 +2150,37 @@ export function listRelsParts(container) {
  *  inside the package. Returns
  *  `{ ok:true, relationships:[{id,type,target,targetMode,external}], outbound:[…external rels] }`
  *  or `{ ok:false, why:"rels_unparseable" }`. */
+/**
+ * @typedef {Object} Relationship
+ * @property {string | null} id
+ * @property {string | null} type
+ * @property {string} target
+ * @property {string | null} targetMode
+ * @property {boolean} external
+ */
+/** @typedef {{ ok: true, relationships: Relationship[], outbound: Relationship[] } | { ok: false, why: "rels_unparseable", final?: true }} RelsResult */
+/**
+ * @param {unknown} xml the part's text; anything else is unparseable
+ * @returns {RelsResult}
+ */
 export function parseRels(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?Relationships\b/.test(xml)) {
     return { ok: false, why: "rels_unparseable" };
   }
   if (malformedReferences(xml)) return { ok: false, why: "rels_unparseable", final: true };
-  const relationships = xmlElements(xml, "Relationship")
-    .filter((a) => a.Target != null)
-    .map((a) => ({
+  /** @type {Relationship[]} */
+  const relationships = [];
+  for (const a of xmlElements(xml, "Relationship")) {
+    const target = a.Target;
+    if (target == null) continue;
+    relationships.push({
       id: a.Id ?? null,
       type: a.Type ?? null,
-      target: a.Target,
+      target,
       targetMode: a.TargetMode ?? null,
       external: a.TargetMode === "External",
-    }));
+    });
+  }
   return { ok: true, relationships, outbound: relationships.filter((r) => r.external) };
 }
 
@@ -1602,16 +2188,41 @@ export function parseRels(xml) {
  *  attribution and keeping unreadable parts STATED in `undetermined` rather
  *  than dropped:
  *  `{ ok:true, byPart:[{part, relationships, outbound}], outbound:[{part, …rel}], undetermined:[{part, why}] }` */
+/** @typedef {{ part: string, id: string | null, type: string | null, target: string, targetMode: string | null, external: boolean }} OutboundRel */
+/**
+ * @typedef {Object} RelsWalk
+ * @property {true} ok
+ * @property {RelsPart[]} byPart
+ * @property {OutboundRel[]} outbound
+ * @property {RelsUnread[]} undetermined
+ */
+/** @typedef {{ part: string, relationships: Relationship[], outbound: Relationship[] }} RelsPart */
+/** @typedef {{ part: string, why: string, final?: true }} RelsUnread */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @returns {Promise<RelsWalk>}
+ */
 export async function walkRels(bytes, container) {
+  /** @type {RelsPart[]} */
   const byPart = [];
+  /** @type {OutboundRel[]} */
   const outbound = [];
+  /** @type {RelsUnread[]} */
   const undetermined = [];
-  for (const part of listRelsParts(container)) {
-    const read = await readPartOf(bytes, container, part, true);
+  const view = viewOf(holdsEntries(container) ? container.entries : null, holdsByName(container) ? container.byName : null);
+  const input = isRangeSource(bytes) ? bytes : toBytes(bytes);
+  for (const part of relsPartsOf(view)) {
+    const read = await readPartOf(input, view, part, true);
     if (!read.ok) { undetermined.push({ part, why: read.why }); continue; }
     const text = decodeText(read.bytes, { name: part, kind: "xml" });
+    /** @type {RelsResult} */
     const parsed = text.ok ? parseRels(text.text) : { ok: false, why: "rels_unparseable" };
-    if (!parsed.ok) { undetermined.push({ part, why: parsed.why, ...(parsed.final ? { final: true } : {}) }); continue; }
+    if (!parsed.ok) {
+      if (parsed.final) undetermined.push({ part, why: parsed.why, final: true });
+      else undetermined.push({ part, why: parsed.why });
+      continue;
+    }
     byPart.push({ part, relationships: parsed.relationships, outbound: parsed.outbound });
     for (const r of parsed.outbound) outbound.push({ part, ...r });
   }
@@ -1630,6 +2241,22 @@ export const CORE_PROPERTIES_PART = "docProps/core.xml";
  *  string the file carries or null when ABSENT — absence recorded, never
  *  filled in. `revision` additionally carries `revisionNumber` when (and only
  *  when) the string is a plain integer. */
+/**
+ * @typedef {Object} CoreProperties
+ * @property {true} ok
+ * @property {string | null} creator
+ * @property {string | null} lastModifiedBy
+ * @property {string | null} revision
+ * @property {number | null} revisionNumber
+ * @property {string | null} created
+ * @property {string | null} modified
+ * @property {string | null} title
+ */
+/** @typedef {CoreProperties | { ok: false, why: string, final?: true }} CoreResult */
+/**
+ * @param {unknown} xml the part's text; anything else is unparseable
+ * @returns {CoreResult}
+ */
 export function parseCoreProperties(xml) {
   if (typeof xml !== "string" || !/<(?:[\w.-]+:)?coreProperties\b/.test(xml)) {
     return { ok: false, why: "core_properties_unparseable" };
@@ -1653,8 +2280,14 @@ export function parseCoreProperties(xml) {
 /** Read and parse `docProps/core.xml` from a container. A package without one
  *  (it is optional in OPC) is `{ ok:false, why:"part_absent" }` — stated, and
  *  distinct from a package whose core.xml exists but cannot be read. */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @returns {Promise<CoreResult>}
+ */
 export async function readCoreProperties(bytes, container) {
-  const read = await readPartOf(bytes, container, CORE_PROPERTIES_PART, true);
+  const view = viewOf(holdsEntries(container) ? container.entries : null, holdsByName(container) ? container.byName : null);
+  const read = await readPartOf(isRangeSource(bytes) ? bytes : toBytes(bytes), view, CORE_PROPERTIES_PART, true);
   if (!read.ok) return { ok: false, why: read.why };
   const text = decodeText(read.bytes, { name: CORE_PROPERTIES_PART, kind: "xml" });
   return text.ok ? parseCoreProperties(text.text) : { ok: false, why: "core_properties_unparseable" };
@@ -1706,15 +2339,39 @@ export const IMAGE_MIME_BY_EXT = Object.freeze({
   emz: "image/x-emz", wmz: "image/x-wmz",
 });
 
+/* The same table, looked up by any extension. */
+/** @type {Readonly<Record<string, string | undefined>>} */
+const MIME_BY_EXT = IMAGE_MIME_BY_EXT;
+
 const IMAGE_HEX = "0123456789abcdef";
+/**
+ * @param {Uint8Array} u8
+ * @returns {Promise<string>}
+ */
 async function imageSha256(u8) {
-  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", u8));
+  /** @type {ArrayBuffer} */
+  const digest = await crypto.subtle.digest("SHA-256", u8);
+  const d = new Uint8Array(digest);
   let out = "";
-  for (let i = 0; i < d.length; i++) out += IMAGE_HEX[d[i] >> 4] + IMAGE_HEX[d[i] & 15];
+  for (let i = 0; i < d.length; i++) out += IMAGE_HEX.charAt((d[i] ?? 0) >> 4) + IMAGE_HEX.charAt((d[i] ?? 0) & 15);
   return out;
 }
 
 /** The IC-1 `image` reference for a container media part. */
+/**
+ * @typedef {Object} ImageRef
+ * @property {"image"} kind
+ * @property {string} ref
+ * @property {string} part
+ * @property {string | null} mime
+ * @property {string | null} name
+ */
+/**
+ * @param {string} part the SHA-256 of the member's bytes, lowercase hex
+ * @param {string | null} [mime]
+ * @param {string | null} [name]
+ * @returns {ImageRef}
+ */
 export function imageRef(part, mime = null, name = null) {
   return { kind: "image", ref: `image ${String(part).slice(0, 12)}`, part, mime, name };
 }
@@ -1722,15 +2379,23 @@ export function imageRef(part, mime = null, name = null) {
 /** Every image member under `dir`, content-addressed, in central-directory
  *  order. Returns `{ images: [imageRef...], why: null }` or
  *  `{ images: null, why }` — never a partial list. */
+/** @typedef {{ images: ImageRef[], why: null } | { images: null, why: string }} ContainerImages */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @param {unknown} dir the media directory, normalized
+ * @returns {Promise<ContainerImages>}
+ */
 export async function containerImages(bytes, container, dir) {
   const want = normalizePartName(dir);
+  /** @type {{ name: string, mime: string }[]} */
   const members = [];
   let declared = 0;
-  for (const e of entriesOf(container)) {
+  for (const e of (holdsEntries(container) ? container.entries : [])) {
     const name = normalizePartName(e.name);
     if (!name.startsWith(want) || name === want || name.endsWith("/")) continue;
     const dot = name.lastIndexOf(".");
-    const mime = dot > name.lastIndexOf("/") ? IMAGE_MIME_BY_EXT[name.slice(dot + 1).toLowerCase()] ?? null : null;
+    const mime = dot > name.lastIndexOf("/") ? MIME_BY_EXT[name.slice(dot + 1).toLowerCase()] ?? null : null;
     if (!mime) continue;
     members.push({ name, mime });
     declared += e.uncompressedSize;
@@ -1742,6 +2407,7 @@ export async function containerImages(bytes, container, dir) {
      — never a prefix of it. */
   const g = sizeGuard(declared);
   if (!g.ok) return { images: null, why: `media_over_size_bound:${declared}>${g.bound}` };
+  /** @type {ImageRef[]} */
   const images = [];
   for (const m of members) {
     const read = await readPart(bytes, container, m.name);
@@ -1757,10 +2423,27 @@ export async function containerImages(bytes, container, dir) {
  *  A failed text() (`ok:false`) is returned untouched: no container was read,
  *  so there is no media directory to have looked in. On a successful read
  *  `images` is the exhaustive list or NULL, and a NULL carries `imagesWhy`. */
+/** @typedef {{ ok?: unknown }} TextOut */
+/** @typedef {{ images: ImageRef[] } | { images: null, imagesWhy: string }} ImagesAdded */
+/** @typedef {{ ok?: unknown, bytes?: unknown, container?: unknown }} Parts */
+/**
+ * @param {unknown} x
+ * @returns {x is Parts}
+ */
+const isParts = (x) => x !== null && (typeof x === "object" || typeof x === "function");
+/**
+ * @template {TextOut | null | undefined | false} T
+ * @param {T | Promise<T>} outOrPromise an entry's text() answer
+ * @param {unknown} parts what the entry read: `{ ok, bytes, container }`
+ * @param {unknown} dir the media directory
+ * @returns {Promise<T | (T & ImagesAdded)>}
+ */
 export async function withContainerImages(outOrPromise, parts, dir) {
   const out = await outOrPromise;
-  if (!out || !out.ok || !parts || !parts.ok || !parts.container) return out;
-  const got = await containerImages(parts.bytes, parts.container, dir);
+  if (!out || !out.ok || !isParts(parts) || !parts.ok) return out;
+  const container = parts.container;
+  if (!container) return out;
+  const got = await containerImages(parts.bytes, container, dir);
   return got.images ? { ...out, images: got.images }
                     : { ...out, images: null, imagesWhy: got.why };
 }
@@ -1789,29 +2472,46 @@ export async function withContainerImages(outOrPromise, parts, dir) {
 const CP437_HIGH =
   "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐"
   + "└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ ";
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
 function cp437(bytes) {
   let s = "";
-  for (const x of bytes) s += x < 0x80 ? String.fromCharCode(x) : CP437_HIGH[x - 0x80];
+  for (const x of bytes) s += x < 0x80 ? String.fromCharCode(x) : CP437_HIGH.charAt(x - 0x80);
   return s;
 }
+/** @type {TextDecoder} */
 const UTF8_STRICT = new TextDecoder("utf-8", { fatal: true });
+/** @type {(bytes: Uint8Array) => string} */
 const hex = (bytes) => Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join("");
+/** @type {(a: Uint8Array, b: Uint8Array) => boolean} */
 const sameBytes = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /* The stated MS-DOS date and time (APPNOTE §4.4.6), no zone; null when the
  * fields name no real instant (month 0, February 30, second 60, …). */
+/**
+ * @param {number} time
+ * @param {number} date
+ * @returns {string | null}
+ */
 function dosTime(time, date) {
   const y = 1980 + (date >>> 9), mo = (date >>> 5) & 15, d = date & 31;
   const h = time >>> 11, mi = (time >>> 5) & 63, s = (time & 31) * 2;
   const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
   const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
   if (!days || d < 1 || d > days || h > 23 || mi > 59 || s > 59) return null;
+  /** @type {(n: number) => string} */
   const p = (n) => String(n).padStart(2, "0");
   return `${y}-${p(mo)}-${p(d)}T${p(h)}:${p(mi)}:${p(s)}`;
 }
 
 /* A name that could reach outside a directory if anything used it as a path:
  * a `..` segment, a leading `/` or `\`, a drive letter, a `\` or a NUL. */
+/**
+ * @param {string} name
+ * @returns {boolean}
+ */
 function pathUnsafe(name) {
   return /^[/\\]/.test(name) || /^[A-Za-z]:/.test(name) || /[\\\0]/.test(name)
     || name.split(/[/\\]/).includes("..");
@@ -1821,33 +2521,91 @@ class Unreadable extends Error {}
 
 /* The two kinds of source behind one interface. A range source's answer must
  * hold `length` bytes; fewer, a rejection or a non-byte answer makes the whole
- * service answer `source_unreadable`, never a partial reading. */
+ * service answer `source_unreadable`, never a partial reading. Each service
+ * hands it its caller's source as a range source where it is one, else through
+ * `toBytes`. */
+/**
+ * @param {Input} source
+ * @returns {Source | null}
+ */
 function sourceOf(source) {
-  if (!isRangeSource(source)) {
-    const b = toBytes(source);
+  if (source instanceof Uint8Array) {
+    const b = source;
     return { size: b.length, read: async (offset, length) => b.subarray(offset, offset + length), whole: b };
   }
   const size = source.size;
-  if (!Number.isSafeInteger(size) || size < 0) return null;
+  if (typeof size !== "number" || !Number.isSafeInteger(size) || size < 0) return null;
   return {
     size,
     async read(offset, length) {
       if (length === 0) return new Uint8Array(0);
-      let got;
-      try { got = await source.read(offset, length); } catch { throw new Unreadable(); }
-      if (got instanceof ArrayBuffer) got = new Uint8Array(got);
-      else if (ArrayBuffer.isView(got) && !(got instanceof Uint8Array)) got = new Uint8Array(got.buffer, got.byteOffset, got.byteLength);
+      const raw = await readRange(source, offset, length);
+      const got = raw instanceof ArrayBuffer ? new Uint8Array(raw)
+        : ArrayBuffer.isView(raw) && !(raw instanceof Uint8Array) ? new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+        : raw;
       if (!(got instanceof Uint8Array) || got.length < length) throw new Unreadable();
       return got.length === length ? got : got.subarray(0, length);
     },
   };
 }
+/* A range source's answer, or `Unreadable` when its `read` throws or rejects. */
+/**
+ * @param {RangeSource} source
+ * @param {number} offset
+ * @param {number} length
+ * @returns {Promise<unknown>}
+ */
+async function readRange(source, offset, length) {
+  try { return await source.read(offset, length); } catch { throw new Unreadable(); }
+}
 
 /** List an archive: every central-directory entry with its verdict (R27,
  *  R28). Async; never throws. */
+/**
+ * One central-directory entry as the listing states it (R27, R28).
+ * @typedef {Object} ArchiveRow
+ * @property {number} index
+ * @property {string} name_raw
+ * @property {string | null} name
+ * @property {string} name_encoding
+ * @property {number} name_shared
+ * @property {boolean} path_unsafe
+ * @property {number} method
+ * @property {number} flags
+ * @property {number} crc32
+ * @property {number} compressed
+ * @property {number} uncompressed
+ * @property {number} local_offset
+ * @property {number | null} data_offset
+ * @property {string | null} dos_time
+ * @property {"dir" | "symlink" | "file"} kind
+ * @property {boolean} encrypted
+ * @property {string | null} verdict
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+/**
+ * What `listArchive` answers (R27, R28): the listing, or a refusal with the rows
+ * as read (null where the directory was not walked).
+ * @typedef {Object} ArchiveListing
+ * @property {boolean} ok
+ * @property {ArchiveRow[] | null} entries
+ * @property {number} [count]
+ * @property {number} [declared_total]
+ * @property {boolean} [zip64]
+ * @property {string} [verdict]
+ * @property {string} [why]
+ * @property {string} [detail]
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+/**
+ * @param {unknown} source the archive's bytes, or a range source standing for it
+ * @returns {Promise<ArchiveListing>}
+ */
 export async function listArchive(source) {
   try {
-    const src = sourceOf(source);
+    const src = sourceOf(isRangeSource(source) ? source : toBytes(source));
     if (!src) return { ok: false, why: "source_unreadable", entries: null };
     return await listFrom(src);
   } catch {
@@ -1855,9 +2613,39 @@ export async function listArchive(source) {
   }
 }
 
-const refusal = (why, extra = {}) => ({ ok: false, why, ...extra, entries: null });
+/**
+ * @param {string} why
+ * @param {number} [limit] the figure of the limit refused on, which makes the refusal final
+ * @returns {ArchiveListing}
+ */
+function refusal(why, limit) {
+  if (limit === undefined) return { ok: false, why, entries: null };
+  return { ok: false, why, limit, final: true, entries: null };
+}
+/**
+ * @param {string} detail
+ * @param {ArchiveRow[] | null} entries
+ * @returns {ArchiveListing}
+ */
 const ambiguous = (detail, entries) => ({ ok: false, why: "ARCHIVE_AMBIGUOUS", detail, entries });
 
+/**
+ * A central-directory record as the listing reads it.
+ * @typedef {Object} DirRecord
+ * @property {Uint8Array} nameBytes
+ * @property {CentralValues} values
+ * @property {number} madeBy
+ * @property {number} flags
+ * @property {number} method
+ * @property {number} time
+ * @property {number} date
+ * @property {number} crc
+ * @property {number} external
+ */
+/**
+ * @param {Source} src
+ * @returns {Promise<ArchiveListing>}
+ */
 async function listFrom(src) {
   const { size } = src;
   if (size < 22) return refusal("too_short_for_zip");
@@ -1869,13 +2657,14 @@ async function listFrom(src) {
    * different tools resolve differently, so the archive is not read as one. */
   const winStart = Math.max(0, size - 22 - 0xffff);
   const win = await src.read(winStart, size - winStart);
+  /** @type {number[]} */
   const candidates = [];
   for (let p = win.length - 22; p >= 0; p--) {
     if (u32(win, p) === SIG_EOCD && p + 22 + u16(win, p + 20) === win.length) candidates.push(winStart + p);
   }
   if (candidates.length === 0) return refusal("eocd_not_found");
   if (candidates.length > 1) return ambiguous("several_eocd_candidates", null);
-  const eocd = candidates[0];
+  const eocd = candidates[0] ?? 0;
   const end = parseEocd(win, eocd - winStart);
   let { diskEntries, totalEntries, cdSize, cdOffset } = end;
   let directoryEnd = eocd;
@@ -1892,7 +2681,7 @@ async function listFrom(src) {
     const z = Number.isFinite(recAt) && recAt + 56 <= locAt
       ? zip64End(loc, locAt, await src.read(recAt, 56), recAt) : null;
     if (!z) return refusal("zip64_record_invalid");
-    for (const k of Object.keys(ZIP64_SENTINELS)) {
+    for (const k of ZIP64_FIELDS) {
       if (end[k] !== ZIP64_SENTINELS[k] && end[k] !== z[k]) return ambiguous("directory_disagrees_with_eocd", null);
     }
     ({ diskEntries, totalEntries, cdSize, cdOffset } = z);
@@ -1900,18 +2689,19 @@ async function listFrom(src) {
     zip64 = true;
   }
   if (diskEntries !== totalEntries) return refusal("multi_disk_unsupported");
-  if (totalEntries > ARCHIVE_ENTRIES_MAX) return refusal("ARCHIVE_ENTRIES_MAX", { limit: ARCHIVE_ENTRIES_MAX, final: true });
-  if (cdSize > ARCHIVE_DIRECTORY_MAX) return refusal("ARCHIVE_DIRECTORY_MAX", { limit: ARCHIVE_DIRECTORY_MAX, final: true });
+  if (totalEntries > ARCHIVE_ENTRIES_MAX) return refusal("ARCHIVE_ENTRIES_MAX", ARCHIVE_ENTRIES_MAX);
+  if (cdSize > ARCHIVE_DIRECTORY_MAX) return refusal("ARCHIVE_DIRECTORY_MAX", ARCHIVE_DIRECTORY_MAX);
   if (cdOffset + cdSize > directoryEnd) return refusal("central_directory_truncated");
 
   /* THE CENTRAL DIRECTORY, every record, the sole authority (R24). */
   const cd = await src.read(cdOffset, cdSize);
+  /** @type {DirRecord[]} */
   const records = [];
   let p = 0;
   for (let i = 0; i < totalEntries; i++) {
     if (p + 46 > cd.length || u32(cd, p) !== SIG_CENTRAL) return refusal("central_directory_truncated");
     const nameLen = u16(cd, p + 28), extraLen = u16(cd, p + 30), commentLen = u16(cd, p + 32);
-    if (nameLen > ARCHIVE_NAME_MAX) return refusal("ARCHIVE_NAME_MAX", { limit: ARCHIVE_NAME_MAX, final: true });
+    if (nameLen > ARCHIVE_NAME_MAX) return refusal("ARCHIVE_NAME_MAX", ARCHIVE_NAME_MAX);
     if (p + 46 + nameLen + extraLen + commentLen > cd.length) return refusal("central_directory_truncated");
     const nameBytes = cd.subarray(p + 46, p + 46 + nameLen);
     const values = centralValues(cd, p, cd.subarray(p + 46 + nameLen, p + 46 + nameLen + extraLen));
@@ -1934,40 +2724,55 @@ async function listFrom(src) {
    * lists the entries in, so a source that fetches parts of a file reads each
    * part once and not once per jump. The rows keep the directory's order. */
   const entries = records.map((r, index) => rowOf(index, r));
+  /** @type {[number, number][]} */
   const ranges = [];
   let outOfRange = false;
-  const physical = entries.map((_, i) => i).sort((a, b) => entries[a].local_offset - entries[b].local_offset || a - b);
+  const physical = entries.map((_, i) => i).sort((a, b) => (entries[a]?.local_offset ?? 0) - (entries[b]?.local_offset ?? 0) || a - b);
   for (const i of physical) {
     const row = entries[i];
-    const local = await crossCheck(src, records[i], row, cdOffset);
+    const record = records[i];
+    if (!row || !record) continue; // every index of `physical` names a row and its record
+    const local = await crossCheck(src, record, row, cdOffset);
     if (local.outOfRange) outOfRange = true;
     ranges.push(local.range);
-    row.verdict = verdictOf(row, local.agrees);
-    if (row.verdict === "MEMBER_MAX") Object.assign(row, { limit: MEMBER_MAX, final: true });
-    if (row.verdict === "ARCHIVE_RATIO_MAX") Object.assign(row, { limit: ARCHIVE_RATIO_MAX, final: true });
+    const verdict = verdictOf(row, local.agrees);
+    row.verdict = verdict;
+    if (verdict === "MEMBER_MAX") Object.assign(row, { limit: MEMBER_MAX, final: true });
+    if (verdict === "ARCHIVE_RATIO_MAX") Object.assign(row, { limit: ARCHIVE_RATIO_MAX, final: true });
   }
-  const shared = new Map();
+  /** @type {Map<string, number>} */
+  const shared = new Map(null);
   for (const row of entries) shared.set(row.name_raw, (shared.get(row.name_raw) ?? 0) + 1);
-  for (const row of entries) row.name_shared = shared.get(row.name_raw);
+  for (const row of entries) row.name_shared = shared.get(row.name_raw) ?? 1; // every name was counted above
 
   if (!directoryFilled) return ambiguous("directory_disagrees_with_eocd", entries);
   if (outOfRange) return ambiguous("entry_out_of_range", entries);
   ranges.sort((a, b) => a[0] - b[0]);
-  for (let i = 1, reach = ranges[0]?.[1]; i < ranges.length; i++) {
-    if (ranges[i][0] < reach) return ambiguous("entries_overlap", entries);
-    reach = Math.max(reach, ranges[i][1]);
+  for (let i = 1, reach = ranges[0]?.[1] ?? 0; i < ranges.length; i++) {
+    const [from, to] = ranges[i] ?? [0, 0]; // i is below ranges.length
+    if (from < reach) return ambiguous("entries_overlap", entries);
+    reach = Math.max(reach, to);
   }
 
   let declared_total = 0;
   for (const row of entries) if (row.kind === "file") declared_total += row.uncompressed;
+  /** @type {ArchiveListing} */
   const out = { ok: true, entries, count: entries.length, declared_total, zip64, verdict: "ok" };
   if (declared_total > ARCHIVE_TOTAL_MAX) { out.verdict = "ARCHIVE_TOTAL_MAX"; out.limit = ARCHIVE_TOTAL_MAX; out.final = true; }
   return out;
 }
 
 /* One row as the central directory states it (R27). */
+/**
+ * @param {number} index
+ * @param {DirRecord} r
+ * @returns {ArchiveRow}
+ */
 function rowOf(index, r) {
-  let name, name_encoding;
+  /** @type {string | null} */
+  let name;
+  /** @type {string} */
+  let name_encoding;
   if (r.flags & 0x0800) {
     try { name = UTF8_STRICT.decode(r.nameBytes); name_encoding = "utf-8"; } catch { name = null; name_encoding = "utf-8-invalid"; }
   } else {
@@ -1992,6 +2797,14 @@ function rowOf(index, r) {
  * (local header to the end of its data and descriptor) and whether any of it
  * runs past the archive's end or into the central directory. Reads only the
  * structures, never the member's data. */
+/** @typedef {{ agrees: boolean, outOfRange: boolean, range: [number, number] }} CrossChecked */
+/**
+ * @param {Source} src
+ * @param {DirRecord} r
+ * @param {ArchiveRow} row
+ * @param {number} cdOffset
+ * @returns {Promise<CrossChecked>}
+ */
 async function crossCheck(src, r, row, cdOffset) {
   const lo = row.local_offset;
   if (lo + 30 > cdOffset) return { agrees: false, outOfRange: true, range: [lo, lo + 30] };
@@ -2018,6 +2831,7 @@ async function crossCheck(src, r, row, cdOffset) {
     const length = (signed ? 4 : 0) + 4 + 2 * width;
     if (length > avail) return { agrees, outOfRange: true, range: [lo, end + length] };
     const q = signed ? 4 : 0;
+    /** @type {(at: number) => number} */
     const read = (at) => (width === 8 ? u64(d, at) : u32(d, at));
     agrees = agrees && u32(d, q) === row.crc32 && read(q + 4) === row.compressed && read(q + 4 + width) === row.uncompressed;
     end += length;
@@ -2025,7 +2839,7 @@ async function crossCheck(src, r, row, cdOffset) {
     let compressed = u32(lh, 18), uncompressed = u32(lh, 22);
     if (compressed === 0xffffffff || uncompressed === 0xffffffff) {
       if (!localZip64) agrees = false;
-      else ({ compressed, uncompressed } = localZip64);
+      else { compressed = localZip64.compressed ?? NaN; uncompressed = localZip64.uncompressed ?? NaN; } // both were asked for, so both are there
     }
     agrees = agrees && u32(lh, 14) === row.crc32 && compressed === row.compressed && uncompressed === row.uncompressed;
   }
@@ -2033,9 +2847,15 @@ async function crossCheck(src, r, row, cdOffset) {
 }
 
 /* R28's per-row verdict: the first that applies. */
+/**
+ * @param {ArchiveRow} row
+ * @param {boolean} agrees
+ * @returns {string}
+ */
 function verdictOf(row, agrees) {
-  if (row.kind === "dir") return "directory";
-  if (row.kind === "symlink") return "symlink";
+  const kind = row.kind;
+  if (kind === "dir") return "directory";
+  if (kind === "symlink") return "symlink";
   if (row.encrypted) return "MEMBER_ENCRYPTED";
   if (row.method !== 0 && row.method !== 8) return "MEMBER_METHOD_UNSUPPORTED";
   if (!agrees) return "MEMBER_AMBIGUOUS";
@@ -2055,7 +2875,9 @@ function verdictOf(row, agrees) {
  * `crypto.subtle.digest` over the same bytes (the suite proves it). The round
  * constants become a table on the first digest this module computes itself,
  * and are kept (R34). */
+/** @type {Uint32Array | null} */
 let shaK = null;
+/** @type {() => Uint32Array} */
 const shaKOf = () => shaK ?? (shaK = new Uint32Array([
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
   0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -2066,26 +2888,39 @@ const shaKOf = () => shaK ?? (shaK = new Uint32Array([
   0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ]));
+/**
+ * A digest made as the bytes pass: `update` with each chunk in order, then
+ * `finish` for the lowercase hex.
+ * @typedef {Object} Hasher
+ * @property {(u8: Uint8Array) => unknown} update
+ * @property {() => Promise<string>} finish
+ */
+/** @returns {Hasher} */
 function sha256Js() {
   const K = shaKOf();
   const H = new Uint32Array([0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]);
   const W = new Uint32Array(64);
   const block = new Uint8Array(64);
   let filled = 0, length = 0;
+  /** @type {(x: number, n: number) => number} */
   const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  /* Every index below is inside its array (a block is 64 bytes, W 64 words, H
+   * 8), so `?? 0` never applies. */
+  /** @type {(m: Uint8Array, at: number) => void} */
   const compress = (m, at) => {
-    for (let t = 0; t < 16; t++) W[t] = (m[at + 4 * t] << 24) | (m[at + 4 * t + 1] << 16) | (m[at + 4 * t + 2] << 8) | m[at + 4 * t + 3];
+    for (let t = 0; t < 16; t++) W[t] = ((m[at + 4 * t] ?? 0) << 24) | ((m[at + 4 * t + 1] ?? 0) << 16) | ((m[at + 4 * t + 2] ?? 0) << 8) | (m[at + 4 * t + 3] ?? 0);
     for (let t = 16; t < 64; t++) {
-      const a = W[t - 15], b = W[t - 2];
-      W[t] = (W[t - 16] + (rotr(a, 7) ^ rotr(a, 18) ^ (a >>> 3)) + W[t - 7] + (rotr(b, 17) ^ rotr(b, 19) ^ (b >>> 10))) | 0;
+      const a = W[t - 15] ?? 0, b = W[t - 2] ?? 0;
+      W[t] = ((W[t - 16] ?? 0) + (rotr(a, 7) ^ rotr(a, 18) ^ (a >>> 3)) + (W[t - 7] ?? 0) + (rotr(b, 17) ^ rotr(b, 19) ^ (b >>> 10))) | 0;
     }
-    let [a, b, c, d, e, f, g, h] = H;
+    let [a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0] = H;
     for (let t = 0; t < 64; t++) {
-      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + W[t]) | 0;
+      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + (K[t] ?? 0) + (W[t] ?? 0)) | 0;
       const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
       h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
     }
-    H[0] += a; H[1] += b; H[2] += c; H[3] += d; H[4] += e; H[5] += f; H[6] += g; H[7] += h;
+    H[0] = (H[0] ?? 0) + a; H[1] = (H[1] ?? 0) + b; H[2] = (H[2] ?? 0) + c; H[3] = (H[3] ?? 0) + d;
+    H[4] = (H[4] ?? 0) + e; H[5] = (H[5] ?? 0) + f; H[6] = (H[6] ?? 0) + g; H[7] = (H[7] ?? 0) + h;
   };
   return {
     update(u8) {
@@ -2115,6 +2950,7 @@ function sha256Js() {
     },
   };
 }
+/** @returns {Hasher} */
 function sha256Stream() {
   const DS = globalThis.crypto?.DigestStream;
   if (typeof DS !== "function") return sha256Js();
@@ -2131,41 +2967,85 @@ function sha256Stream() {
  *  once when the row is refused before anything is read. A consumer that
  *  stops early leaves the rest to be read and verified, unyielded, so `done`
  *  still states whether the member was whole. */
+/**
+ * What a cut answers (R29): the member verified, or the reason it is not.
+ * @typedef {Object} CutResult
+ * @property {boolean} ok
+ * @property {string} [sha256]
+ * @property {number} [crc32]
+ * @property {number} [size]
+ * @property {string} [why]
+ * @property {string} [detail]
+ * @property {number | null} [index]
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+/** @typedef {{ [Symbol.asyncIterator](): AsyncGenerator<Uint8Array, void, void> }} Chunks */
+/** @typedef {{ chunks: Chunks, done: Promise<CutResult> }} Cut */
+/** @type {Readonly<Record<string, number | undefined>>} */
+const LIMIT_BY_NAME = ARCHIVE_LIMITS;
+/**
+ * @param {unknown} source the archive's bytes, or a range source standing for it
+ * @param {ArchiveRow} row one of the rows `listArchive` answered over the same source
+ * @returns {Cut}
+ */
 export function streamMember(source, row) {
-  let settle;
-  const done = new Promise((resolve) => { settle = resolve; });
+  /** @type {(r: CutResult) => void} */
+  let settle = () => {};
+  /** @type {Promise<CutResult>} */
+  const done = new Promise((resolve) => { settle = (r) => resolve(r); });
   const valid = row && typeof row === "object"
-    && Number.isSafeInteger(row.index) && Number.isSafeInteger(row.data_offset) && row.data_offset >= 0
+    && Number.isSafeInteger(row.index) && Number.isSafeInteger(row.data_offset) && (row.data_offset ?? -1) >= 0
     && Number.isSafeInteger(row.compressed) && row.compressed >= 0
     && Number.isSafeInteger(row.uncompressed) && row.uncompressed >= 0
     && Number.isInteger(row.crc32) && (row.method === 0 || row.method === 8);
-  let early = null;
-  if (row?.verdict !== "ok") {
-    early = { ok: false, why: typeof row?.verdict === "string" ? row.verdict : "row_invalid", index: row?.index ?? null };
-    const limit = ARCHIVE_LIMITS[early.why];
-    if (limit !== undefined) { early.limit = limit; early.final = true; }
-  } else if (!valid) {
-    early = { ok: false, why: "row_invalid", index: row?.index ?? null };
-  }
-  if (early) settle(early);
+  const verdict = row?.verdict;
+  const refused = verdict !== "ok" ? refusedAs(typeof verdict === "string" ? verdict : "row_invalid", row?.index ?? null)
+    : !valid ? refusedAs("row_invalid", row?.index ?? null)
+    : null;
+  if (refused) settle(refused);
 
   let started = false;
   const chunks = {
     [Symbol.asyncIterator]() {
-      if (started || early) return (async function* () {})();
+      if (started || refused) return nothing();
       started = true;
-      return relay(cut(source, row), settle, row.index);
+      return relay(cut(isRangeSource(source) ? source : toBytes(source), row), settle, row.index);
     },
   };
   return { chunks, done };
 }
 
+/* A row refused by its verdict: a limit's name carries its figure and is final. */
+/**
+ * @param {string} why
+ * @param {number | null} index
+ * @returns {CutResult}
+ */
+function refusedAs(why, index) {
+  const limit = LIMIT_BY_NAME[why];
+  if (limit === undefined) return { ok: false, why, index };
+  return { ok: false, why, index, limit, final: true };
+}
+
+/* What a refused cut, or a second iteration, yields: nothing. */
+/** @returns {AsyncGenerator<Uint8Array, void, void>} */
+async function* nothing() {}
+
 /* Yields what `inner` yields; when it ends, or the consumer stops, drains
  * the rest unyielded and settles with its answer. `cut` answers every
  * failure itself; should it ever throw, the cut is stated unread rather than
  * left unsettled. */
+/**
+ * @param {AsyncGenerator<Uint8Array, CutResult, void>} inner
+ * @param {(r: CutResult) => void} settle
+ * @param {number} index
+ * @returns {AsyncGenerator<Uint8Array, void, void>}
+ */
 async function* relay(inner, settle, index) {
+  /** @type {CutResult} */
   const unread = { ok: false, why: "source_unreadable", index };
+  /** @type {CutResult | null} */
   let result = null;
   try {
     for (;;) {
@@ -2176,36 +3056,60 @@ async function* relay(inner, settle, index) {
   } catch {
     result = unread;
   } finally {
-    try {
-      while (!result) {
-        const { value, done } = await inner.next();
-        if (done) result = value ?? unread;
-      }
-    } catch {
-      result = unread;
+    settle(await drained(inner, result, unread));
+  }
+}
+
+/* The cut's answer: `result` where it has one, else what the rest of `inner`
+ * answers once read to its end, unyielded; `unread` should that throw. */
+/**
+ * @param {AsyncGenerator<Uint8Array, CutResult, void>} inner
+ * @param {CutResult | null} result
+ * @param {CutResult} unread
+ * @returns {Promise<CutResult>}
+ */
+async function drained(inner, result, unread) {
+  if (result) return result;
+  try {
+    for (;;) {
+      const { value, done } = await inner.next();
+      if (done) return value ?? unread;
     }
-    settle(result);
+  } catch {
+    return unread;
   }
 }
 
 const CUT_WINDOW = 1 << 20;
 
+/**
+ * @param {Input} source
+ * @param {ArchiveRow} row
+ * @returns {AsyncGenerator<Uint8Array, CutResult, void>}
+ */
 async function* cut(source, row) {
+  /** @type {(detail: string) => CutResult} */
   const corrupt = (detail) => ({ ok: false, why: "MEMBER_CORRUPT", detail, index: row.index });
+  /** @type {CutResult} */
   const unreadable = { ok: false, why: "source_unreadable", index: row.index };
   const src = sourceOf(source);
   if (!src) return unreadable;
   const declared = row.uncompressed;
   let crc = 0xffffffff, size = 0;
   const sha = sha256Stream();
+  /** @type {(u8: Uint8Array) => Promise<void>} */
   const take = async (u8) => { crc = crcUpdate(crc, u8); size += u8.length; await sha.update(u8); };
-  async function* windows() {
+  /** @type {() => AsyncGenerator<Uint8Array, void, void>} */
+  const windows = async function* () {
     for (let off = 0; off < row.compressed; off += CUT_WINDOW) {
-      const at = row.data_offset + off, length = Math.min(CUT_WINDOW, row.compressed - off);
+      /* `streamMember` cuts only a row whose data offset is a number; null
+       * would add as 0, as `?? 0` does. */
+      const at = (row.data_offset ?? 0) + off, length = Math.min(CUT_WINDOW, row.compressed - off);
       if (at + length > src.size) throw new Unreadable();
       yield await src.read(at, length);
     }
-  }
+  };
+  /** @type {() => Promise<CutResult>} */
   const finish = async () => {
     if (size !== declared) return corrupt("size_mismatch");
     if (((crc ^ 0xffffffff) >>> 0) !== row.crc32) return corrupt("crc_mismatch");
@@ -2232,18 +3136,20 @@ async function* cut(source, row) {
    * after the whole declared member came out whole is the deflate stream not
    * ending exactly at the end of the data (trailing bytes, or no final
    * block): `stream_end_mismatch`; before, `inflate_failed`. */
+  /** @type {DecompressionStream} */
   let ds;
   try { ds = new DecompressionStream("deflate-raw"); } catch { return corrupt("inflate_failed"); }
   const writer = ds.writable.getWriter();
   const reader = ds.readable.getReader();
-  let sourceFailed = false, fedAll = false;
+  /* How the feeding ended, read once it has. */
+  const fed = { sourceFailed: false, all: false };
   const feeding = (async () => {
     try {
       for await (const w of windows()) await writer.write(w);
       await writer.close();
-      fedAll = true;
+      fed.all = true;
     } catch (e) {
-      if (e instanceof Unreadable) sourceFailed = true;
+      if (e instanceof Unreadable) fed.sourceFailed = true;
       writer.abort().catch(() => {});
     }
   })();
@@ -2264,8 +3170,8 @@ async function* cut(source, row) {
     inflateError = true;
   }
   await feeding;
-  if (sourceFailed) return unreadable;
-  if (inflateError || !fedAll) {
+  if (fed.sourceFailed) return unreadable;
+  if (inflateError || !fed.all) {
     const whole = size === declared && ((crc ^ 0xffffffff) >>> 0) === row.crc32;
     return corrupt(whole ? "stream_end_mismatch" : "inflate_failed");
   }
@@ -2333,30 +3239,45 @@ export const VBA_SUSPICIOUS_KEYWORDS = Object.freeze([
  * itself starts or ends with one. */
 const WORD = "[\\p{L}\\p{N}_]";
 const WORD_CHAR = /^[\p{L}\p{N}_]$/u;
+/** @type {(name: string) => RegExp} */
 const nameMatcher = (name) => {
   const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const before = WORD_CHAR.test(name[0]) ? `(?<!${WORD})` : `(?<=${WORD})`;
-  const after = WORD_CHAR.test(name[name.length - 1]) ? `(?!${WORD})` : `(?=${WORD})`;
+  const before = WORD_CHAR.test(name.charAt(0)) ? `(?<!${WORD})` : `(?<=${WORD})`;
+  const after = WORD_CHAR.test(name.charAt(name.length - 1)) ? `(?!${WORD})` : `(?=${WORD})`;
   return new RegExp(before + esc + after, "iu");
 };
 /* Each table's matchers, compiled on the first project read and kept (R34):
  * some 160 expressions the module's evaluation no longer pays for. */
-const MATCHERS = new Map();
+/** @type {Map<readonly string[], [string, RegExp][]>} */
+const MATCHERS = new Map(null);
+/**
+ * @param {readonly string[]} table
+ * @returns {[string, RegExp][]}
+ */
 function matchersOf(table) {
-  let m = MATCHERS.get(table);
-  if (!m) MATCHERS.set(table, (m = table.map((n) => [n, nameMatcher(n)])));
+  const known = MATCHERS.get(table);
+  if (known) return known;
+  const m = table.map((n) => /** @type {[string, RegExp]} */ ([n, nameMatcher(n)]));
+  MATCHERS.set(table, m);
   return m;
 }
+/** @type {(table: readonly string[], source: string) => string[]} */
 const found = (table, source) => matchersOf(table).filter(([, re]) => re.test(source)).map(([n]) => n);
 
 /* MS-OVBA §2.4.1.3: a CompressedContainer from `start` to the end of `buf`,
  * or null when it is not one. Every copy token is checked against the chunk
  * it copies within, every chunk against 4,096 decompressed bytes, and the
  * whole output against `MEMBER_MAX` (the cap every inflated part carries). */
+/**
+ * @param {Uint8Array} buf
+ * @param {number} start
+ * @returns {Uint8Array | null}
+ */
 function decompressOvba(buf, start) {
   if (!(start < buf.length) || buf[start] !== 0x01) return null;
   let out = new Uint8Array(4096);
   let n = 0;
+  /** @type {(need: number) => boolean} */
   const grow = (need) => {
     if (n + need <= out.length) return true;
     if (n + need > MEMBER_MAX) return false;
@@ -2381,11 +3302,11 @@ function decompressOvba(buf, start) {
       continue;
     }
     while (q < chunkEnd) {
-      const flags = buf[q++];
+      const flags = buf[q++] ?? 0; // q is below chunkEnd, inside buf
       for (let bit = 0; bit < 8 && q < chunkEnd; bit++) {
         if (((flags >>> bit) & 1) === 0) {
           if (!grow(1)) return null;
-          out[n++] = buf[q++];
+          out[n++] = buf[q++] ?? 0; // q is below chunkEnd, inside buf
           continue;
         }
         if (q + 2 > chunkEnd) return null;
@@ -2398,7 +3319,7 @@ function decompressOvba(buf, start) {
         const length = (token & lengthMask) + 3;
         const offset = (token >>> (16 - bitCount)) + 1;
         if (offset > difference || difference + length > 4096 || !grow(length)) return null;
-        for (let k = 0; k < length; k++, n++) out[n] = out[n - offset];
+        for (let k = 0; k < length; k++, n++) out[n] = out[n - offset] ?? 0; // offset is within the chunk written
       }
     }
     if (n - chunkStart > 4096) return null;
@@ -2411,6 +3332,27 @@ function decompressOvba(buf, start) {
  * null when it is not one: a bad header, a FAT, DIFAT, mini FAT or stream
  * chain that leaves the file, loops or ends early, or a directory tree that
  * loops. Every stream's chain is walked here, so a stream read never fails. */
+/**
+ * A directory entry of a compound file (MS-CFB §2.6).
+ * @typedef {Object} CfbEntry
+ * @property {string} name
+ * @property {number | undefined} type
+ * @property {number} left
+ * @property {number} right
+ * @property {number} child
+ * @property {number} start
+ * @property {number} size
+ */
+/**
+ * @typedef {Object} Cfb
+ * @property {CfbEntry} root
+ * @property {(parent: CfbEntry) => CfbEntry[] | null} children
+ * @property {Map<CfbEntry, Uint8Array>} data
+ */
+/**
+ * @param {Uint8Array} b
+ * @returns {Cfb | null}
+ */
 function readCfb(b) {
   const MAGIC = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
   if (b.length < 512 || MAGIC.some((x, i) => b[i] !== x) || u16(b, 0x1c) !== 0xfffe) return null;
@@ -2419,33 +3361,40 @@ function readCfb(b) {
   const ss = 1 << shift;
   if (b.length < ss) return null;
   const nSectors = Math.floor((b.length - ss) / ss);
+  /** @type {(n: number) => Uint8Array} */
   const sector = (n) => b.subarray(ss * (n + 1), ss * (n + 2));
+  /** @type {(s: Uint8Array) => number[]} */
   const ids = (s) => Array.from({ length: s.length / 4 }, (_, i) => u32(s, 4 * i));
   const nFat = u32(b, 0x2c), cutoff = u32(b, 0x38);
   if (nFat > nSectors || cutoff !== 4096) return null;
 
   const fatSectors = ids(b.subarray(0x4c, 0x200)).slice(0, Math.min(nFat, 109));
-  const seen = new Set();
+  /** @type {Set<number>} */
+  const seen = new Set(null);
   for (let s = u32(b, 0x44), k = u32(b, 0x48); fatSectors.length < nFat; k--) {
     if (k <= 0 || s >= nSectors || seen.has(s)) return null;
     seen.add(s);
     const list = ids(sector(s));
     fatSectors.push(...list.slice(0, -1).slice(0, nFat - fatSectors.length));
-    s = list[list.length - 1];
+    s = list[list.length - 1] ?? NaN; // an empty sector list holds no next sector: NaN, as undefined compared, ends the walk
   }
   if (fatSectors.some((s) => s >= nSectors)) return null;
   const fat = fatSectors.flatMap((s) => ids(sector(s)));
 
+  /** @type {(table: number[], start: number, limit: number) => number[] | null} */
   const chain = (table, start, limit) => {
+    /** @type {number[]} */
     const out = [];
-    const visited = new Set();
-    for (let s = start; s !== 0xfffffffe; s = table[s]) {
+    /** @type {Set<number>} */
+    const visited = new Set(null);
+    for (let s = start; s !== 0xfffffffe; s = table[s] ?? NaN) {
       if (s >= limit || s >= table.length || visited.has(s)) return null;
       visited.add(s);
       out.push(s);
     }
     return out;
   };
+  /** @type {(list: number[], read: (s: number) => Uint8Array, unit: number, size: number) => Uint8Array | null} */
   const gather = (list, read, unit, size) => {
     if (list.length * unit < size) return null;
     const out = new Uint8Array(list.length * unit);
@@ -2455,8 +3404,10 @@ function readCfb(b) {
 
   const dirChain = chain(fat, u32(b, 0x30), nSectors);
   if (!dirChain || !dirChain.length) return null;
-  const dirBytes = gather(dirChain, sector, ss, dirChain.length * ss);
+  const dirBytes = gather(dirChain, sector, ss, dirChain.length * ss) ?? new Uint8Array(0); // the chain's own length: never short
+  /** @type {CfbEntry[]} */
   const entries = [];
+  /** @type {TextDecoder} */
   const utf16 = new TextDecoder("utf-16le");
   for (let at = 0; at + 128 <= dirBytes.length; at += 128) {
     const e = dirBytes.subarray(at, at + 128);
@@ -2478,7 +3429,8 @@ function readCfb(b) {
   if (!miniStream || !miniFatChain) return null;
   const miniFat = miniFatChain.flatMap((s) => ids(sector(s)));
   const nMini = Math.floor(miniStream.length / 64);
-  const data = new Map();
+  /** @type {Map<CfbEntry, Uint8Array>} */
+  const data = new Map(null);
   for (const e of entries) {
     if (e.type !== 2) continue;
     if (!Number.isFinite(e.size)) return null;
@@ -2491,17 +3443,21 @@ function readCfb(b) {
 
   /* A storage's children: its child's red-black tree, walked by the
    * siblings. A loop or a reference past the directory is not a tree. */
+  /** @type {(parent: CfbEntry) => CfbEntry[] | null} */
   const children = (parent) => {
+    /** @type {CfbEntry[]} */
     const out = [];
     const stack = [parent.child];
-    const visited = new Set();
+    /** @type {Set<number>} */
+    const visited = new Set(null);
     while (stack.length) {
-      const i = stack.pop();
+      const i = stack.pop() ?? 0xffffffff; // the stack is not empty
       if (i === 0xffffffff) continue;
-      if (i >= entries.length || visited.has(i)) return null;
+      const entry = entries[i];
+      if (i >= entries.length || visited.has(i) || !entry) return null;
       visited.add(i);
-      out.push(entries[i]);
-      stack.push(entries[i].left, entries[i].right);
+      out.push(entry);
+      stack.push(entry.left, entry.right);
     }
     return out;
   };
@@ -2509,6 +3465,13 @@ function readCfb(b) {
 }
 
 /* A storage's child of one name and type; CFB names compare case-blind. */
+/**
+ * @param {Cfb} cfb
+ * @param {CfbEntry} parent
+ * @param {string} name
+ * @param {number} type
+ * @returns {CfbEntry | null | undefined} undefined when the storage's tree is not one
+ */
 function childNamed(cfb, parent, name, type) {
   const list = cfb.children(parent);
   if (!list) return undefined;
@@ -2517,6 +3480,10 @@ function childNamed(cfb, parent, name, type) {
 
 /* Text in the project's code page (PROJECTCODEPAGE) where the host decodes
  * it, else Windows-1252: names and source are matched, never run. */
+/**
+ * @param {number} cp
+ * @returns {TextDecoder}
+ */
 function codePageDecoder(cp) {
   const label = cp === 65001 ? "utf-8" : cp === 10000 ? "macintosh" : cp === 932 ? "shift_jis"
     : cp === 936 ? "gbk" : cp === 949 ? "euc-kr" : cp === 950 ? "big5" : `windows-${cp}`;
@@ -2528,9 +3495,32 @@ function codePageDecoder(cp) {
  * 32-bit size and that many bytes, except PROJECTVERSION (0x0009), whose size
  * field is a fixed 4 followed by 6 bytes. null when a record runs past the
  * stream. */
+/**
+ * A module record of the `dir` stream, as read.
+ * @typedef {Object} DirModule
+ * @property {Uint8Array} nameRaw
+ * @property {Uint8Array} [nameUnicode]
+ * @property {Uint8Array} [streamRaw]
+ * @property {Uint8Array} [streamUnicode]
+ * @property {number} [offset]
+ */
+/**
+ * @typedef {Object} VbaDir
+ * @property {TextDecoder} text
+ * @property {string | null} project
+ * @property {{ name: string | null, stream: string | null, offset: number | undefined }[]} modules
+ */
+/**
+ * @param {Uint8Array} d
+ * @returns {VbaDir | null}
+ */
 function parseVbaDir(d) {
-  let codePage = 1252, projectRaw = null;
+  let codePage = 1252;
+  /** @type {Uint8Array | null} */
+  let projectRaw = null;
+  /** @type {DirModule[]} */
   const modules = [];
+  /** @type {DirModule | null} */
   let cur = null;
   for (let p = 0; p < d.length;) {
     if (p + 6 > d.length) return null;
@@ -2539,22 +3529,31 @@ function parseVbaDir(d) {
     if (p + 6 + size > d.length) return null;
     const data = d.subarray(p + 6, p + 6 + size);
     p += 6 + size;
+    const c = cur;
     if (id === 0x0010) break; // the dir stream's terminator
     else if (id === 0x0003 && size >= 2) codePage = u16(data, 0);
     else if (id === 0x0004) projectRaw = data;
-    else if (id === 0x0019) { cur = { nameRaw: data }; modules.push(cur); }
-    else if (cur && id === 0x0047) cur.nameUnicode = data;
-    else if (cur && id === 0x001a) cur.streamRaw = data;
-    else if (cur && id === 0x0032) cur.streamUnicode = data;
-    else if (cur && id === 0x0031 && size >= 4) cur.offset = u32(data, 0);
+    else if (id === 0x0019) {
+      /** @type {DirModule} */
+      const next = { nameRaw: data };
+      cur = next;
+      modules.push(next);
+    }
+    else if (c && id === 0x0047) c.nameUnicode = data;
+    else if (c && id === 0x001a) c.streamRaw = data;
+    else if (c && id === 0x0032) c.streamUnicode = data;
+    else if (c && id === 0x0031 && size >= 4) c.offset = u32(data, 0);
     else if (id === 0x002b) cur = null;
   }
   const text = codePageDecoder(codePage);
+  /** @type {TextDecoder} */
   const utf16 = new TextDecoder("utf-16le");
+  /** @type {(uni: Uint8Array | undefined, raw: Uint8Array | undefined) => string | null} */
   const pick = (uni, raw) => (uni && uni.length ? utf16.decode(uni) : raw ? text.decode(raw) : null);
+  const project = projectRaw;
   return {
     text,
-    project: projectRaw ? text.decode(projectRaw) : null,
+    project: project ? text.decode(project) : null,
     modules: modules.map((m) => ({
       name: pick(m.nameUnicode, m.nameRaw), stream: pick(m.streamUnicode, m.streamRaw), offset: m.offset,
     })),
@@ -2564,6 +3563,32 @@ function parseVbaDir(d) {
 /** Read an office file's VBA project for its module names, auto-run
  *  procedures and suspicious keywords, without running anything (R32).
  *  Async; never throws. */
+/**
+ * @typedef {Object} VbaModule
+ * @property {string | null} name
+ * @property {string | null} stream
+ * @property {boolean} read
+ * @property {string | null} why
+ * @property {string[]} autoRun
+ * @property {string[]} suspicious
+ */
+/**
+ * @typedef {Object} VbaProject
+ * @property {true} ok
+ * @property {string} part
+ * @property {string | null} project
+ * @property {VbaModule[]} modules
+ * @property {string[]} autoRun
+ * @property {string[]} suspicious
+ * @property {{ module: string | null, why: string }[]} undetermined
+ */
+/** @typedef {VbaProject | { ok: false, why: string, part: string }} VbaResult */
+/**
+ * @param {unknown} bytes the file's bytes, or a range source standing for it
+ * @param {unknown} container a container `readContainer` read; anything else holds no part
+ * @param {unknown} partName the member's name, normalized (an office file's `vbaProject.bin`)
+ * @returns {Promise<VbaResult>}
+ */
 export async function readVbaProject(bytes, container, partName) {
   const part = normalizePartName(partName);
   try {
@@ -2574,16 +3599,20 @@ export async function readVbaProject(bytes, container, partName) {
     const vba = childNamed(cfb, cfb.root, "VBA", 1);
     const dirEntry = vba ? childNamed(cfb, vba, "dir", 2) : vba;
     if (vba === undefined || dirEntry === undefined) return { ok: false, why: "cfb_invalid", part };
-    if (!dirEntry) return { ok: false, why: "vba_dir_absent", part };
-    const dirBytes = decompressOvba(cfb.data.get(dirEntry), 0);
+    if (!dirEntry || !vba) return { ok: false, why: "vba_dir_absent", part };
+    const dirBytes = decompressOvba(cfb.data.get(dirEntry) ?? new Uint8Array(0), 0); // every stream's bytes are in data
     const dir = dirBytes && parseVbaDir(dirBytes);
     if (!dir) return { ok: false, why: "vba_dir_unreadable", part };
 
+    /** @type {VbaModule[]} */
     const modules = [];
+    /** @type {{ module: string | null, why: string }[]} */
     const undetermined = [];
     for (const m of dir.modules) {
-      const entry = m.stream == null ? null : childNamed(cfb, vba, m.stream, 2);
-      const source = entry && Number.isSafeInteger(m.offset) ? decompressOvba(cfb.data.get(entry), m.offset) : null;
+      const stream = m.stream;
+      const offset = m.offset;
+      const entry = stream == null ? null : childNamed(cfb, vba, stream, 2);
+      const source = entry && offset !== undefined && Number.isSafeInteger(offset) ? decompressOvba(cfb.data.get(entry) ?? new Uint8Array(0), offset) : null;
       if (!source) {
         const why = entry ? "module_source_undecompressable" : "module_stream_absent";
         modules.push({ name: m.name, stream: m.stream, read: false, why, autoRun: [], suspicious: [] });
@@ -2596,6 +3625,7 @@ export async function readVbaProject(bytes, container, partName) {
         autoRun: found(VBA_AUTORUN_NAMES, code), suspicious: found(VBA_SUSPICIOUS_KEYWORDS, code),
       });
     }
+    /** @type {(table: readonly string[], key: "autoRun" | "suspicious") => string[]} */
     const union = (table, key) => table.filter((n) => modules.some((m) => m[key].includes(n)));
     return {
       ok: true, part, project: dir.project, modules,

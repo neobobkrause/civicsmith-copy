@@ -20,12 +20,53 @@ const {
   withContainerImages, listArchive, streamMember, readVbaProject, MEMBER_MAX, ARCHIVE_TOTAL_MAX,
 } = M;
 
+/** @typedef {import("../../../src/ooxml.mjs").ZipEntry} ZipEntry */
+/** @import { ZipEntry as MadeEntry } from "../../make-zip.mjs" */
+/** @typedef {import("../../../src/ooxml.mjs").Discrimination} Discrimination */
+/** @typedef {import("../../../src/ooxml.mjs").CutResult} CutResult */
+/** @typedef {import("../../../src/ooxml.mjs").ImageRef} ImageRef */
+/** @typedef {import("../../../src/ooxml.mjs").CoreResult} CoreResult */
+/** @typedef {import("./zip.mjs").ZipMember} ZipMember */
+/** @typedef {import("./zip.mjs").ZipOptions} ZipOptions */
+/** @typedef {import("./zip.mjs").HeaderSays} HeaderSays */
+/** @typedef {import("./zip.mjs").OpcFlavour} OpcFlavour */
+/** @typedef {import("./zip.mjs").OdfFlavour} OdfFlavour */
+/** @typedef {{ ok: true, format: string, why: string, flavourDeclared?: string }} Undetermined */
+/**
+ * What `discriminate` answers, without its signals.
+ * @typedef {Object} Verdict
+ * @property {boolean} ok
+ * @property {string} [format]
+ * @property {string} [why]
+ * @property {string | null} [variant]
+ * @property {string} [mainPart]
+ * @property {"high"} [confidence]
+ * @property {string} [flavourDeclared]
+ * @property {number} [limit]
+ * @property {true} [final]
+ */
+
 const MODULE_URL = new URL("../../../src/ooxml.mjs", import.meta.url).href;
+/** @type {(s: string | undefined) => Uint8Array} */
 const enc = (s) => new TextEncoder().encode(s);
+/** @type {(b: Uint8Array) => string} */
 const dec = (b) => new TextDecoder().decode(b);
+/** @type {(b: Uint8Array) => string} */
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
+/* node:zlib, which the tool has no description of, reached through these two alone. */
+/** @type {(d: Uint8Array) => Uint8Array} */
+const deflate = (d) => deflateRawSync(d);
+/** @type {(d: Uint8Array) => number} */
+const zcrc = (d) => zcrc32(d) >>> 0;
 const ODD = [undefined, null, 0, -1, 1.5, NaN, "", "PK\x03\x04", {}, [], Symbol("s"), () => 0, true];
+/** @type {(members: ZipMember[], o?: ZipOptions) => Uint8Array} */
 const zipOf = (members, o) => buildZip(members, o);
+/** @type {OpcFlavour[]} */
+const OPCS = ["docx", "xlsx", "pptx"];
+/** @type {OdfFlavour[]} */
+const ODFS = ["odt", "ods", "odp"];
+/** @type {(string | undefined)[]} */
+const FLAVOUR_FORMATS = ["docx", "xlsx", "pptx", "odt", "ods", "odp"];
 
 /* ------------------------------------------------------------------ R1 */
 
@@ -83,26 +124,32 @@ test("R3 readContainer: every central-directory record in file order, byName fir
   const names = [enc("a.xml"), enc("b.bin"), enc("a.xml"), latin, utf, utf];
   c.entries.forEach((e, i) => {
     const data = enc(datas[i]);
-    const comp = i === 1 ? data : deflateRawSync(data);
+    const comp = i === 1 ? data : deflate(data);
     assert.deepEqual(Object.keys(e).sort(), ["compressedSize", "crc32", "localHeaderOffset", "method", "name", "uncompressedSize"]);
     assert.equal(e.method, i === 1 ? 0 : 8);
-    assert.equal(e.crc32, zcrc32(data) >>> 0);
+    assert.equal(e.crc32, zcrc(data));
     assert.equal(e.uncompressedSize, data.length);
     assert.equal(e.compressedSize, comp.length);
     assert.equal(e.localHeaderOffset, off);
-    off += 30 + names[i].length + comp.length;
+    const name = names[i];
+    assert.ok(name);
+    off += 30 + name.length + comp.length;
   });
   assert.ok(c.byName instanceof Map);
   assert.equal(c.byName.size, 5);
   assert.equal(c.byName.get("a.xml"), c.entries[0]);
   for (const e of c.entries) assert.ok(c.byName.has(e.name));
   // an ArrayBuffer reads the same; an empty archive is a real zero
-  assert.deepEqual(readContainer(bytes.buffer).entries, c.entries);
+  const fromBuffer = readContainer(bytes.buffer);
+  assert.ok(fromBuffer.ok);
+  assert.deepEqual(fromBuffer.entries, c.entries);
   const empty = readContainer(zipOf([]));
   assert.equal(empty.ok, true); assert.equal(empty.count, 0); assert.deepEqual(empty.entries, []);
   // the central directory, never local headers, is the authority on contents
   const lying = zipOf([{ name: "x", data: "x", local: { sig: 0 } }, { name: "y", data: "y" }], { cdOrder: [1] });
-  assert.deepEqual(readContainer(lying).entries.map((e) => e.name), ["y"]);
+  const lyingC = readContainer(lying);
+  assert.ok(lyingC.ok);
+  assert.deepEqual(lyingC.entries.map((e) => e.name), ["y"]);
 });
 
 test("R3 readContainer refuses by name: too_short_for_zip, eocd_not_found, zip64_record_invalid, multi-disk, truncated", () => {
@@ -143,14 +190,18 @@ test("R3 readContainer reads ZIP64: the end record's and each record's 64-bit va
   const c = readContainer(z);
   assert.equal(c.ok, true);
   assert.equal(c.count, 3);
-  const comp = deflateRawSync(data);
-  assert.deepEqual(c.entries[1], { name: "b.bin", method: 8, crc32: zcrc32(data) >>> 0, compressedSize: comp.length, uncompressedSize: data.length, localHeaderOffset: 30 + 5 + deflateRawSync(enc("<a/>")).length });
-  assert.deepEqual([c.entries[2].compressedSize, c.entries[2].uncompressedSize], [1, 1]);
+  const comp = deflate(data);
+  assert.deepEqual(c.entries[1], { name: "b.bin", method: 8, crc32: zcrc(data), compressedSize: comp.length, uncompressedSize: data.length, localHeaderOffset: 30 + 5 + deflate(enc("<a/>")).length });
+  const third = c.entries[2];
+  assert.ok(third);
+  assert.deepEqual([third.compressedSize, third.uncompressedSize], [1, 1]);
   assert.deepEqual(await readPart(z, c, "b.bin"), { ok: true, bytes: data });
   assert.deepEqual(await readPart(z, c, "c"), { ok: true, bytes: enc("s") });
   // the end record's values are used, not the EOCD's sentinels
-  const many = makeZip(Array.from({ length: 70 }, (_, i) => ({ name: `${i}`, data: `${i}` })), { zip64: true });
-  assert.equal(readContainer(many).count, 70);
+  const many = makeZip(Array.from({ length: 70 }, (_, i) => /** @type {MadeEntry} */ ({ name: `${i}`, data: `${i}` })), { zip64: true });
+  const manyC = readContainer(many);
+  assert.ok(manyC.ok);
+  assert.equal(manyC.count, 70);
   // a directory record's sentinel whose value its 0x0001 extra field lacks
   for (const field of ["uncompressedSize", "compressedSize", "localOffset"]) {
     const bad = makeZip([{ name: "a", data: "a", central: { [field]: 0xffffffff } }]);
@@ -159,7 +210,9 @@ test("R3 readContainer reads ZIP64: the end record's and each record's 64-bit va
   // the locator or end record absent, malformed or out of range
   const locAt = z.length - 22 - 20;
   const recAt = locAt - 56;
-  for (const [at, value] of [[locAt, 0], [locAt + 8, recAt + 1], [locAt + 8, 0xfffffff0], [locAt + 4, 1], [locAt + 16, 3], [recAt, 0], [recAt + 4, 40], [recAt + 4, 48], [recAt + 16, 1], [recAt + 20, 1], [recAt + 44, 0x00400000]]) {
+  /** @type {[number, number][]} */
+  const pokes = [[locAt, 0], [locAt + 8, recAt + 1], [locAt + 8, 0xfffffff0], [locAt + 4, 1], [locAt + 16, 3], [recAt, 0], [recAt + 4, 40], [recAt + 4, 48], [recAt + 16, 1], [recAt + 20, 1], [recAt + 44, 0x00400000]];
+  for (const [at, value] of pokes) {
     const broken = z.slice();
     new DataView(broken.buffer).setUint32(at, value, true);
     assert.deepEqual(readContainer(broken), { ok: false, why: "zip64_record_invalid" }, `byte ${at} = ${value}`);
@@ -173,7 +226,8 @@ test("R3 readContainer reads ZIP64: the end record's and each record's 64-bit va
   assert.deepEqual(readContainer(makeZip([{ name: "a", data: "a" }], { zip64: true, zip64Record: { entries: 2, diskEntries: 2 } })), { ok: false, why: "central_directory_truncated" });
   // zip64_unsupported is no longer answered
   for (const b of [makeZip([{ name: "a", data: "a" }], { zip64: true }), makeZip([{ name: "a", data: "a" }], { eocd: { cdSize: 0xffffffff } })]) {
-    assert.notEqual(readContainer(b).why, "zip64_unsupported");
+    const read = readContainer(b);
+    assert.notEqual(read.ok ? undefined : read.why, "zip64_unsupported");
   }
 });
 
@@ -187,12 +241,12 @@ test("R4 crc32 is the ZIP-polynomial CRC-32, unsigned, pure", () => {
   for (let n = 0; n <= 600; n++) {
     const b = new Uint8Array(n).map(() => Math.floor(r() * 256));
     const v = crc32(b);
-    assert.equal(v, zcrc32(b) >>> 0, `length ${n}`);
+    assert.equal(v, zcrc(b), `length ${n}`);
     assert.ok(Number.isInteger(v) && v >= 0 && v < 2 ** 32);
     assert.equal(crc32(b), v);
   }
   const all = new Uint8Array(256).map((_, i) => i);
-  assert.equal(crc32(all), zcrc32(all) >>> 0);
+  assert.equal(crc32(all), zcrc(all));
   for (const x of ODD) assert.equal(typeof crc32(x), "number");
 });
 
@@ -209,10 +263,14 @@ test("R5 readPart returns a member only once its length and CRC-32 are verified"
   const c = readContainer(bytes);
   assert.deepEqual(await readPart(bytes, c, "d.xml"), { ok: true, bytes: enc("<deflated/>") });
   assert.deepEqual(await readPart(bytes, c, "/s.txt"), { ok: true, bytes: enc("stored") });
-  assert.equal(dec((await readPart(bytes.buffer, c, "big.xml")).bytes), big);
+  const bigRead = await readPart(bytes.buffer, c, "big.xml");
+  assert.ok(bigRead.ok);
+  assert.equal(dec(bigRead.bytes), big);
   assert.deepEqual(await readPart(bytes, c, "empty"), { ok: true, bytes: new Uint8Array(0) });
   // falls back to a linear scan by normalized name when byName lacks it
-  const scan = { ...c, byName: new Map() };
+  /** @type {Map<string, ZipEntry>} */
+  const noNames = new Map(null);
+  const scan = { ...c, byName: noNames };
   assert.deepEqual(await readPart(bytes, scan, "/d.xml"), { ok: true, bytes: enc("<deflated/>") });
   const lead = zipOf([{ name: "/lead.xml", data: "L" }]);
   assert.deepEqual(await readPart(lead, readContainer(lead), "lead.xml"), { ok: true, bytes: enc("L") });
@@ -229,8 +287,13 @@ test("R5 readPart's named refusals, each carrying the normalized name", async ()
   assert.deepEqual(await readPart(badSig, readContainer(badSig), "a.xml"), { ok: false, why: "local_header_invalid", name: "a.xml" });
   const nearEnd = zipOf([{ name: "a.xml", data: "hello" }]);
   const cNear = readContainer(nearEnd);
-  cNear.entries[0].localHeaderOffset = nearEnd.length - 29;
-  assert.deepEqual(await readPart(nearEnd, { ...cNear, byName: new Map() }, "a.xml"), { ok: false, why: "local_header_invalid", name: "a.xml" });
+  assert.ok(cNear.ok);
+  const first = cNear.entries[0];
+  assert.ok(first);
+  first.localHeaderOffset = nearEnd.length - 29;
+  /** @type {Map<string, ZipEntry>} */
+  const noNames = new Map(null);
+  assert.deepEqual(await readPart(nearEnd, { ...cNear, byName: noNames }, "a.xml"), { ok: false, why: "local_header_invalid", name: "a.xml" });
 
   const trunc = zipOf([{ name: "a.xml", data: "hello", cd: { csize: 1 << 20 } }]);
   assert.deepEqual(await readPart(trunc, readContainer(trunc), "a.xml"), { ok: false, why: "member_truncated", name: "a.xml" });
@@ -243,7 +306,7 @@ test("R5 readPart's named refusals, each carrying the normalized name", async ()
   const junk = zipOf([{ name: "a.xml", data: "hello", compressed: new Uint8Array([0xff, 0xff, 0xff, 0xff]) }]);
   assert.deepEqual(await readPart(junk, readContainer(junk), "a.xml"), { ok: false, why: "inflate_failed", name: "a.xml" });
   // a deflate stream cut short is never returned as whole
-  const full = deflateRawSync(enc("the whole member ".repeat(50)));
+  const full = deflate(enc("the whole member ".repeat(50)));
   const cut = zipOf([{ name: "a.xml", data: "the whole member ".repeat(50), compressed: full.subarray(0, full.length - 4) }]);
   const cutRead = await readPart(cut, readContainer(cut), "a.xml");
   assert.equal(cutRead.ok, false);
@@ -258,11 +321,14 @@ test("R5 readPart's named refusals, each carrying the normalized name", async ()
   // a compression bomb declaring a small size is refused, never inflated to completion and returned
   const bomb = zipOf([{ name: "bomb", data: new Uint8Array(64 << 20), cd: { usize: 10 } }]);
   const bombRead = await readPart(bomb, readContainer(bomb), "bomb");
+  assert.equal(bombRead.ok, false);
   assert.equal(bombRead.why, "size_mismatch");
   assert.equal(bombRead.expected, 10);
-  assert.ok(bombRead.got > 10);
+  assert.ok((bombRead.got ?? 0) > 10);
 
-  for (const cd of [{ crc: 0 }, { crc: (zcrc32(enc("hello")) ^ 1) >>> 0 }]) {
+  /** @type {HeaderSays[]} */
+  const badCrcs = [{ crc: 0 }, { crc: (zcrc(enc("hello")) ^ 1) >>> 0 }];
+  for (const cd of badCrcs) {
     const m = zipOf([{ name: "a.xml", data: "hello", cd }]);
     assert.deepEqual(await readPart(m, readContainer(m), "a.xml"), { ok: false, why: "crc_mismatch", name: "a.xml" });
   }
@@ -279,10 +345,12 @@ test("R5 readPart's named refusals, each carrying the normalized name", async ()
 /* ------------------------------------------------------------------ R31 */
 
 test("R31 every part readPart inflates is capped before inflation: MEMBER_MAX, then the file's ARCHIVE_TOTAL_MAX", async () => {
+  /** @type {(name: string, n: number, data?: string | Uint8Array) => MadeEntry} */
   const declared = (name, n, data = "x") => ({ name, data, local: { uncompressedSize: n }, central: { uncompressedSize: n } });
+  /** @type {string[]} */
   const inflated = [];
   const RealDS = globalThis.DecompressionStream;
-  globalThis.DecompressionStream = class extends RealDS { constructor(f) { inflated.push(f); super(f); } };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { inflated.push(f); super(f); } };
   try {
     // one member over MEMBER_MAX
     const big = makeZip([declared("big.xml", MEMBER_MAX + 1), { name: "ok.xml", data: "fine" }]);
@@ -292,9 +360,8 @@ test("R31 every part readPart inflates is capped before inflation: MEMBER_MAX, t
     for (const part of ["ok.xml", "big.xml"]) {
       const half = makeZip([declared("h1", ARCHIVE_TOTAL_MAX / 2), declared("h2", ARCHIVE_TOTAL_MAX / 2), { name: "d/", data: "", method: 0, local: { uncompressedSize: 1 }, central: { uncompressedSize: 1 } }, { name: "ok.xml", data: "fine" }]);
       const r = await readPart(half, readContainer(half), part);
-      assert.deepEqual(r, part === "ok.xml"
-        ? { ok: false, why: "ARCHIVE_TOTAL_MAX", name: "ok.xml", declared: ARCHIVE_TOTAL_MAX + 1 + 4, limit: ARCHIVE_TOTAL_MAX, final: true }
-        : { ok: false, why: "part_absent", name: "big.xml" });
+      if (part === "ok.xml") assert.deepEqual(r, { ok: false, why: "ARCHIVE_TOTAL_MAX", name: "ok.xml", declared: ARCHIVE_TOTAL_MAX + 1 + 4, limit: ARCHIVE_TOTAL_MAX, final: true });
+      else assert.deepEqual(r, { ok: false, why: "part_absent", name: "big.xml" });
     }
     assert.deepEqual(inflated, []);
   } finally {
@@ -304,10 +371,15 @@ test("R31 every part readPart inflates is capped before inflation: MEMBER_MAX, t
   const exact = makeZip([{ name: "a.xml", data: "a" }, declared("pad", ARCHIVE_TOTAL_MAX - 1, "")]);
   assert.deepEqual(await readPart(exact, readContainer(exact), "a.xml"), { ok: true, bytes: enc("a") });
   // a size that is not a number is never under a limit
-  const odd = { entries: [{ name: "a", uncompressedSize: NaN, method: 0, crc32: 0, compressedSize: 0, localHeaderOffset: 0 }], byName: new Map() };
-  assert.equal((await readPart(new Uint8Array(40), odd, "a")).why, "MEMBER_MAX");
+  /** @type {Map<string, ZipEntry>} */
+  const noNames = new Map(null);
+  const odd = { entries: [{ name: "a", uncompressedSize: NaN, method: 0, crc32: 0, compressedSize: 0, localHeaderOffset: 0 }], byName: noNames };
+  const oddRead = await readPart(new Uint8Array(40), odd, "a");
+  assert.equal(oddRead.ok, false);
+  assert.equal(oddRead.why, "MEMBER_MAX");
 
   // every caller states the refusal as it states any other readPart refusal
+  /** @type {(name: string, data?: string | Uint8Array) => MadeEntry} */
   const huge = (name, data = "x") => declared(name, MEMBER_MAX + 1, data);
   const ct = makeZip([huge("[Content_Types].xml", contentTypes({ "/word/document.xml": TYPES.docx })), { name: "word/document.xml", data: "<d/>" }]);
   assert.equal((await discriminate(ct)).why, "content_types_unreadable:MEMBER_MAX");
@@ -330,7 +402,9 @@ test("R6 MEASURED_OOXML_TEXT_BOUND_BYTES is 20 MiB and is sizeGuard's default bo
   assert.equal(MEASURED_OOXML_TEXT_BOUND_BYTES, 20 * 1024 * 1024);
   assert.equal(MEASURED_OOXML_TEXT_BOUND_BYTES, 20971520);
   assert.deepEqual(sizeGuard(20971520), { ok: true });
-  assert.equal(sizeGuard(20971521).bound, 20971520);
+  const over = sizeGuard(20971521);
+  assert.equal(over.ok, false);
+  assert.equal(over.bound, 20971520);
 });
 
 test("R7 declaredTextBytes sums declared uncompressed sizes of matching parts, before inflation", () => {
@@ -341,8 +415,9 @@ test("R7 declaredTextBytes sums declared uncompressed sizes of matching parts, b
     { name: "docProps/core.xml", data: "", cd: { crc: 7 } },
   ]);
   const c = readContainer(bytes);
+  /** @type {string[]} */
   const seen = [];
-  const r = declaredTextBytes(c, (n) => { seen.push(n); return n.startsWith("word/") && n.endsWith(".xml"); });
+  const r = declaredTextBytes(c, (/** @type {string} */ n) => { seen.push(n); return n.startsWith("word/") && n.endsWith(".xml"); });
   assert.deepEqual(seen, ["word/document.xml", "word/media/i.png", "word/footer1.xml", "docProps/core.xml"]);
   assert.deepEqual(r, { total: 1006, parts: [{ name: "word/document.xml", declared: 1000 }, { name: "word/footer1.xml", declared: 6 }] });
   assert.deepEqual(declaredTextBytes(c, () => false), { total: 0, parts: [] });
@@ -354,6 +429,7 @@ test("R7 declaredTextBytes sums declared uncompressed sizes of matching parts, b
 });
 
 test("R8 sizeGuard: ok iff declaredBytes <= bound, else the stated over_size_bound refusal", () => {
+  /** @type {(size: number, bound: number) => { ok: false, text: string, why: string, size: number, bound: number, boundName: string, metric: string }} */
   const refusal = (size, bound) => ({
     ok: false, text: "undetermined", why: "over_size_bound", size, bound,
     boundName: "MEASURED_OOXML_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes",
@@ -361,8 +437,12 @@ test("R8 sizeGuard: ok iff declaredBytes <= bound, else the stated over_size_bou
   const B = MEASURED_OOXML_TEXT_BOUND_BYTES;
   for (const n of [0, 1, B - 1, B]) assert.deepEqual(sizeGuard(n), { ok: true });
   for (const n of [B + 1, B * 4, Number.MAX_SAFE_INTEGER, Infinity]) assert.deepEqual(sizeGuard(n), refusal(n, B));
-  for (const [n, b] of [[10, 10], [0, 0], [-5, -5]]) assert.deepEqual(sizeGuard(n, b), { ok: true });
-  for (const [n, b] of [[11, 10], [1, 0], [7, -1]]) assert.deepEqual(sizeGuard(n, b), refusal(n, b));
+  /** @type {[number, number][]} */
+  const within = [[10, 10], [0, 0], [-5, -5]];
+  for (const [n, b] of within) assert.deepEqual(sizeGuard(n, b), { ok: true });
+  /** @type {[number, number][]} */
+  const beyond = [[11, 10], [1, 0], [7, -1]];
+  for (const [n, b] of beyond) assert.deepEqual(sizeGuard(n, b), refusal(n, b));
   // a size that is not a number is never under the bound
   for (const n of [NaN, undefined, "x"]) assert.equal(sizeGuard(n).ok, false);
   for (const x of ODD) assert.doesNotThrow(() => sizeGuard(x, x));
@@ -371,6 +451,7 @@ test("R8 sizeGuard: ok iff declaredBytes <= bound, else the stated over_size_bou
 /* ------------------------------------------------------------------ R9–R14 */
 
 /* The macro-enabled rows as requirement R10 lists them: twin, variant, main content type. */
+/** @type {[OpcFlavour, string, string][]} */
 const MACRO = [
   ["docx", "docm", "application/vnd.ms-word.document.macroEnabled.main+xml"],
   ["docx", "dotm", "application/vnd.ms-word.template.macroEnabledTemplate.main+xml"],
@@ -384,6 +465,7 @@ const MACRO = [
 ];
 
 /* The template and show rows (R10, fix round 9, G130e): twin, variant, main content type. */
+/** @type {[OpcFlavour, string, string][]} */
 const TEMPLATES = [
   ["docx", "dotx", "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml"],
   ["pptx", "potx", "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"],
@@ -413,16 +495,18 @@ test("R10 CONTAINER_FLAVOURS: the three OPC rows, the macro-enabled rows, then t
   assert.equal((await discriminate(vsdx)).why, "opc_main_part_unrecognized");
 });
 
+/** @type {(r: Discrimination) => boolean} */
 const isSignals = (r) => Array.isArray(r.signals) && r.signals.every((s) => typeof s === "string");
+/** @type {(r: Discrimination) => Verdict} */
 const withoutSignals = ({ signals, ...rest }) => rest;
 
 test("R11 discriminate: each flavour, from the container's own parts", async () => {
-  for (const f of ["docx", "xlsx", "pptx"]) {
+  for (const f of OPCS) {
     const r = await discriminate(zipOf(opc(f)));
     assert.deepEqual(withoutSignals(r), { ok: true, format: f, variant: null, mainPart: MAIN[f], confidence: "high" });
     assert.ok(isSignals(r));
   }
-  for (const f of ["odt", "ods", "odp"]) {
+  for (const f of ODFS) {
     const r = await discriminate(zipOf(odf(f)));
     assert.deepEqual(withoutSignals(r), { ok: true, format: f, variant: null, mainPart: "content.xml", confidence: "high" });
     assert.ok(isSignals(r));
@@ -479,6 +563,7 @@ test("R11 discriminate: not a zip, an unreadable zip, a plain zip", async () => 
     const r = await discriminate(b);
     assert.deepEqual(withoutSignals(r), { ok: false, why: "not_a_zip" }); assert.ok(isSignals(r));
   }
+  /** @type {[Uint8Array, string][]} */
   const cases = [
     [zipOf([{ name: "a", data: "a" }], { eocd: { cdSize: 999 } }), "central_directory_truncated"],
     [zipOf([{ name: "a", data: "a" }], { eocd: { cdOffset: 0xffffffff } }), "zip64_record_invalid"],
@@ -497,6 +582,7 @@ test("R11 discriminate: not a zip, an unreadable zip, a plain zip", async () => 
 });
 
 test("R11 discriminate: every OPC undetermined reason", async () => {
+  /** @type {(why: string, extra?: { flavourDeclared?: string }) => Undetermined} */
   const U = (why, extra = {}) => ({ ok: true, format: "undetermined", why, ...extra });
   const ctBadCrc = zipOf([{ name: "[Content_Types].xml", data: contentTypes({ "/word/document.xml": TYPES.docx }), cd: { crc: 1 } }, { name: "word/document.xml", data: "<d/>" }]);
   assert.deepEqual(withoutSignals(await discriminate(ctBadCrc)), U("content_types_unreadable:crc_mismatch"));
@@ -510,7 +596,7 @@ test("R11 discriminate: every OPC undetermined reason", async () => {
   assert.equal((await discriminate(prefixed)).format, "docx");
   const unknown = zipOf([{ name: "[Content_Types].xml", data: contentTypes({ "/x/main.xml": "application/x-other+xml" }, { xml: "application/xml" }) }, { name: "x/main.xml", data: "<x/>" }, { name: "word/document.xml", data: "<d/>" }]);
   assert.deepEqual(withoutSignals(await discriminate(unknown)), U("opc_main_part_unrecognized"));
-  for (const f of ["docx", "xlsx", "pptx"]) {
+  for (const f of OPCS) {
     const absent = zipOf(opc(f).filter((m) => m.name !== MAIN[f]));
     const r = await discriminate(absent);
     assert.deepEqual(withoutSignals(r), U("declared_main_part_absent", { flavourDeclared: f })); assert.ok(isSignals(r));
@@ -518,14 +604,21 @@ test("R11 discriminate: every OPC undetermined reason", async () => {
 });
 
 test("R11 discriminate: every ODF undetermined reason", async () => {
+  /** @type {(why: string, extra?: { flavourDeclared?: string }) => Undetermined} */
   const U = (why, extra = {}) => ({ ok: true, format: "undetermined", why, ...extra });
   // not first by central-directory index
-  const second = odf("odt"); second.unshift(second.splice(1, 1)[0]);
+  const second = odf("odt"); const moved = second.splice(1, 1)[0]; assert.ok(moved); second.unshift(moved);
   assert.deepEqual(withoutSignals(await discriminate(zipOf(second))), U("odf_mimetype_not_first"));
   // first in the central directory but not first in the file
-  const late = odf("odt"); const lateMembers = [late[1], late[0], late[2]];
+  const late = odf("odt"); const [late0, late1, late2] = late;
+  assert.ok(late0); assert.ok(late1); assert.ok(late2);
+  const lateMembers = [late1, late0, late2];
   const lateZip = zipOf(lateMembers, { cdOrder: [1, 0, 2] });
-  assert.equal(readContainer(lateZip).entries[0].name, "mimetype");
+  const lateC = readContainer(lateZip);
+  assert.ok(lateC.ok);
+  const lateFirst = lateC.entries[0];
+  assert.ok(lateFirst);
+  assert.equal(lateFirst.name, "mimetype");
   assert.deepEqual(withoutSignals(await discriminate(lateZip)), U("odf_mimetype_not_first"));
   // compressed
   const deflated = odf("ods"); deflated[0] = { ...deflated[0], method: 8 };
@@ -546,7 +639,7 @@ test("R11 discriminate: every ODF undetermined reason", async () => {
   for (const v of [`${TYPES.odt}\n`, ` ${TYPES.odt}`, TYPES.odt.toUpperCase(), "application/epub+zip", "", "application/vnd.oasis.opendocument.graphics"]) {
     assert.deepEqual(withoutSignals(await discriminate(zipOf(odf("odt", { mimetype: v })))), U("odf_mimetype_unrecognized"), JSON.stringify(v));
   }
-  for (const f of ["odt", "ods", "odp"]) {
+  for (const f of ODFS) {
     assert.deepEqual(withoutSignals(await discriminate(zipOf(odf(f, { manifest: false })))), U("odf_manifest_absent", { flavourDeclared: f }));
     assert.deepEqual(withoutSignals(await discriminate(zipOf(odf(f, { content: false })))), U("declared_main_part_absent", { flavourDeclared: f }));
   }
@@ -574,7 +667,9 @@ test("R12 OPC is tried before ODF: a container with both is read as OPC and the 
   const r = await discriminate(both);
   assert.deepEqual(withoutSignals(r), { ok: true, format: "docx", variant: null, mainPart: "word/document.xml", confidence: "high" });
   assert.ok(!r.signals.some((s) => s.startsWith("odf:")));
-  for (const [ct, why] of [["garbage", "content_types_unparseable"], [contentTypes({ "/x.xml": "application/x" }), "opc_main_part_unrecognized"]]) {
+  /** @type {[string, string][]} */
+  const unread = [["garbage", "content_types_unparseable"], [contentTypes({ "/x.xml": "application/x" }), "opc_main_part_unrecognized"]];
+  for (const [ct, why] of unread) {
     const b = zipOf([...odf("odt"), { name: "[Content_Types].xml", data: ct }]);
     const u = await discriminate(b);
     assert.equal(u.format, "undetermined"); assert.equal(u.why, why);
@@ -629,7 +724,9 @@ test("R15 relsPartFor gives the conventional relationships part", () => {
   assert.equal(relsPartFor("ppt/slides/slide1.xml"), "ppt/slides/_rels/slide1.xml.rels");
 });
 
+/** @type {(a: { [attribute: string]: string }) => string} */
 const REL = (a) => `<Relationship ${Object.entries(a).map(([k, v]) => `${k}="${v}"`).join(" ")}/>`;
+/** @type {(...rs: string[]) => string} */
 const RELS = (...rs) => `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rs.join("")}</Relationships>`;
 
 test("R16 parseRels reads every Relationship carrying a Target; External ones are outbound", () => {
@@ -654,7 +751,9 @@ test("R16 parseRels reads every Relationship carrying a Target; External ones ar
   assert.deepEqual(r, { ok: true, relationships: rels, outbound: [rels[1], rels[4]] });
   // any namespace prefix on the root and elements
   const pre = `<pr:Relationships xmlns:pr="x"><pr:Relationship Id="a" Target="t" TargetMode="External"/></pr:Relationships>`;
-  assert.deepEqual(parseRels(pre).outbound, [{ id: "a", type: null, target: "t", targetMode: "External", external: true }]);
+  const preRels = parseRels(pre);
+  assert.ok(preRels.ok);
+  assert.deepEqual(preRels.outbound, [{ id: "a", type: null, target: "t", targetMode: "External", external: true }]);
 });
 
 test("R17 walkRels reads every _rels/*.rels part at any depth; unreadable ones are recorded, never dropped", async () => {
@@ -702,7 +801,9 @@ test("R18 CORE_PROPERTIES_PART is \"docProps/core.xml\"", () => {
   assert.equal(CORE_PROPERTIES_PART, "docProps/core.xml");
 });
 
+/** @type {(inner: string) => string} */
 const CORE = (inner) => `<?xml version="1.0"?><cp:coreProperties xmlns:cp="c" xmlns:dc="d" xmlns:dcterms="t">${inner}</cp:coreProperties>`;
+/** @type {(data: string, extra?: ZipMember) => Promise<CoreResult>} */
 const coreOf = async (data, extra = {}) => {
   const b = zipOf([{ name: "docProps/core.xml", data, ...extra }]);
   return readCoreProperties(b, readContainer(b));
@@ -729,30 +830,38 @@ test("R19 readCoreProperties: absent, unreadable, unparseable, and every field a
   const selfClosing = await coreOf(CORE(`<dc:creator/><cp:lastModifiedBy /><cp:revision/><dcterms:created xsi:type="x"/><dcterms:modified/><dc:title/>`));
   assert.deepEqual(selfClosing, empty);
   // an element present and empty is its own (empty) text, not absence
-  assert.equal((await coreOf(CORE(`<dc:creator></dc:creator>`))).creator, "");
+  const emptyCreator = await coreOf(CORE(`<dc:creator></dc:creator>`));
+  assert.ok(emptyCreator.ok);
+  assert.equal(emptyCreator.creator, "");
   for (const [rev, n] of [[" 7 ", 7], ["0", 0], ["007", 7], ["12a", null], ["1.5", null], ["-3", null], ["", null], ["\n 13\t", 13]]) {
     const r = await coreOf(CORE(`<cp:revision>${rev}</cp:revision>`));
+    assert.ok(r.ok);
     assert.equal(r.revision, rev); assert.equal(r.revisionNumber, n, JSON.stringify(rev));
   }
   // any namespace prefix, or none
   const bare = await coreOf(`<coreProperties><creator>X</creator><title>T</title></coreProperties>`);
+  assert.ok(bare.ok);
   assert.equal(bare.creator, "X"); assert.equal(bare.title, "T");
   for (const x of ODD) assert.deepEqual(await readCoreProperties(x, x), { ok: false, why: "part_absent" });
 });
 
 /* ------------------------------------------------------------------ R20–R21 */
 
+/** @type {{ [ext: string]: string }} */
 const MIME = {
   png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", jpe: "image/jpeg", gif: "image/gif", bmp: "image/bmp",
   tif: "image/tiff", tiff: "image/tiff", svg: "image/svg+xml", webp: "image/webp", emf: "image/emf", wmf: "image/wmf",
   emz: "image/x-emz", wmz: "image/x-wmz",
 };
+/** @type {(bytes: Uint8Array) => { ok: true, bytes: Uint8Array, container: import("../../../src/ooxml.mjs").ContainerResult }} */
 const partsOf = (bytes) => ({ ok: true, bytes, container: readContainer(bytes) });
 
 test("R20 withContainerImages returns its input unchanged when no container was read", async () => {
   const out = { ok: true, text: "t" };
   const bytes = zipOf([{ name: "word/media/a.png", data: "png" }]);
-  for (const o of [null, undefined, false, { ok: false, why: "x" }]) assert.equal(await withContainerImages(o, partsOf(bytes), "word/media/"), o);
+  /** @type {(null | undefined | false | { ok: boolean, why: string })[]} */
+  const unread = [null, undefined, false, { ok: false, why: "x" }];
+  for (const o of unread) assert.equal(await withContainerImages(o, partsOf(bytes), "word/media/"), o);
   for (const p of [null, undefined, { ok: false }, { ok: true, bytes }]) assert.equal(await withContainerImages(out, p, "word/media/"), out);
   assert.equal(await withContainerImages(Promise.resolve(out), null, "word/media/"), out);
 });
@@ -794,7 +903,9 @@ test("R20 withContainerImages: the whole list is null, never partial, when media
   const over = zipOf([{ name: "m/a.png", data: "a", cd: { usize: B } }, { name: "m/b.jpg", data: "b", cd: { usize: 1 } }, { name: "m/c.wav", data: "c", cd: { usize: B } }]);
   assert.deepEqual(await withContainerImages(base, partsOf(over), "m/"), { ...base, images: null, imagesWhy: `media_over_size_bound:${B + 1}>${B}` });
   const at = zipOf([{ name: "m/a.png", data: "a", cd: { usize: B } }]);
-  assert.deepEqual((await withContainerImages(base, partsOf(at), "m/")).imagesWhy, "media_part_unreadable:m/a.png:ARCHIVE_RATIO_MAX");
+  const atOut = await withContainerImages(base, partsOf(at), "m/");
+  assert.ok("imagesWhy" in atOut);
+  assert.deepEqual(atOut.imagesWhy, "media_part_unreadable:m/a.png:ARCHIVE_RATIO_MAX");
   const unreadable = zipOf([{ name: "m/a.png", data: "a" }, { name: "m/b.gif", data: "b", cd: { crc: 5 } }, { name: "m/c.png", data: "c" }]);
   assert.deepEqual(await withContainerImages(base, partsOf(unreadable), "m/"), { ...base, images: null, imagesWhy: "media_part_unreadable:m/b.gif:crc_mismatch" });
   for (const x of ODD) await assert.doesNotReject(withContainerImages(base, { ok: true, bytes: x, container: x }, x));
@@ -804,10 +915,15 @@ test("R21 an image's ref is exactly `image ` plus the first 12 hex characters of
   const r = prng(21);
   const members = Array.from({ length: 40 }, (_, i) => ({ name: `Pictures/p${i}.png`, data: new Uint8Array(1 + i * 37).map(() => Math.floor(r() * 256)) }));
   const bytes = zipOf(members);
-  const { images } = await withContainerImages({ ok: true }, partsOf(bytes), "Pictures/");
+  const out = await withContainerImages({ ok: true }, partsOf(bytes), "Pictures/");
+  assert.ok("images" in out);
+  const { images } = out;
+  assert.ok(images);
   assert.equal(images.length, 40);
   images.forEach((img, i) => {
-    assert.equal(img.part, sha256(members[i].data));
+    const member = members[i];
+    assert.ok(member);
+    assert.equal(img.part, sha256(member.data));
     assert.match(img.part, /^[0-9a-f]{64}$/);
     assert.equal(img.ref, `image ${img.part.slice(0, 12)}`);
   });
@@ -815,14 +931,15 @@ test("R21 an image's ref is exactly `image ` plus the first 12 hex characters of
 
 /* ------------------------------------------------------------------ R22–R26 */
 
-/** Every service called once on the given archive. */
+/** Every service called once on the given archive.
+ * @param {Uint8Array} bytes */
 async function callAll(bytes) {
   const c = readContainer(bytes);
   const parts = c.ok ? c.entries.map((e) => e.name) : [];
   return {
     magic: hasZipMagic(bytes), crc: crc32(bytes), norm: normalizePartName("/a/b"), c,
     reads: await Promise.all(parts.map((n) => readPart(bytes, c, n))),
-    text: c.ok ? declaredTextBytes(c, (n) => n.endsWith(".xml")) : null,
+    text: c.ok ? declaredTextBytes(c, (/** @type {string} */ n) => n.endsWith(".xml")) : null,
     guard: sizeGuard(12345), d: await discriminate(bytes, "application/octet-stream"),
     relsFor: relsPartFor("word/document.xml"), rels: parseRels(RELS(REL({ Target: "x" }))),
     walk: c.ok ? await walkRels(bytes, c) : null, core: c.ok ? await readCoreProperties(bytes, c) : null,
@@ -832,16 +949,20 @@ async function callAll(bytes) {
     cuts: await cutEvery(bytes),
   };
 }
-/* Every row listArchive answers, cut: its done answer and the bytes' length and CRC-32. */
+/** Every row listArchive answers, cut: its done answer and the bytes' length and CRC-32.
+ * @param {Uint8Array} bytes
+ * @returns {Promise<{ done: CutResult, length: number, crc: number }[]>} */
 async function cutEvery(bytes) {
   const l = await listArchive(bytes);
+  /** @type {{ done: CutResult, length: number, crc: number }[]} */
   const out = [];
   for (const row of l.entries ?? []) {
     const { chunks, done } = streamMember(bytes, row);
     let length = 0, crc = 0;
+    /** @type {Uint8Array[]} */
     const parts = [];
     for await (const ch of chunks) { length += ch.length; parts.push(ch); }
-    if (parts.length) crc = zcrc32(Buffer.concat(parts)) >>> 0;
+    if (parts.length) crc = zcrc(Buffer.concat(parts));
     out.push({ done: await done, length, crc });
   }
   return out;
@@ -854,8 +975,10 @@ const richDocx = () => zipOf(opc("docx", [
 ]));
 
 test("R22 pure: no store, no network, no clock; identical inputs give identical results", async () => {
+  /** @type {string[]} */
   const touched = [];
   const saved = { fetch: globalThis.fetch, Date: globalThis.Date, perf: globalThis.performance, random: Math.random, caches: globalThis.caches, WebSocket: globalThis.WebSocket };
+  /** @type {(label: string, fn?: (...args: unknown[]) => unknown) => (this: unknown, ...a: unknown[]) => unknown} */
   const spy = (label, fn) => function (...a) { touched.push(label); return fn?.apply(this, a); };
   const SpyDate = new Proxy(saved.Date, { construct(t, a) { touched.push("new Date"); return new t(...a); }, apply(t, s, a) { touched.push("Date()"); return t(...a); }, get(t, k) { if (k === "now") return spy("Date.now", t.now); return t[k]; } });
   const bytes = [richDocx(), zipOf(odf("ods")), zipOf([{ name: "a", data: "a" }]), enc("not a zip")];
@@ -877,21 +1000,40 @@ test("R22 pure: no store, no network, no clock; identical inputs give identical 
   }
   assert.deepEqual(touched, []);
   assert.deepEqual(second, first);
-  assert.equal(first[0].d.format, "docx"); assert.equal(first[0].images.images.length, 1);
-  assert.deepEqual(first[0].vba.autoRun, ["AutoOpen"]);
-  assert.equal(first[0].list.count, 7);
-  assert.ok(first[0].cuts.every((x) => x.done.ok));
+  const results = first;
+  assert.ok(results);
+  const docx = results[0];
+  assert.ok(docx);
+  const docxImages = docx.images;
+  assert.ok("images" in docxImages);
+  const docxImageList = docxImages.images;
+  assert.ok(docxImageList);
+  const docxVba = docx.vba;
+  assert.ok(docxVba);
+  assert.ok(docxVba.ok);
+  assert.equal(docx.d.format, "docx"); assert.equal(docxImageList.length, 1);
+  assert.deepEqual(docxVba.autoRun, ["AutoOpen"]);
+  assert.equal(docx.list.count, 7);
+  assert.ok(docx.cuts.every((x) => x.done.ok));
   // a range source's read is the caller's: given the same bytes, the same answer
   const z = richDocx();
+  /** @type {{ size: number, read: (offset: number, length: number) => Promise<Uint8Array> }} */
   const rs = { size: z.length, read: async (o, n) => z.slice(o, o + n) };
-  assert.deepEqual(await listArchive(rs), first[0].list);
+  assert.deepEqual(await listArchive(rs), docx.list);
 });
 
 test("R23 zero runtime dependency: the module imports nothing; inflate is DecompressionStream(deflate-raw), hashing crypto.subtle", async () => {
+  /** @type {string[]} */
   const imported = [];
   const hooks = registerHooks({
+    /**
+     * @param {string} specifier
+     * @param {{ parentURL?: string | undefined }} context
+     * @param {(specifier: string, context: { parentURL?: string | undefined }) => unknown} next
+     */
     resolve(specifier, context, next) {
-      if (context.parentURL && context.parentURL.startsWith(MODULE_URL)) imported.push(specifier);
+      const parentURL = context.parentURL;
+      if (parentURL && parentURL.startsWith(MODULE_URL)) imported.push(specifier);
       return next(specifier, context);
     },
   });
@@ -901,20 +1043,30 @@ test("R23 zero runtime dependency: the module imports nothing; inflate is Decomp
   assert.deepEqual(imported, ["./read-bounds.mjs"]);
   assert.deepEqual(Object.keys(fresh).sort(), Object.keys(M).sort());
 
+  /** @type {string[]} */
   const formats = [];
+  /** @type {unknown[]} */
   const digests = [];
   const RealDS = globalThis.DecompressionStream;
   const realDigest = crypto.subtle.digest;
-  globalThis.DecompressionStream = class extends RealDS { constructor(f) { formats.push(f); super(f); } };
-  crypto.subtle.digest = function (alg, data) { digests.push(alg); return realDigest.call(this, alg, data); };
+  globalThis.DecompressionStream = class extends RealDS { constructor(/** @type {string} */ f) { formats.push(f); super(f); } };
+  crypto.subtle.digest = function (/** @type {unknown} */ alg, /** @type {unknown} */ data) { digests.push(alg); return realDigest.call(this, alg, data); };
   try {
     const bytes = zipOf([{ name: "m/a.png", data: "deflated image" }]);
     const c = readContainer(bytes);
     assert.deepEqual(await readPart(bytes, c, "m/a.png"), { ok: true, bytes: enc("deflated image") });
     const r = await withContainerImages({ ok: true }, { ok: true, bytes, container: c }, "m/");
-    assert.equal(r.images[0].part, sha256(enc("deflated image")));
+    assert.ok("images" in r);
+    const images = r.images;
+    assert.ok(images);
+    const image = images[0];
+    assert.ok(image);
+    assert.equal(image.part, sha256(enc("deflated image")));
     // the cut inflates through the same primitive; its streamed digest equals crypto.subtle.digest's
-    const row = (await listArchive(bytes)).entries[0];
+    const rows = (await listArchive(bytes)).entries;
+    assert.ok(rows);
+    const row = rows[0];
+    assert.ok(row);
     const { chunks, done } = streamMember(bytes, row);
     for await (const ch of chunks) void ch;
     assert.equal((await done).sha256, sha256(enc("deflated image")));
@@ -922,7 +1074,9 @@ test("R23 zero runtime dependency: the module imports nothing; inflate is Decomp
     globalThis.DecompressionStream = RealDS;
     crypto.subtle.digest = realDigest;
   }
-  assert.ok(formats.length >= 3 && formats.every((f) => f === "deflate-raw"));
+  /** @type {(f: string) => boolean} */
+  const isDeflateRaw = (f) => f === "deflate-raw";
+  assert.ok(formats.length >= 3 && formats.every(isDeflateRaw));
   assert.deepEqual(digests, ["SHA-256"]);
 });
 
@@ -933,6 +1087,7 @@ test("R24 the central directory is the sole authority for size, CRC and method; 
     { name: "c.xml", data: "flags", local: { flags: 0x08, crc: 0, csize: 0, usize: 0 } },
   ]);
   const c = readContainer(lying);
+  assert.ok(c.ok);
   assert.deepEqual(c.entries.map((e) => [e.method, e.uncompressedSize]), [[8, 14], [0, 12], [8, 5]]);
   assert.deepEqual(await readPart(lying, c, "a.xml"), { ok: true, bytes: enc("deflated truth") });
   assert.deepEqual(await readPart(lying, c, "b.txt"), { ok: true, bytes: enc("stored truth") });
@@ -940,8 +1095,12 @@ test("R24 the central directory is the sole authority for size, CRC and method; 
   // a local header telling the truth does not rescue a central directory that disagrees with the bytes
   const cdWrong = zipOf([{ name: "a", data: "hello", cd: { crc: 77 } }, { name: "b", data: "hello", cd: { usize: 4 } }, { name: "c", data: "hello", cd: { method: 0 } }]);
   const cw = readContainer(cdWrong);
-  assert.equal((await readPart(cdWrong, cw, "a")).why, "crc_mismatch");
-  assert.equal((await readPart(cdWrong, cw, "b")).why, "size_mismatch");
+  const readA = await readPart(cdWrong, cw, "a");
+  assert.equal(readA.ok, false);
+  assert.equal(readA.why, "crc_mismatch");
+  const readB = await readPart(cdWrong, cw, "b");
+  assert.equal(readB.ok, false);
+  assert.equal(readB.why, "size_mismatch");
   assert.equal((await readPart(cdWrong, cw, "c")).ok, false);
   // declared sizes for the size guard come from the central directory too
   assert.equal(declaredTextBytes(c, () => true).total, 14 + 12 + 5);
@@ -963,33 +1122,43 @@ test("R25 never invents structure and never throws on malformed or adversarial b
       cases++;
       const all = await callAll(b);
       for (const res of [all.c, all.d, ...all.reads, all.core].filter(Boolean)) {
+        assert.ok(res);
         assert.equal(typeof res.ok, "boolean");
         if (!res.ok) assert.equal(typeof res.why, "string");
       }
-      if (all.c.ok) {
-        all.c.entries.forEach((e, i) => {
+      const allC = all.c;
+      if (allC.ok) {
+        allC.entries.forEach((e, i) => {
           const rd = all.reads[i];
-          if (rd.ok && all.c.byName.get(e.name) === e) {
+          assert.ok(rd);
+          if (rd.ok && allC.byName.get(e.name) === e) {
             assert.equal(rd.bytes.length, e.uncompressedSize);
-            assert.equal(zcrc32(rd.bytes) >>> 0, e.crc32);
+            assert.equal(zcrc(rd.bytes), e.crc32);
           }
         });
-        assert.equal(all.walk.ok, true);
+        const walked = all.walk;
+        assert.ok(walked);
+        assert.equal(walked.ok, true);
       } else {
         assert.ok(["undetermined", undefined].includes(all.d.format) || all.d.ok === false);
-        assert.ok(!["docx", "xlsx", "pptx", "odt", "ods", "odp"].includes(all.d.format));
+        assert.ok(!FLAVOUR_FORMATS.includes(all.d.format));
       }
       if (all.d.ok && all.d.format === "undetermined") assert.equal(typeof all.d.why, "string");
       assert.equal(typeof all.list.ok, "boolean");
       if (!all.list.ok) assert.equal(typeof all.list.why, "string");
       for (const [i, x] of all.cuts.entries()) {
         if (!x.done.ok) { assert.equal(typeof x.done.why, "string"); continue; }
-        const row = all.list.entries[i];
+        const rows = all.list.entries;
+        assert.ok(rows);
+        const row = rows[i];
+        assert.ok(row);
         assert.equal(row.verdict, "ok");
         assert.deepEqual([x.length, x.crc, x.done.size, x.done.crc32], [row.uncompressed, row.crc32, row.uncompressed, row.crc32]);
       }
-      if (all.vba && !all.vba.ok) assert.equal(typeof all.vba.why, "string");
-      if (all.images.images === null) assert.equal(typeof all.images.imagesWhy, "string");
+      const vba = all.vba;
+      if (vba && !vba.ok) assert.equal(typeof vba.why, "string");
+      const withImages = all.images;
+      if ("images" in withImages && withImages.images === null) assert.equal(typeof withImages.imagesWhy, "string");
     }
   }
   assert.equal(cases, 600);
@@ -998,13 +1167,15 @@ test("R25 never invents structure and never throws on malformed or adversarial b
     const b = new Uint8Array(4 + Math.floor(r() * 300)).map(() => Math.floor(r() * 256));
     b.set([0x50, 0x4b, 0x03, 0x04]);
     const d = await discriminate(b);
-    assert.ok(!["docx", "xlsx", "pptx", "odt", "ods", "odp"].includes(d.format));
+    assert.ok(!FLAVOUR_FORMATS.includes(d.format));
   }
 });
 
 test("R26 no jurisdiction: every service runs on bytes and caller tables alone, and names no place", async () => {
+  /** @type {string[]} */
   const strings = [];
-  const walk = (v, seen = new Set()) => {
+  /** @type {(v: unknown, seen?: Set<object>) => void} */
+  const walk = (v, seen = new Set(null)) => {
     if (typeof v === "string") strings.push(v);
     else if (v && typeof v === "object" && !seen.has(v)) { seen.add(v); for (const x of Object.values(v)) walk(x, seen); }
   };
