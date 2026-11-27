@@ -10,14 +10,30 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { DOCTYPES, registerDoctypes } from "../index.mjs";
 import { readText } from "../../docprofile/readtext.mjs";
 import { registerDoctype } from "../../docprofile/doctypes/registry.mjs";
-import { textAnswerOf } from "./r37-readings.mjs";
+import { textAnswerOf, parseWith } from "./r37-readings.mjs";
+/** @import { PartialView, SuppliedText } from "../../docprofile/doctypes/index.mjs" */
+
+/**
+ * A PDF's reading as `dump` writes it and `readbase` and `read` read it back: the module's own file.
+ * @typedef {SuppliedText} DumpedReading
+ */
 
 const [mode, file, out] = process.argv.slice(2);
+/** A path this program was handed; Node's own refusal where none was.
+ *  @param {string | undefined} p @returns {string} @throws {TypeError} where none was handed */
+const pathOf = (p) => {
+  if (p === undefined) throw new TypeError('The "path" argument must be of type string or an instance of Buffer or URL. Received undefined');
+  return p;
+};
+/** The heap in use, in MB. @returns {number} */
 const mb = () => process.memoryUsage().heapUsed / 1048576;
+/** Two full collections, where the process may ask for them. @returns {void} */
 const settle = () => { if (global.gc) { global.gc(); global.gc(); } };
 
 /* About 14 million characters of budget-book lines with the phrases the types look for scattered through them. */
+/** @returns {string} */
 function synthetic() {
+  /** @type {string[]} */
   const block = [];
   for (let i = 0; i < 400; i++) {
     block.push(`Appropriations for program ${i} of the fiscal year are set out in the table below  1,234  5,678  9,012`);
@@ -26,6 +42,7 @@ function synthetic() {
     if (i % 90 === 0) block.push("Page " + i, "   ", "A motion was made by A, seconded by B, that this matter be Accepted. The motion carried by the following vote:");
   }
   const unit = block.join("\n") + "\n";
+  /** @type {string[]} */
   const parts = [];
   let n = 0;
   while (n < 14_000_000) { parts.push(unit); n += unit.length; }
@@ -39,24 +56,26 @@ if (mode === "base") {
 } else if (mode === "types") {
   const text = synthetic();
   settle();
+  /** @type {PartialView} */
   const view = {};
   for (const t of DOCTYPES) {
     t.detect({ text, view });
-    if (["meeting_minutes", "meeting_agenda", "staff_report", "staff_directory"].includes(t.key)) t.parse({ text, view, locate: () => null, alsoSatisfies: () => [] });
+    if (["meeting_minutes", "meeting_agenda", "staff_report", "staff_directory"].includes(t.key)) parseWith(t, { text, view, locate: () => null, alsoSatisfies: () => [] });
   }
   console.log(JSON.stringify({ ok: true, chars: text.length }));
 } else if (mode === "answer") {
   const { extractPdfStructure } = await import("../../bio-plane/src/pdfstructure.mjs");
-  const r = await extractPdfStructure(new Uint8Array(readFileSync(file)));
+  const r = await extractPdfStructure(new Uint8Array(readFileSync(pathOf(file))));
   registerDoctypes(registerDoctype);
-  console.log(JSON.stringify(textAnswerOf(readText(r.text))));
+  console.log(JSON.stringify(textAnswerOf(readText("text" in r ? r.text : undefined))));
 } else if (mode === "dump") {
   const { extractPdfStructure } = await import("../../bio-plane/src/pdfstructure.mjs");
-  const r = await extractPdfStructure(new Uint8Array(readFileSync(file)));
-  writeFileSync(out, JSON.stringify({ document: r.text.document, pages: r.text.pages.map((p) => ({ page: p.page, text: p.text })),
+  const r = await extractPdfStructure(new Uint8Array(readFileSync(pathOf(file))));
+  if (!r.ok) throw new TypeError("Cannot read properties of undefined (reading 'document')");
+  writeFileSync(pathOf(out), JSON.stringify({ document: r.text.document, pages: r.text.pages.map((p) => ({ page: p.page, text: p.text })),
                                       counts: r.text.counts, undetermined: r.text.undetermined }));
 } else if (mode === "readbase" || mode === "read") {
-  const supplied = JSON.parse(readFileSync(file, "utf8"));
+  const supplied = /** @type {DumpedReading} decodes the reading this program dumped */ (JSON.parse(readFileSync(pathOf(file), "utf8")));
   registerDoctypes(registerDoctype);
   settle();
   if (mode === "readbase") console.log(JSON.stringify({ baseMB: mb() }));

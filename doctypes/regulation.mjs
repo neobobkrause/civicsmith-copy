@@ -57,7 +57,109 @@ import { CONFIDENCE, CONTRACT, diffEntities, alsoSatisfies,
 import { event, worstSignificance, isMeaningful, bySeverity } from "../site-profiles/index.mjs";
 import { codeHeadingsIn, readSections, readDefinitions, readExceptions, textDigest } from "./sections.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
-import { scanFlatMany, mergedHits, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
+import { flatHas, mergedHits, rawMergedHits, referenceBook, counted, spend } from "./windows.mjs";
+/** @import { DoctypeContext, Connection, Detection, Entity, EnactmentPattern } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/index.mjs" */
+/** @import { Section, Definition, Exception, Locate, CodeHeadings } from "./sections.mjs" */
+/** @import { ReferencesState } from "./windows.mjs" */
+
+/**
+ * The instrument's own caption (`ownCaption`): its kind, its number or null where the caption carries none, and the
+ * flattened text that follows it (empty where none was asked for).
+ * @typedef {Object} OwnCaption
+ * @property {string} kind
+ * @property {string | null} number
+ * @property {string} after
+ */
+/**
+ * The digest of each section's text, by the section's path joined with `/`.
+ * @typedef {{ [path: string]: string }} SectionDigests
+ */
+/**
+ * How many sections, definitions and exceptions were read, and how many definitions and exceptions no section holds.
+ * @typedef {Object} StructureCounts
+ * @property {number} sections
+ * @property {number} definitions
+ * @property {number} exceptions
+ * @property {number} definitions_unplaced
+ * @property {number} exceptions_unplaced
+ */
+/**
+ * The structure readings of an instrument or a code section (`structure`): its sections, why none were read, each
+ * section's digest, its definitions and exceptions, and their counts.
+ * @typedef {Object} StructureReading
+ * @property {Section[]} sections
+ * @property {string | null} sections_why
+ * @property {SectionDigests} section_digests
+ * @property {Definition[]} definitions
+ * @property {Exception[]} exceptions
+ * @property {StructureCounts} counts
+ */
+/**
+ * Which form of law a text is: an instrument, a code section, or neither (null).
+ * @typedef {"code" | "instrument" | null} LawForm
+ */
+/**
+ * The facts `parse` reads of an instrument besides its structure and its book of references.
+ * @typedef {Object} RegulationFacts
+ * @property {Entity[]} entities
+ * @property {LawForm} form
+ * @property {string | null} form_why
+ * @property {string | null} instrument
+ * @property {string | null} number
+ * @property {string | null} number_why
+ * @property {string | null} title
+ * @property {number} recitals
+ * @property {string[]} also_satisfies
+ * @property {string | null} at
+ */
+/**
+ * What `parse` reads from an ordinance, a resolution or a code section.
+ * @typedef {RegulationFacts & ReferencesState & StructureReading} RegulationReading
+ */
+/**
+ * What was verified unchanged between two readings (R16): how many references the later one names, how many of them both
+ * name, and the instrument's own facts that agree.
+ * @typedef {Object} RegulationConfirmed
+ * @property {number} entries
+ * @property {number} intact
+ * @property {OwnFact[]} facts
+ */
+/**
+ * What moved in the sections between two readings: whether they were compared, the events, and why not where they were not.
+ * @typedef {Object} SectionComparison
+ * @property {boolean} compared
+ * @property {EventHead[]} events
+ * @property {string | null} why
+ */
+/**
+ * What `assess` answers for two readings of one instrument's address.
+ * @typedef {Object} RegulationAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {RegulationConfirmed | null} confirmed
+ * @property {boolean} sections_compared
+ * @property {string | null} sections_why
+ * @property {string} why
+ */
+/**
+ * The ordinance-or-resolution content type (docprofile's `ContentType`).
+ * @typedef {Object} RegulationType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => RegulationReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => RegulationAssessment} assess
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections] never present: this type implies no connections
+ */
+/**
+ * One of the instrument's own facts, compared between two readings.
+ * @typedef {"instrument" | "number" | "title"} OwnFact
+ */
 
 /* THE OPERATIVE VOICE — a body enacting, in the forms the measured instruments use plus
    the general shapes. It is the language of enactment, the same in every jurisdiction
@@ -73,7 +175,7 @@ const RECITAL = /\bWHEREAS\b/gi;
    their number forms are the view's `spaces.enactment`, and any series marker after the
    number (`C.M.S.` in the measured instance) its `enactment_markers`. The number may be
    blank on a proposed instrument, which document A shows. */
-const regCaptions = (ctx) => enactmentPatterns(ctx, { blankNumber: true });
+const regCaptions = /** @param {DoctypeContext} ctx @returns {EnactmentPattern[]} */ (ctx) => enactmentPatterns(ctx, { blankNumber: true });
 /* Codification: the language by which an instrument changes a code. The verbs and a
    code's generic name are the language's; which codes exist is the view's `codes`. */
 const CODIFYING = /\b(?:is\s+hereby\s+(?:amended|added|repealed|deleted)|hereby\s+(?:amended|repealed)|Municipal\s+Code\s+(?:Section|Chapter))\b/gi;
@@ -81,7 +183,7 @@ const CODIFYING = /\b(?:is\s+hereby\s+(?:amended|added|repealed|deleted)|hereby\
 /* The enacting BODY, immediately above its own caption. The words that name a body
    are the view's `bodies` (N3); the measured instruments open `<CITY> CITY COUNCIL` /
    `RESOLUTION NO. ____ C.M.S.`, a body named on its own just above. */
-const regBodyEnds = (ctx) => vocabPatterns(ctx, "bodies", (re) => `(?:${re})[^A-Za-z0-9]{0,40}$`);
+const regBodyEnds = /** @param {DoctypeContext} ctx @returns {RegExp[]} */ (ctx) => vocabPatterns(ctx, "bodies", (re) => `(?:${re})[^A-Za-z0-9]{0,40}$`);
 
 /** WHICH caption is the instrument's OWN, as opposed to one it merely cites.
  *
@@ -113,26 +215,31 @@ const regBodyEnds = (ctx) => vocabPatterns(ctx, "bodies", (re) => `(?:${re})[^A-
  *  extraction — document B's opens `R ESOLUTION N O .` after a drop cap, which no
  *  caption pattern matches — gets a null number with its reason stated, never the
  *  nearest number in the text. That is the direction this reader has already been
- *  wrong in twice. */
+ *  wrong in twice.
+ *  @param {string} text @param {ReadonlyArray<EnactmentPattern>} captions @param {ReadonlyArray<RegExp>} bodies
+ *  @param {number} [afterChars] @returns {OwnCaption | null} */
 function ownCaption(text, captions, bodies, afterChars = 0) {
   /* R37: the captions are met in the flattened text a window at a time (./windows.mjs), in the order and with the
      overlap rule `allMatches` gives them over all of it; `after` is the flattened text that follows the caption found. */
-  let found = null;
+  /** @type {{ found: OwnCaption | null }} */
+  const seen = { found: null };
   mergedHits(text, captions, ({ m, tag }, abs, w) => {
     /* Tested as printed and in capitals: a caption's body is set in capitals, and a
        profile may write a body's name in either case. */
     const before = w.buf.slice(Math.max(0, m.index - 120), m.index);
     if (!(anyMatch(bodies, before) || anyMatch(bodies, before.toUpperCase()))) return false;
     const at = m.index + m[0].length;
-    found = { kind: tag.kind, number: enactmentNumber(tag.forms, m.groups && m.groups.num),
-              after: afterChars ? w.buf.slice(at, at + afterChars) : "" };
+    const groups = m.groups;
+    seen.found = { kind: tag.kind, number: enactmentNumber(tag.forms, groups && groups.num),
+                   after: afterChars ? w.buf.slice(at, at + afterChars) : "" };
     return true;
   });
-  return found;
+  return seen.found;
 }
 
 /** How many matches of a global pattern the text holds. The patterns it is used for bridge words with `\s` only, so the
- *  count is the same over the text as it stands as over its flattened form (R37: no flattened copy). */
+ *  count is the same over the text as it stands as over its flattened form (R37: no flattened copy).
+ *  @param {string} text @param {RegExp} re @returns {number} */
 function countIn(text, re) {
   spend(text.length);
   const g = new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g");
@@ -141,12 +248,17 @@ function countIn(text, re) {
   return n;
 }
 
+/** The instrument's own facts, in the order they are compared and reported.
+ *  @type {ReadonlyArray<OwnFact>} */
+const REG_OWN_FACTS = ["instrument", "number", "title"];
+
 /** What was verified unchanged between two readings of an instrument, or null when
  *  nothing was (R16): the references still named, and the instrument's own facts that
- *  were read on both sides and agree. */
+ *  were read on both sides and agree.
+ *  @param {RegulationReading} a @param {RegulationReading} b @returns {RegulationConfirmed | null} */
 function regConfirmed(a, b) {
   const intact = (a.entities || []).filter((e) => (b.entities || []).some((x) => x.key === e.key)).length;
-  const facts = ["instrument", "number", "title"].filter((k) => a[k] && String(a[k]) === String(b[k] || ""));
+  const facts = REG_OWN_FACTS.filter((k) => a[k] && String(a[k]) === String(b[k] || ""));
   if (!intact && !facts.length) return null;
   return { entries: (b.entities || []).length, intact, facts };
 }
@@ -154,17 +266,24 @@ function regConfirmed(a, b) {
 /** What moved in the sections between two readings (R16): a section whose heading, text,
  *  definitions or exceptions differ, and a section read on one side only, each an
  *  `instrument_changed` naming its path. With no section read on either side nothing is
- *  said about sections, and why (R23, R24). */
+ *  said about sections, and why (R23, R24).
+ *  @param {RegulationReading} a @param {RegulationReading} b @returns {SectionComparison} */
 function sectionChanges(a, b) {
-  const sa = Array.isArray(a.sections) ? a.sections : [], sb = Array.isArray(b.sections) ? b.sections : [];
+  const aSections = a.sections, bSections = b.sections;
+  const sa = Array.isArray(aSections) ? aSections : [], sb = Array.isArray(bSections) ? bSections : [];
   if (!sa.length && !sb.length)
     return { compared: false, events: [],
              why: localize("doctypes.regulation.sections_none_read", "no section was read from either reading, so nothing is said about sections: {why}", { why: String(b.sections_why || a.sections_why || "neither reading carries sections") }) };
-  const key = (s) => s.path.join("/");
-  const ma = new Map(sa.map((s) => [key(s), s])), mb = new Map(sb.map((s) => [key(s), s]));
-  const inSec = (list, k) => (Array.isArray(list) ? list : []).filter((x) => x.section && x.section.join("/") === k);
-  const defsOf = (x, k) => inSec(x.definitions, k).map((d) => d.term).join("\u0000");
-  const excOf = (x, k, raw) => inSec(x.exceptions, k).map((e) => `${e.end - e.start}:${(e.cites || []).join(",")}`).join("|");
+  const key = /** @param {Section} s @returns {string} */ (s) => s.path.join("/");
+  const entry = /** @param {Section} s @returns {[string, Section]} */ (s) => [key(s), s];
+  const ma = new Map(sa.map(entry)), mb = new Map(sb.map(entry));
+  /** @template {Definition | Exception} T @param {T[] | undefined} list @param {string} k @returns {T[]} */
+  const inSec = (list, k) => (Array.isArray(list) ? list : []).filter((x) => { const s = x.section; return s && s.join("/") === k; });
+  const defsOf = /** @param {RegulationReading} x @param {string} k @returns {string} */ (x, k) => inSec(x.definitions, k).map((d) => d.term).join("\u0000");
+  const excOf = /** @param {RegulationReading} x @param {string} k @returns {string} */ (x, k) => inSec(x.exceptions, k).map((e) => `${e.end - e.start}:${(e.cites || []).join(",")}`).join("|");
+  /** @type {SectionDigests} what a reading without digests holds: none */
+  const noDigests = {};
+  /** @type {EventHead[]} */
   const events = [];
   for (const [k, was] of ma) {
     const now = mb.get(k);
@@ -173,9 +292,10 @@ function sectionChanges(a, b) {
         why: localize("doctypes.regulation.section_gone", "section {number} was read before and is not read now", { number: String(was.number) }) }));
       continue;
     }
+    /** @type {string[]} */
     const moved = [];
     if (String(was.heading || "") !== String(now.heading || "")) moved.push("heading");
-    if (((a.section_digests || {})[k] || null) !== ((b.section_digests || {})[k] || null)) moved.push("text");
+    if (((a.section_digests || noDigests)[k] || null) !== ((b.section_digests || noDigests)[k] || null)) moved.push("text");
     if (defsOf(a, k) !== defsOf(b, k)) moved.push("definitions");
     if (excOf(a, k) !== excOf(b, k)) moved.push("exceptions");
     if (moved.length)
@@ -191,13 +311,15 @@ function sectionChanges(a, b) {
 }
 
 /** The code headings in a text (R9). */
-const codeHeads = (ctx, text) => codeHeadingsIn(text, ctx);
+const codeHeads = /** @param {DoctypeContext} ctx @param {string} text @returns {CodeHeadings} */ (ctx, text) => codeHeadingsIn(text, ctx);
 
-/** The structure readings of an instrument or a code section (R9–R14, R19). */
+/** The structure readings of an instrument or a code section (R9–R14, R19).
+ *  @param {DoctypeContext} ctx @param {string} raw @param {LawForm} form @param {Locate} locate @returns {StructureReading} */
 function structure(ctx, raw, form, locate) {
   const { sections, sections_why } = readSections(raw, form, ctx, locate);
   const definitions = readDefinitions(raw, sections, locate);
   const exceptions = readExceptions(raw, sections, form, ctx, locate);
+  /** @type {SectionDigests} */
   const digests = {};
   for (const s of sections) digests[s.path.join("/")] = textDigest(raw, s.start, s.end);
   return {
@@ -208,7 +330,21 @@ function structure(ctx, raw, form, locate) {
   };
 }
 
-export default counted({
+/** Is `x` a reading of this type (what `parse` hands back)? Any reading there is: `assess` reads every member through
+ *  `|| []`, `|| ""` or `Array.isArray` and so tolerates an object that lacks them, and only a missing reading (null or
+ *  undefined) is refused, as reading its `instrument` refused it.
+ *  @param {object | null | undefined} x @returns {x is RegulationReading} */
+function isRegulationReading(x) { return x !== null && x !== undefined; }
+/** `x` as a reading of this type, or the `TypeError` reading a member of a missing one raised.
+ *  @param {object | null | undefined} x @returns {RegulationReading}
+ *  @throws {TypeError} when `x` is null or undefined */
+function regReading(x) {
+  if (!isRegulationReading(x)) throw new TypeError(`Cannot read properties of ${x} (reading 'instrument')`);
+  return x;
+}
+
+/** @type {RegulationType} */
+const regulationType = {
   key: "regulation",
   label: "an ordinance or resolution",
   version: 1,
@@ -225,12 +361,13 @@ export default counted({
    *  no enacting formula at all. */
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
 
     /* R37: one pass over the flattened text, a window at a time; the counts are the whole text's. */
-    let enacting = false, caption = false, codeCites = 0;
-    scanFlatMany(t, [{ re: ENACTING, on: () => (enacting = true) }]);
-    mergedHits(t, regCaptions(ctx), () => (caption = true));
+    let codeCites = 0;
+    const enacting = flatHas(t, ENACTING);
+    const caption = mergedHits(t, regCaptions(ctx), () => true);
     mergedHits(t, codePatterns(ctx), () => { codeCites++; });
     if (enacting) signals.push(localize("doctypes.regulation.enacting", "an enacting formula in the operative voice"));
     const recitals = countIn(t, RECITAL);
@@ -287,12 +424,14 @@ export default counted({
    *  not a fact here and `number` being null is reported as exactly what it is. */
   parse(ctx) {
     const raw = String(ctx.text || "");
-    const locate = typeof ctx.locate === "function" ? ctx.locate : () => null;
+    const given = ctx.locate;
+    /** @type {Locate} */
+    const locate = typeof given === "function" ? given : () => null;
 
-    let enacts = false;
-    scanFlatMany(raw, [{ re: ENACTING, on: () => (enacts = true) }]);
+    const enacts = flatHas(raw, ENACTING);
     const cap = ownCaption(raw, regCaptions(ctx), regBodyEnds(ctx), 2500);
-    const number = cap && cap.number ? cap.number : null;
+    const capNumber = cap ? cap.number : null;
+    const number = capNumber ? capNumber : null;
     const instrument = cap ? cap.kind : (/\bORDAIN/i.test(raw) ? "ordinance" : null);
 
     /* The caption's TITLE — the capitalised sentence that says what the instrument
@@ -301,6 +440,7 @@ export default counted({
        the text immediately following: document A interposes `INTRODUCED BY
        COUNCILMEMBER [IF APPLICABLE]` between its caption and its title, and a rule
        that demanded adjacency returned null on the one document it was written from. */
+    /** @type {string | null} */
     let title = null;
     if (cap) {
       const after = cap.after;
@@ -341,22 +481,32 @@ export default counted({
        and with the overlap rule `allMatches` gives over all of it, so 400,000 citations are never a list of 400,000
        matches. */
     rawMergedHits(raw, enactmentPatterns(ctx), ({ m, tag }) => {
-      const n = enactmentNumber(tag.forms, m.groups && m.groups.num);
+      const groups = m.groups;
+      const n = enactmentNumber(tag.forms, groups && groups.num);
       if (!n) return;
       const key = `${tag.kind}:${n}`;
       if (key === ownKey) return;
-      take(key, "instrument", `${tag.kind[0].toUpperCase()}${tag.kind.slice(1)} No. ${n}`,
+      /* A kind of no letters has no first letter to capitalise, and reading one failed as it always did. */
+      const initial = tag.kind[0];
+      if (initial === undefined) throw new TypeError("Cannot read properties of undefined (reading 'toUpperCase')");
+      take(key, "instrument", `${initial.toUpperCase()}${tag.kind.slice(1)} No. ${n}`,
            { instrument: tag.kind, number: n }, m.index);
     });
     rawMergedHits(raw, codePatterns(ctx), ({ m, tag }) => {
-      take(`${tag.key}:${m.groups.sec}`, "code_section", `${tag.label} ${m.groups.sec}`,
-           { code: tag.key, section: m.groups.sec }, m.index);
+      const groups = m.groups;
+      if (groups === undefined) throw new TypeError("Cannot read properties of undefined (reading 'sec')");
+      /* Every code pattern requires its `sec` group (docprofile's `codePatterns`), so a match always carries it. */
+      const sec = groups.sec;
+      if (sec === undefined) return;
+      take(`${tag.key}:${sec}`, "code_section", `${tag.label} ${sec}`,
+           { code: tag.key, section: sec }, m.index);
     });
 
     /* T33-13 (R9): WHICH FORM OF LAW this is. An instrument enacts (its operative voice, or
        its own caption under a body); a code section is a codifier's page of a code, read
        by the view's section headings. Neither is a stated null, never a guess. */
     const heads = cap ? null : codeHeads(ctx, raw);
+    /** @type {LawForm} */
     const form = heads && (heads.first || heads.count >= 2) ? "code" : enacts || cap ? "instrument" : null;
     const st = structure(ctx, raw, form, locate);
 
@@ -383,21 +533,26 @@ export default counted({
   },
 
   /** Given two parses of the same instrument's address, what happened to it. */
-  assess(a, b) {
+  assess(before, after) {
     /* Nothing read on EITHER side is a failed reader (R16, R33), never an instrument
        that lost its text. */
-    const readNothing = (x) => !x.instrument && !(x.entities || []).length && !(x.sections || []).length;
-    if (readNothing(a) || readNothing(b))
+    const readNothing = /** @param {object | null | undefined} given @returns {boolean} */ (given) => {
+      const x = regReading(given);
+      return !x.instrument && !(x.entities || []).length && !(x.sections || []).length;
+    };
+    if (readNothing(before) || readNothing(after))
       return { meaningful: null, significance: null, events: [], confirmed: null,
                sections_compared: false, sections_why: localize("doctypes.regulation.one_side_unread", "nothing was read from one of the readings, so nothing is said about its sections"),
                why: localize("doctypes.regulation.unread_either", "nothing could be read from this instrument this time, so nothing is claimed about it either way") };
+    const a = regReading(before), b = regReading(after);
 
+    /** @type {EventHead[]} */
     const events = [];
     /* AN INSTRUMENT'S OWN TEXT MOVING AT THE SAME ADDRESS IS THE SERIOUS ONE. This is
        the class of change the record exists to be able to prove: what a body enacted
        is not supposed to change afterwards, and a member who cited the title or the
        number of an instrument cited something fixed. */
-    for (const k of ["instrument", "number", "title"])
+    for (const k of REG_OWN_FACTS)
       if (String(a[k] || "") !== String(b[k] || ""))
         events.push(event("instrument_changed", { key: k, was: a[k] || null, now: b[k] || null,
           why: localize("doctypes.regulation.instrument_changed", "this instrument's {field} is not what it was at this address", { field: k }) }));
@@ -429,4 +584,6 @@ export default counted({
         : localize("doctypes.regulation.unchanged", "this instrument says what it said, and acts on the same things"),
     };
   },
-});
+};
+
+export default counted(regulationType);

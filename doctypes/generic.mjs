@@ -10,7 +10,41 @@ import { CONFIDENCE, CONTRACT } from "../docprofile/doctypes/index.mjs";
 import { event, worstSignificance, isMeaningful } from "../site-profiles/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 
-export default {
+/** @import { DoctypeContext, Detection, Entity, EntityFacts, Connection } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/index.mjs" */
+
+/**
+ * What the generic type reads of a document: no entities and no facts.
+ * @typedef {Object} GenericReading
+ * @property {Entity[]} entities
+ * @property {EntityFacts} facts
+ */
+/**
+ * What the generic type answers of two readings: one `substance_changed` event, graded by the catalogue.
+ * @typedef {Object} GenericAssessment
+ * @property {boolean} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {null} confirmed
+ * @property {string} why
+ */
+/**
+ * The generic content type, the one fallback: docprofile's `ContentType`, its reading and its answer its own.
+ * @typedef {Object} GenericType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {true} fallback
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => GenericReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => GenericAssessment} assess
+ * @property {((before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => ReadonlyArray<Connection> | null | undefined) | undefined} [connections]
+ *   never present: the generic type implies no connections
+ */
+
+/** @type {GenericType} */
+const generic = {
   key: "generic", label: localize("doctypes.generic.label", "a document of no recognised type"), version: 1, fallback: true,
   /* Watch its substance: with no reader for its members, the whole document is the
      unit. This is the declared contract (CONSTRUCTS Step 0 #4), not one derived from
@@ -38,3 +72,5 @@ export default {
              why: localize("doctypes.generic.changed_undescribed", "the substance of this document changed; what kind of document it is has not been worked out, so what changed is not described") };
   },
 };
+
+export default generic;

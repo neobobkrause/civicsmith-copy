@@ -26,27 +26,59 @@ import policy from "./policy.mjs";
 import staffDirectory from "./staff-directory.mjs";
 import generic from "./generic.mjs";
 
+/** @import { ContentType } from "../docprofile/doctypes/index.mjs" */
+
+/**
+ * A registry's `register` function: handed one type at a time.
+ * @typedef {(type: ContentType) => unknown} RegisterType
+ */
+/**
+ * A registry handed whole (`makeRegistry()`'s): its `register` method and, where it has one, `all`, the members it holds.
+ * @typedef {{ readonly register: RegisterType, readonly all?: (() => ReadonlyArray<HeldType | null | undefined>) | undefined }} DoctypeRegistry
+ */
+/**
+ * A member a registry already holds, as `registerDoctypes` reads it: by its key.
+ * @typedef {{ readonly key?: unknown }} HeldType
+ */
+/**
+ * What `registerDoctypes` answers: how many types it added, and why none, when none.
+ * @typedef {Object} Registered
+ * @property {number} registered
+ * @property {string | null} why
+ */
+
+/** The eight types in their registration order (R1), each as docprofile's `ContentType`. @type {ContentType[]} */
+const ORDER = [meetingCalendar, meetingMinutes, meetingAgenda, staffReport, regulation, policy, staffDirectory, generic];
 /** The eight types in their registration order (R1). Frozen: the order is a fact other
- *  modules rest on, not a list a caller may edit. */
-export const DOCTYPES = Object.freeze([meetingCalendar, meetingMinutes, meetingAgenda, staffReport, regulation, policy,
-                                       staffDirectory, generic]);
+ *  modules rest on, not a list a caller may edit.
+ *  @type {ReadonlyArray<ContentType>} */
+export const DOCTYPES = Object.freeze(ORDER);
 
 /* Which registrations have already received the types. A `register` function is
    remembered by identity; a registry object (`makeRegistry()`'s, passed whole) also by
    the members it already holds, so a second call, through either, adds nothing. */
+/** @type {WeakSet<object>} */
 const REGISTERED = new WeakSet();
+/** No member held. @type {ReadonlyArray<unknown>} */
+const NONE_HELD = Object.freeze([]);
 
 /** Register every type, once each, in R1's order (R2). `register` is a registry's
  *  `register` function, or the registry itself (anything with a `register` method).
- *  Called again on the same registry it registers nothing, and says how many it added. */
+ *  Called again on the same registry it registers nothing, and says how many it added.
+ *  @param {RegisterType | DoctypeRegistry | null | undefined} register
+ *  @returns {Registered}
+ *  @throws {TypeError} when `register` is neither a function nor an object with a `register` method */
 export function registerDoctypes(register) {
   const target = register && typeof register === "object" && typeof register.register === "function" ? register : null;
-  const fn = target ? (m) => target.register(m) : register;
+  const fn = target ? (/** @type {ContentType} */ m) => target.register(m) : register;
   if (typeof fn !== "function")
     throw new TypeError("registerDoctypes needs a registry's register function, or the registry itself");
-  const key = target || register;
+  /* With no registry, `fn` is `register` itself. */
+  const key = target || fn;
   if (REGISTERED.has(key)) return { registered: 0, why: "the types are already registered here" };
-  const held = target && typeof target.all === "function" ? new Set(target.all().map((m) => m && m.key)) : new Set();
+  const all = target ? target.all : undefined;
+  /** @type {Set<unknown>} */
+  const held = target && typeof all === "function" ? new Set(all.call(target).map((m) => m && m.key)) : new Set(NONE_HELD);
   let n = 0;
   for (const t of DOCTYPES) {
     if (held.has(t.key)) continue;

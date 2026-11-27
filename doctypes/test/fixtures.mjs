@@ -12,13 +12,44 @@
  */
 import { combine, validate, list } from "../../jurisdictions/index.mjs";
 
-const p = (re, flags) => (flags ? { re, flags } : { re });
+/** @import { Profile, View, Pattern, VocabularyPattern, CodeSections } from "../../jurisdictions/index.mjs" */
+
+/**
+ * A code's section forms by the code's key, as `withCodeSections` takes them: `null` removes that code's forms.
+ * @typedef {{ readonly [code: string]: CodeSections | null }} CodeSectionsByKey
+ */
+/**
+ * One meeting row of `calendarHtml`: its id, body, date as `M/D/YYYY`, and its status, agenda id and minutes id where
+ * it has them.
+ * @typedef {readonly [string, string, string, (string | null)?, string?, string?]} CalendarRow
+ */
+/**
+ * `calendarHtml`'s options: the page's view state and the date range its year list shows.
+ * @typedef {Object} CalendarPage
+ * @property {string} [state]
+ * @property {string} [range]
+ */
+
+/** A profile's pattern: its source and, where given, its flags.
+ *  @param {string} re
+ *  @param {string} [flags]
+ *  @returns {Pattern} */
+const p = (re, flags) => {
+  if (flags) return { re, flags };
+  return { re };
+};
+/** A vocabulary fact of a test profile: its pattern, `basis: "TEST"`, and any further member given.
+ *  @param {Pattern} pattern
+ *  @param {{ basis?: string }} [extra]
+ *  @returns {VocabularyPattern} */
 const fact = (pattern, extra) => ({ pattern, basis: "TEST", ...(extra || {}) });
 
 /** Port Alder's code's section form, unlike the first profile's: `<chapter>-<section>`
- *  numbers, `(a)` then `(i)` subsections. */
+ *  numbers, `(a)` then `(i)` subsections.
+ *  @type {{ readonly pac: CodeSections }} */
 export const PA_SECTIONS = { pac: { number: p("\\d{1,2}-\\d{2}"), separators: "-", markers: ["paren_letter", "roman"] } };
 
+/** @type {Profile} */
 export const PORT_ALDER = {
   id: "port-alder-test", name: "Port Alder (test)", covers: ["Town of Port Alder"], test: true,
   spaces: {
@@ -48,6 +79,7 @@ export const PORT_ALDER = {
   practice: { minutes_due_days: { value: 10, basis: "TEST" } },
 };
 
+/** @type {Profile} */
 export const LAKEMONT = {
   id: "lakemont-test", name: "Lakemont (test)", covers: ["City of Lakemont"], test: true,
   spaces: {
@@ -72,7 +104,10 @@ export const LAKEMONT = {
 };
 
 /** `jurisdictions.combine` of these profiles, as a caller would pass it. Every
- *  fixture profile must validate, or the tests are not testing what they claim. */
+ *  fixture profile must validate, or the tests are not testing what they claim.
+ *  @param {...Profile} profiles
+ *  @returns {View}
+ *  @throws {Error} when a profile is invalid or the profiles do not combine */
 export function view(...profiles) {
   for (const pr of profiles) {
     const v = validate(pr);
@@ -85,25 +120,40 @@ export function view(...profiles) {
 
 /** A made-up profile with its codes' section forms (jurisdictions R6) replaced: `null`
  *  removes a code's forms. The result goes through `view`, so it is validated and combined
- *  as any profile is. */
+ *  as any profile is.
+ *  @param {Profile} profile
+ *  @param {CodeSectionsByKey} sections
+ *  @returns {Profile}
+ *  @throws {TypeError} when the profile has no vocabulary or no codes, as reading them would */
 export function withCodeSections(profile, sections) {
   const out = structuredClone(profile);
-  out.vocabulary.codes = out.vocabulary.codes.map((c) => {
+  const vocabulary = out.vocabulary;
+  if (vocabulary === undefined) throw new TypeError("Cannot read properties of undefined (reading 'codes')");
+  const codes = vocabulary.codes;
+  if (codes === undefined) throw new TypeError("Cannot read properties of undefined (reading 'map')");
+  vocabulary.codes = codes.map((c) => {
     if (!Object.hasOwn(sections, c.key)) return c;
     const { sections: _drop, ...rest } = c;
-    return sections[c.key] ? { ...rest, sections: sections[c.key] } : rest;
+    const given = sections[c.key];
+    return given ? { ...rest, sections: given } : rest;
   });
   return out;
 }
 
-/** A view with no profile in it: nothing local is known. */
-export const EMPTY = combine([]).view;
+/** A view with no profile in it: nothing local is known. `combine([])` always combines (nothing in it can fail).
+ *  @type {View} */
+export const EMPTY = (() => {
+  const r = combine([]);
+  if (!r.ok) throw new Error(`no profiles do not combine: ${JSON.stringify(r.errors)}`);
+  return r.view;
+})();
 
 /** The view of every NON-TEST profile `jurisdictions` holds, PASSED EXPLICITLY: the real
  *  documents the converted suites read were published where the held profile describes, and
  *  this is the view an instance using that profile hands its readers. Where a document came
  *  from is provenance, not a place in the product (layers.md, "No jurisdiction in the
- *  product", rule 6); the test names no place, it asks `jurisdictions` for what it holds. */
+ *  product", rule 6); the test names no place, it asks `jurisdictions` for what it holds.
+ *  @type {View} */
 export const HELD = (() => {
   const r = combine(list().filter((x) => !x.test).map((x) => x.id));
   if (!r.ok) throw new Error(`the held profiles do not combine: ${JSON.stringify(r.errors)}`);
@@ -113,7 +163,8 @@ export const HELD = (() => {
 /* ---- documents written in Port Alder's vocabulary ---- */
 
 /** An agenda: file numbers alone on their lines, item blocks, a masthead on every
- *  page, the jurisdiction's furniture between pages. */
+ *  page, the jurisdiction's furniture between pages.
+ *  @type {string} */
 export const PA_AGENDA = [
   "Tuesday, March 3, 2026",
   "Harbor Commission",
@@ -146,7 +197,8 @@ export const PA_AGENDA = [
   "PA-101",
 ].join("\n");
 
-/** Minutes: masthead at page rate, a motion with its vote, a roster, the frame. */
+/** Minutes: masthead at page rate, a motion with its vote, a roster, the frame.
+ *  @type {string} */
 export const PA_MINUTES = [
   "Wednesday, March 4, 2026",
   "Harbor Commission",
@@ -189,7 +241,8 @@ export const PA_MINUTES = [
   "There Being No Further Business, The Harbor Commission Adjourned The Meeting At 7:02 P.M.",
 ].join("\n");
 
-/** A staff memo in the Port Alder template, citing a bylaw, the code and a file. */
+/** A staff memo in the Port Alder template, citing a bylaw, the code and a file.
+ *  @type {string} */
 export const PA_REPORT = [
   "MEMO TO THE BOARD",
   "TO: Select Board FROM: Town Manager SUBJECT: Mooring Fees DATE: March 1, 2026",
@@ -205,7 +258,8 @@ export const PA_REPORT = [
   "Town Manager",
 ].join("\n");
 
-/** A bylaw: body above its own blank caption, recitals, the operative voice. */
+/** A bylaw: body above its own blank caption, recitals, the operative voice.
+ *  @type {string} */
 export const PA_BYLAW = [
   "HARBOR COMMISSION",
   "BYLAW NO. ____ T.B.S.",
@@ -217,7 +271,8 @@ export const PA_BYLAW = [
   "SECTION 1. P.A.C. Section 4.12 is hereby amended to read as set out below.",
 ].join("\n");
 
-/** A directory: six addresses at one domain, a title line naming it. */
+/** A directory: six addresses at one domain, a title line naming it.
+ *  @type {string} */
 export const PA_DIRECTORY = [
   "Harbor Staff Directory",
   "Ana Reyes, Harbor Master  areyes@portalder.test  555-201-0001",
@@ -228,7 +283,8 @@ export const PA_DIRECTORY = [
   "Fay Lin, Engineer  flin@portalder.test  555-201-0006",
 ].join("\n");
 
-/** A section of Port Alder's code, as its codifier would serve it. */
+/** A section of Port Alder's code, as its codifier would serve it.
+ *  @type {string} */
 export const PA_CODE = [
   "4-12 Mooring fees.",
   "(a)",
@@ -244,10 +300,14 @@ export const PA_CODE = [
 
 /* ---- HTML captures, for the layered pipeline ---- */
 
+/** The page's hidden view state. @param {string} v @returns {string} */
 const vs = (v) => `<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="${v}" />`;
 
 /** A meeting calendar served by ASP.NET WebForms (CERTAIN), in the record vendor's
- *  page shape; `rows` are [id, body, "M/D/YYYY", status?, agendaId?, minutesId?]. */
+ *  page shape; `rows` are [id, body, "M/D/YYYY", status?, agendaId?, minutesId?].
+ *  @param {ReadonlyArray<CalendarRow>} rows
+ *  @param {CalendarPage} [page]
+ *  @returns {string} */
 export function calendarHtml(rows, { state = "abc", range = "This Month" } = {}) {
   const tr = rows.map(([id, body, date, status, ag, mi]) =>
     `<tr><td><a href="MeetingDetail.aspx?ID=${id}&amp;GUID=x">${body}${status ? " - " + status : ""}</a></td>`
@@ -262,7 +322,9 @@ export function calendarHtml(rows, { state = "abc", range = "This Month" } = {})
 </main></form></body></html>`;
 }
 
-/** A client-rendered shell: an empty mount point, a framework marker, no prose. */
+/** A client-rendered shell: an empty mount point, a framework marker, no prose.
+ *  @param {string} [stamp]
+ *  @returns {string} */
 export function shellHtml(stamp = "1") {
   return `<html><head><script src="/app.${stamp}.js"></script></head><body>`
     + `<div id="root"></div><script>window.__INITIAL_STATE__={}</script>`
@@ -272,13 +334,15 @@ export function shellHtml(stamp = "1") {
 /* ---- a policy in the test profile's series (jurisdictions R68: Port Ellery, not the first profile) ---- */
 
 /** `jurisdictions`' own test profile, whose policy series and header labels differ from the first profile's in every
- *  field: a Harbour Standing Order numbered `7/24`, its header printed under Port Ellery's labels. */
+ *  field: a Harbour Standing Order numbered `7/24`, its header printed under Port Ellery's labels.
+ *  @type {View} */
 export const PE = (() => {
   const r = combine(list().filter((x) => x.test).map((x) => x.id));
   if (!r.ok) throw new Error(`the test profile does not combine: ${JSON.stringify(r.errors)}`);
   return r.view;
 })();
 
+/** @type {string} */
 export const PE_POLICY = [
   "PORT ELLERY HARBOUR AUTHORITY",
   "HARBOUR STANDING ORDER",

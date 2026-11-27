@@ -29,10 +29,71 @@
  * weeks after a meeting are a fact about the body, not a gap in the record.
  */
 import { CONFIDENCE, CONTRACT, entity, referential, temporal, diffEntities, readerView, practiceValue } from "../docprofile/doctypes/index.mjs";
-import { event, worstSignificance, isMeaningful, bySeverity, unescapeHtml } from "../site-profiles/index.mjs";
+import { event, worstSignificance, isMeaningful, bySeverity, unescapeHtml, SIGNIFICANCE } from "../site-profiles/index.mjs";
 import { evaluateRule, localDay, reasonText } from "../bio-plane/src/civil-time/index.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
 import { counted, spend } from "./windows.mjs";
+
+/** @import { DoctypeContext, Detection, Entity, EntityFact, Connection, PracticeValue, ReaderView } from "../docprofile/doctypes/index.mjs" */
+/** @import { EventHead } from "../site-profiles/index.mjs" */
+/** @import { RuleDue, RuleUndetermined, Refusal } from "../bio-plane/src/civil-time/kinds.mjs" */
+
+/**
+ * The window a calendar shows (R41): the range control's own name for it, whether it moves, and the first and last
+ * dates on the page as UTC milliseconds (`NaN` both when a date on it is not a date; null with no dates).
+ * @typedef {Object} MeetingWindow
+ * @property {string | null} named
+ * @property {boolean} relative
+ * @property {number | null} from
+ * @property {number | null} to
+ */
+/**
+ * What `parse` reads of a calendar: one entity per meeting, the window, and when it was captured.
+ * @typedef {Object} MeetingCalendarReading
+ * @property {Entity[]} entities
+ * @property {MeetingWindow} window
+ * @property {string | null} at
+ */
+/**
+ * When minutes of a meeting are due (`minutesDue`): the day, its unit, the period and the zone it was counted in, or
+ * no day and why.
+ * @typedef {{ due: string, unit: string, amount: number, zone: string } | { due: null, unit?: string, why: string }} MinutesDue
+ */
+/**
+ * civil-time's answer to the count of minutes due, or what the count threw.
+ * @typedef {{ ok: true, answer: RuleDue | RuleUndetermined | Refusal } | { ok: false, thrown: unknown }} DueCount
+ */
+/**
+ * What `assess` confirmed unchanged: of how many meetings, how many are intact, the window's name, and how many
+ * scrolled out of it.
+ * @typedef {Object} MeetingConfirmed
+ * @property {number} entries
+ * @property {number} intact
+ * @property {string | null} window
+ * @property {number} scrolled_out
+ */
+/**
+ * What `assess` answers of two readings (docprofile's `TypeAssessment`, with the worst significance).
+ * @typedef {Object} MeetingCalendarAssessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {MeetingConfirmed | null} confirmed
+ * @property {string} why
+ */
+/**
+ * The meeting calendar's content type, as `counted` hands it back: docprofile's `ContentType` with this type's own reading.
+ * @typedef {Object} MeetingCalendarType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {boolean} [fallback] never present: this type is not the fallback
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detection} detect
+ * @property {(ctx: DoctypeContext) => MeetingCalendarReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => MeetingCalendarAssessment} assess
+ * @property {(before: object | null | undefined, after: object | null | undefined, ctx: DoctypeContext) => Connection[]} connections
+ */
 
 /* How long after a meeting minutes stop being merely late is the JURISDICTION'S
    practice, not this reader's: it is the view's `practice.minutes_due_days`, with the
@@ -46,73 +107,142 @@ import { counted, spend } from "./windows.mjs";
  *  from the meeting's day in the profile's time zone.
  *  `{due, unit}`, or `{due: null, why}` when no profile states the practice or the count
  *  cannot be made (no weekend stated, a year the closures do not cover), never a guess. */
+/** civil-time's count of the practice's period from `day`, or what the count threw. A rule's `closures` left undefined
+ *  is a rule without one: civil-time reads the member and nothing else of it.
+ *  @param {PracticeValue} p @param {string} count @param {string | null} closures @param {string} day @param {string} zone
+ *  @param {ReaderView} view
+ *  @returns {DueCount} */
+function countDue(p, count, closures, day, zone, view) {
+  try {
+    return { ok: true, answer: evaluateRule({ rule: { rule: "minutes_due_days", units: "days", amount: p.value, count,
+                                                      direction: "forward", basis: p.basis || null, starts: "act",
+                                                      closures: closures || undefined },
+                                              anchor: { value: day, precision: "day", zone }, view }) };
+  }
+  catch (e) { return { ok: false, thrown: e }; }
+}
+
+/** @param {DoctypeContext} ctx @param {string} day @returns {MinutesDue} */
 function minutesDue(ctx, day) {
   const view = readerView(ctx);
   /* The period and its unit through docprofile's shared reader (as docprofile's own seed
      reads it); the closure list it counts on from the view's same entry (jurisdictions R7). */
   const p = practiceValue(ctx, "minutes_due_days");
   if (!p) return { due: null, why: localize("doctypes.meeting-calendar.no_practice", "no active jurisdiction profile states how long minutes usually take") };
-  const entry = view.practice && view.practice.minutes_due_days;
-  const closures = entry && typeof entry.closures === "string" ? entry.closures : null;
+  const practice = view.practice;
+  const entry = practice && practice.minutes_due_days;
+  const named = entry ? entry.closures : undefined;
+  const closures = entry && typeof named === "string" ? named : null;
   const count = p.count === "business" ? "business" : "calendar";
-  const zone = view.time_zone && typeof view.time_zone.value === "string" ? view.time_zone.value : "UTC";
+  const full = "time_zone" in view ? view : null;   // a view without the member reads it as absent
+  const tz = full ? full.time_zone : undefined;
+  const tzValue = tz ? tz.value : undefined;
+  const zone = tz && typeof tzValue === "string" ? tzValue : "UTC";
   /* The closures a business count skips are the profile's own: the list the practice names
      (`closures`) when it names one, else the office calendar (civil-time R9). */
-  const rule = { rule: "minutes_due_days", units: "days", amount: p.value, count, direction: "forward",
-                 basis: p.basis || null, starts: "act", ...(closures ? { closures } : {}) };
-  let r;
-  try { r = evaluateRule({ rule, anchor: { value: day, precision: "day", zone }, view }); }
-  catch (e) { return { due: null, why: localize("doctypes.meeting-calendar.period_uncounted", "the period could not be counted: {reason}", { reason: String((e && e.message) || e) }) }; }
+  const tried = countDue(p, count, closures, day, zone, view);
+  if (!tried.ok) { const e = tried.thrown; return { due: null, why: localize("doctypes.meeting-calendar.period_uncounted", "the period could not be counted: {reason}", { reason: String((e instanceof Error && e.message) || e) }) }; }
   const unit = count === "business" ? "business days" : "days";
-  if (!r || r.refused || r.undetermined || !r.due)
-    return { due: null, unit, why: localize("doctypes.meeting-calendar.period_not_counted_here", "the jurisdiction's {amount} {unit} could not be counted from this meeting: {reason}", { amount: String(p.value), unit, reason: r && r.why ? reasonText(r.why) : "no due day" }) };
+  const answer = tried.answer;
+  /* Each member read as the old `r.refused`, `r.undetermined`, `r.due` and `r.why` read it: undefined where absent. */
+  const refused = "refused" in answer ? answer.refused : undefined;
+  const undetermined = "undetermined" in answer ? answer.undetermined : undefined;
+  const due = "due" in answer ? answer.due : undefined;
+  const why = "why" in answer ? answer.why : undefined;
+  if (!answer || refused || undetermined || !due)
+    return { due: null, unit, why: localize("doctypes.meeting-calendar.period_not_counted_here", "the jurisdiction's {amount} {unit} could not be counted from this meeting: {reason}", { amount: String(p.value), unit, reason: answer && why ? reasonText(why) : "no due day" }) };
   /* An uncertain due is the body's latest candidate: lateness is only raised after it (K1444 (i)). */
-  const d = r.due.candidates ? r.due.candidates[r.due.candidates.length - 1] : r.due;
+  const d = "candidates" in due ? due.candidates[due.candidates.length - 1] : due;
+  if (d === undefined) throw new TypeError("Cannot read properties of undefined (reading 'value')");
   return { due: String(d.value).slice(0, 10), unit, amount: p.value, zone };
 }
 
 /** What lies inside the page's `<main>` element, from the end of its opening tag to its last `</main>`, or the whole text
  *  when it holds none. Only the first opening tag can be the one: a `</main>` after a later one is after this one too.
  *  (R40: found without trying every `<main` against the rest of the text.) */
+/** @param {string} raw @returns {string} */
 function insideMain(raw) {
   const open = /<main\b/i.exec(raw);
   if (!open) return raw;
   const gt = raw.indexOf(">", open.index + open[0].length);
   if (gt < 0) return raw;
-  const close = /<\/main>/gi;
-  close.lastIndex = gt + 1;
+  /* The last `</main>` of the text, kept only when it starts after the opening tag's `>`: one `</main>` cannot overlap
+     another, so the last of all of them is the last of those found from there. */
   let last = -1;
-  for (let c; (c = close.exec(raw)) !== null;) last = c.index;
-  return last < 0 ? raw : raw.slice(gt + 1, last);
+  for (const c of raw.matchAll(/<\/main>/gi)) last = c.index;
+  return last < gt + 1 ? raw : raw.slice(gt + 1, last);
 }
 
 /** The table rows of the text, `<tr ...>` to the next `</tr>`, one at a time (R40: no list of all of them, and no tag
  *  that never closes tried against the rest of the text). */
+/** The first match `it` yields that starts at or after `at`, or null when none is left.
+ *  @param {Iterator<RegExpExecArray, unknown, undefined>} it @param {number} at @returns {RegExpExecArray | null} */
+function firstFrom(it, at) {
+  for (;;) {
+    const n = it.next();
+    if (n.done) return null;
+    if (n.value.index >= at) return n.value;
+  }
+}
+
+/** @param {string} scope @returns {Generator<string, void, void>} */
 function* rowsOf(scope) {
   const lastGt = scope.lastIndexOf(">");
   if (lastGt < 0) return;
   const head = scope.slice(0, lastGt + 1);   // a tag opening after the last ">" never ends
-  const open = /<tr\b[^>]*>/gi, close = /<\/tr>/gi;
+  /* One pass of each pattern, from the start, skipping what lies before where the search would have started: an
+     opening tag holds no ">" but its last, and a row ends on one, so no tag found from the start runs across a row's
+     end; `</tr>` cannot overlap another. So each is the first found from there, as a search started there finds. */
+  const opens = head.matchAll(/<tr\b[^>]*>/gi), closes = scope.matchAll(/<\/tr>/gi);
   for (let at = 0; ;) {
-    open.lastIndex = at;
-    const o = open.exec(head);
+    const o = firstFrom(opens, at);
     if (!o) return;
-    close.lastIndex = o.index + o[0].length;
-    const c = close.exec(scope);
+    const c = firstFrom(closes, o.index + o[0].length);
     if (!c) return;
     at = c.index + c[0].length;
     yield scope.slice(o.index, at);
   }
 }
 
+/** A group of a match as a number, `NaN` where it took no part, as `+` reads an absent one. @param {string | undefined} g @returns {number} */
+const num = (g) => (g === undefined ? NaN : +g);
+/** @param {string} s @returns {number | null} */
 const parseDate = (s) => {
   const m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(s || ""));
   if (!m) return null;
-  return Date.UTC(+m[3], +m[1] - 1, +m[2]);
+  return Date.UTC(num(m[3]), num(m[1]) - 1, num(m[2]));
 };
+/** @param {number | null} t @returns {string | null} */
 const iso = (t) => (t == null ? null : new Date(t).toISOString().slice(0, 10));
+/** A document link's type code, upper-cased, and the document it is. */
+const DOCUMENT_KINDS = new Map([["A", "agenda"], ["M", "minutes"], ["AADA", "agenda"], ["MADA", "minutes"], ["IC", "packet"]]);
+/** A row's documents before any is read: none. @type {ReadonlyArray<[string, string | undefined]>} */
+const NO_DOCS = Object.freeze([]);
 
-export default counted({
+/* What reading a member of a reading that is not there throws, word for word as the old reads threw it: `assess` read
+   `a.entities.length`, `connections` iterated `b.entities`. */
+const MISSING_LENGTH = "Cannot read properties of undefined (reading 'length')";
+const MISSING_ITERABLE = "b.entities is not iterable";
+
+/** Whether `v` is a reading of this type: its entities a list.
+ *  @param {object} v @returns {v is MeetingCalendarReading} */
+function isReading(v) {
+  return "entities" in v && Array.isArray(v.entities);
+}
+
+/** `r` as this type's reading; a `TypeError`, as reading its entities threw, where it is none.
+ *  @param {object | null | undefined} r
+ *  @param {string} missing what reading the absent entities threw
+ *  @returns {MeetingCalendarReading}
+ *  @throws {TypeError} when `r` is absent or holds no list of entities */
+function readingOf(r, missing) {
+  if (r === null || r === undefined) throw new TypeError(`Cannot read properties of ${r} (reading 'entities')`);
+  if (!isReading(r)) throw new TypeError(missing);
+  return r;
+}
+
+/** @type {MeetingCalendarType} */
+const meetingCalendar = {
   key: "meeting_calendar",
   label: "a meeting calendar",
   version: 1,
@@ -123,6 +253,7 @@ export default counted({
 
   detect(ctx) {
     const t = String(ctx.text || "");
+    /** @type {string[]} */
     const signals = [];
     spend(t.length * 3);   // the three tests of the text below each read it once at most
     /* The pattern holds no character an entity stands for, so the text unescaped holds it exactly where the text as it
@@ -187,33 +318,47 @@ export default counted({
        `Math.min`, which throws past about 125,000 arguments. A date that is not a number (`99/99/2026`) makes both ends
        not a number, as `Math.min` and `Math.max` made them. */
     spend(scope.length);
-    let first = null, last = null, nan = false;
+    /** @type {number | null} */
+    let first = null;
+    /** @type {number | null} */
+    let last = null;
+    let nan = false;
     for (const d of scope.matchAll(/\b\d{1,2}\/\d{1,2}\/\d{4}\b/g)) {
       const t = parseDate(d[0]);
       if (t == null) continue;
       if (t !== t) nan = true;
-      if (first === null || t < first) first = t;
-      if (last === null || t > last) last = t;
+      const was0 = first, was1 = last;
+      if (was0 === null || t < was0) first = t;
+      if (was1 === null || t > was1) last = t;
     }
+    const lo = first, hi = last;
+    const value = named ? named[1] : null;
+    if (value === undefined) throw new TypeError("Cannot read properties of undefined (reading 'trim')");
+    /** @type {MeetingWindow} */
     const window = {
-      named: named ? named[1].trim() : null,
-      relative: named ? /this|next|last|current|upcoming|past|month|year|week/i.test(named[1]) : true,
-      from: first === null ? null : nan ? NaN : first,
-      to: last === null ? null : nan ? NaN : last,
+      named: value !== null ? value.trim() : null,
+      relative: value !== null ? /this|next|last|current|upcoming|past|month|year|week/i.test(value) : true,
+      from: lo === null ? null : nan ? NaN : lo,
+      to: hi === null ? null : nan ? NaN : hi,
     };
 
+    /** @type {Entity[]} */
     const entities = [];
     for (const row of rowsOf(scope)) {
       const id = /MeetingDetail\.aspx\?ID=(\d+)/i.exec(row);
       if (!id) continue;
       const flat = row.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-      const docs = {};
+      /** @type {Map<string, string | undefined>} */
+      const docs = new Map(NO_DOCS);
       for (const d of row.match(/View\.ashx\?M=([A-Za-z]+)&ID=(\d+)[^"'\s]*/gi) || []) {
         const c = /M=([A-Za-z]+)&ID=(\d+)/i.exec(d);
+        if (!c) throw new TypeError("Cannot read properties of null (reading '1')");
+        const code = c[1];
+        if (code === undefined) throw new TypeError("Cannot read properties of undefined (reading 'toUpperCase')");
         /* The ADA variants are the same document in an accessible form, so they are
            not separate documents and their presence is not a separate event. */
-        const kind = { A: "agenda", M: "minutes", AADA: "agenda", MADA: "minutes", IC: "packet" }[c[1].toUpperCase()];
-        if (kind && !docs[kind]) docs[kind] = c[2];
+        const kind = DOCUMENT_KINDS.get(code.toUpperCase());
+        if (kind && !docs.get(kind)) docs.set(kind, c[2]);
       }
       const when = parseDate(flat);
       /* The body is the text before the date, which is how Legistar lays a row out.
@@ -223,32 +368,39 @@ export default counted({
          status into the title text ("Rules and Legislation Committee - CANCELLED"),
          so leaving it in means a cancellation moves two facts at once and reports a
          spurious rename beside the real event. Caught on the real page. */
-      const body = flat.split(/\d{1,2}\/\d{1,2}\/\d{4}/)[0]
+      const before = flat.split(/\d{1,2}\/\d{1,2}\/\d{4}/)[0];
+      if (before === undefined) throw new TypeError("Cannot read properties of undefined (reading 'replace')");
+      const body = before
         .replace(/^[*\s]+/, "").replace(/[\s-]*\b(?:CANCELL?ED|RESCHEDULED)\b[\s-]*/gi, " ").trim();
       entities.push(entity(id[1], "meeting", flat.slice(0, 160), {
         body, date: iso(when),
         status: /\bCANCELL?ED\b/i.test(flat) ? "cancelled"
               : /\bRESCHEDULED\b/i.test(flat) ? "rescheduled" : "scheduled",
-        agenda: docs.agenda || null, minutes: docs.minutes || null,
+        agenda: docs.get("agenda") || null, minutes: docs.get("minutes") || null,
       }));
     }
     return { entities, window, at: ctx.at || null };
   },
 
   /** Given two parses, what actually happened. */
-  assess(a, b, ctx) {
+  assess(before, after, ctx) {
     /* A read that found nothing is a failed reader, never an emptied calendar. */
-    if (!a.entities.length || !b.entities.length)
+    const a = readingOf(before, MISSING_LENGTH);
+    const b = a.entities.length ? readingOf(after, MISSING_LENGTH) : null;
+    if (!b || !b.entities.length)
       return { meaningful: null, significance: null, events: [], confirmed: null,
                why: localize("doctypes.meeting-calendar.unread", "the meetings on this calendar could not be read this time, so nothing is claimed about them either way") };
 
     const d = diffEntities(a.entities, b.entities);
+    /** @type {EventHead[]} */
     const events = [];
     const w = b.window;
+    /** @param {EntityFact | undefined} dateIso @returns {boolean | null} */
     const inWindow = (dateIso) => {
-      if (!dateIso || w.from == null || w.to == null) return null;
+      const from = w.from, to = w.to;
+      if (!dateIso || from == null || to == null) return null;
       const t = Date.parse(dateIso + "T00:00:00Z");
-      return t >= w.from && t <= w.to;
+      return t >= from && t <= to;
     };
 
     /* Every event below is built with event(type, ...), which stamps the significance
@@ -272,26 +424,28 @@ export default counted({
 
     for (const alt of d.altered) {
       const f = new Map(alt.moved.map((m) => [m.fact, m]));
-      if (f.has("status")) {
-        const now = f.get("status").now;
+      const status = f.get("status"), date = f.get("date"), body = f.get("body");
+      if (status) {
+        const now = status.now;
         events.push(event(now === "cancelled" ? "cancelled" : now === "rescheduled" ? "rescheduled" : "status_changed",
-                      { key: alt.entity.key, label: alt.entity.label, was: f.get("status").was, now,
-                        why: localize("doctypes.meeting-calendar.status_changed", "a meeting's status changed from {was} to {now}", { was: String(f.get("status").was), now: String(now) }) }));
+                      { key: alt.entity.key, label: alt.entity.label, was: status.was, now,
+                        why: localize("doctypes.meeting-calendar.status_changed", "a meeting's status changed from {was} to {now}", { was: String(status.was), now: String(now) }) }));
       }
-      if (f.has("date"))
+      if (date)
         events.push(event("moved", { key: alt.entity.key, label: alt.entity.label,
-                      was: f.get("date").was, now: f.get("date").now, why: "a meeting's date changed" }));
-      if (f.has("body"))
+                      was: date.was, now: date.now, why: "a meeting's date changed" }));
+      if (body)
         events.push(event("renamed", { key: alt.entity.key,
-                      was: f.get("body").was, now: f.get("body").now,
+                      was: body.was, now: body.now,
                       why: localize("doctypes.meeting-calendar.renamed", "the body holding a meeting is named differently") }));
       /* A document APPEARING is the normal course of business and is a routine
          event with a temporal connection attached. A document DISAPPEARING or being
          SWAPPED is not: a published agenda or set of minutes that stops being the
          one it was is the quiet substitution, and it is an event. */
       for (const kind of ["agenda", "minutes"]) {
-        if (!f.has(kind)) continue;
-        const { was, now } = f.get(kind);
+        const moved = f.get(kind);
+        if (!moved) continue;
+        const { was, now } = moved;
         if (!was && now)
           events.push(event(`${kind}_published`, { key: alt.entity.key, label: alt.entity.label,
                         document: now, why: localize("doctypes.meeting-calendar.published", "{kind} were published for a meeting that had none", { kind }) }));
@@ -318,9 +472,10 @@ export default counted({
     const intact = a.entities.filter((e) =>
       b.entities.some((x) => x.key === e.key && JSON.stringify(x.facts) === JSON.stringify(e.facts))).length;
 
+    /** @type {string[]} */
     const parts = [];
-    if (events.some((e) => e.significance === "event"))
-      parts.push(events.filter((e) => e.significance === "event").length + " needing attention");
+    if (events.some((e) => e.significance === SIGNIFICANCE.EVENT))
+      parts.push(events.filter((e) => e.significance === SIGNIFICANCE.EVENT).length + " needing attention");
     if (scrolled) parts.push(localize("doctypes.meeting-calendar.scrolled", "{count} no longer in the range shown, which is this calendar moving its window", { count: String(scrolled) }));
     if (d.appeared.length) parts.push(`${d.appeared.length} newly listed`);
 
@@ -336,9 +491,12 @@ export default counted({
   },
 
   /** What this calendar implies about relationships and about time. */
-  connections(a, b, ctx) {
+  connections(before, after, ctx) {
+    const b = readingOf(after, MISSING_ITERABLE);
+    /** @type {Connection[]} */
     const out = [];
-    const now = ctx.now ? Date.parse(ctx.now) : Date.now();
+    const given = ctx.now;
+    const now = given ? Date.parse(given) : Date.now();
     for (const m of b.entities) {
       const self = `meeting:${m.key}`;
       /* REFERENTIAL: a document belongs to a meeting, and a meeting belongs to a
@@ -356,28 +514,33 @@ export default counted({
       /* TEMPORAL: a sequence, and its most useful form is an expected thing that
          has not arrived. A meeting whose date has passed with no minutes is a fact
          about the body rather than a hole in the record, and it carries a date. */
-      const when = m.facts.date ? Date.parse(m.facts.date + "T00:00:00Z") : null;
-      if (when == null) continue;
+      /* A parse's date is a day as text or null; a date of another kind is read as none. */
+      const fact = m.facts.date;
+      const date = typeof fact === "string" ? fact : null;
+      if (!date) continue;
+      const when = Date.parse(date + "T00:00:00Z");
       if (m.facts.status === "cancelled") continue;   // nothing is owed for a meeting that did not happen
       if (m.facts.minutes)
         out.push(temporal(self, `document:${m.facts.minutes}`, "minutes_published_after",
-          { at: m.facts.date, why: localize("doctypes.meeting-calendar.minutes_exist", "minutes for this meeting exist, so the meeting was recorded") }));
+          { at: date, why: localize("doctypes.meeting-calendar.minutes_exist", "minutes for this meeting exist, so the meeting was recorded") }));
       else if (when < now) {
-        const due = minutesDue(ctx, m.facts.date);
+        const due = minutesDue(ctx, date);
         const today = due.due ? localDay(new Date(now).toISOString().replace(/\.\d{3}Z$/, "Z"), due.zone) : null;
         out.push(temporal(self, null, "minutes_not_yet_published",
-          { at: m.facts.date, expected_by: due.due,
+          { at: date, expected_by: due.due,
             why: !due.due
-              ? localize("doctypes.meeting-calendar.due_unknown", "this meeting has taken place and no minutes are offered yet; when they are due is not known, because {why}", { why: String(due.why) })
+              ? localize("doctypes.meeting-calendar.due_unknown", "this meeting has taken place and no minutes are offered yet; when they are due is not known, because {why}", { why: String("why" in due ? due.why : undefined) })
               : typeof today === "string" && today > due.due
               ? localize("doctypes.meeting-calendar.overdue", "this meeting was held more than {amount} {unit} ago, longer than minutes usually take here (the jurisdiction's measured practice), and this calendar still offers no minutes", { amount: String(due.amount), unit: String(due.unit) })
               : localize("doctypes.meeting-calendar.taken_place", "this meeting has taken place and no minutes are offered yet") }));
       }
       if (!m.facts.agenda && when > now)
         out.push(temporal(self, null, "agenda_not_yet_published",
-          { at: m.facts.date, expected_by: m.facts.date,
+          { at: date, expected_by: date,
             why: localize("doctypes.meeting-calendar.upcoming", "this meeting is upcoming and no agenda is offered yet") }));
     }
     return out;
   },
-});
+};
+
+export default counted(meetingCalendar);
