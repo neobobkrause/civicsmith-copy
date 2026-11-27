@@ -18,8 +18,11 @@
  */
 import { CONFIDENCE } from "../recogniser.mjs";
 import { REGION } from "../region.mjs";
+/** @import { Detection } from "../recogniser.mjs" */
+/** @import { StackHandler, Rule, Part } from "../region.mjs" */
 
-export default {
+/** @type {{ conservative: boolean, fallback: boolean, detect: () => Detection, kind: () => string, rules: () => Rule[], renderCritical: () => boolean, ignorable: (part: Part) => boolean } & StackHandler} */
+const handler = {
   key: "conservative",
   label: "an unrecognised document",
   version: 1,
@@ -33,12 +36,15 @@ export default {
 
   /* Never claims a match: the registry reaches this handler by falling through,
      not by detection, so a stack handler can never lose to it. */
+  /** @returns {Detection} */
   detect() { return { match: false, confidence: CONFIDENCE.NONE }; },
+  /** @returns {string} */
   kind() { return "unknown"; },
 
   /* The ONLY rules here are ones that are true of the HTTP and HTML machinery
      itself rather than of any particular stack, and every one is per-response by
      definition rather than by observation. Nothing else is assumed. */
+  /** @returns {Rule[]} */
   rules() {
     return [
       { key: "csp_nonce", region: REGION.MECHANICAL, label: "a one-time security token",
@@ -51,11 +57,15 @@ export default {
   /* With no idea what this document is, every part it names might be load-bearing
      for how it reads. So a missing part refuses the render, which is where the
      viewer started before fidelity had levels, and is correct in ignorance. */
+  /** @returns {boolean} */
   renderCritical() { return true; },
   /* Deliberate non-fetches are still not absences: a third party's advertising
      was never part of the document under any handler. */
+  /** @param {Part} part @returns {boolean} */
   ignorable(part) {
     return part.reason === "THIRD_PARTY" || part.reason === "OUTSIDE_THE_DOCUMENT"
         || part.reason === "COLLAPSED_SRCSET_FAMILY";
   },
 };
+
+export default handler;

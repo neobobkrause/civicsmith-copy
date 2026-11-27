@@ -30,9 +30,63 @@
    `possible`; the ladder is still one ladder. */
 export const CONFIDENCE = { CERTAIN: "certain", LIKELY: "likely", POSSIBLE: "possible", NONE: "none" };
 
-const RANK = { none: 0, possible: 1, likely: 2, certain: 3 };
-/** Where a confidence sits on the single ladder, for comparing two detections. */
-export function confidenceRank(c) { return typeof c === "string" && Object.hasOwn(RANK, c) ? RANK[c] : 0; }
+/**
+ * A value of the one ladder, `CONFIDENCE`'s four.
+ * @typedef {string} Confidence
+ */
+
+/**
+ * What a recogniser's `detect` answers: a match carries its confidence.
+ * @typedef {{ match: true, confidence: Confidence, signals?: string[] } | { match: false, confidence?: Confidence, signals?: string[] }} Detection
+ */
+
+/**
+ * A recogniser for one axis, whose `detect` reads that axis's context.
+ * @template C
+ * @typedef {{ key: string, label?: string, version?: number, fallback?: boolean, detect: (ctx: C) => (Detection | null | undefined) }} Recogniser
+ */
+
+/**
+ * One member that matched, as `recognise` lists it.
+ * @typedef {Object} Considered
+ * @property {string} key
+ * @property {Confidence} confidence
+ * @property {string[]} signals
+ */
+
+/**
+ * What `recognise` answers. `member` is absent only from a registry with no members.
+ * @template M
+ * @typedef {Object} Recognition
+ * @property {M | undefined} member
+ * @property {Confidence} confidence
+ * @property {string[]} signals
+ * @property {Considered[]} considered
+ * @property {boolean} matched
+ */
+
+/**
+ * @template M
+ * @typedef {Object} RegistryOptions
+ * @property {(m: M) => boolean} [isFallback] names the member answered when nothing matches
+ */
+
+/**
+ * One axis's registry, its members most specific first.
+ * @template C
+ * @template {Recogniser<C>} M
+ * @typedef {Object} Registry
+ * @property {(m: M) => M} register
+ * @property {() => M[]} all
+ * @property {() => (M | undefined)} fallbackMember
+ * @property {(ctx: C) => Recognition<M>} recognise
+ */
+
+const RANK = new Map([["none", 0], ["possible", 1], ["likely", 2], ["certain", 3]]);
+/** Where a confidence sits on the single ladder, for comparing two detections.
+ *  @param {unknown} c
+ *  @returns {number} */
+export function confidenceRank(c) { return typeof c === "string" ? RANK.get(c) ?? 0 : 0; }
 
 /** Build a recogniser registry for one axis.
  *
@@ -44,26 +98,39 @@ export function confidenceRank(c) { return typeof c === "string" && Object.hasOw
  *  `recognise(ctx)` always returns a member: an unrecognised capture gets the
  *  fallback rather than an error, because refusing to profile would just move the
  *  special case back out into every caller. */
+/**
+ * @template C
+ * @template {Recogniser<C>} M
+ * @param {RegistryOptions<M>} [opts]
+ * @returns {Registry<C, M>}
+ */
 export function makeRegistry(opts = {}) {
   const isFallback = opts.isFallback || ((m) => m.fallback === true);
+  /** @type {M[]} */
   const members = [];
+  /** @type {Registry<C, M>} */
   const registry = {
     register(m) { members.push(m); return m; },
     all() { return members.slice(); },
     fallbackMember() { return members.find(isFallback) || members[members.length - 1]; },
     recognise(ctx) {
+      /** @type {Considered[]} */
       const considered = [];
+      /** @type {{ member: M, confidence: Confidence, signals?: string[] } | null} */
       let best = null;
       for (const m of members) {
+        /** @type {Detection} */
         const d = m.detect(ctx) || { match: false };
         if (!d.match) continue;
         considered.push({ key: m.key, confidence: d.confidence, signals: d.signals || [] });
-        if (!best || confidenceRank(d.confidence) > confidenceRank(best.confidence)) best = { member: m, ...d };
+        const held = best;
+        if (!held || confidenceRank(d.confidence) > confidenceRank(held.confidence)) best = { member: m, ...d };
         if (d.confidence === CONFIDENCE.CERTAIN) break;
       }
-      if (!best)
+      const won = best;
+      if (!won)
         return { member: registry.fallbackMember(), confidence: CONFIDENCE.NONE, signals: [], considered, matched: false };
-      return { member: best.member, confidence: best.confidence, signals: best.signals || [], considered, matched: true };
+      return { member: won.member, confidence: won.confidence, signals: won.signals || [], considered, matched: true };
     },
   };
   return registry;

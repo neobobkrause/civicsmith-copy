@@ -6,11 +6,11 @@ import assert from "node:assert/strict";
 import { identify, profileRecord, CONFIDENCE } from "../index.mjs";
 import { shellHtml } from "./fixtures.mjs";
 
-const csv = (bytes) => {
+const csv = (/** @type {number} */ bytes) => {
   const row = "INFO-2026-0177,2026-03-20,Oakland,Public Works,12345.67,paid\n";
   return "id,date,city,dept,amount,status\n" + row.repeat(Math.ceil(bytes / row.length));
 };
-const prose = (bytes) => "The harbor reopened today after the council voted. ".repeat(Math.ceil(bytes / 50));
+const prose = (/** @type {number} */ bytes) => "The harbor reopened today after the council voted. ".repeat(Math.ceil(bytes / 50));
 
 const SIZES = [20 * 1024, 1024 * 1024, 9 * 1000 * 1000];
 
