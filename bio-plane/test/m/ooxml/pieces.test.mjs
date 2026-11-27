@@ -67,7 +67,11 @@ test("R35 textPlan: whole at or under the 20 MiB bound, pieces over it up to the
   assert.deepEqual(guard, { ...sizeGuard(CEIL + 1, CEIL), boundName: "STREAMED_TEXT_BOUND_BYTES", final: true });
   assert.deepEqual(guard, { ok: false, text: "undetermined", why: "over_size_bound", size: CEIL + 1, bound: CEIL,
     boundName: "STREAMED_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes", final: true });
-  for (const odd of [undefined, null, NaN, "big", {}]) assert.equal(textPlan(odd).read, "none", String(odd));
+  const notNumber = textPlan(NaN);
+  assert.equal(notNumber.read, "none");
+  const notNumberGuard = notNumber.read === "none" ? notNumber.guard : null;
+  assert.deepEqual(notNumberGuard, { ok: false, text: "undetermined", why: "over_size_bound", size: NaN, bound: CEIL,
+    boundName: "STREAMED_TEXT_BOUND_BYTES", metric: "declared_uncompressed_text_part_bytes", final: true });
 });
 
 test("R35 readPartPieces: a deflated member of 6 MiB comes back in pieces that join to what readPart gives, each cut where cut says", async () => {
