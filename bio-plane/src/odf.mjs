@@ -373,7 +373,7 @@ import { word, localize } from "./setup-words/index.mjs";
  * @typedef {Object} PartsFailure parts()'s answer on failure (R3)
  * @property {false} ok
  * @property {string} container
- * @property {string} why
+ * @property {string | undefined} why the discriminator's reason; undefined where it states none
  * @property {string | null} part
  * @property {string | null} flavourDeclared
  * @property {string[]} signals
@@ -418,7 +418,7 @@ import { word, localize } from "./setup-words/index.mjs";
  */
 /** @typedef {BoundMarker | TextStatement} TextUndetermined */
 /** @typedef {{ kind: string, ref: string, part: string, mime: string | null, name: string | null }} ImageRef an image's unit, built by ooxml */
-/** @typedef {{ images: ImageRef[] | null, imagesWhy?: string }} ImagesPart text()'s `images` (R30), added by ooxml's withContainerImages */
+/** @typedef {{ images?: ImageRef[] | null, imagesWhy?: string }} ImagesPart text()'s `images` (R30), added by ooxml's withContainerImages; absent where no container was read */
 
 const UTF8 = new TextDecoder();                // UTF-8, replacing what does not decode
 
@@ -605,8 +605,10 @@ function odfRow(flavour) {
    * these entries project, the honest outcome is a loud failure at module
    * load rather than three entries silently detecting nothing. (Every
    * `partMap:"odf"` row carries its `mimetype`.) */
-  if (!row || !("mimetype" in row)) throw new Error(`odf.mjs: no partMap:"odf" row for "${flavour}" in ooxml.mjs`);
-  return row;
+  if (!row || row.partMap !== "odf" || typeof row.mimetype !== "string") throw new Error(`odf.mjs: no partMap:"odf" row for "${flavour}" in ooxml.mjs`);
+  /** @type {OdfRow} the row, its `partMap` and `mimetype` as checked above */
+  const checked = { ...row, partMap: row.partMap, mimetype: row.mimetype };
+  return checked;
 }
 
 export const ODT_ROW = odfRow("odt");
@@ -1296,13 +1298,14 @@ async function odfPartsUnguarded(row, bytes) {
    * the text-bearing parts, from the central directory BEFORE inflation. For
    * OpenDocument there is exactly one: content.xml. */
   const declared = declaredTextBytes(container, (/** @type {string} */ n) => n === CONTENT_PART);
-  const guardR = sizeGuard(declared.total);
+  const guardR = sizeGuard(declared.total, MEASURED_OOXML_TEXT_BOUND_BYTES);
   /* R35 (F7; BOB K4489): a content.xml over the bound is NOT read in pieces, and is
    * stated as it always was, with its size, and now as `final`: this reader
    * holds the part as one string that about fifteen walks slice and re-walk,
    * and R45's own bound stops a sheet of that size whatever is done. */
   /** @type {SizeMarker | null} */
-  const guard = guardR.ok || guardR.bound === undefined ? null : { ...guardR, ok: false, final: true };
+  const guard = guardR.ok ? null : { ok: false, text: guardR.text, why: guardR.why, size: declared.total,
+    bound: MEASURED_OOXML_TEXT_BOUND_BYTES, boundName: guardR.boundName, metric: guardR.metric, final: true };
 
   /** @type {PartStatement[]} */
   const statements = [];

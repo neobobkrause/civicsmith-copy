@@ -89,6 +89,7 @@ test("R55 isOdfTextPart: true exactly for content.xml, styles.xml and meta.xml, 
 test("R55 a caller sums ooxml's declaredTextBytes over an ODF container with it", () => {
   const bytes = buildZip(members("odt", { body: "<text:p>x</text:p>", meta: metaXml({}), extra: [{ name: "styles.xml", data: "<a/>".repeat(100) }, { name: "Pictures/p.png", data: "x".repeat(5000) }] }));
   const c = readContainer(bytes);
+  assert.ok(c.ok);
   const d = declaredTextBytes(c, isOdfTextPart);
   const sizes = Object.fromEntries(c.entries.map((e) => [e.name, e.uncompressedSize]));
   assert.equal(d.total, sizes["content.xml"] + sizes["styles.xml"] + sizes["meta.xml"]);

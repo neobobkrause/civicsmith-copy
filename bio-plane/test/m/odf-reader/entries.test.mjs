@@ -405,12 +405,20 @@ test("R43 the module owns no check: it exports readers and constants only, and e
   /** @param {{ value: object, kind: string }} r */
   const rebuilt = (r) => {
     const v = r.value;
+    /* the reference's own members, as the walk found them; a member missing or of another type rebuilds no match */
+    const num = (/** @type {number | undefined} */ x) => x ?? NaN;
+    const para = "para" in v && typeof v.para === "number" ? v.para : undefined;
+    const table = "table" in v && typeof v.table === "number" ? v.table : undefined;
+    const sheet = "sheet" in v && typeof v.sheet === "string" ? v.sheet : "";
+    const cell = "cell" in v && typeof v.cell === "string" ? v.cell : "";
+    const slide = "slide" in v && typeof v.slide === "number" ? v.slide : undefined;
+    const shape = "shape" in v && typeof v.shape === "number" ? v.shape : null;
     const build = new Map(/** @type {[string, () => unknown][]} */ ([
-      ["doc-para", () => docParaRef("para" in v ? v.para : undefined)],
-      ["doc-table", () => docTableRef("table" in v ? v.table : undefined)],
-      ["sheet-cell", () => sheetCellRef("sheet" in v ? v.sheet : undefined, "cell" in v ? v.cell : undefined)],
-      ["sheet-range", () => usedSheetRange("sheet" in v ? v.sheet : undefined, 1, 1)],
-      ["slide-shape", () => slideShapeRef("slide" in v ? v.slide : undefined, ("shape" in v ? v.shape : undefined) ?? null)],
+      ["doc-para", () => docParaRef(num(para))],
+      ["doc-table", () => docTableRef(num(table))],
+      ["sheet-cell", () => sheetCellRef(sheet, cell)],
+      ["sheet-range", () => usedSheetRange(sheet, 1, 1)],
+      ["slide-shape", () => slideShapeRef(num(slide), shape)],
     ]));
     const make = build.get(r.kind);
     assert.ok(make);
