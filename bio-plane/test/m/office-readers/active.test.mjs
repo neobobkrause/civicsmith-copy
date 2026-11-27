@@ -226,7 +226,7 @@ test("R32 a VBA project ooxml refuses is still listed, read:false with its why a
   const item = projectItem(found);
   assert.deepEqual(item.modules, ["ThisDocument", "Module1"]);
   const undetermined = item.undetermined;
-  if (undetermined === null) assert.fail("the unread module is stated");
+  if (undetermined === null || undetermined === undefined) assert.fail("the unread module is stated");
   assert.deepEqual(undetermined.map((u) => u.module), ["Module1"]);
   assert.equal(typeof undetermined[0]?.why, "string");
 });

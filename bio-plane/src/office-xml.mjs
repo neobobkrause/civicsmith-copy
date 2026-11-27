@@ -109,7 +109,7 @@ import { boundOf } from "./read-bounds.mjs";
  * @typedef {Object} ScanPartOptions
  * @property {"whole" | "pieces"} [mode]
  * @property {(buf: string) => number} [cut]
- * @property {YieldNow | null | undefined} [yieldNow]
+ * @property {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  * @property {((piece: string) => unknown) | null | undefined} [onPiece]
  */
 /**
@@ -471,7 +471,7 @@ export class Scanner {
 }
 
 /** Let the caller's turn pass; a `yieldNow` that is not a function is no yield, one that fails is no yield.
- *  @param {YieldNow | null | undefined} yieldNow
+ *  @param {unknown} yieldNow a `YieldNow`; anything else is no yield
  *  @returns {Promise<void>} */
 export async function letPass(yieldNow) {
   if (typeof yieldNow !== "function") return;
@@ -482,7 +482,7 @@ export async function letPass(yieldNow) {
  *  passed since the last (never more than 65,536 apart, R42).
  *  @param {Scanner} scanner
  *  @param {string} xml
- *  @param {YieldNow | null | undefined} [yieldNow]
+ *  @param {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  *  @returns {Promise<void>} */
 export async function scanWhole(scanner, xml, yieldNow) {
   for (let at = 0; at < xml.length && !scanner.stopped; at += WINDOW) {
@@ -618,7 +618,7 @@ export async function readTextBytes(bytes, container, name) {
  *  @param {Scanner} scanner
  *  @param {Uint8Array} data
  *  @param {string} encoding
- *  @param {YieldNow | null | undefined} [yieldNow]
+ *  @param {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  *  @returns {Promise<void>} */
 export async function scanBytes(scanner, data, encoding, yieldNow) {
   const decoder = new TextDecoder(encoding, { fatal: false });

@@ -108,7 +108,7 @@ import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanPart, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, jsonBytes, memberIdentities, addressParts, countObjects, precountFloor, readTextBytes, scanBytes, owned, decodePart,
 } from "./office-xml.mjs";
-/** @import { ScanHandler, Skipped, Attrs, ScanNote, PartialNote, PartFailure, YieldNow, ObjectsExceeded, MemberIdentity, ElementRef, TextUnit, AddressedUnit } from "./office-xml.mjs" */
+/** @import { ScanHandler, Skipped, Attrs, ScanNote, PartialNote, PartFailure, ObjectsExceeded, MemberIdentity, ElementRef, TextUnit, AddressedUnit } from "./office-xml.mjs" */
 
 /* ------------------------------------------------------------------ *
  * The shapes this entry answers, and those the three OOXML entries share
@@ -324,11 +324,11 @@ import {
  * @property {string} part
  * @property {boolean} read
  * @property {string | null} why
- * @property {string | null} project
+ * @property {string | null | undefined} project undefined only as ooxml's reading may state it
  * @property {(string | null)[] | null} modules the module names
  * @property {string[] | null} autoRun
  * @property {string[] | null} suspicious
- * @property {{module: string | null, why: string}[] | null} undetermined the modules whose source could not be read
+ * @property {{module: string | null, why: string}[] | null | undefined} undetermined the modules whose source could not be read
  */
 /**
  * A part that can act by being there (R32): an ActiveX or OLE part, an embedded file, an Excel 4.0 macro sheet.
@@ -430,7 +430,7 @@ import {
 /**
  * What `structure()` and `text()` take besides the parts: `yieldNow` (R42) and `inlineCellsMax` (R45).
  * @typedef {Object} ReadOptions
- * @property {YieldNow | null} [yieldNow]
+ * @property {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  * @property {unknown} [inlineCellsMax] a number of bytes; anything else is no cap
  */
 /** @typedef {"header" | "footer" | "footnote" | "endnote"} ExtraKind the kinds of part outside the body that hold text */
@@ -1158,7 +1158,7 @@ function unitReader(unit, layout) {
  *  newline-joined). A part holding a character reference that names no character is stated unreadable (R40). Async:
  *  awaits `yieldNow` as the body walk does.
  *  @param {unknown} xml
- *  @param {YieldNow | null} [yieldNow]
+ *  @param {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  *  @returns {Promise<CommentsRead | CommentsFailure>} */
 export async function parseComments(xml, yieldNow = null) {
   if (typeof xml !== "string") return { ok: false, why: "comments_unparseable" };
@@ -1179,7 +1179,7 @@ export async function parseComments(xml, yieldNow = null) {
  *  @param {DocxParts} parts
  *  @param {string} partName
  *  @param {string | null} unit
- *  @param {YieldNow | null | undefined} yieldNow
+ *  @param {unknown} yieldNow a `YieldNow`; anything else is no yield
  *  @returns {Promise<UnitsRead | PartFailure>} */
 async function readUnits(parts, partName, unit, yieldNow) {
   const u = unitReader(unit, true);
@@ -1430,7 +1430,7 @@ async function docxParts(bytes) {
    names no character). A walk stopped by the retained-objects bound is `w.meter.exceeded` (R44).
    @param {DocxParts} parts
    @param {DocWalk} w
-   @param {YieldNow | null | undefined} yieldNow
+   @param {unknown} yieldNow a `YieldNow`; anything else is no yield
    @returns {Promise<BodyRun | PartFailure>} */
 async function runBody(parts, w, yieldNow) {
   const documentBytes = parts.documentBytes, documentEncoding = parts.documentEncoding;

@@ -107,7 +107,7 @@ import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanPart, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, collectElements, memberIdentities, addressParts, textSink,
 } from "./office-xml.mjs";
-/** @import { ScanHandler, PartialNote, PartFailure, YieldNow, ObjectsExceeded, AddressedUnit, TextUnit } from "./office-xml.mjs" */
+/** @import { ScanHandler, PartialNote, PartFailure, ObjectsExceeded, AddressedUnit, TextUnit } from "./office-xml.mjs" */
 /** @import { ActiveItem, Link, LinkCounts, UrlTarget, IntraTarget, CorePropertiesItem, ActiveCarried, MetadataCarried, DetectAnswer, ReadFailure, ReadOptions, BytesInput, Undetermined, FailureBody } from "./docx.mjs" */
 
 /* ------------------------------------------------------------------ *
@@ -384,7 +384,7 @@ import {
 /**
  * How `walkSheetPart` walks.
  * @typedef {Object} WalkOptions
- * @property {YieldNow | null | undefined} [yieldNow]
+ * @property {unknown} [yieldNow] a `YieldNow`; anything else is no yield
  * @property {WalkControl} [ctl]
  * @property {AccessRecorder | null} [access]
  */

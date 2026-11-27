@@ -40,6 +40,14 @@ function nth(list, i) { const item = list[i]; if (item === undefined) assert.fai
 /* An answer's document, read. */
 /** @type {(t: {document: string | null}) => string} */
 const documentOf = (t) => { const document = t.document; if (document === null) assert.fail("the answer has a document"); return document; };
+/** A member that must be a string; a thrown failure naming `what` when it is not.
+ *  @param {unknown} x
+ *  @param {string} what
+ *  @returns {string} */
+const must = (x, what) => {
+  if (typeof x !== "string") throw new Error(`${what} is not a string`);
+  return x;
+};
 /* A link target's, item's or statement's members, where it states them. */
 /** @type {(t: object) => unknown} */
 const urlOf = (t) => ("url" in t ? t.url : undefined);
@@ -86,10 +94,10 @@ function checkShape(s, container, unitField) {
   for (const l of s.links) {
     for (const k of ["partition", "wrapper", "target", "source"]) assert.ok(k in l, `${container} link has ${k}`);
     assert.ok(PARTITIONS.includes(l.partition));
-    if (l.partition === "deferred") assert.equal(l.wrapper, linkWrapper.deferred(urlOf(l.target)));
+    if (l.partition === "deferred") assert.equal(l.wrapper, linkWrapper.deferred(must(urlOf(l.target), "the url")));
     if (l.partition === "refused") assert.equal(l.wrapper, linkWrapper.refused());
-    if (l.partition === "intra") assert.equal(l.wrapper, linkWrapper.intra(sha256Of(l.target)));
-    if (l.partition === "anchor") assert.equal(l.wrapper, linkWrapper.anchor(fragmentOf(l.target)));
+    if (l.partition === "intra") assert.equal(l.wrapper, linkWrapper.intra(must(sha256Of(l.target), "the sha256")));
+    if (l.partition === "anchor") assert.equal(l.wrapper, linkWrapper.anchor(must(fragmentOf(l.target), "the fragment")));
     if (l.partition === "undetermined") { assert.equal(l.wrapper, null); assert.equal(typeof whyOf(l.target), "string"); }
   }
   const ev = s.evidentiary;

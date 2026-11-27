@@ -4,6 +4,7 @@
    paragraphs, read whole. Both in a child whose old space is the cap of `capFor(128)`. */
 /** @import { Undetermined, WalkExceeded } from "../../../src/docx.mjs" */
 /** @import { R47Idle } from "./r47-peak-child.mjs" */
+/** @import { DocRecipe } from "../../docgen.mjs" */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -32,14 +33,6 @@ const CAP = capFor(128);
 const MARGIN = 0.85 * CAP;
 
 /**
- * A docgen recipe as a case writes it out.
- * @typedef {Object} DocRecipe
- * @property {string} kind
- * @property {string} seed
- * @property {string} [ladder]
- * @property {{partBytes?: number, units: number}} size
- */
-/**
  * The child's answer to `--read`, as the cases read it: `refusal` the statement of the bound passed, or null.
  * @typedef {Object} R47Read
  * @property {number} aboveStartMB
@@ -52,7 +45,7 @@ const MARGIN = 0.85 * CAP;
 /**
  * The least memory above its start that two reads of the package held, in a child whose old space is its idle heap
  * plus `capFor(128)`: a docx made from `recipe`, or the pptx bytes `recipe` is.
- * @param {NodeTestContext} t
+ * @param {{after: (fn: () => void) => void, diagnostic: (message: string) => void}} t the case's context
  * @param {DocRecipe | Uint8Array} recipe
  * @param {"docx" | "pptx"} [kind]
  * @returns {Promise<R47Read>}
@@ -61,7 +54,7 @@ async function measure(t, recipe, kind = "docx") {
   const dir = mkdtempSync(join(tmpdir(), "r47-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const file = join(dir, `doc.${kind}`);
-  const data = kind === "docx" ? await generate(recipe).bytes() : recipe;
+  const data = kind === "docx" && !(recipe instanceof Uint8Array) ? await generate(recipe).bytes() : recipe;
   if (!(data instanceof Uint8Array)) {
     throw new TypeError('The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received an instance of Object');
   }

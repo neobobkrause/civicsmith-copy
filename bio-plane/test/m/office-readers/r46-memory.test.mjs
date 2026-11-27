@@ -4,6 +4,7 @@
    peak, measured in a child, is a small multiple of the document it makes. The whole case at the platform's shape (150,000 rows
    against `capFor(128)`) is plane's `g41-shape.test.mjs`, whose xlsx case carries the 85 % margin. */
 /** @import { R46Report } from "./r46-peak-child.mjs" */
+/** @import { SheetRecipe } from "../../sheetgen.mjs" */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -86,6 +87,7 @@ test("R46 control: a sheet that cannot be read to its end gives none of its line
 });
 
 test("R46 a 150,000-row workbook of 3 cells a row (the platform's shape) is read holding at most 6.5 bytes for each character of the document above its idle, while the unpacked parts are streamed and the text is made once", async (t) => {
+  /** @type {SheetRecipe} */
   const recipe = { kind: "xlsx", seed: "hx150000", size: { rows: 150_000, cols: 3 }, header: "one", types: ["text", "integer", "text"] };
   /** @type {Buffer[]} */
   const chunks = [];

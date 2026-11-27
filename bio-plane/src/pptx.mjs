@@ -127,7 +127,7 @@ import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, collectElements, TAG_MAX, memberIdentities, addressParts, countObjects, precountFloor, owned,
 } from "./office-xml.mjs";
-/** @import { Attrs, PartialNote, PartFailure, YieldNow, ObjectsExceeded, TextUnit, AddressedUnit } from "./office-xml.mjs" */
+/** @import { Attrs, PartialNote, PartFailure, ObjectsExceeded, TextUnit, AddressedUnit } from "./office-xml.mjs" */
 /** @import { BytesInput, Link, LinkCounts, UrlTarget, IntraTarget, UndeterminedTarget, Undetermined, FailureBody, WalkExceeded, CorePropertiesItem, Evidentiary, ActiveItem, ActiveCarried, MetadataCarried, DetectAnswer, ReadFailure, ReadOptions } from "./docx.mjs" */
 
 /* ------------------------------------------------------------------ *
@@ -636,7 +636,7 @@ function slideHandler(meter) {
  *  same `mceSkipper` docx.mjs reads with. A branch not read adds no paragraph, text, shape index or hlink.
  *  @param {string} xml
  *  @param {DeckMeter} meter
- *  @param {YieldNow | null | undefined} yieldNow
+ *  @param {unknown} yieldNow a `YieldNow`; anything else is no yield
  *  @returns {Promise<SlideWalked | SlideRefused>} */
 async function walkSlide(xml, meter, yieldNow) {
   const w = slideHandler(meter);
@@ -667,7 +667,7 @@ function deferredOrRefusedRecord(uri, source) {
   const partition = classifyUri(uri);
   return {
     partition,
-    wrapper: partition === "deferred" ? linkWrapper.deferred(uri) : linkWrapper.refused(uri),
+    wrapper: partition === "deferred" ? linkWrapper.deferred(uri) : linkWrapper.refused(),
     target: { url: uri },
     source,
   };
