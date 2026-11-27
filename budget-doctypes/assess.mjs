@@ -5,10 +5,50 @@
  * in which nothing was read is a failed read, never a document emptied. */
 import { event, isMeaningful, worstSignificance } from "../docprofile/registry.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { EventHead } from "../docprofile/registry.mjs" */
+/** @import { ReadTable, TableRow } from "./tables.mjs" */
+/** @import { BudgetLine, Grouping } from "./lines.mjs" */
 
-/** Key each item by `keyOf`, a repeat of one key numbered in reading order. */
+/**
+ * What a reading confirmed unchanged: its kind, how many rows or lines, and why.
+ * @typedef {Object} Confirmed
+ * @property {string} kind
+ * @property {number} count
+ * @property {string} why
+ */
+/**
+ * The judgement of two readings (R9): whether anything meaningful changed and how badly, the events, what was confirmed
+ * unchanged, and why. A failed read says it could not judge (`meaningful: null`).
+ * @typedef {Object} Assessment
+ * @property {boolean | null} meaningful
+ * @property {string | null} significance
+ * @property {EventHead[]} events
+ * @property {Confirmed | null} confirmed
+ * @property {string} why
+ */
+
+/** One member of a reading this module gave earlier, handed back to it, as a value of no kind yet.
+ *  @param {object | null | undefined} reading @returns {unknown} */
+const tablesOf = (reading) => (reading && (typeof reading === "object" || typeof reading === "function") && "tables" in reading ? reading.tables : undefined);
+/** @param {object | null | undefined} reading @returns {unknown} */
+const rowsOf = (reading) => (reading && (typeof reading === "object" || typeof reading === "function") && "rows" in reading ? reading.rows : undefined);
+/** @param {object | null | undefined} reading @returns {unknown} */
+const groupingsOf = (reading) => (reading && (typeof reading === "object" || typeof reading === "function") && "groupings" in reading ? reading.groupings : undefined);
+/** A reading's tables, as this module's `parse` wrote them. @param {unknown} v @returns {v is ReadTable[]} */
+const isTableList = (v) => Array.isArray(v);
+/** A reading's lines, as this module's `parse` wrote them. @param {unknown} v @returns {v is BudgetLine[]} */
+const isLineList = (v) => Array.isArray(v);
+/** A reading's groupings, as this module's `parse` wrote them. @param {unknown} v @returns {v is Grouping[]} */
+const isGroupingList = (v) => Array.isArray(v);
+
+/** Key each item by `keyOf`, a repeat of one key numbered in reading order.
+ *  @template T
+ *  @param {ReadonlyArray<T>} items
+ *  @param {(item: T) => string} keyOf
+ *  @returns {Map<string, T>} */
 function keyed(items, keyOf) {
-  const seen = new Map(), out = new Map();
+  const seen = new Map(/** @type {Array<[string, number]>} */ ([]));
+  const out = new Map(/** @type {Array<[string, T]>} */ ([]));
   for (const it of items) {
     const k = keyOf(it);
     const n = (seen.get(k) || 0) + 1;
@@ -18,26 +58,36 @@ function keyed(items, keyOf) {
   return out;
 }
 
+/** @param {EventHead[]} events @param {Confirmed | null} confirmed @param {string} why @returns {Assessment} */
 function result(events, confirmed, why) {
   return { meaningful: isMeaningful(events), significance: worstSignificance(events), events, confirmed, why };
 }
 
+/** @param {string} why @returns {Assessment} */
 function failed(why) {
   return { meaningful: null, significance: null, events: [], confirmed: null, why };
 }
 
-const tableKey = (t) => `${t.title || "(untitled table)"} @ page ${t.page === null ? "?" : t.page + 1}`;
-const rowLabel = (r) => (r.label === null ? localize("budget-doctypes.assess.row_with_no_label_read", "(row with no label read)") : r.label);
+/** @param {ReadTable} t @returns {string} */
+const tableKey = (t) => { const page = t.page; return `${t.title || "(untitled table)"} @ page ${page === null ? "?" : page + 1}`; };
+/** @param {TableRow} r @returns {string} */
+const rowLabel = (r) => { const label = r.label; return label === null ? localize("budget-doctypes.assess.row_with_no_label_read", "(row with no label read)") : label; };
+/** @param {TableRow} r @returns {string[]} */
 const cellsOf = (r) => r.cells.map((c) => c.as_read);
 
-/** Two PDF readings: tables matched by title and page, rows by label. */
+/** Two PDF readings: tables matched by title and page, rows by label.
+ *  @param {object | null | undefined} before
+ *  @param {object | null | undefined} after
+ *  @returns {Assessment} */
 export function assessTables(before, after) {
-  const bt = before && Array.isArray(before.tables) ? before.tables : [];
-  const at = after && Array.isArray(after.tables) ? after.tables : [];
+  const btGiven = tablesOf(before), atGiven = tablesOf(after);
+  const bt = before && isTableList(btGiven) ? btGiven : [];
+  const at = after && isTableList(atGiven) ? atGiven : [];
   if (!bt.length || !at.length)
     return failed(!bt.length && !at.length ? localize("budget-doctypes.assess.no_table_was_read_in_either", "no table was read in either reading, so nothing can be compared")
       : localize("budget-doctypes.assess.no_table_was_read_in", "no table was read in the {v1} reading: a failed read, not a document emptied", { v1: String(!bt.length ? "earlier" : "later") }));
   const b = keyed(bt, tableKey), a = keyed(at, tableKey);
+  /** @type {EventHead[]} */
   const events = [];
   let held = 0;
   for (const [k, was] of b) {
@@ -67,14 +117,19 @@ export function assessTables(before, after) {
     events.length ? localize("budget-doctypes.assess.length_change_s_between_the", "{length} change(s) between the two readings' tables", { length: String(events.length) }) : localize("budget-doctypes.assess.every_table_and_figure_read", "every table and figure read is as it was"));
 }
 
-/** Two budget-table readings: rows by R7's key, groupings within a period. */
+/** Two budget-table readings: rows by R7's key, groupings within a period.
+ *  @param {object | null | undefined} before
+ *  @param {object | null | undefined} after
+ *  @returns {Assessment} */
 export function assessLines(before, after) {
-  const bl = before && Array.isArray(before.rows) ? before.rows : [];
-  const al = after && Array.isArray(after.rows) ? after.rows : [];
+  const blGiven = rowsOf(before), alGiven = rowsOf(after);
+  const bl = before && isLineList(blGiven) ? blGiven : [];
+  const al = after && isLineList(alGiven) ? alGiven : [];
   if (!bl.length || !al.length)
     return failed(!bl.length && !al.length ? localize("budget-doctypes.assess.no_budget_line_was_read_in", "no budget line was read in either reading, so nothing can be compared")
       : localize("budget-doctypes.assess.no_budget_line_was_read", "no budget line was read in the {v1} reading: a failed read, not a table emptied", { v1: String(!bl.length ? "earlier" : "later") }));
   const b = keyed(bl, (r) => r.key), a = keyed(al, (r) => r.key);
+  /** @type {EventHead[]} */
   const events = [];
   let held = 0;
   for (const [k, r0] of b) {
@@ -88,16 +143,20 @@ export function assessLines(before, after) {
   }
   for (const k of a.keys()) if (!b.has(k)) events.push(event("item_added", { row: k, why: localize("budget-doctypes.assess.the_line_k_is_new", "the line {k} is new", { k: String(k) }) }));
   /* An org that moved between departments within one period. */
+  /** @param {unknown} groups @returns {Map<string, { g: Grouping, period: string | null, org: string }>} */
   const placed = (groups) => {
-    const m = new Map();
-    for (const g of groups || []) for (const o of g.orgs) m.set(JSON.stringify([g.period_as_written, o]), g);
+    const m = new Map(/** @type {Array<[string, { g: Grouping, period: string | null, org: string }]>} */ ([]));
+    for (const g of isGroupingList(groups) ? groups : [])
+      for (const o of g.orgs) m.set(JSON.stringify([g.period_as_written, o]), { g, period: g.period_as_written ?? null, org: o });
     return m;
   };
-  const pb = placed(before.groupings), pa = placed(after.groupings);
-  for (const [k, g0] of pb) {
-    const g1 = pa.get(k);
+  const pb = placed(groupingsOf(before)), pa = placed(groupingsOf(after));
+  for (const [k, p0] of pb) {
+    const g0 = p0.g;
+    const p1 = pa.get(k);
+    const g1 = p1 ? p1.g : undefined;
     if (!g1 || (g0.department === g1.department && g0.department_code === g1.department_code)) continue;
-    const [period, org] = JSON.parse(k);
+    const period = p0.period, org = p0.org;
     events.push(event("item_changed", { org, period_as_written: period, before: g0.department, after: g1.department,
       why: localize("budget-doctypes.assess.for_period_org_org_was", "for {period}, org {org} was under \"{department}\" and is now under \"{department_2}\"", { period: String(period), org: String(org), department: String(g0.department), department_2: String(g1.department) }) }));
   }

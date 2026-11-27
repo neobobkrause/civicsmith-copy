@@ -18,45 +18,99 @@ import { CONFIDENCE, CONTRACT } from "../docprofile/registry.mjs";
 import { KEYS, patterns } from "./view.mjs";
 import { classify } from "./figures.mjs";
 import { readTables } from "./tables.mjs";
-import { readLines, headerLineMatches, findHeader, sheetRows } from "./lines.mjs";
+import { readLines, headerLineMatches, findHeader, sheetRows, sheetCells } from "./lines.mjs";
 import { assessTables, assessLines } from "./assess.mjs";
 import { localize } from "../bio-plane/src/setup-words/index.mjs";
+/** @import { DoctypeContext, ContentType } from "../docprofile/registry.mjs" */
+/** @import { PatternKey } from "./view.mjs" */
+/** @import { TablesReading } from "./tables.mjs" */
+/** @import { LinesReading } from "./lines.mjs" */
+/** @import { Assessment } from "./assess.mjs" */
+
+/**
+ * What a type's `detect` answers (R1, R14): whether the document is that kind, how sure, on what signals, and, where it
+ * is not, why.
+ * @typedef {Object} Detected
+ * @property {boolean} match
+ * @property {string} confidence
+ * @property {string[]} signals
+ * @property {string} [why]
+ */
+/**
+ * A content type that reads a PDF's tables (R1 to R6, R9).
+ * @typedef {Object} PdfType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detected} detect
+ * @property {(ctx: DoctypeContext) => TablesReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => Assessment} assess
+ */
+/**
+ * The content type that reads a budget line-item sheet (R1, R7 to R9).
+ * @typedef {Object} SheetType
+ * @property {string} key
+ * @property {string} label
+ * @property {number} version
+ * @property {string} contract
+ * @property {(ctx: DoctypeContext) => Detected} detect
+ * @property {(ctx: DoctypeContext) => LinesReading} parse
+ * @property {(before: object | null | undefined, after: object | null | undefined) => Assessment} assess
+ */
 
 /** How much of a document's opening text is searched for the words it names
  *  itself by: a cover and a title page (measured: every fixture's own title is
- *  inside its first 2,000 characters). */
+ *  inside its first 2,000 characters).
+ *  @type {number} */
 export const OPENING_CHARS = 4000;
 /** R1's structural floor: a financial document holds at least this many lines
  *  bearing a figure. Measured: the smallest measured table (a budget book's
  *  department page) bears 10; every ACFR statement page bears over 40, and a
- *  title page or a letter bears fewer than 5. */
+ *  title page or a letter bears fewer than 5.
+ *  @type {number} */
 export const FIGURE_LINE_FLOOR = 10;
 
-function isPdf(ctx) {
-  const ct = String(ctx.content_type || (ctx.headers && (ctx.headers["content-type"] || ctx.headers["Content-Type"])) || "");
-  const s = ctx.supplied;
-  return /pdf/i.test(ct) || /\.pdf(?:[?#]|$)/i.test(String(ctx.locator || ""))
-    || !!(s && (s.container === "pdf" || (Array.isArray(s.pages) && s.pages.some((p) => p && Number.isInteger(p.page)))));
+/** The content type a caller states, or its headers' `content-type`, as a value of no kind.
+ *  @param {DoctypeContext} ctx
+ *  @returns {unknown} */
+function statedType(ctx) {
+  const h = ctx.headers;
+  const lower = h && "content-type" in h ? h["content-type"] : undefined;
+  const upper = h && "Content-Type" in h ? h["Content-Type"] : undefined;
+  return ctx.content_type || (h && (lower || upper));
 }
 
+/** @param {DoctypeContext} ctx @returns {boolean} */
+function isPdf(ctx) {
+  const ct = String(statedType(ctx) || "");
+  const s = ctx.supplied;
+  const pages = s ? s.pages : undefined;
+  return /pdf/i.test(ct) || /\.pdf(?:[?#]|$)/i.test(String(ctx.locator || ""))
+    || !!(s && (s.container === "pdf" || (Array.isArray(pages) && pages.some((p) => p && Number.isInteger(p.page)))));
+}
+
+/** @param {DoctypeContext} ctx @returns {boolean} */
 function isSheet(ctx) {
-  const ct = String(ctx.content_type || (ctx.headers && (ctx.headers["content-type"] || ctx.headers["Content-Type"])) || "");
+  const ct = String(statedType(ctx) || "");
   const s = ctx.supplied;
   return /csv|spreadsheet|excel|opendocument\.spreadsheet/i.test(ct)
     || /\.(?:csv|xlsx|xlsm|xls|ods)(?:[?#]|$)/i.test(String(ctx.locator || ""))
     || !!(s && Array.isArray(s.sheets));
 }
 
+/** @param {string | undefined} text @returns {number} */
 function figureLines(text) {
   let n = 0;
   for (const l of String(text).split("\n")) {
-    const c = classify(l);
-    if (c.kind === "row" || c.kind === "figures") n++;
+    const kind = classify(l).kind;
+    if (kind === "row" || kind === "figures") n++;
   }
   return n;
 }
 
-/** The words a PDF names itself by in its opening, from the view's `key`. */
+/** The words a PDF names itself by in its opening, from the view's `key`.
+ *  @param {DoctypeContext} ctx @param {PatternKey} key @returns {string | null} */
 function ownTitle(ctx, key) {
   const opening = String(ctx.text || "").slice(0, OPENING_CHARS);
   for (const p of patterns(ctx, key)) {
@@ -66,7 +120,9 @@ function ownTitle(ctx, key) {
   return null;
 }
 
+/** @param {DoctypeContext} ctx @param {PatternKey} key @param {string} what @returns {Detected} */
 function detectPdf(ctx, key, what) {
+  /** @param {string} why @returns {Detected} */
   const no = (why) => ({ match: false, confidence: CONFIDENCE.NONE, signals: [], why });
   if (!isPdf(ctx)) return no(localize("budget-doctypes.index.not_a_pdf_a_what", "not a PDF: a {what} is read from a PDF's text", { what: String(what) }));
   if (!patterns(ctx, key).length) return no(localize("budget-doctypes.index.the_view_holds_no_words", "the view holds no words a {what} names itself by (vocabulary.{key})", { what: String(what), key: String(key) }));
@@ -79,6 +135,7 @@ function detectPdf(ctx, key, what) {
            signals: [localize("budget-doctypes.index.it_names_itself_title", "it names itself \"{title}\"", { title: String(title) }), localize("budget-doctypes.index.lines_lines_bear_a_figure", "{lines} lines bear a figure", { lines: String(lines) })] };
 }
 
+/** @param {DoctypeContext} ctx @param {boolean} budget @returns {TablesReading} */
 function readPdf(ctx, budget) {
   const r = readTables(ctx, { budget });
   if (!r.tables.length)
@@ -86,6 +143,7 @@ function readPdf(ctx, budget) {
   return r;
 }
 
+/** @type {PdfType} */
 export const financialReport = {
   key: "financial_report", label: "an annual financial report", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) { return detectPdf(ctx, KEYS.REPORT_TITLES, "financial report"); },
@@ -93,6 +151,7 @@ export const financialReport = {
   assess(before, after) { return assessTables(before, after); },
 };
 
+/** @type {PdfType} */
 export const budgetBook = {
   key: "budget_book", label: "a budget book", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) { return detectPdf(ctx, KEYS.BOOK_TITLES, "budget book"); },
@@ -100,17 +159,22 @@ export const budgetBook = {
   assess(before, after) { return assessTables(before, after); },
 };
 
+/** @type {SheetType} */
 export const budgetTable = {
   key: "budget_table", label: "a budget line-item table", version: 1, contract: CONTRACT.SUBSTANCE,
   detect(ctx) {
+    /** @param {string} why @returns {Detected} */
     const no = (why) => ({ match: false, confidence: CONFIDENCE.NONE, signals: [], why });
     if (!isSheet(ctx)) return no(localize("budget-doctypes.index.not_a_csv_or_workbook_sheet", "not a CSV or workbook sheet: a budget line-item table is read from a sheet's cells"));
-    const sheets = ctx.supplied && Array.isArray(ctx.supplied.sheets) ? ctx.supplied.sheets : [];
+    const supplied = ctx.supplied;
+    const listed = supplied ? supplied.sheets : undefined;
+    const sheets = supplied && Array.isArray(listed) ? listed : [];
     for (const s of sheets) {
-      if (s && Array.isArray(s.cells)) {
-        const h = findHeader(ctx, sheetRows(s));
+      const cells = s ? sheetCells(s) : null;
+      if (s && cells) {
+        const h = findHeader(ctx, sheetRows(cells));
         if (h) return { match: true, confidence: CONFIDENCE.CERTAIN,
-          signals: [localize("budget-doctypes.index.sheet_stringify_names_keys_columns", "sheet {stringify} names {keys} columns in its header row", { stringify: String(JSON.stringify(s.name ?? null)), keys: String(Object.keys(h.map).join(", ")) })] };
+          signals: [localize("budget-doctypes.index.sheet_stringify_names_keys_columns", "sheet {stringify} names {keys} columns in its header row", { stringify: String(JSON.stringify(s.name ?? null)), keys: String([...h.map.keys()].join(", ")) })] };
       }
     }
     /* With no cells, the header row of the text: the first lines, tab-joined. */
@@ -124,13 +188,17 @@ export const budgetTable = {
   assess(before, after) { return assessLines(before, after); },
 };
 
-/** The three types in their registration order. */
+/** The three types in their registration order.
+ *  @type {ReadonlyArray<PdfType | SheetType>} */
 export const BUDGET_TYPES = Object.freeze([financialReport, budgetBook, budgetTable]);
 
-const REGISTERED = new WeakMap();
+const REGISTERED = new WeakMap(/** @type {Array<[(type: ContentType) => unknown, boolean]>} */ ([]));
 
 /** Register the three types through `docprofile`'s registry seam, in order.
- *  Called twice with one `register`, the second call registers nothing. */
+ *  Called twice with one `register`, the second call registers nothing.
+ *  @param {(type: ContentType) => unknown} register
+ *  @returns {string[]}
+ *  @throws {TypeError} when `register` is not a function */
 export function registerBudgetTypes(register) {
   if (typeof register !== "function") throw new TypeError("registerBudgetTypes needs the registry's register function");
   if (REGISTERED.has(register)) return [];

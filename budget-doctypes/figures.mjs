@@ -11,6 +11,18 @@
  * ACFR prints `$ 1,405,595`; a rendered budget page prints `-$9,794,467` and
  * `$308,925,155 (36.5%)`). */
 
+/**
+ * One line, classified: its kind, the label before its trailing figures and those figures as printed; for a chart label
+ * its amount and parenthesised share, and for a dated heading line the mark that it is one.
+ * @typedef {Object} Classified
+ * @property {"blank" | "chart" | "text" | "row" | "years" | "figures"} kind
+ * @property {string} label
+ * @property {string[]} cells
+ * @property {string} [amount]
+ * @property {string} [share]
+ * @property {true} [dated]
+ */
+
 const NUM = String.raw`(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+`;
 /* One figure token, after `$`, `%` and parentheses separated by a space have
    been rejoined to it (see `tokens`). A dash alone (hyphen, en or em dash),
@@ -27,18 +39,24 @@ const CHART_LABEL = /^(.*?)\s*(-?\$\s?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*\(
    table. Month names are place-free language. */
 const DATED = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2},?$/i;
 
+/** @param {string} tok @returns {boolean} */
 export function isFigure(tok) { return typeof tok === "string" && FIGURE.test(tok); }
+/** @param {string} tok @returns {boolean} */
 export function isYear(tok) { return typeof tok === "string" && YEAR.test(tok); }
 
 /** Split a line into tokens, rejoining what a text layer split off a figure:
  *  a lone `$` or `-$` before a number, a lone `%` after one, and a lone `$`
  *  before a parenthesised number (`$ (257,422)`). The rejoined token keeps the
- *  space the text layer printed, so `as_read` is the figure as printed. */
+ *  space the text layer printed, so `as_read` is the figure as printed.
+ *  @param {string} line
+ *  @returns {string[]} */
 export function tokens(line) {
   const raw = String(line).trim().split(/\s+/).filter(Boolean);
+  /** @type {string[]} */
   const out = [];
   for (let i = 0; i < raw.length; i++) {
     const t = raw[i];
+    if (t === undefined) continue;
     const next = raw[i + 1];
     if ((t === "$" || t === "-$") && next !== undefined && isFigure(t + next) && !/^[—–-]$/.test(next)) {
       out.push(t + " " + next); i++; continue;
@@ -46,8 +64,9 @@ export function tokens(line) {
     if ((t === "$" || t === "-$") && next !== undefined && /^[—–-]$/.test(next)) {
       out.push(t + " " + next); i++; continue;
     }
-    if (t === "%" && out.length && isFigure(out[out.length - 1].replace(/ /g, "") + "%")) {
-      out[out.length - 1] += " %"; continue;
+    const last = out[out.length - 1];
+    if (t === "%" && last !== undefined && isFigure(last.replace(/ /g, "") + "%")) {
+      out[out.length - 1] = last + " %"; continue;
     }
     out.push(t);
   }
@@ -55,6 +74,7 @@ export function tokens(line) {
 }
 
 /** True when a rejoined token is a figure (its printed space ignored). */
+/** @param {string} t @returns {boolean} */
 function figureToken(t) { return isFigure(t.replace(/ /g, "")); }
 
 /** One line, classified.
@@ -65,27 +85,30 @@ function figureToken(t) { return isFigure(t.replace(/ /g, "")); }
  *  - `text`: no trailing figure.
  *  `label` is the text before the trailing figures, `cells` the trailing
  *  figures as printed. A figure inside a label (an allowance stated in words)
- *  stays in the label: only TRAILING figures are cells. */
+ *  stays in the label: only TRAILING figures are cells.
+ *  @param {string} line
+ *  @returns {Classified} */
 export function classify(line) {
   const s = String(line).trim();
   if (!s) return { kind: "blank", label: "", cells: [] };
   const chart = CHART_LABEL.exec(s);
-  if (chart) return { kind: "chart", label: chart[1].trim(), cells: [], amount: chart[2], share: `(${chart[3]})` };
+  if (chart) return { kind: "chart", label: (chart[1] ?? "").trim(), cells: [], amount: chart[2] ?? "", share: `(${chart[3]})` };
   const toks = tokens(s);
   let k = toks.length;
-  while (k > 0 && figureToken(toks[k - 1])) k--;
+  while (k > 0 && figureToken(toks[k - 1] ?? "")) k--;
   const cells = toks.slice(k);
   if (!cells.length) return { kind: "text", label: s, cells: [] };
   if (k === 0) {
     /* All figures. A statistical schedule prints a row as its year and its
        figures; a header prints years alone. */
-    if (cells.length >= 3 && isYear(cells[0]) && !isYear(cells[1]))
-      return { kind: "row", label: cells[0], cells: cells.slice(1) };
+    const first = cells[0] ?? "", second = cells[1] ?? "";
+    if (cells.length >= 3 && isYear(first) && !isYear(second))
+      return { kind: "row", label: first, cells: cells.slice(1) };
     if (cells.every(isYear)) return { kind: "years", label: "", cells };
     return { kind: "figures", label: "", cells };
   }
   const label = toks.slice(0, k).join(" ");
-  if (cells.length === 1 && isYear(cells[0]) && DATED.test(label)) return { kind: "text", label: s, cells: [], dated: true };
+  if (cells.length === 1 && isYear(cells[0] ?? "") && DATED.test(label)) return { kind: "text", label: s, cells: [], dated: true };
   return { kind: "row", label, cells };
 }
 
@@ -95,7 +118,11 @@ const CONNECTOR = /(?:,|-|&|\b(?:of|and|or|for|the|to|in|from|by|on|with|at|net|
 
 /** True when `label` is the first part of a label wrapped onto `next` (R3):
  *  its parentheses are unbalanced, it ends on a connecting word, or the next
- *  line opens in lower case. */
+ *  line opens in lower case.
+ *  @param {string} label
+ *  @param {string} [next]
+ *  @param {boolean} [nextIsRow]
+ *  @returns {boolean} */
 export function wraps(label, next, nextIsRow = false) {
   const open = (label.match(/\(/g) || []).length, close = (label.match(/\)/g) || []).length;
   if (open > close) return true;
@@ -115,10 +142,12 @@ export function wraps(label, next, nextIsRow = false) {
 export const TOTAL = /\b(?:sub-?)?totals?\b/i;
 
 /** The scale a heading states, as written (R2), or null. Place-free. */
+/** @type {RegExp} */
 const SCALE = /\b(in\s+(?:thousands|millions|billions)(?:\s+of\s+dollars)?|in\s+\$?\s?(?:000s|000's))\b/i;
+/** @param {string} line @returns {string | null} */
 export function scaleIn(line) {
   const m = SCALE.exec(String(line));
-  return m ? m[1] : null;
+  return m ? m[1] ?? null : null;
 }
 
 /** A table caption a budget book prints, in place-free words ("Table 1:",
@@ -126,7 +155,9 @@ export function scaleIn(line) {
 export const CAPTION = /^(?:table|schedule|exhibit)\s+[A-Z0-9][\w.-]*\s*[:.\-–—]?/i;
 
 /** A sentence: it ends a table region. Measured: no table row of the
- *  fixtures' tables is a sentence of eight words or more ending in a period. */
+ *  fixtures' tables is a sentence of eight words or more ending in a period.
+ *  @param {string} line
+ *  @returns {boolean} */
 export function isSentence(line) {
   const s = String(line).trim();
   return /[.!?]["”’)]?$/.test(s) && s.split(/\s+/).length >= 8;
@@ -134,7 +165,9 @@ export function isSentence(line) {
 
 /** A line of prose, or of a paragraph wrapped mid-sentence: no header of a
  *  table. Inside a table a long label reads the same way, so only a sentence
- *  (`isSentence`) ends a table. */
+ *  (`isSentence`) ends a table.
+ *  @param {string} line
+ *  @returns {boolean} */
 export function isProse(line) {
   const s = String(line).trim();
   const words = s.split(/\s+/);
