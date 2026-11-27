@@ -158,6 +158,29 @@ test("R83: no service throws on any input, and a bad extent or position never re
   }
 });
 
+test("R83, R55, R71: a region or page rect that is missing or not four numbers answers false and never throws", () => {
+  const target = { page: 0, rect: [0, 0, 1, 1] };
+  /** What a rect holds, by type, for an assertion's message. @param {unknown} r @returns {string} */
+  const say = (r) => Array.isArray(r) ? `[${r.map((x) => typeof x).join(",")}]` : typeof r;
+  /** @type {readonly unknown[]} */
+  const badRects = [undefined, null, 3, "0,0,2,2", [0, 0, 2], [0, 0, 2, 2, 2], [Symbol("s"), 0, 2, 2], ["0", "0", "2", "2"],
+    [null, null, 2, 2], [{ valueOf() { throw new Error("read"); } }, 0, 2, 2]];
+  /* The attested region's source rect (the case found by text-chain #2: no rect at all), and the target's. */
+  assert.equal(tc.extentCovers({ kind: "region", source: { page: 0 } }, target), false);
+  for (const rect of badRects) {
+    assert.equal(tc.extentCovers({ kind: "region", source: { kind: "pdf-page", page: 0, rect } }, target), false, say(rect));
+    assert.equal(tc.extentCovers({ kind: "region", source: { kind: "pdf-page", page: 0, rect: [0, 0, 2, 2] } }, { page: 0, rect }), false, say(rect));
+  }
+  /* A pdf-page extent whose rect has four entries that are not all numbers cannot be compared. */
+  const position = { kind: "pdf-page", ref: "r", page: 0, rect: [0, 0, 1, 1] };
+  for (const rect of [[Symbol("s"), 0, 2, 2], ["0", "0", "2", "2"], [null, null, 2, 2], [{ valueOf() { throw new Error("read"); } }, 0, 2, 2]])
+    assert.equal(tc.readingPositionInExtent(position, "pdf-page", { page: 0, rect }), false, say(rect));
+  /* Well-formed rects still answer as R54 and R71 say, an inverted attested rect included. */
+  assert.equal(tc.extentCovers({ kind: "region", source: { kind: "pdf-page", page: 0, rect: [2, 2, 0, 0] } }, target), true);
+  assert.equal(tc.extentCovers({ kind: "region", source: { kind: "pdf-page", page: 0, rect: [0.5, 0, 2, 2] } }, target), false);
+  assert.equal(tc.readingPositionInExtent(position, "pdf-page", { page: 0, rect: [2, 2, 0, 0] }), true);
+});
+
 test("R84: no place is named in anything the module answers", () => {
   const PLACES = /oakland|alameda|california|berkeley|san francisco/i;
   /** @type {string[]} */

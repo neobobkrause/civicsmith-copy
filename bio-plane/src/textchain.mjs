@@ -1559,14 +1559,15 @@ export function extentCovers(extent, target) {
      not what the member checked. */
   const src = extent.source;
   if (!src || !isFields(src) || src.page !== page) return false;
-  const rect = target.rect;
-  if (!isList(rect) || rect.length !== 4) return false;
+  /* Both rects are read only as four numbers (R54); any other shape on either side is R55's no (R83:
+     an attested region whose source names no rect, or a rect of things that are not numbers, never throws). */
+  const rect = target.rect, attested = src.rect;
+  if (!isRect(rect) || !isRect(attested)) return false;
   /* D-670: A RECT IS FOUR NUMBERS IN A SPACE. An OCR anchor is in the pixels of the frame that was
      read (`space: "image-px"`) and a leg's rect in PDF user space; across two spaces "inside" is a
      numeric accident, so the answer is the default one — no. */
   if (!sameSpace(src, target)) return false;
-  /* The attested rect is read as it stands: a region whose source names no rect has nothing to read. */
-  const [ax0, ay0, ax1, ay1] = normRect(/** @type {Iterable<unknown, unknown, unknown>} */ (src.rect));
+  const [ax0, ay0, ax1, ay1] = normRect(attested);
   const [bx0, by0, bx1, by1] = normRect(rect);
   return bx0 >= ax0 && by0 >= ay0 && bx1 <= ax1 && by1 <= ay1;
 }
@@ -1576,12 +1577,15 @@ export function extentCovers(extent, target) {
    inside it. Normalising is not tidiness: an inverted attested rect would have
    made a member's real attestation cover nothing, which fails SAFE but fails
    silently, and a member would have had no way to tell. */
-/** @param {Iterable<unknown, unknown, unknown>} r @returns {[number, number, number, number]} */
+/** @param {Rect} r @returns {Rect} */
 function normRect(r) {
   const [x0, y0, x1, y1] = r;
-  const nx0 = Number(x0), ny0 = Number(y0), nx1 = Number(x1), ny1 = Number(y1);
-  return [Math.min(nx0, nx1), Math.min(ny0, ny1), Math.max(nx0, nx1), Math.max(ny0, ny1)];
+  return [Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1), Math.max(y0, y1)];
 }
+
+/** A rect as the containment rules read one: four numbers (R54, R71). @typedef {[number, number, number, number]} Rect */
+/** @param {unknown} r @returns {r is Rect} */
+const isRect = (r) => isList(r) && r.length === 4 && r.every((n) => typeof n === "number");
 
 /** D-670 — the coordinate space a rect is stated in, and the one every rect written before D-670 was:
  *  PDF default user space (IC-203). `content`'s extent grammar addresses only this space. */
@@ -1862,6 +1866,8 @@ export function readingPositionInExtent(position, extentKind, extent) {
     if (!Array.isArray(own) || own.length !== 4) return false;
     /* D-670: two rects in two spaces are not comparable — `extentCovers`' rule. */
     if (!sameSpace(p, extent)) return false;
+    /* An extent rect of four things that are not all numbers cannot be compared: R71's "else false" (R83). */
+    if (!isRect(rect) || !isRect(own)) return false;
     const [ax0, ay0, ax1, ay1] = normRect(rect);
     const [bx0, by0, bx1, by1] = normRect(own);
     return bx0 >= ax0 && by0 >= ay0 && bx1 <= ax1 && by1 <= ay1;
