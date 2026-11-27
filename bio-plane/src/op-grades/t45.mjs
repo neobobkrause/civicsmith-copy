@@ -22,10 +22,15 @@
 
 import { word } from "../setup-words/index.mjs";
 
+/** @param {string} s */
 const R = (s) => `read: ${s}; writes nothing`;
+/** @param {string} s */
 const PLAN = (s) => `plan-directed: ${s}; kept in the plan's history, never published; moves no bundle`;
+/** @param {string} s */
 const SUCCESS = (s) => `success-directed: ${s}; never a consequence part; moves no bundle`;
+/** @param {string} s */
 const RULE = (s) => `rule-directed: ${s}; the group's own rule beside the profiles, never a profile's; moves no bundle`;
+/** @param {string} s */
 const WATCH = (s) => `watch-directed: ${s}; moves no bundle`;
 
 /* ---- the rungs (`affordances` R19's backing beside each) ---- */
