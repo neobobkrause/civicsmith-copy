@@ -121,22 +121,110 @@
 import "./stdio.mjs";                 /* D-282: a suite's own exit must not discard the suite's own output */
 import { extractPdfStructure, PDF_LINK_TYPES } from "../src/pdfstructure.mjs";
 import { LINK_TYPES, linkWrapper } from "../src/subresources.mjs";
-import { deflateSync } from "node:zlib";
+import { flate as flateOf } from "./m/pdf-reader/pdf.mjs";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+/** @import { PdfStructureAnswer, PdfStructure, LinkRecord, LinkSource, LinkPlace } from "../src/pdfstructure.mjs" */
+
+/** One object of a hand-built PDF: a plain body, or a stream with its dictionary.
+ *  @typedef {{ num: number, body: string } | { num: number, head: string, stream: Uint8Array }} RawObject */
+/** What `textPdf` builds a page from.
+ *  @typedef {Object} TextPdfOptions
+ *  @property {string} content the page's content stream
+ *  @property {string} fontBody the font dict
+ *  @property {string | null} [cmapBody] its /ToUnicode stream, null or absent is none
+ *  @property {boolean} [flate] whether the content and the CMap are FlateDecode-compressed
+ */
+/** The OCR engine and field a reading names, each undefined where none is named.
+ *  @typedef {{ engine: string | undefined, field: string | undefined }} OcrRead */
 
 let pass = 0, fail = 0;
+/** One assertion: `got` and `want` compared as JSON, the outcome printed under `label`.
+ *  @param {string} label
+ *  @param {unknown} got
+ *  @param {unknown} want
+ *  @returns {void} */
 const t = (label, got, want) => {
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${label}${ok ? "" : `\n         want ${JSON.stringify(want)}\n         got  ${JSON.stringify(got)}`}`);
-  ok ? pass++ : fail++;
+  if (ok) pass++; else fail++;
 };
 
+/** The reading of a PDF; a thrown failure when it is refused.
+ *  @param {PdfStructureAnswer} r
+ *  @returns {PdfStructure} */
+const read = (r) => {
+  if (!r.ok) throw new Error(`the PDF was refused: ${r.reason}`);
+  return r;
+};
+/** Entry `i` of a list; a thrown failure naming `what` when there is none.
+ *  @template T
+ *  @param {T[]} xs
+ *  @param {number} i
+ *  @param {string} what
+ *  @returns {T} */
+const nth = (xs, i, what) => {
+  const x = xs[i];
+  if (x === undefined) throw new Error(`${what}[${i}] is missing`);
+  return x;
+};
+/** A value that must be there; a thrown failure naming `what` when it is undefined.
+ *  @template T
+ *  @param {T | undefined} x
+ *  @param {string} what
+ *  @returns {T} */
+const must = (x, what) => {
+  if (x === undefined) throw new Error(`${what} is missing`);
+  return x;
+};
+/** A link's source; a thrown failure when it has none.
+ *  @param {LinkRecord} l
+ *  @returns {LinkSource | LinkPlace} */
+const sourceOf = (l) => {
+  const src = l.source;
+  if (src === null) throw new Error("the link has no source");
+  return src;
+};
+/* Each reader below answers a member of a link's target, or undefined for a link whose partition's target has none. */
+/** @param {LinkRecord} l
+ *  @returns {string | undefined} */
+const urlOf = (l) => {
+  const target = l.target;
+  return "url" in target ? target.url : undefined;
+};
+/** @param {LinkRecord} l
+ *  @returns {number | undefined} */
+const pageOf = (l) => (l.partition === "anchor" ? l.target.page : undefined);
+/** @param {LinkRecord} l
+ *  @returns {string | undefined} */
+const fragmentOf = (l) => (l.partition === "anchor" ? l.target.fragment : undefined);
+/** @param {LinkRecord} l
+ *  @returns {string | null | undefined} */
+const destOf = (l) => (l.partition === "anchor" || l.partition === "undetermined" ? l.target.dest : undefined);
+/** @param {LinkRecord} l
+ *  @returns {string | undefined} */
+const whyOf = (l) => (l.partition === "undetermined" ? l.target.why : undefined);
+/** @param {LinkRecord} l
+ *  @returns {string | undefined} */
+const shaOf = (l) => (l.partition === "intra" ? l.target.sha256 : undefined);
+/** @param {LinkRecord} l
+ *  @returns {string | null | undefined} */
+const nameOf = (l) => (l.partition === "intra" || l.partition === "undetermined" ? l.target.name : undefined);
+/** A refusal's reason; undefined for a reading.
+ *  @param {PdfStructureAnswer} r
+ *  @returns {string | undefined} */
+const reasonOf = (r) => (r.ok ? undefined : r.reason);
+
 /* ---- a tiny PDF assembler: brute-force parseable, no xref needed ---- */
+/** @param {RawObject[]} objs
+ *  @param {string} [trailer]
+ *  @returns {Uint8Array} */
 function pdf(objs, trailer = "") {
+  /** @type {Uint8Array[]} */
   const chunks = [Buffer.from("%PDF-1.7\n", "latin1")];
   for (const o of objs) {
     chunks.push(Buffer.from(`${o.num} 0 obj\n`, "latin1"));
-    if (o.stream) {
+    if ("stream" in o) {
       chunks.push(Buffer.from(o.head + "\nstream\n", "latin1"));
       chunks.push(o.stream);
       chunks.push(Buffer.from("\nendstream\n", "latin1"));
@@ -149,6 +237,9 @@ function pdf(objs, trailer = "") {
   return new Uint8Array(Buffer.concat(chunks));
 }
 
+/** @param {number} n
+ *  @param {string} pagesRef
+ *  @returns {RawObject} */
 const CATALOG = (n, pagesRef) => ({ num: n, body: `<< /Type /Catalog /Pages ${pagesRef} >>` });
 
 /* ------------------------------------------------------------------ */
@@ -160,15 +251,15 @@ console.log("\n--- a /URI link is deferred ---");
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [4 0 R] >>" },
     { num: 4, body: "<< /Type /Annot /Subtype /Link /Rect [100 100 200 120] /A << /S /URI /URI (https://example.gov/agenda.pdf) >> >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("it is a PDF", out.ok, true);
   t("one page", out.pages, 1);
   t("one link", out.links.length, 1);
-  const l = out.links[0];
+  const l = nth(out.links, 0, "links");
   t("partition deferred", l.partition, "deferred");
-  t("the url is carried verbatim", l.target.url, "https://example.gov/agenda.pdf");
-  t("element reference names the source page (0-based)", l.source.page, 0);
-  t("and the annotation rectangle", l.source.rect, [100, 100, 200, 120]);
+  t("the url is carried verbatim", urlOf(l), "https://example.gov/agenda.pdf");
+  t("element reference names the source page (0-based)", sourceOf(l).page, 0);
+  t("and the annotation rectangle", sourceOf(l).rect, [100, 100, 200, 120]);
   t("the wrapper is byte-identical to linkWrapper.deferred",
     l.wrapper, linkWrapper.deferred("https://example.gov/agenda.pdf"));
   t("counts agree", out.counts, { anchor: 0, intra: 0, deferred: 1, refused: 0, undetermined: 0 });
@@ -182,11 +273,11 @@ console.log("\n--- a mailto: /URI link is refused ---");
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /Annots [4 0 R] >>" },
     { num: 4, body: "<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] /A << /S /URI /URI (mailto:clerk@example.gov) >> >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("one link", out.links.length, 1);
-  t("partition refused", out.links[0].partition, "refused");
-  t("the wrapper is the refused wrapper exactly", out.links[0].wrapper, linkWrapper.refused());
-  t("the scheme is still recorded, never invented away", out.links[0].target.url, "mailto:clerk@example.gov");
+  t("partition refused", nth(out.links, 0, "links").partition, "refused");
+  t("the wrapper is the refused wrapper exactly", nth(out.links, 0, "links").wrapper, linkWrapper.refused());
+  t("the scheme is still recorded, never invented away", urlOf(nth(out.links, 0, "links")), "mailto:clerk@example.gov");
   // javascript: is the other executable case
   const js = pdf([
     CATALOG(1, "2 0 R"),
@@ -194,7 +285,7 @@ console.log("\n--- a mailto: /URI link is refused ---");
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /Annots [4 0 R] >>" },
     { num: 4, body: "<< /Type /Annot /Subtype /Link /A << /S /URI /URI (javascript:alert(1)) >> >>" },
   ]);
-  t("javascript: is refused too", (await extractPdfStructure(js)).links[0].partition, "refused");
+  t("javascript: is refused too", nth(read(await extractPdfStructure(js)).links, 0, "links").partition, "refused");
 }
 
 console.log("\n--- an internal /GoTo /Dest is an anchor with the target page resolved ---");
@@ -206,16 +297,16 @@ console.log("\n--- an internal /GoTo /Dest is an anchor with the target page res
     { num: 4, body: "<< /Type /Page /Parent 2 0 R >>" },
     { num: 5, body: "<< /Type /Annot /Subtype /Link /Rect [5 5 15 15] /A << /S /GoTo /D [4 0 R /XYZ 0 792 0] >> >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("two pages", out.pages, 2);
   t("one link", out.links.length, 1);
-  const l = out.links[0];
+  const l = nth(out.links, 0, "links");
   t("partition anchor", l.partition, "anchor");
-  t("the target is the SECOND page, 0-based index 1", l.target.page, 1);
-  t("the source is the FIRST page, index 0", l.source.page, 0);
+  t("the target is the SECOND page, 0-based index 1", pageOf(l), 1);
+  t("the source is the FIRST page, index 0", sourceOf(l).page, 0);
   t("the wrapper is byte-identical to linkWrapper.anchor of the fragment",
-    l.wrapper, linkWrapper.anchor(l.target.fragment));
-  t("the fragment is the 1-based page open-parameter", l.target.fragment, "#page=2");
+    l.wrapper, linkWrapper.anchor(must(fragmentOf(l), "the fragment")));
+  t("the fragment is the 1-based page open-parameter", fragmentOf(l), "#page=2");
   // A bare /Dest on the annotation (no /A) resolves the same way.
   const bare = pdf([
     CATALOG(1, "2 0 R"),
@@ -224,7 +315,7 @@ console.log("\n--- an internal /GoTo /Dest is an anchor with the target page res
     { num: 4, body: "<< /Type /Page /Parent 2 0 R >>" },
     { num: 5, body: "<< /Type /Annot /Subtype /Link /Dest [4 0 R /Fit] >>" },
   ]);
-  t("a bare /Dest resolves to the same anchor", (await extractPdfStructure(bare)).links[0].target.page, 1);
+  t("a bare /Dest resolves to the same anchor", pageOf(nth(read(await extractPdfStructure(bare)).links, 0, "links")), 1);
 }
 
 console.log("\n--- a named destination resolves through the /Dests dict ---");
@@ -236,9 +327,9 @@ console.log("\n--- a named destination resolves through the /Dests dict ---");
     { num: 4, body: "<< /Type /Page /Parent 2 0 R >>" },
     { num: 5, body: "<< /Type /Annot /Subtype /Link /A << /S /GoTo /D (budget) >> >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
-  t("the named dest resolves to page index 1", out.links[0].target.page, 1);
-  t("and the destination name is kept", out.links[0].target.dest, "budget");
+  const out = read(await extractPdfStructure(bytes));
+  t("the named dest resolves to page index 1", pageOf(nth(out.links, 0, "links")), 1);
+  t("and the destination name is kept", destOf(nth(out.links, 0, "links")), "budget");
 }
 
 console.log("\n--- a Link annotation living inside a FlateDecode /ObjStm is read ---");
@@ -249,23 +340,24 @@ console.log("\n--- a Link annotation living inside a FlateDecode /ObjStm is read
   const header = "10 0"; // objNum 10 at offset 0 relative to /First
   const inner = header + "\n" + annotBody;
   const first = Buffer.byteLength(header + "\n", "latin1");
-  const compressed = deflateSync(Buffer.from(inner, "latin1")); // zlib format: DecompressionStream("deflate")
+  const compressed = flateOf(inner); // zlib format: DecompressionStream("deflate")
   const bytes = pdf([
     CATALOG(1, "2 0 R"),
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /Annots [10 0 R] >>" },
     { num: 20, head: `<< /Type /ObjStm /N 1 /First ${first} /Length ${compressed.length} /Filter /FlateDecode >>`, stream: compressed },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("the compressed annotation is NOT silently empty", out.links.length, 1);
-  t("it classifies as deferred", out.links[0].partition, "deferred");
-  t("with the url from inside the object stream", out.links[0].target.url, "https://objstm.example.gov/");
+  t("it classifies as deferred", nth(out.links, 0, "links").partition, "deferred");
+  t("with the url from inside the object stream", urlOf(nth(out.links, 0, "links")), "https://objstm.example.gov/");
 }
 
 console.log("\n--- an embedded file attachment is intra, content-addressed ---");
 {
-  const fileBytes = Buffer.from("PDF-ITEM-PACKET-CONTENTS", "latin1");
-  const efStream = deflateSync(fileBytes);
+  const fileText = "PDF-ITEM-PACKET-CONTENTS";
+  const fileBytes = Buffer.from(fileText, "latin1");
+  const efStream = flateOf(fileText);
   const bytes = pdf([
     CATALOG(1, "2 0 R"),
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
@@ -274,16 +366,15 @@ console.log("\n--- an embedded file attachment is intra, content-addressed ---")
     { num: 5, body: "<< /Type /Filespec /F (item.pdf) /UF (item.pdf) /EF << /F 6 0 R >> >>" },
     { num: 6, head: `<< /Type /EmbeddedFile /Length ${efStream.length} /Filter /FlateDecode >>`, stream: efStream },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("one link", out.links.length, 1);
-  const l = out.links[0];
+  const l = nth(out.links, 0, "links");
   t("partition intra", l.partition, "intra");
-  t("the wrapper is byte-identical to linkWrapper.intra of the sha", l.wrapper, linkWrapper.intra(l.target.sha256));
+  t("the wrapper is byte-identical to linkWrapper.intra of the sha", l.wrapper, linkWrapper.intra(must(shaOf(l), "the sha")));
   // The sha must be SHA-256 of the DECODED embedded bytes, computed independently here.
-  const want = await crypto.subtle.digest("SHA-256", fileBytes);
-  const wantHex = [...new Uint8Array(want)].map((b) => b.toString(16).padStart(2, "0")).join("");
-  t("the sha is SHA-256 of the decoded file bytes", l.target.sha256, wantHex);
-  t("the filename is kept", l.target.name, "item.pdf");
+  const wantHex = createHash("sha256").update(fileBytes).digest("hex");
+  t("the sha is SHA-256 of the decoded file bytes", shaOf(l), wantHex);
+  t("the filename is kept", nameOf(l), "item.pdf");
 }
 
 console.log("\n--- a /GoTo to a dangling page is undetermined, never invented ---");
@@ -294,11 +385,11 @@ console.log("\n--- a /GoTo to a dangling page is undetermined, never invented --
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /Annots [5 0 R] >>" },
     { num: 5, body: "<< /Type /Annot /Subtype /Link /A << /S /GoTo /D [99 0 R /Fit] >> >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("one link", out.links.length, 1);
-  t("partition undetermined", out.links[0].partition, "undetermined");
-  t("it carries no wrapper (undetermined has none)", out.links[0].wrapper, null);
-  t("and states WHY it could not be resolved", out.links[0].target.why, "dest_page_not_in_tree");
+  t("partition undetermined", nth(out.links, 0, "links").partition, "undetermined");
+  t("it carries no wrapper (undetermined has none)", nth(out.links, 0, "links").wrapper, null);
+  t("and states WHY it could not be resolved", whyOf(nth(out.links, 0, "links")), "dest_page_not_in_tree");
   t("undetermined is not one of the four HTML partitions", LINK_TYPES.includes("undetermined"), false);
   t("but it is a first-class PDF partition", PDF_LINK_TYPES.includes("undetermined"), true);
 }
@@ -310,7 +401,7 @@ console.log("\n--- THE CONTROL: a PDF with no annotations finds nothing, invents
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("it is a valid PDF", out.ok, true);
   t("with one page", out.pages, 1);
   t("and ZERO links", out.links.length, 0);
@@ -321,7 +412,7 @@ console.log("\n--- non-PDF bytes are refused as such, not parsed into phantom li
 {
   const out = await extractPdfStructure(new Uint8Array([1, 2, 3, 4]));
   t("not a pdf", out.ok, false);
-  t("named", out.reason, "NOT_A_PDF");
+  t("named", reasonOf(out), "NOT_A_PDF");
 }
 
 console.log("\n--- PARITY: the partition vocabulary mirrors subresources.mjs exactly ---");
@@ -339,7 +430,10 @@ console.log("\n--- PARITY: the partition vocabulary mirrors subresources.mjs exa
  * `fontBody` is the font dict; `cmapBody` (or null) is its /ToUnicode stream.
  * When `flate` is set, both the content and the CMap are FlateDecode-compressed,
  * proving Tier 1 reuses the same stream parser the link half does. */
+/** @param {TextPdfOptions} options
+ *  @returns {Uint8Array} */
 function textPdf({ content, fontBody, cmapBody, flate = false }) {
+  /** @type {RawObject[]} */
   const objs = [
     { num: 1, body: "<< /Type /Catalog /Pages 2 0 R >>" },
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
@@ -347,7 +441,7 @@ function textPdf({ content, fontBody, cmapBody, flate = false }) {
   ];
   const cbuf = Buffer.from(content, "latin1");
   if (flate) {
-    const z = deflateSync(cbuf);
+    const z = flateOf(content);
     objs.push({ num: 4, head: `<< /Length ${z.length} /Filter /FlateDecode >>`, stream: z });
   } else {
     objs.push({ num: 4, head: `<< /Length ${cbuf.length} >>`, stream: cbuf });
@@ -356,7 +450,7 @@ function textPdf({ content, fontBody, cmapBody, flate = false }) {
   if (cmapBody != null) {
     const mbuf = Buffer.from(cmapBody, "latin1");
     if (flate) {
-      const z = deflateSync(mbuf);
+      const z = flateOf(cmapBody);
       objs.push({ num: 6, head: `<< /Length ${z.length} /Filter /FlateDecode >>`, stream: z });
     } else {
       objs.push({ num: 6, head: `<< /Length ${mbuf.length} >>`, stream: mbuf });
@@ -366,6 +460,8 @@ function textPdf({ content, fontBody, cmapBody, flate = false }) {
 }
 
 /* A ToUnicode CMap with a 1-byte codespace and the given bfchar/bfrange body. */
+/** @param {string} body
+ *  @returns {string} */
 const cmap1 = (body) =>
   `/CIDInit /ProcSet findresource begin 12 dict begin begincmap
 /CMapName /Adobe-Identity-UCS def
@@ -376,6 +472,8 @@ ${body}
 endcmap CMapName currentdict /CMap defineresource pop end end`;
 
 /* A ToUnicode CMap with a 2-byte codespace (composite/Type0 case). */
+/** @param {string} body
+ *  @returns {string} */
 const cmap2 = (body) =>
   `/CIDInit /ProcSet findresource begin 12 dict begin begincmap
 /CMapName /Adobe-Identity-UCS def
@@ -396,10 +494,10 @@ console.log("\n--- a simple font with a /ToUnicode bfchar CMap decodes to Unicod
     fontBody: SIMPLE_FONT,
     cmapBody: cmap1(cmapBody),
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("it is a PDF", out.ok, true);
   t("the shown bytes decode to HELLO through the CMap", out.text.document, "HELLO");
-  t("per-page text carries the same string", out.text.pages[0].text, "HELLO");
+  t("per-page text carries the same string", nth(out.text.pages, 0, "pages").text, "HELLO");
   t("nothing was undetermined", out.text.undetermined, []);
   t("the char count is honest", out.text.counts.chars, 5);
 }
@@ -412,7 +510,7 @@ console.log("\n--- a bfrange CMap decodes: incrementing form and array form ---"
     fontBody: SIMPLE_FONT,
     cmapBody: cmap1("1 beginbfrange\n<41> <5A> <0041>\nendbfrange"),
   });
-  t("the incrementing bfrange decodes <4849> to HI", (await extractPdfStructure(inc)).text.document, "HI");
+  t("the incrementing bfrange decodes <4849> to HI", read(await extractPdfStructure(inc)).text.document, "HI");
 
   // array: codes 01..03 -> [A B C]
   const arr = textPdf({
@@ -420,7 +518,7 @@ console.log("\n--- a bfrange CMap decodes: incrementing form and array form ---"
     fontBody: SIMPLE_FONT,
     cmapBody: cmap1("1 beginbfrange\n<01> <03> [<0041> <0042> <0043>]\nendbfrange"),
   });
-  t("the array bfrange decodes to ABC", (await extractPdfStructure(arr)).text.document, "ABC");
+  t("the array bfrange decodes to ABC", read(await extractPdfStructure(arr)).text.document, "ABC");
 }
 
 console.log("\n--- a 2-byte Type0 font with /ToUnicode decodes composite codes ---");
@@ -431,7 +529,7 @@ console.log("\n--- a 2-byte Type0 font with /ToUnicode decodes composite codes -
     fontBody: "<< /Type /Font /Subtype /Type0 /BaseFont /ABCDEF+Sub /Encoding /Identity-H /DescendantFonts [7 0 R] /ToUnicode 6 0 R >>",
     cmapBody: cmap2("2 beginbfchar\n<0001> <0048>\n<0002> <0069>\nendbfchar"),
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("the two-byte codes decode to Hi", out.text.document, "Hi");
   t("no run was left undetermined", out.text.undetermined.length, 0);
 }
@@ -444,16 +542,16 @@ console.log("\n--- a FlateDecode content stream AND CMap are read via the same p
     cmapBody: cmap1("2 beginbfchar\n<01> <0047>\n<02> <006F>\nendbfchar"),
     flate: true,
   });
-  t("compressed content + compressed CMap still decode to Go", (await extractPdfStructure(bytes)).text.document, "Go");
+  t("compressed content + compressed CMap still decode to Go", read(await extractPdfStructure(bytes)).text.document, "Go");
 }
 
 console.log("\n--- TJ: a large negative advance is a word gap; a small kern is not ---");
 {
   const cmapBody = cmap1("2 beginbfchar\n<01> <0041>\n<02> <0042>\nendbfchar"); // 1->A 2->B
   const gap = textPdf({ content: "BT /F1 12 Tf [(\\001)-250(\\002)] TJ ET", fontBody: SIMPLE_FONT, cmapBody });
-  t("a -250 advance inserts a space (A B)", (await extractPdfStructure(gap)).text.document, "A B");
+  t("a -250 advance inserts a space (A B)", read(await extractPdfStructure(gap)).text.document, "A B");
   const kern = textPdf({ content: "BT /F1 12 Tf [(\\001)-20(\\002)] TJ ET", fontBody: SIMPLE_FONT, cmapBody });
-  t("a -20 kern does not (AB)", (await extractPdfStructure(kern)).text.document, "AB");
+  t("a -20 kern does not (AB)", read(await extractPdfStructure(kern)).text.document, "AB");
 }
 
 console.log("\n--- THE ACCEPTANCE CASE: a CID font with NO /ToUnicode is undetermined, NAMING the font, never mojibake ---");
@@ -463,15 +561,15 @@ console.log("\n--- THE ACCEPTANCE CASE: a CID font with NO /ToUnicode is undeter
     fontBody: "<< /Type /Font /Subtype /Type0 /BaseFont /ABCDEF+CustomCID /Encoding /Identity-H /DescendantFonts [7 0 R] >>",
     cmapBody: null, // NO ToUnicode
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("no readable text is produced (no mojibake)", out.text.document, "");
   t("exactly one undetermined region", out.text.undetermined.length, 1);
-  const u = out.text.undetermined[0];
+  const u = nth(out.text.undetermined, 0, "undetermined");
   t("the region is on the right page", u.page, 0);
   t("the reason names the CID-font-with-no-ToUnicode cause", u.reason, "cid_font_no_tounicode");
   t("and NAMES THE FONT (the BaseFont), never a guess", u.font, "ABCDEF+CustomCID");
   t("the undecodable bytes are carried, not dropped", u.codes, "00480049");
-  t("per-page undetermined agrees", out.text.pages[0].undetermined[0].reason, "cid_font_no_tounicode");
+  t("per-page undetermined agrees", nth(nth(out.text.pages, 0, "pages").undetermined, 0, "page undetermined").reason, "cid_font_no_tounicode");
 }
 
 console.log("\n--- a code absent from the CMap is unmapped_code, never guessed; mapped codes still decode ---");
@@ -482,12 +580,12 @@ console.log("\n--- a code absent from the CMap is unmapped_code, never guessed; 
     fontBody: SIMPLE_FONT,
     cmapBody: cmap1("1 beginbfchar\n<01> <0041>\nendbfchar"),
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("the mapped code still decodes (A)", out.text.document, "A");
   t("the unmapped code is one undetermined region", out.text.undetermined.length, 1);
-  t("named unmapped_code", out.text.undetermined[0].reason, "unmapped_code");
-  t("carrying the code that had no mapping", out.text.undetermined[0].codes, "02");
-  t("and the font it was shown in", out.text.undetermined[0].font, "Helvetica");
+  t("named unmapped_code", nth(out.text.undetermined, 0, "undetermined").reason, "unmapped_code");
+  t("carrying the code that had no mapping", nth(out.text.undetermined, 0, "undetermined").codes, "02");
+  t("and the font it was shown in", nth(out.text.undetermined, 0, "undetermined").font, "Helvetica");
 }
 
 console.log("\n--- text shown with no current font is undetermined, not dropped silently ---");
@@ -497,9 +595,9 @@ console.log("\n--- text shown with no current font is undetermined, not dropped 
     fontBody: SIMPLE_FONT,
     cmapBody: cmap1("1 beginbfchar\n<01> <0041>\nendbfchar"),
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("nothing readable", out.text.document, "");
-  t("one undetermined region naming the absence of a current font", out.text.undetermined[0].reason, "no_current_font");
+  t("one undetermined region naming the absence of a current font", nth(out.text.undetermined, 0, "undetermined").reason, "no_current_font");
 }
 
 console.log("\n--- the text field is present and shaped even when a PDF has no text ---");
@@ -510,10 +608,10 @@ console.log("\n--- the text field is present and shaped even when a PDF has no t
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("text.document is the empty string, not missing", out.text.document, "");
   t("one page entry, matching the page count", out.text.pages.length, 1);
-  t("its text is empty and nothing was undetermined", [out.text.pages[0].text, out.text.undetermined.length], ["", 0]);
+  t("its text is empty and nothing was undetermined", [nth(out.text.pages, 0, "pages").text, out.text.undetermined.length], ["", 0]);
 }
 
 console.log("\n--- an ENCRYPTED PDF is NAMED, not degraded to a swarm of undecodable notes (CPDF-5) ---");
@@ -528,12 +626,12 @@ console.log("\n--- an ENCRYPTED PDF is NAMED, not degraded to a swarm of undecod
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
     { num: 4, body: "<< /Filter /Standard /V 2 /R 3 /O (0000000000000000) /U (0000000000000000) /P -44 >>" },
   ], "trailer\n<< /Root 1 0 R /Encrypt 4 0 R >>\n");
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("still ok:true — encryption is a fact about the doc, not a parse fault", out.ok, true);
   t("text is empty, never guessed", out.text.document, "");
   t("exactly one document-level undetermined marker", out.text.undetermined.length, 1);
-  t("named: encrypted", out.text.undetermined[0].reason, "encrypted");
-  t("document-level marker (no single page owns it)", out.text.undetermined[0].page, null);
+  t("named: encrypted", nth(out.text.undetermined, 0, "undetermined").reason, "encrypted");
+  t("document-level marker (no single page owns it)", nth(out.text.undetermined, 0, "undetermined").page, null);
   t("and a note records it for the log", out.notes.includes("encrypted"), true);
   // The escalation predicate the plane uses (undetermined regions > chars) fires.
   t("undetermined regions exceed decoded chars -> the plane will escalate", out.text.counts.undetermined > out.text.counts.chars, true);
@@ -546,7 +644,7 @@ console.log("\n--- a normal (unencrypted) PDF is NOT flagged encrypted ---");
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("no encrypted note on a plain document", out.notes.includes("encrypted"), false);
   t("no encrypted marker", out.text.undetermined.some((u) => u.reason === "encrypted"), false);
 }
@@ -566,7 +664,12 @@ console.log("\n--- a normal (unencrypted) PDF is NOT flagged encrypted ---");
    an assertion that THROWS reading it reports "the suite crashed" where the
    finding is "no engine was named". The control's first arm removes exactly
    that read and must come back as a want/got. */
-const ocrOf = (out) => (out.text && out.text.producer && out.text.producer.ocr) || {};
+/** @param {PdfStructureAnswer} out
+ *  @returns {OcrRead} */
+const ocrOf = (out) => {
+  const ocr = out.ok ? out.text.producer.ocr : null;
+  return ocr === null ? { engine: undefined, field: undefined } : { engine: ocr.engine, field: ocr.field };
+};
 console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last one wins ---");
 {
   const bytes = pdf([
@@ -575,7 +678,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
     { num: 4, body: "<< /Producer (ABBYY FineReader Engine 11) >>" },
   ], "trailer\n<< /Root 1 0 R /Info 4 0 R >>\n");
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("classic trailer: the product is NAMED", ocrOf(out).engine, "ABBYY FineReader Engine 11");
   t("and the determination is ocr", out.text.producer.determination, "ocr");
 }
@@ -591,7 +694,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 5, head: `<< /Type /XRef /Root 1 0 R /Info 4 0 R /W [1 2 1] /Size 6 /Length ${xrefData.length} >>`,
       stream: xrefData },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("xref-stream PDF (no `trailer` keyword at all): /Info is still found",
     out.text.producer.determination, "ocr");
   t("naming the engine from the field that carried it",
@@ -611,7 +714,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 4, body: "<< /Producer (ABBYY FineReader Engine 11) >>" },
     { num: 5, body: "<< /Producer (Adobe PDF Library 15.0) >>" },
   ], "trailer\n<< /Root 1 0 R /Info 4 0 R >>\ntrailer\n<< /Root 1 0 R /Info 5 0 R >>\n");
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("an incremental update's LAST trailer wins", out.text.producer.producer, "Adobe PDF Library 15.0");
   t("and a re-save that dropped the marker reads undetermined, never authored",
     out.text.producer.determination, "undetermined");
@@ -623,7 +726,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
   const header = "9 0";
   const inner = header + "\n" + infoBody;
   const first = Buffer.byteLength(header + "\n", "latin1");
-  const compressed = deflateSync(Buffer.from(inner, "latin1"));
+  const compressed = flateOf(inner);
   const bytes = pdf([
     CATALOG(1, "2 0 R"),
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
@@ -631,7 +734,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 21, head: `<< /Type /ObjStm /N 1 /First ${first} /Length ${compressed.length} /Filter /FlateDecode >>`,
       stream: compressed },
   ], "trailer\n<< /Root 1 0 R /Info 9 0 R >>\n");
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("an /Info living inside a FlateDecode /ObjStm is read, not silently absent",
     [out.text.producer.determination, ocrOf(out).engine], ["ocr", "Tesseract 5.3.4"]);
 }
@@ -641,7 +744,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>" },
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
   ]);
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("no /Info at all: undetermined, NAMED as which absence it is",
     [out.text.producer.determination, out.text.producer.why], ["undetermined", "no_producer_metadata"]);
   t("and nothing is invented for it",
@@ -656,7 +759,7 @@ console.log("\n--- D-251: /Info is read from BOTH trailer shapes, and the last o
     { num: 3, body: "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>" },
     { num: 4, body: "<< /Producer (OmniPage Ultimate 19) >>" },
   ], "trailer\n<< /Root 1 0 R /Info 4 0 R >>\ntrailer\n<< /Root 1 0 R /Info 77 0 R >>\n");
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("a dangling /Info reference falls back to the readable candidate instead of reporting no metadata",
     ocrOf(out).engine, "OmniPage Ultimate 19");
 }
@@ -684,6 +787,8 @@ const GLYPHS = cmap1(
 const PER_GLYPH = "<01> Tj 8 0 Td <02> Tj 8 0 Td <03> Tj 8 0 Td <03> Tj 8 0 Td <04> Tj " +
                   "8 0 Td <05> Tj 8 0 Td <06> Tj 8 0 Td <04> Tj 8 0 Td <07> Tj 8 0 Td " +
                   "<03> Tj 8 0 Td <08> Tj";
+/** @param {string} s
+ *  @returns {string[]} */
 const wordsOf = (s) => (s.match(/[^\s]+/g) || []).filter((w) => w.length >= 2);
 
 console.log("\n--- D-481: a per-glyph-positioned line READS AS WORDS (a Td with ty=0 is not a line) ---");
@@ -692,7 +797,7 @@ console.log("\n--- D-481: a per-glyph-positioned line READS AS WORDS (a Td with 
     content: "BT /F1 12 Tf 72 700 Td " + PER_GLYPH + " ET",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  const out = await extractPdfStructure(bytes);
+  const out = read(await extractPdfStructure(bytes));
   t("eleven glyphs placed by eleven Td read as ONE line", out.text.document, "Hello world");
   t("and as WORDS, not characters — the figure the row is about", wordsOf(out.text.document).length, 2);
   /* A FLOOR that survives every control arm, so a run of them cannot all fail
@@ -708,11 +813,15 @@ console.log("\n--- D-481 THE LIAR ARM: a real baseline move STILL breaks the lin
   /* Each arm is the SAME per-glyph line twice, separated by ONE real move. A
      reading that stopped breaking altogether would fail every arm here while
      passing the arm above — which is the whole reason both exist. */
+  /** @param {string} mover
+   *  @returns {Uint8Array} */
   const twice = (mover) => textPdf({
     content: "BT /F1 12 Tf 14 TL 72 700 Td " + PER_GLYPH + " " + mover + " " + PER_GLYPH + " ET",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  const doc = async (mover) => (await extractPdfStructure(twice(mover))).text.document;
+  /** @param {string} mover
+   *  @returns {Promise<string>} */
+  const doc = async (mover) => read(await extractPdfStructure(twice(mover))).text.document;
   t("T* breaks the line", await doc("T*"), "Hello world\nHello world");
   t("a Td with ty != 0 breaks the line", await doc("0 -14 Td"), "Hello world\nHello world");
   t("a TD with ty != 0 breaks the line", await doc("0 -14 TD"), "Hello world\nHello world");
@@ -727,7 +836,7 @@ console.log("\n--- D-481: ' and \" still break, and move by their own leading --
     content: "BT /F1 12 Tf 14 TL 72 700 Td <01> Tj <02> ' 0 0 <03> \" ET",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  t("' and \" each start a new line", (await extractPdfStructure(bytes)).text.document, "H\ne\nl");
+  t("' and \" each start a new line", read(await extractPdfStructure(bytes)).text.document, "H\ne\nl");
 }
 
 console.log("\n--- D-481: the SAME Tm under a DIFFERENT CTM is a DIFFERENT line ---");
@@ -741,13 +850,13 @@ console.log("\n--- D-481: the SAME Tm under a DIFFERENT CTM is a DIFFERENT line 
              "q 1 0 0 1 0 680 cm BT /F1 12 Tf 1 0 0 1 0 0 Tm <02> Tj ET Q",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  t("two identical Tm under two cm read as two lines", (await extractPdfStructure(bytes)).text.document, "H\ne");
+  t("two identical Tm under two cm read as two lines", read(await extractPdfStructure(bytes)).text.document, "H\ne");
   const same = textPdf({
     content: "q 1 0 0 1 0 700 cm BT /F1 12 Tf 1 0 0 1 0 0 Tm <01> Tj ET Q " +
              "q 1 0 0 1 0 700 cm BT /F1 12 Tf 1 0 0 1 0 0 Tm <02> Tj ET Q",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  t("and under the SAME cm as one line", (await extractPdfStructure(same)).text.document, "He");
+  t("and under the SAME cm as one line", read(await extractPdfStructure(same)).text.document, "He");
 }
 
 console.log("\n--- D-481 OVER-STRICTNESS: conventionally written text is unchanged ---");
@@ -758,12 +867,12 @@ console.log("\n--- D-481 OVER-STRICTNESS: conventionally written text is unchang
     content: "BT /F1 12 Tf 72 700 Td <010203> Tj 0 -14 Td <040506> Tj 0 -14 Td <070801> Tj ET",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  t("three Td-separated lines stay three lines", (await extractPdfStructure(bytes)).text.document, "Hel\no w\nrdH");
+  t("three Td-separated lines stay three lines", read(await extractPdfStructure(bytes)).text.document, "Hel\no w\nrdH");
   const tj = textPdf({
     content: "BT /F1 12 Tf 72 700 Td [(\\001)-250(\\002)] TJ ET",
     fontBody: SIMPLE_FONT, cmapBody: GLYPHS,
   });
-  t("the TJ word-gap rule is untouched", (await extractPdfStructure(tj)).text.document, "H e");
+  t("the TJ word-gap rule is untouched", read(await extractPdfStructure(tj)).text.document, "H e");
 }
 
 
@@ -796,8 +905,12 @@ const WIDTH_FONT = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /FirstCh
 const HELLO = "<0102030304>";   // H e l l o   — 5 glyphs, 25 pt at 10 pt
 const WORLD = "<0604070308>";   // w o r l d
 
+/** @param {string} content
+ *  @param {string} [fontBody]
+ *  @param {string} [cmapBody]
+ *  @returns {Promise<string>} */
 const textOf = async (content, fontBody = WIDTH_FONT, cmapBody = GLYPHS) =>
-  (await extractPdfStructure(textPdf({ content, fontBody, cmapBody }))).text.document;
+  read(await extractPdfStructure(textPdf({ content, fontBody, cmapBody }))).text.document;
 
 console.log("\n--- D-502: two runs on ONE baseline, separated by a horizontal jump, are SPLIT ---");
 {
@@ -865,6 +978,8 @@ console.log("\n--- D-502: the pen survives BT, ET, Q and cm — the Legistar sha
      1404.691 94 Tm …`. `BT` RESETS the text matrix, so a pen read off that
      matrix at the second `Tm` reads the text-space ORIGIN — measured on that
      document as gaps of ~1,200 ems before the pen was held in DEVICE space. */
+  /** @param {string} tmX
+   *  @returns {string} */
   const twoBlocks = (tmX) =>
     "q 1 0 0 1 72 700 cm BT /F1 10 Tf 1 0 0 1 0 0 Tm " + HELLO + " Tj ET Q " +
     "q 1 0 0 1 72 700 cm BT /F1 10 Tf 1 0 0 1 " + tmX + " 0 Tm " + WORLD + " Tj ET Q";
@@ -953,6 +1068,8 @@ console.log("\n--- D-502 OVER-STRICTNESS: D-481's own arms, re-run with widths d
   /* Every shape D-481 pinned, with a font that DOES declare its widths, so the
      gap rule is live on all of them. A break policy that fired on a positioning
      operator rather than on a distance would show here. */
+  /** @param {string} mover
+   *  @returns {string} */
   const twice = (mover) => "BT /F1 10 Tf 14 TL 72 700 Td " + HELLO + " Tj " + mover + " " + HELLO + " Tj ET";
   t("T* still breaks the line", await textOf(twice("T*")), "Hello\nHello");
   t("a Td with ty != 0 still breaks the line", await textOf(twice("0 -14 Td")), "Hello\nHello");
@@ -978,8 +1095,8 @@ console.log("\n--- D-502 ON THE REAL AGENDA: the token M-133 named is gone, and 
      reached the CMap as other numbers and fell out as `unmapped_code`. Read as
      the bytes they are they decode: 51,060 -> 51,105 non-whitespace characters,
      45 markers -> 0, lines and glue unmoved. */
-  const agenda = await extractPdfStructure(
-    new Uint8Array(readFileSync(new URL("./fixtures/legistar-agenda-1425405.pdf", import.meta.url))));
+  const agenda = read(await extractPdfStructure(
+    new Uint8Array(readFileSync(new URL("./fixtures/legistar-agenda-1425405.pdf", import.meta.url)))));
   const doc = agenda.text.document;
   t("the fixture really is the agenda: 33 pages and 51,105 non-whitespace characters",
     [agenda.pages, doc.replace(/\s/g, "").length], [33, 51105]);
@@ -1097,10 +1214,11 @@ console.log("\n--- D-517 ON THE REAL DOCUMENTS: what left the corpus is whitespa
   /* Three of M-141's nine move, and every change is a separator this reader had
      inserted where the document already wrote one, or a line made of nothing
      but those. Figures measured on these committed files (M-145), D-502 -> D-517. */
-  const docOf = async (rel) => (await extractPdfStructure(
-    new Uint8Array(readFileSync(new URL(rel, import.meta.url))))).text.document;
+  /** @param {Uint8Array} bytes
+   *  @returns {Promise<string>} */
+  const docOf = async (bytes) => read(await extractPdfStructure(new Uint8Array(bytes))).text.document;
 
-  const d618 = await docOf("./fixtures/cpdf20/legistar-73618.pdf");
+  const d618 = await docOf(readFileSync(new URL("./fixtures/cpdf20/legistar-73618.pdf", import.meta.url)));
   t("73618: the 24 double spaces this reader inserted are gone, and the count is zero",
     (d618.match(/[^\s] {2,}[^\s]/g) || []).length, 0);
   t("73618: `RESOLUTION  CONFIRMING` — the doubled form — does not occur",
@@ -1114,7 +1232,7 @@ console.log("\n--- D-517 ON THE REAL DOCUMENTS: what left the corpus is whitespa
      (d618.match(/[^\s]+/g) || []).filter((w) => w.length >= 2 && /[A-Za-z0-9]/.test(w)).length,
      (d618.match(/[^\s]+/g) || []).filter((w) => /[a-z][A-Z]/.test(w)).length], [258, 248, 0]);
 
-  const d550 = await docOf("./fixtures/cpdf20/legistar-73550.pdf");
+  const d550 = await docOf(readFileSync(new URL("./fixtures/cpdf20/legistar-73550.pdf", import.meta.url)));
   t("73550: the 10 lines that were NOTHING BUT inserted spaces are gone — 15 lines -> 5",
     [d550.split("\n").length, d550.split("\n").filter((l) => l.length && !l.trim()).length], [5, 0]);
   t("73550: 119 characters -> 29, and all 25 non-whitespace characters are still there",
@@ -1123,7 +1241,7 @@ console.log("\n--- D-517 ON THE REAL DOCUMENTS: what left the corpus is whitespa
     [(d550.match(/[^\s]+/g) || []).length,
      (d550.match(/[^\s]+/g) || []).filter((w) => w.length >= 2 && /[A-Za-z0-9]/.test(w)).length], [5, 2]);
 
-  const d545 = await docOf("./fixtures/cpdf20/legistar-73545.pdf");
+  const d545 = await docOf(readFileSync(new URL("./fixtures/cpdf20/legistar-73545.pdf", import.meta.url)));
   t("73545: `secure.  The` — the doubled form — is gone and the sentence reads single-spaced",
     [/secure {2,}The TFO can then/.test(d545), /secure\. The TFO can then/.test(d545)], [false, true]);
   t("73545: 3,945 characters -> 3,937 and 102 lines -> 100, with non-ws UNMOVED at 3,259",
@@ -1142,7 +1260,7 @@ console.log("\n--- D-517 ON THE REAL DOCUMENTS: what left the corpus is whitespa
      lines, 51,105 non-whitespace characters since N813, glue 11) are that guard; this one
      adds the multiple-space count, which a change that merely stripped double
      spaces everywhere would have moved. */
-  const agenda = await docOf("./fixtures/legistar-agenda-1425405.pdf");
+  const agenda = await docOf(readFileSync(new URL("./fixtures/legistar-agenda-1425405.pdf", import.meta.url)));
   t("the agenda keeps all 39 multiple-space runs the DOCUMENT wrote: nothing was stripped wholesale",
     (agenda.match(/[^\s] {2,}[^\s]/g) || []).length, 39);
   t("...and its characters are unmoved at 60,842: D-502's 60,797 and the 45 codes N813 decodes",

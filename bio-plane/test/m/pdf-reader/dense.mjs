@@ -5,7 +5,19 @@
    memory grows with its pages while its bytes stay small. */
 import { deflateSync } from "node:zlib";
 
+/** What `densePdf` writes.
+ *  @typedef {Object} DenseOptions
+ *  @property {number} pages the page count
+ *  @property {number} [linesPerPage] text lines on a page, absent is 40
+ *  @property {number} [padTo] the byte count image padding brings the file to, absent or 0 is no padding
+ *  @property {boolean} [scan] true makes each page one image and no text
+ *  @property {boolean} [encrypted] true names a Standard security handler in the trailer
+ */
+
 /* incompressible and the same every time: a xorshift32 stream */
+/** @param {number} n
+ *  @param {number} seed
+ *  @returns {Buffer} */
 function padBytes(n, seed) {
   const out = Buffer.alloc(n);
   let x = (seed * 2654435761) >>> 0 || 1;
@@ -13,9 +25,18 @@ function padBytes(n, seed) {
   return out;
 }
 
+/** The synthetic PDF's bytes.
+ *  @param {DenseOptions} options
+ *  @returns {Uint8Array} */
 export function densePdf({ pages, linesPerPage = 40, padTo = 0, scan = false, encrypted = false }) {
+  /** @type {Buffer[]} */
   const objs = [];
+  /** @param {string | Buffer} body
+   *  @returns {number} the object's number */
   const add = (body) => { objs.push(Buffer.isBuffer(body) ? body : Buffer.from(body, "latin1")); return objs.length; };
+  /** @param {string} dict
+   *  @param {Buffer} data
+   *  @returns {Buffer} */
   const stream = (dict, data) => Buffer.concat([Buffer.from(`<< ${dict} /Length ${data.length} >>\nstream\n`, "latin1"), data, Buffer.from("\nendstream", "latin1")]);
   const words = ["budget", "department", "program", "appropriation", "fund", "services", "capital", "transfer", "revenue", "estimate", "fiscal", "report", "outlay", "authority"];
   let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
@@ -23,6 +44,7 @@ export function densePdf({ pages, linesPerPage = 40, padTo = 0, scan = false, en
   const cmapId = scan ? 0 : add(stream("", cmap));
   const fontId = scan ? 0 : add(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /ToUnicode ${cmapId} 0 R >>`);
   const imageId = scan ? add(stream("/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8", Buffer.from([255]))) : 0;
+  /** @type {number[]} */
   const pageIds = [];
   const pagesTreeId = objs.length + pages * 2 + 1;
   for (let p = 0; p < pages; p++) {
@@ -34,7 +56,7 @@ export function densePdf({ pages, linesPerPage = 40, padTo = 0, scan = false, en
     let t = "BT /F1 9 Tf 40 760 Td 11 TL\n";
     for (let l = 0; l < linesPerPage; l++) {
       let line = "";
-      for (let w = 0; w < 9; w++) line += words[Math.floor(rnd() * words.length)] + " " + Math.floor(rnd() * 99999) + " ";
+      for (let w = 0; w < 9; w++) line += String(words[Math.floor(rnd() * words.length)]) + " " + Math.floor(rnd() * 99999) + " ";
       t += `(${line.trim()}) Tj T*\n`;
     }
     t += "ET";
@@ -51,7 +73,11 @@ export function densePdf({ pages, linesPerPage = 40, padTo = 0, scan = false, en
     add(stream("/Type /XObject /Subtype /Image /Width 1000 /Height 1000 /ColorSpace /DeviceGray /BitsPerComponent 8", padBytes(n, objs.length)));
     size += n + 120;
   }
-  const parts = [Buffer.from("%PDF-1.7\n%\xe2\xe3\xcf\xd3\n", "latin1")]; const offs = []; let off = parts[0].length;
+  const head = Buffer.from("%PDF-1.7\n%\xe2\xe3\xcf\xd3\n", "latin1");
+  const parts = [head];
+  /** @type {number[]} */
+  const offs = [];
+  let off = head.length;
   objs.forEach((b, i) => {
     offs.push(off);
     const o = Buffer.concat([Buffer.from(`${i + 1} 0 obj\n`, "latin1"), b, Buffer.from("\nendobj\n", "latin1")]);
