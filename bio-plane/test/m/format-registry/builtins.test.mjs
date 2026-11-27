@@ -10,13 +10,27 @@ import { xlsxEntry } from "../../../src/formats-xlsx.mjs";
 import { pptxEntry } from "../../../src/pptx.mjs";
 import { odtEntry, odsEntry, odpEntry } from "../../../src/odf.mjs";
 import { csvEntry } from "../../../src/csv.mjs";
+/** @import { FormatEntry, FormatDetection } from "../../../src/formats.mjs" */
 
+/** @param {FormatDetection | Promise<FormatDetection>} d @returns {FormatDetection} */
+const now = (d) => { if (d instanceof Promise) throw new Error("detectFormat answered later"); return d; };
+/** @param {string} format @returns {FormatEntry} */
+const entryOf = (format) => { const e = getFormat(format); if (!e) throw new Error(`no entry registered for ${format}`); return e; };
+/** @param {string} s @returns {Uint8Array} */
 const latin1 = (s) => Uint8Array.from([...s].map((c) => c.charCodeAt(0) & 0xff));
+/** @param {number} n @param {string} s @returns {Uint8Array} */
 const pad = (n, s) => latin1(" ".repeat(n) + s);
-const html = getFormat("html"), pdf = getFormat("pdf");
+const html = entryOf("html"), pdf = entryOf("pdf");
 const FALSY = [null, undefined, 0, "", false, NaN];
 
+/**
+ * @param {FormatDetection | null} r
+ * @param {string} format
+ * @param {string} confidence
+ * @returns {void}
+ */
 const isHit = (r, format, confidence) => {
+  assert.ok(r);
   assert.equal(r.format, format);
   assert.equal(r.confidence, confidence);
   assert.ok(Array.isArray(r.signals) && r.signals.length > 0 && r.signals.every((s) => typeof s === "string"));
@@ -25,16 +39,16 @@ const isHit = (r, format, confidence) => {
 
 test("R23: at module load the registry holds exactly the twelve built-in entries, in order, the readers' own objects unmodified", () => {
   assert.deepEqual(listFormats(), ["jpeg", "png", "html", "pdf", "docx", "xlsx", "pptx", "odt", "ods", "odp", "csv", "zip"]);
-  for (const [f, e] of [["docx", docxEntry], ["xlsx", xlsxEntry], ["pptx", pptxEntry], ["odt", odtEntry],
-    ["ods", odsEntry], ["odp", odpEntry], ["csv", csvEntry]]) {
+  for (const [f, e] of /** @type {const} */ ([["docx", docxEntry], ["xlsx", xlsxEntry], ["pptx", pptxEntry], ["odt", odtEntry],
+    ["ods", odsEntry], ["odp", odpEntry], ["csv", csvEntry]])) {
     assert.equal(getFormat(f), e, `${f} is the reader's own entry object`);
     assert.equal(e.format, f);
   }
   assert.equal(html.format, "html");
   assert.equal(pdf.format, "pdf");
-  assert.equal(getFormat("jpeg").format, "jpeg");
-  assert.equal(getFormat("png").format, "png");
-  assert.equal(getFormat("zip").format, "zip");
+  assert.equal(entryOf("jpeg").format, "jpeg");
+  assert.equal(entryOf("png").format, "png");
+  assert.equal(entryOf("zip").format, "zip");
 });
 
 test("R17: html detect with bytes — a doctype or <html> root, any case, that BEGINS the decoded first 1024 bytes is certain; a text that mentions it is not; content type unconsulted", () => {
@@ -51,6 +65,7 @@ test("R17: html detect with bytes — a doctype or <html> root, any case, that B
   assert.equal(html.detect(pad(1011, "<!doctype html"), null), null);
   // UTF-8 with a BOM, and UTF-16 by its BOM, are decoded before the root is looked for
   isHit(html.detect(Uint8Array.from([0xef, 0xbb, 0xbf, ...latin1("<!doctype html>")]), null), "html", "certain");
+  /** @param {string} s @param {boolean} le @returns {Uint8Array} */
   const u16 = (s, le) => Uint8Array.from([...(le ? [0xff, 0xfe] : [0xfe, 0xff]), ...[...s].flatMap((c) => (le ? [c.charCodeAt(0), 0] : [0, c.charCodeAt(0)]))]);
   isHit(html.detect(u16("<html><body>x", true), null), "html", "certain");
   isHit(html.detect(u16("<!DOCTYPE html>", false), null), "html", "certain");
@@ -59,7 +74,7 @@ test("R17: html detect with bytes — a doctype or <html> root, any case, that B
     "<!doctype xml>", "<htm>", "< html>", "<head><body>", "%PDF-1.7", "plain text", "<!doctypehtml", "<htmlx>", "<html5>",
     "<!-- never closed <html>", "<?xml never closed <html>", "// <html>\nint main(){}", "<p>a <html> mention</p>"]) {
     assert.equal(html.detect(latin1(s), null), null, s);
-    assert.equal(detectFormat(latin1(s), null).format !== "html", true, s);
+    assert.equal(now(detectFormat(latin1(s), null)).format !== "html", true, s);
   }
   // content type is not consulted while bytes are truthy — even an empty Uint8Array
   assert.equal(html.detect(latin1("plain"), "text/html"), null);
@@ -110,6 +125,7 @@ test("R22: pdf parts and text are null; structure(bytes) is extractPdfStructure(
   assert.equal(pdf.parts, null);
   assert.equal(pdf.text, null);
   assert.equal(typeof pdf.structure, "function");
+  assert.ok(pdf.structure);
   const doc = latin1([
     "%PDF-1.7",
     "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj",
@@ -123,8 +139,12 @@ test("R22: pdf parts and text are null; structure(bytes) is extractPdfStructure(
     assert.deepEqual(await via, await extractPdfStructure(input));
   }
   const r = await pdf.structure(doc);
+  assert.deepEqual(r, await extractPdfStructure(doc));
   assert.equal(r.ok, true);
+  assert.ok("links" in r);
   assert.equal(r.links[0].target.url, "https://example.gov/a.pdf");
   // and it is what the registry's detect→structure path reaches
-  assert.deepEqual(await getFormat(detectFormat(doc, null).format).structure(doc), await extractPdfStructure(doc));
+  const reached = entryOf(now(detectFormat(doc, null)).format);
+  assert.ok(reached.structure);
+  assert.deepEqual(await reached.structure(doc), await extractPdfStructure(doc));
 });
