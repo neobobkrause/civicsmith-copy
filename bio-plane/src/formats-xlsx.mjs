@@ -106,6 +106,7 @@ import { localize } from "./setup-words/index.mjs";
 import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanPart, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, collectElements, memberIdentities, addressParts, textSink,
+  statedWhy,
 } from "./office-xml.mjs";
 /** @import { ScanHandler, PartialNote, PartFailure, ObjectsExceeded, AddressedUnit, TextUnit } from "./office-xml.mjs" */
 /** @import { ActiveItem, Link, LinkCounts, UrlTarget, IntraTarget, CorePropertiesItem, ActiveCarried, MetadataCarried, DetectAnswer, ReadFailure, ReadOptions, BytesInput, Undetermined, FailureBody } from "./docx.mjs" */
@@ -1136,11 +1137,11 @@ async function xlsxParts(bytes) {
    * container that is not honestly an xlsx yields a stated refusal, never a
    * walk of something else's parts. */
   const disc = await discriminate(b);
-  if (!disc.ok) return { ok: false, why: disc.why, signals: disc.signals };
+  if (!disc.ok) return { ok: false, why: statedWhy(disc.why), signals: disc.signals };
   if (disc.format !== "xlsx") {
     /* An undetermined discrimination carries its own reason (a refused
        limit included, R12), as docx and pptx state it. */
-    return { ok: false, why: disc.format === "undetermined" ? disc.why : `not_xlsx:${disc.format}`, signals: disc.signals };
+    return { ok: false, why: disc.format === "undetermined" ? statedWhy(disc.why) : `not_xlsx:${disc.format}`, signals: disc.signals };
   }
   const container = readContainer(b);
 
@@ -1150,6 +1151,8 @@ async function xlsxParts(bytes) {
   if (!wbRead.ok) return { ok: false, why: `workbook_unreadable:${wbRead.why}` };
   const wbPartial = wbRead.partial;
   if (wbPartial) partials.push(wbPartial);
+  /* a container ooxml refused holds no workbook part, so `wbRead` has answered already; this states it for the checker */
+  if (!container.ok) return { ok: false, why: `workbook_unreadable:${container.why}` };
   const wb = collectElements(wbRead.text, ["sheet", "definedName", "workbookPr"]);
   if (wb.badRef) return { ok: false, why: "workbook_unreadable:char_ref_invalid" };
   const date1904 = wb.elements.some((e) => e.name === "workbookPr" && (e.attrs.date1904 === "1" || e.attrs.date1904 === "true"));
@@ -2573,7 +2576,11 @@ export const xlsxEntry = {
     /* FW-19 / IC-124: `images` under xl/media/, exhaustive or NULL. */
     /* parts that failed answer the refusal, which `withMetadata`, `withActive` and `withContainerImages` carry unchanged */
     if (!parts || !parts.ok) return withContainerImages(readRefused(parts, true), parts, "xl/media/");
-    return withContainerImages(withActive(withMetadata(await xlsxText(parts, opts), parts), parts), parts, "xl/media/");
+    const read = await withActive(withMetadata(await xlsxText(parts, opts), parts), parts);
+    if (!read.ok) return read;
+    /* ooxml adds `images` to every successful read of a package it holds, which a successful parts() always is */
+    const imaged = await withContainerImages(read, parts, "xl/media/");
+    return "images" in imaged ? imaged : { ...imaged, images: null };
   },
   /* G41: the typed cells of a range of one sheet, made from the held bytes (an optional slot, as `dialect` is). */
   cellsIn: async (partsOrBytes, range) => {

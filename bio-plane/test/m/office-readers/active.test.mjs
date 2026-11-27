@@ -365,9 +365,12 @@ test("R12 the file's declared total: over ARCHIVE_TOTAL_MAX every read refuses b
     assert.equal(p.why, "content_types_unreadable:ARCHIVE_TOTAL_MAX", format);
     /* exactly the total: everything the reader inflates still reads */
     const draft = readContainer(build({ extra: [{ name: "customXml/a.xml", data: "a" }] }));
+    assert.ok(draft.ok, format);
     const others = draft.entries.reduce((/** @type {number} */ n, e) => n + e.uncompressedSize, 0) - 1;
     const at = build({ extra: [{ name: "customXml/a.xml", data: "a", cd: { usize: ARCHIVE_TOTAL_MAX - others } }] });
-    assert.equal(readContainer(at).entries.reduce((/** @type {number} */ n, e) => n + e.uncompressedSize, 0), ARCHIVE_TOTAL_MAX);
+    const listed = readContainer(at);
+    assert.ok(listed.ok, format);
+    assert.equal(listed.entries.reduce((/** @type {number} */ n, e) => n + e.uncompressedSize, 0), ARCHIVE_TOTAL_MAX);
     const t = await entry.text(at);
     assert.equal(t.ok, true, format);
     assert.notEqual(t.document, null, format);

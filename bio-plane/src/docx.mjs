@@ -107,6 +107,7 @@ import { localize } from "./setup-words/index.mjs";
 import { boundOf } from "./read-bounds.mjs";
 import {
   Scanner, scanPart, scanWhole, scanSync, parseAttrs, unescape, readText, scanNotes, jsonBytes, memberIdentities, addressParts, countObjects, precountFloor, readTextBytes, scanBytes, owned, decodePart,
+  statedWhy,
 } from "./office-xml.mjs";
 /** @import { ScanHandler, Skipped, Attrs, ScanNote, PartialNote, PartFailure, ObjectsExceeded, MemberIdentity, ElementRef, TextUnit, AddressedUnit } from "./office-xml.mjs" */
 
@@ -1311,11 +1312,11 @@ function extraParts(container, rels, mainPart) {
 async function docxParts(bytes) {
   const b = toBytes(bytes);
   const d = await discriminate(b);
-  if (!d.ok) return { ok: false, why: d.why, signals: d.signals };
+  if (!d.ok) return { ok: false, why: statedWhy(d.why), signals: d.signals };
   if (d.format !== "docx") {
     return {
       ok: false,
-      why: d.format === "undetermined" ? d.why : `not_docx:${d.format}`,
+      why: d.format === "undetermined" ? statedWhy(d.why) : `not_docx:${d.format}`,
       signals: d.signals,
     };
   }
@@ -2363,6 +2364,10 @@ export const docxEntry = {
        addressed, exhaustive or NULL (ooxml.mjs's `containerImages`). */
     /* parts that failed answer the refusal, which `withMetadata` and `withActive` carry unchanged */
     if (!parts || !parts.ok) return withContainerImages(readRefused(parts), parts, "word/media/");
-    return withContainerImages(withActive(withMetadata(await docxText(parts, opts), parts, true), parts), parts, "word/media/");
+    const read = await withActive(withMetadata(await docxText(parts, opts), parts, true), parts);
+    if (!read.ok) return read;
+    /* ooxml adds `images` to every successful read of a package it holds, which a successful parts() always is */
+    const imaged = await withContainerImages(read, parts, "word/media/");
+    return "images" in imaged ? imaged : { ...imaged, images: null };
   },
 };
